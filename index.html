@@ -161,11 +161,28 @@
       </div>
 
       <div class="text-center flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-        <button id="saveComboBtn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50" disabled>Save Current Combo</button>
-        <button id="clearComboBtn" class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">Clear Current Combo</button>
-        <button id="downloadCombosBtn" class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">Download All Combos as Image</button>
+        <button id="saveComboBtn"
+                class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50"
+                disabled>
+          Save Current Combo
+        </button>
+
+        <button id="clearComboBtn"
+                class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">
+          Clear Current Combo
+        </button>
+
+        <button id="downloadCombosBtn"
+                class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">
+          Download All Combos as Image
+        </button>
+
+        <!-- NEW: share all saved combos as text (for Discord / LINE / etc) -->
+        <button id="shareAllCombosBtn"
+                class="px-8 py-3 bg-sky-500 text-white font-bold rounded-lg shadow-lg hover:bg-sky-600">
+          Share All Combos as Text
+        </button>
       </div>
-    </div>
 
     <!-- Saved combos -->
     <div>
@@ -207,3 +224,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
