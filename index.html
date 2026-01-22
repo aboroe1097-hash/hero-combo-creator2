@@ -20,11 +20,11 @@
 
   <!-- App CSS -->
   <link rel="stylesheet" href="css/app.css" />
-  <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)">
+  <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)" />
 
   <!-- Small inline CSS for logo placement -->
   <style>
-    /* team badge in the top-right of the app card (desktop only; hidden on mobile via mobile.css) */
+    /* team badge in the top-right of the app card */
     .team-badge {
       position: absolute;
       top: 12px;
@@ -68,9 +68,9 @@
     }
   </style>
 </head>
-<body class="p-4 bg-gray-900 text-slate-200" style="font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;">
+<body class="p-4 bg-gray-900 text-slate-200 font-inter">
   <div id="app" class="relative max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
-    <!-- small team badge (top-right inside the app card) - hidden on mobile via mobile.css -->
+    <!-- small team badge (top-right inside the app card) -->
     <div class="team-badge" title="VTS 1097">
       <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 logo">
     </div>
@@ -145,7 +145,7 @@
     <!-- Available Heroes -->
     <div class="mb-8">
       <h2 id="availableHeroesTitle" class="text-2xl font-semibold mb-4 text-gray-200">Available Heroes</h2>
-      <div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center">
+      <div id="availableHeroes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-items-center">
         <!-- hero cards appended here -->
       </div>
     </div>
@@ -154,26 +154,16 @@
     <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
       <h2 id="createComboTitle" class="text-2xl font-semibold mb-4 text-gray-200">Create Your Combo (Drag & Drop)</h2>
 
-      <!-- Row of 3 slots (always horizontal, wraps if too small) -->
-      <div class="flex flex-row justify-center items-center mb-6 gap-4 flex-wrap">
+      <div id="comboRow" class="flex flex-col sm:flex-row justify-center items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-6">
         <div id="comboSlot1" class="combo-slot" data-slot-index="0"></div>
         <div id="comboSlot2" class="combo-slot" data-slot-index="1"></div>
         <div id="comboSlot3" class="combo-slot" data-slot-index="2"></div>
       </div>
 
-      <div class="text-center flex flex-wrap justify-center gap-3">
-        <button id="saveComboBtn" class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50" disabled>
-          Save Current Combo
-        </button>
-        <button id="clearComboBtn" class="px-6 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">
-          Clear Current Combo
-        </button>
-        <button id="downloadCombosBtn" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">
-          Download All Combos as Image
-        </button>
-        <button id="shareComboBtn" class="px-6 py-3 bg-sky-600 text-white font-bold rounded-lg shadow-lg hover:bg-sky-700">
-          Share Current Combo
-        </button>
+      <div class="text-center flex flex-col sm:flex-row flex-wrap justify-center gap-4">
+        <button id="saveComboBtn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50" disabled>Save Current Combo</button>
+        <button id="clearComboBtn" class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">Clear Current Combo</button>
+        <button id="downloadCombosBtn" class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">Download All Combos as Image</button>
       </div>
     </div>
 
@@ -188,9 +178,10 @@
   </div>
 
   <!-- Comments Section -->
-  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner max-w-6xl mx-auto">
+  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner">
     <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
 
+    <!-- simple form -->
     <form id="commentForm" class="mb-4">
       <div class="flex flex-col sm:flex-row gap-3">
         <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
@@ -204,12 +195,15 @@
       </div>
     </form>
 
+    <!-- comments list -->
     <div id="commentsList" class="flex flex-col gap-3">
       <!-- comments rendered here -->
     </div>
   </section>
 
-  <!-- Single module entry point; app.js imports firebase.js + translations.js + comments.js -->
+  <!-- module scripts -->
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/translations.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
