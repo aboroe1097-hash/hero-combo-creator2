@@ -14,6 +14,17 @@ const commentText = document.getElementById('commentText');
 const postCommentBtn = document.getElementById('postCommentBtn');
 const commentsList = document.getElementById('commentsList');
 
+/** small throttle helper to avoid double submits */
+function throttle(fn, wait = 2000) {
+  let last = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - last < wait) return;
+    last = now;
+    return fn(...args);
+  };
+}
+
 /**
  * PUBLIC ENTRY POINT
  * Call this from app.js AFTER Firebase is initialized
@@ -24,11 +35,7 @@ export async function initComments() {
     await ensureAnonymousAuth();
 
     // Wire UI + start realtime listener
-    wcatch (e) {
-  console.error('Post comment error:', e);
-  alert('Could not post comment.');
-}
-
+    wireCommentsUI();
     await startCommentsListener();
 
     console.log('[comments] initialized');
@@ -49,8 +56,8 @@ function createCommentCard(docId, data, currentUid) {
   const avatar = document.createElement('div');
   avatar.className = 'comment-avatar';
   const initial =
-    data.name?.trim()?.[0]?.toUpperCase() ??
-    data.authorId?.[0]?.toUpperCase() ??
+    (data.name && data.name.trim() && data.name.trim()[0])?.toUpperCase() ||
+    (data.authorId && data.authorId[0])?.toUpperCase() ||
     'U';
   avatar.textContent = initial;
 
@@ -63,10 +70,10 @@ function createCommentCard(docId, data, currentUid) {
   meta.className = 'comment-meta';
 
   const author = document.createElement('div');
-  author.textContent = data.name?.trim() || 'Anonymous';
+  author.textContent = (data.name && data.name.trim()) ? data.name.trim() : 'Anonymous';
 
   const time = document.createElement('div');
-  const dt = data.createdAt?.seconds
+  const dt = data.createdAt && data.createdAt.seconds
     ? new Date(data.createdAt.seconds * 1000)
     : new Date();
   time.textContent = dt.toLocaleString();
@@ -92,9 +99,7 @@ function createCommentCard(docId, data, currentUid) {
     delBtn.onclick = async () => {
       if (!confirm('Delete this comment?')) return;
       try {
-        const { deleteDoc, doc } = await import(
-          'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-        );
+        const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
         await deleteDoc(doc(getDb(), 'comments', docId));
       } catch (e) {
         console.error('Delete comment error:', e);
@@ -118,21 +123,25 @@ function createCommentCard(docId, data, currentUid) {
 async function startCommentsListener() {
   // Clean up existing listener
   if (commentsListenerUnsub) {
-    commentsListenerUnsub();
+    try { commentsListenerUnsub(); } catch (e) { /* ignore */ }
     commentsListenerUnsub = null;
   }
 
   try {
     const db = getDb();
-    const { collection, query, orderBy, onSnapshot } = await import(
-      'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-    );
-    const { getAuth } = await import(
-      'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
-    );
+    if (!db) {
+      console.warn('[comments] no db available for listener');
+      return;
+    }
 
+    // import modular Firestore helpers
+    const { collection, query, where, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+
+    // only listen to approved comments to match secure rules and avoid permission errors
     const q = query(
       collection(db, 'comments'),
+      where('approved', '==', true),
       orderBy('createdAt', 'desc')
     );
 
@@ -140,27 +149,28 @@ async function startCommentsListener() {
       commentsList.innerHTML = '';
 
       const auth = getAuth();
-      const currentUid = auth.currentUser?.uid || null;
+      const currentUid = auth.currentUser ? auth.currentUser.uid : null;
 
       snap.forEach((docSnap) => {
-        const data = docSnap.data();
+        const data = docSnap.data ? docSnap.data() : null;
+        if (!data) return;
 
-        // Show only approved/public comments
+        // The query already filters approved == true, but keep safety checks
         const visible =
           data.approved === true ||
           data.public === true ||
-          data.authorId === currentUid;
+          (data.authorId && data.authorId === currentUid);
 
         if (!visible) return;
 
-        const card = createCommentCard(
-          docSnap.id,
-          data,
-          currentUid
-        );
+        const card = createCommentCard(docSnap.id, data, currentUid);
         commentsList.appendChild(card);
       });
+    }, (err) => {
+      console.error('[comments] onSnapshot error:', err);
     });
+
+    console.log('[comments] onSnapshot registered (approved comments)');
   } catch (e) {
     console.error('[comments] listener error:', e);
   }
@@ -171,50 +181,50 @@ async function startCommentsListener() {
 /* -------------------------------------------------- */
 
 function wireCommentsUI() {
-  if (!commentForm) return;
+  if (!commentForm) {
+    console.warn('[comments] commentForm not found in DOM');
+    return;
+  }
 
-  commentForm.addEventListener('submit', async (ev) => {
+  // throttled submit handler
+  const submitHandler = throttle(async (ev) => {
     ev.preventDefault();
 
-    const text = commentText.value.trim();
-    if (!text) return alert('Please enter a comment.');
-    if (text.length > 1000)
-      return alert('Comment too long (max 1000 characters).');
+    const textVal = (commentText && commentText.value) ? commentText.value.trim() : '';
+    if (!textVal) return alert('Please enter a comment.');
+    if (textVal.length > 1000) return alert('Comment too long (max 1000 characters).');
 
-    postCommentBtn.disabled = true;
+    if (postCommentBtn) postCommentBtn.disabled = true;
 
     try {
       const db = getDb();
-      const { getAuth } = await import(
-        'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
-      );
-      const { addDoc, collection, serverTimestamp } = await import(
-        'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-      );
+      const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+      const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
 
       const auth = getAuth();
-      const uid = auth.currentUser?.uid;
+      const uid = auth.currentUser ? auth.currentUser.uid : null;
 
       await addDoc(collection(db, 'comments'), {
-        text,
-        name: commentName.value.trim() || null,
-        email: commentEmail.value.trim() || null,
+        text: textVal,
+        name: (commentName && commentName.value && commentName.value.trim()) ? commentName.value.trim() : null,
+        email: (commentEmail && commentEmail.value && commentEmail.value.trim()) ? commentEmail.value.trim() : null,
         authorId: uid,
         createdAt: serverTimestamp(),
-        approved: true, // set false if you want moderation
+        approved: true, // or false for moderation workflow
         public: true
       });
 
       // Reset form
-      commentText.value = '';
-      commentName.value = '';
-      commentEmail.value = '';
+      if (commentText) commentText.value = '';
+      if (commentName) commentName.value = '';
+      if (commentEmail) commentEmail.value = '';
     } catch (e) {
       console.error('Post comment error:', e);
-      alert('Could not post comment.');
+      alert('Could not post comment: ' + (e && e.message ? e.message : e));
     } finally {
-      postCommentBtn.disabled = false;
+      if (postCommentBtn) postCommentBtn.disabled = false;
     }
-  });
-}
+  }, 2000);
 
+  commentForm.addEventListener('submit', submitHandler);
+}
