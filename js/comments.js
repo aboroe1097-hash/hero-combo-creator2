@@ -24,7 +24,11 @@ export async function initComments() {
     await ensureAnonymousAuth();
 
     // Wire UI + start realtime listener
-    wireCommentsUI();
+    wcatch (e) {
+  console.error('Post comment error:', e);
+  alert('Could not post comment.');
+}
+
     await startCommentsListener();
 
     console.log('[comments] initialized');
@@ -213,3 +217,4 @@ function wireCommentsUI() {
     }
   });
 }
+
