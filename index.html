@@ -16,14 +16,72 @@
 
   <!-- App CSS -->
   <link rel="stylesheet" href="css/app.css" />
+
+  <!-- Small inline CSS for logo placement -->
+  <style>
+    /* team badge in the top-right of the app card */
+    .team-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      border: 2px solid rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+    }
+    .team-badge img {
+      width: 88%;
+      height: 88%;
+      object-fit: cover;
+      display: block;
+      border-radius: 8px;
+    }
+
+    /* centered main logo */
+    .main-logo {
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* smaller logo for narrow screens */
+    @media (max-width:640px) {
+      .main-logo { width: 120px; height: 120px; }
+      .team-badge { width: 48px; height: 48px; top: 8px; right: 8px; }
+    }
+  </style>
 </head>
 <body class="p-4 bg-gray-900 text-slate-200 font-inter">
-  <div id="app" class="max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
+  <div id="app" class="relative max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
+    <!-- small team badge (top-right inside the app card) -->
+    <div class="team-badge" title="VTS 1097">
+      <!-- Change the src path if you place the file elsewhere -->
+      <img src="/images/logo.jpg" alt="VTS 1097 logo">
+    </div>
+
     <div id="betaNote" class="text-center mb-6 p-4 bg-blue-900 rounded-lg text-blue-200 font-semibold text-lg">
       BETA Version b1.1 — Created by Abo for VTS 1097
     </div>
 
-    <h1 id="appTitle" class="text-4xl font-bold text-center mb-8 text-blue-400">Hero Combo Creator</h1>
+    <!-- Centered main logo + title -->
+    <div class="flex flex-col items-center mb-6">
+      <!-- Main, larger logo -->
+      <img src="/images/logo.jpg" alt="VTS 1097 — Team Logo" class="main-logo" />
+
+      <h1 id="appTitle" class="text-4xl font-bold text-center mb-2 text-blue-400">Hero Combo Creator</h1>
+      <p class="text-sm text-gray-300">Team VTS 1097</p>
+    </div>
 
     <!-- Language Selector -->
     <div class="flex justify-end mb-4">
