@@ -1,205 +1,210 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Favicon / site icon -->
-  <link rel="icon" type="image/png" href="images/logo.png">
-  <link rel="apple-touch-icon" href="images/logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTS 1097 Hero Combo Creator</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --accent-blue: #3b82f6;
+            /* Faction Colors */
+            --faction-orange: #f97316;
+            --faction-sx: #a855f7;
+            --faction-s1: #10b981;
+        }
 
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hero Combo Creator</title>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-  <!-- Tailwind CDN (utility classes) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+        /* Improved Mobile Header */
+        .header {
+            text-align: center;
+            width: 100%;
+            padding: 15px 0;
+            background: linear-gradient(to bottom, #1e3a8a, var(--bg-dark));
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+        .header h1 { font-size: 1.4rem; margin: 5px 0; }
+        
+        /* Selected Heroes - Horizontal Row */
+        .selected-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--accent-blue);
+        }
 
-  <!-- html2canvas (for screenshot) -->
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+        .slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30%;
+        }
 
-  <!-- App CSS -->
-  <link rel="stylesheet" href="css/app.css" />
-  <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)">
+        .slot-label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; }
 
-  <!-- Small inline CSS for logo placement -->
-  <style>
-    /* team badge in the top-right of the app card */
-    .team-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-      border: 2px solid rgba(255,255,255,0.04);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 40;
-    }
-    .team-badge img {
-      width: 88%;
-      height: 88%;
-      object-fit: cover;
-      display: block;
-      border-radius: 8px;
-    }
+        /* Available Heroes - 3 per row on mobile */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
 
-    /* centered main logo */
-    .main-logo {
-      width: 160px;
-      height: 160px;
-      object-fit: contain;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-      margin-bottom: 12px;
-      display: block;
-      background: rgba(0,0,0,0.15);
-    }
+        .hero-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 5px;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
 
-    /* smaller logo for narrow screens */
-    @media (max-width:640px) {
-      .main-logo { width: 120px; height: 120px; }
-      .team-badge { width: 48px; height: 48px; top: 8px; right: 8px; }
-    }
-  </style>
+        .hero-card:active { transform: scale(0.95); }
+
+        /* Smaller Icons */
+        .hero-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #334155;
+        }
+
+        .hero-name {
+            font-size: 0.75rem;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Faction Color Coding */
+        .orange { border-color: var(--faction-orange); }
+        .sx { border-color: var(--faction-sx); }
+        .s1 { border-color: var(--faction-s1); }
+
+        /* Buttons */
+        .action-bar {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-share { background: var(--accent-blue); color: white; }
+        .btn-reset { background: #ef4444; color: white; }
+    </style>
 </head>
-<body class="p-4 bg-gray-900 text-slate-200" style="font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;">
-  <div id="app" class="relative max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
-    <!-- small team badge (top-right inside the app card) -->
-    <div class="team-badge" title="VTS 1097">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 logo">
+<body>
+
+    <div class="header">
+        <h1>Hero Combo Creator</h1>
+        <small>BETA b1.1 — Team VTS 1097</small>
     </div>
 
-    <div id="betaNote" class="text-center mb-6 p-4 bg-blue-900 rounded-lg text-blue-200 font-semibold text-lg">
-      BETA Version b1.1 — Created by Abo for VTS 1097
-    </div>
-
-    <!-- Centered main logo + title -->
-    <div class="flex flex-col items-center mb-6">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 — Team Logo" class="main-logo" />
-
-      <h1 id="appTitle" class="text-4xl font-bold text-center mb-2 text-blue-400">Hero Combo Creator</h1>
-      <p class="text-sm text-gray-300">Team VTS 1097</p>
-    </div>
-
-    <!-- Language Selector -->
-    <div class="flex justify-end mb-4 language-select-wrapper">
-      <label for="languageSelect" class="mr-2 text-gray-300">Language:</label>
-      <select id="languageSelect" class="bg-gray-700 text-white rounded-md p-2">
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="pt">Português</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-        <option value="zh">中文</option>
-        <option value="ru">Русский</option>
-      </select>
-    </div>
-
-    <!-- Modal Message Box -->
-    <div id="messageBox" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div class="bg-gray-800 p-6 rounded-lg shadow-xl text-center w-11/12 max-w-lg">
-        <p id="messageText" class="text-lg mb-4"></p>
-        <div class="flex justify-center space-x-4">
-          <button id="messageBoxOkBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
-          <button id="messageBoxCancelBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 hidden">Cancel</button>
+    <div class="selected-container" id="selection-row">
+        <div class="slot" onclick="clearSlot(0)">
+            <span class="slot-label">FRONT</span>
+            <div id="slot-0"><img src="placeholder.png" class="hero-icon"></div>
         </div>
-      </div>
+        <div class="slot" onclick="clearSlot(1)">
+            <span class="slot-label">MIDDLE</span>
+            <div id="slot-1"><img src="placeholder.png" class="hero-icon"></div>
+        </div>
+        <div class="slot" onclick="clearSlot(2)">
+            <span class="slot-label">BACK</span>
+            <div id="slot-2"><img src="placeholder.png" class="hero-icon"></div>
+        </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="loading-spinner hidden" aria-hidden="true" title="Loading"></div>
+    <div class="hero-grid" id="hero-list">
+        </div>
 
-    <!-- Season filters -->
-    <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
-      <h2 id="filterBySeasonTitle" class="text-2xl font-semibold mb-4 text-gray-200">Filter by Season</h2>
-      <div id="seasonFilters" class="flex flex-wrap gap-4">
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S0" checked>
-          <span class="ml-2 text-gray-300">Season 0</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S1">
-          <span class="ml-2 text-gray-300">Season 1</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S2">
-          <span class="ml-2 text-gray-300">Season 2</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S3">
-          <span class="ml-2 text-gray-300">Season 3</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S4">
-          <span class="ml-2 text-gray-300">Season 4</span>
-        </label>
-      </div>
+    <div class="action-bar">
+        <button class="btn btn-share" onclick="shareCombo()">Export Combo</button>
+        <button class="btn btn-reset" onclick="resetAll()">Reset</button>
     </div>
 
-    <!-- Available Heroes -->
-    <div class="mb-8">
-      <h2 id="availableHeroesTitle" class="text-2xl font-semibold mb-4 text-gray-200">Available Heroes</h2>
-      <div id="availableHeroes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-items-center">
-        <!-- hero cards appended here -->
-      </div>
-    </div>
+    <script>
+        const heroes = [
+            { id: 1, name: "Jeanne d'Arc", faction: "orange", img: "jeanne.jpg" },
+            { id: 2, name: "Isabella I", faction: "sx", img: "isabella.jpg" },
+            { id: 3, name: "Jiguang Qi", faction: "s1", img: "qi.jpg" },
+            { id: 4, name: "Mary Tudor", faction: "orange", img: "mary.jpg" }
+            // Add more hero data here
+        ];
 
-    <!-- Combo creation -->
-    <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
-      <h2 id="createComboTitle" class="text-2xl font-semibold mb-4 text-gray-200">Create Your Combo (Drag & Drop)</h2>
+        let selected = [null, null, null];
 
-      <div class="flex flex-col sm:flex-row justify-center items-center mb-6 space-x-0 sm:space-x-6">
-        <div id="comboSlot1" class="combo-slot" data-slot-index="0"></div>
-        <div id="comboSlot2" class="combo-slot" data-slot-index="1"></div>
-        <div id="comboSlot3" class="combo-slot" data-slot-index="2"></div>
-      </div>
+        function renderHeroes() {
+            const container = document.getElementById('hero-list');
+            container.innerHTML = heroes.map(h => `
+                <div class="hero-card ${h.faction}" onclick="selectHero(${h.id})">
+                    <img src="${h.img}" class="hero-icon">
+                    <div class="hero-name">${h.name}</div>
+                </div>
+            `).join('');
+        }
 
-      <div class="text-center space-x-4 flex flex-wrap justify-center gap-4">
-        <button id="saveComboBtn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50" disabled>Save Current Combo</button>
-        <button id="clearComboBtn" class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">Clear Current Combo</button>
-        <button id="downloadCombosBtn" class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">Download All Combos as Image</button>
-      </div>
-    </div>
+        function selectHero(id) {
+            const hero = heroes.find(h => h.id === id);
+            const emptySlot = selected.indexOf(null);
+            if (emptySlot !== -1 && !selected.includes(hero.name)) {
+                selected[emptySlot] = hero.name;
+                document.getElementById(`slot-${emptySlot}`).innerHTML = `<img src="${hero.img}" class="hero-icon">`;
+            }
+        }
 
-    <!-- Saved combos -->
-    <div>
-      <h2 id="lastBestCombosTitle" class="text-2xl font-semibold mb-4 text-gray-200">Last Best Combos</h2>
-      <p id="noCombosMessage" class="text-gray-400 text-center mb-4">No combos saved yet. Drag heroes and click 'Save Current Combo'!</p>
-      <div id="savedCombos" class="flex flex-col items-center">
-        <!-- saved combos rendered here -->
-      </div>
-    </div>
-  </div>
+        function clearSlot(index) {
+            selected[index] = null;
+            document.getElementById(`slot-${index}`).innerHTML = `<img src="placeholder.png" class="hero-icon">`;
+        }
 
-  <!-- Comments Section -->
-  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner max-w-6xl mx-auto">
-    <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
+        function shareCombo() {
+            const combo = selected.filter(s => s !== null).join(" / ");
+            if (combo) {
+                const text = `VTS 1097 Combo: ${combo}`;
+                navigator.clipboard.writeText(text);
+                alert("Combo copied to clipboard! Share it in Discord or LINE.");
+            } else {
+                alert("Select heroes first!");
+            }
+        }
 
-    <form id="commentForm" class="mb-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
-        <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)" class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
-      </div>
-      <textarea id="commentText" rows="3" required placeholder="Write a suggestion or comment..." class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white" maxlength="1000"></textarea>
+        function resetAll() {
+            selected = [null, null, null];
+            [0,1,2].forEach(i => clearSlot(i));
+        }
 
-      <div class="flex items-center justify-between mt-3">
-        <div class="text-sm text-gray-400">Be kind — comments are public.</div>
-        <button id="postCommentBtn" type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Post Comment</button>
-      </div>
-    </form>
-
-    <div id="commentsList" class="flex flex-col gap-3">
-      <!-- comments rendered here -->
-    </div>
-  </section>
-
-  <!-- Single module entry point; app.js imports firebase.js + translations.js -->
-  <script type="module" src="js/app.js"></script>
+        renderHeroes();
+    </script>
 </body>
 </html>
