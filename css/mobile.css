@@ -8,9 +8,9 @@
   --mobile-gap: 8px;
 }
 
-html, body {
+html,
+body {
   -webkit-text-size-adjust: 100%;
-  padding-bottom: 120px !important; /* tweak if the bar is taller/shorter */
   font-size: var(--mobile-base-font-size);
 }
 
@@ -51,7 +51,7 @@ button,
   border-radius: 999px !important;
 }
 
-/* Available heroes: 3 per row */
+/* ===== Available heroes: 3 per row ===== */
 #availableHeroes {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -74,39 +74,63 @@ button,
   font-size: 0.9rem !important;
 }
 
-/* Combo row fixed at bottom on small screens */
-#comboRow {
-  position: fixed !important;
+/* ===== Sticky combo footer (slots + buttons) ===== */
+
+/* Give main combo section extra bottom space so content isn't hidden
+   behind the fixed footer bar. */
+.combo-section {
+  padding-bottom: 190px !important;
+}
+
+/* Fixed footer bar that contains slots + buttons */
+#comboFooterBar {
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 60;
-
-  /* center within the app, but still full-width enough for thumbs */
-  max-width: 720px;
-  margin: 0 auto !important;
-  padding: 8px 10px !important;
-
-  background: rgba(15, 23, 42, 0.96); /* slate-ish */
+  background: rgba(15, 23, 42, 0.98); /* slate-ish */
+  padding: 8px 10px 10px;
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
-  border-radius: 16px 16px 0 0;
-  backdrop-filter: blur(6px);
+  z-index: 60;
+}
 
+/* Slots row – compact and centered */
+#comboSlotsRow {
   display: flex !important;
-  flex-direction: row !important;
   justify-content: center !important;
   align-items: center !important;
   gap: 8px !important;
+  margin-bottom: 6px !important;
 }
 
-/* Slightly smaller slots so all 3 fit comfortably in the bar */
-#comboRow .combo-slot {
-  width: 4.75rem !important;
-  height: 4.75rem !important;
+/* Slightly smaller slots so 3 fit comfortably */
+#comboSlotsRow .combo-slot {
+  width: 5.2rem !important;
+  height: 5.2rem !important;
   border-width: 3px !important;
   font-size: 0.7rem !important;
   margin: 0 !important;
 }
+
+#comboSlotsRow .combo-slot img {
+  border-radius: 0.4rem !important;
+}
+
+/* Buttons row – 2×2 grid */
+#comboButtonsRow {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  justify-content: center !important;
+}
+
+#comboButtonsRow button {
+  font-size: 0.8rem !important;
+  padding: 8px 4px !important;
+  min-height: 36px !important;
+  border-radius: 9999px !important;
+}
+
 /* ===== Mobile: Saved combos layout ===== */
 
 /* Make the whole card slightly narrower + centered */
@@ -133,7 +157,7 @@ button,
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 6px !important;
   justify-items: center !important;
-  overflow: visible !important;          /* no clipping */
+  overflow: visible !important;
   -webkit-overflow-scrolling: auto !important;
 }
 
@@ -141,7 +165,7 @@ button,
 .saved-combo-slot-item {
   width: 100% !important;
   height: auto !important;
-  aspect-ratio: 1 / 1 !important;        /* perfect square */
+  aspect-ratio: 1 / 1 !important;
   border-radius: 10px !important;
   padding: 0 !important;
 }
@@ -160,11 +184,7 @@ button,
   margin-top: 4px !important;
 }
 
-.saved-combo-slot-item span {
-  font-size: 0.75rem !important;
-}
-
-/* shrink the share/remove buttons so they don't steal width */
+/* Share/remove buttons smaller so they don't steal width */
 .saved-combo-actions {
   margin-left: 8px !important;
   gap: 6px !important;
@@ -188,8 +208,10 @@ button,
 button:focus,
 .hero-card:focus {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(11,102,195,0.35) !important;
+  box-shadow: 0 0 0 3px rgba(11, 102, 195, 0.35) !important;
 }
 
 /* Avoid grey tap highlight */
-* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
