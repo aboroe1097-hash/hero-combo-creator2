@@ -154,11 +154,13 @@
     <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
       <h2 id="createComboTitle" class="text-2xl font-semibold mb-4 text-gray-200">Create Your Combo (Drag & Drop)</h2>
 
-      <div id="comboRow" class="flex flex-col sm:flex-row justify-center items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-6">
-        <div id="comboSlot1" class="combo-slot" data-slot-index="0"></div>
-        <div id="comboSlot2" class="combo-slot" data-slot-index="1"></div>
-        <div id="comboSlot3" class="combo-slot" data-slot-index="2"></div>
-      </div>
+    <div id="comboRow"
+         class="combo-row flex flex-col sm:flex-row justify-center items-center mb-6 space-x-0 sm:space-x-6">
+      <div id="comboSlot1" class="combo-slot" data-slot-index="0"></div>
+      <div id="comboSlot2" class="combo-slot" data-slot-index="1"></div>
+      <div id="comboSlot3" class="combo-slot" data-slot-index="2"></div>
+    </div>
+
 
       <div class="text-center flex flex-col sm:flex-row flex-wrap justify-center gap-4">
         <button id="saveComboBtn"
@@ -224,4 +226,5 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
