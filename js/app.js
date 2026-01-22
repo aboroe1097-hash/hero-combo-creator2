@@ -1,6 +1,8 @@
 // main app
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { initComments } from './comments.js';
+
 
 // keep a local combined translations object (allow future i18n expansion)
 const translations = baseTranslations;
@@ -394,6 +396,9 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
 
     // setup realtime listener
     setupFirestoreListener();
+
+    // initialize comments UI/listener (requires auth to be ready)
+    await initComments();
   } catch (err) {
     console.error("Firebase/auth init error:", err);
     // show a message but allow UI to be used (it will work locally; saving requires network)
@@ -402,4 +407,5 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     hideLoadingSpinner();
   }
 })();
+
 
