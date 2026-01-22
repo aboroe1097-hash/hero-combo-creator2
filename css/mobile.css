@@ -1,142 +1,114 @@
 /* Mobile overrides for improved readability and touch comfort
-   Loaded with: <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)">
+   Loaded with media="(max-width: 768px)" in index.html
 */
 
 :root {
-  --mobile-base-font-size: 16px;
-  --mobile-radius: 10px;
+  --mobile-base-font-size: 15px;
+  --mobile-radius: 12px;
   --mobile-gap: 8px;
 }
 
-/* Ensure text scaling is stable */
 html, body {
   -webkit-text-size-adjust: 100%;
   font-size: var(--mobile-base-font-size);
 }
 
-/* App container: full-width with comfortable padding */
+/* App container */
 #app {
-  padding: 10px !important;
-  margin: 0 6px !important;
+  padding: 12px !important;
+  margin: 0 4px !important;
   border-radius: var(--mobile-radius) !important;
-  max-width: calc(100% - 12px) !important;
+  max-width: calc(100% - 8px) !important;
   box-sizing: border-box;
 }
 
-/* Hide small badge/logo on mobile (cleaner header) */
+/* Hide small top-right logo on mobile */
 .team-badge {
   display: none !important;
 }
 
-/* Header / logo / title adjustments */
-.main-logo {
-  width: 84px !important;
-  height: 84px !important;
-  object-fit: contain;
-}
+/* Header / text */
 #appTitle {
-  font-size: 1.55rem !important;
-  line-height: 1.15 !important;
-  margin-bottom: 4px !important;
+  font-size: 1.8rem !important;
+  line-height: 1.2 !important;
 }
 #betaNote {
-  font-size: 0.9rem !important;
-  padding: 8px !important;
+  font-size: 0.95rem !important;
+  padding: 10px !important;
 }
 
-/* Controls: wrap and center */
+/* Controls: wrap + center */
 .language-select-wrapper {
-  display: flex !important;
-  gap: var(--mobile-gap) !important;
-  flex-wrap: wrap !important;
   justify-content: center !important;
 }
 
-/* Improve button touch targets */
+/* Buttons: nice large touch targets */
 button,
-.button-ghost,
-.remove-combo-btn {
+.remove-combo-btn,
+.share-combo-btn {
   min-height: 44px !important;
-  padding: 8px 10px !important;
-  font-size: 0.95rem !important;
-  border-radius: 10px !important;
+  border-radius: 999px !important;
 }
 
-/* Hero card improvements: small 3-per-row grid */
+/* Available heroes: 3 per row */
+#availableHeroes {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  justify-items: center !important;
+}
+
+/* Smaller hero cards for mobile */
 .hero-card {
   min-width: 90px !important;
-  max-width: 100px !important;
   min-height: 120px !important;
   padding: 8px !important;
   margin: 4px !important;
-  touch-action: manipulation !important;
 }
 .hero-card img {
-  width: 60px !important;
-  height: 60px !important;
-  object-fit: contain !important;
+  width: 72px !important;
+  height: 72px !important;
 }
 .hero-card .mt-1 {
   font-size: 0.9rem !important;
 }
 
-/* 3 heroes per row on mobile */
-#availableHeroes {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 6px !important;
-  justify-items: center !important;
+/* Combo slots row: always horizontal on mobile */
+#comboRow {
+  flex-direction: row !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
-
-/* Combo slot scaling: small but readable, all 3 in a row */
 .combo-slot {
-  width: 5.2rem !important;   /* ~83px */
-  height: 5.2rem !important;
+  width: 5.5rem !important;
+  height: 5.5rem !important;
   border-width: 3px !important;
-  border-radius: 10px !important;
-  padding: 4px !important;
   font-size: 0.8rem !important;
 }
 
-/* Saved combos horizontal list: slightly smaller tiles */
+/* Saved combos tiles a bit smaller */
 .saved-combo-slot-item {
-  width: 88px !important;
-  height: 88px !important;
-  border-radius: 8px !important;
+  width: 96px !important;
+  height: 96px !important;
 }
-.saved-combo-slots {
-  gap: 6px !important;
-  padding-bottom: 6px !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-/* Saved combo number badge */
 .saved-combo-number {
-  left: 36px !important;
-  width: 26px !important;
-  height: 26px !important;
-  line-height: 26px !important;
-  font-size: 0.8rem !important;
-  transform: translateX(-50%) !important;
+  left: 42px !important;
 }
 
-/* Comments and long text readability */
+/* Comments text size */
 .comment-text {
   font-size: 0.95rem !important;
   line-height: 1.4 !important;
   word-break: break-word !important;
-  white-space: pre-wrap !important;
 }
 
-/* Visible focus for accessibility */
+/* Visible focus */
 button:focus,
-.button-ghost:focus,
 .hero-card:focus {
   outline: none !important;
-  box-shadow: 0 0 0 4px rgba(11,102,195,0.12) !important;
+  box-shadow: 0 0 0 3px rgba(11,102,195,0.35) !important;
 }
 
-/* Prevent highlight on tap */
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-}
+/* Avoid grey tap highlight */
+* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
