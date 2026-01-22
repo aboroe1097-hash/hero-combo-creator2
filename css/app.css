@@ -1,43 +1,11 @@
-/* Base */
+/* Base font */
 :root {
   --brand: #0b66c3;
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-}
-
-/* ---------- Faction / tier coloring (by season) ----------
-   You can later map these to "Orange", "SX", etc. just by
-   changing the mapping in app.js and colors here.
-*/
-.faction-orange {
-  border-color: #f97316 !important;
-  box-shadow: 0 0 0 1px rgba(249,115,22,0.3), 0 8px 24px rgba(0,0,0,0.5);
-}
-.faction-ice {
-  border-color: #38bdf8 !important; /* cyan-400 */
-  box-shadow: 0 0 0 1px rgba(56,189,248,0.3), 0 8px 24px rgba(0,0,0,0.5);
-}
-.faction-royal {
-  border-color: #a855f7 !important; /* purple-500 */
-  box-shadow: 0 0 0 1px rgba(168,85,247,0.3), 0 8px 24px rgba(0,0,0,0.5);
-}
-
-/* Ghost element for mobile touch-drag */
-.touch-ghost {
-  position: fixed;
-  pointer-events: none;
-  z-index: 2000;
-  opacity: 0.9;
-  transform: translate(-50%, -50%);
-}
-
-/* Highlight slot when touch-dragging */
-.combo-slot.touch-highlight {
-  border-style: solid;
-  border-color: #facc15 !important; /* yellow-400 */
-  background-color: #111827 !important;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial;
 }
 
 /* Hero card style (available heroes) */
@@ -46,31 +14,42 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  margin: 6px;
+  padding: 8px;
+  margin: 8px;
   background-color: #374151; /* bg-gray-700 */
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25);
   cursor: grab;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-  min-width: 96px;
-  min-height: 110px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 110px;
+  min-height: 130px;
+  position: relative;
 }
-.hero-card:active {
-  cursor: grabbing;
-}
+.hero-card:active { cursor: grabbing; }
 .hero-card:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
 }
 .hero-card img {
-  width: 72px;
-  height: 72px;
+  width: 86px;
+  height: 86px;
   border-radius: 9999px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   object-fit: cover;
   border: 2px solid #4b5563;
+}
+
+/* tiny rarity / season pill */
+.hero-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #0b1120;
+  background: #f97316; /* default orange, overridden in JS by season */
 }
 
 /* Combo slot */
@@ -79,16 +58,16 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 6.5rem;   /* ~104px */
-  height: 6.5rem;
-  border: 3px dashed #3b82f6; /* border-blue-500 */
-  border-radius: 0.5rem;
+  width: 8rem; /* w-32 */
+  height: 8rem; /* h-32 */
+  border: 4px dashed #3b82f6; /* border-blue-500 */
+  border-radius: 0.75rem;
   background-color: #1f2937; /* gray-800 */
-  margin: 0.25rem;
-  padding: 0.25rem;
+  margin: 0.5rem;
+  padding: 0.5rem;
   text-align: center;
   color: #9ca3af; /* text-gray-400 */
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   overflow: hidden;
   transition: all 0.2s ease;
 }
@@ -102,7 +81,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
 }
 
 /* Comments */
@@ -126,9 +105,7 @@ body {
   color:#f8fafc;
   font-weight:700;
 }
-.comment-body {
-  flex:1;
-}
+.comment-body { flex:1; }
 .comment-meta {
   font-size:0.85rem;
   color:#9ca3af;
@@ -138,10 +115,7 @@ body {
   gap:8px;
   align-items:center;
 }
-.comment-text {
-  color:#e6eef8;
-  white-space:pre-wrap;
-}
+.comment-text { color:#e6eef8; white-space:pre-wrap; }
 .comment-actions button {
   background:transparent;
   border:0;
@@ -151,7 +125,7 @@ body {
   padding:4px;
 }
 
-/* Saved combos list */
+/* Saved combos */
 .saved-combo-display {
   display: flex;
   flex-direction: row;
@@ -161,29 +135,30 @@ body {
   padding: 16px;
   margin: 8px;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
+              0 2px 4px -1px rgba(0,0,0,0.06);
   position: relative;
-  padding-left: 90px;
+  padding-left: 96px;
   width: 100%;
   max-width: 768px;
   box-sizing: border-box;
 }
 .saved-combo-number {
   position: absolute;
-  left: 45px;
-  background-color: #ef4444;
-  color: black;
-  width: 28px;
-  height: 28px;
+  left: 48px;
+  background-color: #f97316;
+  color: #111827;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   transform: translateX(-50%);
   flex-shrink: 0;
-  line-height: 28px;
+  line-height: 32px;
   text-align: center;
 }
 .saved-combo-slots {
@@ -192,7 +167,7 @@ body {
   justify-content: center;
   align-items: center;
   flex-grow: 1;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: nowrap;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -202,24 +177,23 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 110px;
-  height: 110px;
+  width: 112px;
+  height: 112px;
   background-color: #4b5563;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.3);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.2);
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid rgba(148,163,184,0.35);
 }
 .saved-combo-slot-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 .saved-combo-slot-item span {
   font-size: 0.8rem;
-  margin-top: 2px;
+  margin-top: 4px;
   color: #93c5fd;
   text-align: center;
   padding: 0 4px;
@@ -229,27 +203,42 @@ body {
   white-space: nowrap;
 }
 
-/* remove button */
-.remove-combo-btn {
-  background-color: #dc2626;
-  color: white;
+/* buttons on each saved combo */
+.saved-combo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+.remove-combo-btn,
+.share-combo-btn {
   padding: 8px;
   border-radius: 9999px;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 700;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25);
-  transition: background-color 0.15s, transform 0.1s;
-  flex-shrink: 0;
-  margin-left: 12px;
-  border: none;
+  transition: background-color 0.15s, transform 0.15s;
+}
+.remove-combo-btn {
+  background-color: #dc2626;
+  color: white;
 }
 .remove-combo-btn:hover {
   background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+.share-combo-btn {
+  background-color: #0ea5e9;
+  color: #0f172a;
+}
+.share-combo-btn:hover {
+  background-color: #0284c7;
   transform: translateY(-1px);
 }
 
@@ -273,17 +262,4 @@ body {
 }
 
 /* small utility */
-.hidden {
-  display: none !important;
-}
-
-/* Slight responsive tweaks (for browsers without mobile.css) */
-@media (max-width: 640px) {
-  .saved-combo-display {
-    padding-left: 80px;
-  }
-  .saved-combo-slot-item {
-    width: 96px;
-    height: 96px;
-  }
-}
+.hidden { display: none !important; }
