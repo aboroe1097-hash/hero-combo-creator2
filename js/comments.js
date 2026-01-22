@@ -159,12 +159,12 @@ async function startCommentsListener() {
       'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
     );
 
-    // Only approved comments – matches strict Firestore rules
+    // Just order by time; filter in JS
     const q = query(
       collection(db, 'comments'),
-      where('approved', '==', true),
       orderBy('createdAt', 'desc')
     );
+
 
     commentsListenerUnsub = onSnapshot(
       q,
@@ -275,3 +275,4 @@ function wireCommentsUI() {
 
   commentForm.addEventListener('submit', handleSubmit);
 }
+
