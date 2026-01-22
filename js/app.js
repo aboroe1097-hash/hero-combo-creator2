@@ -215,80 +215,97 @@ function initComboSlots() {
 async function setupFirestoreListener() {
   try {
     const _db = getDb();
-    if (!_db) return;
+    if (!_db || !userId) return;
     db = _db;
 
-    const { collection, query, orderBy, onSnapshot, deleteDoc, doc } = await import(
-      "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
+    const {
+      collection,
+      query,
+      orderBy,
+      limit,
+      onSnapshot,
+      deleteDoc,
+      doc
+    } = await import(
+      'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
     );
 
-    // Global list of combos, oldest first
+    // listen only to this user's combos
+    const userCombosRef = collection(db, `users/${userId}/bestCombos`);
     const q = query(
-      collection(db, "bestCombos"),
-      orderBy("timestamp", "asc")
+      userCombosRef,
+      orderBy('timestamp', 'desc'), // newest first (change to 'asc' if you prefer)
+      limit(100)                    // safety limit; adjust if needed
     );
 
-    onSnapshot(q, (snap) => {
-      savedCombosEl.innerHTML = '';
-      noCombosMessage.classList.toggle('hidden', !snap.empty);
-      let count = 1;
+    onSnapshot(
+      q,
+      (snap) => {
+        savedCombosEl.innerHTML = '';
+        noCombosMessage.classList.toggle('hidden', !snap.empty);
 
-      snap.forEach(d => {
-        const data = d.data();
-        const row = document.createElement('div');
-        row.className = 'saved-combo-display';
-        row.innerHTML = `<span class="saved-combo-number">${count}</span><div class="saved-combo-slots"></div>`;
+        let count = 1;
+        snap.forEach((d) => {
+          const data = d.data();
+          const row = document.createElement('div');
+          row.className = 'saved-combo-display';
+          row.innerHTML =
+            `<span class="saved-combo-number">${count}</span>` +
+            `<div class="saved-combo-slots"></div>`;
 
-        (data.heroes || []).forEach(name => {
-          const item = document.createElement('div');
-          item.className = 'saved-combo-slot-item';
-          item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`;
-          row.querySelector('.saved-combo-slots').appendChild(item);
-        });
+          const slotsContainer = row.querySelector('.saved-combo-slots');
+          (data.heroes || []).forEach((name) => {
+            const item = document.createElement('div');
+            item.className = 'saved-combo-slot-item';
+            item.innerHTML =
+              `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">` +
+              `<span>${name}</span>`;
+            slotsContainer.appendChild(item);
+          });
 
-        // Only allow delete if this user created the combo
-        if (data.authorId && data.authorId === userId) {
+          // delete button – only shows for the current user (since this is their collection)
           const btn = document.createElement('button');
           btn.className = 'remove-combo-btn';
           btn.textContent = 'X';
           btn.onclick = () =>
             showMessageBox(
-              translations[currentLanguage]?.messageConfirmRemoveCombo || 'Confirm remove?',
+              translations[currentLanguage]?.messageConfirmRemoveCombo ||
+                'Remove this combo?',
               async () => {
                 showLoadingSpinner();
                 try {
-                  await deleteDoc(doc(db, "bestCombos", d.id));
+                  await deleteDoc(doc(userCombosRef, d.id));
                 } catch (err) {
-                  console.error("Delete error", err);
+                  console.error('Delete error', err);
                   showMessageBox(
-                    (translations[currentLanguage]?.messageErrorRemovingCombo || 'Error removing') +
-                      ' ' +
-                      (err.message || err)
+                    (translations[currentLanguage]?.messageErrorRemovingCombo ||
+                      'Error removing combo: ') + (err.message || err)
                   );
                 } finally {
                   hideLoadingSpinner();
                 }
               }
             );
-          row.appendChild(btn);
-        }
 
-        savedCombosEl.appendChild(row);
-        count++;
-      });
-    }, (err) => {
-      console.error("Snapshot listener error:", err);
-      hideLoadingSpinner();
-      showMessageBox(
-        (translations[currentLanguage]?.messageErrorLoadingCombos || 'Error loading combos') +
-          ' ' +
-          (err.message || err)
-      );
-    });
+          row.appendChild(btn);
+          savedCombosEl.appendChild(row);
+          count++;
+        });
+      },
+      (err) => {
+        console.error('Snapshot listener error:', err);
+        hideLoadingSpinner();
+        showMessageBox(
+          (translations[currentLanguage]?.messageErrorLoadingCombos ||
+            'Error loading combos: ') + (err.message || err)
+        );
+      }
+    );
   } catch (e) {
-    console.error("setupFirestoreListener error", e);
+    console.error('setupFirestoreListener error', e);
   }
 }
+
 
 /* -------------------------------------------------- */
 /* Save combo into GLOBAL bestCombos                  */
@@ -296,61 +313,81 @@ async function setupFirestoreListener() {
 
 async function saveCombo() {
   if (currentCombo.includes(null)) {
-    showMessageBox(translations[currentLanguage]?.messagePleaseDrag3Heroes || 'Please drag 3 heroes');
+    showMessageBox(
+      translations[currentLanguage]?.messagePleaseDrag3Heroes ||
+        'Please drag 3 heroes'
+    );
     return;
   }
-  if (!isAuthReady) {
-    showMessageBox(translations[currentLanguage]?.messageAuthNotReady || 'Auth not ready');
+
+  if (!isAuthReady || !db || !userId) {
+    showMessageBox(
+      translations[currentLanguage]?.messageAuthNotReady ||
+        'Authentication not ready yet.'
+    );
     return;
   }
 
   showLoadingSpinner();
 
   try {
-    const { collection, getDocs, addDoc, serverTimestamp } = await import(
-      "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
+    const {
+      collection,
+      query,
+      where,
+      getDocs,
+      addDoc,
+      serverTimestamp
+    } = await import(
+      'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
     );
 
-    const ref = collection(db, "bestCombos");
-    const snap = await getDocs(ref);
+    const heroes = [...currentCombo];
+    const heroesKey = heroes.slice().sort().join(',');
 
-    const heroesKey = [...currentCombo].sort().join(',');
+    // user-specific subcollection
+    const userCombosRef = collection(db, `users/${userId}/bestCombos`);
 
-    // check if a combo with the same heroesKey already exists
-    const alreadyExists = snap.docs.some(doc => doc.data().heroesKey === heroesKey);
+    // efficient duplicate check (per user)
+    const dupQuery = query(userCombosRef, where('heroesKey', '==', heroesKey));
+    const dupSnap = await getDocs(dupQuery);
 
-    if (alreadyExists) {
+    if (!dupSnap.empty) {
       showMessageBox(
-        translations[currentLanguage]?.messageComboAlreadySaved || 'This combo is already saved.'
+        translations[currentLanguage]?.messageComboAlreadySaved ||
+          'This combo is already saved.'
       );
-    } else {
-      await addDoc(ref, {
-        heroes: currentCombo,
-        heroesKey,
-        authorId: userId,
-        timestamp: serverTimestamp()
-      });
-      showMessageBox(
-        translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!'
-      );
-
-      // clear current combo after save (optional)
-      currentCombo = [null, null, null];
-      document
-        .querySelectorAll('.combo-slot')
-        .forEach((s, i) => updateComboSlotDisplay(s, null, i));
+      return;
     }
-  } catch (e) {
-    console.error(e);
+
+    // save new combo for this user
+    await addDoc(userCombosRef, {
+      heroes,
+      heroesKey,
+      authorId: userId,
+      timestamp: serverTimestamp()
+    });
+
     showMessageBox(
-      (translations[currentLanguage]?.messageErrorSavingCombo || 'Error saving') +
-        ' ' +
-        (e.message || e)
+      translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!'
+    );
+
+    // optional: clear current combo after save
+    currentCombo = [null, null, null];
+    document
+      .querySelectorAll('.combo-slot')
+      .forEach((slot, idx) => updateComboSlotDisplay(slot, null, idx));
+  } catch (e) {
+    console.error('saveCombo error:', e);
+    showMessageBox(
+      (translations[currentLanguage]?.messageErrorSavingCombo ||
+        'Error saving combo: ') + (e.message || e)
     );
   } finally {
     hideLoadingSpinner();
   }
 }
+
 
 /* -------------------------------------------------- */
 
@@ -471,3 +508,4 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     hideLoadingSpinner();
   }
 })();
+
