@@ -397,8 +397,13 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     // setup realtime listener
     setupFirestoreListener();
 
-    // initialize comments UI/listener (requires auth to be ready)
-    await initComments();
+// initialise comments listener/UI
+if (typeof initComments !== 'undefined') {
+  initComments().catch(err => console.error('[comments] init caught', err));
+} else {
+  console.warn('[comments] initComments not imported');
+}
+              
   } catch (err) {
     console.error("Firebase/auth init error:", err);
     // show a message but allow UI to be used (it will work locally; saving requires network)
@@ -407,5 +412,6 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     hideLoadingSpinner();
   }
 })();
+
 
 
