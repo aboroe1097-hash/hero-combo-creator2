@@ -87,13 +87,46 @@ button,
   font-size: 0.8rem !important;
 }
 
-/* Saved combos tiles a bit smaller */
-.saved-combo-slot-item {
-  width: 96px !important;
-  height: 96px !important;
+/* ===== Last Best Combos – MOBILE LAYOUT FIX ===== */
+
+.saved-combo-display {
+  padding: 12px 10px 12px 68px !important;
+  border-radius: 14px !important;
 }
+
+/* smaller number bubble a bit closer in */
 .saved-combo-number {
-  left: 42px !important;
+  left: 38px !important;
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 0.9rem !important;
+  line-height: 26px !important;
+}
+
+/* make slots + actions more compact so 3 tiles are fully visible */
+.saved-combo-slots {
+  gap: 6px !important;
+}
+.saved-combo-slot-item {
+  width: 82px !important;
+  height: 82px !important;
+  border-radius: 8px !important;
+}
+.saved-combo-slot-item span {
+  font-size: 0.75rem !important;
+}
+
+/* shrink the share/remove buttons so they don't steal width */
+.saved-combo-actions {
+  margin-left: 8px !important;
+  gap: 6px !important;
+}
+.share-combo-btn,
+.remove-combo-btn {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.75rem !important;
+  padding: 0 !important;
 }
 
 /* Comments text size */
