@@ -20,6 +20,8 @@ const messageBox = document.getElementById('messageBox');
 const messageText = document.getElementById('messageText');
 const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
+const shareAllCombosBtn = document.getElementById('shareAllCombosBtn'); // NEW
+
 
 let currentLanguage = 'en';
 let selectedSeasons = ['S0'];
@@ -29,6 +31,7 @@ let db = null;
 let userId = 'anonymous';
 let isAuthReady = false;
 let spinnerFallbackTimer = null;
+let userCombosData = []; // NEW: store heroes arrays for all saved combos
 
 // --- hero data -----------------------------------------------------
 const allHeroesData = [
@@ -387,10 +390,12 @@ async function setupFirestoreListener() {
       (snap) => {
         savedCombosEl.innerHTML = '';
         noCombosMessage.classList.toggle('hidden', !snap.empty);
+        userCombosData = []; // reset cached combos
 
         let count = 1;
         snap.forEach((d) => {
           const data = d.data();
+          userCombosData.push(data.heroes || []); // cache for share-all
           const row = document.createElement('div');
           row.className = 'saved-combo-display';
           row.innerHTML =
@@ -535,6 +540,53 @@ async function saveCombo() {
   }
 }
 
+// Share ALL saved combos as a single text blob
+async function shareAllCombos() {
+  if (!userCombosData || userCombosData.length === 0) {
+    showMessageBox('No saved combos to share yet.');
+    return;
+  }
+
+  const lines = ['VTS 1097 – Saved Hero Combos'];
+  userCombosData.forEach((heroes, idx) => {
+    const row = heroes && heroes.length
+      ? heroes.join('  |  ')
+      : '(empty combo)';
+    lines.push(`#${idx + 1}: ${row}`);
+  });
+  lines.push('');
+  lines.push(`Create yours here: ${location.href}`);
+
+  const text = lines.join('\n');
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'My Hero Combos',
+        text
+      });
+      return;
+    } catch (e) {
+      if (!e || e.name !== 'AbortError') {
+        console.error('navigator.share error', e);
+      }
+      // fall through to clipboard / alert
+    }
+  }
+
+  if (navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showMessageBox('All combos copied to clipboard – paste into chat!');
+    } catch (e) {
+      console.error('clipboard error', e);
+      alert(text);
+    }
+  } else {
+    alert(text);
+  }
+}
+
 // Share a given heroes array as text (used per saved combo)
 async function shareCombo(heroes) {
   if (!heroes || heroes.length === 0) {
@@ -636,6 +688,9 @@ function wireUIActions() {
 
   saveComboBtn.addEventListener('click', saveCombo);
   downloadCombosBtn.addEventListener('click', downloadCombosAsImage);
+  if (shareAllCombosBtn) {
+  shareAllCombosBtn.addEventListener('click', shareAllCombos);
+}
 }
 
 function updateTextContent() {
