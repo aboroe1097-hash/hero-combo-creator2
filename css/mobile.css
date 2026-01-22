@@ -74,21 +74,39 @@ button,
   font-size: 0.9rem !important;
 }
 
-/* Combo slots row: always horizontal on mobile */
+/* Combo row fixed at bottom on small screens */
 #comboRow {
+  position: fixed !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+
+  /* center within the app, but still full-width enough for thumbs */
+  max-width: 720px;
+  margin: 0 auto !important;
+  padding: 8px 10px !important;
+
+  background: rgba(15, 23, 42, 0.96); /* slate-ish */
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
+  border-radius: 16px 16px 0 0;
+  backdrop-filter: blur(6px);
+
+  display: flex !important;
   flex-direction: row !important;
   justify-content: center !important;
   align-items: center !important;
   gap: 8px !important;
 }
-.combo-slot {
-  width: 5.5rem !important;
-  height: 5.5rem !important;
-  border-width: 3px !important;
-  font-size: 0.8rem !important;
-}
 
-/* ===== Last Best Combos – MOBILE LAYOUT FIX ===== */
+/* Slightly smaller slots so all 3 fit comfortably in the bar */
+#comboRow .combo-slot {
+  width: 4.75rem !important;
+  height: 4.75rem !important;
+  border-width: 3px !important;
+  font-size: 0.7rem !important;
+  margin: 0 !important;
+}
 
 .saved-combo-display {
   padding: 12px 10px 12px 68px !important;
