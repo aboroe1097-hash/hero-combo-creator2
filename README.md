@@ -1,4 +1,4 @@
-# Hero Combo Creator (production-ready)
+# Hero Combo Creator - b1.1
 
 ## Files
 - `index.html` — main page
@@ -6,4 +6,5 @@
 - `js/firebase.js` — firebase initialization + auth helper
 - `js/translations.js` — translations (English included)
 - `js/app.js` — app logic
+
 
