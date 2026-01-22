@@ -1,11 +1,7 @@
-/* css/mobile.css
-   Mobile overrides for improved readability and touch comfort
-
-   In index.html:
-   <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)">
+/* Mobile overrides for improved readability and touch comfort
+   Loaded with: <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)">
 */
 
-/* Slightly larger base font on mobile for readability */
 :root {
   --mobile-base-font-size: 16px;
   --mobile-radius: 10px;
@@ -13,8 +9,7 @@
 }
 
 /* Ensure text scaling is stable */
-html,
-body {
+html, body {
   -webkit-text-size-adjust: 100%;
   font-size: var(--mobile-base-font-size);
 }
@@ -32,23 +27,19 @@ body {
 .main-logo {
   width: 92px !important;
   height: 92px !important;
-  object-fit: contain !important;
+  object-fit: contain;
 }
-
 #appTitle {
   font-size: 1.6rem !important;
   line-height: 1.15 !important;
   margin-bottom: 6px !important;
 }
-
 #betaNote {
   font-size: 0.95rem !important;
   padding: 10px !important;
 }
 
-/* Controls: wrap and center on small screens */
-.controls,
-.flex-justify-end,
+/* Controls: wrap and center */
 .language-select-wrapper {
   display: flex !important;
   gap: var(--mobile-gap) !important;
@@ -66,7 +57,7 @@ button,
   border-radius: 10px !important;
 }
 
-/* HERO CARDS – bigger, easier to tap/drag */
+/* Hero card improvements */
 .hero-card {
   min-width: 120px !important;
   min-height: 140px !important;
@@ -74,24 +65,16 @@ button,
   margin: 6px !important;
   touch-action: manipulation !important;
 }
-
-/* Important: keep taps on the card instead of triggering "save image" UI */
 .hero-card img {
   width: 84px !important;
   height: 84px !important;
   object-fit: contain !important;
-  pointer-events: none !important;       /* taps hit the card, not the image */
-  -webkit-user-drag: none !important;    /* avoid long-press save on iOS */
-  user-drag: none !important;
-  -webkit-touch-callout: none !important;
 }
-
 .hero-card .mt-1 {
   font-size: 1rem !important;
 }
 
 /* Make the available-heroes container more grid-like for narrow screens */
-/* match both an ID and a potential class */
 #availableHeroes,
 .available-heroes,
 .hero-list {
@@ -101,7 +84,7 @@ button,
   justify-items: center !important;
 }
 
-/* COMBO SLOTS – slightly smaller but still tappable */
+/* Combo slot scaling */
 .combo-slot {
   width: 6.25rem !important;  /* 100px */
   height: 6.25rem !important;
@@ -109,7 +92,6 @@ button,
   border-radius: 10px !important;
   padding: 8px !important;
   font-size: 0.95rem !important;
-  touch-action: manipulation !important;
 }
 
 /* Saved combos horizontal list: slightly smaller tiles and better scroll behavior */
@@ -118,7 +100,6 @@ button,
   height: 96px !important;
   border-radius: 8px !important;
 }
-
 .saved-combo-slots {
   gap: 8px !important;
   padding-bottom: 8px !important;
@@ -143,15 +124,6 @@ button,
   white-space: pre-wrap !important;
 }
 
-/* You can hide less important elements on phones if you want:
-   (uncomment and replace with actual element IDs/classes)
-*/
-/*
-#someLessImportantElement {
-  display: none !important;
-}
-*/
-
 /* Visible focus for accessibility */
 button:focus,
 .button-ghost:focus,
@@ -160,7 +132,7 @@ button:focus,
   box-shadow: 0 0 0 4px rgba(11,102,195,0.12) !important;
 }
 
-/* Final small-screen tweak to prevent ugly highlight + accidental zooming */
+/* Prevent nasty blue highlight on tap */
 * {
   -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
