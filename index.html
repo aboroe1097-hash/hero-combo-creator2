@@ -53,6 +53,7 @@
       box-shadow: 0 12px 30px rgba(0,0,0,0.6);
       margin-bottom: 12px;
       display: block;
+      background: rgba(0,0,0,0.15);
     }
 
     /* smaller logo for narrow screens */
@@ -66,8 +67,8 @@
   <div id="app" class="relative max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
     <!-- small team badge (top-right inside the app card) -->
     <div class="team-badge" title="VTS 1097">
-      <!-- Change the src path if you place the file elsewhere -->
-      <img src="/images/logo.png" alt="VTS 1097 logo">
+      <!-- Use relative path (no leading slash). Fallback to .jpg if needed -->
+      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 logo">
     </div>
 
     <div id="betaNote" class="text-center mb-6 p-4 bg-blue-900 rounded-lg text-blue-200 font-semibold text-lg">
@@ -76,8 +77,8 @@
 
     <!-- Centered main logo + title -->
     <div class="flex flex-col items-center mb-6">
-      <!-- Main, larger logo -->
-      <img src="/images/logo.png" alt="VTS 1097 — Team Logo" class="main-logo" />
+      <!-- Main, larger logo (relative path + fallback) -->
+      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 — Team Logo" class="main-logo" />
 
       <h1 id="appTitle" class="text-4xl font-bold text-center mb-2 text-blue-400">Hero Combo Creator</h1>
       <p class="text-sm text-gray-300">Team VTS 1097</p>
@@ -174,35 +175,32 @@
   </div>
 
   <!-- Comments Section -->
-<section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner">
-  <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
+  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner">
+    <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
 
-  <!-- simple form -->
-  <form id="commentForm" class="mb-4">
-    <div class="flex flex-col sm:flex-row gap-3">
-      <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
-      <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)" class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
+    <!-- simple form -->
+    <form id="commentForm" class="mb-4">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
+        <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)" class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
+      </div>
+      <textarea id="commentText" rows="3" required placeholder="Write a suggestion or comment..." class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white" maxlength="1000"></textarea>
+
+      <div class="flex items-center justify-between mt-3">
+        <div class="text-sm text-gray-400">Be kind — comments are public.</div>
+        <button id="postCommentBtn" type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Post Comment</button>
+      </div>
+    </form>
+
+    <!-- comments list -->
+    <div id="commentsList" class="flex flex-col gap-3">
+      <!-- comments rendered here -->
     </div>
-    <textarea id="commentText" rows="3" required placeholder="Write a suggestion or comment..." class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white" maxlength="1000"></textarea>
+  </section>
 
-    <div class="flex items-center justify-between mt-3">
-      <div class="text-sm text-gray-400">Be kind — comments are public.</div>
-      <button id="postCommentBtn" type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Post Comment</button>
-    </div>
-  </form>
-
-  <!-- comments list -->
-  <div id="commentsList" class="flex flex-col gap-3">
-    <!-- comments rendered here -->
-  </div>
-</section>
-
-  
   <!-- module scripts -->
   <script type="module" src="js/firebase.js"></script>
   <script type="module" src="js/translations.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
-
