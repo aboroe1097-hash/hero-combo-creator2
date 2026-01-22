@@ -107,30 +107,59 @@ button,
   font-size: 0.7rem !important;
   margin: 0 !important;
 }
+/* ===== Mobile: Saved combos layout ===== */
 
+/* Make the whole card slightly narrower + centered */
 .saved-combo-display {
-  padding: 12px 10px 12px 68px !important;
-  border-radius: 14px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 8px 0 !important;
+  padding: 12px 12px 12px 72px !important; /* room for the orange badge */
+  box-sizing: border-box !important;
 }
 
-/* smaller number bubble a bit closer in */
+/* Number badge a bit closer on mobile */
 .saved-combo-number {
-  left: 38px !important;
-  width: 26px !important;
-  height: 26px !important;
+  left: 30px !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
   font-size: 0.9rem !important;
-  line-height: 26px !important;
 }
 
-/* make slots + actions more compact so 3 tiles are fully visible */
+/* 3-column grid, no horizontal scroll, no clipping */
 .saved-combo-slots {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 6px !important;
+  justify-items: center !important;
+  overflow: visible !important;          /* no clipping */
+  -webkit-overflow-scrolling: auto !important;
 }
+
+/* Each tile fits its grid cell and keeps a square ratio */
 .saved-combo-slot-item {
-  width: 82px !important;
-  height: 82px !important;
-  border-radius: 8px !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;        /* perfect square */
+  border-radius: 10px !important;
+  padding: 0 !important;
 }
+
+/* Image fills tile completely */
+.saved-combo-slot-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 10px !important;
+}
+
+/* Name text under hero – a bit smaller on mobile */
+.saved-combo-slot-item span {
+  font-size: 0.75rem !important;
+  margin-top: 4px !important;
+}
+
 .saved-combo-slot-item span {
   font-size: 0.75rem !important;
 }
