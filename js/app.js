@@ -31,6 +31,12 @@ let userId = 'anonymous';
 let isAuthReady = false;
 let spinnerFallbackTimer = null;
 
+// Detect touch vs desktop
+const isTouchDevice =
+  'ontouchstart' in window ||
+  navigator.maxTouchPoints > 0 ||
+  navigator.msMaxTouchPoints > 0;
+
 // Data (copied from original file)
 const allHeroesData = [
   // Season 0
@@ -91,7 +97,6 @@ const allHeroesData = [
 function showLoadingSpinner() {
   loadingSpinner.classList.remove('hidden');
   loadingSpinner.setAttribute('aria-hidden', 'false');
-  // fallback: if the spinner is still visible after 10 seconds, hide and show a notice
   clearTimeout(spinnerFallbackTimer);
   spinnerFallbackTimer = setTimeout(() => {
     if (!isAuthReady) {
@@ -100,7 +105,6 @@ function showLoadingSpinner() {
     }
   }, 10000);
 }
-
 function hideLoadingSpinner() {
   clearTimeout(spinnerFallbackTimer);
   loadingSpinner.classList.add('hidden');
@@ -148,48 +152,51 @@ function renderAvailableHeroes() {
   chosen.forEach(hero => {
     const card = document.createElement('div');
     card.className = 'hero-card';
-    card.draggable = true;
+
+    // Desktop: draggable; Mobile: not draggable
+    card.draggable = !isTouchDevice;
     card.dataset.heroName = hero.name;
 
-    // note: img is NOT draggable; this avoids "save image" behavior stealing the drag/tap
     card.innerHTML = `
       <img src="${getHeroImageUrl(hero.name)}"
            alt="${hero.name}"
            loading="lazy"
-           draggable="false"
+           draggable="${!isTouchDevice}"
            crossorigin="anonymous">
       <span class="mt-1">${hero.name}</span>
     `;
 
-    // Mobile-friendly: tap/click card to drop hero into a combo slot
-    card.addEventListener('click', () => {
-      const heroName = hero.name;
+    // Mobile / touch – tap to place hero into a slot
+    if (isTouchDevice) {
+      card.addEventListener('click', () => {
+        const heroName = hero.name;
 
-      // find target slot: first empty, else slot 0
-      let targetIdx = currentCombo.indexOf(null);
-      if (targetIdx === -1) targetIdx = 0;
+        // find first empty slot, otherwise slot 0
+        let targetIdx = currentCombo.indexOf(null);
+        if (targetIdx === -1) targetIdx = 0;
 
-      // prevent duplicate in other slot
-      if (currentCombo.includes(heroName) && currentCombo[targetIdx] !== heroName) {
-        showMessageBox(
-          (translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Hero already in another slot.')
-            .replace('{heroName}', heroName)
-        );
-        return;
-      }
+        // avoid duplicates
+        if (currentCombo.includes(heroName) && currentCombo[targetIdx] !== heroName) {
+          showMessageBox(
+            (translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Hero already in another slot.')
+              .replace('{heroName}', heroName)
+          );
+          return;
+        }
 
-      // clear old slot if hero already assigned
-      const oldIdx = currentCombo.indexOf(heroName);
-      if (oldIdx !== -1 && oldIdx !== targetIdx) {
-        currentCombo[oldIdx] = null;
-        const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
-        if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
-      }
+        // clear old slot if hero already used
+        const oldIdx = currentCombo.indexOf(heroName);
+        if (oldIdx !== -1 && oldIdx !== targetIdx) {
+          currentCombo[oldIdx] = null;
+          const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
+          if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
+        }
 
-      currentCombo[targetIdx] = heroName;
-      const targetSlot = document.querySelector(`[data-slot-index="${targetIdx}"]`);
-      if (targetSlot) updateComboSlotDisplay(targetSlot, heroName, targetIdx);
-    });
+        currentCombo[targetIdx] = heroName;
+        const targetSlot = document.querySelector(`[data-slot-index="${targetIdx}"]`);
+        if (targetSlot) updateComboSlotDisplay(targetSlot, heroName, targetIdx);
+      });
+    }
 
     availableHeroesEl.appendChild(card);
   });
@@ -198,7 +205,7 @@ function renderAvailableHeroes() {
 function updateComboSlotDisplay(slot, name, idx) {
   if (name) {
     slot.innerHTML =
-      `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="true" data-hero-name="${name}" crossorigin="anonymous">` +
+      `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="${!isTouchDevice}" data-hero-name="${name}" crossorigin="anonymous">` +
       `<span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>`;
     slot.classList.add('relative', 'p-0');
   } else {
@@ -223,6 +230,7 @@ function initComboSlots() {
     const idx = parseInt(slot.dataset.slotIndex);
     updateComboSlotDisplay(slot, null, idx);
 
+    // Drag/drop mainly for desktop
     slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('drag-over'); });
     slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
     slot.addEventListener('drop', (e) => {
@@ -246,19 +254,21 @@ function initComboSlots() {
     });
   });
 
-  // global dragstart/dragend
-  document.addEventListener('dragstart', (e) => {
-    const target = e.target.closest('.hero-card') || e.target.closest('.combo-slot img');
-    if (target) {
-      const name = target.dataset.heroName || target.dataset['heroName'];
-      if (name) e.dataTransfer.setData('text/plain', name);
-      if (target.classList.contains('hero-card')) target.classList.add('opacity-50');
-    }
-  });
-  document.addEventListener('dragend', (e) => {
-    const c = e.target.closest('.hero-card');
-    if (c) c.classList.remove('opacity-50');
-  });
+  // Desktop: delegate dragstart / dragend
+  if (!isTouchDevice) {
+    document.addEventListener('dragstart', (e) => {
+      const target = e.target.closest('.hero-card') || e.target.closest('.combo-slot img');
+      if (target) {
+        const name = target.dataset.heroName || target.getAttribute('data-hero-name');
+        if (name) e.dataTransfer.setData('text/plain', name);
+        if (target.classList.contains('hero-card')) target.classList.add('opacity-50');
+      }
+    });
+    document.addEventListener('dragend', (e) => {
+      const c = e.target.closest('.hero-card');
+      if (c) c.classList.remove('opacity-50');
+    });
+  }
 }
 
 /* -------------------------------------------------- */
@@ -484,18 +494,20 @@ function wireUIActions() {
   saveComboBtn.addEventListener('click', saveCombo);
   downloadCombosBtn.addEventListener('click', downloadCombosAsImage);
 
-  // delegate dragging from hero cards
-  availableHeroesEl.addEventListener('dragstart', (e) => {
-    const card = e.target.closest('.hero-card');
-    if (!card) return;
-    const name = card.dataset.heroName;
-    if (name) e.dataTransfer.setData('text/plain', name);
-    card.classList.add('opacity-50');
-  });
-  availableHeroesEl.addEventListener('dragend', (e) => {
-    const card = e.target.closest('.hero-card');
-    if (card) card.classList.remove('opacity-50');
-  });
+  // Desktop drag from hero cards (mobile uses tap)
+  if (!isTouchDevice) {
+    availableHeroesEl.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('.hero-card');
+      if (!card) return;
+      const name = card.dataset.heroName;
+      if (name) e.dataTransfer.setData('text/plain', name);
+      card.classList.add('opacity-50');
+    });
+    availableHeroesEl.addEventListener('dragend', (e) => {
+      const card = e.target.closest('.hero-card');
+      if (card) card.classList.remove('opacity-50');
+    });
+  }
 }
 
 function updateTextContent() {
@@ -538,7 +550,6 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     setupFirestoreListener();
 
     initComments().catch(err => console.error('[comments] init caught', err));
-
   } catch (err) {
     console.error("Firebase/auth init error:", err);
     showMessageBox(
