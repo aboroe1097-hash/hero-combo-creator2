@@ -100,6 +100,7 @@ function showLoadingSpinner() {
     }
   }, 10000);
 }
+
 function hideLoadingSpinner() {
   clearTimeout(spinnerFallbackTimer);
   loadingSpinner.classList.add('hidden');
@@ -137,25 +138,77 @@ function getHeroImageUrl(heroName) {
   return `https://placehold.co/128x128/374151/e2e8f0?text=${encoded}`;
 }
 
+/* ------------------------------------------ */
+/* Render heroes (desktop drag + mobile tap)  */
+/* ------------------------------------------ */
 function renderAvailableHeroes() {
   availableHeroesEl.innerHTML = '';
   const chosen = allHeroesData.filter(h => selectedSeasons.includes(h.season));
+
   chosen.forEach(hero => {
     const card = document.createElement('div');
     card.className = 'hero-card';
     card.draggable = true;
     card.dataset.heroName = hero.name;
-    card.innerHTML = `<img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" loading="lazy" crossorigin="anonymous"><span class="mt-1">${hero.name}</span>`;
+
+    // note: img is NOT draggable; this avoids "save image" behavior stealing the drag/tap
+    card.innerHTML = `
+      <img src="${getHeroImageUrl(hero.name)}"
+           alt="${hero.name}"
+           loading="lazy"
+           draggable="false"
+           crossorigin="anonymous">
+      <span class="mt-1">${hero.name}</span>
+    `;
+
+    // Mobile-friendly: tap/click card to drop hero into a combo slot
+    card.addEventListener('click', () => {
+      const heroName = hero.name;
+
+      // find target slot: first empty, else slot 0
+      let targetIdx = currentCombo.indexOf(null);
+      if (targetIdx === -1) targetIdx = 0;
+
+      // prevent duplicate in other slot
+      if (currentCombo.includes(heroName) && currentCombo[targetIdx] !== heroName) {
+        showMessageBox(
+          (translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Hero already in another slot.')
+            .replace('{heroName}', heroName)
+        );
+        return;
+      }
+
+      // clear old slot if hero already assigned
+      const oldIdx = currentCombo.indexOf(heroName);
+      if (oldIdx !== -1 && oldIdx !== targetIdx) {
+        currentCombo[oldIdx] = null;
+        const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
+        if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
+      }
+
+      currentCombo[targetIdx] = heroName;
+      const targetSlot = document.querySelector(`[data-slot-index="${targetIdx}"]`);
+      if (targetSlot) updateComboSlotDisplay(targetSlot, heroName, targetIdx);
+    });
+
     availableHeroesEl.appendChild(card);
   });
 }
 
 function updateComboSlotDisplay(slot, name, idx) {
   if (name) {
-    slot.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="true" data-hero-name="${name}" crossorigin="anonymous"><span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>`;
+    slot.innerHTML =
+      `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="true" data-hero-name="${name}" crossorigin="anonymous">` +
+      `<span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>`;
     slot.classList.add('relative', 'p-0');
   } else {
-    slot.innerHTML = `<div class="flex flex-col items-center justify-center h-full w-full"><span class="text-6xl font-bold text-blue-400">+</span><span class="text-sm text-gray-400 mt-2">${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}</span></div>`;
+    slot.innerHTML =
+      `<div class="flex flex-col items-center justify-center h-full w-full">
+        <span class="text-6xl font-bold text-blue-400">+</span>
+        <span class="text-sm text-gray-400 mt-2">
+          ${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}
+        </span>
+      </div>`;
     slot.classList.remove('relative', 'p-0');
   }
   updateSaveButtonState();
@@ -209,7 +262,7 @@ function initComboSlots() {
 }
 
 /* -------------------------------------------------- */
-/* Firestore listener for GLOBAL bestCombos           */
+/* Firestore listener for per-user bestCombos         */
 /* -------------------------------------------------- */
 
 async function setupFirestoreListener() {
@@ -230,12 +283,11 @@ async function setupFirestoreListener() {
       'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
     );
 
-    // listen only to this user's combos
     const userCombosRef = collection(db, `users/${userId}/bestCombos`);
     const q = query(
       userCombosRef,
-      orderBy('timestamp', 'desc'), // newest first (change to 'asc' if you prefer)
-      limit(100)                    // safety limit; adjust if needed
+      orderBy('timestamp', 'desc'),
+      limit(100)
     );
 
     onSnapshot(
@@ -263,7 +315,6 @@ async function setupFirestoreListener() {
             slotsContainer.appendChild(item);
           });
 
-          // delete button – only shows for the current user (since this is their collection)
           const btn = document.createElement('button');
           btn.className = 'remove-combo-btn';
           btn.textContent = 'X';
@@ -306,9 +357,8 @@ async function setupFirestoreListener() {
   }
 }
 
-
 /* -------------------------------------------------- */
-/* Save combo into GLOBAL bestCombos                  */
+/* Save combo into per-user bestCombos                */
 /* -------------------------------------------------- */
 
 async function saveCombo() {
@@ -345,10 +395,8 @@ async function saveCombo() {
     const heroes = [...currentCombo];
     const heroesKey = heroes.slice().sort().join(',');
 
-    // user-specific subcollection
     const userCombosRef = collection(db, `users/${userId}/bestCombos`);
 
-    // efficient duplicate check (per user)
     const dupQuery = query(userCombosRef, where('heroesKey', '==', heroesKey));
     const dupSnap = await getDocs(dupQuery);
 
@@ -360,7 +408,6 @@ async function saveCombo() {
       return;
     }
 
-    // save new combo for this user
     await addDoc(userCombosRef, {
       heroes,
       heroesKey,
@@ -372,7 +419,6 @@ async function saveCombo() {
       translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!'
     );
 
-    // optional: clear current combo after save
     currentCombo = [null, null, null];
     document
       .querySelectorAll('.combo-slot')
@@ -388,7 +434,6 @@ async function saveCombo() {
   }
 }
 
-
 /* -------------------------------------------------- */
 
 async function downloadCombosAsImage() {
@@ -399,7 +444,6 @@ async function downloadCombosAsImage() {
       showMessageBox(t?.messageNoCombosToDownload || 'No combos to download');
       return;
     }
-    // temporarily hide remove buttons for clean capture
     const buttons = document.querySelectorAll('.remove-combo-btn');
     buttons.forEach(b => b.style.display = 'none');
 
@@ -485,27 +529,23 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
 
   try {
     initFirebase();
-    // ensure auth - will sign in anonymously if needed
     const user = await ensureAnonymousAuth();
     isAuthReady = true;
     userId = user.uid || 'anonymous';
     db = getDb();
 
-    // now enable the save button if applicable
     updateSaveButtonState();
-
-    // setup realtime listener for GLOBAL combos
     setupFirestoreListener();
 
-    // initialise comments listener/UI
     initComments().catch(err => console.error('[comments] init caught', err));
 
   } catch (err) {
     console.error("Firebase/auth init error:", err);
-    // show a message but allow UI to be used (it will work locally; saving requires network)
-    showMessageBox((translations[currentLanguage]?.messageFirebaseInitError || 'Firebase init error') + ' ' + (err.message || err));
+    showMessageBox(
+      (translations[currentLanguage]?.messageFirebaseInitError || 'Firebase init error') +
+      ' ' + (err.message || err)
+    );
   } finally {
     hideLoadingSpinner();
   }
 })();
-
