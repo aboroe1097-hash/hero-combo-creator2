@@ -48,6 +48,32 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI"
   overflow: hidden;
   transition: all 0.2s ease;
 }
+
+.comment-card {
+  background: #111827; /* darker card */
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.comment-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(180deg,#374151,#1f2937);
+  display: flex;
+  align-items:center;
+  justify-content:center;
+  color:#f8fafc;
+  font-weight:700;
+}
+.comment-body { flex:1; }
+.comment-meta { font-size:0.85rem; color:#9ca3af; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.comment-text { color:#e6eef8; white-space:pre-wrap; }
+.comment-actions button { background:transparent; border:0; color:#f97316; cursor:pointer; font-weight:600; padding:4px; }
+
 .combo-slot.drag-over {
   border-style: solid;
   border-color: #4ade80; /* green-400 */
@@ -176,3 +202,4 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI"
 
 /* small utility */
 .hidden { display: none !important; }
+
