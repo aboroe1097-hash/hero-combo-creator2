@@ -1,5 +1,6 @@
 // js/app.js
 // main app
+
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -207,89 +208,151 @@ function initComboSlots() {
   });
 }
 
+/* -------------------------------------------------- */
+/* Firestore listener for GLOBAL bestCombos           */
+/* -------------------------------------------------- */
+
 async function setupFirestoreListener() {
   try {
     const _db = getDb();
     if (!_db) return;
     db = _db;
-    // real-time listener using modular Firestore functions (import inside to avoid large top-level imports)
-    const { collection, query, orderBy, onSnapshot, deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
-    const q = query(collection(db, `users/${userId}/bestCombos`), orderBy("timestamp", "asc"));
+    const { collection, query, orderBy, onSnapshot, deleteDoc, doc } = await import(
+      "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
+    );
+
+    // Global list of combos, oldest first
+    const q = query(
+      collection(db, "bestCombos"),
+      orderBy("timestamp", "asc")
+    );
+
     onSnapshot(q, (snap) => {
       savedCombosEl.innerHTML = '';
       noCombosMessage.classList.toggle('hidden', !snap.empty);
       let count = 1;
+
       snap.forEach(d => {
         const data = d.data();
         const row = document.createElement('div');
         row.className = 'saved-combo-display';
         row.innerHTML = `<span class="saved-combo-number">${count}</span><div class="saved-combo-slots"></div>`;
-        data.heroes.forEach(name => {
+
+        (data.heroes || []).forEach(name => {
           const item = document.createElement('div');
           item.className = 'saved-combo-slot-item';
           item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`;
           row.querySelector('.saved-combo-slots').appendChild(item);
         });
 
-        const btn = document.createElement('button');
-        btn.className = 'remove-combo-btn';
-        btn.textContent = 'X';
-        btn.onclick = () => showMessageBox(translations[currentLanguage]?.messageConfirmRemoveCombo || 'Confirm remove?', async () => {
-          showLoadingSpinner();
-          try {
-            await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
-          } catch (err) {
-            console.error("Delete error", err);
-            showMessageBox((translations[currentLanguage]?.messageErrorRemovingCombo || 'Error removing') + ' ' + (err.message || err));
-          } finally {
-            hideLoadingSpinner();
-          }
-        });
+        // Only allow delete if this user created the combo
+        if (data.authorId && data.authorId === userId) {
+          const btn = document.createElement('button');
+          btn.className = 'remove-combo-btn';
+          btn.textContent = 'X';
+          btn.onclick = () =>
+            showMessageBox(
+              translations[currentLanguage]?.messageConfirmRemoveCombo || 'Confirm remove?',
+              async () => {
+                showLoadingSpinner();
+                try {
+                  await deleteDoc(doc(db, "bestCombos", d.id));
+                } catch (err) {
+                  console.error("Delete error", err);
+                  showMessageBox(
+                    (translations[currentLanguage]?.messageErrorRemovingCombo || 'Error removing') +
+                      ' ' +
+                      (err.message || err)
+                  );
+                } finally {
+                  hideLoadingSpinner();
+                }
+              }
+            );
+          row.appendChild(btn);
+        }
 
-        row.appendChild(btn);
         savedCombosEl.appendChild(row);
         count++;
       });
     }, (err) => {
       console.error("Snapshot listener error:", err);
       hideLoadingSpinner();
-      showMessageBox((translations[currentLanguage]?.messageErrorLoadingCombos || 'Error loading combos') + ' ' + (err.message || err));
+      showMessageBox(
+        (translations[currentLanguage]?.messageErrorLoadingCombos || 'Error loading combos') +
+          ' ' +
+          (err.message || err)
+      );
     });
   } catch (e) {
     console.error("setupFirestoreListener error", e);
   }
 }
 
+/* -------------------------------------------------- */
+/* Save combo into GLOBAL bestCombos                  */
+/* -------------------------------------------------- */
+
 async function saveCombo() {
   if (currentCombo.includes(null)) {
     showMessageBox(translations[currentLanguage]?.messagePleaseDrag3Heroes || 'Please drag 3 heroes');
     return;
   }
-  if (!isAuthReady) { showMessageBox(translations[currentLanguage]?.messageAuthNotReady || 'Auth not ready'); return; }
+  if (!isAuthReady) {
+    showMessageBox(translations[currentLanguage]?.messageAuthNotReady || 'Auth not ready');
+    return;
+  }
 
   showLoadingSpinner();
+
   try {
-    const { collection, getDocs, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-    const ref = collection(db, `users/${userId}/bestCombos`);
+    const { collection, getDocs, addDoc, serverTimestamp } = await import(
+      "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"
+    );
+
+    const ref = collection(db, "bestCombos");
     const snap = await getDocs(ref);
-    const existing = snap.docs.map(d => [...d.data().heroes].sort().join(','));
-    if (existing.includes([...currentCombo].sort().join(','))) {
-      showMessageBox(translations[currentLanguage]?.messageComboAlreadySaved || 'Already saved');
+
+    const heroesKey = [...currentCombo].sort().join(',');
+
+    // check if a combo with the same heroesKey already exists
+    const alreadyExists = snap.docs.some(doc => doc.data().heroesKey === heroesKey);
+
+    if (alreadyExists) {
+      showMessageBox(
+        translations[currentLanguage]?.messageComboAlreadySaved || 'This combo is already saved.'
+      );
     } else {
-      await addDoc(ref, { heroes: currentCombo, timestamp: serverTimestamp() });
-      showMessageBox(translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!');
+      await addDoc(ref, {
+        heroes: currentCombo,
+        heroesKey,
+        authorId: userId,
+        timestamp: serverTimestamp()
+      });
+      showMessageBox(
+        translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!'
+      );
+
       // clear current combo after save (optional)
       currentCombo = [null, null, null];
-      document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+      document
+        .querySelectorAll('.combo-slot')
+        .forEach((s, i) => updateComboSlotDisplay(s, null, i));
     }
   } catch (e) {
     console.error(e);
-    showMessageBox((translations[currentLanguage]?.messageErrorSavingCombo || 'Error saving') + ' ' + (e.message || e));
+    showMessageBox(
+      (translations[currentLanguage]?.messageErrorSavingCombo || 'Error saving') +
+        ' ' +
+        (e.message || e)
+    );
   } finally {
     hideLoadingSpinner();
   }
 }
+
+/* -------------------------------------------------- */
 
 async function downloadCombosAsImage() {
   const t = translations[currentLanguage];
@@ -385,7 +448,6 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
 
   try {
     initFirebase();
-
     // ensure auth - will sign in anonymously if needed
     const user = await ensureAnonymousAuth();
     isAuthReady = true;
@@ -395,11 +457,12 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     // now enable the save button if applicable
     updateSaveButtonState();
 
-    // setup realtime listener for combos
-    await setupFirestoreListener();
+    // setup realtime listener for GLOBAL combos
+    setupFirestoreListener();
 
-    // initialize comments (after auth & db ready)
-    await initComments();
+    // initialise comments listener/UI
+    initComments().catch(err => console.error('[comments] init caught', err));
+
   } catch (err) {
     console.error("Firebase/auth init error:", err);
     // show a message but allow UI to be used (it will work locally; saving requires network)
