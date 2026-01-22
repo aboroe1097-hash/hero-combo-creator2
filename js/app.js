@@ -14,6 +14,7 @@ const availableHeroesEl = document.getElementById('availableHeroes');
 const saveComboBtn = document.getElementById('saveComboBtn');
 const clearComboBtn = document.getElementById('clearComboBtn');
 const downloadCombosBtn = document.getElementById('downloadCombosBtn');
+const shareComboBtn = document.getElementById('shareComboBtn');
 const savedCombosEl = document.getElementById('savedCombos');
 const noCombosMessage = document.getElementById('noCombosMessage');
 const loadingSpinner = document.getElementById('loadingSpinner');
@@ -36,6 +37,9 @@ const isTouchDevice =
   'ontouchstart' in window ||
   navigator.maxTouchPoints > 0 ||
   navigator.msMaxTouchPoints > 0;
+
+// Touch-drag state (for mobile)
+let activeTouchDrag = null;
 
 // Heroes data
 const allHeroesData = [
@@ -94,6 +98,8 @@ const allHeroesData = [
   { name: "King Arthur", season: "S4", imageUrl: "https://i.ibb.co/4Ryx1F6P/King-Arthur.png" }
 ];
 
+/* ---------- Helpers ---------- */
+
 function showLoadingSpinner() {
   loadingSpinner.classList.remove('hidden');
   loadingSpinner.setAttribute('aria-hidden', 'false');
@@ -101,10 +107,13 @@ function showLoadingSpinner() {
   spinnerFallbackTimer = setTimeout(() => {
     if (!isAuthReady) {
       hideLoadingSpinner();
-      showMessageBox('Authentication is taking longer than expected. The app is usable offline; saved combos require network to sync.');
+      showMessageBox(
+        'Authentication is taking longer than expected. The app is usable offline; saved combos require network to sync.'
+      );
     }
   }, 10000);
 }
+
 function hideLoadingSpinner() {
   clearTimeout(spinnerFallbackTimer);
   loadingSpinner.classList.add('hidden');
@@ -142,18 +151,57 @@ function getHeroImageUrl(heroName) {
   return `https://placehold.co/128x128/374151/e2e8f0?text=${encoded}`;
 }
 
+/* Season -> faction class (for visual color coding)
+   You can change this mapping later to real Orange/SX tiers. */
+function getFactionClassForHero(hero) {
+  if (!hero) return '';
+  if (hero.season === 'S0' || hero.season === 'S1') return 'faction-orange';
+  if (hero.season === 'S2' || hero.season === 'S3') return 'faction-ice';
+  if (hero.season === 'S4') return 'faction-royal';
+  return '';
+}
+function getFactionClassByName(name) {
+  const hero = allHeroesData.find(h => h.name === name);
+  return getFactionClassForHero(hero);
+}
+
+/* Place hero into a slot (used by desktop drop + touch drag) */
+function placeHeroInSlot(heroName, idx) {
+  if (idx < 0 || idx > 2) return;
+
+  // If hero already somewhere else, avoid duplicate
+  if (currentCombo.includes(heroName) && currentCombo[idx] !== heroName) {
+    showMessageBox(
+      (translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Hero already in another slot.')
+        .replace('{heroName}', heroName)
+    );
+    return;
+  }
+
+  const oldIdx = currentCombo.indexOf(heroName);
+  if (oldIdx !== -1 && oldIdx !== idx) {
+    currentCombo[oldIdx] = null;
+    const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
+    if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
+  }
+
+  currentCombo[idx] = heroName;
+  const slot = document.querySelector(`[data-slot-index="${idx}"]`);
+  if (slot) updateComboSlotDisplay(slot, heroName, idx);
+}
+
 /* ------------------------------------------ */
-/* Render heroes (desktop drag + mobile tap)  */
+/* Render heroes (desktop drag + mobile touch)*/
 /* ------------------------------------------ */
 function renderAvailableHeroes() {
   availableHeroesEl.innerHTML = '';
   const chosen = allHeroesData.filter(h => selectedSeasons.includes(h.season));
 
   chosen.forEach(hero => {
-    const card = document.createElement('div');
-    card.className = 'hero-card';
+    const factionClass = getFactionClassForHero(hero);
 
-    // Desktop: draggable; Mobile: not draggable
+    const card = document.createElement('div');
+    card.className = `hero-card ${factionClass}`;
     card.draggable = !isTouchDevice;
     card.dataset.heroName = hero.name;
 
@@ -166,36 +214,9 @@ function renderAvailableHeroes() {
       <span class="mt-1">${hero.name}</span>
     `;
 
-    // Mobile / touch – tap to place hero into a slot
+    // Mobile / touch – custom drag using touch events
     if (isTouchDevice) {
-      card.addEventListener('click', () => {
-        const heroName = hero.name;
-
-        // find first empty slot, otherwise slot 0
-        let targetIdx = currentCombo.indexOf(null);
-        if (targetIdx === -1) targetIdx = 0;
-
-        // avoid duplicates
-        if (currentCombo.includes(heroName) && currentCombo[targetIdx] !== heroName) {
-          showMessageBox(
-            (translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Hero already in another slot.')
-              .replace('{heroName}', heroName)
-          );
-          return;
-        }
-
-        // clear old slot if hero already used
-        const oldIdx = currentCombo.indexOf(heroName);
-        if (oldIdx !== -1 && oldIdx !== targetIdx) {
-          currentCombo[oldIdx] = null;
-          const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
-          if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
-        }
-
-        currentCombo[targetIdx] = heroName;
-        const targetSlot = document.querySelector(`[data-slot-index="${targetIdx}"]`);
-        if (targetSlot) updateComboSlotDisplay(targetSlot, heroName, targetIdx);
-      });
+      card.addEventListener('touchstart', handleTouchStartHero, { passive: false });
     }
 
     availableHeroesEl.appendChild(card);
@@ -204,8 +225,15 @@ function renderAvailableHeroes() {
 
 function updateComboSlotDisplay(slot, name, idx) {
   if (name) {
+    const factionClass = getFactionClassByName(name);
+    slot.classList.add(factionClass);
+
     slot.innerHTML =
-      `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="${!isTouchDevice}" data-hero-name="${name}" crossorigin="anonymous">` +
+      `<img src="${getHeroImageUrl(name)}"
+             alt="${name}"
+             draggable="${!isTouchDevice}"
+             data-hero-name="${name}"
+             crossorigin="anonymous">` +
       `<span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>`;
     slot.classList.add('relative', 'p-0');
   } else {
@@ -216,7 +244,7 @@ function updateComboSlotDisplay(slot, name, idx) {
           ${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}
         </span>
       </div>`;
-    slot.classList.remove('relative', 'p-0');
+    slot.classList.remove('relative', 'p-0', 'faction-orange', 'faction-ice', 'faction-royal');
   }
   updateSaveButtonState();
 }
@@ -239,18 +267,7 @@ function initComboSlots() {
       const name = e.dataTransfer.getData('text/plain');
       if (!name) return;
       const idx = parseInt(slot.dataset.slotIndex);
-      if (currentCombo.includes(name) && currentCombo[idx] !== name) {
-        showMessageBox((translations[currentLanguage]?.messageHeroAlreadyInSlot || 'Already in slot').replace('{heroName}', name));
-        return;
-      }
-      const oldIdx = currentCombo.indexOf(name);
-      if (oldIdx !== -1) {
-        currentCombo[oldIdx] = null;
-        const oldSlot = document.querySelector(`[data-slot-index="${oldIdx}"]`);
-        if (oldSlot) updateComboSlotDisplay(oldSlot, null, oldIdx);
-      }
-      currentCombo[idx] = name;
-      updateComboSlotDisplay(slot, name, idx);
+      placeHeroInSlot(name, idx);
     });
   });
 
@@ -260,7 +277,7 @@ function initComboSlots() {
       const target = e.target.closest('.hero-card') || e.target.closest('.combo-slot img');
       if (target) {
         const name = target.dataset.heroName || target.getAttribute('data-hero-name');
-        if (name) e.dataTransfer.setData('text/plain', name);
+        if (name && e.dataTransfer) e.dataTransfer.setData('text/plain', name);
         if (target.classList.contains('hero-card')) target.classList.add('opacity-50');
       }
     });
@@ -270,6 +287,78 @@ function initComboSlots() {
     });
   }
 }
+
+/* ------------------------------------------ */
+/* Touch drag handlers (mobile/tablet)        */
+/* ------------------------------------------ */
+
+function handleTouchStartHero(e) {
+  e.preventDefault(); // avoid long-press "save image" etc.
+  const card = e.currentTarget;
+  const heroName = card.dataset.heroName;
+  if (!heroName) return;
+
+  const touch = e.touches[0];
+  const ghost = card.cloneNode(true);
+  ghost.classList.add('touch-ghost');
+  document.body.appendChild(ghost);
+  positionGhost(ghost, touch.clientX, touch.clientY);
+
+  activeTouchDrag = {
+    heroName,
+    ghost,
+    currentSlotEl: null
+  };
+}
+
+function positionGhost(ghost, x, y) {
+  ghost.style.left = `${x}px`;
+  ghost.style.top = `${y}px`;
+}
+
+// Global touchmove / touchend listeners
+document.addEventListener('touchmove', (e) => {
+  if (!activeTouchDrag) return;
+  const touch = e.touches[0];
+  e.preventDefault();
+
+  positionGhost(activeTouchDrag.ghost, touch.clientX, touch.clientY);
+
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const slot = el ? el.closest('.combo-slot') : null;
+
+  if (activeTouchDrag.currentSlotEl && activeTouchDrag.currentSlotEl !== slot) {
+    activeTouchDrag.currentSlotEl.classList.remove('touch-highlight');
+  }
+  if (slot && slot !== activeTouchDrag.currentSlotEl) {
+    slot.classList.add('touch-highlight');
+  }
+  activeTouchDrag.currentSlotEl = slot;
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  if (!activeTouchDrag) return;
+  const { heroName, ghost, currentSlotEl } = activeTouchDrag;
+
+  ghost.remove();
+  if (currentSlotEl) {
+    currentSlotEl.classList.remove('touch-highlight');
+    const idx = parseInt(currentSlotEl.dataset.slotIndex, 10);
+    if (!Number.isNaN(idx)) {
+      placeHeroInSlot(heroName, idx);
+    }
+  }
+  activeTouchDrag = null;
+});
+
+document.addEventListener('touchcancel', () => {
+  if (!activeTouchDrag) return;
+  activeTouchDrag.ghost.remove();
+  if (activeTouchDrag.currentSlotEl) {
+    activeTouchDrag.currentSlotEl.classList.remove('touch-highlight');
+  }
+  activeTouchDrag = null;
+});
 
 /* -------------------------------------------------- */
 /* Firestore listener for per-user bestCombos         */
@@ -317,8 +406,9 @@ async function setupFirestoreListener() {
 
           const slotsContainer = row.querySelector('.saved-combo-slots');
           (data.heroes || []).forEach((name) => {
+            const factionClass = getFactionClassByName(name);
             const item = document.createElement('div');
-            item.className = 'saved-combo-slot-item';
+            item.className = `saved-combo-slot-item ${factionClass}`;
             item.innerHTML =
               `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">` +
               `<span>${name}</span>`;
@@ -445,6 +535,8 @@ async function saveCombo() {
 }
 
 /* -------------------------------------------------- */
+/* Download all saved combos as image                 */
+/* -------------------------------------------------- */
 
 async function downloadCombosAsImage() {
   const t = translations[currentLanguage];
@@ -473,6 +565,47 @@ async function downloadCombosAsImage() {
   }
 }
 
+/* -------------------------------------------------- */
+/* Share current combo as text (and native share)     */
+/* -------------------------------------------------- */
+
+async function shareCurrentCombo() {
+  if (currentCombo.includes(null)) {
+    showMessageBox(
+      translations[currentLanguage]?.messagePleaseDrag3Heroes ||
+        'Please drag 3 heroes before sharing.'
+    );
+    return;
+  }
+
+  const title = 'VTS 1097 Hero Combo';
+  const text =
+    `${title}:\n` +
+    `1) ${currentCombo[0]}\n` +
+    `2) ${currentCombo[1]}\n` +
+    `3) ${currentCombo[2]}\n\n` +
+    `Created via Hero Combo Creator.`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text });
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      showMessageBox('Combo copied to clipboard! Paste it into Discord / LINE / chat.');
+      return;
+    }
+    // Fallback: show in dialog so user can manually copy
+    showMessageBox(text);
+  } catch (e) {
+    console.error('share combo error:', e);
+    showMessageBox('Unable to share automatically. You can copy this:\n' + text);
+  }
+}
+
+/* -------------------------------------------------- */
+
 function wireUIActions() {
   languageSelect.addEventListener('change', (e) => {
     currentLanguage = e.target.value;
@@ -493,14 +626,15 @@ function wireUIActions() {
 
   saveComboBtn.addEventListener('click', saveCombo);
   downloadCombosBtn.addEventListener('click', downloadCombosAsImage);
+  shareComboBtn.addEventListener('click', shareCurrentCombo);
 
-  // Desktop drag from hero cards (mobile uses tap)
+  // Desktop drag from hero cards (mobile uses touch drag)
   if (!isTouchDevice) {
     availableHeroesEl.addEventListener('dragstart', (e) => {
       const card = e.target.closest('.hero-card');
       if (!card) return;
       const name = card.dataset.heroName;
-      if (name) e.dataTransfer.setData('text/plain', name);
+      if (name && e.dataTransfer) e.dataTransfer.setData('text/plain', name);
       card.classList.add('opacity-50');
     });
     availableHeroesEl.addEventListener('dragend', (e) => {
@@ -521,6 +655,7 @@ function updateTextContent() {
   saveComboBtn.textContent = t.saveComboBtn;
   clearComboBtn.textContent = t.clearComboBtn;
   downloadCombosBtn.textContent = t.downloadCombosBtn;
+  if (shareComboBtn) shareComboBtn.textContent = t.shareComboBtn || 'Share Current Combo';
 
   document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
     if (currentCombo[idx] === null) updateComboSlotDisplay(slot, null, idx);
