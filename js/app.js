@@ -197,19 +197,24 @@ function renderAvailableHeroes() {
 function updateComboSlotDisplay(slot, name, idx) {
   if (name) {
     slot.innerHTML = `
-      <img src="${getHeroImageUrl(name)}" alt="${name}" draggable="true" data-hero-name="${name}" crossorigin="anonymous">
-      <span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>
-    `;
-    slot.classList.add('relative');
+      <img src="${getHeroImageUrl(name)}"
+           alt="${name}"
+           draggable="true"
+           data-hero-name="${name}"
+           crossorigin="anonymous">
+      <span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">
+        ${name}
+      </span>`;
+    slot.classList.add('relative', 'p-0');
   } else {
     slot.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-full w-full">
+      <div class="combo-slot-placeholder">
         <span class="text-5xl font-bold text-blue-400">+</span>
-        <span class="text-xs md:text-sm text-gray-400 mt-2">
+        <span class="text-xs text-gray-300">
           ${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}
         </span>
       </div>`;
-    slot.classList.remove('relative');
+    slot.classList.remove('relative', 'p-0');
   }
   updateSaveButtonState();
 }
