@@ -52,6 +52,9 @@ body {
   background: #f97316; /* default orange, overridden in JS by season */
 }
 
+.combo-row {
+  gap: 0.75rem;
+}
 /* Combo slot */
 .combo-slot {
   display: flex;
@@ -263,3 +266,4 @@ body {
 
 /* small utility */
 .hidden { display: none !important; }
+
