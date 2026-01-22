@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Combo Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- html2canvas for image download -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        .hero-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            margin: 8px;
+            background-color: #374151; /* bg-gray-700 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            transition: transform 0.2s, scale 0.2s;
+            min-width: 100px;
+            min-height: 110px;
+        }
+        .hero-card:active {
+            cursor: grabbing;
+        }
+        .hero-card:hover {
+            transform: scale(1.05);
+        }
+        .hero-card img {
+            width: 80px;
+            height: 80px;
+            border-radius: 9999px;
+            margin-bottom: 8px;
+            object-fit: cover;
+            border: 2px solid #4b5563;
+        }
+        .hero-card span {
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+            width: 100%;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .combo-slot {
+            @apply flex flex-col items-center justify-center w-32 h-32 border-4 border-dashed border-blue-500 rounded-lg bg-gray-800 m-2 p-2 text-center text-gray-400 text-sm overflow-hidden transition-all duration-300;
+        }
+        .combo-slot.drag-over {
+            @apply border-solid border-green-400 bg-gray-700 shadow-lg;
+        }
+        .combo-slot img {
+            @apply w-full h-full object-cover rounded-md;
+        }
+        /* Styles for saved combos */
+        .saved-combo-display {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #374151;
+            padding: 16px;
+            margin: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+            padding-left: 100px;
+            width: 100%;
+            max-width: 768px;
+            box-sizing: border-box;
+        }
+        .saved-combo-number {
+            position: absolute;
+            left: 50px;
+            background-color: #ef4444;
+            color: black;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            transform: translateX(-50%);
+            flex-shrink: 0;
+            line-height: 30px; /* Forces vertical center alignment for html2canvas */
+            text-align: center;
+        }
+        .saved-combo-slots {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            gap: 16px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .saved-combo-slot-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 128px;
+            height: 128px;
+            background-color: #4b5563;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .saved-combo-slot-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .saved-combo-slot-item span {
+            font-size: 0.875rem;
+            margin-top: 4px;
+            color: #93c5fd;
+            text-align: center;
+            padding: 0 4px;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .remove-combo-btn {
+            background-color: #dc2626;
+            color: white;
+            padding: 8px;
+            border-radius: 9999px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 700;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.15s;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+        .remove-combo-btn:hover {
+            background-color: #b91c1c;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div id="app" class="max-w-6xl mx-auto bg-gray-900 p-6 rounded-xl shadow-2xl">
+        <!-- BETA Version Note -->
+        <div class="text-center mb-6 p-4 bg-blue-900 rounded-lg text-blue-200 font-semibold text-lg">
+            BETA Version b1.1<br>Created by Abo for VTS 1097<br>Please wait until the page fully loads.
+        </div>
+
+        <h1 class="text-4xl font-bold text-center mb-8 text-blue-400" id="appTitle">Hero Combo Creator</h1>
+
+        <!-- Language Selector -->
+        <div class="flex justify-end mb-4">
+            <label for="languageSelect" class="mr-2 text-gray-300">Language:</label>
+            <select id="languageSelect" class="bg-gray-700 text-white rounded-md p-2">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="zh">中文</option>
+                <option value="ru">Русский</option>
+            </select>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-xl text-center">
+                <p id="messageText" class="text-lg mb-4"></p>
+                <div class="flex justify-center space-x-4">
+                    <button id="messageBoxOkBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">OK</button>
+                    <button id="messageBoxCancelBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors hidden">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner"></div>
+
+        <!-- Season Filter Section -->
+        <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200" id="filterBySeasonTitle">Filter by Season</h2>
+            <div id="seasonFilters" class="flex flex-wrap gap-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S0" checked>
+                    <span class="ml-2 text-gray-300">Season 0</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S1">
+                    <span class="ml-2 text-gray-300">Season 1</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S2">
+                    <span class="ml-2 text-gray-300">Season 2</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S3">
+                    <span class="ml-2 text-gray-300">Season 3</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S4">
+                    <span class="ml-2 text-gray-300">Season 4</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Available Heroes Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200" id="availableHeroesTitle">Available Heroes</h2>
+            <div id="availableHeroes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-items-center">
+                <!-- Heroes loaded here -->
+            </div>
+        </div>
+
+        <!-- Combo Creation Section -->
+        <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200" id="createComboTitle">Create Your Combo (Drag & Drop)</h2>
+            <div class="flex flex-col sm:flex-row justify-center items-center mb-6">
+                <div id="comboSlot1" class="combo-slot" data-slot-index="0">
+                    <div class="flex flex-col items-center justify-center h-full w-full">
+                        <span class="text-6xl font-bold text-blue-400">+</span>
+                        <span class="text-sm text-gray-400 mt-2">Drag Hero Here</span>
+                    </div>
+                </div>
+                <div id="comboSlot2" class="combo-slot" data-slot-index="1">
+                    <div class="flex flex-col items-center justify-center h-full w-full">
+                        <span class="text-6xl font-bold text-blue-400">+</span>
+                        <span class="text-sm text-gray-400 mt-2">Drag Hero Here</span>
+                    </div>
+                </div>
+                <div id="comboSlot3" class="combo-slot" data-slot-index="2">
+                    <div class="flex flex-col items-center justify-center h-full w-full">
+                        <span class="text-6xl font-bold text-blue-400">+</span>
+                        <span class="text-sm text-gray-400 mt-2">Drag Hero Here</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center space-x-4 flex flex-wrap justify-center gap-4">
+                <button id="saveComboBtn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition-colors transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Save Current Combo
+                </button>
+                <button id="clearComboBtn" class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700 transition-colors transform hover:scale-105">
+                    Clear Current Combo
+                </button>
+                <button id="downloadCombosBtn" class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700 transition-colors transform hover:scale-105">
+                    Download All Combos as Image
+                </button>
+            </div>
+        </div>
+
+        <!-- Last Best Combos Section -->
+        <div>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200" id="lastBestCombosTitle">Last Best Combos</h2>
+            <p id="noCombosMessage" class="text-gray-400 text-center mb-4">No combos saved yet. Drag heroes and click 'Save Current Combo'!</p>
+            <div id="savedCombos" class="flex flex-col items-center">
+                <!-- Saved combos stack here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, serverTimestamp, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let app, db, auth, userId = 'anonymous', isAuthReady = false;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDO0WZf1-T9OIX-Rxa1EUj1HPOI9ey5wWY",
+            authDomain: "abocombo.firebaseapp.com",
+            projectId: "abocombo",
+            storageBucket: "abocombo.firebasestorage.app",
+            messagingSenderId: "103195597389",
+            appId: "1:103195597389:web:97788d99356b4e59839a04",
+            measurementId: "G-ZV9X180WLS"
+        };
+
+        const allHeroesData = [
+            // Season 0
+            { name: "Jeanne d'Arc", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Isabella I", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Jiguang Qi", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_3bb681424e034e9e8f0dea7d71c93390~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Mary Tudor", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_7d24a8f5148b42c68e9e183ecdf1080d~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Leonidas", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_f672d18c06904465a490ea4811cee798~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "The Boneless", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_5fec4c7d62314acfb90ea624dedd08c6~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Demon Spear", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_39ffb285fd524cd1b7c27057b0fe4f44~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Kublai", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "The Heroine", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Queen Anne", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "North's Rage", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "William Wallace", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Yukimura Sanada", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Heaven's Justice", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            // Season 1
+            { name: "Alfred", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_e75a942dc1c64689b140f23d905b5ca0~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Cao Cao", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_3998355c7cae4b70a89000ee66ad8e3f~mv2.png/v1/fill/w_126,h_126,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Charles the Great", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_e95b962e46204b6badbd6e63e1307582~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Black Prince", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_29a333b02497463f81d329056996b8a3~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Lionheart", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_ecf64b68a8f64ad2bd159f86f5be179c~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Al Fatih", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_f834a1ef8d2d4de5bba80ab40e531a6f~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Edward the Confessor", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_51538af01a9f4ec789127837e62dccfa~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Constantine the Great", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_b738599c5a0b46deb6a4abf7273f9268~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Genghis Khan", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_40f1c10ba0e04d4fa3e841f865cd206a~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "William the Conqueror", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            // Season 2
+            { name: "Inquisitor", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_5e9612fc176442b78c1fa6766b87473c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "BeastQueen", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_6883135290314469a0daee804dd03692~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Jade", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_61729052c05240b4b7cf34324f8ed870~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Immortal", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_8c4e699dedc341a7a86ae4b47d3cce71~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Peace Bringer", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_cfea192f7ad64a13be3fa40c516a8bce~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Witch Hunter", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Ramses II", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Octavius", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            // Season 3
+            { name: "War Lord", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Jane", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Sky Breaker", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_cacde74500864a0d916746fe0945c970~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Rokuboshuten", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_eaf3463bf3654d0e90adb41a1cb5ad4c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Bleeding Steed", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_9256fc0a80284c1ab285554dbf33a4b3~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Rozen Blade", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_42b02c160ac849dca0dd7e4a6b472582~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Celopatrra VII", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            { name: "Ceasar", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_5cf26138c5174d4587fc025cd5fe399a~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png" },
+            // Season 4
+            { name: "Desert Storm", season: "S4", imageUrl: "https://i.ibb.co/vChW2BGG/Desert-Storm.png" },
+            { name: "Soaring Hawk", season: "S4", imageUrl: "https://i.ibb.co/nsypbRHh/Soaring-hawk.png" },
+            { name: "The Brave", season: "S4", imageUrl: "https://i.ibb.co/XxR25Kzy/brave.png" },
+            { name: "Jade Eagle", season: "S4", imageUrl: "https://i.ibb.co/GQzRPtZf/Jade-eagle.png" },
+            { name: "Immortal Guardian", season: "S4", imageUrl: "https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png" },
+            { name: "Divine Arrow", season: "S4", imageUrl: "https://i.ibb.co/6JcVTCnr/Divine-Arrow.png" },
+            { name: "Theodora", season: "S4", imageUrl: "https://i.ibb.co/JwtYrGzN/Theodora.png" },
+            { name: "King Arthur", season: "S4", imageUrl: "https://i.ibb.co/4Ryx1F6P/King-Arthur.png" }
+        ];
+
+        const translations = {
+            en: {
+                appTitle: "Hero Combo Creator",
+                filterBySeasonTitle: "Filter by Season",
+                availableHeroesTitle: "Available Heroes",
+                createComboTitle: "Create Your Combo (Drag & Drop)",
+                dragHeroHere: "Drag Hero Here",
+                saveComboBtn: "Save Current Combo",
+                clearComboBtn: "Clear Current Combo",
+                downloadCombosBtn: "Download All Combos as Image",
+                lastBestCombosTitle: "Last Best Combos",
+                noCombosMessage: "No combos saved yet. Drag heroes and click 'Save Current Combo'!",
+                messagePleaseDrag3Heroes: "Please drag 3 heroes to form a complete combo before saving!",
+                messageAuthNotReady: "Authentication not ready. Please wait a moment and try again.",
+                messageComboAlreadySaved: "This exact combo is already saved!",
+                messageComboSavedSuccess: "Combo saved successfully!",
+                messageErrorSavingCombo: "Error saving combo:",
+                messageConfirmRemoveCombo: "Are you sure you want to remove this combo?",
+                messageComboRemovedSuccess: "Combo removed successfully!",
+                messageErrorRemovingCombo: "Error removing combo:",
+                messageNoCombosToDownload: "No combos to download. Please save some combos first!",
+                messageCombosDownloadedSuccess: "Combos downloaded successfully!",
+                messageErrorDownloadingCombos: "Error downloading combos:",
+                messageCrossOriginWarning: "If images are missing, it might be due to cross-origin restrictions.",
+                messageHeroAlreadyInSlot: "Hero \"{heroName}\" is already in another slot in the current combo.",
+                messageFirebaseInitError: "Firebase initialization error:",
+                messageAuthError: "Authentication error: {errorMessage}.",
+                messageErrorLoadingCombos: "Error loading saved combos:",
+                messageBoxConfirm: "Confirm",
+                messageBoxCancel: "Cancel",
+                messageBoxOk: "OK"
+            },
+            es: {
+                appTitle: "Creador de Combos de Héroes",
+                filterBySeasonTitle: "Filtrar por Temporada",
+                availableHeroesTitle: "Héroes Disponibles",
+                createComboTitle: "Crea tu Combo (Arrastrar y Soltar)",
+                dragHeroHere: "Arrastra Héroe Aquí",
+                saveComboBtn: "Guardar Combo Actual",
+                clearComboBtn: "Limpiar Combo Actual",
+                downloadCombosBtn: "Descargar Todos los Combos como Imagen",
+                lastBestCombosTitle: "Últimos Mejores Combos",
+                noCombosMessage: "Aún no hay combos guardados. ¡Arrastra héroes y haz clic en 'Guardar Combo Actual'!",
+                messagePleaseDrag3Heroes: "¡Por favor, arrastra 3 héroes para formar un combo completo antes de guardar!",
+                messageAuthNotReady: "Autenticación no lista. Por favor, espera un momento e inténtalo de nuevo.",
+                messageComboAlreadySaved: "¡Este combo ya está guardado!",
+                messageComboSavedSuccess: "¡Combo guardado exitosamente!",
+                messageErrorSavingCombo: "Error al guardar el combo:",
+                messageConfirmRemoveCombo: "¿Estás seguro de que quieres eliminar este combo?",
+                messageComboRemovedSuccess: "¡Combo eliminado exitosamente!",
+                messageErrorRemovingCombo: "Error al eliminar el combo:",
+                messageNoCombosToDownload: "No hay combos para descargar. ¡Por favor, guarda algunos combos primero!",
+                messageCombosDownloadedSuccess: "¡Combos descargados exitosamente!",
+                messageErrorDownloadingCombos: "Error al descargar combos:",
+                messageCrossOriginWarning: "Si faltan imágenes, podría deberse a restricciones de origen cruzado.",
+                messageHeroAlreadyInSlot: "El héroe \"{heroName}\" ya está en otra ranura del combo actual.",
+                messageFirebaseInitError: "Error de inicialización de Firebase:",
+                messageAuthError: "Error de autenticación: {errorMessage}.",
+                messageErrorLoadingCombos: "Error al cargar los combos guardados:",
+                messageBoxConfirm: "Confirmar",
+                messageBoxCancel: "Cancelar",
+                messageBoxOk: "Aceptar"
+            },
+            pt: {
+                appTitle: "Criador de Combos de Heróis",
+                filterBySeasonTitle: "Filtrar por Temporada",
+                availableHeroesTitle: "Heróis Disponíveis",
+                createComboTitle: "Crie Seu Combo (Arrastar e Soltar)",
+                dragHeroHere: "Arraste o Herói Aqui",
+                saveComboBtn: "Salvar Combo Atual",
+                clearComboBtn: "Limpar Combo Atual",
+                downloadCombosBtn: "Baixar Todos os Combos como Imagem",
+                lastBestCombosTitle: "Últimos Melhores Combos",
+                noCombosMessage: "Nenhum combo salvo ainda. Arraste heróis e clique em 'Salvar Combo Atual'!",
+                messagePleaseDrag3Heroes: "Por favor, arraste 3 heróis para formar um combo completo antes de salvar!",
+                messageAuthNotReady: "Autenticação não pronta. Por favor, aguarde um momento e tente novamente.",
+                messageComboAlreadySaved: "Este combo já está salvo!",
+                messageComboSavedSuccess: "Combo salvo com sucesso!",
+                messageErrorSavingCombo: "Erro ao salvar combo:",
+                messageConfirmRemoveCombo: "Tem certeza de que deseja remover este combo?",
+                messageComboRemovedSuccess: "Combo removido com sucesso!",
+                messageErrorRemovingCombo: "Erro ao remover combo:",
+                messageNoCombosToDownload: "Nenhum combo para baixar. Por favor, salve alguns combos primeiro!",
+                messageCombosDownloadedSuccess: "Combos baixados com sucesso!",
+                messageErrorDownloadingCombos: "Erro ao baixar combos:",
+                messageCrossOriginWarning: "Se as imagens estiverem faltando, pode ser devido a restrições de origem cruzada.",
+                messageHeroAlreadyInSlot: "O herói \"{heroName}\" já está em outro slot no combo atual.",
+                messageFirebaseInitError: "Erro de inicialização do Firebase:",
+                messageAuthError: "Erro de autenticação: {errorMessage}.",
+                messageErrorLoadingCombos: "Erro ao carregar combos salvos:",
+                messageBoxConfirm: "Confirmar",
+                messageBoxCancel: "Cancelar",
+                messageBoxOk: "OK"
+            },
+            de: {
+                appTitle: "Helden-Kombinations-Ersteller",
+                filterBySeasonTitle: "Nach Saison filtern",
+                availableHeroesTitle: "Verfügbare Helden",
+                createComboTitle: "Erstelle deine Kombination (Drag & Drop)",
+                dragHeroHere: "Helden hierher ziehen",
+                saveComboBtn: "Aktuelle Kombination speichern",
+                clearComboBtn: "Aktuelle Kombination löschen",
+                downloadCombosBtn: "Alle Kombinationen als Bild herunterladen",
+                lastBestCombosTitle: "Letzte beste Kombinationen",
+                noCombosMessage: "Noch keine Kombinationen gespeichert. Ziehen Sie Helden und klicken Sie auf 'Aktuelle Kombination speichern'!",
+                messagePleaseDrag3Heroes: "Bitte ziehen Sie 3 Helden, um eine vollständige Kombination zu bilden, bevor Sie speichern!",
+                messageAuthNotReady: "Authentifizierung nicht bereit. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+                messageComboAlreadySaved: "Diese Kombination ist bereits gespeichert!",
+                messageComboSavedSuccess: "Kombination erfolgreich gespeichert!",
+                messageErrorSavingCombo: "Fehler beim Speichern der Kombination:",
+                messageConfirmRemoveCombo: "Möchten Sie diese Kombination wirklich entfernen?",
+                messageComboRemovedSuccess: "Kombination erfolgreich entfernt!",
+                messageErrorRemovingCombo: "Fehler beim Entfernen der Kombination:",
+                messageNoCombosToDownload: "Keine Kombinationen zum Herunterladen. Bitte speichern Sie zuerst einige Kombinationen!",
+                messageCombosDownloadedSuccess: "Kombinationen erfolgreich heruntergeladen!",
+                messageErrorDownloadingCombos: "Fehler beim Herunterladen der Kombinationen:",
+                messageCrossOriginWarning: "Wenn Bilder fehlen, kann dies an Cross-Origin-Einschränkungen liegen.",
+                messageHeroAlreadyInSlot: "Held „{heroName}“ befindet sich bereits in einem anderen Slot der aktuellen Kombination.",
+                messageFirebaseInitError: "Firebase-Initialisierungsfehler:",
+                messageAuthError: "Authentifizierungsfehler: {errorMessage}.",
+                messageErrorLoadingCombos: "Fehler beim Laden der gespeicherten Kombinationen:",
+                messageBoxConfirm: "Bestätigen",
+                messageBoxCancel: "Abbrechen",
+                messageBoxOk: "OK"
+            },
+            fr: {
+                appTitle: "Créateur de Combos de Héros",
+                filterBySeasonTitle: "Filtrer par Saison",
+                availableHeroesTitle: "Héros Disponibles",
+                createComboTitle: "Créez votre Combo (Glisser-Déposer)",
+                dragHeroHere: "Glissez le Héros Ici",
+                saveComboBtn: "Enregistrer le Combo Actuel",
+                clearComboBtn: "Effacer le Combo Actuel",
+                downloadCombosBtn: "Télécharger Tous les Combos en Image",
+                lastBestCombosTitle: "Derniers Meilleurs Combos",
+                noCombosMessage: "Aucun combo enregistré pour l'instant. Glissez des héros et cliquez sur 'Enregistrer le Combo Actuel' !",
+                messagePleaseDrag3Heroes: "Veuillez glisser 3 héros pour former un combo complet avant d'enregistrer !",
+                messageAuthNotReady: "Authentification non prête. Veuillez patienter un instant et réessayer.",
+                messageComboAlreadySaved: "Ce combo est déjà enregistré !",
+                messageComboSavedSuccess: "Combo enregistré avec succès !",
+                messageErrorSavingCombo: "Erreur lors de l'enregistrement du combo :",
+                messageConfirmRemoveCombo: "Êtes-vous sûr de vouloir supprimer ce combo ?",
+                messageComboRemovedSuccess: "Combo supprimé avec succès !",
+                messageErrorRemovingCombo: "Erreur lors de la suppression du combo :",
+                messageNoCombosToDownload: "Aucun combo à télécharger. Veuillez d'abord enregistrer des combos !",
+                messageCombosDownloadedSuccess: "Combos téléchargés avec succès !",
+                messageErrorDownloadingCombos: "Erreur lors du téléchargement des combos :",
+                messageCrossOriginWarning: "Si des images sont manquantes, cela peut être dû à des restrictions d'origine croisée.",
+                messageHeroAlreadyInSlot: "Le héros « {heroName} » est déjà dans un autre emplacement du combo actuel.",
+                messageFirebaseInitError: "Erreur d'initialisation de Firebase :",
+                messageAuthError: "Erreur d'authentification : {errorMessage}.",
+                messageErrorLoadingCombos: "Erreur lors du chargement des combos enregistrés :",
+                messageBoxConfirm: "Confirmer",
+                messageBoxCancel: "Annuler",
+                messageBoxOk: "OK"
+            },
+            zh: {
+                appTitle: "英雄组合创建器",
+                filterBySeasonTitle: "按赛季筛选",
+                availableHeroesTitle: "可用英雄",
+                createComboTitle: "创建你的组合（拖放）",
+                dragHeroHere: "将英雄拖到此处",
+                saveComboBtn: "保存当前组合",
+                clearComboBtn: "清除当前组合",
+                downloadCombosBtn: "下载所有组合图片",
+                lastBestCombosTitle: "最新最佳组合",
+                noCombosMessage: "尚未保存任何组合。拖动英雄并点击“保存当前组合”！",
+                messagePleaseDrag3Heroes: "请拖动3个英雄以形成完整组合再保存！",
+                messageAuthNotReady: "认证未准备好。请稍等片刻再试。",
+                messageComboAlreadySaved: "此组合已保存！",
+                messageComboSavedSuccess: "组合保存成功！",
+                messageErrorSavingCombo: "保存组合时出错：",
+                messageConfirmRemoveCombo: "确定要删除此组合吗？",
+                messageComboRemovedSuccess: "组合删除成功！",
+                messageErrorRemovingCombo: "删除组合时出错：",
+                messageNoCombosToDownload: "没有可下载的组合。请先保存一些组合！",
+                messageCombosDownloadedSuccess: "组合下载成功！",
+                messageErrorDownloadingCombos: "下载组合时出错：",
+                messageCrossOriginWarning: "如果图片缺失，可能是由于跨域限制。",
+                messageHeroAlreadyInSlot: "英雄“{heroName}”已在当前组合的另一个槽位中。",
+                messageFirebaseInitError: "Firebase 初始化错误：",
+                messageAuthError: "身份验证错误：{errorMessage}。",
+                messageErrorLoadingCombos: "加载已保存组合时出错：",
+                messageBoxConfirm: "确定",
+                messageBoxCancel: "取消",
+                messageBoxOk: "好的"
+            },
+            ru: {
+                appTitle: "Создатель Комбинаций Героев",
+                filterBySeasonTitle: "Фильтровать по сезону",
+                availableHeroesTitle: "Доступные герои",
+                createComboTitle: "Создайте свою комбинацию (перетаскивание)",
+                dragHeroHere: "Перетащите героя сюда",
+                saveComboBtn: "Сохранить текущую комбинацию",
+                clearComboBtn: "Очистить текущую комбинацию",
+                downloadCombosBtn: "Скачать все комбинации как изображение",
+                lastBestCombosTitle: "Последние лучшие комбинации",
+                noCombosMessage: "Пока нет сохраненных комбинаций. Перетащите героев и нажмите 'Сохранить текущую комбинацию'!",
+                messagePleaseDrag3Heroes: "Пожалуйста, перетащите 3 героев, чтобы сформировать полную комбинацию перед сохранением!",
+                messageAuthNotReady: "Аутентификация не готова. Пожалуйста, подождите немного и попробуйте снова.",
+                messageComboAlreadySaved: "Эта комбинация уже  сохранена!",
+                messageComboSavedSuccess: "Комбинация успешно сохранена!",
+                messageErrorSavingCombo: "Ошибка при сохранении комбинации:",
+                messageConfirmRemoveCombo: "Вы уверены, что хотите удалить эту комбинацию?",
+                messageComboRemovedSuccess: "Комбинация успешно удалена!",
+                messageErrorRemovingCombo: "Ошибка при удалении комбинации:",
+                messageNoCombosToDownload: "Нет комбинаций для скачивания. Пожалуйста, сначала сохраните несколько комбинаций!",
+                messageCombosDownloadedSuccess: "Комбинации успешно скачаны!",
+                messageErrorDownloadingCombos: "Ошибка при скачивании комбинаций:",
+                messageCrossOriginWarning: "Если изображения отсутствуют, это может быть связано с ограничениями кросс-доменных запросов.",
+                messageHeroAlreadyInSlot: "Герой «{heroName}» уже находится в другом слоте текущей комбинации.",
+                messageFirebaseInitError: "Ошибка инициализации Firebase:",
+                messageAuthError: "Ошибка аутентификации: {errorMessage}.",
+                messageErrorLoadingCombos: "Ошибка при загрузке сохраненных комбинаций:",
+                messageBoxConfirm: "Подтвердить",
+                messageBoxCancel: "Отмена",
+                messageBoxOk: "ОК"
+            }
+        };
+
+        let currentLanguage = 'en', selectedSeasons = ["S0"], currentCombo = [null, null, null];
+
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        const debouncedRenderAvailableHeroes = debounce(renderAvailableHeroes, 200);
+
+        function getHeroImageUrl(heroName) {
+            const hero = allHeroesData.find(h => h.name === heroName);
+            if (hero && hero.imageUrl) {
+                return hero.imageUrl;
+            }
+            const encodedName = encodeURIComponent(heroName.replace(/\s/g, '+'));
+            return `https://placehold.co/128x128/374151/e2e8f0?text=${encodedName}`;
+        }
+
+        function updateTextContent() {
+            const t = translations[currentLanguage];
+            const ids = ['appTitle', 'filterBySeasonTitle', 'availableHeroesTitle', 'createComboTitle', 'lastBestCombosTitle', 'noCombosMessage'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = t[id];
+            });
+
+            if (saveComboBtn) saveComboBtn.textContent = t.saveComboBtn;
+            if (clearComboBtn) clearComboBtn.textContent = t.clearComboBtn;
+            if (downloadCombosBtn) downloadCombosBtn.textContent = t.downloadCombosBtn;
+
+            document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
+                if (currentCombo[idx] === null) updateComboSlotDisplay(slot, null, idx);
+            });
+        }
+
+        function showMessageBox(message, onConfirm = null) {
+            const t = translations[currentLanguage];
+            const box = document.getElementById('messageBox');
+            document.getElementById('messageText').innerText = message;
+            box.classList.remove('hidden');
+            const ok = document.getElementById('messageBoxOkBtn');
+            const cancel = document.getElementById('messageBoxCancelBtn');
+            if (onConfirm) {
+                ok.textContent = t.messageBoxConfirm || "Confirm";
+                ok.onclick = () => { box.classList.add('hidden'); onConfirm(); };
+                cancel.classList.remove('hidden');
+                cancel.textContent = t.messageBoxCancel || "Cancel";
+                cancel.onclick = () => box.classList.add('hidden');
+            } else {
+                ok.textContent = t.messageBoxOk || "OK";
+                ok.onclick = () => { box.classList.add('hidden'); };
+                cancel.classList.add('hidden');
+            }
+        }
+
+        function showLoadingSpinner() { loadingSpinner.style.display = 'block'; }
+        function hideLoadingSpinner() { loadingSpinner.style.display = 'none'; }
+
+        function renderAvailableHeroes() {
+            const container = document.getElementById('availableHeroes');
+            container.innerHTML = '';
+            allHeroesData.filter(h => selectedSeasons.includes(h.season)).forEach(hero => {
+                const card = document.createElement('div');
+                card.className = 'hero-card';
+                card.draggable = true;
+                card.dataset.heroName = hero.name;
+                card.innerHTML = `<img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" loading="lazy"><span>${hero.name}</span>`;
+                container.appendChild(card);
+            });
+        }
+
+        function updateSaveButtonState() {
+            saveComboBtn.disabled = !isAuthReady || currentCombo.includes(null);
+        }
+
+        function updateComboSlotDisplay(slot, name, idx) {
+            if (name) {
+                slot.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" draggable="true" data-hero-name="${name}"><span class="bottom-2 text-white bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs w-full overflow-hidden text-ellipsis whitespace-nowrap">${name}</span>`;
+                slot.classList.add('relative', 'p-0');
+            } else {
+                slot.innerHTML = `<div class="flex flex-col items-center justify-center h-full w-full"><span class="text-6xl font-bold text-blue-400">+</span><span class="text-sm text-gray-400 mt-2">${translations[currentLanguage].dragHeroHere}</span></div>`;
+                slot.classList.remove('relative', 'p-0');
+            }
+            updateSaveButtonState();
+        }
+
+        languageSelect.addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+            updateTextContent();
+        });
+
+        document.getElementById('seasonFilters').addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (e.target.checked) selectedSeasons.push(val);
+            else selectedSeasons = selectedSeasons.filter(s => s !== val);
+            debouncedRenderAvailableHeroes();
+        });
+
+        document.addEventListener('dragstart', (e) => {
+            const target = e.target.closest('.hero-card') || e.target.closest('.combo-slot img');
+            if (target) {
+                const name = target.dataset.heroName;
+                e.dataTransfer.setData('text/plain', name);
+                if (target.classList.contains('hero-card')) target.classList.add('opacity-50');
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (e.target.closest('.hero-card')) e.target.closest('.hero-card').classList.remove('opacity-50');
+        });
+
+        document.querySelectorAll('.combo-slot').forEach(slot => {
+            slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('drag-over'); });
+            slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('drag-over');
+                const name = e.dataTransfer.getData('text/plain');
+                if (name) {
+                    const idx = parseInt(slot.dataset.slotIndex);
+                    if (currentCombo.includes(name) && currentCombo[idx] !== name) {
+                        showMessageBox(translations[currentLanguage].messageHeroAlreadyInSlot.replace("{heroName}", name));
+                        return;
+                    }
+                    const oldIdx = currentCombo.indexOf(name);
+                    if (oldIdx !== -1) {
+                        currentCombo[oldIdx] = null;
+                        updateComboSlotDisplay(document.querySelector(`[data-slot-index="${oldIdx}"]`), null, oldIdx);
+                    }
+                    currentCombo[idx] = name;
+                    updateComboSlotDisplay(slot, name, idx);
+                }
+            });
+        });
+
+        clearComboBtn.addEventListener('click', () => {
+            currentCombo = [null, null, null];
+            document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+        });
+
+        saveComboBtn.addEventListener('click', async () => {
+            const t = translations[currentLanguage];
+            showLoadingSpinner();
+            try {
+                const ref = collection(db, `users/${userId}/bestCombos`);
+                const snap = await getDocs(ref);
+                const existing = snap.docs.map(d => [...d.data().heroes].sort().join(','));
+                if (existing.includes([...currentCombo].sort().join(','))) {
+                    showMessageBox(t.messageComboAlreadySaved);
+                } else {
+                    await addDoc(ref, { heroes: currentCombo, timestamp: serverTimestamp() });
+                    showMessageBox(t.messageComboSavedSuccess);
+                }
+            } catch (e) { showMessageBox(`${t.messageErrorSavingCombo} ${e.message}`); }
+            finally { hideLoadingSpinner(); }
+        });
+
+        downloadCombosBtn.addEventListener('click', async () => {
+            const t = translations[currentLanguage];
+            showLoadingSpinner();
+            try {
+                const el = document.getElementById('savedCombos');
+                document.querySelectorAll('.remove-combo-btn').forEach(b => b.style.display = 'none');
+                const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true });
+                document.querySelectorAll('.remove-combo-btn').forEach(b => b.style.display = '');
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = 'hero_combos.png';
+                link.click();
+            } catch (e) { showMessageBox(`${t.messageErrorDownloadingCombos} ${e.message}`); }
+            finally { hideLoadingSpinner(); }
+        });
+
+        window.onload = async () => {
+            showLoadingSpinner();
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) userId = user.uid;
+                    else {
+                        const cred = await signInAnonymously(auth);
+                        userId = cred.user.uid;
+                    }
+                    isAuthReady = true;
+                    updateSaveButtonState();
+                    setupFirestoreListener();
+                    hideLoadingSpinner();
+                });
+            } catch (e) { 
+                console.error("Firebase init error", e);
+                hideLoadingSpinner(); 
+            }
+            renderAvailableHeroes();
+            updateTextContent();
+        };
+
+        function setupFirestoreListener() {
+            const q = query(collection(db, `users/${userId}/bestCombos`), orderBy("timestamp", "asc"));
+            onSnapshot(q, (snap) => {
+                const container = document.getElementById('savedCombos');
+                container.innerHTML = '';
+                const noMsg = document.getElementById('noCombosMessage');
+                if (noMsg) noMsg.classList.toggle('hidden', !snap.empty);
+                let count = 1;
+                snap.forEach(d => {
+                    const data = d.data();
+                    const row = document.createElement('div');
+                    row.className = 'saved-combo-display';
+                    row.innerHTML = `<span class="saved-combo-number">${count}</span><div class="saved-combo-slots"></div>`;
+                    data.heroes.forEach(name => {
+                        const item = document.createElement('div');
+                        item.className = 'saved-combo-slot-item';
+                        item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}"><span>${name}</span>`;
+                        row.querySelector('.saved-combo-slots').appendChild(item);
+                    });
+                    const btn = document.createElement('button');
+                    btn.className = 'remove-combo-btn';
+                    btn.textContent = 'X';
+                    btn.onclick = () => showMessageBox(translations[currentLanguage].messageConfirmRemoveCombo, async () => {
+                        showLoadingSpinner();
+                        try {
+                            await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
+                        } catch (e) { console.error("Delete error", e); }
+                        finally { hideLoadingSpinner(); }
+                    });
+                    row.appendChild(btn);
+                    container.appendChild(row);
+                    count++;
+                });
+            }, (err) => {
+                console.error("Snapshot error", err);
+                hideLoadingSpinner();
+            });
+        }
+    </script>
+</body>
+</html>
