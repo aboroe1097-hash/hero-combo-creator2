@@ -1,5 +1,4 @@
-// js/app.js
-// Main app (manual builder + combo generator) - Version b2.0
+// js/app.js - Fixed & Polished Version b2.0
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -36,7 +35,7 @@ const generatorResultsEl = document.getElementById('generatorResults');
 let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
 let selectedSeasons = ['S0']; 
 let currentCombo = [null, null, null];
-let generatorSelectedSeasons = ['S0']; // Default to Season 0 only
+let generatorSelectedSeasons = ['S0']; // Default to Season 0
 const generatorSelectedHeroes = new Set();
 let db = null;
 let userId = 'anonymous';
@@ -44,9 +43,7 @@ let isAuthReady = false;
 let spinnerFallbackTimer = null;
 let userCombosData = []; 
 
-// -------------------------------------------------------------
-// Heroes data (Season 0 to 4)
-// -------------------------------------------------------------
+// Hero Data Array
 const allHeroesData = [
   { name: "Jeanne d'Arc", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png" },
   { name: "Isabella I", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png" },
@@ -115,9 +112,7 @@ function showLoadingSpinner() {
   if (!loadingSpinner) return;
   loadingSpinner.classList.remove('hidden');
   clearTimeout(spinnerFallbackTimer);
-  spinnerFallbackTimer = setTimeout(() => {
-    if (!isAuthReady) { hideLoadingSpinner(); showMessageBox('Authentication slow. App usable offline.'); }
-  }, 10000);
+  spinnerFallbackTimer = setTimeout(() => { if (!isAuthReady) { hideLoadingSpinner(); showMessageBox('Authentication slow. App usable offline.'); } }, 10000);
 }
 
 function hideLoadingSpinner() { if (loadingSpinner) loadingSpinner.classList.add('hidden'); }
@@ -152,7 +147,6 @@ function updateTextContent() {
   downloadCombosBtn.textContent = t.downloadCombosBtn;
   shareAllCombosBtn.textContent = t.shareAllCombosBtn;
 
-  // Generator Strings
   const genTitle = generatorSection.querySelector('h2');
   if (genTitle) genTitle.textContent = t.generatorTitle;
   const genIntro = generatorSection.querySelector('p');
@@ -173,7 +167,7 @@ function renderAvailableHeroes() {
     card.dataset.heroName = hero.name;
     const tagColor = seasonColors[hero.season] || '#f97316';
     card.innerHTML = `<span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
-      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center">${hero.name}</span>`;
+      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
     card.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', hero.name));
     card.addEventListener('touchstart', onHeroTouchStart, { passive: false });
     availableHeroesEl.appendChild(card);
@@ -187,7 +181,7 @@ function renderGeneratorHeroes() {
     const card = document.createElement('button');
     card.className = `hero-card generator-card ${generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''}`;
     card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
-      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center">${hero.name}</span>`;
+      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
     card.onclick = () => {
       if (generatorSelectedHeroes.has(hero.name)) { generatorSelectedHeroes.delete(hero.name); card.classList.remove('generator-card-selected'); }
       else { generatorSelectedHeroes.add(hero.name); card.classList.add('generator-card-selected'); }
@@ -199,10 +193,7 @@ function renderGeneratorHeroes() {
 function placeHeroIntoSlot(heroName, slotEl) {
   const idx = parseInt(slotEl.dataset.slotIndex, 10);
   const t = translations[currentLanguage] || translations.en;
-  if (currentCombo.includes(heroName) && currentCombo[idx] !== heroName) {
-    showMessageBox(t.messageHeroAlreadyInSlot.replace('{heroName}', heroName));
-    return;
-  }
+  if (currentCombo.includes(heroName) && currentCombo[idx] !== heroName) { showMessageBox(t.messageHeroAlreadyInSlot.replace('{heroName}', heroName)); return; }
   const oldIdx = currentCombo.indexOf(heroName);
   if (oldIdx !== -1) { currentCombo[oldIdx] = null; updateComboSlotDisplay(document.querySelector(`[data-slot-index="${oldIdx}"]`), null, oldIdx); }
   currentCombo[idx] = heroName; updateComboSlotDisplay(slotEl, heroName, idx);
@@ -221,7 +212,7 @@ function updateComboSlotDisplay(slot, name, idx) {
   saveComboBtn.disabled = !isAuthReady || currentCombo.includes(null);
 }
 
-// --- COMBO GENERATOR ACTION ---
+// --- GENERATOR LOGIC ---
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
@@ -257,14 +248,12 @@ function renderGeneratorResults(bestCombos) {
       card.appendChild(slots);
       const score = document.createElement('div'); score.className = 'text-sm font-semibold text-sky-300 ml-4 whitespace-nowrap';
       score.textContent = `${t.generatorScoreLabel} ${combo.score}`; card.appendChild(score);
-    } else {
-      card.innerHTML = `<p class="text-xs text-slate-400 text-center w-full italic">${t.generatorEmptySlotLabel}</p>`;
-    }
+    } else { card.innerHTML = `<p class="text-xs text-slate-400 text-center w-full italic">${t.generatorEmptySlotLabel}</p>`; }
     generatorResultsEl.appendChild(card);
   }
 }
 
-// --- TOUCH HANDLING ---
+// --- UI WIRING & TOUCH ---
 const touchDragState = { heroName: null, ghostEl: null, active: false };
 function onHeroTouchStart(e) {
   const name = e.currentTarget.dataset.heroName; if (!name) return;
@@ -281,32 +270,26 @@ function onHeroTouchStart(e) {
 function onTouchMove(e) {
   if (!touchDragState.active) return;
   const touch = e.touches[0]; touchDragState.ghostEl.style.left = `${touch.clientX - 40}px`; touchDragState.ghostEl.style.top = `${touch.clientY - 40}px`;
-  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const slot = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.combo-slot');
   document.querySelectorAll('.combo-slot').forEach(s => s.classList.remove('drag-over'));
-  const slot = el?.closest('.combo-slot'); if (slot) slot.classList.add('drag-over');
+  if (slot) slot.classList.add('drag-over');
   e.preventDefault();
 }
 function onTouchEnd(e) {
   const heroName = touchDragState.heroName; touchDragState.ghostEl?.remove(); touchDragState.active = false;
   document.removeEventListener('touchmove', onTouchMove);
   document.querySelectorAll('.hero-card').forEach(c => c.classList.remove('opacity-50'));
-  document.querySelectorAll('.combo-slot').forEach(s => s.classList.remove('drag-over'));
   const touch = e.changedTouches?.[0]; if (!touch || !heroName) return;
   const slot = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.combo-slot');
   if (slot) placeHeroIntoSlot(heroName, slot);
 }
 
-// --- UI WIRING ---
 function wireUIActions() {
   languageSelect.value = currentLanguage;
-  languageSelect.onchange = (e) => {
-    currentLanguage = e.target.value;
-    localStorage.setItem('vts_hero_lang', currentLanguage);
-    updateTextContent(); renderGeneratorHeroes();
-  };
+  languageSelect.onchange = (e) => { currentLanguage = e.target.value; localStorage.setItem('vts_hero_lang', currentLanguage); updateTextContent(); renderGeneratorHeroes(); };
 
   const handleTabSwitch = (showManual) => {
-    const minH = Math.max(window.innerHeight * 0.7, 600) + "px";
+    const minH = Math.max(window.innerHeight * 0.7, 700) + "px";
     manualSection.style.minHeight = minH; generatorSection.style.minHeight = minH;
     manualSection.classList.toggle('hidden', !showManual); generatorSection.classList.toggle('hidden', showManual);
     tabManualBtn.className = showManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive';
@@ -322,8 +305,9 @@ function wireUIActions() {
   };
 
   generatorSeasonFilters.onchange = (e) => {
-    if (e.target.checked) generatorSelectedSeasons.push(e.target.value);
-    else generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== e.target.value);
+    const val = e.target.value;
+    if (e.target.checked) { if (!generatorSelectedSeasons.includes(val)) generatorSelectedSeasons.push(val); }
+    else { generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== val); }
     renderGeneratorHeroes();
   };
 
