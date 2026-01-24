@@ -46,6 +46,27 @@
       justify-content: center;
       z-index: 40;
     }
+
+          /* Empty State Visuals */
+      .empty-results-border {
+        border: 2px dashed #334155;
+        border-radius: 1rem;
+        padding: 2rem;
+        background: rgba(30, 41, 59, 0.3);
+      }
+      
+      .empty-results-placeholder {
+        color: #94a3b8;
+        font-style: italic;
+        text-align: center;
+        font-size: 0.875rem;
+      }
+      
+      /* Prevenção de pulos entre abas */
+      #manualBuilderSection, #comboGeneratorSection {
+        transition: opacity 0.2s ease-in-out;
+      }
+    
     .team-badge img {
       width: 88%;
       height: 88%;
@@ -360,3 +381,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
