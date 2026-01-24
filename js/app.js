@@ -4,6 +4,7 @@
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
+import { rankedCombos } from './combos-db.js'; // <--- ADD THIS IMPORT
 
 const translations = baseTranslations;
 
@@ -864,15 +865,23 @@ function renderGeneratorResults(bestCombos) {
 
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
-
   const selectedHeroes = Array.from(generatorSelectedHeroes);
+  
   if (selectedHeroes.length < 15) {
-    showMessageBox(
-      t.generatorNeedMoreHeroes ||
-        'Please select at least 15 heroes to generate 5 combos.'
-    );
+    showMessageBox(t.generatorMinHeroesMessage || 'Select 15 heroes.');
     return;
   }
+
+  const ownedSet = new Set(selectedHeroes);
+
+  // USE THE REAL DATABASE HERE
+  const eligibleCombos = rankedCombos.filter((c) =>
+    c.heroes.every((h) => ownedSet.has(h))
+  );
+
+  eligibleCombos.sort((a, b) => (b.score || 0) - (a.score || 0));
+  renderGeneratorResults(eligibleCombos);
+}
 
   const ownedSet = new Set(selectedHeroes);
 
