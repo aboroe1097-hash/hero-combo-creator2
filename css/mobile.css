@@ -183,6 +183,30 @@ button,
   border-radius: 10px !important;
 }
 
+/* js/mobile.css addition */
+
+/* Disable sticky hover effects on mobile to prevent selection lag */
+@media (hover: none) {
+  .hero-card:hover {
+    transform: none !important;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25) !important;
+  }
+}
+
+/* Ensure the selected state is very distinct and overrides everything */
+.generator-card-selected {
+  border: 3px solid #38bdf8 !important; /* Use a real border instead of just a shadow */
+  background-color: rgba(56, 189, 248, 0.1) !important;
+  transform: scale(0.95) !important; /* Slight shrink gives immediate physical feedback on tap */
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4) !important;
+}
+
+/* Optimization: Faster tap response */
+.generator-card {
+  touch-action: manipulation;
+  transition: transform 0.1s ease-out !important;
+}
+
 /* Name text under hero – a bit smaller on mobile */
 .saved-combo-slot-item span {
   font-size: 0.75rem !important;
