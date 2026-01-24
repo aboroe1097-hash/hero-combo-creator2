@@ -193,6 +193,29 @@ function renderGeneratorResults(bestCombos) {
   });
 }
 
+async function downloadGeneratorResultsAsImage() {
+  const t = translations[currentLanguage] || translations.en;
+  if (!generatorResultsEl || generatorResultsEl.children.length === 0) return;
+  
+  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+  try {
+    const canvas = await html2canvas(generatorResultsEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#020617", // Matches your body background
+      logging: false
+    });
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'VTS_1097_Top_Combos.png';
+    link.click();
+  } catch (e) {
+    console.error("Image capture failed", e);
+    showMessageBox("Error creating image.");
+  } finally {
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+  }
+}
 // --- FIRESTORE LISTENER (FIXED NaN) ---
 async function setupFirestoreListener() {
   const _db = getDb(); if (!_db || !userId) return; db = _db;
