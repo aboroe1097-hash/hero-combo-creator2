@@ -17,7 +17,7 @@
 
 // --- Season 3 ---
 // "War Lord", "Jane", "Sky Breaker", "Rokuboshuten", "Bleeding Steed", 
-// "Rozen Blade", "Celopatrra VII", "Ceasar"
+// "Rozen Blade", "Celopatrra VII", "Caesar"
 
 // --- Season 4 ---
 // "Desert Storm", "Soaring Hawk", "The Brave", "Jade Eagle", 
@@ -28,11 +28,11 @@ export const rankedCombos = [
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Theodora", "The Brave", "Jade Eagle"] },
-  { heroes: ["Octavius", "Cleopatrra VII", "Ceasar"] },
+  { heroes: ["Octavius", "Cleopatrra VII", "Caesar"] },
   { heroes: ["King Arthur", "Bleeding Steed", "Cleopatrra VII"] },
 
   // --- TIER 2 (STRONG META) ---
-  { heroes: ["Octavius", "The Brave", "Ceasar"] },
+  { heroes: ["Octavius", "The Brave", "Caesar"] },
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },
   { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"] },
   { heroes: ["Alfred", "Bleeding Steed", "Cleopatrra VII"] },
