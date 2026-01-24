@@ -109,6 +109,14 @@ function updateTextContent() {
   document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
   document.getElementById('createComboTitle').textContent = t.createComboTitle;
   document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
+  // Translate Tabs
+  document.getElementById('tabManual').textContent = t.tabManual;
+  document.getElementById('tabGenerator').textContent = t.tabGenerator;
+
+  // Translate all Season Filter Pills
+  document.querySelectorAll('.filter-pill span').forEach((span, index) => {
+    span.textContent = `${t.seasonLabel} ${index}`;
+  });
   saveComboBtn.textContent = t.saveComboBtn;
   clearComboBtn.textContent = t.clearComboBtn;
   downloadCombosBtn.textContent = t.downloadCombosBtn;
