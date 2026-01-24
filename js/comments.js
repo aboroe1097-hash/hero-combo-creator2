@@ -20,13 +20,9 @@ const commentsList = document.getElementById('commentsList');
  */
 export async function initComments() {
   try {
-    // Ensure anonymous auth (or existing auth)
-    await ensureAnonymousAuth();
-
-    // Wire UI + start realtime listener
+    // Wire UI + start realtime listener without re-triggering auth if already ready
     wireCommentsUI();
     await startCommentsListener();
-
     console.log('[comments] initialized');
   } catch (err) {
     console.error('[comments] init error:', err);
@@ -219,3 +215,4 @@ function wireCommentsUI() {
     }
   });
 }
+
