@@ -37,6 +37,7 @@ export const translations = {
     generatorNoCombosAvailable: "No ranked combos available for this selection yet.",
     generatorComboLabel: "Combo",
     generatorScoreLabel: "Score:",
+    generatorDownloadBtn: "Download Results as Image",
     generatorEmptySlotLabel: "No available combo for this slot yet."
   },
   es: {
@@ -73,7 +74,9 @@ export const translations = {
     generatorNoCombosAvailable: "No hay combos para esta selección.",
     generatorComboLabel: "Combo",
     generatorScoreLabel: "Puntuación:",
+    generatorDownloadBtn: "Descargar Resultados como Imagen",
     generatorEmptySlotLabel: "No hay combo para esta ranura."
+    
   },
   pt: {
     appTitle: "Criador de Combos",
@@ -109,6 +112,7 @@ export const translations = {
     generatorNoCombosAvailable: "Nenhum combo disponível.",
     generatorComboLabel: "Combo",
     generatorScoreLabel: "Pontuação:",
+    generatorDownloadBtn: "Baixar Resultados como Imagem",
     generatorEmptySlotLabel: "Nenhum combo disponível."
   },
   de: {
@@ -145,6 +149,7 @@ export const translations = {
     generatorNoCombosAvailable: "Keine Kombos für diese Auswahl.",
     generatorComboLabel: "Kombination",
     generatorScoreLabel: "Ergebnis:",
+    generatorDownloadBtn: "Ergebnisse als Bild speichern",
     generatorEmptySlotLabel: "Keine Kombi für diesen Slot."
   },
   ru: {
@@ -181,6 +186,7 @@ export const translations = {
     generatorNoCombosAvailable: "Нет доступных комбо.",
     generatorComboLabel: "Комбо",
     generatorScoreLabel: "Оценка:",
+    generatorDownloadBtn: "Скачать результаты как фото",
     generatorEmptySlotLabel: "Для этого слота нет комбо."
   },
   fr: {
@@ -215,6 +221,7 @@ export const translations = {
     generatorNoHeroesSelected: "Aucun héros sélectionné.",
     generatorMinHeroesMessage: "Sélectionnez au moins 15 héros.",
     generatorNoCombosAvailable: "Aucun combo disponible.",
+    generatorDownloadBtn: "Télécharger l'image des résultats",
     generatorComboLabel: "Combo",
     generatorScoreLabel: "Score :",
     generatorEmptySlotLabel: "Aucun combo disponible."
@@ -252,6 +259,7 @@ export const translations = {
     generatorMinHeroesMessage: "请至少选择 15 名英雄。",
     generatorNoCombosAvailable: "当前选择无匹配组合。",
     generatorComboLabel: "组合",
+    generatorDownloadBtn: "下载结果图片",
     generatorScoreLabel: "评分：",
     generatorEmptySlotLabel: "此槽位暂无可用组合。"
   },
@@ -288,6 +296,7 @@ export const translations = {
     generatorMinHeroesMessage: "Lütfen en az 15 kahraman seçin.",
     generatorNoCombosAvailable: "Bu seçim için uygun kombo yok.",
     generatorComboLabel: "Kombo",
+    generatorDownloadBtn: "Sonuçları Resim Olarak İndir",
     generatorScoreLabel: "Puan:",
     generatorEmptySlotLabel: "Bu yuva için kombo yok."
   },
@@ -324,6 +333,7 @@ export const translations = {
     generatorMinHeroesMessage: "Pilih minimal 15 hero.",
     generatorNoCombosAvailable: "Tidak ada kombo untuk pilihan ini.",
     generatorComboLabel: "Kombo",
+    generatorDownloadBtn: "Unduh Hasil sebagai Gambar",
     generatorScoreLabel: "Skor:",
     generatorEmptySlotLabel: "Slot ini kosong."
   },
@@ -360,6 +370,7 @@ export const translations = {
     generatorMinHeroesMessage: "يرجى اختيار 15 بطلاً على الأقل.",
     generatorNoCombosAvailable: "لا توجد تشكيلات متاحة لهذا الاختيار.",
     generatorComboLabel: "تشكيلة",
+    generatorDownloadBtn: "مشاركة النتائج كصورة",
     generatorScoreLabel: "النتيجة:",
     generatorEmptySlotLabel: "لا توجد تشكيلة لهذا القسم."
   },
@@ -397,6 +408,8 @@ export const translations = {
     generatorNoCombosAvailable: "사용 가능한 조합이 없습니다.",
     generatorComboLabel: "조합",
     generatorScoreLabel: "점수:",
+    generatorDownloadBtn: "결과를 이미지로 저장",
     generatorEmptySlotLabel: "이 슬롯에 조합이 없습니다."
   }
 };
+
