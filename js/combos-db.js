@@ -1,7 +1,7 @@
 // js/combos-db.js
 // Simple ranked combos DB: each entry = 3 heroes + score.
 // Mapping order: [Front, Middle, Back]
-// Data extracted from VTS 1097 "Last Best Combos" 
+// Higher Score = Better
 
 export const rankedCombos = [
   // --- High Tier Meta (Top Performers) ---
@@ -12,10 +12,6 @@ export const rankedCombos = [
   {
     heroes: ["Octavius", "Cleopatra VII", "Caesar"],
     score: 98
-  },
-  {
-    heroes: ["Sky Breaker", "Ramses II", "Al Fatih"],
-    score: 97
   },
   {
     heroes: ["Charles Great", "Inquisitor", "Witch Hunter"],
