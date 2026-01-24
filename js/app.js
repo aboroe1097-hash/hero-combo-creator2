@@ -1,4 +1,4 @@
-// js/app.js - Fixed & Polished Version b2.2
+// js/app.js - Fixed & Polished Version b2.3
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -18,7 +18,6 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const messageBox = document.getElementById('messageBox');
 const messageText = document.getElementById('messageText');
 const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
-const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
 const shareAllCombosBtn = document.getElementById('shareAllCombosBtn');
 const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 
@@ -93,260 +92,174 @@ function getHeroImageUrl(heroName) {
   const hero = allHeroesData.find((h) => h.name === heroName);
   return hero?.imageUrl || `https://placehold.co/128x128/374151/e2e8f0?text=${encodeURIComponent(heroName)}`;
 }
-
-function showLoadingSpinner() {
-  if (!loadingSpinner) return;
-  loadingSpinner.classList.remove('hidden');
+function showMessageBox(message) {
+  if (!messageBox) { alert(message); return; }
+  messageText.textContent = message; messageBox.classList.remove('hidden');
+  messageBoxOkBtn.onclick = () => messageBox.classList.add('hidden');
 }
-function hideLoadingSpinner() { if (loadingSpinner) loadingSpinner.classList.add('hidden'); }
 
 // --- TRANSLATION LOGIC (FIXED) ---
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
-  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
-  // Header and Manual Section
+  
+  // Headers & Manual
   document.getElementById('appTitle').textContent = t.appTitle;
+  document.getElementById('tabManual').textContent = t.tabManual;
+  document.getElementById('tabGenerator').textContent = t.tabGenerator;
   document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
   document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
   document.getElementById('createComboTitle').textContent = t.createComboTitle;
   document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
-  // Translate Tabs
-  document.getElementById('tabManual').textContent = t.tabManual;
-  document.getElementById('tabGenerator').textContent = t.tabGenerator;
-
-  // Translate all Season Filter Pills
-  document.querySelectorAll('.filter-pill span').forEach((span, index) => {
-    span.textContent = `${t.seasonLabel} ${index}`;
-  });
   saveComboBtn.textContent = t.saveComboBtn;
   clearComboBtn.textContent = t.clearComboBtn;
   downloadCombosBtn.textContent = t.downloadCombosBtn;
   shareAllCombosBtn.textContent = t.shareAllCombosBtn;
 
-  // Combo Generator Section (Targeting correct children in index.html)
-  const genTitle = generatorSection.querySelector('h2');
-  if (genTitle) genTitle.textContent = t.generatorTitle;
-  
-  const genIntro = generatorSection.querySelector('p');
-  if (genIntro) genIntro.innerHTML = t.generatorIntro;
-
-  const genFilterTitle = generatorSection.querySelector('h3');
-  if (genFilterTitle) genFilterTitle.textContent = t.filterBySeasonTitle;
-
-  const selectVisibleBtn = document.getElementById('genSelectAllBtn');
-  if (selectVisibleBtn) selectVisibleBtn.textContent = t.generatorSelectAll;
-
-  const clearSelectBtn = document.getElementById('genClearAllBtn');
-  if (clearSelectBtn) clearSelectBtn.textContent = t.generatorClearAll;
-
+  // Generator
+  document.getElementById('genToolTitle').textContent = t.generatorTitle;
+  document.getElementById('genIntroText').innerHTML = t.generatorIntro;
+  document.getElementById('genFilterTitle').textContent = t.filterBySeasonTitle;
+  document.getElementById('genSelectTitle').textContent = t.generatorSelectAll;
+  document.getElementById('genSelectAllBtn').textContent = t.generatorSelectAll;
+  document.getElementById('genClearAllBtn').textContent = t.generatorClearAll;
   generateCombosBtn.textContent = t.generatorGenerateBtn;
+  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
 
-  // Empty state visual
+  // Season labels in Pills
+  document.querySelectorAll('.filter-pill span').forEach((span, index) => {
+    span.textContent = `${t.seasonLabel} ${index % 5}`;
+  });
+
   if (generatorResultsEl.children.length === 0) {
     generatorResultsEl.innerHTML = `<div class="empty-results-placeholder">${t.generatorNoHeroesSelected}</div>`;
   }
 }
 
-// --- COMBO GENERATOR LOGIC ---
+// --- CORE RENDERING ---
+function renderAvailableHeroes() {
+  if (!availableHeroesEl) return; availableHeroesEl.innerHTML = '';
+  allHeroesData.filter(h => selectedSeasons.includes(h.season)).forEach(hero => {
+    const card = document.createElement('div'); card.className = 'hero-card'; card.draggable = true;
+    card.dataset.heroName = hero.name; const tagColor = seasonColors[hero.season] || '#f97316';
+    card.innerHTML = `<span class="hero-tag" style="background:${tagColor}">${hero.season}</span><img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
+    card.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', hero.name));
+    availableHeroesEl.appendChild(card);
+  });
+}
+
 function renderGeneratorHeroes() {
-  if (!generatorHeroesEl) return;
-  generatorHeroesEl.innerHTML = '';
+  if (!generatorHeroesEl) return; generatorHeroesEl.innerHTML = '';
   allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(hero => {
     const card = document.createElement('button');
     card.className = `hero-card generator-card ${generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''}`;
-    card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
-      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
-    card.onclick = () => {
-      if (generatorSelectedHeroes.has(hero.name)) { generatorSelectedHeroes.delete(hero.name); card.classList.remove('generator-card-selected'); }
-      else { generatorSelectedHeroes.add(hero.name); card.classList.add('generator-card-selected'); }
-    };
+    card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span><img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
+    card.onclick = () => { if (generatorSelectedHeroes.has(hero.name)) { generatorSelectedHeroes.delete(hero.name); card.classList.remove('generator-card-selected'); } else { generatorSelectedHeroes.add(hero.name); card.classList.add('generator-card-selected'); } };
     generatorHeroesEl.appendChild(card);
   });
 }
 
+function updateComboSlotDisplay(slot, name, idx) {
+  const t = translations[currentLanguage] || translations.en;
+  if (name) {
+    slot.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span class="bottom-2 text-white bg-black/50 px-2 py-1 rounded text-xs w-full truncate">${name}</span>`;
+    slot.classList.add('relative', 'p-0');
+  } else {
+    slot.innerHTML = `<div class="combo-slot-placeholder"><span class="text-5xl font-bold text-blue-400">+</span><span class="text-xs text-gray-300">${t.dragHeroHere}</span></div>`;
+    slot.classList.remove('relative', 'p-0');
+  }
+}
+
+// --- COMBO GENERATOR ACTIONS ---
+async function downloadGeneratorResultsAsImage() {
+  if (!generatorResultsEl || generatorResultsEl.children.length === 0) return;
+  loadingSpinner.classList.remove('hidden');
+  try {
+    const canvas = await html2canvas(generatorResultsEl, { scale: 2, useCORS: true, backgroundColor: "#020617", logging: false });
+    const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'Top_Combos.png'; link.click();
+  } catch (e) { console.error(e); } finally { loadingSpinner.classList.add('hidden'); }
+}
+
+function generateBestCombos() {
+  const t = translations[currentLanguage] || translations.en;
+  const selected = Array.from(generatorSelectedHeroes);
+  if (selected.length < 15) { showMessageBox(t.generatorMinHeroesMessage); return; }
+  const ownedSet = new Set(selected);
+  const eligible = rankedCombos.filter(c => c.heroes.every(h => ownedSet.has(h)));
+  eligible.sort((a, b) => (b.score || 0) - (a.score || 0));
+  renderGeneratorResults(eligible);
+  if (eligible.length > 0) downloadGeneratorBtn.classList.remove('hidden');
+}
+
 function renderGeneratorResults(bestCombos) {
   const t = translations[currentLanguage] || translations.en;
-  generatorResultsEl.innerHTML = '';
-  generatorResultsEl.classList.remove('empty-results-border');
-
-  if (bestCombos.length === 0) {
-    generatorResultsEl.classList.add('empty-results-border');
-    generatorResultsEl.innerHTML = `<p class="text-sm text-slate-300 text-center w-full py-8">${t.generatorNoCombosAvailable}</p>`;
-    return;
-  }
-
+  generatorResultsEl.innerHTML = ''; generatorResultsEl.classList.remove('empty-results-border');
+  if (bestCombos.length === 0) { generatorResultsEl.classList.add('empty-results-border'); generatorResultsEl.innerHTML = `<p class="text-center py-8">${t.generatorNoCombosAvailable}</p>`; return; }
   bestCombos.slice(0, 5).forEach((combo, i) => {
-    const card = document.createElement('div');
-    card.className = 'generated-combo-card';
+    const card = document.createElement('div'); card.className = 'generated-combo-card';
     const slots = document.createElement('div'); slots.className = 'saved-combo-slots';
-    combo.heroes.forEach(name => {
-      const item = document.createElement('div'); item.className = 'saved-combo-slot-item';
-      item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`;
-      slots.appendChild(item);
-    });
+    combo.heroes.forEach(name => { const item = document.createElement('div'); item.className = 'saved-combo-slot-item'; item.innerHTML = `<img src="${getHeroImageUrl(name)}" crossorigin="anonymous"><span>${name}</span>`; slots.appendChild(item); });
     card.innerHTML = `<span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>`;
     card.appendChild(slots);
-    const score = document.createElement('div'); score.className = 'text-sm font-semibold text-sky-300 ml-4';
-    score.textContent = `${t.generatorScoreLabel} ${combo.score}`;
-    card.appendChild(score);
+    const score = document.createElement('div'); score.className = 'text-sm font-semibold text-sky-300 ml-4'; score.textContent = `${t.generatorScoreLabel} ${combo.score}`; card.appendChild(score);
     generatorResultsEl.appendChild(card);
   });
 }
 
-async function downloadGeneratorResultsAsImage() {
-  const t = translations[currentLanguage] || translations.en;
-  if (!generatorResultsEl || generatorResultsEl.children.length === 0) return;
-  
-  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
-  try {
-    const canvas = await html2canvas(generatorResultsEl, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#020617", // Matches your body background
-      logging: false
-    });
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = 'VTS_1097_Top_Combos.png';
-    link.click();
-  } catch (e) {
-    console.error("Image capture failed", e);
-    showMessageBox("Error creating image.");
-  } finally {
-    if (loadingSpinner) loadingSpinner.classList.add('hidden');
-  }
-}
-// --- FIRESTORE LISTENER (FIXED NaN) ---
+// --- FIRESTORE ---
 async function setupFirestoreListener() {
   const _db = getDb(); if (!_db || !userId) return; db = _db;
   const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
   const userCombosRef = collection(db, `users/${userId}/bestCombos`);
-  
   onSnapshot(query(userCombosRef, orderBy('timestamp', 'desc'), limit(100)), (snap) => {
-    savedCombosEl.innerHTML = '';
-    noCombosMessage.classList.toggle('hidden', !snap.empty);
-    
-    // Use an external counter to avoid NaN issues
+    savedCombosEl.innerHTML = ''; noCombosMessage.classList.toggle('hidden', !snap.empty);
     let counter = 1;
     snap.forEach((d) => {
       const heroes = d.data().heroes || [];
-      const row = document.createElement('div');
-      row.className = 'saved-combo-display';
+      const row = document.createElement('div'); row.className = 'saved-combo-display';
       row.innerHTML = `<span class="saved-combo-number">${counter}</span><div class="saved-combo-slots"></div>`;
-      
-      const slotsContainer = row.querySelector('.saved-combo-slots');
-      heroes.forEach(name => {
-        const item = document.createElement('div');
-        item.className = 'saved-combo-slot-item';
-        item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`;
-        slotsContainer.appendChild(item);
-      });
-      
-      const delBtn = document.createElement('button');
-      delBtn.className = 'remove-combo-btn';
-      delBtn.textContent = 'X';
-      delBtn.onclick = async () => { if(confirm('Delete combo?')) await deleteDoc(doc(userCombosRef, d.id)); };
-      
-      row.appendChild(delBtn);
-      savedCombosEl.appendChild(row);
-      counter++; 
+      const slots = row.querySelector('.saved-combo-slots');
+      heroes.forEach(name => { const item = document.createElement('div'); item.className = 'saved-combo-slot-item'; item.innerHTML = `<img src="${getHeroImageUrl(name)}"><span>${name}</span>`; slots.appendChild(item); });
+      const delBtn = document.createElement('button'); delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X'; 
+      delBtn.onclick = async () => { if(confirm('Delete?')) await deleteDoc(doc(userCombosRef, d.id)); }; row.appendChild(delBtn);
+      savedCombosEl.appendChild(row); counter++;
     });
-  });
+  }, (err) => { if (err.message.includes('quota')) showMessageBox("Hourly limit reached for the VTS database. Try again in an hour."); });
+}
+
+async function saveCombo() {
+  const t = translations[currentLanguage] || translations.en;
+  if (currentCombo.includes(null)) return showMessageBox(t.messagePleaseDrag3Heroes);
+  loadingSpinner.classList.remove('hidden');
+  try {
+    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    await addDoc(collection(db, `users/${userId}/bestCombos`), { heroes: [...currentCombo], heroesKey: currentCombo.slice().sort().join(','), authorId: userId, timestamp: serverTimestamp() });
+    currentCombo = [null, null, null]; document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+  } catch (e) { if (e.message.includes('quota')) showMessageBox("Hourly limit reached."); } finally { loadingSpinner.classList.add('hidden'); }
 }
 
 // --- UI WIRING ---
 function wireUIActions() {
   languageSelect.value = currentLanguage;
-  languageSelect.onchange = (e) => {
-    currentLanguage = e.target.value;
-    localStorage.setItem('vts_hero_lang', currentLanguage); 
-    updateTextContent();
-    renderGeneratorHeroes(); 
-  };
-
-  const handleTabSwitch = (isManual) => {
-    const minH = Math.max(window.innerHeight * 0.7, 700) + "px";
-    manualSection.style.minHeight = minH;
-    generatorSection.style.minHeight = minH;
-    manualSection.classList.toggle('hidden', !isManual);
-    generatorSection.classList.toggle('hidden', isManual);
-    tabManualBtn.className = isManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive';
-    tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active';
-  };
-
-  tabManualBtn.onclick = () => handleTabSwitch(true);
-  tabGeneratorBtn.onclick = () => handleTabSwitch(false);
-
-  document.getElementById('seasonFilters').onchange = (e) => {
-    if (e.target.checked) selectedSeasons.push(e.target.value);
-    else selectedSeasons = selectedSeasons.filter(s => s !== e.target.value);
-    // Call renderAvailableHeroes() here if it's defined
-  };
-
-  generatorSeasonFilters.onchange = (e) => {
-    if (e.target.checked) { if (!generatorSelectedSeasons.includes(e.target.value)) generatorSelectedSeasons.push(e.target.value); }
-    else { generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== e.target.value); }
-    renderGeneratorHeroes();
-  };
-
-  document.getElementById('genSelectAllBtn').onclick = () => {
-    allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(h => generatorSelectedHeroes.add(h.name));
-    renderGeneratorHeroes();
-  };
-  
-  document.getElementById('genClearAllBtn').onclick = () => {
-    generatorSelectedHeroes.clear();
-    renderGeneratorHeroes();
-  };
-// Add inside wireUIActions()
-downloadGeneratorBtn.onclick = downloadGeneratorResultsAsImage;
-
-// Update the generateCombosBtn logic to show the download button
-const originalGenerate = generateCombosBtn.onclick;
-generateCombosBtn.onclick = () => {
-  // Run existing generation logic
-  const selected = Array.from(generatorSelectedHeroes);
-  if (selected.length < 15) {
-     alert(translations[currentLanguage].generatorMinHeroesMessage);
-     return;
-  }
-  const ownedSet = new Set(selected);
-  const eligible = rankedCombos.filter(c => c.heroes.every(h => ownedSet.has(h)));
-  eligible.sort((a, b) => (b.score || 0) - (a.score || 0));
-  renderGeneratorResults(eligible);
-  
-  // FIX: Show the button only if results exist
-  if (eligible.length > 0) {
-    downloadGeneratorBtn.classList.remove('hidden');
-  }
-};
-  
-  generateCombosBtn.onclick = () => {
-    const selected = Array.from(generatorSelectedHeroes);
-    if (selected.length < 15) {
-       alert(translations[currentLanguage].generatorMinHeroesMessage);
-       return;
-    }
-    const ownedSet = new Set(selected);
-    const eligible = rankedCombos.filter(c => c.heroes.every(h => ownedSet.has(h)));
-    eligible.sort((a, b) => (b.score || 0) - (a.score || 0));
-    renderGeneratorResults(eligible);
-  };
+  languageSelect.onchange = (e) => { currentLanguage = e.target.value; localStorage.setItem('vts_hero_lang', currentLanguage); updateTextContent(); renderGeneratorHeroes(); };
+  const handleTabSwitch = (isManual) => { const minH = Math.max(window.innerHeight * 0.7, 700) + "px"; manualSection.style.minHeight = minH; generatorSection.style.minHeight = minH; manualSection.classList.toggle('hidden', !isManual); generatorSection.classList.toggle('hidden', isManual); tabManualBtn.className = isManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive'; tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active'; };
+  tabManualBtn.onclick = () => handleTabSwitch(true); tabGeneratorBtn.onclick = () => handleTabSwitch(false);
+  document.getElementById('seasonFilters').onchange = (e) => { if (e.target.checked) selectedSeasons.push(e.target.value); else selectedSeasons = selectedSeasons.filter(s => s !== e.target.value); renderAvailableHeroes(); };
+  generatorSeasonFilters.onchange = (e) => { const val = e.target.value; if (e.target.checked) { if (!generatorSelectedSeasons.includes(val)) generatorSelectedSeasons.push(val); } else { generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== val); } renderGeneratorHeroes(); };
+  document.getElementById('genSelectAllBtn').onclick = () => { allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(h => generatorSelectedHeroes.add(h.name)); renderGeneratorHeroes(); };
+  document.getElementById('genClearAllBtn').onclick = () => { generatorSelectedHeroes.clear(); renderGeneratorHeroes(); };
+  saveComboBtn.onclick = saveCombo; generateCombosBtn.onclick = generateBestCombos; downloadGeneratorBtn.onclick = downloadGeneratorResultsAsImage;
 }
 
 // --- INIT ---
 (async function main() {
-  showLoadingSpinner();
-  wireUIActions();
-  updateTextContent();
-  renderGeneratorHeroes();
-  
+  wireUIActions(); updateTextContent(); renderAvailableHeroes(); renderGeneratorHeroes();
+  document.querySelectorAll('.combo-slot').forEach((slot, i) => {
+    updateComboSlotDisplay(slot, null, i);
+    slot.addEventListener('dragover', (e) => e.preventDefault());
+    slot.addEventListener('drop', (e) => { e.preventDefault(); const name = e.dataTransfer.getData('text/plain'); const idx = parseInt(slot.dataset.slotIndex); currentCombo[idx] = name; updateComboSlotDisplay(slot, name, idx); });
+  });
   try {
-    initFirebase();
-    const user = await ensureAnonymousAuth();
-    isAuthReady = true; userId = user.uid; db = getDb();
-    setupFirestoreListener();
-    initComments().catch(err => console.error(err));
-  } catch (err) { console.error('Init Error:', err); }
-  finally { hideLoadingSpinner(); }
+    initFirebase(); const user = await ensureAnonymousAuth(); isAuthReady = true; userId = user.uid; db = getDb();
+    setupFirestoreListener(); initComments().catch(err => console.error(err));
+  } catch (err) { console.error(err); } finally { hideLoadingSpinner(); }
 })();
