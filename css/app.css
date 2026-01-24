@@ -30,6 +30,52 @@ body {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 25px rgba(0,0,0,0.35);
 }
+
+/* Custom Filter Pills */
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: #1e293b; /* slate-800 */
+  border: 2px solid #334155; /* slate-700 */
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.filter-pill input {
+  display: none; /* Hide the ugly standard checkbox */
+}
+
+/* Active States with Season Colors */
+.filter-pill:has(input:checked) {
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+}
+
+.s0-pill:has(input:checked) { background: #475569; border-color: #9ca3af; }
+.s1-pill:has(input:checked) { background: #1e40af; border-color: #3b82f6; }
+.s2-pill:has(input:checked) { background: #7e22ce; border-color: #a855f7; }
+.s3-pill:has(input:checked) { background: #c2410c; border-color: #f97316; }
+.s4-pill:has(input:checked) { background: #a16207; border-color: #facc15; }
+
+/* Empty State Visuals for Generator */
+.empty-results-border {
+  border: 2px dashed #334155;
+  border-radius: 1rem;
+  padding: 2rem;
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.empty-results-placeholder {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
 .hero-card img {
   width: 86px;
   height: 86px;
@@ -278,5 +324,6 @@ body {
 
 /* small utility */
 .hidden { display: none !important; }
+
 
 
