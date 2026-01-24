@@ -49,10 +49,11 @@ export const rankedCombos = [
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },
 
   // --- TIER 3: SEASONAL SYNERGIES & SPECIALISTS ---
-  { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
-  { heroes: ["Sky Breaker", "Charles the Great", "Inquisitor"] }, // Anti-Heal focus
   { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             // Mixed Utility
-    { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
+  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] }, // Anti-Heal focus
+  { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
+  { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
+  { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
