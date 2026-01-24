@@ -43,7 +43,6 @@ export const rankedCombos = [
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },     // S4-S3 Transition
   { heroes: ["The Brave", "Rozen Blade", "Immortal"] },
   { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },
-  { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },
@@ -54,6 +53,7 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
+    { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
