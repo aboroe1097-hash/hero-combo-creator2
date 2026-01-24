@@ -25,11 +25,12 @@
 export const rankedCombos = [
   // --- TIER 1 (TOP META / GARRISON) ---
   { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },
+  { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] },
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Theodora", "The Brave", "Jade Eagle"] },
   { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },
-  { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] },
+
 
   // --- TIER 2 (STRONG META) ---
   { heroes: ["Octavius", "The Brave", "Caesar"] },
