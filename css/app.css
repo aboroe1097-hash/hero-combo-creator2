@@ -1,4 +1,4 @@
-/* Base font */
+/* Base font and Branding */
 :root {
   --brand: #0b66c3;
 }
@@ -25,10 +25,33 @@ body {
   min-height: 130px;
   position: relative;
 }
+
 .hero-card:active { cursor: grabbing; }
 .hero-card:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+}
+
+.hero-card img {
+  width: 86px;
+  height: 86px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+  object-fit: cover;
+  border: 2px solid #4b5563;
+}
+
+/* tiny rarity / season pill */
+.hero-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #0b1120;
+  background: #f97316;
 }
 
 /* Custom Filter Pills */
@@ -46,7 +69,7 @@ body {
 }
 
 .filter-pill input {
-  display: none; /* Hide the ugly standard checkbox */
+  display: none; /* Hide standard checkbox */
 }
 
 /* Active States with Season Colors */
@@ -76,32 +99,7 @@ body {
   font-size: 0.875rem;
 }
 
-.hero-card img {
-  width: 86px;
-  height: 86px;
-  border-radius: 9999px;
-  margin-bottom: 8px;
-  object-fit: cover;
-  border: 2px solid #4b5563;
-}
-
-/* tiny rarity / season pill */
-.hero-tag {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #0b1120;
-  background: #f97316; /* default orange, overridden in JS by season */
-}
-
-.combo-row {
-  gap: 0.75rem;
-}
-/* Combo slot */
+/* Manual Builder Combo slots */
 .combo-slot {
   display: flex;
   flex-direction: column;
@@ -113,31 +111,21 @@ body {
   border-radius: 0.5rem;
   background-color: #1f2937;
   margin: 0.5rem;
-  /* padding: 0.5rem;  <-- remove this */
   text-align: center;
   color: #9ca3af;
   font-size: 0.875rem;
   overflow: hidden;
   transition: all 0.2s ease;
-  gap: 4px; /* helps center + and text nicely */
-}
-
-.combo-slot-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
   gap: 4px;
 }
 
 .combo-slot.drag-over {
   border-style: solid;
-  border-color: #4ade80; /* green-400 */
-  background-color: #374151; /* gray-700 */
+  border-color: #4ade80;
+  background-color: #374151;
   box-shadow: 0 8px 30px rgba(0,0,0,0.3);
 }
+
 .combo-slot img {
   width: 100%;
   height: 100%;
@@ -145,68 +133,29 @@ body {
   border-radius: 0.5rem;
 }
 
-/* Comments */
-.comment-card {
-  background: #111827; /* darker card */
-  border-radius: 8px;
-  padding: 12px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  border: 1px solid rgba(255,255,255,0.03);
-}
-.comment-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  background: linear-gradient(180deg,#374151,#1f2937);
-  display: flex;
-  align-items:center;
-  justify-content:center;
-  color:#f8fafc;
-  font-weight:700;
-}
-.comment-body { flex:1; }
-.comment-meta {
-  font-size:0.85rem;
-  color:#9ca3af;
-  margin-bottom:6px;
-  display:flex;
-  justify-content:space-between;
-  gap:8px;
-  align-items:center;
-}
-.comment-text { color:#e6eef8; white-space:pre-wrap; }
-.comment-actions button {
-  background:transparent;
-  border:0;
-  color:#f97316;
-  cursor:pointer;
-  font-weight:600;
-  padding:4px;
-}
-
-/* Saved combos */
-.saved-combo-display {
+/* Saved combos & Generator Results Layout Fix */
+.saved-combo-display, .generated-combo-card {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   background-color: #374151;
-  padding: 16px;
-  margin: 8px;
+  padding: 12px 16px;
+  margin: 12px auto;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
-              0 2px 4px -1px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   position: relative;
-  padding-left: 96px;
+  /* FIX: Centers hero icons by providing a balanced gutter */
+  padding-left: 60px; 
   width: 100%;
   max-width: 768px;
   box-sizing: border-box;
 }
+
 .saved-combo-number {
   position: absolute;
-  left: 48px;
+  /* FIX: Center the orange badge within the 60px padding */
+  left: 30px; 
   background-color: #f97316;
   color: #111827;
   width: 32px;
@@ -215,24 +164,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
   transform: translateX(-50%);
   flex-shrink: 0;
-  line-height: 32px;
-  text-align: center;
+  line-height: 1;
 }
+
 .saved-combo-slots {
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
   flex-grow: 1;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
 }
+
 .saved-combo-slot-item {
   display: flex;
   flex-direction: column;
@@ -242,65 +192,36 @@ body {
   height: 112px;
   background-color: #4b5563;
   border-radius: 10px;
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.2);
   overflow: hidden;
   flex-shrink: 0;
 }
+
 .saved-combo-slot-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
 }
+
 .saved-combo-slot-item span {
-  font-size: 0.8rem;
-  margin-top: 4px;
+  font-size: 0.75rem;
+  margin-top: 2px;
   color: #93c5fd;
   text-align: center;
-  padding: 0 4px;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* buttons on each saved combo */
-.saved-combo-actions {
+/* Comments */
+.comment-card {
+  background: #111827;
+  border-radius: 8px;
+  padding: 12px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-left: 16px;
-  flex-shrink: 0;
-}
-.remove-combo-btn,
-.share-combo-btn {
-  padding: 8px;
-  border-radius: 9999px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25);
-  transition: background-color 0.15s, transform 0.15s;
-}
-.remove-combo-btn {
-  background-color: #dc2626;
-  color: white;
-}
-.remove-combo-btn:hover {
-  background-color: #b91c1c;
-  transform: translateY(-1px);
-}
-.share-combo-btn {
-  background-color: #0ea5e9;
-  color: #0f172a;
-}
-.share-combo-btn:hover {
-  background-color: #0284c7;
-  transform: translateY(-1px);
+  gap: 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
 }
 
 /* Loading spinner */
@@ -312,18 +233,34 @@ body {
   height: 36px;
   animation: spin 1s linear infinite;
   position: fixed;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   z-index: 1000;
 }
-@keyframes spin {
-  0% { transform: translate(-50%,-50%) rotate(0deg); }
-  100% { transform: translate(-50%,-50%) rotate(360deg); }
-}
 
-/* small utility */
+@keyframes spin { 0% { transform: translate(-50%,-50%) rotate(0deg); } 100% { transform: translate(-50%,-50%) rotate(360deg); } }
+
 .hidden { display: none !important; }
 
+/* Mobile Overrides */
+@media (max-width: 768px) {
+  .saved-combo-display, .generated-combo-card {
+    padding-left: 50px;
+    padding-right: 8px;
+  }
+  
+  .saved-combo-number {
+    left: 25px;
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
 
+  .saved-combo-slot-item {
+    width: 85px !important;
+    height: 85px !important;
+  }
 
+  /* Prevent grey tap highlight on mobile browsers */
+  * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+}
