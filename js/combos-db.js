@@ -52,10 +52,11 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
   { heroes: ["Sky Breaker", "Charles the Great", "Inquisitor"] }, // Anti-Heal focus
   { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             // Mixed Utility
+    { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
-  { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
+
   { heroes: ["War Lord", "Black Prince", "Jane"] },
   { heroes: ["War Lord", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
