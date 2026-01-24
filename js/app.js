@@ -129,7 +129,7 @@ function showMessageBox(message, onConfirm = null) {
     messageBoxCancelBtn.onclick = () => messageBox.classList.add('hidden');
   } else {
     messageBoxOkBtn.textContent = t.messageBoxOk || 'OK';
-    messageBoxOkBtn.onclick = () => messageBox.classList.add('hidden');
+    messageBoxOkBtn.onclick = () => { messageBox.classList.add('hidden'); };
     messageBoxCancelBtn.classList.add('hidden');
   }
 }
@@ -212,7 +212,7 @@ function updateComboSlotDisplay(slot, name, idx) {
   saveComboBtn.disabled = !isAuthReady || currentCombo.includes(null);
 }
 
-// --- GENERATOR LOGIC ---
+// --- COMBO GENERATOR LOGIC ---
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
@@ -248,8 +248,67 @@ function renderGeneratorResults(bestCombos) {
       card.appendChild(slots);
       const score = document.createElement('div'); score.className = 'text-sm font-semibold text-sky-300 ml-4 whitespace-nowrap';
       score.textContent = `${t.generatorScoreLabel} ${combo.score}`; card.appendChild(score);
-    } else { card.innerHTML = `<p class="text-xs text-slate-400 text-center w-full italic">${t.generatorEmptySlotLabel}</p>`; }
+    } else {
+      card.innerHTML = `<p class="text-xs text-slate-400 text-center w-full italic">${t.generatorEmptySlotLabel}</p>`;
+    }
     generatorResultsEl.appendChild(card);
+  }
+}
+
+// --- FIRESTORE LISTENER & SAVER ---
+async function setupFirestoreListener() {
+  const _db = getDb(); if (!_db || !userId) return; db = _db;
+  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const userCombosRef = collection(db, `users/${userId}/bestCombos`);
+  onSnapshot(query(userCombosRef, orderBy('timestamp', 'desc'), limit(100)), (snap) => {
+    savedCombosEl.innerHTML = ''; noCombosMessage.classList.toggle('hidden', !snap.empty);
+    userCombosData = [];
+    snap.forEach((d, i) => {
+      const heroes = d.data().heroes || []; userCombosData.push(heroes);
+      const row = document.createElement('div'); row.className = 'saved-combo-display';
+      row.innerHTML = `<span class="saved-combo-number">${i+1}</span><div class="saved-combo-slots"></div>`;
+      const slotsContainer = row.querySelector('.saved-combo-slots');
+      heroes.forEach(name => { const item = document.createElement('div'); item.className = 'saved-combo-slot-item'; item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`; slotsContainer.appendChild(item); });
+      const delBtn = document.createElement('button'); delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X'; 
+      delBtn.onclick = async () => { if(confirm('Delete combo?')) await deleteDoc(doc(userCombosRef, d.id)); }; 
+      row.appendChild(delBtn); savedCombosEl.appendChild(row);
+    });
+  }, (err) => {
+    console.error('Firestore Error:', err);
+    if (err.message.includes('quota')) {
+      showMessageBox("Database limit reached for this hour. Combos will reappear once the quota resets.");
+    }
+  });
+}
+
+async function saveCombo() {
+  const t = translations[currentLanguage] || translations.en;
+  if (currentCombo.includes(null)) return showMessageBox(t.messagePleaseDrag3Heroes);
+  
+  showLoadingSpinner();
+  try {
+    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    
+    // Attempt the write
+    await addDoc(collection(db, `users/${userId}/bestCombos`), {
+      heroes: [...currentCombo],
+      heroesKey: currentCombo.slice().sort().join(','),
+      authorId: userId,
+      timestamp: serverTimestamp()
+    });
+
+    currentCombo = [null, null, null];
+    document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+  } catch (e) {
+    console.error('Save failed:', e);
+    // Specific check for quota error based on logs
+    if (e.message && e.message.includes('quota')) {
+      showMessageBox("Hourly limit reached for the VTS community. Please try saving again in one hour.");
+    } else {
+      showMessageBox(t.messageErrorSavingCombo || "Error saving combo.");
+    }
+  } finally {
+    hideLoadingSpinner();
   }
 }
 
@@ -317,6 +376,7 @@ function wireUIActions() {
   };
   document.getElementById('genClearAllBtn').onclick = () => { generatorSelectedHeroes.clear(); renderGeneratorHeroes(); };
 
+  saveComboBtn.onclick = saveCombo;
   clearComboBtn.onclick = () => { currentCombo = [null, null, null]; document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i)); };
   generateCombosBtn.onclick = generateBestCombos;
 }
@@ -335,6 +395,7 @@ function wireUIActions() {
   try {
     initFirebase(); const user = await ensureAnonymousAuth();
     isAuthReady = true; userId = user.uid; db = getDb();
+    setupFirestoreListener(); // Fetches previously saved combos
     initComments().catch(err => console.error(err));
   } catch (err) { console.error('Init Error:', err); } finally { hideLoadingSpinner(); }
 })();
