@@ -238,7 +238,7 @@
       </div>
     </div>
 
-    <!-- ======================= -->
+       <!-- ======================= -->
     <!--   COMBO GENERATOR MODE  -->
     <!-- ======================= -->
     <div id="generatorMode" class="hidden mt-6">
@@ -249,10 +249,39 @@
         Select all heroes you currently have, then tap "Generate Best Combos".
       </p>
 
-      <!-- hero checklist -->
+      <!-- Season filters just for generator -->
+      <div class="mb-4 p-4 bg-gray-800 rounded-xl shadow-inner">
+        <h3 id="generatorFilterBySeasonTitle" class="text-lg font-semibold mb-3 text-gray-200">
+          Filter by Season
+        </h3>
+        <div id="generatorSeasonFilters" class="flex flex-wrap gap-4">
+          <label class="inline-flex items-center">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S0" checked>
+            <span class="ml-2 text-gray-300">Season 0</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S1" checked>
+            <span class="ml-2 text-gray-300">Season 1</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S2" checked>
+            <span class="ml-2 text-gray-300">Season 2</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S3" checked>
+            <span class="ml-2 text-gray-300">Season 3</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S4" checked>
+            <span class="ml-2 text-gray-300">Season 4</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Hero grid (same style as manual builder, click to select) -->
       <div id="ownedHeroesList"
-           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-        <!-- populated by JS -->
+           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
+        <!-- JS will render hero cards here -->
       </div>
 
       <div class="flex flex-wrap gap-3 mb-6">
@@ -274,36 +303,6 @@
         <!-- Top 5 generated combos render here -->
       </div>
     </div>
-  </div>
-
-  <!-- Comments Section (shared for both modes) -->
-  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner max-w-6xl mx-auto">
-    <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
-
-    <form id="commentForm" class="mb-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="commentName" type="text" placeholder="Your name (optional)"
-               class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
-        <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)"
-               class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
-      </div>
-      <textarea id="commentText" rows="3" required
-                placeholder="Write a suggestion or comment..."
-                class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white"
-                maxlength="1000"></textarea>
-
-      <div class="flex items-center justify-between mt-3">
-        <div class="text-sm text-gray-400">Be kind — comments are public.</div>
-        <button id="postCommentBtn" type="submit"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md">
-          Post Comment
-        </button>
-      </div>
-    </form>
-
-    <div id="commentsList" class="flex flex-col gap-3">
-      <!-- comments rendered here -->
-    </div>
   </section>
 
   <!-- module scripts -->
@@ -313,3 +312,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
