@@ -103,7 +103,7 @@ function hideLoadingSpinner() { if (loadingSpinner) loadingSpinner.classList.add
 // --- TRANSLATION LOGIC (FIXED) ---
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
-  
+  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
   // Header and Manual Section
   document.getElementById('appTitle').textContent = t.appTitle;
   document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
@@ -298,7 +298,29 @@ function wireUIActions() {
     generatorSelectedHeroes.clear();
     renderGeneratorHeroes();
   };
+// Add inside wireUIActions()
+downloadGeneratorBtn.onclick = downloadGeneratorResultsAsImage;
 
+// Update the generateCombosBtn logic to show the download button
+const originalGenerate = generateCombosBtn.onclick;
+generateCombosBtn.onclick = () => {
+  // Run existing generation logic
+  const selected = Array.from(generatorSelectedHeroes);
+  if (selected.length < 15) {
+     alert(translations[currentLanguage].generatorMinHeroesMessage);
+     return;
+  }
+  const ownedSet = new Set(selected);
+  const eligible = rankedCombos.filter(c => c.heroes.every(h => ownedSet.has(h)));
+  eligible.sort((a, b) => (b.score || 0) - (a.score || 0));
+  renderGeneratorResults(eligible);
+  
+  // FIX: Show the button only if results exist
+  if (eligible.length > 0) {
+    downloadGeneratorBtn.classList.remove('hidden');
+  }
+};
+  
   generateCombosBtn.onclick = () => {
     const selected = Array.from(generatorSelectedHeroes);
     if (selected.length < 15) {
