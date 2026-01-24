@@ -182,9 +182,16 @@ function renderGeneratorHeroes() {
     card.className = `hero-card generator-card ${generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''}`;
     card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
       <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
-    card.onclick = () => {
-      if (generatorSelectedHeroes.has(hero.name)) { generatorSelectedHeroes.delete(hero.name); card.classList.remove('generator-card-selected'); }
-      else { generatorSelectedHeroes.add(hero.name); card.classList.add('generator-card-selected'); }
+    // Inside renderGeneratorHeroes function in js/app.js
+    card.onclick = (e) => {
+      // Toggle the visual class immediately for instant feedback
+      const isSelected = card.classList.toggle('generator-card-selected');
+      
+      if (isSelected) {
+        generatorSelectedHeroes.add(hero.name);
+      } else {
+        generatorSelectedHeroes.delete(hero.name);
+      }
     };
     generatorHeroesEl.appendChild(card);
   });
