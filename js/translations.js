@@ -11,38 +11,39 @@ export const translations = {
     downloadCombosBtn: "Download All Combos as Image",
     shareAllCombosBtn: "Share All Combos as Text",
     lastBestCombosTitle: "Last Best Combos",
-    noCombosMessage:
-      "No combos saved yet. Drag heroes and click 'Save Current Combo'!",
-    messagePleaseDrag3Heroes:
-      "Please drag 3 heroes to form a complete combo before saving!",
-    messageAuthNotReady:
-      "Authentication not ready. Please wait a moment and try again.",
+    noCombosMessage: "No combos saved yet. Drag heroes and click 'Save Current Combo'!",
+    messagePleaseDrag3Heroes: "Please drag 3 heroes to form a complete combo before saving!",
+    messageAuthNotReady: "Authentication not ready. Please wait a moment and try again.",
     messageComboAlreadySaved: "This exact combo is already saved!",
     messageComboSavedSuccess: "Combo saved successfully!",
     messageErrorSavingCombo: "Error saving combo:",
     messageConfirmRemoveCombo: "Are you sure you want to remove this combo?",
     messageComboRemovedSuccess: "Combo removed successfully!",
     messageErrorRemovingCombo: "Error removing combo:",
-    messageNoCombosToDownload:
-      "No combos to download. Please save some combos first!",
+    messageNoCombosToDownload: "No combos to download. Please save some combos first!",
     messageCombosDownloadedSuccess: "Combos downloaded successfully!",
     messageErrorDownloadingCombos: "Error downloading combos:",
-    messageCrossOriginWarning:
-      "If images are missing, it might be due to cross-origin restrictions.",
-    messageHeroAlreadyInSlot:
-      'Hero "{heroName}" is already in another slot in the current combo.',
+    messageCrossOriginWarning: "If images are missing, it might be due to cross-origin restrictions.",
+    messageHeroAlreadyInSlot: 'Hero "{heroName}" is already in another slot in the current combo.',
     messageFirebaseInitError: "Firebase initialization error:",
     messageAuthError: "Authentication error: {errorMessage}.",
     messageErrorLoadingCombos: "Error loading saved combos:",
-    messageNoCombosToShare:
-      "No combos to share. Please save at least one combo first!",
-    messageShareTextCopied:
-      "Share text copied. You can paste it into your chat or group.",
+    messageNoCombosToShare: "No combos to share. Please save at least one combo first!",
+    messageShareTextCopied: "Share text copied. You can paste it into your chat or group.",
     messageShareFailed: "Sharing failed. Please try again.",
     shareComboTooltip: "Share this combo as text",
     messageBoxConfirm: "Confirm",
     messageBoxCancel: "Cancel",
     messageBoxOk: "OK",
+    generatorTitle: "Combo Generator (Top 5)",
+    generatorIntro: "Select all heroes you currently have, then tap \"Generate Best Combos\".",
+    generatorSelectAll: "Select All",
+    generatorClearAll: "Clear All",
+    generatorGenerateBtn: "Generate Best Combos",
+    generatorComboLabel: "Combo",
+    generatorScoreLabel: "Score:",
+    generatorMinHeroesMessage: "Please select at least 15 heroes to generate the top 5 combos.",
+    generatorEmptySlotLabel: "Not enough heroes selected or combos available for this slot. Add more heroes to unlock it.",
   },
 
   es: {
@@ -56,38 +57,39 @@ export const translations = {
     downloadCombosBtn: "Descargar Todos los Combos como Imagen",
     shareAllCombosBtn: "Compartir Todos los Combos como Texto",
     lastBestCombosTitle: "Últimos Mejores Combos",
-    noCombosMessage:
-      "Aún no hay combos guardados. ¡Arrastra héroes y haz clic en 'Guardar Combo Actual'!",
-    messagePleaseDrag3Heroes:
-      "¡Por favor, arrastra 3 héroes para formar un combo completo antes de guardar!",
-    messageAuthNotReady:
-      "Autenticación no lista. Por favor, espera un momento e inténtalo de nuevo.",
+    noCombosMessage: "Aún no hay combos guardados. ¡Arrastra héroes y haz clic en 'Guardar Combo Actual'!",
+    messagePleaseDrag3Heroes: "¡Por favor, arrastra 3 héroes para formar un combo completo antes de guardar!",
+    messageAuthNotReady: "Autenticación no lista. Por favor, espera un momento e inténtalo de nuevo.",
     messageComboAlreadySaved: "¡Este combo ya está guardado!",
     messageComboSavedSuccess: "¡Combo guardado exitosamente!",
     messageErrorSavingCombo: "Error al guardar el combo:",
     messageConfirmRemoveCombo: "¿Estás seguro de que quieres eliminar este combo?",
     messageComboRemovedSuccess: "¡Combo eliminado exitosamente!",
     messageErrorRemovingCombo: "Error al eliminar el combo:",
-    messageNoCombosToDownload:
-      "No hay combos para descargar. ¡Por favor, guarda algunos combos primero!",
+    messageNoCombosToDownload: "No hay combos para descargar. ¡Por favor, guarda algunos combos primero!",
     messageCombosDownloadedSuccess: "¡Combos descargados exitosamente!",
     messageErrorDownloadingCombos: "Error al descargar combos:",
-    messageCrossOriginWarning:
-      "Si faltan imágenes, podría deberse a restricciones de origen cruzado.",
-    messageHeroAlreadyInSlot:
-      'El héroe "{heroName}" ya está en otra ranura del combo actual.',
+    messageCrossOriginWarning: "Si faltan imágenes, podría deberse a restricciones de origen cruzado.",
+    messageHeroAlreadyInSlot: 'El héroe "{heroName}" ya está en otra ranura del combo actual.',
     messageFirebaseInitError: "Error de inicialización de Firebase:",
     messageAuthError: "Error de autenticación: {errorMessage}.",
     messageErrorLoadingCombos: "Error al cargar los combos guardados:",
-    messageNoCombosToShare:
-      "No hay combos para compartir. ¡Guarda al menos un combo primero!",
-    messageShareTextCopied:
-      "Texto para compartir copiado. Puedes pegarlo en tu chat o grupo.",
+    messageNoCombosToShare: "No hay combos para compartir. ¡Guarda al menos un combo primero!",
+    messageShareTextCopied: "Texto para compartir copiado. Puedes pegarlo en tu chat o grupo.",
     messageShareFailed: "Error al compartir. Inténtalo de nuevo.",
     shareComboTooltip: "Compartir este combo como texto",
     messageBoxConfirm: "Confirmar",
     messageBoxCancel: "Cancelar",
     messageBoxOk: "Aceptar",
+    generatorTitle: "Generador de Combos (Top 5)",
+    generatorIntro: "Selecciona todos los héroes que tienes actualmente, luego toca \"Generar mejores combos\".",
+    generatorSelectAll: "Seleccionar todo",
+    generatorClearAll: "Limpiar todo",
+    generatorGenerateBtn: "Generar mejores combos",
+    generatorComboLabel: "Combo",
+    generatorScoreLabel: "Puntuación:",
+    generatorMinHeroesMessage: "Selecciona al menos 15 héroes para generar los 5 mejores combos.",
+    generatorEmptySlotLabel: "No hay suficientes héroes seleccionados o combos disponibles para este espacio. Agrega más héroes para desbloquearlo.",
   },
 
   pt: {
@@ -101,39 +103,39 @@ export const translations = {
     downloadCombosBtn: "Baixar Todos os Combos como Imagem",
     shareAllCombosBtn: "Compartilhar Todos os Combos em Texto",
     lastBestCombosTitle: "Últimos Melhores Combos",
-    noCombosMessage:
-      "Nenhum combo salvo ainda. Arraste heróis e clique em 'Salvar Combo Atual'!",
-    messagePleaseDrag3Heroes:
-      "Por favor, arraste 3 heróis para formar um combo completo antes de salvar!",
-    messageAuthNotReady:
-      "Autenticação não pronta. Por favor, aguarde um momento e tente novamente.",
+    noCombosMessage: "Nenhum combo salvo ainda. Arraste heróis e clique em 'Salvar Combo Atual'!",
+    messagePleaseDrag3Heroes: "Por favor, arraste 3 heróis para formar um combo completo antes de salvar!",
+    messageAuthNotReady: "Autenticação não pronta. Por favor, aguarde um momento e tente novamente.",
     messageComboAlreadySaved: "Este combo já está salvo!",
     messageComboSavedSuccess: "Combo salvo com sucesso!",
     messageErrorSavingCombo: "Erro ao salvar combo:",
-    messageConfirmRemoveCombo:
-      "Tem certeza de que deseja remover este combo?",
+    messageConfirmRemoveCombo: "Tem certeza de que deseja remover este combo?",
     messageComboRemovedSuccess: "Combo removido com sucesso!",
     messageErrorRemovingCombo: "Erro ao remover combo:",
-    messageNoCombosToDownload:
-      "Nenhum combo para baixar. Por favor, salve alguns combos primeiro!",
+    messageNoCombosToDownload: "Nenhum combo para baixar. Por favor, salve alguns combos primeiro!",
     messageCombosDownloadedSuccess: "Combos baixados com sucesso!",
     messageErrorDownloadingCombos: "Erro ao baixar combos:",
-    messageCrossOriginWarning:
-      "Se as imagens estiverem faltando, pode ser devido a restrições de origem cruzada.",
-    messageHeroAlreadyInSlot:
-      'O herói "{heroName}" já está em outro slot no combo atual.',
+    messageCrossOriginWarning: "Se as imagens estiverem faltando, pode ser devido a restrições de origem cruzada.",
+    messageHeroAlreadyInSlot: 'O herói "{heroName}" já está em outro slot no combo atual.',
     messageFirebaseInitError: "Erro de inicialização do Firebase:",
     messageAuthError: "Erro de autenticação: {errorMessage}.",
     messageErrorLoadingCombos: "Erro ao carregar combos salvos:",
-    messageNoCombosToShare:
-      "Nenhum combo para compartilhar. Salve pelo menos um combo primeiro!",
-    messageShareTextCopied:
-      "Texto de compartilhamento copiado. Você pode colá-lo no seu chat ou grupo.",
+    messageNoCombosToShare: "Nenhum combo para compartilhar. Salve pelo menos um combo primeiro!",
+    messageShareTextCopied: "Texto de compartilhamento copiado. Você pode colá-lo no seu chat ou grupo.",
     messageShareFailed: "Falha ao compartilhar. Tente novamente.",
     shareComboTooltip: "Compartilhar este combo em texto",
     messageBoxConfirm: "Confirmar",
     messageBoxCancel: "Cancelar",
     messageBoxOk: "OK",
+    generatorTitle: "Gerador de Combos (Top 5)",
+    generatorIntro: "Selecione todos os heróis que você possui no momento e toque em \"Gerar melhores combos\".",
+    generatorSelectAll: "Selecionar tudo",
+    generatorClearAll: "Limpar tudo",
+    generatorGenerateBtn: "Gerar melhores combos",
+    generatorComboLabel: "Combo",
+    generatorScoreLabel: "Pontuação:",
+    generatorMinHeroesMessage: "Selecione pelo menos 15 heróis para gerar os 5 melhores combos.",
+    generatorEmptySlotLabel: "Não há heróis suficientes selecionados ou combos disponíveis para este espaço. Adicione mais heróis para desbloqueá-lo.",
   },
 
   de: {
@@ -147,41 +149,39 @@ export const translations = {
     downloadCombosBtn: "Alle Kombinationen als Bild herunterladen",
     shareAllCombosBtn: "Alle Kombinationen als Text teilen",
     lastBestCombosTitle: "Letzte beste Kombinationen",
-    noCombosMessage:
-      "Noch keine Kombinationen gespeichert. Ziehe Helden und klicke auf 'Aktuelle Kombination speichern'!",
-    messagePleaseDrag3Heroes:
-      "Bitte ziehe 3 Helden, um eine vollständige Kombination zu bilden, bevor du speicherst!",
-    messageAuthNotReady:
-      "Authentifizierung nicht bereit. Bitte warte einen Moment und versuche es erneut.",
+    noCombosMessage: "Noch keine Kombinationen gespeichert. Ziehe Helden und klicke auf 'Aktuelle Kombination speichern'!",
+    messagePleaseDrag3Heroes: "Bitte ziehe 3 Helden, um eine vollständige Kombination zu bilden, bevor du speicherst!",
+    messageAuthNotReady: "Authentifizierung nicht bereit. Bitte warte einen Moment und versuche es erneut.",
     messageComboAlreadySaved: "Diese Kombination ist bereits gespeichert!",
     messageComboSavedSuccess: "Kombination erfolgreich gespeichert!",
     messageErrorSavingCombo: "Fehler beim Speichern der Kombination:",
-    messageConfirmRemoveCombo:
-      "Möchtest du diese Kombination wirklich entfernen?",
+    messageConfirmRemoveCombo: "Möchtest du diese Kombination wirklich entfernen?",
     messageComboRemovedSuccess: "Kombination erfolgreich entfernt!",
     messageErrorRemovingCombo: "Fehler beim Entfernen der Kombination:",
-    messageNoCombosToDownload:
-      "Keine Kombinationen zum Herunterladen. Bitte speichere zuerst einige Kombinationen!",
+    messageNoCombosToDownload: "Keine Kombinationen zum Herunterladen. Bitte speichere zuerst einige Kombinationen!",
     messageCombosDownloadedSuccess: "Kombinationen erfolgreich heruntergeladen!",
-    messageErrorDownloadingCombos:
-      "Fehler beim Herunterladen der Kombinationen:",
-    messageCrossOriginWarning:
-      "Wenn Bilder fehlen, kann dies an Cross-Origin-Einschränkungen liegen.",
-    messageHeroAlreadyInSlot:
-      "Held „{heroName}“ befindet sich bereits in einem anderen Slot der aktuellen Kombination.",
+    messageErrorDownloadingCombos: "Fehler beim Herunterladen der Kombinationen:",
+    messageCrossOriginWarning: "Wenn Bilder fehlen, kann dies an Cross-Origin-Einschränkungen liegen.",
+    messageHeroAlreadyInSlot: "Held „{heroName}“ befindet sich bereits in einem anderen Slot der aktuellen Kombination.",
     messageFirebaseInitError: "Firebase-Initialisierungsfehler:",
     messageAuthError: "Authentifizierungsfehler: {errorMessage}.",
-    messageErrorLoadingCombos:
-      "Fehler beim Laden der gespeicherten Kombinationen:",
-    messageNoCombosToShare:
-      "Keine Kombinationen zum Teilen. Bitte speichere zuerst mindestens eine Kombination!",
-    messageShareTextCopied:
-      "Text zum Teilen kopiert. Du kannst ihn in deinen Chat oder deine Gruppe einfügen.",
+    messageErrorLoadingCombos: "Fehler beim Laden der gespeicherten Kombinationen:",
+    messageNoCombosToShare: "Keine Kombinationen zum Teilen. Bitte speichere zuerst mindestens eine Kombination!",
+    messageShareTextCopied: "Text zum Teilen kopiert. Du kannst ihn in deinen Chat oder deine Gruppe einfügen.",
     messageShareFailed: "Teilen fehlgeschlagen. Bitte versuche es erneut.",
     shareComboTooltip: "Diese Kombination als Text teilen",
     messageBoxConfirm: "Bestätigen",
     messageBoxCancel: "Abbrechen",
     messageBoxOk: "OK",
+    generatorTitle: "Kombinationsgenerator (Top 5)",
+    generatorIntro: "Wählen Sie alle Helden aus, die Sie derzeit besitzen, und tippen Sie dann auf „Beste Kombinationen generieren“.",
+    generatorSelectAll: "Alles auswählen",
+    generatorClearAll: "Alles löschen",
+    generatorGenerateBtn: "Beste Kombos generieren",
+    generatorComboLabel: "Combo",
+    generatorScoreLabel: "Ergebnis:",
+    generatorMinHeroesMessage: "Bitte wählen Sie mindestens 15 Helden aus, um die Top 5 Kombis zu generieren.",
+    generatorEmptySlotLabel: "Nicht genügend Helden ausgewählt oder Kombis für diesen Slot verfügbar. Füge mehr Helden hinzu, um ihn freizuschalten.",
   },
 
   fr: {
@@ -195,42 +195,39 @@ export const translations = {
     downloadCombosBtn: "Télécharger Tous les Combos en Image",
     shareAllCombosBtn: "Partager Tous les Combos en Texte",
     lastBestCombosTitle: "Derniers Meilleurs Combos",
-    noCombosMessage:
-      "Aucun combo enregistré pour l'instant. Glissez des héros et cliquez sur 'Enregistrer le Combo Actuel' !",
-    messagePleaseDrag3Heroes:
-      "Veuillez glisser 3 héros pour former un combo complet avant d'enregistrer !",
-    messageAuthNotReady:
-      "Authentification non prête. Veuillez patienter un instant et réessayer.",
+    noCombosMessage: "Aucun combo enregistré pour l'instant. Glissez des héros et cliquez sur 'Enregistrer le Combo Actuel' !",
+    messagePleaseDrag3Heroes: "Veuillez glisser 3 héros pour former un combo complet avant d'enregistrer !",
+    messageAuthNotReady: "Authentification non prête. Veuillez patienter un instant et réessayer.",
     messageComboAlreadySaved: "Ce combo est déjà enregistré !",
     messageComboSavedSuccess: "Combo enregistré avec succès !",
     messageErrorSavingCombo: "Erreur lors de l'enregistrement du combo :",
-    messageConfirmRemoveCombo:
-      "Êtes-vous sûr de vouloir supprimer ce combo ?",
+    messageConfirmRemoveCombo: "Êtes-vous sûr de vouloir supprimer ce combo ?",
     messageComboRemovedSuccess: "Combo supprimé avec succès !",
     messageErrorRemovingCombo: "Erreur lors de la suppression du combo :",
-    messageNoCombosToDownload:
-      "Aucun combo à télécharger. Veuillez d'abord enregistrer des combos !",
+    messageNoCombosToDownload: "Aucun combo à télécharger. Veuillez d'abord enregistrer des combos !",
     messageCombosDownloadedSuccess: "Combos téléchargés avec succès !",
-    messageErrorDownloadingCombos:
-      "Erreur lors du téléchargement des combos :",
-    messageCrossOriginWarning:
-      "Si des images sont manquantes, cela peut être dû à des restrictions d'origine croisée.",
-    messageHeroAlreadyInSlot:
-      "Le héros « {heroName} » est déjà dans un autre emplacement du combo actuel.",
+    messageErrorDownloadingCombos: "Erreur lors du téléchargement des combos :",
+    messageCrossOriginWarning: "Si des images sont manquantes, cela peut être dû à des restrictions d'origine croisée.",
+    messageHeroAlreadyInSlot: "Le héros « {heroName} » est déjà dans un autre emplacement du combo actuel.",
     messageFirebaseInitError: "Erreur d'initialisation de Firebase :",
     messageAuthError: "Erreur d'authentification : {errorMessage}.",
-    messageErrorLoadingCombos:
-      "Erreur lors du chargement des combos enregistrés :",
-    messageNoCombosToShare:
-      "Aucun combo à partager. Veuillez d'abord enregistrer au moins un combo !",
-    messageShareTextCopied:
-      "Texte de partage copié. Vous pouvez le coller dans votre chat ou groupe.",
-    messageShareFailed:
-      "Échec du partage. Veuillez réessayer.",
+    messageErrorLoadingCombos: "Erreur lors du chargement des combos enregistrés :",
+    messageNoCombosToShare: "Aucun combo à partager. Veuillez d'abord enregistrer au moins un combo !",
+    messageShareTextCopied: "Texte de partage copié. Vous pouvez le coller dans votre chat ou groupe.",
+    messageShareFailed: "Échec du partage. Veuillez réessayer.",
     shareComboTooltip: "Partager ce combo en texte",
     messageBoxConfirm: "Confirmer",
     messageBoxCancel: "Annuler",
     messageBoxOk: "OK",
+    generatorTitle: "Générateur de Combos (Top 5)",
+    generatorIntro: "Sélectionnez tous les héros que vous possédez actuellement, puis appuyez sur « Générer les meilleurs combos ».",
+    generatorSelectAll: "Tout sélectionner",
+    generatorClearAll: "Tout effacer",
+    generatorGenerateBtn: "Générer les meilleurs combos",
+    generatorComboLabel: "Combo",
+    generatorScoreLabel: "Score :",
+    generatorMinHeroesMessage: "Veuillez sélectionner au menos 15 héros pour générer le top 5 des combos.",
+    generatorEmptySlotLabel: "Pas assez de héros sélectionnés ou de combos disponibles pour cet emplacement. Ajoutez plus de héros para le débloquer.",
   },
 
   zh: {
@@ -244,8 +241,7 @@ export const translations = {
     downloadCombosBtn: "下载所有组合图片",
     shareAllCombosBtn: "以文字分享所有组合",
     lastBestCombosTitle: "最新最佳组合",
-    noCombosMessage:
-      "尚未保存任何组合。拖动英雄并点击“保存当前组合”！",
+    noCombosMessage: "尚未保存任何组合。拖动英雄并点击“保存当前组合”！",
     messagePleaseDrag3Heroes: "请拖动3个英雄以形成完整组合再保存！",
     messageAuthNotReady: "认证未准备好。请稍等片刻再试。",
     messageComboAlreadySaved: "此组合已保存！",
@@ -254,26 +250,30 @@ export const translations = {
     messageConfirmRemoveCombo: "确定要删除此组合吗？",
     messageComboRemovedSuccess: "组合删除成功！",
     messageErrorRemovingCombo: "删除组合时出错：",
-    messageNoCombosToDownload:
-      "没有可下载的组合。请先保存一些组合！",
+    messageNoCombosToDownload: "没有可下载的组合。请先保存一些组合！",
     messageCombosDownloadedSuccess: "组合下载成功！",
     messageErrorDownloadingCombos: "下载组合时出错：",
-    messageCrossOriginWarning:
-      "如果图片缺失，可能是由于跨域限制。",
-    messageHeroAlreadyInSlot:
-      "英雄“{heroName}”已在当前组合的另一个槽位中。",
+    messageCrossOriginWarning: "如果图片缺失，可能是由于跨域限制。",
+    messageHeroAlreadyInSlot: "英雄“{heroName}”已在当前组合的另一个槽位中。",
     messageFirebaseInitError: "Firebase 初始化错误：",
     messageAuthError: "身份验证错误：{errorMessage}。",
     messageErrorLoadingCombos: "加载已保存组合时出错：",
-    messageNoCombosToShare:
-      "没有可分享的组合。请先至少保存一个组合！",
-    messageShareTextCopied:
-      "分享文本已复制。你可以粘贴到聊天或群组中。",
+    messageNoCombosToShare: "没有可分享的组合。请先至少保存一个组合！",
+    messageShareTextCopied: "分享文本已复制。你可以粘贴到聊天或群组中。",
     messageShareFailed: "分享失败。请重试。",
     shareComboTooltip: "以文字分享此组合",
     messageBoxConfirm: "确定",
     messageBoxCancel: "取消",
     messageBoxOk: "好的",
+    generatorTitle: "组合生成器 (前 5 名)",
+    generatorIntro: "选择您当前拥有的所有英雄，然后点击“生成最佳组合”。",
+    generatorSelectAll: "全选",
+    generatorClearAll: "全部清除",
+    generatorGenerateBtn: "生成最佳组合",
+    generatorComboLabel: "组合",
+    generatorScoreLabel: "评分：",
+    generatorMinHeroesMessage: "请至少选择 15 名英雄以生成前 5 名组合。",
+    generatorEmptySlotLabel: "未选择足够的英雄或此槽位没有可用的组合。添加更多英雄来解锁它。",
   },
 
   ru: {
@@ -287,39 +287,38 @@ export const translations = {
     downloadCombosBtn: "Скачать все комбинации как изображение",
     shareAllCombosBtn: "Поделиться всеми комбинациями в виде текста",
     lastBestCombosTitle: "Последние лучшие комбинации",
-    noCombosMessage:
-      "Пока нет сохраненных комбинаций. Перетащите героев и нажмите «Сохранить текущую комбинацию»!",
-    messagePleaseDrag3Heroes:
-      "Пожалуйста, перетащите 3 героев, чтобы сформировать полную комбинацию перед сохранением!",
-    messageAuthNotReady:
-      "Аутентификация не готова. Пожалуйста, подождите немного и попробуйте снова.",
+    noCombosMessage: "Пока нет сохраненных комбинаций. Перетащите героев и нажмите «Сохранить текущую комбинацию»!",
+    messagePleaseDrag3Heroes: "Пожалуйста, перетащите 3 героев, чтобы сформировать полную комбинацию перед сохранением!",
+    messageAuthNotReady: "Аутентификация не готова. Пожалуйста, подождите немного и попробуйте снова.",
     messageComboAlreadySaved: "Эта комбинация уже сохранена!",
     messageComboSavedSuccess: "Комбинация успешно сохранена!",
     messageErrorSavingCombo: "Ошибка при сохранении комбинации:",
-    messageConfirmRemoveCombo:
-      "Вы уверены, что хотите удалить эту комбинацию?",
+    messageConfirmRemoveCombo: "Вы уверены, что хотите удалить эту комбинацию?",
     messageComboRemovedSuccess: "Комбинация успешно удалена!",
     messageErrorRemovingCombo: "Ошибка при удалении комбинации:",
-    messageNoCombosToDownload:
-      "Нет комбинаций для скачивания. Пожалуйста, сначала сохраните несколько комбинаций!",
+    messageNoCombosToDownload: "Нет комбинаций для скачивания. Пожалуйста, сначала сохраните несколько комбинаций!",
     messageCombosDownloadedSuccess: "Комбинации успешно скачаны!",
     messageErrorDownloadingCombos: "Ошибка при скачивании комбинаций:",
-    messageCrossOriginWarning:
-      "Если изображения отсутствуют, это может быть связано с ограничениями кросс-доменных запросов.",
-    messageHeroAlreadyInSlot:
-      "Герой «{heroName}» уже находится в другом слоте текущей комбинации.",
+    messageCrossOriginWarning: "Если изображения отсутствуют, это может быть связано с ограничениями кросс-доменных запросов.",
+    messageHeroAlreadyInSlot: "Герой «{heroName}» уже находится в другом слоте текущей комбинации.",
     messageFirebaseInitError: "Ошибка инициализации Firebase:",
     messageAuthError: "Ошибка аутентификации: {errorMessage}.",
-    messageErrorLoadingCombos:
-      "Ошибка при загрузке сохраненных комбинаций:",
-    messageNoCombosToShare:
-      "Нет комбинаций для отправки. Сначала сохраните хотя бы одну комбинацию!",
-    messageShareTextCopied:
-      "Текст для отправки скопирован. Вы можете вставить его в чат или группу.",
+    messageErrorLoadingCombos: "Ошибка при загрузке сохраненных комбинаций:",
+    messageNoCombosToShare: "Нет комбинаций для отправки. Сначала сохраните хотя бы одну комбинацию!",
+    messageShareTextCopied: "Текст для отправки скопирован. Вы можете вставить его в чат или группу.",
     messageShareFailed: "Не удалось поделиться. Попробуйте ещё раз.",
     shareComboTooltip: "Поделиться этой комбинацией в виде текста",
     messageBoxConfirm: "Подтвердить",
     messageBoxCancel: "Отмена",
     messageBoxOk: "ОК",
+    generatorTitle: "Генератор комбинаций (Топ-5)",
+    generatorIntro: "Выберите всех героев, которые у вас есть, затем нажмите «Создать лучшие комбинации».",
+    generatorSelectAll: "Выбрать все",
+    generatorClearAll: "Очистить все",
+    generatorGenerateBtn: "Создать лучшие комбинации",
+    generatorComboLabel: "Комбо",
+    generatorScoreLabel: "Оценка:",
+    generatorMinHeroesMessage: "Пожалуйста, выберите не менее 15 героев, чтобы создать 5 лучших комбинаций.",
+    generatorEmptySlotLabel: "Выбрано недостаточно героев или нет доступных комбинаций для этого слота. Добавьте больше героев, чтобы разблокировать его.",
   },
 };
