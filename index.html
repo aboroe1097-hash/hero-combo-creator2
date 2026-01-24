@@ -87,8 +87,12 @@
     
     #manualBuilderSection, #comboGeneratorSection { transition: opacity 0.2s ease-in-out; }
 
-    /* Generator Specific Visuals */
-    .generator-card-selected { box-shadow: 0 0 0 3px #38bdf8; transform: translateY(-2px); }
+      /* Change this in your index.html style section */
+      .generator-card-selected {
+        box-shadow: 0 0 0 4px #38bdf8 !important; /* Increased to 4px for better visibility */
+        transform: translateY(-2px) scale(1.05) !important;
+        z-index: 10; /* Ensures the blue glow is above other cards */
+      }
     .empty-results-border {
       border: 2px dashed #334155; border-radius: 1rem; padding: 3rem 1rem;
       background: rgba(30, 41, 59, 0.3); text-align: center; color: #64748b; font-style: italic;
@@ -240,3 +244,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
