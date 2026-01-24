@@ -40,8 +40,8 @@ export const rankedCombos = [
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },      // Speed & Rage variation
   { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"] },
   { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },     // Mid-Tier Sustained
-  { heroes: ["The Brave", "Rozen Blade", "Immortal"] },
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },     // S4-S3 Transition
+  { heroes: ["The Brave", "Rozen Blade", "Immortal"] },
   { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },
   { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
