@@ -182,25 +182,84 @@ async function downloadGeneratorResultsAsImage() {
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
-  if (selected.length < 15) { showMessageBox(t.generatorMinHeroesMessage); return; }
-  const ownedSet = new Set(selected);
-  const eligible = rankedCombos.filter(c => c.heroes.every(h => ownedSet.has(h)));
-  eligible.sort((a, b) => (b.score || 0) - (a.score || 0));
-  renderGeneratorResults(eligible);
-  if (eligible.length > 0) downloadGeneratorBtn.classList.remove('hidden');
-}
+  
+  if (selected.length < 15) { 
+    alert(t.generatorMinHeroesMessage); 
+    return; 
+  }
 
+  const ownedSet = new Set(selected);
+  const usedHeroesGlobal = new Set();
+  const finalSelection = [];
+
+  // 1. Loop through rankedCombos in their natural order
+  for (const combo of rankedCombos) {
+    if (finalSelection.length >= 5) break;
+
+    // 2. Check if owned AND heroes are not already used in a higher combo
+    const canBuild = combo.heroes.every(h => ownedSet.has(h));
+    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
+
+    if (canBuild && isUnique) {
+      // Calculate a "Dynamic Score" for display (optional)
+      // Top 1 gets 100, and it drops slightly for each item down the list
+      const dynamicScore = 100 - rankedCombos.indexOf(combo);
+      
+      finalSelection.push({ ...combo, displayScore: dynamicScore });
+      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
+    }
+  }
+
+  renderGeneratorResults(finalSelection);
+}
+/**
+ * Renders the top 5 generated combos ensuring each hero is unique.
+ * Automatically calculates a display score based on the database position.
+ */
 function renderGeneratorResults(bestCombos) {
   const t = translations[currentLanguage] || translations.en;
-  generatorResultsEl.innerHTML = ''; generatorResultsEl.classList.remove('empty-results-border');
-  if (bestCombos.length === 0) { generatorResultsEl.classList.add('empty-results-border'); generatorResultsEl.innerHTML = `<p class="text-center py-8">${t.generatorNoCombosAvailable}</p>`; return; }
-  bestCombos.slice(0, 5).forEach((combo, i) => {
-    const card = document.createElement('div'); card.className = 'generated-combo-card';
-    const slots = document.createElement('div'); slots.className = 'saved-combo-slots';
-    combo.heroes.forEach(name => { const item = document.createElement('div'); item.className = 'saved-combo-slot-item'; item.innerHTML = `<img src="${getHeroImageUrl(name)}" crossorigin="anonymous"><span>${name}</span>`; slots.appendChild(item); });
+  generatorResultsEl.innerHTML = '';
+  generatorResultsEl.classList.remove('empty-results-border');
+
+  if (bestCombos.length === 0) {
+    generatorResultsEl.classList.add('empty-results-border');
+    generatorResultsEl.innerHTML = `<p class="text-sm text-slate-300 text-center w-full py-8">${t.generatorNoCombosAvailable}</p>`;
+    return;
+  }
+
+  // Display only the top 5 unique combos found
+  bestCombos.forEach((combo, i) => {
+    const card = document.createElement('div');
+    card.className = 'generated-combo-card';
+
+    // HERO SLOTS CONTAINER
+    const slots = document.createElement('div');
+    slots.className = 'saved-combo-slots';
+    
+    combo.heroes.forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'saved-combo-slot-item';
+      // Crossorigin anonymous is required for html2canvas to capture the images
+      item.innerHTML = `
+        <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
+        <span class="text-[10px] sm:text-xs text-sky-300 font-bold truncate px-1">${name}</span>
+      `;
+      slots.appendChild(item);
+    });
+
+    // RANK NUMBER BADGE (Perfectly Centered for Captures)
     card.innerHTML = `<span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>`;
     card.appendChild(slots);
-    const score = document.createElement('div'); score.className = 'text-sm font-semibold text-sky-300 ml-4'; score.textContent = `${t.generatorScoreLabel} ${combo.score}`; card.appendChild(score);
+
+    // SCORE DISPLAY (Uses calculated score from database order)
+    const scoreBox = document.createElement('div');
+    scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2';
+    scoreBox.innerHTML = `
+      <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
+      <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+    `;
+    
+    card.appendChild(scoreBox);
     generatorResultsEl.appendChild(card);
   });
 }
