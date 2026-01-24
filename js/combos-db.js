@@ -22,51 +22,57 @@
 // --- Season 4 ---
 // "Desert Storm", "Soaring Hawk", "The Brave", "Jade Eagle", 
 // "Immortal Guardian", "Divine Arrow", "Theodora", "King Arthur"
+// js/combos-db.js
+// Rank is determined by position in this array. First item = Rank 1.
+// Mapping order: [Front, Middle, Back]
+
 export const rankedCombos = [
-  // --- TIER 1 (TOP META / GARRISON) ---
-  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },
-  { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] },
-  { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },
-  { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
-  { heroes: ["Theodora", "The Brave", "Jade Eagle"] },
-  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },
+  // --- TIER 1: TOP GARRISON META (S4 Focus) ---
+  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Meta Peak
+  { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] }, // Cavalry/Garrison Mix
+  { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // High Sustainability
+  { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },    // Classic Power
+  { heroes: ["Theodora", "The Brave", "Jade Eagle"] },          // S4 Defense Synergies
+  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // High Damage Output
 
-
-  // --- TIER 2 (STRONG META) ---
+  // --- TIER 2: STRONG COMPETITIVE META ---
   { heroes: ["Octavius", "The Brave", "Caesar"] },
-  { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },
+  { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },      // Speed & Rage variation
   { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"] },
-  { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },
+  { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },     // Mid-Tier Sustained
   { heroes: ["The Brave", "Rozen Blade", "Immortal"] },
-  { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },
+  { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },     // S4-S3 Transition
   { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },
-  
-  { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },
-  
+  { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },
 
-  // --- TIER 3 (SYNERGY) ---
+  // --- TIER 3: SEASONAL SYNERGIES & SPECIALISTS ---
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
-  { heroes: ["Sky Breaker", "Charles the Great", "Inquisitor"] },
-  { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },
+  { heroes: ["Sky Breaker", "Charles the Great", "Inquisitor"] }, // Anti-Heal focus
+  { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             // Mixed Utility
+  { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
-  { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
+  { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
   { heroes: ["Black Prince", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Black Prince", "Jane"] },
   { heroes: ["War Lord", "Rokuboshuten", "Jane"] },
-  { heroes: ["War Lord", "Constantine the Great", "Jane"] },
+  { heroes: ["War Lord", "Constantine the Great", "Jane"] },     // Defensive Support
+  { heroes: ["Alfred", "Constantine the Great", "Jane"] },       // Support Variation
   { heroes: ["Edward the Confessor", "Leonidas", "Al Fatih"] },
   { heroes: ["Edward the Confessor", "Isabella I", "Al Fatih"] },
   { heroes: ["Peace Bringer", "Genghis Khan", "The Heroine"] },
-  
+
+  // --- TIER 4: EARLY SEASON & TRANSITIONAL TEAMS ---
   { heroes: ["North's Rage", "Yukimura Sanada", "Isabella I"] },
-  
-  { heroes: ["Peace Bringer", "Genghis Khan", "Cao Cao"] },
-  { heroes: ["Demon Spear", "Jiguang Qi", "Genghis Khan"] },
-  { heroes: ["Demon Spear", "Jiguang Qi", "North's Rage"] },
-  { heroes: ["Demon Spear", "Queen Anne", "William Wallace"] }
+  { heroes: ["Peace Bringer", "Genghis Khan", "Cao Cao"] },      // High Mobility
+  { heroes: ["Demon Spear", "Jiguang Qi", "Genghis Khan"] },     // Burst Damage
+  { heroes: ["Demon Spear", "Jiguang Qi", "North's Rage"] },     // Physical focus
+  { heroes: ["Demon Spear", "Queen Anne", "William Wallace"] },  // Counter-Attack build
+  { heroes: ["William Wallace", "Jiguang Qi", "Heaven's Justice"] }, // S0 Starter Peak
+  { heroes: ["North's Rage", "The Boneless", "The Heroine"] },   // Balanced Starter
+  { heroes: ["North's Rage", "The Boneless", "Heaven's Justice"] }
 ];
