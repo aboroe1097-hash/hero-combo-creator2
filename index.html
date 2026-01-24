@@ -210,9 +210,15 @@
         <div id="generatorHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 justify-items-center"></div>
       </div>
 
-      <div class="mb-8 text-center">
-        <button id="generateCombosBtn" class="w-full sm:w-auto px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
+      <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
+        <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">
+          GENERATE BEST COMBOS
+        </button>
+        <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">
+          DOWNLOAD RESULTS AS IMAGE
+        </button>
       </div>
+      
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
@@ -244,4 +250,5 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
