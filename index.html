@@ -57,7 +57,7 @@
       .team-badge { width: 48px; height: 48px; top: 8px; right: 8px; }
     }
 
-    /* Modern Filter Pills */
+    /* Modern Filter Pills UI */
     .filter-pill {
       display: inline-flex;
       align-items: center;
@@ -73,36 +73,26 @@
     .filter-pill input { display: none; }
     .filter-pill:has(input:checked) { color: #ffffff; box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
 
-    /* Active Season Colors */
+    /* Season-Specific Active Colors */
     .s0-pill:has(input:checked) { background: #475569; border-color: #9ca3af; }
     .s1-pill:has(input:checked) { background: #1e40af; border-color: #3b82f6; }
     .s2-pill:has(input:checked) { background: #7e22ce; border-color: #a855f7; }
     .s3-pill:has(input:checked) { background: #c2410c; border-color: #f97316; }
     .s4-pill:has(input:checked) { background: #a16207; border-color: #facc15; }
 
-    /* Polishing: Tab Logic & Jumping Prevention */
+    /* Tab Logic & Layout Polish */
     .tab-pill { padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 9999px; transition: all 0.2s ease; border: none; }
     .tab-pill-active { background: #2563eb; color: #f9fafb; }
     .tab-pill-inactive { background: transparent; color: #e5e7eb; }
     
-    #manualBuilderSection, #comboGeneratorSection {
-      transition: opacity 0.2s ease-in-out;
-      min-height: 700px; /* Prevents jumping */
-    }
+    #manualBuilderSection, #comboGeneratorSection { transition: opacity 0.2s ease-in-out; }
 
-    /* Polishing: Generator Visuals */
+    /* Generator Specific Visuals */
     .generator-card-selected { box-shadow: 0 0 0 3px #38bdf8; transform: translateY(-2px); }
-    
     .empty-results-border {
-      border: 2px dashed #334155;
-      border-radius: 1rem;
-      padding: 3rem 1rem;
-      background: rgba(30, 41, 59, 0.3);
-      text-align: center;
-      color: #64748b;
-      font-style: italic;
+      border: 2px dashed #334155; border-radius: 1rem; padding: 3rem 1rem;
+      background: rgba(30, 41, 59, 0.3); text-align: center; color: #64748b; font-style: italic;
     }
-
     .generated-combo-card {
       display: flex; flex-direction: column; align-items: center; justify-content: space-between;
       background: #1f2937; border-radius: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
@@ -125,9 +115,7 @@
 
     <div class="flex flex-col items-center mb-6">
       <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 — Team Logo" class="main-logo" />
-      <h1 id="appTitle" class="text-3xl sm:text-4xl font-extrabold text-blue-400 tracking-tight text-center">
-        Hero Combo Creator
-      </h1>
+      <h1 id="appTitle" class="text-3xl sm:text-4xl font-extrabold text-blue-400 tracking-tight text-center">Hero Combo Creator</h1>
       <p class="text-sm text-slate-300">Team VTS 1097</p>
     </div>
 
@@ -175,7 +163,6 @@
           <div class="combo-slot" data-slot-index="1"></div>
           <div class="combo-slot" data-slot-index="2"></div>
         </div>
-
         <div class="mt-6 flex flex-col space-y-3">
           <button id="saveComboBtn" class="w-full px-6 py-3 bg-green-600 text-white font-bold rounded-full shadow-lg hover:bg-green-700 transition disabled:opacity-50">Save Current Combo</button>
           <button id="clearComboBtn" class="w-full px-6 py-3 bg-red-600 text-white font-bold rounded-full shadow-lg hover:bg-red-700 transition">Clear Current Combo</button>
@@ -194,35 +181,17 @@
     <section id="comboGeneratorSection" class="hidden">
       <div class="mb-6">
         <h2 class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
-        <p class="text-sm text-slate-400 leading-relaxed">
-          Select all heroes you currently own, then tap <span class="font-semibold text-emerald-400">"Generate Best Combos"</span>.<br> 
-          You need at least <span class="font-semibold text-blue-400">15 heroes</span> to build 5 full combos.
-        </p>
+        <p class="text-sm text-slate-400 leading-relaxed">Select heroes you own, then tap Generate Best Combos.</p>
       </div>
 
       <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl shadow-inner border border-slate-800">
         <h3 class="text-lg font-semibold mb-4 text-slate-100">Filter by Season</h3>
-        <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm sm:text-base mb-4">
-          <label class="filter-pill s0-pill">
-            <input type="checkbox" value="S0" checked />
-            <span>Season 0</span>
-          </label>
-          <label class="filter-pill s1-pill">
-            <input type="checkbox" value="S1" />
-            <span>Season 1</span>
-          </label>
-          <label class="filter-pill s2-pill">
-            <input type="checkbox" value="S2" />
-            <span>Season 2</span>
-          </label>
-          <label class="filter-pill s3-pill">
-            <input type="checkbox" value="S3" />
-            <span>Season 3</span>
-          </label>
-          <label class="filter-pill s4-pill">
-            <input type="checkbox" value="S4" />
-            <span>Season 4</span>
-          </label>
+        <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
+          <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
+          <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span>Season 1</span></label>
+          <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span>Season 2</span></label>
+          <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span>Season 3</span></label>
+          <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span>Season 4</span></label>
         </div>
       </div>
 
@@ -238,11 +207,8 @@
       </div>
 
       <div class="mb-8 text-center">
-        <button id="generateCombosBtn" class="w-full sm:w-auto px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">
-          GENERATE BEST COMBOS
-        </button>
+        <button id="generateCombosBtn" class="w-full sm:w-auto px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
       </div>
-
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
@@ -254,11 +220,10 @@
           <input id="commentEmail" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="Email (optional)" />
         </div>
         <textarea id="commentText" rows="3" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="Write a suggestion..."></textarea>
-        <button type="submit" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition">Submit Comment</button>
+        <button type="submit" id="postCommentBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition">Submit Comment</button>
       </form>
       <div id="commentsList" class="space-y-4"></div>
     </section>
-
   </div>
 
   <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -272,8 +237,6 @@
   </div>
 
   <div id="loadingSpinner" class="loading-spinner hidden" aria-hidden="true"></div>
-
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
