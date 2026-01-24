@@ -20,6 +20,7 @@ const messageText = document.getElementById('messageText');
 const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
 const shareAllCombosBtn = document.getElementById('shareAllCombosBtn');
+const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 
 const tabManualBtn = document.getElementById('tabManual');
 const tabGeneratorBtn = document.getElementById('tabGenerator');
