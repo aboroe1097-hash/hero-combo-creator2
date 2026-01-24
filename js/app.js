@@ -1,4 +1,4 @@
-// js/app.js - Fixed & Polished Version b2.0
+// js/app.js - Fixed Version b2.1
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -11,7 +11,6 @@ const languageSelect = document.getElementById('languageSelect');
 const availableHeroesEl = document.getElementById('availableHeroes');
 const saveComboBtn = document.getElementById('saveComboBtn');
 const clearComboBtn = document.getElementById('clearComboBtn');
-const downloadCombosBtn = document.getElementById('downloadCombosBtn');
 const savedCombosEl = document.getElementById('savedCombos');
 const noCombosMessage = document.getElementById('noCombosMessage');
 const loadingSpinner = document.getElementById('loadingSpinner');
@@ -20,6 +19,7 @@ const messageText = document.getElementById('messageText');
 const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
 const shareAllCombosBtn = document.getElementById('shareAllCombosBtn');
+const downloadCombosBtn = document.getElementById('downloadCombosBtn');
 
 const tabManualBtn = document.getElementById('tabManual');
 const tabGeneratorBtn = document.getElementById('tabGenerator');
@@ -35,7 +35,7 @@ const generatorResultsEl = document.getElementById('generatorResults');
 let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
 let selectedSeasons = ['S0']; 
 let currentCombo = [null, null, null];
-let generatorSelectedSeasons = ['S0']; // Default to Season 0
+let generatorSelectedSeasons = ['S0']; // Default to Season 0 only
 const generatorSelectedHeroes = new Set();
 let db = null;
 let userId = 'anonymous';
@@ -43,7 +43,9 @@ let isAuthReady = false;
 let spinnerFallbackTimer = null;
 let userCombosData = []; 
 
-// Hero Data Array
+// -------------------------------------------------------------
+// Heroes data (Season 0 to 4)
+// -------------------------------------------------------------
 const allHeroesData = [
   { name: "Jeanne d'Arc", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png" },
   { name: "Isabella I", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png" },
@@ -182,16 +184,9 @@ function renderGeneratorHeroes() {
     card.className = `hero-card generator-card ${generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''}`;
     card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
       <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
-    // Inside renderGeneratorHeroes function in js/app.js
-    card.onclick = (e) => {
-      // Toggle the visual class immediately for instant feedback
-      const isSelected = card.classList.toggle('generator-card-selected');
-      
-      if (isSelected) {
-        generatorSelectedHeroes.add(hero.name);
-      } else {
-        generatorSelectedHeroes.delete(hero.name);
-      }
+    card.onclick = () => {
+      if (generatorSelectedHeroes.has(hero.name)) { generatorSelectedHeroes.delete(hero.name); card.classList.remove('generator-card-selected'); }
+      else { generatorSelectedHeroes.add(hero.name); card.classList.add('generator-card-selected'); }
     };
     generatorHeroesEl.appendChild(card);
   });
@@ -219,7 +214,7 @@ function updateComboSlotDisplay(slot, name, idx) {
   saveComboBtn.disabled = !isAuthReady || currentCombo.includes(null);
 }
 
-// --- COMBO GENERATOR LOGIC ---
+// --- GENERATOR LOGIC ---
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
@@ -262,28 +257,32 @@ function renderGeneratorResults(bestCombos) {
   }
 }
 
-// --- FIRESTORE LISTENER & SAVER ---
+// --- FIRESTORE LISTENER & SAVER (FIXED NaN & QUOTA) ---
 async function setupFirestoreListener() {
   const _db = getDb(); if (!_db || !userId) return; db = _db;
   const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
   const userCombosRef = collection(db, `users/${userId}/bestCombos`);
+  
   onSnapshot(query(userCombosRef, orderBy('timestamp', 'desc'), limit(100)), (snap) => {
     savedCombosEl.innerHTML = ''; noCombosMessage.classList.toggle('hidden', !snap.empty);
     userCombosData = [];
-    snap.forEach((d, i) => {
+    
+    // FIX: Use counter to avoid NaN issues
+    let counter = 1;
+    snap.forEach((d) => {
       const heroes = d.data().heroes || []; userCombosData.push(heroes);
       const row = document.createElement('div'); row.className = 'saved-combo-display';
-      row.innerHTML = `<span class="saved-combo-number">${i+1}</span><div class="saved-combo-slots"></div>`;
+      row.innerHTML = `<span class="saved-combo-number">${counter}</span><div class="saved-combo-slots"></div>`;
       const slotsContainer = row.querySelector('.saved-combo-slots');
       heroes.forEach(name => { const item = document.createElement('div'); item.className = 'saved-combo-slot-item'; item.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span>${name}</span>`; slotsContainer.appendChild(item); });
       const delBtn = document.createElement('button'); delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X'; 
       delBtn.onclick = async () => { if(confirm('Delete combo?')) await deleteDoc(doc(userCombosRef, d.id)); }; 
       row.appendChild(delBtn); savedCombosEl.appendChild(row);
+      counter++;
     });
   }, (err) => {
-    console.error('Firestore Error:', err);
-    if (err.message.includes('quota')) {
-      showMessageBox("Database limit reached for this hour. Combos will reappear once the quota resets.");
+    if (err.message && err.message.includes('quota')) {
+      showMessageBox("Database limit reached for this hour. Saved combos will reappear once the quota resets.");
     }
   });
 }
@@ -296,7 +295,6 @@ async function saveCombo() {
   try {
     const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
     
-    // Attempt the write
     await addDoc(collection(db, `users/${userId}/bestCombos`), {
       heroes: [...currentCombo],
       heroesKey: currentCombo.slice().sort().join(','),
@@ -308,7 +306,7 @@ async function saveCombo() {
     document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
   } catch (e) {
     console.error('Save failed:', e);
-    // Specific check for quota error based on logs
+    // User-friendly quota message
     if (e.message && e.message.includes('quota')) {
       showMessageBox("Hourly limit reached for the VTS community. Please try saving again in one hour.");
     } else {
@@ -402,7 +400,7 @@ function wireUIActions() {
   try {
     initFirebase(); const user = await ensureAnonymousAuth();
     isAuthReady = true; userId = user.uid; db = getDb();
-    setupFirestoreListener(); // Fetches previously saved combos
+    setupFirestoreListener(); // Fetches previously saved combos & fixes numbers
     initComments().catch(err => console.error(err));
   } catch (err) { console.error('Init Error:', err); } finally { hideLoadingSpinner(); }
 })();
