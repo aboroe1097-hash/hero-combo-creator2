@@ -1,20 +1,20 @@
 // js/app.js
-// main app
+// Main app (manual builder + combo generator)
 
 import { translations as baseTranslations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
-import { rankedCombos } from './combos-db.js';
 
 const translations = baseTranslations;
 
-// DOM elements
+// DOM references (shared)
 const languageSelect = document.getElementById('languageSelect');
+
+// Manual builder DOM
 const availableHeroesEl = document.getElementById('availableHeroes');
 const saveComboBtn = document.getElementById('saveComboBtn');
 const clearComboBtn = document.getElementById('clearComboBtn');
 const downloadCombosBtn = document.getElementById('downloadCombosBtn');
-const shareAllCombosBtn = document.getElementById('shareAllCombosBtn');
 const savedCombosEl = document.getElementById('savedCombos');
 const noCombosMessage = document.getElementById('noCombosMessage');
 const loadingSpinner = document.getElementById('loadingSpinner');
@@ -22,382 +22,133 @@ const messageBox = document.getElementById('messageBox');
 const messageText = document.getElementById('messageText');
 const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
+const shareAllCombosBtn = document.getElementById('shareAllCombosBtn');
 
-// mode tabs
-const tabBuilder = document.getElementById('tabBuilder');
-const tabGenerator = document.getElementById('tabGenerator');
-const builderMode = document.getElementById('builderMode');
-const generatorMode = document.getElementById('generatorMode');
+// Tabs + sections
+const tabManualBtn = document.getElementById('tabManual');
+const tabGeneratorBtn = document.getElementById('tabGenerator');
+const manualSection = document.getElementById('manualBuilderSection');
+const generatorSection = document.getElementById('comboGeneratorSection');
 
-// generator DOM
-const ownedHeroesListEl = document.getElementById('ownedHeroesList');
-const generatorResultsEl = document.getElementById('generatorResults');
-const selectAllHeroesBtn = document.getElementById('selectAllHeroesBtn');
-const clearAllHeroesBtn = document.getElementById('clearAllHeroesBtn');
+// Combo generator DOM
+const generatorHeroesEl = document.getElementById('generatorHeroes');
+const generatorSeasonFilters = document.getElementById('generatorSeasonFilters');
 const generateCombosBtn = document.getElementById('generateCombosBtn');
+const generatorResultsEl = document.getElementById('generatorResults');
 
-// state
+// State
 let currentLanguage = 'en';
-let selectedSeasons = ['S0'];
+let selectedSeasons = ['S0']; // manual builder default
 let currentCombo = [null, null, null];
+
+let generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4'];
+const generatorSelectedHeroes = new Set();
 
 let db = null;
 let userId = 'anonymous';
 let isAuthReady = false;
 let spinnerFallbackTimer = null;
-let userCombosData = []; // store heroes arrays for all saved combos (for share-all)
+let userCombosData = []; // list of heroes[] for all saved combos
 
-let ownedHeroes = new Set(); // combo-generator selection state
-
-// --- hero data -----------------------------------------------------
+// -------------------------------------------------------------
+// Heroes data (shared between manual builder & generator)
+// -------------------------------------------------------------
 const allHeroesData = [
   // Season 0
-  {
-    name: "Jeanne d'Arc",
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Isabella I',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Jiguang Qi',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_3bb681424e034e9e8f0dea7d71c93390~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Mary Tudor',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_7d24a8f5148b42c68e9e183ecdf1080d~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Leonidas',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_f672d18c06904465a490ea4811cee798~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'The Boneless',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_5fec4c7d62314acfb90ea624dedd08c6~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Demon Spear',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_39ffb285fd524cd1b7c27057b0fe4f44~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Kublai',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'The Heroine',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Queen Anne',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: "North's Rage",
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'William Wallace',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Yukimura Sanada',
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: "Heaven's Justice",
-    season: 'S0',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
+  { name: "Jeanne d'Arc", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png" },
+  { name: "Isabella I", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png" },
+  { name: "Jiguang Qi", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_3bb681424e034e9e8f0dea7d71c93390~mv2.png" },
+  { name: "Mary Tudor", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_7d24a8f5148b42c68e9e183ecdf1080d~mv2.png" },
+  { name: "Leonidas", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_f672d18c06904465a490ea4811cee798~mv2.png" },
+  { name: "The Boneless", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_5fec4c7d62314acfb90ea624dedd08c6~mv2.png" },
+  { name: "Demon Spear", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_39ffb285fd524cd1b7c27057b0fe4f44~mv2.png" },
+  { name: "Kublai", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png" },
+  { name: "The Heroine", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png" },
+  { name: "Queen Anne", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png" },
+  { name: "North's Rage", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png" },
+  { name: "William Wallace", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png" },
+  { name: "Yukimura Sanada", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png" },
+  { name: "Heaven's Justice", season: "S0", imageUrl: "https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png" },
   // Season 1
-  {
-    name: 'Alfred',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_e75a942dc1c64689b140f23d905b5ca0~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Cao Cao',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_3998355c7cae4b70a89000ee66ad8e3f~mv2.png/v1/fill/w_126,h_126,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Charles the Great',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_e95b962e46204b6badbd6e63e1307582~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Black Prince',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_29a333b02497463f81d329056996b8a3~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Lionheart',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_ecf64b68a8f64ad2bd159f86f5be179c~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Al Fatih',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_f834a1ef8d2d4de5bba80ab40e531a6f~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Edward the Confessor',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_51538af01a9f4ec789127837e62dccfa~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Constantine the Great',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_b738599c5a0b46deb6a4abf7273f9268~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Genghis Khan',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_40f1c10ba0e04d4fa3e841f865cd206a~mv2.png/v1/fill/w_99,h_99,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'William the Conqueror',
-    season: 'S1',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
+  { name: "Alfred", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_e75a942dc1c64689b140f23d905b5ca0~mv2.png" },
+  { name: "Cao Cao", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_3998355c7cae4b70a89000ee66ad8e3f~mv2.png" },
+  { name: "Charles the Great", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_e95b962e46204b6badbd6e63e1307582~mv2.png" },
+  { name: "Black Prince", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_29a333b02497463f81d329056996b8a3~mv2.png" },
+  { name: "Lionheart", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_ecf64b68a8f64ad2bd159f86f5be179c~mv2.png" },
+  { name: "Al Fatih", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_f834a1ef8d2d4de5bba80ab40e531a6f~mv2.png" },
+  { name: "Edward the Confessor", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_51538af01a9f4ec789127837e62dccfa~mv2.png" },
+  { name: "Constantine the Great", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_b738599c5a0b46deb6a4abf7273f9268~mv2.png" },
+  { name: "Genghis Khan", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_40f1c10ba0e04d4fa3e841f865cd206a~mv2.png" },
+  { name: "William the Conqueror", season: "S1", imageUrl: "https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png" },
   // Season 2
-  {
-    name: 'Inquisitor',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_5e9612fc176442b78c1fa6766b87473c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'BeastQueen',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_6883135290314469a0daee804dd03692~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Jade',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_61729052c05240b4b7cf34324f8ed870~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Immortal',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_8c4e699dedc341a7a86ae4b47d3cce71~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Peace Bringer',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_cfea192f7ad64a13be3fa40c516a8bce~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Witch Hunter',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Ramses II',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Octavius',
-    season: 'S2',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
+  { name: "Inquisitor", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_5e9612fc176442b78c1fa6766b87473c~mv2.png" },
+  { name: "BeastQueen", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_6883135290314469a0daee804dd03692~mv2.png" },
+  { name: "Jade", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_61729052c05240b4b7cf34324f8ed870~mv2.png" },
+  { name: "Immortal", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_8c4e699dedc341a7a86ae4b47d3cce71~mv2.png" },
+  { name: "Peace Bringer", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_cfea192f7ad64a13be3fa40c516a8bce~mv2.png" },
+  { name: "Witch Hunter", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png" },
+  { name: "Ramses II", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png" },
+  { name: "Octavius", season: "S2", imageUrl: "https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png" },
   // Season 3
-  {
-    name: 'War Lord',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Jane',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Sky Breaker',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_cacde74500864a0d916746fe0945c970~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Rokuboshuten',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_eaf3463bf3654d0e90adb41a1cb5ad4c~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Bleeding Steed',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_9256fc0a80284c1ab285554dbf33a4b3~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Rozen Blade',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_42b02c160ac849dca0dd7e4a6b472582~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Celopatrra VII',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
-  {
-    name: 'Ceasar',
-    season: 'S3',
-    imageUrl:
-      'https://static.wixstatic.com/media/43ee96_5cf26138c5174d4587fc025cd5fe399a~mv2.png/v1/fill/w_101,h_101,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/GettyImages-591216789.png'
-  },
+  { name: "War Lord", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png" },
+  { name: "Jane", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png" },
+  { name: "Sky Breaker", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_cacde74500864a0d916746fe0945c970~mv2.png" },
+  { name: "Rokuboshuten", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_eaf3463bf3654d0e90adb41a1cb5ad4c~mv2.png" },
+  { name: "Bleeding Steed", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_9256fc0a80284c1ab285554dbf33a4b3~mv2.png" },
+  { name: "Rozen Blade", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_42b02c160ac849dca0dd7e4a6b472582~mv2.png" },
+  { name: "Celopatrra VII", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png" },
+  { name: "Ceasar", season: "S3", imageUrl: "https://static.wixstatic.com/media/43ee96_5cf26138c5174d4587fc025cd5fe399a~mv2.png" },
   // Season 4
-  {
-    name: 'Desert Storm',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/vChW2BGG/Desert-Storm.png'
-  },
-  {
-    name: 'Soaring Hawk',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/nsypbRHh/Soaring-hawk.png'
-  },
-  {
-    name: 'The Brave',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/XxR25Kzy/brave.png'
-  },
-  {
-    name: 'Jade Eagle',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/GQzRPtZf/Jade-eagle.png'
-  },
-  {
-    name: 'Immortal Guardian',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png'
-  },
-  {
-    name: 'Divine Arrow',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/6JcVTCnr/Divine-Arrow.png'
-  },
-  {
-    name: 'Theodora',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png'
-  },
-  {
-    name: 'King Arthur',
-    season: 'S4',
-    imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png'
-  }
+  { name: "Desert Storm", season: "S4", imageUrl: "https://i.ibb.co/vChW2BGG/Desert-Storm.png" },
+  { name: "Soaring Hawk", season: "S4", imageUrl: "https://i.ibb.co/nsypbRHh/Soaring-hawk.png" },
+  { name: "The Brave", season: "S4", imageUrl: "https://i.ibb.co/XxR25Kzy/brave.png" },
+  { name: "Jade Eagle", season: "S4", imageUrl: "https://i.ibb.co/GQzRPtZf/Jade-eagle.png" },
+  { name: "Immortal Guardian", season: "S4", imageUrl: "https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png" },
+  { name: "Divine Arrow", season: "S4", imageUrl: "https://i.ibb.co/6JcVTCnr/Divine-Arrow.png" },
+  { name: "Theodora", season: "S4", imageUrl: "https://i.ibb.co/JwtYrGzN/Theodora.png" },
+  { name: "King Arthur", season: "S4", imageUrl: "https://i.ibb.co/4Ryx1F6P/King-Arthur.png" }
 ];
 
-// simple color-coding per season (visual feedback)
+// Simple color-coding per season (visual feedback)
 const seasonColors = {
-  S0: '#9ca3af', // grey
-  S1: '#3b82f6', // blue
-  S2: '#a855f7', // purple
-  S3: '#f97316', // orange
-  S4: '#facc15'  // gold
+  S0: '#9ca3af',
+  S1: '#3b82f6',
+  S2: '#a855f7',
+  S3: '#f97316',
+  S4: '#facc15'
 };
 
-function getCurrentLanguage() {
-  return currentLanguage;
-}
-
-// ------------------------------------------------------------
-// helpers / UI
-// ------------------------------------------------------------
-function showLoadingSpinner() {
-  loadingSpinner.classList.remove('hidden');
-  loadingSpinner.setAttribute('aria-hidden', 'false');
-  clearTimeout(spinnerFallbackTimer);
-  spinnerFallbackTimer = setTimeout(() => {
-    if (!isAuthReady) {
-      hideLoadingSpinner();
-      showMessageBox(
-        'Authentication is taking longer than expected. The app is usable offline; saved combos require network to sync.'
-      );
-    }
-  }, 10000);
-}
-
-function hideLoadingSpinner() {
-  clearTimeout(spinnerFallbackTimer);
-  loadingSpinner.classList.add('hidden');
-  loadingSpinner.setAttribute('aria-hidden', 'true');
-}
-
-function showMessageBox(message, onConfirm = null) {
-  messageText.textContent = message;
-  messageBox.classList.remove('hidden');
-  if (onConfirm) {
-    messageBoxOkBtn.textContent =
-      translations[currentLanguage].messageBoxConfirm || 'Confirm';
-    messageBoxOkBtn.onclick = () => {
-      messageBox.classList.add('hidden');
-      onConfirm();
-    };
-    messageBoxCancelBtn.classList.remove('hidden');
-    messageBoxCancelBtn.textContent =
-      translations[currentLanguage].messageBoxCancel || 'Cancel';
-    messageBoxCancelBtn.onclick = () => messageBox.classList.add('hidden');
-  } else {
-    messageBoxOkBtn.textContent =
-      translations[currentLanguage].messageBoxOk || 'OK';
-    messageBoxOkBtn.onclick = () => {
-      messageBox.classList.add('hidden');
-    };
-    messageBoxCancelBtn.classList.add('hidden');
+// -------------------------------------------------------------
+// Combo generator score database (simple now: heroes + score)
+// You can extend this list later – just keep hero names exact.
+// -------------------------------------------------------------
+const comboScores = [
+  {
+    heroes: ['William Wallace', "Leonidas", "North's Rage"],
+    score: 98
+  },
+  {
+    heroes: ['Yukimura Sanada', 'William Wallace', 'Demon Spear'],
+    score: 96
+  },
+  {
+    heroes: ['Genghis Khan', 'Lionheart', 'Black Prince'],
+    score: 95
+  },
+  {
+    heroes: ['Desert Storm', 'Soaring Hawk', 'Immortal Guardian'],
+    score: 94
+  },
+  {
+    heroes: ['The Heroine', 'Queen Anne', "Heaven's Justice"],
+    score: 93
   }
-}
+  // add more here…
+];
 
+// -------------------------------------------------------------
+// Utility helpers
+// -------------------------------------------------------------
 function debounce(func, wait = 200) {
   let timeout;
   return (...args) => {
@@ -413,40 +164,69 @@ function getHeroImageUrl(heroName) {
   return `https://placehold.co/128x128/374151/e2e8f0?text=${encoded}`;
 }
 
-// ------------------------------------------------------------
-// Mode switching (builder vs generator)
-// ------------------------------------------------------------
-function setMode(mode) {
-  const isBuilder = mode === 'builder';
+function showLoadingSpinner() {
+  if (!loadingSpinner) return;
+  loadingSpinner.classList.remove('hidden');
+  loadingSpinner.setAttribute('aria-hidden', 'false');
+  clearTimeout(spinnerFallbackTimer);
+  spinnerFallbackTimer = setTimeout(() => {
+    if (!isAuthReady) {
+      hideLoadingSpinner();
+      showMessageBox(
+        'Authentication is taking longer than expected. The app is usable offline; saved combos require network to sync.'
+      );
+    }
+  }, 10000);
+}
 
-  if (builderMode) {
-    builderMode.classList.toggle('hidden', !isBuilder);
+function hideLoadingSpinner() {
+  if (!loadingSpinner) return;
+  clearTimeout(spinnerFallbackTimer);
+  loadingSpinner.classList.add('hidden');
+  loadingSpinner.setAttribute('aria-hidden', 'true');
+}
+
+function showMessageBox(message, onConfirm = null) {
+  if (!messageBox) {
+    alert(message);
+    if (onConfirm) onConfirm();
+    return;
   }
-  if (generatorMode) {
-    generatorMode.classList.toggle('hidden', isBuilder);
-  }
-  if (tabBuilder) {
-    tabBuilder.classList.toggle('bg-blue-600', isBuilder);
-    tabBuilder.classList.toggle('text-white', isBuilder);
-    tabBuilder.classList.toggle('bg-gray-700', !isBuilder);
-    tabBuilder.classList.toggle('text-gray-200', !isBuilder);
-  }
-  if (tabGenerator) {
-    tabGenerator.classList.toggle('bg-blue-600', !isBuilder);
-    tabGenerator.classList.toggle('text-white', !isBuilder);
-    tabGenerator.classList.toggle('bg-gray-700', isBuilder);
-    tabGenerator.classList.toggle('text-gray-200', isBuilder);
+
+  messageText.textContent = message;
+  messageBox.classList.remove('hidden');
+
+  const t = translations[currentLanguage] || translations.en;
+
+  if (onConfirm) {
+    messageBoxOkBtn.textContent = t.messageBoxConfirm || 'Confirm';
+    messageBoxOkBtn.onclick = () => {
+      messageBox.classList.add('hidden');
+      onConfirm();
+    };
+    messageBoxCancelBtn.classList.remove('hidden');
+    messageBoxCancelBtn.textContent = t.messageBoxCancel || 'Cancel';
+    messageBoxCancelBtn.onclick = () => messageBox.classList.add('hidden');
+  } else {
+    messageBoxOkBtn.textContent = t.messageBoxOk || 'OK';
+    messageBoxOkBtn.onclick = () => {
+      messageBox.classList.add('hidden');
+    };
+    messageBoxCancelBtn.classList.add('hidden');
   }
 }
 
-// ------------------------------------------------------------
-// Available heroes grid
-// ------------------------------------------------------------
+// -------------------------------------------------------------
+// Manual builder: heroes grid + drag/drop
+// -------------------------------------------------------------
 function renderAvailableHeroes() {
+  if (!availableHeroesEl) return;
   availableHeroesEl.innerHTML = '';
+
   const chosen = allHeroesData.filter((h) =>
     selectedSeasons.includes(h.season)
   );
+
   chosen.forEach((hero) => {
     const card = document.createElement('div');
     card.className = 'hero-card';
@@ -457,7 +237,10 @@ function renderAvailableHeroes() {
 
     card.innerHTML = `
       <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
-      <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" loading="lazy" crossorigin="anonymous">
+      <img src="${getHeroImageUrl(hero.name)}"
+           alt="${hero.name}"
+           loading="lazy"
+           crossorigin="anonymous">
       <span class="mt-1">${hero.name}</span>
     `;
 
@@ -478,6 +261,8 @@ function renderAvailableHeroes() {
 }
 
 function updateComboSlotDisplay(slot, name, idx) {
+  const t = translations[currentLanguage] || translations.en;
+
   if (name) {
     slot.innerHTML = `
       <img src="${getHeroImageUrl(name)}"
@@ -491,10 +276,10 @@ function updateComboSlotDisplay(slot, name, idx) {
     slot.classList.add('relative', 'p-0');
   } else {
     slot.innerHTML = `
-      <div class="combo-slot-placeholder flex flex-col items-center justify-center h-full w-full">
+      <div class="combo-slot-placeholder">
         <span class="text-5xl font-bold text-blue-400">+</span>
         <span class="text-xs text-gray-300">
-          ${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}
+          ${t.dragHeroHere || 'Drag Hero Here'}
         </span>
       </div>`;
     slot.classList.remove('relative', 'p-0');
@@ -512,10 +297,13 @@ function placeHeroIntoSlot(heroName, slotEl) {
   const idx = parseInt(slotEl.dataset.slotIndex, 10);
   if (Number.isNaN(idx)) return;
 
+  const t = translations[currentLanguage] || translations.en;
+
+  // Prevent duplicates in different slots
   if (currentCombo.includes(heroName) && currentCombo[idx] !== heroName) {
     showMessageBox(
-      (translations[currentLanguage]?.messageHeroAlreadyInSlot ||
-        'This hero is already in a slot: {heroName}.').replace(
+      (t.messageHeroAlreadyInSlot ||
+        'This hero is already in another slot: {heroName}.').replace(
         '{heroName}',
         heroName
       )
@@ -523,6 +311,7 @@ function placeHeroIntoSlot(heroName, slotEl) {
     return;
   }
 
+  // If hero already in another slot, clear it first
   const oldIdx = currentCombo.indexOf(heroName);
   if (oldIdx !== -1 && oldIdx !== idx) {
     currentCombo[oldIdx] = null;
@@ -545,7 +334,9 @@ function initComboSlots() {
       e.preventDefault();
       slot.classList.add('drag-over');
     });
-    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('dragleave', () =>
+      slot.classList.remove('drag-over')
+    );
     slot.addEventListener('drop', (e) => {
       e.preventDefault();
       slot.classList.remove('drag-over');
@@ -555,9 +346,9 @@ function initComboSlots() {
   });
 }
 
-// ------------------------------------------------------------
-// Mobile touch drag–drop
-// ------------------------------------------------------------
+// -------------------------------------------------------------
+// Mobile touch drag–drop (manual builder)
+// -------------------------------------------------------------
 const touchDragState = {
   heroName: null,
   ghostEl: null,
@@ -649,9 +440,9 @@ function onTouchEnd(e) {
   }
 }
 
-// ------------------------------------------------------------
-// Firestore listen + save (per-user bestCombos)
-// ------------------------------------------------------------
+// -------------------------------------------------------------
+// Firestore listen + save (manual builder)
+// -------------------------------------------------------------
 async function setupFirestoreListener() {
   try {
     const _db = getDb();
@@ -671,16 +462,15 @@ async function setupFirestoreListener() {
     );
 
     const userCombosRef = collection(db, `users/${userId}/bestCombos`);
-
-    // IMPORTANT: ascending so first combo saved is #1, next is #2, etc.
-    const q = query(userCombosRef, orderBy('timestamp', 'asc'), limit(100));
+    // newest first so latest saved combo is #1
+    const q = query(userCombosRef, orderBy('timestamp', 'desc'), limit(100));
 
     onSnapshot(
       q,
       (snap) => {
         savedCombosEl.innerHTML = '';
         noCombosMessage.classList.toggle('hidden', !snap.empty);
-        userCombosData = []; // reset cached combos
+        userCombosData = [];
 
         let count = 1;
         snap.forEach((d) => {
@@ -707,7 +497,7 @@ async function setupFirestoreListener() {
           const actions = document.createElement('div');
           actions.className = 'saved-combo-actions';
 
-          // Share button (per combo text)
+          // per-combo share button
           const shareBtn = document.createElement('button');
           shareBtn.className = 'share-combo-btn';
           shareBtn.title = 'Share this combo';
@@ -715,14 +505,14 @@ async function setupFirestoreListener() {
           shareBtn.onclick = () => shareCombo(heroes);
           actions.appendChild(shareBtn);
 
-          // Delete button
+          // delete button
           const delBtn = document.createElement('button');
           delBtn.className = 'remove-combo-btn';
           delBtn.textContent = 'X';
           delBtn.onclick = () =>
             showMessageBox(
-              translations[currentLanguage]?.messageConfirmRemoveCombo ||
-                'Remove this combo?',
+              (translations[currentLanguage]?.messageConfirmRemoveCombo ||
+                'Remove this combo?'),
               async () => {
                 showLoadingSpinner();
                 try {
@@ -760,18 +550,19 @@ async function setupFirestoreListener() {
 }
 
 async function saveCombo() {
+  const t = translations[currentLanguage] || translations.en;
+
   if (currentCombo.includes(null)) {
     showMessageBox(
-      translations[currentLanguage]?.messagePleaseDrag3Heroes ||
-        'Please drag 3 heroes'
+      t.messagePleaseDrag3Heroes ||
+        'Please drag 3 heroes to form a complete combo before saving!'
     );
     return;
   }
 
   if (!isAuthReady || !db || !userId) {
     showMessageBox(
-      translations[currentLanguage]?.messageAuthNotReady ||
-        'Authentication not ready yet.'
+      t.messageAuthNotReady || 'Authentication not ready yet. Please wait.'
     );
     return;
   }
@@ -800,8 +591,7 @@ async function saveCombo() {
 
     if (!dupSnap.empty) {
       showMessageBox(
-        translations[currentLanguage]?.messageComboAlreadySaved ||
-          'This combo is already saved.'
+        t.messageComboAlreadySaved || 'This exact combo is already saved!'
       );
       return;
     }
@@ -814,7 +604,7 @@ async function saveCombo() {
     });
 
     showMessageBox(
-      translations[currentLanguage]?.messageComboSavedSuccess || 'Saved!'
+      t.messageComboSavedSuccess || 'Combo saved successfully!'
     );
 
     currentCombo = [null, null, null];
@@ -824,22 +614,24 @@ async function saveCombo() {
   } catch (e) {
     console.error('saveCombo error:', e);
     showMessageBox(
-      (translations[currentLanguage]?.messageErrorSavingCombo ||
-        'Error saving combo: ') + (e.message || e)
+      (t.messageErrorSavingCombo || 'Error saving combo: ') + (e.message || e)
     );
   } finally {
     hideLoadingSpinner();
   }
 }
 
-// ------------------------------------------------------------
-// Sharing helpers
-// ------------------------------------------------------------
-
-// Share ALL saved combos as a single text blob
+// -------------------------------------------------------------
+// Sharing helpers (manual builder)
+// -------------------------------------------------------------
 async function shareAllCombos() {
+  const t = translations[currentLanguage] || translations.en;
+
   if (!userCombosData || userCombosData.length === 0) {
-    showMessageBox('No saved combos to share yet.');
+    showMessageBox(
+      t.messageNoCombosToDownload ||
+        'No saved combos to share yet. Save some first!'
+    );
     return;
   }
 
@@ -865,7 +657,7 @@ async function shareAllCombos() {
       if (!e || e.name !== 'AbortError') {
         console.error('navigator.share error', e);
       }
-      // fall through to clipboard / alert
+      // fall through to clipboard
     }
   }
 
@@ -882,7 +674,6 @@ async function shareAllCombos() {
   }
 }
 
-// Share a given heroes array as text (per saved combo)
 async function shareCombo(heroes) {
   if (!heroes || heroes.length === 0) {
     showMessageBox('Nothing to share – this combo is empty.');
@@ -918,18 +709,21 @@ async function shareCombo(heroes) {
   }
 }
 
-// ------------------------------------------------------------
-// Download combos as image
-// ------------------------------------------------------------
+// -------------------------------------------------------------
+// Download all combos as image (manual builder)
+// -------------------------------------------------------------
 async function downloadCombosAsImage() {
-  const t = translations[currentLanguage];
+  const t = translations[currentLanguage] || translations.en;
   showLoadingSpinner();
   try {
     if (!savedCombosEl || savedCombosEl.children.length === 0) {
-      showMessageBox(t?.messageNoCombosToDownload || 'No combos to download');
+      showMessageBox(
+        t.messageNoCombosToDownload ||
+          'No combos to download. Please save some combos first!'
+      );
       return;
     }
-
+    // hide small buttons for clean capture
     const buttons = document.querySelectorAll(
       '.remove-combo-btn, .share-combo-btn'
     );
@@ -941,19 +735,19 @@ async function downloadCombosAsImage() {
       allowTaint: true,
       logging: false
     });
-
     buttons.forEach((b) => (b.style.display = ''));
 
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = 'hero_combos.png';
     link.click();
-    showMessageBox(t?.messageCombosDownloadedSuccess || 'Downloaded!');
+    showMessageBox(
+      t.messageCombosDownloadedSuccess || 'Combos downloaded successfully!'
+    );
   } catch (e) {
     console.error(e);
     showMessageBox(
-      (t?.messageErrorDownloadingCombos || 'Download error') +
-        ' ' +
+      (t.messageErrorDownloadingCombos || 'Error downloading combos: ') +
         (e.message || e)
     );
   } finally {
@@ -961,390 +755,256 @@ async function downloadCombosAsImage() {
   }
 }
 
-// ------------------------------------------------------------
-// Combo Generator logic
-// ------------------------------------------------------------
-function getCurrentLanguage() {
-  return currentLanguage;
-}
+// -------------------------------------------------------------
+// Combo Generator: render heroes as cards, build top 5
+// -------------------------------------------------------------
+function renderGeneratorHeroes() {
+  if (!generatorHeroesEl) return;
+  generatorHeroesEl.innerHTML = '';
 
-// ---------------------------------------------
-// Combo Generator: hero cards + season filters
-// ---------------------------------------------
-function initComboGenerator() {
-  if (!generatorMode || !ownedHeroesListEl || !generatorResultsEl) return;
-
-  const t = translations[getCurrentLanguage()] || translations.en;
-
-  // keep track of which seasons are shown in the generator
-  let generatorSelectedSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4']);
-
-  // --- build a season filter bar inside generator (only once) ---
-  let filtersWrapper = document.getElementById(
-    'generatorSeasonFiltersWrapper'
+  const heroes = allHeroesData.filter((h) =>
+    generatorSelectedSeasons.includes(h.season)
   );
-  if (!filtersWrapper) {
-    filtersWrapper = document.createElement('div');
-    filtersWrapper.id = 'generatorSeasonFiltersWrapper';
-    filtersWrapper.className = 'mb-4';
 
-    filtersWrapper.innerHTML = `
-      <h3 id="generatorFilterBySeasonTitle"
-          class="text-lg font-semibold mb-2 text-gray-200">
-        ${t.generatorFilterBySeasonTitle ||
-          t.filterBySeasonTitle ||
-          'Filter by Season'}
-      </h3>
-      <div id="generatorSeasonFiltersRow"
-           class="flex flex-wrap gap-3"></div>
+  heroes.forEach((hero) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'hero-card generator-card';
+    card.dataset.heroName = hero.name;
+
+    const tagColor = seasonColors[hero.season] || '#f97316';
+
+    card.innerHTML = `
+      <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+      <img src="${getHeroImageUrl(hero.name)}"
+           alt="${hero.name}"
+           loading="lazy"
+           crossorigin="anonymous">
+      <span class="mt-1">${hero.name}</span>
     `;
 
-    // insert the filter bar just above the hero list in generator mode
-    generatorMode.insertBefore(filtersWrapper, ownedHeroesListEl);
-
-    const filtersRow = filtersWrapper.querySelector(
-      '#generatorSeasonFiltersRow'
-    );
-    ['S0', 'S1', 'S2', 'S3', 'S4'].forEach((season) => {
-      const label = document.createElement('label');
-      label.className = 'inline-flex items-center';
-
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = season;
-      cb.checked = true;
-      cb.className = 'form-checkbox h-5 w-5 text-blue-600';
-
-      cb.addEventListener('change', () => {
-        if (cb.checked) {
-          generatorSelectedSeasons.add(season);
-        } else {
-          generatorSelectedSeasons.delete(season);
-        }
-        renderOwnedHeroList();
-      });
-
-      const span = document.createElement('span');
-      span.className = 'ml-2 text-gray-300';
-      span.textContent = season.replace('S', 'Season ');
-
-      label.appendChild(cb);
-      label.appendChild(span);
-      filtersRow.appendChild(label);
-    });
-  }
-
-  // helper to visually mark selected cards
-  function setCardSelected(card, selected) {
-    if (selected) {
-      card.style.outline = '2px solid #22c55e';
-      card.style.boxShadow = '0 0 0 2px rgba(34,197,94,0.4)';
-      card.style.opacity = '1';
-    } else {
-      card.style.outline = '';
-      card.style.boxShadow = '';
-      card.style.opacity = '';
-    }
-  }
-
-  // --- render hero cards (like manual builder) but click to select ---
-  function renderOwnedHeroList() {
-    ownedHeroesListEl.innerHTML = '';
-
-    const filteredHeroes = allHeroesData.filter((h) =>
-      generatorSelectedSeasons.has(h.season)
-    );
-
-    filteredHeroes.forEach((hero) => {
-      const card = document.createElement('div');
-      card.className = 'hero-card cursor-pointer';
-      card.dataset.heroName = hero.name;
-
-      const tagColor = seasonColors[hero.season] || '#f97316';
-
-      card.innerHTML = `
-        <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
-        <img src="${getHeroImageUrl(hero.name)}"
-             alt="${hero.name}"
-             loading="lazy"
-             crossorigin="anonymous">
-        <span class="mt-1">${hero.name}</span>
-      `;
-
-      // initial highlight if already in ownedHeroes
-      const isSelected = ownedHeroes.has(hero.name);
-      setCardSelected(card, isSelected);
-
-      // click to toggle selection
-      card.addEventListener('click', () => {
-        if (ownedHeroes.has(hero.name)) {
-          ownedHeroes.delete(hero.name);
-          setCardSelected(card, false);
-        } else {
-          ownedHeroes.add(hero.name);
-          setCardSelected(card, true);
-        }
-      });
-
-      ownedHeroesListEl.appendChild(card);
-    });
-  }
-
-  // --- generate up to 5 best combos for selected heroes ---
-  function generateBestCombos() {
-    const t2 = translations[getCurrentLanguage()] || translations.en;
-    generatorResultsEl.innerHTML = '';
-
-    const minHeroes = 15;
-    if (ownedHeroes.size < minHeroes) {
-      const msgTemplate =
-        t2.generatorTooFewHeroes ||
-        'Select at least {minHeroes} heroes to generate 5 combos.';
-      const msg = msgTemplate.replace('{minHeroes}', String(minHeroes));
-      generatorResultsEl.innerHTML = `
-        <p class="text-sm text-red-400">${msg}</p>
-      `;
-      return;
+    // highlight if already selected
+    if (generatorSelectedHeroes.has(hero.name)) {
+      card.classList.add('generator-card-selected');
     }
 
-    const ownedList = Array.from(ownedHeroes);
-    const ownedSet = new Set(ownedList);
-
-    const buildable = rankedCombos
-      .filter(
-        (combo) =>
-          combo.heroes &&
-          combo.heroes.length === 3 &&
-          combo.heroes.every((h) => ownedSet.has(h))
-      )
-      .sort((a, b) => (b.score || 0) - (a.score || 0));
-
-    if (buildable.length === 0) {
-      const msg =
-        t2.generatorNoCombosAvailable ||
-        'No ranked combos available for this selection yet. Try selecting more heroes.';
-      generatorResultsEl.innerHTML = `
-        <p class="text-sm text-yellow-300">${msg}</p>
-      `;
-      return;
-    }
-
-    const comboLabel = t2.generatorComboLabel || 'Combo';
-    const scoreLabel = t2.generatorScoreLabel || 'Score:';
-    const emptyMsgTemplate =
-      t2.generatorEmptySlotMessage ||
-      'No combo for slot #{slot}. Add more heroes to your squad.';
-
-    const maxSlots = 5;
-
-    for (let i = 0; i < maxSlots; i++) {
-      const card = document.createElement('div');
-      card.className =
-        'bg-gray-800 rounded-xl p-4 mb-3 shadow-md border border-gray-700';
-
-      const titleRow = document.createElement('div');
-      titleRow.className = 'flex items-center justify-between mb-2';
-
-      const left = document.createElement('div');
-      left.className = 'flex items-center gap-2';
-
-      const badge = document.createElement('span');
-      badge.className =
-        'inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-xs font-bold';
-      badge.textContent = `#${i + 1}`;
-
-      const label = document.createElement('span');
-      label.className = 'font-semibold text-sm';
-      label.textContent = `${comboLabel} ${i + 1}`;
-
-      left.appendChild(badge);
-      left.appendChild(label);
-      titleRow.appendChild(left);
-
-      if (i < buildable.length) {
-        const combo = buildable[i];
-        const scoreEl = document.createElement('span');
-        scoreEl.className = 'text-xs text-amber-300 font-semibold';
-        scoreEl.textContent = `${scoreLabel} ${combo.score ?? 0}`;
-        titleRow.appendChild(scoreEl);
-        card.appendChild(titleRow);
-
-        const heroesRow = document.createElement('div');
-        heroesRow.className = 'flex flex-wrap gap-3 mt-2';
-
-        combo.heroes.forEach((hName) => {
-          const tile = document.createElement('div');
-          tile.className =
-            'flex flex-col items-center justify-center w-20';
-
-          tile.innerHTML = `
-            <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-600 mb-1">
-              <img src="${getHeroImageUrl(hName)}"
-                   alt="${hName}"
-                   class="w-full h-full object-cover"
-                   crossorigin="anonymous">
-            </div>
-            <span class="text-[11px] text-center text-blue-100 truncate w-full">
-              ${hName}
-            </span>
-          `;
-          heroesRow.appendChild(tile);
-        });
-
-        card.appendChild(heroesRow);
+    card.addEventListener('click', () => {
+      if (generatorSelectedHeroes.has(hero.name)) {
+        generatorSelectedHeroes.delete(hero.name);
+        card.classList.remove('generator-card-selected');
       } else {
-        // placeholder card for missing #4/#5
-        card.appendChild(titleRow);
-        const emptyMsg = emptyMsgTemplate.replace(
-          '{slot}',
-          String(i + 1)
-        );
-        const info = document.createElement('p');
-        info.className = 'text-xs text-gray-400 mt-2';
-        info.textContent = emptyMsg;
-        card.appendChild(info);
+        generatorSelectedHeroes.add(hero.name);
+        card.classList.add('generator-card-selected');
       }
+    });
 
-      generatorResultsEl.appendChild(card);
-    }
-  }
-
-  // --- wire buttons for select all / clear / generate ---
-  if (selectAllHeroesBtn) {
-    selectAllHeroesBtn.onclick = () => {
-      const filteredHeroes = allHeroesData.filter((h) =>
-        generatorSelectedSeasons.has(h.season)
-      );
-      filteredHeroes.forEach((h) => ownedHeroes.add(h.name));
-      renderOwnedHeroList(); // refresh highlighting
-    };
-  }
-
-  if (clearAllHeroesBtn) {
-    clearAllHeroesBtn.onclick = () => {
-      ownedHeroes.clear();
-      renderOwnedHeroList();
-    };
-  }
-
-  if (generateCombosBtn) {
-    generateCombosBtn.onclick = generateBestCombos;
-  }
-
-  // initial render: show all heroes, all seasons checked
-  renderOwnedHeroList();
+    generatorHeroesEl.appendChild(card);
+  });
 }
-// ------------------------------------------------------------
-// Wire UI actions
-// ------------------------------------------------------------
+
+function renderGeneratorResults(bestCombos) {
+  generatorResultsEl.innerHTML = '';
+
+  const selectedCount = generatorSelectedHeroes.size;
+
+  // show header summary
+  const summary = document.createElement('p');
+  summary.className = 'text-sm text-slate-300 mb-2';
+  summary.textContent = `You selected ${selectedCount} hero${
+    selectedCount === 1 ? '' : 'es'
+  }. Showing up to top 5 available combos.`;
+  generatorResultsEl.appendChild(summary);
+
+  for (let i = 0; i < 5; i++) {
+    const rank = i + 1;
+    const combo = bestCombos[i];
+
+    const card = document.createElement('div');
+    card.className = 'generated-combo-card';
+
+    if (combo) {
+      const number = document.createElement('span');
+      number.className =
+        'saved-combo-number flex-shrink-0 bg-amber-400 text-slate-900';
+      number.textContent = rank;
+
+      const slots = document.createElement('div');
+      slots.className = 'saved-combo-slots';
+
+      combo.heroes.forEach((name) => {
+        const item = document.createElement('div');
+        item.className = 'saved-combo-slot-item';
+        item.innerHTML =
+          `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">` +
+          `<span>${name}</span>`;
+        slots.appendChild(item);
+      });
+
+      const scoreEl = document.createElement('div');
+      scoreEl.className =
+        'mt-3 md:mt-0 md:ml-4 text-sm font-semibold text-sky-300';
+      scoreEl.textContent = `Score: ${combo.score}`;
+
+      card.appendChild(number);
+      card.appendChild(slots);
+      card.appendChild(scoreEl);
+    } else {
+      // placeholder: no combo for this rank
+      const placeholderText = document.createElement('p');
+      placeholderText.className =
+        'text-sm text-slate-300 text-center w-full';
+      placeholderText.textContent =
+        'No available combo for this slot yet – select more heroes or expand the database.';
+      card.appendChild(placeholderText);
+    }
+
+    generatorResultsEl.appendChild(card);
+  }
+}
+
+function generateBestCombos() {
+  const t = translations[currentLanguage] || translations.en;
+
+  const selectedHeroes = Array.from(generatorSelectedHeroes);
+  if (selectedHeroes.length < 15) {
+    showMessageBox(
+      t.generatorNeedMoreHeroes ||
+        'Please select at least 15 heroes to generate 5 combos.'
+    );
+    return;
+  }
+
+  const ownedSet = new Set(selectedHeroes);
+
+  // Filter DB combos where the user owns all 3 heroes
+  const eligibleCombos = comboScores.filter((c) =>
+    c.heroes.every((h) => ownedSet.has(h))
+  );
+
+  // Sort by score desc
+  eligibleCombos.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+  renderGeneratorResults(eligibleCombos);
+}
+
+// -------------------------------------------------------------
+// Tabs + text content
+// -------------------------------------------------------------
+function switchToManual() {
+  tabManualBtn.classList.add('tab-pill-active');
+  tabManualBtn.classList.remove('tab-pill-inactive');
+  tabGeneratorBtn.classList.remove('tab-pill-active');
+  tabGeneratorBtn.classList.add('tab-pill-inactive');
+
+  manualSection.classList.remove('hidden');
+  generatorSection.classList.add('hidden');
+}
+
+function switchToGenerator() {
+  tabGeneratorBtn.classList.add('tab-pill-active');
+  tabGeneratorBtn.classList.remove('tab-pill-inactive');
+  tabManualBtn.classList.remove('tab-pill-active');
+  tabManualBtn.classList.add('tab-pill-inactive');
+
+  manualSection.classList.add('hidden');
+  generatorSection.classList.remove('hidden');
+}
+
 function wireUIActions() {
-  if (languageSelect) {
-    languageSelect.addEventListener('change', (e) => {
-      currentLanguage = e.target.value;
-      updateTextContent();
-    });
-  }
+  // language
+  languageSelect.addEventListener('change', (e) => {
+    currentLanguage = e.target.value;
+    updateTextContent();
+  });
 
-  const seasonFiltersEl = document.getElementById('seasonFilters');
-  if (seasonFiltersEl) {
-    seasonFiltersEl.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (!val) return;
-      if (e.target.checked) {
-        if (!selectedSeasons.includes(val)) selectedSeasons.push(val);
-      } else {
-        selectedSeasons = selectedSeasons.filter((s) => s !== val);
-      }
-      debouncedRender();
-    });
-  }
+  // manual season filters
+  document.getElementById('seasonFilters').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (!val) return;
+    if (e.target.checked) {
+      if (!selectedSeasons.includes(val)) selectedSeasons.push(val);
+    } else {
+      selectedSeasons = selectedSeasons.filter((s) => s !== val);
+    }
+    debouncedRenderManualHeroes();
+  });
 
-  if (clearComboBtn) {
-    clearComboBtn.addEventListener('click', () => {
-      currentCombo = [null, null, null];
-      document
-        .querySelectorAll('.combo-slot')
-        .forEach((s, i) => updateComboSlotDisplay(s, null, i));
-    });
-  }
+  // generator season filters
+  generatorSeasonFilters.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (!val) return;
+    if (e.target.checked) {
+      if (!generatorSelectedSeasons.includes(val))
+        generatorSelectedSeasons.push(val);
+    } else {
+      generatorSelectedSeasons = generatorSelectedSeasons.filter(
+        (s) => s !== val
+      );
+    }
+    renderGeneratorHeroes();
+  });
 
-  if (saveComboBtn) {
-    saveComboBtn.addEventListener('click', saveCombo);
-  }
-  if (downloadCombosBtn) {
-    downloadCombosBtn.addEventListener('click', downloadCombosAsImage);
-  }
+  // manual buttons
+  clearComboBtn.addEventListener('click', () => {
+    currentCombo = [null, null, null];
+    document
+      .querySelectorAll('.combo-slot')
+      .forEach((s, i) => updateComboSlotDisplay(s, null, i));
+  });
+
+  saveComboBtn.addEventListener('click', saveCombo);
+  downloadCombosBtn.addEventListener('click', downloadCombosAsImage);
   if (shareAllCombosBtn) {
     shareAllCombosBtn.addEventListener('click', shareAllCombos);
   }
 
-  // mode tabs
-  if (tabBuilder) {
-    tabBuilder.addEventListener('click', () => setMode('builder'));
-  }
-  if (tabGenerator) {
-    tabGenerator.addEventListener('click', () => setMode('generator'));
-  }
+  // tabs
+  tabManualBtn.addEventListener('click', switchToManual);
+  tabGeneratorBtn.addEventListener('click', switchToGenerator);
+
+  // generator button
+  generateCombosBtn.addEventListener('click', generateBestCombos);
 }
 
 function updateTextContent() {
-  const t = translations[currentLanguage] || translations['en'];
+  const t = translations[currentLanguage] || translations.en;
+
   const appTitleEl = document.getElementById('appTitle');
   if (appTitleEl) appTitleEl.textContent = t.appTitle;
 
-  const filterTitleEl = document.getElementById('filterBySeasonTitle');
-  if (filterTitleEl) filterTitleEl.textContent = t.filterBySeasonTitle;
-
-  const availTitleEl = document.getElementById('availableHeroesTitle');
-  if (availTitleEl) availTitleEl.textContent = t.availableHeroesTitle;
-
-  const createTitleEl = document.getElementById('createComboTitle');
-  if (createTitleEl) createTitleEl.textContent = t.createComboTitle;
-
-  const lastBestTitleEl = document.getElementById('lastBestCombosTitle');
-  if (lastBestTitleEl) lastBestTitleEl.textContent = t.lastBestCombosTitle;
+  document.getElementById('filterBySeasonTitle').textContent =
+    t.filterBySeasonTitle;
+  document.getElementById('availableHeroesTitle').textContent =
+    t.availableHeroesTitle;
+  document.getElementById('createComboTitle').textContent = t.createComboTitle;
+  document.getElementById('lastBestCombosTitle').textContent =
+    t.lastBestCombosTitle;
 
   if (noCombosMessage) noCombosMessage.textContent = t.noCombosMessage;
-
   if (saveComboBtn) saveComboBtn.textContent = t.saveComboBtn;
   if (clearComboBtn) clearComboBtn.textContent = t.clearComboBtn;
   if (downloadCombosBtn) downloadCombosBtn.textContent = t.downloadCombosBtn;
 
-  // generator translations (if present)
-  const genTitleEl = document.getElementById('generatorTitle');
-  if (genTitleEl && t.generatorTitle) genTitleEl.textContent = t.generatorTitle;
-  const genIntroEl = document.getElementById('generatorIntro');
-  if (genIntroEl && t.generatorIntro) genIntroEl.textContent = t.generatorIntro;
-  if (selectAllHeroesBtn && t.generatorSelectAll) {
-    selectAllHeroesBtn.textContent = t.generatorSelectAll;
-  }
-  if (clearAllHeroesBtn && t.generatorClearAll) {
-    clearAllHeroesBtn.textContent = t.generatorClearAll;
-  }
-  if (generateCombosBtn && t.generatorGenerateBtn) {
-    generateCombosBtn.textContent = t.generatorGenerateBtn;
-  }
-
-  // refresh empty slots language
+  // refresh empty slots placeholder text
   document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
     if (currentCombo[idx] === null) updateComboSlotDisplay(slot, null, idx);
   });
 }
 
-const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
+const debouncedRenderManualHeroes = debounce(() => renderAvailableHeroes(), 150);
 
-// ------------------------------------------------------------
-// main init
-// ------------------------------------------------------------
+// -------------------------------------------------------------
+// Main init
+// -------------------------------------------------------------
 (async function main() {
   showLoadingSpinner();
 
   renderAvailableHeroes();
+  renderGeneratorHeroes();
   initComboSlots();
   wireUIActions();
   updateTextContent();
-  initComboGenerator();
-  setMode('builder');
+  switchToManual();
 
   try {
     initFirebase();
@@ -1359,9 +1019,11 @@ const debouncedRender = debounce(() => renderAvailableHeroes(), 150);
     );
   } catch (err) {
     console.error('Firebase/auth init error:', err);
+    const t = translations[currentLanguage] || translations.en;
     showMessageBox(
-      (translations[currentLanguage]?.messageFirebaseInitError ||
-        'Firebase init error') + ' ' + (err.message || err)
+      (t.messageFirebaseInitError || 'Firebase initialization error:') +
+        ' ' +
+        (err.message || err)
     );
   } finally {
     hideLoadingSpinner();
