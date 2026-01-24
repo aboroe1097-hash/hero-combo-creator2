@@ -964,80 +964,180 @@ async function downloadCombosAsImage() {
 // ------------------------------------------------------------
 // Combo Generator logic
 // ------------------------------------------------------------
+function getCurrentLanguage() {
+  return currentLanguage;
+}
+
+// ---------------------------------------------
+// Combo Generator: hero cards + season filters
+// ---------------------------------------------
 function initComboGenerator() {
-  if (!ownedHeroesListEl || !generatorResultsEl) return;
+  if (!generatorMode || !ownedHeroesListEl || !generatorResultsEl) return;
 
-  ownedHeroes = new Set();
+  const t = translations[getCurrentLanguage()] || translations.en;
 
-  function renderOwnedHeroList() {
-    ownedHeroesListEl.innerHTML = '';
-    allHeroesData.forEach((hero) => {
-      const wrapper = document.createElement('label');
-      wrapper.className =
-        'flex items-center gap-2 bg-gray-800 rounded-lg px-2 py-1 cursor-pointer text-xs sm:text-sm';
+  // keep track of which seasons are shown in the generator
+  let generatorSelectedSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4']);
 
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'form-checkbox h-4 w-4 text-blue-500';
-      checkbox.value = hero.name;
+  // --- build a season filter bar inside generator (only once) ---
+  let filtersWrapper = document.getElementById(
+    'generatorSeasonFiltersWrapper'
+  );
+  if (!filtersWrapper) {
+    filtersWrapper = document.createElement('div');
+    filtersWrapper.id = 'generatorSeasonFiltersWrapper';
+    filtersWrapper.className = 'mb-4';
 
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-          ownedHeroes.add(hero.name);
+    filtersWrapper.innerHTML = `
+      <h3 id="generatorFilterBySeasonTitle"
+          class="text-lg font-semibold mb-2 text-gray-200">
+        ${t.generatorFilterBySeasonTitle ||
+          t.filterBySeasonTitle ||
+          'Filter by Season'}
+      </h3>
+      <div id="generatorSeasonFiltersRow"
+           class="flex flex-wrap gap-3"></div>
+    `;
+
+    // insert the filter bar just above the hero list in generator mode
+    generatorMode.insertBefore(filtersWrapper, ownedHeroesListEl);
+
+    const filtersRow = filtersWrapper.querySelector(
+      '#generatorSeasonFiltersRow'
+    );
+    ['S0', 'S1', 'S2', 'S3', 'S4'].forEach((season) => {
+      const label = document.createElement('label');
+      label.className = 'inline-flex items-center';
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = season;
+      cb.checked = true;
+      cb.className = 'form-checkbox h-5 w-5 text-blue-600';
+
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          generatorSelectedSeasons.add(season);
         } else {
-          ownedHeroes.delete(hero.name);
+          generatorSelectedSeasons.delete(season);
         }
+        renderOwnedHeroList();
       });
 
-      const img = document.createElement('img');
-      img.src = hero.imageUrl;
-      img.alt = hero.name;
-      img.loading = 'lazy';
-      img.width = 32;
-      img.height = 32;
-      img.className = 'rounded';
+      const span = document.createElement('span');
+      span.className = 'ml-2 text-gray-300';
+      span.textContent = season.replace('S', 'Season ');
 
-      const text = document.createElement('span');
-      text.textContent = hero.name;
-
-      wrapper.appendChild(checkbox);
-      wrapper.appendChild(img);
-      wrapper.appendChild(text);
-      ownedHeroesListEl.appendChild(wrapper);
+      label.appendChild(cb);
+      label.appendChild(span);
+      filtersRow.appendChild(label);
     });
   }
 
-  function generateBestCombos() {
-    const t = translations[getCurrentLanguage()] || translations.en;
-
-    if (ownedHeroes.size === 0) {
-      generatorResultsEl.innerHTML = `<p class="text-sm text-red-400">${t.generatorNoHeroesSelected}</p>`;
-      return;
+  // helper to visually mark selected cards
+  function setCardSelected(card, selected) {
+    if (selected) {
+      card.style.outline = '2px solid #22c55e';
+      card.style.boxShadow = '0 0 0 2px rgba(34,197,94,0.4)';
+      card.style.opacity = '1';
+    } else {
+      card.style.outline = '';
+      card.style.boxShadow = '';
+      card.style.opacity = '';
     }
+  }
 
-    // combos that are fully buildable (all 3 heroes owned)
-    const buildable = rankedCombos.filter((combo) =>
-      combo.heroes &&
-      combo.heroes.length === 3 &&
-      combo.heroes.every((h) => ownedHeroes.has(h))
+  // --- render hero cards (like manual builder) but click to select ---
+  function renderOwnedHeroList() {
+    ownedHeroesListEl.innerHTML = '';
+
+    const filteredHeroes = allHeroesData.filter((h) =>
+      generatorSelectedSeasons.has(h.season)
     );
 
-    if (buildable.length === 0) {
-      generatorResultsEl.innerHTML = `<p class="text-sm text-yellow-400">${t.generatorNoCombosAvailable}</p>`;
+    filteredHeroes.forEach((hero) => {
+      const card = document.createElement('div');
+      card.className = 'hero-card cursor-pointer';
+      card.dataset.heroName = hero.name;
+
+      const tagColor = seasonColors[hero.season] || '#f97316';
+
+      card.innerHTML = `
+        <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        <img src="${getHeroImageUrl(hero.name)}"
+             alt="${hero.name}"
+             loading="lazy"
+             crossorigin="anonymous">
+        <span class="mt-1">${hero.name}</span>
+      `;
+
+      // initial highlight if already in ownedHeroes
+      const isSelected = ownedHeroes.has(hero.name);
+      setCardSelected(card, isSelected);
+
+      // click to toggle selection
+      card.addEventListener('click', () => {
+        if (ownedHeroes.has(hero.name)) {
+          ownedHeroes.delete(hero.name);
+          setCardSelected(card, false);
+        } else {
+          ownedHeroes.add(hero.name);
+          setCardSelected(card, true);
+        }
+      });
+
+      ownedHeroesListEl.appendChild(card);
+    });
+  }
+
+  // --- generate up to 5 best combos for selected heroes ---
+  function generateBestCombos() {
+    const t2 = translations[getCurrentLanguage()] || translations.en;
+    generatorResultsEl.innerHTML = '';
+
+    const minHeroes = 15;
+    if (ownedHeroes.size < minHeroes) {
+      const msgTemplate =
+        t2.generatorTooFewHeroes ||
+        'Select at least {minHeroes} heroes to generate 5 combos.';
+      const msg = msgTemplate.replace('{minHeroes}', String(minHeroes));
+      generatorResultsEl.innerHTML = `
+        <p class="text-sm text-red-400">${msg}</p>
+      `;
       return;
     }
 
-    // sort by score descending
-    buildable.sort((a, b) => {
-      const sa = a.score ?? 0;
-      const sb = b.score ?? 0;
-      return sb - sa;
-    });
+    const ownedList = Array.from(ownedHeroes);
+    const ownedSet = new Set(ownedList);
 
-    const top = buildable.slice(0, 5);
+    const buildable = rankedCombos
+      .filter(
+        (combo) =>
+          combo.heroes &&
+          combo.heroes.length === 3 &&
+          combo.heroes.every((h) => ownedSet.has(h))
+      )
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-    generatorResultsEl.innerHTML = '';
-    top.forEach((combo, index) => {
+    if (buildable.length === 0) {
+      const msg =
+        t2.generatorNoCombosAvailable ||
+        'No ranked combos available for this selection yet. Try selecting more heroes.';
+      generatorResultsEl.innerHTML = `
+        <p class="text-sm text-yellow-300">${msg}</p>
+      `;
+      return;
+    }
+
+    const comboLabel = t2.generatorComboLabel || 'Combo';
+    const scoreLabel = t2.generatorScoreLabel || 'Score:';
+    const emptyMsgTemplate =
+      t2.generatorEmptySlotMessage ||
+      'No combo for slot #{slot}. Add more heroes to your squad.';
+
+    const maxSlots = 5;
+
+    for (let i = 0; i < maxSlots; i++) {
       const card = document.createElement('div');
       card.className =
         'bg-gray-800 rounded-xl p-4 mb-3 shadow-md border border-gray-700';
@@ -1045,84 +1145,95 @@ function initComboGenerator() {
       const titleRow = document.createElement('div');
       titleRow.className = 'flex items-center justify-between mb-2';
 
-      const title = document.createElement('div');
-      title.className = 'flex items-center gap-2';
-      title.innerHTML = `
-        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-xs font-bold">
-          #${index + 1}
-        </span>
-        <span class="font-semibold text-sm">
-          ${t.generatorComboLabel} ${index + 1}
-        </span>
-      `;
+      const left = document.createElement('div');
+      left.className = 'flex items-center gap-2';
 
-      const scoreEl = document.createElement('span');
-      if (combo.score != null) {
-        scoreEl.className = 'text-xs text-gray-300';
-        scoreEl.textContent = `${t.generatorScoreLabel} ${combo.score}`;
+      const badge = document.createElement('span');
+      badge.className =
+        'inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-xs font-bold';
+      badge.textContent = `#${i + 1}`;
+
+      const label = document.createElement('span');
+      label.className = 'font-semibold text-sm';
+      label.textContent = `${comboLabel} ${i + 1}`;
+
+      left.appendChild(badge);
+      left.appendChild(label);
+      titleRow.appendChild(left);
+
+      if (i < buildable.length) {
+        const combo = buildable[i];
+        const scoreEl = document.createElement('span');
+        scoreEl.className = 'text-xs text-amber-300 font-semibold';
+        scoreEl.textContent = `${scoreLabel} ${combo.score ?? 0}`;
+        titleRow.appendChild(scoreEl);
+        card.appendChild(titleRow);
+
+        const heroesRow = document.createElement('div');
+        heroesRow.className = 'flex flex-wrap gap-3 mt-2';
+
+        combo.heroes.forEach((hName) => {
+          const tile = document.createElement('div');
+          tile.className =
+            'flex flex-col items-center justify-center w-20';
+
+          tile.innerHTML = `
+            <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-600 mb-1">
+              <img src="${getHeroImageUrl(hName)}"
+                   alt="${hName}"
+                   class="w-full h-full object-cover"
+                   crossorigin="anonymous">
+            </div>
+            <span class="text-[11px] text-center text-blue-100 truncate w-full">
+              ${hName}
+            </span>
+          `;
+          heroesRow.appendChild(tile);
+        });
+
+        card.appendChild(heroesRow);
+      } else {
+        // placeholder card for missing #4/#5
+        card.appendChild(titleRow);
+        const emptyMsg = emptyMsgTemplate.replace(
+          '{slot}',
+          String(i + 1)
+        );
+        const info = document.createElement('p');
+        info.className = 'text-xs text-gray-400 mt-2';
+        info.textContent = emptyMsg;
+        card.appendChild(info);
       }
 
-      titleRow.appendChild(title);
-      if (combo.score != null) titleRow.appendChild(scoreEl);
-
-      const heroesRow = document.createElement('div');
-      heroesRow.className = 'flex flex-wrap gap-2 mb-2';
-      combo.heroes.forEach((heroName) => {
-        const heroCard = document.createElement('div');
-        heroCard.className =
-          'flex items-center gap-1 bg-gray-900 rounded-lg px-2 py-1 text-xs';
-
-        const heroData = allHeroesData.find((h) => h.name === heroName);
-
-        if (heroData) {
-          const img = document.createElement('img');
-          img.src = heroData.imageUrl;
-          img.alt = heroName;
-          img.loading = 'lazy';
-          img.width = 28;
-          img.height = 28;
-          img.className = 'rounded';
-          heroCard.appendChild(img);
-        }
-
-        const label = document.createElement('span');
-        label.textContent = heroName;
-        heroCard.appendChild(label);
-        heroesRow.appendChild(heroCard);
-      });
-
-      card.appendChild(titleRow);
-      card.appendChild(heroesRow);
       generatorResultsEl.appendChild(card);
-    });
+    }
   }
 
-  // buttons
+  // --- wire buttons for select all / clear / generate ---
   if (selectAllHeroesBtn) {
-    selectAllHeroesBtn.addEventListener('click', () => {
-      ownedHeroes = new Set(allHeroesData.map((h) => h.name));
-      ownedHeroesListEl
-        .querySelectorAll('input[type="checkbox"]')
-        .forEach((cb) => (cb.checked = true));
-    });
+    selectAllHeroesBtn.onclick = () => {
+      const filteredHeroes = allHeroesData.filter((h) =>
+        generatorSelectedSeasons.has(h.season)
+      );
+      filteredHeroes.forEach((h) => ownedHeroes.add(h.name));
+      renderOwnedHeroList(); // refresh highlighting
+    };
   }
 
   if (clearAllHeroesBtn) {
-    clearAllHeroesBtn.addEventListener('click', () => {
+    clearAllHeroesBtn.onclick = () => {
       ownedHeroes.clear();
-      ownedHeroesListEl
-        .querySelectorAll('input[type="checkbox"]')
-        .forEach((cb) => (cb.checked = false));
-    });
+      renderOwnedHeroList();
+    };
   }
 
   if (generateCombosBtn) {
-    generateCombosBtn.addEventListener('click', generateBestCombos);
+    generateCombosBtn.onclick = generateBestCombos;
   }
 
+  // initial render: show all heroes, all seasons checked
   renderOwnedHeroList();
 }
-
 // ------------------------------------------------------------
 // Wire UI actions
 // ------------------------------------------------------------
