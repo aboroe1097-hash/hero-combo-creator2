@@ -305,6 +305,31 @@
     </div>
   </section>
 
+    
+  <!-- Comments Section -->
+  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner">
+    <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments & Suggestions</h2>
+
+    <!-- simple form -->
+    <form id="commentForm" class="mb-4">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
+        <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)" class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
+      </div>
+      <textarea id="commentText" rows="3" required placeholder="Write a suggestion or comment..." class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white" maxlength="1000"></textarea>
+
+      <div class="flex items-center justify-between mt-3">
+        <div class="text-sm text-gray-400">Be kind — comments are public.</div>
+        <button id="postCommentBtn" type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Post Comment</button>
+      </div>
+    </form>
+
+    <!-- comments list -->
+    <div id="commentsList" class="flex flex-col gap-3">
+      <!-- comments rendered here -->
+    </div>
+  </section>
+    
   <!-- module scripts -->
   <script type="module" src="js/firebase.js"></script>
   <script type="module" src="js/translations.js"></script>
@@ -312,4 +337,5 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
