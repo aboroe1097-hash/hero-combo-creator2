@@ -56,9 +56,14 @@ export const rankedCombos = [
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
-  { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
-  { heroes: ["Black Prince", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Black Prince", "Jane"] },
+  { heroes: ["War Lord", "Isabella I", "Lionheart"] },
+  { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
+  { heroes: ["North's Rage", "Isabella I", "Mary Tudor"] },
+  { heroes: ["North's Rage", "Isabella I", "Lionheart"] },
+  { heroes: ["North's Rage", "Isabella I", "Mary Tudor"] },
+  { heroes: ["Yukimura Sanada", "Isabella I", "Lionheart"] },
+  { heroes: ["Yukimura Sanada", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Rokuboshuten", "Jane"] },
   { heroes: ["War Lord", "Constantine the Great", "Jane"] },     // Defensive Support
   { heroes: ["Alfred", "Constantine the Great", "Jane"] },       // Support Variation
