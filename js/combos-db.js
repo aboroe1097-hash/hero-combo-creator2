@@ -66,8 +66,9 @@ export const rankedCombos = [
   { heroes: ["Edward the Confessor", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
   { heroes: ["Immortal Guardian", "Leonidas", "Jade Eagle"] },
   { heroes: ["Immortal Guardian", "Isabella I", "Jade Eagle"] },
-  { heroes: ["Immortal Guardian", "Isabella I", "Divine Arrow"] },
   { heroes: ["Immortal Guardian", "Leonidas", "Divine Arrow"] },
+  { heroes: ["Immortal Guardian", "Isabella I", "Divine Arrow"] },
+  { heroes: ["Demon Spear","Soaring Hawk", "Desert Storm"] },
   { heroes: ["Yukimura Sanada", "Rokuboshuten", "Jane"] },
   { heroes: ["North's Rage", "Rokuboshuten", "Jane"] },
   { heroes: ["War Lord", "Black Prince", "Jane"] },
