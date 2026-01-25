@@ -52,10 +52,17 @@
       <option value="ar">العربية</option><option value="kr">한국어</option>
     </select></div>
 
-    <div class="flex justify-center mb-6"><div class="inline-flex bg-slate-800 rounded-full p-1 border border-slate-700">
-      <button id="tabManual" class="tab-pill tab-pill-active">Manual Builder</button>
-      <button id="tabGenerator" class="tab-pill tab-pill-inactive">Combo Generator</button>
-    </div></div>
+    <div class="flex justify-center mb-6">
+      <div class="inline-flex bg-slate-800 rounded-full p-1 border border-slate-700">
+        <button id="tabManual" class="tab-pill tab-pill-active">Manual Builder</button>
+        <div class="relative">
+          <button id="tabGenerator" class="tab-pill tab-pill-inactive">Combo Generator</button>
+          <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-lg uppercase tracking-tighter">
+            Beta
+          </span>
+        </div>
+      </div>
+    </div>
 
     <section id="manualBuilderSection">
       <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl shadow-inner border border-slate-800">
@@ -129,6 +136,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
