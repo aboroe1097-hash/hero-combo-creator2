@@ -66,7 +66,7 @@ const allHeroesData = [
   { name: 'Edward the Confessor', season: 'S1', imageUrl: 'https://static.wixstatic.com/media/43ee96_51538af01a9f4ec789127837e62dccfa~mv2.png' },
   { name: 'Constantine the Great', season: 'S1', imageUrl: 'https://static.wixstatic.com/media/43ee96_b738599c5a0b46deb6a4abf7273f9268~mv2.png' },
   { name: 'Genghis Khan', season: 'S1', imageUrl: 'https://static.wixstatic.com/media/43ee96_40f1c10ba0e04d4fa3e841f865cd206a~mv2.png' },
-  { name: 'William the Conqueror', season: 'S1', imageUrl: 'https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png' },
+  { name: 'William the Conqueror', season: 'S0', imageUrl: 'https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png' },
 
   { name: 'Inquisitor', season: 'S2', imageUrl: 'https://static.wixstatic.com/media/43ee96_5e9612fc176442b78c1fa6766b87473c~mv2.png' },
   { name: 'BeastQueen', season: 'S2', imageUrl: 'https://static.wixstatic.com/media/43ee96_6883135290314469a0daee804dd03692~mv2.png' },
