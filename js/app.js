@@ -37,11 +37,12 @@ const generatorSelectedHeroes = new Set();
 let userId = 'anonymous';
 let db     = null;
 
-// Used for “Share as Text”
+// For “Share as Text”
 let savedCombosCache = [];
 
 // NEW: touch-drag state for mobile manual builder
-let touchDragHero = null;
+let touchDragHero  = null;
+let touchDragGhost = null;
 
 // --- HERO DATA ---
 const allHeroesData = [
@@ -180,12 +181,55 @@ function captureElementAsImage(element, filename) {
   }).catch(err => console.error('Error creating image', err));
 }
 
-// NEW: touch-based "drag" handling for mobile
+// --- TOUCH DRAG (MOBILE) ---
+
+function createTouchGhost(card, touch) {
+  if (!card || !touch) return;
+  // remove old ghost if any
+  if (touchDragGhost && touchDragGhost.parentNode) {
+    touchDragGhost.parentNode.removeChild(touchDragGhost);
+  }
+
+  const rect = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  ghost.style.position = 'fixed';
+  ghost.style.left = `${rect.left}px`;
+  ghost.style.top  = `${rect.top}px`;
+  ghost.style.width  = `${rect.width}px`;
+  ghost.style.height = `${rect.height}px`;
+  ghost.style.opacity = '0.9';
+  ghost.style.pointerEvents = 'none';
+  ghost.style.zIndex = '9999';
+  ghost.style.transform = 'scale(1.05)';
+  ghost.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
+  document.body.appendChild(ghost);
+  touchDragGhost = ghost;
+}
+
 function setupTouchDragForManualBuilder() {
-  // Where the finger ends, see if it’s over a combo-slot and drop there
+  // Move ghost with finger
+  document.addEventListener('touchmove', (e) => {
+    if (!touchDragHero || !touchDragGhost) return;
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
+    // When actually dragging, prevent page scroll
+    e.preventDefault();
+    const w = touchDragGhost.offsetWidth || 80;
+    const h = touchDragGhost.offsetHeight || 80;
+    touchDragGhost.style.left = `${touch.clientX - w / 2}px`;
+    touchDragGhost.style.top  = `${touch.clientY - h / 2}px`;
+  }, { passive: false });
+
+  // Drop on slot where finger ends
   document.addEventListener('touchend', (e) => {
     if (!touchDragHero) return;
     const touch = e.changedTouches && e.changedTouches[0];
+
+    if (touchDragGhost && touchDragGhost.parentNode) {
+      touchDragGhost.parentNode.removeChild(touchDragGhost);
+    }
+    touchDragGhost = null;
+
     if (!touch) {
       touchDragHero = null;
       return;
@@ -224,9 +268,12 @@ function setupTouchDragForManualBuilder() {
     touchDragHero = null;
   }, { passive: true });
 
-  // Clear if touch is cancelled
   document.addEventListener('touchcancel', () => {
-    touchDragHero = null;
+    if (touchDragGhost && touchDragGhost.parentNode) {
+      touchDragGhost.parentNode.removeChild(touchDragGhost);
+    }
+    touchDragGhost = null;
+    touchDragHero  = null;
   }, { passive: true });
 }
 
@@ -257,9 +304,11 @@ function renderAvailableHeroes() {
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
-      // NEW: when a touch starts on this hero, remember him for mobile drag
-      card.addEventListener('touchstart', () => {
+      // NEW: touchstart creates ghost + sets hero
+      card.addEventListener('touchstart', (e) => {
+        const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
+        createTouchGhost(card, touch);
       }, { passive: true });
 
       // Tap / click add (mobile + desktop)
@@ -776,7 +825,7 @@ async function updateTextContent() {
   renderAvailableHeroes();
   renderGeneratorHeroes();
 
-  // add touch-drag support for mobile manual builder
+  // touch drag support for mobile
   setupTouchDragForManualBuilder();
 
   // default landing: generator tab
