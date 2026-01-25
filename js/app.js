@@ -184,7 +184,7 @@ function renderAvailableHeroes() {
       card.classList.remove('opacity-50');
     });
 
-    // Mobile touch-drag
+    // Mobile touch-drag / tap
     card.addEventListener('touchstart', onHeroTouchStart, { passive: false });
 
     availableHeroesEl.appendChild(card);
@@ -208,7 +208,7 @@ function updateComboSlotDisplay(slot, name, idx) {
       <div class="combo-slot-placeholder">
         <span class="text-5xl font-bold text-blue-400">+</span>
         <span class="text-xs text-gray-300">
-          ${translations[currentLanguage]?.dragHeroHere || 'Drag Hero Here'}
+          ${translations[currentLanguage]?.dragHeroHere || 'Drag or tap hero here'}
         </span>
       </div>`;
     slot.classList.remove('relative', 'p-0');
@@ -249,6 +249,21 @@ function placeHeroIntoSlot(heroName, slotEl) {
   updateComboSlotDisplay(slotEl, heroName, idx);
 }
 
+// Auto-place helper (for simple tap on mobile)
+function autoPlaceHero(heroName) {
+  if (!heroName) return;
+  let targetIndex = currentCombo.indexOf(null);
+  if (targetIndex === -1) {
+    // if full, overwrite the first slot (or you can choose to do nothing)
+    targetIndex = 0;
+  }
+  const slots = document.querySelectorAll('.combo-slot');
+  const targetSlot = slots[targetIndex];
+  if (targetSlot) {
+    placeHeroIntoSlot(heroName, targetSlot);
+  }
+}
+
 function initComboSlots() {
   document.querySelectorAll('.combo-slot').forEach((slot) => {
     const idx = parseInt(slot.dataset.slotIndex, 10);
@@ -271,7 +286,7 @@ function initComboSlots() {
 }
 
 // ------------------------------------------------------------
-// Mobile touch drag–drop
+// Mobile touch drag–drop / tap
 // ------------------------------------------------------------
 const touchDragState = {
   heroName: null,
@@ -359,8 +374,13 @@ function onTouchEnd(e) {
 
   const el = document.elementFromPoint(touch.clientX, touch.clientY);
   const slot = el && el.closest && el.closest('.combo-slot');
+
   if (slot) {
+    // dropped on a slot
     placeHeroIntoSlot(heroName, slot);
+  } else {
+    // simple tap -> auto-place into first empty slot
+    autoPlaceHero(heroName);
   }
 }
 
@@ -479,7 +499,7 @@ async function saveCombo() {
   if (currentCombo.includes(null)) {
     showMessageBox(
       translations[currentLanguage]?.messagePleaseDrag3Heroes ||
-        'Please drag 3 heroes'
+        'Please drag or tap 3 heroes'
     );
     return;
   }
