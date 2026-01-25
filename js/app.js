@@ -40,6 +40,9 @@ let db     = null;
 // Used for “Share as Text”
 let savedCombosCache = [];
 
+// NEW: touch-drag state for mobile manual builder
+let touchDragHero = null;
+
 // --- HERO DATA ---
 const allHeroesData = [
   { name: "Jeanne d'Arc", season: 'S0', imageUrl: 'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png' },
@@ -177,6 +180,56 @@ function captureElementAsImage(element, filename) {
   }).catch(err => console.error('Error creating image', err));
 }
 
+// NEW: touch-based "drag" handling for mobile
+function setupTouchDragForManualBuilder() {
+  // Where the finger ends, see if it’s over a combo-slot and drop there
+  document.addEventListener('touchend', (e) => {
+    if (!touchDragHero) return;
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) {
+      touchDragHero = null;
+      return;
+    }
+
+    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!targetElement) {
+      touchDragHero = null;
+      return;
+    }
+
+    const slot = targetElement.closest && targetElement.closest('.combo-slot');
+    if (!slot) {
+      touchDragHero = null;
+      return;
+    }
+
+    const idx = parseInt(slot.dataset.slotIndex, 10);
+    if (Number.isNaN(idx)) {
+      touchDragHero = null;
+      return;
+    }
+
+    if (isHeroAlreadyInCombo(touchDragHero, idx)) {
+      const t = translations[currentLanguage] || translations.en;
+      showAboModal(
+        t.manualNoDuplicateHero || 'This hero is already used in your current combo.'
+      );
+      touchDragHero = null;
+      return;
+    }
+
+    currentCombo[idx] = touchDragHero;
+    updateComboSlotDisplay(slot, touchDragHero, idx);
+    updateManualComboScore();
+    touchDragHero = null;
+  }, { passive: true });
+
+  // Clear if touch is cancelled
+  document.addEventListener('touchcancel', () => {
+    touchDragHero = null;
+  }, { passive: true });
+}
+
 // --- RENDERING: MANUAL BUILDER ---
 
 function renderAvailableHeroes() {
@@ -199,12 +252,17 @@ function renderAvailableHeroes() {
         <span class="mt-1 text-center font-bold text-xs">${hero.name}</span>
       `;
 
-      // desktop drag
+      // Desktop drag
       card.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
-      // tap / click add (mobile + desktop)
+      // NEW: when a touch starts on this hero, remember him for mobile drag
+      card.addEventListener('touchstart', () => {
+        touchDragHero = hero.name;
+      }, { passive: true });
+
+      // Tap / click add (mobile + desktop)
       card.addEventListener('click', () => {
         if (isHeroAlreadyInCombo(hero.name)) {
           showAboModal(
@@ -407,9 +465,9 @@ function generateBestCombos() {
     return;
   }
 
-  const ownedSet       = new Set(selected);
+  const ownedSet        = new Set(selected);
   const usedHeroesGlobal = new Set();
-  const finalSelection = [];
+  const finalSelection  = [];
 
   for (const combo of rankedCombos) {
     if (finalSelection.length >= 5) break;
@@ -718,6 +776,9 @@ async function updateTextContent() {
   renderAvailableHeroes();
   renderGeneratorHeroes();
 
+  // add touch-drag support for mobile manual builder
+  setupTouchDragForManualBuilder();
+
   // default landing: generator tab
   tabGeneratorBtn.click();
 
@@ -726,6 +787,7 @@ async function updateTextContent() {
     slot.dataset.slotIndex = i;
     updateComboSlotDisplay(slot, null, i);
 
+    // desktop HTML5 drag support
     slot.addEventListener('dragover', e => e.preventDefault());
     slot.addEventListener('drop', e => {
       e.preventDefault();
