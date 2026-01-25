@@ -1,252 +1,52 @@
-/* Mobile overrides for improved readability and touch comfort
-   Loaded with media="(max-width: 768px)" in index.html
-*/
+/* css/mobile.css - Optimized Mobile Experience */
 
-:root {
-  --mobile-base-font-size: 15px;
-  --mobile-radius: 12px;
-  --mobile-gap: 8px;
-}
+:root { --mobile-gap: 8px; }
 
 html, body {
   -webkit-text-size-adjust: 100%;
-  /* extra space so comments aren't hidden behind the fixed footer */
-  padding-bottom: 180px !important;
-  font-size: var(--mobile-base-font-size);
+  padding-bottom: 200px !important; /* Space for sticky bar */
 }
 
-/* App container */
-#app {
-  padding: 12px !important;
-  margin: 0 4px !important;
-  border-radius: var(--mobile-radius) !important;
-  max-width: calc(100% - 8px) !important;
-  box-sizing: border-box;
-}
+#app { padding: 12px !important; border-radius: 12px !important; }
 
-/* Hide small top-right logo on mobile */
-.team-badge {
-  display: none !important;
-}
+/* Hide desktop-only branding */
+.team-badge, #createComboTitle { display: none !important; }
 
-#createComboTitle {
-  display: none !important;
-}
+#appTitle { font-size: 1.8rem !important; }
 
-/* Header / text */
-#appTitle {
-  font-size: 1.8rem !important;
-  line-height: 1.2 !important;
-}
-#betaNote {
-  background: rgba(30, 58, 138, 0.4);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-/* Controls: wrap + center */
-.language-select-wrapper {
-  justify-content: center !important;
-}
-
-/* Buttons: nice large touch targets */
-button,
-.remove-combo-btn,
-.share-combo-btn {
-  min-height: 44px !important;
-  border-radius: 999px !important;
-}
-
-/* ===== Available heroes: 3 per row ===== */
-#availableHeroes {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  justify-items: center !important;
-}
-
-/* Smaller hero cards for mobile */
-.hero-card {
-  min-width: 90px !important;
-  min-height: 120px !important;
-  padding: 8px !important;
-  margin: 4px !important;
-}
-.hero-card img {
-  width: 72px !important;
-  height: 72px !important;
-}
-.hero-card .mt-1 {
-  font-size: 0.9rem !important;
-}
-
-/* ===== Sticky combo footer (slots + buttons) ===== */
-
-/* Give main combo section extra bottom space so content isn't hidden
-   behind the fixed footer bar. */
-.combo-section {
-  padding-bottom: 190px !important;
-}
-
-/* Fixed footer bar that contains slots + buttons */
+/* Sticky Mobile Footer Fix */
 #comboFooterBar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 100;
-    border-radius: 20px 20px 0 0; /* Rounded top only */
-    border-top: 2px solid rgba(59, 130, 246, 0.4);
-    padding: 12px;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
-  }
-
-/* Slots row – compact and centered */
-#comboSlotsRow {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-bottom: 6px !important;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+  border-radius: 20px 20px 0 0;
+  border-top: 2px solid rgba(59, 130, 246, 0.4);
+  padding: 12px;
+  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
 }
 
-/* Slightly smaller slots so 3 fit comfortably */
-#comboSlotsRow .combo-slot {
-  width: 70px !important;
-  height: 70px !important;
-  border-width: 3px !important;
-  font-size: 0.7rem !important;
-  margin: 0 !important;
-}
+/* Slots and Buttons Grid */
+#comboSlotsRow { display: flex; justify-content: center; gap: 8px; margin-bottom: 6px; }
 
-#comboSlotsRow .combo-slot img {
-  border-radius: 0.4rem !important;
-}
+.combo-slot { width: 70px !important; height: 70px !important; margin: 0 !important; }
 
-/* Buttons row – 2×2 grid */
-#comboButtonsRow {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 6px !important;
-  justify-content: center !important;
-}
+#comboButtonsRow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 
-#comboButtonsRow button {
-  font-size: 0.8rem !important;
-  padding: 8px 4px !important;
-  min-height: 36px !important;
-  border-radius: 9999px !important;
-}
+#comboButtonsRow button { font-size: 0.75rem; padding: 6px; min-height: 40px !important; }
 
-/* ===== Mobile: Saved combos layout ===== */
+/* Saved Combo List Optimizations */
+.saved-combo-display { padding-left: 72px !important; }
 
-/* Make the whole card slightly narrower + centered */
-.saved-combo-display {
-  max-width: 100% !important;
-  width: 100% !important;
-  margin: 8px 0 !important;
-  padding: 12px 12px 12px 72px !important; /* room for the orange badge */
-  box-sizing: border-box !important;
-}
+.saved-combo-number { left: 24px !important; width: 32px !important; height: 32px !important; }
 
-/* Number badge a bit closer on mobile */
-.saved-combo-number {
-  left: 30px !important;
-  width: 32px !important;
-  height: 32px !important;
-  line-height: 32px !important;
-  font-size: 0.9rem !important;
-}
+.saved-combo-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 
-/* 3-column grid, no horizontal scroll, no clipping */
-.saved-combo-slots {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 6px !important;
-  justify-items: center !important;
-  overflow: visible !important;
-  -webkit-overflow-scrolling: auto !important;
-}
+.saved-combo-slot-item { aspect-ratio: 1/1; }
 
-/* Each tile fits its grid cell and keeps a square ratio */
-.saved-combo-slot-item {
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1 !important;
-  border-radius: 10px !important;
-  padding: 0 !important;
-}
+/* Selection Feedback */
+.generator-card-selected { border: 3px solid #38bdf8 !important; transform: scale(0.95) !important; }
 
-/* Image fills tile completely */
-.saved-combo-slot-item img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: 10px !important;
-}
-
-/* js/mobile.css addition */
-
-/* Disable sticky hover effects on mobile to prevent selection lag */
-@media (hover: none) {
-  .hero-card:hover {
-    transform: none !important;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25) !important;
-  }
-}
-
-/* Ensure the selected state is very distinct and overrides everything */
-.generator-card-selected {
-  border: 3px solid #38bdf8 !important; /* Use a real border instead of just a shadow */
-  background-color: rgba(56, 189, 248, 0.1) !important;
-  transform: scale(0.95) !important; /* Slight shrink gives immediate physical feedback on tap */
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4) !important;
-}
-
-/* Optimization: Faster tap response */
-.generator-card {
-  touch-action: manipulation;
-  transition: transform 0.1s ease-out !important;
-}
-
-/* Name text under hero – a bit smaller on mobile */
-.saved-combo-slot-item span {
-  font-size: 0.75rem !important;
-  margin-top: 4px !important;
-}
-
-/* Share/remove buttons smaller so they don't steal width */
-.saved-combo-actions {
-  margin-left: 8px !important;
-  gap: 6px !important;
-}
-.share-combo-btn,
-.remove-combo-btn {
-  width: 32px !important;
-  height: 32px !important;
-  font-size: 0.75rem !important;
-  padding: 0 !important;
-}
-
-/* Comments text size */
-.comment-text {
-  font-size: 0.95rem !important;
-  line-height: 1.4 !important;
-  word-break: break-word !important;
-}
-
-/* Visible focus */
-button:focus,
-.hero-card:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(11, 102, 195, 0.35) !important;
-}
-
-/* Avoid grey tap highlight */
-* {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
+* { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
