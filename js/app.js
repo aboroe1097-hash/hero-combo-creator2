@@ -185,6 +185,23 @@ function updateComboSlotDisplay(slot, name, idx) {
   }
 }
 
+// --- CUSTOM MODAL ENGINE ---
+function showAboModal(message, onConfirm = null) {
+  const t = translations[currentLanguage] || translations.en;
+  messageText.textContent = message;
+  messageBox.classList.remove('hidden');
+  
+  if (onConfirm) {
+    messageBoxOkBtn.textContent = t.messageBoxConfirm || "Confirm";
+    messageBoxCancelBtn.classList.remove('hidden');
+    messageBoxOkBtn.onclick = () => { messageBox.classList.add('hidden'); onConfirm(); };
+    messageBoxCancelBtn.onclick = () => messageBox.classList.add('hidden');
+  } else {
+    messageBoxOkBtn.textContent = t.messageBoxOk || "OK";
+    messageBoxCancelBtn.classList.add('hidden');
+    messageBoxOkBtn.onclick = () => messageBox.classList.add('hidden');
+  }
+}
 // --- COMBO GENERATOR ACTIONS ---
 async function downloadGeneratorResultsAsImage() {
   if (!generatorResultsEl || generatorResultsEl.children.length === 0) return;
