@@ -1,4 +1,4 @@
-// js/app.js - Version b2.6 with Mobile Drag Support + Manual Combo Scoring
+// js/app.js - Final Version b2.4 Full Fix
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -28,14 +28,11 @@ const generatorResultsEl = document.getElementById('generatorResults');
 const generateCombosBtn = document.getElementById('generateCombosBtn');
 const comboFooterBar = document.getElementById('comboFooterBar');
 
-// Will be created dynamically under the combo slots if not present in HTML
-let comboScoreInfoEl = document.getElementById('comboScoreInfo');
-
 // State
 let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
-let selectedSeasons = ['S0'];
+let selectedSeasons = ['S0']; 
 let currentCombo = [null, null, null];
-let generatorSelectedSeasons = ['S0'];
+let generatorSelectedSeasons = ['S0']; 
 const generatorSelectedHeroes = new Set();
 let userId = 'anonymous';
 let db = null;
@@ -100,6 +97,27 @@ function getHeroImageUrl(name) {
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
 }
 
+// Find rank + score for a given 3-hero combo (order independent)
+function getComboRankInfo(heroes) {
+  if (!Array.isArray(heroes) || heroes.length !== 3) return null;
+  const userSorted = [...heroes].slice().sort();
+  for (let i = 0; i < rankedCombos.length; i++) {
+    const combo = rankedCombos[i];
+    if (!combo.heroes || combo.heroes.length !== 3) continue;
+    const comboSorted = [...combo.heroes].slice().sort();
+    if (
+      comboSorted[0] === userSorted[0] &&
+      comboSorted[1] === userSorted[1] &&
+      comboSorted[2] === userSorted[2]
+    ) {
+      const rank = i + 1;
+      const score = 100 - i;
+      return { rank, score, index: i };
+    }
+  }
+  return null;
+}
+
 function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
@@ -116,136 +134,11 @@ function showAboModal(message, onConfirm = null) {
   }
 }
 
-// Ensure we have a place to show manual-combo score info
-function ensureComboScoreInfoEl() {
-  if (comboScoreInfoEl) return comboScoreInfoEl;
-  const comboRow = document.getElementById('comboRow');
-  if (!comboRow) return null;
-  comboScoreInfoEl = document.createElement('p');
-  comboScoreInfoEl.id = 'comboScoreInfo';
-  comboScoreInfoEl.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center hidden';
-  comboRow.insertAdjacentElement('afterend', comboScoreInfoEl);
-  return comboScoreInfoEl;
-}
-
-/* ---------- MOBILE TOUCH DRAG SUPPORT ---------- */
-
-let touchDragHeroName = null;
-let touchDragGhost = null;
-let touchDragLastSlot = null;
-
-function isTouchDevice() {
-  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-}
-
-function setupHeroTouchDrag(card, hero) {
-  if (!isTouchDevice()) return;
-
-  // On touch devices, disable native HTML5 drag to avoid conflicts
-  card.draggable = false;
-
-  card.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    e.preventDefault();
-
-    const touch = e.touches[0];
-    touchDragHeroName = hero.name;
-
-    // Create ghost element that follows the finger
-    touchDragGhost = document.createElement('div');
-    touchDragGhost.className = 'hero-drag-ghost';
-    touchDragGhost.innerHTML = `
-      <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
-    `;
-    document.body.appendChild(touchDragGhost);
-    moveHeroDragGhost(touch.clientX, touch.clientY);
-
-    document.addEventListener('touchmove', onHeroTouchMove, { passive: false });
-    document.addEventListener('touchend', onHeroTouchEnd);
-    document.addEventListener('touchcancel', onHeroTouchCancel);
-  });
-}
-
-function moveHeroDragGhost(x, y) {
-  if (!touchDragGhost) return;
-  touchDragGhost.style.left = x + 'px';
-  touchDragGhost.style.top = y + 'px';
-}
-
-function clearHeroSlotHover() {
-  if (touchDragLastSlot) {
-    touchDragLastSlot.classList.remove('combo-slot-hover');
-    touchDragLastSlot = null;
-  }
-}
-
-function onHeroTouchMove(e) {
-  if (!touchDragHeroName || !touchDragGhost) return;
-  const touch = e.touches[0];
-  if (!touch) return;
-
-  // Prevent scrolling while dragging
-  e.preventDefault();
-
-  moveHeroDragGhost(touch.clientX, touch.clientY);
-
-  const elem = document.elementFromPoint(touch.clientX, touch.clientY);
-  const slot = elem && elem.closest ? elem.closest('.combo-slot') : null;
-
-  if (slot !== touchDragLastSlot) {
-    clearHeroSlotHover();
-    if (slot) {
-      slot.classList.add('combo-slot-hover');
-      touchDragLastSlot = slot;
-    }
-  }
-}
-
-function finishHeroTouchDrop(targetSlot) {
-  if (!targetSlot || !touchDragHeroName) return;
-  const idx = parseInt(targetSlot.dataset.slotIndex, 10);
-  if (isNaN(idx)) return;
-
-  currentCombo[idx] = touchDragHeroName;
-  updateComboSlotDisplay(targetSlot, touchDragHeroName, idx);
-  updateCurrentComboScore();
-}
-
-function cleanupHeroTouchDrag() {
-  clearHeroSlotHover();
-  if (touchDragGhost && touchDragGhost.parentNode) {
-    touchDragGhost.parentNode.removeChild(touchDragGhost);
-  }
-  touchDragGhost = null;
-  touchDragHeroName = null;
-}
-
-function onHeroTouchEnd(e) {
-  const touch = e.changedTouches[0];
-  const elem = document.elementFromPoint(touch.clientX, touch.clientY);
-  const slot = elem && elem.closest ? elem.closest('.combo-slot') : null;
-
-  if (slot) {
-    finishHeroTouchDrop(slot);
-  }
-
-  cleanupHeroTouchDrag();
-  document.removeEventListener('touchmove', onHeroTouchMove);
-  document.removeEventListener('touchend', onHeroTouchEnd);
-  document.removeEventListener('touchcancel', onHeroTouchCancel);
-}
-
-function onHeroTouchCancel() {
-  cleanupHeroTouchDrag();
-  document.removeEventListener('touchmove', onHeroTouchMove);
-  document.removeEventListener('touchend', onHeroTouchEnd);
-  document.removeEventListener('touchcancel', onHeroTouchCancel);
-}
-
-/* ---------- RENDERING FUNCTIONS ---------- */
-
+// --- RENDERING FUNCTIONS (Restored) ---
 function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
+
+  const t = translations[currentLanguage] || translations.en;
 
   availableHeroesEl.innerHTML = '';
   allHeroesData
@@ -268,8 +161,25 @@ function renderAvailableHeroes() {
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
-      // Mobile drag via touch events (no tap-to-place)
-      setupHeroTouchDrag(card, hero);
+      // NEW: Mobile (and desktop) tap support
+      card.addEventListener('click', () => {
+        // Find first empty slot
+        const emptyIndex = currentCombo.indexOf(null);
+        if (emptyIndex === -1) {
+          // All 3 slots full – reuse your existing message text
+          showAboModal(t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.');
+          return;
+        }
+
+        currentCombo[emptyIndex] = hero.name;
+
+        const slots = document.querySelectorAll('.combo-slot');
+        const targetSlot = slots[emptyIndex];
+        if (targetSlot) {
+          updateComboSlotDisplay(targetSlot, hero.name, emptyIndex);
+          updateManualComboScore();
+        }
+      });
 
       availableHeroesEl.appendChild(card);
     });
@@ -297,14 +207,13 @@ function renderGeneratorHeroes() {
 
 function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
-
   if (name) {
     slot.innerHTML = `
       <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
       <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
         ${name}
       </span>`;
-    slot.classList.add('relative', 'p-0', 'border-solid', 'border-emerald-500');
+    slot.classList.add('relative', 'p-0');
   } else {
     slot.innerHTML = `
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
@@ -313,61 +222,53 @@ function updateComboSlotDisplay(slot, name, idx) {
           ${t.dragHeroHere}
         </span>
       </div>`;
-    slot.classList.remove('relative', 'p-0', 'border-emerald-500');
+    slot.classList.remove('relative', 'p-0');
   }
 }
 
-/* ---------- MANUAL COMBO SCORING ---------- */
-
-function updateCurrentComboScore() {
+// Show score for current manual combo under the combo slots
+function updateManualComboScore() {
   const t = translations[currentLanguage] || translations.en;
-  const el = ensureComboScoreInfoEl();
-  if (!el) return;
+  const comboFooterBarEl = document.getElementById('comboFooterBar');
+  if (!comboFooterBarEl) return;
 
-  // If combo not complete, hide message
-  if (currentCombo.includes(null)) {
-    el.textContent = '';
-    el.classList.add('hidden');
-    return;
-  }
-
-  const userSorted = [...currentCombo].slice().sort();
-  let foundIndex = -1;
-
-  for (let i = 0; i < rankedCombos.length; i++) {
-    const combo = rankedCombos[i];
-    if (!combo.heroes || combo.heroes.length !== 3) continue;
-    const sortedHeroes = [...combo.heroes].slice().sort();
-    if (
-      sortedHeroes[0] === userSorted[0] &&
-      sortedHeroes[1] === userSorted[1] &&
-      sortedHeroes[2] === userSorted[2]
-    ) {
-      foundIndex = i;
-      break;
+  let scoreBox = document.getElementById('manualComboScoreBox');
+  if (!scoreBox) {
+    scoreBox = document.createElement('div');
+    scoreBox.id = 'manualComboScoreBox';
+    scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center hidden';
+    const buttonsRow = document.getElementById('comboButtonsRow');
+    if (buttonsRow) {
+      comboFooterBarEl.insertBefore(scoreBox, buttonsRow);
+    } else {
+      comboFooterBarEl.appendChild(scoreBox);
     }
   }
 
-  el.classList.remove('hidden');
+  // If combo not complete, hide box
+  if (currentCombo.includes(null)) {
+    scoreBox.textContent = '';
+    scoreBox.classList.add('hidden');
+    return;
+  }
 
-  if (foundIndex === -1) {
-    el.textContent =
-      t.manualComboNotRanked ||
-      'This combo is not in the ranked database.';
+  const info = getComboRankInfo(currentCombo);
+  scoreBox.classList.remove('hidden');
+
+  if (!info) {
+    scoreBox.textContent =
+      (t.manualComboNotRanked || 'This combo is not in the ranked database.');
   } else {
-    const humanRank = foundIndex + 1;
-    const score = 100 - foundIndex; // same style scoring as generator
-    const template =
-      t.manualComboRankMessage ||
-      'This combo is ranked #{rank} with score {score}/100.';
-    el.textContent = template
-      .replace('{rank}', humanRank)
-      .replace('{score}', score);
+    const label = t.generatorScoreLabel || 'Score';
+    scoreBox.innerHTML = `
+      <span class="uppercase tracking-widest text-slate-400 mr-2">${label}</span>
+      <span class="font-black text-sky-400 text-base sm:text-lg">${info.score}</span>
+      <span class="ml-2 text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
+    `;
   }
 }
 
-/* ---------- LOGIC FUNCTIONS ---------- */
-
+// --- LOGIC FUNCTIONS ---
 async function saveCombo() {
   const t = translations[currentLanguage] || translations.en;
   if (currentCombo.includes(null)) return showAboModal(t.messagePleaseDrag3Heroes);
@@ -380,14 +281,8 @@ async function saveCombo() {
     });
     currentCombo = [null, null, null];
     document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
-    updateCurrentComboScore();
+    updateManualComboScore();
   } catch (e) { console.error(e); } finally { loadingSpinner.classList.add('hidden'); }
-}
-
-function clearCurrentCombo() {
-  currentCombo = [null, null, null];
-  document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
-  updateCurrentComboScore();
 }
 
 function generateBestCombos() {
@@ -419,8 +314,8 @@ function renderGeneratorResults(bestCombos) {
   generatorResultsEl.innerHTML = '';
   bestCombos.forEach((combo, i) => {
     const card = document.createElement('div');
-    card.className = 'generated-combo-card';
-
+    card.className = 'generated-combo-card'; // CSS Handles spacing
+    
     const slots = document.createElement('div');
     slots.className = 'saved-combo-slots';
     combo.heroes.forEach(name => {
@@ -440,17 +335,16 @@ function renderGeneratorResults(bestCombos) {
   });
 }
 
-/* ---------- FIRESTORE ---------- */
-
+// --- FIRESTORE ---
 async function setupFirestoreListener() {
   const _db = getDb(); if (!_db || !userId) return; db = _db;
   const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
   const q = query(collection(db, `users/${userId}/bestCombos`), orderBy('timestamp', 'desc'), limit(100));
-
+  
   onSnapshot(q, (snap) => {
     savedCombosEl.innerHTML = '';
     noCombosMessage.classList.toggle('hidden', !snap.empty);
-    let counter = 1;
+    let counter = 1; // FIX: Manual counter fixes NaN
     snap.forEach((d) => {
       const heroes = d.data().heroes || [];
       const row = document.createElement('div');
@@ -463,6 +357,18 @@ async function setupFirestoreListener() {
         item.innerHTML = `<img src="${getHeroImageUrl(name)}"><span>${name}</span>`;
         slots.appendChild(item);
       });
+
+      // Add score box for this saved combo if it exists in rankedCombos
+      const rankInfo = getComboRankInfo(heroes);
+      if (rankInfo) {
+        const scoreBox = document.createElement('div');
+        scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2 saved-combo-scorebox';
+        const t = translations[currentLanguage] || translations.en;
+        const label = t.generatorScoreLabel || 'Score';
+        scoreBox.innerHTML = `<span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span><span class="text-lg font-black text-sky-400">${rankInfo.score}</span>`;
+        row.appendChild(scoreBox);
+      }
+
       const delBtn = document.createElement('button');
       delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X';
       delBtn.onclick = () => showAboModal(translations[currentLanguage].messageConfirmRemoveCombo, async () => {
@@ -475,18 +381,14 @@ async function setupFirestoreListener() {
   });
 }
 
-/* ---------- UI WIRING ---------- */
-
+// --- UI WIRING ---
 function wireUIActions() {
-  if (languageSelect) {
-    languageSelect.onchange = (e) => {
-      currentLanguage = e.target.value;
-      localStorage.setItem('vts_hero_lang', currentLanguage);
-      updateTextContent();
-      renderGeneratorHeroes();
-      updateCurrentComboScore();
-    };
-  }
+  languageSelect.onchange = (e) => {
+    currentLanguage = e.target.value;
+    localStorage.setItem('vts_hero_lang', currentLanguage);
+    updateTextContent();
+    renderGeneratorHeroes();
+  };
 
   const handleTabSwitch = (isManual) => {
     manualSection.classList.toggle('hidden', !isManual);
@@ -496,9 +398,10 @@ function wireUIActions() {
     tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active';
   };
 
-  if (tabManualBtn) tabManualBtn.onclick = () => handleTabSwitch(true);
-  if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => handleTabSwitch(false);
+  tabManualBtn.onclick = () => handleTabSwitch(true);
+  tabGeneratorBtn.onclick = () => handleTabSwitch(false);
 
+  // DEFENSIVE FIX for null element errors
   const seasonFilters = document.getElementById('seasonFilters');
   if (seasonFilters) {
     seasonFilters.onchange = (e) => {
@@ -517,83 +420,47 @@ function wireUIActions() {
     };
   }
 
-  const genSelectAllBtn = document.getElementById('genSelectAllBtn');
-  const genClearAllBtn = document.getElementById('genClearAllBtn');
+  document.getElementById('genSelectAllBtn').onclick = () => {
+    allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(h => generatorSelectedHeroes.add(h.name));
+    renderGeneratorHeroes();
+  };
+  document.getElementById('genClearAllBtn').onclick = () => {
+    generatorSelectedHeroes.clear();
+    renderGeneratorHeroes();
+  };
 
-  if (genSelectAllBtn) {
-    genSelectAllBtn.onclick = () => {
-      allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(h => generatorSelectedHeroes.add(h.name));
-      renderGeneratorHeroes();
-    };
-  }
-
-  if (genClearAllBtn) {
-    genClearAllBtn.onclick = () => {
-      generatorSelectedHeroes.clear();
-      renderGeneratorHeroes();
-    };
-  }
-
-  if (saveComboBtn) saveComboBtn.onclick = saveCombo;
-  if (clearComboBtn) clearComboBtn.onclick = clearCurrentCombo;
-  if (generateCombosBtn) generateCombosBtn.onclick = generateBestCombos;
+  saveComboBtn.onclick = saveCombo;
+  clearComboBtn.onclick = () => {
+    currentCombo = [null, null, null];
+    document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+    updateManualComboScore();
+  };
+  generateCombosBtn.onclick = generateBestCombos;
 }
 
-/* ---------- TEXT / TRANSLATIONS ---------- */
-
+// --- INITIALIZATION ---
 async function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
-
-  // Top & tabs
   document.getElementById('appTitle').textContent = t.appTitle;
   document.getElementById('tabManual').textContent = t.tabManual;
   document.getElementById('tabGenerator').textContent = t.tabGenerator;
-
-  // Manual builder headings
   document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
   document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
   document.getElementById('createComboTitle').textContent = t.createComboTitle;
   document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
-  document.getElementById('noCombosMessage').textContent = t.noCombosMessage;
 
-  // Manual builder buttons
-  if (saveComboBtn) saveComboBtn.textContent = t.saveComboBtn;
-  if (clearComboBtn) clearComboBtn.textContent = t.clearComboBtn;
-  if (downloadCombosBtn) downloadCombosBtn.textContent = t.downloadCombosBtn;
-  if (shareAllCombosBtn) shareAllCombosBtn.textContent = t.shareAllCombosBtn;
-
-  // Generator section headings
-  const genToolTitle   = document.getElementById('genToolTitle');
-  const genIntroText   = document.getElementById('genIntroText');
-  const genFilterTitle = document.getElementById('genFilterTitle');
-
-  if (genToolTitle)   genToolTitle.textContent   = t.generatorTitle;
-  if (genIntroText)   genIntroText.textContent   = t.generatorIntro;
-  if (genFilterTitle) genFilterTitle.textContent = t.filterBySeasonTitle;
-
-  // Generator buttons
-  const genSelectAllBtn   = document.getElementById('genSelectAllBtn');
-  const genClearAllBtn    = document.getElementById('genClearAllBtn');
-
-  if (genSelectAllBtn)       genSelectAllBtn.textContent       = t.generatorSelectAll;
-  if (genClearAllBtn)        genClearAllBtn.textContent        = t.generatorClearAll;
-  if (generateCombosBtn)     generateCombosBtn.textContent     = t.generatorGenerateBtn;
-  if (downloadGeneratorBtn)  downloadGeneratorBtn.textContent  = t.generatorDownloadBtn;
-
-  // If there's a combo score currently visible, re-render it in the new language
-  updateCurrentComboScore();
+  // Re-render manual combo score text in the new language if visible
+  updateManualComboScore();
 }
-
-/* ---------- MAIN ---------- */
 
 (async function main() {
   wireUIActions();
   updateTextContent();
   renderAvailableHeroes();
   renderGeneratorHeroes();
-
+  
   // DEFAULT LANDING: Combo Generator
-  if (tabGeneratorBtn) tabGeneratorBtn.click();
+  tabGeneratorBtn.click();
 
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
     updateComboSlotDisplay(slot, null, i);
@@ -601,10 +468,10 @@ async function updateTextContent() {
     slot.addEventListener('drop', (e) => {
       e.preventDefault();
       const name = e.dataTransfer.getData('text/plain');
-      const idx = parseInt(slot.dataset.slotIndex, 10);
+      const idx = parseInt(slot.dataset.slotIndex);
       currentCombo[idx] = name;
       updateComboSlotDisplay(slot, name, idx);
-      updateCurrentComboScore();
+      updateManualComboScore();
     });
   });
 
