@@ -296,6 +296,7 @@ body {
 .generator-card:hover {
   cursor: pointer;
   filter: brightness(1.1);
+  transform: translateY(-1px) scale(1.02);
 }
 
 /* Text styling for the Combo Slot placeholder */
@@ -312,6 +313,7 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
 
