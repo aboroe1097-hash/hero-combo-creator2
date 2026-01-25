@@ -116,17 +116,51 @@ function showAboModal(message, onConfirm = null) {
 // --- RENDERING FUNCTIONS (Restored) ---
 function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
+
+  const t = translations[currentLanguage] || translations.en;
+
   availableHeroesEl.innerHTML = '';
-  allHeroesData.filter(h => selectedSeasons.includes(h.season)).forEach(hero => {
-    const card = document.createElement('div');
-    card.className = 'hero-card';
-    card.draggable = true;
-    card.dataset.heroName = hero.name;
-    const tagColor = seasonColors[hero.season] || '#f97316';
-    card.innerHTML = `<span class="hero-tag" style="background:${tagColor}">${hero.season}</span><img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
-    card.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', hero.name));
-    availableHeroesEl.appendChild(card);
-  });
+  allHeroesData
+    .filter(h => selectedSeasons.includes(h.season))
+    .forEach(hero => {
+      const card = document.createElement('div');
+      card.className = 'hero-card';
+      card.draggable = true;
+      card.dataset.heroName = hero.name;
+
+      const tagColor = seasonColors[hero.season] || '#f97316';
+      card.innerHTML = `
+        <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        <img src="${hero.imageUrl}" alt="${hero.name}">
+        <span class="mt-1 text-center font-bold text-xs">${hero.name}</span>
+      `;
+
+      // Desktop drag & drop
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', hero.name);
+      });
+
+      // NEW: Mobile (and desktop) tap support
+      card.addEventListener('click', () => {
+        // Find first empty slot
+        const emptyIndex = currentCombo.indexOf(null);
+        if (emptyIndex === -1) {
+          // All 3 slots full – reuse your existing message text
+          showAboModal(t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.');
+          return;
+        }
+
+        currentCombo[emptyIndex] = hero.name;
+
+        const slots = document.querySelectorAll('.combo-slot');
+        const targetSlot = slots[emptyIndex];
+        if (targetSlot) {
+          updateComboSlotDisplay(targetSlot, hero.name, emptyIndex);
+        }
+      });
+
+      availableHeroesEl.appendChild(card);
+    });
 }
 
 function renderGeneratorHeroes() {
