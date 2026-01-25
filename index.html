@@ -13,19 +13,57 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
+    
+    /* Logo Branding & Glow */
     .logo-container { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
     .logo-container::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); z-index: -1; }
     .main-logo { width: 150px; height: 150px; border-radius: 24px; border: 2px solid rgba(255, 255, 255, 0.05); }
+    
+    /* Tab Navigation */
     .tab-pill { padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 9999px; transition: all 0.2s ease; border: none; cursor: pointer; }
     .tab-pill-active { background: #2563eb; color: #f9fafb; }
     .tab-pill-inactive { background: transparent; color: #e5e7eb; }
-    .generated-combo-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #1f2937; border-radius: 0.75rem; padding: 0.75rem 1rem 0.75rem 60px; margin-bottom: 0.75rem; }
-    @media (min-width:768px) { .generated-combo-card { flex-direction: row; } }
-    .saved-combo-number { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background-color: #f97316; color: #111827; width: 32px; height: 32px; border-radius: 50%; display: block; line-height: 32px; text-align: center; font-size: 1.05rem; font-weight: 800; z-index: 5; }
+
+    /* Unified Number Spacing & Card Layout */
+    .saved-combo-display, .generated-combo-card { 
+      position: relative; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: space-between; 
+      background: #1f2937; 
+      border-radius: 0.75rem; 
+      padding: 0.75rem 1rem 0.75rem 72px !important; /* Unified padding for identical spacing */
+      margin-bottom: 0.75rem; 
+      min-height: 90px;
+    }
+    @media (min-width:768px) { 
+      .saved-combo-display, .generated-combo-card { flex-direction: row; } 
+    }
+
+    /* Rank Numbering Badge */
+    .saved-combo-number { 
+      position: absolute; 
+      left: 20px; /* Centered relative to the 72px padding */
+      top: 50%; 
+      transform: translateY(-50%); 
+      background-color: #f97316; 
+      color: #111827; 
+      width: 32px; 
+      height: 32px; 
+      border-radius: 50%; 
+      display: block; 
+      line-height: 32px; 
+      text-align: center; 
+      font-size: 1.05rem; 
+      font-weight: 800; 
+      z-index: 5; 
+    }
   </style>
 </head>
 <body class="p-3 sm:p-4">
   <div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
+    
     <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase">BETA b2.0 — VTS s1097 Community Tool</div>
     
     <div class="logo-container">
@@ -37,7 +75,7 @@
       </div>
     </div>
 
-    <div class="flex justify-end mb-4 language-select-wrapper">
+    <div class="flex justify-end mb-4">
       <select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700 outline-none">
         <option value="en">English</option><option value="es">Español</option><option value="pt">Português</option>
         <option value="de">Deutsch</option><option value="fr">Français</option><option value="tr">Türkçe</option>
@@ -48,15 +86,15 @@
 
     <div class="flex justify-center mb-6">
       <div class="inline-flex bg-slate-800 rounded-full p-1 border border-slate-700">
-        <button id="tabManual" class="tab-pill tab-pill-active">Manual Builder</button>
+        <button id="tabManual" class="tab-pill tab-pill-inactive">Manual Builder</button>
         <div class="relative">
-          <button id="tabGenerator" class="tab-pill tab-pill-inactive">Combo Generator</button>
+          <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
           <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase animate-pulse">Beta</span>
         </div>
       </div>
     </div>
 
-    <section id="manualBuilderSection">
+    <section id="manualBuilderSection" class="hidden">
       <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
         <h2 id="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
         <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
@@ -73,7 +111,7 @@
         <div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
       </div>
 
-      <div id="comboFooterBar" class="p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl">
+      <div id="comboFooterBar" style="display: none;" class="p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl">
         <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
         <div id="comboRow" class="flex justify-center items-center gap-2 sm:gap-4">
           <div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div>
@@ -89,12 +127,16 @@
       <div class="mt-10 mb-10">
         <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-wide">Last Best Combos</h2>
         <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet. Drag heroes to start!</p>
-        <div id="savedCombos" class="flex flex-col items-center"></div>
+        <div id="savedCombos" class="flex flex-col items-center w-full"></div>
       </div>
     </section>
 
-    <section id="comboGeneratorSection" class="hidden">
-      <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2><p id="genIntroText" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p></div>
+    <section id="comboGeneratorSection">
+      <div class="mb-6">
+        <h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
+        <p id="genIntroText" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
+      </div>
+      
       <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
         <h3 id="genFilterTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
         <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
@@ -105,6 +147,7 @@
           <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span>Season 4</span></label>
         </div>
       </div>
+
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <h3 id="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
@@ -115,10 +158,12 @@
         </div>
         <div id="generatorHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
       </div>
+
       <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
         <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
         <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
       </div>
+      
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
@@ -145,6 +190,7 @@
       </div>
     </div>
   </div>
+
   <div id="loadingSpinner" class="loading-spinner hidden"></div>
   <script type="module" src="js/app.js"></script>
 </body>
