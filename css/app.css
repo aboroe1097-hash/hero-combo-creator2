@@ -205,8 +205,9 @@ body {
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
 }
 
-/* Saved combos & Generator Results Layout Fix */
-.saved-combo-display, .generated-combo-card {
+/* Saved combos & Generator Results Layout */
+.saved-combo-display,
+.generated-combo-card {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -217,28 +218,27 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   position: relative;
-  /* FIX: Centers hero icons by providing a balanced gutter */
-  padding-left: 60px;
+  padding-left: 52px; /* room for rank bubble without pushing heroes too far */
   width: 100%;
   max-width: 768px;
   box-sizing: border-box;
 }
 
-/* Fix: Use Line-Height for perfect capture centering */
+/* Rank bubble */
 .saved-combo-number {
   position: absolute;
-  left: 12px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   background-color: #f97316;
   color: #111827;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  display: block; /* Safer for html2canvas than flex */
-  line-height: 32px; /* Matches height for vertical center */
-  text-align: center; /* Horizontal center */
-  font-size: 1.05rem;
+  display: block;
+  line-height: 30px;
+  text-align: center;
+  font-size: 1rem;
   font-weight: 800;
   z-index: 10;
 }
@@ -330,16 +330,18 @@ body {
 
 /* Mobile Overrides */
 @media (max-width: 768px) {
-  .saved-combo-display, .generated-combo-card {
-    padding-left: 50px;
+  .saved-combo-display,
+  .generated-combo-card {
+    padding-left: 44px;
     padding-right: 8px;
   }
 
   .saved-combo-number {
-    left: 25px;
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
+    left: 18px;
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+    line-height: 26px;
   }
 
   .saved-combo-slot-item {
@@ -347,8 +349,9 @@ body {
     height: 85px !important;
   }
 
-  /* 1. Make the hero grid tighter and cleaner on mobile */
-  #availableHeroes, #generatorHeroes {
+  /* Make the hero grid tighter and cleaner on mobile */
+  #availableHeroes,
+  #generatorHeroes {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -356,15 +359,17 @@ body {
     padding: 10px;
   }
 
-  /* 2. Enforce a consistent size for hero cards on mobile so they don't stretch */
-  .hero-card, .generator-card {
+  /* Enforce a consistent size for hero cards on mobile so they don't stretch */
+  .hero-card,
+  .generator-card {
     width: 110px;
     flex-grow: 0;
     margin: 0 !important; /* Remove old margins since we use gap */
   }
 
-  /* 3. Make the "Generate" buttons look more premium on mobile */
-  #generateCombosBtn, #downloadGeneratorBtn {
+  /* Make the "Generate" buttons look more premium on mobile */
+  #generateCombosBtn,
+  #downloadGeneratorBtn {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     border: 1px solid #34d399;
     box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
@@ -411,4 +416,5 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
