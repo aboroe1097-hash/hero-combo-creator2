@@ -1,4 +1,4 @@
-// js/comments.js - Threaded Comments Update
+// js/comments.js - Threaded Comments with Name Input
 import { ensureAnonymousAuth, getDb } from './firebase.js';
 
 let commentsListenerUnsub = null;
@@ -11,7 +11,7 @@ const commentText = document.getElementById('commentText');
 const postCommentBtn = document.getElementById('postCommentBtn');
 const commentsList = document.getElementById('commentsList');
 
-// Global map to store comments for easy parent-lookup
+// Global map to store comments
 let allCommentsMap = new Map();
 let currentUserId = null;
 
@@ -19,7 +19,7 @@ export async function initComments() {
   try {
     wireCommentsUI();
     await startCommentsListener();
-    console.log('[comments] initialized (threaded)');
+    console.log('[comments] initialized (threaded + names)');
   } catch (err) {
     console.error('[comments] init error:', err);
   }
@@ -73,7 +73,7 @@ function createCommentCard(id, data, isReply = false) {
   const replyBtn = document.createElement('button');
   replyBtn.textContent = 'Reply';
   replyBtn.className = 'text-slate-500 hover:text-white transition';
-  replyBtn.onclick = () => toggleReplyForm(id, data.name);
+  replyBtn.onclick = () => toggleReplyForm(id);
   actionBar.appendChild(replyBtn);
 
   // DELETE BUTTON (Owner only)
@@ -89,14 +89,16 @@ function createCommentCard(id, data, isReply = false) {
   body.appendChild(textEl);
   body.appendChild(actionBar);
 
-  // Reply Input Container (Hidden by default)
+  // --- CHANGED: Reply Form now has a Name Input ---
   const replyFormContainer = document.createElement('div');
   replyFormContainer.id = `reply-form-${id}`;
-  replyFormContainer.className = 'hidden mt-3 pl-2 border-l-2 border-slate-700';
+  replyFormContainer.className = 'hidden mt-3 pl-2 border-l-2 border-slate-700 space-y-2';
+  
   replyFormContainer.innerHTML = `
+    <input type="text" id="reply-name-${id}" class="w-full bg-slate-800 text-sm p-2 rounded text-white border border-slate-600 focus:border-blue-500 outline-none" placeholder="Your Name (Optional)">
     <textarea id="reply-input-${id}" class="w-full bg-slate-800 text-sm p-2 rounded text-white border border-slate-600 focus:border-blue-500 outline-none" rows="2" placeholder="Write a reply..."></textarea>
-    <div class="flex gap-2 mt-2">
-      <button onclick="window.submitReply('${id}')" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">Post Reply</button>
+    <div class="flex gap-2">
+      <button onclick="window.submitReply('${id}')" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 font-bold">Post Reply</button>
       <button onclick="document.getElementById('reply-form-${id}').classList.add('hidden')" class="px-3 py-1 bg-slate-700 text-white text-xs rounded hover:bg-slate-600">Cancel</button>
     </div>
   `;
@@ -130,7 +132,6 @@ function renderCommentsTree(docs) {
     const data = docSnap.data();
     const item = { id: docSnap.id, ...data };
     
-    // Check visibility
     if (data.approved === false && data.authorId !== currentUserId) return;
 
     allCommentsMap.set(item.id, item);
@@ -148,8 +149,7 @@ function renderCommentsTree(docs) {
     commentsList.appendChild(card);
   });
 
-  // 3. Append Replies (Oldest First usually makes more sense for threads, but we keep DB order)
-  // We reverse replies here so they appear chronologically under the parent if the DB query is desc
+  // 3. Append Replies (Oldest First for threads)
   replies.reverse().forEach(reply => {
     const parentContainer = document.getElementById(`replies-${reply.parentId}`);
     if (parentContainer) {
@@ -166,15 +166,18 @@ function renderCommentsTree(docs) {
 // Expose to window so inline HTML onclicks work
 window.submitReply = async (parentId) => {
   const input = document.getElementById(`reply-input-${parentId}`);
+  const nameInput = document.getElementById(`reply-name-${parentId}`); // CHANGED: Grab specific name input
+  
   const text = input.value.trim();
   if (!text) return;
 
-  // Use name from main form or default
-  const savedName = document.getElementById('commentName').value || 'Guest';
+  // Use the local name input, default to 'Guest' if empty
+  const displayName = nameInput.value.trim() || 'Guest';
 
   try {
-    await addCommentToDb(text, savedName, parentId);
+    await addCommentToDb(text, displayName, parentId);
     input.value = '';
+    // Optional: Clear name or keep it? Keeping it is usually friendlier if they reply twice.
     document.getElementById(`reply-form-${parentId}`).classList.add('hidden');
   } catch (e) {
     alert('Error posting reply: ' + e.message);
@@ -184,6 +187,11 @@ window.submitReply = async (parentId) => {
 function toggleReplyForm(id) {
   const form = document.getElementById(`reply-form-${id}`);
   form.classList.toggle('hidden');
+  // Auto-focus the name field if opening
+  if (!form.classList.contains('hidden')) {
+    const nameField = document.getElementById(`reply-name-${id}`);
+    if (nameField) nameField.focus();
+  }
 }
 
 async function deleteComment(docId) {
@@ -202,7 +210,7 @@ async function addCommentToDb(text, name, parentId = null) {
   await addDoc(collection(getDb(), 'comments'), {
     text,
     name: name || null,
-    parentId: parentId, // The Link!
+    parentId: parentId, 
     authorId: currentUserId,
     createdAt: serverTimestamp(),
     approved: true,
@@ -238,7 +246,7 @@ function wireCommentsUI() {
     
     postCommentBtn.disabled = true;
     try {
-      await addCommentToDb(text, commentName.value.trim(), null); // null = Root comment
+      await addCommentToDb(text, commentName.value.trim(), null);
       commentText.value = '';
     } catch (e) {
       console.error(e);
