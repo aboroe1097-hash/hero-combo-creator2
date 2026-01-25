@@ -152,7 +152,6 @@ body {
   object-fit: cover;
   border-radius: 0.5rem;
 }
-
 /* Saved combos & Generator Results Layout Fix */
 .saved-combo-display, .generated-combo-card {
   display: flex;
@@ -171,10 +170,10 @@ body {
   max-width: 768px;
   box-sizing: border-box;
 }
-
+/* Fix: Use Line-Height for perfect capture centering */
 .saved-combo-number {
   position: absolute;
-  left: 12px; /* Fixed distance from left side */
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   background-color: #f97316;
@@ -182,13 +181,14 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  display: block; /* Block + Line-height is safer for capture than Flex */
-  line-height: 32px;
-  text-align: center;
+  display: block; /* Safer for html2canvas than flex */
+  line-height: 32px; /* Matches height for vertical center */
+  text-align: center; /* Horizontal center */
   font-size: 1.05rem;
   font-weight: 800;
-  z-index: 5;
+  z-index: 10;
 }
+
 
 .saved-combo-slots {
   display: flex;
@@ -283,5 +283,6 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
