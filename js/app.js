@@ -76,8 +76,7 @@ const allHeroesData = [
   { name: 'Witch Hunter', season: 'S2', imageUrl: 'https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png' },
   { name: 'Ramses II', season: 'S2', imageUrl: 'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png' },
   { name: 'Octavius', season: 'S2', imageUrl: 'https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png' },
-  { name: 'Che Liu', season: 'S3', imageUrl: 'https://ibb.co/xqrtrvc1' },
-
+  { name: 'Che Liu', season: 'S3', imageUrl: 'https://i.ibb.co/xqrtrvc1/image-2026-01-25-212407172.png' },
   { name: 'War Lord', season: 'S3', imageUrl: 'https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png' },
   { name: 'Jane', season: 'S3', imageUrl: 'https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png' },
   { name: 'Sky Breaker', season: 'S3', imageUrl: 'https://static.wixstatic.com/media/43ee96_cacde74500864a0d916746fe0945c970~mv2.png' },
