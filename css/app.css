@@ -279,10 +279,36 @@ body {
     width: 85px !important;
     height: 85px !important;
   }
+  /* app.css - Additions */
+
+/* Moved from mobile.css to ensure it works on Desktop */
+.generator-card-selected {
+  border: 3px solid #38bdf8; /* Sky-400 */
+  transform: scale(0.95);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); /* Added a nice glow for desktop */
+}
+
+/* Better feedback for desktop users hovering over generator cards */
+.generator-card:hover {
+  cursor: pointer;
+  filter: brightness(1.1);
+}
+
+/* Text styling for the Combo Slot placeholder */
+.combo-slot-placeholder-text {
+  font-size: 0.75rem;
+  color: #64748b; /* slate-500 */
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.1;
+}
 
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
 
