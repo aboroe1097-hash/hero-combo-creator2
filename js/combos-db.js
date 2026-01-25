@@ -56,10 +56,10 @@ export const rankedCombos = [
   { heroes: ["Immortal Guardian", "Charles the Great", "Al Fatih"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Al Fatih"] },
 
-
-  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
+  { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["Bleeding Steed", "Soaring Hawk", "Desert Storm"] },
   { heroes: ["Bleeding Steed", "Desert Storm", "Cao Cao"] },
+  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
   { heroes: ["BeastQueen", "Lionheart", "Immortal"] },
   { heroes: ["BeastQueen", "Isabella I", "Immortal"] },
   { heroes: ["King Arthur","Soaring Hawk", "Desert Storm"] }, // Cavalry/Garrison Mix
@@ -68,7 +68,7 @@ export const rankedCombos = [
   { heroes: ["Soaring Hawk", "Desert Storm", "Cao Cao"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
-  { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
+
   { heroes: ["Peace Bringer", "Che Liu", "Jade"] },        // Debuff variation
   { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },        // Debuff variation
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
