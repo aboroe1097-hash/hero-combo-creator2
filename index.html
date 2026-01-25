@@ -37,15 +37,26 @@
 <body class="p-3 sm:p-4">
   <div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
     <div class="team-badge" title="VTS 1097"><img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS logo"></div>
-    <div id="betaNote" class="text-center mb-6 p-4 bg-blue-900 rounded-xl text-blue-100 font-semibold text-base">BETA b2.0 —  VTS s1097</div>
-    
-    <div class="flex flex-col items-center mb-6">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo" />
-      <h1 id="appTitle" class="text-3xl sm:text-4xl font-extrabold text-blue-400 text-center">Hero Combo Creator</h1>
-      <p class="text-sm text-slate-300">Rise Of Empires: Ice & Fire. </p>
-       <p class="text-sm text-slate-300">Stage 1097. </p>
-    </div>
+    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border">
+  BETA b2.0 — VTS s1097 Community Tool
+</div>
 
+<div class="logo-container">
+  <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo" />
+  
+  <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white tracking-tighter text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400">
+    Hero Combo Creator
+  </h1>
+  
+  <div class="flex flex-col items-center mt-2 space-y-1">
+    <p class="text-xs sm:text-sm brand-subtitle uppercase">Rise Of Empires: Ice & Fire</p>
+    <div class="flex items-center gap-2">
+      <span class="h-px w-8 bg-blue-500/30"></span>
+      <p class="text-sm font-bold text-blue-400">TEAM VTS — STAGE 1097</p>
+      <span class="h-px w-8 bg-blue-500/30"></span>
+    </div>
+  </div>
+</div>
     <div class="flex justify-end mb-4"><select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700">
       <option value="en">English</option><option value="es">Español</option><option value="pt">Português</option>
       <option value="de">Deutsch</option><option value="fr">Français</option><option value="tr">Türkçe</option>
@@ -140,6 +151,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
