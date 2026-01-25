@@ -75,6 +75,7 @@ export const rankedCombos = [
   { heroes: ["War Lord", "Black Prince", "Jane"] },
   { heroes: ["War Lord", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
+  { heroes: ["Demon Spear", "Che Liu", "Bleeding Steed"] },        // Debuff variation
   { heroes: ["North's Rage", "Isabella I", "Mary Tudor"] },
   { heroes: ["North's Rage", "Isabella I", "Lionheart"] },
   { heroes: ["Yukimura Sanada", "Isabella I", "Mary Tudor"] },
