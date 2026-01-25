@@ -54,6 +54,31 @@ body {
   background: #f97316;
 }
 
+/* GENERATOR HEROES (selection state) */
+.generator-card {
+  cursor: pointer; /* generator heroes are clicked/tapped, not dragged */
+}
+
+.generator-card-selected {
+  border: 3px solid #38bdf8; /* Sky Blue Highlight */
+  background-color: #1e293b; /* Slightly darker bg for contrast */
+  transform: scale(0.95);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); /* Glow effect */
+  transition: all 0.2s ease;
+}
+
+.generator-card:hover {
+  cursor: pointer;
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  border-color: #64748b; /* Light grey border on hover */
+}
+
+/* Ensure the selected state overrides the hover state */
+.generator-card-selected:hover {
+  transform: scale(0.95) translateY(0);
+  border-color: #38bdf8;
+}
 
 /* Beta Badge Styling */
 .relative span {
@@ -74,6 +99,7 @@ body {
   position: relative;
   z-index: 10;
 }
+
 /* Custom Filter Pills */
 .filter-pill {
   display: inline-flex;
@@ -146,12 +172,39 @@ body {
   box-shadow: 0 8px 30px rgba(0,0,0,0.3);
 }
 
+/* Hover/target state for touch drag */
+.combo-slot-hover {
+  border-style: solid;
+  border-color: #4ade80;
+  background-color: #374151;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
 .combo-slot img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 0.5rem;
 }
+
+/* Ghost element for mobile drag */
+.hero-drag-ghost {
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+}
+
+.hero-drag-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 9999px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+
 /* Saved combos & Generator Results Layout Fix */
 .saved-combo-display, .generated-combo-card {
   display: flex;
@@ -165,11 +218,12 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   position: relative;
   /* FIX: Centers hero icons by providing a balanced gutter */
-  padding-left: 60px; 
+  padding-left: 60px;
   width: 100%;
   max-width: 768px;
   box-sizing: border-box;
 }
+
 /* Fix: Use Line-Height for perfect capture centering */
 .saved-combo-number {
   position: absolute;
@@ -188,7 +242,6 @@ body {
   font-weight: 800;
   z-index: 10;
 }
-
 
 .saved-combo-slots {
   display: flex;
@@ -257,90 +310,13 @@ body {
   z-index: 1000;
 }
 
-@keyframes spin { 0% { transform: translate(-50%,-50%) rotate(0deg); } 100% { transform: translate(-50%,-50%) rotate(360deg); } }
+@keyframes spin {
+  0% { transform: translate(-50%,-50%) rotate(0deg); }
+  100% { transform: translate(-50%,-50%) rotate(360deg); }
+}
 
 .hidden { display: none !important; }
 
-/* Mobile Overrides */
-@media (max-width: 768px) {
-  .saved-combo-display, .generated-combo-card {
-    padding-left: 50px;
-    padding-right: 8px;
-  }
-  
-  .saved-combo-number {
-    left: 25px;
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
-  }
-
-  .saved-combo-slot-item {
-    width: 85px !important;
-    height: 85px !important;
-  }
-  /* app.css - Additions */
-
-  .generator-card {
-  cursor: pointer;              /* so generator cards feel clickable, not draggable */
-}
-  
-/* --- GENERATOR SELECTION FIX (Desktop & Global) --- */
-
-/* This was missing from app.css! */
-.generator-card-selected {
-  border: 3px solid #38bdf8 !important; /* Sky Blue Highlight */
-  background-color: #1e293b !important; /* Slightly darker bg for contrast */
-  transform: scale(0.95); /* Shrink effect */
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); /* Glow effect */
-  transition: all 0.2s ease;
-}
-
-/* Add a hover effect for desktop users so they know it's clickable */
-.generator-card:hover {
-  cursor: pointer;
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-  border-color: #64748b; /* Light grey border on hover */
-}
-
-/* Ensure the selected state overrides the hover state */
-.generator-card-selected:hover {
-  transform: scale(0.95) translateY(0);
-  border-color: #38bdf8;
-}
-
-  /* --- LAYOUT OPTIMIZATIONS --- */
-
-/* 1. Make the hero grid tighter and cleaner */
-#availableHeroes, #generatorHeroes {
-  display: flex;       /* Switch from Grid to Flex for better centering */
-  flex-wrap: wrap;     /* Allow wrapping */
-  justify-content: center; /* Center everything */
-  gap: 12px;           /* Consistent spacing */
-  padding: 10px;
-}
-
-/* 2. Enforce a consistent size for hero cards so they don't stretch */
-.hero-card, .generator-card {
-  width: 110px;        /* Fixed width */
-  flex-grow: 0;        /* Prevent stretching to fill empty space */
-  margin: 0 !important; /* Remove old margins since we use gap */
-}
-
-/* 3. Make the "Generate" buttons look more premium */
-#generateCombosBtn, #downloadGeneratorBtn {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  border: 1px solid #34d399;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-#generateCombosBtn:hover {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
-  transform: translateY(-2px);
-}
 /* Text styling for the Combo Slot placeholder */
 .combo-slot-placeholder-text {
   font-size: 0.75rem;
@@ -352,14 +328,55 @@ body {
   line-height: 1.1;
 }
 
+/* Mobile Overrides */
+@media (max-width: 768px) {
+  .saved-combo-display, .generated-combo-card {
+    padding-left: 50px;
+    padding-right: 8px;
+  }
+
+  .saved-combo-number {
+    left: 25px;
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .saved-combo-slot-item {
+    width: 85px !important;
+    height: 85px !important;
+  }
+
+  /* 1. Make the hero grid tighter and cleaner on mobile */
+  #availableHeroes, #generatorHeroes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px;
+  }
+
+  /* 2. Enforce a consistent size for hero cards on mobile so they don't stretch */
+  .hero-card, .generator-card {
+    width: 110px;
+    flex-grow: 0;
+    margin: 0 !important; /* Remove old margins since we use gap */
+  }
+
+  /* 3. Make the "Generate" buttons look more premium on mobile */
+  #generateCombosBtn, #downloadGeneratorBtn {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: 1px solid #34d399;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  #generateCombosBtn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    transform: translateY(-2px);
+  }
+
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
-
-
-
-
-
-
-
-
