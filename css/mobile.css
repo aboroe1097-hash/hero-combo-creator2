@@ -93,15 +93,17 @@ button,
 
 /* Fixed footer bar that contains slots + buttons */
 #comboFooterBar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.98); /* slate-ish */
-  padding: 8px 10px 10px;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.7);
-  z-index: 60;
-}
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 100;
+    border-radius: 20px 20px 0 0; /* Rounded top only */
+    border-top: 2px solid rgba(59, 130, 246, 0.4);
+    padding: 12px;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+  }
 
 /* Slots row – compact and centered */
 #comboSlotsRow {
@@ -114,8 +116,8 @@ button,
 
 /* Slightly smaller slots so 3 fit comfortably */
 #comboSlotsRow .combo-slot {
-  width: 5.2rem !important;
-  height: 5.2rem !important;
+  width: 70px !important;
+  height: 70px !important;
   border-width: 3px !important;
   font-size: 0.7rem !important;
   margin: 0 !important;
