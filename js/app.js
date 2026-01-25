@@ -151,12 +151,22 @@ function renderGeneratorHeroes() {
 
 function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
+  
   if (name) {
-    slot.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span class="absolute bottom-1 left-0 right-0 text-white bg-black/60 px-1 py-0.5 rounded text-[10px] w-full truncate text-center">${name}</span>`;
-    slot.classList.add('relative', 'p-0');
+    slot.innerHTML = `
+      <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
+      <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
+        ${name}
+      </span>`;
+    slot.classList.add('relative', 'p-0', 'border-solid', 'border-emerald-500'); // Added border feedback
   } else {
-    slot.innerHTML = `<div class="combo-slot-placeholder h-full flex items-center justify-center font-bold text-blue-400/50 text-3xl">+</div>`;
-    slot.classList.remove('relative', 'p-0');
+    // Fixed: Uses t.dragHeroHere and better spacing
+    slot.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full opacity-50">
+        <span class="text-4xl text-slate-600 mb-1">+</span>
+        <span class="combo-slot-placeholder-text px-2">${t.dragHeroHere || "Drag Hero Here"}</span>
+      </div>`;
+    slot.classList.remove('relative', 'p-0', 'border-solid', 'border-emerald-500');
   }
 }
 
@@ -314,7 +324,9 @@ function wireUIActions() {
 
 // --- INITIALIZATION ---
 async function updateTextContent() {
-  const t = translations[currentLanguage] || translations.en;
+ const t = translations[currentLanguage] || translations.en;
+  
+  // Existing
   document.getElementById('appTitle').textContent = t.appTitle;
   document.getElementById('tabManual').textContent = t.tabManual;
   document.getElementById('tabGenerator').textContent = t.tabGenerator;
@@ -322,6 +334,25 @@ async function updateTextContent() {
   document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
   document.getElementById('createComboTitle').textContent = t.createComboTitle;
   document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
+  document.getElementById('saveComboBtn').textContent = t.saveComboBtn;
+  document.getElementById('clearComboBtn').textContent = t.clearComboBtn;
+  document.getElementById('downloadCombosBtn').textContent = t.downloadCombosBtn;
+  document.getElementById('shareAllCombosBtn').textContent = t.shareAllCombosBtn;
+
+  // NEW: Generator Section Buttons (These were missing!)
+  document.getElementById('genSelectAllBtn').textContent = t.generatorSelectAll;
+  document.getElementById('genClearAllBtn').textContent = t.generatorClearAll;
+  document.getElementById('generateCombosBtn').textContent = t.generatorGenerateBtn;
+  
+  // Note: This button is hidden initially, but we update text anyway
+  document.getElementById('downloadGeneratorBtn').textContent = t.generatorDownloadBtn; 
+  
+  // Headers
+  const genToolTitle = document.getElementById('genToolTitle');
+  if(genToolTitle) genToolTitle.textContent = t.generatorTitle;
+  
+  const genIntroText = document.getElementById('genIntroText');
+  if(genIntroText) genIntroText.textContent = t.generatorIntro;
 }
 
 (async function main() {
