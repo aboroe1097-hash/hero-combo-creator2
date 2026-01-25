@@ -55,6 +55,8 @@ export const rankedCombos = [
   { heroes: ["Soaring Hawk", "Bleeding Steed", "Desert Storm"] },
   { heroes: ["BeastQueen", "Lionheart", "Immortal"] },
   { heroes: ["BeastQueen", "Isabella I", "Immortal"] },
+  { heroes: ["King Arthur","Soaring Hawk", "Desert Storm"] }, // Cavalry/Garrison Mix
+  
   { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
   { heroes: ["King Arthur", "Desert Storm", "Cao Cao"] },
   { heroes: ["Soaring Hawk", "Desert Storm", "Cao Cao"] },
