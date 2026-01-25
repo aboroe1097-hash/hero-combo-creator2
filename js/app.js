@@ -340,7 +340,26 @@ async function saveCombo() {
 function wireUIActions() {
   languageSelect.value = currentLanguage;
   languageSelect.onchange = (e) => { currentLanguage = e.target.value; localStorage.setItem('vts_hero_lang', currentLanguage); updateTextContent(); renderGeneratorHeroes(); };
-  const handleTabSwitch = (isManual) => { const minH = Math.max(window.innerHeight * 0.7, 700) + "px"; manualSection.style.minHeight = minH; generatorSection.style.minHeight = minH; manualSection.classList.toggle('hidden', !isManual); generatorSection.classList.toggle('hidden', isManual); tabManualBtn.className = isManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive'; tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active'; };
+ const handleTabSwitch = (isManual) => {
+  const minH = Math.max(window.innerHeight * 0.7, 700) + "px";
+  manualSection.style.minHeight = minH;
+  generatorSection.style.minHeight = minH;
+
+  // Toggle sections
+  manualSection.classList.toggle('hidden', !isManual);
+  generatorSection.classList.toggle('hidden', isManual);
+
+  // Toggle Sticky Footer visibility
+  const footerBar = document.getElementById('comboFooterBar');
+  if (footerBar) {
+    // Show sticky bar only for Manual Builder
+    footerBar.style.display = isManual ? 'block' : 'none';
+  }
+
+  // Update tab button styles
+  tabManualBtn.className = isManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive';
+  tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active';
+};
   tabManualBtn.onclick = () => handleTabSwitch(true); tabGeneratorBtn.onclick = () => handleTabSwitch(false);
   document.getElementById('seasonFilters').onchange = (e) => { if (e.target.checked) selectedSeasons.push(e.target.value); else selectedSeasons = selectedSeasons.filter(s => s !== e.target.value); renderAvailableHeroes(); };
   generatorSeasonFilters.onchange = (e) => { const val = e.target.value; if (e.target.checked) { if (!generatorSelectedSeasons.includes(val)) generatorSelectedSeasons.push(val); } else { generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== val); } renderGeneratorHeroes(); };
