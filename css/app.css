@@ -377,6 +377,38 @@ body {
     transform: translateY(-2px);
   }
 
+  /* --- THREADED COMMENTS --- */
+
+/* Indent replies to the right */
+.reply-card {
+  margin-left: 32px; /* Indentation depth */
+  border-left: 2px solid #334155; /* Visual thread line */
+  background-color: #172033; /* Slightly darker/different bg for replies */
+  margin-top: 8px;
+  position: relative;
+}
+
+/* Make the avatar smaller for replies */
+.reply-card .comment-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  line-height: 24px;
+}
+
+/* Adjust nested container spacing */
+.replies-container {
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  margin-left: 10px;
+  padding-left: 10px;
+}
+
+/* Hover effects for action buttons */
+.comment-actions button:hover {
+  text-decoration: underline;
+}
+
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
