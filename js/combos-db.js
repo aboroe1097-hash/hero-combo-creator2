@@ -53,10 +53,11 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
-    { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
+  { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },       // Debuff variation
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },         // Classic S0 Powerhouse
   { heroes: ["Alfred", "Jeanne d'Arc", "Mary Tudor"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
+  { heroes: ["Edward the Confessor", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
 
   { heroes: ["War Lord", "Black Prince", "Jane"] },
   { heroes: ["War Lord", "Isabella I", "Lionheart"] },
