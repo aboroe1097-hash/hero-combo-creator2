@@ -1,4 +1,4 @@
-// js/app.js - Final Version b2.4
+// js/app.js - Final Version b2.4 Full Fix
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -26,6 +26,7 @@ const tabGeneratorBtn = document.getElementById('tabGenerator');
 const generatorHeroesEl = document.getElementById('generatorHeroes');
 const generatorResultsEl = document.getElementById('generatorResults');
 const generateCombosBtn = document.getElementById('generateCombosBtn');
+const comboFooterBar = document.getElementById('comboFooterBar');
 
 // State
 let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
@@ -90,13 +91,12 @@ const allHeroesData = [
 
 const seasonColors = { S0: '#9ca3af', S1: '#3b82f6', S2: '#a855f7', S3: '#f97316', S4: '#facc15' };
 
-// Utilities
+// --- UTILITIES ---
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
 }
 
-// Custom Modal Engine
 function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
@@ -113,65 +113,69 @@ function showAboModal(message, onConfirm = null) {
   }
 }
 
-// Translation Engine
-function updateTextContent() {
+// --- RENDERING FUNCTIONS (Restored) ---
+function renderAvailableHeroes() {
+  if (!availableHeroesEl) return;
+  availableHeroesEl.innerHTML = '';
+  allHeroesData.filter(h => selectedSeasons.includes(h.season)).forEach(hero => {
+    const card = document.createElement('div');
+    card.className = 'hero-card';
+    card.draggable = true;
+    card.dataset.heroName = hero.name;
+    const tagColor = seasonColors[hero.season] || '#f97316';
+    card.innerHTML = `<span class="hero-tag" style="background:${tagColor}">${hero.season}</span><img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
+    card.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', hero.name));
+    availableHeroesEl.appendChild(card);
+  });
+}
+
+function renderGeneratorHeroes() {
+  if (!generatorHeroesEl) return;
+  generatorHeroesEl.innerHTML = '';
+  allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(hero => {
+    const card = document.createElement('button');
+    card.className = `hero-card generator-card ${generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''}`;
+    card.innerHTML = `<span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span><img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous"><span class="mt-1 text-center font-bold text-xs">${hero.name}</span>`;
+    card.onclick = () => {
+      if (generatorSelectedHeroes.has(hero.name)) {
+        generatorSelectedHeroes.delete(hero.name);
+        card.classList.remove('generator-card-selected');
+      } else {
+        generatorSelectedHeroes.add(hero.name);
+        card.classList.add('generator-card-selected');
+      }
+    };
+    generatorHeroesEl.appendChild(card);
+  });
+}
+
+function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
-  document.getElementById('appTitle').textContent = t.appTitle;
-  document.getElementById('tabManual').textContent = t.tabManual;
-  document.getElementById('tabGenerator').textContent = t.tabGenerator;
-  document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
-  document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
-  document.getElementById('createComboTitle').textContent = t.createComboTitle;
-  document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
-  saveComboBtn.textContent = t.saveComboBtn;
-  clearComboBtn.textContent = t.clearComboBtn;
-  downloadCombosBtn.textContent = t.downloadCombosBtn;
-  shareAllCombosBtn.textContent = t.shareAllCombosBtn;
-  document.getElementById('genToolTitle').textContent = t.generatorTitle;
-  document.getElementById('genIntroText').innerHTML = t.generatorIntro;
-  document.getElementById('genFilterTitle').textContent = t.filterBySeasonTitle;
-  document.getElementById('genSelectTitle').textContent = t.generatorSelectAll;
-  document.getElementById('genSelectAllBtn').textContent = t.generatorSelectAll;
-  document.getElementById('genClearAllBtn').textContent = t.generatorClearAll;
-  generateCombosBtn.textContent = t.generatorGenerateBtn;
-  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
-
-  document.querySelectorAll('.filter-pill span').forEach((span, idx) => {
-    span.textContent = `${t.seasonLabel} ${idx % 5}`;
-  });
+  if (name) {
+    slot.innerHTML = `<img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous"><span class="absolute bottom-1 left-0 right-0 text-white bg-black/60 px-1 py-0.5 rounded text-[10px] w-full truncate text-center">${name}</span>`;
+    slot.classList.add('relative', 'p-0');
+  } else {
+    slot.innerHTML = `<div class="combo-slot-placeholder h-full flex items-center justify-center font-bold text-blue-400/50 text-3xl">+</div>`;
+    slot.classList.remove('relative', 'p-0');
+  }
 }
 
-// Firestore with NaN fix
-async function setupFirestoreListener() {
-  const _db = getDb(); if (!_db || !userId) return; db = _db;
-  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-  const q = query(collection(db, `users/${userId}/bestCombos`), orderBy('timestamp', 'desc'), limit(100));
-  
-  onSnapshot(q, (snap) => {
-    savedCombosEl.innerHTML = '';
-    noCombosMessage.classList.toggle('hidden', !snap.empty);
-    let counter = 1; // Manual counter fixes NaN
-    snap.forEach((d) => {
-      const heroes = d.data().heroes || [];
-      const row = document.createElement('div'); row.className = 'saved-combo-display';
-      row.innerHTML = `<span class="saved-combo-number">${counter}</span><div class="saved-combo-slots"></div>`;
-      const slots = row.querySelector('.saved-combo-slots');
-      heroes.forEach(name => {
-        const item = document.createElement('div'); item.className = 'saved-combo-slot-item';
-        item.innerHTML = `<img src="${getHeroImageUrl(name)}"><span>${name}</span>`;
-        slots.appendChild(item);
-      });
-      const delBtn = document.createElement('button'); delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X';
-      delBtn.onclick = () => showAboModal(translations[currentLanguage].messageConfirmRemoveCombo, async () => {
-        await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
-      });
-      row.appendChild(delBtn); savedCombosEl.appendChild(row);
-      counter++;
+// --- LOGIC FUNCTIONS ---
+async function saveCombo() {
+  const t = translations[currentLanguage] || translations.en;
+  if (currentCombo.includes(null)) return showAboModal(t.messagePleaseDrag3Heroes);
+  loadingSpinner.classList.remove('hidden');
+  try {
+    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    await addDoc(collection(db, `users/${userId}/bestCombos`), {
+      heroes: [...currentCombo],
+      timestamp: serverTimestamp()
     });
-  });
+    currentCombo = [null, null, null];
+    document.querySelectorAll('.combo-slot').forEach((s, i) => updateComboSlotDisplay(s, null, i));
+  } catch (e) { console.error(e); } finally { loadingSpinner.classList.add('hidden'); }
 }
 
-// Generator with Unique Hero logic
 function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
@@ -200,51 +204,152 @@ function renderGeneratorResults(bestCombos) {
   const t = translations[currentLanguage] || translations.en;
   generatorResultsEl.innerHTML = '';
   bestCombos.forEach((combo, i) => {
-    const card = document.createElement('div'); card.className = 'generated-combo-card';
-    const slots = document.createElement('div'); slots.className = 'saved-combo-slots';
+    const card = document.createElement('div');
+    card.className = 'generated-combo-card'; // CSS Handles spacing
+    
+    const slots = document.createElement('div');
+    slots.className = 'saved-combo-slots';
     combo.heroes.forEach(name => {
-      const item = document.createElement('div'); item.className = 'saved-combo-slot-item';
+      const item = document.createElement('div');
+      item.className = 'saved-combo-slot-item';
       item.innerHTML = `<img src="${getHeroImageUrl(name)}" crossorigin="anonymous"><span class="text-[10px] text-sky-300 font-bold truncate px-1">${name}</span>`;
       slots.appendChild(item);
     });
+
     card.innerHTML = `<span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>`;
     card.appendChild(slots);
-    const scoreBox = document.createElement('div'); scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2';
+    const scoreBox = document.createElement('div');
+    scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2';
     scoreBox.innerHTML = `<span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span><span class="text-lg font-black text-sky-400">${combo.displayScore}</span>`;
-    card.appendChild(scoreBox); generatorResultsEl.appendChild(card);
+    card.appendChild(scoreBox);
+    generatorResultsEl.appendChild(card);
   });
 }
 
-// UI Wiring & Tab Switch
+// --- FIRESTORE ---
+async function setupFirestoreListener() {
+  const _db = getDb(); if (!_db || !userId) return; db = _db;
+  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const q = query(collection(db, `users/${userId}/bestCombos`), orderBy('timestamp', 'desc'), limit(100));
+  
+  onSnapshot(q, (snap) => {
+    savedCombosEl.innerHTML = '';
+    noCombosMessage.classList.toggle('hidden', !snap.empty);
+    let counter = 1; // FIX: Manual counter fixes NaN
+    snap.forEach((d) => {
+      const heroes = d.data().heroes || [];
+      const row = document.createElement('div');
+      row.className = 'saved-combo-display';
+      row.innerHTML = `<span class="saved-combo-number">${counter}</span><div class="saved-combo-slots"></div>`;
+      const slots = row.querySelector('.saved-combo-slots');
+      heroes.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'saved-combo-slot-item';
+        item.innerHTML = `<img src="${getHeroImageUrl(name)}"><span>${name}</span>`;
+        slots.appendChild(item);
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'remove-combo-btn'; delBtn.textContent = 'X';
+      delBtn.onclick = () => showAboModal(translations[currentLanguage].messageConfirmRemoveCombo, async () => {
+        await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
+      });
+      row.appendChild(delBtn);
+      savedCombosEl.appendChild(row);
+      counter++;
+    });
+  });
+}
+
+// --- UI WIRING ---
 function wireUIActions() {
-  languageSelect.value = currentLanguage;
-  languageSelect.onchange = (e) => { currentLanguage = e.target.value; localStorage.setItem('vts_hero_lang', currentLanguage); updateTextContent(); renderGeneratorHeroes(); };
+  languageSelect.onchange = (e) => {
+    currentLanguage = e.target.value;
+    localStorage.setItem('vts_hero_lang', currentLanguage);
+    updateTextContent();
+    renderGeneratorHeroes();
+  };
 
   const handleTabSwitch = (isManual) => {
     manualSection.classList.toggle('hidden', !isManual);
     generatorSection.classList.toggle('hidden', isManual);
-    // Sticky Footer Logic
-    const footerBar = document.getElementById('comboFooterBar');
-    if (footerBar) footerBar.style.display = isManual ? 'block' : 'none';
+    if (comboFooterBar) comboFooterBar.style.display = isManual ? 'block' : 'none';
     tabManualBtn.className = isManual ? 'tab-pill tab-pill-active' : 'tab-pill tab-pill-inactive';
     tabGeneratorBtn.className = isManual ? 'tab-pill tab-pill-inactive' : 'tab-pill tab-pill-active';
   };
 
   tabManualBtn.onclick = () => handleTabSwitch(true);
   tabGeneratorBtn.onclick = () => handleTabSwitch(false);
-  generateCombosBtn.onclick = generateBestCombos;
-  
+
+  // DEFENSIVE FIX for null element errors
+  const seasonFilters = document.getElementById('seasonFilters');
+  if (seasonFilters) {
+    seasonFilters.onchange = (e) => {
+      if (e.target.checked) selectedSeasons.push(e.target.value);
+      else selectedSeasons = selectedSeasons.filter(s => s !== e.target.value);
+      renderAvailableHeroes();
+    };
+  }
+
+  const genSeasonFilters = document.getElementById('generatorSeasonFilters');
+  if (genSeasonFilters) {
+    genSeasonFilters.onchange = (e) => {
+      if (e.target.checked) generatorSelectedSeasons.push(e.target.value);
+      else generatorSelectedSeasons = generatorSelectedSeasons.filter(s => s !== e.target.value);
+      renderGeneratorHeroes();
+    };
+  }
+
   document.getElementById('genSelectAllBtn').onclick = () => {
     allHeroesData.filter(h => generatorSelectedSeasons.includes(h.season)).forEach(h => generatorSelectedHeroes.add(h.name));
     renderGeneratorHeroes();
   };
-  document.getElementById('genClearAllBtn').onclick = () => { generatorSelectedHeroes.clear(); renderGeneratorHeroes(); };
+  document.getElementById('genClearAllBtn').onclick = () => {
+    generatorSelectedHeroes.clear();
+    renderGeneratorHeroes();
+  };
+
+  saveComboBtn.onclick = saveCombo;
+  generateCombosBtn.onclick = generateBestCombos;
+}
+
+// --- INITIALIZATION ---
+async function updateTextContent() {
+  const t = translations[currentLanguage] || translations.en;
+  document.getElementById('appTitle').textContent = t.appTitle;
+  document.getElementById('tabManual').textContent = t.tabManual;
+  document.getElementById('tabGenerator').textContent = t.tabGenerator;
+  document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
+  document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
+  document.getElementById('createComboTitle').textContent = t.createComboTitle;
+  document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
 }
 
 (async function main() {
-  wireUIActions(); updateTextContent(); renderAvailableHeroes(); renderGeneratorHeroes();
+  wireUIActions();
+  updateTextContent();
+  renderAvailableHeroes();
+  renderGeneratorHeroes();
+  
+  // DEFAULT LANDING: Combo Generator
+  tabGeneratorBtn.click();
+
+  document.querySelectorAll('.combo-slot').forEach((slot, i) => {
+    updateComboSlotDisplay(slot, null, i);
+    slot.addEventListener('dragover', (e) => e.preventDefault());
+    slot.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const name = e.dataTransfer.getData('text/plain');
+      currentCombo[parseInt(slot.dataset.slotIndex)] = name;
+      updateComboSlotDisplay(slot, name);
+    });
+  });
+
   try {
-    initFirebase(); const user = await ensureAnonymousAuth(); userId = user.uid; db = getDb();
-    setupFirestoreListener(); initComments();
+    initFirebase();
+    const user = await ensureAnonymousAuth();
+    userId = user.uid;
+    db = getDb();
+    setupFirestoreListener();
+    initComments();
   } catch (err) { console.error(err); }
 })();
