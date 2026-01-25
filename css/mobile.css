@@ -1,20 +1,32 @@
 /* css/mobile.css - Optimized Mobile Experience */
 
-:root { --mobile-gap: 8px; }
+:root {
+  --mobile-gap: 8px;
+}
 
-html, body {
+/* General mobile tweaks */
+html,
+body {
   -webkit-text-size-adjust: 100%;
   padding-bottom: 200px !important; /* Space for sticky bar */
 }
 
-#app { padding: 12px !important; border-radius: 12px !important; }
+#app {
+  padding: 12px !important;
+  border-radius: 12px !important;
+}
 
 /* Hide desktop-only branding */
-.team-badge, #createComboTitle { display: none !important; }
+.team-badge,
+#createComboTitle {
+  display: none !important;
+}
 
-#appTitle { font-size: 1.8rem !important; }
+#appTitle {
+  font-size: 1.8rem !important;
+}
 
-/* Sticky Mobile Footer Fix */
+/* Sticky Mobile Footer Fix (manual builder footer) */
 #comboFooterBar {
   position: fixed;
   bottom: 0;
@@ -26,85 +38,184 @@ html, body {
   border-top: 2px solid rgba(59, 130, 246, 0.4);
   padding: 12px;
   box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(circle at 0 0, #1d2435 0, #020617 55%);
 }
 
-/* Slots and Buttons Grid */
-#comboSlotsRow { display: flex; justify-content: center; gap: 8px; margin-bottom: 6px; }
+/* Slots and Buttons Grid (manual builder) */
+#comboSlotsRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
 
-.combo-slot { width: 70px !important; height: 70px !important; margin: 0 !important; }
+.combo-slot {
+  width: 70px !important;
+  height: 70px !important;
+  margin: 0 !important;
+}
 
-#comboButtonsRow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+#comboButtonsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
 
-#comboButtonsRow button { font-size: 0.75rem; padding: 6px; min-height: 40px !important; }
+#comboButtonsRow button {
+  font-size: 0.75rem;
+  padding: 6px;
+  min-height: 40px !important;
+}
 
-/* Saved Combo List Optimizations */
-.saved-combo-display, .generated-combo-card {
+/* --- Generator buttons on mobile --- */
+#generateCombosBtn,
+#downloadGeneratorBtn {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 4px auto;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.7);
+  border-width: 1px;
+}
+
+/* Primary action – green */
+#generateCombosBtn {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  border-color: #22c55e;
+}
+
+/* Secondary action – blue */
+#downloadGeneratorBtn {
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+  border-color: #0ea5e9;
+}
+
+/* Saved Combo List & Generator Results (cards) */
+.saved-combo-display,
+.generated-combo-card {
   padding: 12px 12px 12px 72px !important;
   margin: 8px 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
+/* Number pill on the left */
 .saved-combo-number {
-  left: 20px !important; /* Identical position for both mode results */
+  left: 20px !important;
   width: 32px !important;
   height: 32px !important;
 }
 
-.saved-combo-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-
-.saved-combo-slot-item { aspect-ratio: 1/1; }
-
-/* Selection Feedback */
-.generator-card-selected { border: 3px solid #38bdf8 !important; transform: scale(0.95) !important; }
-
-/* css/mobile.css - Additions for 4-Column Layout */
-
-/* 1. Force 4 Columns on Mobile */
-#generatorHeroes, #availableHeroes {
-  display: grid !important; 
-  grid-template-columns: repeat(4, 1fr) !important; /* Forces 4 equal columns */
-  gap: 6px !important; /* Tighter gap */
-  justify-items: center !important;
-  padding: 0 4px !important; /* Maximizes screen width */
+/* Saved-combos list: 3-hero grid */
+.saved-combo-display .saved-combo-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
-/* 2. Shrink the Cards to fit */
-.hero-card, .generator-card {
-  width: 100% !important; /* Fill the grid cell */
-  min-width: 0 !important; /* Remove the desktop size limit */
+/* Generator results: heroes in one centered row */
+.generated-combo-card {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.generated-combo-card .saved-combo-slots {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+/* Score box inside generator results – center under heroes */
+.generated-combo-card > div:last-child {
+  margin-left: 0 !important;
+  padding-right: 0 !important;
+  text-align: center;
+}
+
+.generated-combo-card > div:last-child span:first-child {
+  letter-spacing: 0.18em;
+}
+
+/* Generic slot item squaring */
+.saved-combo-slot-item {
+  aspect-ratio: 1 / 1;
+}
+
+/* Score box used in saved combos (if present) */
+.saved-combo-scorebox {
+  margin-left: 4px !important;
+  padding-right: 0 !important;
+}
+
+/* Selection Feedback for generator heroes */
+.generator-card-selected {
+  border: 3px solid #38bdf8 !important;
+  transform: scale(0.95) !important;
+}
+
+/* --- 4-Column hero grid on mobile (manual + generator) --- */
+#generatorHeroes,
+#availableHeroes {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 6px !important;
+  justify-items: center !important;
+  padding: 0 4px !important;
+}
+
+/* Hero / generator cards shrink */
+.hero-card,
+.generator-card {
+  width: 100% !important;
+  min-width: 0 !important;
   min-height: 0 !important;
-  aspect-ratio: 1 / 1.3; /* Keeps them rectangular */
-  padding: 4px !important; /* Less padding */
+  aspect-ratio: 1 / 1.3;
+  padding: 4px !important;
   margin: 0 !important;
 }
 
-/* 3. Make Images Smaller */
-.hero-card img, .generator-card img {
-  width: 48px !important; /* Much smaller than desktop (86px) */
+/* Smaller hero images */
+.hero-card img,
+.generator-card img {
+  width: 48px !important;
   height: 48px !important;
   margin-bottom: 4px !important;
-  border-width: 1px !important; /* Thinner border */
+  border-width: 1px !important;
 }
 
-/* 4. Tiny Text for Mobile */
-.hero-card span.text-xs, 
+/* Tiny name text */
+.hero-card span.text-xs,
 .generator-card span.text-xs {
-  font-size: 0.60rem !important; /* Smaller font */
+  font-size: 0.60rem !important;
   line-height: 1.1 !important;
-  white-space: normal !important; /* Allow text to wrap */
+  white-space: normal !important;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Limit to 2 lines */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-top: 2px !important;
 }
 
-/* 5. Adjust the Season Tag */
+/* Season pill */
 .hero-tag {
   font-size: 0.5rem !important;
   padding: 1px 4px !important;
   top: 2px !important;
   left: 2px !important;
 }
-* { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+
+/* Remove grey tap highlight */
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
