@@ -1,12 +1,9 @@
-// js/comments.js
-// Realtime comments saved to Firestore (global collection "comments")
-
+// js/comments.js - Threaded Comments Update
 import { ensureAnonymousAuth, getDb } from './firebase.js';
 
-// Firestore unsubscribe handle
 let commentsListenerUnsub = null;
 
-// DOM elements (must exist in index.html)
+// DOM elements
 const commentForm = document.getElementById('commentForm');
 const commentName = document.getElementById('commentName');
 const commentEmail = document.getElementById('commentEmail');
@@ -14,89 +11,103 @@ const commentText = document.getElementById('commentText');
 const postCommentBtn = document.getElementById('postCommentBtn');
 const commentsList = document.getElementById('commentsList');
 
-/**
- * PUBLIC ENTRY POINT
- * Call this from app.js AFTER Firebase is initialized
- */
+// Global map to store comments for easy parent-lookup
+let allCommentsMap = new Map();
+let currentUserId = null;
+
 export async function initComments() {
   try {
-    // Wire UI + start realtime listener without re-triggering auth if already ready
     wireCommentsUI();
     await startCommentsListener();
-    console.log('[comments] initialized');
+    console.log('[comments] initialized (threaded)');
   } catch (err) {
     console.error('[comments] init error:', err);
   }
 }
 
 /* -------------------------------------------------- */
-/* UI helpers                                          */
+/* UI: Card Creation                                   */
 /* -------------------------------------------------- */
 
-function createCommentCard(docId, data, currentUid) {
+function createCommentCard(id, data, isReply = false) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'comment-card';
+  wrapper.className = isReply ? 'comment-card reply-card' : 'comment-card';
+  wrapper.id = `comment-${id}`;
 
-  // Avatar (first letter)
+  // Avatar
   const avatar = document.createElement('div');
   avatar.className = 'comment-avatar';
-  const initial =
-    data.name?.trim()?.[0]?.toUpperCase() ??
-    data.authorId?.[0]?.toUpperCase() ??
-    'U';
+  const initial = data.name?.trim()?.[0]?.toUpperCase() ?? 'A';
   avatar.textContent = initial;
 
-  // Body
+  // Body Container
   const body = document.createElement('div');
   body.className = 'comment-body';
 
-  // Meta
+  // Meta (Name + Date)
   const meta = document.createElement('div');
   meta.className = 'comment-meta';
+  
+  const authorSpan = document.createElement('span');
+  authorSpan.className = 'font-bold text-sky-400 mr-2';
+  authorSpan.textContent = data.name?.trim() || 'Anonymous';
+  
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'text-xs text-slate-500';
+  const dt = data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000) : new Date();
+  timeSpan.textContent = dt.toLocaleString();
 
-  const author = document.createElement('div');
-  author.textContent = data.name?.trim() || 'Anonymous';
+  meta.appendChild(authorSpan);
+  meta.appendChild(timeSpan);
 
-  const time = document.createElement('div');
-  const dt = data.createdAt?.seconds
-    ? new Date(data.createdAt.seconds * 1000)
-    : new Date();
-  time.textContent = dt.toLocaleString();
-
-  meta.appendChild(author);
-  meta.appendChild(time);
-
-  // Text
+  // Comment Text
   const textEl = document.createElement('div');
-  textEl.className = 'comment-text';
+  textEl.className = 'comment-text mt-1 text-slate-300';
   textEl.textContent = data.text || '';
+
+  // Action Bar (Reply / Delete)
+  const actionBar = document.createElement('div');
+  actionBar.className = 'flex gap-3 mt-2 text-xs font-semibold';
+
+  // REPLY BUTTON
+  const replyBtn = document.createElement('button');
+  replyBtn.textContent = 'Reply';
+  replyBtn.className = 'text-slate-500 hover:text-white transition';
+  replyBtn.onclick = () => toggleReplyForm(id, data.name);
+  actionBar.appendChild(replyBtn);
+
+  // DELETE BUTTON (Owner only)
+  if (data.authorId && data.authorId === currentUserId) {
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.className = 'text-red-900 hover:text-red-500 transition ml-auto';
+    delBtn.onclick = () => deleteComment(id);
+    actionBar.appendChild(delBtn);
+  }
 
   body.appendChild(meta);
   body.appendChild(textEl);
+  body.appendChild(actionBar);
 
-  // Actions (delete if author)
-  if (data.authorId && data.authorId === currentUid) {
-    const actions = document.createElement('div');
-    actions.className = 'comment-actions';
+  // Reply Input Container (Hidden by default)
+  const replyFormContainer = document.createElement('div');
+  replyFormContainer.id = `reply-form-${id}`;
+  replyFormContainer.className = 'hidden mt-3 pl-2 border-l-2 border-slate-700';
+  replyFormContainer.innerHTML = `
+    <textarea id="reply-input-${id}" class="w-full bg-slate-800 text-sm p-2 rounded text-white border border-slate-600 focus:border-blue-500 outline-none" rows="2" placeholder="Write a reply..."></textarea>
+    <div class="flex gap-2 mt-2">
+      <button onclick="window.submitReply('${id}')" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">Post Reply</button>
+      <button onclick="document.getElementById('reply-form-${id}').classList.add('hidden')" class="px-3 py-1 bg-slate-700 text-white text-xs rounded hover:bg-slate-600">Cancel</button>
+    </div>
+  `;
+  body.appendChild(replyFormContainer);
 
-    const delBtn = document.createElement('button');
-    delBtn.textContent = 'Delete';
-    delBtn.onclick = async () => {
-      if (!confirm('Delete this comment?')) return;
-      try {
-        const { deleteDoc, doc } = await import(
-          'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-        );
-        await deleteDoc(doc(getDb(), 'comments', docId));
-      } catch (e) {
-        console.error('Delete comment error:', e);
-        alert('Could not delete comment.');
-      }
-    };
-
-    actions.appendChild(delBtn);
-    body.appendChild(actions);
-  }
+  // Container for nested replies
+  const childrenContainer = document.createElement('div');
+  childrenContainer.className = 'replies-container mt-2 space-y-2';
+  childrenContainer.id = `replies-${id}`;
+  
+  body.appendChild(childrenContainer);
 
   wrapper.appendChild(avatar);
   wrapper.appendChild(body);
@@ -104,115 +115,135 @@ function createCommentCard(docId, data, currentUid) {
 }
 
 /* -------------------------------------------------- */
-/* Firestore realtime listener                         */
+/* Logic: Render Tree                                  */
 /* -------------------------------------------------- */
 
-async function startCommentsListener() {
-  // Clean up existing listener
-  if (commentsListenerUnsub) {
-    commentsListenerUnsub();
-    commentsListenerUnsub = null;
-  }
+function renderCommentsTree(docs) {
+  commentsList.innerHTML = '';
+  allCommentsMap.clear();
 
-  try {
-    const db = getDb();
-    const { collection, query, orderBy, onSnapshot } = await import(
-      'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-    );
-    const { getAuth } = await import(
-      'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
-    );
+  const roots = [];
+  const replies = [];
 
-    // Just order by time; filter "approved/public" on the client
-    const q = query(
-      collection(db, 'comments'),
-      orderBy('createdAt', 'desc')
-    );
+  // 1. Separate Roots and Replies
+  docs.forEach(docSnap => {
+    const data = docSnap.data();
+    const item = { id: docSnap.id, ...data };
+    
+    // Check visibility
+    if (data.approved === false && data.authorId !== currentUserId) return;
 
-    console.log('[comments] onSnapshot registered (approved comments)');
+    allCommentsMap.set(item.id, item);
 
-    commentsListenerUnsub = onSnapshot(
-      q,
-      (snap) => {
-        commentsList.innerHTML = '';
+    if (item.parentId) {
+      replies.push(item);
+    } else {
+      roots.push(item);
+    }
+  });
 
-        const auth = getAuth();
-        const currentUid = auth.currentUser?.uid || null;
+  // 2. Render Roots (Newest First)
+  roots.forEach(root => {
+    const card = createCommentCard(root.id, root, false);
+    commentsList.appendChild(card);
+  });
 
-        snap.forEach((docSnap) => {
-          const data = docSnap.data();
-
-          // Show only approved/public comments or your own
-          const visible =
-            data.approved === true ||
-            data.public === true ||
-            data.authorId === currentUid;
-
-          if (!visible) return;
-
-          const card = createCommentCard(docSnap.id, data, currentUid);
-          commentsList.appendChild(card);
-        });
-      },
-      (err) => {
-        console.error('[comments] onSnapshot error:', err);
-      }
-    );
-  } catch (e) {
-    console.error('[comments] listener error:', e);
-  }
+  // 3. Append Replies (Oldest First usually makes more sense for threads, but we keep DB order)
+  // We reverse replies here so they appear chronologically under the parent if the DB query is desc
+  replies.reverse().forEach(reply => {
+    const parentContainer = document.getElementById(`replies-${reply.parentId}`);
+    if (parentContainer) {
+      const card = createCommentCard(reply.id, reply, true);
+      parentContainer.appendChild(card);
+    }
+  });
 }
 
 /* -------------------------------------------------- */
-/* Form handling                                       */
+/* Logic: Actions                                      */
 /* -------------------------------------------------- */
+
+// Expose to window so inline HTML onclicks work
+window.submitReply = async (parentId) => {
+  const input = document.getElementById(`reply-input-${parentId}`);
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Use name from main form or default
+  const savedName = document.getElementById('commentName').value || 'Guest';
+
+  try {
+    await addCommentToDb(text, savedName, parentId);
+    input.value = '';
+    document.getElementById(`reply-form-${parentId}`).classList.add('hidden');
+  } catch (e) {
+    alert('Error posting reply: ' + e.message);
+  }
+};
+
+function toggleReplyForm(id) {
+  const form = document.getElementById(`reply-form-${id}`);
+  form.classList.toggle('hidden');
+}
+
+async function deleteComment(docId) {
+  if (!confirm('Delete this comment?')) return;
+  try {
+    const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    await deleteDoc(doc(getDb(), 'comments', docId));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function addCommentToDb(text, name, parentId = null) {
+  const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  
+  await addDoc(collection(getDb(), 'comments'), {
+    text,
+    name: name || null,
+    parentId: parentId, // The Link!
+    authorId: currentUserId,
+    createdAt: serverTimestamp(),
+    approved: true,
+    public: true
+  });
+}
+
+/* -------------------------------------------------- */
+/* Firestore Listener                                  */
+/* -------------------------------------------------- */
+
+async function startCommentsListener() {
+  if (commentsListenerUnsub) commentsListenerUnsub();
+  const db = getDb();
+  const { collection, query, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+
+  const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
+
+  commentsListenerUnsub = onSnapshot(q, (snap) => {
+    const auth = getAuth();
+    currentUserId = auth.currentUser?.uid || null;
+    renderCommentsTree(snap);
+  });
+}
 
 function wireCommentsUI() {
   if (!commentForm) return;
-
   commentForm.addEventListener('submit', async (ev) => {
     ev.preventDefault();
-
     const text = commentText.value.trim();
-    if (!text) return alert('Please enter a comment.');
-    if (text.length > 1000)
-      return alert('Comment too long (max 1000 characters).');
-
+    if (!text) return;
+    
     postCommentBtn.disabled = true;
-
     try {
-      const db = getDb();
-      const { getAuth } = await import(
-        'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js'
-      );
-      const { addDoc, collection, serverTimestamp } = await import(
-        'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js'
-      );
-
-      const auth = getAuth();
-      // if somehow auth failed, fall back to "anonymous"
-      const uid = auth.currentUser?.uid || 'anonymous';
-
-      await addDoc(collection(db, 'comments'), {
-        text,
-        name: commentName.value.trim() || null,
-        email: commentEmail.value.trim() || null,
-        authorId: uid,
-        createdAt: serverTimestamp(),
-        approved: true, // set false if you want moderation
-        public: true
-      });
-
-      // Reset form
+      await addCommentToDb(text, commentName.value.trim(), null); // null = Root comment
       commentText.value = '';
-      commentName.value = '';
-      commentEmail.value = '';
     } catch (e) {
-      console.error('Post comment error:', e);
-      alert('Could not post comment.');
+      console.error(e);
     } finally {
       postCommentBtn.disabled = false;
     }
   });
 }
-
