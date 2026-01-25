@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Heros Combos Tool</title>
+  <title>Hero Combo Tool - VTS 1097</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
@@ -13,131 +13,88 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
-    .team-badge { position: absolute; top: 12px; right: 12px; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.45); border: 2px solid rgba(255,255,255,0.04); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25)); display: flex; align-items: center; justify-content: center; z-index: 40; }
-    .team-badge img { width: 88%; height: 88%; object-fit: cover; border-radius: 8px; }
-    /* Logo Glow Effect */
-.logo-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.logo-container::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
-  z-index: -1;
-  border-radius: 50%;
-}
-    .main-logo {
-      width: 150px;
-      height: 150px;
-      border-radius: 24px; /* More rounded for a modern look */
-      border: 2px solid rgba(255, 255, 255, 0.05);
-      transition: transform 0.3s ease;
-    }
-    .main-logo:hover {
-  transform: scale(1.05);
-}
-    /* Text Refinement */
-.brand-subtitle {
-  color: #94a3b8;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-    .filter-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; background: #1e293b; border: 2px solid #334155; color: #94a3b8; cursor: pointer; transition: all 0.2s ease; user-select: none; }
-    .filter-pill input { display: none; }
-    .filter-pill:has(input:checked) { color: #ffffff; box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
-    .s0-pill:has(input:checked) { background: #475569; border-color: #9ca3af; }
-    .s1-pill:has(input:checked) { background: #1e40af; border-color: #3b82f6; }
-    .s2-pill:has(input:checked) { background: #7e22ce; border-color: #a855f7; }
-    .s3-pill:has(input:checked) { background: #c2410c; border-color: #f97316; }
-    .s4-pill:has(input:checked) { background: #a16207; border-color: #facc15; }
+    .logo-container { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+    .logo-container::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); z-index: -1; }
+    .main-logo { width: 150px; height: 150px; border-radius: 24px; border: 2px solid rgba(255, 255, 255, 0.05); }
     .tab-pill { padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 9999px; transition: all 0.2s ease; border: none; }
     .tab-pill-active { background: #2563eb; color: #f9fafb; }
     .tab-pill-inactive { background: transparent; color: #e5e7eb; }
-    #manualBuilderSection, #comboGeneratorSection { transition: opacity 0.2s ease-in-out; }
-    .generator-card-selected { box-shadow: 0 0 0 4px #38bdf8 !important; transform: translateY(-2px) scale(1.05) !important; z-index: 10; }
-    .empty-results-border { border: 2px dashed #334155; border-radius: 1rem; padding: 3rem 1rem; background: rgba(30, 41, 59, 0.3); text-align: center; color: #64748b; font-style: italic; }
-    .generated-combo-card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #1f2937; border-radius: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    .generated-combo-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #1f2937; border-radius: 0.75rem; padding: 0.75rem 1rem 0.75rem 60px; margin-bottom: 0.75rem; }
     @media (min-width:768px) { .generated-combo-card { flex-direction: row; } }
+    .saved-combo-number { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); background-color: #f97316; color: #111827; width: 32px; height: 32px; border-radius: 50%; display: block; line-height: 32px; text-align: center; font-size: 1.05rem; font-weight: 800; z-index: 5; }
   </style>
 </head>
 <body class="p-3 sm:p-4">
   <div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
-    <div class="team-badge" title="VTS 1097"><img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS logo"></div>
-    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border">
-  BETA b2.0 — VTS s1097 
-</div>
-
-<div class="logo-container">
-  <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo" />
-  
-  <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white tracking-tighter text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400">
-    Hero Combo Creator
-  </h1>
-  
-  <div class="flex flex-col items-center mt-2 space-y-1">
-    <p class="text-xs sm:text-sm brand-subtitle uppercase">Rise Of Empires: Ice & Fire</p>
-    <div class="flex items-center gap-2">
-      <span class="h-px w-8 bg-blue-500/30"></span>
-      <p class="text-sm font-bold text-blue-400">TEAM VTS — STATE 1097</p>
-      <span class="h-px w-8 bg-blue-500/30"></span>
+    
+    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border">BETA b2.0 — VTS s1097</div>
+    <div class="logo-container">
+      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo" />
+      <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
+      <p class="text-xs sm:text-sm text-slate-400 uppercase font-bold mt-2">Rise Of Empires: Ice & Fire — Stage 1097</p>
     </div>
-  </div>
-</div>
-    <div class="flex justify-end mb-4"><select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700">
-      <option value="en">English</option><option value="es">Español</option><option value="pt">Português</option>
-      <option value="de">Deutsch</option><option value="fr">Français</option><option value="tr">Türkçe</option>
-      <option value="ru">Русский</option><option value="id">Indonesia</option><option value="zh">中文</option>
-      <option value="ar">العربية</option><option value="kr">한국어</option>
-    </select></div>
+
+    <div class="flex justify-end mb-4">
+      <select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700">
+        <option value="en">English</option><option value="es">Español</option><option value="pt">Português</option>
+        <option value="de">Deutsch</option><option value="fr">Français</option><option value="tr">Türkçe</option>
+        <option value="ru">Русский</option><option value="id">Indonesia</option><option value="zh">中文</option>
+        <option value="ar">العربية</option><option value="kr">한국어</option>
+      </select>
+    </div>
 
     <div class="flex justify-center mb-6">
       <div class="inline-flex bg-slate-800 rounded-full p-1 border border-slate-700">
         <button id="tabManual" class="tab-pill tab-pill-active">Manual Builder</button>
         <div class="relative">
           <button id="tabGenerator" class="tab-pill tab-pill-inactive">Combo Generator</button>
-          <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-lg uppercase tracking-tighter">
-            Beta
-          </span>
+          <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase animate-pulse">Beta</span>
         </div>
       </div>
     </div>
 
-   <section id="manualBuilderSection">
-  <div id="comboFooterBar" class="mt-8 p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/50">
-    <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center">
-      Create Your Combo
-    </h2>
+    <section id="manualBuilderSection">
+      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <h2 id="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100">Filter by Season</h2>
+        <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
+          <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
+          <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span>Season 1</span></label>
+          <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span>Season 2</span></label>
+          <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span>Season 3</span></label>
+          <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span>Season 4</span></label>
+        </div>
+      </div>
 
-    <div id="comboRow" class="flex justify-center items-center gap-2 sm:gap-4">
-      <div class="combo-slot" data-slot-index="0"></div>
-      <div class="combo-slot" data-slot-index="1"></div>
-      <div class="combo-slot" data-slot-index="2"></div>
-    </div>
+      <div class="mb-8">
+        <h2 id="availableHeroesTitle" class="text-xl font-semibold mb-4 text-slate-100">Available Heroes</h2>
+        <div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
+      </div>
 
-    <div class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2">
-      <button id="saveComboBtn" class="px-4 py-2 bg-green-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-green-700 transition">Save</button>
-      <button id="clearComboBtn" class="px-4 py-2 bg-red-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-red-700 transition">Clear</button>
-      <button id="downloadCombosBtn" class="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-purple-700 transition">Image</button>
-      <button id="shareAllCombosBtn" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-sky-700 transition">Text</button>
-    </div>
-  </div>
-</section>
+      <div id="comboFooterBar" class="p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl">
+        <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
+        <div id="comboRow" class="flex justify-center items-center gap-2 sm:gap-4">
+          <div class="combo-slot" data-slot-index="0"></div>
+          <div class="combo-slot" data-slot-index="1"></div>
+          <div class="combo-slot" data-slot-index="2"></div>
+        </div>
+        <div id="comboButtonsRow" class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2">
+          <button id="saveComboBtn" class="bg-green-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-green-700 transition disabled:opacity-50">Save</button>
+          <button id="clearComboBtn" class="bg-red-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-red-700 transition">Clear</button>
+          <button id="downloadCombosBtn" class="bg-purple-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-purple-700 transition">Image</button>
+          <button id="shareAllCombosBtn" class="bg-sky-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-sky-700 transition">Text</button>
+        </div>
+      </div>
+
+      <div class="mt-10 mb-10">
+        <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center">Last Best Combos</h2>
+        <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet!</p>
+        <div id="savedCombos" class="flex flex-col items-center"></div>
+      </div>
+    </section>
 
     <section id="comboGeneratorSection" class="hidden">
-      <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
-        <p id="genIntroText" class="text-sm text-slate-400">Select heroes you own and Generate Best Combos.</p></div>
-      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl shadow-inner border border-slate-800">
+      <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator</h2><p id="genIntroText" class="text-sm text-slate-400">Select heroes you own and Generate Best Combos.</p></div>
+      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
         <h3 id="genFilterTitle" class="text-lg font-semibold mb-4 text-slate-100">Filter by Season</h3>
         <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
           <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
@@ -147,12 +104,16 @@
           <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span>Season 4</span></label>
         </div>
       </div>
-      <div class="mb-6"><div class="flex items-center justify-between mb-4"><h3 id="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 id="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
           <div class="flex gap-2">
-            <button id="genSelectAllBtn" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All Visible</button>
-            <button id="genClearAllBtn" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear Selection</button>
+            <button id="genSelectAllBtn" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All</button>
+            <button id="genClearAllBtn" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear All</button>
           </div>
-        </div><div id="generatorHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div></div>
+        </div>
+        <div id="generatorHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
+      </div>
       <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
         <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
         <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
@@ -160,39 +121,17 @@
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
-    <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl shadow-inner border border-slate-800">
-      <h2 class="text-xl font-semibold mb-4 text-slate-100">Comments</h2>
-      <form id="commentForm" class="space-y-3 mb-6">
-        <input id="commentName" type="text" class="w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white" placeholder="Name" />
-        <textarea id="commentText" rows="3" class="w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white" placeholder="Suggestion..."></textarea>
-        <button type="submit" id="postCommentBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition">Submit Comment</button>
-      </form>
-      <div id="commentsList" class="space-y-4"></div>
-    </section>
-  </div>
-
-  <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
-    <div class="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
-      <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
-      <div class="flex justify-center gap-3">
-        <button id="messageBoxOkBtn" class="px-8 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">OK</button>
-        <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden">Cancel</button>
+    <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+      <div class="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
+        <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
+        <div class="flex justify-center gap-3">
+          <button id="messageBoxOkBtn" class="px-8 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">OK</button>
+          <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
-  <div id="loadingSpinner" class="loading-spinner hidden" aria-hidden="true"></div>
+  <div id="loadingSpinner" class="loading-spinner hidden"></div>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
