@@ -54,6 +54,26 @@ body {
   background: #f97316;
 }
 
+
+/* Beta Badge Styling */
+.relative span {
+  pointer-events: none; /* User can click through the badge to the button */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  z-index: 50;
+  animation: pulse-soft 2s infinite; /* Subtle pulse to draw attention */
+}
+
+@keyframes pulse-soft {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-1px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Adjust tab pills for better alignment with badges */
+.tab-pill {
+  position: relative;
+  z-index: 10;
+}
 /* Custom Filter Pills */
 .filter-pill {
   display: inline-flex;
@@ -263,4 +283,5 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
