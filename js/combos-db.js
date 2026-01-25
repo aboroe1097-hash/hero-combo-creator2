@@ -66,6 +66,7 @@ export const rankedCombos = [
   { heroes: ["Edward the Confessor", "Inquisitor", "Witch Hunter"] }, // Critical Strike focus
   { heroes: ["Immortal Guardian", "Leonidas", "Jade Eagle"] },
   { heroes: ["Immortal Guardian", "Isabella I", "Jade Eagle"] },
+  { heroes: ["Immortal Guardian", "Divine Arrow", "William the Conqueror"] },
   { heroes: ["Immortal Guardian", "Leonidas", "Divine Arrow"] },
   { heroes: ["Immortal Guardian", "Isabella I", "Divine Arrow"] },
   { heroes: ["Demon Spear","Soaring Hawk", "Desert Storm"] },
@@ -83,6 +84,7 @@ export const rankedCombos = [
   { heroes: ["Alfred", "Constantine the Great", "Jane"] },        // Support Variation
   { heroes: ["Edward the Confessor", "Leonidas", "Al Fatih"] },
   { heroes: ["Edward the Confessor", "Isabella I", "Al Fatih"] },
+  { heroes: ["Edward the Confessor", "Charles the Great", "William the Conqueror"] },
   { heroes: ["Peace Bringer", "Genghis Khan", "The Heroine"] },
 
   // --- TIER 4: EARLY SEASON & TRANSITIONAL TEAMS ---
