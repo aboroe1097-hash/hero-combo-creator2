@@ -112,6 +112,7 @@ export const rankedCombos = [
 
   { heroes: ["Yukimura Sanada", "Queen Anne", "Heaven's Justice"] }, // S0 Starter Peak
   { heroes: ["North's Rage", "Queen Anne", "Heaven's Justice"] }, // S0 Starter Peak
+  { heroes: ["Kublai", "William Wallace", "Heaven's Justice"] }, // S0 Starter Peak
   
   { heroes: ["William Wallace", "Jiguang Qi", "Heaven's Justice"] }, // S0 Starter Peak
   { heroes: ["North's Rage", "The Boneless", "The Heroine"] },    // Balanced Starter
