@@ -80,6 +80,7 @@ export const rankedCombos = [
   { heroes: ["War Lord", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
   { heroes: ["Demon Spear", "Che Liu", "Bleeding Steed"] },        // Debuff variation
+  { heroes: ["Yukimura Sanada", "Isabella I", "Mary Tudor"] },
   { heroes: ["North's Rage", "Isabella I", "Mary Tudor"] },
   { heroes: ["North's Rage", "Isabella I", "Lionheart"] },
   { heroes: ["Yukimura Sanada", "Isabella I", "Mary Tudor"] },
@@ -95,6 +96,7 @@ export const rankedCombos = [
   // --- TIER 4: EARLY SEASON & TRANSITIONAL TEAMS ---
   { heroes: ["North's Rage", "Yukimura Sanada", "Isabella I"] },
   { heroes: ["Peace Bringer", "Genghis Khan", "Cao Cao"] },       // High Mobility
+  { heroes: ["Queen Anne", "The Heroine", "William the Conqueror"] },
   { heroes: ["Queen Anne", "The Heroine", "The Boneless"] },
   { heroes: ["Queen Anne", "The Heroine", "William Wallace"] },
   { heroes: ["Yukimura Sanada", "The Heroine", "William Wallace"] },
@@ -102,6 +104,15 @@ export const rankedCombos = [
   { heroes: ["Demon Spear", "Jiguang Qi", "Genghis Khan"] },      // Burst Damage
   { heroes: ["Demon Spear", "Jiguang Qi", "North's Rage"] },      // Physical focus
   { heroes: ["Demon Spear", "Queen Anne", "William Wallace"] },   // Counter-Attack build
+  { heroes: ["Yukimura Sanada", "William Wallace", "Heaven's Justice"] }, // S0 Starter Peak
+  { heroes: ["North's Rage", "William Wallace", "Heaven's Justice"] }, // S0 Starter Peak
+
+  { heroes: ["Yukimura Sanada", "The Heroine", "Heaven's Justice"] }, // S0 Starter Peak
+  { heroes: ["North's Rage", "The Heroine", "Heaven's Justice"] }, // S0 Starter Peak
+
+  { heroes: ["Yukimura Sanada", "Queen Anne", "Heaven's Justice"] }, // S0 Starter Peak
+  { heroes: ["North's Rage", "Queen Anne", "Heaven's Justice"] }, // S0 Starter Peak
+  
   { heroes: ["William Wallace", "Jiguang Qi", "Heaven's Justice"] }, // S0 Starter Peak
   { heroes: ["North's Rage", "The Boneless", "The Heroine"] },    // Balanced Starter
   { heroes: ["North's Rage", "The Boneless", "Heaven's Justice"] }
