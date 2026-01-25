@@ -402,7 +402,7 @@ function generateBestCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
 
-  if (selected.length < 15) {
+  if (selected.length < 12) {
     showAboModal(t.generatorMinHeroesMessage);
     return;
   }
