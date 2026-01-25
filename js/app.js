@@ -1,4 +1,4 @@
-// js/app.js - Final Version b2.4 Full Fix
+// js/app.js - Final Version b2.5 with Mobile Drag Support
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
@@ -30,9 +30,9 @@ const comboFooterBar = document.getElementById('comboFooterBar');
 
 // State
 let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
-let selectedSeasons = ['S0']; 
+let selectedSeasons = ['S0'];
 let currentCombo = [null, null, null];
-let generatorSelectedSeasons = ['S0']; 
+let generatorSelectedSeasons = ['S0'];
 const generatorSelectedHeroes = new Set();
 let userId = 'anonymous';
 let db = null;
@@ -113,11 +113,122 @@ function showAboModal(message, onConfirm = null) {
   }
 }
 
+// --- MOBILE TOUCH DRAG SUPPORT FOR MANUAL BUILDER ---
+
+let touchDragHeroName = null;
+let touchDragGhost = null;
+let touchDragLastSlot = null;
+
+function isTouchDevice() {
+  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+}
+
+function setupHeroTouchDrag(card, hero) {
+  if (!isTouchDevice()) return;
+
+  // On touch devices, disable native HTML5 drag to avoid conflicts
+  card.draggable = false;
+
+  card.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    touchDragHeroName = hero.name;
+
+    // Create ghost element that follows the finger
+    touchDragGhost = document.createElement('div');
+    touchDragGhost.className = 'hero-drag-ghost';
+    touchDragGhost.innerHTML = `
+      <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
+    `;
+    document.body.appendChild(touchDragGhost);
+    moveHeroDragGhost(touch.clientX, touch.clientY);
+
+    document.addEventListener('touchmove', onHeroTouchMove, { passive: false });
+    document.addEventListener('touchend', onHeroTouchEnd);
+    document.addEventListener('touchcancel', onHeroTouchCancel);
+  });
+}
+
+function moveHeroDragGhost(x, y) {
+  if (!touchDragGhost) return;
+  touchDragGhost.style.left = x + 'px';
+  touchDragGhost.style.top = y + 'px';
+}
+
+function clearHeroSlotHover() {
+  if (touchDragLastSlot) {
+    touchDragLastSlot.classList.remove('combo-slot-hover');
+    touchDragLastSlot = null;
+  }
+}
+
+function onHeroTouchMove(e) {
+  if (!touchDragHeroName || !touchDragGhost) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+
+  // Prevent scrolling while dragging
+  e.preventDefault();
+
+  moveHeroDragGhost(touch.clientX, touch.clientY);
+
+  const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+  const slot = elem && elem.closest ? elem.closest('.combo-slot') : null;
+
+  if (slot !== touchDragLastSlot) {
+    clearHeroSlotHover();
+    if (slot) {
+      slot.classList.add('combo-slot-hover');
+      touchDragLastSlot = slot;
+    }
+  }
+}
+
+function finishHeroTouchDrop(targetSlot) {
+  if (!targetSlot || !touchDragHeroName) return;
+  const idx = parseInt(targetSlot.dataset.slotIndex, 10);
+  if (isNaN(idx)) return;
+
+  currentCombo[idx] = touchDragHeroName;
+  updateComboSlotDisplay(targetSlot, touchDragHeroName, idx);
+}
+
+function cleanupHeroTouchDrag() {
+  clearHeroSlotHover();
+  if (touchDragGhost && touchDragGhost.parentNode) {
+    touchDragGhost.parentNode.removeChild(touchDragGhost);
+  }
+  touchDragGhost = null;
+  touchDragHeroName = null;
+}
+
+function onHeroTouchEnd(e) {
+  const touch = e.changedTouches[0];
+  const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+  const slot = elem && elem.closest ? elem.closest('.combo-slot') : null;
+
+  if (slot) {
+    finishHeroTouchDrop(slot);
+  }
+
+  cleanupHeroTouchDrag();
+  document.removeEventListener('touchmove', onHeroTouchMove);
+  document.removeEventListener('touchend', onHeroTouchEnd);
+  document.removeEventListener('touchcancel', onHeroTouchCancel);
+}
+
+function onHeroTouchCancel() {
+  cleanupHeroTouchDrag();
+  document.removeEventListener('touchmove', onHeroTouchMove);
+  document.removeEventListener('touchend', onHeroTouchEnd);
+  document.removeEventListener('touchcancel', onHeroTouchCancel);
+}
+
 // --- RENDERING FUNCTIONS (Restored) ---
 function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
-
-  const t = translations[currentLanguage] || translations.en;
 
   availableHeroesEl.innerHTML = '';
   allHeroesData
@@ -140,24 +251,8 @@ function renderAvailableHeroes() {
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
-      // NEW: Mobile (and desktop) tap support
-      card.addEventListener('click', () => {
-        // Find first empty slot
-        const emptyIndex = currentCombo.indexOf(null);
-        if (emptyIndex === -1) {
-          // All 3 slots full – reuse your existing message text
-          showAboModal(t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.');
-          return;
-        }
-
-        currentCombo[emptyIndex] = hero.name;
-
-        const slots = document.querySelectorAll('.combo-slot');
-        const targetSlot = slots[emptyIndex];
-        if (targetSlot) {
-          updateComboSlotDisplay(targetSlot, hero.name, emptyIndex);
-        }
-      });
+      // Mobile drag via touch events (no tap-to-place)
+      setupHeroTouchDrag(card, hero);
 
       availableHeroesEl.appendChild(card);
     });
@@ -185,7 +280,7 @@ function renderGeneratorHeroes() {
 
 function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
-  
+
   if (name) {
     slot.innerHTML = `
       <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
@@ -193,16 +288,16 @@ function updateComboSlotDisplay(slot, name, idx) {
         ${name}
       </span>`;
     slot.classList.add('relative', 'p-0', 'border-solid', 'border-emerald-500'); // Added border feedback
-} else {
-  slot.innerHTML = `
-    <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
-      <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
-      <span class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
-        ${t.dragHeroHere}
-      </span>
-    </div>`;
-  slot.classList.remove('relative', 'p-0');
-}
+  } else {
+    slot.innerHTML = `
+      <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
+        <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
+        <span class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+          ${t.dragHeroHere}
+        </span>
+      </div>`;
+    slot.classList.remove('relative', 'p-0', 'border-emerald-500');
+  }
 }
 
 // --- LOGIC FUNCTIONS ---
@@ -251,7 +346,7 @@ function renderGeneratorResults(bestCombos) {
   bestCombos.forEach((combo, i) => {
     const card = document.createElement('div');
     card.className = 'generated-combo-card'; // CSS Handles spacing
-    
+
     const slots = document.createElement('div');
     slots.className = 'saved-combo-slots';
     combo.heroes.forEach(name => {
@@ -276,7 +371,7 @@ async function setupFirestoreListener() {
   const _db = getDb(); if (!_db || !userId) return; db = _db;
   const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
   const q = query(collection(db, `users/${userId}/bestCombos`), orderBy('timestamp', 'desc'), limit(100));
-  
+
   onSnapshot(q, (snap) => {
     savedCombosEl.innerHTML = '';
     noCombosMessage.classList.toggle('hidden', !snap.empty);
@@ -392,19 +487,18 @@ async function updateTextContent() {
   const genSelectAllBtn   = document.getElementById('genSelectAllBtn');
   const genClearAllBtn    = document.getElementById('genClearAllBtn');
 
-  if (genSelectAllBtn)    genSelectAllBtn.textContent    = t.generatorSelectAll;
-  if (genClearAllBtn)     genClearAllBtn.textContent     = t.generatorClearAll;
-  if (generateCombosBtn)  generateCombosBtn.textContent  = t.generatorGenerateBtn;
-  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
+  if (genSelectAllBtn)       genSelectAllBtn.textContent       = t.generatorSelectAll;
+  if (genClearAllBtn)        genClearAllBtn.textContent        = t.generatorClearAll;
+  if (generateCombosBtn)     generateCombosBtn.textContent     = t.generatorGenerateBtn;
+  if (downloadGeneratorBtn)  downloadGeneratorBtn.textContent  = t.generatorDownloadBtn;
 }
-
 
 (async function main() {
   wireUIActions();
   updateTextContent();
   renderAvailableHeroes();
   renderGeneratorHeroes();
-  
+
   // DEFAULT LANDING: Combo Generator
   tabGeneratorBtn.click();
 
@@ -415,7 +509,7 @@ async function updateTextContent() {
       e.preventDefault();
       const name = e.dataTransfer.getData('text/plain');
       currentCombo[parseInt(slot.dataset.slotIndex)] = name;
-      updateComboSlotDisplay(slot, name);
+      updateComboSlotDisplay(slot, name, parseInt(slot.dataset.slotIndex, 10));
     });
   });
 
