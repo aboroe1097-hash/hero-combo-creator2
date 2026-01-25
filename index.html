@@ -15,7 +15,44 @@
     body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
     .team-badge { position: absolute; top: 12px; right: 12px; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.45); border: 2px solid rgba(255,255,255,0.04); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25)); display: flex; align-items: center; justify-content: center; z-index: 40; }
     .team-badge img { width: 88%; height: 88%; object-fit: cover; border-radius: 8px; }
-    .main-logo { width: 160px; height: 160px; object-fit: contain; border-radius: 16px; box-shadow: 0 12px 30px rgba(0,0,0,0.6); margin-bottom: 12px; background: rgba(0,0,0,0.15); }
+    /* Logo Glow Effect */
+.logo-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo-container::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+  z-index: -1;
+  border-radius: 50%;
+}
+    .main-logo {
+      width: 150px;
+      height: 150px;
+      border-radius: 24px; /* More rounded for a modern look */
+      border: 2px solid rgba(255, 255, 255, 0.05);
+      transition: transform 0.3s ease;
+    }
+    .main-logo:hover {
+  transform: scale(1.05);
+}
+    /* Text Refinement */
+.brand-subtitle {
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
     .filter-pill { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px; background: #1e293b; border: 2px solid #334155; color: #94a3b8; cursor: pointer; transition: all 0.2s ease; user-select: none; }
     .filter-pill input { display: none; }
     .filter-pill:has(input:checked) { color: #ffffff; box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
@@ -151,6 +188,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
