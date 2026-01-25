@@ -159,15 +159,16 @@ function updateComboSlotDisplay(slot, name, idx) {
         ${name}
       </span>`;
     slot.classList.add('relative', 'p-0', 'border-solid', 'border-emerald-500'); // Added border feedback
-  } else {
-    // Fixed: Uses t.dragHeroHere and better spacing
-    slot.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-full opacity-50">
-        <span class="text-4xl text-slate-600 mb-1">+</span>
-        <span class="combo-slot-placeholder-text px-2">${t.dragHeroHere || "Drag Hero Here"}</span>
-      </div>`;
-    slot.classList.remove('relative', 'p-0', 'border-solid', 'border-emerald-500');
-  }
+} else {
+  slot.innerHTML = `
+    <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
+      <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
+      <span class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+        ${t.dragHeroHere}
+      </span>
+    </div>`;
+  slot.classList.remove('relative', 'p-0');
+}
 }
 
 // --- LOGIC FUNCTIONS ---
@@ -324,36 +325,45 @@ function wireUIActions() {
 
 // --- INITIALIZATION ---
 async function updateTextContent() {
- const t = translations[currentLanguage] || translations.en;
-  
-  // Existing
+  const t = translations[currentLanguage] || translations.en;
+
+  // Top & tabs
   document.getElementById('appTitle').textContent = t.appTitle;
   document.getElementById('tabManual').textContent = t.tabManual;
   document.getElementById('tabGenerator').textContent = t.tabGenerator;
+
+  // Manual builder headings
   document.getElementById('filterBySeasonTitle').textContent = t.filterBySeasonTitle;
   document.getElementById('availableHeroesTitle').textContent = t.availableHeroesTitle;
   document.getElementById('createComboTitle').textContent = t.createComboTitle;
   document.getElementById('lastBestCombosTitle').textContent = t.lastBestCombosTitle;
-  document.getElementById('saveComboBtn').textContent = t.saveComboBtn;
-  document.getElementById('clearComboBtn').textContent = t.clearComboBtn;
-  document.getElementById('downloadCombosBtn').textContent = t.downloadCombosBtn;
-  document.getElementById('shareAllCombosBtn').textContent = t.shareAllCombosBtn;
+  document.getElementById('noCombosMessage').textContent = t.noCombosMessage;
 
-  // NEW: Generator Section Buttons (These were missing!)
-  document.getElementById('genSelectAllBtn').textContent = t.generatorSelectAll;
-  document.getElementById('genClearAllBtn').textContent = t.generatorClearAll;
-  document.getElementById('generateCombosBtn').textContent = t.generatorGenerateBtn;
-  
-  // Note: This button is hidden initially, but we update text anyway
-  document.getElementById('downloadGeneratorBtn').textContent = t.generatorDownloadBtn; 
-  
-  // Headers
-  const genToolTitle = document.getElementById('genToolTitle');
-  if(genToolTitle) genToolTitle.textContent = t.generatorTitle;
-  
-  const genIntroText = document.getElementById('genIntroText');
-  if(genIntroText) genIntroText.textContent = t.generatorIntro;
+  // Manual builder buttons
+  if (saveComboBtn) saveComboBtn.textContent = t.saveComboBtn;
+  if (clearComboBtn) clearComboBtn.textContent = t.clearComboBtn;
+  if (downloadCombosBtn) downloadCombosBtn.textContent = t.downloadCombosBtn;
+  if (shareAllCombosBtn) shareAllCombosBtn.textContent = t.shareAllCombosBtn;
+
+  // Generator section headings
+  const genToolTitle   = document.getElementById('genToolTitle');
+  const genIntroText   = document.getElementById('genIntroText');
+  const genFilterTitle = document.getElementById('genFilterTitle');
+
+  if (genToolTitle)   genToolTitle.textContent   = t.generatorTitle;
+  if (genIntroText)   genIntroText.textContent   = t.generatorIntro;
+  if (genFilterTitle) genFilterTitle.textContent = t.filterBySeasonTitle;
+
+  // Generator buttons
+  const genSelectAllBtn   = document.getElementById('genSelectAllBtn');
+  const genClearAllBtn    = document.getElementById('genClearAllBtn');
+
+  if (genSelectAllBtn)    genSelectAllBtn.textContent    = t.generatorSelectAll;
+  if (genClearAllBtn)     genClearAllBtn.textContent     = t.generatorClearAll;
+  if (generateCombosBtn)  generateCombosBtn.textContent  = t.generatorGenerateBtn;
+  if (downloadGeneratorBtn) downloadGeneratorBtn.textContent = t.generatorDownloadBtn;
 }
+
 
 (async function main() {
   wireUIActions();
