@@ -113,30 +113,26 @@
       </div>
     </div>
 
-    <section id="manualBuilderSection">
-      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl shadow-inner border border-slate-800">
-        <h2 id="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100">Filter by Season</h2>
-        <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
-          <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
-          <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span>Season 1</span></label>
-          <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span>Season 2</span></label>
-          <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span>Season 3</span></label>
-          <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span>Season 4</span></label>
-        </div>
-      </div>
-      <div class="mb-8"><h2 id="availableHeroesTitle" class="text-xl font-semibold mb-4 text-slate-100">Available Heroes</h2><div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div></div>
-      <div class="mb-8 p-4 sm:p-6 bg-slate-900/50 rounded-2xl shadow-inner border border-slate-800">
-        <h2 id="createComboTitle" class="text-xl font-semibold mb-4 text-slate-100">Create Your Combo</h2>
-        <div id="comboRow" class="flex justify-center items-center gap-3 mt-2"><div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div></div>
-        <div class="mt-6 flex flex-col space-y-3">
-          <button id="saveComboBtn" class="w-full px-6 py-3 bg-green-600 text-white font-bold rounded-full shadow-lg hover:bg-green-700 transition">Save Current Combo</button>
-          <button id="clearComboBtn" class="w-full px-6 py-3 bg-red-600 text-white font-bold rounded-full shadow-lg hover:bg-red-700 transition">Clear Current Combo</button>
-          <button id="downloadCombosBtn" class="w-full px-6 py-3 bg-purple-600 text-white font-bold rounded-full shadow-lg hover:bg-purple-700 transition">Download as Image</button>
-          <button id="shareAllCombosBtn" class="w-full px-6 py-3 bg-sky-600 text-white font-bold rounded-full shadow-lg hover:bg-sky-700 transition">Share All as Text</button>
-        </div>
-      </div>
-      <div class="mb-10"><h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100">Last Best Combos</h2><p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet!</p><div id="savedCombos" class="flex flex-col items-center"></div></div>
-    </section>
+   <section id="manualBuilderSection">
+  <div id="comboFooterBar" class="mt-8 p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/50">
+    <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center">
+      Create Your Combo
+    </h2>
+
+    <div id="comboRow" class="flex justify-center items-center gap-2 sm:gap-4">
+      <div class="combo-slot" data-slot-index="0"></div>
+      <div class="combo-slot" data-slot-index="1"></div>
+      <div class="combo-slot" data-slot-index="2"></div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2">
+      <button id="saveComboBtn" class="px-4 py-2 bg-green-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-green-700 transition">Save</button>
+      <button id="clearComboBtn" class="px-4 py-2 bg-red-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-red-700 transition">Clear</button>
+      <button id="downloadCombosBtn" class="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-purple-700 transition">Image</button>
+      <button id="shareAllCombosBtn" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl text-xs sm:text-sm hover:bg-sky-700 transition">Text</button>
+    </div>
+  </div>
+</section>
 
     <section id="comboGeneratorSection" class="hidden">
       <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
@@ -188,6 +184,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
