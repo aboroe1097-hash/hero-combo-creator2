@@ -45,7 +45,8 @@ export const rankedCombos = [
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },
-
+  { heroes: ["War Lord", "Rozen Blade", "Caesar"] },
+  
   // --- TIER 3: SEASONAL SYNERGIES & SPECIALISTS ---
   { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             // Mixed Utility
   { heroes: ["Leonidas", "Ramses II", "Witch Hunter"] },
