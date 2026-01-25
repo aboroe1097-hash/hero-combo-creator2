@@ -56,6 +56,8 @@ export const rankedCombos = [
   { heroes: ["BeastQueen", "Lionheart", "Immortal"] },
   { heroes: ["BeastQueen", "Isabella I", "Immortal"] },
   { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
+  { heroes: ["King Arthur", "Desert Storm", "Cao Cao"] },
+  { heroes: ["Soaring Hawk", "Desert Storm", "Cao Cao"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
@@ -73,6 +75,8 @@ export const rankedCombos = [
   { heroes: ["Yukimura Sanada", "Rokuboshuten", "Jane"] },
   { heroes: ["North's Rage", "Rokuboshuten", "Jane"] },
   { heroes: ["War Lord", "Black Prince", "Jane"] },
+  { heroes: ["Alfred", "Black Prince", "Lionheart"] },
+  { heroes: ["Black Prince", "Constantine the Great", "Lionheart"] }
   { heroes: ["War Lord", "Isabella I", "Lionheart"] },
   { heroes: ["War Lord", "Isabella I", "Mary Tudor"] },
   { heroes: ["Demon Spear", "Che Liu", "Bleeding Steed"] },        // Debuff variation
