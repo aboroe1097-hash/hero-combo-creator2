@@ -38,9 +38,18 @@ html, body {
 #comboButtonsRow button { font-size: 0.75rem; padding: 6px; min-height: 40px !important; }
 
 /* Saved Combo List Optimizations */
-.saved-combo-display { padding-left: 72px !important; }
+.saved-combo-display, .generated-combo-card {
+  padding: 12px 12px 12px 72px !important;
+  margin: 8px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
 
-.saved-combo-number { left: 24px !important; width: 32px !important; height: 32px !important; }
+.saved-combo-number {
+  left: 20px !important; /* Identical position for both mode results */
+  width: 32px !important;
+  height: 32px !important;
+}
 
 .saved-combo-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 
