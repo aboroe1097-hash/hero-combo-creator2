@@ -244,6 +244,13 @@ function generateBestCombos() {
   }
 
   renderGeneratorResults(finalSelection);
+// FIX: Explicitly remove the 'hidden' class so the button appears
+  if (finalSelection.length > 0) {
+    const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
+    if (downloadGeneratorBtn) {
+      downloadGeneratorBtn.classList.remove('hidden');
+    }
+  }
 }
 /**
  * Renders the top 5 generated combos ensuring each hero is unique.
