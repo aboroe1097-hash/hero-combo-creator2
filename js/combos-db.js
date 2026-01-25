@@ -56,7 +56,7 @@ export const rankedCombos = [
   { heroes: ["Immortal Guardian", "Charles the Great", "Jade Eagle"] },
   { heroes: ["Immortal Guardian", "Charles the Great", "Al Fatih"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Al Fatih"] },
-
+  { heroes: ["Immortal Guardian", "Divine Arrow", "Sky Breaker"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["Bleeding Steed", "Soaring Hawk", "Desert Storm"] },
   { heroes: ["Bleeding Steed", "Desert Storm", "Cao Cao"] },
