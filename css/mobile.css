@@ -43,6 +43,14 @@ html, body {
   padding: 10px !important;
 }
 
+/* Season filters: tighter spacing on mobile */
+#seasonFilters {
+  gap: 6px !important;
+}
+#seasonFilters label {
+  font-size: 0.86rem !important;
+}
+
 /* Controls: wrap + center */
 .language-select-wrapper {
   justify-content: center !important;
