@@ -50,15 +50,21 @@ export const rankedCombos = [
   { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             // Mixed Utility
   { heroes: ["Leonidas", "Ramses II", "Witch Hunter"] },
   { heroes: ["Leonidas", "Ramses II", "Inquisitor"] },
+  { heroes: ["King Arthur", "Desert Storm", "Cao Cao"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Jade Eagle"] },
+  { heroes: ["Immortal Guardian", "Charles the Great", "Jade Eagle"] },
+  { heroes: ["Immortal Guardian", "Charles the Great", "Al Fatih"] },
+  { heroes: ["Immortal Guardian", "Divine Arrow", "Al Fatih"] },
+
+
+  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
+  { heroes: ["Bleeding Steed", "Soaring Hawk", "Desert Storm"] },
   { heroes: ["Bleeding Steed", "Desert Storm", "Cao Cao"] },
-  { heroes: ["Soaring Hawk", "Bleeding Steed", "Desert Storm"] },
   { heroes: ["BeastQueen", "Lionheart", "Immortal"] },
   { heroes: ["BeastQueen", "Isabella I", "Immortal"] },
   { heroes: ["King Arthur","Soaring Hawk", "Desert Storm"] }, // Cavalry/Garrison Mix
-  
-  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
-  { heroes: ["King Arthur", "Desert Storm", "Cao Cao"] },
+
+
   { heroes: ["Soaring Hawk", "Desert Storm", "Cao Cao"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
