@@ -13,7 +13,7 @@ export const translations = {
     generatorSelectAll: "Select All Visible", generatorClearAll: "Clear Selection",
     generatorGenerateBtn: "Generate Best Combos", generatorDownloadBtn: "Download Results as Image",
     generatorNoHeroesSelected: "No heroes selected. Tap heroes from the list below.",
-    generatorMinHeroesMessage: "Select at least 15 heroes.", generatorNoCombosAvailable: "No ranked combos found.",
+    generatorMinHeroesMessage: "Select at least 12 heroes.", generatorNoCombosAvailable: "No ranked combos found.",
     generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo."
   },
   pt: {
@@ -29,7 +29,7 @@ export const translations = {
     generatorSelectAll: "Selecionar Visíveis", generatorClearAll: "Limpar Seleção",
     generatorGenerateBtn: "Gerar Melhores Combos", generatorDownloadBtn: "Baixar Resultados",
     generatorNoHeroesSelected: "Nenhum herói selecionado.",
-    generatorMinHeroesMessage: "Selecione pelo menos 15 heróis.", generatorNoCombosAvailable: "Nenhum combo disponível.",
+    generatorMinHeroesMessage: "Selecione pelo menos 12 heróis.", generatorNoCombosAvailable: "Nenhum combo disponível.",
     generatorScoreLabel: "Pontuação:", generatorEmptySlotLabel: "Nenhum combo disponível."
   },
   tr: {
@@ -45,7 +45,7 @@ export const translations = {
     generatorSelectAll: "Görünenleri Seç", generatorClearAll: "Seçimi Temizle",
     generatorGenerateBtn: "En İyi Komboları Oluştur", generatorDownloadBtn: "Sonuçları İndir",
     generatorNoHeroesSelected: "Kahraman seçilmedi.",
-    generatorMinHeroesMessage: "En az 15 kahraman seçin.", generatorNoCombosAvailable: "Uygun kombo yok.",
+    generatorMinHeroesMessage: "En az 12 kahraman seçin.", generatorNoCombosAvailable: "Uygun kombo yok.",
     generatorScoreLabel: "Puan:", generatorEmptySlotLabel: "Bu yuva boş."
   },
   ru: {
@@ -61,7 +61,7 @@ export const translations = {
     generatorSelectAll: "Выбрать видимых", generatorClearAll: "Сбросить выбор",
     generatorGenerateBtn: "Создать лучшие комбо", generatorDownloadBtn: "Скачать результаты",
     generatorNoHeroesSelected: "Герои не выбраны.",
-    generatorMinHeroesMessage: "Выберите минимум 15 героев.", generatorNoCombosAvailable: "Нет доступных комбо.",
+    generatorMinHeroesMessage: "Выберите минимум 12 героев.", generatorNoCombosAvailable: "Нет доступных комбо.",
     generatorScoreLabel: "Оценка:", generatorEmptySlotLabel: "Пусто."
   },
   es: {
@@ -77,7 +77,7 @@ export const translations = {
     generatorSelectAll: "Seleccionar Visibles", generatorClearAll: "Limpiar Selección",
     generatorGenerateBtn: "Generar Mejores Combos", generatorDownloadBtn: "Descargar Resultados",
     generatorNoHeroesSelected: "No hay héroes seleccionados.",
-    generatorMinHeroesMessage: "Selecciona al menos 15 héroes.", generatorNoCombosAvailable: "No hay combos disponibles.",
+    generatorMinHeroesMessage: "Selecciona al menos 12 héroes.", generatorNoCombosAvailable: "No hay combos disponibles.",
     generatorScoreLabel: "Puntuación:", generatorEmptySlotLabel: "Ranura vacía."
   },
   fr: {
@@ -93,7 +93,7 @@ export const translations = {
     generatorSelectAll: "Tout Sélectionner", generatorClearAll: "Effacer Sélection",
     generatorGenerateBtn: "Générer Meilleurs Combos", generatorDownloadBtn: "Télécharger Résultats",
     generatorNoHeroesSelected: "Aucun héros sélectionné.",
-    generatorMinHeroesMessage: "Choisissez au moins 15 héros.", generatorNoCombosAvailable: "Aucun combo disponible.",
+    generatorMinHeroesMessage: "Choisissez au moins 12 héros.", generatorNoCombosAvailable: "Aucun combo disponible.",
     generatorScoreLabel: "Score :", generatorEmptySlotLabel: "Aucun combo."
   },
   de: {
@@ -109,7 +109,7 @@ export const translations = {
     generatorSelectAll: "Alle Sichtbaren", generatorClearAll: "Auswahl Löschen",
     generatorGenerateBtn: "Beste Kombos generieren", generatorDownloadBtn: "Ergebnisse speichern",
     generatorNoHeroesSelected: "Noch keine Helden gewählt.",
-    generatorMinHeroesMessage: "Wähle mindestens 15 Helden.", generatorNoCombosAvailable: "Keine Kombos verfügbar.",
+    generatorMinHeroesMessage: "Wähle mindestens 12 Helden.", generatorNoCombosAvailable: "Keine Kombos verfügbar.",
     generatorScoreLabel: "Ergebnis:", generatorEmptySlotLabel: "Keine Kombi."
   },
   id: {
@@ -125,7 +125,7 @@ export const translations = {
     generatorSelectAll: "Pilih Semua", generatorClearAll: "Hapus Pilihan",
     generatorGenerateBtn: "Buat Kombo Terbaik", generatorDownloadBtn: "Unduh Hasil",
     generatorNoHeroesSelected: "Belum ada hero dipilih.",
-    generatorMinHeroesMessage: "Pilih minimal 15 hero.", generatorNoCombosAvailable: "Tidak ada kombo.",
+    generatorMinHeroesMessage: "Pilih minimal 12 hero.", generatorNoCombosAvailable: "Tidak ada kombo.",
     generatorScoreLabel: "Skor:", generatorEmptySlotLabel: "Slot kosong."
   },
   zh: {
@@ -141,7 +141,7 @@ export const translations = {
     generatorSelectAll: "全选可见", generatorClearAll: "清空选择",
     generatorGenerateBtn: "生成最佳组合", generatorDownloadBtn: "下载结果图片",
     generatorNoHeroesSelected: "尚未选择英雄。",
-    generatorMinHeroesMessage: "请至少选择 15 名英雄。", generatorNoCombosAvailable: "无匹配组合。",
+    generatorMinHeroesMessage: "请至少选择 12 名英雄。", generatorNoCombosAvailable: "无匹配组合。",
     generatorComboLabel: "组合", generatorScoreLabel: "评分：", generatorEmptySlotLabel: "槽位暂无组合。"
   },
   ar: {
@@ -157,7 +157,7 @@ export const translations = {
     generatorSelectAll: "تحديد الكل", generatorClearAll: "مسح الاختيار",
     generatorGenerateBtn: "توليد أفضل التشكيلات", generatorDownloadBtn: "تحميل النتائج",
     generatorNoHeroesSelected: "لم يتم اختيار أبطال.",
-    generatorMinHeroesMessage: "اختر 15 بطلاً على الأقل.", generatorNoCombosAvailable: "لا توجد تشكيلات.",
+    generatorMinHeroesMessage: "اختر 12 بطلاً على الأقل.", generatorNoCombosAvailable: "لا توجد تشكيلات.",
     generatorScoreLabel: "النتيجة:", generatorEmptySlotLabel: "لا توجد تشكيلة."
   },
   kr: {
@@ -173,7 +173,8 @@ export const translations = {
     generatorSelectAll: "전체 선택", generatorClearAll: "선택 해ze",
     generatorGenerateBtn: "최강 조합 생성", generatorDownloadBtn: "결과 저장",
     generatorNoHeroesSelected: "영웅이 선택되지 않았습니다.",
-    generatorMinHeroesMessage: "최소 15명의 영웅을 선택하세요.", generatorNoCombosAvailable: "사용 가능한 조합 없음.",
+    generatorMinHeroesMessage: "최소 12명의 영웅을 선택하세요.", generatorNoCombosAvailable: "사용 가능한 조합 없음.",
     generatorScoreLabel: "점수:", generatorEmptySlotLabel: "조합 없음."
   }
 };
+
