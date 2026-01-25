@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Hero Combo Tool - VTS 1097</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)" />
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -16,7 +16,7 @@
     .logo-container { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
     .logo-container::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); z-index: -1; }
     .main-logo { width: 150px; height: 150px; border-radius: 24px; border: 2px solid rgba(255, 255, 255, 0.05); }
-    .tab-pill { padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 9999px; transition: all 0.2s ease; border: none; }
+    .tab-pill { padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600; border-radius: 9999px; transition: all 0.2s ease; border: none; cursor: pointer; }
     .tab-pill-active { background: #2563eb; color: #f9fafb; }
     .tab-pill-inactive { background: transparent; color: #e5e7eb; }
     .generated-combo-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #1f2937; border-radius: 0.75rem; padding: 0.75rem 1rem 0.75rem 60px; margin-bottom: 0.75rem; }
@@ -26,16 +26,19 @@
 </head>
 <body class="p-3 sm:p-4">
   <div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
+    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase">BETA b2.0 — VTS s1097 Community Tool</div>
     
-    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-blue-300 font-bold text-xs sm:text-sm tracking-widest border">BETA b2.0 — VTS s1097</div>
     <div class="logo-container">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo" />
+      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo shadow-2xl" />
       <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
-      <p class="text-xs sm:text-sm text-slate-400 uppercase font-bold mt-2">Rise Of Empires: Ice & Fire — Stage 1097</p>
+      <div class="flex flex-col items-center mt-2 space-y-1">
+        <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise Of Empires: Ice & Fire</p>
+        <p class="text-xs sm:text-sm font-bold text-blue-400">TEAM VTS — STAGE 1097</p>
+      </div>
     </div>
 
-    <div class="flex justify-end mb-4">
-      <select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700">
+    <div class="flex justify-end mb-4 language-select-wrapper">
+      <select id="languageSelect" class="bg-slate-800 text-white rounded-md px-3 py-2 text-sm border border-slate-700 outline-none">
         <option value="en">English</option><option value="es">Español</option><option value="pt">Português</option>
         <option value="de">Deutsch</option><option value="fr">Français</option><option value="tr">Türkçe</option>
         <option value="ru">Русский</option><option value="id">Indonesia</option><option value="zh">中文</option>
@@ -55,7 +58,7 @@
 
     <section id="manualBuilderSection">
       <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
-        <h2 id="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100">Filter by Season</h2>
+        <h2 id="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
         <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
           <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
           <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span>Season 1</span></label>
@@ -66,19 +69,17 @@
       </div>
 
       <div class="mb-8">
-        <h2 id="availableHeroesTitle" class="text-xl font-semibold mb-4 text-slate-100">Available Heroes</h2>
+        <h2 id="availableHeroesTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Available Heroes</h2>
         <div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
       </div>
 
       <div id="comboFooterBar" class="p-4 sm:p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl">
         <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
         <div id="comboRow" class="flex justify-center items-center gap-2 sm:gap-4">
-          <div class="combo-slot" data-slot-index="0"></div>
-          <div class="combo-slot" data-slot-index="1"></div>
-          <div class="combo-slot" data-slot-index="2"></div>
+          <div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div>
         </div>
-        <div id="comboButtonsRow" class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2">
-          <button id="saveComboBtn" class="bg-green-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-green-700 transition disabled:opacity-50">Save</button>
+        <div id="comboButtonsRow" class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2 justify-center">
+          <button id="saveComboBtn" class="bg-emerald-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-emerald-700 transition disabled:opacity-50">Save</button>
           <button id="clearComboBtn" class="bg-red-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-red-700 transition">Clear</button>
           <button id="downloadCombosBtn" class="bg-purple-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-purple-700 transition">Image</button>
           <button id="shareAllCombosBtn" class="bg-sky-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-sky-700 transition">Text</button>
@@ -86,16 +87,16 @@
       </div>
 
       <div class="mt-10 mb-10">
-        <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center">Last Best Combos</h2>
-        <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet!</p>
+        <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-wide">Last Best Combos</h2>
+        <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet. Drag heroes to start!</p>
         <div id="savedCombos" class="flex flex-col items-center"></div>
       </div>
     </section>
 
     <section id="comboGeneratorSection" class="hidden">
-      <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator</h2><p id="genIntroText" class="text-sm text-slate-400">Select heroes you own and Generate Best Combos.</p></div>
+      <div class="mb-6"><h2 id="genToolTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2><p id="genIntroText" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p></div>
       <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-        <h3 id="genFilterTitle" class="text-lg font-semibold mb-4 text-slate-100">Filter by Season</h3>
+        <h3 id="genFilterTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
         <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
           <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span>Season 0</span></label>
           <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span>Season 1</span></label>
@@ -119,6 +120,19 @@
         <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
       </div>
       <div id="generatorResults" class="mb-8 space-y-3"></div>
+    </section>
+
+    <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
+      <h2 id="commentsHeaderTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-widest">Comments & Suggestions</h2>
+      <form id="commentForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="commentName" type="text" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Your name (optional)" />
+          <input id="commentEmail" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Email (optional)" />
+        </div>
+        <textarea id="commentText" rows="3" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Write a suggestion..."></textarea>
+        <button type="submit" id="postCommentBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-lg">Submit Comment</button>
+      </form>
+      <div id="commentsList" class="space-y-4"></div>
     </section>
 
     <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
