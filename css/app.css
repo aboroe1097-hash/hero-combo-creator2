@@ -310,6 +310,37 @@ body {
   border-color: #38bdf8;
 }
 
+  /* --- LAYOUT OPTIMIZATIONS --- */
+
+/* 1. Make the hero grid tighter and cleaner */
+#availableHeroes, #generatorHeroes {
+  display: flex;       /* Switch from Grid to Flex for better centering */
+  flex-wrap: wrap;     /* Allow wrapping */
+  justify-content: center; /* Center everything */
+  gap: 12px;           /* Consistent spacing */
+  padding: 10px;
+}
+
+/* 2. Enforce a consistent size for hero cards so they don't stretch */
+.hero-card, .generator-card {
+  width: 110px;        /* Fixed width */
+  flex-grow: 0;        /* Prevent stretching to fill empty space */
+  margin: 0 !important; /* Remove old margins since we use gap */
+}
+
+/* 3. Make the "Generate" buttons look more premium */
+#generateCombosBtn, #downloadGeneratorBtn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border: 1px solid #34d399;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#generateCombosBtn:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-2px);
+}
 /* Text styling for the Combo Slot placeholder */
 .combo-slot-placeholder-text {
   font-size: 0.75rem;
@@ -324,6 +355,7 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
 
