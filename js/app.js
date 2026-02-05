@@ -86,7 +86,10 @@ const allHeroesData = [
   { name: 'Immortal Guardian', season: 'S4', imageUrl: 'https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png' },
   { name: 'Divine Arrow', season: 'S4', imageUrl: 'https://i.ibb.co/6JcVTCnr/Divine-Arrow.png' },
   { name: 'Theodora', season: 'S4', imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png' },
-  { name: 'King Arthur', season: 'S4', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' }
+  { name: 'King Arthur', season: 'S4', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
+    // Season 5(x1)
+  { name: 'ELK', season: 'S5', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
+  { name: 'Cicero', season: 'S5', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' }
 ];
 
 // Simple color-coding per season (visual feedback)
