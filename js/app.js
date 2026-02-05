@@ -136,7 +136,7 @@ const seasonColors = {
   S2: '#a855f7',
   S3: '#f97316',
   S4: '#facc15',
-  S5: '#b6fa16'
+  S5: '#67ab69'
 };
 
 // --- UTILITIES ---
