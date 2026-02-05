@@ -28,12 +28,33 @@ const generateCombosBtn    = document.getElementById('generateCombosBtn');
 const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 const comboFooterBar       = document.getElementById('comboFooterBar');
 
+// Filter containers
+const seasonFiltersEl         = document.getElementById('seasonFilters');
+const stateFiltersEl          = document.getElementById('stateFilters');
+const troopFiltersEl          = document.getElementById('troopFilters');
+const genSeasonFiltersEl      = document.getElementById('generatorSeasonFilters');
+const genStateFiltersEl       = document.getElementById('generatorStateFilters');
+const genTroopFiltersEl       = document.getElementById('generatorTroopFilters');
+
 // --- STATE ---
-let currentLanguage          = localStorage.getItem('vts_hero_lang') || 'en';
-let selectedSeasons          = ['S0'];
-let currentCombo             = [null, null, null];
-let generatorSelectedSeasons = ['S0'];
-const generatorSelectedHeroes = new Set();
+let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
+
+// Manual filters
+let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+let selectedStates             = ['Free', 'Paid'];              // Free / Paid
+let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; // troop types
+
+// Manual combo
+let currentCombo               = [null, null, null];
+
+// Generator filters
+let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+let generatorSelectedStates    = ['Free', 'Paid'];
+let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
+
+// Generator selected heroes
+const generatorSelectedHeroes  = new Set();
+
 let userId = 'anonymous';
 let db     = null;
 
@@ -99,15 +120,14 @@ const allHeroesData = [
   { name: 'Theodora',          season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png' },
   { name: 'King Arthur',       season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
 
-    // Season 5(x1)
-  { name: 'Bewoulf', season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
-  { name: 'Hunk', season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
-
-  { name: 'Boudica', season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
-  { name: 'Sakura', season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
-  { name: 'Wind-Walker', season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
-  { name: 'ELK', season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
-  { name: 'Cicero', season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' }
+  // Season 5 (X1)
+  { name: 'Bewoulf',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
+  { name: 'Hunk',         season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
+  { name: 'Boudica',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
+  { name: 'Sakura',       season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
+  { name: 'Wind-Walker',  season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
+  { name: 'ELK',          season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
+  { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' }
 ];
 
 const seasonColors = {
@@ -116,7 +136,7 @@ const seasonColors = {
   S2: '#a855f7',
   S3: '#f97316',
   S4: '#facc15',
-  S5: '#b6fa16',
+  S5: '#b6fa16'
 };
 
 // --- UTILITIES ---
@@ -124,6 +144,84 @@ const seasonColors = {
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
+}
+
+// small helper to collect checkbox values in a container
+function getCheckedValues(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(i => i.value);
+}
+
+// convert raw state checkbox values into canonical ['Free','Paid']
+function computeStateSelection(container) {
+  const raw = getCheckedValues(container).map(v => v.toLowerCase());
+  const set = new Set();
+
+  if (raw.length === 0) {
+    // nothing checked -> no restriction (both)
+    return ['Free', 'Paid'];
+  }
+
+  if (raw.some(v => v.includes('paid') && v.includes('free'))) {
+    set.add('Free');
+    set.add('Paid');
+  }
+  if (raw.some(v => v === 'free')) set.add('Free');
+  if (raw.some(v => v === 'paid')) set.add('Paid');
+
+  if (set.size === 0) {
+    // only "both" style values
+    set.add('Free');
+    set.add('Paid');
+  }
+  return Array.from(set);
+}
+
+// convert raw troop type values into canonical types
+function computeTypeSelection(container) {
+  const raw = getCheckedValues(container).map(v => v.toLowerCase());
+  if (raw.length === 0) {
+    return ['Archers', 'Footmen', 'Cavalry', 'All'];
+  }
+
+  // "All" option
+  const hasAll = raw.some(v =>
+    v.includes('all') ||
+    v.includes('cavalry or archers') ||
+    v.includes('cavalry or archers or footmen')
+  );
+  if (hasAll) {
+    return ['Archers', 'Footmen', 'Cavalry', 'All'];
+  }
+
+  const set = new Set();
+  if (raw.some(v => v.includes('archers'))) set.add('Archers');
+  if (raw.some(v => v.includes('footmen'))) set.add('Footmen');
+  if (raw.some(v => v.includes('cavalry'))) set.add('Cavalry');
+  if (set.size === 0) {
+    return ['Archers', 'Footmen', 'Cavalry', 'All'];
+  }
+  // Always treat 'All'-type heroes as visible, even if not explicitly selected
+  return Array.from(set);
+}
+
+// hero matches season / state / troop type filters
+function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
+  // season
+  if (!seasonsArr || seasonsArr.length === 0) return false;
+  if (!seasonsArr.includes(hero.season)) return false;
+
+  // state
+  const heroState = hero.State || 'Free';
+  if (statesArr && statesArr.length && !statesArr.includes(heroState)) return false;
+
+  // type
+  const heroType = hero.Type || 'All';
+  if (!typesArr || !typesArr.length) return true;
+  if (heroType === 'All') return true; // heroes usable in all troop types
+  if (typesArr.includes('All')) return true;
+  return typesArr.includes(heroType);
 }
 
 // order-independent match against rankedCombos
@@ -296,7 +394,7 @@ function renderAvailableHeroes() {
 
   availableHeroesEl.innerHTML = '';
   allHeroesData
-    .filter(h => selectedSeasons.includes(h.season))
+    .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
     .forEach(hero => {
       const card = document.createElement('div');
       card.className = 'hero-card';
@@ -307,7 +405,7 @@ function renderAvailableHeroes() {
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
         <img src="${hero.imageUrl}" alt="${hero.name}">
-        <span class="mt-1 text-center font-bold text-xs">${hero.name}</span>
+        <span class="mt-1 text-center font-bold text-[10px]">${hero.name}</span>
       `;
 
       // Desktop drag
@@ -419,7 +517,7 @@ function renderGeneratorHeroes() {
   generatorHeroesEl.innerHTML = '';
 
   allHeroesData
-    .filter(h => generatorSelectedSeasons.includes(h.season))
+    .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
     .forEach(hero => {
       const card = document.createElement('button');
       card.className = `hero-card generator-card ${
@@ -428,7 +526,7 @@ function renderGeneratorHeroes() {
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
         <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous">
-        <span class="mt-1 text-center font-bold text-xs">${hero.name}</span>
+        <span class="mt-1 text-center font-bold text-[10px]">${hero.name}</span>
       `;
       card.onclick = () => {
         if (generatorSelectedHeroes.has(hero.name)) {
@@ -658,39 +756,57 @@ function wireUIActions() {
       : 'tab-pill tab-pill-active';
   };
 
-  tabManualBtn.onclick     = () => handleTabSwitch(true);
-  tabGeneratorBtn.onclick  = () => handleTabSwitch(false);
+  tabManualBtn.onclick    = () => handleTabSwitch(true);
+  tabGeneratorBtn.onclick = () => handleTabSwitch(false);
 
-  // manual season filters
-  const seasonFilters = document.getElementById('seasonFilters');
-  if (seasonFilters) {
-    seasonFilters.onchange = e => {
-      if (e.target.checked) {
-        if (!selectedSeasons.includes(e.target.value)) {
-          selectedSeasons.push(e.target.value);
-        }
-      } else {
-        selectedSeasons = selectedSeasons.filter(s => s !== e.target.value);
+  // --- Manual filters ---
+  if (seasonFiltersEl) {
+    seasonFiltersEl.addEventListener('change', () => {
+      selectedSeasons = getCheckedValues(seasonFiltersEl);
+      if (!selectedSeasons.length) {
+        selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
       }
       renderAvailableHeroes();
-    };
+    });
   }
 
-  // generator season filters
-  const genSeasonFilters = document.getElementById('generatorSeasonFilters');
-  if (genSeasonFilters) {
-    genSeasonFilters.onchange = e => {
-      if (e.target.checked) {
-        if (!generatorSelectedSeasons.includes(e.target.value)) {
-          generatorSelectedSeasons.push(e.target.value);
-        }
-      } else {
-        generatorSelectedSeasons = generatorSelectedSeasons.filter(
-          s => s !== e.target.value
-        );
+  if (stateFiltersEl) {
+    stateFiltersEl.addEventListener('change', () => {
+      selectedStates = computeStateSelection(stateFiltersEl);
+      renderAvailableHeroes();
+    });
+  }
+
+  if (troopFiltersEl) {
+    troopFiltersEl.addEventListener('change', () => {
+      selectedTypes = computeTypeSelection(troopFiltersEl);
+      renderAvailableHeroes();
+    });
+  }
+
+  // --- Generator filters ---
+  if (genSeasonFiltersEl) {
+    genSeasonFiltersEl.addEventListener('change', () => {
+      generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
+      if (!generatorSelectedSeasons.length) {
+        generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
       }
       renderGeneratorHeroes();
-    };
+    });
+  }
+
+  if (genStateFiltersEl) {
+    genStateFiltersEl.addEventListener('change', () => {
+      generatorSelectedStates = computeStateSelection(genStateFiltersEl);
+      renderGeneratorHeroes();
+    });
+  }
+
+  if (genTroopFiltersEl) {
+    genTroopFiltersEl.addEventListener('change', () => {
+      generatorSelectedTypes = computeTypeSelection(genTroopFiltersEl);
+      renderGeneratorHeroes();
+    });
   }
 
   // generator select/clear all buttons
@@ -700,7 +816,7 @@ function wireUIActions() {
   if (genSelectAllBtn) {
     genSelectAllBtn.onclick = () => {
       allHeroesData
-        .filter(h => generatorSelectedSeasons.includes(h.season))
+        .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
         .forEach(h => generatorSelectedHeroes.add(h.name));
       renderGeneratorHeroes();
     };
@@ -833,6 +949,22 @@ async function updateTextContent() {
 (async function main() {
   wireUIActions();
   await updateTextContent();
+
+  // initialize filter state from current DOM (so defaults in HTML are respected)
+  if (seasonFiltersEl) {
+    const seasons = getCheckedValues(seasonFiltersEl);
+    if (seasons.length) selectedSeasons = seasons;
+  }
+  if (stateFiltersEl)   selectedStates = computeStateSelection(stateFiltersEl);
+  if (troopFiltersEl)   selectedTypes  = computeTypeSelection(troopFiltersEl);
+
+  if (genSeasonFiltersEl) {
+    const gSeasons = getCheckedValues(genSeasonFiltersEl);
+    if (gSeasons.length) generatorSelectedSeasons = gSeasons;
+  }
+  if (genStateFiltersEl) generatorSelectedStates = computeStateSelection(genStateFiltersEl);
+  if (genTroopFiltersEl) generatorSelectedTypes  = computeTypeSelection(genTroopFiltersEl);
+
   renderAvailableHeroes();
   renderGeneratorHeroes();
 
