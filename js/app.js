@@ -97,9 +97,18 @@ const allHeroesData = [
   { name: 'Immortal Guardian', season: 'S4', imageUrl: 'https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png' },
   { name: 'Divine Arrow',      season: 'S4', imageUrl: 'https://i.ibb.co/6JcVTCnr/Divine-Arrow.png' },
   { name: 'Theodora',          season: 'S4', imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png' },
-  { name: 'King Arthur',       season: 'S4', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' }
+  { name: 'King Arthur',       season: 'S4', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
 
+    // Season 5(x1)
+  { name: 'Bewoulf', season: 'S5', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
+  { name: 'Hunk', season: 'S5', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
 
+  { name: 'Boudica', season: 'S5', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
+  { name: 'Sakura', season: 'S5', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
+  { name: 'Wind-Walker', season: 'S5', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
+  { name: 'ELK', season: 'S5', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
+  { name: 'Cicero', season: 'S5', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' }
+];
   // js/app.js
 // main app
 
