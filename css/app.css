@@ -41,6 +41,15 @@ body {
   border: 2px solid #4b5563;
 }
 
+
+/* Season 5 Filter Pill Color (Lime/Green) */
+.s5-pill:has(input:checked) { 
+  background: #4d7c0f; /* Darker Green background */
+  border-color: #b6fa16; /* Bright Lime border */
+  color: #fff;
+  box-shadow: 0 0 10px rgba(182, 250, 22, 0.4); 
+}
+
 /* tiny rarity / season pill */
 .hero-tag {
   position: absolute;
@@ -416,5 +425,6 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
