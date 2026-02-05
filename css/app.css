@@ -42,16 +42,17 @@ body {
 }
 
 /* --- NEW FILTER COLORS --- */
+/* --- SPECIFIC FILTER COLORS (Rainbow Style) --- */
 
-/* 1. State Filters (Free vs Paid) - Pink/Fuchsia Theme */
-.free-pill {
+/* 1. Paid vs Free */
+.free-pill:has(input:checked) {
   background: #059669; /* Emerald Green */
   border-color: #34d399;
   color: #fff;
   box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
 }
 
-.paid-pill {
+.paid-pill:has(input:checked) {
   background: #e11d48; /* Rose Red (Premium look) */
   border-color: #fb7185;
   color: #fff;
@@ -59,34 +60,33 @@ body {
 }
 
 /* 2. Troop Types */
-.archers-pill {
+.archers-pill:has(input:checked) {
   background: #0891b2; /* Cyan/Teal */
   border-color: #22d3ee;
   color: #fff;
   box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
 }
 
-.footmen-pill {
+.footmen-pill:has(input:checked) {
   background: #4f46e5; /* Indigo/Deep Blue */
   border-color: #818cf8;
   color: #fff;
   box-shadow: 0 0 10px rgba(129, 140, 248, 0.4);
 }
 
-.cavalry-pill{
+.cavalry-pill:has(input:checked) {
   background: #db2777; /* Pink/Fuchsia */
   border-color: #f472b6;
   color: #fff;
   box-shadow: 0 0 10px rgba(244, 114, 182, 0.4);
 }
 
-.all-pill {
+.all-pill:has(input:checked) {
   background: #475569; /* Slate Grey (Neutral) */
   border-color: #94a3b8;
   color: #fff;
   box-shadow: 0 0 10px rgba(148, 163, 184, 0.4);
 }
-
 
 /* Season 5 Filter Pill Color (Lime/Green) */
 .s5-pill { 
@@ -471,6 +471,7 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
 
