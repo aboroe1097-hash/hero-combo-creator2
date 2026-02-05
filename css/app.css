@@ -44,23 +44,52 @@ body {
 /* --- NEW FILTER COLORS --- */
 
 /* 1. State Filters (Free vs Paid) - Pink/Fuchsia Theme */
-.state-pill {
-  background: #be185d; /* Pink-700 */
-  border-color: #f472b6; /* Pink-400 */
+.free-pill {
+  background: #059669; /* Emerald Green */
+  border-color: #34d399;
   color: #fff;
-  box-shadow: 0 0 10px rgba(244, 114, 182, 0.4);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
 }
 
-/* 2. Troop Filters (Archers, etc.) - Cyan/Teal Theme */
-.troop-pill {
-  background: #0e7490; /* Cyan-700 */
-  border-color: #22d3ee; /* Cyan-400 */
+.paid-pill {
+  background: #e11d48; /* Rose Red (Premium look) */
+  border-color: #fb7185;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(251, 113, 133, 0.4);
+}
+
+/* 2. Troop Types */
+.archers-pill {
+  background: #0891b2; /* Cyan/Teal */
+  border-color: #22d3ee;
   color: #fff;
   box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
 }
 
+.footmen-pill {
+  background: #4f46e5; /* Indigo/Deep Blue */
+  border-color: #818cf8;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.4);
+}
+
+.cavalry-pill{
+  background: #db2777; /* Pink/Fuchsia */
+  border-color: #f472b6;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.4);
+}
+
+.all-pill {
+  background: #475569; /* Slate Grey (Neutral) */
+  border-color: #94a3b8;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.4);
+}
+
+
 /* Season 5 Filter Pill Color (Lime/Green) */
-.s5-pill:has(input:checked) { 
+.s5-pill { 
   background: #4d7c0f; /* Darker Green background */
   border-color: #b6fa16; /* Bright Lime border */
   color: #fff;
@@ -442,6 +471,7 @@ body {
   /* Prevent grey tap highlight on mobile browsers */
   * { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
 }
+
 
 
 
