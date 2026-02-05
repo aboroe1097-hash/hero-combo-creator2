@@ -50,7 +50,7 @@ let currentCombo               = [null, null, null];
 // Generator filters
 let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
 let generatorSelectedStates    = ['Free', 'Paid'];
-let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
+let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'General'];
 
 // Generator selected heroes
 const generatorSelectedHeroes  = new Set();
@@ -68,19 +68,19 @@ let touchDragGhost = null;
 // --- HERO DATA ---
 const allHeroesData = [
   { name: "Jeanne d'Arc", season: 'S0', Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png' },
-  { name: 'Isabella I', season: 'S0', Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png' },
+  { name: 'Isabella I', season: 'S0', Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png' },
   { name: 'Jiguang Qi', season: 'S1',Type:'Footmen', State:'Free',  imageUrl: 'https://static.wixstatic.com/media/43ee96_3bb681424e034e9e8f0dea7d71c93390~mv2.png' },
   { name: 'Mary Tudor', season: 'S0',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_7d24a8f5148b42c68e9e183ecdf1080d~mv2.png' },
   { name: 'Leonidas', season: 'S0',Type:'Archers', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_f672d18c06904465a490ea4811cee798~mv2.png' },
   { name: 'The Boneless', season: 'S0',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_5fec4c7d62314acfb90ea624dedd08c6~mv2.png' },
   { name: 'Demon Spear', season: 'S0',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_39ffb285fd524cd1b7c27057b0fe4f44~mv2.png' },
-  { name: 'Kublai', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png' },
-  { name: 'The Heroine', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png' },
-  { name: 'Queen Anne', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png' },
-  { name: "North's Rage", season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png' },
-  { name: 'William Wallace', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png' },
-  { name: 'Yukimura Sanada', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png' },
-  { name: "Heaven's Justice", season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png' },
+  { name: 'Kublai', season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png' },
+  { name: 'The Heroine', season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png' },
+  { name: 'Queen Anne', season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png' },
+  { name: "North's Rage", season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png' },
+  { name: 'William Wallace', season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png' },
+  { name: 'Yukimura Sanada', season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png' },
+  { name: "Heaven's Justice", season: 'S0',Type:'General', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png' },
 
   { name: 'Alfred', season: 'S1',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_e75a942dc1c64689b140f23d905b5ca0~mv2.png' },
   { name: 'Cao Cao', season: 'S1',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_3998355c7cae4b70a89000ee66ad8e3f~mv2.png' },
@@ -108,7 +108,7 @@ const allHeroesData = [
   { name: 'Rokuboshuten', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_eaf3463bf3654d0e90adb41a1cb5ad4c~mv2.png' },
   { name: 'Bleeding Steed', season: 'S3',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_9256fc0a80284c1ab285554dbf33a4b3~mv2.png' },
   { name: 'Rozen Blade', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_42b02c160ac849dca0dd7e4a6b472582~mv2.png' },
-  { name: 'Cleopatra VII', season: 'S3',Type:'All', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png' },
+  { name: 'Cleopatra VII', season: 'S3',Type:'General', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png' },
   { name: 'Caesar', season: 'S3',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_5cf26138c5174d4587fc025cd5fe399a~mv2.png' },
 
   { name: 'Desert Storm',      season: 'S4',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/vChW2BGG/Desert-Storm.png' },
