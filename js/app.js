@@ -649,6 +649,52 @@ function generateBestCombos() {
   }
 }
 
+// --- ADD THIS FUNCTION TO JS/APP.JS ---
+
+function generateRandomCombos() {
+  const t = translations[currentLanguage] || translations.en;
+  
+  // 1. Get Selected Heroes from the Set
+  let pool = Array.from(generatorSelectedHeroes);
+
+  // 2. Validate
+  if (pool.length < 3) {
+    showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
+    return;
+  }
+
+  const randomSelection = [];
+
+  // 3. Shuffle Utility (Fisher-Yates)
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // 4. Generate up to 5 unique teams
+  while (pool.length >= 3 && randomSelection.length < 5) {
+    // Take first 3 heroes
+    const chunk = pool.splice(0, 3);
+    
+    // Check if this random team happens to be Ranked
+    const rankInfo = getComboRankInfo(chunk);
+    
+    // Create the combo object
+    randomSelection.push({
+      heroes: chunk,
+      // If it's ranked, show the real score. If not, show "?"
+      displayScore: rankInfo ? rankInfo.score : '?' 
+    });
+  }
+
+  // 5. Render
+  renderGeneratorResults(randomSelection);
+  
+  // Show download button if we have results
+  if (randomSelection.length > 0 && downloadGeneratorBtn) {
+    downloadGeneratorBtn.classList.remove('hidden');
+  }
+}
 // Firestore listener for “Last Best Combos”
 async function setupFirestoreListener() {
   const _db = getDb();
