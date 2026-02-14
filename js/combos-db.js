@@ -66,7 +66,6 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Sky Breaker", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Boudica", "Inquisitor", "Witch Hunter"] },
-  { heroes: ["Sky Breaker", "Inquisitor", "Charles the Great"] },
   
   { heroes: ["Wind-Walker", "Rozen Blade", "Immortal"] },  
   { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
@@ -87,7 +86,7 @@ export const rankedCombos = [
   { heroes: ["Alfred", "Black Prince", "Lionheart"] },          
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },       
   { heroes: ["Alfred", "Cleopatra VII", "Jane"] },              
-   
+  { heroes: ["Sky Breaker", "Inquisitor", "Charles the Great"] },
   
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
