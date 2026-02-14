@@ -674,6 +674,8 @@ function generateBestCombos() {
 
 // --- ADD/REPLACE THIS IN JS/APP.JS ---
 
+// js/app.js
+
 function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   
@@ -688,22 +690,19 @@ function generateRandomCombos() {
 
   const ownedSet = new Set(selected);
 
-  // 3. Find ALL valid combos in the database that user can build
-  // We map them first to preserve their original Rank/Score before shuffling
-// Inside generateRandomCombos() ...
-
-  // 3. Find ALL valid combos
+  // 3. Find ALL valid combos (and calculate their scores immediately)
+  const totalCombos = rankedCombos.length;
+  
   const validCombos = rankedCombos
     .map((combo, index) => {
-      // Use the same formula here so scores match!
-      const total = rankedCombos.length;
-      const calculatedScore = Math.round(50 + (50 * (1 - (index / total))));
-      
-      return {
-        ...combo,
-        originalIndex: index,
-        score: calculatedScore // <--- UPDATED THIS LINE
-      };
+        // Dynamic Score Formula: 50 to 100 based on database position
+        // Rank 1 gets 100, Rank 200 gets ~50.
+        const calculatedScore = Math.round(50 + (50 * (1 - (index / totalCombos))));
+        return {
+          ...combo,
+          originalIndex: index,
+          displayScore: calculatedScore
+        };
     })
     .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
@@ -713,13 +712,13 @@ function generateRandomCombos() {
   }
 
   // 4. Shuffle the valid combos (Fisher-Yates Shuffle)
+  // This ensures we get a random variety, not just the top ones.
   for (let i = validCombos.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
   }
 
-  // 5. Pick up to 5 unique teams (Roster Mode)
-  // We ensure heroes aren't used twice in the same result set
+  // 5. Pick up to 5 unique teams
   const randomSelection = [];
   const usedHeroesGlobal = new Set();
 
@@ -729,15 +728,16 @@ function generateRandomCombos() {
     const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
 
     if (isUnique) {
-      randomSelection.push({
-        heroes: combo.heroes,
-        displayScore: combo.score
-      });
+      randomSelection.push(combo);
       combo.heroes.forEach(h => usedHeroesGlobal.add(h));
     }
   }
 
-  // 6. Render
+  // 6. SORT the final 5 picks by Score (Highest First)
+  // Even though the selection was random, the display is organized.
+  randomSelection.sort((a, b) => b.displayScore - a.displayScore);
+
+  // 7. Render
   if (randomSelection.length === 0) {
      showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
   } else {
