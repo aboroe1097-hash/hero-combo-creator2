@@ -228,21 +228,18 @@ function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
 // js/app.js
 
 // UPDATED: Dynamic Scoring (Percentage based)
+// js/app.js
+
 function getComboRankInfo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return null;
-  
-  // Sort user input to ensure order doesn't matter
   const userSorted = [...heroes].slice().sort();
-  
-  const totalCombos = rankedCombos.length;
+  const total = rankedCombos.length;
 
-  for (let i = 0; i < totalCombos; i++) {
+  for (let i = 0; i < total; i++) {
     const combo = rankedCombos[i];
     if (!combo.heroes || combo.heroes.length !== 3) continue;
     
     const comboSorted = [...combo.heroes].slice().sort();
-    
-    // Check if heroes match
     if (
       comboSorted[0] === userSorted[0] &&
       comboSorted[1] === userSorted[1] &&
@@ -250,17 +247,13 @@ function getComboRankInfo(heroes) {
     ) {
       const rank = i + 1;
       
-      // --- DYNAMIC SCORING FORMULA ---
-      // 1. Calculate percentile: (Total - Rank) / Total
-      // 2. Map it to a 50-100 scale (so even the last ranked combo feels "okay")
-      // Formula: 50 + (50 * (1 - (i / totalCombos)))
+      // FORMULA: Map Rank 1 -> 100, Last Rank -> 1
+      let rawScore = 100;
+      if (total > 1) {
+        rawScore = 100 - ((i / (total - 1)) * 99);
+      }
       
-      let rawScore = 50 + (50 * (1 - (i / totalCombos)));
-      
-      // Round to 1 decimal place (e.g. 98.5) or integer (e.g. 99)
-      const score = Math.round(rawScore); 
-
-      return { rank, score, index: i };
+      return { rank, score: rawScore.toFixed(1), index: i };
     }
   }
   return null;
@@ -634,29 +627,38 @@ async function saveCombo() {
     loadingSpinner.classList.add('hidden');
   }
 }
+// js/app.js - Inside generateBestCombos() function
 
 function generateBestCombos() {
+  // ... (keep the existing setup code at the top) ...
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
 
-  if (selected.length < 12) {
-    showAboModal(t.generatorMinHeroesMessage);
+  if (selected.length < 12) { // Changed to 12 as per your earlier request (or keep 15)
+    showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes.");
     return;
   }
 
-  const ownedSet        = new Set(selected);
+  const ownedSet = new Set(selected);
   const usedHeroesGlobal = new Set();
-  const finalSelection  = [];
+  const finalSelection = [];
+  const total = rankedCombos.length; // Needed for scoring
 
-  for (const combo of rankedCombos) {
+  for (let i = 0; i < total; i++) {
+    const combo = rankedCombos[i];
     if (finalSelection.length >= 5) break;
 
     const canBuild = combo.heroes.every(h => ownedSet.has(h));
     const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
 
     if (canBuild && isUnique) {
-      const score = 100 - rankedCombos.indexOf(combo);
-      finalSelection.push({ ...combo, displayScore: score });
+      // NEW SCORING: 1 to 100 with decimals
+      let rawScore = 100;
+      if (total > 1) {
+        rawScore = 100 - ((i / (total - 1)) * 99);
+      }
+
+      finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
       combo.heroes.forEach(h => usedHeroesGlobal.add(h));
     }
   }
@@ -669,13 +671,6 @@ function generateBestCombos() {
     downloadGeneratorBtn.classList.add('hidden');
   }
 }
-
-// --- ADD THIS FUNCTION TO JS/APP.JS ---
-
-// --- ADD/REPLACE THIS IN JS/APP.JS ---
-
-// js/app.js
-
 function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   
