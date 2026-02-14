@@ -121,7 +121,7 @@ const allHeroesData = [
   { name: 'King Arthur',       season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
 
   // Season 5 (X1)
-  { name: 'Bewoulf',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
+  { name: 'Beowulf',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
   { name: 'Hunk',         season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
   { name: 'Boudica',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
   { name: 'Sakura',       season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
