@@ -225,20 +225,41 @@ function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
 }
 
 // order-independent match against rankedCombos
+// js/app.js
+
+// UPDATED: Dynamic Scoring (Percentage based)
 function getComboRankInfo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return null;
+  
+  // Sort user input to ensure order doesn't matter
   const userSorted = [...heroes].slice().sort();
-  for (let i = 0; i < rankedCombos.length; i++) {
+  
+  const totalCombos = rankedCombos.length;
+
+  for (let i = 0; i < totalCombos; i++) {
     const combo = rankedCombos[i];
     if (!combo.heroes || combo.heroes.length !== 3) continue;
+    
     const comboSorted = [...combo.heroes].slice().sort();
+    
+    // Check if heroes match
     if (
       comboSorted[0] === userSorted[0] &&
       comboSorted[1] === userSorted[1] &&
       comboSorted[2] === userSorted[2]
     ) {
-      const rank  = i + 1;
-      const score = 100 - i;
+      const rank = i + 1;
+      
+      // --- DYNAMIC SCORING FORMULA ---
+      // 1. Calculate percentile: (Total - Rank) / Total
+      // 2. Map it to a 50-100 scale (so even the last ranked combo feels "okay")
+      // Formula: 50 + (50 * (1 - (i / totalCombos)))
+      
+      let rawScore = 50 + (50 * (1 - (i / totalCombos)));
+      
+      // Round to 1 decimal place (e.g. 98.5) or integer (e.g. 99)
+      const score = Math.round(rawScore); 
+
       return { rank, score, index: i };
     }
   }
