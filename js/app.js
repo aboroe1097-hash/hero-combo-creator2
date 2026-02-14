@@ -651,48 +651,68 @@ function generateBestCombos() {
 
 // --- ADD THIS FUNCTION TO JS/APP.JS ---
 
+// --- ADD/REPLACE THIS IN JS/APP.JS ---
+
 function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   
-  // 1. Get Selected Heroes from the Set
-  let pool = Array.from(generatorSelectedHeroes);
+  // 1. Get Selected Heroes
+  const selected = Array.from(generatorSelectedHeroes);
 
   // 2. Validate
-  if (pool.length < 3) {
+  if (selected.length < 3) {
     showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
     return;
   }
 
-  const randomSelection = [];
+  const ownedSet = new Set(selected);
 
-  // 3. Shuffle Utility (Fisher-Yates)
-  for (let i = pool.length - 1; i > 0; i--) {
+  // 3. Find ALL valid combos in the database that user can build
+  // We map them first to preserve their original Rank/Score before shuffling
+  const validCombos = rankedCombos
+    .map((combo, index) => ({
+      ...combo,
+      originalIndex: index,
+      score: 100 - index // Calculate score based on rank
+    }))
+    .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
+
+  if (validCombos.length === 0) {
+    showAboModal(t.generatorNoCombosAvailable || "No ranked combos found with these heroes.");
+    return;
+  }
+
+  // 4. Shuffle the valid combos (Fisher-Yates Shuffle)
+  for (let i = validCombos.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
   }
 
-  // 4. Generate up to 5 unique teams
-  while (pool.length >= 3 && randomSelection.length < 5) {
-    // Take first 3 heroes
-    const chunk = pool.splice(0, 3);
-    
-    // Check if this random team happens to be Ranked
-    const rankInfo = getComboRankInfo(chunk);
-    
-    // Create the combo object
-    randomSelection.push({
-      heroes: chunk,
-      // If it's ranked, show the real score. If not, show "?"
-      displayScore: rankInfo ? rankInfo.score : '?' 
-    });
+  // 5. Pick up to 5 unique teams (Roster Mode)
+  // We ensure heroes aren't used twice in the same result set
+  const randomSelection = [];
+  const usedHeroesGlobal = new Set();
+
+  for (const combo of validCombos) {
+    if (randomSelection.length >= 5) break;
+
+    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
+
+    if (isUnique) {
+      randomSelection.push({
+        heroes: combo.heroes,
+        displayScore: combo.score
+      });
+      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
+    }
   }
 
-  // 5. Render
-  renderGeneratorResults(randomSelection);
-  
-  // Show download button if we have results
-  if (randomSelection.length > 0 && downloadGeneratorBtn) {
-    downloadGeneratorBtn.classList.remove('hidden');
+  // 6. Render
+  if (randomSelection.length === 0) {
+     showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
+  } else {
+     renderGeneratorResults(randomSelection);
+     downloadGeneratorBtn.classList.remove('hidden');
   }
 }
 // Firestore listener for “Last Best Combos”
