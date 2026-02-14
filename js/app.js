@@ -809,6 +809,13 @@ function wireUIActions() {
     });
   }
 
+  // In js/app.js inside wireUIActions()
+
+const generateRandomBtn = document.getElementById('generateRandomBtn');
+if (generateRandomBtn) {
+  generateRandomBtn.onclick = generateRandomCombos;
+}
+
   // generator select/clear all buttons
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
@@ -931,6 +938,11 @@ async function updateTextContent() {
   if (genIntroText)   genIntroText.textContent   = t.generatorIntro;
   if (genFilterTitle) genFilterTitle.textContent = t.filterBySeasonTitle;
 
+  // In js/app.js inside updateTextContent()
+
+const randomBtn = document.getElementById('generateRandomBtn');
+if (randomBtn) randomBtn.textContent = t.generatorRandomBtn || "Surprise Me";
+  
   // generator buttons
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
