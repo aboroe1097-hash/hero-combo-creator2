@@ -1,11 +1,23 @@
 // js/combos-db.js
 // Rank is determined by position in this array. First item = Rank 1.
 // Mapping order: [Front, Middle, Back]
+  // Season 5 (X1)
+ //  { name: 'Bewoulf',      
+ //  { name: 'Hunk',        
+ //  { name: 'Boudica',      
+ //  { name: 'Sakura',       
+  // { name: 'Wind-Walker',  
+ //  { name: 'ELK',          
+  // { name: 'Cicero',     }
+
 
 export const rankedCombos = [
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
+  { heroes: ["Ramses II", "Leonidas", "Bewoulf"] },          // Rank 1
+  { heroes: ["Ramses II", "Cleopatra VII", "Bewoulf"] },      // Rank 3
+  { heroes: ["Bleeding Steed", "Ramses II", "Bewoulf"] },     // Rank 4
+  
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
-
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
