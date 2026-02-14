@@ -690,12 +690,21 @@ function generateRandomCombos() {
 
   // 3. Find ALL valid combos in the database that user can build
   // We map them first to preserve their original Rank/Score before shuffling
+// Inside generateRandomCombos() ...
+
+  // 3. Find ALL valid combos
   const validCombos = rankedCombos
-    .map((combo, index) => ({
-      ...combo,
-      originalIndex: index,
-      score: 100 - index // Calculate score based on rank
-    }))
+    .map((combo, index) => {
+      // Use the same formula here so scores match!
+      const total = rankedCombos.length;
+      const calculatedScore = Math.round(50 + (50 * (1 - (index / total))));
+      
+      return {
+        ...combo,
+        originalIndex: index,
+        score: calculatedScore // <--- UPDATED THIS LINE
+      };
+    })
     .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
   if (validCombos.length === 0) {
