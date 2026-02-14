@@ -17,10 +17,10 @@ export const translations = {
     generatorTitle: "Combo Generator (Top 5)", generatorIntro: "Select heroes you own and Generate Best Combos.",
     generatorSelectAll: "Select All Visible", generatorClearAll: "Clear Selection",
     generatorGenerateBtn: "Generate Best Combos", generatorDownloadBtn: "Download Results as Image",
+    generatorRandomBtn: "Surprise Me (Random)", // <-- NEW
     generatorNoHeroesSelected: "No heroes selected. Tap heroes from the list below.",
     generatorMinHeroesMessage: "Select at least 12 heroes.", generatorNoCombosAvailable: "No ranked combos found.",
-    generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo.",
-    generatorRandomBtn: "Surprise Me (Random)"
+    generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo."
   },
   pt: {
     appTitle: "Criador de Combos", tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
@@ -39,6 +39,7 @@ export const translations = {
     generatorTitle: "Gerador de Combos (Top 5)", generatorIntro: "Selecione seus heróis e toque em Gerar.",
     generatorSelectAll: "Selecionar Visíveis", generatorClearAll: "Limpar Seleção",
     generatorGenerateBtn: "Gerar Melhores Combos", generatorDownloadBtn: "Baixar Resultados",
+    generatorRandomBtn: "Surpreenda-me (Aleatório)", // <-- NEW
     generatorNoHeroesSelected: "Nenhum herói selecionado.",
     generatorMinHeroesMessage: "Selecione pelo menos 12 heróis.", generatorNoCombosAvailable: "Nenhum combo disponível.",
     generatorScoreLabel: "Pontuação:", generatorEmptySlotLabel: "Nenhum combo disponível."
@@ -60,6 +61,7 @@ export const translations = {
     generatorTitle: "Kombo Oluşturucu (İlk 5)", generatorIntro: "Kahramanlarını seç ve kombo oluştur.",
     generatorSelectAll: "Görünenleri Seç", generatorClearAll: "Seçimi Temizle",
     generatorGenerateBtn: "En İyi Komboları Oluştur", generatorDownloadBtn: "Sonuçları İndir",
+    generatorRandomBtn: "Şaşırt Beni (Rastgele)", // <-- NEW
     generatorNoHeroesSelected: "Kahraman seçilmedi.",
     generatorMinHeroesMessage: "En az 12 kahraman seçin.", generatorNoCombosAvailable: "Uygun kombo yok.",
     generatorScoreLabel: "Puan:", generatorEmptySlotLabel: "Bu yuva boş."
@@ -81,6 +83,7 @@ export const translations = {
     generatorTitle: "Генератор комбо (Топ-5)", generatorIntro: "Выберите героев и нажмите Создать.",
     generatorSelectAll: "Выбрать видимых", generatorClearAll: "Сбросить выбор",
     generatorGenerateBtn: "Создать лучшие комбо", generatorDownloadBtn: "Скачать результаты",
+    generatorRandomBtn: "Удиви меня (Случайно)", // <-- NEW
     generatorNoHeroesSelected: "Герои не выбраны.",
     generatorMinHeroesMessage: "Выберите минимум 12 героев.", generatorNoCombosAvailable: "Нет доступных комбо.",
     generatorScoreLabel: "Оценка:", generatorEmptySlotLabel: "Пусто."
@@ -102,6 +105,7 @@ export const translations = {
     generatorTitle: "Generador de Combos (Top 5)", generatorIntro: "Selecciona tus héroes y toca Generar.",
     generatorSelectAll: "Seleccionar Visibles", generatorClearAll: "Limpiar Selección",
     generatorGenerateBtn: "Generar Mejores Combos", generatorDownloadBtn: "Descargar Resultados",
+    generatorRandomBtn: "Sorpréndeme (Aleatorio)", // <-- NEW
     generatorNoHeroesSelected: "No hay héroes seleccionados.",
     generatorMinHeroesMessage: "Selecciona al menos 12 héroes.", generatorNoCombosAvailable: "No hay combos disponibles.",
     generatorScoreLabel: "Puntuación:", generatorEmptySlotLabel: "Ranura vacía."
@@ -123,6 +127,7 @@ export const translations = {
     generatorTitle: "Générateur (Top 5)", generatorIntro: "Sélectionnez vos héros et appuyez sur Générer.",
     generatorSelectAll: "Tout Sélectionner", generatorClearAll: "Effacer Sélection",
     generatorGenerateBtn: "Générer Meilleurs Combos", generatorDownloadBtn: "Télécharger Résultats",
+    generatorRandomBtn: "Surprends-moi (Aléatoire)", // <-- NEW
     generatorNoHeroesSelected: "Aucun héros sélectionné.",
     generatorMinHeroesMessage: "Choisissez au moins 12 héros.", generatorNoCombosAvailable: "Aucun combo disponible.",
     generatorScoreLabel: "Score :", generatorEmptySlotLabel: "Aucun combo."
@@ -144,6 +149,7 @@ export const translations = {
     generatorTitle: "Kombi-Generator (Top 5)", generatorIntro: "Wähle deine Helden und tippe auf Generieren.",
     generatorSelectAll: "Alle Sichtbaren", generatorClearAll: "Auswahl Löschen",
     generatorGenerateBtn: "Beste Kombos generieren", generatorDownloadBtn: "Ergebnisse speichern",
+    generatorRandomBtn: "Überrasch mich (Zufall)", // <-- NEW
     generatorNoHeroesSelected: "Noch keine Helden gewählt.",
     generatorMinHeroesMessage: "Wähle mindestens 12 Helden.", generatorNoCombosAvailable: "Keine Kombos verfügbar.",
     generatorScoreLabel: "Ergebnis:", generatorEmptySlotLabel: "Keine Kombi."
@@ -165,6 +171,7 @@ export const translations = {
     generatorTitle: "Generator Kombo (Top 5)", generatorIntro: "Pilih hero Anda dan klik Buat.",
     generatorSelectAll: "Pilih Semua", generatorClearAll: "Hapus Pilihan",
     generatorGenerateBtn: "Buat Kombo Terbaik", generatorDownloadBtn: "Unduh Hasil",
+    generatorRandomBtn: "Kejutkan Saya (Acak)", // <-- NEW
     generatorNoHeroesSelected: "Belum ada hero dipilih.",
     generatorMinHeroesMessage: "Pilih minimal 12 hero.", generatorNoCombosAvailable: "Tidak ada kombo.",
     generatorScoreLabel: "Skor:", generatorEmptySlotLabel: "Slot kosong."
@@ -186,6 +193,7 @@ export const translations = {
     generatorTitle: "组合生成器 (前 5 名)", generatorIntro: "选择拥有的英雄，点击生成。",
     generatorSelectAll: "全选可见", generatorClearAll: "清空选择",
     generatorGenerateBtn: "生成最佳组合", generatorDownloadBtn: "下载结果图片",
+    generatorRandomBtn: "给我惊喜 (随机)", // <-- NEW
     generatorNoHeroesSelected: "尚未选择英雄。",
     generatorMinHeroesMessage: "请至少选择 12 名英雄。", generatorNoCombosAvailable: "无匹配组合。",
     generatorComboLabel: "组合", generatorScoreLabel: "评分：", generatorEmptySlotLabel: "槽位暂无组合。"
@@ -207,6 +215,7 @@ export const translations = {
     generatorTitle: "مولد التشكيلات (أفضل 5)", generatorIntro: "اختر الأبطال الذين تملكهم واضغط توليد.",
     generatorSelectAll: "تحديد الكل", generatorClearAll: "مسح الاختيار",
     generatorGenerateBtn: "توليد أفضل التشكيلات", generatorDownloadBtn: "تحميل النتائج",
+    generatorRandomBtn: "فاجئني (عشوائي)", // <-- NEW
     generatorNoHeroesSelected: "لم يتم اختيار أبطال.",
     generatorMinHeroesMessage: "اختر 12 بطلاً على الأقل.", generatorNoCombosAvailable: "لا توجد تشكيلات.",
     generatorScoreLabel: "النتيجة:", generatorEmptySlotLabel: "لا توجد تشكيلة."
@@ -228,9 +237,9 @@ export const translations = {
     generatorTitle: "조합 생성기 (Top 5)", generatorIntro: "보유 영웅을 선택하고 생성하세요.",
     generatorSelectAll: "전체 선택", generatorClearAll: "선택 해ze",
     generatorGenerateBtn: "최강 조합 생성", generatorDownloadBtn: "결과 저장",
+    generatorRandomBtn: "랜덤 생성 (Surprise Me)", // <-- NEW
     generatorNoHeroesSelected: "영웅이 선택되지 않았습니다.",
     generatorMinHeroesMessage: "최소 12명의 영웅을 선택하세요.", generatorNoCombosAvailable: "사용 가능한 조합 없음.",
     generatorScoreLabel: "점수:", generatorEmptySlotLabel: "조합 없음."
   }
 };
-
