@@ -19,7 +19,8 @@ export const translations = {
     generatorGenerateBtn: "Generate Best Combos", generatorDownloadBtn: "Download Results as Image",
     generatorNoHeroesSelected: "No heroes selected. Tap heroes from the list below.",
     generatorMinHeroesMessage: "Select at least 12 heroes.", generatorNoCombosAvailable: "No ranked combos found.",
-    generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo."
+    generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo.",
+    generatorRandomBtn: "Surprise Me (Random)"
   },
   pt: {
     appTitle: "Criador de Combos", tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
@@ -232,3 +233,4 @@ export const translations = {
     generatorScoreLabel: "점수:", generatorEmptySlotLabel: "조합 없음."
   }
 };
+
