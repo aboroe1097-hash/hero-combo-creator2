@@ -18,34 +18,35 @@ export const rankedCombos = [
   { heroes: ["Bleeding Steed", "Ramses II", "Bewoulf"] },     // Rank 4
   
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
+  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
+  { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
+  { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
+  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
-  { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
-  { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
-  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
   { heroes: ["King Arthur", "Theodora", "Bleeding Steed"] },    // Rank 7
+  { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] }, // Rank 13
+  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
+  { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
+  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
   { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },         // Rank 8
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
+  { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
-  
-  // --- TIER 2: HIGH COMPETITIVE ---
-  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
-  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
-  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
-  { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] }, // Rank 13
-  { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] }, // Rank 14
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
-  { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
-        
-
+  
   // --- TIER 2: STRONG COMPETITIVE META ---
+   //  { name: 'Hunk',        
+ //  { name: 'Boudica',      
+ //  { name: 'Sakura',  
+  { heroes: ["Hunk", "Sakura", "Jade Eagle"] },      // Rank 3
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },        
   { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"] },
   { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },      
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },      
-  { heroes: ["Rozen Blade", "Cleopatra VII", "Caesar"] },
   { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
   { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },     
+  { heroes: ["Hunk", "Ramses II", "Al Fatih"] },    
   { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },         // Rank 17
   { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },               // Rank 18
   { heroes: ["Alfred", "Black Prince", "Cleopatra VII"] },      // Rank 19
