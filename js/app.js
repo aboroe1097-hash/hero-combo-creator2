@@ -671,6 +671,8 @@ function generateBestCombos() {
     downloadGeneratorBtn.classList.add('hidden');
   }
 }
+// js/app.js
+
 function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   
@@ -684,30 +686,30 @@ function generateRandomCombos() {
   }
 
   const ownedSet = new Set(selected);
+  const total = rankedCombos.length;
 
-  // 3. Find ALL valid combos (and calculate their scores immediately)
-  const totalCombos = rankedCombos.length;
-  
+  // 3. Find ALL valid combos & calculate 1-100 scores
   const validCombos = rankedCombos
     .map((combo, index) => {
-        // Dynamic Score Formula: 50 to 100 based on database position
-        // Rank 1 gets 100, Rank 200 gets ~50.
-        const calculatedScore = Math.round(50 + (50 * (1 - (index / totalCombos))));
+        let rawScore = 100;
+        if (total > 1) {
+          rawScore = 100 - ((index / (total - 1)) * 99);
+        }
+        
         return {
           ...combo,
           originalIndex: index,
-          displayScore: calculatedScore
+          displayScore: rawScore.toFixed(1)
         };
     })
     .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
   if (validCombos.length === 0) {
-    showAboModal(t.generatorNoCombosAvailable || "No ranked combos found with these heroes.");
+    showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
     return;
   }
 
-  // 4. Shuffle the valid combos (Fisher-Yates Shuffle)
-  // This ensures we get a random variety, not just the top ones.
+  // 4. Shuffle (Fisher-Yates)
   for (let i = validCombos.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
@@ -728,9 +730,8 @@ function generateRandomCombos() {
     }
   }
 
-  // 6. SORT the final 5 picks by Score (Highest First)
-  // Even though the selection was random, the display is organized.
-  randomSelection.sort((a, b) => b.displayScore - a.displayScore);
+  // 6. Sort by Score (High to Low)
+  randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
 
   // 7. Render
   if (randomSelection.length === 0) {
