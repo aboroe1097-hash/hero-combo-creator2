@@ -5,11 +5,12 @@
 export const rankedCombos = [
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
-  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
+
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
+  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
   { heroes: ["King Arthur", "Theodora", "Bleeding Steed"] },    // Rank 7
   { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },         // Rank 8
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
@@ -17,17 +18,13 @@ export const rankedCombos = [
   
   // --- TIER 2: HIGH COMPETITIVE ---
   { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
+  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
   { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
   { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] }, // Rank 13
   { heroes: ["King Arthur", "Bleeding Steed", "Cleopatra VII"] }, // Rank 14
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
   { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
-  { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },         // Rank 17
-  { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },               // Rank 18
-  { heroes: ["Alfred", "Black Prince", "Cleopatra VII"] },      // Rank 19
-  { heroes: ["Alfred", "Jeanne d'Arc", "Lionheart"] },          // Rank 20
-  { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },    
-  { heroes: ["Theodora", "The Brave", "Jade Eagle"] },           
+        
 
   // --- TIER 2: STRONG COMPETITIVE META ---
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },        
@@ -36,11 +33,19 @@ export const rankedCombos = [
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] },      
   { heroes: ["Rozen Blade", "Cleopatra VII", "Caesar"] },
   { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
+  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },     
+  { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },         // Rank 17
+  { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },               // Rank 18
+  { heroes: ["Alfred", "Black Prince", "Cleopatra VII"] },      // Rank 19
+  { heroes: ["Alfred", "Jeanne d'Arc", "Lionheart"] },          // Rank 20
+  { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },    
+  { heroes: ["Theodora", "The Brave", "Jade Eagle"] },   
+  
   { heroes: ["War Lord", "Alfred", "Lionheart"] },              
   { heroes: ["Alfred", "Black Prince", "Lionheart"] },          
   { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },       
   { heroes: ["Alfred", "Cleopatra VII", "Jane"] },              
-  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },        
+   
   
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
