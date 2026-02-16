@@ -464,6 +464,8 @@ function renderAvailableHeroes() {
     });
 }
 
+// js/app.js
+
 function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
 
@@ -475,17 +477,17 @@ function updateComboSlotDisplay(slot, name, idx) {
       </span>`;
     slot.classList.add('relative', 'p-0');
   } else {
+    // FIXED: Added data-i18n="dragHeroHere" to the span below
     slot.innerHTML = `
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
         <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
-        <span class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+        <span data-i18n="dragHeroHere" class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
           ${t.dragHeroHere}
         </span>
       </div>`;
     slot.classList.remove('relative', 'p-0');
   }
 }
-
 // score label under manual combo slots
 function updateManualComboScore() {
   const t = translations[currentLanguage] || translations.en;
