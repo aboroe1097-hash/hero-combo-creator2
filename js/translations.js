@@ -1,10 +1,16 @@
 // js/translations.js
 export const translations = {
   en: {
-    appTitle: "Hero Combo Creator", tabManual: "Manual Builder", tabGenerator: "Combo Generator",
+    appTitle: "Hero Combo Creator",
+    betaNote: "BETA b2.4 — VTS s1097 Community Tool",
+    tabManual: "Manual Builder", tabGenerator: "Combo Generator",
+    
+    // Filters
     filterBySeasonTitle: "Filter by Season", seasonLabel: "Season", availableHeroesTitle: "Available Heroes",
     filterByStateTitle: "Filter Paid or Free", stateFree: "Free", statePaid: "Paid",
     filterByTroopTitle: "Filter Troops", troopArchers: "Archers", troopFootmen: "Footmen", troopCavalry: "Cavalry", troopAll: "All",
+    
+    // Manual
     createComboTitle: "Create Your Combo", dragHeroHere: "Drag Hero Here", saveComboBtn: "Save Current Combo",
     clearComboBtn: "Clear Current Combo", downloadCombosBtn: "Download as Image", shareAllCombosBtn: "Share as Text",
     lastBestCombosTitle: "Last Best Combos", noCombosMessage: "No combos saved yet!",
@@ -12,6 +18,8 @@ export const translations = {
     messageComboSavedSuccess: "Combo saved!", messageConfirmRemoveCombo: "Delete this combo?",
     messageHeroAlreadyInSlot: "Hero {heroName} is already selected.", messageBoxOk: "OK",
     manualComboNotRanked: "This combo is not in the ranked database.", shareCombosCopied: "Combos copied to clipboard!",
+    
+    // Generator
     generatorTitle: "Combo Generator (Top 5)", generatorIntro: "Select heroes you own and Generate Best Combos.",
     generatorSelectAll: "Select All Visible", generatorClearAll: "Clear Selection",
     generatorGenerateBtn: "Generate Best Combos", generatorDownloadBtn: "Download Results as Image",
@@ -20,9 +28,12 @@ export const translations = {
     generatorMinHeroesMessage: "Select at least 12 heroes.", generatorNoCombosAvailable: "No ranked combos found.",
     generatorScoreLabel: "Score:", generatorEmptySlotLabel: "No available combo.",
     genSelectTitle: "Select Your Heroes",
-    // Filters & Comments
+    
+    // Filter Buttons
     season0: "Season 0", season1: "Season 1", season2: "Season 2", 
     season3: "Season 3", season4: "Season 4", season5: "Season 5 (X1)",
+    
+    // Comments
     commentsHeader: "Comments & Suggestions",
     commentNamePh: "Your name (optional)",
     commentEmailPh: "Email (optional)",
@@ -30,7 +41,9 @@ export const translations = {
     commentSubmitBtn: "Submit Comment"
   },
   pt: {
-    appTitle: "Criador de Combos", tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
+    appTitle: "Criador de Combos",
+    betaNote: "BETA b2.4 — Ferramenta da Comunidade VTS s1097",
+    tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Heróis Disponíveis",
     filterByStateTitle: "Filtrar Pago ou Grátis", stateFree: "Grátis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueiros", troopFootmen: "Infantaria", troopCavalry: "Cavalaria", troopAll: "Todos",
@@ -41,7 +54,7 @@ export const translations = {
     messageComboSavedSuccess: "Combo salvo!", messageConfirmRemoveCombo: "Excluir este combo?",
     messageHeroAlreadyInSlot: "O herói {heroName} já foi selecionado.", messageBoxOk: "OK",
     manualComboNotRanked: "Este combo não está no ranking.", shareCombosCopied: "Combos copiados para a área de transferência!",
-    generatorTitle: "Gerador de Combos (Top 5)", generatorIntro: "Selecione seus heróis e toque em Gerar.",
+    generatorTitle: "Gerador de Combos (Top 5)", generatorIntro: "Selecione seus heróis e Gere os Melhores Combos.",
     generatorSelectAll: "Selecionar Visíveis", generatorClearAll: "Limpar Seleção",
     generatorGenerateBtn: "Gerar Melhores Combos", generatorDownloadBtn: "Baixar Resultados",
     generatorRandomBtn: "Surpreenda-me (Aleatório)",
@@ -49,7 +62,6 @@ export const translations = {
     generatorMinHeroesMessage: "Selecione pelo menos 12 heróis.", generatorNoCombosAvailable: "Nenhum combo disponível.",
     generatorScoreLabel: "Pontuação:", generatorEmptySlotLabel: "Nenhum combo disponível.",
     genSelectTitle: "Selecione seus Heróis",
-    // Filters & Comments
     season0: "Temporada 0", season1: "Temporada 1", season2: "Temporada 2", 
     season3: "Temporada 3", season4: "Temporada 4", season5: "Temporada 5 (X1)",
     commentsHeader: "Comentários e Sugestões",
@@ -59,7 +71,9 @@ export const translations = {
     commentSubmitBtn: "Enviar Comentário"
   },
   tr: {
-    appTitle: "Kombo Oluşturucu", tabManual: "Manuel Mod", tabGenerator: "Kombo Oluşturucu",
+    appTitle: "Kombo Oluşturucu",
+    betaNote: "BETA b2.4 — VTS s1097 Topluluk Aracı",
+    tabManual: "Manuel Mod", tabGenerator: "Kombo Oluşturucu",
     filterBySeasonTitle: "Sezona Göre Filtrele", seasonLabel: "Sezon", availableHeroesTitle: "Mevcut Kahramanlar",
     filterByStateTitle: "Ücretli/Ücretsiz Filtrele", stateFree: "Ücretsiz", statePaid: "Ücretli",
     filterByTroopTitle: "Birlikleri Filtrele", troopArchers: "Okçular", troopFootmen: "Piyadeler", troopCavalry: "Süvariler", troopAll: "Hepsi",
@@ -70,7 +84,7 @@ export const translations = {
     messageComboSavedSuccess: "Kombo kaydedildi!", messageConfirmRemoveCombo: "Silmek istiyor musun?",
     messageHeroAlreadyInSlot: "{heroName} zaten seçildi.", messageBoxOk: "Tamam",
     manualComboNotRanked: "Bu kombo veritabanında yok.", shareCombosCopied: "Kombolar kopyalandı!",
-    generatorTitle: "Kombo Oluşturucu (İlk 5)", generatorIntro: "Kahramanlarını seç ve kombo oluştur.",
+    generatorTitle: "Kombo Oluşturucu (İlk 5)", generatorIntro: "Kahramanlarınızı seçin ve En İyi Komboları Oluşturun.",
     generatorSelectAll: "Görünenleri Seç", generatorClearAll: "Seçimi Temizle",
     generatorGenerateBtn: "En İyi Komboları Oluştur", generatorDownloadBtn: "Sonuçları İndir",
     generatorRandomBtn: "Şaşırt Beni (Rastgele)",
@@ -78,7 +92,6 @@ export const translations = {
     generatorMinHeroesMessage: "En az 12 kahraman seçin.", generatorNoCombosAvailable: "Uygun kombo yok.",
     generatorScoreLabel: "Puan:", generatorEmptySlotLabel: "Bu yuva boş.",
     genSelectTitle: "Kahramanlarını Seç",
-    // Filters & Comments
     season0: "Sezon 0", season1: "Sezon 1", season2: "Sezon 2", 
     season3: "Sezon 3", season4: "Sezon 4", season5: "Sezon 5 (X1)",
     commentsHeader: "Yorumlar ve Öneriler",
@@ -88,7 +101,9 @@ export const translations = {
     commentSubmitBtn: "Yorum Gönder"
   },
   ru: {
-    appTitle: "Создатель Комбо", tabManual: "Ручной Режим", tabGenerator: "Генератор Комбо",
+    appTitle: "Создатель Комбо",
+    betaNote: "БЕТА b2.4 — Инструмент сообщества VTS s1097",
+    tabManual: "Ручной Режим", tabGenerator: "Генератор Комбо",
     filterBySeasonTitle: "Фильтр сезонов", seasonLabel: "Сезон", availableHeroesTitle: "Доступные герои",
     filterByStateTitle: "Фильтр (Платные/Бесплатные)", stateFree: "Бесплатные", statePaid: "Платные",
     filterByTroopTitle: "Фильтр войск", troopArchers: "Лучники", troopFootmen: "Пехота", troopCavalry: "Кавалерия", troopAll: "Все",
@@ -99,7 +114,7 @@ export const translations = {
     messageComboSavedSuccess: "Комбо сохранено!", messageConfirmRemoveCombo: "Удалить?",
     messageHeroAlreadyInSlot: "Герой {heroName} уже выбран.", messageBoxOk: "ОК",
     manualComboNotRanked: "Этого комбо нет в базе данных.", shareCombosCopied: "Комбо скопированы!",
-    generatorTitle: "Генератор комбо (Топ-5)", generatorIntro: "Выберите героев и нажмите Создать.",
+    generatorTitle: "Генератор комбо (Топ-5)", generatorIntro: "Выберите своих героев и создайте лучшие комбо.",
     generatorSelectAll: "Выбрать видимых", generatorClearAll: "Сбросить выбор",
     generatorGenerateBtn: "Создать лучшие комбо", generatorDownloadBtn: "Скачать результаты",
     generatorRandomBtn: "Удиви меня (Случайно)",
@@ -107,7 +122,6 @@ export const translations = {
     generatorMinHeroesMessage: "Выберите минимум 12 героев.", generatorNoCombosAvailable: "Нет доступных комбо.",
     generatorScoreLabel: "Оценка:", generatorEmptySlotLabel: "Пусто.",
     genSelectTitle: "Выберите героев",
-    // Filters & Comments
     season0: "Сезон 0", season1: "Сезон 1", season2: "Сезон 2", 
     season3: "Сезон 3", season4: "Сезон 4", season5: "Сезон 5 (X1)",
     commentsHeader: "Комментарии и предложения",
@@ -117,7 +131,9 @@ export const translations = {
     commentSubmitBtn: "Отправить"
   },
   es: {
-    appTitle: "Creador de Combos", tabManual: "Constructor Manual", tabGenerator: "Generador de Combos",
+    appTitle: "Creador de Combos",
+    betaNote: "BETA b2.4 — Herramienta de la Comunidad VTS s1097",
+    tabManual: "Constructor Manual", tabGenerator: "Generador de Combos",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Héroes Disponibles",
     filterByStateTitle: "Filtrar Pago o Gratis", stateFree: "Gratis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueros", troopFootmen: "Infantería", troopCavalry: "Caballería", troopAll: "Todos",
@@ -128,7 +144,7 @@ export const translations = {
     messageComboSavedSuccess: "¡Combo guardado!", messageConfirmRemoveCombo: "¿Eliminar combo?",
     messageHeroAlreadyInSlot: "El héroe {heroName} ya está seleccionado.", messageBoxOk: "Aceptar",
     manualComboNotRanked: "Este combo no está en la base de datos.", shareCombosCopied: "¡Combos copiados!",
-    generatorTitle: "Generador de Combos (Top 5)", generatorIntro: "Selecciona tus héroes y toca Generar.",
+    generatorTitle: "Generador de Combos (Top 5)", generatorIntro: "Selecciona tus héroes y Genera los Mejores Combos.",
     generatorSelectAll: "Seleccionar Visibles", generatorClearAll: "Limpiar Selección",
     generatorGenerateBtn: "Generar Mejores Combos", generatorDownloadBtn: "Descargar Resultados",
     generatorRandomBtn: "Sorpréndeme (Aleatorio)",
@@ -136,7 +152,6 @@ export const translations = {
     generatorMinHeroesMessage: "Selecciona al menos 12 héroes.", generatorNoCombosAvailable: "No hay combos disponibles.",
     generatorScoreLabel: "Puntuación:", generatorEmptySlotLabel: "Ranura vacía.",
     genSelectTitle: "Selecciona tus Héroes",
-    // Filters & Comments
     season0: "Temporada 0", season1: "Temporada 1", season2: "Temporada 2", 
     season3: "Temporada 3", season4: "Temporada 4", season5: "Temporada 5 (X1)",
     commentsHeader: "Comentarios y Sugerencias",
@@ -146,7 +161,9 @@ export const translations = {
     commentSubmitBtn: "Enviar Comentario"
   },
   fr: {
-    appTitle: "Créateur de Combos", tabManual: "Mode Manuel", tabGenerator: "Générateur de Combos",
+    appTitle: "Créateur de Combos",
+    betaNote: "BETA b2.4 — Outil Communautaire VTS s1097",
+    tabManual: "Mode Manuel", tabGenerator: "Générateur de Combos",
     filterBySeasonTitle: "Filtrer par Saison", seasonLabel: "Saison", availableHeroesTitle: "Héros Disponibles",
     filterByStateTitle: "Filtrer Payant ou Gratuit", stateFree: "Gratuit", statePaid: "Payant",
     filterByTroopTitle: "Filtrer Troupes", troopArchers: "Archers", troopFootmen: "Infanterie", troopCavalry: "Cavalerie", troopAll: "Tous",
@@ -157,7 +174,7 @@ export const translations = {
     messageComboSavedSuccess: "Combo enregistré !", messageConfirmRemoveCombo: "Supprimer ce combo ?",
     messageHeroAlreadyInSlot: "Le héros {heroName} est déjà utilisé.", messageBoxOk: "OK",
     manualComboNotRanked: "Ce combo n'est pas classé.", shareCombosCopied: "Combos copiés !",
-    generatorTitle: "Générateur (Top 5)", generatorIntro: "Sélectionnez vos héros et appuyez sur Générer.",
+    generatorTitle: "Générateur (Top 5)", generatorIntro: "Sélectionnez vos héros et générez les meilleurs combos.",
     generatorSelectAll: "Tout Sélectionner", generatorClearAll: "Effacer Sélection",
     generatorGenerateBtn: "Générer Meilleurs Combos", generatorDownloadBtn: "Télécharger Résultats",
     generatorRandomBtn: "Surprends-moi (Aléatoire)",
@@ -165,7 +182,6 @@ export const translations = {
     generatorMinHeroesMessage: "Choisissez au moins 12 héros.", generatorNoCombosAvailable: "Aucun combo disponible.",
     generatorScoreLabel: "Score :", generatorEmptySlotLabel: "Aucun combo.",
     genSelectTitle: "Sélectionnez vos Héros",
-    // Filters & Comments
     season0: "Saison 0", season1: "Saison 1", season2: "Saison 2", 
     season3: "Saison 3", season4: "Saison 4", season5: "Saison 5 (X1)",
     commentsHeader: "Commentaires et suggestions",
@@ -175,7 +191,9 @@ export const translations = {
     commentSubmitBtn: "Envoyer"
   },
   de: {
-    appTitle: "Kombi-Ersteller", tabManual: "Manueller Bau", tabGenerator: "Kombi-Generator",
+    appTitle: "Kombi-Ersteller",
+    betaNote: "BETA b2.4 — VTS s1097 Community-Tool",
+    tabManual: "Manueller Bau", tabGenerator: "Kombi-Generator",
     filterBySeasonTitle: "Nach Saison filtern", seasonLabel: "Saison", availableHeroesTitle: "Verfügbare Helden",
     filterByStateTitle: "Nach Kosten filtern", stateFree: "Kostenlos", statePaid: "Bezahlt",
     filterByTroopTitle: "Nach Truppen filtern", troopArchers: "Bogenschützen", troopFootmen: "Infanterie", troopCavalry: "Kavallerie", troopAll: "Alle",
@@ -186,7 +204,7 @@ export const translations = {
     messageComboSavedSuccess: "Kombination gespeichert!", messageConfirmRemoveCombo: "Diese Kombi löschen?",
     messageHeroAlreadyInSlot: "Held {heroName} ist bereits belegt.", messageBoxOk: "OK",
     manualComboNotRanked: "Diese Kombi ist nicht in der Datenbank.", shareCombosCopied: "Kombis kopiert!",
-    generatorTitle: "Kombi-Generator (Top 5)", generatorIntro: "Wähle deine Helden und tippe auf Generieren.",
+    generatorTitle: "Kombi-Generator (Top 5)", generatorIntro: "Wähle deine Helden und generiere die besten Kombos.",
     generatorSelectAll: "Alle Sichtbaren", generatorClearAll: "Auswahl Löschen",
     generatorGenerateBtn: "Beste Kombos generieren", generatorDownloadBtn: "Ergebnisse speichern",
     generatorRandomBtn: "Überrasch mich (Zufall)",
@@ -194,7 +212,6 @@ export const translations = {
     generatorMinHeroesMessage: "Wähle mindestens 12 Helden.", generatorNoCombosAvailable: "Keine Kombos verfügbar.",
     generatorScoreLabel: "Ergebnis:", generatorEmptySlotLabel: "Keine Kombi.",
     genSelectTitle: "Wähle deine Helden",
-    // Filters & Comments
     season0: "Saison 0", season1: "Saison 1", season2: "Saison 2", 
     season3: "Saison 3", season4: "Saison 4", season5: "Saison 5 (X1)",
     commentsHeader: "Kommentare & Vorschläge",
@@ -204,7 +221,9 @@ export const translations = {
     commentSubmitBtn: "Kommentar senden"
   },
   id: {
-    appTitle: "Pembuat Kombo", tabManual: "Mode Manual", tabGenerator: "Generator Kombo",
+    appTitle: "Pembuat Kombo",
+    betaNote: "BETA b2.4 — Alat Komunitas VTS s1097",
+    tabManual: "Mode Manual", tabGenerator: "Generator Kombo",
     filterBySeasonTitle: "Filter Musim", seasonLabel: "Musim", availableHeroesTitle: "Hero Tersedia",
     filterByStateTitle: "Filter Gratis/Berbayar", stateFree: "Gratis", statePaid: "Berbayar",
     filterByTroopTitle: "Filter Pasukan", troopArchers: "Pemanah", troopFootmen: "Infanteri", troopCavalry: "Kavaleri", troopAll: "Semua",
@@ -215,7 +234,7 @@ export const translations = {
     messageComboSavedSuccess: "Kombo disimpan!", messageConfirmRemoveCombo: "Hapus kombo?",
     messageHeroAlreadyInSlot: "Hero {heroName} sudah dipilih.", messageBoxOk: "OK",
     manualComboNotRanked: "Kombo ini tidak ada di database.", shareCombosCopied: "Kombo disalin!",
-    generatorTitle: "Generator Kombo (Top 5)", generatorIntro: "Pilih hero Anda dan klik Buat.",
+    generatorTitle: "Generator Kombo (Top 5)", generatorIntro: "Pilih hero Anda dan Hasilkan Kombo Terbaik.",
     generatorSelectAll: "Pilih Semua", generatorClearAll: "Hapus Pilihan",
     generatorGenerateBtn: "Buat Kombo Terbaik", generatorDownloadBtn: "Unduh Hasil",
     generatorRandomBtn: "Kejutkan Saya (Acak)",
@@ -223,7 +242,6 @@ export const translations = {
     generatorMinHeroesMessage: "Pilih minimal 12 hero.", generatorNoCombosAvailable: "Tidak ada kombo.",
     generatorScoreLabel: "Skor:", generatorEmptySlotLabel: "Slot kosong.",
     genSelectTitle: "Pilih Hero Anda",
-    // Filters & Comments
     season0: "Musim 0", season1: "Musim 1", season2: "Musim 2", 
     season3: "Musim 3", season4: "Musim 4", season5: "Musim 5 (X1)",
     commentsHeader: "Komentar & Saran",
@@ -233,7 +251,9 @@ export const translations = {
     commentSubmitBtn: "Kirim Komentar"
   },
   zh: {
-    appTitle: "英雄组合创建器", tabManual: "手动模式", tabGenerator: "组合生成器",
+    appTitle: "英雄组合创建器",
+    betaNote: "测试版 b2.4 — VTS s1097 社区工具",
+    tabManual: "手动模式", tabGenerator: "组合生成器",
     filterBySeasonTitle: "按赛季筛选", seasonLabel: "赛季", availableHeroesTitle: "可用英雄",
     filterByStateTitle: "按付费类型筛选", stateFree: "免费", statePaid: "付费",
     filterByTroopTitle: "按兵种筛选", troopArchers: "弓兵", troopFootmen: "步兵", troopCavalry: "骑兵", troopAll: "全部",
@@ -244,7 +264,7 @@ export const translations = {
     messageComboSavedSuccess: "组合保存成功！", messageConfirmRemoveCombo: "确定删除吗？",
     messageHeroAlreadyInSlot: "英雄 {heroName} 已在槽位中。", messageBoxOk: "好的",
     manualComboNotRanked: "此组合不在排名数据库中。", shareCombosCopied: "组合已复制到剪贴板！",
-    generatorTitle: "组合生成器 (前 5 名)", generatorIntro: "选择拥有的英雄，点击生成。",
+    generatorTitle: "组合生成器 (前 5 名)", generatorIntro: "选择您拥有的英雄并生成最佳组合。",
     generatorSelectAll: "全选可见", generatorClearAll: "清空选择",
     generatorGenerateBtn: "生成最佳组合", generatorDownloadBtn: "下载结果图片",
     generatorRandomBtn: "给我惊喜 (随机)",
@@ -252,7 +272,6 @@ export const translations = {
     generatorMinHeroesMessage: "请至少选择 12 名英雄。", generatorNoCombosAvailable: "无匹配组合。",
     generatorScoreLabel: "评分：", generatorEmptySlotLabel: "槽位暂无组合。",
     genSelectTitle: "选择您的英雄",
-    // Filters & Comments
     season0: "赛季 0", season1: "赛季 1", season2: "赛季 2", 
     season3: "赛季 3", season4: "赛季 4", season5: "赛季 5 (X1)",
     commentsHeader: "评论与建议",
@@ -262,7 +281,9 @@ export const translations = {
     commentSubmitBtn: "提交评论"
   },
   ar: {
-    appTitle: "صانع تشكيلات الأبطال", tabManual: "بناء يدوي", tabGenerator: "مولد التشكيلات",
+    appTitle: "صانع تشكيلات الأبطال",
+    betaNote: "نسخة تجريبية b2.4 — أداة مجتمع VTS s1097",
+    tabManual: "بناء يدوي", tabGenerator: "مولد التشكيلات",
     filterBySeasonTitle: "تصفية حسب الموسم", seasonLabel: "الموسم", availableHeroesTitle: "الأبطال المتاحون",
     filterByStateTitle: "تصفية مدفوع أو مجاني", stateFree: "مجاني", statePaid: "مدفوع",
     filterByTroopTitle: "تصفية القوات", troopArchers: "رماة", troopFootmen: "مشاة", troopCavalry: "فرسان", troopAll: "الكل",
@@ -273,7 +294,7 @@ export const translations = {
     messageComboSavedSuccess: "تم الحفظ!", messageConfirmRemoveCombo: "هل تريد الحذف؟",
     messageHeroAlreadyInSlot: "البطل {heroName} موجود بالفعل.", messageBoxOk: "حسناً",
     manualComboNotRanked: "هذه التشكيلة غير موجودة في قاعدة البيانات.", shareCombosCopied: "تم نسخ التشكيلات!",
-    generatorTitle: "مولد التشكيلات (أفضل 5)", generatorIntro: "اختر الأبطال الذين تملكهم واضغط توليد.",
+    generatorTitle: "مولد التشكيلات (أفضل 5)", generatorIntro: "اختر أبطالك وقم بتوليد أفضل التشكيلات.",
     generatorSelectAll: "تحديد الكل", generatorClearAll: "مسح الاختيار",
     generatorGenerateBtn: "توليد أفضل التشكيلات", generatorDownloadBtn: "تحميل النتائج",
     generatorRandomBtn: "فاجئني (عشوائي)",
@@ -281,7 +302,6 @@ export const translations = {
     generatorMinHeroesMessage: "اختر 12 بطلاً على الأقل.", generatorNoCombosAvailable: "لا توجد تشكيلات.",
     generatorScoreLabel: "النتيجة:", generatorEmptySlotLabel: "لا توجد تشكيلة.",
     genSelectTitle: "اختر أبطالك",
-    // Filters & Comments
     season0: "موسم 0", season1: "موسم 1", season2: "موسم 2", 
     season3: "موسم 3", season4: "موسم 4", season5: "موسم 5 (X1)",
     commentsHeader: "التعليقات والمقترحات",
@@ -291,7 +311,9 @@ export const translations = {
     commentSubmitBtn: "إرسال التعليق"
   },
   kr: {
-    appTitle: "영웅 조합 생성기", tabManual: "수동 빌더", tabGenerator: "조합 생성기",
+    appTitle: "영웅 조합 생성기",
+    betaNote: "베타 b2.4 — VTS s1097 커뮤니티 도구",
+    tabManual: "수동 빌더", tabGenerator: "조합 생성기",
     filterBySeasonTitle: "시즌별 필터", seasonLabel: "시즌", availableHeroesTitle: "사용 가능 영웅",
     filterByStateTitle: "유료/무료 필터", stateFree: "무료", statePaid: "유료",
     filterByTroopTitle: "병종 필터", troopArchers: "궁병", troopFootmen: "보병", troopCavalry: "기병", troopAll: "전체",
@@ -302,15 +324,14 @@ export const translations = {
     messageComboSavedSuccess: "조합 저장 완료!", messageConfirmRemoveCombo: "삭제하시겠습니까?",
     messageHeroAlreadyInSlot: "{heroName}은(는) 이미 선택되었습니다.", messageBoxOk: "확인",
     manualComboNotRanked: "이 조합은 랭킹 데이터에 없습니다.", shareCombosCopied: "클립보드에 복사되었습니다!",
-    generatorTitle: "조합 생성기 (Top 5)", generatorIntro: "보유 영웅을 선택하고 생성하세요.",
-    generatorSelectAll: "전체 선택", generatorClearAll: "선택 해ze",
+    generatorTitle: "조합 생성기 (Top 5)", generatorIntro: "보유한 영웅을 선택하고 최강 조합을 생성하세요.",
+    generatorSelectAll: "전체 선택", generatorClearAll: "선택 해제",
     generatorGenerateBtn: "최강 조합 생성", generatorDownloadBtn: "결과 저장",
     generatorRandomBtn: "랜덤 생성 (Surprise Me)",
     generatorNoHeroesSelected: "영웅이 선택되지 않았습니다.",
     generatorMinHeroesMessage: "최소 12명의 영웅을 선택하세요.", generatorNoCombosAvailable: "사용 가능한 조합 없음.",
     generatorScoreLabel: "점수:", generatorEmptySlotLabel: "조합 없음.",
     genSelectTitle: "영웅 선택",
-    // Filters & Comments
     season0: "시즌 0", season1: "시즌 1", season2: "시즌 2", 
     season3: "시즌 3", season4: "시즌 4", season5: "시즌 5 (X1)",
     commentsHeader: "댓글 및 제안",
