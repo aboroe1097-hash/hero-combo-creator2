@@ -999,52 +999,60 @@ if (generateRandomBtn) {
 }
 
 // --- TRANSLATIONS / TEXT ---
+// js/app.js
 
 async function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
 
-  // top + tabs
-  document.getElementById('appTitle').textContent   = t.appTitle;
-  document.getElementById('tabManual').textContent  = t.tabManual;
-  document.getElementById('tabGenerator').textContent = t.tabGenerator;
+  // 1. Map IDs to Translation Keys (For main layout elements)
+  const idMap = {
+    'appTitle': t.appTitle,
+    'tabManual': t.tabManual,
+    'tabGenerator': t.tabGenerator,
+    
+    // Headers
+    'filterBySeasonTitle': t.filterBySeasonTitle,
+    'availableHeroesTitle': t.availableHeroesTitle,
+    'createComboTitle': t.createComboTitle,
+    'lastBestCombosTitle': t.lastBestCombosTitle,
+    'noCombosMessage': t.noCombosMessage,
+    'genToolTitle': t.generatorTitle,
+    'genIntroText': t.generatorIntro,
+    'genFilterTitle': t.filterBySeasonTitle,
+    'genSelectTitle': t.genSelectTitle, // New
 
-  // manual headings
-  document.getElementById('filterBySeasonTitle').textContent   = t.filterBySeasonTitle;
-  document.getElementById('availableHeroesTitle').textContent  = t.availableHeroesTitle;
-  document.getElementById('createComboTitle').textContent      = t.createComboTitle;
-  document.getElementById('lastBestCombosTitle').textContent   = t.lastBestCombosTitle;
-  document.getElementById('noCombosMessage').textContent       = t.noCombosMessage;
+    // Buttons
+    'saveComboBtn': t.saveComboBtn,
+    'clearComboBtn': t.clearComboBtn,
+    'downloadCombosBtn': t.downloadCombosBtn,
+    'shareAllCombosBtn': t.shareAllCombosBtn,
+    'genSelectAllBtn': t.generatorSelectAll,
+    'genClearAllBtn': t.generatorClearAll,
+    'generateCombosBtn': t.generatorGenerateBtn,
+    'downloadGeneratorBtn': t.generatorDownloadBtn,
+    'generateRandomBtn': t.generatorRandomBtn
+  };
 
-  // manual buttons
-  if (saveComboBtn)        saveComboBtn.textContent        = t.saveComboBtn;
-  if (clearComboBtn)       clearComboBtn.textContent       = t.clearComboBtn;
-  if (downloadCombosBtn)   downloadCombosBtn.textContent   = t.downloadCombosBtn;
-  if (shareAllCombosBtn)   shareAllCombosBtn.textContent   = t.shareAllCombosBtn;
+  // Apply ID-based translations
+  for (const [id, text] of Object.entries(idMap)) {
+    const el = document.getElementById(id);
+    if (el && text) el.textContent = text;
+  }
 
-  // generator headings
-  const genToolTitle   = document.getElementById('genToolTitle');
-  const genIntroText   = document.getElementById('genIntroText');
-  const genFilterTitle = document.getElementById('genFilterTitle');
+  // 2. Apply "data-i18n" translations (For Filters, Labels, New Headers)
+  // This automatically translates anything with <span data-i18n="key">
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
 
-  if (genToolTitle)   genToolTitle.textContent   = t.generatorTitle;
-  if (genIntroText)   genIntroText.textContent   = t.generatorIntro;
-  if (genFilterTitle) genFilterTitle.textContent = t.filterBySeasonTitle;
+  // 3. Apply "data-i18n-ph" translations (For Input Placeholders)
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (t[key]) el.placeholder = t[key];
+  });
 
-  // In js/app.js inside updateTextContent()
-
-const randomBtn = document.getElementById('generateRandomBtn');
-if (randomBtn) randomBtn.textContent = t.generatorRandomBtn || "Surprise Me";
-  
-  // generator buttons
-  const genSelectAllBtn = document.getElementById('genSelectAllBtn');
-  const genClearAllBtn  = document.getElementById('genClearAllBtn');
-
-  if (genSelectAllBtn)       genSelectAllBtn.textContent       = t.generatorSelectAll;
-  if (genClearAllBtn)        genClearAllBtn.textContent        = t.generatorClearAll;
-  if (generateCombosBtn)     generateCombosBtn.textContent     = t.generatorGenerateBtn;
-  if (downloadGeneratorBtn)  downloadGeneratorBtn.textContent  = t.generatorDownloadBtn;
-
-  // refresh score language under manual combo if visible
+  // 4. Update dynamic score text if a combo is currently selected
   updateManualComboScore();
 }
 
