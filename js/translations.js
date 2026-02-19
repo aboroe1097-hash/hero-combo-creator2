@@ -347,7 +347,46 @@ export const translations = {
     commentNamePh: "اسمك (اختياري)",
     commentEmailPh: "البريد الإلكتروني (اختياري)",
     commentBodyPh: "اكتب اقتراحك هنا...",
-    commentSubmitBtn: "إرسال التعليق"
+    commentSubmitBtn: "إرسال التعليق",
+    // --- ADD THESE TO THE BOTTOM OF YOUR "ar" BLOCK ---
+    tabLoyalty: "حاسبة ولاء إيدن",
+    loyaltyTitle: "حاسبة ترقية الولاء",
+    loyaltyDesc: "حساب أوقات المعالجة ونسب السم ومسارات الترقية المثلى.",
+    campLevelsTitle: "مستويات معسكرات التحالف",
+    camp1: "مستوى معسكر 1",
+    camp2: "مستوى معسكر 2",
+    camp3: "مستوى معسكر 3",
+    camp4: "مستوى معسكر 4",
+    dailyProdTitle: "مصادر الإنتاج اليومي (وحدة/ساعة)",
+    source1: "المصدر 1", source2: "المصدر 2", source3: "المصدر 3",
+    source4: "المصدر 4", source5: "المصدر 5", source6: "المصدر 6",
+    modifiersTitle: "المعدلات",
+    bonusLoyalty: "ولاء إضافي",
+    bonusLoyaltyDesc: "1 نقطة تقنية = 60 ولاء",
+    savedUnits: "الوحدات المحفوظة",
+    savedUnitsDesc: "المخزون الحالي",
+    processingTitle: "إعدادات المعالجة",
+    unitsPerPatch: "الوحدات لكل دفعة",
+    timePerPatch: "الوقت لكل دفعة",
+    activePatches: "الدفعات النشطة",
+    activePatchesDesc: "ورش العمل قيد التشغيل",
+    calcUpgradesBtn: "حساب الترقيات",
+
+    // Results Table (JS generated)
+    resMaxProcessing: "الحد الأقصى للمعالجة (يومياً)",
+    resUnits: "وحدات",
+    resHrPerPatch: "/ساعة لكل دفعة",
+    resProdVsProc: "الإنتاج مقابل المعالجة",
+    resSurplus: "فائض",
+    resDeficit: "عجز",
+    resTotalDaily: "إجمالي الإنتاج اليومي:",
+    resTimeMax: "الوقت للوصول للحد الأقصى (8000)",
+    step: "خطوة", upgrade: "ترقية", cost: "التكلفة", timeNeeded: "الوقت المطلوب",
+    cumulTime: "الوقت التراكمي", loyaltyShift: "تغير الولاء", poisonPct: "نسبة السم", siteUnlock: "فتح الموقع",
+    lvl: "مستوى", next: "التالي", after: "بعده",
+    errAcLevels: "الرجاء إدخال مستويات صحيحة (0-20).",
+    errProcTime: "وقت المعالجة يجب أن يكون أكبر من 0.",
+    errProcRate: "معدل المعالجة صفر. تحقق من القيم."
   },
   kr: {
     appTitle: "영웅 조합 생성기",
@@ -380,4 +419,5 @@ export const translations = {
     commentSubmitBtn: "댓글 제출"
   }
 };
+
 
