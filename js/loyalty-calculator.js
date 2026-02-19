@@ -65,13 +65,11 @@ export function initLoyaltyCalculator() {
     calcBtn.addEventListener('click', () => {
         const resultContainer = document.getElementById('loyaltyResult');
         
-        // Change the fallback from || 1 to || 0 so 0 is a valid input
         const ac1Level = parseInt(document.getElementById('ac1Level').value) || 0;
         const ac2Level = parseInt(document.getElementById('ac2Level').value) || 0;
         const ac3Level = parseInt(document.getElementById('ac3Level').value) || 0;
         const ac4Level = parseInt(document.getElementById('ac4Level').value) || 0;
 
-        // Change validation to allow 0
         if ([ac1Level, ac2Level, ac3Level, ac4Level].some(l => l < 0 || l > 20)) {
             resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Please enter valid AC levels (0-20).</p>`;
             return;
@@ -79,6 +77,7 @@ export function initLoyaltyCalculator() {
 
         const bonusLoyalty = (parseInt(document.getElementById('bonusPoints').value) || 0) * 60;
         let savedUnits = parseInt(document.getElementById('savedUnits').value) || 0;
+        
         const source1 = parseFloat(document.getElementById('source1').value) || 0;
         const source2 = parseFloat(document.getElementById('source2').value) || 0;
         const source3 = parseFloat(document.getElementById('source3').value) || 0;
@@ -86,10 +85,8 @@ export function initLoyaltyCalculator() {
         const source5 = parseFloat(document.getElementById('source5').value) || 0;
         const source6 = parseFloat(document.getElementById('source6').value) || 0;
 
-        // FIXED: Removed the buffer calculation since the input was deleted
+        // FIXED: Only declare these once
         const totalHourlyProduction = (source1 + source2 + source3) + (source4 + source5 + source6);
-        const adjustedDailyProduction = totalHourlyProduction * 24;
-        const totalHourlyProduction = bufferedHourly + (source4 + source5 + source6);
         const adjustedDailyProduction = totalHourlyProduction * 24;
 
         const p_hours = parseFloat(document.getElementById('processingHours').value) || 0;
@@ -113,7 +110,6 @@ export function initLoyaltyCalculator() {
             return;
         }
 
-        // Logic loop
         let levels = { AC1: ac1Level, AC2: ac2Level, AC3: ac3Level, AC4: ac4Level };
         let currentLoyalty = (ac1Level + ac2Level + ac3Level + ac4Level) * 100 + bonusLoyalty;
         let upgradeSequence = [];
@@ -123,10 +119,9 @@ export function initLoyaltyCalculator() {
             let minCost = Infinity;
             let nextUpgrade = null;
 
-        for (const building in levels) {
+            for (const building in levels) {
                 const lvl = levels[building];
                 if (lvl < 20) {
-                    // SAFEGUARD: If level is 0, cost to build to 1 is set to 0 units (or you can put a custom number here)
                     const cost = lvl === 0 ? 0 : upgradeCosts[building][lvl - 1];
                     
                     if (cost < minCost) {
