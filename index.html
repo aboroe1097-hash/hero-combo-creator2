@@ -116,6 +116,10 @@
           <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
           <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase animate-pulse">Beta</span>
         </div>
+        <div class="relative">
+          <button id="tabLoyalty" class="tab-pill tab-pill-inactive">Loyalty Calc</button>
+          <span class="absolute -top-2 -right-1 bg-sky-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase">Beta</span>
+        </div>
       </div>
     </div>
 
@@ -225,6 +229,98 @@
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
+
+    <section id="loyaltyCalcSection" class="hidden">
+      <div class="mb-6">
+        <h2 class="text-2xl font-semibold mb-2 text-slate-100">Loyalty Upgrade Calculator</h2>
+        <p class="text-sm text-slate-400 leading-relaxed">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Assault Camp Levels</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <label class="flex flex-col gap-2">
+              <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=AC1" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">AC 1 Level</span></div>
+              <input type="number" id="ac1Level" min="1" max="20" value="18" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+            </label>
+            <label class="flex flex-col gap-2">
+              <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=AC2" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">AC 2 Level</span></div>
+              <input type="number" id="ac2Level" min="1" max="20" value="12" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+            </label>
+            <label class="flex flex-col gap-2">
+              <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=AC3" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">AC 3 Level</span></div>
+              <input type="number" id="ac3Level" min="1" max="20" value="9" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+            </label>
+            <label class="flex flex-col gap-2">
+              <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=AC4" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">AC 4 Level</span></div>
+              <input type="number" id="ac4Level" min="1" max="20" value="9" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Modifiers</h3>
+            <div class="space-y-4">
+              <label class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Loy" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Bonus Loyalty Points (1 = 60)</span></div>
+                <input type="number" id="bonusPoints" min="0" value="0" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+              </label>
+              <label class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Sav" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Saved Units Inventory</span></div>
+                <input type="number" id="savedUnits" min="0" value="300000" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+              </label>
+              <label class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Buf" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Buffer (Sources 1-3) %</span></div>
+                <input type="number" id="productionBuffer" min="0" max="12" value="0" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+              </label>
+            </div>
+          </div>
+
+          <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Processing Settings</h3>
+            <div class="space-y-4">
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Time" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Processing Time (per patch)</span></div>
+                <div class="flex gap-2">
+                  <input type="number" id="processingHours" min="0" value="5" placeholder="Hr" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+                  <input type="number" id="processingMinutes" min="0" max="59" value="51" placeholder="Min" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+                  <input type="number" id="processingSeconds" min="0" max="59" value="20" placeholder="Sec" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+              </div>
+              <label class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Amt" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Units per patch</span></div>
+                <input type="number" id="totalUnitsPerPatch" value="340000" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+              </label>
+              <label class="flex flex-col gap-2">
+                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Num" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Active Patches</span></div>
+                <input type="number" id="numPatches" value="3" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Daily Production Sources (Units/Hour)</h3>
+          <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <input type="number" id="source1" placeholder="S1" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+            <input type="number" id="source2" placeholder="S2" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+            <input type="number" id="source3" placeholder="S3" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+            <input type="number" id="source4" placeholder="S4" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+            <input type="number" id="source5" placeholder="S5" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+            <input type="number" id="source6" placeholder="S6" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none text-sm">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <button id="calcLoyaltyBtn" class="px-10 py-3 bg-sky-600 text-white font-extrabold rounded-full shadow-lg hover:bg-sky-700 transition">CALCULATE UPGRADES</button>
+      </div>
+
+      <div id="loyaltyResult" class="mt-8"></div>
+    </section>
+    
 <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
       <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-widest">Comments & Suggestions</h2>
       
@@ -257,6 +353,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
