@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
 import { rankedCombos } from './combos-db.js';
+import { initLoyaltyCalculator } from './loyalty-calculator.js'; // <-- NEW
 
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
