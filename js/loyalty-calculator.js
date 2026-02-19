@@ -65,14 +65,15 @@ export function initLoyaltyCalculator() {
     calcBtn.addEventListener('click', () => {
         const resultContainer = document.getElementById('loyaltyResult');
         
-        // Fetch inputs
-        const ac1Level = parseInt(document.getElementById('ac1Level').value) || 1;
-        const ac2Level = parseInt(document.getElementById('ac2Level').value) || 1;
-        const ac3Level = parseInt(document.getElementById('ac3Level').value) || 1;
-        const ac4Level = parseInt(document.getElementById('ac4Level').value) || 1;
+        // Change the fallback from || 1 to || 0 so 0 is a valid input
+        const ac1Level = parseInt(document.getElementById('ac1Level').value) || 0;
+        const ac2Level = parseInt(document.getElementById('ac2Level').value) || 0;
+        const ac3Level = parseInt(document.getElementById('ac3Level').value) || 0;
+        const ac4Level = parseInt(document.getElementById('ac4Level').value) || 0;
 
-        if ([ac1Level, ac2Level, ac3Level, ac4Level].some(l => l < 1 || l > 20)) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Please enter valid AC levels (1-20).</p>`;
+        // Change validation to allow 0
+        if ([ac1Level, ac2Level, ac3Level, ac4Level].some(l => l < 0 || l > 20)) {
+            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Please enter valid AC levels (0-20).</p>`;
             return;
         }
 
@@ -122,10 +123,12 @@ export function initLoyaltyCalculator() {
             let minCost = Infinity;
             let nextUpgrade = null;
 
-            for (const building in levels) {
+        for (const building in levels) {
                 const lvl = levels[building];
                 if (lvl < 20) {
-                    const cost = upgradeCosts[building][lvl - 1];
+                    // SAFEGUARD: If level is 0, cost to build to 1 is set to 0 units (or you can put a custom number here)
+                    const cost = lvl === 0 ? 0 : upgradeCosts[building][lvl - 1];
+                    
                     if (cost < minCost) {
                         minCost = cost;
                         nextUpgrade = { building, level: lvl + 1, cost };
