@@ -38,7 +38,46 @@ export const translations = {
     commentNamePh: "Your name (optional)",
     commentEmailPh: "Email (optional)",
     commentBodyPh: "Write a suggestion...",
-    commentSubmitBtn: "Submit Comment"
+    commentSubmitBtn: "Submit Comment",
+    // --- ADD THESE TO THE BOTTOM OF YOUR "en" BLOCK ---
+    tabLoyalty: "Eden Loyalty Calc",
+    loyaltyTitle: "Loyalty Upgrade Calculator",
+    loyaltyDesc: "Calculate processing times, poison percentages, and optimal upgrade paths.",
+    campLevelsTitle: "Coalition Base Camp Levels",
+    camp1: "Camp I Level",
+    camp2: "Camp II Level",
+    camp3: "Camp III Level",
+    camp4: "Camp IV Level",
+    dailyProdTitle: "Daily Production Sources (Units/Hour)",
+    source1: "Source 1", source2: "Source 2", source3: "Source 3",
+    source4: "Source 4", source5: "Source 5", source6: "Source 6",
+    modifiersTitle: "Modifiers",
+    bonusLoyalty: "Bonus Loyalty",
+    bonusLoyaltyDesc: "1 Tech Point = 60 Loyalty",
+    savedUnits: "Saved Units",
+    savedUnitsDesc: "Current inventory",
+    processingTitle: "Processing Settings",
+    unitsPerPatch: "Units per patch",
+    timePerPatch: "Time per patch",
+    activePatches: "Active Patches",
+    activePatchesDesc: "Currently running workshops",
+    calcUpgradesBtn: "CALCULATE UPGRADES",
+    
+    // Results Table (JS generated)
+    resMaxProcessing: "Max Processing (Daily)",
+    resUnits: "units",
+    resHrPerPatch: "/hr per patch",
+    resProdVsProc: "Production vs Processing",
+    resSurplus: "Surplus",
+    resDeficit: "Deficit",
+    resTotalDaily: "Total Daily Prod:",
+    resTimeMax: "Time to Max Loyalty (8000)",
+    step: "Step", upgrade: "Upgrade", cost: "Cost", timeNeeded: "Time Needed",
+    cumulTime: "Cumul. Time", loyaltyShift: "Loyalty Shift", poisonPct: "Poison %", siteUnlock: "Site Unlock",
+    lvl: "Lvl", next: "Next", after: "After",
+    errAcLevels: "Please enter valid AC levels (0-20).",
+    errProcTime: "Processing time must be > 0.",
+    errProcRate: "Processing rate is zero. Check patch values."
   },
   pt: {
     appTitle: "Criador de Combos",
@@ -341,3 +380,4 @@ export const translations = {
     commentSubmitBtn: "댓글 제출"
   }
 };
+
