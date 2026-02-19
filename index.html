@@ -117,7 +117,7 @@
           <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase animate-pulse">Beta</span>
         </div>
         <div class="relative">
-          <button id="tabLoyalty" class="tab-pill tab-pill-inactive">Eden Loyalty Calc</button>
+          <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">Eden Loyalty Calc</button>
           <span class="absolute -top-2 -right-1 bg-sky-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase">New</span>
         </div>
       </div>
@@ -232,13 +232,13 @@
 
     <section id="loyaltyCalcSection" class="hidden">
       <div class="mb-6">
-        <h2 class="text-2xl font-semibold mb-2 text-slate-100">Loyalty Upgrade Calculator</h2>
-        <p class="text-sm text-slate-400 leading-relaxed">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
+        <h2 class="text-2xl font-semibold mb-2 text-slate-100" data-i18n="loyaltyTitle">Loyalty Upgrade Calculator</h2>
+        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="loyaltyDesc">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
       </div>
 
       <div class="space-y-6">
 <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Coalition Base Camp Levels</h3>
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="campLevelsTitle">Coalition Base Camp Levels</h3>
           
           <div class="flex flex-col sm:flex-row gap-6">
             <div class="sm:w-1/3 flex justify-center items-center">
@@ -248,22 +248,22 @@
             <div class="sm:w-2/3 flex flex-col justify-center gap-3 sm:gap-4">
               
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
-                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors">Camp I Level</span>
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp1">Camp I Level</span>
                 <input type="number" id="ac1Level" min="0" max="20" value="20" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
               
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
-                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors">Camp II Level</span>
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp2">Camp II Level</span>
                 <input type="number" id="ac2Level" min="0" max="20" value="16" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
               
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
-                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors">Camp III Level</span>
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp3">Camp III Level</span>
                 <input type="number" id="ac3Level" min="0" max="20" value="12" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
 
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
-                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors">Camp IV Level</span>
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp4">Camp IV Level</span>
                 <input type="number" id="ac4Level" min="0" max="20" value="10" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
 
@@ -273,7 +273,7 @@
 
 
         <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Daily Production Sources (Units/Hour)</h3>
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="dailyProdTitle">Daily Production Sources (Units/Hour)</h3>
           
           <div class="flex flex-col gap-6">
             
@@ -284,17 +284,17 @@
               
               <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 1</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source1">Source 1</span>
                   <input type="number" id="source1" placeholder="1830" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
                 
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 2</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source2">Source 2</span>
                   <input type="number" id="source2" placeholder="64999" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
                 
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 3</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source3">Source 3</span>
                   <input type="number" id="source3" placeholder="78801" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
               </div>
@@ -309,17 +309,17 @@
               
               <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 4</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source4">Source 4</span>
                   <input type="number" id="source4" placeholder="4855" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
                 
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 5</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source5">Source 5</span>
                   <input type="number" id="source5" placeholder="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
                 
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
-                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors">Source 6</span>
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source6">Source 6</span>
                   <input type="number" id="source6" placeholder="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
               </div>
@@ -329,7 +329,7 @@
         </div>
         
 <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Modifiers</h3>
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="modifiersTitle">Modifiers</h3>
           
           <div class="flex flex-col gap-4">
             
@@ -339,8 +339,8 @@
               </div>
               <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
                 <div class="flex flex-col">
-                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors">Bonus Loyalty</span>
-                  <span class="text-[10px] text-slate-500">1 Tech Point = 60 Loyalty</span>
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors" data-i18n="bonusLoyalty">Bonus Loyalty</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="bonusLoyaltyDesc">1 Tech Point = 60 Loyalty</span>
                 </div>
                 <input type="number" id="bonusPoints" min="0" value="20" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-purple-500 transition-colors shadow-inner">
               </div>
@@ -352,8 +352,8 @@
               </div>
               <div class="md:w-3/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
                 <div class="flex flex-col">
-                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors">Saved Units</span>
-                  <span class="text-[10px] text-slate-500">Current inventory</span>
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors" data-i18n="savedUnits">Saved Units</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="savedUnitsDesc">Current inventory</span>
                 </div>
                 <input type="number" id="savedUnits" min="0" value="2340016" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-amber-500 transition-colors shadow-inner">
               </div>
@@ -363,7 +363,7 @@
         </div>
 
         <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Processing Settings</h3>
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="processingTitle">Processing Settings</h3>
           
           <div class="flex flex-col gap-4">
             
@@ -374,12 +374,12 @@
               
               <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-5">
                 <label class="flex flex-col gap-1 cursor-pointer text-center md:text-left">
-                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Units per patch</span>
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="unitsPerPatch">Units per patch</span>
                   <input type="number" id="totalUnitsPerPatch" value="568000" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
                 </label>
                 
                 <div class="flex flex-col gap-1 text-center md:text-left">
-                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Time per patch</span>
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="timePerPatch">Time per patch</span>
                   <div class="flex gap-2">
                     <div class="relative w-full">
                       <input type="number" id="processingHours" min="0" value="8" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
@@ -405,8 +405,8 @@
               
               <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
                 <div class="flex flex-col">
-                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Active Patches</span>
-                  <span class="text-[10px] text-slate-500">Currently running workshops</span>
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="activePatches">Active Patches</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="activePatchesDesc">Currently running workshops</span>
                 </div>
                 <input type="number" id="numPatches" value="3" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
               </div>
@@ -416,7 +416,7 @@
         </div>
 
       <div class="mt-8 text-center">
-        <button id="calcLoyaltyBtn" class="px-10 py-3 bg-sky-600 text-white font-extrabold rounded-full shadow-lg hover:bg-sky-700 transition">CALCULATE UPGRADES</button>
+        <button id="calcLoyaltyBtn" class="px-10 py-3 bg-sky-600 text-white font-extrabold rounded-full shadow-lg hover:bg-sky-700 transition" data-i18n="calcUpgradesBtn">CALCULATE UPGRADES</button>
       </div>
 
       <div id="loyaltyResult" class="mt-8"></div>
@@ -454,6 +454,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
