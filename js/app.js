@@ -829,34 +829,59 @@ async function setupFirestoreListener() {
 
 // --- UI WIRING ---
 
+
+
+// --- UI WIRING ---
+
 function wireUIActions() {
-  // language switch
-  languageSelect.onchange = e => {
-    currentLanguage = e.target.value;
-    localStorage.setItem('vts_hero_lang', currentLanguage);
-    updateTextContent();
-    renderAvailableHeroes();
-    renderGeneratorHeroes();
+  // 1. Language switch
+  if (languageSelect) {
+    languageSelect.onchange = e => {
+      currentLanguage = e.target.value;
+      localStorage.setItem('vts_hero_lang', currentLanguage);
+      updateTextContent();
+      renderAvailableHeroes();
+      renderGeneratorHeroes();
+    };
+  }
+
+  // 2. Tab Navigation (Updated for 3 Tabs)
+  const tabLoyaltyBtn  = document.getElementById('tabLoyalty');
+  const loyaltySection = document.getElementById('loyaltyCalcSection');
+
+  const switchTab = (tabName) => {
+    // Hide all sections first
+    if (manualSection) manualSection.classList.add('hidden');
+    if (generatorSection) generatorSection.classList.add('hidden');
+    if (loyaltySection) loyaltySection.classList.add('hidden');
+    if (comboFooterBar) comboFooterBar.style.display = 'none';
+
+    // Reset all buttons to inactive
+    if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-inactive';
+    if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-inactive';
+    if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-inactive';
+
+    // Show the active tab and section
+    if (tabName === 'manual') {
+      if (manualSection) manualSection.classList.remove('hidden');
+      if (comboFooterBar) comboFooterBar.style.display = 'block';
+      if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-active';
+    } else if (tabName === 'generator') {
+      if (generatorSection) generatorSection.classList.remove('hidden');
+      if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-active';
+    } else if (tabName === 'loyalty') {
+      if (loyaltySection) loyaltySection.classList.remove('hidden');
+      if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-active';
+    }
   };
 
-  // tabs
-  const handleTabSwitch = isManual => {
-    manualSection.classList.toggle('hidden', !isManual);
-    generatorSection.classList.toggle('hidden', isManual);
-    if (comboFooterBar) comboFooterBar.style.display = isManual ? 'block' : 'none';
+  // Bind click events to tabs
+  if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
+  if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
+  if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
 
-    tabManualBtn.className = isManual
-      ? 'tab-pill tab-pill-active'
-      : 'tab-pill tab-pill-inactive';
-    tabGeneratorBtn.className = isManual
-      ? 'tab-pill tab-pill-inactive'
-      : 'tab-pill tab-pill-active';
-  };
 
-  tabManualBtn.onclick    = () => handleTabSwitch(true);
-  tabGeneratorBtn.onclick = () => handleTabSwitch(false);
-
-  // --- Manual filters ---
+  // 3. --- Manual filters ---
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
@@ -881,7 +906,7 @@ function wireUIActions() {
     });
   }
 
-  // --- Generator filters ---
+  // 4. --- Generator filters ---
   if (genSeasonFiltersEl) {
     genSeasonFiltersEl.addEventListener('change', () => {
       generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
@@ -906,14 +931,8 @@ function wireUIActions() {
     });
   }
 
-  // In js/app.js inside wireUIActions()
 
-const generateRandomBtn = document.getElementById('generateRandomBtn');
-if (generateRandomBtn) {
-  generateRandomBtn.onclick = generateRandomCombos;
-}
-
-  // generator select/clear all buttons
+  // 5. Generator select/clear all buttons
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
 
@@ -933,17 +952,24 @@ if (generateRandomBtn) {
     };
   }
 
-  // main actions
-  saveComboBtn.onclick   = saveCombo;
-  clearComboBtn.onclick  = () => {
-    currentCombo = [null, null, null];
-    document.querySelectorAll('.combo-slot')
-      .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
-    updateManualComboScore();
-  };
-  generateCombosBtn.onclick = generateBestCombos;
+  // 6. Main Actions
+  if (saveComboBtn) saveComboBtn.onclick = saveCombo;
+  
+  if (clearComboBtn) {
+    clearComboBtn.onclick = () => {
+      currentCombo = [null, null, null];
+      document.querySelectorAll('.combo-slot')
+        .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
+      updateManualComboScore();
+    };
+  }
+  
+  if (generateCombosBtn) generateCombosBtn.onclick = generateBestCombos;
+  
+  const generateRandomBtn = document.getElementById('generateRandomBtn');
+  if (generateRandomBtn) generateRandomBtn.onclick = generateRandomCombos;
 
-  // manual: download “Last Best Combos” as image
+  // 7. Manual: download “Last Best Combos” as image
   if (downloadCombosBtn) {
     downloadCombosBtn.onclick = () => {
       const t = translations[currentLanguage] || translations.en;
@@ -955,7 +981,7 @@ if (generateRandomBtn) {
     };
   }
 
-  // manual: share all combos as text
+  // 8. Manual: share all combos as text
   if (shareAllCombosBtn) {
     shareAllCombosBtn.onclick = async () => {
       const t = translations[currentLanguage] || translations.en;
@@ -988,7 +1014,7 @@ if (generateRandomBtn) {
     };
   }
 
-  // generator: download results as image
+  // 9. Generator: download results as image
   if (downloadGeneratorBtn) {
     downloadGeneratorBtn.onclick = () => {
       const t = translations[currentLanguage] || translations.en;
@@ -1002,7 +1028,6 @@ if (generateRandomBtn) {
     };
   }
 }
-
 // --- TRANSLATIONS / TEXT ---
 // js/app.js
 
@@ -1087,7 +1112,7 @@ async function updateTextContent() {
 
   // touch drag support for mobile
   setupTouchDragForManualBuilder();
-
+  initLoyaltyCalculator(); // <-- ADD THIS
   // default landing: generator tab
   tabGeneratorBtn.click();
 
