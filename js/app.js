@@ -1039,7 +1039,7 @@ async function updateTextContent() {
     'appTitle': t.appTitle,
     'tabManual': t.tabManual,
     'tabGenerator': t.tabGenerator,
-    
+    'tabLoyalty': t.tabLoyalty, // <-- ADD THIS
     // Headers
     'filterBySeasonTitle': t.filterBySeasonTitle,
     'availableHeroesTitle': t.availableHeroesTitle,
@@ -1050,7 +1050,7 @@ async function updateTextContent() {
     'genIntroText': t.generatorIntro,
     'genFilterTitle': t.filterBySeasonTitle,
     'genSelectTitle': t.genSelectTitle, // New
-
+'calcLoyaltyBtn': t.calcUpgradesBtn // <-- ADD THIS (if your button has id="calcLoyaltyBtn")
     // Buttons
     'saveComboBtn': t.saveComboBtn,
     'clearComboBtn': t.clearComboBtn,
