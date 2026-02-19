@@ -1050,7 +1050,7 @@ async function updateTextContent() {
     'genIntroText': t.generatorIntro,
     'genFilterTitle': t.filterBySeasonTitle,
     'genSelectTitle': t.genSelectTitle, // New
-'calcLoyaltyBtn': t.calcUpgradesBtn // <-- ADD THIS (if your button has id="calcLoyaltyBtn")
+'calcLoyaltyBtn': t.calcUpgradesBtn, // <-- ADD THIS (if your button has id="calcLoyaltyBtn")
     // Buttons
     'saveComboBtn': t.saveComboBtn,
     'clearComboBtn': t.clearComboBtn,
