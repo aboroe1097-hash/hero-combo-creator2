@@ -79,8 +79,6 @@ export function initLoyaltyCalculator() {
 
         const bonusLoyalty = (parseInt(document.getElementById('bonusPoints').value) || 0) * 60;
         let savedUnits = parseInt(document.getElementById('savedUnits').value) || 0;
-        const prodBuffer = Math.min(12, Math.max(0, parseFloat(document.getElementById('productionBuffer').value) || 0));
-
         const source1 = parseFloat(document.getElementById('source1').value) || 0;
         const source2 = parseFloat(document.getElementById('source2').value) || 0;
         const source3 = parseFloat(document.getElementById('source3').value) || 0;
@@ -88,7 +86,9 @@ export function initLoyaltyCalculator() {
         const source5 = parseFloat(document.getElementById('source5').value) || 0;
         const source6 = parseFloat(document.getElementById('source6').value) || 0;
 
-        const bufferedHourly = (source1 + source2 + source3) * (1 + prodBuffer / 100);
+        // FIXED: Removed the buffer calculation since the input was deleted
+        const totalHourlyProduction = (source1 + source2 + source3) + (source4 + source5 + source6);
+        const adjustedDailyProduction = totalHourlyProduction * 24;
         const totalHourlyProduction = bufferedHourly + (source4 + source5 + source6);
         const adjustedDailyProduction = totalHourlyProduction * 24;
 
