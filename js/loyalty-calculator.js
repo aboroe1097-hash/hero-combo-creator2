@@ -1,4 +1,5 @@
 // js/loyalty-calculator.js
+import { translations } from './translations.js';
 
 const upgradeCosts = {
     AC1: [700, 2500, 4000, 8000, 14000, 25000, 46000, 83000, 150000, 271000, 325000, 390000, 469000, 562000, 675000, 810000, 972000, 1167000, 1401000],
@@ -63,6 +64,8 @@ export function initLoyaltyCalculator() {
     if (!calcBtn) return;
 
     calcBtn.addEventListener('click', () => {
+        const lang = localStorage.getItem('vts_hero_lang') || 'en';
+        const t = translations[lang] || translations.en;
         const resultContainer = document.getElementById('loyaltyResult');
         
         const ac1Level = parseInt(document.getElementById('ac1Level').value) || 0;
@@ -71,7 +74,7 @@ export function initLoyaltyCalculator() {
         const ac4Level = parseInt(document.getElementById('ac4Level').value) || 0;
 
         if ([ac1Level, ac2Level, ac3Level, ac4Level].some(l => l < 0 || l > 20)) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Please enter valid AC levels (0-20).</p>`;
+            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errAcLevels || 'Please enter valid AC levels (0-20).'}</p>`;
             return;
         }
 
@@ -85,7 +88,6 @@ export function initLoyaltyCalculator() {
         const source5 = parseFloat(document.getElementById('source5').value) || 0;
         const source6 = parseFloat(document.getElementById('source6').value) || 0;
 
-        // FIXED: Only declare these once
         const totalHourlyProduction = (source1 + source2 + source3) + (source4 + source5 + source6);
         const adjustedDailyProduction = totalHourlyProduction * 24;
 
@@ -95,7 +97,7 @@ export function initLoyaltyCalculator() {
         const processingTime = p_hours + (p_mins / 60) + (p_secs / 3600);
 
         if (processingTime <= 0) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Processing time must be > 0.</p>`;
+            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errProcTime || 'Processing time must be > 0.'}</p>`;
             return;
         }
 
@@ -106,7 +108,7 @@ export function initLoyaltyCalculator() {
         const possibleProcessingDaily = hourlyRatePerPatch * numPatches * 24;
 
         if (possibleProcessingDaily <= 0) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">Processing rate is zero. Check patch values.</p>`;
+            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errProcRate || 'Processing rate is zero. Check patch values.'}</p>`;
             return;
         }
 
@@ -158,43 +160,42 @@ export function initLoyaltyCalculator() {
             currentLoyalty = newLoyalty;
         }
 
-        // Render Results
+        // Render Translated Results
         const isSurplus = adjustedDailyProduction >= possibleProcessingDaily;
         const diff = Math.abs(adjustedDailyProduction - possibleProcessingDaily);
         
         let html = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
-                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Max Processing (Daily)</p>
-                    <p class="text-xl font-black text-blue-400">${Math.round(possibleProcessingDaily).toLocaleString()} units</p>
-                    <p class="text-[10px] text-slate-500 mt-1">${Math.round(hourlyRatePerPatch).toLocaleString()}/hr per patch</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">${t.resMaxProcessing || 'Max Processing (Daily)'}</p>
+                    <p class="text-xl font-black text-blue-400">${Math.round(possibleProcessingDaily).toLocaleString()} ${t.resUnits || 'units'}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">${Math.round(hourlyRatePerPatch).toLocaleString()} ${t.resHrPerPatch || '/hr per patch'}</p>
                 </div>
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
-                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Production vs Processing</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">${t.resProdVsProc || 'Production vs Processing'}</p>
                     <p class="text-lg font-black ${isSurplus ? 'text-emerald-400' : 'text-red-400'}">
-                        ${isSurplus ? 'Surplus' : 'Deficit'} of ${Math.round(diff).toLocaleString()}
+                        ${isSurplus ? (t.resSurplus || 'Surplus') : (t.resDeficit || 'Deficit')} : ${Math.round(diff).toLocaleString()}
                     </p>
-                    <p class="text-[10px] text-slate-500 mt-1">Total Daily Prod: ${Math.round(adjustedDailyProduction).toLocaleString()}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">${t.resTotalDaily || 'Total Daily Prod:'} ${Math.round(adjustedDailyProduction).toLocaleString()}</p>
                 </div>
                 <div class="bg-slate-800 p-4 rounded-xl border border-amber-700/50 shadow-md relative overflow-hidden">
-                    <div class="absolute -right-4 -bottom-4 opacity-10"><img src="https://placehold.co/100x100?text=Time" width="80"></div>
-                    <p class="text-xs text-amber-500 uppercase tracking-widest mb-1">Time to Max Loyalty (8000)</p>
+                    <p class="text-xs text-amber-500 uppercase tracking-widest mb-1">${t.resTimeMax || 'Time to Max Loyalty (8000)'}</p>
                     <p class="text-xl font-black text-amber-400">${formatDuration(cumulativeTime)}</p>
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-slate-700 shadow-lg">
-                <table class="w-full text-sm text-left text-slate-300">
+            <div class="overflow-x-auto rounded-xl border border-slate-700 shadow-lg" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
+                <table class="w-full text-sm ${lang === 'ar' ? 'text-right' : 'text-left'} text-slate-300">
                     <thead class="text-xs text-slate-400 uppercase bg-slate-800 border-b border-slate-700">
                         <tr>
-                            <th class="px-4 py-3">Step</th>
-                            <th class="px-4 py-3">Upgrade</th>
-                            <th class="px-4 py-3">Cost</th>
-                            <th class="px-4 py-3">Time Needed</th>
-                            <th class="px-4 py-3">Cumul. Time</th>
-                            <th class="px-4 py-3">Loyalty Shift</th>
-                            <th class="px-4 py-3">Poison %</th>
-                            <th class="px-4 py-3">Site Unlock</th>
+                            <th class="px-4 py-3">${t.step || 'Step'}</th>
+                            <th class="px-4 py-3">${t.upgrade || 'Upgrade'}</th>
+                            <th class="px-4 py-3">${t.cost || 'Cost'}</th>
+                            <th class="px-4 py-3">${t.timeNeeded || 'Time Needed'}</th>
+                            <th class="px-4 py-3">${t.cumulTime || 'Cumul. Time'}</th>
+                            <th class="px-4 py-3">${t.loyaltyShift || 'Loyalty Shift'}</th>
+                            <th class="px-4 py-3">${t.poisonPct || 'Poison %'}</th>
+                            <th class="px-4 py-3">${t.siteUnlock || 'Site Unlock'}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -204,7 +205,7 @@ export function initLoyaltyCalculator() {
             html += `
                 <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
                     <td class="px-4 py-3 font-bold text-slate-500">${idx + 1}</td>
-                    <td class="px-4 py-3"><span class="font-bold text-white">${up.building}</span> <span class="text-slate-400">Lvl ${up.level}</span></td>
+                    <td class="px-4 py-3"><span class="font-bold text-white">${up.building}</span> <span class="text-slate-400">${t.lvl || 'Lvl'} ${up.level}</span></td>
                     <td class="px-4 py-3 text-red-300 font-semibold">${up.cost.toLocaleString()}</td>
                     <td class="px-4 py-3 text-sky-300">${formatDuration(up.hours)}</td>
                     <td class="px-4 py-3 text-amber-300">${formatDuration(up.cumulativeTime)}</td>
@@ -214,8 +215,8 @@ export function initLoyaltyCalculator() {
                         <span class="text-emerald-400 font-bold">${up.newLoyalty}</span>
                     </td>
                     <td class="px-4 py-3 text-[11px]">
-                        Next: <span class="text-purple-400">${up.poisonNext}%</span><br>
-                        After: <span class="text-purple-400/60">${up.poisonAfterNext}%</span>
+                        ${t.next || 'Next'}: <span class="text-purple-400">${up.poisonNext}%</span><br>
+                        ${t.after || 'After'}: <span class="text-purple-400/60">${up.poisonAfterNext}%</span>
                     </td>
                     <td class="px-4 py-3 font-black text-amber-500">${up.extractionSite}</td>
                 </tr>
