@@ -270,53 +270,34 @@
             </div>
           </div>
         </div>
-
 <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col">
-            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Processing Settings</h3>
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Modifiers</h3>
             
             <div class="flex flex-col gap-5 flex-1 justify-center">
               
-              <div class="flex flex-col bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 shadow-lg overflow-hidden group">
+              <label class="flex flex-col bg-slate-800 rounded-xl border border-slate-700 hover:border-purple-500 transition-all duration-300 group cursor-pointer shadow-lg overflow-hidden">
                 <div class="w-full bg-slate-900/80 border-b border-slate-700 p-4 flex justify-center items-center">
-                  <img src="images/processing_time.jpg" alt="Processing Time" class="w-full max-h-32 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
-                </div>
-                
-                <div class="p-4 flex flex-col gap-4 text-center">
-                  <label class="flex flex-col gap-1 cursor-pointer">
-                    <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Units per patch</span>
-                    <input type="number" id="totalUnitsPerPatch" value="340000" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner text-center">
-                  </label>
-                  
-                  <div class="flex flex-col gap-1">
-                    <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Time per patch</span>
-                    <div class="flex gap-2 justify-center">
-                      <div class="relative w-full">
-                        <input type="number" id="processingHours" min="0" value="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
-                        <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">h</span>
-                      </div>
-                      <div class="relative w-full">
-                        <input type="number" id="processingMinutes" min="0" max="59" value="51" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
-                        <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">m</span>
-                      </div>
-                      <div class="relative w-full">
-                        <input type="number" id="processingSeconds" min="0" max="59" value="20" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
-                        <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">s</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <label class="flex flex-col bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 group cursor-pointer shadow-lg overflow-hidden">
-                <div class="w-full bg-slate-900/80 border-b border-slate-700 p-4 flex justify-center items-center">
-                  <img src="images/patches.jpg" alt="Active Patches" class="w-3/4 max-h-24 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+                  <img src="images/bonus_loyalty.png" alt="Bonus Loyalty" class="w-3/4 max-h-24 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
                 </div>
                 <div class="p-4 flex flex-col gap-3">
                   <div class="flex flex-col">
-                    <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors">Active Patches</span>
-                    <span class="text-[10px] text-slate-500">Currently running workshops</span>
+                    <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors">Bonus Loyalty</span>
+                    <span class="text-[10px] text-slate-500">1 Tech Point = 60 Loyalty</span>
                   </div>
-                  <input type="number" id="numPatches" value="3" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                  <input type="number" id="bonusPoints" min="0" value="20" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-white font-bold outline-none focus:border-purple-500 transition-colors shadow-inner">
+                </div>
+              </label>
+
+              <label class="flex flex-col bg-slate-800 rounded-xl border border-slate-700 hover:border-amber-500 transition-all duration-300 group cursor-pointer shadow-lg overflow-hidden">
+                <div class="w-full bg-slate-900/80 border-b border-slate-700 p-4 flex justify-center items-center">
+                  <img src="images/saved_units.png" alt="Saved Units" class="w-1/2 max-h-24 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+                </div>
+                <div class="p-4 flex flex-col gap-3">
+                  <div class="flex flex-col">
+                    <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors">Saved Units</span>
+                    <span class="text-[10px] text-slate-500">Current inventory</span>
+                  </div>
+                  <input type="number" id="savedUnits" min="0" value="2340016" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-white font-bold outline-none focus:border-amber-500 transition-colors shadow-inner">
                 </div>
               </label>
 
@@ -470,6 +451,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
