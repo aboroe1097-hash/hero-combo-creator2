@@ -28,6 +28,8 @@ const generatorResultsEl   = document.getElementById('generatorResults');
 const generateCombosBtn    = document.getElementById('generateCombosBtn');
 const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 const comboFooterBar       = document.getElementById('comboFooterBar');
+const tabLoyaltyBtn      = document.getElementById('tabLoyalty'); // NEW
+const loyaltySection     = document.getElementById('loyaltyCalcSection'); // NEW
 
 // Filter containers
 const seasonFiltersEl         = document.getElementById('seasonFilters');
