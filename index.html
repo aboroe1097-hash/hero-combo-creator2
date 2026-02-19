@@ -271,18 +271,33 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+<div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col">
             <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Modifiers</h3>
-            <div class="space-y-4">
-              <label class="flex flex-col gap-2">
-                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Loy" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Bonus Loyalty Points (1 = 60)</span></div>
-                <input type="number" id="bonusPoints" min="0" value="0" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+            
+            <div class="flex flex-col gap-4 flex-1 justify-center">
+              
+              <label class="flex items-center gap-4 bg-slate-800 p-3 rounded-xl border border-slate-700 hover:border-purple-500 transition-colors group cursor-pointer shadow-sm">
+                <div class="w-20 shrink-0">
+                  <img src="images/bonus_loyalty.png" alt="Bonus Loyalty" class="w-full h-auto rounded border border-slate-600 shadow-md">
+                </div>
+                <div class="flex flex-col w-full">
+                  <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors">Bonus Loyalty</span>
+                  <span class="text-[10px] text-slate-500 mb-2">1 Tech Point = 60 Loyalty</span>
+                  <input type="number" id="bonusPoints" min="0" value="0" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-white font-bold outline-none focus:border-purple-500 transition-colors">
+                </div>
               </label>
-              <label class="flex flex-col gap-2">
-                <div class="flex items-center gap-2"><img src="https://placehold.co/40x40?text=Sav" class="w-6 h-6 rounded"><span class="text-xs text-slate-400 font-bold">Saved Units Inventory</span></div>
-                <input type="number" id="savedUnits" min="0" value="300000" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none">
+
+              <label class="flex items-center gap-4 bg-slate-800 p-3 rounded-xl border border-slate-700 hover:border-amber-500 transition-colors group cursor-pointer shadow-sm">
+                <div class="w-20 shrink-0">
+                  <img src="images/saved_units.png" alt="Saved Units" class="w-full h-auto object-cover rounded border border-slate-600 shadow-md">
+                </div>
+                <div class="flex flex-col w-full">
+                  <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors">Saved Units</span>
+                  <span class="text-[10px] text-slate-500 mb-2">Current inventory</span>
+                  <input type="number" id="savedUnits" min="0" value="300000" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-white font-bold outline-none focus:border-amber-500 transition-colors">
+                </div>
               </label>
+
             </div>
           </div>
 
@@ -404,6 +419,7 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
