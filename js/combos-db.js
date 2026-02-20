@@ -16,14 +16,13 @@ export const rankedCombos = [
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
   { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
   { heroes: ["Rozen Blade", "Ramses II", "Beowulf"] },     // Rank 4
-  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 1
-  { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
-
+  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
   { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
-  { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
+  { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },          // Rank 12
   { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
+  { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
   { heroes: ["King Arthur", "Theodora", "Bleeding Steed"] },    // Rank 7
@@ -35,6 +34,7 @@ export const rankedCombos = [
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
+  { heroes: ["Hunk", "Boudica" , "Sakura"] },
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
   
   // --- TIER 2: STRONG COMPETITIVE META ---
