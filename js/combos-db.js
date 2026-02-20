@@ -58,7 +58,6 @@ export const rankedCombos = [
 
   { heroes: ["Hunk", "Cleopatra VII", "Cao Cao"] },        // Rapid Rage
   { heroes: ["Hunk", "Bleeding Steed", "Cao Cao"] },       // Cav Speed
-  { heroes: ["Theodora", "Che Liu", "Cicero"] },            // Mixed Control
   
   { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },      
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] }, 
@@ -70,7 +69,8 @@ export const rankedCombos = [
   
   { heroes: ["Wind-Walker", "Rozen Blade", "Immortal"] },  
   { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
-  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },     
+  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },    
+  { heroes: ["Theodora", "Che Liu", "Cicero"] },            // Mixed Control
   { heroes: ["Hunk", "Ramses II", "Al Fatih"] },    
   { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },         // Rank 17
   { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },               // Rank 18
