@@ -14,13 +14,11 @@
 export const rankedCombos = [
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
-  { heroes: ["Boudica", "Jade Eagle", "Ramses II"] },
-  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 1
-  { heroes: ["Ramses II", "Cleopatra VII", "Beowulf"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
+  { heroes: ["Rozen Blade", "Ramses II", "Beowulf"] },     // Rank 4
+  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 1
   { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
 
-  
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
   { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
