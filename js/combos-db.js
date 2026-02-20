@@ -30,12 +30,15 @@ export const rankedCombos = [
   { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
   { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
   { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
+  
   { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },          // Rank 12
+  
   { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },         // Rank 8
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
   { heroes: ["Hunk", "Boudica" , "Sakura"] },
+  { heroes: ["Sakura", "Elk", "Jade Eagle"] },          // Rank 12
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
   
   // --- TIER 2: STRONG COMPETITIVE META ---
@@ -43,11 +46,10 @@ export const rankedCombos = [
  //  { name: 'Boudica',      
  //  { name: 'Sakura',  
   { heroes: ["Hunk", "Sakura", "Jade Eagle"] },      // Rank 3
-  { heroes: ["Boudica", "Sakura", "ELK"] },
+  { heroes: ["Sky Breaker", "Boudica", "Sakura"] },
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },
   { heroes: ["King Arthur", "Cicero", "Bleeding Steed"] },  // Control/Sustain
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },     
-  { heroes: ["Sky Breaker", "Boudica", "Sakura"] },
   { heroes: ["Boudica", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Ramses II", "Immortal Guardian", "Witch Hunter"] },
   { heroes: ["Boudica", "Al Fatih", "Ramses II"] },
