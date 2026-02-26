@@ -150,8 +150,8 @@ const seasonColors = {
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-// FIXED width for desktop so it doesn't stretch too far (sm:w-[340px])
-heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+// WIDENED for PC: Added md:w-[480px] and lg:w-[520px] so it expands beautifully on larger screens
+heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
 // Close tooltip when touching anywhere else on mobile
@@ -282,7 +282,7 @@ function showHeroTooltip(e, heroName) {
         <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-    <div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[50vh] md:max-h-[70vh] overflow-y-auto pr-1 shrink">
+<div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[85vh] overflow-y-auto pr-1 shrink custom-scrollbar">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
