@@ -144,11 +144,9 @@ const seasonColors = {
   S5: '#67ab69'
 };
 
-// --- HERO HOVER TOOLTIP (Optimized for Mobile) ---
 // --- HERO HOVER TOOLTIP (Optimized for Mobile & PC) ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-// ADDED: md:w-[450px], md:max-w-none for a wide, beautiful desktop view
 heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-80 md:w-[450px] max-w-[320px] md:max-w-none pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
@@ -168,7 +166,6 @@ function showHeroTooltip(e, heroName) {
   const troopColorClass = getTroopColorClass(troopType);
   const localizedTroop = getLocalizedTroop(troopType);
 
-  // ADDED: md:p-3 and md:text-xs/sm classes for better desktop readability
   let skillsHtml = data.skills.map(s => `
     <div class="mb-2 bg-slate-800 p-2 md:p-3 rounded-lg border border-slate-700 shadow-inner">
       <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
@@ -243,13 +240,11 @@ function hideHeroTooltip() {
 
 // --- UTILITIES ---
 
-// RESTORED: Fetch Image URL for slots and tables
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
 }
 
-// Map the Hero Type to a specific color class for the cards
 function getTroopColorClass(type) {
   switch(type) {
     case 'Archers': return 'text-emerald-400';
@@ -260,7 +255,6 @@ function getTroopColorClass(type) {
   }
 }
 
-// Fetch localized version of the troop type text
 function getLocalizedTroop(type) {
   const t = translations[currentLanguage] || translations.en;
   if (type === 'Archers') return t.troopArchers || type;
@@ -386,16 +380,23 @@ function createTouchGhost(card, touch) {
   }
   const rect = card.getBoundingClientRect();
   const ghost = card.cloneNode(true);
+  
+  // FIX 1: Enforce strict boundaries so the ghost cannot stretch
   ghost.style.position = 'fixed';
+  ghost.style.margin = '0';
   ghost.style.left = `${rect.left}px`;
   ghost.style.top  = `${rect.top}px`;
   ghost.style.width  = `${rect.width}px`;
   ghost.style.height = `${rect.height}px`;
+  ghost.style.minWidth  = `${rect.width}px`;
+  ghost.style.maxWidth  = `${rect.width}px`;
+  ghost.style.boxSizing = 'border-box';
   ghost.style.opacity = '0.9';
   ghost.style.pointerEvents = 'none';
   ghost.style.zIndex = '9999';
   ghost.style.transform = 'scale(1.05)';
   ghost.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
+  
   document.body.appendChild(ghost);
   touchDragGhost = ghost;
 }
@@ -467,7 +468,6 @@ function renderAvailableHeroes() {
       card.addEventListener('mouseleave', hideHeroTooltip);
 
       const tagColor = seasonColors[hero.season] || '#f97316';
-      // ADDED: Troop type tag below the name
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
         <img src="${hero.imageUrl}" alt="${hero.name}">
@@ -487,24 +487,9 @@ function renderAvailableHeroes() {
         createTouchGhost(card, touch);
       }, { passive: true });
 
-      card.addEventListener('click', () => {
-        if (isHeroAlreadyInCombo(hero.name)) {
-          showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
-          return;
-        }
-        const emptyIndex = currentCombo.indexOf(null);
-        if (emptyIndex === -1) {
-          showAboModal(t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.');
-          return;
-        }
-        currentCombo[emptyIndex] = hero.name;
-        const slots = document.querySelectorAll('.combo-slot');
-        const targetSlot = slots[emptyIndex];
-        if (targetSlot) {
-          updateComboSlotDisplay(targetSlot, hero.name, emptyIndex);
-          updateManualComboScore();
-        }
-      });
+      // FIX 2: Entirely removed the card.addEventListener('click') block from here. 
+      // Now, clicking/tapping the card will purely reveal the tooltip without auto-placing!
+
       availableHeroesEl.appendChild(card);
     });
 }
@@ -579,7 +564,6 @@ function renderGeneratorHeroes() {
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       
-      // ADDED: Troop type tag below the name
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
         <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
@@ -1061,6 +1045,10 @@ async function updateTextContent() {
 // --- MAIN ---
 
 (async function main() {
+  // FIX 3: Add extra padding to the absolute bottom of the document so the browser 
+  // navigation bar never covers your buttons or footer when scrolling down.
+  document.body.classList.add('pb-28');
+
   wireUIActions();
   await updateTextContent();
 
