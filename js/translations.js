@@ -4,7 +4,7 @@ export const translations = {
     appTitle: "Hero Combo Creator",
     betaNote: "BETA b3.0 — VTS s1097 Community Tool",
     tabManual: "Manual Builder", tabGenerator: "Combo Generator",
-    'tabYouTube': t.tabYouTube || 'YouTube', // <--- ADD THIS LINE
+    tabYouTube: "YouTube", // <--- MAKE SURE THIS IS JUST A STRING like "YouTube", NOT t.tabYouTube
     // Filters
     filterBySeasonTitle: "Filter by Season", seasonLabel: "Season", availableHeroesTitle: "Available Heroes",
     filterByStateTitle: "Filter Paid or Free", stateFree: "Free", statePaid: "Paid",
@@ -368,6 +368,7 @@ export const translations = {
     resMaxProcessing: "최대 처리량 (일일)", resUnits: "단위", resHrPerPatch: "/시간 (배치 당)", resProdVsProc: "생산 대비 처리량", resSurplus: "잉여", resDeficit: "부족", resTotalDaily: "총 일일 생산량:", resTimeMax: "최대 충성도(8000) 도달 시간", step: "단계", upgrade: "업그레이드", cost: "비용", timeNeeded: "소요 시간", cumulTime: "누적 시간", loyaltyShift: "충성도 변화", poisonPct: "독 %", siteUnlock: "잠금 해제 사이트", lvl: "레벨", next: "다음", after: "이후", errAcLevels: "올바른 AC 레벨(0-20)을 입력하세요.", errProcTime: "처리 시간은 0보다 커야 합니다.", errProcRate: "처리 속도가 0입니다. 배치 값을 확인하세요."
   }
 };
+
 
 
 
