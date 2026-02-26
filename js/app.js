@@ -282,7 +282,7 @@ function showHeroTooltip(e, heroName) {
         <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-<div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[95vh] overflow-y-auto pr-1 shrink custom-scrollbar">
+<div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[115vh] overflow-y-auto pr-1 shrink custom-scrollbar">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
