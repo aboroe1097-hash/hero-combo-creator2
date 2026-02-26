@@ -389,5 +389,95 @@ export const heroesExtendedData = {
             { id: 5, type: "Pre-Battle Skills", range: 2, target: "2 Random Ally", desc: "The first 3 turns, 2 random friendly squads have 70% chance to enter the Sputtering status, normal attack deal 160% damage to 2 enemy squads behind the target." },
             { id: 8, type: "Pre-Battle Skills", range: 2, target: "1 Random Ally", desc: "First 3 turn of the battle, the front row cavalry squad has 70% chance to enter counterattack status, which deals 250% return damage to the source when basic attacked." }
         ]
+    },
+    "Cao Cao": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "80% chance to deal 157% damage to 2 random enemy squads within the valid range." },
+            { id: 5, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "Every time Cao Cao casts the combat skill, his squads damage increases by 18%, stackable for up to 10 times till the battle ends." },
+            { id: 8, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "50% chance to deal 396% damage to 1 random enemy and apply the status Faltering, to the said squads, making the targets takes 302% more damage every time the targets takes damage. The effect can be triggered up to 3 times each time the skill is cast, lasting 1 turn." }
+        ]
+    },
+    "Charles the Great": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 255% damage to 2 random enemy squad within the valid range and make the resistance of the targets -170% for 2 turns." },
+            { id: 5, type: "Pre-Battle Skills", range: 3, target: "2 Random Ally", desc: "For the first 4 turn, increases the damage dealt by 2 random squads of your side by 20%, stackable for up to 4 times till the battle ends." },
+            { id: 8, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "50% chance to deal 510% damage to 1 random enemy squad within the valid range and allow your back-row squad to have a 100% chance to enter the status Dodging, the next 2 times it takes damage." }
+        ]
+    },
+    "Black Prince": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "35% chance to apply 1 status out of Suppressing, Silencing and Disarm to 2 random enemy squads within the valid range, lasting 2 rounds." },
+            { id: 5, type: "Combat Skill", range: 3, target: "2 Random Enemy", desc: "Max Lvl. 60% chance to steal 200% Resistance from 2 random enemy squads within the valid range, lasting 2 turns (Stackable for up to 2 times)." },
+            { id: 8, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "1 turn prep. 50% chance to deal 490% damage to 2 random enemy squads within the valid range and make the Might of the targets -150% for 2 turns." }
+        ]
+    },
+    "Lionheart": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 250% damage to 2 random enemy squads within the valid range and make the skill damage of Lionheart increased by 40% for 1 turn." },
+            { id: 5, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "1 turn prep. 50% chance to deal 288% damage to 2 random enemy squads within the valid range and 288% more damage to the enemy squad within the lowest resistance." },
+            { id: 8, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "1 turn prep. 60% chance to deal 343% massive damage to all enemy squads within the valid range; when prepping, applies the status First to Attack, to the Lionheart for 1 turn." }
+        ]
+    },
+    "Al Fatih": {
+        placement: "Any Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 0, target: "1 Random Ally", desc: "80% chance to increase the damage dealt in normal attacks made by Al Fatih by 60% for 1 turn." },
+            { id: 5, type: "Combat Skill", range: 0, target: "1 Random Ally", desc: "Al Fatih target at 1 random enemy squad in normal attacks and have a 50% chance to cast Fatal Blow." },
+            { id: 8, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "The damage rate of the Fatal Blow cast by Al Fatih increases by 60%, within the effect stacked 1 time each turn for up to 4 times till the battle ends." }
+        ]
+    },
+    "Edward the Confessor": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "All your squads have a 100% chance to enter the status Dodging the first time they are attacked; for the first 4 turns, they have a 70% chance to make the skill damage of all enemy squads -40% each round." },
+            { id: 5, type: "Combat Skill", range: 3, target: "1 Random Enemy", desc: "35% chance to deal 480% damage to 1 random enemy squad within the valid range and apply to status Suppressing to target for 1 tun." },
+            { id: 8, type: "Pre-Battle Skills", range: 3, target: "2 Random Ally", desc: "Starting from turn 3, the Physycal Damage of 2 random squads of your side can be increased by 30% each turn, stackable for up to 4 times till the battle ends." }
+        ]
+    },
+    "Constantine the Great": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "1 turn prep. 45% chance to deal 330% damage to 2 random enemy squads within the valid range." },
+            { id: 5, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 203% damage to 2 enemy squads within the valid range and make the skill damage of your back-row squad increased by 50% for 1 turn." },
+            { id: 8, type: "Pre-Battle Skills", range: 4, target: "1 Random Enemy", desc: "When all your squads are prepping for the prep skills, Constantine has a 80% chance to deal 304% damage to 1 random enemy squad within the valid range." }
+        ]
+    },
+    "Genghis Khan": {
+        placement: "Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "3 Random Enemy", desc: "1 turn prep. 50% chance to apply the status Bleeding to all enemy squads, making them take 213% damage each round for 2 turns." },
+            { id: 5, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "50% chance to deal 202% damage to 2 random enemy squads within the valid range. 50% chance to deal 202% more damage to all enemy squads." },
+            { id: 8, type: "Pre-Battle Skills", range: 3, target: "2 Random Ally", desc: "For every 4 combat skills cast by any of your squads during the combat, Genghis Khan will restore some Power for 2 Random squads of your side (recovery rate: 152%)." }
+        ]
+    },
+    "Jiguang Qi": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 3, target: "3 Random Enemy", desc: "40% chance to deal 192% damage to all enemy squad(s) within the valid range." },
+            { id: 5, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 220% damage to 2 enemy squads within valid range, reducing the Physical Damage dealt by the squad(s) by -40% for 1 turn." },
+            { id: 8, type: "Pre-Battle Skills", range: 3, target: "1 Random Ally", desc: "For every 2 combat skill cast by any of your squads, Jiguang Qi Resistance increases by 80%, stackable for up to 10 time(s) till the battle ends." }
+        ]
     }
 };
