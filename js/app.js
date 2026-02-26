@@ -204,7 +204,6 @@ function formatSkillText(text) {
 }
 
 function showHeroTooltip(e, heroName) {
-  // NEW: Instantly return if user toggled Info Panels OFF globally
   if (!heroInfoEnabled) return; 
 
   const data = heroesExtendedData[heroName];
@@ -259,32 +258,33 @@ function showHeroTooltip(e, heroName) {
   }
 
   heroTooltip.innerHTML = `
-    <div class="border-b border-slate-700 pb-2 mb-2 shrink-0 relative">
+    <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
+      <div class="flex flex-col">
+        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
+        <div class="flex gap-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 w-fit">
+          <div class="flex flex-col">
+            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
+            <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
+          </div>
+          <div class="w-px bg-slate-700/50"></div>
+          <div class="flex flex-col">
+            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
+            <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
+          </div>
+        </div>
+      </div>
       
-      <button id="closeTooltipBtn" class="lg:hidden absolute -top-1 -right-1 text-slate-400 hover:text-white bg-slate-900 hover:bg-red-500/80 rounded-full w-6 h-6 flex items-center justify-center border border-slate-600 shadow-md transition-colors z-[10000]">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+      <button id="closeTooltipBtn" class="lg:hidden bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
-
-      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-6">${heroName}</h4>
-      
-      <div class="flex gap-3 mt-1.5 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
-        <div class="flex flex-col">
-          <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
-          <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
-        </div>
-        <div class="w-px bg-slate-700/50"></div>
-        <div class="flex flex-col">
-          <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
-          <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
-        </div>
-      </div>
-
-      <div class="flex justify-between items-center mt-2 px-1">
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
-      </div>
     </div>
-    <div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[85vh] overflow-y-auto pr-1 shrink custom-scrollbar">
+
+    <div class="flex justify-between items-center mb-2 px-1 shrink-0">
+      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
+      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
+    </div>
+
+    <div class="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-2">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
@@ -297,7 +297,6 @@ function showHeroTooltip(e, heroName) {
   });
   moveHeroTooltip(e);
 
-  // NEW: Bind logic for the Mobile Close Button
   const closeBtn = document.getElementById('closeTooltipBtn');
   if (closeBtn) {
     closeBtn.addEventListener('click', (ev) => {
@@ -316,20 +315,28 @@ function moveHeroTooltip(e) {
   if (heroTooltip.classList.contains('hidden')) return;
   const rect = heroTooltip.getBoundingClientRect();
   
-  let clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches.length > 0 ? e.touches[0].clientX : window.innerWidth / 2);
-  let clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches.length > 0 ? e.touches[0].clientY : window.innerHeight / 2);
-
-  let x, y;
-  if (window.innerWidth < 640) {
-    x = (window.innerWidth - rect.width) / 2;
-    if (clientY > window.innerHeight / 2) y = clientY - rect.height - 20;
-    else y = clientY + 30;
-  } else {
-    x = clientX + 15;
-    y = clientY + 15;
-    if (x + rect.width > window.innerWidth) x = clientX - rect.width - 15;
-    if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 15;
+  // FIXED: On Mobile/Tablets, perfectly center it like a modal instead of following the finger.
+  if (window.innerWidth < 1024) {
+    heroTooltip.style.left = '50%';
+    heroTooltip.style.top = '50%';
+    heroTooltip.style.transform = 'translate(-50%, -50%)';
+    heroTooltip.style.maxHeight = '90vh'; // Ensures it never exceeds the screen height
+    return;
   }
+
+  // Desktop Behavior: Follow the Mouse
+  heroTooltip.style.transform = 'none';
+  heroTooltip.style.maxHeight = '85vh';
+
+  let clientX = e.clientX !== undefined ? e.clientX : window.innerWidth / 2;
+  let clientY = e.clientY !== undefined ? e.clientY : window.innerHeight / 2;
+
+  let x = clientX + 15;
+  let y = clientY + 15;
+  
+  if (x + rect.width > window.innerWidth) x = clientX - rect.width - 15;
+  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 15;
+  
   if (y < 10) y = 10;
   if (x < 10) x = 10;
 
