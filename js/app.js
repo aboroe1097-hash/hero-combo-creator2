@@ -215,10 +215,7 @@ function showHeroTooltip(e, heroName) {
   const localizedTroop = getLocalizedTroop(troopType);
 
   let skillsHtml = data.skills.map(s => {
-    // Process the description through our new formatter
     const formattedDesc = formatSkillText(s.desc);
-
-    // Auto-highlight targets based on Ally or Enemy
     const isEnemy = s.target.toLowerCase().includes('enemy');
     const targetColor = isEnemy ? 'text-red-400' : 'text-emerald-400';
 
@@ -239,6 +236,27 @@ function showHeroTooltip(e, heroName) {
       </div>
     `;
   }).join('');
+
+  // NEW: Generate Synergy HTML with mini avatars
+  let synergyHtml = '';
+  const synergies = getSynergies(heroName);
+  if (synergies.length > 0) {
+    const synTags = synergies.map(syn => `
+      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded border border-slate-700 shadow-sm">
+         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-600 object-cover">
+         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
+      </div>
+    `).join('');
+    
+    synergyHtml = `
+      <div class="mt-2 pt-2 border-t border-slate-700/50">
+        <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
+        <div class="flex flex-wrap gap-2">
+          ${synTags}
+        </div>
+      </div>
+    `;
+  }
 
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
@@ -263,6 +281,7 @@ function showHeroTooltip(e, heroName) {
     </div>
     <div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[50vh] md:max-h-[70vh] overflow-y-auto pr-1 shrink">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
+      ${synergyHtml}
     </div>
   `;
 
@@ -315,6 +334,31 @@ function forceHideHeroTooltip() {
 
 
 // --- UTILITIES ---
+
+// NEW: Calculate the Top 3 Synergies for a specific hero based on rankedCombos database
+function getSynergies(heroName) {
+  // 1. Find all combos containing this hero
+  const containingCombos = rankedCombos.filter(c => c.heroes && c.heroes.includes(heroName));
+  
+  // 2. We only look at the Top 5 best combos they appear in (combos-db is assumed ranked best-to-worst)
+  const top5 = containingCombos.slice(0, 5);
+  if (top5.length === 0) return [];
+
+  // 3. Count how often other heroes appear alongside them
+  const counts = {};
+  top5.forEach(combo => {
+    combo.heroes.forEach(h => {
+      if (h !== heroName) counts[h] = (counts[h] || 0) + 1;
+    });
+  });
+
+  // 4. Sort partners by frequency (descending) and take the top 3
+  const sortedPartners = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => entry[0]);
+
+  return sortedPartners.slice(0, 3);
+}
 
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
