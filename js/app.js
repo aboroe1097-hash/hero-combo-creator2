@@ -5,7 +5,8 @@ import { initComments } from './comments.js';
 import { rankedCombos } from './combos-db.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
-
+const tabYouTubeBtn      = document.getElementById('tabYouTube');
+const youtubeSection     = document.getElementById('youtubeSection');
 // --- APP CONFIG ---
 const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
 
@@ -956,16 +957,21 @@ function wireUIActions() {
     };
   }
 
-  const switchTab = (tabName) => {
+const switchTab = (tabName) => {
+    // Hide all sections
     if (manualSection) manualSection.classList.add('hidden');
     if (generatorSection) generatorSection.classList.add('hidden');
     if (loyaltySection) loyaltySection.classList.add('hidden');
+    if (youtubeSection) youtubeSection.classList.add('hidden'); // NEW
     if (comboFooterBar) comboFooterBar.style.display = 'none';
 
+    // Reset all buttons to inactive
     if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-inactive';
     if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-inactive';
     if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-inactive';
+    if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-inactive flex items-center gap-1.5'; // NEW
 
+    // Activate the chosen tab
     if (tabName === 'manual') {
       if (manualSection) manualSection.classList.remove('hidden');
       if (comboFooterBar) comboFooterBar.style.display = 'block';
@@ -976,12 +982,16 @@ function wireUIActions() {
     } else if (tabName === 'loyalty') {
       if (loyaltySection) loyaltySection.classList.remove('hidden');
       if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-active';
+    } else if (tabName === 'youtube') {
+      if (youtubeSection) youtubeSection.classList.remove('hidden'); // NEW
+      if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-active flex items-center gap-1.5'; // NEW
     }
   };
 
   if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
   if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
   if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
+  if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube'); // NEW;
 
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
