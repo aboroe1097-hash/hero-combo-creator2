@@ -81,6 +81,7 @@ export function initLoyaltyCalculator() {
         const bonusLoyalty = (parseInt(document.getElementById('bonusPoints').value) || 0) * 60;
         let savedUnits = parseInt(document.getElementById('savedUnits').value) || 0;
         
+        // Fetch all sources
         const source1 = parseFloat(document.getElementById('source1').value) || 0;
         const source2 = parseFloat(document.getElementById('source2').value) || 0;
         const source3 = parseFloat(document.getElementById('source3').value) || 0;
@@ -88,8 +89,9 @@ export function initLoyaltyCalculator() {
         const source5 = parseFloat(document.getElementById('source5').value) || 0;
         const source6 = parseFloat(document.getElementById('source6').value) || 0;
 
-        const totalHourlyProduction = (source1 + source2 + source3) + (source4 + source5 + source6);
-        const adjustedDailyProduction = totalHourlyProduction * 24;
+        // NEW LOGIC: Only Sources 1, 2, 3, and 6 are used for upgrading Camps!
+        const campHourlyProduction = source1 + source2 + source3 + source6;
+        const campDailyProduction = campHourlyProduction * 24;
 
         const p_hours = parseFloat(document.getElementById('processingHours').value) || 0;
         const p_mins = parseFloat(document.getElementById('processingMinutes').value) || 0;
@@ -106,11 +108,19 @@ export function initLoyaltyCalculator() {
 
         const hourlyRatePerPatch = unitsPerPatch / processingTime;
         const possibleProcessingDaily = hourlyRatePerPatch * numPatches * 24;
+        const maxProcessingPerHour = hourlyRatePerPatch * numPatches;
 
         if (possibleProcessingDaily <= 0) {
             resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errProcRate || 'Processing rate is zero. Check patch values.'}</p>`;
             return;
         }
+
+        // --- TRUE BOTTLENECK LOGIC ---
+        // Determines if you are constrained by your workshops OR by your gathering speed of camp materials
+        const actualEffectiveHourlyRate = Math.min(maxProcessingPerHour, campHourlyProduction);
+        
+        // Failsafe to prevent division by zero in timeline if production is 0
+        const safeHourlyRate = actualEffectiveHourlyRate > 0 ? actualEffectiveHourlyRate : maxProcessingPerHour;
 
         let levels = { AC1: ac1Level, AC2: ac2Level, AC3: ac3Level, AC4: ac4Level };
         let currentLoyalty = (ac1Level + ac2Level + ac3Level + ac4Level) * 100 + bonusLoyalty;
@@ -138,7 +148,8 @@ export function initLoyaltyCalculator() {
             let effectiveCost = Math.max(0, nextUpgrade.cost - savedUnits);
             savedUnits = Math.max(0, savedUnits - nextUpgrade.cost);
 
-            const hoursNeeded = effectiveCost / (hourlyRatePerPatch * numPatches);
+            // Timeline is driven by the bottleneck speed
+            const hoursNeeded = effectiveCost / safeHourlyRate;
             cumulativeTime += hoursNeeded;
 
             const newLoyalty = currentLoyalty + 100;
@@ -161,8 +172,8 @@ export function initLoyaltyCalculator() {
         }
 
         // Render Translated Results
-        const isSurplus = adjustedDailyProduction >= possibleProcessingDaily;
-        const diff = Math.abs(adjustedDailyProduction - possibleProcessingDaily);
+        const isSurplus = campDailyProduction >= possibleProcessingDaily;
+        const diff = Math.abs(campDailyProduction - possibleProcessingDaily);
         
         let html = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
@@ -176,7 +187,7 @@ export function initLoyaltyCalculator() {
                     <p class="text-lg font-black ${isSurplus ? 'text-emerald-400' : 'text-red-400'}">
                         ${isSurplus ? (t.resSurplus || 'Surplus') : (t.resDeficit || 'Deficit')} : ${Math.round(diff).toLocaleString()}
                     </p>
-                    <p class="text-[10px] text-slate-500 mt-1">${t.resTotalDaily || 'Total Daily Prod:'} ${Math.round(adjustedDailyProduction).toLocaleString()}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">${t.resTotalDaily || 'Total Daily Prod'} (S1, S2, S3, S6): ${Math.round(campDailyProduction).toLocaleString()}</p>
                 </div>
                 <div class="bg-slate-800 p-4 rounded-xl border border-amber-700/50 shadow-md relative overflow-hidden">
                     <p class="text-xs text-amber-500 uppercase tracking-widest mb-1">${t.resTimeMax || 'Time to Max Loyalty (8000)'}</p>
