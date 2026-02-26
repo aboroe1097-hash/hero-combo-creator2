@@ -2,9 +2,10 @@
 export const translations = {
   en: {
     appTitle: "Hero Combo Creator",
-    betaNote: "BETA b3.0 — VTS s1097 Community Tool",
+    betaNote: "BETA {version} — VTS s1097 Community Tool",
     tabManual: "Manual Builder", tabGenerator: "Combo Generator",
-    tabYouTube: "YouTube", // <--- MAKE SURE THIS IS JUST A STRING like "YouTube", NOT t.tabYouTube
+    tabYouTube: "YouTube", 
+    toggleHeroInfo: "Show Hero Info Panels",
     // Filters
     filterBySeasonTitle: "Filter by Season", seasonLabel: "Season", availableHeroesTitle: "Available Heroes",
     filterByStateTitle: "Filter Paid or Free", stateFree: "Free", statePaid: "Paid",
@@ -68,8 +69,9 @@ export const translations = {
     errProcRate: "Processing rate is zero. Check patch values."
   },
   pt: {
-    appTitle: "Criador de Combos", betaNote: "BETA b3.0 — Ferramenta da Comunidade VTS s1097",
+    appTitle: "Criador de Combos", betaNote: "BETA {version} — Ferramenta da Comunidade VTS s1097",
     tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
+    tabYouTube: "YouTube", toggleHeroInfo: "Mostrar Painéis de Heróis",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Heróis Disponíveis",
     filterByStateTitle: "Filtrar Pago ou Grátis", stateFree: "Grátis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueiros", troopFootmen: "Infantaria", troopCavalry: "Cavalaria", troopAll: "Todos",
@@ -98,8 +100,9 @@ export const translations = {
     resMaxProcessing: "Processamento Máx. (Diário)", resUnits: "unidades", resHrPerPatch: "/h por lote", resProdVsProc: "Produção vs Processamento", resSurplus: "Superávit", resDeficit: "Déficit", resTotalDaily: "Prod. Total:", resTimeMax: "Tempo até Lealdade Máx. (8000)", step: "Passo", upgrade: "Melhoria", cost: "Custo", timeNeeded: "Tempo Necessário", cumulTime: "Tempo Acumulado", loyaltyShift: "Mudança de Lealdade", poisonPct: "% Veneno", siteUnlock: "Desbloqueio", lvl: "Nv", next: "Próximo", after: "Depois", errAcLevels: "Níveis inválidos (0-20).", errProcTime: "Tempo de processamento deve ser > 0.", errProcRate: "Taxa zero. Verifique os lotes."
   },
   tr: {
-    appTitle: "Kombo Oluşturucu", betaNote: "BETA b3.0 — VTS s1097 Topluluk Aracı",
+    appTitle: "Kombo Oluşturucu", betaNote: "BETA {version} — VTS s1097 Topluluk Aracı",
     tabManual: "Manuel Mod", tabGenerator: "Kombo Oluşturucu",
+    tabYouTube: "YouTube", toggleHeroInfo: "Kahraman Bilgi Panellerini Göster",
     filterBySeasonTitle: "Sezona Göre Filtrele", seasonLabel: "Sezon", availableHeroesTitle: "Mevcut Kahramanlar",
     filterByStateTitle: "Ücretli/Ücretsiz Filtrele", stateFree: "Ücretsiz", statePaid: "Ücretli",
     filterByTroopTitle: "Birlikleri Filtrele", troopArchers: "Okçular", troopFootmen: "Piyadeler", troopCavalry: "Süvariler", troopAll: "Hepsi",
@@ -128,8 +131,9 @@ export const translations = {
     resMaxProcessing: "Maks İşleme (Günlük)", resUnits: "birim", resHrPerPatch: "/saat parti", resProdVsProc: "Üretim / İşleme", resSurplus: "Fazlalık", resDeficit: "Açık", resTotalDaily: "Toplam Üretim:", resTimeMax: "Maks Sadakat Süresi (8000)", step: "Adım", upgrade: "Yükseltme", cost: "Maliyet", timeNeeded: "Gereken Süre", cumulTime: "Toplam Süre", loyaltyShift: "Sadakat Değişimi", poisonPct: "Zehir %", siteUnlock: "Kilit Açılan", lvl: "Seviye", next: "Sonraki", after: "Daha Sonra", errAcLevels: "Geçersiz AC seviyeleri (0-20).", errProcTime: "İşleme süresi > 0 olmalı.", errProcRate: "İşleme hızı sıfır."
   },
   ru: {
-    appTitle: "Создатель Комбо", betaNote: "БЕТА b3.0 — Инструмент сообщества VTS s1097",
+    appTitle: "Создатель Комбо", betaNote: "БЕТА {version} — Инструмент сообщества VTS s1097",
     tabManual: "Ручной Режим", tabGenerator: "Генератор Комбо",
+    tabYouTube: "YouTube", toggleHeroInfo: "Показывать панели информации о героях",
     filterBySeasonTitle: "Фильтр сезонов", seasonLabel: "Сезон", availableHeroesTitle: "Доступные герои",
     filterByStateTitle: "Фильтр (Платные/Бесплатные)", stateFree: "Бесплатные", statePaid: "Платные",
     filterByTroopTitle: "Фильтр войск", troopArchers: "Лучники", troopFootmen: "Пехота", troopCavalry: "Кавалерия", troopAll: "Все",
@@ -158,8 +162,9 @@ export const translations = {
     resMaxProcessing: "Макс. обработка (в день)", resUnits: "ед.", resHrPerPatch: "/ч за партию", resProdVsProc: "Производство / Обработка", resSurplus: "Избыток", resDeficit: "Дефицит", resTotalDaily: "Итого в день:", resTimeMax: "Время до макс. лояльности", step: "Шаг", upgrade: "Улучшение", cost: "Стоимость", timeNeeded: "Время", cumulTime: "Общее время", loyaltyShift: "Сдвиг лояльности", poisonPct: "% Яда", siteUnlock: "Доступ", lvl: "Ур", next: "След.", after: "Потом", errAcLevels: "Неверный уровень (0-20).", errProcTime: "Время обработки должно быть > 0.", errProcRate: "Скорость обработки равна нулю."
   },
   es: {
-    appTitle: "Creador de Combos", betaNote: "BETA b3.0 — Herramienta de la Comunidad VTS s1097",
+    appTitle: "Creador de Combos", betaNote: "BETA {version} — Herramienta de la Comunidad VTS s1097",
     tabManual: "Constructor Manual", tabGenerator: "Generador de Combos",
+    tabYouTube: "YouTube", toggleHeroInfo: "Mostrar Paneles de Información",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Héroes Disponibles",
     filterByStateTitle: "Filtrar Pago o Gratis", stateFree: "Gratis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueros", troopFootmen: "Infantería", troopCavalry: "Caballería", troopAll: "Todos",
@@ -188,8 +193,9 @@ export const translations = {
     resMaxProcessing: "Procesamiento Máx. (Diario)", resUnits: "unidades", resHrPerPatch: "/h por lote", resProdVsProc: "Producción vs Procesamiento", resSurplus: "Superávit", resDeficit: "Déficit", resTotalDaily: "Prod. Total:", resTimeMax: "Tiempo a Lealtad Máx. (8000)", step: "Paso", upgrade: "Mejora", cost: "Costo", timeNeeded: "Tiempo Nec.", cumulTime: "Tiempo Acum.", loyaltyShift: "Cambio de Lealtad", poisonPct: "% Veneno", siteUnlock: "Desbloqueo", lvl: "Niv", next: "Próx", after: "Después", errAcLevels: "Niveles AC no válidos (0-20).", errProcTime: "Tiempo de procesamiento debe ser > 0.", errProcRate: "Tasa de procesamiento cero."
   },
   fr: {
-    appTitle: "Créateur de Combos", betaNote: "BETA b3.0 — Outil Communautaire VTS s1097",
+    appTitle: "Créateur de Combos", betaNote: "BETA {version} — Outil Communautaire VTS s1097",
     tabManual: "Mode Manuel", tabGenerator: "Générateur de Combos",
+    tabYouTube: "YouTube", toggleHeroInfo: "Afficher les Infos des Héros",
     filterBySeasonTitle: "Filtrer par Saison", seasonLabel: "Saison", availableHeroesTitle: "Héros Disponibles",
     filterByStateTitle: "Filtrer Payant ou Gratuit", stateFree: "Gratuit", statePaid: "Payant",
     filterByTroopTitle: "Filtrer Troupes", troopArchers: "Archers", troopFootmen: "Infanterie", troopCavalry: "Cavalerie", troopAll: "Tous",
@@ -218,8 +224,9 @@ export const translations = {
     resMaxProcessing: "Traitement Max (Quotidien)", resUnits: "unités", resHrPerPatch: "/h par lot", resProdVsProc: "Production vs Traitement", resSurplus: "Surplus", resDeficit: "Déficit", resTotalDaily: "Prod Totale:", resTimeMax: "Temps jusqu'à Fidélité Max (8000)", step: "Étape", upgrade: "Amélioration", cost: "Coût", timeNeeded: "Temps Requis", cumulTime: "Temps Cumulé", loyaltyShift: "Gain Fidélité", poisonPct: "% Poison", siteUnlock: "Déblocage", lvl: "Niv", next: "Proch", after: "Après", errAcLevels: "Niveaux AC invalides (0-20).", errProcTime: "Le temps de traitement doit être > 0.", errProcRate: "Le taux de traitement est nul."
   },
   de: {
-    appTitle: "Kombi-Ersteller", betaNote: "BETA b3.0 — VTS s1097 Community-Tool",
+    appTitle: "Kombi-Ersteller", betaNote: "BETA {version} — VTS s1097 Community-Tool",
     tabManual: "Manueller Bau", tabGenerator: "Kombi-Generator",
+    tabYouTube: "YouTube", toggleHeroInfo: "Helden-Info-Panels anzeigen",
     filterBySeasonTitle: "Nach Saison filtern", seasonLabel: "Saison", availableHeroesTitle: "Verfügbare Helden",
     filterByStateTitle: "Nach Kosten filtern", stateFree: "Kostenlos", statePaid: "Bezahlt",
     filterByTroopTitle: "Nach Truppen filtern", troopArchers: "Bogenschützen", troopFootmen: "Infanterie", troopCavalry: "Kavallerie", troopAll: "Alle",
@@ -248,8 +255,9 @@ export const translations = {
     resMaxProcessing: "Max. Verarbeitung (Täglich)", resUnits: "Einh.", resHrPerPatch: "/h pro Charge", resProdVsProc: "Produktion vs. Verarbeitung", resSurplus: "Überschuss", resDeficit: "Defizit", resTotalDaily: "Produktion Gesamt:", resTimeMax: "Zeit bis Max. Loyalität (8000)", step: "Schritt", upgrade: "Upgrade", cost: "Kosten", timeNeeded: "Benötigte Zeit", cumulTime: "Gesamtzeit", loyaltyShift: "Loyalität +/-", poisonPct: "Gift %", siteUnlock: "Freischaltung", lvl: "Lvl", next: "Nächste", after: "Danach", errAcLevels: "Ungültige Lagerlevel (0-20).", errProcTime: "Verarbeitungszeit muss > 0 sein.", errProcRate: "Verarbeitungsrate ist null."
   },
   id: {
-    appTitle: "Pembuat Kombo", betaNote: "BETA b3.0 — Alat Komunitas VTS s1097",
+    appTitle: "Pembuat Kombo", betaNote: "BETA {version} — Alat Komunitas VTS s1097",
     tabManual: "Mode Manual", tabGenerator: "Generator Kombo",
+    tabYouTube: "YouTube", toggleHeroInfo: "Tampilkan Panel Info Hero",
     filterBySeasonTitle: "Filter Musim", seasonLabel: "Musim", availableHeroesTitle: "Hero Tersedia",
     filterByStateTitle: "Filter Gratis/Berbayar", stateFree: "Gratis", statePaid: "Berbayar",
     filterByTroopTitle: "Filter Pasukan", troopArchers: "Pemanah", troopFootmen: "Infanteri", troopCavalry: "Kavaleri", troopAll: "Semua",
@@ -278,8 +286,9 @@ export const translations = {
     resMaxProcessing: "Pemrosesan Maks (Harian)", resUnits: "unit", resHrPerPatch: "/jam per antrean", resProdVsProc: "Produksi vs Pemrosesan", resSurplus: "Surplus", resDeficit: "Defisit", resTotalDaily: "Total Produksi:", resTimeMax: "Waktu ke Loyalitas Maks (8000)", step: "Langkah", upgrade: "Peningkatan", cost: "Biaya", timeNeeded: "Waktu Dibutuhkan", cumulTime: "Waktu Kumulatif", loyaltyShift: "Ubah Loyalitas", poisonPct: "Racun %", siteUnlock: "Buka Situs", lvl: "Lvl", next: "Berikut", after: "Setelah", errAcLevels: "Level AC tidak valid (0-20).", errProcTime: "Waktu proses harus > 0.", errProcRate: "Tingkat proses nol."
   },
   zh: {
-    appTitle: "英雄组合创建器", betaNote: "测试版 b3.0 — VTS s1097 社区工具",
+    appTitle: "英雄组合创建器", betaNote: "测试版 {version} — VTS s1097 社区工具",
     tabManual: "手动模式", tabGenerator: "组合生成器",
+    tabYouTube: "YouTube", toggleHeroInfo: "显示英雄信息面板",
     filterBySeasonTitle: "按赛季筛选", seasonLabel: "赛季", availableHeroesTitle: "可用英雄",
     filterByStateTitle: "按付费类型筛选", stateFree: "免费", statePaid: "付费",
     filterByTroopTitle: "按兵种筛选", troopArchers: "弓兵", troopFootmen: "步兵", troopCavalry: "骑兵", troopAll: "全部",
@@ -308,8 +317,9 @@ export const translations = {
     resMaxProcessing: "最大处理量 (每日)", resUnits: "单位", resHrPerPatch: "/小时 每批", resProdVsProc: "生产对比处理", resSurplus: "盈余", resDeficit: "赤字", resTotalDaily: "总日产量:", resTimeMax: "到达最大忠诚度 (8000) 所需时间", step: "步骤", upgrade: "升级", cost: "成本", timeNeeded: "所需时间", cumulTime: "累计时间", loyaltyShift: "忠诚度变化", poisonPct: "毒气 %", siteUnlock: "解锁矿区", lvl: "等级", next: "下一个", after: "其后", errAcLevels: "请输入有效的 AC 等级 (0-20)。", errProcTime: "处理时间必须 > 0。", errProcRate: "处理率为零，请检查批次值。"
   },
   ar: {
-    appTitle: "صانع تشكيلات الأبطال", betaNote: "نسخة تجريبية b3.0 — أداة مجتمع VTS s1097",
+    appTitle: "صانع تشكيلات الأبطال", betaNote: "نسخة تجريبية {version} — أداة مجتمع VTS s1097",
     tabManual: "بناء يدوي", tabGenerator: "مولد التشكيلات",
+    tabYouTube: "يوتيوب", toggleHeroInfo: "إظهار لوحات معلومات الأبطال",
     filterBySeasonTitle: "تصفية حسب الموسم", seasonLabel: "الموسم", availableHeroesTitle: "الأبطال المتاحون",
     filterByStateTitle: "تصفية مدفوع أو مجاني", stateFree: "مجاني", statePaid: "مدفوع",
     filterByTroopTitle: "تصفية القوات", troopArchers: "رماة", troopFootmen: "مشاة", troopCavalry: "فرسان", troopAll: "الكل",
@@ -338,8 +348,9 @@ export const translations = {
     resMaxProcessing: "الحد الأقصى للمعالجة (يومياً)", resUnits: "وحدة", resHrPerPatch: "/ساعة لكل دفعة", resProdVsProc: "الإنتاج مقابل المعالجة", resSurplus: "فائض", resDeficit: "عجز", resTotalDaily: "إجمالي الإنتاج:", resTimeMax: "الوقت للولاء الأقصى (8000)", step: "خطوة", upgrade: "ترقية", cost: "التكلفة", timeNeeded: "الوقت المطلوب", cumulTime: "الوقت التراكمي", loyaltyShift: "تغير الولاء", poisonPct: "نسبة السم", siteUnlock: "فتح الموقع", lvl: "مستوى", next: "التالي", after: "بعده", errAcLevels: "الرجاء إدخال مستويات صحيحة (0-20).", errProcTime: "وقت المعالجة يجب أن يكون > 0.", errProcRate: "معدل المعالجة صفر."
   },
   kr: {
-    appTitle: "영웅 조합 생성기", betaNote: "베타 b3.0 — VTS s1097 커뮤니티 도구",
+    appTitle: "영웅 조합 생성기", betaNote: "베타 {version} — VTS s1097 커뮤니티 도구",
     tabManual: "수동 빌더", tabGenerator: "조합 생성기",
+    tabYouTube: "YouTube", toggleHeroInfo: "영웅 정보 패널 표시",
     filterBySeasonTitle: "시즌별 필터", seasonLabel: "시즌", availableHeroesTitle: "사용 가능 영웅",
     filterByStateTitle: "유료/무료 필터", stateFree: "무료", statePaid: "유료",
     filterByTroopTitle: "병종 필터", troopArchers: "궁병", troopFootmen: "보병", troopCavalry: "기병", troopAll: "전체",
@@ -368,7 +379,3 @@ export const translations = {
     resMaxProcessing: "최대 처리량 (일일)", resUnits: "단위", resHrPerPatch: "/시간 (배치 당)", resProdVsProc: "생산 대비 처리량", resSurplus: "잉여", resDeficit: "부족", resTotalDaily: "총 일일 생산량:", resTimeMax: "최대 충성도(8000) 도달 시간", step: "단계", upgrade: "업그레이드", cost: "비용", timeNeeded: "소요 시간", cumulTime: "누적 시간", loyaltyShift: "충성도 변화", poisonPct: "독 %", siteUnlock: "잠금 해제 사이트", lvl: "레벨", next: "다음", after: "이후", errAcLevels: "올바른 AC 레벨(0-20)을 입력하세요.", errProcTime: "처리 시간은 0보다 커야 합니다.", errProcRate: "처리 속도가 0입니다. 배치 값을 확인하세요."
   }
 };
-
-
-
-
