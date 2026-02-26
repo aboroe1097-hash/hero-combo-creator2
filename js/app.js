@@ -3,8 +3,8 @@ import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
 import { rankedCombos } from './combos-db.js';
-import { initLoyaltyCalculator } from './loyalty-calculator.js'; // <-- NEW
-import { heroesExtendedData } from './heroes-info.js'; // <-- NEW IMPORT
+import { initLoyaltyCalculator } from './loyalty-calculator.js';
+import { heroesExtendedData } from './heroes-info.js';
 
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
@@ -29,16 +29,16 @@ const generatorResultsEl   = document.getElementById('generatorResults');
 const generateCombosBtn    = document.getElementById('generateCombosBtn');
 const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 const comboFooterBar       = document.getElementById('comboFooterBar');
-const tabLoyaltyBtn      = document.getElementById('tabLoyalty'); // NEW
-const loyaltySection     = document.getElementById('loyaltyCalcSection'); // NEW
+const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
+const loyaltySection       = document.getElementById('loyaltyCalcSection');
 
 // Filter containers
-const seasonFiltersEl         = document.getElementById('seasonFilters');
-const stateFiltersEl          = document.getElementById('stateFilters');
-const troopFiltersEl          = document.getElementById('troopFilters');
-const genSeasonFiltersEl      = document.getElementById('generatorSeasonFilters');
-const genStateFiltersEl       = document.getElementById('generatorStateFilters');
-const genTroopFiltersEl       = document.getElementById('generatorTroopFilters');
+const seasonFiltersEl      = document.getElementById('seasonFilters');
+const stateFiltersEl       = document.getElementById('stateFilters');
+const troopFiltersEl       = document.getElementById('troopFilters');
+const genSeasonFiltersEl   = document.getElementById('generatorSeasonFilters');
+const genStateFiltersEl    = document.getElementById('generatorStateFilters');
+const genTroopFiltersEl    = document.getElementById('generatorTroopFilters');
 
 // --- STATE ---
 let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
@@ -65,7 +65,7 @@ let db     = null;
 // For “Share as Text”
 let savedCombosCache = [];
 
-// NEW: touch-drag state for mobile manual builder
+// Touch-drag state for mobile manual builder
 let touchDragHero  = null;
 let touchDragGhost = null;
 
@@ -105,6 +105,7 @@ const allHeroesData = [
   { name: 'Witch Hunter', season: 'S2',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png' },
   { name: 'Ramses II', season: 'S2',Type:'Archers', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png' },
   { name: 'Octavius', season: 'S2',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png' },
+
   { name: 'Che Liu', season: 'S3',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xqrtrvc1/image-2026-01-25-212407172.png' },
   { name: 'War Lord', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png' },
   { name: 'Jane', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png' },
@@ -143,15 +144,9 @@ const seasonColors = {
   S5: '#67ab69'
 };
 
-// --- UTILITIES ---
-// --- HERO HOVER TOOLTIP ---
-
-// --- HERO HOVER TOOLTIP ---
-
-// Create the Tooltip UI element once and attach to body
+// --- HERO HOVER TOOLTIP (Optimized for Mobile) ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-// OPTIMIZED FOR MOBILE: Max width, reduced padding, dynamic sizing
 heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-80 max-w-[320px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
@@ -166,7 +161,6 @@ function showHeroTooltip(e, heroName) {
   const data = heroesExtendedData[heroName];
   if (!data) return; // If hero is not in the database yet, do nothing
 
-  // Generate HTML for skills - Scaled down text for mobile
   let skillsHtml = data.skills.map(s => `
     <div class="mb-2 bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-inner">
       <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
@@ -178,7 +172,6 @@ function showHeroTooltip(e, heroName) {
     </div>
   `).join('');
 
-  // Set the full Tooltip HTML
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
       <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
@@ -203,38 +196,22 @@ function showHeroTooltip(e, heroName) {
 
 function moveHeroTooltip(e) {
   if (heroTooltip.classList.contains('hidden')) return;
-  
   const rect = heroTooltip.getBoundingClientRect();
   
-  // Get touch or mouse coordinates
   let clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches.length > 0 ? e.touches[0].clientX : window.innerWidth / 2);
   let clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches.length > 0 ? e.touches[0].clientY : window.innerHeight / 2);
 
   let x, y;
-
-  // Mobile layout (< 640px)
   if (window.innerWidth < 640) {
-    x = (window.innerWidth - rect.width) / 2; // Center horizontally
-    
-    // If tapping in lower half of screen, show tooltip ABOVE finger
-    if (clientY > window.innerHeight / 2) {
-      y = clientY - rect.height - 20;
-    } else {
-      // Show BELOW finger
-      y = clientY + 30;
-    }
-  } 
-  // Desktop layout
-  else {
+    x = (window.innerWidth - rect.width) / 2;
+    if (clientY > window.innerHeight / 2) y = clientY - rect.height - 20;
+    else y = clientY + 30;
+  } else {
     x = clientX + 15;
     y = clientY + 15;
-    // Prevent clipping right edge
     if (x + rect.width > window.innerWidth) x = clientX - rect.width - 15;
-    // Prevent clipping bottom edge
     if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 15;
   }
-
-  // Final safety checks so it never goes off-screen entirely
   if (y < 10) y = 10;
   if (x < 10) x = 10;
 
@@ -250,99 +227,87 @@ function hideHeroTooltip() {
   }, 200);
 }
 
-// small helper to collect checkbox values in a container
+
+// --- UTILITIES ---
+
+// RESTORED: Fetch Image URL for slots and tables
+function getHeroImageUrl(name) {
+  const h = allHeroesData.find(x => x.name === name);
+  return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
+}
+
+// Map the Hero Type to a specific color class for the cards
+function getTroopColorClass(type) {
+  switch(type) {
+    case 'Archers': return 'text-emerald-400';
+    case 'Footmen': return 'text-amber-400';
+    case 'Cavalry': return 'text-sky-400';
+    case 'All': return 'text-purple-400';
+    default: return 'text-slate-400';
+  }
+}
+
+// Fetch localized version of the troop type text
+function getLocalizedTroop(type) {
+  const t = translations[currentLanguage] || translations.en;
+  if (type === 'Archers') return t.troopArchers || type;
+  if (type === 'Footmen') return t.troopFootmen || type;
+  if (type === 'Cavalry') return t.troopCavalry || type;
+  if (type === 'All') return t.troopAll || type;
+  return type;
+}
+
 function getCheckedValues(container) {
   if (!container) return [];
   return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
     .map(i => i.value);
 }
 
-// convert raw state checkbox values into canonical ['Free','Paid']
 function computeStateSelection(container) {
   const raw = getCheckedValues(container).map(v => v.toLowerCase());
   const set = new Set();
-
-  if (raw.length === 0) {
-    // nothing checked -> no restriction (both)
-    return ['Free', 'Paid'];
-  }
-
+  if (raw.length === 0) return ['Free', 'Paid'];
   if (raw.some(v => v.includes('paid') && v.includes('free'))) {
-    set.add('Free');
-    set.add('Paid');
+    set.add('Free'); set.add('Paid');
   }
   if (raw.some(v => v === 'free')) set.add('Free');
   if (raw.some(v => v === 'paid')) set.add('Paid');
-
-  if (set.size === 0) {
-    // only "both" style values
-    set.add('Free');
-    set.add('Paid');
-  }
+  if (set.size === 0) { set.add('Free'); set.add('Paid'); }
   return Array.from(set);
 }
 
-// convert raw troop type values into canonical types
 function computeTypeSelection(container) {
   const raw = getCheckedValues(container).map(v => v.toLowerCase());
-  if (raw.length === 0) {
-    return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  }
-
-  // "All" option
-  const hasAll = raw.some(v =>
-    v.includes('all') ||
-    v.includes('cavalry or archers') ||
-    v.includes('cavalry or archers or footmen')
-  );
-  if (hasAll) {
-    return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  }
-
+  if (raw.length === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
+  const hasAll = raw.some(v => v.includes('all') || v.includes('cavalry or archers'));
+  if (hasAll) return ['Archers', 'Footmen', 'Cavalry', 'All'];
   const set = new Set();
   if (raw.some(v => v.includes('archers'))) set.add('Archers');
   if (raw.some(v => v.includes('footmen'))) set.add('Footmen');
   if (raw.some(v => v.includes('cavalry'))) set.add('Cavalry');
-  if (set.size === 0) {
-    return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  }
-  // Always treat 'All'-type heroes as visible, even if not explicitly selected
+  if (set.size === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
   return Array.from(set);
 }
 
-// hero matches season / state / troop type filters
 function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
-  // season
   if (!seasonsArr || seasonsArr.length === 0) return false;
   if (!seasonsArr.includes(hero.season)) return false;
-
-  // state
   const heroState = hero.State || 'Free';
   if (statesArr && statesArr.length && !statesArr.includes(heroState)) return false;
-
-  // type
   const heroType = hero.Type || 'All';
   if (!typesArr || !typesArr.length) return true;
-  if (heroType === 'All') return true; // heroes usable in all troop types
+  if (heroType === 'All') return true; 
   if (typesArr.includes('All')) return true;
   return typesArr.includes(heroType);
 }
-
-// order-independent match against rankedCombos
-// js/app.js
-
-// UPDATED: Dynamic Scoring (Percentage based)
-// js/app.js
 
 function getComboRankInfo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return null;
   const userSorted = [...heroes].slice().sort();
   const total = rankedCombos.length;
-
   for (let i = 0; i < total; i++) {
     const combo = rankedCombos[i];
     if (!combo.heroes || combo.heroes.length !== 3) continue;
-    
     const comboSorted = [...combo.heroes].slice().sort();
     if (
       comboSorted[0] === userSorted[0] &&
@@ -350,20 +315,14 @@ function getComboRankInfo(heroes) {
       comboSorted[2] === userSorted[2]
     ) {
       const rank = i + 1;
-      
-      // FORMULA: Map Rank 1 -> 100, Last Rank -> 1
       let rawScore = 100;
-      if (total > 1) {
-        rawScore = 100 - ((i / (total - 1)) * 99);
-      }
-      
+      if (total > 1) rawScore = 100 - ((i / (total - 1)) * 99);
       return { rank, score: rawScore.toFixed(1), index: i };
     }
   }
   return null;
 }
 
-// hero already present in current combo (optionally ignore a slot index)
 function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
   return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
@@ -372,7 +331,6 @@ function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
   messageBox.classList.remove('hidden');
-
   if (onConfirm) {
     messageBoxOkBtn.textContent = t.messageBoxConfirm || 'Confirm';
     messageBoxCancelBtn.classList.remove('hidden');
@@ -388,7 +346,6 @@ function showAboModal(message, onConfirm = null) {
   }
 }
 
-// generic “download element as PNG” using html2canvas
 function captureElementAsImage(element, filename) {
   if (!element) return;
   const h2c = window.html2canvas;
@@ -409,14 +366,11 @@ function captureElementAsImage(element, filename) {
 }
 
 // --- TOUCH DRAG (MOBILE) ---
-
 function createTouchGhost(card, touch) {
   if (!card || !touch) return;
-  // remove old ghost if any
   if (touchDragGhost && touchDragGhost.parentNode) {
     touchDragGhost.parentNode.removeChild(touchDragGhost);
   }
-
   const rect = card.getBoundingClientRect();
   const ghost = card.cloneNode(true);
   ghost.style.position = 'fixed';
@@ -434,12 +388,10 @@ function createTouchGhost(card, touch) {
 }
 
 function setupTouchDragForManualBuilder() {
-  // Move ghost with finger
   document.addEventListener('touchmove', (e) => {
     if (!touchDragHero || !touchDragGhost) return;
     const touch = e.touches && e.touches[0];
     if (!touch) return;
-    // When actually dragging, prevent page scroll
     e.preventDefault();
     const w = touchDragGhost.offsetWidth || 80;
     const h = touchDragGhost.offsetHeight || 80;
@@ -447,48 +399,27 @@ function setupTouchDragForManualBuilder() {
     touchDragGhost.style.top  = `${touch.clientY - h / 2}px`;
   }, { passive: false });
 
-  // Drop on slot where finger ends
   document.addEventListener('touchend', (e) => {
     if (!touchDragHero) return;
     const touch = e.changedTouches && e.changedTouches[0];
-
     if (touchDragGhost && touchDragGhost.parentNode) {
       touchDragGhost.parentNode.removeChild(touchDragGhost);
     }
     touchDragGhost = null;
-
-    if (!touch) {
-      touchDragHero = null;
-      return;
-    }
-
+    if (!touch) { touchDragHero = null; return; }
     const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!targetElement) {
-      touchDragHero = null;
-      return;
-    }
-
+    if (!targetElement) { touchDragHero = null; return; }
     const slot = targetElement.closest && targetElement.closest('.combo-slot');
-    if (!slot) {
-      touchDragHero = null;
-      return;
-    }
-
+    if (!slot) { touchDragHero = null; return; }
     const idx = parseInt(slot.dataset.slotIndex, 10);
-    if (Number.isNaN(idx)) {
-      touchDragHero = null;
-      return;
-    }
+    if (Number.isNaN(idx)) { touchDragHero = null; return; }
 
     if (isHeroAlreadyInCombo(touchDragHero, idx)) {
       const t = translations[currentLanguage] || translations.en;
-      showAboModal(
-        t.manualNoDuplicateHero || 'This hero is already used in your current combo.'
-      );
+      showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
       touchDragHero = null;
       return;
     }
-
     currentCombo[idx] = touchDragHero;
     updateComboSlotDisplay(slot, touchDragHero, idx);
     updateManualComboScore();
@@ -509,7 +440,6 @@ function setupTouchDragForManualBuilder() {
 function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
   const t = translations[currentLanguage] || translations.en;
-
   availableHeroesEl.innerHTML = '';
   allHeroesData
     .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
@@ -518,47 +448,42 @@ function renderAvailableHeroes() {
       card.className = 'hero-card';
       card.draggable = true;
       card.dataset.heroName = hero.name;
-      // NEW HOVER EVENTS FOR TOOLTIP
+      
       card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
       card.addEventListener('mousemove', moveHeroTooltip);
       card.addEventListener('mouseleave', hideHeroTooltip);
 
       const tagColor = seasonColors[hero.season] || '#f97316';
+      // ADDED: Troop type tag below the name
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
         <img src="${hero.imageUrl}" alt="${hero.name}">
-        <span class="mt-1 text-center font-bold text-[10px]">${hero.name}</span>
+        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
+            <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
+            <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
+        </div>
       `;
 
-      // Desktop drag
       card.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
-      // NEW: touchstart creates ghost + sets hero
       card.addEventListener('touchstart', (e) => {
         const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
       }, { passive: true });
 
-      // Tap / click add (mobile + desktop)
       card.addEventListener('click', () => {
         if (isHeroAlreadyInCombo(hero.name)) {
-          showAboModal(
-            t.manualNoDuplicateHero || 'This hero is already used in your current combo.'
-          );
+          showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
           return;
         }
-
         const emptyIndex = currentCombo.indexOf(null);
         if (emptyIndex === -1) {
-          showAboModal(
-            t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.'
-          );
+          showAboModal(t.messagePleaseDrag3Heroes || 'Please use Clear to reset your combo first.');
           return;
         }
-
         currentCombo[emptyIndex] = hero.name;
         const slots = document.querySelectorAll('.combo-slot');
         const targetSlot = slots[emptyIndex];
@@ -567,16 +492,12 @@ function renderAvailableHeroes() {
           updateManualComboScore();
         }
       });
-
       availableHeroesEl.appendChild(card);
     });
 }
 
-// js/app.js
-
 function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
-
   if (name) {
     slot.innerHTML = `
       <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
@@ -585,7 +506,6 @@ function updateComboSlotDisplay(slot, name, idx) {
       </span>`;
     slot.classList.add('relative', 'p-0');
   } else {
-    // FIXED: Added data-i18n="dragHeroHere" to the span below
     slot.innerHTML = `
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
         <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
@@ -596,7 +516,7 @@ function updateComboSlotDisplay(slot, name, idx) {
     slot.classList.remove('relative', 'p-0');
   }
 }
-// score label under manual combo slots
+
 function updateManualComboScore() {
   const t = translations[currentLanguage] || translations.en;
   const bar = document.getElementById('comboFooterBar');
@@ -622,8 +542,7 @@ function updateManualComboScore() {
   scoreBox.classList.remove('hidden');
 
   if (!info) {
-    scoreBox.textContent =
-      t.manualComboNotRanked || 'This combo is not in the ranked database.';
+    scoreBox.textContent = t.manualComboNotRanked || 'This combo is not in the ranked database.';
   } else {
     const label = t.generatorScoreLabel || 'Score:';
     scoreBox.innerHTML = `
@@ -639,7 +558,6 @@ function updateManualComboScore() {
 function renderGeneratorHeroes() {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
-
   allHeroesData
     .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
     .forEach(hero => {
@@ -647,10 +565,15 @@ function renderGeneratorHeroes() {
       card.className = `hero-card generator-card ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
+      
+      // ADDED: Troop type tag below the name
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
-        <img src="${getHeroImageUrl(hero.name)}" alt="${hero.name}" crossorigin="anonymous">
-        <span class="mt-1 text-center font-bold text-[10px]">${hero.name}</span>
+        <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
+        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
+            <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
+            <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
+        </div>
       `;
       card.onclick = () => {
         if (generatorSelectedHeroes.has(hero.name)) {
@@ -661,7 +584,6 @@ function renderGeneratorHeroes() {
           card.classList.add('generator-card-selected');
         }
       };
-      // NEW HOVER EVENTS FOR TOOLTIP
       card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
       card.addEventListener('mousemove', moveHeroTooltip);
       card.addEventListener('mouseleave', hideHeroTooltip);
@@ -717,20 +639,13 @@ async function saveCombo() {
     showAboModal(t.messagePleaseDrag3Heroes);
     return;
   }
-
   loadingSpinner.classList.remove('hidden');
   try {
-    const {
-      collection,
-      addDoc,
-      serverTimestamp
-    } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-
+    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
     await addDoc(collection(db, `users/${userId}/bestCombos`), {
       heroes: [...currentCombo],
       timestamp: serverTimestamp()
     });
-
     currentCombo = [null, null, null];
     document.querySelectorAll('.combo-slot')
       .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
@@ -741,14 +656,12 @@ async function saveCombo() {
     loadingSpinner.classList.add('hidden');
   }
 }
-// js/app.js - Inside generateBestCombos() function
 
 function generateBestCombos() {
-  // ... (keep the existing setup code at the top) ...
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
 
-  if (selected.length < 12) { // Changed to 12 as per your earlier request (or keep 15)
+  if (selected.length < 12) { 
     showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes.");
     return;
   }
@@ -756,22 +669,19 @@ function generateBestCombos() {
   const ownedSet = new Set(selected);
   const usedHeroesGlobal = new Set();
   const finalSelection = [];
-  const total = rankedCombos.length; // Needed for scoring
+  const total = rankedCombos.length;
 
   for (let i = 0; i < total; i++) {
     const combo = rankedCombos[i];
     if (finalSelection.length >= 5) break;
-
     const canBuild = combo.heroes.every(h => ownedSet.has(h));
     const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
 
     if (canBuild && isUnique) {
-      // NEW SCORING: 1 to 100 with decimals
       let rawScore = 100;
       if (total > 1) {
         rawScore = 100 - ((i / (total - 1)) * 99);
       }
-
       finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
       combo.heroes.forEach(h => usedHeroesGlobal.add(h));
     }
@@ -785,15 +695,10 @@ function generateBestCombos() {
     downloadGeneratorBtn.classList.add('hidden');
   }
 }
-// js/app.js
 
 function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
-  
-  // 1. Get Selected Heroes
   const selected = Array.from(generatorSelectedHeroes);
-
-  // 2. Validate
   if (selected.length < 3) {
     showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
     return;
@@ -802,14 +707,12 @@ function generateRandomCombos() {
   const ownedSet = new Set(selected);
   const total = rankedCombos.length;
 
-  // 3. Find ALL valid combos & calculate 1-100 scores
   const validCombos = rankedCombos
     .map((combo, index) => {
         let rawScore = 100;
         if (total > 1) {
           rawScore = 100 - ((index / (total - 1)) * 99);
         }
-        
         return {
           ...combo,
           originalIndex: index,
@@ -823,31 +726,25 @@ function generateRandomCombos() {
     return;
   }
 
-  // 4. Shuffle (Fisher-Yates)
   for (let i = validCombos.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
   }
 
-  // 5. Pick up to 5 unique teams
   const randomSelection = [];
   const usedHeroesGlobal = new Set();
 
   for (const combo of validCombos) {
     if (randomSelection.length >= 5) break;
-
     const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
-
     if (isUnique) {
       randomSelection.push(combo);
       combo.heroes.forEach(h => usedHeroesGlobal.add(h));
     }
   }
 
-  // 6. Sort by Score (High to Low)
   randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
 
-  // 7. Render
   if (randomSelection.length === 0) {
      showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
   } else {
@@ -855,21 +752,13 @@ function generateRandomCombos() {
      downloadGeneratorBtn.classList.remove('hidden');
   }
 }
-// Firestore listener for “Last Best Combos”
+
 async function setupFirestoreListener() {
   const _db = getDb();
   if (!_db || !userId) return;
   db = _db;
 
-  const {
-    collection,
-    query,
-    orderBy,
-    limit,
-    onSnapshot,
-    deleteDoc,
-    doc
-  } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
 
   const q = query(
     collection(db, `users/${userId}/bestCombos`),
@@ -937,13 +826,7 @@ async function setupFirestoreListener() {
 }
 
 // --- UI WIRING ---
-
-
-
-// --- UI WIRING ---
-
 function wireUIActions() {
-  // 1. Language switch
   if (languageSelect) {
     languageSelect.onchange = e => {
       currentLanguage = e.target.value;
@@ -954,23 +837,16 @@ function wireUIActions() {
     };
   }
 
-  // 2. Tab Navigation (Updated for 3 Tabs)
-  const tabLoyaltyBtn  = document.getElementById('tabLoyalty');
-  const loyaltySection = document.getElementById('loyaltyCalcSection');
-
   const switchTab = (tabName) => {
-    // Hide all sections first
     if (manualSection) manualSection.classList.add('hidden');
     if (generatorSection) generatorSection.classList.add('hidden');
     if (loyaltySection) loyaltySection.classList.add('hidden');
     if (comboFooterBar) comboFooterBar.style.display = 'none';
 
-    // Reset all buttons to inactive
     if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-inactive';
     if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-inactive';
     if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-inactive';
 
-    // Show the active tab and section
     if (tabName === 'manual') {
       if (manualSection) manualSection.classList.remove('hidden');
       if (comboFooterBar) comboFooterBar.style.display = 'block';
@@ -984,19 +860,14 @@ function wireUIActions() {
     }
   };
 
-  // Bind click events to tabs
   if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
   if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
   if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
 
-
-  // 3. --- Manual filters ---
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
-      if (!selectedSeasons.length) {
-        selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
-      }
+      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
       renderAvailableHeroes();
     });
   }
@@ -1015,13 +886,10 @@ function wireUIActions() {
     });
   }
 
-  // 4. --- Generator filters ---
   if (genSeasonFiltersEl) {
     genSeasonFiltersEl.addEventListener('change', () => {
       generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
-      if (!generatorSelectedSeasons.length) {
-        generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
-      }
+      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
       renderGeneratorHeroes();
     });
   }
@@ -1040,8 +908,6 @@ function wireUIActions() {
     });
   }
 
-
-  // 5. Generator select/clear all buttons
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
 
@@ -1061,7 +927,6 @@ function wireUIActions() {
     };
   }
 
-  // 6. Main Actions
   if (saveComboBtn) saveComboBtn.onclick = saveCombo;
   
   if (clearComboBtn) {
@@ -1078,7 +943,6 @@ function wireUIActions() {
   const generateRandomBtn = document.getElementById('generateRandomBtn');
   if (generateRandomBtn) generateRandomBtn.onclick = generateRandomCombos;
 
-  // 7. Manual: download “Last Best Combos” as image
   if (downloadCombosBtn) {
     downloadCombosBtn.onclick = () => {
       const t = translations[currentLanguage] || translations.en;
@@ -1090,7 +954,6 @@ function wireUIActions() {
     };
   }
 
-  // 8. Manual: share all combos as text
   if (shareAllCombosBtn) {
     shareAllCombosBtn.onclick = async () => {
       const t = translations[currentLanguage] || translations.en;
@@ -1111,9 +974,7 @@ function wireUIActions() {
           await navigator.share({ text });
         } else if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text);
-          showAboModal(
-            t.shareCombosCopied || 'Combos copied to clipboard. You can paste them anywhere.'
-          );
+          showAboModal(t.shareCombosCopied || 'Combos copied to clipboard. You can paste them anywhere.');
         } else {
           showAboModal(text);
         }
@@ -1123,33 +984,28 @@ function wireUIActions() {
     };
   }
 
-  // 9. Generator: download results as image
   if (downloadGeneratorBtn) {
     downloadGeneratorBtn.onclick = () => {
       const t = translations[currentLanguage] || translations.en;
       if (!generatorResultsEl || !generatorResultsEl.children.length) {
-        showAboModal(
-          t.generatorNoCombosAvailable || 'No ranked combos found.'
-        );
+        showAboModal(t.generatorNoCombosAvailable || 'No ranked combos found.');
         return;
       }
       captureElementAsImage(generatorResultsEl, 'vts-generator-results.png');
     };
   }
 }
+
 // --- TRANSLATIONS / TEXT ---
-// js/app.js
 
 async function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
 
-  // 1. Map IDs to Translation Keys (For main layout elements)
   const idMap = {
     'appTitle': t.appTitle,
     'tabManual': t.tabManual,
     'tabGenerator': t.tabGenerator,
-    'tabLoyalty': t.tabLoyalty, // <-- ADD THIS
-    // Headers
+    'tabLoyalty': t.tabLoyalty,
     'filterBySeasonTitle': t.filterBySeasonTitle,
     'availableHeroesTitle': t.availableHeroesTitle,
     'createComboTitle': t.createComboTitle,
@@ -1158,9 +1014,8 @@ async function updateTextContent() {
     'genToolTitle': t.generatorTitle,
     'genIntroText': t.generatorIntro,
     'genFilterTitle': t.filterBySeasonTitle,
-    'genSelectTitle': t.genSelectTitle, // New
-'calcLoyaltyBtn': t.calcUpgradesBtn, // <-- ADD THIS (if your button has id="calcLoyaltyBtn")
-    // Buttons
+    'genSelectTitle': t.genSelectTitle,
+    'calcLoyaltyBtn': t.calcUpgradesBtn,
     'saveComboBtn': t.saveComboBtn,
     'clearComboBtn': t.clearComboBtn,
     'downloadCombosBtn': t.downloadCombosBtn,
@@ -1172,26 +1027,21 @@ async function updateTextContent() {
     'generateRandomBtn': t.generatorRandomBtn
   };
 
-  // Apply ID-based translations
   for (const [id, text] of Object.entries(idMap)) {
     const el = document.getElementById(id);
     if (el && text) el.textContent = text;
   }
 
-  // 2. Apply "data-i18n" translations (For Filters, Labels, New Headers)
-  // This automatically translates anything with <span data-i18n="key">
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (t[key]) el.textContent = t[key];
   });
 
-  // 3. Apply "data-i18n-ph" translations (For Input Placeholders)
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const key = el.getAttribute('data-i18n-ph');
     if (t[key]) el.placeholder = t[key];
   });
 
-  // 4. Update dynamic score text if a combo is currently selected
   updateManualComboScore();
 }
 
@@ -1201,7 +1051,6 @@ async function updateTextContent() {
   wireUIActions();
   await updateTextContent();
 
-  // initialize filter state from current DOM (so defaults in HTML are respected)
   if (seasonFiltersEl) {
     const seasons = getCheckedValues(seasonFiltersEl);
     if (seasons.length) selectedSeasons = seasons;
@@ -1219,18 +1068,15 @@ async function updateTextContent() {
   renderAvailableHeroes();
   renderGeneratorHeroes();
 
-  // touch drag support for mobile
   setupTouchDragForManualBuilder();
-  initLoyaltyCalculator(); // <-- ADD THIS
-  // default landing: generator tab
+  initLoyaltyCalculator();
+  
   tabGeneratorBtn.click();
 
-  // set up combo slots for DnD
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
     slot.dataset.slotIndex = i;
     updateComboSlotDisplay(slot, null, i);
 
-    // desktop HTML5 drag support
     slot.addEventListener('dragover', e => e.preventDefault());
     slot.addEventListener('drop', e => {
       e.preventDefault();
@@ -1239,9 +1085,7 @@ async function updateTextContent() {
 
       if (isHeroAlreadyInCombo(name, idx)) {
         const t = translations[currentLanguage] || translations.en;
-        showAboModal(
-          t.manualNoDuplicateHero || 'This hero is already used in your current combo.'
-        );
+        showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
         return;
       }
 
