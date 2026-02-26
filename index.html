@@ -63,6 +63,7 @@
 </head>
 <body class="p-3 sm:p-4">
   <div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
+    
     <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
     
     <div class="logo-container">
@@ -74,7 +75,7 @@
       </div>
     </div>
 
-<div class="flex justify-end mb-6 relative z-50">
+    <div class="flex justify-end mb-6 relative z-50">
       <div class="relative inline-block group">
         <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
           
@@ -108,8 +109,8 @@
       </div>
     </div>
 
-<div class="flex justify-center mb-6">
-      <div class="inline-flex bg-slate-800 rounded-full p-1 border border-slate-700">
+    <div class="flex justify-center mb-6">
+      <div class="inline-flex flex-wrap justify-center bg-slate-800 rounded-2xl sm:rounded-full p-1 border border-slate-700 gap-1 sm:gap-0">
         <button id="tabManual" class="tab-pill tab-pill-inactive">Manual Builder</button>
         <div class="relative">
           <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
@@ -119,11 +120,15 @@
           <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">Eden Loyalty</button>
           <span class="absolute -top-2 -right-1 bg-sky-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase">New</span>
         </div>
+        <button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube">
+          <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>
+          YouTube
+        </button>
       </div>
     </div>
 
-<section id="manualBuilderSection" class="hidden">
-    <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+    <section id="manualBuilderSection" class="hidden">
+      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
         <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
         <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
             <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
@@ -147,15 +152,15 @@
             <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
             <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
         </div>
-    </div>
-
+      </div>
 
       <div class="mb-8">
         <h2 id="availableHeroesTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Available Heroes</h2>
         <div id="availableHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
       </div>
 
-<div id="comboFooterBar" style="display: none;" class="sticky bottom-4 sm:bottom-6 z-[100] mt-8 p-4 sm:p-6 bg-slate-900/95 backdrop-blur-xl rounded-2xl border-2 border-slate-600 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] w-full transition-all">        <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
+      <div id="comboFooterBar" style="display: none;" class="sticky bottom-4 sm:bottom-6 z-[100] mt-8 p-4 sm:p-6 bg-slate-900/95 backdrop-blur-xl rounded-2xl border-2 border-slate-600 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] w-full transition-all">        
+        <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
         <div id="comboRow" class="flex justify-center items-center gap-1 sm:gap-4 flex-nowrap">
           <div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div>
         </div>
@@ -174,61 +179,59 @@
       </div>
     </section>
 
-<section id="comboGeneratorSection">
-    <div class="mb-6">
-        <h2 id="genToolTitle" data-i18n="generatorTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
-        <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
-    </div>
+    <section id="comboGeneratorSection">
+      <div class="mb-6">
+          <h2 id="genToolTitle" data-i18n="generatorTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
+          <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
+      </div>
 
-    <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-        <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
-        <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
-            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
-            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
-            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
-            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
-            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
-            <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
-        </div>
+      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
+          <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
+              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
+              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
+              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
+              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+              <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
+          </div>
 
-        <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
-        <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
-            <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
-            <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
-        </div>
+          <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
+          <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+              <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+          </div>
 
-        <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
-        <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
-            <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
-            <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
-            <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
-            <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
-        </div>
-    </div>
-
+          <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
+          <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+              <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+              <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+              <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          </div>
+      </div>
 
       <div class="mb-6">
-<div class="flex items-center justify-between mb-4">
-    <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
-    <div class="flex gap-2">
-        <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All</button>
-        <button id="genClearAllBtn" data-i18n="generatorClearAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear All</button>
-    </div>
-</div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
+            <div class="flex gap-2">
+                <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All</button>
+                <button id="genClearAllBtn" data-i18n="generatorClearAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear All</button>
+            </div>
+        </div>
         <div id="generatorHeroes" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 justify-items-center"></div>
       </div>
 
-<div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
-  <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
-  <button id="generateRandomBtn" class="px-10 py-3 bg-amber-600 text-white font-extrabold rounded-full shadow-lg hover:bg-amber-700 transition">SURPRISE ME</button>
-  <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
-</div>
-      
+      <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
+        <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
+        <button id="generateRandomBtn" class="px-10 py-3 bg-amber-600 text-white font-extrabold rounded-full shadow-lg hover:bg-amber-700 transition">SURPRISE ME</button>
+        <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
+      </div>
+        
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
-
-   <section id="loyaltyCalcSection" class="hidden">
+    <section id="loyaltyCalcSection" class="hidden">
       <div class="mb-6">
         <h2 class="text-2xl font-semibold mb-2 text-slate-100" data-i18n="loyaltyTitle">Loyalty Upgrade Calculator</h2>
         <p class="text-sm text-slate-400 leading-relaxed" data-i18n="loyaltyDesc">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
@@ -244,53 +247,43 @@
             </div>
             
             <div class="sm:w-2/3 flex flex-col justify-center gap-3 sm:gap-4">
-              
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                 <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp1">Camp I Level</span>
                 <input type="number" id="ac1Level" min="0" max="20" value="20" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
-              
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                 <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp2">Camp II Level</span>
                 <input type="number" id="ac2Level" min="0" max="20" value="16" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
-              
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                 <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp3">Camp III Level</span>
                 <input type="number" id="ac3Level" min="0" max="20" value="12" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
-
               <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                 <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp4">Camp IV Level</span>
                 <input type="number" id="ac4Level" min="0" max="20" value="10" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
               </label>
-
             </div>
           </div>
         </div>
-
 
         <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
           <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="dailyProdTitle">Daily Production Sources (Units/Hour)</h3>
           
           <div class="flex flex-col gap-6">
-            
             <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
               <div class="sm:w-5/12 flex justify-center w-full">
                 <img src="images/prod_1_3.jpg" alt="Sources 1 to 3" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
               </div>
-              
               <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source1">Source 1</span>
                   <input type="number" id="source1" value="1830" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
-                
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source2">Source 2</span>
                   <input type="number" id="source2" value="64999" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
-                
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source3">Source 3</span>
                   <input type="number" id="source3" value="78801" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
@@ -304,33 +297,27 @@
               <div class="sm:w-5/12 flex justify-center w-full">
                 <img src="images/prod_4_6.jpg" alt="Sources 4 to 6" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
               </div>
-              
               <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source4">Source 4</span>
                   <input type="number" id="source4" value="4855" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
-                
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source5">Source 5</span>
                   <input type="number" id="source5" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
-                
                 <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
                   <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source6">Source 6</span>
                   <input type="number" id="source6" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
                 </label>
               </div>
             </div>
-
           </div>
         </div>
         
         <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
           <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="modifiersTitle">Modifiers</h3>
-          
           <div class="flex flex-col gap-4">
-            
             <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-purple-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
               <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
                 <img src="images/bonus_loyalty.png" alt="Bonus Loyalty" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
@@ -356,7 +343,6 @@
                 <input type="number" id="savedUnits" min="0" value="2340016" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-amber-500 transition-colors shadow-inner">
               </div>
             </label>
-
           </div>
         </div>
 
@@ -364,7 +350,6 @@
           <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="processingTitle">Processing Settings</h3>
           
           <div class="flex flex-col gap-4">
-            
             <div class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 shadow-md overflow-hidden group">
               <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
                 <img src="images/processing_time.jpg" alt="Processing Time" class="w-full max-h-32 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
@@ -409,10 +394,8 @@
                 <input type="number" id="numPatches" value="3" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
               </div>
             </label>
-
           </div>
         </div>
-
       </div>
 
       <div class="mt-8 text-center">
@@ -421,17 +404,45 @@
 
       <div id="loyaltyResult" class="mt-8"></div>
     </section>
+
+    <section id="youtubeSection" class="hidden animate-fade-in pb-8 mt-6">
+      
+      <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-sky-400 uppercase tracking-widest drop-shadow-md">VTS 1097 Journey & Randoms</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-amber-400 uppercase tracking-widest drop-shadow-md">Game Events & Guides</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+    </section>
     
-<section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
+    <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
       <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-widest">Comments & Suggestions</h2>
       
       <form id="commentForm" class="space-y-3 mb-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Your name (optional)" />
-          <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Email (optional)" />
+          <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Your name (optional)" />
+          <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Email (optional)" />
         </div>
         
-        <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none" placeholder="Write a suggestion..."></textarea>
+        <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Write a suggestion..."></textarea>
         
         <button type="submit" id="postCommentBtn" data-i18n="commentSubmitBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-lg">Submit Comment</button>
       </form>
@@ -444,7 +455,7 @@
         <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
         <div class="flex justify-center gap-3">
           <button id="messageBoxOkBtn" class="px-8 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">OK</button>
-          <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden">Cancel</button>
+          <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden transition">Cancel</button>
         </div>
       </div>
     </div>
@@ -454,47 +465,3 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
