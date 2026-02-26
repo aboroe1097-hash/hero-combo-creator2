@@ -157,6 +157,27 @@ document.addEventListener('touchstart', (e) => {
     hideHeroTooltip();
   }
 }, { passive: true });
+// NEW: Auto-formatter for dynamic skill text highlighting
+function formatSkillText(text) {
+  // 1. Highlight Percentages (e.g., 40%, -50%, 348%) -> Green/Red depending on context or just bright Sky Blue
+  let formatted = text.replace(/(-?\d+(?:\.\d+)?%)/g, '<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">$1</span>');
+  
+  // 2. Highlight Turns/Rounds and their numbers (e.g., 2 turns, 1 round) -> Amber
+  formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers))/gi, '<span class="font-bold text-amber-400">$1</span>');
+  
+  // 3. Highlight specific Status Effects (Silence, Disarm, Suppress, Confuse, etc.) -> Purple with underline
+  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash'];
+  const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
+  formatted = formatted.replace(statusRegex, '<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">$1</span>');
+
+  // 4. Highlight raw numbers that aren't caught by the turns/rounds rule (e.g., "target 2 random enemy") -> White & Bold
+  formatted = formatted.replace(/\b(\d+)\b(?!\s*(?:turn|round|time|layer|%))/gi, '<span class="font-bold text-white bg-slate-700/50 px-1 rounded">$1</span>');
+
+  // 5. Clean up any existing raw HTML tags from the database so they don't clash
+  formatted = formatted.replace(/<\/?b>/g, '').replace(/<\/?u>/g, '');
+
+  return formatted;
+}
 
 function showHeroTooltip(e, heroName) {
   const data = heroesExtendedData[heroName];
@@ -167,32 +188,54 @@ function showHeroTooltip(e, heroName) {
   const troopColorClass = getTroopColorClass(troopType);
   const localizedTroop = getLocalizedTroop(troopType);
 
-  let skillsHtml = data.skills.map(s => `
-    <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner">
-      <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
-        <span class="text-[10px] sm:text-xs font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
-        <span class="text-[8px] sm:text-[9.5px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
+  let skillsHtml = data.skills.map(s => {
+    // Process the description through our new formatter
+    const formattedDesc = formatSkillText(s.desc);
+
+    // Auto-highlight targets based on Ally or Enemy
+    const isEnemy = s.target.toLowerCase().includes('enemy');
+    const targetColor = isEnemy ? 'text-red-400' : 'text-emerald-400';
+
+    return `
+      <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner hover:border-slate-500 transition-colors">
+        <div class="flex justify-between items-center mb-1.5 border-b border-slate-700/50 pb-1">
+          <span class="text-[10px] sm:text-xs font-black text-slate-200 bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
+          <div class="flex gap-2">
+            <span class="text-[8px] sm:text-[9.5px] text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
+            <span class="text-[8px] sm:text-[9.5px] text-slate-500 font-bold uppercase">Range: <span class="text-white bg-slate-700 px-1 rounded">${s.range}</span></span>
+          </div>
+        </div>
+        <p class="text-[8.5px] sm:text-[10px] ${targetColor} font-bold mb-1.5 uppercase tracking-widest flex items-center gap-1">
+          <svg class="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-5.029-5.912c.328-.521.529-1.134.529-1.788a4.991 4.991 0 00-1.854-3.791A3.99 3.99 0 0114 12H6a3.99 3.99 0 012.354-8.491A4.991 4.991 0 006.5 7.3c0 .654.2 1.267.529 1.788A5.972 5.972 0 002 15v3h14z"></path></svg>
+          ${s.target}
+        </p>
+        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-300">${formattedDesc}</p>
       </div>
-      <p class="text-[8.5px] sm:text-[10px] text-amber-400 font-bold mb-0.5 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
-      <p class="text-[9.5px] sm:text-[11px] leading-snug text-slate-300">${s.desc}</p>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
-      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
+      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md">${heroName}</h4>
       
-      <div class="flex flex-col gap-0.5 mt-1">
-        <p class="text-[10px] sm:text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
-        <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
+      <div class="flex gap-3 mt-1.5 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+        <div class="flex flex-col">
+          <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
+          <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
+        </div>
+        <div class="w-px bg-slate-700/50"></div>
+        <div class="flex flex-col">
+          <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
+          <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
+        </div>
       </div>
 
-      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
+      <div class="flex justify-between items-center mt-2 px-1">
+        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
+        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-    <div class="flex flex-col gap-1 max-h-[45vh] sm:max-h-[50vh] md:max-h-[70vh] overflow-y-auto pr-1 shrink">
+    <div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[50vh] md:max-h-[70vh] overflow-y-auto pr-1 shrink">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
     </div>
   `;
