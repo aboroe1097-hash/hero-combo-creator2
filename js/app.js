@@ -1,13 +1,3 @@
-// js/app.js - Manual + Generator, scoring, no duplicates, image + text export
-import { translations } from './translations.js';
-import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
-import { initComments } from './comments.js';
-import { rankedCombos } from './combos-db.js';
-import { initLoyaltyCalculator } from './loyalty-calculator.js';
-import { heroesExtendedData } from './heroes-info.js';
-const tabYouTubeBtn      = document.getElementById('tabYouTube');
-const youtubeSection     = document.getElementById('youtubeSection');
-
 const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
 
 import { translations } from './translations.js';
