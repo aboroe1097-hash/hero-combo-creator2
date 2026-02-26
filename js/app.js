@@ -145,9 +145,11 @@ const seasonColors = {
 };
 
 // --- HERO HOVER TOOLTIP (Optimized for Mobile) ---
+// --- HERO HOVER TOOLTIP (Optimized for Mobile & PC) ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-80 max-w-[320px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+// ADDED: md:w-[450px], md:max-w-none for a wide, beautiful desktop view
+heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-80 md:w-[450px] max-w-[320px] md:max-w-none pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
 // Close tooltip when touching anywhere else on mobile
@@ -159,40 +161,40 @@ document.addEventListener('touchstart', (e) => {
 
 function showHeroTooltip(e, heroName) {
   const data = heroesExtendedData[heroName];
-  if (!data) return; // If hero is not in the database yet, do nothing
+  if (!data) return; 
 
-  // Grab the base hero data to find out their Troop Type
   const baseData = allHeroesData.find(h => h.name === heroName);
   const troopType = baseData ? baseData.Type : 'Unknown';
   const troopColorClass = getTroopColorClass(troopType);
   const localizedTroop = getLocalizedTroop(troopType);
 
+  // ADDED: md:p-3 and md:text-xs/sm classes for better desktop readability
   let skillsHtml = data.skills.map(s => `
-    <div class="mb-2 bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-inner">
+    <div class="mb-2 bg-slate-800 p-2 md:p-3 rounded-lg border border-slate-700 shadow-inner">
       <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
-        <span class="text-[10px] sm:text-xs font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
-        <span class="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
+        <span class="text-[10px] sm:text-xs md:text-[13px] font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
+        <span class="text-[8px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
       </div>
-      <p class="text-[8.5px] sm:text-[10px] text-amber-400 font-bold mb-1 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
-      <p class="text-[9.5px] sm:text-[10px] leading-snug text-slate-300">${s.desc}</p>
+      <p class="text-[8.5px] sm:text-[10px] md:text-[11px] text-amber-400 font-bold mb-1 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
+      <p class="text-[9.5px] sm:text-[10px] md:text-[12px] leading-snug md:leading-relaxed text-slate-300">${s.desc}</p>
     </div>
   `).join('');
 
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
-      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
+      <h4 class="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wider">${heroName}</h4>
       
       <div class="flex flex-col gap-0.5 mt-1">
-        <p class="text-[10px] sm:text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
-        <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
+        <p class="text-[10px] sm:text-[11px] md:text-xs text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
+        <p class="text-[10px] sm:text-[11px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
       </div>
 
-      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
-        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
+      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 md:p-2 rounded border border-slate-700/50">
+        <p class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
+        <p class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-    <div class="flex flex-col gap-1 max-h-[45vh] sm:max-h-[50vh] overflow-y-auto pr-1 shrink">
+    <div class="flex flex-col gap-1 max-h-[45vh] sm:max-h-[50vh] md:max-h-[85vh] overflow-y-auto pr-1 shrink">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
     </div>
   `;
