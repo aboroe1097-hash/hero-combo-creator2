@@ -6,6 +6,9 @@ import { rankedCombos } from './combos-db.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 
+// --- APP CONFIG ---
+const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
+
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
 const availableHeroesEl    = document.getElementById('availableHeroes');
@@ -1113,12 +1116,12 @@ function wireUIActions() {
 }
 
 // --- TRANSLATIONS / TEXT ---
-
 async function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
 
   const idMap = {
     'appTitle': t.appTitle,
+    'betaNote': t.betaNote, // <-- Make sure betaNote is in this list!
     'tabManual': t.tabManual,
     'tabGenerator': t.tabGenerator,
     'tabLoyalty': t.tabLoyalty,
@@ -1145,22 +1148,29 @@ async function updateTextContent() {
 
   for (const [id, text] of Object.entries(idMap)) {
     const el = document.getElementById(id);
-    if (el && text) el.textContent = text;
+    if (el && text) {
+      // NEW: Automatically injects the version number
+      el.textContent = text.replace('{version}', APP_VERSION);
+    }
   }
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (t[key]) el.textContent = t[key];
+    if (t[key]) {
+      // NEW: Automatically injects the version number
+      el.textContent = t[key].replace('{version}', APP_VERSION);
+    }
   });
 
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const key = el.getAttribute('data-i18n-ph');
-    if (t[key]) el.placeholder = t[key];
+    if (t[key]) {
+      el.placeholder = t[key].replace('{version}', APP_VERSION);
+    }
   });
 
   updateManualComboScore();
 }
-
 // --- MAIN ---
 
 (async function main() {
