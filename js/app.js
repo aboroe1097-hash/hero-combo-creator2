@@ -144,10 +144,11 @@ const seasonColors = {
   S5: '#67ab69'
 };
 
-// --- HERO HOVER TOOLTIP (Optimized for Mobile & PC) ---
+// --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-80 md:w-[450px] max-w-[320px] md:max-w-none pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+// FIXED width for desktop so it doesn't stretch too far (sm:w-[340px])
+heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
 // Close tooltip when touching anywhere else on mobile
@@ -167,31 +168,31 @@ function showHeroTooltip(e, heroName) {
   const localizedTroop = getLocalizedTroop(troopType);
 
   let skillsHtml = data.skills.map(s => `
-    <div class="mb-2 bg-slate-800 p-2 md:p-3 rounded-lg border border-slate-700 shadow-inner">
+    <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner">
       <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
-        <span class="text-[10px] sm:text-xs md:text-[13px] font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
-        <span class="text-[8px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
+        <span class="text-[10px] sm:text-xs font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
+        <span class="text-[8px] sm:text-[9.5px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
       </div>
-      <p class="text-[8.5px] sm:text-[10px] md:text-[11px] text-amber-400 font-bold mb-1 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
-      <p class="text-[9.5px] sm:text-[10px] md:text-[12px] leading-snug md:leading-relaxed text-slate-300">${s.desc}</p>
+      <p class="text-[8.5px] sm:text-[10px] text-amber-400 font-bold mb-0.5 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
+      <p class="text-[9.5px] sm:text-[11px] leading-snug text-slate-300">${s.desc}</p>
     </div>
   `).join('');
 
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
-      <h4 class="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-wider">${heroName}</h4>
+      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
       
       <div class="flex flex-col gap-0.5 mt-1">
-        <p class="text-[10px] sm:text-[11px] md:text-xs text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
-        <p class="text-[10px] sm:text-[11px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
+        <p class="text-[10px] sm:text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
+        <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
       </div>
 
-      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 md:p-2 rounded border border-slate-700/50">
-        <p class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
-        <p class="text-[9px] sm:text-[10px] md:text-[11px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
+      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
+        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
+        <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-    <div class="flex flex-col gap-1 max-h-[45vh] sm:max-h-[50vh] md:max-h-[85vh] overflow-y-auto pr-1 shrink">
+    <div class="flex flex-col gap-1 max-h-[45vh] sm:max-h-[50vh] md:max-h-[70vh] overflow-y-auto pr-1 shrink">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
     </div>
   `;
@@ -235,6 +236,12 @@ function hideHeroTooltip() {
   setTimeout(() => {
     if(heroTooltip.classList.contains('opacity-0')) heroTooltip.classList.add('hidden');
   }, 200);
+}
+
+// FORCE HIDE IMMEDIATELY ON DRAG
+function forceHideHeroTooltip() {
+  heroTooltip.classList.add('hidden', 'opacity-0');
+  heroTooltip.classList.remove('opacity-100');
 }
 
 
@@ -381,7 +388,7 @@ function createTouchGhost(card, touch) {
   const rect = card.getBoundingClientRect();
   const ghost = card.cloneNode(true);
   
-  // FIX 1: Enforce strict boundaries so the ghost cannot stretch
+  // FIX: Enforce strict boundaries so the ghost cannot stretch horizontally
   ghost.style.position = 'fixed';
   ghost.style.margin = '0';
   ghost.style.left = `${rect.left}px`;
@@ -478,17 +485,16 @@ function renderAvailableHeroes() {
       `;
 
       card.addEventListener('dragstart', e => {
+        forceHideHeroTooltip(); // HIDE TOOLTIP IMMEDIATELY ON DRAG (PC)
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
       card.addEventListener('touchstart', (e) => {
+        forceHideHeroTooltip(); // HIDE TOOLTIP IMMEDIATELY ON DRAG (MOBILE)
         const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
       }, { passive: true });
-
-      // FIX 2: Entirely removed the card.addEventListener('click') block from here. 
-      // Now, clicking/tapping the card will purely reveal the tooltip without auto-placing!
 
       availableHeroesEl.appendChild(card);
     });
@@ -1045,8 +1051,6 @@ async function updateTextContent() {
 // --- MAIN ---
 
 (async function main() {
-  // FIX 3: Add extra padding to the absolute bottom of the document so the browser 
-  // navigation bar never covers your buttons or footer when scrolling down.
   document.body.classList.add('pb-28');
 
   wireUIActions();
