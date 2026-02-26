@@ -186,8 +186,7 @@ function formatSkillText(text) {
     tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
   );
   
-  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting', 'Bleeding', 'bleeding'];
-  const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
+const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting', 'Bleeding', 'bleeding', 'Faltering', 'First to Attack', 'Fatal Blow'];  const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
   formatted = formatted.replace(statusRegex, (match) => 
     tokenize(`<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">${match}</span>`)
   );
