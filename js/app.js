@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG ---
-const APP_VERSION = "b2.6"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
+const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
 
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
