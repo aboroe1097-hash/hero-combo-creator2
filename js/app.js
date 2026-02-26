@@ -1,4 +1,6 @@
-const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
+// js/app.js - Manual + Generator, scoring, no duplicates, image + text export
+// --- APP CONFIG ---
+const APP_VERSION = "b2.6"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
 
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
@@ -26,12 +28,13 @@ const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
 const manualSection        = document.getElementById('manualBuilderSection');
 const generatorSection     = document.getElementById('comboGeneratorSection');
 const loyaltySection       = document.getElementById('loyaltyCalcSection');
-const youtubeSection       = document.getElementById('youtubeSection'); // NEW
+const youtubeSection       = document.getElementById('youtubeSection'); 
 
 const tabManualBtn         = document.getElementById('tabManual');
 const tabGeneratorBtn      = document.getElementById('tabGenerator');
 const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
-const tabYouTubeBtn        = document.getElementById('tabYouTube'); // NEW
+const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
+const globalToggleRow      = document.getElementById('globalToggleRow'); // NEW TOGGLE ROW
 
 const comboFooterBar       = document.getElementById('comboFooterBar');
 const generatorHeroesEl    = document.getElementById('generatorHeroes');
@@ -49,11 +52,12 @@ const genTroopFiltersEl    = document.getElementById('generatorTroopFilters');
 
 // --- STATE ---
 let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
+let heroInfoEnabled            = true; // NEW: Toggle state for Hero Info Panels
 
 // Manual filters
 let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
-let selectedStates             = ['Free', 'Paid'];              // Free / Paid
-let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; // troop types
+let selectedStates             = ['Free', 'Paid'];              
+let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
 
 // Manual combo
 let currentCombo               = [null, null, null];
@@ -69,10 +73,8 @@ const generatorSelectedHeroes  = new Set();
 let userId = 'anonymous';
 let db     = null;
 
-// For “Share as Text”
 let savedCombosCache = [];
 
-// Touch-drag state for mobile manual builder
 let touchDragHero  = null;
 let touchDragGhost = null;
 
@@ -157,14 +159,12 @@ heroTooltip.id = 'hero-tooltip';
 heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
-// Close tooltip when touching anywhere else on mobile
 document.addEventListener('touchstart', (e) => {
   if (!e.target.closest('.hero-card') && !heroTooltip.contains(e.target)) {
     hideHeroTooltip();
   }
 }, { passive: true });
 
-// NEW: Truly Bulletproof Auto-formatter for dynamic skill text highlighting
 function formatSkillText(text) {
   let counter = 0;
   const tokens = {};
@@ -204,6 +204,9 @@ function formatSkillText(text) {
 }
 
 function showHeroTooltip(e, heroName) {
+  // NEW: Instantly return if user toggled Info Panels OFF globally
+  if (!heroInfoEnabled) return; 
+
   const data = heroesExtendedData[heroName];
   if (!data) return; 
 
@@ -235,7 +238,6 @@ function showHeroTooltip(e, heroName) {
     `;
   }).join('');
 
-  // NEW: Generate Synergy HTML with mini avatars
   let synergyHtml = '';
   const synergies = getSynergies(heroName);
   if (synergies.length > 0) {
@@ -257,8 +259,13 @@ function showHeroTooltip(e, heroName) {
   }
 
   heroTooltip.innerHTML = `
-    <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
-      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md">${heroName}</h4>
+    <div class="border-b border-slate-700 pb-2 mb-2 shrink-0 relative">
+      
+      <button id="closeTooltipBtn" class="lg:hidden absolute -top-1 -right-1 text-slate-400 hover:text-white bg-slate-900 hover:bg-red-500/80 rounded-full w-6 h-6 flex items-center justify-center border border-slate-600 shadow-md transition-colors z-[10000]">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-6">${heroName}</h4>
       
       <div class="flex gap-3 mt-1.5 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
         <div class="flex flex-col">
@@ -289,6 +296,20 @@ function showHeroTooltip(e, heroName) {
     heroTooltip.classList.add('opacity-100');
   });
   moveHeroTooltip(e);
+
+  // NEW: Bind logic for the Mobile Close Button
+  const closeBtn = document.getElementById('closeTooltipBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      hideHeroTooltip();
+    });
+    closeBtn.addEventListener('touchstart', (ev) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      hideHeroTooltip();
+    }, { passive: false });
+  }
 }
 
 function moveHeroTooltip(e) {
@@ -425,7 +446,6 @@ function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
   return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
 
-// Calculate the Top 3 Synergies for a specific hero based on rankedCombos database
 function getSynergies(heroName) {
   const containingCombos = rankedCombos.filter(c => c.heroes && c.heroes.includes(heroName));
   const top5 = containingCombos.slice(0, 5);
@@ -602,9 +622,8 @@ function renderAvailableHeroes() {
         createTouchGhost(card, touch);
       }, { passive: true });
 
-      // NEW: Use pointer events to strictly separate Mouse from Touch
       card.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'touch') return; // Completely ignore mobile touches for hover!
+        if (e.pointerType === 'touch') return; 
         showHeroTooltip(e, hero.name);
       });
       card.addEventListener('pointermove', (e) => {
@@ -616,16 +635,15 @@ function renderAvailableHeroes() {
         hideHeroTooltip();
       });
 
-      // Bind the new mobile info button
       const infoBtn = card.querySelector('.info-btn');
       if (infoBtn) {
         infoBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); // Stop the card from dragging
+          e.stopPropagation(); 
           e.preventDefault();
           showHeroTooltip(e, hero.name);
         });
         infoBtn.addEventListener('touchstart', (e) => {
-          e.stopPropagation(); // Stop parent touches
+          e.stopPropagation(); 
         }, { passive: false });
       }
 
@@ -720,7 +738,7 @@ function renderGeneratorHeroes() {
       `;
       
       card.onclick = () => {
-        forceHideHeroTooltip(); // Instantly kill the tooltip if it accidentally opens on mobile
+        forceHideHeroTooltip(); 
         
         if (generatorSelectedHeroes.has(hero.name)) {
           generatorSelectedHeroes.delete(hero.name);
@@ -731,9 +749,8 @@ function renderGeneratorHeroes() {
         }
       };
 
-      // NEW: Use pointer events to strictly separate Mouse from Touch
       card.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'touch') return; // Completely ignore mobile touches for hover!
+        if (e.pointerType === 'touch') return; 
         showHeroTooltip(e, hero.name);
       });
       card.addEventListener('pointermove', (e) => {
@@ -745,11 +762,10 @@ function renderGeneratorHeroes() {
         hideHeroTooltip();
       });
 
-      // Bind the new mobile info button
       const infoBtn = card.querySelector('.info-btn');
       if (infoBtn) {
         infoBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); // Stop the card from being selected!
+          e.stopPropagation(); 
           e.preventDefault();
           showHeroTooltip(e, hero.name);
         });
@@ -1008,22 +1024,35 @@ function wireUIActions() {
     };
   }
 
-  // --- TAB SWITCHING LOGIC ---
+  // NEW: Wire Global Info Toggle
+  const heroInfoToggle = document.getElementById('heroInfoToggle');
+  if (heroInfoToggle) {
+    heroInfoToggle.addEventListener('change', (e) => {
+      heroInfoEnabled = e.target.checked;
+      forceHideHeroTooltip();
+      document.body.classList.toggle('hide-hero-info', !heroInfoEnabled);
+    });
+  }
+
   const switchTab = (tabName) => {
-    // 1. Hide all sections
     if (manualSection) manualSection.classList.add('hidden');
     if (generatorSection) generatorSection.classList.add('hidden');
     if (loyaltySection) loyaltySection.classList.add('hidden');
     if (youtubeSection) youtubeSection.classList.add('hidden'); 
     if (comboFooterBar) comboFooterBar.style.display = 'none';
 
-    // 2. Reset all buttons to inactive
     if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-inactive';
     if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-inactive';
     if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-inactive';
     if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-inactive flex items-center justify-center gap-1.5';
 
-    // 3. Activate the chosen tab
+    // Show/Hide Global Toggle based on active tab
+    if (tabName === 'manual' || tabName === 'generator') {
+      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
+    } else {
+      if (globalToggleRow) globalToggleRow.classList.add('hidden');
+    }
+
     if (tabName === 'manual') {
       if (manualSection) manualSection.classList.remove('hidden');
       if (comboFooterBar) comboFooterBar.style.display = 'block';
