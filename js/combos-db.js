@@ -17,11 +17,12 @@ export const rankedCombos = [
   { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
   { heroes: ["Rozen Blade", "Ramses II", "Beowulf"] },     // Rank 4
   { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 
+  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
   { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
 
-  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
+
   { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
