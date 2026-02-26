@@ -569,17 +569,20 @@ function renderAvailableHeroes() {
     .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
     .forEach(hero => {
       const card = document.createElement('div');
-      card.className = 'hero-card';
+      card.className = 'hero-card relative';
       card.draggable = true;
       card.dataset.heroName = hero.name;
-      
-      card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
-      card.addEventListener('mousemove', moveHeroTooltip);
-      card.addEventListener('mouseleave', hideHeroTooltip);
 
       const tagColor = seasonColors[hero.season] || '#f97316';
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        
+        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+        </div>
+
         <img src="${hero.imageUrl}" alt="${hero.name}">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
@@ -598,6 +601,33 @@ function renderAvailableHeroes() {
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
       }, { passive: true });
+
+      // NEW: Use pointer events to strictly separate Mouse from Touch
+      card.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return; // Completely ignore mobile touches for hover!
+        showHeroTooltip(e, hero.name);
+      });
+      card.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        moveHeroTooltip(e);
+      });
+      card.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch') return;
+        hideHeroTooltip();
+      });
+
+      // Bind the new mobile info button
+      const infoBtn = card.querySelector('.info-btn');
+      if (infoBtn) {
+        infoBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Stop the card from dragging
+          e.preventDefault();
+          showHeroTooltip(e, hero.name);
+        });
+        infoBtn.addEventListener('touchstart', (e) => {
+          e.stopPropagation(); // Stop parent touches
+        }, { passive: false });
+      }
 
       availableHeroesEl.appendChild(card);
     });
@@ -669,19 +699,29 @@ function renderGeneratorHeroes() {
     .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
     .forEach(hero => {
       const card = document.createElement('button');
-      card.className = `hero-card generator-card ${
+      card.className = `hero-card generator-card relative ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
+        
+        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+        </div>
+
         <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
         </div>
       `;
+      
       card.onclick = () => {
+        forceHideHeroTooltip(); // Instantly kill the tooltip if it accidentally opens on mobile
+        
         if (generatorSelectedHeroes.has(hero.name)) {
           generatorSelectedHeroes.delete(hero.name);
           card.classList.remove('generator-card-selected');
@@ -690,9 +730,34 @@ function renderGeneratorHeroes() {
           card.classList.add('generator-card-selected');
         }
       };
-      card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
-      card.addEventListener('mousemove', moveHeroTooltip);
-      card.addEventListener('mouseleave', hideHeroTooltip);
+
+      // NEW: Use pointer events to strictly separate Mouse from Touch
+      card.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return; // Completely ignore mobile touches for hover!
+        showHeroTooltip(e, hero.name);
+      });
+      card.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        moveHeroTooltip(e);
+      });
+      card.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch') return;
+        hideHeroTooltip();
+      });
+
+      // Bind the new mobile info button
+      const infoBtn = card.querySelector('.info-btn');
+      if (infoBtn) {
+        infoBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Stop the card from being selected!
+          e.preventDefault();
+          showHeroTooltip(e, hero.name);
+        });
+        infoBtn.addEventListener('touchstart', (e) => {
+          e.stopPropagation(); 
+        }, { passive: false });
+      }
+
       generatorHeroesEl.appendChild(card);
     });
 }
