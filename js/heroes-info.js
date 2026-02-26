@@ -448,5 +448,229 @@ export const heroesExtendedData = {
                 desc: "Arthur is blessings, permanently magnifying the healing effects he receives by <b>15%</b>. For every <b>6</b> times of damage dealt by your squads, the casting chance of Sword in the Stone increases by <b>4%</b>, stackable for up to <b>5</b> layers, lasting until the battle ends. When the stacking limit is reached, <b>100%</b> chance to ignore the enemy's Dodging status when dealing damage, lasting <b>2</b> rounds."
             }
         ]
+    },
+    "Leonidas": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Additional Attack",
+                range: 4,
+                target: "2 Random Enemy",
+                desc: "After launching a normal attack , <b>40%</b> chance to make the <u><b>Might</b></u> <b>-50%</b> and <u><b>Resistance</b></u> <b>-50%</b> for 2 random enemy squads within the valid range and <u><b>Silence</b></u> the squads for 1 turn."
+            },
+            {
+                id: 5,
+                type: "Combat Skill",
+                range: 4,
+                target: "3 Random Enemy",
+                desc: "<b>50%</b> chance to deal <b>220% Damage</b> to <b>2-3</b> random enemy squads within the valid range."
+            },
+            {
+                id: 8,
+                type: "Pre-Battle Skills",
+                range: 3,
+                target: "3 Random Ally",
+                desc: "In the first 2 rounds, all your Archer squads restore some HP each round (<b>recovery rate: 55%</b>); starting round 3, all your Archer squads <b>take -30% damage</b> and gain <b>5% life-steal</b> effect, lasting till the battle ends."
+            }
+        ]
+    },
+    "Isabella I": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Combat Skill",
+                range: 4,
+                target: "1 Random Enemy",
+                desc: "<b>70%</b> chance each round to breathe dragon's fire onto 1 random enemy squad at a time for 6 time(s), dealing 83% <u><b>burning</b></u> Damage; if all enemy squads are hit in round, 1 random friendly squad received <u><b>Clarity</b></u> (immune to the Suppressing/Silenceing/Disarming/Confusing effects) for 1 round."
+            },
+            {
+                id: 5,
+                type: "Pre-Battle Skills",
+                range: 4,
+                target: "2 Random Enemy",
+                desc: "Starting from round 3, at the price of remaining on fire permanently, the hero's squad has <b>70%</b> chance each round to deal 236% <u><b>burning</b></u> Damage to 2 random enemy squad(s), whose combat skill damage will then -20%."
+            },
+            {
+                id: 8,
+                type: "Status Skill",
+                range: 4,
+                target: "1 Random Ally",
+                desc: "Bestows a shield to your squad(s) that stay(s) sober due to the skill 2 and the damage the squad(s) take(s) -50% for subsequent 2 time(s); when being on fire for the first time, the hero will <u><b>recover</b></u> a large amount of troop power for you front-row squad (recovery rate: 304) and <u><b>suppress</b></u> 1-2 random enemy squads within the valid range in the subsequent 1 round."
+            }
+        ]
+    },
+    "Desert Storm": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Pre-Battle Skills",
+                range: 5,
+                target: "3 Random Enemy",
+                desc: "On turn 1, 3 and 5, have all enemy squads enter <u><b>Cursed</b></u>, <u><b>Burning</b></u> and <u><b>Poisoned</b></u>, and <b>dealing 24%, 29% and 34% damage</b> on correspoding turns, lasting till the end of the battle."
+            },
+            {
+                id: 5,
+                type: "Pre-Battle Skills",
+                range: 3,
+                target: "2 Random Enemy",
+                desc: "On the beginning of turn 5, 2 random friendly squads will <b>Recover units</b> each turn (Recovery rate: <b>60%</b>)."
+            },
+            {
+                id: 8,
+                type: "Combat Skill",
+                range: 5,
+                target: "1 Random Enemy",
+                desc: "<b>100%</b> chance to deal <b>243% damage</b> to an enemy squad within range, <u><b>Interrupting</b></u> channeling skills."
+            }
+        ]
+    },
+    "Soaring Hawk": {
+        placement: "Front Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Combat Skill",
+                range: 3,
+                target: "2 Random Enemy",
+                desc: "<b>40%</b> chance to deal <b>179% damage</b> to 2 random enemy squads within range, making their <b>Might -38%</b>, lasting 2 turns."
+            },
+            {
+                id: 5,
+                type: "Status Skill",
+                range: 0,
+                target: "1 Random Ally",
+                desc: "Heroes squad have <b>100%</b> chance to <u><b>counterattack</b></u> when basic attacked, dealing <b>120% damage</b> to attacking source."
+            },
+            {
+                id: 8,
+                type: "Pre-Battle Skills",
+                range: 2,
+                target: "3 Random Ally",
+                desc: "First 2 turns, All friendly squads take <b>-30% damage</b>, after turn 3, heroes squad <b>Recover 30%</b> units when dealing damage."
+            }
+        ]
+    },
+    "The Brave": {
+        placement: "Front Row / Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Pre-Battle Skills",
+                range: 4,
+                target: "2 Random Enemy",
+                desc: "First 3 turns of the battle, <b>80%</b> chance each turn to <u><b>Disarm</b></u> 2 enemy squads within range."
+            },
+            {
+                id: 5,
+                type: "Combat Skill",
+                range: 5,
+                target: "2 Random Enemy",
+                desc: "<u><b>1 Turn prep</b></u>, <b>30%</b> to <u><b>Silence</b></u> 2 random enemy squads within range, lasting 2 turns."
+            },
+            {
+                id: 8,
+                type: "Pre-Battle Skills",
+                range: 4,
+                target: "3 Random Enemy",
+                desc: "In battle, all enemy squads lose <b>-60% Might and Resistance</b>, combat speed <b>-100</b>, damage taken increases by <b>5%</b> and damage dealt <b>-5%</b> from round 5, all your <b>cavalry</b> squads deal <b>40% more damage</b>."
+            }
+        ]
+    },
+    "Jade Eagle": {
+        placement: "Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Combat Skill",
+                range: 5,
+                target: "2 Random Enemy",
+                desc: "<b>40%</b> chance to lauch <u><b>2 attacks</b></u>, each dealing <b>142% Damage</b> to 2 random enemy squads within the valid range, with a <b>25%</b> chance to <u><b>Silence</b></u> the targets for <b>1</b> round."
+            },
+            {
+                id: 5,
+                type: "Combat Skill",
+                range: 5,
+                target: "3 Random Enemy",
+                desc: "<u><b>1 turn prep</b></u>. <b>50%</b> chance to deal <b>310% damage</b> to all enemy squads, making enemy Footmen (<b>Cannot recover units</b>) enemy Cavalry (Combat Skill Damage <b>-50%</b>), enemy Archers are (<u><b>Disarmed</b></u>), lasting 1 turn."
+            },
+            {
+                id: 8,
+                type: "Combat Skill",
+                range: 5,
+                target: "2 Random Enemy",
+                desc: "<u><b>In round 2 and 4</b></u>, 100% chance to deal <b>863% Massive damage</b> to 3 random enemy squads within range; <u>if the target id Disarmed or Suppressed</u>, it'll take <b>40% more Damage</b>. lasting 2 rounds."
+            }
+        ]
+    },
+    "Immortal Guardian": {
+        placement: "Front Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Status Skill",
+                range: 0,
+                target: "1 Random Ally",
+                desc: "Hero's squad <b>Damage Taken -30%</b>"
+            },
+            {
+                id: 5,
+                type: "Pre-Battle Skills",
+                range: 5,
+                target: "2 Random Enemy",
+                desc: "In battle, when 2 random enemy squads within range cast combat skilss or basic attack, <b>deal -5% damage</b> to them this effects stacks a maximum of 8 times."
+            },
+            {
+                id: 8,
+                type: "Pre-Battle Skills",
+                range: 2,
+                target: "3 Random Ally",
+                desc: "First 3 turns. All friedly units <b>damage taken -20%</b>, <b>50%</b> chance to <b>Recover</b> units when taking damage (Recovery rate: <b>45%</b>)."
+            }
+        ]
+    },
+    "Divine Arrow": {
+        placement: "Middle Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Combat Skill",
+                range: 4,
+                target: "2 Random Enemy",
+                desc: "<b>25%</b> chance to deal <b>211% damage</b> to 2 random enemy, <u><b>Disarming</b></u> them for 1 turn."
+            },
+            {
+                id: 5,
+                type: "Combat Skill",
+                range: 3,
+                target: "2 Random Enemy",
+                desc: "<b>30%</b> chance to cause <u><b>Chain</b></u> status, linking 2 random enemies, when one squad takes damage, the other will also take <b>25% damage</b>, lasting 2 turns."
+            },
+            {
+                id: 8,
+                type: "Pre-Battle Skills",
+                range: 2,
+                target: "3 Random Ally",
+                desc: "In battle, All friendly Archers have <b>Splash</b> status, basic attacking can also deal <b>40% damage</b> to 2 back row enemy squads."
+            }
+        ]
     }
 };
