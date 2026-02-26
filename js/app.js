@@ -7,8 +7,15 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 const tabYouTubeBtn      = document.getElementById('tabYouTube');
 const youtubeSection     = document.getElementById('youtubeSection');
-// --- APP CONFIG ---
+
 const APP_VERSION = "b3.0"; // <-- UPDATE THIS SINGLE LINE FOR NEW VERSIONS
+
+import { translations } from './translations.js';
+import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { initComments } from './comments.js';
+import { rankedCombos } from './combos-db.js';
+import { initLoyaltyCalculator } from './loyalty-calculator.js';
+import { heroesExtendedData } from './heroes-info.js';
 
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
@@ -24,17 +31,23 @@ const messageBox           = document.getElementById('messageBox');
 const messageText          = document.getElementById('messageText');
 const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
+
+// TABS & SECTIONS
 const manualSection        = document.getElementById('manualBuilderSection');
 const generatorSection     = document.getElementById('comboGeneratorSection');
+const loyaltySection       = document.getElementById('loyaltyCalcSection');
+const youtubeSection       = document.getElementById('youtubeSection'); // NEW
+
 const tabManualBtn         = document.getElementById('tabManual');
 const tabGeneratorBtn      = document.getElementById('tabGenerator');
+const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
+const tabYouTubeBtn        = document.getElementById('tabYouTube'); // NEW
+
+const comboFooterBar       = document.getElementById('comboFooterBar');
 const generatorHeroesEl    = document.getElementById('generatorHeroes');
 const generatorResultsEl   = document.getElementById('generatorResults');
 const generateCombosBtn    = document.getElementById('generateCombosBtn');
 const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
-const comboFooterBar       = document.getElementById('comboFooterBar');
-const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
-const loyaltySection       = document.getElementById('loyaltyCalcSection');
 
 // Filter containers
 const seasonFiltersEl      = document.getElementById('seasonFilters');
@@ -151,7 +164,6 @@ const seasonColors = {
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'hero-tooltip';
-// WIDENED for PC: Added md:w-[480px] and lg:w-[520px] so it expands beautifully on larger screens
 heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
 document.body.appendChild(heroTooltip);
 
@@ -161,13 +173,11 @@ document.addEventListener('touchstart', (e) => {
     hideHeroTooltip();
   }
 }, { passive: true });
-// NEW: Auto-formatter for dynamic skill text highlighting
-// NEW: Bulletproof Auto-formatter for dynamic skill text highlighting
+
 // NEW: Truly Bulletproof Auto-formatter for dynamic skill text highlighting
 function formatSkillText(text) {
   let counter = 0;
   const tokens = {};
-  // Using pure alphabet characters so the \d+ number regex completely ignores our hidden tokens!
   const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   
   function tokenize(html) {
@@ -176,32 +186,26 @@ function formatSkillText(text) {
     return token;
   }
 
-  // 1. Clean up any existing raw HTML tags from the database so they don't clash
   let formatted = text.replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
 
-  // 2. Highlight Percentages (e.g., 40%, -50%, +20%, 348.5%)
   formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) => 
     tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
   );
   
-  // 3. Highlight Turns/Rounds/Times (e.g., 2 turns, 1 round)
   formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers|roun))/gi, (match) => 
     tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
   );
   
-  // 4. Highlight specific Status Effects -> Purple with underline
   const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting', 'Bleeding', 'bleeding'];
   const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
   formatted = formatted.replace(statusRegex, (match) => 
     tokenize(`<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">${match}</span>`)
   );
 
-  // 5. Highlight remaining raw numbers (e.g., "2 random enemy") -> White & Bold
   formatted = formatted.replace(/\b(\d+)\b/g, (match) => 
     tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
   );
 
-  // 6. Restore all tokens back to their beautiful HTML strings
   for (const [token, html] of Object.entries(tokens)) {
     formatted = formatted.replace(token, html);
   }
@@ -283,7 +287,7 @@ function showHeroTooltip(e, heroName) {
         <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
       </div>
     </div>
-<div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[115vh] overflow-y-auto pr-1 shrink custom-scrollbar">
+    <div class="flex flex-col gap-1.5 max-h-[45vh] sm:max-h-[55vh] md:max-h-[85vh] overflow-y-auto pr-1 shrink custom-scrollbar">
       ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
@@ -330,39 +334,12 @@ function hideHeroTooltip() {
   }, 200);
 }
 
-// FORCE HIDE IMMEDIATELY ON DRAG
 function forceHideHeroTooltip() {
   heroTooltip.classList.add('hidden', 'opacity-0');
   heroTooltip.classList.remove('opacity-100');
 }
 
-
 // --- UTILITIES ---
-
-// NEW: Calculate the Top 3 Synergies for a specific hero based on rankedCombos database
-function getSynergies(heroName) {
-  // 1. Find all combos containing this hero
-  const containingCombos = rankedCombos.filter(c => c.heroes && c.heroes.includes(heroName));
-  
-  // 2. We only look at the Top 5 best combos they appear in (combos-db is assumed ranked best-to-worst)
-  const top5 = containingCombos.slice(0, 5);
-  if (top5.length === 0) return [];
-
-  // 3. Count how often other heroes appear alongside them
-  const counts = {};
-  top5.forEach(combo => {
-    combo.heroes.forEach(h => {
-      if (h !== heroName) counts[h] = (counts[h] || 0) + 1;
-    });
-  });
-
-  // 4. Sort partners by frequency (descending) and take the top 3
-  const sortedPartners = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(entry => entry[0]);
-
-  return sortedPartners.slice(0, 3);
-}
 
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
@@ -458,6 +435,26 @@ function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
   return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
 
+// Calculate the Top 3 Synergies for a specific hero based on rankedCombos database
+function getSynergies(heroName) {
+  const containingCombos = rankedCombos.filter(c => c.heroes && c.heroes.includes(heroName));
+  const top5 = containingCombos.slice(0, 5);
+  if (top5.length === 0) return [];
+
+  const counts = {};
+  top5.forEach(combo => {
+    combo.heroes.forEach(h => {
+      if (h !== heroName) counts[h] = (counts[h] || 0) + 1;
+    });
+  });
+
+  const sortedPartners = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => entry[0]);
+
+  return sortedPartners.slice(0, 3);
+}
+
 function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
@@ -505,7 +502,6 @@ function createTouchGhost(card, touch) {
   const rect = card.getBoundingClientRect();
   const ghost = card.cloneNode(true);
   
-  // FIX: Enforce strict boundaries so the ghost cannot stretch horizontally
   ghost.style.position = 'fixed';
   ghost.style.margin = '0';
   ghost.style.left = `${rect.left}px`;
@@ -602,12 +598,12 @@ function renderAvailableHeroes() {
       `;
 
       card.addEventListener('dragstart', e => {
-        forceHideHeroTooltip(); // HIDE TOOLTIP IMMEDIATELY ON DRAG (PC)
+        forceHideHeroTooltip();
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
       card.addEventListener('touchstart', (e) => {
-        forceHideHeroTooltip(); // HIDE TOOLTIP IMMEDIATELY ON DRAG (MOBILE)
+        forceHideHeroTooltip();
         const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
@@ -957,21 +953,22 @@ function wireUIActions() {
     };
   }
 
-const switchTab = (tabName) => {
-    // Hide all sections
+  // --- TAB SWITCHING LOGIC ---
+  const switchTab = (tabName) => {
+    // 1. Hide all sections
     if (manualSection) manualSection.classList.add('hidden');
     if (generatorSection) generatorSection.classList.add('hidden');
     if (loyaltySection) loyaltySection.classList.add('hidden');
-    if (youtubeSection) youtubeSection.classList.add('hidden'); // NEW
+    if (youtubeSection) youtubeSection.classList.add('hidden'); 
     if (comboFooterBar) comboFooterBar.style.display = 'none';
 
-    // Reset all buttons to inactive
+    // 2. Reset all buttons to inactive
     if (tabManualBtn) tabManualBtn.className = 'tab-pill tab-pill-inactive';
     if (tabGeneratorBtn) tabGeneratorBtn.className = 'tab-pill tab-pill-inactive';
     if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-inactive';
-    if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-inactive flex items-center gap-1.5'; // NEW
+    if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-inactive flex items-center justify-center gap-1.5';
 
-    // Activate the chosen tab
+    // 3. Activate the chosen tab
     if (tabName === 'manual') {
       if (manualSection) manualSection.classList.remove('hidden');
       if (comboFooterBar) comboFooterBar.style.display = 'block';
@@ -983,15 +980,15 @@ const switchTab = (tabName) => {
       if (loyaltySection) loyaltySection.classList.remove('hidden');
       if (tabLoyaltyBtn) tabLoyaltyBtn.className = 'tab-pill tab-pill-active';
     } else if (tabName === 'youtube') {
-      if (youtubeSection) youtubeSection.classList.remove('hidden'); // NEW
-      if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-active flex items-center gap-1.5'; // NEW
+      if (youtubeSection) youtubeSection.classList.remove('hidden'); 
+      if (tabYouTubeBtn) tabYouTubeBtn.className = 'tab-pill tab-pill-active flex items-center justify-center gap-1.5';
     }
   };
 
   if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
   if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
   if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
-  if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube'); // NEW;
+  if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube');
 
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
@@ -1126,15 +1123,17 @@ const switchTab = (tabName) => {
 }
 
 // --- TRANSLATIONS / TEXT ---
+
 async function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
 
   const idMap = {
     'appTitle': t.appTitle,
-    'betaNote': t.betaNote, // <-- Make sure betaNote is in this list!
+    'betaNote': t.betaNote,
     'tabManual': t.tabManual,
     'tabGenerator': t.tabGenerator,
     'tabLoyalty': t.tabLoyalty,
+    'tabYouTube': t.tabYouTube || 'YouTube',
     'filterBySeasonTitle': t.filterBySeasonTitle,
     'availableHeroesTitle': t.availableHeroesTitle,
     'createComboTitle': t.createComboTitle,
@@ -1159,7 +1158,6 @@ async function updateTextContent() {
   for (const [id, text] of Object.entries(idMap)) {
     const el = document.getElementById(id);
     if (el && text) {
-      // NEW: Automatically injects the version number
       el.textContent = text.replace('{version}', APP_VERSION);
     }
   }
@@ -1167,7 +1165,6 @@ async function updateTextContent() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (t[key]) {
-      // NEW: Automatically injects the version number
       el.textContent = t[key].replace('{version}', APP_VERSION);
     }
   });
@@ -1181,6 +1178,7 @@ async function updateTextContent() {
 
   updateManualComboScore();
 }
+
 // --- MAIN ---
 
 (async function main() {
