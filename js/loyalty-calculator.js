@@ -63,6 +63,30 @@ export function initLoyaltyCalculator() {
     const calcBtn = document.getElementById('calcLoyaltyBtn');
     if (!calcBtn) return;
 
+    // --- 1. LOCAL STORAGE: SAVE & LOAD ---
+    const inputIds = [
+        'ac1Level', 'ac2Level', 'ac3Level', 'ac4Level',
+        'source1', 'source2', 'source3', 'source4', 'source5', 'source6',
+        'bonusPoints', 'savedUnits', 'totalUnitsPerPatch', 
+        'processingHours', 'processingMinutes', 'processingSeconds', 'numPatches'
+    ];
+
+    inputIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // Load from storage on page load
+            const savedVal = localStorage.getItem(`vts_loyalty_${id}`);
+            if (savedVal !== null) {
+                el.value = savedVal;
+            }
+            // Save to storage instantly when the user changes a value
+            el.addEventListener('input', () => {
+                localStorage.setItem(`vts_loyalty_${id}`, el.value);
+            });
+        }
+    });
+
+    // --- 2. CALCULATOR LOGIC ---
     calcBtn.addEventListener('click', () => {
         const lang = localStorage.getItem('vts_hero_lang') || 'en';
         const t = translations[lang] || translations.en;
@@ -81,7 +105,6 @@ export function initLoyaltyCalculator() {
         const bonusLoyalty = (parseInt(document.getElementById('bonusPoints').value) || 0) * 60;
         let savedUnits = parseInt(document.getElementById('savedUnits').value) || 0;
         
-        // Fetch all sources
         const source1 = parseFloat(document.getElementById('source1').value) || 0;
         const source2 = parseFloat(document.getElementById('source2').value) || 0;
         const source3 = parseFloat(document.getElementById('source3').value) || 0;
@@ -89,7 +112,6 @@ export function initLoyaltyCalculator() {
         const source5 = parseFloat(document.getElementById('source5').value) || 0;
         const source6 = parseFloat(document.getElementById('source6').value) || 0;
 
-        // NEW LOGIC: Only Sources 1, 2, 3, and 6 are used for upgrading Camps!
         const campHourlyProduction = source1 + source2 + source3 + source6;
         const campDailyProduction = campHourlyProduction * 24;
 
@@ -115,11 +137,7 @@ export function initLoyaltyCalculator() {
             return;
         }
 
-        // --- TRUE BOTTLENECK LOGIC ---
-        // Determines if you are constrained by your workshops OR by your gathering speed of camp materials
         const actualEffectiveHourlyRate = Math.min(maxProcessingPerHour, campHourlyProduction);
-        
-        // Failsafe to prevent division by zero in timeline if production is 0
         const safeHourlyRate = actualEffectiveHourlyRate > 0 ? actualEffectiveHourlyRate : maxProcessingPerHour;
 
         let levels = { AC1: ac1Level, AC2: ac2Level, AC3: ac3Level, AC4: ac4Level };
@@ -148,7 +166,6 @@ export function initLoyaltyCalculator() {
             let effectiveCost = Math.max(0, nextUpgrade.cost - savedUnits);
             savedUnits = Math.max(0, savedUnits - nextUpgrade.cost);
 
-            // Timeline is driven by the bottleneck speed
             const hoursNeeded = effectiveCost / safeHourlyRate;
             cumulativeTime += hoursNeeded;
 
@@ -171,7 +188,6 @@ export function initLoyaltyCalculator() {
             currentLoyalty = newLoyalty;
         }
 
-        // Render Translated Results
         const isSurplus = campDailyProduction >= possibleProcessingDaily;
         const diff = Math.abs(campDailyProduction - possibleProcessingDaily);
         
