@@ -59,6 +59,10 @@
       font-weight: 800; 
       z-index: 5; 
     }
+    /* Toggle Switch & Info Button Logic */
+    .switch-peer:checked ~ .switch-dot { transform: translateX(1.25rem); background-color: #34d399; }
+    .switch-peer:not(:checked) ~ .switch-dot { transform: translateX(0); background-color: #94a3b8; }
+    body.hide-hero-info .info-btn { display: none !important; }
   </style>
 </head>
 <body class="p-3 sm:p-4">
@@ -125,6 +129,17 @@
           YouTube
         </button>
       </div>
+    </div>
+
+    <div id="globalToggleRow" class="flex justify-center mb-6 transition-all duration-300">
+      <label class="flex items-center cursor-pointer gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-slate-700 shadow-sm hover:border-slate-500 transition-colors">
+        <span class="text-[10px] sm:text-xs text-slate-300 font-bold uppercase tracking-widest" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
+        <div class="relative inline-flex items-center">
+          <input type="checkbox" id="heroInfoToggle" class="switch-peer sr-only" checked>
+          <div class="w-10 h-5 bg-slate-900 rounded-full border border-slate-600 shadow-inner"></div>
+          <div class="switch-dot absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition-transform duration-300 shadow-md"></div>
+        </div>
+      </label>
     </div>
 
     <section id="manualBuilderSection" class="hidden">
@@ -465,3 +480,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
