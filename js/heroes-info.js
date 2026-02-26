@@ -51,6 +51,35 @@ export const heroesExtendedData = {
             { id: 8, type: "Pre-Battle Skills", range: 2, target: "2 Random Ally", desc: "The first three turns, 2 random friendly squads have 70% chance to be sober(immune to Silence, Disarm, Suppress, Confuse) and 55% increased might." }
         ]
     },
+    "Mary Tudor": {
+        placement: "Middle Row / Back Row",
+        minCopies: 34,
+        maxCopies: 34,
+        skills: [
+            {
+                id: 2,
+                type: "Combat Skill",
+                range: 5,
+                target: "1 Random Enemy",
+                desc: "60% chance to deal 325% Damage to 1 random enemy squad within the valid range; if the target's troop power is lower than 50%, 195% more damage will be dealt."
+            },
+            {
+                id: 5,
+                type: "Pre-Battle Skills",
+                range: 1,
+                target: "1 Random Ally",
+                desc: "Every time Mary I casts a combat skill, her squad deals +25% Skill Damage, (stackable for up to 6 times) lasting till the battle ends."
+            },
+            {
+                id: 8,
+                type: "Combat Skill",
+                range: 5,
+                target: "2 Random Enemy",
+                desc: "1 roun of prep. 50% chance to deal 368% Damage to 2 random enemy squads within the valid range and subject them to a bleeding status, making them take 155% Damage before taking actions at the beginning of each round, lasting 2 rounds."
+            }
+        ]
+    },
+
     "Cicero": {
         placement: "Front Row / Middle Row",
         minCopies: 34,
