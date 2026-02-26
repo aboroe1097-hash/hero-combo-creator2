@@ -144,7 +144,76 @@ const seasonColors = {
 };
 
 // --- UTILITIES ---
+// --- HERO HOVER TOOLTIP ---
 
+// Create the Tooltip UI element once and attach to body
+const heroTooltip = document.createElement('div');
+heroTooltip.id = 'hero-tooltip';
+heroTooltip.className = 'fixed z-[9999] bg-slate-900/95 backdrop-blur-md border border-slate-600 rounded-xl p-4 shadow-2xl text-slate-200 w-80 pointer-events-none hidden opacity-0 transition-opacity duration-200';
+document.body.appendChild(heroTooltip);
+
+function showHeroTooltip(e, heroName) {
+  const data = heroesExtendedData[heroName];
+  if (!data) return; // If hero is not in the database yet, do nothing
+
+  // Generate HTML for skills
+  let skillsHtml = data.skills.map(s => `
+    <div class="mb-2 bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-inner">
+      <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
+        <span class="text-xs font-black text-sky-400 tracking-wider">SKILL ${s.id}</span>
+        <span class="text-[10px] text-slate-400 font-bold uppercase">${s.type} | Range: <span class="text-white">${s.range}</span></span>
+      </div>
+      <p class="text-[10px] text-amber-400 font-bold mb-1 uppercase tracking-wider">Target: <span class="text-white">${s.target}</span></p>
+      <p class="text-[10px] leading-snug text-slate-300">${s.desc}</p>
+    </div>
+  `).join('');
+
+  // Set the full Tooltip HTML
+  heroTooltip.innerHTML = `
+    <div class="border-b border-slate-700 pb-2 mb-3">
+      <h4 class="text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
+      <p class="text-[11px] text-emerald-400 font-bold mt-1 uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
+      <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
+        <p class="text-[10px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
+        <p class="text-[10px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
+    </div>
+  `;
+
+  heroTooltip.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    heroTooltip.classList.remove('opacity-0');
+    heroTooltip.classList.add('opacity-100');
+  });
+  moveHeroTooltip(e);
+}
+
+function moveHeroTooltip(e) {
+  if (heroTooltip.classList.contains('hidden')) return;
+  
+  // Offset slightly from cursor
+  let x = e.clientX + 15;
+  let y = e.clientY + 15;
+
+  // Prevent it from clipping off the right or bottom edges of the screen
+  const rect = heroTooltip.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - 15;
+  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 15;
+
+  heroTooltip.style.left = `${x}px`;
+  heroTooltip.style.top = `${y}px`;
+}
+
+function hideHeroTooltip() {
+  heroTooltip.classList.remove('opacity-100');
+  heroTooltip.classList.add('opacity-0');
+  setTimeout(() => {
+    if(heroTooltip.classList.contains('opacity-0')) heroTooltip.classList.add('hidden');
+  }, 200); // Matches transition duration
+}
 function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
@@ -418,6 +487,10 @@ function renderAvailableHeroes() {
       card.className = 'hero-card';
       card.draggable = true;
       card.dataset.heroName = hero.name;
+      // NEW HOVER EVENTS FOR TOOLTIP
+      card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
+      card.addEventListener('mousemove', moveHeroTooltip);
+      card.addEventListener('mouseleave', hideHeroTooltip);
 
       const tagColor = seasonColors[hero.season] || '#f97316';
       card.innerHTML = `
@@ -557,6 +630,10 @@ function renderGeneratorHeroes() {
           card.classList.add('generator-card-selected');
         }
       };
+      // NEW HOVER EVENTS FOR TOOLTIP
+      card.addEventListener('mouseenter', (e) => showHeroTooltip(e, hero.name));
+      card.addEventListener('mousemove', moveHeroTooltip);
+      card.addEventListener('mouseleave', hideHeroTooltip);
       generatorHeroesEl.appendChild(card);
     });
 }
