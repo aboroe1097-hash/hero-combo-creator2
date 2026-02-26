@@ -159,13 +159,15 @@ document.addEventListener('touchstart', (e) => {
 }, { passive: true });
 // NEW: Auto-formatter for dynamic skill text highlighting
 // NEW: Bulletproof Auto-formatter for dynamic skill text highlighting
+// NEW: Truly Bulletproof Auto-formatter for dynamic skill text highlighting
 function formatSkillText(text) {
   let counter = 0;
   const tokens = {};
+  // Using pure alphabet characters so the \d+ number regex completely ignores our hidden tokens!
+  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   
-  // Helper to safely hide formatted text so rules don't clash with each other
   function tokenize(html) {
-    const token = `__TOKEN_${counter++}__`;
+    const token = `_TK${alpha[counter++]}_`;
     tokens[token] = html;
     return token;
   }
@@ -179,12 +181,12 @@ function formatSkillText(text) {
   );
   
   // 3. Highlight Turns/Rounds/Times (e.g., 2 turns, 1 round)
-  formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers))/gi, (match) => 
+  formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers|roun))/gi, (match) => 
     tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
   );
   
   // 4. Highlight specific Status Effects -> Purple with underline
-  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting'];
+  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting', 'Bleeding', 'bleeding'];
   const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
   formatted = formatted.replace(statusRegex, (match) => 
     tokenize(`<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">${match}</span>`)
