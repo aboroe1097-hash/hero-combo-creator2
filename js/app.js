@@ -161,6 +161,12 @@ function showHeroTooltip(e, heroName) {
   const data = heroesExtendedData[heroName];
   if (!data) return; // If hero is not in the database yet, do nothing
 
+  // Grab the base hero data to find out their Troop Type
+  const baseData = allHeroesData.find(h => h.name === heroName);
+  const troopType = baseData ? baseData.Type : 'Unknown';
+  const troopColorClass = getTroopColorClass(troopType);
+  const localizedTroop = getLocalizedTroop(troopType);
+
   let skillsHtml = data.skills.map(s => `
     <div class="mb-2 bg-slate-800 p-2 rounded-lg border border-slate-700 shadow-inner">
       <div class="flex justify-between items-center mb-1 border-b border-slate-700/50 pb-1">
@@ -175,7 +181,12 @@ function showHeroTooltip(e, heroName) {
   heroTooltip.innerHTML = `
     <div class="border-b border-slate-700 pb-2 mb-2 shrink-0">
       <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">${heroName}</h4>
-      <p class="text-[10px] sm:text-[11px] text-emerald-400 font-bold mt-0.5 uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
+      
+      <div class="flex flex-col gap-0.5 mt-1">
+        <p class="text-[10px] sm:text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Placement: <span class="text-white">${data.placement || 'Any'}</span></p>
+        <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">Troop: <span class="${troopColorClass}">${localizedTroop}</span></p>
+      </div>
+
       <div class="flex gap-4 mt-2 bg-slate-800/50 p-1.5 rounded border border-slate-700/50">
         <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Min: <span class="text-amber-400">${data.minCopies || 34} copies</span></p>
         <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase">Max: <span class="text-sky-400">${data.maxCopies || 34} copies</span></p>
