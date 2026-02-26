@@ -158,23 +158,47 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { passive: true });
 // NEW: Auto-formatter for dynamic skill text highlighting
+// NEW: Bulletproof Auto-formatter for dynamic skill text highlighting
 function formatSkillText(text) {
-  // 1. Highlight Percentages (e.g., 40%, -50%, 348%) -> Green/Red depending on context or just bright Sky Blue
-  let formatted = text.replace(/(-?\d+(?:\.\d+)?%)/g, '<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">$1</span>');
+  let counter = 0;
+  const tokens = {};
   
-  // 2. Highlight Turns/Rounds and their numbers (e.g., 2 turns, 1 round) -> Amber
-  formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers))/gi, '<span class="font-bold text-amber-400">$1</span>');
+  // Helper to safely hide formatted text so rules don't clash with each other
+  function tokenize(html) {
+    const token = `__TOKEN_${counter++}__`;
+    tokens[token] = html;
+    return token;
+  }
+
+  // 1. Clean up any existing raw HTML tags from the database so they don't clash
+  let formatted = text.replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
+
+  // 2. Highlight Percentages (e.g., 40%, -50%, +20%, 348.5%)
+  formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) => 
+    tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
+  );
   
-  // 3. Highlight specific Status Effects (Silence, Disarm, Suppress, Confuse, etc.) -> Purple with underline
-  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash'];
+  // 3. Highlight Turns/Rounds/Times (e.g., 2 turns, 1 round)
+  formatted = formatted.replace(/(\d+\s*(?:turn|turns|round|rounds|time|times|layer|layers))/gi, (match) => 
+    tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
+  );
+  
+  // 4. Highlight specific Status Effects -> Purple with underline
+  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting'];
   const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
-  formatted = formatted.replace(statusRegex, '<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">$1</span>');
+  formatted = formatted.replace(statusRegex, (match) => 
+    tokenize(`<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">${match}</span>`)
+  );
 
-  // 4. Highlight raw numbers that aren't caught by the turns/rounds rule (e.g., "target 2 random enemy") -> White & Bold
-  formatted = formatted.replace(/\b(\d+)\b(?!\s*(?:turn|round|time|layer|%))/gi, '<span class="font-bold text-white bg-slate-700/50 px-1 rounded">$1</span>');
+  // 5. Highlight remaining raw numbers (e.g., "2 random enemy") -> White & Bold
+  formatted = formatted.replace(/\b(\d+)\b/g, (match) => 
+    tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
+  );
 
-  // 5. Clean up any existing raw HTML tags from the database so they don't clash
-  formatted = formatted.replace(/<\/?b>/g, '').replace(/<\/?u>/g, '');
+  // 6. Restore all tokens back to their beautiful HTML strings
+  for (const [token, html] of Object.entries(tokens)) {
+    formatted = formatted.replace(token, html);
+  }
 
   return formatted;
 }
