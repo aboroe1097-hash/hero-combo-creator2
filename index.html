@@ -111,21 +111,29 @@
       </div>
     </div>
 
-    <div class="flex justify-center mb-6">
+<div class="flex justify-center mb-6">
       <div class="inline-flex flex-wrap justify-center bg-slate-800 rounded-2xl sm:rounded-full p-1 border border-slate-700 gap-1 sm:gap-0">
+        
         <button id="tabManual" class="tab-pill tab-pill-inactive">Manual Builder</button>
+        
         <div class="relative">
           <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
           <span class="absolute -top-2 -right-1 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase animate-pulse">Beta</span>
         </div>
+        
         <div class="relative">
           <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">Eden Loyalty</button>
           <span class="absolute -top-2 -right-1 bg-sky-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase">New</span>
         </div>
-        <button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube">
-          <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>
-          YouTube
-        </button>
+
+        <div class="relative">
+          <button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube">
+            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>
+            YouTube
+          </button>
+          <span class="absolute -top-2 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase shadow-md border border-red-400/50">Hot</span>
+        </div>
+
       </div>
     </div>
 
@@ -478,5 +486,6 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
 
 
