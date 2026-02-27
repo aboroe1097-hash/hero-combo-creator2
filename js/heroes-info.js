@@ -13,7 +13,7 @@ export const heroesExtendedData = {
     },
     "Wind-Walker": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "Whenever the squad takes basic attacks, the First-Aid status will be entered, recover troops each turn (20% recovery rate), Lasts 2 turns, the first-aid status can stack 8 times." },
@@ -23,7 +23,7 @@ export const heroesExtendedData = {
     },
     "Hunk": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "When the squad takes damage, 25% chance to evade (immune this damage), 50% chance each turn to increase squad damage by 50%." },
@@ -33,7 +33,7 @@ export const heroesExtendedData = {
     },
     "Sakura": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 4, target: "2 Random Ally", desc: "First 2 turns, 2 random enemy will move first, on the second turn, deal 687% damage to 2 random to 2 random enemy squads." },
@@ -43,7 +43,7 @@ export const heroesExtendedData = {
     },
     "ELK": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 2, target: "1 Random Ally", desc: "First 3 turns, the front row Archer squad has 70% chance to enter counterattack state, which deals 250% return damage to the source when basic attacked." },
@@ -53,7 +53,7 @@ export const heroesExtendedData = {
     },
     "Mary Tudor": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             {
@@ -82,7 +82,7 @@ export const heroesExtendedData = {
 
     "Cicero": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Additional Attack", range: 3, target: "2 Random Enemy", desc: "After basic attacks, 30% chance to deal 310% damage to 2 random enemy squads within range, making them take 20% additional damage for 2 turns." },
@@ -92,7 +92,7 @@ export const heroesExtendedData = {
     },
     "Beowulf": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 1, target: "1 Random Ally", desc: "After every normal attack, the damage caused by the hero's normal attack will be magnified by 20%, stackable for up to 5 layers; after reaching the stackable limit, the hero enters the Mass Attack status, dealing some damage equal to 260% + layer count of the \"Feverish\" effect *50% to the two enemy squads other than the target in normal attack; the effect can cause Crit Damage; meanwhile, 100% chance to ignore the enemy's Dodging status when dealing damage." },
@@ -102,7 +102,7 @@ export const heroesExtendedData = {
     },
     "Theodora": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "1 Random Ally", desc: "60% chance to deal 20% skill damage to 1 random friendly squads, excluding the heros squad, making the target squads deal 50% more damage, lasting 2 rounds." },
@@ -112,7 +112,7 @@ export const heroesExtendedData = {
     },
     "Caesar": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "3 Random Ally", desc: "Starting round 3, Caesar has 40% chance to cast a skill every round, which increases the Might and Resistance of all your Cavalry squads by 200% and Damage by 60%. Meanwhile, Caesar has 20% more chance to launch additional attacks, lasting till the battles ends (this skill can only be cast once). Every round, the chance of casting this skill increases by 20%." },
@@ -122,7 +122,7 @@ export const heroesExtendedData = {
     },
     "Octavius": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "Octavius has a 80% chance to gain the Taunting effect every round. When a random squad is to be chasen by the enemy's active skill or additional attack, Octavius will be chosen first. The chance of casting this skill decreases by 5% every round." },
@@ -132,7 +132,7 @@ export const heroesExtendedData = {
     },
     "Boudica": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "1 Random Enemy", desc: "Boudica charges forward. 70% chance to deal 200% Damage to 1 mid-row or back-row enemy squads within the valid range for 3 consecutive times; 40% of the Damage will be used to restore the power of 2 random squads of your side." },
@@ -142,7 +142,7 @@ export const heroesExtendedData = {
     },
     "Jeanne d'Arc": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "1 round of prep. 50% chance to deal 477% damage to 2 random enemy squads within the valid range and make the squads take 30% more SKill Damage." },
@@ -152,7 +152,7 @@ export const heroesExtendedData = {
     },
     "Alfred": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "35% chance to deal 335% Damage to 2 enemy squads within the valid range and make the target's troop power restoring effect -40%. If the target is already subjected to a status that stops it from restoring troop power or curbs its power restoration, the target will take 30% more Skill Damage for 2 round." },
@@ -162,7 +162,7 @@ export const heroesExtendedData = {
     },
     "Ramses II": {
         placement: "Any Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 6, target: "3 Random Ally", desc: "For the first 2 rounds, all enemy and your squads take -45% Physical Damage; in round 3-6, all your squads have 80% chance to cast normal attacks 2 times each rounds." },
@@ -172,7 +172,7 @@ export const heroesExtendedData = {
     },
     "Cleopatra VII": {
         placement: "Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 5, target: "1 Random Ally", desc: "For the first 4 rounds, the friendly squad with the lowest troop power has 40% chance to dodge the incoming damage when being attacked; starting round 4 your squad with the lowest troop power will restore some troop power (recovery rate: 150%)." },
@@ -182,7 +182,7 @@ export const heroesExtendedData = {
     },
     "King Arthur": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "The Damage the Hero takes -80% at the start of the battle. Each time the Hero take Damage, the Damage mitigation effect will be reduced by 8%, with Resistance increased by 20% and Damage dealt increased by 10% (stackable up to 16 layers), effective until the end of the battle." },
@@ -192,7 +192,7 @@ export const heroesExtendedData = {
     },
     "Leonidas": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Additional Attack", range: 4, target: "2 Random Enemy", desc: "After launching a normal attack , 40% chance to make the Might -50% and Resistance -50% for 2 random enemy squads within the valid range and Silence the squads for 1 turn." },
@@ -202,7 +202,7 @@ export const heroesExtendedData = {
     },
     "Isabella I": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "70% chance each round to breathe dragon's fire onto 1 random enemy squad at a time for 6 time(s), dealing 83% burning Damage; if all enemy squads are hit in round, 1 random friendly squad received Clarity (immune to the Suppressing/Silenceing/Disarming/Confusing effects) for 1 round." },
@@ -212,7 +212,7 @@ export const heroesExtendedData = {
     },
     "Desert Storm": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 5, target: "3 Random Enemy", desc: "On turn 1, 3 and 5, have all enemy squads enter Cursed, Burning and Poisoned, and dealing 24%, 29% and 34% damage on correspoding turns, lasting till the end of the battle." },
@@ -222,7 +222,7 @@ export const heroesExtendedData = {
     },
     "Soaring Hawk": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "2 Random Enemy", desc: "40% chance to deal 179% damage to 2 random enemy squads within range, making their Might -38%, lasting 2 turns." },
@@ -232,7 +232,7 @@ export const heroesExtendedData = {
     },
     "The Brave": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 4, target: "2 Random Enemy", desc: "First 3 turns of the battle, 80% chance each turn to Disarm 2 enemy squads within range." },
@@ -242,7 +242,7 @@ export const heroesExtendedData = {
     },
 "Jade Eagle": {
         placement: "Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "40% chance to lauch 2 attacks, each dealing 142% Damage to 2 random enemy squads within the valid range, with a 25% chance to Silence the targets for 1 round." },
@@ -253,7 +253,7 @@ export const heroesExtendedData = {
     },
     "Immortal Guardian": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "Hero's squad Damage Taken -30%" },
@@ -263,7 +263,7 @@ export const heroesExtendedData = {
     },
     "Divine Arrow": {
         placement: "Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "25% chance to deal 211% damage to 2 random enemy, Disarming them for 1 turn." },
@@ -273,7 +273,7 @@ export const heroesExtendedData = {
     },
     "Che Liu": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "50% Increased damage for the squad. When the current troop is halved, Gain 100% additional Might and Resistance" },
@@ -283,7 +283,7 @@ export const heroesExtendedData = {
     },
     "War Lord": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "During battle, all friendly Cavalry squads has -20% basic attack damage, 45% increase combat skill damage." },
@@ -293,7 +293,7 @@ export const heroesExtendedData = {
     },
     "Jane": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "1 turn prep 35% chance to deal 334.5% damage to all enemy squads within range." },
@@ -303,7 +303,7 @@ export const heroesExtendedData = {
     },
     "Sky Breaker": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "2 Random Enemy", desc: "40% chance to deal 325% damage to 2 random enemy and make the skill damage deal -20% for 2 turns." },
@@ -313,7 +313,7 @@ export const heroesExtendedData = {
     },
     "Rokuboshuten": {
         placement: "Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 255% damage to 2 random enemy, making their Might and Resistance -55%, lasting 2 turns." },
@@ -323,7 +323,7 @@ export const heroesExtendedData = {
     },
     "Bleeding Steed": {
         placement: "Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 2, target: "2 Random Ally", desc: "First 3 turns, 2 friendly squads have 60% bonus damage." },
@@ -333,7 +333,7 @@ export const heroesExtendedData = {
     },
     "Rozen Blade": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "3 Random Enemy", desc: "30% chance to remove the debuff of ally Cavalry and archers (excluding Debuffs from pre-battle skills), give their Basic Attacks 25% chance to cause 1 turn Suppression, lasting 1 turn." },
@@ -343,7 +343,7 @@ export const heroesExtendedData = {
     },
     "Jade": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "1 Turn prep. 40% chance to attack 6 times, each attack randomly selects an enemy squad within range dealing 162% Damage." },
@@ -353,7 +353,7 @@ export const heroesExtendedData = {
     },
     "Witch Hunter": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "30% chance to deal 237% damage to all enemy squads within the valid range and inflict the Flammable status on them, increasing the Burning damage they take by 35% lasting 2 turns." },
@@ -363,7 +363,7 @@ export const heroesExtendedData = {
     },
     "Peace Bringer": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "Hero's squad has 50% chance to be buffed every turn, taking -50% fewer damage these turns. hero's squad has a 35% chance to counterattack when basic attacked, dealing 190% damage to the damage source." },
@@ -373,7 +373,7 @@ export const heroesExtendedData = {
     },
     "Inquisitor": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "3 Random Enemy", desc: "1 turns prep, 35% chance to attack all squad for 246% damage within the range and give the Disarm status to the enemy squad, enemy unable to perform a normal attack, last for 2 turns." },
@@ -383,7 +383,7 @@ export const heroesExtendedData = {
     },
     "BeastQueen": {
         placement: "Front Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 2, target: "3 Random Ally", desc: "In the first turn, all our squads normal attack and pursuit skill damage increased by 80%, the effect reduced by 1/4 er round." },
@@ -393,7 +393,7 @@ export const heroesExtendedData = {
     },
 "Cao Cao": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "80% chance to deal 157% damage to 2 random enemy squads within the valid range." },
@@ -404,7 +404,7 @@ export const heroesExtendedData = {
     },
     "Charles the Great": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 255% damage to 2 random enemy squad within the valid range and make the resistance of the targets -170% for 2 turns." },
@@ -414,7 +414,7 @@ export const heroesExtendedData = {
     },
     "Black Prince": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "35% chance to apply 1 status out of Suppressing, Silencing and Disarm to 2 random enemy squads within the valid range, lasting 2 rounds." },
@@ -424,7 +424,7 @@ export const heroesExtendedData = {
     },
 "Lionheart": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 250% damage to 2 random enemy squads within the valid range and make the skill damage of Lionheart increased by 40% for 1 turn." },
@@ -435,7 +435,7 @@ export const heroesExtendedData = {
     },
 "Al Fatih": {
         placement: "Any Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 0, target: "1 Random Ally", desc: "80% chance to increase the damage dealt in normal attacks made by Al Fatih by 60% for 1 turn." },
@@ -446,7 +446,7 @@ export const heroesExtendedData = {
     },
     "Edward the Confessor": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "All your squads have a 100% chance to enter the status Dodging the first time they are attacked; for the first 4 turns, they have a 70% chance to make the skill damage of all enemy squads -40% each round." },
@@ -456,7 +456,7 @@ export const heroesExtendedData = {
     },
     "Constantine the Great": {
         placement: "Middle Row / Back Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "1 turn prep. 45% chance to deal 330% damage to 2 random enemy squads within the valid range." },
@@ -466,7 +466,7 @@ export const heroesExtendedData = {
     },
     "Genghis Khan": {
         placement: "Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 4, target: "3 Random Enemy", desc: "1 turn prep. 50% chance to apply the status Bleeding to all enemy squads, making them take 213% damage each round for 2 turns." },
@@ -476,7 +476,7 @@ export const heroesExtendedData = {
     },
     "Jiguang Qi": {
         placement: "Front Row / Middle Row",
-        minCopies: 34,
+        minCopies: 14,
         maxCopies: 34,
         skills: [
             { id: 2, type: "Combat Skill", range: 3, target: "3 Random Enemy", desc: "40% chance to deal 192% damage to all enemy squad(s) within the valid range." },
