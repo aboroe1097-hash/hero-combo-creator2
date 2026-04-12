@@ -13,7 +13,7 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
-    /* Logo Branding & Glow */
+    
     /* Logo Branding & Glow */
     .logo-container { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
     .logo-container::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); z-index: -1; }
@@ -147,28 +147,45 @@
       </div>
     </div>
 
-    <div class="flex justify-center mb-6 px-1 w-full relative z-40">
-      <div class="flex flex-row bg-slate-800/90 rounded-full p-1 border border-slate-700 shadow-lg" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px;max-width:calc(100vw - 2rem);">
-        <div class="relative flex-shrink-0">
-          <button id="tabManual" class="tab-pill tab-pill-inactive">Manual Builder</button>
+    <div class="flex justify-center mb-8 px-2 w-full relative z-40">
+      <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:calc(100vw - 2rem);backdrop-filter:blur(12px);">
+        <!-- Manual Builder -->
+        <div class="relative flex-shrink-0 flex items-center">
+          <button id="tabManual" class="tab-pill tab-pill-inactive">
+            <svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+            Manual Builder
+          </button>
         </div>
-        <div class="relative flex-shrink-0">
-          <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
+        <!-- Combo Generator -->
+        <div class="relative flex-shrink-0 flex items-center">
+          <button id="tabGenerator" class="tab-pill tab-pill-active">
+            <svg class="w-3.5 h-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
+            Combo Generator
+          </button>
         </div>
-        <div class="relative flex-shrink-0">
-          <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">Eden Loyalty</button>
-          <span class="tab-badge absolute -top-1.5 -right-1 bg-sky-500 text-slate-900 z-10 pointer-events-none shadow-sm border border-sky-400">New</span>
+        <!-- Eden Loyalty -->
+        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;">
+          <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">
+            <svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75"/></svg>
+            Eden Loyalty
+          </button>
+          <span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-sky-500 text-slate-900 border border-sky-400" style="transform:translate(25%,-25%);">NEW</span>
         </div>
-        <div class="relative flex-shrink-0">
-          <button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch">Research</button>
-          <span class="tab-badge absolute -top-1.5 -right-1 bg-amber-500 text-slate-900 z-10 pointer-events-none shadow-sm border border-amber-400">Beta</span>
+        <!-- Research -->
+        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;">
+          <button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch">
+            <svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
+            Research
+          </button>
+          <span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-amber-500 text-slate-900 border border-amber-400" style="transform:translate(25%,-25%);">BETA</span>
         </div>
-        <div class="relative flex-shrink-0">
+        <!-- YouTube -->
+        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;">
           <button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube">
             <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>
             YouTube
           </button>
-          <span class="tab-badge absolute -top-1.5 -right-1 bg-red-600 text-white z-10 pointer-events-none shadow-md border border-red-400/50">Hot</span>
+          <span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-md leading-tight bg-red-600 text-white border border-red-400/50" style="transform:translate(25%,-25%);">HOT</span>
         </div>
       </div>
     </div>
@@ -536,21 +553,61 @@
 
     </section>
     
-    <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
-      <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-widest">Comments & Suggestions</h2>
-      
-      <form id="commentForm" class="space-y-3 mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Your name (optional)" />
-          <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Email (optional)" />
+    <section id="commentsSection" class="mt-8 rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl">
+      <!-- Header bar -->
+      <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-slate-900 via-slate-800/80 to-slate-900 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+          </div>
+          <div>
+            <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-base font-black text-white uppercase tracking-widest leading-none">Comments & Suggestions</h2>
+            <p class="text-[10px] text-slate-500 font-medium mt-0.5">Share your thoughts with the VTS 1097 community</p>
+          </div>
         </div>
-        
-        <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Write a suggestion..."></textarea>
-        
-        <button type="submit" id="postCommentBtn" data-i18n="commentSubmitBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-lg">Submit Comment</button>
-      </form>
-      
-      <div id="commentsList" class="space-y-4"></div>
+        <!-- Report / Feedback button -->
+        <a id="feedbackMailBtn" href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Combo%20Tool%20-%20Feedback&body=Hi%20Abo%2C%0A%0A%5BDescribe%20your%20suggestion%20or%20bug%20here%5D%0A%0A----%0APage%3A%20Hero%20Combo%20Creator%0A" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:border-amber-400/60 transition-all duration-200 text-xs font-bold group shrink-0" title="Send feedback or report a bug to the developer">
+          <svg class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.047.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152 6.06M12 12.75c-2.883 0-5.647.508-8.208 1.44a23.916 23.916 0 0 0 1.152 6.061M12 12.75c1.955 0 3.838.354 5.574 1.003.012-.018.025-.037.038-.055A6.752 6.752 0 0 0 12 5.25a6.752 6.752 0 0 0-5.613 8.448c.013.018.025.037.038.055A14.904 14.904 0 0 1 12 12.75Z"/></svg>
+          <span class="hidden sm:inline">Report / Suggest</span>
+          <span class="sm:hidden">Report</span>
+        </a>
+      </div>
+
+      <!-- Composer -->
+      <div class="p-5 bg-slate-900/60">
+        <form id="commentForm" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
+              <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Your name (optional)" />
+            </div>
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+              <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Email (optional)" />
+            </div>
+          </div>
+          <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none leading-relaxed" placeholder="Write a suggestion, report a bug, or share feedback..."></textarea>
+          <div class="flex items-center gap-3">
+            <button type="submit" id="postCommentBtn" data-i18n="commentSubmitBtn" class="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-500 active:scale-95 transition-all shadow-lg shadow-blue-900/30">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+              Submit Comment
+            </button>
+            <a href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Tool%20-%20Bug%20Report&body=Bug%20or%20issue%3A%0A%0A" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 hover:border-red-500/50 hover:text-red-400 hover:bg-red-900/10 transition-all text-sm font-bold shrink-0 group" title="Email bug report directly to developer">
+              <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+              <span class="hidden sm:inline">Report Bug</span>
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 px-5 py-2 bg-slate-900/40 border-t border-slate-700/40">
+        <svg class="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+        <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-widest" id="commentsCountLabel">Community comments</span>
+      </div>
+
+      <!-- Comments list -->
+      <div id="commentsList" class="divide-y divide-slate-800/60 bg-slate-900/30"></div>
     </section>
 
     <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
