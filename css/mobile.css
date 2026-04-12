@@ -139,7 +139,7 @@ html, body {
   margin: 6px 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  min-height: 80px !important;
+  min-height: 110px !important;
 }
 .saved-combo-number {
   left: 10px !important;
@@ -159,8 +159,8 @@ html, body {
 .generated-combo-card > div:last-child {
   margin-left: 0 !important; padding-right: 0 !important; text-align: center !important;
 }
-.saved-combo-slot-item { width: 72px !important; height: 72px !important; }
-.saved-combo-slot-item img { width: 52px !important; height: 52px !important; }
+.saved-combo-slot-item { width: 80px !important; height: 80px !important; }
+.saved-combo-slot-item img { width: 72px !important; height: 72px !important; }
 
 /* ── Scroll-to-top lower on mobile (above footer) ────────── */
 #scrollTopBtn { bottom: 5.5rem !important; right: 0.75rem !important; }

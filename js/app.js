@@ -855,10 +855,39 @@ function renderGeneratorResults(bestCombos) {
     combo.heroes.forEach(name => {
       const item = document.createElement('div');
       item.className = 'saved-combo-slot-item';
-      item.innerHTML = `
-        <img src="${getHeroImageUrl(name)}" crossorigin="anonymous">
-        <span class="text-[10px] text-sky-300 font-bold truncate px-1">${name}</span>
-      `;
+      item.style.cursor = 'pointer';
+      const img = document.createElement('img');
+      img.src = getHeroImageUrl(name);
+      img.crossOrigin = 'anonymous';
+      img.style.transition = 'transform 0.18s ease, box-shadow 0.18s ease';
+      const label = document.createElement('span');
+      label.className = 'text-[10px] text-sky-300 font-bold truncate px-1';
+      label.textContent = name;
+      item.appendChild(img);
+      item.appendChild(label);
+      // Desktop: hover tooltip
+      item.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return;
+        img.style.transform = 'scale(1.12)';
+        img.style.boxShadow = '0 0 18px rgba(56,189,248,0.45)';
+        showHeroTooltip(e, name);
+      });
+      item.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
+        moveHeroTooltip(e);
+      });
+      item.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch') return;
+        img.style.transform = '';
+        img.style.boxShadow = '';
+        hideHeroTooltip();
+      });
+      // Mobile: tap to show tooltip
+      item.addEventListener('click', () => {
+        const rect = item.getBoundingClientRect();
+        const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top };
+        showHeroTooltip(fakeEvent, name);
+      });
       slots.appendChild(item);
     });
 
