@@ -1,237 +1,625 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Favicon / site icon -->
+  <meta charset="UTF-8" />
+  <title>Hero Combo Creator — VTS 1097</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
-
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hero Combo Creator</title>
-
-  <!-- Tailwind CDN (utility classes) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- html2canvas (for screenshot) -->
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-
-  <!-- App CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)" />
-
-  <!-- Small inline CSS for logo placement -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    /* team badge in the top-right of the app card */
-    .team-badge {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-      border: 2px solid rgba(255,255,255,0.04);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.25));
+    body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
+    
+    /* Logo Branding & Glow */
+    .logo-container { position: relative; display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+    .logo-container::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); z-index: -1; }
+    .main-logo { width: 150px; height: 150px; border-radius: 24px; border: 2px solid rgba(255, 255, 255, 0.05); }
+    
+    /* Tab Navigation */
+    .tab-pill { width: 100%; height: 100%; padding: 0.6rem 0.25rem; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; transition: all 0.2s ease; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
+    @media (min-width: 640px) {
+      .tab-pill { width: auto; padding: 0.5rem 1.25rem; font-size: 0.875rem; }
+    }
+    .tab-pill-active { background: #2563eb; color: #f9fafb; }
+    .tab-pill-inactive { background: transparent; color: #e5e7eb; }
+
+    /* Comment Avatar */
+    .comment-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 40;
-    }
-    .team-badge img {
-      width: 88%;
-      height: 88%;
-      object-fit: cover;
-      display: block;
-      border-radius: 8px;
+      font-weight: 900;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
     }
 
-    /* centered main logo */
-    .main-logo {
-      width: 160px;
-      height: 160px;
-      object-fit: contain;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-      margin-bottom: 12px;
-      display: block;
-      background: rgba(0,0,0,0.15);
+    /* Threaded Replies (Desktop & Mobile) */
+    .replies-container {
+      margin-left: 1.5rem;
+      margin-top: 0.75rem;
+      border-left: 2px solid #334155;
+      padding-left: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    @media (min-width: 640px) {
+      .replies-container { margin-left: 3rem; }
+    }
+    
+    .reply-card {
+      background: #1e293b;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid #334155;
+    }
+    /* Unified Number Spacing & Card Layout */
+    .saved-combo-display, .generated-combo-card { 
+      position: relative; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: space-between; 
+      background: #1f2937; 
+      border-radius: 0.75rem; 
+      padding: 0.75rem 1rem 0.75rem 72px !important;
+      margin-bottom: 0.75rem; 
+      min-height: 90px;
+    }
+    @media (min-width:768px) { 
+      .saved-combo-display, .generated-combo-card { flex-direction: row; } 
     }
 
-    /* smaller logo for narrow screens */
-    @media (max-width:640px) {
-      .main-logo { width: 120px; height: 120px; }
-      .team-badge { width: 48px; height: 48px; top: 8px; right: 8px; }
+    /* Rank Numbering Badge */
+    .saved-combo-number { 
+      position: absolute; 
+      left: 20px;
+      top: 50%; 
+      transform: translateY(-50%); 
+      background-color: #f97316; 
+      color: #111827; 
+      width: 32px; 
+      height: 32px; 
+      border-radius: 50%; 
+      display: block; 
+      line-height: 32px; 
+      text-align: center; 
+      font-size: 1.05rem; 
+      font-weight: 800; 
+      z-index: 5; 
     }
+    
+    /* Toggle Switch & Info Button Logic */
+    body.hide-hero-info .info-btn { display: none !important; }
   </style>
 </head>
-<body class="p-4 bg-gray-900 text-slate-200 font-inter">
-  <div id="app" class="relative max-w-6xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
-    <!-- small team badge (top-right inside the app card) -->
-    <div class="team-badge" title="VTS 1097">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 logo">
+<body class="p-3 sm:p-4">
+<div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">    
+    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
+    
+    <div class="logo-container">
+      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Logo" class="main-logo shadow-2xl" />
+      <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
+      <div class="flex flex-col items-center mt-2 space-y-1">
+        <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise Of Castles: Ice & Fire</p>
+        <p class="text-xs sm:text-sm font-bold text-blue-400">TEAM VTS — STATE 1097</p>
+      </div>
     </div>
 
-    <div id="betaNote" class="text-center mb-6 p-4 bg-blue-900 rounded-lg text-blue-200 font-semibold text-lg">
-      BETA Version b1.2 — Created by Abo for VTS 1097
-    </div>
-
-    <!-- Centered main logo + title -->
-    <div class="flex flex-col items-center mb-6">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="VTS 1097 — Team Logo" class="main-logo" />
-
-      <h1 id="appTitle" class="text-4xl font-bold text-center mb-2 text-blue-400">Hero Combo Creator</h1>
-      <p class="text-sm text-gray-300">Team VTS 1097</p>
-    </div>
-
-    <!-- Language Selector -->
-    <div class="flex justify-end mb-4 language-select-wrapper">
-      <label for="languageSelect" class="mr-2 text-gray-300">Language:</label>
-      <select id="languageSelect" class="bg-gray-700 text-white rounded-md p-2">
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="pt">Português</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-        <option value="zh">中文</option>
-        <option value="ru">Русский</option>
-      </select>
-    </div>
-
-    <!-- Modal Message Box -->
-    <div id="messageBox" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div class="bg-gray-800 p-6 rounded-lg shadow-xl text-center w-11/12 max-w-lg">
-        <p id="messageText" class="text-lg mb-4"></p>
-        <div class="flex justify-center space-x-4">
-          <button id="messageBoxOkBtn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
-          <button id="messageBoxCancelBtn" class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 hidden">Cancel</button>
+    <div class="flex justify-end mb-6 relative z-50">
+      <div class="relative inline-block group">
+        <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
+          <div class="pl-3 pr-1 text-slate-400 group-hover:text-blue-400 pointer-events-none transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
+            </svg>
+          </div>
+          <select id="languageSelect" class="appearance-none bg-transparent text-slate-200 font-semibold py-2 pl-2 pr-9 text-sm outline-none cursor-pointer w-full h-full">
+            <option value="en" class="bg-slate-800 text-white">English</option>
+            <option value="es" class="bg-slate-800 text-white">Español</option>
+            <option value="pt" class="bg-slate-800 text-white">Português</option>
+            <option value="de" class="bg-slate-800 text-white">Deutsch</option>
+            <option value="fr" class="bg-slate-800 text-white">Français</option>
+            <option value="tr" class="bg-slate-800 text-white">Türkçe</option>
+            <option value="ru" class="bg-slate-800 text-white">Русский</option>
+            <option value="id" class="bg-slate-800 text-white">Indonesia</option>
+            <option value="zh" class="bg-slate-800 text-white">中文</option>
+            <option value="ar" class="bg-slate-800 text-white">العربية</option>
+            <option value="kr" class="bg-slate-800 text-white">한국어</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 group-hover:text-blue-400 transition-colors">
+            <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="loading-spinner hidden" aria-hidden="true" title="Loading"></div>
-
-    <!-- Season filters -->
-    <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner">
-      <h2 id="filterBySeasonTitle" class="text-2xl font-semibold mb-4 text-gray-200">Filter by Season</h2>
-      <div id="seasonFilters" class="flex flex-wrap gap-4">
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S0" checked>
-          <span class="ml-2 text-gray-300">Season 0</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S1">
-          <span class="ml-2 text-gray-300">Season 1</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S2">
-          <span class="ml-2 text-gray-300">Season 2</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S3">
-          <span class="ml-2 text-gray-300">Season 3</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S4">
-          <span class="ml-2 text-gray-300">Season 4</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600" value="S5">
-          <span class="ml-2 text-gray-300">Season 5 (X1)</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Available Heroes -->
-    <div class="mb-8">
-      <h2 id="availableHeroesTitle" class="text-2xl font-semibold mb-4 text-gray-200">Available Heroes</h2>
-      <div id="availableHeroes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-items-center">
-        <!-- hero cards appended here -->
-      </div>
-    </div>
-
-    <!-- Combo creation -->
-    <div class="mb-8 p-6 bg-gray-800 rounded-xl shadow-inner combo-section">
-      <h2 id="createComboTitle" class="text-2xl font-semibold mb-4 text-gray-200">
-        Create Your Combo (Drag &amp; Drop / Tap)
-      </h2>
-
-      <!-- This wrapper will become the sticky footer on mobile -->
-      <div id="comboFooterBar">
-        <!-- 3 combo slots -->
-        <div id="comboSlotsRow"
-             class="flex justify-center items-center mb-4 gap-4">
-          <div id="comboSlot1" class="combo-slot" data-slot-index="0"></div>
-          <div id="comboSlot2" class="combo-slot" data-slot-index="1"></div>
-          <div id="comboSlot3" class="combo-slot" data-slot-index="2"></div>
+    <div class="flex justify-center mb-6 px-1 w-full relative z-40">
+      <div class="flex flex-row bg-slate-800/90 rounded-full p-1 border border-slate-700 shadow-lg" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px;max-width:calc(100vw - 2rem);">
+        <div class="relative flex-shrink-0">
+          <button id="tabManual" class="tab-pill tab-pill-inactive">Manual Builder</button>
         </div>
-
-        <!-- Buttons (will be 2×2 grid on mobile, normal row on desktop) -->
-        <div id="comboButtonsRow"
-             class="text-center flex flex-wrap justify-center gap-4">
-          <button id="saveComboBtn"
-                  class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 disabled:opacity-50"
-                  disabled>
-            Save Current Combo
+        <div class="relative flex-shrink-0">
+          <button id="tabGenerator" class="tab-pill tab-pill-active">Combo Generator</button>
+        </div>
+        <div class="relative flex-shrink-0">
+          <button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty">Eden Loyalty</button>
+          <span class="tab-badge absolute -top-1.5 -right-1 bg-sky-500 text-slate-900 z-10 pointer-events-none shadow-sm border border-sky-400">New</span>
+        </div>
+        <div class="relative flex-shrink-0">
+          <button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch">Research</button>
+          <span class="tab-badge absolute -top-1.5 -right-1 bg-amber-500 text-slate-900 z-10 pointer-events-none shadow-sm border border-amber-400">Beta</span>
+        </div>
+        <div class="relative flex-shrink-0">
+          <button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube">
+            <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>
+            YouTube
           </button>
-          <button id="clearComboBtn"
-                  class="px-8 py-3 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:bg-red-700">
-            Clear Current Combo
-          </button>
-          <button id="downloadCombosBtn"
-                  class="px-8 py-3 bg-purple-600 text-white font-bold rounded-lg shadow-lg hover:bg-purple-700">
-            Download All Combos as Image
-          </button>
-          <button id="shareAllCombosBtn"
-                  class="px-8 py-3 bg-sky-600 text-white font-bold rounded-lg shadow-lg hover:bg-sky-700">
-            Share All Combos as Text
-          </button>
+          <span class="tab-badge absolute -top-1.5 -right-1 bg-red-600 text-white z-10 pointer-events-none shadow-md border border-red-400/50">Hot</span>
         </div>
       </div>
     </div>
 
-    <!-- Saved combos -->
-    <div>
-      <h2 id="lastBestCombosTitle" class="text-2xl font-semibold mb-4 text-gray-200">Last Best Combos</h2>
-      <p id="noCombosMessage" class="text-gray-400 text-center mb-4">No combos saved yet. Drag or tap heroes and click 'Save Current Combo'!</p>
-      <div id="savedCombos" class="flex flex-col items-center">
-        <!-- saved combos rendered here -->
+    <div id="globalToggleRow" class="flex justify-center mb-6 transition-all duration-300">
+      <label class="flex items-center cursor-pointer gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-slate-700 shadow-sm hover:border-slate-500 transition-colors">
+        <span class="text-[10px] sm:text-xs text-slate-300 font-bold uppercase tracking-widest" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
+        <div class="relative inline-flex items-center">
+          <input type="checkbox" id="heroInfoToggle" class="sr-only peer" checked>
+          <div class="w-11 h-6 bg-slate-700 rounded-full border border-slate-600 shadow-inner transition-colors duration-300 peer-checked:bg-emerald-500 peer-checked:border-emerald-400"></div>
+          <div class="absolute left-1 top-1 w-4 h-4 bg-slate-300 rounded-full transition-all duration-300 shadow-md peer-checked:translate-x-5 peer-checked:bg-white"></div>
+        </div>
+      </label>
+    </div>
+
+    <section id="manualBuilderSection" class="hidden">
+      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
+        <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
+            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
+            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
+            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
+            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+            <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
+        </div>
+
+        <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
+        <div id="stateFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+            <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+        </div>
+
+        <h2 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h2>
+        <div id="troopFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+            <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+            <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+            <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h2 id="availableHeroesTitle" class="text-xl font-semibold text-slate-100 uppercase tracking-wide">Available Heroes</h2>
+          <span id="manualHeroCount" class="text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700"></span>
+        </div>
+        <div class="hero-search-wrap">
+          <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+          <input id="manualHeroSearch" class="hero-search-input" type="text" placeholder="Search heroes..." autocomplete="off" />
+        </div>
+        <div id="availableHeroes" class="gap-3 justify-items-center"></div>
+      </div>
+
+      <div id="comboFooterBar" class="hidden sticky bottom-4 sm:bottom-6 z-[100] mt-8 p-4 sm:p-6 bg-slate-900/95 backdrop-blur-xl rounded-2xl border-2 border-slate-600 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] w-full transition-all">        
+        <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
+        <div id="comboRow" class="flex justify-center items-center gap-1 sm:gap-4 flex-nowrap">
+          <div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div>
+        </div>
+        <div id="comboButtonsRow" class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2 justify-center">
+          <button id="saveComboBtn" class="bg-emerald-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-emerald-700 transition disabled:opacity-50">Save</button>
+          <button id="clearComboBtn" class="bg-red-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-red-700 transition">Clear</button>
+          <button id="downloadCombosBtn" class="bg-purple-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-purple-700 transition">Image</button>
+          <button id="shareAllCombosBtn" class="bg-sky-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-sky-700 transition">Text</button>
+        </div>
+      </div>
+
+      <div class="mt-10 mb-10">
+        <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-wide">Last Best Combos</h2>
+        <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet. Drag heroes to start!</p>
+        <div id="savedCombos" class="flex flex-col items-center w-full"></div>
+      </div>
+    </section>
+
+    <section id="comboGeneratorSection">
+      <div class="mb-6">
+          <h2 id="genToolTitle" data-i18n="generatorTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
+          <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
+      </div>
+
+      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
+          <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
+              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
+              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
+              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
+              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+              <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
+          </div>
+
+          <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
+          <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+              <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+          </div>
+
+          <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
+          <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+              <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+              <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+              <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          </div>
+      </div>
+
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
+              <span id="genSelectedCount" class="text-xs font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-full border border-sky-500/40 hidden"></span>
+            </div>
+            <div class="flex gap-2">
+                <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All</button>
+                <button id="genClearAllBtn" data-i18n="generatorClearAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear All</button>
+            </div>
+        </div>
+        <div class="hero-search-wrap">
+          <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+          <input id="generatorHeroSearch" class="hero-search-input" type="text" placeholder="Search heroes..." autocomplete="off" />
+        </div>
+        <div id="generatorHeroes" class="gap-3 justify-items-center"></div>
+      </div>
+
+      <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
+        <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
+        <button id="generateRandomBtn" class="px-10 py-3 bg-amber-600 text-white font-extrabold rounded-full shadow-lg hover:bg-amber-700 transition">SURPRISE ME</button>
+        <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
+      </div>
+        
+      <div id="generatorResults" class="mb-8 space-y-3"></div>
+    </section>
+
+    <section id="loyaltyCalcSection" class="hidden">
+      <div class="mb-6">
+        <h2 class="text-2xl font-semibold mb-2 text-slate-100" data-i18n="loyaltyTitle">Loyalty Upgrade Calculator</h2>
+        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="loyaltyDesc">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="campLevelsTitle">Coalition Base Camp Levels</h3>
+          
+          <div class="flex flex-col sm:flex-row gap-6">
+            <div class="sm:w-1/3 flex justify-center items-center">
+              <img src="images/ac_camp.jpg" alt="Coalition Camps" class="w-full max-w-[200px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover aspect-auto">
+            </div>
+            
+            <div class="sm:w-2/3 flex flex-col justify-center gap-3 sm:gap-4">
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp1">Camp I Level</span>
+                <input type="number" id="ac1Level" min="0" max="20" value="20" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp2">Camp II Level</span>
+                <input type="number" id="ac2Level" min="0" max="20" value="16" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp3">Camp III Level</span>
+                <input type="number" id="ac3Level" min="0" max="20" value="12" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp4">Camp IV Level</span>
+                <input type="number" id="ac4Level" min="0" max="20" value="10" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="dailyProdTitle">Daily Production Sources (Units/Hour)</h3>
+          
+          <div class="flex flex-col gap-6">
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
+              <div class="sm:w-5/12 flex justify-center w-full">
+                <img src="images/prod_1_3.jpg" alt="Sources 1 to 3" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
+              </div>
+              <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source1">Source 1</span>
+                  <input type="number" id="source1" value="1830" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source2">Source 2</span>
+                  <input type="number" id="source2" value="64999" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source3">Source 3</span>
+                  <input type="number" id="source3" value="78801" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+              </div>
+            </div>
+
+            <div class="h-px w-full bg-slate-700/50 rounded-full"></div>
+
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
+              <div class="sm:w-5/12 flex justify-center w-full">
+                <img src="images/prod_4_6.jpg" alt="Sources 4 to 6" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
+              </div>
+              <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source4">Source 4</span>
+                  <input type="number" id="source4" value="4855" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source5">Source 5</span>
+                  <input type="number" id="source5" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source6">Source 6</span>
+                  <input type="number" id="source6" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="modifiersTitle">Modifiers</h3>
+          <div class="flex flex-col gap-4">
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-purple-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="images/bonus_loyalty.png" alt="Bonus Loyalty" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors" data-i18n="bonusLoyalty">Bonus Loyalty</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="bonusLoyaltyDesc">1 Tech Point = 60 Loyalty</span>
+                </div>
+                <input type="number" id="bonusPoints" min="0" value="20" max="20" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-purple-500 transition-colors shadow-inner">
+              </div>
+            </label>
+
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-amber-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-2/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="images/saved_units.png" alt="Saved Units" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              <div class="md:w-3/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors" data-i18n="savedUnits">Saved Units</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="savedUnitsDesc">Current inventory</span>
+                </div>
+                <input type="number" id="savedUnits" min="0" value="2340016" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-amber-500 transition-colors shadow-inner">
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="processingTitle">Processing Settings</h3>
+          
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 shadow-md overflow-hidden group">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="images/processing_time.jpg" alt="Processing Time" class="w-full max-h-32 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-5">
+                <label class="flex flex-col gap-1 cursor-pointer text-center md:text-left">
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="unitsPerPatch">Units per patch</span>
+                  <input type="number" id="totalUnitsPerPatch" value="568000" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                </label>
+                
+                <div class="flex flex-col gap-1 text-center md:text-left">
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="timePerPatch">Time per patch</span>
+                  <div class="flex gap-2 justify-center md:justify-start">
+                    <div class="relative w-full">
+                      <input type="number" id="processingHours" min="0" value="8" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">h</span>
+                    </div>
+                    <div class="relative w-full">
+                      <input type="number" id="processingMinutes" min="0" max="59" value="2" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">m</span>
+                    </div>
+                    <div class="relative w-full">
+                      <input type="number" id="processingSeconds" min="0" max="59" value="48" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">s</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="images/patches.jpg" alt="Active Patches" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="activePatches">Active Patches</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="activePatchesDesc">Currently running workshops</span>
+                </div>
+                <input type="number" id="numPatches" value="3" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <button id="calcLoyaltyBtn" class="px-10 py-3 bg-sky-600 text-white font-extrabold rounded-full shadow-lg hover:bg-sky-700 transition" data-i18n="calcUpgradesBtn">CALCULATE UPGRADES</button>
+      </div>
+
+      <div id="loyaltyResult" class="mt-8"></div>
+    </section>
+<section id="researchSection" class="hidden animate-fade-in pb-8">
+      <div class="mb-6">
+          <h2 class="text-2xl font-semibold mb-2 text-slate-100 uppercase tracking-widest">Tech Research Calculator</h2>
+          <p class="text-sm text-slate-400 leading-relaxed">Track your tech progress and calculate required medals/resources.</p>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-2 mb-6 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-blue-600 text-white" data-season="S0">S0</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S1">S1</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S2">S2</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S3">S3</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S4">S4</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X1">X1</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X2">X2</button>
+      </div>
+<div id="techListContainer" class="w-full mb-6">
+</div>
+
+      <div id="techCalculatorContainer" class="hidden bg-slate-900/80 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-2xl">
+          </div>
+    </section>
+  <section id="youtubeSection" class="hidden animate-fade-in pb-8 mt-6">
+      
+      <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-sky-400 uppercase tracking-widest drop-shadow-md">VTS 1097 Journey & Randoms</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-emerald-400 uppercase tracking-widest drop-shadow-md">Recruitment Videos</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+      
+      <div class="bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-amber-400 uppercase tracking-widest drop-shadow-md">Game Events & Guides</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+    </section>
+    
+    <section id="commentsSection" class="mt-8 p-4 sm:p-6 bg-slate-900 rounded-2xl border border-slate-800">
+      <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-widest">Comments & Suggestions</h2>
+      
+      <form id="commentForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Your name (optional)" />
+          <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Email (optional)" />
+        </div>
+        
+        <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 transition-colors" placeholder="Write a suggestion..."></textarea>
+        
+        <button type="submit" id="postCommentBtn" data-i18n="commentSubmitBtn" class="w-full px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-lg">Submit Comment</button>
+      </form>
+      
+      <div id="commentsList" class="space-y-4"></div>
+    </section>
+
+    <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+      <div class="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
+        <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
+        <div class="flex justify-center gap-3">
+          <button id="messageBoxOkBtn" class="px-8 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">OK</button>
+          <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden transition">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Comments Section -->
-  <section id="commentsSection" class="mt-8 p-6 bg-gray-800 rounded-xl shadow-inner">
-    <h2 class="text-2xl font-semibold mb-4 text-gray-200">Comments &amp; Suggestions</h2>
+  <div id="loadingSpinner" class="loading-spinner hidden"></div>
+  
+  <!-- Scroll to top -->
+  <button id="scrollTopBtn" title="Back to top" aria-label="Scroll to top">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="18" height="18">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/>
+    </svg>
+  </button>
 
-    <!-- simple form -->
-    <form id="commentForm" class="mb-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="commentName" type="text" placeholder="Your name (optional)" class="flex-1 p-2 rounded-md bg-gray-700 text-white" maxlength="50" />
-        <input id="commentEmail" type="email" placeholder="Email (optional, won't be public)" class="w-full sm:w-64 p-2 rounded-md bg-gray-700 text-white" />
-      </div>
-      <textarea id="commentText" rows="3" required placeholder="Write a suggestion or comment..." class="w-full mt-3 p-3 rounded-md bg-gray-700 text-white" maxlength="1000"></textarea>
+  <!-- Toast notifications -->
+  <div id="toastContainer"></div>
 
-      <div class="flex items-center justify-between mt-3">
-        <div class="text-sm text-gray-400">Be kind — comments are public.</div>
-        <button id="postCommentBtn" type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Post Comment</button>
-      </div>
-    </form>
+  <script>
+  // ── Scroll-to-top ─────────────────────────────────────
+  (function() {
+    const btn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) btn.classList.add('visible');
+      else btn.classList.remove('visible');
+    }, { passive: true });
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  })();
 
-    <!-- comments list -->
-    <div id="commentsList" class="flex flex-col gap-3">
-      <!-- comments rendered here -->
-    </div>
-  </section>
+  // ── Toast helper (global) ─────────────────────────────
+  window.showToast = function(msg, type = 'info', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toast-in 0.3s ease reverse both';
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  };
 
-  <!-- module scripts -->
-  <script type="module" src="js/firebase.js"></script>
-  <script type="module" src="js/translations.js"></script>
+  // ── Hero search filtering ─────────────────────────────
+  function applyHeroSearch(inputId, gridId) {
+    const input = document.getElementById(inputId);
+    const grid  = document.getElementById(gridId);
+    if (!input || !grid) return;
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      grid.querySelectorAll('.hero-card, .generator-card').forEach(card => {
+        const name = (card.dataset.heroName || card.querySelector('span')?.textContent || '').toLowerCase();
+        card.style.display = (!q || name.includes(q)) ? '' : 'none';
+      });
+    });
+  }
+  // Delay to wait for JS to render cards
+  setTimeout(() => {
+    applyHeroSearch('manualHeroSearch', 'availableHeroes');
+    applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
+  }, 800);
+  </script>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
