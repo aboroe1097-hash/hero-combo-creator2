@@ -152,11 +152,11 @@ const allHeroesData = [
   { name: 'Wind-Walker',  season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
   { name: 'ELK',          season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
   { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
-  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-The_Avalanche.jpg' },
-  { name: 'Army Breaker',    season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Army_Breaker.jpg' },
-  { name: 'Dach Tengri',     season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Dach_Tengri.jpg' },
-  { name: 'Tarantula',       season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Tarantula.jpg' },
-  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://rocherocombos.com/hero_images/X2-Alexander_The_Great.jpg' }
+  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://ibb.co/vvZqffxw' },
+  { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://ibb.co/zTt8B3Kw' },
+  { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://ibb.co/nqryD2Jp' },
+  { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://ibb.co/6c0TV1Zj' },
+  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://ibb.co/NgvWBn6B' }
 ];
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
