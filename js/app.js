@@ -152,12 +152,13 @@ const allHeroesData = [
   { name: 'Wind-Walker',  season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
   { name: 'ELK',          season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
   { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
-  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://ibb.co/vvZqffxw' },
-  { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://ibb.co/zTt8B3Kw' },
-  { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://ibb.co/nqryD2Jp' },
+  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/vvZqffxw/Avalanche.png' },
+  { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
+  { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://ibb.co/6c0TV1Zj' },
-  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://ibb.co/NgvWBn6B' }
+  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: '<a href="https://ibb.co/NgvWBn6B"><img src="https://i.ibb.co/NgvWBn6B/Alexander.png" alt="Alexander" border="0" /></a>' }
 ];
+
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
 techDatabase.forEach(tech => {
