@@ -525,3 +525,172 @@ input[type=number] { -moz-appearance: textfield; }
   box-shadow: 0 2px 12px rgba(52,211,153,0.28);
   color: #fff;
 }
+
+/* ============================================================
+   b4.1 ADDITIONS
+   1. Paid badge on hero cards
+   2. Tab switch animations
+   3. Heroes tab: ranking + detail
+   ============================================================ */
+
+/* ── 1. Paid badge ───────────────────────────────────────── */
+.paid-badge {
+  position: absolute;
+  bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff; font-size: 0.52rem; font-weight: 800;
+  padding: 2px 6px; border-radius: 99px; white-space: nowrap;
+  letter-spacing: 0.04em; z-index: 10;
+  box-shadow: 0 2px 8px rgba(168,85,247,0.5);
+  pointer-events: none;
+  animation: paid-pulse 3s ease-in-out infinite;
+}
+@keyframes paid-pulse {
+  0%,100% { box-shadow: 0 2px 8px rgba(168,85,247,0.5); }
+  50%      { box-shadow: 0 2px 14px rgba(168,85,247,0.85); }
+}
+
+/* ── 2. Tab switch animation ─────────────────────────────── */
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tab-exit-anim {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.98); }
+}
+
+section:not(.hidden) {
+  animation: tab-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+section.tab-exit {
+  animation: tab-exit-anim 0.22s ease both !important;
+  pointer-events: none;
+}
+
+/* ── 3a. Heroes tab — season selector ───────────────────── */
+.heroes-season-tabs {
+  display: flex; gap: 5px; flex-wrap: wrap;
+  background: rgba(15,23,42,0.6); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 14px; padding: 8px; margin-bottom: 16px;
+}
+.hero-tab-season {
+  padding: 5px 13px; border-radius: 99px; border: none; cursor: pointer;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+  background: transparent; color: #94a3b8;
+  transition: all 0.15s ease; text-transform: uppercase;
+}
+.hero-tab-season:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
+.hero-tab-season.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  /* use season color if provided */
+  border: 1px solid var(--sc, rgba(255,255,255,0.2));
+}
+
+/* ── 3b. Heroes layout — list + detail side by side ─────── */
+.heroes-layout {
+  display: flex; flex-direction: column; gap: 12px;
+}
+@media (min-width: 900px) {
+  .heroes-layout.has-detail {
+    flex-direction: row; align-items: flex-start; gap: 16px;
+  }
+  .heroes-layout.has-detail .heroes-ranking-list { flex: 0 0 340px; max-height: 70vh; overflow-y: auto; }
+  .heroes-layout.has-detail .hero-detail-panel   { flex: 1; min-width: 0; }
+}
+
+/* ── 3c. Ranking list rows ───────────────────────────────── */
+.heroes-ranking-list { display: flex; flex-direction: column; gap: 4px; }
+
+.hero-rank-row {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(30,41,59,0.65); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 12px; padding: 8px 12px; cursor: pointer;
+  transition: all 0.16s ease; position: relative; overflow: hidden;
+}
+.hero-rank-row::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02));
+  opacity: 0; transition: opacity 0.16s;
+}
+.hero-rank-row:hover { border-color: rgba(99,102,241,0.5); transform: translateX(3px); }
+.hero-rank-row:hover::before { opacity: 1; }
+.hero-rank-row.selected {
+  border-color: #6366f1; background: rgba(99,102,241,0.12);
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.3);
+}
+
+.rank-medal { font-size: 0.85rem; min-width: 26px; text-align: center; flex-shrink: 0; }
+.rank-img   { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(51,65,85,0.8); flex-shrink: 0; }
+.rank-info  { flex: 1; min-width: 0; }
+.rank-name  { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-paid  { font-size: 0.75rem; }
+.rank-meta  { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+.rank-troop { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.rank-apps  { font-size: 0.6rem; color: #64748b; font-weight: 600; }
+.rank-apps-zero { color: #475569 !important; }
+.rank-bar-wrap { height: 3px; background: rgba(51,65,85,0.5); border-radius: 99px; margin-top: 5px; overflow: hidden; }
+.rank-bar { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.rank-score { font-size: 0.9rem; font-weight: 900; flex-shrink: 0; min-width: 32px; text-align: right; }
+.rank-score.has-score { color: #60a5fa; }
+.rank-score.no-score  { color: #334155; }
+
+/* ── 3d. Hero detail panel ───────────────────────────────── */
+.hero-detail-panel {
+  background: rgba(15,23,42,0.9); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 18px; padding: 18px 16px; position: relative;
+  animation: tab-enter 0.26s ease both;
+}
+.detail-close {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(30,41,59,0.8); border: 1px solid rgba(51,65,85,0.8);
+  color: #94a3b8; border-radius: 8px; padding: 4px 10px;
+  font-size: 0.72rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s;
+}
+.detail-close:hover { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #f87171; }
+
+.detail-header { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.detail-img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(99,102,241,0.5); flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+.detail-meta { flex: 1; min-width: 0; }
+.detail-name { font-size: 1.05rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
+.detail-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.detail-season-tag { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+.detail-troop-tag  { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; background: rgba(30,41,59,0.8); border: 1px solid rgba(51,65,85,0.8); }
+.detail-state-tag  { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+.detail-state-tag.paid { background: rgba(124,58,237,0.2); border: 1px solid #7c3aed; color: #c084fc; }
+.detail-state-tag.free { background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #34d399; }
+
+.detail-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.detail-stat { background: rgba(30,41,59,0.6); border-radius: 8px; padding: 6px 8px; text-align: center; }
+.detail-stat-lbl { font-size: 0.58rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.detail-stat-val { font-size: 0.9rem; font-weight: 900; color: #e2e8f0; margin-top: 2px; }
+
+.detail-section-title { font-size: 0.62rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin: 14px 0 8px; border-top: 1px solid rgba(51,65,85,0.5); padding-top: 12px; }
+
+.detail-synergies { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.detail-syn-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.detail-syn-item img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(99,102,241,0.4); }
+.detail-syn-item span { font-size: 0.58rem; font-weight: 700; color: #94a3b8; text-align: center; max-width: 48px; line-height: 1.2; }
+
+.detail-combos { display: flex; flex-direction: column; gap: 6px; }
+.detail-combo-row { display: flex; align-items: center; gap: 8px; background: rgba(30,41,59,0.5); border-radius: 10px; padding: 6px 10px; }
+.detail-combo-rank { font-size: 0.65rem; font-weight: 900; color: #f97316; min-width: 28px; }
+.detail-combo-hero { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+.detail-combo-hero img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(51,65,85,0.8); }
+.detail-combo-hero span { font-size: 0.55rem; color: #94a3b8; text-align: center; max-width: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-combo-score { font-size: 0.8rem; font-weight: 900; color: #60a5fa; min-width: 36px; text-align: right; }
+
+.detail-skills { display: flex; flex-direction: column; gap: 8px; }
+.detail-skill { background: rgba(30,41,59,0.5); border: 1px solid rgba(51,65,85,0.6); border-radius: 10px; padding: 10px 12px; }
+.detail-skill-header { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+.detail-skill-id    { font-size: 0.6rem; font-weight: 900; background: rgba(51,65,85,0.8); color: #e2e8f0; padding: 2px 7px; border-radius: 5px; }
+.detail-skill-type  { font-size: 0.6rem; font-weight: 700; color: #7dd3fc; text-transform: uppercase; }
+.detail-skill-range { font-size: 0.6rem; color: #94a3b8; font-weight: 600; }
+.detail-skill-target { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.detail-skill-target.enemy { color: #f87171; }
+.detail-skill-target.ally  { color: #34d399; }
+.detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
+

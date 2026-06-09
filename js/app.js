@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b4.0"; // Updated version
+const APP_VERSION = "b4.1"; // Updated version
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -38,6 +38,8 @@ const tabGeneratorBtn      = document.getElementById('tabGenerator');
 const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
 const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
 const tabResearchBtn       = document.getElementById('tabResearch'); 
+const tabHeroesBtn         = document.getElementById('tabHeroes');
+const heroesSection        = document.getElementById('heroesSection');
 const globalToggleRow      = document.getElementById('globalToggleRow'); 
 
 const comboFooterBar       = document.getElementById('comboFooterBar');
@@ -885,6 +887,7 @@ function renderAvailableHeroes() {
       const tagColor = seasonColors[hero.season] || '#f97316';
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        ${hero.State === 'Paid' ? '<span class="paid-badge">💎 Paid</span>' : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -1028,6 +1031,7 @@ function renderGeneratorHeroes() {
       
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
+        ${hero.State === 'Paid' ? '<span class="paid-badge">💎 Paid</span>' : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -1425,15 +1429,25 @@ function wireUIActions() {
     });
   }
 
+  let _lastTab = 'generator';
   const switchTab = (tabName) => {
+    if (tabName === _lastTab) return;
+    // Animate out current visible section
+    const allSections = [manualSection, generatorSection, loyaltySection, youtubeSection, researchSection, heroesSection];
+    const currentVisible = allSections.find(s => s && !s.classList.contains('hidden'));
+    if (currentVisible) {
+      currentVisible.classList.add('tab-exit');
+      setTimeout(() => currentVisible.classList.remove('tab-exit'), 300);
+    }
+    _lastTab = tabName;
     // Hide all sections
-    [manualSection, generatorSection, loyaltySection, youtubeSection, researchSection].forEach(sec => {
+    allSections.forEach(sec => {
         if (sec) sec.classList.add('hidden');
     });
     if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
     // Reset all tabs
-    [tabManualBtn, tabGeneratorBtn, tabLoyaltyBtn, tabYouTubeBtn, tabResearchBtn].forEach(btn => {
+    [tabManualBtn, tabGeneratorBtn, tabLoyaltyBtn, tabYouTubeBtn, tabResearchBtn, tabHeroesBtn].forEach(btn => {
         if (btn) {
             btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
         }
@@ -1469,6 +1483,12 @@ function wireUIActions() {
     } else if (tabName === 'research') {
       if (researchSection) researchSection.classList.remove('hidden');
       if (tabResearchBtn) tabResearchBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+    } else if (tabName === 'heroes') {
+      if (heroesSection) {
+        heroesSection.classList.remove('hidden');
+        renderHeroesTab();
+      }
+      if (tabHeroesBtn) tabHeroesBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
     }
   };
 
@@ -1477,6 +1497,7 @@ function wireUIActions() {
   if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
   if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube');
   if (tabResearchBtn) tabResearchBtn.onclick = () => switchTab('research');
+  if (tabHeroesBtn) tabHeroesBtn.onclick = () => switchTab('heroes');
 
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
@@ -2378,6 +2399,182 @@ function calculateTechTotals(tech) {
     
     updateGlobalSummary();
 }
+
+// ─── HEROES TAB: detail view + auto-ranking ───────────────────────────────────
+function computeHeroRankings() {
+  const total = rankedCombos.length;
+  const stats = {};
+
+  // Initialise every hero
+  allHeroesData.forEach(h => {
+    stats[h.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
+  });
+
+  rankedCombos.forEach((combo, idx) => {
+    // score: rank 1 = 100, last = 1
+    const score = total > 1 ? 100 - ((idx / (total - 1)) * 99) : 100;
+    (combo.heroes || []).forEach(heroName => {
+      if (!stats[heroName]) stats[heroName] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
+      stats[heroName].appearances++;
+      stats[heroName].weightedScore += score;
+      if (idx + 1 < stats[heroName].topComboRank) stats[heroName].topComboRank = idx + 1;
+    });
+  });
+
+  // Final rating = weighted average score (weightedScore / appearances), 0 if never appears
+  allHeroesData.forEach(h => {
+    const s = stats[h.name];
+    s.rating = s.appearances > 0
+      ? ((s.weightedScore / s.appearances) * 0.6 + (s.appearances / total * 100) * 0.4)
+      : 0;
+  });
+
+  return stats;
+}
+
+let _heroesTabState = { season: 'all', selected: null, view: 'ranking' };
+
+function renderHeroesTab() {
+  const container = document.getElementById('heroesTabContent');
+  if (!container) return;
+
+  const stats = computeHeroRankings();
+  const t = translations[currentLanguage] || translations.en;
+  const { season, selected, view } = _heroesTabState;
+
+  // Filtered heroes
+  const seasons = ['all','S0','S1','S2','S3','S4','S5','X2'];
+  const filtered = season === 'all'
+    ? [...allHeroesData]
+    : allHeroesData.filter(h => h.season === season);
+
+  // Season tabs
+  const seasonTabsHtml = seasons.map(s => `
+    <button class="hero-tab-season ${_heroesTabState.season === s ? 'active' : ''}"
+      onclick="_heroesTabState.season='${s}'; _heroesTabState.selected=null; renderHeroesTab();"
+      style="${s !== 'all' && seasonColors[s] ? `--sc:${seasonColors[s]}` : ''}">
+      ${s === 'all' ? 'All' : s}
+    </button>`).join('');
+
+  if (view === 'ranking') {
+    // Sort by rating desc
+    const ranked = [...filtered].sort((a,b) => (stats[b.name]?.rating||0) - (stats[a.name]?.rating||0));
+
+    const rowsHtml = ranked.map((hero, i) => {
+      const s = stats[hero.name] || {};
+      const pct = Math.min(100, (s.rating || 0)).toFixed(0);
+      const tagColor = seasonColors[hero.season] || '#f97316';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+      return `
+        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}"
+          onclick="_heroesTabState.selected='${hero.name.replace(/'/g,"\'")}'; renderHeroesTab();">
+          <span class="rank-medal">${medal}</span>
+          <img class="rank-img" src="${hero.imageUrl}" alt="${hero.name}" onerror="this.src='images/logo.png'">
+          <div class="rank-info">
+            <div class="rank-name">
+              ${hero.name}
+              ${hero.State === 'Paid' ? '<span class="rank-paid">💎</span>' : ''}
+            </div>
+            <div class="rank-meta">
+              <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
+              <span class="rank-troop ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
+              ${s.appearances ? `<span class="rank-apps">${s.appearances} combo${s.appearances!==1?'s':''}</span>` : '<span class="rank-apps rank-apps-zero">Not ranked</span>'}
+            </div>
+            <div class="rank-bar-wrap">
+              <div class="rank-bar" style="width:${pct}%;background:${tagColor};"></div>
+            </div>
+          </div>
+          <div class="rank-score ${s.rating > 0 ? 'has-score' : 'no-score'}">${s.rating > 0 ? pct : '—'}</div>
+        </div>`;
+    }).join('');
+
+    // Detail panel for selected hero
+    let detailHtml = '';
+    if (selected) {
+      const hero = allHeroesData.find(h => h.name === selected);
+      const ext  = heroesExtendedData[selected];
+      const s    = stats[selected] || {};
+      const tagColor = hero ? (seasonColors[hero.season] || '#f97316') : '#f97316';
+      const synergies = getSynergies(selected);
+
+      // Top combos this hero appears in
+      const heroCombos = rankedCombos
+        .map((c,i) => ({...c, rank: i+1, score:(rankedCombos.length>1?100-((i/(rankedCombos.length-1))*99):100).toFixed(1)}))
+        .filter(c => c.heroes && c.heroes.includes(selected))
+        .slice(0, 5);
+
+      const combosHtml = heroCombos.map(c => `
+        <div class="detail-combo-row">
+          <span class="detail-combo-rank">#${c.rank}</span>
+          ${c.heroes.map(hn => `
+            <div class="detail-combo-hero">
+              <img src="${getHeroImageUrl(hn)}" alt="${hn}">
+              <span>${hn}</span>
+            </div>`).join('')}
+          <span class="detail-combo-score">${parseFloat(c.score).toFixed(1)}</span>
+        </div>`).join('');
+
+      const skillsHtml = ext ? ext.skills.map(sk => `
+        <div class="detail-skill">
+          <div class="detail-skill-header">
+            <span class="detail-skill-id">SKILL ${sk.id}</span>
+            <span class="detail-skill-type">${sk.type}</span>
+            ${sk.range && sk.range !== '-' ? `<span class="detail-skill-range">Range ${sk.range}</span>` : ''}
+          </div>
+          <p class="detail-skill-target ${sk.target.toLowerCase().includes('enemy') ? 'enemy' : 'ally'}">${sk.target}</p>
+          <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
+        </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
+
+      detailHtml = `
+        <div class="hero-detail-panel">
+          <button class="detail-close" onclick="_heroesTabState.selected=null; renderHeroesTab();">✕ Close</button>
+          <div class="detail-header">
+            <img class="detail-img" src="${hero?.imageUrl}" alt="${selected}" onerror="this.src='images/logo.png'">
+            <div class="detail-meta">
+              <div class="detail-name">${selected}${hero?.State==='Paid' ? ' <span class="rank-paid">💎</span>' : ''}</div>
+              <div class="detail-tags">
+                <span class="detail-season-tag" style="background:${tagColor};color:#000">${hero?.season}</span>
+                <span class="detail-troop-tag ${getTroopColorClass(hero?.Type)}">${getLocalizedTroop(hero?.Type||'All')}</span>
+                <span class="detail-state-tag ${hero?.State==='Paid'?'paid':'free'}">${hero?.State||'Free'}</span>
+              </div>
+              <div class="detail-stats-row">
+                <div class="detail-stat"><div class="detail-stat-lbl">Rating</div><div class="detail-stat-val" style="color:${tagColor}">${s.rating>0?Math.min(100,s.rating).toFixed(1):'—'}</div></div>
+                <div class="detail-stat"><div class="detail-stat-lbl">Combos</div><div class="detail-stat-val">${s.appearances||0}</div></div>
+                <div class="detail-stat"><div class="detail-stat-lbl">Best Rank</div><div class="detail-stat-val">${s.topComboRank!==Infinity?'#'+s.topComboRank:'—'}</div></div>
+                ${ext ? `<div class="detail-stat"><div class="detail-stat-lbl">Min Copies</div><div class="detail-stat-val">${ext.minCopies||34}</div></div>` : ''}
+              </div>
+            </div>
+          </div>
+
+          ${synergies.length > 0 ? `
+          <div class="detail-section-title">Best Synergies</div>
+          <div class="detail-synergies">
+            ${synergies.map(syn => `
+              <div class="detail-syn-item">
+                <img src="${getHeroImageUrl(syn)}" alt="${syn}">
+                <span>${syn}</span>
+              </div>`).join('')}
+          </div>` : ''}
+
+          <div class="detail-section-title">Top Combos</div>
+          <div class="detail-combos">${combosHtml || '<p class="text-xs text-slate-500 italic">No ranked combos yet.</p>'}</div>
+
+          <div class="detail-section-title">Skills</div>
+          <div class="detail-skills">${skillsHtml}</div>
+        </div>`;
+    }
+
+    container.innerHTML = `
+      <div class="heroes-tab-inner">
+        <div class="heroes-season-tabs">${seasonTabsHtml}</div>
+        <div class="heroes-layout ${selected ? 'has-detail' : ''}">
+          <div class="heroes-ranking-list">${rowsHtml}</div>
+          ${selected ? detailHtml : ''}
+        </div>
+      </div>`;
+  }
+}
+
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
     // 1. Setup UI & Render Heroes
