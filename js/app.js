@@ -155,7 +155,7 @@ const allHeroesData = [
   { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-The_Avalanche.jpg' },
   { name: 'Army Breaker',    season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Army_Breaker.jpg' },
   { name: 'Dach Tengri',     season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Dach_Tengri.jpg' },
-  { name: 'Tarantula',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://rocherocombos.com/hero_images/X2-Tarantula.jpg' },
+  { name: 'Tarantula',       season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Tarantula.jpg' },
   { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://rocherocombos.com/hero_images/X2-Alexander_The_Great.jpg' }
 ];
 // --- DATA NORMALIZER (Fixes Bug #3) ---
