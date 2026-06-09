@@ -47,6 +47,7 @@ export const rankedCombos = [
 
   // --- X2 Spectral Reaper Combos ---
   { heroes: ["Hunk", "Spectral Reaper", "Ramses II"] },
+      { heroes: ["Octavius", "The Brave", "Caesar"] },
   { heroes: ["Rozen Blade", "Spectral Reaper", "Sakura"] },
   
   // --- X2 Mixed / Lawman Combos ---
@@ -62,7 +63,6 @@ export const rankedCombos = [
   { heroes: ["Immortal Guardian", "ELK", "Tarantula"] },
   { heroes: ["Immortal Guardian", "Charles the Great", "Tarantula"] },
   { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
-  { heroes: ["Octavius", "The Brave", "Caesar"] },
   
   // --- X2 Cavalry / Avalanche Combos ---
   { heroes: ["Lawman", "Lancelot", "The Avalanche"] },
