@@ -12,6 +12,7 @@
 
 
 export const rankedCombos = [
+  { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
   { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
