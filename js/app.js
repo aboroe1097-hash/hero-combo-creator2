@@ -156,9 +156,9 @@ const allHeroesData = [
   { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
   { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/DD2SMtwW/image-2026-06-09-131719049.png' },
+  { name: 'Lancelot',       season: 'X2', Type:'Cavalry', State:'Paid', imageUrl: 'https://i.ibb.co/rKLkTLgN/image-2026-06-09-132226928.png' },
   { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/2LhYhkd/image-2026-06-09-132117177.png' }
 ];
-
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
 techDatabase.forEach(tech => {
