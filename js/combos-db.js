@@ -13,6 +13,8 @@
 
 export const rankedCombos = [
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
+    { heroes: ["King Arthur","Theodora", "Alexander"\] },
+    { heroes: ["King Arthur","Cleopatra VII","Alexander"] },
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
   { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
@@ -40,7 +42,9 @@ export const rankedCombos = [
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
-  { heroes: ["Hunk", "Boudica" , "Sakura"] },
+    { heroes: ["Boudica" , "Sakura", "Jade Eagle"] },       // Rank 10
+
+  { heroes: ["Hunk", ] },
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },          // Rank 12
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
   
