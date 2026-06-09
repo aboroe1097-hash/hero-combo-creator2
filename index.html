@@ -211,6 +211,7 @@
             <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
             <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
             <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
+            <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="season6">Season 6 (X2)</span></label>
         </div>
 
         <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
@@ -260,7 +261,7 @@
       </div>
     </section>
 
-    <section id="comboGeneratorSection">
+    <section id="comboGeneratorSection" class="hidden">
       <div class="mb-6">
           <h2 id="genToolTitle" data-i18n="generatorTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
           <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
@@ -275,6 +276,7 @@
               <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
               <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
               <label class="filter-pill s5-pill"><input type="checkbox" value="S5" /><span data-i18n="season5">Season 5 (X1)</span></label>
+              <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="season6">Season 6 (X2)</span></label>
           </div>
 
           <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
@@ -499,11 +501,11 @@
       </div>
 
       <div class="flex flex-wrap justify-center gap-2 mb-6 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-blue-600 text-white" data-season="S0">S0</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S0">S0</button>
           <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S1">S1</button>
           <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S2">S2</button>
           <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S3">S3</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S4">S4</button>
+          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-blue-600 text-white" data-season="S4">S4</button>
           <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X1">X1</button>
           <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X2">X2</button>
       </div>
@@ -523,7 +525,7 @@
           </a>
         </div>
         <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
-          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" src="" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
 
@@ -535,7 +537,7 @@
           </a>
         </div>
         <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
-          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" src="" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
       
@@ -547,7 +549,7 @@
           </a>
         </div>
         <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
-          <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" src="" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
 
