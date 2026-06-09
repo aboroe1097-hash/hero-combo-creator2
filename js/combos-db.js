@@ -9,7 +9,15 @@
   // { name: 'Wind-Walker',  
  //  { name: 'ELK',          
   // { name: 'Cicero',     }
-
+  // Season 5 (X1)
+ // { name: 'Dach Tengri',   
+  //{ name: 'Tarantula',   
+  //{ name: 'Lancelot',     
+  //{ name: 'Alexander',
+  //{ name: 'Lawman',      
+  //{ name: 'Defender',        
+  //{ name: 'Spectral Reaper', 
+  //{ name: 'Valkyrie',      
 
 export const rankedCombos = [
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
@@ -35,6 +43,24 @@ export const rankedCombos = [
   { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
   { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
   { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
+
+  // --- X2 Spectral Reaper Combos ---
+  { heroes: ["Hunk", "Spectral Reaper", "Ramses II"] },
+  { heroes: ["Rozen Blade", "Spectral Reaper", "Sakura"] },
+  
+  // --- X2 Mixed / Lawman Combos ---
+  { heroes: ["Lawman", "War Lord", "Jane"] },
+  { heroes: ["Lawman", "Rozen Blade", "Immortal"] },
+
+  // --- X2 Archers / Defender & Tarantula Combos ---
+  { heroes: ["Defender", "Tarantula", "Sakura"] },
+  { heroes: ["Defender", "Sakura", "Jade Eagle"] },
+  { heroes: ["Defender", "Ramses II", "Al Fatih"] },
+  { heroes: ["Defender", "Sakura", "Spectral Reaper"] },
+  { heroes: ["Sakura", "Divine Arrow", "Spectral Reaper"] },
+  { heroes: ["Immortal Guardian", "ELK", "Tarantula"] },
+  { heroes: ["Immortal Guardian", "Charles the Great", "Tarantula"] },
+  
   
   { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },          // Rank 12
   
@@ -42,9 +68,7 @@ export const rankedCombos = [
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
-    { heroes: ["Boudica" , "Sakura", "Jade Eagle"] },       // Rank 10
-
-  { heroes: ["Hunk", ] },
+  { heroes: ["Boudica" , "Sakura", "Jade Eagle"] },       // Rank 10
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },          // Rank 12
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
   
@@ -74,6 +98,21 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Sky Breaker", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Boudica", "Inquisitor", "Witch Hunter"] },
+  // --- X2 Cavalry / Avalanche Combos ---
+  { heroes: ["Lawman", "Lancelot", "The Avalanche"] },
+  { heroes: ["Lawman", "Army Breaker", "The Avalanche"] },
+  { heroes: ["War Lord", "Lawman", "The Avalanche"] },
+  { heroes: ["The Brave", "Lawman", "The Avalanche"] },
+  { heroes: ["Lawman", "The Brave", "The Avalanche"] },
+  { heroes: ["Lawman", "Rozen Blade", "The Avalanche"] },
+  { heroes: ["Lawman", "Lionheart", "The Avalanche"] },
+  { heroes: ["The Brave", "Army Breaker", "The Avalanche"] },
+  { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
+  { heroes: ["Black Prince", "Jeanne d'Arc", "The Avalanche"] },
+
+  // --- X2 Mixed / Lawman Combos ---
+  { heroes: ["Lawman", "War Lord", "Jane"] },
+  { heroes: ["Lawman", "Rozen Blade", "Immortal"] },
     { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
   { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },    
   { heroes: ["Theodora", "Che Liu", "Cicero"] },            // Mixed Control
