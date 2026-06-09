@@ -157,7 +157,11 @@ const allHeroesData = [
   { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/DD2SMtwW/image-2026-06-09-131719049.png' },
   { name: 'Lancelot',       season: 'X2', Type:'Cavalry', State:'Paid', imageUrl: 'https://i.ibb.co/rKLkTLgN/image-2026-06-09-132226928.png' },
-  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/2LhYhkd/image-2026-06-09-132117177.png' }
+  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/2LhYhkd/image-2026-06-09-132117177.png' },
+  { name: 'Lawman',          season: 'X2', Type:'All', State:'Free', imageUrl: 'https://i.ibb.co/Y7rCgh5L/image-2026-06-09-132925633.png' },
+  { name: 'Defender',        season: 'X2', Type:'All', State:'Free', imageUrl: 'https://i.ibb.co/bj79KD5X/image-2026-06-09-132942387.png' },
+  { name: 'Spectral Reaper', season: 'X2', Type:'All', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
+  { name: 'Valkyrie',        season: 'X2', Type:'All', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' }
 ];
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
