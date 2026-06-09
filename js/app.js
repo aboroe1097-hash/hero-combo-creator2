@@ -156,7 +156,7 @@ const allHeroesData = [
   { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
   { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://ibb.co/6c0TV1Zj' },
-  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: '<a href="https://ibb.co/NgvWBn6B"><img src="https://i.ibb.co/NgvWBn6B/Alexander.png" alt="Alexander" border="0" /></a>' }
+  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/NgvWBn6B/Alexander.png' }
 ];
 
 // --- DATA NORMALIZER (Fixes Bug #3) ---
