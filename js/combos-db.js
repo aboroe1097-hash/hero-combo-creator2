@@ -34,7 +34,6 @@ export const rankedCombos = [
   { heroes: ["King Arthur", "Bleeding Steed", "Desert Storm"] },    // Rank 7
   { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
   { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
-  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
 
   { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
   { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
@@ -60,7 +59,20 @@ export const rankedCombos = [
   { heroes: ["Sakura", "Divine Arrow", "Spectral Reaper"] },
   { heroes: ["Immortal Guardian", "ELK", "Tarantula"] },
   { heroes: ["Immortal Guardian", "Charles the Great", "Tarantula"] },
-  
+    { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
+
+  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
+  // --- X2 Cavalry / Avalanche Combos ---
+  { heroes: ["Lawman", "Lancelot", "The Avalanche"] },
+  { heroes: ["Lawman", "Army Breaker", "The Avalanche"] },
+  { heroes: ["War Lord", "Lawman", "The Avalanche"] },
+  { heroes: ["The Brave", "Lawman", "The Avalanche"] },
+  { heroes: ["Lawman", "The Brave", "The Avalanche"] },
+  { heroes: ["Lawman", "Rozen Blade", "The Avalanche"] },
+  { heroes: ["Lawman", "Lionheart", "The Avalanche"] },
+  { heroes: ["The Brave", "Army Breaker", "The Avalanche"] },
+  { heroes: ["Black Prince", "Jeanne d'Arc", "The Avalanche"] },
+
   
   { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },          // Rank 12
   
@@ -98,17 +110,7 @@ export const rankedCombos = [
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Sky Breaker", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Boudica", "Inquisitor", "Witch Hunter"] },
-  // --- X2 Cavalry / Avalanche Combos ---
-  { heroes: ["Lawman", "Lancelot", "The Avalanche"] },
-  { heroes: ["Lawman", "Army Breaker", "The Avalanche"] },
-  { heroes: ["War Lord", "Lawman", "The Avalanche"] },
-  { heroes: ["The Brave", "Lawman", "The Avalanche"] },
-  { heroes: ["Lawman", "The Brave", "The Avalanche"] },
-  { heroes: ["Lawman", "Rozen Blade", "The Avalanche"] },
-  { heroes: ["Lawman", "Lionheart", "The Avalanche"] },
-  { heroes: ["The Brave", "Army Breaker", "The Avalanche"] },
-  { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
-  { heroes: ["Black Prince", "Jeanne d'Arc", "The Avalanche"] },
+
 
   // --- X2 Mixed / Lawman Combos ---
   { heroes: ["Lawman", "War Lord", "Jane"] },
