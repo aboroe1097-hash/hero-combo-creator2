@@ -241,3 +241,30 @@ html, body {
 /* ── Comments ────────────────────────────────────────────── */
 .comment-avatar { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 0.85rem !important; }
 .replies-container { margin-left: 1rem !important; padding-left: 0.75rem !important; }
+
+/* ── b4.1 Mobile additions ───────────────────────────────── */
+
+/* Paid badge — smaller on mobile */
+.paid-badge { font-size: 0.48rem !important; padding: 1px 5px !important; bottom: 22px !important; }
+
+/* Heroes tab — full width detail on mobile */
+.heroes-layout.has-detail { flex-direction: column !important; }
+.heroes-layout.has-detail .heroes-ranking-list { max-height: 45vh !important; overflow-y: auto !important; }
+
+.hero-rank-row { padding: 6px 8px !important; gap: 7px !important; }
+.rank-img      { width: 32px !important; height: 32px !important; }
+.rank-name     { font-size: 0.76rem !important; }
+.rank-score    { font-size: 0.8rem !important; }
+
+.hero-detail-panel { padding: 14px 12px !important; border-radius: 14px !important; }
+.detail-img { width: 56px !important; height: 56px !important; }
+.detail-name { font-size: 0.95rem !important; }
+.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 5px !important; }
+.detail-stat { padding: 5px 6px !important; }
+
+.detail-combo-hero img { width: 26px !important; height: 26px !important; }
+.detail-combo-hero span { font-size: 0.5rem !important; max-width: 42px !important; }
+
+.heroes-season-tabs { gap: 4px !important; padding: 6px !important; }
+.hero-tab-season { padding: 4px 10px !important; font-size: 0.66rem !important; }
+

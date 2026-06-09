@@ -5,7 +5,7 @@ export const translations = {
     betaNote: "BETA {version} — VTS s1097 Community Tool",
     tabManual: "Manual Builder", 
     tabGenerator: "Combo Generator",
-    tabYouTube: "YouTube", 
+    tabYouTube: "YouTube", tabHeroes: "Heroes", 
     tabLoyalty: "Eden Loyalty",
     tabResearch: "Research",
     toggleHeroInfo: "Show Hero Info Panels",
@@ -75,7 +75,7 @@ export const translations = {
   pt: {
     appTitle: "Criador de Combos", betaNote: "BETA {version} — Ferramenta da Comunidade VTS s1097",
     tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
-    tabYouTube: "YouTube", tabLoyalty: "Calculadora de Lealdade", tabResearch: "Pesquisa", toggleHeroInfo: "Mostrar Painéis de Heróis",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Calculadora de Lealdade", tabResearch: "Pesquisa", toggleHeroInfo: "Mostrar Painéis de Heróis",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Heróis Disponíveis",
     filterByStateTitle: "Filtrar Pago ou Grátis", stateFree: "Grátis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueiros", troopFootmen: "Infantaria", troopCavalry: "Cavalaria", troopAll: "Todos",
@@ -105,7 +105,7 @@ export const translations = {
   tr: {
     appTitle: "Kombo Oluşturucu", betaNote: "BETA {version} — VTS s1097 Topluluk Aracı",
     tabManual: "Manuel Mod", tabGenerator: "Kombo Oluşturucu",
-    tabYouTube: "YouTube", tabLoyalty: "Eden Sadakat", tabResearch: "Araştırma", toggleHeroInfo: "Kahraman Bilgi Panellerini Göster",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Eden Sadakat", tabResearch: "Araştırma", toggleHeroInfo: "Kahraman Bilgi Panellerini Göster",
     filterBySeasonTitle: "Sezona Göre Filtrele", seasonLabel: "Sezon", availableHeroesTitle: "Mevcut Kahramanlar",
     filterByStateTitle: "Ücretli/Ücretsiz Filtrele", stateFree: "Ücretsiz", statePaid: "Ücretli",
     filterByTroopTitle: "Birlikleri Filtrele", troopArchers: "Okçular", troopFootmen: "Piyadeler", troopCavalry: "Süvariler", troopAll: "Hepsi",
@@ -135,7 +135,7 @@ export const translations = {
   ru: {
     appTitle: "Создатель Комбо", betaNote: "БЕТА {version} — Инструмент сообщества VTS s1097",
     tabManual: "Ручной Режим", tabGenerator: "Генератор Комбо",
-    tabYouTube: "YouTube", tabLoyalty: "Калькулятор лояльности", tabResearch: "Исследования", toggleHeroInfo: "Показывать панели информации о героях",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Калькулятор лояльности", tabResearch: "Исследования", toggleHeroInfo: "Показывать панели информации о героях",
     filterBySeasonTitle: "Фильтр сезонов", seasonLabel: "Сезон", availableHeroesTitle: "Доступные герои",
     filterByStateTitle: "Фильтр (Платные/Бесплатные)", stateFree: "Бесплатные", statePaid: "Платные",
     filterByTroopTitle: "Фильтр войск", troopArchers: "Лучники", troopFootmen: "Пехота", troopCavalry: "Кавалерия", troopAll: "Все",
@@ -165,7 +165,7 @@ export const translations = {
   es: {
     appTitle: "Creador de Combos", betaNote: "BETA {version} — Herramienta de la Comunidad VTS s1097",
     tabManual: "Constructor Manual", tabGenerator: "Generador de Combos",
-    tabYouTube: "YouTube", tabLoyalty: "Calc. de Lealtad", tabResearch: "Investigación", toggleHeroInfo: "Mostrar Paneles de Información",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Calc. de Lealtad", tabResearch: "Investigación", toggleHeroInfo: "Mostrar Paneles de Información",
     filterBySeasonTitle: "Filtrar por Temporada", seasonLabel: "Temporada", availableHeroesTitle: "Héroes Disponibles",
     filterByStateTitle: "Filtrar Pago o Gratis", stateFree: "Gratis", statePaid: "Pago",
     filterByTroopTitle: "Filtrar Tropas", troopArchers: "Arqueros", troopFootmen: "Infantería", troopCavalry: "Caballería", troopAll: "Todos",
@@ -195,7 +195,7 @@ export const translations = {
   fr: {
     appTitle: "Créateur de Combos", betaNote: "BETA {version} — Outil Communautaire VTS s1097",
     tabManual: "Mode Manuel", tabGenerator: "Générateur de Combos",
-    tabYouTube: "YouTube", tabLoyalty: "Calc. Fidélité Eden", tabResearch: "Recherche", toggleHeroInfo: "Afficher les Infos des Héros",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Calc. Fidélité Eden", tabResearch: "Recherche", toggleHeroInfo: "Afficher les Infos des Héros",
     filterBySeasonTitle: "Filtrer par Saison", seasonLabel: "Saison", availableHeroesTitle: "Héros Disponibles",
     filterByStateTitle: "Filtrer Payant ou Gratuit", stateFree: "Gratuit", statePaid: "Payant",
     filterByTroopTitle: "Filtrer Troupes", troopArchers: "Archers", troopFootmen: "Infanterie", troopCavalry: "Cavalerie", troopAll: "Tous",
@@ -225,7 +225,7 @@ export const translations = {
   de: {
     appTitle: "Kombi-Ersteller", betaNote: "BETA {version} — VTS s1097 Community-Tool",
     tabManual: "Manueller Bau", tabGenerator: "Kombi-Generator",
-    tabYouTube: "YouTube", tabLoyalty: "Eden Loyalität", tabResearch: "Forschung", toggleHeroInfo: "Helden-Info-Panels anzeigen",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Eden Loyalität", tabResearch: "Forschung", toggleHeroInfo: "Helden-Info-Panels anzeigen",
     filterBySeasonTitle: "Nach Saison filtern", seasonLabel: "Saison", availableHeroesTitle: "Verfügbare Helden",
     filterByStateTitle: "Nach Kosten filtern", stateFree: "Kostenlos", statePaid: "Bezahlt",
     filterByTroopTitle: "Nach Truppen filtern", troopArchers: "Bogenschützen", troopFootmen: "Infanterie", troopCavalry: "Kavallerie", troopAll: "Alle",
@@ -255,7 +255,7 @@ export const translations = {
   id: {
     appTitle: "Pembuat Kombo", betaNote: "BETA {version} — Alat Komunitas VTS s1097",
     tabManual: "Mode Manual", tabGenerator: "Generator Kombo",
-    tabYouTube: "YouTube", tabLoyalty: "Kalkulator Loyalitas", tabResearch: "Penelitian", toggleHeroInfo: "Tampilkan Panel Info Hero",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "Kalkulator Loyalitas", tabResearch: "Penelitian", toggleHeroInfo: "Tampilkan Panel Info Hero",
     filterBySeasonTitle: "Filter Musim", seasonLabel: "Musim", availableHeroesTitle: "Hero Tersedia",
     filterByStateTitle: "Filter Gratis/Berbayar", stateFree: "Gratis", statePaid: "Berbayar",
     filterByTroopTitle: "Filter Pasukan", troopArchers: "Pemanah", troopFootmen: "Infanteri", troopCavalry: "Kavaleri", troopAll: "Semua",
@@ -285,7 +285,7 @@ export const translations = {
   zh: {
     appTitle: "英雄组合创建器", betaNote: "测试版 {version} — VTS s1097 社区工具",
     tabManual: "手动模式", tabGenerator: "组合生成器",
-    tabYouTube: "YouTube", tabLoyalty: "伊甸忠诚度计算", tabResearch: "科技研究", toggleHeroInfo: "显示英雄信息面板",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "伊甸忠诚度计算", tabResearch: "科技研究", toggleHeroInfo: "显示英雄信息面板",
     filterBySeasonTitle: "按赛季筛选", seasonLabel: "赛季", availableHeroesTitle: "可用英雄",
     filterByStateTitle: "按付费类型筛选", stateFree: "免费", statePaid: "付费",
     filterByTroopTitle: "按兵种筛选", troopArchers: "弓兵", troopFootmen: "步兵", troopCavalry: "骑兵", troopAll: "全部",
@@ -315,7 +315,7 @@ export const translations = {
   ar: {
     appTitle: "صانع تشكيلات الأبطال", betaNote: "نسخة تجريبية {version} — أداة مجتمع VTS s1097",
     tabManual: "بناء يدوي", tabGenerator: "مولد التشكيلات",
-    tabYouTube: "يوتيوب", tabLoyalty: "حاسبة ولاء إيدن", tabResearch: "الأبحاث", toggleHeroInfo: "إظهار لوحات معلومات الأبطال",
+    tabYouTube: "يوتيوب", tabHeroes: "Heroes", tabLoyalty: "حاسبة ولاء إيدن", tabResearch: "الأبحاث", toggleHeroInfo: "إظهار لوحات معلومات الأبطال",
     filterBySeasonTitle: "تصفية حسب الموسم", seasonLabel: "الموسم", availableHeroesTitle: "الأبطال المتاحون",
     filterByStateTitle: "تصفية مدفوع أو مجاني", stateFree: "مجاني", statePaid: "مدفوع",
     filterByTroopTitle: "تصفية القوات", troopArchers: "رماة", troopFootmen: "مشاة", troopCavalry: "فرسان", troopAll: "الكل",
@@ -345,7 +345,7 @@ export const translations = {
   kr: {
     appTitle: "영웅 조합 생성기", betaNote: "베타 {version} — VTS s1097 커뮤니티 도구",
     tabManual: "수동 빌더", tabGenerator: "조합 생성기",
-    tabYouTube: "YouTube", tabLoyalty: "에덴 충성도 계산기", tabResearch: "연구", toggleHeroInfo: "영웅 정보 패널 표시",
+    tabYouTube: "YouTube", tabHeroes: "Heroes", tabLoyalty: "에덴 충성도 계산기", tabResearch: "연구", toggleHeroInfo: "영웅 정보 패널 표시",
     filterBySeasonTitle: "시즌별 필터", seasonLabel: "시즌", availableHeroesTitle: "사용 가능 영웅",
     filterByStateTitle: "유료/무료 필터", stateFree: "무료", statePaid: "유료",
     filterByTroopTitle: "병종 필터", troopArchers: "궁병", troopFootmen: "보병", troopCavalry: "기병", troopAll: "전체",
