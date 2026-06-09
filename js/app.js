@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b3.1"; // Updated version
+const APP_VERSION = "b4.0"; // Updated version
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -70,7 +70,7 @@ let heroInfoEnabled            = true;
 let activeTechSeasons          = new Set(['S4']); // Default research season
 
 // Manual filters
-let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
 let selectedStates             = ['Free', 'Paid'];              
 let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
 
@@ -78,7 +78,7 @@ let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All'];
 let currentCombo               = [null, null, null];
 
 // Generator filters
-let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
 let generatorSelectedStates    = ['Free', 'Paid'];
 let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
@@ -151,7 +151,12 @@ const allHeroesData = [
   { name: 'Sakura',       season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
   { name: 'Wind-Walker',  season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
   { name: 'ELK',          season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
-  { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' }
+  { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
+  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-The_Avalanche.jpg' },
+  { name: 'Army Breaker',    season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Army_Breaker.jpg' },
+  { name: 'Dach Tengri',     season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://rocherocombos.com/hero_images/X2-Dach_Tengri.jpg' },
+  { name: 'Tarantula',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://rocherocombos.com/hero_images/X2-Tarantula.jpg' },
+  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://rocherocombos.com/hero_images/X2-Alexander_The_Great.jpg' }
 ];
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
@@ -174,7 +179,8 @@ const seasonColors = {
   S2: '#a855f7',
   S3: '#f97316',
   S4: '#facc15',
-  S5: '#67ab69'
+  S5: '#67ab69',
+  X2: '#34d399'  // Emerald Green
 };
 
 // --- HERO HOVER TOOLTIP ---
@@ -1445,7 +1451,15 @@ function wireUIActions() {
       if (loyaltySection) loyaltySection.classList.remove('hidden');
       if (tabLoyaltyBtn) tabLoyaltyBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
     } else if (tabName === 'youtube') {
-      if (youtubeSection) youtubeSection.classList.remove('hidden'); 
+      if (youtubeSection) {
+        youtubeSection.classList.remove('hidden');
+        // Lazy-load iframes on first visit
+        youtubeSection.querySelectorAll('iframe[data-src]').forEach(f => {
+          if (!f.src || f.src === window.location.href || f.src === '') {
+            f.src = f.dataset.src;
+          }
+        });
+      }
       if (tabYouTubeBtn) tabYouTubeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
     } else if (tabName === 'research') {
       if (researchSection) researchSection.classList.remove('hidden');
@@ -1462,7 +1476,7 @@ function wireUIActions() {
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
-      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
       renderAvailableHeroes();
     });
   }
@@ -1484,7 +1498,7 @@ function wireUIActions() {
   if (genSeasonFiltersEl) {
     genSeasonFiltersEl.addEventListener('change', () => {
       generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
-      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5'];
+      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
       renderGeneratorHeroes();
     });
   }
