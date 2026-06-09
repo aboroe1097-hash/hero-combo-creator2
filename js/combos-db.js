@@ -18,30 +18,32 @@
   //{ name: 'Defender',        
   //{ name: 'Spectral Reaper', 
   //{ name: 'Valkyrie',      
+// js/combos-db.js
+// Rank is determined by position in this array. First item = Rank 1.
+// Mapping order: [Front, Middle, Back]
 
 export const rankedCombos = [
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
-    { heroes: ["King Arthur","Theodora", "Alexander"] },
-    { heroes: ["King Arthur","Cleopatra VII","Alexander"] },
+  { heroes: ["King Arthur","Theodora", "Alexander"] },
+  { heroes: ["King Arthur","Cleopatra VII","Alexander"] },
+  
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
-  { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },     // Rank 4
-  { heroes: ["Rozen Blade", "Ramses II", "Beowulf"] },     // Rank 4
-  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },          // Rank 
-  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },          // Rank 12
-  { heroes: ["King Arthur", "Theodora", "Bleeding Steed"] },    // Rank 7
-  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },              // Rank 2
-  { heroes: ["King Arthur", "Bleeding Steed", "Desert Storm"] },    // Rank 7
-  { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },          // Rank 1
-  { heroes: ["Octavius", "Theodora", "Caesar"] },               // Rank 5
-
-  { heroes: ["Theodora", "Boudica", "Jade Eagle"] },          // Rank 12
-  { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },      // Rank 3
-  { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },     // Rank 4
-  { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] }, // Rank 13
-  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },    // Rank 7
-  { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },     // Rank 16
-  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },          // Rank 11
+  { heroes: ["Bleeding Steed", "Ramses II", "Beowulf"] },
+  { heroes: ["Rozen Blade", "Ramses II", "Beowulf"] },
+  { heroes: ["Ramses II", "Leonidas", "Beowulf"] },
+  { heroes: ["Theodora", "Ramses II", "Jade Eagle"] },
+  { heroes: ["King Arthur", "Theodora", "Bleeding Steed"] },
+  { heroes: ["Octavius", "Cleopatra VII", "Caesar"] },
+  { heroes: ["King Arthur", "Bleeding Steed", "Desert Storm"] },
+  { heroes: ["Ramses II", "Leonidas", "Jade Eagle"] },
+  { heroes: ["Octavius", "Theodora", "Caesar"] },
+  { heroes: ["Theodora", "Boudica", "Jade Eagle"] },
+  { heroes: ["Ramses II", "Cleopatra VII", "Jade Eagle"] },
+  { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },
+  { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] },
+  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },
+  { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },
 
   // --- X2 Spectral Reaper Combos ---
   { heroes: ["Hunk", "Spectral Reaper", "Ramses II"] },
@@ -59,9 +61,9 @@ export const rankedCombos = [
   { heroes: ["Sakura", "Divine Arrow", "Spectral Reaper"] },
   { heroes: ["Immortal Guardian", "ELK", "Tarantula"] },
   { heroes: ["Immortal Guardian", "Charles the Great", "Tarantula"] },
-    { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
-
-  { heroes: ["Octavius", "The Brave", "Caesar"] },              // Rank 2
+  { heroes: ["Black Prince", "Lancelot", "The Avalanche"] },
+  { heroes: ["Octavius", "The Brave", "Caesar"] },
+  
   // --- X2 Cavalry / Avalanche Combos ---
   { heroes: ["Lawman", "Lancelot", "The Avalanche"] },
   { heroes: ["Lawman", "Army Breaker", "The Avalanche"] },
@@ -72,26 +74,20 @@ export const rankedCombos = [
   { heroes: ["Lawman", "Lionheart", "The Avalanche"] },
   { heroes: ["The Brave", "Army Breaker", "The Avalanche"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "The Avalanche"] },
-
   
-  { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },          // Rank 12
-  
-  { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },         // Rank 8
-  { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] }, // Rank 9
-  { heroes: ["Octavius", "Rozen Blade", "Caesar"] },            // Rank 6
-  { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },       // Rank 10
-  { heroes: ["Boudica" , "Sakura", "Jade Eagle"] },       // Rank 10
-  { heroes: ["Sakura", "ELK", "Jade Eagle"] },          // Rank 12
-  { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },         // Rank 15
+  { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },
+  { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },
+  { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] },
+  { heroes: ["Octavius", "Rozen Blade", "Caesar"] },
+  { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },
+  { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
+  { heroes: ["Sakura", "ELK", "Jade Eagle"] },
+  { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },
   
   // --- TIER 2: STRONG COMPETITIVE META ---
-   //  { name: 'Hunk',        
- //  { name: 'Boudica',      
- //  { name: 'Sakura',  
-  { heroes: ["Hunk", "Sakura", "Jade Eagle"] },      // Rank 3
+  { heroes: ["Hunk", "Sakura", "Jade Eagle"] },
   { heroes: ["Sky Breaker", "Boudica", "Sakura"] },
-  { heroes: ["Sakura", "ELK", "Jade Eagle"] },
-  { heroes: ["King Arthur", "Cicero", "Bleeding Steed"] },  // Control/Sustain
+  { heroes: ["King Arthur", "Cicero", "Bleeding Steed"] },
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },     
   { heroes: ["Boudica", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Ramses II", "Immortal Guardian", "Witch Hunter"] },
@@ -99,61 +95,46 @@ export const rankedCombos = [
   { heroes: ["Ramses II", "Al Fatih", "Sakura"] },
   { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"] },
   { heroes: ["Wind-Walker", "Rozen Blade", "Immortal"] },  
-  
-  { heroes: ["Hunk", "Cleopatra VII", "Cao Cao"] },        // Rapid Rage
-  { heroes: ["Hunk", "Bleeding Steed", "Cao Cao"] },       // Cav Speed
-  
+  { heroes: ["Hunk", "Cleopatra VII", "Cao Cao"] },
+  { heroes: ["Hunk", "Bleeding Steed", "Cao Cao"] },
   { heroes: ["Alfred", "Bleeding Steed", "Cleopatra VII"] },      
   { heroes: ["The Brave", "Bleeding Steed", "Jade Eagle"] }, 
-
   { heroes: ["Immortal Guardian", "Sakura", "Jade Eagle"] },
   { heroes: ["Charles the Great", "Ramses II", "Al Fatih"] },
   { heroes: ["Sky Breaker", "Cleopatra VII", "Al Fatih"] },
   { heroes: ["Boudica", "Inquisitor", "Witch Hunter"] },
-
-
-  // --- X2 Mixed / Lawman Combos ---
-  { heroes: ["Lawman", "War Lord", "Jane"] },
-  { heroes: ["Lawman", "Rozen Blade", "Immortal"] },
-    { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
-  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },    
-  { heroes: ["Theodora", "Che Liu", "Cicero"] },            // Mixed Control
-  { heroes: ["Hunk", "Ramses II", "Al Fatih"] },    
-    { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },     
-  { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },         // Rank 17
-  { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },               // Rank 18
-  { heroes: ["Alfred", "Black Prince", "Cleopatra VII"] },      // Rank 19
-  { heroes: ["Alfred", "Jeanne d'Arc", "Lionheart"] },          // Rank 20
+  { heroes: ["Rozen Blade", "Cleopatra VII", "Immortal"] },     
+  { heroes: ["BeastQueen", "Rozen Blade", "Immortal"] },  
+  { heroes: ["Theodora", "Che Liu", "Cicero"] },
+  { heroes: ["Hunk", "Ramses II", "Al Fatih"] },  
+  { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"] },     
+  { heroes: ["Black Prince", "Jeanne d'Arc", "Jane"] },
+  { heroes: ["Alfred", "Jeanne d'Arc", "Jane"] },
+  { heroes: ["Alfred", "Black Prince", "Cleopatra VII"] },
+  { heroes: ["Alfred", "Jeanne d'Arc", "Lionheart"] },
   { heroes: ["Theodora", "The Brave", "Jade Eagle"] },   
-
-  
   { heroes: ["Immortal Guardian", "Charles the Great", "Jade Eagle"] },
   { heroes: ["Sky Breaker", "Inquisitor", "Sakura"] },
   { heroes: ["Sakura", "Charles the Great", "Al Fatih"] },
   { heroes: ["War Lord", "Alfred", "Lionheart"] },              
   { heroes: ["Alfred", "Black Prince", "Lionheart"] },          
-  
   { heroes: ["Alfred", "Cleopatra VII", "Jane"] },              
   { heroes: ["Sky Breaker", "Inquisitor", "Charles the Great"] },
-  
   { heroes: ["Immortal Guardian", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["Octavius", "BeastQueen", "Immortal"] },
   { heroes: ["War Lord", "Rozen Blade", "Caesar"] },
   
   // --- TIER 3: SEASONAL SYNERGIES & SPECIALISTS ---
-  { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },              
+  { heroes: ["Theodora", "Inquisitor", "Al Fatih"] },             
   { heroes: ["Leonidas", "Ramses II", "Witch Hunter"] },
   { heroes: ["Leonidas", "Ramses II", "Inquisitor"] },
   { heroes: ["King Arthur", "Desert Storm", "Cao Cao"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Jade Eagle"] },
-  { heroes: ["Immortal Guardian", "Charles the Great", "Jade Eagle"] },
   { heroes: ["Immortal Guardian", "Charles the Great", "Al Fatih"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Al Fatih"] },
   { heroes: ["Immortal Guardian", "Divine Arrow", "Sky Breaker"] },
-
-  { heroes: ["Che Liu", "Cicero", "Desert Storm"] },        // Frontline Burst
-  { heroes: ["Che Liu", "Jade", "Cicero"] },                // Evasion/Control
-  
+  { heroes: ["Che Liu", "Cicero", "Desert Storm"] },
+  { heroes: ["Che Liu", "Jade", "Cicero"] },
   { heroes: ["War Lord", "Jeanne d'Arc", "Jane"] },               
   { heroes: ["Black Prince", "Cleopatra VII", "Jane"] },        
   { heroes: ["Black Prince", "Cleopatra VII", "Lionheart"] },   
@@ -161,18 +142,15 @@ export const rankedCombos = [
   { heroes: ["War Lord", "Alfred", "Jane"] },               
   { heroes: ["War Lord", "Cleopatra VII", "Lionheart"] },      
   { heroes: ["War Lord", "Cleopatra VII", "Jane"] },            
-  
   { heroes: ["Bleeding Steed", "Soaring Hawk", "Desert Storm"] },
   { heroes: ["Bleeding Steed", "Desert Storm", "Cao Cao"] },
-  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },      // Anti-Heal focus
+  { heroes: ["Sky Breaker", "Inquisitor", "Witch Hunter"] },
   { heroes: ["BeastQueen", "Lionheart", "Immortal"] },
   { heroes: ["BeastQueen", "Isabella I", "Immortal"] },
   { heroes: ["King Arthur","Soaring Hawk", "Desert Storm"] }, 
-
   { heroes: ["Soaring Hawk", "Desert Storm", "Cao Cao"] },
   { heroes: ["Charles the Great", "Inquisitor", "Witch Hunter"] },
   { heroes: ["Charles the Great", "Edward the Confessor", "Al Fatih"] },
-
   { heroes: ["Peace Bringer", "Che Liu", "Jade"] },        
   { heroes: ["Peace Bringer", "Bleeding Steed", "Jade"] },        
   { heroes: ["War Lord", "Jeanne d'Arc", "Mary Tudor"] },          
@@ -216,14 +194,11 @@ export const rankedCombos = [
   { heroes: ["Demon Spear", "Queen Anne", "William Wallace"] },   
   { heroes: ["Yukimura Sanada", "William Wallace", "Heaven's Justice"] }, 
   { heroes: ["North's Rage", "William Wallace", "Heaven's Justice"] }, 
-
   { heroes: ["Yukimura Sanada", "The Heroine", "Heaven's Justice"] }, 
   { heroes: ["North's Rage", "The Heroine", "Heaven's Justice"] }, 
-
   { heroes: ["Yukimura Sanada", "Queen Anne", "Heaven's Justice"] }, 
   { heroes: ["North's Rage", "Queen Anne", "Heaven's Justice"] }, 
   { heroes: ["Kublai", "William Wallace", "Heaven's Justice"] }, 
-  
   { heroes: ["William Wallace", "Jiguang Qi", "Heaven's Justice"] }, 
   { heroes: ["North's Rage", "The Boneless", "The Heroine"] },    
   { heroes: ["North's Rage", "The Boneless", "Heaven's Justice"] }
