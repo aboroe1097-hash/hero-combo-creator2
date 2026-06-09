@@ -483,5 +483,105 @@ export const heroesExtendedData = {
             { id: 5, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to deal 220% damage to 2 enemy squads within valid range, reducing the Physical Damage dealt by the squad(s) by -40% for 1 turn." },
             { id: 8, type: "Pre-Battle Skills", range: 3, target: "1 Random Ally", desc: "For every 2 combat skill cast by any of your squads, Jiguang Qi Resistance increases by 80%, stackable for up to 10 time(s) till the battle ends." }
         ]
+    },
+    "Valkyrie": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "100% chance to make self-squad unable to launch normal attacks, 30% increased damage, for 2 turns and deal 218% damage to 1 random enemy squad within range." },
+            { id: 5, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "1 turns prep. 45% chance to deal 310% damage to 3 enemy squads within range." },
+            { id: 8, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "Self-squad countering to Footmen and Cavalries is increased by 30%, 70% chance each turn to ignore 50% of enemy squad's base resistance." }
+        ]
+    },
+    "Lawman": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Status Skill", range: 2, target: "1 Random Enemy", desc: "When self squad is taking damage, 50% chance to deal 63% damage to 2 random squads within the range of 2." },
+            { id: 5, type: "Status Skill", range: 3, target: "1 Random Ally", desc: "Self squad and 1 randomly friendly squad recover troops each turn (Recovery rate 96.5%)." },
+            { id: 8, type: "Combat Skill", range: 3, target: "2 Random Ally", desc: "40% chance to reduce -30% damage taken for self squad and take 30% damage from the enemies for the other 2 friendly squads for 2 turns." }
+        ]
+    },
+    "Spectral Reaper": {
+        placement: "Mid / Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Additional Attack", range: 5, target: "1 Random Enemy", desc: "35% chance to attack again after basic attacks to the same target dealing 742% damage, making them unable to recover troops for 1 turns." },
+            { id: 5, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "40% chance to deal 455% damage to 1 random enemy squad within the valid range, 90% chance to increase the normal attack attempts of the hero's squad by 1 per round, lasting 1 rounds." },
+            { id: 8, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "The hero's squad deals 100% more damage in normal attacks; after each combat skill is cast, the hero's squad gains +40% chance to launch an Additional Attack, lasting 1 round. When the skill cast by the enemy needs to calculate its effective range, the hero's squad will be considered +1 in distance from the enemy." }
+        ]
+    },
+    "Defender": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Additional Attack", range: 1, target: "1 Random Ally", desc: "After basic attacks, 80% chance to make the damage the hero's squad take -20% for 2 rounds. The status can be stacked." },
+            { id: 5, type: "Additional Attack", range: 3, target: "1 Random Enemy", desc: "50% chance to deal 310% damage to 1 random enemy squad within range after basic attacks and recover some troops for the self-squad (67% recovery rate)." },
+            { id: 8, type: "Combat Skill", range: 3, target: "2 Random Ally", desc: "35% chance to make 2 random friendly squads to attack twice, with 30% increased damage for 2 turns." }
+        ]
+    },
+    "Army Breaker": {
+        placement: "Mid Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 3, target: "2 Random Ally", desc: "55% chance to recover some troops for 2 random friendly squads within range (84% recovery rate) and remove debuffs (Cannot remove pre-battle debuffs)." },
+            { id: 5, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "40% chance to silence 2 random enemy squads within range and deal -20% lesser damage for 2 turns." },
+            { id: 8, type: "Combat Skill", range: 2, target: "3 Random Ally", desc: "30% chance to make all friendly squads have 60% chance of entering evasion status when taking the next 3 damages and increases 47% Might and Resistance for 2 turns." }
+        ]
+    },
+    "The Avalanche": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "60% chance to deal 226% damage to multiple enemy targets." },
+            { id: 5, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "1 turn prep, 40% chance to deal 595% damage to 1 random enemy squad within range, 60% chance to deal 310% damage to the enemy back row squad, making them suppressed and unable to take actions for 1 turns." },
+            { id: 8, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "In combat, self squad gains the clarity status, immune to Silence, Disarm, Suppression, Confusion, gain 60% Might increase, deal 30% additional damage." }
+        ]
+    },
+    "Dach Tengri": {
+        placement: "Mid / Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "100% chance to make 1 random enemy squad within range to take 6% additional damage, 6% reduced damage dealt, -38 reduced combat speed, and make 2 random friendly squads take -6% lesser damage, Deal -6% additional damage, 38 increased combat speed for 1 turns." },
+            { id: 5, type: "Pre-Battle Skills", range: 5, target: "2 Random Enemy", desc: "Starting turn 4, each turn there's a 70% chance to make 2 random enemy squads within range not able to recover troops and reduce damage taken by 2 random friendly squads damage taken by -25%." },
+            { id: 8, type: "Pre-Battle Skills", range: 2, target: "2 Random Ally", desc: "The first 3 turns, each turn give 2 random friendly squads 7% increased damage (Effect stackable), until the battle ends, starting turn 4, splash status is granted, basic attacks will deal 40% damage to 2 enemy squads in the back until the end of the battle." }
+        ]
+    },
+    "Tarantula": {
+        placement: "Mid / Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "2 Random Enemy", desc: "30% chance to deal 641% damage to 2 random enemy squads within range, while the damage dealt by the Hero's squad and the back row squad is increased by 40% for the next 2 attacks. If the Hero's squad is the back row squad, then they gain a double damage buff effect. Lasts 2 rounds." },
+            { id: 5, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "35% chance to deal 402% damage to 1 random enemy squad within range and before the back row squad's next action, deal 403% damage to 1 random enemy squad within range of 4 from the back row squad." },
+            { id: 8, type: "Status Skill", range: 1, target: "1 Random Ally", desc: "In battles, the hero's squad gains one of the buffs each round randomly: 1-Restoring some troop power (recovery rate: 100%); 2-Might, Resistance, Tactical Might and Resistance increased by 60%; 3-taking -40% damage." }
+        ]
+    },
+    "Alexander": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 5, target: "1 Random Enemy", desc: "In round 1 and 3, shock 1 random enemy squads, making the squads take 325% additional damage each time taking damage, lasting till the battle ends." },
+            { id: 5, type: "Pre-Battle Skills", range: 5, target: "1 Random Ally", desc: "The hero takes -60% less damage and gains 20% magnified healing effect, but the burning damage taken will also be increased by 300%." },
+            { id: 8, type: "Pre-Battle Skills", range: 5, target: "1 Random Ally", desc: "100% chance to make all enemy squads bleed, making them take 260% damage before acting in each round, lasting till the battle ends. If the hero's squad loses 25% of the total troop power in any round, some troop power of the squad will be restored (recovery rate: 350%) upon the end of that round." }
+        ]
+    },
+    "Lancelot": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "1 round of prep. 50% chance to deal 356% damage to all enemy squads; If a target happens to be subject to a reduced healing effect or is unable to restore troop power, deals 356% damage additionally to all enemy squads, with a 90% chance for each enemy squad to enter the Suppressed status for 1 round." },
+            { id: 5, type: "Pre-Battle Skills", range: 5, target: "1 Random Ally", desc: "The hero cannot launch normal attacks (the effect cannot be lifted). In each round, 100% chance to deal 356% damage to 1 random enemy squad(s), while the hero gains one of the seals out of Courage/Justice/Mercy (Courage: damage increased by 20%; Justice: Evasion Rate increased by 10%; Mercy: the seal carrier can restore some troop power each round when taking actions, recovery rate: 67%), lasting till the battle ends and stackable for up to 2 layers; when all three seals are gained, the skill will target all enemy squads instead." },
+            { id: 8, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "At the beginning of the battle, applies an effect to all friendly squads: when they cast a prep skill, 80% chance to skip 1 round(s) (effective for up to 3 time(s)). Upon gaining the effect and using up the attempts of the effect, applies 1 seal(s) to the carrier." }
+        ]
     }
 };
