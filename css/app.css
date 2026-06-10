@@ -1035,6 +1035,105 @@ section.tab-exit {
   box-shadow: 0 0 6px #a855f7;
 }
 /* ── 4. Eden Map planner (fully revamped) ───────────────── */
+.eden-dataset-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c7d2fe;
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.35);
+}
+.eden-dataset-badge.hidden { display: none; }
+.eden-dataset-label { flex-shrink: 0; }
+.eden-dataset-select {
+  min-width: 118px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 0.68rem;
+  background: rgba(15,23,42,0.8);
+  border: 1px solid rgba(51,65,85,0.8);
+  color: #e2e8f0;
+}
+
+.eden-season-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2,6,23,0.72);
+  backdrop-filter: blur(4px);
+}
+.eden-season-modal.hidden { display: none; }
+.eden-season-card {
+  width: min(520px, 100%);
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(15,23,42,0.96);
+  border: 1px solid rgba(99,102,241,0.35);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+}
+.eden-season-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+.eden-season-intro {
+  margin: 0 0 14px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+.eden-season-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.eden-season-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(71,85,105,0.55);
+  background: rgba(30,41,59,0.55);
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.eden-season-choice:hover {
+  border-color: rgba(129,140,248,0.55);
+  background: rgba(99,102,241,0.12);
+}
+.eden-season-choice-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.eden-season-choice-desc {
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+.eden-season-choice-meta {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .eden-map-root { display: flex; flex-direction: column; gap: 10px; }
 .eden-map-header {
   display: flex; flex-direction: column; gap: 8px;
@@ -1199,10 +1298,20 @@ section.tab-exit {
 .eden-action-btn:hover { background: rgba(51,65,85,0.7); border-color: #6366f1; color: #e0e7ff; }
 .eden-action-btn.active { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.6); color: #fca5a5; }
 
-.eden-filter-row { display: flex; gap: 5px; }
+.eden-filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
 .eden-filter-select {
-  flex: 1; padding: 5px 7px; border-radius: 7px; font-size: 0.68rem;
-  background: rgba(15,23,42,0.8); border: 1px solid rgba(51,65,85,0.8); color: #e2e8f0;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  border-radius: 7px;
+  font-size: 0.66rem;
+  background: rgba(15,23,42,0.8);
+  border: 1px solid rgba(51,65,85,0.8);
+  color: #e2e8f0;
   transition: border-color 0.13s;
 }
 .eden-filter-select:focus { border-color: #6366f1; outline: none; }

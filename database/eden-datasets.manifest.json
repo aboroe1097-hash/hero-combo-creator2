@@ -1,0 +1,18 @@
+{
+  "datasets": [
+    {
+      "id": "season3",
+      "labelKey": "edenDatasetSeason3",
+      "descKey": "edenDatasetSeason3Desc",
+      "file": "Eden_Normal_NorthvSouth_Season3_Map.txt",
+      "sectorMode": "full"
+    },
+    {
+      "id": "season5",
+      "labelKey": "edenDatasetSeason5",
+      "descKey": "edenDatasetSeason5Desc",
+      "file": "Eden_Wonders_NorthvSouth_Season5_Map.txt",
+      "sectorMode": "full"
+    }
+  ]
+}

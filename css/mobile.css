@@ -458,9 +458,8 @@ html, body {
   border-radius: 6px !important;
 }
 
-.eden-filter-row { flex-wrap: wrap !important; gap: 4px !important; }
-.eden-filter-select { font-size: 0.62rem !important; min-height: 34px; flex: 1 1 calc(50% - 4px); }
-.eden-sort-select { max-width: 100% !important; flex: 1 1 100% !important; }
+.eden-filter-row { grid-template-columns: 1fr 1fr !important; gap: 4px !important; }
+.eden-filter-select { font-size: 0.62rem !important; min-height: 34px; width: 100% !important; }
 .eden-search-wrap { margin-top: 4px !important; }
 .eden-stats { font-size: 0.6rem !important; padding-right: 36px !important; }
 .eden-hover-info { font-size: 0.6rem !important; }
@@ -496,6 +495,10 @@ html, body {
   cursor: pointer;
   z-index: 2;
 }
+
+.eden-season-card { padding: 14px !important; }
+.eden-dataset-select { max-width: 140px; }
+.eden-toolbar-primary { flex-wrap: wrap !important; }
 
 .eden-coord-search-row { flex-wrap: nowrap; }
 .eden-coord-go-btn { padding: 6px 10px !important; }
