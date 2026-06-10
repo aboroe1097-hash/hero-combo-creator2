@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b4.2"; // Updated version for bonus system
+const APP_VERSION = "b4.3"; // Updated version for bonus system
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
