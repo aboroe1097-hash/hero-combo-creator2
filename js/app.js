@@ -12,7 +12,8 @@ import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { renderCountersToggle } from './combo-counters.js';
+import { renderCountersToggle, getCounterCount } from './combo-counters.js';
+import { preloadStructureIcons } from './eden-map-assets.js';
 import { escapeHtml } from './utils.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
@@ -1044,7 +1045,7 @@ function updateManualComboScore() {
   if (!scoreBox) {
     scoreBox = document.createElement('div');
     scoreBox.id = 'manualComboScoreBox';
-    scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center hidden';
+    scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox hidden';
     const buttonsRow = document.getElementById('comboButtonsRow');
     if (buttonsRow) bar.insertBefore(scoreBox, buttonsRow);
     else bar.appendChild(scoreBox);
@@ -1057,18 +1058,25 @@ function updateManualComboScore() {
   }
 
   const info = getComboRankInfo(currentCombo);
+  const counterCount = getCounterCount(currentCombo);
   scoreBox.classList.remove('hidden');
 
-  if (!info) {
+  if (!info && !counterCount) {
+    scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center';
     scoreBox.textContent = t.manualComboNotRanked || 'This combo is not in the ranked database.';
-  } else {
-    const label = t.generatorScoreLabel || 'Score:';
-    scoreBox.innerHTML = `
-      <span class="uppercase tracking-widest text-slate-400 mr-2">${label}</span>
-      <span class="font-black text-sky-400 text-base sm:text-lg">${info.score}</span>
-      <span class="ml-2 text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
-    `;
+    return;
   }
+
+  scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox';
+  const label = t.generatorScoreLabel || 'Score:';
+  const scoreHtml = info
+    ? `<div class="gen-score-main">
+        <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
+        <span class="text-lg font-black text-sky-400">${info.score}</span>
+        <span class="text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
+      </div>`
+    : '';
+  scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
 }
 
 // --- RENDERING: GENERATOR ---
@@ -1397,18 +1405,19 @@ async function setupFirestoreListener() {
       });
 
       const rankInfo = getComboRankInfo(heroes);
-      if (rankInfo) {
+      const counterCount = getCounterCount(heroes);
+      if (rankInfo || counterCount) {
         const t = translations[currentLanguage] || translations.en;
         const label = t.generatorScoreLabel || 'Score:';
         const scoreBox = document.createElement('div');
         scoreBox.className = 'gen-score-panel saved-combo-scorebox';
-        scoreBox.innerHTML = `
-          <div class="gen-score-main">
-            <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
-            <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
-          </div>
-          ${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
-        `;
+        const scoreHtml = rankInfo
+          ? `<div class="gen-score-main">
+              <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
+              <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
+            </div>`
+          : '';
+        scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
         row.appendChild(scoreBox);
       }
 
@@ -3014,6 +3023,7 @@ async function startApp() {
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();
+    preloadStructureIcons(['C5', 'C6', 'CS', 'STRHD', 'CP1', 'ST2', 'LT2', 'AT', 'WC8']);
     console.log('wireUIActions finished, tabs should be clickable');
     // 2. Start the Local Calculators
     initResearchCalculator();

@@ -34,11 +34,12 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/eden-map-guide.js` | Interactive Eden map walkthrough |
 | `js/eden-datasets.generated.js` | Generated Season 5 structure coords |
 | `assets/eden-reference/faction-division-map.png` | Processed parchment underlay |
-| `assets/Gate.png`, `assets/Town.png`, `assets/stronghold.png`, `assets/Capital.png` | Hand-authored structure icons (capital falls back to extracted `c5.png` until you add `Capital.png`) |
+| `assets/Gate.png`, `assets/Town.png`, `assets/stronghold.png`, `assets/Capital.png` | Hand-authored structure icons (processed to `assets/eden-reference/icons/user-*.png`) |
+| `database/build-eden-datasets.py` | Generate `js/eden-datasets.generated.js` from `database/*.txt` |
 | `database/build-eden-from-screenshots.py` | Rebuild structure dataset from screenshots |
 | `database/prepare-faction-map.py` | Crop/upscale faction-division source image |
-| `database/prepare-user-icons.py` | Checkerboard removal for gate/town icons |
-| `database/build-icon-atlas.py` | Pack structure sprites into atlas |
+| `database/prepare-user-icons.py` | Checkerboard removal + crop for gate/town/stronghold/capital icons |
+| `database/build-icon-atlas.py` | Pack structure sprites into atlas (runs `prepare-user-icons.py`) |
 | `js/tech-db.js` | Tech research costs |
 | `js/translations.js` | i18n (11 languages) |
 | `js/heroes-data.js` | Hero roster (name, season, type, image URLs) |
@@ -76,6 +77,7 @@ Open `http://localhost:3000` (or the port shown).
 After updating screenshot JSON or the faction source image:
 
 ```bash
+python database/build-eden-datasets.py
 python database/build-eden-from-screenshots.py
 python database/prepare-faction-map.py
 python database/build-icon-atlas.py

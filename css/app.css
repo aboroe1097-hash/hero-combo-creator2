@@ -335,6 +335,16 @@ section.tab-exit {
   text-align: center; max-width: 110px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.gen-score-panel {
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: 6px; margin-left: auto; min-width: 100px; flex-shrink: 0;
+}
+.gen-score-main {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.manual-combo-scorebox {
+  align-items: center; margin-left: 0; width: 100%;
+}
 .saved-combo-scorebox {
   display: flex; flex-direction: column; align-items: flex-end;
   gap: 4px; padding-left: 10px; min-width: 90px; flex-shrink: 0;
@@ -1244,6 +1254,8 @@ section.tab-exit {
 }
 .combo-counters-panel.counter-panel--open {
   max-height: 520px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   opacity: 1;
   transform: translateY(0);
 }

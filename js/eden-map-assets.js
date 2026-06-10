@@ -460,6 +460,7 @@ export function createStructureSprite(type, size = 28) {
 const _spriteCache = new Map();
 const _spriteLoading = new Set();
 const _urlImageCache = new Map();
+const _urlFailed = new Set();
 let _atlasImage = null;
 let _atlasMeta = null;
 let _atlasLoading = false;
@@ -540,9 +541,28 @@ function loadIconAtlas(types, onDone) {
     .catch(() => { _atlasLoading = false; onDone?.(); });
 }
 
+function fallbackStructureIcon(type) {
+  if (!usesUserIcon(type)) return;
+  const slice = sliceAtlasSprite(type);
+  if (slice) {
+    _spriteCache.set(type, slice);
+    _iconReadyCb?.();
+    return;
+  }
+  const sprite = createStructureSprite(type);
+  if (sprite) {
+    _spriteCache.set(type, sprite);
+    _iconReadyCb?.();
+  }
+}
+
 function loadIconPng(type) {
   if (_spriteCache.has(type) || _spriteLoading.has(type)) return;
   const url = iconPngUrl(type);
+  if (_urlFailed.has(url)) {
+    fallbackStructureIcon(type);
+    return;
+  }
   const shared = _urlImageCache.get(url);
   if (shared && isIconReady(shared)) {
     _spriteCache.set(type, shared);
@@ -556,7 +576,15 @@ function loadIconPng(type) {
     _spriteCache.set(type, img);
     _iconReadyCb?.();
   };
-  img.onerror = () => { _spriteLoading.delete(type); };
+  img.onerror = () => {
+    _spriteLoading.delete(type);
+    _urlFailed.add(url);
+    if (usesUserIcon(type)) {
+      loadIconAtlas([type], () => fallbackStructureIcon(type));
+      return;
+    }
+    fallbackStructureIcon(type);
+  };
   img.src = url;
 }
 
