@@ -345,41 +345,32 @@
             <h2 class="text-2xl font-semibold text-slate-100 uppercase tracking-widest">Eden Map Planner</h2>
             <p class="text-sm text-slate-400 mt-1">Full X1 map with terrain — rivers, mountains & route distance (A→B respects obstacles).</p>
           </div>
-          <div class="eden-toolbar">
-            <select id="edenSectorSelect" class="eden-sector-select">
-              <option value="FULL">Full Map</option>
-              <optgroup label="─ Cardinal Sectors ─">
-                <option value="N">North (N)</option>
-                <option value="NE">North East (NE)</option>
-                <option value="E">East (E)</option>
-                <option value="SE">South East (SE)</option>
-                <option value="S">South (S)</option>
-                <option value="SW">South West (SW)</option>
-                <option value="W">West (W)</option>
-                <option value="NW">North West (NW)</option>
-              </optgroup>
-              <optgroup label="─ Central Sectors ─">
-                <option value="C">Central (C)</option>
-                <option value="NC">North Central (NC)</option>
-                <option value="EC">Eastern Central (EC)</option>
-                <option value="WC">West Central (WC)</option>
-                <option value="SC">South Central (SC)</option>
-              </optgroup>
-            </select>
-            <button type="button" data-eden-tool="select" class="eden-tool-btn active">Select</button>
-            <button type="button" data-eden-tool="path" class="eden-tool-btn">Draw Path</button>
-            <button type="button" data-eden-tool="measure" class="eden-tool-btn">Measure A→B</button>
-            <button type="button" data-eden-tool="target" class="eden-tool-btn">Pin Target</button>
-            <button type="button" data-eden-tool="pan" class="eden-tool-btn">Pan</button>
-            <button type="button" id="edenFinishPath" class="eden-tool-btn eden-tool-accent">Finish Path</button>
-            <button type="button" id="edenClearPaths" class="eden-tool-btn">Clear Paths</button>
-            <button type="button" id="edenZoomIn" class="eden-tool-btn">+</button>
-            <button type="button" id="edenZoomOut" class="eden-tool-btn">−</button>
-            <button type="button" id="edenResetView" class="eden-tool-btn">Reset</button>
-            <button type="button" id="edenLoadX1Targets" class="eden-tool-btn">Load X1 Targets</button>
-            <button type="button" id="edenExportPlan" class="eden-tool-btn eden-tool-accent">Export</button>
-          </div>
-        </div>
+          <div class="eden-toolbar flex flex-wrap gap-2 items-center bg-slate-800/40 p-1.5 rounded-xl border border-slate-700/60">
+  <select id="edenSectorSelect" class="eden-sector-select bg-indigo-950/80 border-indigo-500/50 outline-none"></select>
+  
+  <div class="w-px h-5 bg-slate-600 mx-1 hidden sm:block"></div>
+  
+  <button type="button" data-eden-tool="select" class="eden-tool-btn active">Select</button>
+  <button type="button" data-eden-tool="path" class="eden-tool-btn">Path</button>
+  <button type="button" data-eden-tool="measure" class="eden-tool-btn">Measure</button>
+  <button type="button" data-eden-tool="target" class="eden-tool-btn">Pin</button>
+  <button type="button" data-eden-tool="pan" class="eden-tool-btn">Pan</button>
+  
+  <div class="w-px h-5 bg-slate-600 mx-1 hidden sm:block"></div>
+  
+  <div class="flex rounded-lg overflow-hidden border border-slate-600">
+    <button type="button" id="edenZoomIn" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 font-bold text-white">+</button>
+    <div class="w-px bg-slate-800"></div>
+    <button type="button" id="edenZoomOut" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 font-bold text-white">−</button>
+  </div>
+  <button type="button" id="edenResetView" class="eden-tool-btn">Reset</button>
+
+  <div class="w-px h-5 bg-slate-600 mx-1 hidden sm:block"></div>
+
+  <button type="button" id="edenClearPaths" class="eden-tool-btn">Clear</button>
+  <button type="button" id="edenFinishPath" class="eden-tool-btn eden-tool-accent font-bold">Finish Path</button>
+            </div>
+</div>
         <div class="eden-map-body">
           <div class="eden-canvas-wrap">
             <canvas id="edenMapCanvas"></canvas>
