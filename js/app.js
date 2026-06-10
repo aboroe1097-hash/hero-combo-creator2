@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b5.0"; // Updated version for bonus system
+const APP_VERSION = "b6.0";
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -22,11 +22,34 @@ document.addEventListener('click', (e) => {
   if (!btn) return;
   const panel = document.getElementById(btn.dataset.counterTarget);
   if (!panel) return;
-  const willOpen = panel.classList.contains('hidden');
-  panel.classList.toggle('hidden');
+  const willOpen = !panel.classList.contains('counter-panel--open');
+  if (willOpen) {
+    panel.classList.remove('hidden', 'counter-panel--closing');
+    requestAnimationFrame(() => panel.classList.add('counter-panel--open'));
+  } else {
+    panel.classList.remove('counter-panel--open');
+    panel.classList.add('counter-panel--closing');
+    const done = () => {
+      panel.classList.add('hidden');
+      panel.classList.remove('counter-panel--closing');
+      panel.removeEventListener('transitionend', done);
+    };
+    panel.addEventListener('transitionend', done);
+    setTimeout(done, 280);
+  }
   btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   btn.classList.toggle('counter-toggle-btn--open', willOpen);
 });
+
+function getCounterLabels() {
+  const t = translations[currentLanguage] || translations.en;
+  return {
+    toggle: t.countersToggle || 'Counters ({n})',
+    title: t.countersTitle || 'Counters',
+    score: t.countersScore || 'Score',
+    hide: t.countersHide || 'Hide counters',
+  };
+}
 
 function getHeroFinalScore(heroName, autoRating) {
   const bonus = heroBonusPoints[heroName] || 0;
@@ -174,6 +197,8 @@ const seasonColors = {
   X1: '#f87171',
   X2: '#34d399'  // Emerald Green
 };
+
+const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
@@ -476,8 +501,53 @@ function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
   return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
 
-function getSynergies(heroName) {
-  const containingCombos = rankedCombos.filter(c => c.heroes && c.heroes.includes(heroName));
+const _heroSeasonByName = new Map(allHeroesData.map(h => [h.name, h.season]));
+const HERO_SEASON_INDEX = Object.fromEntries(HERO_ATLAS_ALL_SEASONS.map((s, i) => [s, i]));
+
+function getHeroSeason(name) {
+  return _heroSeasonByName.get(name) || null;
+}
+
+function getSeasonIndex(season) {
+  return HERO_SEASON_INDEX[season] ?? -1;
+}
+
+function comboFitsHeroSeasonScope(combo, anchorHeroName, selectedSeasons, scope) {
+  if (!combo?.heroes?.includes(anchorHeroName)) return false;
+  if (scope === 'all') return true;
+
+  const anchorSeason = getHeroSeason(anchorHeroName);
+  if (!anchorSeason) return false;
+  const capIdx = getSeasonIndex(anchorSeason);
+  const seasonSet = new Set(normalizeHeroAtlasSeasons(selectedSeasons));
+
+  return combo.heroes.every(hn => {
+    const hs = getHeroSeason(hn);
+    if (!hs) return false;
+    if (getSeasonIndex(hs) > capIdx) return false;
+    if (hs === 'S0') return true;
+    return seasonSet.has(hs);
+  });
+}
+
+function getHeroAtlasCombos(heroName, state, limit = 5) {
+  const scope = state.comboScope || 'season-capped';
+  const eligible = rankedCombos.filter(c =>
+    comboFitsHeroSeasonScope(c, heroName, state.seasons, scope),
+  );
+  const total = eligible.length;
+  return eligible.map((c, i) => ({
+    heroes: c.heroes,
+    rank: i + 1,
+    score: (total > 1 ? 100 - ((i / (total - 1)) * 99) : 100).toFixed(1),
+  })).slice(0, limit);
+}
+
+function getSynergies(heroName, state = _heroesTabState) {
+  const scope = state.comboScope || 'season-capped';
+  const containingCombos = rankedCombos.filter(c =>
+    comboFitsHeroSeasonScope(c, heroName, state.seasons, scope),
+  );
   const top5 = containingCombos.slice(0, 5);
   if (top5.length === 0) return [];
 
@@ -1150,7 +1220,7 @@ function renderGeneratorResults(bestCombos) {
         <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
         <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
       </div>
-      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, true)}
+      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
     `;
     card.appendChild(scoreBox);
 
@@ -1337,7 +1407,7 @@ async function setupFirestoreListener() {
             <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
             <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
           </div>
-          ${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, true)}
+          ${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
         `;
         row.appendChild(scoreBox);
       }
@@ -2548,8 +2618,6 @@ function computeHeroRankings() {
   return stats;
 }
 
-const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-
 let _heroesTabState = {
   seasons: [...HERO_ATLAS_ALL_SEASONS],
   troop: 'all',
@@ -2557,6 +2625,7 @@ let _heroesTabState = {
   search: '',
   selected: null,
   view: 'ranking',
+  comboScope: 'season-capped',
 };
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
@@ -2657,6 +2726,13 @@ function wireHeroesTabEvents(container) {
       return;
     }
 
+    const scopeBtn = e.target.closest('[data-combo-scope]');
+    if (scopeBtn) {
+      _heroesTabState.comboScope = scopeBtn.dataset.comboScope;
+      renderHeroesTab();
+      return;
+    }
+
     const pickHero = e.target.closest('[data-hero-pick]');
     if (pickHero) {
       e.stopPropagation();
@@ -2711,7 +2787,8 @@ function renderHeroesTab() {
   const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
 
   const stats = computeHeroRankings();
-  const { seasons: selectedSeasons, troop, state, search, selected, view } = _heroesTabState;
+  const { seasons: selectedSeasons, troop, state, search, selected, view, comboScope } = _heroesTabState;
+  const t = translations[currentLanguage] || translations.en;
 
   const troops = ['all','Archers','Footmen','Cavalry'];
   const states = ['all','Free','Paid'];
@@ -2748,10 +2825,11 @@ function renderHeroesTab() {
       const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-      const rankNumber = i < 3 ? medal : `#${i+1}`;
+      const rankNumber = i < 3 ? medal : `${i + 1}`;
+      const rankClass = i < 3 ? 'rank-medal' : 'rank-medal rank-medal--num';
       return `
         <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}">
-          <span class="rank-medal">${rankNumber}</span>
+          <span class="${rankClass}">${rankNumber}</span>
           <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" onerror="this.src='images/logo.png'">
           <div class="rank-info">
             <div class="rank-name">
@@ -2778,12 +2856,12 @@ function renderHeroesTab() {
       const ext  = heroesExtendedData[selected];
       const s    = stats[selected] || {};
       const tagColor = hero ? (seasonColors[hero.season] || '#f97316') : '#f97316';
-      const synergies = getSynergies(selected);
-
-      const heroCombos = rankedCombos
-        .map((c,i) => ({...c, rank: i+1, score:(rankedCombos.length>1?100-((i/(rankedCombos.length-1))*99):100).toFixed(1)}))
-        .filter(c => c.heroes && c.heroes.includes(selected))
-        .slice(0, 5);
+      const synergies = getSynergies(selected, _heroesTabState);
+      const heroCombos = getHeroAtlasCombos(selected, _heroesTabState);
+      const comboScopeHint = comboScope === 'season-capped'
+        ? (t.heroesComboScopeHint || 'Combos using heroes up to {season} within your season filters.')
+            .replace('{season}', hero?.season || '')
+        : (t.heroesComboScopeAllHint || 'All ranked combos from the full database.');
 
       const combosHtml = heroCombos.map(c => `
         <div class="detail-combo-row">
@@ -2801,7 +2879,7 @@ function renderHeroesTab() {
                 <span>${escapeHtml(hn)}</span>
               </button>`).join('')}
           </div>
-          ${renderCountersToggle(c.heroes, getComboRankInfo, getHeroImageUrl, true)}
+          ${renderCountersToggle(c.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
         </div>`).join('');
 
       const skillsHtml = ext ? ext.skills.map(sk => `
@@ -2858,8 +2936,19 @@ function renderHeroesTab() {
           </div>` : ''}
 
           <div id="detail-section-combos" class="detail-section-block">
-            <div class="detail-section-title">Top Combos</div>
-            <div class="detail-combos">${combosHtml || '<p class="text-xs text-slate-500 italic">No ranked combos yet.</p>'}</div>
+            <div class="detail-section-head">
+              <div class="detail-section-title">${t.heroesTopCombos || 'Top Combos'}</div>
+              <div class="heroes-combo-scope" role="group" aria-label="${t.heroesComboScopeLabel || 'Combo season scope'}">
+                <button type="button" class="heroes-combo-scope-btn ${comboScope === 'season-capped' ? 'active' : ''}" data-combo-scope="season-capped">
+                  ${(t.heroesComboScopeCapped || 'Up to {season}').replace('{season}', hero?.season || '')}
+                </button>
+                <button type="button" class="heroes-combo-scope-btn ${comboScope === 'all' ? 'active' : ''}" data-combo-scope="all">
+                  ${t.heroesComboScopeAll || 'All best'}
+                </button>
+              </div>
+            </div>
+            <p class="heroes-combo-scope-hint">${comboScopeHint}</p>
+            <div class="detail-combos">${combosHtml || `<p class="text-xs text-slate-500 italic">${t.heroesNoCombos || 'No ranked combos yet.'}</p>`}</div>
           </div>
 
           <div id="detail-section-skills" class="detail-section-block">

@@ -202,9 +202,9 @@ export function initEdenMapPlanner() {
   }
 
   function structureIconScale(mode) {
-    if (mode === 'overview') return 1.45;
-    if (mode === 'compact') return 1.25;
-    return 1.55;
+    if (mode === 'overview') return 1.85;
+    if (mode === 'compact') return 1.55;
+    return 2.0;
   }
 
   function notifySelection() {
@@ -462,9 +462,12 @@ export function initEdenMapPlanner() {
     ctx.fill();
 
     if (isIconReady(icon)) {
-      const iw = iconSize;
+      const sw = icon.naturalWidth || icon.width || iconSize;
+      const sh = icon.naturalHeight || icon.height || iconSize;
+      const aspect = sw / Math.max(1, sh);
       const ih = iconSize;
-      ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.78, iw, ih);
+      const iw = iconSize * aspect;
+      ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.82, iw, ih);
     } else {
       const r = meta.size * scale * 0.85;
       ctx.beginPath();
@@ -1777,7 +1780,7 @@ export function initEdenMapPlanner() {
     ownFilterEl.addEventListener('input', () => draw());
   }
 
-  mountGameClock(document.getElementById('edenGameClock'));
+  mountGameClock(document.getElementById('edenGameClock'), { showUae: false });
   bindToolbar();
   syncToolButtons();
   populateFilters(true);

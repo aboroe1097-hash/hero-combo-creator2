@@ -31,10 +31,11 @@ export const MAP_REFERENCE = {
 
 const ICON_ATLAS_JSON = `${ASSET_ROOT}icons-atlas.json`;
 const ICON_ATLAS_PNG = `${ASSET_ROOT}icons-atlas.png`;
+const ICON_PNG_DIR = `${ASSET_ROOT}icons/`;
 const ATLAS_TYPE_ALIASES = {
-  CP2: 'CP1', CP3: 'CP1', CP4: 'CP1', CP5: 'CP1', CP7: 'CP1',
-  ST2: 'ST1', ST3: 'ST1', LT2: 'ST1', LT3: 'ST1', LT4: 'ST1',
-  CS: 'STRHD', AT: 'WC8', WCB: 'WC8',
+  CP2: 'CP1', CP4: 'CP1', CP5: 'CP1',
+  LT3: 'LT2',
+  WCB: 'WC8',
 };
 
 export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manifest.json`;
@@ -199,18 +200,26 @@ export function getReferenceMapImage() {
   return _refImage;
 }
 
-// Icons load from one atlas PNG (database/build-icon-atlas.py); gates/towns use lightweight procedural until atlas arrives.
-export const STRUCTURE_ICON_URLS = {};
-
-// Radians — gates face the iso map better rotated ~90° counter-clockwise.
-export const STRUCTURE_ICON_ROTATION = {
-  CP1: -Math.PI / 2,
-  CP2: -Math.PI / 2,
-  CP3: -Math.PI / 2,
-  CP4: -Math.PI / 2,
-  CP5: -Math.PI / 2,
-  CP7: -Math.PI / 2,
+/** Hand-authored sprites (transparent PNGs, shared across levels). */
+export const STRUCTURE_ICON_URLS = {
+  CP1: 'assets/eden-reference/icons/user-gate.png',
+  CP2: 'assets/eden-reference/icons/user-gate.png',
+  CP3: 'assets/eden-reference/icons/user-gate.png',
+  CP4: 'assets/eden-reference/icons/user-gate.png',
+  CP5: 'assets/eden-reference/icons/user-gate.png',
+  CP7: 'assets/eden-reference/icons/user-gate.png',
+  ST1: 'assets/eden-reference/icons/user-town.png',
+  ST2: 'assets/eden-reference/icons/user-town.png',
+  ST3: 'assets/eden-reference/icons/user-town.png',
+  LT2: 'assets/eden-reference/icons/user-town.png',
+  LT3: 'assets/eden-reference/icons/user-town.png',
+  LT4: 'assets/eden-reference/icons/user-town.png',
+  STRHD: 'assets/stronghold.png',
+  CS: 'assets/stronghold.png',
 };
+
+// Procedural gate placeholders only — authored Gate.png is already iso-oriented.
+export const STRUCTURE_ICON_ROTATION = {};
 
 export function getStructureIconRotation(type) {
   return STRUCTURE_ICON_ROTATION[type] || 0;
@@ -447,9 +456,24 @@ export function createStructureSprite(type, size = 28) {
 }
 
 const _spriteCache = new Map();
+const _spriteLoading = new Set();
+const _urlImageCache = new Map();
 let _atlasImage = null;
 let _atlasMeta = null;
 let _atlasLoading = false;
+
+function usesUserIcon(type) {
+  if (STRUCTURE_ICON_URLS[type]) return true;
+  const key = ATLAS_TYPE_ALIASES[type] || type;
+  return Boolean(STRUCTURE_ICON_URLS[key]);
+}
+
+function iconPngUrl(type) {
+  if (STRUCTURE_ICON_URLS[type]) return STRUCTURE_ICON_URLS[type];
+  const key = ATLAS_TYPE_ALIASES[type] || type;
+  if (STRUCTURE_ICON_URLS[key]) return STRUCTURE_ICON_URLS[key];
+  return `${ICON_PNG_DIR}${key.toLowerCase()}.png`;
+}
 
 function atlasKey(type) {
   return _atlasMeta?.sprites?.[type] ? type : (ATLAS_TYPE_ALIASES[type] || null);
@@ -470,6 +494,9 @@ function sliceAtlasSprite(type) {
 
 function applyAtlasSprites(types) {
   types.forEach((type) => {
+    if (usesUserIcon(type)) return;
+    const cached = _spriteCache.get(type);
+    if (cached instanceof HTMLImageElement) return;
     const slice = sliceAtlasSprite(type);
     if (slice) _spriteCache.set(type, slice);
   });
@@ -507,20 +534,46 @@ function loadIconAtlas(types, onDone) {
     .catch(() => { _atlasLoading = false; onDone?.(); });
 }
 
+function loadIconPng(type) {
+  if (_spriteCache.has(type) || _spriteLoading.has(type)) return;
+  const url = iconPngUrl(type);
+  const shared = _urlImageCache.get(url);
+  if (shared && isIconReady(shared)) {
+    _spriteCache.set(type, shared);
+    return;
+  }
+  _spriteLoading.add(type);
+  const img = new Image();
+  img.onload = () => {
+    _spriteLoading.delete(type);
+    _urlImageCache.set(url, img);
+    _spriteCache.set(type, img);
+    _iconReadyCb?.();
+  };
+  img.onerror = () => { _spriteLoading.delete(type); };
+  img.src = url;
+}
+
 export function loadStructureIcon(type) {
   if (_spriteCache.has(type)) return _spriteCache.get(type);
-  const sprite = createStructureSprite(type);
-  if (sprite) _spriteCache.set(type, sprite);
-  return sprite;
+  loadIconPng(type);
+  if (!usesUserIcon(type)) {
+    const sprite = createStructureSprite(type);
+    if (sprite) _spriteCache.set(type, sprite);
+  }
+  return _spriteCache.get(type) || null;
 }
 
 export function getStructureIcon(type) {
   return _spriteCache.get(type) || null;
 }
 
-/** Instant procedural icons; one small atlas request upgrades majors in the background. */
+/** Procedural placeholders first; per-type PNGs + atlas upgrade sprites in the background. */
 export function preloadStructureIcons(types) {
-  types.forEach((t) => loadStructureIcon(t));
+  types.forEach((t) => {
+    loadIconPng(t);
+    loadStructureIcon(t);
+  });
   loadIconAtlas(types);
 }
 
