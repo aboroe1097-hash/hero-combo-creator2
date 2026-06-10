@@ -10,6 +10,8 @@ import { rankedCombos } from './combos-db.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
+import { initEdenMapPlanner } from './eden-map.js';
+import { renderCountersInline } from './combo-counters.js';
 
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
@@ -39,7 +41,9 @@ const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
 const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
 const tabResearchBtn       = document.getElementById('tabResearch'); 
 const tabHeroesBtn         = document.getElementById('tabHeroes');
+const tabEdenMapBtn        = document.getElementById('tabEdenMap');
 const heroesSection        = document.getElementById('heroesSection');
+const edenMapSection       = document.getElementById('edenMapSection');
 const globalToggleRow      = document.getElementById('globalToggleRow'); 
 
 const comboFooterBar       = document.getElementById('comboFooterBar');
@@ -72,7 +76,7 @@ let heroInfoEnabled            = true;
 let activeTechSeasons          = new Set(['S4']); // Default research season
 
 // Manual filters
-let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
+let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 let selectedStates             = ['Free', 'Paid'];              
 let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
 
@@ -80,7 +84,7 @@ let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All'];
 let currentCombo               = [null, null, null];
 
 // Generator filters
-let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
+let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 let generatorSelectedStates    = ['Free', 'Paid'];
 let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
@@ -95,6 +99,16 @@ let touchDragHero  = null;
 let touchDragGhost = null;
 
 const sourceCreditText = "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
+
+const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
+
+function paidBadgeHtml(variant = 'card') {
+  return `<span class="paid-badge paid-badge--${variant}" title="Paid Hero">${PAID_GEM_SVG}<span class="paid-badge-text">PAID</span></span>`;
+}
+
+function paidIconHtml() {
+  return `<span class="paid-icon-inline" title="Paid Hero">${PAID_GEM_SVG}</span>`;
+}
 
 // --- HERO DATA ---
 const allHeroesData = [
@@ -147,15 +161,15 @@ const allHeroesData = [
   { name: 'Divine Arrow',      season: 'S4',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/6JcVTCnr/Divine-Arrow.png' },
   { name: 'Theodora',          season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png' },
   { name: 'King Arthur',       season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
-  { name: 'Beowulf',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
-  { name: 'Hunk',         season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
-  { name: 'Boudica',      season: 'S5',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
-  { name: 'Sakura',       season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
-  { name: 'Wind-Walker',  season: 'S5',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
-  { name: 'ELK',          season: 'S5',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
-  { name: 'Cicero',       season: 'S5',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
+  { name: 'Beowulf',      season: 'X1',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
+  { name: 'Hunk',         season: 'X1',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
+  { name: 'Boudica',      season: 'X1',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
+  { name: 'Sakura',       season: 'X1',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
+  { name: 'Wind-Walker',  season: 'X1',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
+  { name: 'ELK',          season: 'X1',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
+  { name: 'Cicero',       season: 'X1',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
   { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/vvZqffxw/Avalanche.png' },
-  { name: 'Army Breaker',    season: 'S5', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
+  { name: 'Army Breaker',    season: 'X1', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
   { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
   { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/DD2SMtwW/image-2026-06-09-131719049.png' },
   { name: 'Lancelot',       season: 'X2', Type:'Cavalry', State:'Paid', imageUrl: 'https://i.ibb.co/rKLkTLgN/image-2026-06-09-132226928.png' },
@@ -186,7 +200,7 @@ const seasonColors = {
   S2: '#a855f7',
   S3: '#f97316',
   S4: '#facc15',
-  S5: '#67ab69',
+  X1: '#f87171',
   X2: '#34d399'  // Emerald Green
 };
 
@@ -887,7 +901,7 @@ function renderAvailableHeroes() {
       const tagColor = seasonColors[hero.season] || '#f97316';
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
-        ${hero.State === 'Paid' ? '<span class="paid-badge">💎 Paid</span>' : ''}
+        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -1031,7 +1045,7 @@ function renderGeneratorHeroes() {
       
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
-        ${hero.State === 'Paid' ? '<span class="paid-badge">💎 Paid</span>' : ''}
+        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -1159,12 +1173,13 @@ function renderGeneratorResults(bestCombos) {
     card.appendChild(slots);
 
     const scoreBox = document.createElement('div');
-    scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2';
+    scoreBox.className = 'gen-score-panel';
     scoreBox.innerHTML = `
-      <span class="text-[10px] uppercase tracking-widest text-slate-400">
-        ${t.generatorScoreLabel}
-      </span>
-      <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+      <div class="gen-score-main">
+        <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
+        <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+      </div>
+      ${renderCountersInline(combo.heroes, getComboRankInfo, getHeroImageUrl, true)}
     `;
     card.appendChild(scoreBox);
 
@@ -1345,10 +1360,13 @@ async function setupFirestoreListener() {
         const t = translations[currentLanguage] || translations.en;
         const label = t.generatorScoreLabel || 'Score:';
         const scoreBox = document.createElement('div');
-        scoreBox.className = 'flex flex-col items-center justify-center ml-4 pr-2 saved-combo-scorebox';
+        scoreBox.className = 'gen-score-panel saved-combo-scorebox';
         scoreBox.innerHTML = `
-          <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
-          <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
+          <div class="gen-score-main">
+            <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
+            <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
+          </div>
+          ${renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, true)}
         `;
         row.appendChild(scoreBox);
       }
@@ -1433,7 +1451,7 @@ function wireUIActions() {
   const switchTab = (tabName) => {
     if (tabName === _lastTab) return;
     // Animate out current visible section
-    const allSections = [manualSection, generatorSection, loyaltySection, youtubeSection, researchSection, heroesSection];
+    const allSections = [manualSection, generatorSection, edenMapSection, loyaltySection, youtubeSection, researchSection, heroesSection];
     const currentVisible = allSections.find(s => s && !s.classList.contains('hidden'));
     if (currentVisible) {
       currentVisible.classList.add('tab-exit');
@@ -1447,7 +1465,7 @@ function wireUIActions() {
     if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
     // Reset all tabs
-    [tabManualBtn, tabGeneratorBtn, tabLoyaltyBtn, tabYouTubeBtn, tabResearchBtn, tabHeroesBtn].forEach(btn => {
+    [tabManualBtn, tabGeneratorBtn, tabEdenMapBtn, tabLoyaltyBtn, tabYouTubeBtn, tabResearchBtn, tabHeroesBtn].forEach(btn => {
         if (btn) {
             btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
         }
@@ -1466,6 +1484,15 @@ function wireUIActions() {
     } else if (tabName === 'generator') {
       if (generatorSection) generatorSection.classList.remove('hidden');
       if (tabGeneratorBtn) tabGeneratorBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+    } else if (tabName === 'edenmap') {
+      if (edenMapSection) {
+        edenMapSection.classList.remove('hidden');
+        if (!window._edenMapReady) {
+          initEdenMapPlanner();
+          window._edenMapReady = true;
+        }
+      }
+      if (tabEdenMapBtn) tabEdenMapBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
     } else if (tabName === 'loyalty') {
       if (loyaltySection) loyaltySection.classList.remove('hidden');
       if (tabLoyaltyBtn) tabLoyaltyBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
@@ -1494,6 +1521,7 @@ function wireUIActions() {
 
   if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
   if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
+  if (tabEdenMapBtn) tabEdenMapBtn.onclick = () => switchTab('edenmap');
   if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
   if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube');
   if (tabResearchBtn) tabResearchBtn.onclick = () => switchTab('research');
@@ -1502,7 +1530,7 @@ function wireUIActions() {
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
-      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
+      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
       renderAvailableHeroes();
     });
   }
@@ -1524,7 +1552,7 @@ function wireUIActions() {
   if (genSeasonFiltersEl) {
     genSeasonFiltersEl.addEventListener('change', () => {
       generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
-      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'X2'];
+      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
       renderGeneratorHeroes();
     });
   }
@@ -2432,48 +2460,57 @@ function computeHeroRankings() {
   return stats;
 }
 
-let _heroesTabState = { season: 'all', selected: null, view: 'ranking' };
+let _heroesTabState = { season: 'all', troop: 'all', state: 'all', search: '', selected: null, view: 'ranking' };
 
 function renderHeroesTab() {
   const container = document.getElementById('heroesTabContent');
   if (!container) return;
 
   const stats = computeHeroRankings();
-  const t = translations[currentLanguage] || translations.en;
-  const { season, selected, view } = _heroesTabState;
+  const { season, troop, state, search, selected, view } = _heroesTabState;
 
-  // Filtered heroes
-  const seasons = ['all','S0','S1','S2','S3','S4','S5','X2'];
-  const filtered = season === 'all'
-    ? [...allHeroesData]
-    : allHeroesData.filter(h => h.season === season);
+  const seasons = ['all','S0','S1','S2','S3','S4','X1','X2'];
+  const troops = ['all','Archers','Footmen','Cavalry'];
+  const states = ['all','Free','Paid'];
+  const q = (search || '').trim().toLowerCase();
 
-  // Season tabs
+  let filtered = season === 'all' ? [...allHeroesData] : allHeroesData.filter(h => h.season === season);
+  if (troop !== 'all') filtered = filtered.filter(h => h.Type === troop || h.Type === 'All');
+  if (state !== 'all') filtered = filtered.filter(h => h.State === state);
+  if (q) filtered = filtered.filter(h => h.name.toLowerCase().includes(q));
+
   const seasonTabsHtml = seasons.map(s => `
-    <button class="hero-tab-season ${_heroesTabState.season === s ? 'active' : ''}"
-      onclick="_heroesTabState.season='${s}'; _heroesTabState.selected=null; renderHeroesTab();"
+    <button type="button" class="hero-tab-season ${season === s ? 'active' : ''}" data-hero-season="${s}"
       style="${s !== 'all' && seasonColors[s] ? `--sc:${seasonColors[s]}` : ''}">
       ${s === 'all' ? 'All' : s}
     </button>`).join('');
 
+  const troopPillsHtml = troops.map(tr => `
+    <button type="button" class="heroes-filter-pill ${troop === tr ? 'active' : ''}" data-hero-troop="${tr}">
+      ${tr === 'all' ? 'All troops' : getLocalizedTroop(tr)}
+    </button>`).join('');
+
+  const statePillsHtml = states.map(st => `
+    <button type="button" class="heroes-filter-pill ${state === st ? 'active' : ''}" data-hero-state="${st}">
+      ${st === 'all' ? 'All' : st}
+    </button>`).join('');
+
   if (view === 'ranking') {
-    // Sort by rating desc
     const ranked = [...filtered].sort((a,b) => (stats[b.name]?.rating||0) - (stats[a.name]?.rating||0));
 
-    const rowsHtml = ranked.map((hero, i) => {
+    const rowsHtml = ranked.length ? ranked.map((hero, i) => {
       const s = stats[hero.name] || {};
       const pct = Math.min(100, (s.rating || 0)).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
       return `
-        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}"
-          onclick="_heroesTabState.selected='${hero.name.replace(/'/g,"\'")}'; renderHeroesTab();">
+        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${hero.name.replace(/"/g, '&quot;')}">
           <span class="rank-medal">${medal}</span>
           <img class="rank-img" src="${hero.imageUrl}" alt="${hero.name}" onerror="this.src='images/logo.png'">
           <div class="rank-info">
             <div class="rank-name">
               ${hero.name}
-              ${hero.State === 'Paid' ? '<span class="rank-paid">💎</span>' : ''}
+              ${hero.State === 'Paid' ? paidIconHtml() : ''}
             </div>
             <div class="rank-meta">
               <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
@@ -2486,7 +2523,7 @@ function renderHeroesTab() {
           </div>
           <div class="rank-score ${s.rating > 0 ? 'has-score' : 'no-score'}">${s.rating > 0 ? pct : '—'}</div>
         </div>`;
-    }).join('');
+    }).join('') : '<p class="text-sm text-slate-500 italic p-4 text-center">No heroes match your filters.</p>';
 
     // Detail panel for selected hero
     let detailHtml = '';
@@ -2512,6 +2549,7 @@ function renderHeroesTab() {
               <span>${hn}</span>
             </div>`).join('')}
           <span class="detail-combo-score">${parseFloat(c.score).toFixed(1)}</span>
+          ${renderCountersInline(c.heroes, getComboRankInfo, getHeroImageUrl, true)}
         </div>`).join('');
 
       const skillsHtml = ext ? ext.skills.map(sk => `
@@ -2527,11 +2565,11 @@ function renderHeroesTab() {
 
       detailHtml = `
         <div class="hero-detail-panel">
-          <button class="detail-close" onclick="_heroesTabState.selected=null; renderHeroesTab();">✕ Close</button>
+          <button type="button" class="detail-close" data-hero-close>✕ Close</button>
           <div class="detail-header">
             <img class="detail-img" src="${hero?.imageUrl}" alt="${selected}" onerror="this.src='images/logo.png'">
             <div class="detail-meta">
-              <div class="detail-name">${selected}${hero?.State==='Paid' ? ' <span class="rank-paid">💎</span>' : ''}</div>
+              <div class="detail-name">${selected}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
               <div class="detail-tags">
                 <span class="detail-season-tag" style="background:${tagColor};color:#000">${hero?.season}</span>
                 <span class="detail-troop-tag ${getTroopColorClass(hero?.Type)}">${getLocalizedTroop(hero?.Type||'All')}</span>
@@ -2566,12 +2604,62 @@ function renderHeroesTab() {
 
     container.innerHTML = `
       <div class="heroes-tab-inner">
+        <div class="heroes-toolbar">
+          <div class="hero-search-wrap">
+            <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <input id="heroesTabSearch" class="hero-search-input" type="text" placeholder="Search heroes..." value="${search.replace(/"/g, '&quot;')}" autocomplete="off" />
+          </div>
+          <div class="heroes-filter-pills">${troopPillsHtml}</div>
+          <div class="heroes-filter-pills">${statePillsHtml}</div>
+        </div>
         <div class="heroes-season-tabs">${seasonTabsHtml}</div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
           <div class="heroes-ranking-list">${rowsHtml}</div>
           ${selected ? detailHtml : ''}
         </div>
       </div>`;
+
+    container.querySelector('#heroesTabSearch')?.addEventListener('input', (e) => {
+      _heroesTabState.search = e.target.value;
+      _heroesTabState.selected = null;
+      renderHeroesTab();
+    });
+
+    container.querySelectorAll('[data-hero-season]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.season = btn.dataset.heroSeason;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+
+    container.querySelectorAll('[data-hero-troop]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.troop = btn.dataset.heroTroop;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+
+    container.querySelectorAll('[data-hero-state]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.state = btn.dataset.heroState;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+
+    container.querySelectorAll('[data-hero-name]').forEach(row => {
+      row.addEventListener('click', () => {
+        _heroesTabState.selected = row.dataset.heroName;
+        renderHeroesTab();
+      });
+    });
+
+    container.querySelector('[data-hero-close]')?.addEventListener('click', () => {
+      _heroesTabState.selected = null;
+      renderHeroesTab();
+    });
   }
 }
 
