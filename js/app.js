@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b4.1"; // Updated version
+const APP_VERSION = "b5.0"; // Updated version for bonus system
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -13,7 +13,7 @@ import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
 import { renderCountersInline } from './combo-counters.js';
 
-// Hero bonus points (added to automatic score)
+// ========== HERO BONUS SYSTEM (always active) ==========
 let heroBonuses = {};
 try {
   const saved = localStorage.getItem('vts_hero_bonuses');
@@ -27,9 +27,10 @@ function saveHeroBonuses() {
 function getHeroFinalScore(heroName, autoRating) {
   const bonus = heroBonuses[heroName] || 0;
   let final = autoRating + bonus;
-  // Clamp to 0-100 range for display
   return Math.min(100, Math.max(0, final));
 }
+// ========================================================
+
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
 const availableHeroesEl    = document.getElementById('availableHeroes');
@@ -196,8 +197,8 @@ const allHeroesData = [
   { name: 'Spectral Reaper', season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
   { name: 'Valkyrie',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' }
 ];
-
-// --- DATA NORMALIZER ---
+// --- DATA NORMALIZER (Fixes Bug #3) ---
+// Automatically patches any arrays that have 19 costs instead of 20
 techDatabase.forEach(tech => {
     tech.nodes.forEach(node => {
         ['costs', 'wisdomCosts', 'courageCosts', 'wb_costs', 'cm_costs'].forEach(arrName => {
@@ -211,7 +212,6 @@ techDatabase.forEach(tech => {
         });
     });
 });
-
 const seasonColors = {
   S0: '#9ca3af',
   S1: '#3b82f6',
@@ -219,7 +219,7 @@ const seasonColors = {
   S3: '#f97316',
   S4: '#facc15',
   X1: '#f87171',
-  X2: '#34d399'  
+  X2: '#34d399'  // Emerald Green
 };
 
 // --- HERO HOVER TOOLTIP ---
@@ -359,9 +359,6 @@ function showHeroTooltip(e, heroName) {
     </div>
   `;
 
-  heroTooltip.style.left = '';
-  heroTooltip.style.top = '';
-  heroTooltip.style.transform = '';
   heroTooltip.classList.remove('hidden');
   requestAnimationFrame(() => {
     heroTooltip.classList.remove('opacity-0');
@@ -489,6 +486,7 @@ function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
   if (!seasonsArr || seasonsArr.length === 0) return false;
   if (!seasonsArr.includes(hero.season)) return false;
   
+  // Safe case-insensitive state matching
   const heroState = (hero.State || 'Free').toLowerCase();
   const lowerStatesArr = (statesArr || []).map(s => s.toLowerCase());
   if (lowerStatesArr.length && !lowerStatesArr.includes(heroState)) return false;
@@ -564,12 +562,14 @@ function showAboModal(message, onConfirm = null) {
 }
 
 // ── Custom Canvas Image Renderer ─────────────────────────────────────────────
+// Draws combo results pixel-perfectly to a canvas — no html2canvas quirks.
+
 async function loadImageCrossOrigin(url) {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload  = () => resolve(img);
-    img.onerror = () => resolve(null);    
+    img.onerror = () => resolve(null);    // fail gracefully
     img.src = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
   });
 }
@@ -603,11 +603,12 @@ function circleClipImage(ctx, img, cx, cy, r) {
 }
 
 async function renderCombosToCanvas(combosData, title) {
-  const S        = 2;           
-  const W        = 820;         
-  const PAD      = 28;          
-  const HDR_H    = 72;          
-  const CARD_H   = 160;         
+  // ── Layout constants ────────────────────────────────────
+  const S        = 2;           // retina scale
+  const W        = 820;         // logical width
+  const PAD      = 28;          // outer padding
+  const HDR_H    = 72;          // header height
+  const CARD_H   = 160;         // each combo card height
   const CARD_GAP = 12;
   const FOOT_H   = 42;
   const n        = combosData.length;
@@ -619,17 +620,21 @@ async function renderCombosToCanvas(combosData, title) {
   const ctx     = canvas.getContext('2d');
   ctx.scale(S, S);
 
+  // ── Background ──────────────────────────────────────────
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0,   '#0d1628');
   bg.addColorStop(1,   '#020617');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
+  // Subtle dot grid
   ctx.fillStyle = 'rgba(37,99,235,0.04)';
   for (let gx = 0; gx < W; gx += 28)
     for (let gy = 0; gy < H; gy += 28)
       { ctx.beginPath(); ctx.arc(gx, gy, 1, 0, Math.PI*2); ctx.fill(); }
 
+  // ── Header ──────────────────────────────────────────────
+  // Logo (try to load)
   const logoImg = await loadImageCrossOrigin('images/logo.png');
   if (logoImg) {
     const lSize = 44;
@@ -649,6 +654,7 @@ async function renderCombosToCanvas(combosData, title) {
   ctx.fillStyle = '#60a5fa';
   ctx.fillText('TEAM VTS — STATE 1097  •  Rise of Castles: Ice & Fire', titleX, 50);
 
+  // Divider
   const grad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
   grad.addColorStop(0,   'rgba(59,130,246,0.6)');
   grad.addColorStop(0.5, 'rgba(59,130,246,0.2)');
@@ -660,12 +666,15 @@ async function renderCombosToCanvas(combosData, title) {
   ctx.lineTo(W - PAD, HDR_H - 1);
   ctx.stroke();
 
-  const IMG_R   = 54;          
+  // ── Combo Cards ─────────────────────────────────────────
+  const IMG_R   = 54;          // hero circle radius
   const IMG_D   = IMG_R * 2;
   const HEROES  = 3;
   const NAME_H  = 18;
-  const ITEM_W  = IMG_D + 20;  
-  
+  const ITEM_W  = IMG_D + 20;  // horizontal space per hero
+  const HEROES_BLOCK_W = HEROES * ITEM_W + (HEROES - 1) * 10;
+
+  // Pre-load all hero images in parallel
   const allUrls = combosData.flatMap(c => c.heroes.map(n2 => getHeroImageUrl(n2)));
   const imgCache = {};
   await Promise.all([...new Set(allUrls)].map(async url => {
@@ -676,6 +685,7 @@ async function renderCombosToCanvas(combosData, title) {
     const combo = combosData[i];
     const cardY = HDR_H + PAD + i * (CARD_H + CARD_GAP);
 
+    // Card background
     ctx.save();
     roundRect(ctx, PAD, cardY, W - PAD * 2, CARD_H, 16);
     const cardBg = ctx.createLinearGradient(PAD, cardY, W - PAD, cardY + CARD_H);
@@ -683,13 +693,14 @@ async function renderCombosToCanvas(combosData, title) {
     cardBg.addColorStop(1, '#182135');
     ctx.fillStyle = cardBg;
     ctx.fill();
-    
+    // Border
     roundRect(ctx, PAD, cardY, W - PAD * 2, CARD_H, 16);
     ctx.strokeStyle = 'rgba(51,65,85,0.8)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
 
+    // Rank badge
     const BADGE_R = 20;
     const badgeX  = PAD + 38;
     const badgeY  = cardY + CARD_H / 2;
@@ -706,8 +717,9 @@ async function renderCombosToCanvas(combosData, title) {
     ctx.fillText(String(i + 1), badgeX, badgeY + 5.5);
     ctx.textAlign = 'left';
 
+    // Hero images — centred in card
     const heroesStartX = PAD + 80;
-    const availW       = (W - PAD * 2) - 80 - 140; 
+    const availW       = (W - PAD * 2) - 80 - 140; // space between badge and score
     const heroSpacing  = availW / HEROES;
     const imgCY        = cardY + CARD_H / 2 - NAME_H / 2 - 4;
 
@@ -716,6 +728,7 @@ async function renderCombosToCanvas(combosData, title) {
       const url = getHeroImageUrl(heroName);
       const img = imgCache[url];
 
+      // Circle border glow
       ctx.save();
       ctx.shadowColor = 'rgba(59,130,246,0.35)';
       ctx.shadowBlur  = 12;
@@ -726,13 +739,15 @@ async function renderCombosToCanvas(combosData, title) {
       ctx.stroke();
       ctx.restore();
 
+      // Circular hero image
       circleClipImage(ctx, img, cx, imgCY, IMG_R);
 
+      // Hero name label
       const nameY = imgCY + IMG_R + 14;
       ctx.font = '600 11px Inter, system-ui, sans-serif';
       ctx.fillStyle = '#93c5fd';
       ctx.textAlign = 'center';
-      
+      // Truncate long names
       let label = heroName;
       while (ctx.measureText(label).width > heroSpacing - 8 && label.length > 3)
         label = label.slice(0, -1);
@@ -741,6 +756,7 @@ async function renderCombosToCanvas(combosData, title) {
       ctx.textAlign = 'left';
     });
 
+    // Score box (right side)
     const scoreX = W - PAD - 120;
     const scoreY = cardY + CARD_H / 2;
     ctx.font = '700 10px Inter, system-ui, sans-serif';
@@ -750,6 +766,7 @@ async function renderCombosToCanvas(combosData, title) {
     ctx.fillText('SCORE', scoreX + 50, scoreY - 14);
     ctx.letterSpacing = '0px';
 
+    // Score value with gradient text (via fillStyle only — no gradient text on canvas)
     const score = combo.displayScore || combo.score || '—';
     ctx.font = 'bold 32px Inter, system-ui, sans-serif';
     ctx.fillStyle = i === 0 ? '#38bdf8' : i === 1 ? '#60a5fa' : i === 2 ? '#818cf8' : '#94a3b8';
@@ -757,6 +774,7 @@ async function renderCombosToCanvas(combosData, title) {
     ctx.fillText(String(score), scoreX + 50, scoreY + 16);
     ctx.textAlign = 'left';
 
+    // Rank label under score
     const medals = ['🥇', '🥈', '🥉'];
     if (i < 3) {
       ctx.font = '14px sans-serif';
@@ -766,6 +784,7 @@ async function renderCombosToCanvas(combosData, title) {
     ctx.textAlign = 'left';
   }
 
+  // ── Footer ───────────────────────────────────────────────
   const footY = H - FOOT_H + 10;
   ctx.font = '500 11px Inter, system-ui, sans-serif';
   ctx.fillStyle = 'rgba(100,116,139,0.7)';
@@ -793,7 +812,9 @@ async function downloadComboImage(combosData, title, filename) {
   }
 }
 
+// Keep old name so nothing else breaks
 function captureElementAsImage(element, filename) {
+  // Legacy fallback — only used if called directly with no data
   const h2c = window.html2canvas;
   if (!h2c) return;
   h2c(element, { backgroundColor: '#020617', useCORS: true, scale: 2 })
@@ -882,6 +903,7 @@ function setupTouchDragForManualBuilder() {
 }
 
 // --- RENDERING: MANUAL BUILDER ---
+
 function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
   const t = translations[currentLanguage] || translations.en;
@@ -961,7 +983,7 @@ function renderAvailableHeroes() {
       availableHeroesEl.parentNode.appendChild(sourceNote);
   }
   sourceNote.innerHTML = sourceCreditText;
-  
+  // Update hero count badge
   const countEl = document.getElementById('manualHeroCount');
   if (countEl) {
     const count = availableHeroesEl.querySelectorAll('.hero-card').length;
@@ -1027,6 +1049,7 @@ function updateManualComboScore() {
 }
 
 // --- RENDERING: GENERATOR ---
+
 function renderGeneratorHeroes() {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
@@ -1065,7 +1088,7 @@ function renderGeneratorHeroes() {
           generatorSelectedHeroes.add(hero.name);
           card.classList.add('generator-card-selected');
         }
-        
+        // Update selected count badge
         const countBadge = document.getElementById('genSelectedCount');
         if (countBadge) {
           const n = generatorSelectedHeroes.size;
@@ -1136,7 +1159,7 @@ function renderGeneratorResults(bestCombos) {
       label.textContent = name;
       item.appendChild(img);
       item.appendChild(label);
-      
+      // Desktop: hover tooltip
       item.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return;
         img.style.transform = 'scale(1.12)';
@@ -1153,7 +1176,7 @@ function renderGeneratorResults(bestCombos) {
         img.style.boxShadow = '';
         hideHeroTooltip();
       });
-      
+      // Mobile: tap to show tooltip
       item.addEventListener('click', () => {
         const rect = item.getBoundingClientRect();
         const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top };
@@ -1183,6 +1206,7 @@ function renderGeneratorResults(bestCombos) {
 }
 
 // --- LOGIC ---
+
 async function saveCombo() {
   const t = translations[currentLanguage] || translations.en;
   if (currentCombo.includes(null)) {
@@ -1382,15 +1406,17 @@ async function setupFirestoreListener() {
     });
   });
 }
-
 // --- UI WIRING ---
 function wireUIActions() {
+  // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
+    // 1. Draw the initial '+' signs
     updateComboSlotDisplay(slot, null, i);
 
+    // 2. Setup Desktop Drag-and-Drop zones
     slot.addEventListener('dragover', e => {
-      e.preventDefault(); 
-      slot.classList.add('ring-2', 'ring-blue-500', 'bg-slate-800/50'); 
+      e.preventDefault(); // Required to allow dropping
+      slot.classList.add('ring-2', 'ring-blue-500', 'bg-slate-800/50'); // Highlight effect
     });
     
     slot.addEventListener('dragleave', e => {
@@ -1416,7 +1442,9 @@ function wireUIActions() {
     });
   });
 
+  // 3. Turn on Mobile Touch Dragging
   setupTouchDragForManualBuilder();
+  // --------------------------------------------------------
 
   if (languageSelect) {
     languageSelect.onchange = e => {
@@ -1438,74 +1466,63 @@ function wireUIActions() {
   }
 
   let _lastTab = 'generator';
-  let _isAnimating = false;
+  let _pendingTab = null;
+let _isAnimating = false;
 
-  function switchTab(tabName) {
-    if (_isAnimating) return;
-    if (tabName === _lastTab) return;
+function switchTab(tabName) {
+  if (_isAnimating) return;
+  if (tabName === _lastTab) return;
 
-    _isAnimating = true;
-    const currentSection = document.querySelector(`section:not(.hidden)`);
-    if (!currentSection) {
-      _isAnimating = false;
-      return;
-    }
-
-    currentSection.classList.add('tab-exit');
-    setTimeout(() => {
-      const allSections = [
-        manualSection, generatorSection, edenMapSection,
-        loyaltySection, youtubeSection, researchSection, heroesSection
-      ];
-      allSections.forEach(sec => {
-        if (sec) sec.classList.add('hidden');
-        sec?.classList.remove('tab-exit');
-      });
-      if (comboFooterBar) comboFooterBar.classList.add('hidden');
-
-      document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
-      const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-      if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-
-      const targetSection = document.getElementById(`${tabName}Section`);
-      if (targetSection) {
-        targetSection.classList.remove('hidden');
-        void targetSection.offsetWidth;
-      }
-
-      if (tabName === 'manual' || tabName === 'generator') {
-        if (globalToggleRow) globalToggleRow.classList.remove('hidden');
-      } else {
-        if (globalToggleRow) globalToggleRow.classList.add('hidden');
-      }
-
-      if (tabName === 'manual') {
-        if (comboFooterBar) comboFooterBar.classList.remove('hidden');
-      } else {
-        if (comboFooterBar) comboFooterBar.classList.add('hidden');
-      }
-
-      if (tabName === 'heroes') {
-        renderHeroesTab();
-      }
-
-      _lastTab = tabName;
-      _isAnimating = false;
-    }, 250); 
+  _isAnimating = true;
+  const currentSection = document.querySelector(`section:not(.hidden)`);
+  if (!currentSection) {
+    _isAnimating = false;
+    return;
   }
 
-  // Bind individual tabs securely
-  tabManualBtn?.addEventListener('click', () => switchTab('manual'));
-  tabGeneratorBtn?.addEventListener('click', () => switchTab('generator'));
-  tabLoyaltyBtn?.addEventListener('click', () => switchTab('loyalty'));
-  tabYouTubeBtn?.addEventListener('click', () => switchTab('youtube'));
-  tabResearchBtn?.addEventListener('click', () => switchTab('research'));
-  tabHeroesBtn?.addEventListener('click', () => switchTab('heroes'));
-  tabEdenMapBtn?.addEventListener('click', () => {
-    switchTab('edenMap');
-    if (typeof initEdenMapPlanner === 'function') initEdenMapPlanner();
-  });
+  // Exit animation
+  currentSection.classList.add('tab-exit');
+  setTimeout(() => {
+    // Hide all sections
+    const allSections = [
+      manualSection, generatorSection, edenMapSection,
+      loyaltySection, youtubeSection, researchSection, heroesSection
+    ];
+    allSections.forEach(sec => {
+      if (sec) sec.classList.add('hidden');
+      sec?.classList.remove('tab-exit');
+    });
+    if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
+    // Update active tab styling
+    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+    const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+
+    // Show new section
+    const targetSection = document.getElementById(`${tabName}Section`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+      // Trigger reflow for animation
+      void targetSection.offsetWidth;
+    }
+
+    if (tabName === 'manual' || tabName === 'generator') {
+      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
+    } else {
+      if (globalToggleRow) globalToggleRow.classList.add('hidden');
+    }
+
+    if (tabName === 'manual') {
+      if (comboFooterBar) comboFooterBar.classList.remove('hidden');
+    } else {
+      if (comboFooterBar) comboFooterBar.classList.add('hidden');
+    }
+
+    _lastTab = tabName;
+    _isAnimating = false;
+  }, 250); // matches animation duration
+}
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
@@ -1602,7 +1619,8 @@ function wireUIActions() {
         showAboModal(t.noCombosMessage || 'No combos saved yet!');
         return;
       }
-      const comboData = savedCombosCache.map((heroes) => {
+      // Build combo data format compatible with canvas renderer
+      const comboData = savedCombosCache.map((heroes, idx) => {
         const info = getComboRankInfo(heroes);
         return { heroes, displayScore: info ? info.score : '—' };
       });
@@ -1651,6 +1669,7 @@ function wireUIActions() {
     };
   }
 
+  // Force Tab Initialization to prevent desync
   switchTab('generator');
 }
 
@@ -1658,6 +1677,7 @@ function wireUIActions() {
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
   
+  // RTL support for Arabic
   document.documentElement.dir = (currentLanguage === 'ar') ? 'rtl' : 'ltr';
   document.documentElement.lang = currentLanguage;
 
@@ -1719,12 +1739,14 @@ window.quickMaxTech = function(e, techId) {
     const tech = techDatabase.find(t => t.id === techId);
     if(!tech) return;
     
+    // Max out every node in the background
     tech.nodes.forEach(n => {
         localStorage.setItem(`tech_${tech.id}_${n.id}`, n.maxLevel);
     });
     
     updateGlobalSummary();
     
+    // Quick visual feedback on the button
     const btn = e.target;
     const originalText = btn.innerHTML;
     btn.innerHTML = `<svg class="w-3 h-3 inline pb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
@@ -1739,6 +1761,7 @@ window.quickMaxTech = function(e, techId) {
         btn.classList.replace('bg-emerald-900/80', 'bg-blue-900/80');
     }, 1000);
     
+    // Refresh calculator UI if it's currently open
     const calcContainer = document.getElementById('techCalculatorContainer');
     if (!calcContainer.classList.contains('hidden')) {
         renderCalculator(tech);
@@ -1792,10 +1815,10 @@ function initResearchCalculator() {
 
     renderTechList();
 }
-
 function renderTechList() {
     const container = document.getElementById('techListContainer');
     
+    // Inject dynamic CSS to handle explicit Row/Col placements securely
     if (!document.getElementById('dynamic-tech-grid-styles')) {
         const style = document.createElement('style');
         style.id = 'dynamic-tech-grid-styles';
@@ -1815,6 +1838,7 @@ function renderTechList() {
         document.head.appendChild(style);
     }
 
+    // Grid capped at exactly 4 columns (lg:grid-cols-4)
     container.innerHTML = '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full relative" id="techGridWrapper"></div>';
     const wrapper = document.getElementById('techGridWrapper');
 
@@ -1828,13 +1852,17 @@ function renderTechList() {
 
     filteredTechs.forEach(tech => {
         const card = document.createElement('div');
+        
+        // Grab the vibrant color for this specific season
         const sColor = TechseasonColors[tech.season] || '#3b82f6';
         
+        // Extract default position if it exists, otherwise auto-place
         const r = tech.default_pos?.row || 'auto';
         const c = tech.default_pos?.col || 'auto';
 
         card.className = "tech-card-pos tech-card-hover bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer transition-all duration-300 flex flex-col justify-between relative overflow-hidden group w-full";
         
+        // Feed the explicit coordinates and colors to the CSS
         card.style.cssText = `
             --desk-row: ${r}; 
             --desk-col: ${c}; 
@@ -1871,7 +1899,6 @@ function renderTechList() {
     }
     sourceNote.innerHTML = sourceCreditText;
 }
-
 function updateGlobalSummary(filteredTechs = null) {
     if (!filteredTechs) {
         filteredTechs = techDatabase.filter(tech => activeTechSeasons.has(tech.season));
@@ -2026,11 +2053,12 @@ function applyAutoGridToGroup(groupNodes) {
         lastType = type;
     });
 }
-
 function renderCalculator(tech) {
     const container = document.getElementById('techCalculatorContainer');
     container.classList.remove('hidden');
 
+    // 1. Cleanly normalize the manual Row/Col/Branch tags from the DB. 
+    // ZERO auto-guessing logic here.
     tech.nodes.forEach((node) => {
         if (node.Row !== undefined) node.row = node.Row;
         if (node.column !== undefined) node.col = node.column;
@@ -2049,6 +2077,8 @@ function renderCalculator(tech) {
     const buildNodeHtml = (node) => {
         const savedLevel = parseInt(localStorage.getItem(`tech_${tech.id}_${node.id}`)) || 0;
         const isMaxed = savedLevel === node.maxLevel;
+        
+        // Dynamic classes based on max status
         const maxedContainerStyle = isMaxed ? 'opacity-50 saturate-0 border-slate-800 shadow-none' : 'border-slate-700 hover:border-slate-500 shadow-xl';
         
         let quickButtonsHtml = `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="0">0</button>`;
@@ -2057,6 +2087,7 @@ function renderCalculator(tech) {
         if (node.maxLevel >= 15) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="15">15</button>`;
         if (node.maxLevel >= 20) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="20">20</button>`;
         
+        // Smart Toggle Button
         let toggleText = isMaxed ? 'UNDO' : 'MAX';
         let toggleVal = isMaxed ? 0 : node.maxLevel;
         let toggleColor = isMaxed ? 'bg-slate-700 border-slate-500 hover:bg-slate-600 text-white' : 'bg-blue-900/50 border-blue-500/50 hover:bg-blue-800/70 text-blue-300';
@@ -2155,7 +2186,10 @@ function renderCalculator(tech) {
     `;
 
     let treeHtml = `<div class="flex flex-col items-center py-4 sm:py-6 w-full relative">`;
-    if (trunkNodes.length) treeHtml += renderNodeGroup(trunkNodes);
+    
+    if (trunkNodes.length) {
+        treeHtml += renderNodeGroup(trunkNodes);
+    }
     
     const hasBranches = b1Nodes.length || b2Nodes.length || b3Nodes.length;
     if (hasBranches) {
@@ -2195,6 +2229,7 @@ function renderCalculator(tech) {
     }
     
     treeHtml += `</div></div>`; 
+
     html += treeHtml;
 
     html += `
@@ -2203,7 +2238,8 @@ function renderCalculator(tech) {
                 <span class="text-[11px] sm:text-sm text-amber-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">Tree Total</span>
                 <span class="text-[10px] sm:text-sm text-slate-400">Total remaining for this specific tree</span>
             </div>
-            <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums"></div>
+            <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums">
+                </div>
         </div>
     `;
 
@@ -2223,6 +2259,7 @@ function renderCalculator(tech) {
 
             tab.classList.add('bg-blue-600', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]', 'border-blue-400/50', 'active', 'font-black');
             tab.classList.remove('bg-slate-800', 'text-slate-400', 'border-slate-700', 'font-bold');
+            
             container.querySelector('#' + tab.dataset.target).classList.remove('hidden');
         });
     });
@@ -2246,6 +2283,7 @@ function renderCalculator(tech) {
             input.value = v;
             localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
 
+            // Dynamic Gray-out & Button Swap
             if (v === max) {
                 cont.classList.remove('border-slate-700', 'hover:border-slate-500', 'shadow-xl');
                 cont.classList.add('opacity-50', 'saturate-0', 'border-slate-800', 'shadow-none');
@@ -2263,10 +2301,12 @@ function renderCalculator(tech) {
                     maxBtn.className = 'quick-set-btn max-toggle-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-900/50 border border-blue-500/50 hover:bg-blue-800/70 text-blue-300 rounded text-[9px] sm:text-[10px] font-black transition-colors';
                 }
             }
+
             calculateTechTotals(tech);
         };
         
         updateFns.push({ nodeId, updateLevel, max: parseInt(input.max) });
+
         slider.addEventListener('input', (e) => updateLevel(e.target.value));
         input.addEventListener('input', (e) => updateLevel(e.target.value));
         
@@ -2279,6 +2319,7 @@ function renderCalculator(tech) {
     document.getElementById('resetAllTechBtn').addEventListener('click', () => {
         updateFns.forEach(obj => obj.updateLevel(0));
     });
+
     document.getElementById('maxAllTechBtn').addEventListener('click', () => {
         updateFns.forEach(obj => obj.updateLevel(obj.max));
     });
@@ -2286,9 +2327,10 @@ function renderCalculator(tech) {
     calculateTechTotals(tech);
     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
 function calculateTechTotals(tech) {
-    let grandTotalCourage = 0, grandTotalWisdom = 0, grandTotalOther = 0;
+    let grandTotalCourage = 0;
+    let grandTotalWisdom = 0;
+    let grandTotalOther = 0;
     
     const iconCM = `<img src="images/CM.png" class="w-3 h-3 sm:w-5 sm:h-5 inline-block object-contain shrink-0" alt="CM">`;
     const iconWB = `<img src="images/WB.png" class="w-3 h-3 sm:w-5 sm:h-5 inline-block object-contain shrink-0" alt="WB">`;
@@ -2302,7 +2344,9 @@ function calculateTechTotals(tech) {
         const display = container.querySelector('.node-cost-display');
         const currentLevel = parseInt(input.value) || 0;
         
-        let nodeWisdom = 0, nodeCourage = 0, nodeOther = 0;
+        let nodeWisdom = 0;
+        let nodeCourage = 0;
+        let nodeOther = 0;
 
         for (let i = currentLevel; i < node.maxLevel; i++) {
             let genericCost = (node.costs && node.costs[i]) || 0;
@@ -2376,26 +2420,27 @@ function calculateTechTotals(tech) {
             </span>
         `;
     }
+    
     updateGlobalSummary();
 }
 
-// ─── HEROES TAB: detail view + auto-ranking ───────────────────────────────────
+// ─── HEROES TAB: detail view + auto-ranking (with bonus system) ───────────────────────────────────
 function computeHeroRankings() {
   const total = rankedCombos.length;
   const stats = {};
 
-  // Securely initialize dictionary keys to avoid reference mutations
-  allHeroesData.forEach(h => {
-    stats[h.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity, autoRating: 0, finalRating: 0 };
+  allHeroesData.forEach(hero => {
+    stats[hero.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
   });
 
   rankedCombos.forEach((combo, idx) => {
     const score = total > 1 ? 100 - ((idx / (total - 1)) * 99) : 100;
     (combo.heroes || []).forEach(heroName => {
-      if (stats[heroName]) {
-        stats[heroName].appearances++;
-        stats[heroName].weightedScore += score;
-        if (idx + 1 < stats[heroName].topComboRank) stats[heroName].topComboRank = idx + 1;
+      const s = stats[heroName];
+      if (s) {
+        s.appearances++;
+        s.weightedScore += score;
+        if (idx + 1 < s.topComboRank) s.topComboRank = idx + 1;
       }
     });
   });
@@ -2447,12 +2492,18 @@ function renderHeroesTab() {
       ${st === 'all' ? 'All' : st}
     </button>`).join('');
 
+  // Reset bonuses button in toolbar
+  const resetBonusesBtnHtml = `
+    <button id="resetAllBonusesBtn" class="text-[10px] bg-red-900/30 hover:bg-red-800/50 text-red-400 border border-red-500/30 px-3 py-1 rounded-full transition-colors ml-2">
+      Reset Bonuses
+    </button>`;
+
   if (view === 'ranking') {
-    const ranked = [...filtered].sort((a,b) => (stats[b.name]?.finalRating||0) - (stats[a.name]?.finalRating||0));
+    const ranked = [...filtered].sort((a,b) => (stats[b.name]?.finalRating || 0) - (stats[a.name]?.finalRating || 0));
 
     const rowsHtml = ranked.length ? ranked.map((hero, i) => {
       const s = stats[hero.name] || {};
-      const pct = Math.min(100, (s.finalRating || 0)).toFixed(0);
+      const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
       const rankNumber = i < 3 ? medal : `#${i+1}`;
@@ -2471,13 +2522,14 @@ function renderHeroesTab() {
               ${s.appearances ? `<span class="rank-apps">${s.appearances} combo${s.appearances!==1?'s':''}</span>` : '<span class="rank-apps rank-apps-zero">Not ranked</span>'}
             </div>
             <div class="rank-bar-wrap">
-              <div class="rank-bar" style="width:${pct}%;background:${tagColor};"></div>
+              <div class="rank-bar" style="width:${finalPct}%;background:${tagColor};"></div>
             </div>
           </div>
-          <div class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? pct : '—'}</div>
+          <div class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</div>
         </div>`;
     }).join('') : '<p class="text-sm text-slate-500 italic p-4 text-center">No heroes match your filters.</p>';
 
+    // Detail panel for selected hero
     let detailHtml = '';
     if (selected) {
       const hero = allHeroesData.find(h => h.name === selected);
@@ -2485,6 +2537,7 @@ function renderHeroesTab() {
       const s    = stats[selected] || {};
       const tagColor = hero ? (seasonColors[hero.season] || '#f97316') : '#f97316';
       const synergies = getSynergies(selected);
+      const bonusValue = heroBonuses[selected] || 0;
 
       const heroCombos = rankedCombos
         .map((c,i) => ({...c, rank: i+1, score:(rankedCombos.length>1?100-((i/(rankedCombos.length-1))*99):100).toFixed(1)}))
@@ -2514,14 +2567,14 @@ function renderHeroesTab() {
           <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
         </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
 
-      const bonusValue = heroBonuses[selected] || 0;
+      // Bonus control inside detail stats row
       const bonusControlHtml = `
-        <div class="detail-stat bonus-control border border-slate-700/60 bg-slate-950/40">
+        <div class="detail-stat bonus-control" style="grid-column: span 2;">
           <div class="detail-stat-lbl">➕ Bonus</div>
-          <div class="detail-stat-val" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:3px;">
-            <button class="bonus-minus text-white font-black flex items-center justify-center hover:bg-slate-600 active:scale-90 transition-all shadow" data-hero="${selected.replace(/"/g, '&quot;')}" style="background:#334155; border:none; border-radius:20px; width:22px; height:22px; cursor:pointer; font-size:14px;">-</button>
-            <span id="bonusValueDisplay" class="font-black text-amber-400 tabular-nums min-w-[16px] text-center">${bonusValue}</span>
-            <button class="bonus-plus text-white font-black flex items-center justify-center hover:bg-slate-600 active:scale-90 transition-all shadow" data-hero="${selected.replace(/"/g, '&quot;')}" style="background:#334155; border:none; border-radius:20px; width:22px; height:22px; cursor:pointer; font-size:13px;">+</button>
+          <div class="detail-stat-val" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <button class="bonus-minus" data-hero="${selected}" style="background:#334155; border:none; border-radius:20px; width:24px; height:24px; font-weight:bold; cursor:pointer;">-</button>
+            <span id="bonusValueDisplay">${bonusValue}</span>
+            <button class="bonus-plus" data-hero="${selected}" style="background:#334155; border:none; border-radius:20px; width:24px; height:24px; font-weight:bold; cursor:pointer;">+</button>
           </div>
         </div>
       `;
@@ -2542,6 +2595,7 @@ function renderHeroesTab() {
                 <div class="detail-stat"><div class="detail-stat-lbl">Rating</div><div class="detail-stat-val" style="color:${tagColor}">${s.finalRating>0?Math.min(100,s.finalRating).toFixed(1):'—'}</div></div>
                 <div class="detail-stat"><div class="detail-stat-lbl">Combos</div><div class="detail-stat-val">${s.appearances||0}</div></div>
                 <div class="detail-stat"><div class="detail-stat-lbl">Best Rank</div><div class="detail-stat-val">${s.topComboRank!==Infinity?'#'+s.topComboRank:'—'}</div></div>
+                ${ext ? `<div class="detail-stat"><div class="detail-stat-lbl">Min Copies</div><div class="detail-stat-val">${ext.minCopies||34}</div></div>` : ''}
                 ${bonusControlHtml}
               </div>
             </div>
@@ -2567,16 +2621,17 @@ function renderHeroesTab() {
 
     container.innerHTML = `
       <div class="heroes-tab-inner">
-        <div class="heroes-toolbar flex items-center justify-between flex-wrap gap-3">
-          <div class="flex flex-wrap gap-2 items-center flex-1">
-            <div class="hero-search-wrap min-w-[180px] sm:min-w-[240px]">
-              <input id="heroesTabSearch" class="hero-search-input" type="text" placeholder="Search heroes..." value="${search.replace(/"/g, '&quot;')}" autocomplete="off" />
-            </div>
-            <div class="heroes-filter-pills">${troopPillsHtml}</div>
-            <div class="heroes-filter-pills">${statePillsHtml}</div>
+        <div class="heroes-toolbar">
+          <div class="hero-search-wrap" style="flex:1">
+            <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <input id="heroesTabSearch" class="hero-search-input" type="text" placeholder="Search heroes..." value="${search.replace(/"/g, '&quot;')}" autocomplete="off" />
           </div>
-          <button id="resetAllBonusesBtn" class="text-[10px] bg-red-900/30 px-2.5 py-1 rounded-full text-red-400 font-bold hover:bg-red-900/50 transition ml-auto whitespace-nowrap border border-red-500/20 shadow-sm">Reset Bonuses</button>
+          <div class="flex items-center gap-1">
+            ${resetBonusesBtnHtml}
+          </div>
         </div>
+        <div class="heroes-filter-pills">${troopPillsHtml}</div>
+        <div class="heroes-filter-pills">${statePillsHtml}</div>
         <div class="heroes-season-tabs">${seasonTabsHtml}</div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
           <div class="heroes-ranking-list">${rowsHtml}</div>
@@ -2584,7 +2639,7 @@ function renderHeroesTab() {
         </div>
       </div>`;
 
-    // Handler bindings
+    // Attach event handlers
     document.getElementById('heroesTabSearch')?.addEventListener('input', (e) => {
       _heroesTabState.search = e.target.value;
       _heroesTabState.selected = null;
@@ -2617,30 +2672,26 @@ function renderHeroesTab() {
         renderHeroesTab();
       });
     });
-    
-    container.querySelector('[data-hero-close]')?.addEventListener('click', () => {
+    const closeBtn = container.querySelector('[data-hero-close]');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
       _heroesTabState.selected = null;
       renderHeroesTab();
     });
 
-    // Plus Adjustment Click Handlers
-    container.querySelectorAll('.bonus-plus').forEach(btn => {
+    // Bonus +/- listeners
+    document.querySelectorAll('.bonus-plus').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
         const hero = btn.dataset.hero;
         heroBonuses[hero] = (heroBonuses[hero] || 0) + 1;
         saveHeroBonuses();
-        renderHeroesTab(); 
+        renderHeroesTab();
       });
     });
-
-    // Minus Adjustment Click Handlers
-    container.querySelectorAll('.bonus-minus').forEach(btn => {
+    document.querySelectorAll('.bonus-minus').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
         const hero = btn.dataset.hero;
         let current = heroBonuses[hero] || 0;
-        if (current > -20) { 
+        if (current > -20) { // allow negative down to -20
           heroBonuses[hero] = current - 1;
           saveHeroBonuses();
           renderHeroesTab();
@@ -2648,75 +2699,87 @@ function renderHeroesTab() {
       });
     });
 
-    // Reset Link Handler
-    document.getElementById('resetAllBonusesBtn')?.addEventListener('click', () => {
-      if (confirm('Reset all manual adjustments back to zero?')) {
-        heroBonuses = {};
-        saveHeroBonuses();
-        renderHeroesTab();
-      }
-    });
+    // Reset all bonuses button
+    const resetBtn = document.getElementById('resetAllBonusesBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        if (confirm('Reset all hero bonuses to zero?')) {
+          heroBonuses = {};
+          saveHeroBonuses();
+          renderHeroesTab();
+        }
+      });
+    }
   }
 }
 
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
+    // 1. Setup UI & Render Heroes
     updateTextContent();
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();
     
+    // 2. Start the Local Calculators
     initResearchCalculator();
     
+    // RESTORED: Wake up the Loyalty Calculator!
     if (typeof initLoyaltyCalculator === 'function') {
         initLoyaltyCalculator();
     }
 
   // --- Tab scroll buttons ---
-  function initTabScroll() {
-    const scrollContainer = document.getElementById('tabNavScroll');
-    const leftBtn = document.getElementById('tabScrollLeft');
-    const rightBtn = document.getElementById('tabScrollRight');
-    if (!scrollContainer) return;
+function initTabScroll() {
+  const scrollContainer = document.getElementById('tabNavScroll');
+  const leftBtn = document.getElementById('tabScrollLeft');
+  const rightBtn = document.getElementById('tabScrollRight');
+  if (!scrollContainer) return;
 
-    const scrollStep = () => {
-      const cardWidth = scrollContainer.querySelector('.tab-pill')?.offsetWidth || 100;
-      return cardWidth + 12;
-    };
+  const scrollStep = () => {
+    const cardWidth = scrollContainer.querySelector('.tab-pill')?.offsetWidth || 100;
+    return cardWidth + 12;
+  };
 
-    leftBtn?.addEventListener('click', () => {
-      scrollContainer.scrollBy({ left: -scrollStep(), behavior: 'smooth' });
-    });
-    rightBtn?.addEventListener('click', () => {
-      scrollContainer.scrollBy({ left: scrollStep(), behavior: 'smooth' });
-    });
+  leftBtn?.addEventListener('click', () => {
+    scrollContainer.scrollBy({ left: -scrollStep(), behavior: 'smooth' });
+  });
+  rightBtn?.addEventListener('click', () => {
+    scrollContainer.scrollBy({ left: scrollStep(), behavior: 'smooth' });
+  });
 
-    const checkOverflow = () => {
-      const hasOverflow = scrollContainer.scrollWidth > scrollContainer.clientWidth;
-      if (leftBtn && rightBtn) {
-        leftBtn.style.display = hasOverflow ? 'flex' : 'none';
-        rightBtn.style.display = hasOverflow ? 'flex' : 'none';
-      }
-    };
-    window.addEventListener('resize', checkOverflow);
-    setTimeout(checkOverflow, 100);
-  }
+  // Hide buttons if not needed (on desktop)
+  const checkOverflow = () => {
+    const hasOverflow = scrollContainer.scrollWidth > scrollContainer.clientWidth;
+    if (leftBtn && rightBtn) {
+      leftBtn.style.display = hasOverflow ? 'flex' : 'none';
+      rightBtn.style.display = hasOverflow ? 'flex' : 'none';
+    }
+  };
+  window.addEventListener('resize', checkOverflow);
+  setTimeout(checkOverflow, 100);
+}
 
-  initTabScroll();
+// Call this after your existing DOM setup
+initTabScroll();
   
+    // 3. Initialize Firebase & User Data
     try {
         await initFirebase();
         const user = await ensureAnonymousAuth();
         
+        // RESTORED: Assign the actual Firebase User ID so your saved combos work!
         if (user && user.uid) {
             userId = user.uid;
         }
         
         setupFirestoreListener();
         
+        // RESTORED: Wake up the Comments section!
         if (typeof initComments === 'function') {
             initComments();
         }
+        
     } catch (error) {
         console.warn("Firebase could not initialize (might be offline or missing config).", error);
     }
