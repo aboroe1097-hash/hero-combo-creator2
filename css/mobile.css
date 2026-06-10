@@ -497,6 +497,9 @@ html, body {
   z-index: 2;
 }
 
+.eden-coord-search-row { flex-wrap: nowrap; }
+.eden-coord-go-btn { padding: 6px 10px !important; }
+
 .eden-help-panel { padding: 10px 10px !important; }
 .eden-help-summary { font-size: 0.72rem !important; }
 .eden-guide-sec-label { max-width: 56px !important; }
