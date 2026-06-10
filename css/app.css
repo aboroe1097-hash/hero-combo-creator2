@@ -1168,3 +1168,20 @@ section.tab-exit {
   cursor: pointer; transition: all 0.13s;
 }
 .eden-sector-select:focus { outline: none; border-color: #818cf8; }
+
+/* Bonus control inside hero detail panel */
+.bonus-control {
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.3);
+}
+
+.bonus-plus, .bonus-minus {
+  transition: all 0.15s ease;
+}
+.bonus-plus:hover, .bonus-minus:hover {
+  background: #475569 !important;
+  transform: scale(1.05);
+}
+.bonus-plus:active, .bonus-minus:active {
+  transform: scale(0.95);
+}
