@@ -1,6 +1,6 @@
 // Eden Map UI — minimap, keyboard shortcuts, quick-jump, mobile sidebar
 
-const MAJOR_TYPES = new Set(['C5', 'C6', 'CS', 'AT']);
+const MAJOR_TYPES = new Set(['C5', 'C6', 'CS', 'STRHD', 'AT', 'WCB', 'WC8']);
 const MINIMAP_SIZE = 150;
 
 export function initEdenMapUI(api) {

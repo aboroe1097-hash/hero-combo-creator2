@@ -40,14 +40,20 @@ export const STRUCTURE_ICON_URLS = {
   CP3: '',
   CP4: '',
   CP5: '',
+  CP7: '',
   ST1: '',
   ST2: '',
+  ST3: '',
+  LT2: '',
   LT3: '',
   LT4: '',
   C5:  '',
   C6:  '',
   CS:  '',
+  STRHD: '',
   AT:  '',
+  WCB: '',
+  WC8: '',
 };
 
 // Radians — gates face the iso map better rotated ~90° counter-clockwise.
@@ -57,6 +63,7 @@ export const STRUCTURE_ICON_ROTATION = {
   CP3: -Math.PI / 2,
   CP4: -Math.PI / 2,
   CP5: -Math.PI / 2,
+  CP7: -Math.PI / 2,
 };
 
 export function getStructureIconRotation(type) {
@@ -78,14 +85,20 @@ const STRUCTURE_DRAW = {
   CP3: { tier: 'cp', roof: '#7dd3fc', wall: '#3b82a8', accent: '#bae6fd' },
   CP4: { tier: 'cp', roof: '#38bdf8', wall: '#2563a8', accent: '#7dd3fc' },
   CP5: { tier: 'cp', roof: '#0ea5e9', wall: '#0369a1', accent: '#38bdf8' },
+  CP7: { tier: 'cp', roof: '#0284c7', wall: '#075985', accent: '#0ea5e9' },
   ST1: { tier: 'st', roof: '#4ade80', wall: '#166534', accent: '#86efac' },
+  ST3: { tier: 'st', roof: '#16a34a', wall: '#14532d', accent: '#4ade80' },
   ST2: { tier: 'st', roof: '#22c55e', wall: '#14532d', accent: '#4ade80' },
+  LT2: { tier: 'lt', roof: '#2563eb', wall: '#1e3a8a', accent: '#60a5fa' },
   LT3: { tier: 'lt', roof: '#3b82f6', wall: '#1e3a8a', accent: '#60a5fa' },
   LT4: { tier: 'lt', roof: '#6366f1', wall: '#312e81', accent: '#818cf8' },
   C5:  { tier: 'cap', roof: '#f59e0b', wall: '#92400e', accent: '#fbbf24' },
   C6:  { tier: 'cap', roof: '#ef4444', wall: '#7f1d1d', accent: '#f87171' },
   CS:  { tier: 'sh', roof: '#f59e0b', wall: '#92400e', accent: '#fcd34d' },
+  STRHD: { tier: 'sh', roof: '#f59e0b', wall: '#92400e', accent: '#fcd34d' },
   AT:  { tier: 'at', roof: '#ec4899', wall: '#831843', accent: '#f9a8d4' },
+  WCB: { tier: 'at', roof: '#d946ef', wall: '#86198f', accent: '#f0abfc' },
+  WC8: { tier: 'at', roof: '#c026d3', wall: '#701a75', accent: '#e879f9' },
 };
 
 function strokePath(ctx) {

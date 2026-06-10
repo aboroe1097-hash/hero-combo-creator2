@@ -1,6 +1,16 @@
-// Eden Map Structure Coordinates — all sectors
-// Source: Akhenaten (S167) — full coordinate reference
-// Coordinates are raw game coords (X:Y format from images)
+// Eden Map Structure Coordinates — base layout (Classic ~2023 reference)
+// Season datasets: database/*.txt → python database/build-eden-datasets.py
+import {
+  EDEN_DATASET_CATALOG,
+  EDEN_DATASET_OVERLAYS,
+  EDEN_DATASET_SECTORS,
+} from './eden-datasets.generated.js';
+
+const EDEN_DATASET_STORAGE_KEY = 'vts_eden_dataset';
+const LEGACY_DATASET_IDS = { classic: 'season3', wonders: 'season5' };
+export const TEMPLE_TYPES = new Set(['AT', 'WCB', 'WC8']);
+let activeDatasetId = null;
+let activeSectors = null;
 
 // In-game names per Rise of Castles Eden occupation guide (Gates, Towns, Capitals, Temple).
 export const STRUCTURE_TYPES = {
@@ -9,15 +19,28 @@ export const STRUCTURE_TYPES = {
   CP3:  { label: 'Gate Lv3',           short: 'G3', category: 'gate',       points: 5,   color: '#7dd3fc', size: 6  },
   CP4:  { label: 'Gate Lv4',           short: 'G4', category: 'gate',       points: 5,   color: '#38bdf8', size: 6  },
   CP5:  { label: 'Gate Lv5',           short: 'G5', category: 'gate',       points: 5,   color: '#0ea5e9', size: 6  },
+  CP7:  { label: 'Gate Lv7',           short: 'G7', category: 'gate',       points: 5,   color: '#0284c7', size: 6  },
   ST1:  { label: 'Small Town Lv1',     short: 'ST1', category: 'town',      points: 15,  color: '#4ade80', size: 9  },
+  ST3:  { label: 'Small Town Lv3',     short: 'ST3', category: 'town',      points: 20,  color: '#16a34a', size: 9  },
   ST2:  { label: 'Small Town Lv2',     short: 'ST2', category: 'town',      points: 20,  color: '#22c55e', size: 9  },
   LT3:  { label: 'Large Town Lv3',     short: 'LT3', category: 'town',      points: 30,  color: '#3b82f6', size: 12 },
+  LT2:  { label: 'Large Town Lv2',     short: 'LT2', category: 'town',      points: 30,  color: '#2563eb', size: 12 },
   LT4:  { label: 'Large Town Lv4',     short: 'LT4', category: 'town',      points: 50,  color: '#6366f1', size: 12 },
+  STRHD:{ label: 'Stronghold',         short: 'SH', category: 'stronghold', points: 10,  color: '#f59e0b', size: 14 },
   C5:   { label: 'Capital Lv5',        short: 'C5', category: 'capital',   points: 70,  color: '#f59e0b', size: 16 },
   C6:   { label: 'Capital Lv6',        short: 'C6', category: 'capital',   points: 100, color: '#ef4444', size: 18 },
   CS:   { label: 'Stronghold',         short: 'SH', category: 'stronghold', points: 70,  color: '#f59e0b', size: 16 },
   AT:   { label: 'Ancient Temple',     short: 'AT', category: 'temple',    points: 600, color: '#ec4899', size: 20 },
+  WCB:  { label: 'Wonder Capital',     short: 'WCB', category: 'temple',   points: 600, color: '#d946ef', size: 20 },
+  WC8:  { label: 'Wonder Capital Lv8', short: 'WC8', category: 'temple',   points: 600, color: '#c026d3', size: 20 },
 };
+
+export function getStructurePoints(s) {
+  if (s?.points != null && s.points !== '') return Number(s.points) || 0;
+  return STRUCTURE_TYPES[s?.type]?.points || 0;
+}
+
+export { EDEN_DATASET_CATALOG };
 
 export function getStructureLabel(type) {
   return STRUCTURE_TYPES[type]?.label || type;
@@ -27,7 +50,7 @@ export function getStructureShort(type) {
   return STRUCTURE_TYPES[type]?.short || type;
 }
 
-export const EDEN_SECTORS = {
+const EDEN_SECTORS_BASE = {
 
   // ─── CENTRAL (C) ───────────────────────────────────────────────────────────
   C: {
@@ -298,6 +321,7 @@ export const EDEN_SECTORS = {
       { id: 'nw6-cp1-2',  zone: 'NW6', type: 'CP1', x: 279,  y: 504, guild: '' },
       { id: 'nw6-cp1-3',  zone: 'NW6', type: 'CP1', x: 208,  y: 483, guild: '' },
       { id: 'nw6-cp1-4',  zone: 'NW6', type: 'CP1', x: 251,  y: 384, guild: '' },
+      { id: 'nw6-cp4-1',  zone: 'N1,W', type: 'CP4', x: 190, y: 509, guild: '' },
     ],
   },
 
@@ -787,10 +811,136 @@ export const EDEN_SECTORS = {
   },
 };
 
+function cloneBaseSectors() {
+  return JSON.parse(JSON.stringify(EDEN_SECTORS_BASE));
+}
+
+function ensureSector(sectors, sectorKey, structures) {
+  if (sectors[sectorKey]) return;
+  const zones = [...new Set(structures.map(s => s.zone))];
+  const xs = structures.map(s => s.x);
+  const ys = structures.map(s => s.y);
+  const pad = 48;
+  sectors[sectorKey] = {
+    label: `${sectorKey} Sector`,
+    zones,
+    bounds: {
+      minX: Math.min(...xs) - pad,
+      maxX: Math.max(...xs) + pad,
+      minY: Math.min(...ys) - pad,
+      maxY: Math.max(...ys) + pad,
+    },
+    zoneCenters: Object.fromEntries(zones.map((z) => {
+      const zs = structures.filter(s => s.zone === z);
+      const ax = zs.reduce((n, s) => n + s.x, 0) / zs.length;
+      const ay = zs.reduce((n, s) => n + s.y, 0) / zs.length;
+      return [z, { x: Math.round(ax), y: Math.round(ay) }];
+    })),
+    structures: [],
+  };
+}
+
+function updateCenterLandmark(sectorData, structures) {
+  const landmark = structures.find(s => TEMPLE_TYPES.has(s.type));
+  if (!landmark || !sectorData.zoneCenters) return;
+  const key = landmark.zone in sectorData.zoneCenters ? landmark.zone : Object.keys(sectorData.zoneCenters)[0];
+  if (key) sectorData.zoneCenters[key] = { x: landmark.x, y: landmark.y };
+}
+
+function mergeStructureList(base, overlay) {
+  const byId = new Map(base.map(s => [s.id, { ...s }]));
+  for (const row of overlay) {
+    if (byId.has(row.id)) {
+      Object.assign(byId.get(row.id), row);
+      continue;
+    }
+    const near = [...byId.values()].find(s =>
+      s.type === row.type && Math.hypot(s.x - row.x, s.y - row.y) <= 12
+    );
+    if (near) Object.assign(near, row);
+    else byId.set(row.id, { ...row });
+  }
+  return [...byId.values()];
+}
+
+function applyOverlay(sectors, overlay, entry) {
+  const replaceSet = new Set(entry.replaceSectors || []);
+  for (const [sectorKey, rows] of Object.entries(overlay)) {
+    ensureSector(sectors, sectorKey, rows);
+    if (entry.sectorMode === 'replace_list' && replaceSet.has(sectorKey)) {
+      sectors[sectorKey].structures = rows.map(s => ({ ...s }));
+    } else {
+      sectors[sectorKey].structures = mergeStructureList(sectors[sectorKey].structures || [], rows);
+    }
+    updateCenterLandmark(sectors[sectorKey], sectors[sectorKey].structures);
+  }
+}
+
+function migrateDatasetId(id) {
+  return LEGACY_DATASET_IDS[id] || id;
+}
+
+export function getEdenDatasetId() {
+  const raw = activeDatasetId || localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || '';
+  return migrateDatasetId(raw);
+}
+
+export function hasEdenDatasetChoice() {
+  const id = getEdenDatasetId();
+  return !!id && EDEN_DATASET_CATALOG.some(d => d.id === id);
+}
+
+export function applyEdenDataset(id) {
+  const resolvedId = migrateDatasetId(id);
+  const entry = EDEN_DATASET_CATALOG.find(d => d.id === resolvedId);
+  if (!entry) return false;
+  activeDatasetId = resolvedId;
+
+  if (entry.sectorMode === 'full' && EDEN_DATASET_SECTORS[resolvedId]) {
+    activeSectors = JSON.parse(JSON.stringify(EDEN_DATASET_SECTORS[resolvedId]));
+  } else {
+    activeSectors = cloneBaseSectors();
+    const overlay = EDEN_DATASET_OVERLAYS[resolvedId];
+    if (overlay) applyOverlay(activeSectors, overlay, entry);
+  }
+
+  localStorage.setItem(EDEN_DATASET_STORAGE_KEY, resolvedId);
+  window.dispatchEvent(new CustomEvent('edenDatasetChange', { detail: { id: resolvedId, entry } }));
+  return true;
+}
+
+export function syncEdenSectorSelect(selectEl, { fullLabel = 'Full Map' } = {}) {
+  const el = selectEl || document.getElementById('edenSectorSelect');
+  if (!el) return;
+  const prev = el.value;
+  const sectors = getEdenSectors();
+  const opts = [`<option value="FULL">${fullLabel}</option>`];
+  for (const [key, sec] of Object.entries(sectors).sort((a, b) => a[0].localeCompare(b[0]))) {
+    const label = sec.label ? `${sec.label} (${key})` : key;
+    opts.push(`<option value="${key}">${label}</option>`);
+  }
+  el.innerHTML = opts.join('');
+  el.value = (prev === 'FULL' || sectors[prev]) ? prev : 'FULL';
+}
+
+export function getEdenSectors() {
+  if (!activeSectors) {
+    const saved = migrateDatasetId(localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || '');
+    if (saved && EDEN_DATASET_CATALOG.some(d => d.id === saved)) {
+      applyEdenDataset(saved);
+    } else {
+      activeSectors = cloneBaseSectors();
+    }
+  }
+  return activeSectors;
+}
+
 // Eden North/South seasonal layout — cardinal + central sectors by faction half.
 export const SECTOR_FACTION = {
   N: 'north', NE: 'north', NW: 'north', NC: 'north', EC: 'north', WC: 'north',
+  N1: 'north', N2: 'north', N3: 'north', N4: 'north',
   S: 'south', SE: 'south', SW: 'south', SC: 'south', E: 'south', W: 'south',
+  S2: 'south', S3: 'south', S4: 'south',
   C: 'contested',
 };
 
@@ -808,18 +958,20 @@ export function getSectorFaction(sectorKey) {
 }
 
 export function getSectorStructures(sectorKey) {
+  const sectors = getEdenSectors();
   if (sectorKey === 'FULL') {
-    return Object.entries(EDEN_SECTORS).flatMap(([sk, sec]) =>
+    return Object.entries(sectors).flatMap(([sk, sec]) =>
       sec.structures.map(s => ({ ...s, sector: sk }))
     );
   }
-  const sec = EDEN_SECTORS[sectorKey];
+  const sec = sectors[sectorKey];
   return sec ? sec.structures.map(s => ({ ...s, sector: sectorKey })) : [];
 }
 
 export function getSectorBounds(sectorKey) {
+  const sectors = getEdenSectors();
   if (sectorKey === 'FULL') return { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
-  return EDEN_SECTORS[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
+  return sectors[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 }
 
 /** Parse in-game coord strings: 800:800, 800,800, 800 800, X:800 Y:800 */
@@ -843,7 +995,7 @@ export function parseCoordInput(raw) {
 export function findStructureByCoords(x, y, tolerance = 14) {
   let best = null;
   let bestD = Infinity;
-  for (const [sector, sec] of Object.entries(EDEN_SECTORS)) {
+  for (const [sector, sec] of Object.entries(getEdenSectors())) {
     for (const s of sec.structures) {
       const d = Math.hypot(s.x - x, s.y - y);
       if (d <= tolerance && d < bestD) {
@@ -859,7 +1011,7 @@ export function findStructureByCoords(x, y, tolerance = 14) {
 export function findSectorForCoords(x, y) {
   let best = null;
   let bestArea = Infinity;
-  for (const [sk, sec] of Object.entries(EDEN_SECTORS)) {
+  for (const [sk, sec] of Object.entries(getEdenSectors())) {
     const b = sec.bounds;
     if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
       const area = (b.maxX - b.minX) * (b.maxY - b.minY);
@@ -870,6 +1022,12 @@ export function findSectorForCoords(x, y) {
     }
   }
   return best;
+}
+
+export function getTempleCoords() {
+  const c = getEdenSectors().C?.structures || [];
+  const landmark = c.find(s => TEMPLE_TYPES.has(s.type));
+  return landmark ? { x: landmark.x, y: landmark.y } : { x: 800, y: 800 };
 }
 
 export const X1_PLANNING_TARGETS = [

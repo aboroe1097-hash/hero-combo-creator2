@@ -1,6 +1,6 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js';
-import { SECTOR_FACTION, getSectorBounds } from './eden-map-data.js';
+import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
 import { getReferenceMapImage } from './eden-map-assets.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';
@@ -160,7 +160,7 @@ export function drawTerritoryOverlay(ctx, worldToIso) {
 
 export function drawFogOfWar(ctx, worldToIso, explored, sectorKey) {
   const sectors = sectorKey === 'FULL'
-    ? Object.keys(SECTOR_FACTION)
+    ? Object.keys(getEdenSectors())
     : [sectorKey];
   ctx.save();
   sectors.forEach(sk => {

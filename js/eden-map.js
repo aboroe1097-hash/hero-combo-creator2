@@ -1,8 +1,10 @@
 import {
-  EDEN_SECTORS, STRUCTURE_TYPES, X1_PLANNING_TARGETS, SECTOR_FACTION,
-  getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
+  STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES,
+  getEdenSectors, getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
+  getStructurePoints, getSectorFaction, syncEdenSectorSelect,
   parseCoordInput, findStructureByCoords, findSectorForCoords,
 } from './eden-map-data.js';
+import { initEdenSeasonPicker } from './eden-map-season.js';
 import {
   MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints, getTerrainAt,
 } from './eden-map-terrain.js';
@@ -200,7 +202,7 @@ export function initEdenMapPlanner() {
   function structurePassesFaction(s) {
     if (factionFilter === 'all') return true;
     const sk = s.sector || sectorKey;
-    const f = SECTOR_FACTION[sk];
+    const f = getSectorFaction(sk);
     if (factionFilter === 'north') return f === 'north' || f === 'contested';
     if (factionFilter === 'south') return f === 'south' || f === 'contested';
     return true;
@@ -386,7 +388,7 @@ export function initEdenMapPlanner() {
 
   function drawSectorLabel() {
     if (!layers.labels || sectorKey === 'FULL') return;
-    const sec = EDEN_SECTORS[sectorKey];
+    const sec = getEdenSectors()[sectorKey];
     if (!sec) return;
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.font = 'bold 14px Inter, sans-serif';
@@ -396,7 +398,7 @@ export function initEdenMapPlanner() {
 
   function drawZoneOverlays() {
     if (!layers.zones || sectorKey === 'FULL') return;
-    const zones = EDEN_SECTORS[sectorKey]?.zoneCenters || {};
+    const zones = getEdenSectors()[sectorKey]?.zoneCenters || {};
     Object.entries(zones).forEach(([zone, center]) => {
       const p = iso(center.x, center.y);
       ctx.beginPath();
@@ -771,7 +773,7 @@ export function initEdenMapPlanner() {
     if (layers.heatmap && !fastMode) {
       const heatStructs = structures().filter(structureVisible).map(s => ({
         ...s,
-        points: STRUCTURE_TYPES[s.type]?.points || 0,
+        points: getStructurePoints(s),
       }));
       drawHeatmap(ctx, iso, heatStructs, scale);
     }
@@ -890,8 +892,14 @@ export function initEdenMapPlanner() {
 
   function jumpToTemple() {
     setSector('C');
-    centerOn(800, 800);
-    selectedId = structures().find(s => s.type === 'AT')?.id || null;
+    const temple = structures().find(s => TEMPLE_TYPES.has(s.type));
+    if (temple) {
+      selectedId = temple.id;
+      zoomToStructure(temple);
+    } else {
+      centerOn(800, 800);
+      selectedId = null;
+    }
     notifySelection();
     draw();
   }
@@ -1010,8 +1018,8 @@ export function initEdenMapPlanner() {
     filtered.sort((a, b) => {
       if (listSort === 'zone') return a.zone.localeCompare(b.zone) || a.type.localeCompare(b.type);
       if (listSort === 'type') return a.type.localeCompare(b.type) || a.zone.localeCompare(b.zone);
-      const pa = STRUCTURE_TYPES[a.type]?.points || 0;
-      const pb = STRUCTURE_TYPES[b.type]?.points || 0;
+      const pa = getStructurePoints(a);
+      const pb = getStructurePoints(b);
       return pb - pa || a.zone.localeCompare(b.zone);
     });
     return filtered;
@@ -1106,7 +1114,7 @@ export function initEdenMapPlanner() {
 
     const statsEl = document.getElementById('edenMapStats');
     if (statsEl) {
-      const pts = list.reduce((sum, s) => sum + (STRUCTURE_TYPES[s.type]?.points || 0), 0);
+      const pts = list.reduce((sum, s) => sum + getStructurePoints(s), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
       const pathTime = formatTravelTime(estimateTravelMinutes(pathDist, plan.speed || 1));
       const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : '';
@@ -1766,7 +1774,23 @@ export function initEdenMapPlanner() {
     }
   });
 
+  initEdenSeasonPicker({
+    onDatasetApplied: () => {
+      syncEdenSectorSelect(null, { fullLabel: edenT('edenSectorFull') });
+      if (sectorKey !== 'FULL' && !getEdenSectors()[sectorKey]) {
+        switchSectorForNav('FULL');
+      }
+      filtersPopulatedFor = null;
+      selectedId = null;
+      notifySelection();
+      populateFilters(true);
+      fitView();
+      draw();
+    },
+  });
+
   window.addEventListener('edenLanguageUpdate', () => {
+    syncEdenSectorSelect(null, { fullLabel: edenT('edenSectorFull') });
     populateFilters(true);
     renderSidebar();
   });
