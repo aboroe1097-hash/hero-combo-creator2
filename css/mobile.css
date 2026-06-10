@@ -1,5 +1,5 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool  b4.0
+   mobile.css — VTS Hero Combo Tool  b6.2
    Applied on screens ≤768px via <link media="(max-width: 768px)">
    ============================================================= */
 
@@ -175,13 +175,23 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .hero-search-input { font-size: 0.8rem !important; }
 
 /* ── Research tab ────────────────────────────────────────── */
+#researchSection,
+.research-control-deck,
+.research-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: clip;
+}
 .research-header { flex-direction: column; gap: 8px !important; margin-bottom: 12px !important; }
 .research-title { font-size: 1.15rem !important; }
 .research-desc { font-size: 0.75rem !important; }
 .research-tree-count { align-self: flex-start; font-size: 0.6rem !important; padding: 4px 10px !important; }
-.research-toolbar { padding: 10px !important; gap: 8px !important; margin-bottom: 12px !important; }
-.research-toolbar-row { flex-direction: column; align-items: stretch !important; gap: 8px !important; }
-.research-toolbar-label { font-size: 0.58rem !important; }
+.research-control-deck { gap: 6px !important; margin-bottom: 12px !important; }
+.research-deck-row { padding: 8px 10px !important; gap: 6px 8px !important; }
+.research-deck-row-tools { flex-direction: column; align-items: stretch !important; }
+.research-deck-label { font-size: 0.54rem !important; min-width: 40px !important; }
+.research-season-segment { padding: 3px !important; }
 .research-season-bar {
   flex-wrap: nowrap !important; overflow-x: auto !important;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -189,12 +199,25 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 }
 .research-season-bar::-webkit-scrollbar { display: none; }
 .tech-season-btn {
-  flex-shrink: 0; padding: 6px 11px !important; font-size: 0.72rem !important;
+  flex-shrink: 0; padding: 6px 11px !important; font-size: 0.68rem !important;
 }
-.research-toolbar-actions { flex-wrap: wrap !important; }
-.research-action-btn { font-size: 0.64rem !important; padding: 7px 10px !important; flex: 1 1 auto; }
-.research-search-wrap { max-width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; }
-.research-search-input { font-size: 0.75rem !important; min-height: 36px; }
+.research-quick-segment { width: 100%; justify-content: stretch; }
+.research-quick-btn { flex: 1; font-size: 0.64rem !important; padding: 8px 10px !important; }
+.research-search-wrap { max-width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; width: 100% !important; }
+.research-search-input { font-size: 0.75rem !important; min-height: 38px; }
+.research-branch-segment { margin: 12px auto 18px !important; padding: 3px !important; }
+.research-branch-btn { padding: 8px 4px !important; font-size: 0.56rem !important; }
+.research-branch-btn span:first-child { font-size: 1rem !important; }
+.research-calc-title { font-size: 1rem !important; }
+.research-calc-actions { gap: 6px !important; }
+.research-calc-btn { font-size: 0.62rem !important; padding: 8px 10px !important; }
+.research-game-tree-viewport { max-height: 58vh !important; padding: 12px 8px 6px !important; }
+.game-tech-frame { width: 64px !important; height: 64px !important; }
+.game-tech-glyph { font-size: 1.15rem !important; }
+.game-tech-name { font-size: 0.52rem !important; max-width: 82px !important; }
+.game-tree-tier { gap: 8px 8px !important; }
+.research-page-tab { font-size: 0.56rem !important; padding: 5px 9px !important; }
+.research-game-title { font-size: 0.88rem !important; }
 .research-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 10px !important;
@@ -296,7 +319,7 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .comment-avatar { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 0.85rem !important; }
 .replies-container { margin-left: 1rem !important; padding-left: 0.75rem !important; }
 
-/* ── b4.1 Mobile additions ───────────────────────────────── */
+/* ── b6.2 Mobile additions (legacy b4.1 block) ─────────── */
 
 /* Paid badge — corner ribbon on mobile */
 .paid-badge { top: 3px !important; right: 3px !important; padding: 2px 5px 2px 3px !important; }
@@ -304,8 +327,26 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .paid-badge-text { font-size: 0.42rem !important; }
 
 /* Heroes tab — mobile layout */
+#heroesSection,
+#heroesTabContent,
+.heroes-tab-inner,
+.heroes-toolbar-sticky {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: clip;
+}
 .heroes-toolbar-sticky { top: 0 !important; padding-bottom: 6px !important; }
 .heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
+.heroes-filter-pills {
+  padding: 6px 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.heroes-filter-pills::-webkit-scrollbar { display: none; }
+.heroes-filter-pill { flex-shrink: 0 !important; }
 .heroes-count-badge { font-size: 0.62rem !important; padding: 3px 8px !important; }
 .heroes-clear-filters { font-size: 0.6rem !important; padding: 3px 8px !important; }
 
@@ -378,6 +419,9 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 
 .heroes-season-tabs {
   gap: 4px !important; padding: 6px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   overflow-x: auto; flex-wrap: nowrap !important;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
@@ -406,9 +450,42 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 }
 #edenMapCanvas { min-height: min(52vh, 420px) !important; }
 
+.eden-control-deck { gap: 6px !important; }
+.eden-deck-row {
+  padding: 8px 10px !important;
+  gap: 6px 8px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.eden-deck-row::-webkit-scrollbar { display: none; }
+.eden-deck-label { min-width: 36px !important; font-size: 0.52rem !important; }
+.eden-deck-cluster-end { margin-left: 0 !important; }
+.eden-tool-segment { flex-shrink: 0; }
+.eden-path-tools.eden-path-tools--visible {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  max-height: none !important;
+  -webkit-overflow-scrolling: touch;
+}
+.eden-plans-panel summary { padding: 8px 12px !important; font-size: 0.62rem !important; }
+.eden-plans-body { padding: 8px 10px 10px !important; flex-wrap: nowrap !important; overflow-x: auto !important; }
+.eden-layer-scroll, .eden-quick-scroll {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.eden-layer-scroll::-webkit-scrollbar,
+.eden-quick-scroll::-webkit-scrollbar { display: none; }
+
 .eden-toolbar-primary,
 .eden-toolbar-tools,
-.eden-toolbar-modes {
+.eden-toolbar-modes,
+.eden-deck-nav,
+.eden-deck-tools,
+.eden-deck-meta {
   gap: 5px !important;
   padding: 6px 8px !important;
   overflow-x: auto;
@@ -416,6 +493,9 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
+.eden-deck-nav::-webkit-scrollbar,
+.eden-deck-tools::-webkit-scrollbar,
+.eden-deck-meta::-webkit-scrollbar,
 .eden-toolbar-primary::-webkit-scrollbar,
 .eden-toolbar-tools::-webkit-scrollbar,
 .eden-toolbar-modes::-webkit-scrollbar,
@@ -426,13 +506,13 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .eden-toolbar-divider { height: 22px !important; margin: 0 2px !important; flex-shrink: 0; }
 
 .eden-tool-btn {
-  padding: 8px 10px !important;
+  padding: 8px 11px !important;
   font-size: 0.64rem !important;
-  min-height: 34px;
+  min-height: 36px !important;
   flex-shrink: 0;
   white-space: nowrap;
 }
-.eden-tool-icon { min-width: 36px !important; padding: 8px !important; }
+.eden-tool-icon { min-width: 38px !important; min-height: 36px !important; padding: 8px !important; }
 
 .eden-sector-select,
 .eden-plan-select,

@@ -1,53 +1,450 @@
 [
-  {"sector":"N2","zone":"Z1","type":"ST1","x":244,"y":94,"points":15},
-  {"sector":"N2","zone":"Z1","type":"LT4","x":312,"y":86,"points":15},
-  {"sector":"N2","zone":"Z1","type":"CP1","x":357,"y":120,"points":5},
-  {"sector":"N2","zone":"Z1,Z2","type":"ST1","x":354,"y":105,"points":15},
-  {"sector":"N2","zone":"Z1,Z2","type":"CP2","x":380,"y":93,"points":5},
-  {"sector":"N2","zone":"Z1,Z2","type":"ST1","x":381,"y":165,"points":5},
-  {"sector":"N2","zone":"Z1,Z2","type":"CP1","x":398,"y":177,"points":15},
-  {"sector":"N2","zone":"Z1,Z2","type":"CP2","x":370,"y":205,"points":5},
-  {"sector":"N2","zone":"Z1,Z2","type":"CP2","x":463,"y":193,"points":5},
-  {"sector":"N2","zone":"Z2","type":"ST1","x":427,"y":93,"points":15},
-  {"sector":"N2","zone":"Z2","type":"LT4","x":463,"y":99,"points":15},
-  {"sector":"N2","zone":"Z2","type":"ST1","x":494,"y":139,"points":50},
-  {"sector":"N2","zone":"Z2","type":"CP1","x":506,"y":118,"points":5},
-  {"sector":"N2","zone":"Z2","type":"ST1","x":525,"y":103,"points":15},
-  {"sector":"N2","zone":"Z2","type":"CP1","x":533,"y":178,"points":5},
-  {"sector":"N2","zone":"Z2","type":"ST1","x":535,"y":168,"points":15},
-  {"sector":"N2","zone":"Z2","type":"ST1","x":551,"y":198,"points":5},
-  {"sector":"N2","zone":"Z2,Z3","type":"CP2","x":577,"y":155,"points":5},
-  {"sector":"N2","zone":"Z3","type":"ST2","x":608,"y":104,"points":20},
-  {"sector":"N2","zone":"Z3","type":"CP1","x":619,"y":130,"points":5},
-  {"sector":"N2","zone":"Z3","type":"LT4","x":686,"y":131,"points":50},
-  {"sector":"N2","zone":"Z3","type":"ST1","x":708,"y":96,"points":15},
-  {"sector":"N2","zone":"Z3","type":"LT4","x":706,"y":134,"points":50},
-  {"sector":"N2","zone":"Z3","type":"ST1","x":722,"y":173,"points":15},
-  {"sector":"N2","zone":"Z3","type":"CP3","x":724,"y":109,"points":5},
-  {"sector":"N2","zone":"Z4","type":"ST2","x":418,"y":250,"points":20},
-  {"sector":"N2","zone":"Z4","type":"CP1","x":454,"y":347,"points":15},
-  {"sector":"N2","zone":"Z4","type":"ST1","x":476,"y":181,"points":5},
-  {"sector":"N2","zone":"Z4","type":"CP1","x":479,"y":246,"points":15},
-  {"sector":"N2","zone":"Z4","type":"STRHD","x":514,"y":340,"points":10},
-  {"sector":"N2","zone":"Z4","type":"ST1","x":537,"y":316,"points":15},
-  {"sector":"N2","zone":"Z4,WC1","type":"CP5","x":561,"y":401,"points":5},
-  {"sector":"N2","zone":"Z5","type":"ST2","x":596,"y":324,"points":20},
-  {"sector":"N2","zone":"Z5","type":"CP1","x":608,"y":325,"points":5},
-  {"sector":"N2","zone":"Z5","type":"CP1","x":599,"y":258,"points":100},
-  {"sector":"N2","zone":"Z5","type":"CS","x":590,"y":258,"points":100},
-  {"sector":"N2","zone":"Z5","type":"CP1","x":600,"y":231,"points":5},
-  {"sector":"N2","zone":"Z5","type":"ST2","x":596,"y":290,"points":20},
-  {"sector":"N2","zone":"Z5","type":"ST1","x":660,"y":357,"points":15},
-  {"sector":"N2","zone":"Z5","type":"ST1","x":693,"y":358,"points":15},
-  {"sector":"N2","zone":"Z5,Z6","type":"CP2","x":684,"y":209,"points":5},
-  {"sector":"N2","zone":"Z6","type":"ST1","x":684,"y":230,"points":5},
-  {"sector":"N2","zone":"Z6","type":"CP1","x":730,"y":260,"points":5},
-  {"sector":"N2","zone":"Z6","type":"LT4","x":749,"y":296,"points":15},
-  {"sector":"N2","zone":"Z6","type":"ST2","x":801,"y":338,"points":20},
-  {"sector":"N2","zone":"Z6","type":"ST1","x":801,"y":338,"points":5},
-  {"sector":"N2","zone":"Z6","type":"STRHD","x":815,"y":331,"points":10},
-  {"sector":"N2","zone":"Z6","type":"ST1","x":753,"y":357,"points":5},
-  {"sector":"N2","zone":"Z6","type":"CP3","x":802,"y":260,"points":5},
-  {"sector":"N2","zone":"Z6,N3-Z4","type":"CP3","x":802,"y":260,"points":5},
-  {"sector":"N2","zone":"Z5,EC-Z5","type":"CP5","x":698,"y":417,"points":5}
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "CP1",
+    "x": 357,
+    "y": 120,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "LT4",
+    "x": 312,
+    "y": 86,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "LT4",
+    "x": 312,
+    "y": 135,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 288,
+    "y": 76,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 240,
+    "y": 90,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 354,
+    "y": 105,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 398,
+    "y": 177,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1,Z2",
+    "type": "CP2",
+    "x": 380,
+    "y": 93,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1,Z2",
+    "type": "CP2",
+    "x": 463,
+    "y": 193,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1,Z2",
+    "type": "CP2",
+    "x": 370,
+    "y": 205,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z1,Z2",
+    "type": "ST1",
+    "x": 381,
+    "y": 165,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "CP1",
+    "x": 506,
+    "y": 118,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "LT4",
+    "x": 463,
+    "y": 99,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "LT4",
+    "x": 494,
+    "y": 139,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 463,
+    "y": 69,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 427,
+    "y": 93,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 525,
+    "y": 103,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 533,
+    "y": 168,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 551,
+    "y": 198,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z2,Z3",
+    "type": "CP2",
+    "x": 577,
+    "y": 155,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "CP1",
+    "x": 619,
+    "y": 130,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "CP3",
+    "x": 724,
+    "y": 109,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "LT4",
+    "x": 666,
+    "y": 131,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "LT4",
+    "x": 686,
+    "y": 131,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "LT4",
+    "x": 706,
+    "y": 134,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "ST1",
+    "x": 689,
+    "y": 96,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "ST1",
+    "x": 708,
+    "y": 96,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "ST1",
+    "x": 722,
+    "y": 173,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z3",
+    "type": "ST2",
+    "x": 608,
+    "y": 104,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "CP1",
+    "x": 479,
+    "y": 246,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "CP1",
+    "x": 454,
+    "y": 347,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "LT4",
+    "x": 479,
+    "y": 296,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "ST1",
+    "x": 476,
+    "y": 181,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "ST1",
+    "x": 537,
+    "y": 316,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "ST1",
+    "x": 484,
+    "y": 337,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "ST2",
+    "x": 418,
+    "y": 250,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "ST2",
+    "x": 418,
+    "y": 270,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4",
+    "type": "STRHD",
+    "x": 514,
+    "y": 340,
+    "points": 10
+  },
+  {
+    "sector": "N2",
+    "zone": "Z4,WC1",
+    "type": "CP5",
+    "x": 561,
+    "y": 401,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "C5",
+    "x": 590,
+    "y": 258,
+    "points": 100
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "CP1",
+    "x": 600,
+    "y": 231,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "ST1",
+    "x": 660,
+    "y": 357,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "ST1",
+    "x": 693,
+    "y": 358,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "ST2",
+    "x": 596,
+    "y": 209,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "ST2",
+    "x": 596,
+    "y": 290,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5",
+    "type": "ST2",
+    "x": 608,
+    "y": 325,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5,EC-Z5",
+    "type": "CP5",
+    "x": 698,
+    "y": 417,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z5,Z6",
+    "type": "CP2",
+    "x": 684,
+    "y": 209,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "CP1",
+    "x": 730,
+    "y": 260,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "CP3",
+    "x": 802,
+    "y": 260,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "LT4",
+    "x": 749,
+    "y": 296,
+    "points": 50
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "ST1",
+    "x": 684,
+    "y": 230,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "ST1",
+    "x": 775,
+    "y": 261,
+    "points": 15
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "ST1",
+    "x": 753,
+    "y": 357,
+    "points": 5
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "ST2",
+    "x": 801,
+    "y": 338,
+    "points": 20
+  },
+  {
+    "sector": "N2",
+    "zone": "Z6",
+    "type": "STRHD",
+    "x": 815,
+    "y": 331,
+    "points": 10
+  }
 ]

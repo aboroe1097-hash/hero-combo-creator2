@@ -1,6 +1,7 @@
 {
   "version": "x17-v0",
-  "label": "Eden Wonders Season 5 structure coordinates",
+  "label": "Eden Wonders X12 reference sheets (not live X1 — see database/eden-wonders-screenshots)",
+  "wonderVersion": "X12",
   "coordFormats": ["x.y", "x-y", "x:y"],
   "sectors": [
     { "id": "N1", "file": "eden-wonders-map-structure-coordinates-x17-v0-zqmy81y0ufrb1.webp", "label": "North Sector 1" },

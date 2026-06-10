@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Merge database/eden-wonders-screenshots/*.json into Season 5 txt, then rebuild JS."""
+"""Merge database/eden-wonders-screenshots/*.json into Season 5 Wonder X1 txt, then rebuild JS.
+
+Workflow:
+  1. python database/extract-eden-screenshots.py   # OCR from in-game UI screenshots
+  2. python database/merge-eden-x1.py              # X1 coords + X12 gate fallback
+  Or: python database/build-eden-from-screenshots.py  # rebuild only
+"""
 from __future__ import annotations
 
 import json

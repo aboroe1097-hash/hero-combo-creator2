@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b6.0";
+const APP_VERSION = "b6.2";
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -135,7 +135,7 @@ function appT(key, vars = {}) {
 // --- STATE ---
 let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
 let heroInfoEnabled            = true; 
-let activeTechSeasons          = new Set(['S4']); // Default research season
+let activeTechSeasons          = new Set(['X1']); // Default research season
 let techSearchQuery            = '';
 
 // Manual filters
@@ -1928,15 +1928,42 @@ function getTechMedalTotals(tech) {
 
 function syncTechSeasonButtons() {
     document.querySelectorAll('.tech-season-btn').forEach((btn) => {
-        btn.classList.toggle('active', activeTechSeasons.has(btn.dataset.season));
+        const season = btn.dataset.season;
+        const isActive = activeTechSeasons.has(season);
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+            btn.style.setProperty('--sc', TechseasonColors[season] || '#38bdf8');
+        } else {
+            btn.style.removeProperty('--sc');
+        }
     });
+    syncResearchQuickButtons();
+}
+
+function syncResearchQuickButtons() {
+    const allBtn = document.getElementById('techSeasonAllBtn');
+    const currentBtn = document.getElementById('techSeasonX1Btn');
+    const isAll = TECH_SEASON_ORDER.every((s) => activeTechSeasons.has(s));
+    const isX1Only = activeTechSeasons.size === 1 && activeTechSeasons.has('X1');
+    allBtn?.classList.toggle('active', isAll);
+    currentBtn?.classList.toggle('active', isX1Only);
+}
+
+function closeTechCalculator() {
+    const container = document.getElementById('techCalculatorContainer');
+    if (!container || container.classList.contains('hidden')) return;
+    container.classList.add('research-calculator--closing');
+    window.setTimeout(() => {
+        container.classList.add('hidden');
+        container.classList.remove('research-calculator--closing');
+    }, 200);
 }
 
 function setActiveTechSeasons(seasons) {
     activeTechSeasons = new Set(seasons);
     syncTechSeasonButtons();
     renderTechList();
-    document.getElementById('techCalculatorContainer')?.classList.add('hidden');
+    closeTechCalculator();
 }
 
 function getFilteredTechTrees() {
@@ -1986,7 +2013,7 @@ function initResearchCalculator() {
             }
             syncTechSeasonButtons();
             renderTechList();
-            document.getElementById('techCalculatorContainer')?.classList.add('hidden');
+            closeTechCalculator();
         });
     });
 
@@ -1994,8 +2021,8 @@ function initResearchCalculator() {
         setActiveTechSeasons(TECH_SEASON_ORDER);
     });
 
-    document.getElementById('techSeasonS4Btn')?.addEventListener('click', () => {
-        setActiveTechSeasons(['S4']);
+    document.getElementById('techSeasonX1Btn')?.addEventListener('click', () => {
+        setActiveTechSeasons(['X1']);
     });
 
     const searchInput = document.getElementById('techSearchInput');
@@ -2011,6 +2038,8 @@ function initResearchCalculator() {
 function renderTechList() {
     const container = document.getElementById('techListContainer');
     if (!container) return;
+
+    container.classList.add('research-list--updating');
 
     if (!document.getElementById('dynamic-tech-grid-styles')) {
         const style = document.createElement('style');
@@ -2039,11 +2068,13 @@ function renderTechList() {
             ? appT('researchNoResults')
             : appT('researchNoData');
         wrapper.innerHTML = `<p class="research-empty">${emptyMsg}</p>`;
+        requestAnimationFrame(() => container.classList.remove('research-list--updating'));
         return;
     }
 
     let lastSeason = null;
     const showSeasonHeaders = activeTechSeasons.size > 1;
+    let cardIndex = 0;
 
     filteredTechs.forEach((tech) => {
         if (showSeasonHeaders && tech.season !== lastSeason) {
@@ -2070,7 +2101,9 @@ function renderTechList() {
             --season-color: ${sColor};
             --hover-color: ${sColor}40;
             --border-color: ${sColor};
+            --card-delay: ${Math.min(cardIndex * 35, 280)}ms;
         `;
+        cardIndex += 1;
 
         const resourceLabel = tech.primaryResource || '—';
         const progressPct = Math.min(100, Math.max(0, totals.pct));
@@ -2106,6 +2139,7 @@ function renderTechList() {
         container.appendChild(sourceNote);
     }
     sourceNote.textContent = sourceCreditText;
+    requestAnimationFrame(() => container.classList.remove('research-list--updating'));
 }
 function updateGlobalSummary(filteredTechs = null) {
     if (!filteredTechs) filteredTechs = getFilteredTechTrees();
@@ -2222,9 +2256,300 @@ function applyAutoGridToGroup(groupNodes) {
         lastType = type;
     });
 }
+
+function usesGameTreeLayout(tech) {
+    return tech.layoutMode === 'game' || tech.nodes.every((n) => n.row && n.col);
+}
+
+function getGameTroopClass(troop) {
+    const t = (troop || '').toLowerCase();
+    if (t.includes('arch')) return 'archer';
+    if (t.includes('cav')) return 'cavalry';
+    if (t === 'all' || !t) return 'all';
+    return 'footmen';
+}
+
+function getGameTroopGlyph(troop) {
+    const kind = getGameTroopClass(troop);
+    if (kind === 'archer') return '🏹';
+    if (kind === 'cavalry') return '🐎';
+    if (kind === 'all') return '✦';
+    return '🛡';
+}
+
+function getStoredNodeLevel(techId, nodeId) {
+    return parseInt(localStorage.getItem(`tech_${techId}_${nodeId}`), 10) || 0;
+}
+
+function formatGameNodeLevel(node, level) {
+    if (level >= node.maxLevel) return 'MAX';
+    return `${level}/${node.maxLevel}`;
+}
+
+function syncGameNodeButton(node, level) {
+    const btn = document.querySelector(`.game-tech-node[data-node-id="${node.id}"]`);
+    if (!btn) return;
+    const lvlEl = btn.querySelector('.game-tech-level');
+    if (lvlEl) lvlEl.textContent = formatGameNodeLevel(node, level);
+    btn.classList.toggle('game-tech-node--maxed', level >= node.maxLevel);
+    btn.classList.toggle('game-tech-node--progress', level > 0 && level < node.maxLevel);
+}
+
+function buildGameTreeTierHtml(nodesInRow) {
+    const slots = [null, null, null];
+    nodesInRow.forEach((node) => {
+        const col = Math.min(3, Math.max(1, node.col || 2)) - 1;
+        slots[col] = node;
+    });
+    const wideConnector = nodesInRow.length >= 3 ? ' game-tree-connector--wide' : '';
+    let html = '<div class="game-tree-tier">';
+    slots.forEach((node, idx) => {
+        if (node) {
+            const level = getStoredNodeLevel(node._techId || node.techId, node.id);
+            const troopClass = getGameTroopClass(node.troop);
+            const shortName = node.name.replace(/\s+(I|II|III|IV)$/i, '').trim();
+            html += `
+              <button type="button" class="game-tech-node game-tech-node--${troopClass}${level >= node.maxLevel ? ' game-tech-node--maxed' : level > 0 ? ' game-tech-node--progress' : ''}"
+                style="--node-col:${node.col || idx + 1}" data-node-id="${node.id}" aria-label="${escapeHtml(node.name)}">
+                <span class="game-tech-frame">
+                  <span class="game-tech-glyph">${getGameTroopGlyph(node.troop)}</span>
+                  <span class="game-tech-level">${formatGameNodeLevel(node, level)}</span>
+                </span>
+                <span class="game-tech-name">${escapeHtml(shortName)}</span>
+              </button>`;
+        } else {
+            html += '<span class="game-tree-slot" aria-hidden="true"></span>';
+        }
+    });
+    html += `</div><div class="game-tree-connector${wideConnector}" aria-hidden="true"></div>`;
+    return html;
+}
+
+function renderGameTreePageHtml(tech, pageNodes) {
+    const rowMap = {};
+    pageNodes.forEach((node) => {
+        const row = node.row || 1;
+        if (!rowMap[row]) rowMap[row] = [];
+        rowMap[row].push({ ...node, _techId: tech.id });
+    });
+    const rowKeys = Object.keys(rowMap).map(Number).sort((a, b) => a - b);
+    let html = '<div class="research-game-tree">';
+    rowKeys.forEach((rk, i) => {
+        rowMap[rk].sort((a, b) => (a.col || 0) - (b.col || 0));
+        html += buildGameTreeTierHtml(rowMap[rk]);
+        if (i === rowKeys.length - 1) {
+            html = html.replace(/<div class="game-tree-connector[^"]*"[^>]*><\/div>$/, '');
+        }
+    });
+    html += '</div>';
+    return html;
+}
+
+function buildNodeEditorPanelHtml(tech, node) {
+    const savedLevel = getStoredNodeLevel(tech.id, node.id);
+    const isMaxed = savedLevel === node.maxLevel;
+    let quickButtonsHtml = `<button type="button" class="quick-set-btn px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[10px] font-bold transition-colors" data-val="0">0</button>`;
+    [5, 10, 15, 20].forEach((v) => {
+        if (node.maxLevel >= v) {
+            quickButtonsHtml += `<button type="button" class="quick-set-btn px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[10px] font-bold transition-colors" data-val="${v}">${v}</button>`;
+        }
+    });
+    const toggleText = isMaxed ? 'UNDO' : 'MAX';
+    const toggleVal = isMaxed ? 0 : node.maxLevel;
+    const toggleColor = isMaxed
+        ? 'bg-slate-700 border-slate-500 hover:bg-slate-600 text-white'
+        : 'bg-blue-900/50 border-blue-500/50 hover:bg-blue-800/70 text-blue-300';
+    quickButtonsHtml += `<button type="button" class="quick-set-btn max-toggle-btn px-2 py-1 ${toggleColor} border rounded text-[10px] font-black transition-colors" data-val="${toggleVal}">${toggleText}</button>`;
+
+    return `
+      <div class="research-node-editor-head">
+        <div>
+          <div class="research-node-editor-title">${escapeHtml(node.name)}</div>
+          <div class="research-node-editor-buff">${escapeHtml(node.buff)}</div>
+        </div>
+        <button type="button" class="research-node-editor-close" data-close-node-editor>Close</button>
+      </div>
+      <div class="tech-node-container flex flex-col bg-slate-800/95 w-full p-3 rounded-xl border border-slate-700 relative transition-all" data-node-id="${node.id}">
+        <div class="flex justify-between items-start mb-2 gap-2">
+          <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold shrink-0">Remaining</span>
+          <div class="node-cost-display flex flex-col w-full gap-1 tabular-nums text-right text-xs"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-3 bg-slate-900/80 p-2 rounded-lg border border-slate-700/50">
+            <div class="flex flex-col items-center min-w-[40px]">
+              <span class="text-[9px] font-bold text-slate-400 uppercase">Lvl</span>
+              <input type="number" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-input w-12 bg-slate-800 border border-slate-600 rounded text-center text-white font-black py-1 text-sm outline-none focus:border-blue-500">
+            </div>
+            <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider flex-1 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer" style="accent-color:#3b82f6;">
+            <div class="flex flex-col items-center min-w-[32px]">
+              <span class="text-[9px] font-bold text-slate-500 uppercase">Max</span>
+              <span class="text-sm font-black text-slate-400">${node.maxLevel}</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1">${quickButtonsHtml}</div>
+        </div>
+      </div>`;
+}
+
+function wireNodeEditor(tech, node, editorEl, updateFns) {
+    const cont = editorEl.querySelector('.tech-node-container');
+    if (!cont) return;
+    const slider = cont.querySelector('.tech-node-slider');
+    const input = cont.querySelector('.tech-node-input');
+    const maxBtn = cont.querySelector('.max-toggle-btn');
+    const nodeId = cont.dataset.nodeId;
+
+    const updateLevel = (val) => {
+        let v = parseInt(val, 10);
+        const max = parseInt(input.max, 10);
+        if (isNaN(v) || v < 0) v = 0;
+        if (v > max) v = max;
+        slider.value = v;
+        input.value = v;
+        localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
+        syncGameNodeButton(node, v);
+        if (v === max) {
+            if (maxBtn) {
+                maxBtn.dataset.val = 0;
+                maxBtn.textContent = 'UNDO';
+                maxBtn.className = 'quick-set-btn max-toggle-btn px-2 py-1 bg-slate-700 border border-slate-500 hover:bg-slate-600 text-white rounded text-[10px] font-black transition-colors';
+            }
+        } else if (maxBtn) {
+            maxBtn.dataset.val = max;
+            maxBtn.textContent = 'MAX';
+            maxBtn.className = 'quick-set-btn max-toggle-btn px-2 py-1 bg-blue-900/50 border border-blue-500/50 hover:bg-blue-800/70 text-blue-300 rounded text-[10px] font-black transition-colors';
+        }
+        calculateTechTotals(tech);
+    };
+
+    const existing = updateFns.find((f) => f.nodeId === nodeId);
+    if (existing) existing.updateLevel = updateLevel;
+    else updateFns.push({ nodeId, updateLevel, max: parseInt(input.max, 10) });
+
+    slider.addEventListener('input', (e) => updateLevel(e.target.value));
+    input.addEventListener('input', (e) => updateLevel(e.target.value));
+    cont.addEventListener('click', (e) => {
+        const btn = e.target.closest('.quick-set-btn');
+        if (btn) updateLevel(btn.dataset.val);
+    });
+    calculateTechTotals(tech);
+}
+
+function openGameNodeEditor(tech, node, container, updateFns) {
+    const editor = container.querySelector('#researchNodeEditor');
+    if (!editor) return;
+    container.querySelectorAll('.game-tech-node.selected').forEach((b) => b.classList.remove('selected'));
+    const btn = container.querySelector(`.game-tech-node[data-node-id="${node.id}"]`);
+    if (btn) btn.classList.add('selected');
+    editor.classList.remove('hidden');
+    editor.innerHTML = buildNodeEditorPanelHtml(tech, node);
+    editor.querySelector('[data-close-node-editor]')?.addEventListener('click', () => {
+        editor.classList.add('hidden');
+        editor.innerHTML = '';
+        container.querySelectorAll('.game-tech-node.selected').forEach((b) => b.classList.remove('selected'));
+    });
+    wireNodeEditor(tech, node, editor, updateFns);
+}
+
+function renderGameCalculator(tech, container) {
+    const pages = tech.treePages || null;
+    const pageGroups = {};
+    tech.nodes.forEach((node) => {
+        const p = node.page || 1;
+        if (!pageGroups[p]) pageGroups[p] = [];
+        pageGroups[p].push(node);
+    });
+    const pageIds = Object.keys(pageGroups).map(Number).sort((a, b) => a - b);
+
+    const pageTabsHtml = pages && pageIds.length > 1
+        ? `<div class="research-page-tabs" role="tablist">${pageIds.map((pid, i) =>
+            `<button type="button" class="research-page-tab${i === 0 ? ' active' : ''}" role="tab" data-game-page="${pid}" aria-selected="${i === 0}">${escapeHtml(pages[pid - 1] || `Page ${pid}`)}</button>`
+          ).join('')}</div>`
+        : '';
+
+    const pagesHtml = pageIds.map((pid, i) =>
+        `<div class="research-game-page${i === 0 ? ' active' : ''}" data-game-page-panel="${pid}" role="tabpanel">${renderGameTreePageHtml(tech, pageGroups[pid])}</div>`
+    ).join('');
+
+    container.innerHTML = `
+      <div class="research-calc-top">
+        <div class="research-calc-header">
+          <div>
+            <h3 class="research-calc-title">${escapeHtml(tech.name)} <span class="research-calc-season">(${tech.season})</span></h3>
+            <p class="research-calc-sub">Primary Cost: <span class="text-white">${escapeHtml(tech.primaryResource)}</span></p>
+          </div>
+          <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="research-calc-actions">
+          <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">Reset All</button>
+          <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">Max All</button>
+        </div>
+      </div>
+      <div class="research-game-shell">
+        <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(tech.name)}</span></div>
+        ${pageTabsHtml}
+        <div class="research-game-tree-viewport">${pagesHtml}</div>
+        <p class="research-game-footer">${appT('researchGameFooter')}</p>
+        <div id="researchNodeEditor" class="research-node-editor hidden"></div>
+      </div>
+      <div class="research-calc-total">
+        <div class="flex flex-col">
+          <span class="text-[11px] sm:text-sm text-amber-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">Tree Total</span>
+          <span class="text-[10px] sm:text-sm text-slate-400">Total remaining for this specific tree</span>
+        </div>
+        <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums"></div>
+      </div>`;
+
+    requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
+
+    const updateFns = [];
+    container.querySelectorAll('.game-tech-node').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const node = tech.nodes.find((n) => n.id === btn.dataset.nodeId);
+            if (node) openGameNodeEditor(tech, node, container, updateFns);
+        });
+    });
+
+    container.querySelectorAll('.research-page-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const pid = tab.dataset.gamePage;
+            container.querySelectorAll('.research-page-tab').forEach((t) => {
+                t.classList.toggle('active', t === tab);
+                t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+            });
+            container.querySelectorAll('.research-game-page').forEach((p) => {
+                p.classList.toggle('active', p.dataset.gamePagePanel === pid);
+            });
+            container.querySelector('#researchNodeEditor')?.classList.add('hidden');
+        });
+    });
+
+    tech.nodes.forEach((node) => {
+        updateFns.push({
+            nodeId: node.id,
+            max: node.maxLevel,
+            updateLevel: (val) => {
+                let v = parseInt(val, 10);
+                if (isNaN(v) || v < 0) v = 0;
+                if (v > node.maxLevel) v = node.maxLevel;
+                localStorage.setItem(`tech_${tech.id}_${node.id}`, v);
+                syncGameNodeButton(node, v);
+                calculateTechTotals(tech);
+            },
+        });
+    });
+
+    document.getElementById('resetAllTechBtn')?.addEventListener('click', () => updateFns.forEach((o) => o.updateLevel(0)));
+    document.getElementById('maxAllTechBtn')?.addEventListener('click', () => updateFns.forEach((o) => o.updateLevel(o.max)));
+    calculateTechTotals(tech);
+}
+
 function renderCalculator(tech) {
     const container = document.getElementById('techCalculatorContainer');
-    container.classList.remove('hidden');
+    container.classList.remove('hidden', 'research-calculator--closing');
 
     // 1. Cleanly normalize the manual Row/Col/Branch tags from the DB. 
     // ZERO auto-guessing logic here.
@@ -2233,6 +2558,11 @@ function renderCalculator(tech) {
         if (node.column !== undefined) node.col = node.column;
         if (node.branch !== undefined) node.b = node.branch;
     });
+
+    if (usesGameTreeLayout(tech)) {
+        renderGameCalculator(tech, container);
+        return;
+    }
 
     const trunkNodes = tech.nodes.filter(n => !n.b);
     const b1Nodes = tech.nodes.filter(n => n.b == 1 || n.b === '1');
@@ -2330,24 +2660,19 @@ function renderCalculator(tech) {
     };
 
     let html = `
-        <div class="flex flex-col border-b border-slate-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
-            <div class="flex justify-between items-start mb-3 sm:mb-4">
+        <div class="research-calc-top">
+            <div class="research-calc-header">
                 <div>
-                    <h3 class="text-lg sm:text-2xl font-black text-sky-400 uppercase tracking-widest drop-shadow-md">${tech.name} <span class="text-slate-500 text-sm sm:text-lg ml-1 sm:ml-2 tracking-normal">(${tech.season})</span></h3>
-                    <p class="text-[10px] sm:text-sm text-slate-400 mt-0.5 sm:mt-1 font-semibold uppercase tracking-wide">Primary Cost: <span class="text-white">${tech.primaryResource}</span></p>
+                    <h3 class="research-calc-title">${tech.name} <span class="research-calc-season">(${tech.season})</span></h3>
+                    <p class="research-calc-sub">Primary Cost: <span class="text-white">${tech.primaryResource}</span></p>
                 </div>
-                <button id="closeCalcBtn" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-red-500/80 p-1.5 sm:p-2.5 rounded-full transition-colors border border-slate-600 shadow-md shrink-0">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
-            <div class="flex gap-2 sm:gap-3 mt-1 sm:mt-2">
-                <button id="resetAllTechBtn" class="flex-1 bg-red-900/30 hover:bg-red-800/50 text-red-400 border border-red-500/30 font-bold py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs uppercase tracking-widest transition-all shadow-sm">
-                    Reset All
-                </button>
-                <button id="maxAllTechBtn" class="flex-1 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-400 border border-emerald-500/30 font-bold py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-xs uppercase tracking-widest transition-all shadow-sm">
-                    Max All
-                </button>
+            <div class="research-calc-actions">
+                <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">Reset All</button>
+                <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">Max All</button>
             </div>
         </div>
         
@@ -2371,15 +2696,15 @@ function renderCalculator(tech) {
         }
 
         treeHtml += `
-            <div class="flex gap-2 sm:gap-4 mt-4 sm:mt-6 mb-6 sm:mb-8 relative z-10 w-full justify-center max-w-[800px] px-2">
-                <button class="branch-tab-btn active flex-1 py-2 sm:py-3 px-1 sm:px-2 rounded-lg sm:rounded-xl bg-blue-600 text-white font-black tracking-widest text-[9px] sm:text-xs border border-blue-400/50 shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all flex flex-col items-center gap-1" data-target="branch_1">
-                    <span class="text-lg sm:text-2xl font-black leading-none">+</span> <span class="uppercase">Footmen</span>
+            <div class="research-branch-segment relative z-10 px-2">
+                <button type="button" class="research-branch-btn branch-tab-btn active" data-target="branch_1">
+                    <span>+</span><span>Footmen</span>
                 </button>
-                <button class="branch-tab-btn flex-1 py-2 sm:py-3 px-1 sm:px-2 rounded-lg sm:rounded-xl bg-slate-800 text-slate-400 font-bold tracking-widest text-[9px] sm:text-xs border border-slate-700 hover:bg-slate-700 transition-all flex flex-col items-center gap-1" data-target="branch_2">
-                    <span class="text-lg sm:text-2xl font-black leading-none">+</span> <span class="uppercase">Cavalry</span>
+                <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_2">
+                    <span>+</span><span>Cavalry</span>
                 </button>
-                <button class="branch-tab-btn flex-1 py-2 sm:py-3 px-1 sm:px-2 rounded-lg sm:rounded-xl bg-slate-800 text-slate-400 font-bold tracking-widest text-[9px] sm:text-xs border border-slate-700 hover:bg-slate-700 transition-all flex flex-col items-center gap-1" data-target="branch_3">
-                    <span class="text-lg sm:text-2xl font-black leading-none">+</span> <span class="uppercase">Archer</span>
+                <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_3">
+                    <span>+</span><span>Archer</span>
                 </button>
             </div>
         `;
@@ -2402,35 +2727,30 @@ function renderCalculator(tech) {
     html += treeHtml;
 
     html += `
-        <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-3 sm:p-6 rounded-xl sm:rounded-2xl border-2 border-amber-600/40 shadow-[0_0_20px_rgba(217,119,6,0.15)] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
+        <div class="research-calc-total">
             <div class="flex flex-col">
                 <span class="text-[11px] sm:text-sm text-amber-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">Tree Total</span>
                 <span class="text-[10px] sm:text-sm text-slate-400">Total remaining for this specific tree</span>
             </div>
-            <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums">
-                </div>
+            <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums"></div>
         </div>
     `;
 
     container.innerHTML = html;
-    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    document.getElementById('closeCalcBtn').onclick = () => container.classList.add('hidden');
+    requestAnimationFrame(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
 
     const branchTabs = container.querySelectorAll('.branch-tab-btn');
     const branchContents = container.querySelectorAll('.branch-content');
-    
+
     branchTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            branchTabs.forEach(t => {
-                t.classList.remove('bg-blue-600', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]', 'border-blue-400/50', 'active', 'font-black');
-                t.classList.add('bg-slate-800', 'text-slate-400', 'border-slate-700', 'font-bold');
-            });
+            branchTabs.forEach(t => t.classList.remove('active'));
             branchContents.forEach(c => c.classList.add('hidden'));
-
-            tab.classList.add('bg-blue-600', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.5)]', 'border-blue-400/50', 'active', 'font-black');
-            tab.classList.remove('bg-slate-800', 'text-slate-400', 'border-slate-700', 'font-bold');
-            
-            container.querySelector('#' + tab.dataset.target).classList.remove('hidden');
+            tab.classList.add('active');
+            container.querySelector('#' + tab.dataset.target)?.classList.remove('hidden');
         });
     });
 
@@ -2508,12 +2828,12 @@ function calculateTechTotals(tech) {
 
     tech.nodes.forEach(node => {
         const container = document.querySelector(`.tech-node-container[data-node-id="${node.id}"]`);
-        if (!container) return;
-        
-        const input = container.querySelector('.tech-node-input');
-        const display = container.querySelector('.node-cost-display');
-        const currentLevel = parseInt(input.value) || 0;
-        
+        const input = container?.querySelector('.tech-node-input');
+        const display = container?.querySelector('.node-cost-display');
+        const currentLevel = input
+            ? (parseInt(input.value, 10) || 0)
+            : getStoredNodeLevel(tech.id, node.id);
+
         let nodeWisdom = 0;
         let nodeCourage = 0;
         let nodeOther = 0;
@@ -2535,18 +2855,22 @@ function calculateTechTotals(tech) {
             }
         }
 
-        if (node.costType === "Dual") {
-            display.innerHTML = `
-                <span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>
-                <span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30 mt-1">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>
-            `;
-        } else if (node.costType === "Courage") {
-            display.innerHTML = `<span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
-        } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
-            display.innerHTML = `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>`;
-        } else {
-            display.innerHTML = `<span class="flex items-center justify-between w-full text-amber-400 font-bold bg-amber-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-amber-500/30">${iconRes} <span>${nodeOther.toLocaleString()}</span></span>`;
+        if (display) {
+            if (node.costType === "Dual") {
+                display.innerHTML = `
+                    <span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>
+                    <span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30 mt-1">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>
+                `;
+            } else if (node.costType === "Courage") {
+                display.innerHTML = `<span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
+            } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
+                display.innerHTML = `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>`;
+            } else {
+                display.innerHTML = `<span class="flex items-center justify-between w-full text-amber-400 font-bold bg-amber-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-amber-500/30">${iconRes} <span>${nodeOther.toLocaleString()}</span></span>`;
+            }
         }
+
+        syncGameNodeButton(node, currentLevel);
 
         grandTotalWisdom += nodeWisdom;
         grandTotalCourage += nodeCourage;
