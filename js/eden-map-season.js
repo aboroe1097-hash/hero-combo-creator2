@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import {
   EDEN_DATASET_CATALOG,
   applyEdenDataset,
+  getDefaultEdenDatasetId,
   getEdenDatasetId,
   hasEdenDatasetChoice,
 } from './eden-map-data.js';
@@ -52,7 +53,7 @@ export function initEdenSeasonPicker(api) {
     select.innerHTML = EDEN_DATASET_CATALOG.map(ds =>
       `<option value="${ds.id}">${t(ds.labelKey)}</option>`
     ).join('');
-    select.value = getEdenDatasetId() || EDEN_DATASET_CATALOG[0]?.id || '';
+    select.value = getEdenDatasetId() || getDefaultEdenDatasetId();
   }
 
   function pick(id, { showToast = true } = {}) {

@@ -7,7 +7,14 @@ import {
 } from './eden-datasets.generated.js';
 
 const EDEN_DATASET_STORAGE_KEY = 'vts_eden_dataset';
+const DEFAULT_EDEN_DATASET_ID = 'season5';
 const LEGACY_DATASET_IDS = { classic: 'season3', wonders: 'season5' };
+
+export function getDefaultEdenDatasetId() {
+  return EDEN_DATASET_CATALOG.some(d => d.id === DEFAULT_EDEN_DATASET_ID)
+    ? DEFAULT_EDEN_DATASET_ID
+    : (EDEN_DATASET_CATALOG[0]?.id || '');
+}
 export const TEMPLE_TYPES = new Set(['AT', 'WCB', 'WC8']);
 let activeDatasetId = null;
 let activeSectors = null;
@@ -882,7 +889,8 @@ function migrateDatasetId(id) {
 
 export function getEdenDatasetId() {
   const raw = activeDatasetId || localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || '';
-  return migrateDatasetId(raw);
+  const migrated = migrateDatasetId(raw);
+  return migrated || getDefaultEdenDatasetId();
 }
 
 export function hasEdenDatasetChoice() {
@@ -926,11 +934,11 @@ export function syncEdenSectorSelect(selectEl, { fullLabel = 'Full Map' } = {}) 
 export function getEdenSectors() {
   if (!activeSectors) {
     const saved = migrateDatasetId(localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || '');
-    if (saved && EDEN_DATASET_CATALOG.some(d => d.id === saved)) {
-      applyEdenDataset(saved);
-    } else {
-      activeSectors = cloneBaseSectors();
-    }
+    const id = (saved && EDEN_DATASET_CATALOG.some(d => d.id === saved))
+      ? saved
+      : getDefaultEdenDatasetId();
+    if (id) applyEdenDataset(id);
+    else activeSectors = cloneBaseSectors();
   }
   return activeSectors;
 }
