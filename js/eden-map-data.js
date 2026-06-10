@@ -16,6 +16,8 @@ export function getDefaultEdenDatasetId() {
     : (EDEN_DATASET_CATALOG[0]?.id || '');
 }
 export const TEMPLE_TYPES = new Set(['AT', 'WCB', 'WC8']);
+/** In-game overview zoom: capitals, strongholds, and temple only. */
+export const OVERVIEW_STRUCTURE_TYPES = new Set(['C5', 'C6', 'CS', 'STRHD', 'AT', 'WCB', 'WC8']);
 let activeDatasetId = null;
 let activeSectors = null;
 

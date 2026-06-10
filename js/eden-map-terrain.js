@@ -1,5 +1,8 @@
 // X1 Conqueror full-map terrain — biomes, rivers, mountains + pathfinding grid
-import { TERRAIN_STYLES, MAP_REFERENCE, getReferenceMapImage } from './eden-map-assets.js';
+import {
+  TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE,
+  getReferenceMapImage, getScreenshotRefs, getScreenshotImage,
+} from './eden-map-assets.js';
 
 export const MAP_BOUNDS = { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 export const CELL_SIZE = 10;
@@ -304,6 +307,54 @@ function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
   ctx.restore();
 }
 
+function drawParchmentBase(ctx, worldToIso) {
+  const b = MAP_BOUNDS;
+  const corners = [
+    worldToIso(b.minX, b.minY),
+    worldToIso(b.maxX, b.minY),
+    worldToIso(b.maxX, b.maxY),
+    worldToIso(b.minX, b.maxY),
+  ];
+  const g = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+  g.addColorStop(0, PARCHMENT_BASE.fill);
+  g.addColorStop(1, PARCHMENT_BASE.fill2);
+  ctx.beginPath();
+  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = PARCHMENT_BASE.stroke;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+export function drawScreenshotRefLayer(ctx, worldToIso, sectorKey, opacity = 0.72) {
+  const refs = getScreenshotRefs();
+  if (!refs.length) return false;
+  const active = refs.filter((ref) => {
+    if (sectorKey === 'FULL') return ref.sector === 'FULL';
+    return ref.sector === sectorKey;
+  });
+  if (!active.length) return false;
+
+  let drew = false;
+  active.forEach((ref) => {
+    const img = getScreenshotImage(ref.id);
+    if (!img?.complete || !img.naturalWidth) return;
+    const wb = ref.worldBounds;
+    const p0 = worldToIso(wb.minX, wb.minY);
+    const p1 = worldToIso(wb.maxX, wb.minY);
+    const p2 = worldToIso(wb.maxX, wb.maxY);
+    const p3 = worldToIso(wb.minX, wb.maxY);
+    ctx.save();
+    ctx.globalAlpha = ref.opacity ?? opacity;
+    drawTexturedQuad(ctx, img, p0, p1, p2, p3);
+    ctx.restore();
+    drew = true;
+  });
+  return drew;
+}
+
 export function drawReferenceLayer(ctx, worldToIso, opacity = MAP_REFERENCE.opacity) {
   const img = getReferenceMapImage();
   if (!img?.complete || !img.naturalWidth) return false;
@@ -325,15 +376,24 @@ export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
     showRivers = true,
     showMountains = true,
     showReference = false,
+    showScreenshots = false,
+    screenshotOpacity = 0.72,
+    sectorKey = 'FULL',
     fastMode = false,
     viewBounds = null,
   } = options;
+
+  drawParchmentBase(ctx, worldToIso);
 
   if (showReference) {
     drawReferenceLayer(ctx, worldToIso, options.referenceOpacity);
   }
 
-  if (fastMode && showReference) return;
+  if (showScreenshots && !fastMode) {
+    drawScreenshotRefLayer(ctx, worldToIso, sectorKey, screenshotOpacity);
+  }
+
+  if (fastMode && (showReference || showScreenshots)) return;
   const tileStep = TILE_SIZE;
   const tw = tileStep * 0.5 * scale;
   const th = tileStep * 0.25 * scale;
