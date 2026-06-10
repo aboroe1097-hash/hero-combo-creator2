@@ -1,5 +1,5 @@
 /* =============================================================
-   app.css — VTS Hero Combo Tool  b4.0
+   app.css — VTS Hero Combo Tool  b4.1
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
 
@@ -349,6 +349,11 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   color: var(--text-muted); pointer-events: none; width: 14px; height: 14px;
 }
 
+/* ── Hero count badge ────────────────────────────────────── */
+#manualHeroCount, #genSelectedCount {
+  transition: all var(--t-fast);
+}
+
 /* ── Hero grid ───────────────────────────────────────────── */
 #availableHeroes, #generatorHeroes {
   display: grid;
@@ -432,6 +437,14 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   box-shadow: 0 -12px 42px rgba(0,0,0,0.65);
 }
 
+/* ── Hero info toggle ────────────────────────────────────── */
+body.hide-hero-info .info-btn { display: none !important; }
+
+/* ── Number input — hide spinners ────────────────────────── */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
 /* ── Tech node ───────────────────────────────────────────── */
 .tech-node-container {
   background: var(--surface); border: 1px solid var(--border);
@@ -440,6 +453,7 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
               opacity var(--t-med), filter var(--t-med);
 }
 
+/* Tech slider thumb */
 .tech-node-slider { -webkit-appearance: none; appearance: none; cursor: pointer; }
 .tech-node-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
@@ -453,11 +467,20 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   transform: scale(1.2);
   box-shadow: 0 0 12px rgba(59,130,246,0.65);
 }
+.tech-node-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--brand-light); cursor: pointer;
+  border: 2px solid #0f172a;
+}
 
-.quick-set-btn { transition: all var(--t-fast); }
+/* Quick-set buttons */
+.quick-set-btn {
+  transition: all var(--t-fast);
+}
 .quick-set-btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
 .quick-set-btn:active { transform: scale(0.95); }
 
+/* Branch tab buttons */
 .branch-tab-btn { transition: all var(--t-fast); }
 .branch-tab-btn:hover:not(.active) {
   background: #334155 !important;
@@ -465,13 +488,25 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   transform: translateY(-1px);
 }
 
+/* Tech card hover */
 .tech-card-hover {
   transition: transform var(--t-med), box-shadow var(--t-med), border-color var(--t-med) !important;
 }
 .tech-card-hover:hover { transform: translateY(-3px) !important; }
 
+/* ── Feedback button ─────────────────────────────────────── */
 #feedbackMailBtn:hover { box-shadow: 0 0 18px rgba(245,158,11,0.18); }
 
+/* ── Reply form smooth reveal ────────────────────────────── */
+[id^="reply-form-"] { transition: all var(--t-med); }
+
+/* ── Comment action buttons ──────────────────────────────── */
+.reply-btn, .del-btn { line-height: 1; cursor: pointer; border: none; background: none; padding: 0; }
+
+/* ── Comments list item animation ───────────────────────── */
+#commentsList > div { animation: fade-in-up 0.2s ease both; }
+
+/* ── Loyalty table ───────────────────────────────────────── */
 #loyaltyResult table { border-collapse: collapse; }
 #loyaltyResult tr { transition: background var(--t-fast); }
 #loyaltyResult tr:hover td { background: rgba(30,41,59,0.6); }
@@ -483,172 +518,91 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   }
 }
 
+/* ── X2 Season pill ──────────────────────────────────────── */
+.x2-pill:has(input:checked) {
+  background: #065f46;
+  border-color: #34d399;
+  box-shadow: 0 2px 12px rgba(52,211,153,0.28);
+  color: #fff;
+}
+
 /* ============================================================
-   EDEN MAP & HERO ATLAS REFINEMENTS
+   b4.1 ADDITIONS
+   1. Paid badge on hero cards
+   2. Tab switch animations
+   3. Heroes tab: ranking + detail (enhanced)
+   4. Eden Map planner (fully revamped)
    ============================================================ */
 
-/* ── Eden Map planner ──────────────────────────────────── */
-.eden-map-root { display: flex; flex-direction: column; gap: 10px; }
-.eden-map-header {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  justify-content: space-between; align-items: flex-start;
-  padding: 14px 16px; background: rgba(15,23,42,0.7);
-  border: 1px solid rgba(51,65,85,0.6); border-radius: 14px;
+/* ── 1. Paid badge ───────────────────────────────────────── */
+.paid-badge {
+  position: absolute; top: 4px; right: 4px;
+  display: inline-flex; align-items: center; gap: 3px;
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 55%, #a855f7 100%);
+  color: #fef3c7; font-size: 0.48rem; font-weight: 900;
+  padding: 2px 6px 2px 4px; border-radius: 6px;
+  letter-spacing: 0.08em; z-index: 10;
+  border: 1px solid rgba(253,230,138,0.45);
+  box-shadow: 0 2px 10px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  pointer-events: none; line-height: 1;
+}
+.paid-badge--card .paid-gem-svg { width: 11px; height: 11px; flex-shrink: 0; }
+.paid-badge-text { font-size: 0.46rem; }
+.paid-icon-inline { display: inline-flex; vertical-align: middle; margin-left: 4px; }
+.paid-icon-inline .paid-gem-svg { width: 14px; height: 14px; filter: drop-shadow(0 1px 3px rgba(168,85,247,0.6)); }
+.paid-gem-svg { display: block; }
+
+/* ── 2. Tab switch animation ─────────────────────────────── */
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tab-exit-anim {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.98); }
 }
 
-/* Toolbar: grouped layout */
-.eden-toolbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-.eden-toolbar-group {
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 8px; border-right: 1px solid rgba(51,65,85,0.5);
+section:not(.hidden) {
+  animation: tab-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.eden-toolbar-group:last-child { border-right: none; padding-right: 0; }
-.eden-toolbar-group:first-child { padding-left: 0; }
-
-.eden-sector-select {
-  padding: 5px 10px; border-radius: 7px; font-size: 0.7rem; font-weight: 800;
-  background: rgba(49,46,129,0.8); border: 1px solid rgba(99,102,241,0.7); color: #e0e7ff;
-  cursor: pointer; transition: all 0.13s;
+section.tab-exit {
+  animation: tab-exit-anim 0.22s ease both !important;
+  pointer-events: none;
 }
-.eden-sector-select:focus { outline: none; border-color: #818cf8; }
-
-.eden-tool-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 5px 10px; border-radius: 7px; font-size: 0.68rem; font-weight: 700;
-  background: rgba(30,41,59,0.85); border: 1px solid rgba(51,65,85,0.85);
-  color: #94a3b8; cursor: pointer; transition: all 0.13s; white-space: nowrap;
-}
-.eden-tool-btn svg { flex-shrink: 0; }
-.eden-tool-btn:hover { border-color: rgba(99,102,241,0.6); color: #e2e8f0; background: rgba(30,41,59,1); }
-.eden-tool-btn.active {
-  background: rgba(79,70,229,0.9); border-color: #818cf8; color: #fff;
-  box-shadow: 0 0 0 2px rgba(99,102,241,0.25);
-}
-.eden-tool-accent {
-  background: rgba(109,40,217,0.2); border-color: rgba(167,139,250,0.6);
-  color: #c4b5fd;
-}
-.eden-tool-accent:hover {
-  background: rgba(109,40,217,0.35); border-color: #a78bfa; color: #ede9fe;
-}
-
-.eden-map-body { display: flex; flex-direction: column; gap: 10px; }
-@media (min-width: 960px) {
-  .eden-map-body { flex-direction: row; align-items: stretch; }
-  .eden-canvas-wrap { flex: 1; min-width: 0; }
-  .eden-sidebar { width: 280px; flex-shrink: 0; }
-}
-.eden-canvas-wrap {
-  position: relative; border-radius: 14px; overflow: hidden;
-  border: 1px solid rgba(51,65,85,0.8); background: #111810;
-  min-height: 460px;
-}
-#edenMapCanvas { display: block; width: 100%; height: 100%; min-height: 460px; cursor: crosshair; }
-.eden-map-legend {
-  position: absolute; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 8px;
-  padding: 5px 10px; border-radius: 8px;
-  background: rgba(10,18,36,0.88); backdrop-filter: blur(4px);
-  font-size: 0.6rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em;
-}
-.eden-map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
-
-/* Sidebar Layout */
-.eden-sidebar {
-  display: flex; flex-direction: column; gap: 8px;
-  background: rgba(13,20,37,0.9); border: 1px solid rgba(51,65,85,0.6);
-  border-radius: 14px; padding: 12px; max-height: 560px;
-}
-.eden-stats {
-  font-size: 0.63rem; font-weight: 800; color: #475569;
-  text-transform: uppercase; letter-spacing: 0.07em;
-  padding: 5px 8px; background: rgba(15,23,42,0.6); border-radius: 7px;
-  border: 1px solid rgba(51,65,85,0.4);
-}
-.eden-selected-panel { min-height: 80px; }
-.eden-hint {
-  font-size: 0.7rem; color: #475569; font-style: italic; line-height: 1.5;
-  padding: 8px; background: rgba(15,23,42,0.4); border-radius: 8px;
-  border: 1px dashed rgba(51,65,85,0.5);
-}
-.eden-selected-card {
-  background: rgba(30,41,59,0.7); border-radius: 10px; padding: 10px;
-  border: 1px solid rgba(99,102,241,0.2);
-}
-.eden-selected-title { font-weight: 900; color: #e2e8f0; font-size: 0.82rem; }
-.eden-zone-tag {
-  font-size: 0.58rem; background: rgba(30,64,175,0.4); color: #93c5fd;
-  padding: 1px 6px; border-radius: 99px; margin-left: 4px;
-  border: 1px solid rgba(59,130,246,0.3);
-}
-.eden-selected-meta { font-size: 0.67rem; color: #64748b; margin: 4px 0 8px; }
-.eden-guild-label { display: block; font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-.eden-guild-label input {
-  width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 7px;
-  background: rgba(15,23,42,0.8); border: 1px solid #334155; color: #e2e8f0;
-  font-size: 0.75rem; transition: border-color 0.13s;
-}
-.eden-guild-label input:focus { border-color: #6366f1; outline: none; }
-.eden-selected-actions { display: flex; gap: 5px; margin-top: 8px; }
-.eden-action-btn {
-  flex: 1; padding: 5px 8px; border-radius: 7px; font-size: 0.63rem; font-weight: 800;
-  background: rgba(51,65,85,0.4); border: 1px solid rgba(71,85,105,0.8);
-  color: #cbd5e1; cursor: pointer; transition: all 0.13s;
-}
-.eden-action-btn:hover { background: rgba(51,65,85,0.7); border-color: #6366f1; color: #e0e7ff; }
-.eden-action-btn.active { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.6); color: #fca5a5; }
-
-.eden-filter-row { display: flex; gap: 5px; }
-.eden-filter-select {
-  flex: 1; padding: 5px 7px; border-radius: 7px; font-size: 0.68rem;
-  background: rgba(15,23,42,0.8); border: 1px solid rgba(51,65,85,0.8); color: #e2e8f0;
-  transition: border-color 0.13s;
-}
-.eden-filter-select:focus { border-color: #6366f1; outline: none; }
-.eden-search-wrap { margin: 0 !important; }
-
-/* Structures sidebar list */
-.eden-struct-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.eden-struct-row {
-  display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 7px;
-  background: rgba(30,41,59,0.35); border: 1px solid transparent;
-  cursor: pointer; text-align: left; width: 100%; transition: all 0.12s;
-}
-.eden-struct-row:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.08); }
-.eden-struct-row.active { border-color: #6366f1; background: rgba(99,102,241,0.15); }
-.eden-struct-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.eden-struct-info { flex: 1; font-size: 0.67rem; color: #cbd5e1; font-weight: 600; }
-.eden-struct-info strong { color: #e2e8f0; }
-.eden-struct-info em { color: #475569; font-style: normal; margin-left: 4px; font-size: 0.6rem; }
-.eden-struct-pts { font-size: 0.6rem; font-weight: 800; color: #fbbf24; min-width: 24px; text-align: right; }
-.eden-target-star { color: #ef4444; font-size: 0.72rem; }
 
 /* ── 3a. Heroes tab — season selector ───────────────────── */
 .heroes-season-tabs {
   display: flex; gap: 5px; flex-wrap: wrap;
-  padding: 4px; background: rgba(15,23,42,0.8);
-  border-radius: 12px; margin-bottom: 16px;
+  background: rgba(15,23,42,0.6); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 14px; padding: 8px; margin-bottom: 16px;
 }
 .hero-tab-season {
-  padding: 4px 10px; border-radius: 99px; border: none; cursor: pointer;
-  font-size: 0.65rem; font-weight: 800; letter-spacing: 0.06em;
+  padding: 5px 13px; border-radius: 99px; border: none; cursor: pointer;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
   background: transparent; color: #94a3b8;
   transition: all 0.15s ease; text-transform: uppercase;
 }
 .hero-tab-season:hover { color: #e2e8f0; background: rgba(255,255,255,0.06); }
 .hero-tab-season.active {
-  background: rgba(255,255,255,0.1); color: #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3); border: 1px solid var(--sc, rgba(255,255,255,0.2));
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  border: 1px solid var(--sc, rgba(255,255,255,0.2));
 }
 
-/* ── 3b. Heroes layout ───────────────────────────────────── */
-.heroes-layout { display: flex; flex-direction: column; gap: 12px; }
+/* ── 3b. Heroes layout — list + detail side by side ─────── */
+.heroes-layout {
+  display: flex; flex-direction: column; gap: 12px;
+}
 @media (min-width: 900px) {
-  .heroes-layout.has-detail { flex-direction: row; align-items: flex-start; gap: 16px; }
+  .heroes-layout.has-detail {
+    flex-direction: row; align-items: flex-start; gap: 16px;
+  }
   .heroes-layout.has-detail .heroes-ranking-list { flex: 0 0 360px; max-height: 72vh; overflow-y: auto; }
   .heroes-layout.has-detail .hero-detail-panel   { flex: 1; min-width: 0; position: sticky; top: 12px; }
 }
 
-/* ── 3c. Ranking list rows ───────────────────────────────── */
+/* ── 3c. Ranking list rows (polished) ───────────────────── */
 .heroes-ranking-list { display: flex; flex-direction: column; gap: 4px; }
 
 .hero-rank-row {
@@ -691,7 +645,7 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
 .rank-score.has-score { color: #60a5fa; }
 .rank-score.no-score  { color: #1e293b; }
 
-/* ── 3d. Hero detail panel ───────────────────────────────── */
+/* ── 3d. Hero detail panel (polished) ───────────────────── */
 .hero-detail-panel {
   background: rgba(13,20,38,0.95); border: 1px solid rgba(99,102,241,0.25);
   border-radius: 16px; padding: 16px; position: relative;
@@ -752,7 +706,7 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
 .detail-skill-target.ally  { color: #34d399; }
 .detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
 
-/* ── Hero Atlas toolbar ──────────────────────────────────── */
+/* ── Hero Atlas toolbar (polished) ──────────────────────── */
 .heroes-toolbar {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
   margin-bottom: 12px; padding: 12px 14px;
@@ -780,20 +734,142 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
 }
 
-/* ── b4.1 Elements ───────────────────────────────────────── */
-.paid-badge {
-  position: absolute; top: 4px; right: 4px;
-  display: inline-flex; align-items: center; gap: 3px;
-  background: linear-gradient(135deg, #581c87 0%, #7c3aed 55%, #a855f7 100%);
-  color: #fef3c7; font-size: 0.48rem; font-weight: 900;
-  padding: 2px 6px 2px 4px; border-radius: 6px;
-  letter-spacing: 0.08em; z-index: 10;
-  border: 1px solid rgba(253,230,138,0.45);
-  box-shadow: 0 2px 10px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
-  pointer-events: none; line-height: 1;
+/* ── 4. Eden Map planner (fully revamped) ───────────────── */
+.eden-map-root { display: flex; flex-direction: column; gap: 10px; }
+.eden-map-header {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: space-between; align-items: flex-start;
+  padding: 14px 16px; background: rgba(15,23,42,0.7);
+  border: 1px solid rgba(51,65,85,0.6); border-radius: 14px;
 }
-.paid-badge--card .paid-gem-svg { width: 11px; height: 11px; flex-shrink: 0; }
-.paid-badge-text { font-size: 0.46rem; }
-.paid-icon-inline { display: inline-flex; vertical-align: middle; margin-left: 4px; }
-.paid-icon-inline .paid-gem-svg { width: 14px; height: 14px; filter: drop-shadow(0 1px 3px rgba(168,85,247,0.6)); }
-.paid-gem-svg { display: block; }
+
+/* Toolbar: grouped layout */
+.eden-toolbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.eden-toolbar-group {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0 8px; border-right: 1px solid rgba(51,65,85,0.5);
+}
+.eden-toolbar-group:last-child { border-right: none; padding-right: 0; }
+.eden-toolbar-group:first-child { padding-left: 0; }
+
+.eden-tool-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 7px; font-size: 0.68rem; font-weight: 700;
+  background: rgba(30,41,59,0.85); border: 1px solid rgba(51,65,85,0.85);
+  color: #94a3b8; cursor: pointer; transition: all 0.13s; white-space: nowrap;
+}
+.eden-tool-btn svg { flex-shrink: 0; }
+.eden-tool-btn:hover { border-color: rgba(99,102,241,0.6); color: #e2e8f0; background: rgba(30,41,59,1); }
+.eden-tool-btn.active {
+  background: rgba(79,70,229,0.9); border-color: #818cf8; color: #fff;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.25);
+}
+.eden-tool-accent {
+  background: rgba(109,40,217,0.2); border-color: rgba(167,139,250,0.6);
+  color: #c4b5fd;
+}
+.eden-tool-accent:hover {
+  background: rgba(109,40,217,0.35); border-color: #a78bfa; color: #ede9fe;
+}
+.eden-tool-danger {
+  background: rgba(127,29,29,0.2); border-color: rgba(239,68,68,0.4);
+  color: #fca5a5;
+}
+.eden-tool-danger:hover { background: rgba(127,29,29,0.35); border-color: #ef4444; color: #fecaca; }
+.eden-tool-icon { padding: 5px 9px; font-size: 0.85rem; font-weight: 900; min-width: 30px; justify-content: center; }
+
+.eden-map-body { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 960px) {
+  .eden-map-body { flex-direction: row; align-items: stretch; }
+  .eden-canvas-wrap { flex: 1; min-width: 0; }
+  .eden-sidebar { width: 280px; flex-shrink: 0; }
+}
+.eden-canvas-wrap {
+  position: relative; border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(51,65,85,0.8); background: #111810;
+  min-height: 460px;
+}
+#edenMapCanvas { display: block; width: 100%; height: 100%; min-height: 460px; cursor: crosshair; }
+.eden-map-legend {
+  position: absolute; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 5px 10px; border-radius: 8px;
+  background: rgba(10,18,36,0.88); backdrop-filter: blur(4px);
+  font-size: 0.6rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em;
+}
+.eden-map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+/* Sidebar */
+.eden-sidebar {
+  display: flex; flex-direction: column; gap: 8px;
+  background: rgba(13,20,37,0.9); border: 1px solid rgba(51,65,85,0.6);
+  border-radius: 14px; padding: 12px; max-height: 560px;
+}
+.eden-stats {
+  font-size: 0.7rem; font-weight: 800; color: #475569;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 5px 8px; background: rgba(15,23,42,0.6); border-radius: 7px;
+  border: 1px solid rgba(51,65,85,0.4);
+}
+.eden-selected-panel { min-height: 80px; }
+.eden-hint {
+  font-size: 0.7rem; color: #475569; font-style: italic; line-height: 1.5;
+  padding: 8px; background: rgba(15,23,42,0.4); border-radius: 8px;
+  border: 1px dashed rgba(51,65,85,0.5);
+}
+.eden-selected-card {
+  background: rgba(30,41,59,0.7); border-radius: 10px; padding: 10px;
+  border: 1px solid rgba(99,102,241,0.2);
+}
+.eden-selected-title { font-weight: 900; color: #e2e8f0; font-size: 0.82rem; }
+.eden-zone-tag {
+  font-size: 0.58rem; background: rgba(30,64,175,0.4); color: #93c5fd;
+  padding: 1px 6px; border-radius: 99px; margin-left: 4px;
+  border: 1px solid rgba(59,130,246,0.3);
+}
+.eden-selected-meta { font-size: 0.67rem; color: #64748b; margin: 4px 0 8px; }
+.eden-guild-label { display: block; font-size: 0.63rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+.eden-guild-label input {
+  width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 7px;
+  background: rgba(15,23,42,0.8); border: 1px solid #334155; color: #e2e8f0;
+  font-size: 0.75rem; transition: border-color 0.13s;
+}
+.eden-guild-label input:focus { border-color: #6366f1; outline: none; }
+.eden-selected-actions { display: flex; gap: 5px; margin-top: 8px; }
+.eden-action-btn {
+  flex: 1; padding: 5px 8px; border-radius: 7px; font-size: 0.63rem; font-weight: 800;
+  background: rgba(51,65,85,0.4); border: 1px solid rgba(71,85,105,0.8);
+  color: #cbd5e1; cursor: pointer; transition: all 0.13s;
+}
+.eden-action-btn:hover { background: rgba(51,65,85,0.7); border-color: #6366f1; color: #e0e7ff; }
+.eden-action-btn.active { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.6); color: #fca5a5; }
+
+.eden-filter-row { display: flex; gap: 5px; }
+.eden-filter-select {
+  flex: 1; padding: 5px 7px; border-radius: 7px; font-size: 0.68rem;
+  background: rgba(15,23,42,0.8); border: 1px solid rgba(51,65,85,0.8); color: #e2e8f0;
+  transition: border-color 0.13s;
+}
+.eden-filter-select:focus { border-color: #6366f1; outline: none; }
+.eden-search-wrap { margin: 0 !important; }
+
+.eden-struct-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.eden-struct-row {
+  display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 7px;
+  background: rgba(30,41,59,0.35); border: 1px solid transparent;
+  cursor: pointer; text-align: left; width: 100%; transition: all 0.12s;
+}
+.eden-struct-row:hover { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.08); }
+.eden-struct-row.active { border-color: #6366f1; background: rgba(99,102,241,0.15); }
+.eden-struct-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.eden-struct-info { flex: 1; font-size: 0.67rem; color: #cbd5e1; font-weight: 600; }
+.eden-struct-info strong { color: #e2e8f0; }
+.eden-struct-info em { color: #475569; font-style: normal; margin-left: 4px; font-size: 0.6rem; }
+.eden-struct-pts { font-size: 0.6rem; font-weight: 800; color: #fbbf24; min-width: 24px; text-align: right; }
+.eden-target-star { color: #ef4444; font-size: 0.72rem; }
+
+.eden-sector-select {
+  padding: 5px 10px; border-radius: 7px; font-size: 0.7rem; font-weight: 800;
+  background: rgba(49,46,129,0.8); border: 1px solid rgba(99,102,241,0.7); color: #e0e7ff;
+  cursor: pointer; transition: all 0.13s;
+}
+.eden-sector-select:focus { outline: none; border-color: #818cf8; }
