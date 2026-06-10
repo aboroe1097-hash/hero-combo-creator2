@@ -1,14 +1,21 @@
 // Eden map visual assets — terrain patterns + structure icons.
 
 const ASSET_ROOT = 'assets/eden-reference/';
-const ICON_ROOT = `${ASSET_ROOT}icons/`;
 
-// Community reference map (riseofcastles.net Eden Bounty layout). Calibrated to MAP_BOUNDS.
+// Optional legacy overlay (has baked structures + cropped edges — off by default).
 export const MAP_REFERENCE = {
   url: `${ASSET_ROOT}eden-map-reference.png`,
   fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
-  opacity: 0.88,
+  opacity: 0.55,
   bounds: { minX: 0, maxX: 1700, minY: 0, maxY: 1600 },
+};
+
+const ICON_ATLAS_JSON = `${ASSET_ROOT}icons-atlas.json`;
+const ICON_ATLAS_PNG = `${ASSET_ROOT}icons-atlas.png`;
+const ATLAS_TYPE_ALIASES = {
+  CP2: 'CP1', CP3: 'CP1', CP4: 'CP1', CP5: 'CP1', CP7: 'CP1',
+  ST2: 'ST1', ST3: 'ST1', LT2: 'ST1', LT3: 'ST1', LT4: 'ST1',
+  CS: 'STRHD', AT: 'WC8', WCB: 'WC8',
 };
 
 export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manifest.json`;
@@ -94,28 +101,8 @@ export function getReferenceMapImage() {
   return _refImage;
 }
 
-// In-game sprites extracted from WhatsApp reference captures (database/extract-eden-icons.py).
-export const STRUCTURE_ICON_URLS = {
-  CP1: `${ICON_ROOT}cp1.png`,
-  CP2: `${ICON_ROOT}cp1.png`,
-  CP3: `${ICON_ROOT}cp3.png`,
-  CP4: `${ICON_ROOT}cp3.png`,
-  CP5: `${ICON_ROOT}cp3.png`,
-  CP7: `${ICON_ROOT}cp7.png`,
-  ST1: `${ICON_ROOT}st1.png`,
-  ST2: `${ICON_ROOT}st2.png`,
-  ST3: `${ICON_ROOT}st3.png`,
-  LT2: `${ICON_ROOT}lt2.png`,
-  LT3: `${ICON_ROOT}lt4.png`,
-  LT4: `${ICON_ROOT}lt4.png`,
-  C5:  `${ICON_ROOT}c5.png`,
-  C6:  `${ICON_ROOT}c6.png`,
-  CS:  `${ICON_ROOT}cs.png`,
-  STRHD: `${ICON_ROOT}strhd.png`,
-  AT:  `${ICON_ROOT}at.png`,
-  WCB: `${ICON_ROOT}wc8.png`,
-  WC8: `${ICON_ROOT}wc8.png`,
-};
+// Icons load from one atlas PNG (database/build-icon-atlas.py); gates/towns use lightweight procedural until atlas arrives.
+export const STRUCTURE_ICON_URLS = {};
 
 // Radians — gates face the iso map better rotated ~90° counter-clockwise.
 export const STRUCTURE_ICON_ROTATION = {
@@ -342,7 +329,7 @@ function bakeIcon(source, rotation = 0) {
   return canvas;
 }
 
-export function createStructureSprite(type, size = 48) {
+export function createStructureSprite(type, size = 28) {
   const colors = { ...STRUCTURE_DRAW[type], tier: STRUCTURE_DRAW[type]?.tier };
   if (!colors.roof) return null;
 
@@ -361,37 +348,33 @@ export function createStructureSprite(type, size = 48) {
   return rotation ? bakeIcon(canvas, rotation) : canvas;
 }
 
-const _imageCache = new Map();
 const _spriteCache = new Map();
+let _atlasImage = null;
+let _atlasMeta = null;
+let _atlasLoading = false;
 
-function cacheBakedIcon(type, source) {
-  const rotation = getStructureIconRotation(type);
-  const baked = rotation ? bakeIcon(source, rotation) : source;
-  _spriteCache.set(type, baked);
-  return baked;
+function atlasKey(type) {
+  return _atlasMeta?.sprites?.[type] ? type : (ATLAS_TYPE_ALIASES[type] || null);
 }
 
-export function loadStructureIcon(type) {
-  if (_spriteCache.has(type)) return _spriteCache.get(type);
-  const url = STRUCTURE_ICON_URLS[type];
-  if (url) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      cacheBakedIcon(type, img);
-      _iconReadyCb?.();
-    };
-    img.src = url;
-    _imageCache.set(type, img);
-    return img;
-  }
-  const sprite = createStructureSprite(type);
-  if (sprite) _spriteCache.set(type, sprite);
-  return sprite;
+function sliceAtlasSprite(type) {
+  const key = atlasKey(type);
+  const rect = key && _atlasMeta?.sprites?.[key];
+  if (!rect || !_atlasImage?.complete) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = rect.w;
+  canvas.height = rect.h;
+  canvas.getContext('2d').drawImage(
+    _atlasImage, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h,
+  );
+  return canvas;
 }
 
-export function getStructureIcon(type) {
-  return _spriteCache.get(type) || _imageCache.get(type) || null;
+function applyAtlasSprites(types) {
+  types.forEach((type) => {
+    const slice = sliceAtlasSprite(type);
+    if (slice) _spriteCache.set(type, slice);
+  });
 }
 
 let _iconReadyCb = null;
@@ -400,8 +383,47 @@ export function onStructureIconsReady(cb) {
   _iconReadyCb = cb;
 }
 
+function loadIconAtlas(types, onDone) {
+  if (_atlasMeta && _atlasImage?.complete) {
+    applyAtlasSprites(types);
+    onDone?.();
+    return;
+  }
+  if (_atlasLoading) return;
+  _atlasLoading = true;
+  fetch(ICON_ATLAS_JSON)
+    .then(r => r.json())
+    .then((meta) => {
+      _atlasMeta = meta;
+      const img = new Image();
+      img.onload = () => {
+        _atlasImage = img;
+        _atlasLoading = false;
+        applyAtlasSprites(types);
+        _iconReadyCb?.();
+        onDone?.();
+      };
+      img.onerror = () => { _atlasLoading = false; onDone?.(); };
+      img.src = ICON_ATLAS_PNG;
+    })
+    .catch(() => { _atlasLoading = false; onDone?.(); });
+}
+
+export function loadStructureIcon(type) {
+  if (_spriteCache.has(type)) return _spriteCache.get(type);
+  const sprite = createStructureSprite(type);
+  if (sprite) _spriteCache.set(type, sprite);
+  return sprite;
+}
+
+export function getStructureIcon(type) {
+  return _spriteCache.get(type) || null;
+}
+
+/** Instant procedural icons; one small atlas request upgrades majors in the background. */
 export function preloadStructureIcons(types) {
-  types.forEach(t => loadStructureIcon(t));
+  types.forEach((t) => loadStructureIcon(t));
+  loadIconAtlas(types);
 }
 
 export function isIconReady(icon) {

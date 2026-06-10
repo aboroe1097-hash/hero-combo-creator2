@@ -307,7 +307,7 @@ function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
   ctx.restore();
 }
 
-function drawParchmentBase(ctx, worldToIso) {
+function drawParchmentBase(ctx, worldToIso, scale = 1) {
   const b = MAP_BOUNDS;
   const corners = [
     worldToIso(b.minX, b.minY),
@@ -317,6 +317,7 @@ function drawParchmentBase(ctx, worldToIso) {
   ];
   const g = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
   g.addColorStop(0, PARCHMENT_BASE.fill);
+  g.addColorStop(0.55, '#ddd0b4');
   g.addColorStop(1, PARCHMENT_BASE.fill2);
   ctx.beginPath();
   corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -326,6 +327,23 @@ function drawParchmentBase(ctx, worldToIso) {
   ctx.strokeStyle = PARCHMENT_BASE.stroke;
   ctx.lineWidth = 2;
   ctx.stroke();
+
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(120,100,72,0.14)';
+  ctx.lineWidth = 1;
+  const step = Math.max(28, 56 * scale);
+  for (let y = b.minY; y <= b.maxY; y += 80) {
+    const pts = [];
+    for (let x = b.minX; x <= b.maxX; x += 40) {
+      const wobble = Math.sin((x + y) * 0.018) * 6 + Math.cos(y * 0.011) * 4;
+      pts.push(worldToIso(x, y + wobble));
+    }
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 export function drawScreenshotRefLayer(ctx, worldToIso, sectorKey, opacity = 0.72) {
@@ -383,7 +401,7 @@ export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
     viewBounds = null,
   } = options;
 
-  drawParchmentBase(ctx, worldToIso);
+  drawParchmentBase(ctx, worldToIso, scale);
 
   if (showReference) {
     drawReferenceLayer(ctx, worldToIso, options.referenceOpacity);

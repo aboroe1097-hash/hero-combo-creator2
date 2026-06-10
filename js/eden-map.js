@@ -90,9 +90,9 @@ export function initEdenMapPlanner() {
   let listSort = 'points';
 
   const layers = {
-    reference: true,
+    reference: false,
     screenshots: false,
-    terrain: false,
+    terrain: true,
     structures: true,
     paths: true,
     targets: true,
@@ -144,10 +144,20 @@ export function initEdenMapPlanner() {
     }
   }
 
-  preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
   onStructureIconsReady(() => scheduleDraw());
-  preloadReferenceMap(() => scheduleDraw());
-  preloadScreenshotRefs(() => scheduleDraw());
+  preloadStructureIcons([...OVERVIEW_STRUCTURE_TYPES]);
+  const deferIcons = () => preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(deferIcons, { timeout: 1200 });
+  else setTimeout(deferIcons, 80);
+
+  function ensureReferenceLoaded() {
+    if (!layers.reference) return;
+    preloadReferenceMap(() => scheduleDraw());
+  }
+  function ensureScreenshotsLoaded() {
+    if (!layers.screenshots) return;
+    preloadScreenshotRefs(() => scheduleDraw());
+  }
 
   const iso = (x, y) => ({
     x: (x - y) * 0.5 * scale + offsetX,
@@ -185,9 +195,9 @@ export function initEdenMapPlanner() {
   }
 
   function structureIconScale(mode) {
-    if (mode === 'overview') return 2.65;
-    if (mode === 'compact') return 2.35;
-    return 3.1;
+    if (mode === 'overview') return 1.45;
+    if (mode === 'compact') return 1.25;
+    return 1.55;
   }
 
   function notifySelection() {
@@ -439,7 +449,7 @@ export function initEdenMapPlanner() {
     const statusColor = STATUS_COLORS[status] || STATUS_COLORS.neutral;
 
     const iconMul = structureIconScale(mode);
-    const iconSize = Math.max(mode === 'compact' ? 18 : 22, (meta.size || 9) * scale * iconMul);
+    const iconSize = Math.max(mode === 'compact' ? 10 : 12, (meta.size || 9) * scale * iconMul);
     const icon = getStructureIcon(s.type) || loadStructureIcon(s.type);
 
     ctx.beginPath();
@@ -1161,6 +1171,8 @@ export function initEdenMapPlanner() {
       btn.addEventListener('click', () => {
         layers[layer] = !layers[layer];
         btn.classList.toggle('active', layers[layer]);
+        if (layer === 'reference') ensureReferenceLoaded();
+        if (layer === 'screenshots') ensureScreenshotsLoaded();
         draw();
       });
     });
@@ -1724,7 +1736,7 @@ export function initEdenMapPlanner() {
     },
     resetLayers: () => {
       Object.assign(layers, {
-        reference: true, terrain: false, structures: true, paths: true, targets: true,
+        reference: false, terrain: true, structures: true, paths: true, targets: true,
         labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
       });
       document.querySelectorAll('[data-eden-layer]').forEach(btn => {

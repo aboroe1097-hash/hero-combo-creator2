@@ -74,7 +74,7 @@ export const translations = {
 
     // Eden Map Planner
     edenMapTitle: "Eden Map Planner",
-    edenMapDesc: "In-game reference map overlay, occupation structures (Gates, Towns, Capitals, Temple), paths & terrain-aware distance.",
+    edenMapDesc: "Clean parchment map with structures placed from season data. Toggle Ref only for rough legacy alignment.",
     edenSectorTitle: "Sector",
     edenZoomOutTitle: "Zoom out (−)", edenZoomInTitle: "Zoom in (+)",
     edenResetView: "⟳ Reset", edenResetViewTitle: "Reset view (Space)",
@@ -105,6 +105,7 @@ export const translations = {
     edenScoutPush: "Push Intel", edenScoutPushTitle: "Push ownership to cloud",
     edenLayersLabel: "Layers",
     edenLayerRef: "Ref",
+    edenLayerRefTitle: "Legacy overlay map (has baked structures — use for rough alignment only)",
     edenLayerScreenshots: "Shots",
     edenLayerScreenshotsTitle: "In-game screenshot overlays (per sector, for alignment checks)",
     edenLayerTerrain: "Terrain", edenLayerStruct: "Struct",
