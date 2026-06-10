@@ -20,6 +20,7 @@ import {
   startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
 } from './eden-map-scout.js';
 import { translations } from './translations.js';
+import { initEdenMapGuide, openEdenGuide } from './eden-map-guide.js';
 
 function edenT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || 'en';
@@ -921,7 +922,7 @@ export function initEdenMapPlanner() {
             <button type="button" id="edenClearMeasure" class="eden-action-btn">${edenT('edenClearMeasure')}</button>
           </div>`;
       } else if (!selected) {
-        selPanel.innerHTML = `<p class="eden-hint">${edenT('edenHintEmpty')} <a href="#edenHelpPanel" class="eden-help-link">${edenT('edenHelpTitle')}</a></p>`;
+        selPanel.innerHTML = `<p class="eden-hint">${edenT('edenHintEmpty')} <a href="#edenHelpPanel" class="eden-help-link">${edenT('edenGuideBtn')}</a></p>`;
       } else {
         const meta = STRUCTURE_TYPES[selected.type];
         const icon = getStructureIcon(selected.type);
@@ -1248,11 +1249,8 @@ export function initEdenMapPlanner() {
 
   sidebar.addEventListener('click', (e) => {
     if (e.target.closest('.eden-help-link')) {
-      const panel = document.getElementById('edenHelpPanel');
-      if (panel) {
-        panel.open = true;
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      openEdenGuide();
+      edenGuide?.open?.();
       return;
     }
     const row = e.target.closest('.eden-struct-row');
@@ -1533,6 +1531,17 @@ export function initEdenMapPlanner() {
   markSectorExplored(sectorKey);
 
   loadPlanFromHash();
+
+  const edenGuide = initEdenMapGuide({
+    setTool,
+    setSector: (key) => setSector(key, true),
+    fitView,
+    redraw: draw,
+  });
+
+  document.getElementById('edenOpenGuide')?.addEventListener('click', () => {
+    edenGuide?.open?.() ?? openEdenGuide();
+  });
 
   initEdenMapUI({
     getMapBounds: getMapBounds,

@@ -1399,4 +1399,251 @@ section.tab-exit {
 }
 .eden-help-link:hover { color: #a5b4fc; }
 
+.eden-guide-root { margin-top: 12px; }
+.eden-guide-header { margin-bottom: 12px; }
+.eden-guide-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.eden-guide-intro {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  flex: 1;
+}
+.eden-guide-version {
+  font-size: 0.58rem;
+  color: #64748b;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.eden-guide-progress-wrap { margin-bottom: 8px; }
+.eden-guide-progress-bar {
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(51,65,85,0.65);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.eden-guide-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  transition: width 0.35s ease;
+}
+.eden-guide-progress-text {
+  font-size: 0.62rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.eden-guide-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.eden-guide-meta-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(99,102,241,0.45);
+  background: rgba(99,102,241,0.15);
+  color: #c7d2fe;
+  font-size: 0.64rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.eden-guide-meta-btn:hover {
+  background: rgba(99,102,241,0.28);
+  border-color: rgba(129,140,248,0.65);
+}
+.eden-guide-meta-muted {
+  border-color: rgba(71,85,105,0.55);
+  background: rgba(30,41,59,0.45);
+  color: #94a3b8;
+}
+.eden-guide-meta-muted:hover {
+  background: rgba(51,65,85,0.55);
+  border-color: rgba(100,116,139,0.65);
+}
+.eden-guide-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.eden-guide-sec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(71,85,105,0.5);
+  background: rgba(30,41,59,0.5);
+  color: #94a3b8;
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.eden-guide-sec-btn:hover { border-color: rgba(129,140,248,0.45); color: #cbd5e1; }
+.eden-guide-sec-btn.active {
+  border-color: rgba(99,102,241,0.65);
+  background: rgba(99,102,241,0.2);
+  color: #e0e7ff;
+}
+.eden-guide-sec-btn.complete .eden-guide-sec-count { color: #4ade80; }
+.eden-guide-sec-icon { font-size: 0.85rem; line-height: 1; }
+.eden-guide-sec-label { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eden-guide-sec-count {
+  font-size: 0.55rem;
+  color: #64748b;
+  margin-left: 2px;
+}
+.eden-guide-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.eden-guide-step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(71,85,105,0.45);
+  background: rgba(15,23,42,0.55);
+  color: #94a3b8;
+  font-size: 0.58rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.eden-guide-step-pill:hover { color: #e2e8f0; }
+.eden-guide-step-pill.active {
+  border-color: rgba(129,140,248,0.6);
+  background: rgba(99,102,241,0.18);
+  color: #e0e7ff;
+}
+.eden-guide-step-pill.done { border-color: rgba(34,197,94,0.35); }
+.eden-guide-step-pill.done .eden-guide-step-num { color: #4ade80; }
+.eden-guide-step-num {
+  font-size: 0.55rem;
+  font-weight: 800;
+  min-width: 12px;
+  text-align: center;
+}
+.eden-guide-step-card {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(30,41,59,0.55);
+  border: 1px solid rgba(71,85,105,0.45);
+  margin-bottom: 8px;
+}
+.eden-guide-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.eden-guide-step-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+.eden-guide-step-eyebrow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.eden-guide-step-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+.eden-guide-step-desc {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+.eden-guide-step-tips {
+  margin: 0 0 10px;
+  padding-left: 1.1rem;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+.eden-guide-step-tips li { margin-bottom: 4px; }
+.eden-guide-step-tips li:last-child { margin-bottom: 0; }
+.eden-guide-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.eden-guide-try-btn,
+.eden-guide-done-btn,
+.eden-guide-nav-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.eden-guide-try-btn {
+  background: rgba(99,102,241,0.22);
+  border-color: rgba(99,102,241,0.5);
+  color: #c7d2fe;
+}
+.eden-guide-try-btn:hover { background: rgba(99,102,241,0.35); }
+.eden-guide-done-btn {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.35);
+  color: #86efac;
+}
+.eden-guide-done-btn:hover { background: rgba(34,197,94,0.22); }
+.eden-guide-nav-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.eden-guide-nav-btn {
+  background: rgba(30,41,59,0.55);
+  border-color: rgba(71,85,105,0.5);
+  color: #94a3b8;
+}
+.eden-guide-nav-btn:hover:not(:disabled) { color: #e2e8f0; border-color: rgba(129,140,248,0.45); }
+.eden-guide-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.eden-guide-nav-primary {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.45);
+  color: #c7d2fe;
+}
+.eden-guide-nav-primary:hover { background: rgba(99,102,241,0.3); }
+
+.eden-guide-highlight {
+  outline: 2px solid #818cf8 !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.3), 0 0 16px rgba(129, 140, 248, 0.45) !important;
+  animation: eden-guide-pulse 1.6s ease-in-out infinite;
+  position: relative;
+  z-index: 60;
+}
+#edenMapCanvas.eden-guide-highlight,
+#edenMinimap.eden-guide-highlight {
+  outline-offset: 0;
+}
+@keyframes eden-guide-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.28); }
+  50% { box-shadow: 0 0 0 8px rgba(129, 140, 248, 0.12); }
+}
+
 body.hide-hero-info .info-btn { display: none !important; }

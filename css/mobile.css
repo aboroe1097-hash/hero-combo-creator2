@@ -498,9 +498,13 @@ html, body {
 }
 
 .eden-help-panel { padding: 10px 10px !important; }
-.eden-help-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
 .eden-help-summary { font-size: 0.72rem !important; }
-.eden-help-list { font-size: 0.64rem !important; padding-left: 1rem !important; }
+.eden-guide-sec-label { max-width: 56px !important; }
+.eden-guide-step-pill span:not(.eden-guide-step-num) { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eden-guide-step-title { font-size: 0.76rem !important; }
+.eden-guide-step-desc { font-size: 0.66rem !important; }
+.eden-guide-nav-row { flex-direction: column; }
+.eden-guide-nav-btn { width: 100%; text-align: center; }
 
 @media (max-width: 380px) {
   .eden-tool-btn { padding: 7px 8px !important; font-size: 0.58rem !important; }
