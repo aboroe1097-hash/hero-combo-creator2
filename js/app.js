@@ -1408,6 +1408,22 @@ async function setupFirestoreListener() {
 }
 // --- UI WIRING ---
 function wireUIActions() {
+  // === TAB BUTTON HANDLERS ===
+const tabs = [
+  { btn: tabManualBtn,   name: 'manual' },
+  { btn: tabGeneratorBtn,name: 'generator' },
+  { btn: tabEdenMapBtn,  name: 'edenMap' },
+  { btn: tabLoyaltyBtn,  name: 'loyalty' },
+  { btn: tabYouTubeBtn,  name: 'youtube' },
+  { btn: tabResearchBtn, name: 'research' },
+  { btn: tabHeroesBtn,   name: 'heroes' }
+];
+
+tabs.forEach(tab => {
+  if (tab.btn) {
+    tab.btn.addEventListener('click', () => switchTab(tab.name));
+  }
+});
   // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
     // 1. Draw the initial '+' signs
@@ -1668,7 +1684,14 @@ function switchTab(tabName) {
       downloadComboImage(lastGeneratedCombos, t.generatorTitle || 'Best Combos', 'vts-generator-results.png');
     };
   }
-
+// --- ATTACH TAB CLICK LISTENERS ---
+document.getElementById('tabManual')?.addEventListener('click', () => switchTab('manual'));
+document.getElementById('tabGenerator')?.addEventListener('click', () => switchTab('generator'));
+document.getElementById('tabEdenMap')?.addEventListener('click', () => switchTab('edenMap'));
+document.getElementById('tabLoyalty')?.addEventListener('click', () => switchTab('loyalty'));
+document.getElementById('tabYouTube')?.addEventListener('click', () => switchTab('youtube'));
+document.getElementById('tabResearch')?.addEventListener('click', () => switchTab('research'));
+document.getElementById('tabHeroes')?.addEventListener('click', () => switchTab('heroes'));
   // Force Tab Initialization to prevent desync
   switchTab('generator');
 }
