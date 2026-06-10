@@ -1,13 +1,38 @@
 // Code-defined counter combos — edit COMBO_COUNTERS below to add/update matchups.
-// Shown automatically next to combo scores (top 3 counters + their ranks).
+// Each counter can be a hero array OR { heroes: [...], reason: "optional note" }.
+
+import { escapeHtml } from './utils.js';
 
 function comboKey(heroes) {
   return [...heroes].sort().join('|');
 }
 
+/** @typedef {{ heroes: string[], reason: string|null }} CounterEntry */
+
 /**
- * Each entry: target combo (3 heroes) → up to 3 counter lineups (each 3 heroes).
+ * @param {string[] | { heroes: string[], reason?: string }} raw
+ * @returns {CounterEntry | null}
+ */
+function normalizeCounter(raw) {
+  if (Array.isArray(raw) && raw.length === 3) {
+    return { heroes: raw, reason: null };
+  }
+  if (raw && Array.isArray(raw.heroes) && raw.heroes.length === 3) {
+    const reason = typeof raw.reason === 'string' ? raw.reason.trim() : '';
+    return { heroes: raw.heroes, reason: reason || null };
+  }
+  return null;
+}
+
+/**
+ * Each entry: target combo (3 heroes) → up to 3 counter lineups.
  * Ranks are resolved automatically from combos-db.js at runtime.
+ *
+ * Example with optional reasoning:
+ *   counters: [
+ *     ['King Arthur', 'Theodora', 'Alexander'],
+ *     { heroes: ['Lawman', 'Lancelot', 'The Avalanche'], reason: 'Silence + burst before their skills land' },
+ *   ]
  */
 export const COMBO_COUNTERS = [
   {
@@ -69,8 +94,20 @@ export const COMBO_COUNTERS = [
 ];
 
 const _lookup = new Map(
-  COMBO_COUNTERS.map(e => [comboKey(e.target), e.counters])
+  COMBO_COUNTERS.map((entry) => {
+    const counters = (entry.counters || [])
+      .map(normalizeCounter)
+      .filter(Boolean);
+    return [comboKey(entry.target), counters];
+  }),
 );
+
+const DEFAULT_LABELS = {
+  toggle: 'Counters ({n})',
+  title: 'Counters',
+  score: 'Score',
+  hide: 'Hide counters',
+};
 
 export function getCounterCount(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return 0;
@@ -89,59 +126,69 @@ export function getTopCounters(heroes, getComboRankInfo, limit = 3) {
   const counters = _lookup.get(comboKey(heroes));
   if (!counters?.length) return [];
 
-  return counters.slice(0, limit).map(counterHeroes => {
-    const info = getComboRankInfo(counterHeroes);
+  return counters.slice(0, limit).map((counter) => {
+    const info = getComboRankInfo(counter.heroes);
     return {
-      heroes: counterHeroes,
+      heroes: counter.heroes,
+      reason: counter.reason,
       rank: info?.rank ?? null,
       score: info?.score ?? null,
     };
   });
 }
 
-export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, compact = false) {
+function renderHeroChips(heroes, getHeroImageUrl) {
+  return heroes.map((name) => `
+    <span class="counter-hero-chip" title="${escapeHtml(name)}">
+      <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" class="counter-hero-chip-img" loading="lazy">
+      <span class="counter-hero-chip-name">${escapeHtml(name)}</span>
+    </span>`).join('');
+}
+
+export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS) {
   const counters = getTopCounters(heroes, getComboRankInfo);
   if (!counters.length) return '';
 
+  const t = { ...DEFAULT_LABELS, ...labels };
   const rows = counters.map((c, i) => {
     const rankLabel = c.rank ? `#${c.rank}` : '—';
-    const scoreLabel = c.score ? c.score : '';
-    const imgs = c.heroes.map(h =>
-      `<img src="${getHeroImageUrl(h)}" alt="${h}" title="${h}" class="counter-hero-thumb">`
-    ).join('');
-    if (compact) {
-      return `<div class="counter-inline-row">
-        <span class="counter-inline-rank">${rankLabel}</span>
-        <span class="counter-inline-heroes">${c.heroes.join(' / ')}</span>
-        ${scoreLabel ? `<span class="counter-inline-score">${scoreLabel}</span>` : ''}
-      </div>`;
-    }
-    return `<div class="counter-inline-row counter-inline-row--full">
-      <span class="counter-inline-idx">${i + 1}</span>
-      <span class="counter-inline-rank">${rankLabel}</span>
-      <div class="counter-inline-imgs">${imgs}</div>
-      <span class="counter-inline-names">${c.heroes.join(' · ')}</span>
-      ${scoreLabel ? `<span class="counter-inline-score">${scoreLabel}</span>` : ''}
-    </div>`;
+    const scoreLabel = c.score ? `${t.score} ${c.score}` : '';
+    const reasonHtml = c.reason
+      ? `<p class="counter-card-reason">${escapeHtml(c.reason)}</p>`
+      : '';
+
+    return `<article class="counter-card" style="--counter-delay:${i * 60}ms">
+      <div class="counter-card-head">
+        <span class="counter-card-idx">${i + 1}</span>
+        <span class="counter-card-rank">${rankLabel}</span>
+        ${scoreLabel ? `<span class="counter-card-score">${escapeHtml(scoreLabel)}</span>` : ''}
+      </div>
+      <div class="counter-card-heroes">${renderHeroChips(c.heroes, getHeroImageUrl)}</div>
+      ${reasonHtml}
+    </article>`;
   }).join('');
 
   return `<div class="combo-counters-inline">
-    <div class="counter-inline-title">Counters</div>
-    ${rows}
+    <div class="counter-inline-title">${escapeHtml(t.title)}</div>
+    <div class="counter-cards">${rows}</div>
   </div>`;
 }
 
-export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, compact = false) {
+export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS) {
   const count = getCounterCount(heroes);
   if (!count) return '';
 
+  const t = { ...DEFAULT_LABELS, ...labels };
   const panelId = counterPanelId(heroes);
-  const inner = renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, compact);
+  const inner = renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, t);
+  const toggleLabel = (t.toggle || DEFAULT_LABELS.toggle).replace('{n}', String(count));
 
   return `<div class="combo-counters-wrap">
-    <button type="button" class="counter-toggle-btn" data-counter-target="${panelId}" aria-expanded="false">
-      Counters (${count})
+    <button type="button" class="counter-toggle-btn" data-counter-target="${panelId}" aria-expanded="false" aria-controls="${panelId}">
+      <span class="counter-toggle-icon" aria-hidden="true">⚔</span>
+      <span class="counter-toggle-label">${escapeHtml(toggleLabel)}</span>
+      <span class="counter-toggle-chevron" aria-hidden="true"></span>
     </button>
-    <div id="${panelId}" class="combo-counters-panel hidden">${inner}</div>
+    <div id="${panelId}" class="combo-counters-panel hidden" role="region" aria-label="${escapeHtml(t.title)}">${inner}</div>
   </div>`;
 }

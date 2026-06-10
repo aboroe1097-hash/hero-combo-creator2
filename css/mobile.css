@@ -50,8 +50,15 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .tab-pill svg { width: 12px !important; height: 12px !important; }
 .tab-badge-wrap { padding-top: 8px !important; }
 .tab-badge {
-  font-size: 7px !important; padding: 1px 4px !important;
-  transform: translate(20%, -30%) !important;
+  z-index: 20 !important;
+  top: 0 !important;
+  font-size: 7px !important;
+  padding: 1px 4px !important;
+  transform: translate(20%, -35%) !important;
+}
+.tab-badge-wrap:has(.tab-pill-active) .tab-badge {
+  top: 0 !important;
+  transform: translate(20%, -35%) !important;
 }
 
 /* ── Global hero-info toggle ─────────────────────────────── */
@@ -340,10 +347,11 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 }
 
 .hero-rank-row { padding: 10px 10px !important; gap: 8px !important; min-height: 52px; }
+.rank-medal    { font-size: 1.35rem !important; min-width: 34px !important; }
+.rank-medal--num { font-size: 1.1rem !important; min-width: 34px !important; padding: 4px 2px !important; }
 .rank-img      { width: 36px !important; height: 36px !important; }
 .rank-name     { font-size: 0.8rem !important; }
 .rank-score    { font-size: 0.85rem !important; min-width: 28px !important; }
-.rank-medal    { font-size: 0.8rem !important; min-width: 24px !important; }
 
 .hero-detail-panel { padding: 16px 14px !important; border-radius: 16px !important; }
 .detail-header { flex-wrap: wrap; gap: 10px !important; }
@@ -360,8 +368,11 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .detail-combo-hero span { font-size: 0.58rem !important; }
 .detail-combo-score { font-size: 0.95rem !important; }
 .detail-combo-rank { font-size: 0.68rem !important; }
-.combo-counters-inline { margin-top: 4px; }
-.counter-toggle-btn { font-size: 0.56rem !important; padding: 3px 8px !important; }
+.combo-counters-inline { margin-top: 4px; padding: 0.45rem 0.55rem !important; }
+.counter-toggle-btn { font-size: 0.56rem !important; padding: 4px 9px !important; }
+.counter-hero-chip-name { max-width: 64px !important; font-size: 0.52rem !important; }
+.counter-hero-chip-img { width: 20px !important; height: 20px !important; }
+.counter-card-reason { font-size: 0.55rem !important; }
 
 .heroes-season-tabs {
   gap: 4px !important; padding: 6px !important;
@@ -376,7 +387,7 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 /* Generator score + counters on mobile */
 .gen-score-panel { max-width: 100% !important; margin-left: 0 !important; align-items: stretch !important; }
 .generated-combo-card, .saved-combo-display { flex-wrap: wrap !important; padding-left: 56px !important; }
-.counter-inline-heroes { font-size: 0.52rem !important; }
+
 
 /* Eden map mobile */
 .eden-map-root { gap: 6px !important; }
