@@ -13,6 +13,19 @@ import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
 import { renderCountersInline } from './combo-counters.js';
 
+// Manual score override (admin feature)
+let manualHeroScores = {};
+try {
+  const saved = localStorage.getItem('vts_hero_manual_scores');
+  if (saved) manualHeroScores = JSON.parse(saved);
+} catch(e) { console.warn(e); }
+
+function saveManualScores() {
+  localStorage.setItem('vts_hero_manual_scores', JSON.stringify(manualHeroScores));
+}
+
+// Admin mode toggle
+let adminMode = false;
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
 const availableHeroesEl    = document.getElementById('availableHeroes');
@@ -2433,13 +2446,11 @@ function computeHeroRankings() {
   const total = rankedCombos.length;
   const stats = {};
 
-  // Initialise every hero
   allHeroesData.forEach(h => {
     stats[h.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
   });
 
   rankedCombos.forEach((combo, idx) => {
-    // score: rank 1 = 100, last = 1
     const score = total > 1 ? 100 - ((idx / (total - 1)) * 99) : 100;
     (combo.heroes || []).forEach(heroName => {
       if (!stats[heroName]) stats[heroName] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
@@ -2449,12 +2460,16 @@ function computeHeroRankings() {
     });
   });
 
-  // Final rating = weighted average score (weightedScore / appearances), 0 if never appears
   allHeroesData.forEach(h => {
     const s = stats[h.name];
-    s.rating = s.appearances > 0
+    let autoRating = s.appearances > 0
       ? ((s.weightedScore / s.appearances) * 0.6 + (s.appearances / total * 100) * 0.4)
       : 0;
+    // Apply manual override if present
+    if (adminMode && manualHeroScores[h.name] !== undefined) {
+      autoRating = manualHeroScores[h.name];
+    }
+    s.rating = autoRating;
   });
 
   return stats;
@@ -2481,7 +2496,7 @@ function renderHeroesTab() {
 
   const seasonTabsHtml = seasons.map(s => `
     <button type="button" class="hero-tab-season ${season === s ? 'active' : ''}" data-hero-season="${s}"
-      style="${s !== 'all' && seasonColors[s] ? `--sc:${seasonColors[s]}` : ''}">
+      ${s !== 'all' && seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>
       ${s === 'all' ? 'All' : s}
     </button>`).join('');
 
@@ -2495,6 +2510,15 @@ function renderHeroesTab() {
       ${st === 'all' ? 'All' : st}
     </button>`).join('');
 
+  // Admin toggle bar
+  const adminBarHtml = `
+    <div class="heroes-admin-bar">
+      <button id="adminModeToggle" class="admin-toggle-btn ${adminMode ? 'active' : ''}">
+        ✎ Manual Ranking ${adminMode ? 'ON' : 'OFF'}
+      </button>
+    </div>
+  `;
+
   if (view === 'ranking') {
     const ranked = [...filtered].sort((a,b) => (stats[b.name]?.rating||0) - (stats[a.name]?.rating||0));
 
@@ -2502,10 +2526,11 @@ function renderHeroesTab() {
       const s = stats[hero.name] || {};
       const pct = Math.min(100, (s.rating || 0)).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+      const rankNumber = i < 3 ? medal : `#${i+1}`;
       return `
         <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${hero.name.replace(/"/g, '&quot;')}">
-          <span class="rank-medal">${medal}</span>
+          <span class="rank-medal">${rankNumber}</span>
           <img class="rank-img" src="${hero.imageUrl}" alt="${hero.name}" onerror="this.src='images/logo.png'">
           <div class="rank-info">
             <div class="rank-name">
@@ -2534,7 +2559,6 @@ function renderHeroesTab() {
       const tagColor = hero ? (seasonColors[hero.season] || '#f97316') : '#f97316';
       const synergies = getSynergies(selected);
 
-      // Top combos this hero appears in
       const heroCombos = rankedCombos
         .map((c,i) => ({...c, rank: i+1, score:(rankedCombos.length>1?100-((i/(rankedCombos.length-1))*99):100).toFixed(1)}))
         .filter(c => c.heroes && c.heroes.includes(selected))
@@ -2563,6 +2587,14 @@ function renderHeroesTab() {
           <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
         </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
 
+      // Manual score edit input (only if adminMode)
+      const scoreEditHtml = adminMode ? `
+        <div class="detail-stat" style="cursor:pointer;" onclick="editHeroScore('${selected}')">
+          <div class="detail-stat-lbl">★ MANUAL SCORE</div>
+          <div class="detail-stat-val" id="manualScoreDisplay">${manualHeroScores[selected] !== undefined ? manualHeroScores[selected].toFixed(0) : 'Auto'}</div>
+        </div>
+      ` : '';
+
       detailHtml = `
         <div class="hero-detail-panel">
           <button type="button" class="detail-close" data-hero-close>✕ Close</button>
@@ -2580,6 +2612,7 @@ function renderHeroesTab() {
                 <div class="detail-stat"><div class="detail-stat-lbl">Combos</div><div class="detail-stat-val">${s.appearances||0}</div></div>
                 <div class="detail-stat"><div class="detail-stat-lbl">Best Rank</div><div class="detail-stat-val">${s.topComboRank!==Infinity?'#'+s.topComboRank:'—'}</div></div>
                 ${ext ? `<div class="detail-stat"><div class="detail-stat-lbl">Min Copies</div><div class="detail-stat-val">${ext.minCopies||34}</div></div>` : ''}
+                ${scoreEditHtml}
               </div>
             </div>
           </div>
@@ -2604,9 +2637,10 @@ function renderHeroesTab() {
 
     container.innerHTML = `
       <div class="heroes-tab-inner">
+        ${adminBarHtml}
         <div class="heroes-toolbar">
           <div class="hero-search-wrap">
-            <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <svg class="hero-search-icon" ...>...</svg>
             <input id="heroesTabSearch" class="hero-search-input" type="text" placeholder="Search heroes..." value="${search.replace(/"/g, '&quot;')}" autocomplete="off" />
           </div>
           <div class="heroes-filter-pills">${troopPillsHtml}</div>
@@ -2619,11 +2653,75 @@ function renderHeroesTab() {
         </div>
       </div>`;
 
-    container.querySelector('#heroesTabSearch')?.addEventListener('input', (e) => {
+    // Attach event handlers (same as before)
+    document.getElementById('heroesTabSearch')?.addEventListener('input', (e) => {
       _heroesTabState.search = e.target.value;
       _heroesTabState.selected = null;
       renderHeroesTab();
     });
+    document.querySelectorAll('[data-hero-season]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.season = btn.dataset.heroSeason;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+    document.querySelectorAll('[data-hero-troop]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.troop = btn.dataset.heroTroop;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+    document.querySelectorAll('[data-hero-state]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _heroesTabState.state = btn.dataset.heroState;
+        _heroesTabState.selected = null;
+        renderHeroesTab();
+      });
+    });
+    document.querySelectorAll('[data-hero-name]').forEach(row => {
+      row.addEventListener('click', () => {
+        _heroesTabState.selected = row.dataset.heroName;
+        renderHeroesTab();
+      });
+    });
+    const closeBtn = container.querySelector('[data-hero-close]');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      _heroesTabState.selected = null;
+      renderHeroesTab();
+    });
+
+    // Admin toggle listener
+    const adminToggle = document.getElementById('adminModeToggle');
+    if (adminToggle) {
+      adminToggle.addEventListener('click', () => {
+        adminMode = !adminMode;
+        renderHeroesTab();
+      });
+    }
+  }
+}
+
+// Global function for editing hero score (called from inline onclick)
+window.editHeroScore = function(heroName) {
+  let newScore = prompt(`Enter manual score for ${heroName} (0-100, leave empty to auto)`, 
+    manualHeroScores[heroName] !== undefined ? manualHeroScores[heroName] : '');
+  if (newScore === null) return;
+  if (newScore.trim() === '') {
+    delete manualHeroScores[heroName];
+  } else {
+    let val = parseFloat(newScore);
+    if (!isNaN(val) && val >= 0 && val <= 100) {
+      manualHeroScores[heroName] = val;
+    } else {
+      alert('Score must be between 0 and 100');
+      return;
+    }
+  }
+  saveManualScores();
+  renderHeroesTab(); // refresh
+};
 
     container.querySelectorAll('[data-hero-season]').forEach(btn => {
       btn.addEventListener('click', () => {
