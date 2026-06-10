@@ -1,7 +1,7 @@
 // Eden Map interactive guide — data-driven walkthrough (update EDEN_GUIDE_VERSION when features change)
 import { translations } from './translations.js';
 
-export const EDEN_GUIDE_VERSION = '2.4.0';
+export const EDEN_GUIDE_VERSION = '2.5.0';
 
 const PROGRESS_KEY = 'vts_eden_guide_progress_v1';
 
@@ -72,7 +72,7 @@ export const EDEN_GUIDE_SECTIONS = [
     steps: [
       { id: 'layers-toggle', icon: '👁️', titleKey: 'edenGuideLayersTitle', descKey: 'edenGuideLayersDesc', tips: ['edenGuideLayersTip1', 'edenGuideLayersTip2'], highlight: '.eden-layer-bar' },
       { id: 'ref-opacity', icon: '🖼️', titleKey: 'edenGuideRefTitle', descKey: 'edenGuideRefDesc', tips: ['edenGuideRefTip1'], highlight: '#edenRefOpacity' },
-      { id: 'faction', icon: '⚔️', titleKey: 'edenGuideFactionTitle', descKey: 'edenGuideFactionDesc', tips: ['edenGuideFactionTip1'], highlight: '.eden-quick-jump' },
+      { id: 'zones', icon: '⚔️', titleKey: 'edenGuideZoneTitle', descKey: 'edenGuideZoneDesc', tips: ['edenGuideZoneTip1', 'edenGuideZoneTip2'], highlight: '[data-eden-faction="central"]' },
     ],
   },
   {

@@ -1,0 +1,10 @@
+[
+  {"sector":"C","zone":"C","type":"WC8","x":800,"y":800,"points":600},
+  {"sector":"C","zone":"C","type":"CP3","x":836,"y":889,"points":5},
+  {"sector":"C","zone":"C","type":"CP3","x":884,"y":788,"points":5},
+  {"sector":"C","zone":"C","type":"CP3","x":787,"y":716,"points":5},
+  {"sector":"C","zone":"C","type":"CP7","x":847,"y":832,"points":5},
+  {"sector":"C","zone":"C","type":"CP7","x":827,"y":757,"points":5},
+  {"sector":"C","zone":"C","type":"CP7","x":761,"y":767,"points":5},
+  {"sector":"C","zone":"C","type":"CP7","x":771,"y":828,"points":5}
+]

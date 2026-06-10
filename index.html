@@ -26,7 +26,8 @@
       </div>
     </div>
 
-    <div class="flex justify-end mb-6 relative z-50">
+    <div class="flex justify-end items-center gap-3 mb-6 relative z-50 flex-wrap">
+      <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time — 06:00 UAE = 00:00"></div>
       <div class="relative inline-block group">
         <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
           <div class="pl-3 pr-1 text-slate-400 group-hover:text-blue-400 pointer-events-none transition-colors">
@@ -60,11 +61,11 @@
       <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:calc(100vw - 2rem);backdrop-filter:blur(12px);">
         <div class="relative flex-shrink-0 flex items-center"><button id="tabManual" class="tab-pill tab-pill-inactive"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>Manual Builder</button></div>
         <div class="relative flex-shrink-0 flex items-center"><button id="tabGenerator" class="tab-pill tab-pill-active"><svg class="w-3.5 h-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>Combo Generator</button></div>
-        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabEdenMap" class="tab-pill tab-pill-inactive" data-i18n="tabEdenMap"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m0 0v2.25m0-10.5V4.5m0 10.5H4.5m4.5 0h10.5M9 15l-3-3m3 3 3-3"/></svg>Eden Map</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-violet-600 text-white border border-violet-400" style="transform:translate(25%,-25%);">DEMO</span></div>
-        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75"/></svg>Eden Loyalty</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-sky-500 text-slate-900 border border-sky-400" style="transform:translate(25%,-25%);">NEW</span></div>
-        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>Research</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-amber-500 text-slate-900 border border-amber-400" style="transform:translate(25%,-25%);">BETA</span></div>
-        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabHeroes" class="tab-pill tab-pill-inactive" data-i18n="tabHeroes"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>Hero Atlas</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-violet-500 text-white border border-violet-400" style="transform:translate(25%,-25%);">NEW</span></div>
-        <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube"><svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>YouTube</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-md leading-tight bg-red-600 text-white border border-red-400/50" style="transform:translate(25%,-25%);">HOT</span></div>
+        <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabHeroes" class="tab-pill tab-pill-inactive" data-i18n="tabHeroes"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>Hero Atlas</button><span class="tab-badge tab-badge-new">NEW</span></div>
+        <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>Research</button><span class="tab-badge tab-badge-beta">BETA</span></div>
+        <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabEdenMap" class="tab-pill tab-pill-inactive" data-i18n="tabEdenMap"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m0 0v2.25m0-10.5V4.5m0 10.5H4.5m4.5 0h10.5M9 15l-3-3m3 3 3-3"/></svg>Eden Map</button><span class="tab-badge tab-badge-demo">DEMO</span></div>
+        <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75"/></svg>Eden Loyalty</button><span class="tab-badge tab-badge-new">NEW</span></div>
+        <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube"><svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>YouTube</button><span class="tab-badge tab-badge-hot">HOT</span></div>
       </div>
     </div>
 
@@ -199,7 +200,52 @@
       <div id="generatorResults" class="mb-8 space-y-3"></div>
     </section>
 
-        <!-- IMPROVED EDEN MAP SECTION -->
+    <section id="heroesSection" class="tab-panel hidden animate-fade-in pb-8">
+      <div class="heroes-tab-header mb-4">
+        <h2 class="text-2xl font-semibold mb-1 text-slate-100 uppercase tracking-widest" data-i18n="tabHeroes">Hero Atlas</h2>
+        <p class="text-sm text-slate-400" data-i18n="heroesTabDesc">Rankings from the combo database. Search, filter, then tap a hero for skills, synergies &amp; top combos.</p>
+      </div>
+      <div id="heroesTabContent"></div>
+    </section>
+
+    <section id="researchSection" class="tab-panel hidden animate-fade-in pb-8">
+      <div class="research-header">
+        <div>
+          <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">Tech Research Calculator</h2>
+          <p id="researchDesc" class="research-desc" data-i18n="researchDesc">Track tech progress and calculate remaining War Badges and Courage Medals across seasons.</p>
+        </div>
+        <span id="techTreeCount" class="research-tree-count"></span>
+      </div>
+
+      <div id="globalTechSummary" class="research-summary-slot"></div>
+
+      <div class="research-toolbar">
+        <div class="research-toolbar-row">
+          <span class="research-toolbar-label" data-i18n="researchSeasonLabel">Seasons</span>
+          <div class="research-season-bar">
+            <button type="button" class="tech-season-btn" data-season="S0">S0</button>
+            <button type="button" class="tech-season-btn" data-season="S1">S1</button>
+            <button type="button" class="tech-season-btn" data-season="S2">S2</button>
+            <button type="button" class="tech-season-btn" data-season="S3">S3</button>
+            <button type="button" class="tech-season-btn active" data-season="S4">S4</button>
+            <button type="button" class="tech-season-btn" data-season="X1">X1</button>
+            <button type="button" class="tech-season-btn" data-season="X2">X2</button>
+          </div>
+        </div>
+        <div class="research-toolbar-row research-toolbar-actions">
+          <button type="button" id="techSeasonAllBtn" class="research-action-btn" data-i18n="researchSelectAll">All seasons</button>
+          <button type="button" id="techSeasonS4Btn" class="research-action-btn" data-i18n="researchSelectCurrent">S4 only</button>
+          <div class="research-search-wrap">
+            <svg class="research-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <input type="search" id="techSearchInput" class="research-search-input" data-i18n-ph="researchSearchPh" placeholder="Search tech trees..." autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <div id="techListContainer" class="research-list"></div>
+      <div id="techCalculatorContainer" class="research-calculator hidden"></div>
+    </section>
+
     <section id="edenMapSection" class="tab-panel hidden animate-fade-in pb-4">
       <div id="edenMapRoot" class="eden-map-root">
         <div class="eden-map-header">
@@ -276,11 +322,13 @@
             <button type="button" id="edenDeletePath" class="eden-tool-btn eden-tool-danger" data-i18n="edenDeletePath" data-i18n-title="edenDeletePathTitle">Del Path</button>
           </div>
           <div class="eden-toolbar eden-toolbar-modes">
+            <div id="edenGameClock" class="eden-game-clock" data-i18n-title="gameClockTitle" title="Game time — 06:00 UAE = 00:00"></div>
             <label class="eden-mode-label"><span data-i18n="edenViewLabel">View</span>
               <select id="edenViewMode" class="eden-view-select">
                 <option value="strategic" data-i18n="edenViewStrategic">Strategic</option>
                 <option value="scout" data-i18n="edenViewScout">Scout Mode</option>
                 <option value="route" data-i18n="edenViewRoute">Route Planner</option>
+                <option value="teams" data-i18n="edenViewTeams">Team Plan</option>
               </select>
             </label>
             <label class="eden-mode-label"><span data-i18n="edenMarchSpeedLabel">March speed</span>
@@ -298,6 +346,7 @@
             <button type="button" data-eden-layer="structures" class="eden-layer-btn active" data-i18n="edenLayerStruct">Struct</button>
             <button type="button" data-eden-layer="paths" class="eden-layer-btn active" data-i18n="edenLayerPaths">Paths</button>
             <button type="button" data-eden-layer="targets" class="eden-layer-btn active" data-i18n="edenLayerTargets">Targets</button>
+            <button type="button" data-eden-layer="teams" class="eden-layer-btn active" data-i18n="edenLayerTeams" data-i18n-title="edenLayerTeamsTitle">Teams</button>
             <button type="button" data-eden-layer="labels" class="eden-layer-btn" data-i18n="edenLayerLabels">Labels</button>
             <button type="button" data-eden-layer="zones" class="eden-layer-btn" data-i18n="edenLayerZones">Zones</button>
             <button type="button" data-eden-layer="territory" class="eden-layer-btn" data-i18n="edenLayerTerritory" data-i18n-title="edenLayerTerritoryTitle">Territory</button>
@@ -310,10 +359,11 @@
             </label>
           </div>
           <div class="eden-quick-jump">
-            <span class="eden-quick-label" data-i18n="edenFactionLabel">Faction</span>
+            <span class="eden-quick-label" data-i18n="edenZoneLabel">Zone</span>
             <button type="button" data-eden-faction="all" class="eden-quick-btn active" data-i18n="edenFactionAll">All</button>
-            <button type="button" data-eden-faction="north" class="eden-quick-btn eden-faction-n" data-i18n="edenFactionNorth">North</button>
-            <button type="button" data-eden-faction="south" class="eden-quick-btn eden-faction-s" data-i18n="edenFactionSouth">South</button>
+            <button type="button" data-eden-faction="north" class="eden-quick-btn eden-faction-n" data-i18n="edenZoneNorth" title="N1–N4 staging">North</button>
+            <button type="button" data-eden-faction="central" class="eden-quick-btn eden-faction-c" data-i18n="edenZoneCentral" title="C, EC, E, W, WC — war zone">Central</button>
+            <button type="button" data-eden-faction="south" class="eden-quick-btn eden-faction-s" data-i18n="edenZoneSouth" title="S1–S4 staging">South</button>
             <span class="eden-quick-divider"></span>
             <span class="eden-quick-label" data-i18n="edenQuickLabel">Quick</span>
             <button type="button" data-eden-jump="C" class="eden-quick-btn">C</button>
@@ -331,7 +381,6 @@
             <canvas id="edenMinimap" class="eden-minimap" width="150" height="150" data-i18n-title="edenMinimapTitle" title="Click to jump"></canvas>
             <div id="edenCoordHud" class="eden-coord-hud hidden"></div>
             <div class="eden-map-legend">
-              <span><i style="background:#3a6b4a"></i> <span data-i18n="edenLegendForest">Forest</span></span>
               <span><i style="background:#8a7848"></i> <span data-i18n="edenLegendPlains">Plains</span></span>
               <span><i style="background:#b89560"></i> <span data-i18n="edenLegendDesert">Desert</span></span>
               <span><i style="background:#2d7ab8"></i> <span data-i18n="edenLegendRiver">River</span></span>
@@ -343,8 +392,21 @@
             <button type="button" id="edenSidebarClose" class="eden-sidebar-close" data-i18n-aria="edenSidebarClose" aria-label="Close sidebar">×</button>
             <div id="edenMapStats" class="eden-stats"></div>
             <div id="edenHoverInfo" class="eden-hover-info hidden"></div>
+            <details id="edenTeamPanel" class="eden-team-panel" open>
+              <summary data-i18n="edenTeamPanelTitle">Team plan</summary>
+              <p class="eden-team-panel-desc" data-i18n="edenTeamPanelDesc">Assign structures to one of 4 teams with optional game-time windows.</p>
+              <div id="edenTeamBoard" class="eden-team-board"></div>
+            </details>
             <div id="edenSelectedPanel" class="eden-selected-panel"></div>
             <div class="eden-filter-row">
+              <select id="edenTeamFilter" class="eden-filter-select">
+                <option value="all" data-i18n="edenTeamFilterAll">All teams</option>
+                <option value="t1" data-i18n="edenTeam1">Team 1</option>
+                <option value="t2" data-i18n="edenTeam2">Team 2</option>
+                <option value="t3" data-i18n="edenTeam3">Team 3</option>
+                <option value="t4" data-i18n="edenTeam4">Team 4</option>
+                <option value="unassigned" data-i18n="edenTeamUnassigned">Unassigned</option>
+              </select>
               <select id="edenOwnershipFilter" class="eden-filter-select">
                 <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
                 <option value="owned" data-i18n="edenOwnershipOwned">🟢 Owned</option>
@@ -574,25 +636,6 @@
       <div id="loyaltyResult" class="mt-8"></div>
     </section>
 
-    <section id="researchSection" class="tab-panel hidden animate-fade-in pb-8">
-      <div class="mb-6">
-          <h2 class="text-2xl font-semibold mb-2 text-slate-100 uppercase tracking-widest">Tech Research Calculator</h2>
-          <p class="text-sm text-slate-400 leading-relaxed">Track your tech progress and calculate required medals/resources.</p>
-      </div>
-
-      <div class="flex flex-wrap justify-center gap-2 mb-6 bg-slate-800/50 p-2 rounded-xl border border-slate-700">
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S0">S0</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S1">S1</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S2">S2</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="S3">S3</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-blue-600 text-white" data-season="S4">S4</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X1">X1</button>
-          <button class="tech-season-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600" data-season="X2">X2</button>
-      </div>
-      <div id="techListContainer" class="w-full mb-6"></div>
-      <div id="techCalculatorContainer" class="hidden bg-slate-900/80 p-4 sm:p-6 rounded-2xl border border-slate-700 shadow-2xl"></div>
-    </section>
-
     <section id="youtubeSection" class="tab-panel hidden animate-fade-in pb-8 mt-6">
       <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
@@ -629,14 +672,6 @@
           <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
-    </section>
-    
-    <section id="heroesSection" class="tab-panel hidden animate-fade-in pb-8 mt-2">
-      <div class="mb-4">
-        <h2 class="text-2xl font-semibold mb-1 text-slate-100 uppercase tracking-widest">Hero Atlas</h2>
-        <p class="text-sm text-slate-400">Rankings from the combo database. Search, filter, then tap a hero for skills, synergies & top combos.</p>
-      </div>
-      <div id="heroesTabContent"></div>
     </section>
 
     <section id="commentsSection" class="mt-8 rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl">

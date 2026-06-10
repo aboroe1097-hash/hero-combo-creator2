@@ -1,21 +1,32 @@
 // Eden map visual assets — terrain patterns + structure icons.
 
 const ASSET_ROOT = 'assets/eden-reference/';
+const WORLD_W = 1700;
+const WORLD_H = 1600;
 
-/** Clean Season 5 faction-division parchment (primary map underlay). */
+/** User-cropped square faction map — trim light padding, draw as-is (no rotate/warp). */
 export const FACTION_DIVISION_MAP = {
-  url: 'assets/faction-division.jpg',
+  url: 'assets/faction-division2.png',
+  processedUrl: `${ASSET_ROOT}faction-division-map.png`,
+  rawUrl: 'assets/faction-division.jpg',
+  layout: 'rect',
   opacity: 0.96,
-  bounds: { minX: 0, maxX: 1700, minY: 0, maxY: 1600 },
+  bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
+  trimThreshold: 224,
+  trimMinContent: 0.12,
 };
 
 // Legacy overlay (baked structures + cropped edges) — fallback only.
 export const MAP_REFERENCE = {
   url: FACTION_DIVISION_MAP.url,
+  layout: FACTION_DIVISION_MAP.layout,
+  processedUrl: FACTION_DIVISION_MAP.processedUrl,
   legacyUrl: `${ASSET_ROOT}eden-map-reference.png`,
   fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
   opacity: FACTION_DIVISION_MAP.opacity,
   bounds: FACTION_DIVISION_MAP.bounds,
+  trimThreshold: FACTION_DIVISION_MAP.trimThreshold,
+  trimMinContent: FACTION_DIVISION_MAP.trimMinContent,
 };
 
 const ICON_ATLAS_JSON = `${ASSET_ROOT}icons-atlas.json`;
@@ -31,35 +42,109 @@ export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manif
 let _refImage = null;
 let _refLoading = false;
 
+function trimLightBorders(source, config = MAP_REFERENCE) {
+  const sw = source.naturalWidth || source.width;
+  const sh = source.naturalHeight || source.height;
+  if (!sw || !sh) return source;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(source, 0, 0);
+  const { data } = ctx.getImageData(0, 0, sw, sh);
+  const threshold = config.trimThreshold ?? 224;
+  const minContent = config.trimMinContent ?? 0.12;
+
+  const grayAt = (x, y) => {
+    const i = (y * sw + x) * 4;
+    return (data[i] + data[i + 1] + data[i + 2]) / 3;
+  };
+
+  const rowHasContent = (y) => {
+    let content = 0;
+    let samples = 0;
+    for (let x = 0; x < sw; x += 4) {
+      if (grayAt(x, y) < threshold) content++;
+      samples++;
+    }
+    return content / samples >= minContent;
+  };
+
+  const colHasContent = (x) => {
+    let content = 0;
+    let samples = 0;
+    for (let y = 0; y < sh; y += 4) {
+      if (grayAt(x, y) < threshold) content++;
+      samples++;
+    }
+    return content / samples >= minContent;
+  };
+
+  let top = 0;
+  while (top < sh && !rowHasContent(top)) top++;
+  let bottom = sh - 1;
+  while (bottom > top && !rowHasContent(bottom)) bottom--;
+  let left = 0;
+  while (left < sw && !colHasContent(left)) left++;
+  let right = sw - 1;
+  while (right > left && !colHasContent(right)) right--;
+
+  const cw = right - left + 1;
+  const ch = bottom - top + 1;
+  if (cw < 8 || ch < 8 || (cw === sw && ch === sh)) return source;
+
+  const out = document.createElement('canvas');
+  out.width = cw;
+  out.height = ch;
+  out.getContext('2d').drawImage(canvas, left, top, cw, ch, 0, 0, cw, ch);
+  return out;
+}
+
+function finishReferenceLoad(img, onReady) {
+  _refImage = img.dataset.fallback ? img : trimLightBorders(img);
+  _refLoading = false;
+  onReady?.(_refImage);
+}
+
+export function isReferenceReady(img) {
+  if (!img) return false;
+  if (typeof HTMLCanvasElement !== 'undefined' && img instanceof HTMLCanvasElement) {
+    return img.width > 0 && img.height > 0;
+  }
+  return Boolean(img.complete && img.naturalWidth);
+}
+
 export function preloadReferenceMap(onReady) {
-  if (_refImage?.complete && _refImage.naturalWidth) {
+  if (isReferenceReady(_refImage)) {
     onReady?.(_refImage);
     return _refImage;
   }
   if (_refLoading) return _refImage;
   _refLoading = true;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    _refImage = img;
-    _refLoading = false;
-    onReady?.(img);
-  };
-  img.onerror = () => {
-    if (img.dataset.fallback !== '1' && MAP_REFERENCE.legacyUrl) {
-      img.dataset.fallback = '1';
-      img.src = MAP_REFERENCE.legacyUrl;
+  const el = new Image();
+  el.crossOrigin = 'anonymous';
+  el.onload = () => finishReferenceLoad(el, onReady);
+  el.onerror = () => {
+    if (el.dataset.fallback !== '1' && MAP_REFERENCE.processedUrl) {
+      el.dataset.fallback = '1';
+      el.src = MAP_REFERENCE.processedUrl;
       return;
     }
-    if (img.dataset.fallback !== '2' && MAP_REFERENCE.fallbackUrl) {
-      img.dataset.fallback = '2';
-      img.src = MAP_REFERENCE.fallbackUrl;
+    if (el.dataset.fallback !== '2' && MAP_REFERENCE.legacyUrl) {
+      el.dataset.fallback = '2';
+      el.src = MAP_REFERENCE.legacyUrl;
+      return;
+    }
+    if (el.dataset.fallback !== '3' && MAP_REFERENCE.fallbackUrl) {
+      el.dataset.fallback = '3';
+      el.src = MAP_REFERENCE.fallbackUrl;
       return;
     }
     _refLoading = false;
   };
-  img.src = MAP_REFERENCE.url;
-  return img;
+  el.src = MAP_REFERENCE.url;
+  return _refImage;
 }
 
 let _screenshotManifest = null;

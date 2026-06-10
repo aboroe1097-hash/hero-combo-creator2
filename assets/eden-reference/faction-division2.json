@@ -1,0 +1,8 @@
+{
+  "source": "assets/faction-division2.png",
+  "layout": "rect",
+  "worldSize": [1700, 1600],
+  "trimThreshold": 224,
+  "trimMinContent": 0.12,
+  "note": "Light padding is auto-trimmed on load. No rotation or diamond warp."
+}
