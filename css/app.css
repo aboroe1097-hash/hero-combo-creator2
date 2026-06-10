@@ -705,35 +705,249 @@ section.tab-exit {
 .detail-skill-target.enemy { color: #f87171; }
 .detail-skill-target.ally  { color: #34d399; }
 .detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
+/* ===== HERO ATLAS – ENHANCEMENTS ===== */
 
-/* ── Hero Atlas toolbar (polished) ──────────────────────── */
-.heroes-toolbar {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
-  margin-bottom: 12px; padding: 12px 14px;
-  background: rgba(13,20,38,0.7); border: 1px solid rgba(51,65,85,0.6);
-  border-radius: 14px; backdrop-filter: blur(4px);
+/* Logo & header area */
+.logo-container {
+  margin-bottom: 1.8rem;
 }
-.heroes-toolbar .hero-search-wrap { flex: 1 1 100%; min-width: 0; margin: 0; }
-.heroes-filter-pills { display: flex; flex-wrap: wrap; gap: 5px; flex: 1 1 auto; }
-@media (min-width: 640px) {
-  .heroes-toolbar .hero-search-wrap { flex: 1 1 200px; }
+.main-logo {
+  width: 180px;
+  height: 180px;
+  border-radius: 32px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.6), 0 0 0 2px rgba(59,130,246,0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.heroes-filter-pills-divider {
-  width: 1px; background: rgba(51,65,85,0.5); border-radius: 99px; margin: 0 2px;
-  align-self: stretch;
+.main-logo:hover {
+  transform: scale(1.02);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.7), 0 0 0 3px rgba(96,165,250,0.4);
 }
-.heroes-filter-pill {
-  padding: 4px 11px; border-radius: 99px; font-size: 0.63rem; font-weight: 800;
-  border: 1px solid rgba(51,65,85,0.7); background: rgba(20,30,48,0.7);
-  color: #64748b; cursor: pointer; transition: all 0.14s; letter-spacing: 0.02em;
+#appTitle {
+  font-size: 2.8rem;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
-.heroes-filter-pill:hover { color: #94a3b8; border-color: rgba(99,102,241,0.4); }
-.heroes-filter-pill.active {
-  color: #fff; border-color: rgba(99,102,241,0.7);
-  background: rgba(79,70,229,0.2);
-  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+@media (max-width: 640px) {
+  .main-logo { width: 120px; height: 120px; }
+  #appTitle { font-size: 1.8rem; }
 }
 
+/* Hero Atlas – two‑column layout: fixed left width */
+.heroes-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+@media (min-width: 900px) {
+  .heroes-layout.has-detail {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .heroes-layout.has-detail .heroes-ranking-list {
+    flex: 0 0 360px;          /* fixed width, no squeezing */
+    min-width: 320px;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .heroes-layout.has-detail .hero-detail-panel {
+    flex: 1;
+    min-width: 0;             /* allows shrinking */
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+/* Ranking row – improved spacing & readability */
+.hero-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(20,30,48,0.7);
+  border: 1px solid rgba(51,65,85,0.55);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem 0.6rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.rank-medal {
+  font-size: 1rem;
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 900;
+}
+.rank-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(51,65,85,0.7);
+  flex-shrink: 0;
+}
+.rank-info {
+  flex: 1;
+}
+.rank-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.rank-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+}
+.rank-troop {
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.rank-apps {
+  color: #64748b;
+  font-weight: 600;
+}
+.rank-bar-wrap {
+  height: 3px;
+  background: rgba(51,65,85,0.4);
+  border-radius: 99px;
+  margin-top: 0.3rem;
+  overflow: hidden;
+}
+.rank-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.rank-score {
+  font-size: 1rem;
+  font-weight: 900;
+  min-width: 2.5rem;
+  text-align: right;
+  color: #60a5fa;
+}
+.rank-score.no-score {
+  color: #334155;
+}
+
+/* Detail panel – larger image, better counters */
+.hero-detail-panel {
+  background: rgba(13,20,38,0.96);
+  border: 1px solid rgba(99,102,241,0.35);
+  border-radius: 20px;
+  padding: 1.25rem;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.detail-img {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #6366f1;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+}
+.detail-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+.detail-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+.detail-stat {
+  background: rgba(20,30,50,0.8);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  flex: 1;
+  min-width: 70px;
+}
+.detail-stat-lbl {
+  font-size: 0.6rem;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+.detail-stat-val {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #e2e8f0;
+  margin-top: 0.2rem;
+}
+
+/* Counter rows – previously missing CSS */
+.combo-counters-inline {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(249,115,22,0.08);
+  border-radius: 12px;
+  border-left: 3px solid #f97316;
+}
+.counter-inline-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+}
+.counter-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  padding: 0.2rem 0;
+}
+.counter-inline-rank {
+  font-weight: 900;
+  color: #f97316;
+  min-width: 2rem;
+}
+.counter-inline-heroes {
+  flex: 1;
+  font-weight: 600;
+}
+.counter-inline-score {
+  font-weight: 800;
+  color: #60a5fa;
+}
+.counter-hero-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+/* Admin toggle for manual ranking */
+.heroes-admin-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+.admin-toggle-btn {
+  background: rgba(124,58,237,0.2);
+  border: 1px solid #7c3aed;
+  color: #c084fc;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-toggle-btn.active {
+  background: #7c3aed;
+  color: white;
+  box-shadow: 0 0 6px #a855f7;
+}
 /* ── 4. Eden Map planner (fully revamped) ───────────────── */
 .eden-map-root { display: flex; flex-direction: column; gap: 10px; }
 .eden-map-header {
