@@ -13,19 +13,23 @@ import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
 import { renderCountersInline } from './combo-counters.js';
 
-// Manual score override (admin feature)
-let manualHeroScores = {};
+// Hero bonus points (added to automatic score)
+let heroBonuses = {};
 try {
-  const saved = localStorage.getItem('vts_hero_manual_scores');
-  if (saved) manualHeroScores = JSON.parse(saved);
+  const saved = localStorage.getItem('vts_hero_bonuses');
+  if (saved) heroBonuses = JSON.parse(saved);
 } catch(e) { console.warn(e); }
 
-function saveManualScores() {
-  localStorage.setItem('vts_hero_manual_scores', JSON.stringify(manualHeroScores));
+function saveHeroBonuses() {
+  localStorage.setItem('vts_hero_bonuses', JSON.stringify(heroBonuses));
 }
 
-// Admin mode toggle
-let adminMode = false;
+function getHeroFinalScore(heroName, autoRating) {
+  const bonus = heroBonuses[heroName] || 0;
+  let final = autoRating + bonus;
+  // Clamp to 0-100 range for display
+  return Math.min(100, Math.max(0, final));
+}
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
 const availableHeroesEl    = document.getElementById('availableHeroes');
@@ -2446,9 +2450,14 @@ function computeHeroRankings() {
   const total = rankedCombos.length;
   const stats = {};
 
-  allHeroesData.forEach(h => {
-    stats[h.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
-  });
+allHeroesData.forEach(h => {
+  const s = stats[h.name];
+  let autoRating = s.appearances > 0
+    ? ((s.weightedScore / s.appearances) * 0.6 + (s.appearances / total * 100) * 0.4)
+    : 0;
+  s.autoRating = autoRating;
+  s.finalRating = getHeroFinalScore(h.name, autoRating);
+});
 
   rankedCombos.forEach((combo, idx) => {
     const score = total > 1 ? 100 - ((idx / (total - 1)) * 99) : 100;
