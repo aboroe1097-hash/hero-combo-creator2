@@ -49,17 +49,16 @@ HEADER_ALIASES = {
 }
 
 
-def zone_prefix(zone: str) -> str:
-    return str(zone).split(",")[0].strip().lower()
+def zone_slug(zone: str) -> str:
+    raw = re.sub(r"[^a-z0-9]+", "-", str(zone).strip().lower()).strip("-")
+    return raw or "z"
 
 
 def make_id(sector: str, zone: str, stype: str, index: int) -> str:
-    zp = zone_prefix(zone)
     sec = str(sector).strip().lower()
+    z = zone_slug(zone)
     t = str(stype).strip().lower()
-    if zp == sec or str(zone).strip() == str(sector).strip():
-        return f"{sec}-{t}-{index}"
-    return f"{zp}-{t}-{index}"
+    return f"{sec}-{z}-{t}-{index}"
 
 
 def is_intish(value: str) -> bool:
@@ -165,12 +164,13 @@ def read_delimited(path: Path) -> list[dict]:
 
 def build_sector_map(rows: list[dict]) -> dict[str, list]:
     by_sector: dict[str, list] = defaultdict(list)
-    type_counts: dict[tuple[str, str], int] = defaultdict(int)
+    type_counts: dict[tuple[str, str, str], int] = defaultdict(int)
 
     for row in sorted(rows, key=lambda r: (r["sector"], r["zone"], r["type"], r["y"], r["x"])):
         sec = row["sector"]
-        type_counts[(sec, row["type"])] += 1
-        struct_id = row.get("id") or make_id(sec, row["zone"], row["type"], type_counts[(sec, row["type"])])
+        count_key = (sec, row["zone"], row["type"])
+        type_counts[count_key] += 1
+        struct_id = row.get("id") or make_id(sec, row["zone"], row["type"], type_counts[count_key])
         entry = {
             "id": struct_id,
             "zone": row["zone"],
