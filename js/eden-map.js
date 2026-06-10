@@ -21,20 +21,6 @@ function savePlan(plan) {
 }
 
 export function initEdenMapPlanner() {
-
-  function populateFilters(mapData) {
-  const zones = [...new Set(mapData.map(item => item.zone))].sort();
-  const types = [...new Set(mapData.map(item => item.type))].sort();
-  
-  const zoneSelect = document.getElementById('edenZoneFilter');
-  const typeSelect = document.getElementById('edenTypeFilter');
-  
-  zoneSelect.innerHTML = '<option value="all">All Zones</option>' + 
-    zones.map(z => `<option value="${z}">${z}</option>`).join('');
-    
-  typeSelect.innerHTML = '<option value="all">All Types</option>' + 
-    types.map(t => `<option value="${t}">${t}</option>`).join('');
-}
   const root = document.getElementById('edenMapRoot');
   const canvas = document.getElementById('edenMapCanvas');
   const sidebar = document.getElementById('edenMapSidebar');
@@ -278,17 +264,27 @@ export function initEdenMapPlanner() {
     return { x: Math.round(x), y: Math.round(y) };
   }
 
-  function updateZoneFilterOptions() {
-    const sel = sidebar.querySelector('#edenZoneFilter');
-    if (!sel) return;
-    const zones = sectorKey === 'FULL'
-      ? ['all', ...Object.values(EDEN_SECTORS).flatMap(s => s.zones)]
-      : ['all', ...(EDEN_SECTORS[sectorKey]?.zones || [])];
-    const cur = sel.value;
-    sel.innerHTML = zones.map(z =>
-      `<option value="${z}">${z === 'all' ? 'All zones' : z}</option>`
-    ).join('');
-    if (zones.includes(cur)) sel.value = cur;
+  // FIXED: Replaced old uncalled function with robust dynamic filtering population
+  function updateFilterOptions() {
+    const zoneSel = sidebar.querySelector('#edenZoneFilter');
+    const typeSel = sidebar.querySelector('#edenTypeFilter');
+    const currentRawList = getSectorStructures(sectorKey);
+
+    if (zoneSel) {
+      const curZone = zoneSel.value;
+      const zones = [...new Set(currentRawList.map(s => s.zone))].filter(Boolean).sort();
+      zoneSel.innerHTML = '<option value="all">All zones</option>' + 
+        zones.map(z => `<option value="${z}">${z}</option>`).join('');
+      zoneSel.value = zones.includes(curZone) ? curZone : 'all';
+    }
+
+    if (typeSel) {
+      const curType = typeSel.value;
+      const types = [...new Set(currentRawList.map(s => s.type))].filter(Boolean).sort();
+      typeSel.innerHTML = '<option value="all">All types</option>' + 
+        types.map(t => `<option value="${t}">${t}</option>`).join('');
+      typeSel.value = types.includes(curType) ? curType : 'all';
+    }
   }
 
   function renderSidebar() {
@@ -297,12 +293,10 @@ export function initEdenMapPlanner() {
     const typeFilter = sidebar.querySelector('#edenTypeFilter')?.value || 'all';
     const search = (sidebar.querySelector('#edenStructSearch')?.value || '').toLowerCase();
 
+    // FIXED: Cleaned filtering logic to natively respect dynamic types perfectly
     const filtered = list.filter(s => {
       if (zoneFilter !== 'all' && s.zone !== zoneFilter) return false;
-      if (typeFilter !== 'all') {
-        if (typeFilter === 'CP1' && !s.type.startsWith('CP')) return false;
-        else if (typeFilter !== 'CP1' && s.type !== typeFilter) return false;
-      }
+      if (typeFilter !== 'all' && s.type !== typeFilter) return false;
       if (search && !(`${s.zone} ${s.type} ${s.x}:${s.y} ${s.guild}`.toLowerCase().includes(search))) return false;
       return true;
     });
@@ -397,7 +391,7 @@ export function initEdenMapPlanner() {
       sectorKey = e.target.value;
       selectedId = null;
       pathDraft = [];
-      updateZoneFilterOptions();
+      updateFilterOptions(); // Re-evaluates both dropdown layouts
       fitView();
       draw();
     });
@@ -519,7 +513,7 @@ export function initEdenMapPlanner() {
     sidebar.querySelector('#' + id)?.addEventListener('change', () => draw());
   });
 
-  updateZoneFilterOptions();
+  updateFilterOptions(); // Initial execution run to build dropdown markup data
   bindToolbar();
   window.addEventListener('resize', resize);
   resize();
