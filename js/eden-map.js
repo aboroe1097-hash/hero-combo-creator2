@@ -51,6 +51,22 @@ export function initEdenMapPlanner() {
     return base.map(s => ({ ...s, guild: guilds[s.id] || s.guild || '' }));
   };
 
+  // ---- Dynamic filter population (zone + type) ----
+  function populateFilters() {
+    const structs = structures();
+    const zones = [...new Set(structs.map(s => s.zone))].sort();
+    const types = [...new Set(structs.map(s => s.type))].sort();
+
+    const zoneSelect = document.getElementById('edenZoneFilter');
+    const typeSelect = document.getElementById('edenTypeFilter');
+    if (!zoneSelect || !typeSelect) return;
+
+    zoneSelect.innerHTML = '<option value="all">All zones</option>' +
+      zones.map(z => `<option value="${z}">${z}</option>`).join('');
+    typeSelect.innerHTML = '<option value="all">All types</option>' +
+      types.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
   function fitView() {
     const b = sectorKey === 'FULL' ? MAP_BOUNDS : getSectorBounds(sectorKey);
     const rect = canvas.parentElement.getBoundingClientRect();
@@ -234,8 +250,8 @@ export function initEdenMapPlanner() {
     ctx.fillStyle = '#1a1208';
     ctx.fillRect(0, 0, w, h);
 
-    const terrainIso = (x, y, s) => iso(x, y);
-    drawTerrainLayer(ctx, (x, y, _s) => terrainIso(x, y), scale);
+    const terrainIso = (x, y) => iso(x, y);
+    drawTerrainLayer(ctx, terrainIso, scale);
 
     drawZoneOverlays();
     drawPaths();
@@ -264,36 +280,14 @@ export function initEdenMapPlanner() {
     return { x: Math.round(x), y: Math.round(y) };
   }
 
-  // FIXED: Replaced old uncalled function with robust dynamic filtering population
-  function updateFilterOptions() {
-    const zoneSel = sidebar.querySelector('#edenZoneFilter');
-    const typeSel = sidebar.querySelector('#edenTypeFilter');
-    const currentRawList = getSectorStructures(sectorKey);
-
-    if (zoneSel) {
-      const curZone = zoneSel.value;
-      const zones = [...new Set(currentRawList.map(s => s.zone))].filter(Boolean).sort();
-      zoneSel.innerHTML = '<option value="all">All zones</option>' + 
-        zones.map(z => `<option value="${z}">${z}</option>`).join('');
-      zoneSel.value = zones.includes(curZone) ? curZone : 'all';
-    }
-
-    if (typeSel) {
-      const curType = typeSel.value;
-      const types = [...new Set(currentRawList.map(s => s.type))].filter(Boolean).sort();
-      typeSel.innerHTML = '<option value="all">All types</option>' + 
-        types.map(t => `<option value="${t}">${t}</option>`).join('');
-      typeSel.value = types.includes(curType) ? curType : 'all';
-    }
-  }
-
   function renderSidebar() {
-    const list = structures();
-    const zoneFilter = sidebar.querySelector('#edenZoneFilter')?.value || 'all';
-    const typeFilter = sidebar.querySelector('#edenTypeFilter')?.value || 'all';
-    const search = (sidebar.querySelector('#edenStructSearch')?.value || '').toLowerCase();
+    populateFilters(); // refresh zone/type options from current structures
 
-    // FIXED: Cleaned filtering logic to natively respect dynamic types perfectly
+    const list = structures();
+    const zoneFilter = document.getElementById('edenZoneFilter')?.value || 'all';
+    const typeFilter = document.getElementById('edenTypeFilter')?.value || 'all';
+    const search = (document.getElementById('edenStructSearch')?.value || '').toLowerCase();
+
     const filtered = list.filter(s => {
       if (zoneFilter !== 'all' && s.zone !== zoneFilter) return false;
       if (typeFilter !== 'all' && s.type !== typeFilter) return false;
@@ -302,7 +296,7 @@ export function initEdenMapPlanner() {
     });
 
     const selected = list.find(s => s.id === selectedId);
-    const selPanel = sidebar.querySelector('#edenSelectedPanel');
+    const selPanel = document.getElementById('edenSelectedPanel');
 
     if (selPanel) {
       if (tool === 'measure' && measureA && measureB) {
@@ -316,7 +310,7 @@ export function initEdenMapPlanner() {
             ${route.blocked ? '<p class="eden-hint">Partially blocked — route may cross mountains.</p>' : ''}
             <button type="button" id="edenClearMeasure" class="eden-action-btn">Clear Measure</button>
           </div>`;
-        selPanel.querySelector('#edenClearMeasure')?.addEventListener('click', () => {
+        document.getElementById('edenClearMeasure')?.addEventListener('click', () => {
           measureA = measureB = null;
           draw();
         });
@@ -338,13 +332,13 @@ export function initEdenMapPlanner() {
               <button type="button" id="edenCenterBtn" class="eden-action-btn">Center</button>
             </div>
           </div>`;
-        selPanel.querySelector('#edenGuildInput')?.addEventListener('change', (e) => {
+        document.getElementById('edenGuildInput')?.addEventListener('change', (e) => {
           plan.guilds = plan.guilds || {};
           plan.guilds[selected.id] = e.target.value.trim();
           savePlan(plan);
           draw();
         });
-        selPanel.querySelector('#edenToggleTargetBtn')?.addEventListener('click', () => {
+        document.getElementById('edenToggleTargetBtn')?.addEventListener('click', () => {
           plan.targets = plan.targets || [];
           const i = plan.targets.indexOf(selected.id);
           if (i >= 0) plan.targets.splice(i, 1);
@@ -352,7 +346,7 @@ export function initEdenMapPlanner() {
           savePlan(plan);
           draw();
         });
-        selPanel.querySelector('#edenCenterBtn')?.addEventListener('click', () => {
+        document.getElementById('edenCenterBtn')?.addEventListener('click', () => {
           const rect = canvas.getBoundingClientRect();
           offsetX = rect.width * 0.5 - (selected.x - selected.y) * 0.5 * scale;
           offsetY = rect.height * 0.35 - (selected.x + selected.y) * 0.25 * scale;
@@ -361,7 +355,7 @@ export function initEdenMapPlanner() {
       }
     }
 
-    const listEl = sidebar.querySelector('#edenStructList');
+    const listEl = document.getElementById('edenStructList');
     if (listEl) {
       listEl.innerHTML = filtered.map(s => {
         const meta = STRUCTURE_TYPES[s.type];
@@ -378,39 +372,38 @@ export function initEdenMapPlanner() {
       });
     }
 
-    const statsEl = sidebar.querySelector('#edenMapStats');
+    const statsEl = document.getElementById('edenMapStats');
     if (statsEl) {
       const pts = list.reduce((sum, s) => sum + (STRUCTURE_TYPES[s.type]?.points || 0), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
-      statsEl.textContent = `${list.length} structures · ${pts} pts · ${(plan.targets||[]).length} targets · ${(plan.paths||[]).length} paths (${pathDist} tiles)`;
+      statsEl.textContent = `${list.length} structures · ${pts.toLocaleString()} pts · ${(plan.targets||[]).length} targets · ${(plan.paths||[]).length} paths (${pathDist.toLocaleString()} tiles)`;
     }
   }
 
   function bindToolbar() {
-    root.querySelector('#edenSectorSelect')?.addEventListener('change', (e) => {
+    document.getElementById('edenSectorSelect')?.addEventListener('change', (e) => {
       sectorKey = e.target.value;
       selectedId = null;
       pathDraft = [];
-      updateFilterOptions(); // Re-evaluates both dropdown layouts
       fitView();
       draw();
     });
 
-    root.querySelectorAll('[data-eden-tool]').forEach(btn => {
+    document.querySelectorAll('[data-eden-tool]').forEach(btn => {
       btn.addEventListener('click', () => {
         tool = btn.dataset.edenTool;
-        root.querySelectorAll('[data-eden-tool]').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('[data-eden-tool]').forEach(b => b.classList.toggle('active', b === btn));
         pathDraft = [];
         if (tool !== 'measure') { measureA = measureB = null; }
         draw();
       });
     });
 
-    root.querySelector('#edenZoomIn')?.addEventListener('click', () => { scale = Math.min(1.2, scale + 0.06); draw(); });
-    root.querySelector('#edenZoomOut')?.addEventListener('click', () => { scale = Math.max(0.2, scale - 0.06); draw(); });
-    root.querySelector('#edenResetView')?.addEventListener('click', () => { fitView(); draw(); });
+    document.getElementById('edenZoomIn')?.addEventListener('click', () => { scale = Math.min(1.2, scale + 0.06); draw(); });
+    document.getElementById('edenZoomOut')?.addEventListener('click', () => { scale = Math.max(0.2, scale - 0.06); draw(); });
+    document.getElementById('edenResetView')?.addEventListener('click', () => { fitView(); draw(); });
 
-    root.querySelector('#edenFinishPath')?.addEventListener('click', () => {
+    document.getElementById('edenFinishPath')?.addEventListener('click', () => {
       if (pathDraft.length < 2) return;
       const routed = routeThroughWaypoints(pathDraft);
       plan.paths = plan.paths || [];
@@ -427,14 +420,14 @@ export function initEdenMapPlanner() {
       if (typeof window.showToast === 'function') window.showToast(`Path saved — ${routed.distance} tiles`, 'success');
     });
 
-    root.querySelector('#edenClearPaths')?.addEventListener('click', () => {
+    document.getElementById('edenClearPaths')?.addEventListener('click', () => {
       plan.paths = [];
       pathDraft = [];
       savePlan(plan);
       draw();
     });
 
-    root.querySelector('#edenExportPlan')?.addEventListener('click', () => {
+    document.getElementById('edenExportPlan')?.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -442,7 +435,7 @@ export function initEdenMapPlanner() {
       a.click();
     });
 
-    root.querySelector('#edenLoadX1Targets')?.addEventListener('click', () => {
+    document.getElementById('edenLoadX1Targets')?.addEventListener('click', () => {
       plan.customTargets = X1_PLANNING_TARGETS.filter(t => t.x && t.y).map(t => ({
         x: t.x, y: t.y, label: t.name, team: t.team,
       }));
@@ -509,11 +502,13 @@ export function initEdenMapPlanner() {
   canvas.addEventListener('pointerup', () => { panning = false; });
 
   ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch'].forEach(id => {
-    sidebar.querySelector('#' + id)?.addEventListener('input', () => draw());
-    sidebar.querySelector('#' + id)?.addEventListener('change', () => draw());
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => draw());
+      el.addEventListener('change', () => draw());
+    }
   });
 
-  updateFilterOptions(); // Initial execution run to build dropdown markup data
   bindToolbar();
   window.addEventListener('resize', resize);
   resize();
