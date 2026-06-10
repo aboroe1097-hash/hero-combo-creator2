@@ -1,6 +1,7 @@
 import {
   EDEN_SECTORS, STRUCTURE_TYPES, X1_PLANNING_TARGETS, SECTOR_FACTION,
   getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
+  parseCoordInput, findStructureByCoords, findSectorForCoords,
 } from './eden-map-data.js';
 import {
   MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints, getTerrainAt,
@@ -79,6 +80,7 @@ export function initEdenMapPlanner() {
   let plan = normalizePlan(plansStore.plans[activePlanId]?.plan);
   let refOpacity = 0.92;
   let factionFilter = 'all';
+  let coordSearchPin = null;
   let filtersPopulatedFor = null;
   let listSort = 'points';
 
@@ -645,6 +647,34 @@ export function initEdenMapPlanner() {
     }
   }
 
+  function drawCoordSearchPin() {
+    if (!coordSearchPin || Date.now() > coordSearchPin.until) {
+      coordSearchPin = null;
+      return;
+    }
+    const p = iso(coordSearchPin.x, coordSearchPin.y);
+    const pulse = 0.65 + 0.35 * Math.sin(Date.now() / 220);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 10 + pulse * 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(250,204,21,0.55)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(250,204,21,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    if (layers.labels) {
+      ctx.fillStyle = '#fde68a';
+      ctx.font = 'bold 9px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${coordSearchPin.x}:${coordSearchPin.y}`, p.x, p.y - 16);
+    }
+    requestAnimationFrame(() => scheduleDraw({ sidebar: false }));
+  }
+
   function drawPlanningTargets() {
     if (!layers.targets) return;
     (plan.customTargets || []).forEach(t => {
@@ -751,6 +781,7 @@ export function initEdenMapPlanner() {
     drawSnapPreview();
     if (!fastMode) drawPlanningTargets();
     if (!fastMode) drawSectorLabel();
+    if (!fastMode) drawCoordSearchPin();
 
     onRedrawExtra?.();
 
@@ -863,6 +894,93 @@ export function initEdenMapPlanner() {
     selectedId = structures().find(s => s.type === 'AT')?.id || null;
     notifySelection();
     draw();
+  }
+
+  function switchSectorForNav(key) {
+    sectorKey = key;
+    markSectorExplored(key);
+    pathDraft = [];
+    filtersPopulatedFor = null;
+    const sel = document.getElementById('edenSectorSelect');
+    if (sel) sel.value = key;
+    document.querySelectorAll('[data-eden-sector]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.edenSector === key);
+    });
+  }
+
+  function goToCoords(x, y) {
+    if (
+      x < MAP_BOUNDS.minX || x > MAP_BOUNDS.maxX
+      || y < MAP_BOUNDS.minY || y > MAP_BOUNDS.maxY
+    ) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(edenT('edenCoordInvalid'), 'error', 3500);
+      }
+      return false;
+    }
+
+    const struct = findStructureByCoords(x, y);
+    const targetSector = struct?.sector || findSectorForCoords(x, y) || 'FULL';
+
+    if (sectorKey !== targetSector) {
+      switchSectorForNav(targetSector);
+      fitView();
+    }
+
+    if (struct) {
+      selectedId = struct.id;
+      notifySelection();
+      zoomToStructure(struct);
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          edenT('edenCoordFoundStruct')
+            .replace('{name}', getStructureLabel(struct.type))
+            .replace('{x}', String(struct.x))
+            .replace('{y}', String(struct.y)),
+          'success',
+          3000,
+        );
+      }
+      coordSearchPin = null;
+    } else {
+      selectedId = null;
+      notifySelection();
+      const rect = canvas.getBoundingClientRect();
+      const nextScale = snapScale(Math.max(scale, 0.9));
+      const target = {
+        offsetX: rect.width * 0.5 - (x - y) * 0.5 * nextScale,
+        offsetY: rect.height * 0.42 - (x + y) * 0.25 * nextScale,
+        scale: nextScale,
+      };
+      animateCamera(
+        () => ({ offsetX, offsetY, scale }),
+        (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+        target,
+        () => scheduleDraw({ sidebar: false }),
+      );
+      coordSearchPin = { x, y, until: Date.now() + 5000 };
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          edenT('edenCoordJumped').replace('{x}', String(x)).replace('{y}', String(y)),
+          'info',
+          2500,
+        );
+      }
+    }
+
+    draw();
+    return true;
+  }
+
+  function submitCoordSearch(raw) {
+    const parsed = parseCoordInput(raw);
+    if (!parsed) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(edenT('edenCoordInvalid'), 'error', 3500);
+      }
+      return false;
+    }
+    return goToCoords(parsed.x, parsed.y);
   }
 
   function screenToWorld(mx, my) {
@@ -1041,6 +1159,24 @@ export function initEdenMapPlanner() {
     document.getElementById('edenSortSelect')?.addEventListener('change', (e) => {
       listSort = e.target.value;
       draw();
+    });
+
+    const coordInput = document.getElementById('edenCoordSearch');
+    const coordGo = () => submitCoordSearch(coordInput?.value);
+    document.getElementById('edenCoordGo')?.addEventListener('click', coordGo);
+    coordInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        coordGo();
+      }
+    });
+    document.getElementById('edenStructSearch')?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const parsed = parseCoordInput(e.target.value);
+      if (parsed) {
+        e.preventDefault();
+        submitCoordSearch(e.target.value);
+      }
     });
 
     document.getElementById('edenZoomIn')?.addEventListener('click', () => zoomStep(1));

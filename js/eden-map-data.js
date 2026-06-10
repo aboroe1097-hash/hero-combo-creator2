@@ -822,6 +822,56 @@ export function getSectorBounds(sectorKey) {
   return EDEN_SECTORS[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 }
 
+/** Parse in-game coord strings: 800:800, 800,800, 800 800, X:800 Y:800 */
+export function parseCoordInput(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+
+  let m = s.match(/x\s*:?\s*(\d+)\s*[,;\s]+\s*y\s*:?\s*(\d+)/i);
+  if (m) return { x: Number(m[1]), y: Number(m[2]) };
+
+  m = s.match(/^(\d{1,4})\s*[:;,]\s*(\d{1,4})$/);
+  if (m) return { x: Number(m[1]), y: Number(m[2]) };
+
+  m = s.match(/^(\d{1,4})\s+(\d{1,4})$/);
+  if (m) return { x: Number(m[1]), y: Number(m[2]) };
+
+  return null;
+}
+
+/** Nearest occupation structure within tolerance (game tiles). */
+export function findStructureByCoords(x, y, tolerance = 14) {
+  let best = null;
+  let bestD = Infinity;
+  for (const [sector, sec] of Object.entries(EDEN_SECTORS)) {
+    for (const s of sec.structures) {
+      const d = Math.hypot(s.x - x, s.y - y);
+      if (d <= tolerance && d < bestD) {
+        best = { ...s, sector };
+        bestD = d;
+      }
+    }
+  }
+  return best;
+}
+
+/** Smallest sector bounds that contain the point. */
+export function findSectorForCoords(x, y) {
+  let best = null;
+  let bestArea = Infinity;
+  for (const [sk, sec] of Object.entries(EDEN_SECTORS)) {
+    const b = sec.bounds;
+    if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
+      const area = (b.maxX - b.minX) * (b.maxY - b.minY);
+      if (area < bestArea) {
+        best = sk;
+        bestArea = area;
+      }
+    }
+  }
+  return best;
+}
+
 export const X1_PLANNING_TARGETS = [
   { name: 'Temple Push', team: 'Alliance', x: 800, y: 800 },
   { name: 'NC1 Cap', team: 'North', x: 551, y: 660 },

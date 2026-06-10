@@ -345,6 +345,13 @@
                 <option value="type" data-i18n="edenSortType">Sort: Type</option>
               </select>
             </div>
+            <div class="eden-coord-search">
+              <label class="eden-coord-search-label" for="edenCoordSearch" data-i18n="edenCoordSearchLabel">Go to coords</label>
+              <div class="eden-coord-search-row">
+                <input id="edenCoordSearch" class="eden-coord-input" type="text" inputmode="numeric" data-i18n-ph="edenCoordSearchPh" placeholder="X:Y e.g. 800:800" autocomplete="off" spellcheck="false" />
+                <button type="button" id="edenCoordGo" class="eden-coord-go-btn" data-i18n="edenCoordGo" data-i18n-title="edenCoordGoTitle">Go</button>
+              </div>
+            </div>
             <div class="hero-search-wrap eden-search-wrap">
               <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
               <input id="edenStructSearch" class="hero-search-input" type="text" data-i18n-ph="edenSearchPh" placeholder="Search structures..." autocomplete="off" />
