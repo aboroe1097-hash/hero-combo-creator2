@@ -2743,7 +2743,7 @@ async function startApp() {
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();
-    
+    console.log('wireUIActions finished, tabs should be clickable');
     // 2. Start the Local Calculators
     initResearchCalculator();
     
