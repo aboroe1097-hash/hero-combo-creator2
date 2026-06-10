@@ -666,6 +666,15 @@ section.tab-exit {
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   border: 1px solid var(--sc, rgba(255,255,255,0.2));
 }
+.heroes-season-hint {
+  width: 100%;
+  margin: -4px 0 10px 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  text-transform: uppercase;
+}
 
 /* ── 3b. Heroes layout — list + detail side by side ─────── */
 .heroes-layout {

@@ -2445,14 +2445,29 @@ function computeHeroRankings() {
   return stats;
 }
 
-let _heroesTabState = { season: 'all', troop: 'all', state: 'all', search: '', selected: null, view: 'ranking' };
+const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+
+let _heroesTabState = {
+  seasons: [...HERO_ATLAS_ALL_SEASONS],
+  troop: 'all',
+  state: 'all',
+  search: '',
+  selected: null,
+  view: 'ranking',
+};
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
 
+function normalizeHeroAtlasSeasons(seasons) {
+  const picked = HERO_ATLAS_ALL_SEASONS.filter(s => (seasons || []).includes(s));
+  return picked.length ? picked : [...HERO_ATLAS_ALL_SEASONS];
+}
+
 function getFilteredHeroes(state = _heroesTabState) {
-  const { season, troop, state: heroState, search } = state;
+  const { seasons, troop, state: heroState, search } = state;
   const q = (search || '').trim().toLowerCase();
-  let filtered = season === 'all' ? [...allHeroesData] : allHeroesData.filter(h => h.season === season);
+  const seasonSet = new Set(normalizeHeroAtlasSeasons(seasons));
+  let filtered = allHeroesData.filter(h => seasonSet.has(h.season));
   if (troop !== 'all') filtered = filtered.filter(h => h.Type === troop || h.Type === 'All');
   if (heroState !== 'all') filtered = filtered.filter(h => h.State === heroState);
   if (q) filtered = filtered.filter(h => h.name.toLowerCase().includes(q));
@@ -2460,8 +2475,23 @@ function getFilteredHeroes(state = _heroesTabState) {
 }
 
 function heroesFiltersActive(state = _heroesTabState) {
-  const { season, troop, state: heroState, search } = state;
-  return season !== 'all' || troop !== 'all' || heroState !== 'all' || !!(search || '').trim();
+  const { seasons, troop, state: heroState, search } = state;
+  const normalized = normalizeHeroAtlasSeasons(seasons);
+  const allSeasonsSelected = normalized.length === HERO_ATLAS_ALL_SEASONS.length;
+  return !allSeasonsSelected || troop !== 'all' || heroState !== 'all' || !!(search || '').trim();
+}
+
+function toggleHeroAtlasSeason(seasonKey) {
+  if (seasonKey === 'all') {
+    _heroesTabState.seasons = [...HERO_ATLAS_ALL_SEASONS];
+    return;
+  }
+  const set = new Set(normalizeHeroAtlasSeasons(_heroesTabState.seasons));
+  if (set.has(seasonKey)) set.delete(seasonKey);
+  else set.add(seasonKey);
+  _heroesTabState.seasons = set.size
+    ? HERO_ATLAS_ALL_SEASONS.filter(s => set.has(s))
+    : [...HERO_ATLAS_ALL_SEASONS];
 }
 
 function syncHeroSelectionWithFilters() {
@@ -2485,7 +2515,7 @@ function wireHeroesTabEvents(container) {
   container.addEventListener('click', (e) => {
     const seasonBtn = e.target.closest('[data-hero-season]');
     if (seasonBtn) {
-      _heroesTabState.season = seasonBtn.dataset.heroSeason;
+      toggleHeroAtlasSeason(seasonBtn.dataset.heroSeason);
       syncHeroSelectionWithFilters();
       renderHeroesTab();
       return;
@@ -2509,7 +2539,7 @@ function wireHeroesTabEvents(container) {
 
     const clearBtn = e.target.closest('[data-heroes-clear-filters]');
     if (clearBtn) {
-      _heroesTabState.season = 'all';
+      _heroesTabState.seasons = [...HERO_ATLAS_ALL_SEASONS];
       _heroesTabState.troop = 'all';
       _heroesTabState.state = 'all';
       _heroesTabState.search = '';
@@ -2578,19 +2608,24 @@ function renderHeroesTab() {
   const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
 
   const stats = computeHeroRankings();
-  const { season, troop, state, search, selected, view } = _heroesTabState;
+  const { seasons: selectedSeasons, troop, state, search, selected, view } = _heroesTabState;
 
-  const seasons = ['all','S0','S1','S2','S3','S4','X1','X2'];
   const troops = ['all','Archers','Footmen','Cavalry'];
   const states = ['all','Free','Paid'];
   const filtered = getFilteredHeroes();
   const filtersActive = heroesFiltersActive();
+  const normalizedSeasons = normalizeHeroAtlasSeasons(selectedSeasons);
+  const allSeasonsSelected = normalizedSeasons.length === HERO_ATLAS_ALL_SEASONS.length;
 
-  const seasonTabsHtml = seasons.map(s => `
-    <button type="button" class="hero-tab-season ${season === s ? 'active' : ''}" data-hero-season="${s}"
-      ${s !== 'all' && seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>
-      ${s === 'all' ? 'All' : s}
-    </button>`).join('');
+  const seasonTabsHtml = `
+    <button type="button" class="hero-tab-season ${allSeasonsSelected ? 'active' : ''}" data-hero-season="all" title="Select all seasons">
+      All
+    </button>
+    ${HERO_ATLAS_ALL_SEASONS.map(s => `
+    <button type="button" class="hero-tab-season ${normalizedSeasons.includes(s) ? 'active' : ''}" data-hero-season="${s}"
+      ${seasonColors[s] ? `style="--sc:${seasonColors[s]}"` : ''}>
+      ${s}
+    </button>`).join('')}`;
 
   const troopPillsHtml = troops.map(tr => `
     <button type="button" class="heroes-filter-pill ${troop === tr ? 'active' : ''}" data-hero-troop="${tr}">
@@ -2748,7 +2783,8 @@ function renderHeroesTab() {
           </div>
           <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>
           <div class="heroes-filter-pills heroes-filter-pills--state">${statePillsHtml}</div>
-          <div class="heroes-season-tabs">${seasonTabsHtml}</div>
+          <p class="heroes-season-hint">Seasons — select multiple</p>
+          <div class="heroes-season-tabs" role="group" aria-label="Filter by season (multi-select)">${seasonTabsHtml}</div>
         </div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
           <div class="heroes-ranking-list" role="list">${rowsHtml}</div>

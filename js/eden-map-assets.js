@@ -2,12 +2,20 @@
 
 const ASSET_ROOT = 'assets/eden-reference/';
 
-// Optional legacy overlay (has baked structures + cropped edges — off by default).
-export const MAP_REFERENCE = {
-  url: `${ASSET_ROOT}eden-map-reference.png`,
-  fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
-  opacity: 0.55,
+/** Clean Season 5 faction-division parchment (primary map underlay). */
+export const FACTION_DIVISION_MAP = {
+  url: 'assets/faction-division.jpg',
+  opacity: 0.96,
   bounds: { minX: 0, maxX: 1700, minY: 0, maxY: 1600 },
+};
+
+// Legacy overlay (baked structures + cropped edges) — fallback only.
+export const MAP_REFERENCE = {
+  url: FACTION_DIVISION_MAP.url,
+  legacyUrl: `${ASSET_ROOT}eden-map-reference.png`,
+  fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
+  opacity: FACTION_DIVISION_MAP.opacity,
+  bounds: FACTION_DIVISION_MAP.bounds,
 };
 
 const ICON_ATLAS_JSON = `${ASSET_ROOT}icons-atlas.json`;
@@ -38,8 +46,13 @@ export function preloadReferenceMap(onReady) {
     onReady?.(img);
   };
   img.onerror = () => {
-    if (img.dataset.fallback !== '1' && MAP_REFERENCE.fallbackUrl) {
+    if (img.dataset.fallback !== '1' && MAP_REFERENCE.legacyUrl) {
       img.dataset.fallback = '1';
+      img.src = MAP_REFERENCE.legacyUrl;
+      return;
+    }
+    if (img.dataset.fallback !== '2' && MAP_REFERENCE.fallbackUrl) {
+      img.dataset.fallback = '2';
       img.src = MAP_REFERENCE.fallbackUrl;
       return;
     }
