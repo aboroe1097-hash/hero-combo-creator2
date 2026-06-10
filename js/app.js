@@ -1465,28 +1465,46 @@ function wireUIActions() {
   }
 
   let _lastTab = 'generator';
-  const switchTab = (tabName) => {
-    if (tabName === _lastTab) return;
-    // Animate out current visible section
-    const allSections = [manualSection, generatorSection, edenMapSection, loyaltySection, youtubeSection, researchSection, heroesSection];
-    const currentVisible = allSections.find(s => s && !s.classList.contains('hidden'));
-    if (currentVisible) {
-      currentVisible.classList.add('tab-exit');
-      setTimeout(() => currentVisible.classList.remove('tab-exit'), 300);
-    }
-    _lastTab = tabName;
+  let _pendingTab = null;
+let _isAnimating = false;
+
+function switchTab(tabName) {
+  if (_isAnimating) return;
+  if (tabName === _lastTab) return;
+
+  _isAnimating = true;
+  const currentSection = document.querySelector(`section:not(.hidden)`);
+  if (!currentSection) {
+    _isAnimating = false;
+    return;
+  }
+
+  // Exit animation
+  currentSection.classList.add('tab-exit');
+  setTimeout(() => {
     // Hide all sections
+    const allSections = [
+      manualSection, generatorSection, edenMapSection,
+      loyaltySection, youtubeSection, researchSection, heroesSection
+    ];
     allSections.forEach(sec => {
-        if (sec) sec.classList.add('hidden');
+      if (sec) sec.classList.add('hidden');
+      sec?.classList.remove('tab-exit');
     });
     if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-    // Reset all tabs
-    [tabManualBtn, tabGeneratorBtn, tabEdenMapBtn, tabLoyaltyBtn, tabYouTubeBtn, tabResearchBtn, tabHeroesBtn].forEach(btn => {
-        if (btn) {
-            btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
-        }
-    });
+    // Update active tab styling
+    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+    const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+
+    // Show new section
+    const targetSection = document.getElementById(`${tabName}Section`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+      // Trigger reflow for animation
+      void targetSection.offsetWidth;
+    }
 
     if (tabName === 'manual' || tabName === 'generator') {
       if (globalToggleRow) globalToggleRow.classList.remove('hidden');
@@ -1495,55 +1513,15 @@ function wireUIActions() {
     }
 
     if (tabName === 'manual') {
-      if (manualSection) manualSection.classList.remove('hidden');
       if (comboFooterBar) comboFooterBar.classList.remove('hidden');
-      if (tabManualBtn) tabManualBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'generator') {
-      if (generatorSection) generatorSection.classList.remove('hidden');
-      if (tabGeneratorBtn) tabGeneratorBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'edenmap') {
-      if (edenMapSection) {
-        edenMapSection.classList.remove('hidden');
-        if (!window._edenMapReady) {
-          initEdenMapPlanner();
-          window._edenMapReady = true;
-        }
-      }
-      if (tabEdenMapBtn) tabEdenMapBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'loyalty') {
-      if (loyaltySection) loyaltySection.classList.remove('hidden');
-      if (tabLoyaltyBtn) tabLoyaltyBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'youtube') {
-      if (youtubeSection) {
-        youtubeSection.classList.remove('hidden');
-        // Lazy-load iframes on first visit
-        youtubeSection.querySelectorAll('iframe[data-src]').forEach(f => {
-          if (!f.src || f.src === window.location.href || f.src === '') {
-            f.src = f.dataset.src;
-          }
-        });
-      }
-      if (tabYouTubeBtn) tabYouTubeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'research') {
-      if (researchSection) researchSection.classList.remove('hidden');
-      if (tabResearchBtn) tabResearchBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
-    } else if (tabName === 'heroes') {
-      if (heroesSection) {
-        heroesSection.classList.remove('hidden');
-        renderHeroesTab();
-      }
-      if (tabHeroesBtn) tabHeroesBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+    } else {
+      if (comboFooterBar) comboFooterBar.classList.add('hidden');
     }
-  };
 
-  if (tabManualBtn) tabManualBtn.onclick = () => switchTab('manual');
-  if (tabGeneratorBtn) tabGeneratorBtn.onclick = () => switchTab('generator');
-  if (tabEdenMapBtn) tabEdenMapBtn.onclick = () => switchTab('edenmap');
-  if (tabLoyaltyBtn) tabLoyaltyBtn.onclick = () => switchTab('loyalty');
-  if (tabYouTubeBtn) tabYouTubeBtn.onclick = () => switchTab('youtube');
-  if (tabResearchBtn) tabResearchBtn.onclick = () => switchTab('research');
-  if (tabHeroesBtn) tabHeroesBtn.onclick = () => switchTab('heroes');
-
+    _lastTab = tabName;
+    _isAnimating = false;
+  }, 250); // matches animation duration
+}
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
@@ -2786,6 +2764,40 @@ async function startApp() {
         initLoyaltyCalculator();
     }
 
+  // --- Tab scroll buttons ---
+function initTabScroll() {
+  const scrollContainer = document.getElementById('tabNavScroll');
+  const leftBtn = document.getElementById('tabScrollLeft');
+  const rightBtn = document.getElementById('tabScrollRight');
+  if (!scrollContainer) return;
+
+  const scrollStep = () => {
+    const cardWidth = scrollContainer.querySelector('.tab-pill')?.offsetWidth || 100;
+    return cardWidth + 12;
+  };
+
+  leftBtn?.addEventListener('click', () => {
+    scrollContainer.scrollBy({ left: -scrollStep(), behavior: 'smooth' });
+  });
+  rightBtn?.addEventListener('click', () => {
+    scrollContainer.scrollBy({ left: scrollStep(), behavior: 'smooth' });
+  });
+
+  // Hide buttons if not needed (on desktop)
+  const checkOverflow = () => {
+    const hasOverflow = scrollContainer.scrollWidth > scrollContainer.clientWidth;
+    if (leftBtn && rightBtn) {
+      leftBtn.style.display = hasOverflow ? 'flex' : 'none';
+      rightBtn.style.display = hasOverflow ? 'flex' : 'none';
+    }
+  };
+  window.addEventListener('resize', checkOverflow);
+  setTimeout(checkOverflow, 100);
+}
+
+// Call this after your existing DOM setup
+initTabScroll();
+  
     // 3. Initialize Firebase & User Data
     try {
         await initFirebase();
