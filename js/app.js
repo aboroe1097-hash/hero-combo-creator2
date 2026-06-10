@@ -47,10 +47,9 @@ const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
 
 // TABS & SECTIONS
-// Near top - fix DOM selectors to match HTML IDs
-const manualSection        = document.getElementById('manualSection');
-const generatorSection     = document.getElementById('generatorSection');  
-const loyaltySection       = document.getElementById('loyaltySection'); 
+const manualSection        = document.getElementById('manualBuilderSection');
+const generatorSection     = document.getElementById('comboGeneratorSection');
+const loyaltySection       = document.getElementById('loyaltyCalcSection');
 const youtubeSection       = document.getElementById('youtubeSection'); 
 const researchSection      = document.getElementById('researchSection'); 
 
@@ -1499,39 +1498,46 @@ function switchTab(tabName) {
 
   // Exit animation
   currentSection.classList.add('tab-exit');
-  ssetTimeout(() => {
-    // Hide all
-    const allSections = document.querySelectorAll('section[id$="Section"]');
+  setTimeout(() => {
+    // Hide all sections
+    const allSections = [
+      manualSection, generatorSection, edenMapSection,
+      loyaltySection, youtubeSection, researchSection, heroesSection
+    ];
     allSections.forEach(sec => {
-      sec.classList.add('hidden');
-      sec.classList.remove('tab-exit');
+      if (sec) sec.classList.add('hidden');
+      sec?.classList.remove('tab-exit');
     });
+    if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-    // Show target
-    const targetId = tabName === 'edenMap' ? 'edenMapSection' : `${tabName}Section`;
-    const targetSection = document.getElementById(targetId);
+    // Update active tab styling
+    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+    const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+
+    // Show new section
+    const targetSection = document.getElementById(`${tabName}Section`);
     if (targetSection) {
       targetSection.classList.remove('hidden');
-      void targetSection.offsetWidth; // reflow
-      // Re-init heavy tabs
-      if (tabName === 'edenMap' && typeof initEdenMapPlanner === 'function') {
-        initEdenMapPlanner();  // ensure canvas is ready
-      }
-      if (tabName === 'generator') renderGeneratorHeroes();
-      if (tabName === 'manual') renderAvailableHeroes();
+      // Trigger reflow for animation
+      void targetSection.offsetWidth;
     }
 
-    // Tab styling
-    document.querySelectorAll('.tab-pill').forEach(b => {
-      b.classList.remove('tab-pill-active');
-      b.classList.add('tab-pill-inactive');
-    });
-    const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-    if (activeBtn) activeBtn.classList.add('tab-pill-active');
+    if (tabName === 'manual' || tabName === 'generator') {
+      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
+    } else {
+      if (globalToggleRow) globalToggleRow.classList.add('hidden');
+    }
+
+    if (tabName === 'manual') {
+      if (comboFooterBar) comboFooterBar.classList.remove('hidden');
+    } else {
+      if (comboFooterBar) comboFooterBar.classList.add('hidden');
+    }
 
     _lastTab = tabName;
     _isAnimating = false;
-  }, 220);
+  }, 250); // matches animation duration
 }
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
