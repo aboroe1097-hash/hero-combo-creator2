@@ -1,26 +1,6 @@
 // js/combos-db.js
 // Rank is determined by position in this array. First item = Rank 1.
 // Mapping order: [Front, Middle, Back]
-  // Season 5 (X1)
- //  { name: 'Beowulf',      
- //  { name: 'Hunk',        
- //  { name: 'Boudica',      
- //  { name: 'Sakura',       
-  // { name: 'Wind-Walker',  
- //  { name: 'ELK',          
-  // { name: 'Cicero',     }
-  // Season 5 (X1)
- // { name: 'Dach Tengri',   
-  //{ name: 'Tarantula',   
-  //{ name: 'Lancelot',     
-  //{ name: 'Alexander',
-  //{ name: 'Lawman',      
-  //{ name: 'Defender',        
-  //{ name: 'Spectral Reaper', 
-  //{ name: 'Valkyrie',      
-// js/combos-db.js
-// Rank is determined by position in this array. First item = Rank 1.
-// Mapping order: [Front, Middle, Back]
 
 export const rankedCombos = [
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },

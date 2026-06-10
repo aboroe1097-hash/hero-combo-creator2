@@ -231,11 +231,11 @@ html, body {
 #globalTechSummary .h-5 { height: 10px !important; }
 
 /* ── Loyalty calculator ──────────────────────────────────── */
-#loyaltyCalcSection table { font-size: 0.72rem !important; }
-#loyaltyCalcSection th, #loyaltyCalcSection td { padding: 6px 8px !important; }
+#loyaltySection table { font-size: 0.72rem !important; }
+#loyaltySection th, #loyaltySection td { padding: 6px 8px !important; }
 @media (max-width: 480px) {
-  #loyaltyCalcSection th:nth-child(5),
-  #loyaltyCalcSection td:nth-child(5) { display: none; }
+  #loyaltySection th:nth-child(5),
+  #loyaltySection td:nth-child(5) { display: none; }
 }
 
 /* ── Comments ────────────────────────────────────────────── */
@@ -250,15 +250,46 @@ html, body {
 .paid-badge-text { font-size: 0.42rem !important; }
 
 /* Heroes tab — mobile layout */
+.heroes-toolbar-sticky { top: 0 !important; padding-bottom: 6px !important; }
+.heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
+.heroes-count-badge { font-size: 0.62rem !important; padding: 3px 8px !important; }
+.heroes-clear-filters { font-size: 0.6rem !important; padding: 3px 8px !important; }
+
 .heroes-layout.has-detail { flex-direction: column !important; gap: 10px !important; }
-.heroes-layout.has-detail .heroes-ranking-list {
-  max-height: 38vh !important; overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid rgba(51,65,85,0.5); border-radius: 12px; padding: 4px;
-}
+.heroes-layout.has-detail .heroes-ranking-list { display: none !important; }
 .heroes-layout.has-detail .hero-detail-panel {
   border: 2px solid rgba(99,102,241,0.35) !important;
   box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+  width: 100% !important;
+  max-height: none !important;
+  position: relative !important;
+  top: auto !important;
+}
+.heroes-layout:not(.has-detail) .heroes-ranking-list {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(51,65,85,0.5);
+  border-radius: 12px;
+  padding: 4px;
+}
+.heroes-mobile-back { display: block !important; }
+.detail-close { display: none !important; }
+.detail-nav { top: 0 !important; }
+
+.heroes-tab-inner--detail-open .heroes-filter-pills,
+.heroes-tab-inner--detail-open .heroes-season-tabs,
+.heroes-tab-inner--detail-open .heroes-toolbar {
+  display: none !important;
+}
+.heroes-tab-inner--detail-open .heroes-toolbar-sticky {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
 }
 
 .hero-rank-row { padding: 10px 10px !important; gap: 8px !important; min-height: 52px; }
@@ -275,10 +306,15 @@ html, body {
 .detail-stat { padding: 8px 6px !important; }
 .detail-stat-val { font-size: 0.85rem !important; }
 
-.detail-combo-row { padding: 8px !important; gap: 6px !important; }
-.detail-combo-hero img { width: 28px !important; height: 28px !important; }
-.detail-combo-hero span { font-size: 0.52rem !important; max-width: 48px !important; }
+.detail-combo-row { padding: 10px 12px !important; gap: 8px !important; }
+.detail-combo-heroes { gap: 6px !important; }
+.detail-combo-hero { padding: 6px 3px 5px !important; }
+.detail-combo-hero img { width: 44px !important; height: 44px !important; }
+.detail-combo-hero span { font-size: 0.58rem !important; }
+.detail-combo-score { font-size: 0.95rem !important; }
+.detail-combo-rank { font-size: 0.68rem !important; }
 .combo-counters-inline { margin-top: 4px; }
+.counter-toggle-btn { font-size: 0.56rem !important; padding: 3px 8px !important; }
 
 .heroes-season-tabs {
   gap: 4px !important; padding: 6px !important;
@@ -297,9 +333,32 @@ html, body {
 
 /* Eden map mobile */
 .eden-map-body { flex-direction: column !important; }
-.eden-sidebar { max-height: 280px !important; width: 100% !important; }
-.eden-canvas-wrap { min-height: 300px !important; }
-#edenMapCanvas { min-height: 300px !important; }
-.eden-toolbar { gap: 4px !important; }
+.eden-canvas-wrap { min-height: 340px !important; }
+#edenMapCanvas { min-height: 340px !important; }
+.eden-toolbar-primary, .eden-toolbar-tools { gap: 4px !important; padding: 5px 6px !important; }
 .eden-tool-btn { padding: 5px 8px !important; font-size: 0.62rem !important; }
+.eden-layer-bar { padding: 6px 8px !important; gap: 4px !important; }
+.eden-layer-btn { font-size: 0.58rem !important; padding: 3px 7px !important; }
+.eden-toolbar-modes { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
+.eden-quick-jump { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
+.eden-quick-btn { flex-shrink: 0; font-size: 0.58rem !important; }
+.eden-coord-hud { font-size: 0.6rem !important; max-width: 90% !important; }
+.eden-filter-row { flex-wrap: wrap !important; }
+.eden-sort-select { max-width: 100% !important; flex: 1 1 100% !important; }
+.eden-minimap { width: 110px !important; height: 110px !important; right: 6px !important; bottom: 6px !important; }
+
+.eden-sidebar {
+  position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 50;
+  width: 100% !important; max-height: 72vh !important;
+  transform: translateY(100%); transition: transform 0.22s ease;
+  border-radius: 14px 14px 0 0 !important;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+.eden-sidebar.eden-sidebar-open { transform: translateY(0); }
+.eden-sidebar-close {
+  display: block !important; position: absolute; top: 8px; right: 10px;
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(71,85,105,0.8);
+  background: rgba(30,41,59,0.9); color: #e2e8f0; font-size: 1.1rem; line-height: 1;
+  cursor: pointer; z-index: 2;
+}
 

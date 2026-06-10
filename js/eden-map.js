@@ -1,23 +1,33 @@
 import {
-  EDEN_SECTORS, STRUCTURE_TYPES, X1_PLANNING_TARGETS,
-  getSectorStructures, getSectorBounds,
+  EDEN_SECTORS, STRUCTURE_TYPES, X1_PLANNING_TARGETS, SECTOR_FACTION,
+  getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
 } from './eden-map-data.js';
 import {
-  MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints,
+  MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints, getTerrainAt,
 } from './eden-map-terrain.js';
+import {
+  preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
+  loadStructureIcon, preloadReferenceMap,
+} from './eden-map-assets.js';
+import { initEdenMapUI, MAJOR_TYPES } from './eden-map-ui.js';
+import {
+  createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
+  estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
+  drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorTileOverlay,
+  animateCamera, exportMapAsPng,
+} from './eden-map-features.js';
+import {
+  startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
+} from './eden-map-scout.js';
 
 const PLAN_KEY = 'vts_eden_map_plan_v2';
-
-function loadPlan() {
-  try {
-    return JSON.parse(localStorage.getItem(PLAN_KEY) || localStorage.getItem('vts_eden_map_plan_v1') || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function savePlan(plan) {
-  localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+const MIN_SCALE = 0.12;
+const MAX_SCALE = 3.2;
+const ZOOM_PRESETS = [0.25, 0.42, 0.5, 0.75, 1.0, 1.5, 2.0, MAX_SCALE];
+const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
+const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
+function normalizePlan(raw) {
+  return { ...createEmptyPlan(), ...raw };
 }
 
 export function initEdenMapPlanner() {
@@ -28,17 +38,100 @@ export function initEdenMapPlanner() {
 
   const ctx = canvas.getContext('2d');
   let sectorKey = 'FULL';
-  let tool = 'select';
+  let tool = 'navigate';
+  let snapPreview = null;
+  let selectedPathIdx = null;
+  let selectedWaypointIdx = null;
+  let draggingWaypoint = null;
+  let hoverPathHit = null;
+  let viewMode = 'strategic';
+  let routeStart = null;
+  let routeEnd = null;
+  let scoutActive = false;
+  let onSelectionChange = null;
+  let onRedrawExtra = null;
   let scale = 0.42;
   let offsetX = 0;
   let offsetY = 0;
   let panning = false;
+  let interacting = false;
+  let dragMoved = false;
+  let pointerDownHit = null;
+  let drawRaf = 0;
+  let interactEndTimer = 0;
+  let sidebarDirty = true;
   let lastPointer = { x: 0, y: 0 };
   let selectedId = null;
   let pathDraft = [];
   let measureA = null;
   let measureB = null;
-  let plan = loadPlan();
+  let hoverStruct = null;
+  let hoverWorld = null;
+  let plansStore = loadPlansStore();
+  let activePlanId = plansStore.activeId || 'default';
+  let plan = normalizePlan(plansStore.plans[activePlanId]?.plan);
+  let refOpacity = 0.92;
+  let factionFilter = 'all';
+  let filtersPopulatedFor = null;
+  let listSort = 'points';
+
+  const layers = {
+    reference: true,
+    terrain: false,
+    structures: true,
+    paths: true,
+    targets: true,
+    labels: false,
+    zones: false,
+    fog: false,
+    heatmap: false,
+    territory: false,
+    sectorTiles: false,
+  };
+
+  function savePlan() {
+    plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
+    plansStore.plans[activePlanId].plan = plan;
+    plansStore.activeId = activePlanId;
+    savePlansStore(plansStore);
+    localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+  }
+
+  function switchPlan(id) {
+    if (!plansStore.plans[id]) return;
+    activePlanId = id;
+    plan = normalizePlan(plansStore.plans[id].plan);
+    selectedId = null;
+    selectedPathIdx = null;
+    pathDraft = [];
+    notifySelection();
+    syncPlanSelector();
+    draw();
+  }
+
+  function syncPlanSelector() {
+    const sel = document.getElementById('edenPlanSelect');
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = Object.entries(plansStore.plans).map(([id, entry]) =>
+      `<option value="${id}">${entry.name || id}</option>`
+    ).join('');
+    if (plansStore.plans[prev]) sel.value = prev;
+    else sel.value = activePlanId;
+  }
+
+  function markSectorExplored(key) {
+    if (key === 'FULL') return;
+    plan.explored = plan.explored || {};
+    if (!plan.explored[key]) {
+      plan.explored[key] = true;
+      savePlan();
+    }
+  }
+
+  preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
+  onStructureIconsReady(() => scheduleDraw());
+  preloadReferenceMap(() => scheduleDraw());
 
   const iso = (x, y) => ({
     x: (x - y) * 0.5 * scale + offsetX,
@@ -48,23 +141,134 @@ export function initEdenMapPlanner() {
   const structures = () => {
     const base = getSectorStructures(sectorKey);
     const guilds = plan.guilds || {};
-    return base.map(s => ({ ...s, guild: guilds[s.id] || s.guild || '' }));
+    const statuses = plan.status || {};
+    return base.map(s => ({
+      ...s,
+      guild: guilds[s.id] || s.guild || '',
+      status: statuses[s.id] || 'neutral',
+    }));
   };
 
-  // ---- Dynamic filter population (zone + type) ----
-  function populateFilters() {
+  function getMapBounds() {
+    return sectorKey === 'FULL' ? MAP_BOUNDS : getSectorBounds(sectorKey);
+  }
+
+  function getStructureStatus(s) {
+    return plan.status?.[s.id] || 'neutral';
+  }
+
+  function structureRenderMode() {
+    if (scale >= 0.6) return 'full';
+    if (scale >= 0.3) return 'dot';
+    return 'major';
+  }
+
+  function shouldDrawStructure(s) {
+    const mode = structureRenderMode();
+    if (mode === 'major') return MAJOR_TYPES.has(s.type);
+    return true;
+  }
+
+  function notifySelection() {
+    onSelectionChange?.(!!selectedId);
+  }
+
+  function syncToolButtons() {
+    document.querySelectorAll('[data-eden-tool]').forEach(b => {
+      b.classList.toggle('active', b.dataset.edenTool === tool);
+    });
+    canvas.style.cursor = tool === 'navigate' ? 'grab' : 'crosshair';
+  }
+
+  function setTool(next) {
+    tool = next;
+    if (tool !== 'measure') measureA = measureB = null;
+    if (tool !== 'path') pathDraft = [];
+    syncToolButtons();
+    draw();
+  }
+
+  function structurePassesFaction(s) {
+    if (factionFilter === 'all') return true;
+    const sk = s.sector || sectorKey;
+    const f = SECTOR_FACTION[sk];
+    if (factionFilter === 'north') return f === 'north' || f === 'contested';
+    if (factionFilter === 'south') return f === 'south' || f === 'contested';
+    return true;
+  }
+
+  function structurePassesOwnership(s) {
+    const ownFilter = document.getElementById('edenOwnershipFilter')?.value || 'all';
+    if (ownFilter === 'all') return true;
+    return getStructureStatus(s) === ownFilter;
+  }
+
+  function structureVisible(s) {
+    return structurePassesFaction(s) && structurePassesOwnership(s);
+  }
+
+  function snapScale(val) {
+    let best = val;
+    let bestD = 0.06;
+    ZOOM_PRESETS.forEach(p => {
+      const d = Math.abs(p - val);
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return best;
+  }
+
+  function panBy(dx, dy) {
+    offsetX += dx;
+    offsetY += dy;
+    scheduleDraw({ sidebar: false });
+  }
+
+  function loadPlanFromHash() {
+    const m = location.hash.match(/eden=([^&]+)/);
+    if (!m) return;
+    try {
+      plan = normalizePlan(JSON.parse(decodeURIComponent(escape(atob(m[1])))));
+      savePlan();
+      if (typeof window.showToast === 'function') window.showToast('Plan loaded from share link', 'success');
+    } catch { /* ignore bad hash */ }
+  }
+
+  function sharePlanLink() {
+    try {
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(plan))));
+      const url = `${location.origin}${location.pathname}#eden=${payload}`;
+      navigator.clipboard?.writeText(url).then(() => {
+        if (typeof window.showToast === 'function') window.showToast('Share link copied', 'success');
+      });
+    } catch {
+      if (typeof window.showToast === 'function') window.showToast('Could not create share link', 'error');
+    }
+  }
+
+  function populateFilters(force = false) {
+    if (!force && filtersPopulatedFor === sectorKey) return;
+    filtersPopulatedFor = sectorKey;
+
     const structs = structures();
     const zones = [...new Set(structs.map(s => s.zone))].sort();
-    const types = [...new Set(structs.map(s => s.type))].sort();
+    const types = [...new Set(structs.map(s => s.type))].sort((a, b) =>
+      getStructureLabel(a).localeCompare(getStructureLabel(b))
+    );
 
     const zoneSelect = document.getElementById('edenZoneFilter');
     const typeSelect = document.getElementById('edenTypeFilter');
     if (!zoneSelect || !typeSelect) return;
 
+    const prevZone = zoneSelect.value;
+    const prevType = typeSelect.value;
+
     zoneSelect.innerHTML = '<option value="all">All zones</option>' +
       zones.map(z => `<option value="${z}">${z}</option>`).join('');
-    typeSelect.innerHTML = '<option value="all">All types</option>' +
-      types.map(t => `<option value="${t}">${t}</option>`).join('');
+    typeSelect.innerHTML = '<option value="all">All structure types</option>' +
+      types.map(t => `<option value="${t}">${getStructureLabel(t)}</option>`).join('');
+
+    if ([...zoneSelect.options].some(o => o.value === prevZone)) zoneSelect.value = prevZone;
+    if ([...typeSelect.options].some(o => o.value === prevType)) typeSelect.value = prevType;
   }
 
   function fitView() {
@@ -75,10 +279,45 @@ export function initEdenMapPlanner() {
     offsetX = rect.width / 2 - ((b.minX + b.maxX) / 2 - (b.minY + b.maxY) / 2) * 0.5 * scale;
     offsetY = rect.height * 0.15;
     if (sectorKey !== 'FULL') {
-      scale = Math.min(0.65, Math.min(rect.width / mapW, rect.height / mapH) * 0.85);
+      scale = Math.min(0.75, Math.min(rect.width / mapW, rect.height / mapH) * 0.88);
       offsetX = rect.width * 0.5 - ((b.minX + b.maxX) / 2 - (b.minY + b.maxY) / 2) * 0.5 * scale;
-      offsetY = rect.height * 0.2;
+      offsetY = rect.height * 0.18;
     }
+  }
+
+  function centerOn(x, y, smooth = false) {
+    const rect = canvas.getBoundingClientRect();
+    const target = {
+      offsetX: rect.width * 0.5 - (x - y) * 0.5 * scale,
+      offsetY: rect.height * 0.4 - (x + y) * 0.25 * scale,
+      scale,
+    };
+    if (smooth) {
+      return animateCamera(
+        () => ({ offsetX, offsetY, scale }),
+        (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+        target,
+        () => scheduleDraw({ sidebar: false }),
+      );
+    }
+    offsetX = target.offsetX;
+    offsetY = target.offsetY;
+  }
+
+  function zoomToStructure(s, targetScale = 1.2) {
+    const rect = canvas.getBoundingClientRect();
+    const nextScale = snapScale(Math.min(MAX_SCALE, Math.max(0.5, targetScale)));
+    const target = {
+      offsetX: rect.width * 0.5 - (s.x - s.y) * 0.5 * nextScale,
+      offsetY: rect.height * 0.42 - (s.x + s.y) * 0.25 * nextScale,
+      scale: nextScale,
+    };
+    return animateCamera(
+      () => ({ offsetX, offsetY, scale }),
+      (cam) => { offsetX = cam.offsetX; offsetY = cam.offsetY; scale = cam.scale; },
+      target,
+      () => scheduleDraw({ sidebar: false }),
+    );
   }
 
   function resize() {
@@ -86,117 +325,224 @@ export function initEdenMapPlanner() {
     canvas.width = Math.floor(rect.width * devicePixelRatio);
     canvas.height = Math.floor(rect.height * devicePixelRatio);
     canvas.style.width = rect.width + 'px';
-    canvas.style.height = Math.max(420, rect.height) + 'px';
+    canvas.style.height = Math.max(480, rect.height) + 'px';
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     if (!offsetX && !offsetY) fitView();
     draw();
   }
 
   function drawSectorLabel() {
-    if (sectorKey === 'FULL') return;
+    if (!layers.labels || sectorKey === 'FULL') return;
     const sec = EDEN_SECTORS[sectorKey];
     if (!sec) return;
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = 'bold 13px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.font = 'bold 14px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(sec.label, 12, 22);
+    ctx.fillText(sec.label, 14, 24);
   }
 
   function drawZoneOverlays() {
-    if (sectorKey === 'FULL') return;
+    if (!layers.zones || sectorKey === 'FULL') return;
     const zones = EDEN_SECTORS[sectorKey]?.zoneCenters || {};
     Object.entries(zones).forEach(([zone, center]) => {
       const p = iso(center.x, center.y);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 36 * scale, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(59,130,246,0.1)';
+      ctx.arc(p.x, p.y, 40 * scale, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(59,130,246,0.08)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(96,165,250,0.4)';
+      ctx.strokeStyle = 'rgba(96,165,250,0.35)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = `bold ${Math.max(10, 12 * scale)}px Inter`;
-      ctx.textAlign = 'center';
-      ctx.fillText(zone, p.x, p.y + 3);
+      if (layers.labels) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = `bold ${Math.max(10, 12 * scale)}px Inter`;
+        ctx.textAlign = 'center';
+        ctx.fillText(zone, p.x, p.y + 4);
+      }
     });
   }
 
   function drawStructure(s) {
+    if (!shouldDrawStructure(s)) return;
     const meta = STRUCTURE_TYPES[s.type] || STRUCTURE_TYPES.ST1;
     const p = iso(s.x, s.y);
-    const r = meta.size * scale * 0.85;
     const isSel = selectedId === s.id;
+    const isHover = hoverStruct?.id === s.id;
     const isTarget = (plan.targets || []).includes(s.id);
+    const status = getStructureStatus(s);
+    const mode = structureRenderMode();
+    const statusColor = STATUS_COLORS[status] || STATUS_COLORS.neutral;
 
-    ctx.beginPath();
-    ctx.ellipse(p.x, p.y + r * 0.35, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.fill();
+    if (mode === 'dot') {
+      const r = Math.max(4, 5 * scale);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - r, r, 0, Math.PI * 2);
+      ctx.fillStyle = meta.color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - r, r + 2.5, 0, Math.PI * 2);
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      const iconSize = Math.max(24, (meta.size || 9) * scale * 3.1);
+      const icon = getStructureIcon(s.type) || loadStructureIcon(s.type);
 
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y - r * 1.35);
-    ctx.lineTo(p.x + r, p.y - r * 0.35);
-    ctx.lineTo(p.x, p.y + r * 0.55);
-    ctx.lineTo(p.x - r, p.y - r * 0.35);
-    ctx.closePath();
-    ctx.fillStyle = meta.color;
-    ctx.fill();
-    ctx.strokeStyle = isSel ? '#fff' : 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = isSel ? 2.5 : 1;
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y + iconSize * 0.12, iconSize * 0.55, iconSize * 0.2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.fill();
+
+      if (isIconReady(icon)) {
+        const iw = iconSize;
+        const ih = iconSize;
+        ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.72, iw, ih);
+      } else {
+        const r = meta.size * scale * 0.85;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - r * 1.35);
+        ctx.lineTo(p.x + r, p.y - r * 0.35);
+        ctx.lineTo(p.x, p.y + r * 0.55);
+        ctx.lineTo(p.x - r, p.y - r * 0.35);
+        ctx.closePath();
+        ctx.fillStyle = meta.color;
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - iconSize * 0.35, iconSize * 0.58, 0, Math.PI * 2);
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = isSel ? 3 : 2;
+      ctx.stroke();
+    }
+
+    if (isSel || isHover) {
+      const ringR = mode === 'dot' ? 10 * scale : Math.max(14, 18 * scale);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - ringR * 0.5, ringR, 0, Math.PI * 2);
+      ctx.strokeStyle = isSel ? '#fff' : '#a5b4fc';
+      ctx.lineWidth = isSel ? 2.5 : 1.5;
+      ctx.stroke();
+    }
 
     if (isTarget) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y - r * 1.55, r * 0.5, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y - 14 * scale, 4 * scale, 0, Math.PI * 2);
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    if (s.guild) {
-      ctx.fillStyle = '#fbbf24';
+    if (layers.labels && mode === 'full' && (scale > 0.35 || isSel || isHover)) {
+      const label = s.guild ? s.guild.slice(0, 6) : getStructureShort(s.type);
+      ctx.fillStyle = isSel ? '#fff' : '#cbd5e1';
       ctx.font = `bold ${Math.max(7, 8 * scale)}px Inter`;
       ctx.textAlign = 'center';
-      ctx.fillText(s.guild.slice(0, 5), p.x, p.y - r * 1.65);
+      ctx.fillText(label, p.x, p.y - 28 * scale);
     }
   }
 
-  function drawRoutedPath(points, color, label, distance) {
-    if (!points?.length) return;
+  function drawSnapPreview() {
+    if (!snapPreview) return;
+    const p = iso(snapPreview.x, snapPreview.y);
     ctx.beginPath();
-    points.forEach((pt, i) => {
-      const p = iso(pt.x, pt.y);
+    ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawArrowhead(from, to, color, size = 9) {
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    ctx.save();
+    ctx.translate(to.x, to.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, -size * 0.45);
+    ctx.lineTo(-size, size * 0.45);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawRoutedPath(points, color, label, distance, opts = {}) {
+    if (!points?.length) return;
+    const { dashed = false, arrows = true, lineWidth = 3.5 } = opts;
+    const screenPts = points.map(pt => iso(pt.x, pt.y));
+
+    ctx.beginPath();
+    screenPts.forEach((p, i) => {
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     });
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([]);
+    ctx.lineWidth = dashed ? 2.5 : lineWidth;
+    ctx.setLineDash(dashed ? [10, 7] : []);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.stroke();
+    ctx.setLineDash([]);
 
-    if (label || distance) {
-      const first = iso(points[0].x, points[0].y);
+    screenPts.forEach((p, i) => {
+      if (i === 0 || i === screenPts.length - 1) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    });
+
+    if (arrows && screenPts.length >= 2) {
+      const n = screenPts.length;
+      drawArrowhead(screenPts[n - 2], screenPts[n - 1], color);
+    }
+
+    if (layers.labels && (label || distance != null)) {
+      const first = screenPts[0];
       ctx.fillStyle = color;
-      ctx.font = 'bold 9px Inter';
+      ctx.font = 'bold 10px Inter';
       ctx.textAlign = 'left';
       const txt = [label, distance != null ? `${distance} tiles` : ''].filter(Boolean).join(' · ');
-      ctx.fillText(txt, first.x + 4, first.y - 8);
+      ctx.fillText(txt, first.x + 6, first.y - 10);
     }
   }
 
   function drawPaths() {
-    (plan.paths || []).forEach(path => {
+    if (!layers.paths) return;
+
+    (plan.paths || []).forEach((path, idx) => {
       const routed = path.routedPath || path.points;
-      drawRoutedPath(routed, path.color || '#ef4444', path.label, path.distance);
+      const color = path.color || '#ef4444';
+      const selected = selectedPathIdx === idx;
+      const showSeg = selected || hoverPathHit?.pathIdx === idx;
+      drawRoutedPath(routed, color, path.label, path.distance, { lineWidth: selected ? 5 : 3.5 });
+      if (showSeg) drawSegmentLabels(ctx, iso, path, color, layers.labels || selected);
+      if (selected && routed?.length) {
+        routed.forEach((pt, wi) => {
+          const p = iso(pt.x, pt.y);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, wi === selectedWaypointIdx ? 8 : 5, 0, Math.PI * 2);
+          ctx.fillStyle = wi === selectedWaypointIdx ? '#fff' : color;
+          ctx.fill();
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        });
+      }
     });
 
     if (pathDraft.length >= 2) {
       const preview = routeThroughWaypoints(pathDraft);
-      drawRoutedPath(preview.path, '#f97316', 'Draft', preview.distance);
+      const draftColor = document.getElementById('edenPathColor')?.value || '#f97316';
+      drawRoutedPath(preview.path, draftColor, 'Draft', preview.distance, { dashed: true, arrows: true });
     } else if (pathDraft.length === 1) {
       const p = iso(pathDraft[0].x, pathDraft[0].y);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
       ctx.fillStyle = '#f97316';
       ctx.fill();
     }
@@ -204,72 +550,268 @@ export function initEdenMapPlanner() {
     if (measureA) {
       const pa = iso(measureA.x, measureA.y);
       ctx.beginPath();
-      ctx.arc(pa.x, pa.y, 7, 0, Math.PI * 2);
+      ctx.arc(pa.x, pa.y, 8, 0, Math.PI * 2);
       ctx.fillStyle = '#22d3ee';
       ctx.fill();
-      ctx.fillStyle = '#cffafe';
-      ctx.font = 'bold 9px Inter';
-      ctx.fillText('A', pa.x + 10, pa.y - 4);
+      if (layers.labels) {
+        ctx.fillStyle = '#cffafe';
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText('A', pa.x + 12, pa.y - 4);
+      }
     }
+    if (viewMode === 'route' && routeStart) {
+      const p = iso(routeStart.x, routeStart.y);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = '#3b82f6';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      if (layers.labels) {
+        ctx.fillStyle = '#93c5fd';
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText('Start', p.x + 10, p.y - 6);
+      }
+    }
+
     if (measureB) {
       const pb = iso(measureB.x, measureB.y);
       ctx.beginPath();
-      ctx.arc(pb.x, pb.y, 7, 0, Math.PI * 2);
+      ctx.arc(pb.x, pb.y, 8, 0, Math.PI * 2);
       ctx.fillStyle = '#a78bfa';
       ctx.fill();
       const route = findRoute(measureA.x, measureA.y, measureB.x, measureB.y);
       drawRoutedPath(route.path, '#a78bfa', null, null);
       const mid = route.path[Math.floor(route.path.length / 2)];
-      if (mid) {
+      if (layers.labels && mid) {
         const pm = iso(mid.x, mid.y);
         ctx.fillStyle = '#e9d5ff';
-        ctx.font = 'bold 10px Inter';
+        ctx.font = 'bold 11px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText(`${route.distance} tiles`, pm.x, pm.y - 10);
+        ctx.fillText(`${route.distance} tiles`, pm.x, pm.y - 12);
       }
     }
   }
 
   function drawPlanningTargets() {
+    if (!layers.targets) return;
     (plan.customTargets || []).forEach(t => {
       const p = iso(t.x, t.y);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(239,68,68,0.3)';
+      ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(239,68,68,0.35)';
       ctx.fill();
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 2;
       ctx.stroke();
+      if (layers.labels && t.label) {
+        ctx.fillStyle = '#fecaca';
+        ctx.font = 'bold 8px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.label, p.x, p.y - 14);
+      }
     });
   }
 
-  function draw() {
+  function updateCoordHud() {
+    const hud = document.getElementById('edenCoordHud');
+    const hoverPanel = document.getElementById('edenHoverInfo');
+    if (!hud) return;
+    if (!hoverWorld) {
+      hud.classList.add('hidden');
+      hoverPanel?.classList.add('hidden');
+      return;
+    }
+    const terrain = getTerrainAt(hoverWorld.x, hoverWorld.y);
+    const terrainLabel = terrain.charAt(0).toUpperCase() + terrain.slice(1);
+    let text = `X:${hoverWorld.x} Y:${hoverWorld.y} | ${terrainLabel}`;
+    if (hoverStruct) {
+      const meta = STRUCTURE_TYPES[hoverStruct.type];
+      text = `X:${hoverStruct.x} Y:${hoverStruct.y} | ${terrainLabel} | Zone: ${hoverStruct.zone} | ${getStructureLabel(hoverStruct.type)} · ${meta?.points || 0} OV`;
+    }
+    hud.textContent = text;
+    hud.classList.remove('hidden');
+
+    if (hoverPanel) {
+      if (hoverStruct) {
+        let extra = `${getStructureLabel(hoverStruct.type)} · ${hoverStruct.zone} · ${hoverStruct.x}:${hoverStruct.y}`;
+        const sel = structures().find(s => s.id === selectedId);
+        if (sel && sel.id !== hoverStruct.id) {
+          const route = findRoute(sel.x, sel.y, hoverStruct.x, hoverStruct.y);
+          extra += ` · ${route.distance} tiles from selected`;
+        }
+        hoverPanel.textContent = extra;
+        hoverPanel.classList.remove('hidden');
+      } else {
+        hoverPanel.classList.add('hidden');
+      }
+    }
+  }
+
+  function getViewBounds() {
+    const corners = [
+      screenToWorld(0, 0),
+      screenToWorld(canvas.width / devicePixelRatio, 0),
+      screenToWorld(0, canvas.height / devicePixelRatio),
+      screenToWorld(canvas.width / devicePixelRatio, canvas.height / devicePixelRatio),
+    ];
+    return {
+      minX: Math.min(...corners.map(c => c.x)),
+      maxX: Math.max(...corners.map(c => c.x)),
+      minY: Math.min(...corners.map(c => c.y)),
+      maxY: Math.max(...corners.map(c => c.y)),
+    };
+  }
+
+  function drawCanvas() {
     const w = canvas.width / devicePixelRatio;
     const h = canvas.height / devicePixelRatio;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#1a1208';
+    ctx.fillStyle = '#14100a';
     ctx.fillRect(0, 0, w, h);
 
-    const terrainIso = (x, y) => iso(x, y);
-    drawTerrainLayer(ctx, terrainIso, scale);
+    const fastMode = interacting || panning;
+    if (layers.reference || layers.terrain) {
+      drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
+        showReference: layers.reference,
+        referenceOpacity: refOpacity,
+        showTiles: layers.terrain,
+        showRivers: layers.terrain && !fastMode,
+        showMountains: layers.terrain && !fastMode,
+        fastMode,
+        viewBounds: getViewBounds(),
+      });
+    }
 
-    drawZoneOverlays();
+    if (!fastMode) drawZoneOverlays();
+    if (layers.territory && !fastMode) drawTerritoryOverlay(ctx, iso);
+    if (layers.sectorTiles && !fastMode) drawSectorTileOverlay(ctx, iso, sectorKey, refOpacity);
+    if (layers.heatmap && !fastMode) {
+      const heatStructs = structures().filter(structureVisible).map(s => ({
+        ...s,
+        points: STRUCTURE_TYPES[s.type]?.points || 0,
+      }));
+      drawHeatmap(ctx, iso, heatStructs, scale);
+    }
+    if (layers.fog && !fastMode) drawFogOfWar(ctx, iso, plan.explored || {}, sectorKey);
     drawPaths();
-    structures().forEach(drawStructure);
-    drawPlanningTargets();
-    drawSectorLabel();
+    if (layers.structures) structures().filter(structureVisible).forEach(drawStructure);
+    drawSnapPreview();
+    if (!fastMode) drawPlanningTargets();
+    if (!fastMode) drawSectorLabel();
+
+    onRedrawExtra?.();
+
+    document.getElementById('edenZoomLevel')?.replaceChildren(
+      document.createTextNode(`${Math.round(scale * 100)}%`)
+    );
+  }
+
+  function scheduleDraw(opts = {}) {
+    if (opts.sidebar) sidebarDirty = true;
+    if (drawRaf) return;
+    drawRaf = requestAnimationFrame(() => {
+      drawRaf = 0;
+      drawCanvas();
+      if (sidebarDirty) {
+        sidebarDirty = false;
+        renderSidebar();
+      }
+    });
+  }
+
+  function draw(opts = {}) {
+    scheduleDraw({ sidebar: true, ...opts });
+  }
+
+  function markInteracting() {
+    interacting = true;
+    clearTimeout(interactEndTimer);
+  }
+
+  function endInteraction() {
+    clearTimeout(interactEndTimer);
+    interactEndTimer = setTimeout(() => {
+      if (!panning) {
+        interacting = false;
+        scheduleDraw({ sidebar: false });
+      }
+    }, 100);
+  }
+
+  function refreshSidebar() {
     renderSidebar();
   }
 
-  function hitTest(mx, my) {
+  function hitTest(mx, my, radiusMul = 1) {
     let best = null;
     let bestD = Infinity;
+    const hitRadius = Math.max(14, 22 * scale) * radiusMul;
     structures().forEach(s => {
+      if (!shouldDrawStructure(s) && radiusMul <= 1) return;
       const p = iso(s.x, s.y);
       const d = Math.hypot(mx - p.x, my - p.y);
-      if (d < 16 * scale && d < bestD) { bestD = d; best = s; }
+      if (d < hitRadius && d < bestD) { bestD = d; best = s; }
     });
     return best;
+  }
+
+  function snapPoint(mx, my) {
+    const hit = hitTest(mx, my, 1.85);
+    if (hit) return { x: hit.x, y: hit.y, struct: hit };
+    const w = screenToWorld(mx, my);
+    return { x: w.x, y: w.y, struct: null };
+  }
+
+  function addPathPoint(mx, my) {
+    const pt = snapPoint(mx, my);
+    pathDraft.push({ x: pt.x, y: pt.y });
+  }
+
+  function reroutePath(idx) {
+    const p = plan.paths?.[idx];
+    if (!p?.points?.length) return;
+    const routed = routeThroughWaypoints(p.points);
+    p.routedPath = routed.path;
+    p.distance = routed.distance;
+    p.travelMinutes = estimateTravelMinutes(routed.distance, plan.speed || 1);
+  }
+
+  function handleRoutePlannerClick(mx, my) {
+    const pt = snapPoint(mx, my);
+    if (!routeStart) {
+      routeStart = { x: pt.x, y: pt.y };
+      if (typeof window.showToast === 'function') window.showToast('Route: pick destination', 'info', 2000);
+      draw();
+      return;
+    }
+    routeEnd = { x: pt.x, y: pt.y };
+    const routed = routeThroughWaypoints([routeStart, routeEnd]);
+    const color = document.getElementById('edenPathColor')?.value || '#3b82f6';
+    plan.paths = plan.paths || [];
+    plan.paths.push({
+      label: document.getElementById('edenPathLabel')?.value?.trim() || `Route ${plan.paths.length + 1}`,
+      points: [routeStart, routeEnd],
+      routedPath: routed.path,
+      distance: routed.distance,
+      travelMinutes: estimateTravelMinutes(routed.distance, plan.speed || 1),
+      color,
+    });
+    routeStart = routeEnd = null;
+    savePlan();
+    draw();
+    if (typeof window.showToast === 'function') {
+      window.showToast(`Route planned — ${routed.distance} tiles`, 'success');
+    }
+  }
+
+  function jumpToTemple() {
+    setSector('C');
+    centerOn(800, 800);
+    selectedId = structures().find(s => s.type === 'AT')?.id || null;
+    notifySelection();
+    draw();
   }
 
   function screenToWorld(mx, my) {
@@ -280,21 +822,37 @@ export function initEdenMapPlanner() {
     return { x: Math.round(x), y: Math.round(y) };
   }
 
-  function renderSidebar() {
-    populateFilters(); // refresh zone/type options from current structures
-
+  function getFilteredStructures() {
     const list = structures();
     const zoneFilter = document.getElementById('edenZoneFilter')?.value || 'all';
     const typeFilter = document.getElementById('edenTypeFilter')?.value || 'all';
     const search = (document.getElementById('edenStructSearch')?.value || '').toLowerCase();
 
     const filtered = list.filter(s => {
+      if (!structureVisible(s)) return false;
       if (zoneFilter !== 'all' && s.zone !== zoneFilter) return false;
       if (typeFilter !== 'all' && s.type !== typeFilter) return false;
-      if (search && !(`${s.zone} ${s.type} ${s.x}:${s.y} ${s.guild}`.toLowerCase().includes(search))) return false;
+      const label = getStructureLabel(s.type);
+      const hay = `${s.zone} ${s.type} ${label} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(s)}`;
+      if (search && !fuzzyIncludes(search, hay)) return false;
       return true;
     });
 
+    filtered.sort((a, b) => {
+      if (listSort === 'zone') return a.zone.localeCompare(b.zone) || a.type.localeCompare(b.type);
+      if (listSort === 'type') return a.type.localeCompare(b.type) || a.zone.localeCompare(b.zone);
+      const pa = STRUCTURE_TYPES[a.type]?.points || 0;
+      const pb = STRUCTURE_TYPES[b.type]?.points || 0;
+      return pb - pa || a.zone.localeCompare(b.zone);
+    });
+    return filtered;
+  }
+
+  function renderSidebar() {
+    populateFilters();
+
+    const list = structures();
+    const filtered = getFilteredStructures();
     const selected = list.find(s => s.id === selectedId);
     const selPanel = document.getElementById('edenSelectedPanel');
 
@@ -302,56 +860,57 @@ export function initEdenMapPlanner() {
       if (tool === 'measure' && measureA && measureB) {
         const route = findRoute(measureA.x, measureA.y, measureB.x, measureB.y);
         const direct = Math.round(Math.hypot(measureB.x - measureA.x, measureB.y - measureA.y));
+        const travelMins = estimateTravelMinutes(route.distance, plan.speed || 1);
         selPanel.innerHTML = `
           <div class="eden-selected-card">
             <div class="eden-selected-title">Distance A → B</div>
             <div class="eden-selected-meta">Terrain route: <strong>${route.distance}</strong> tiles · Direct: ${direct} tiles</div>
+            <div class="eden-selected-meta">Est. march: <strong>${formatTravelTime(travelMins)}</strong> @ speed ${plan.speed || 1}×</div>
             <div class="eden-selected-meta">${measureA.x}:${measureA.y} → ${measureB.x}:${measureB.y}</div>
             ${route.blocked ? '<p class="eden-hint">Partially blocked — route may cross mountains.</p>' : ''}
             <button type="button" id="edenClearMeasure" class="eden-action-btn">Clear Measure</button>
           </div>`;
-        document.getElementById('edenClearMeasure')?.addEventListener('click', () => {
-          measureA = measureB = null;
-          draw();
-        });
       } else if (!selected) {
-        selPanel.innerHTML = '<p class="eden-hint">Select a structure, measure A→B, or draw a path. Terrain (rivers, mountains) affects route distance.</p>';
+        selPanel.innerHTML = `<p class="eden-hint">Drag pan · pinch zoom (mobile) · click structure · dbl-click zoom in · click path to select/drag waypoint · Route mode: click start→end · Arrow keys pan · Del path · 1–8 sectors</p>`;
       } else {
         const meta = STRUCTURE_TYPES[selected.type];
+        const icon = getStructureIcon(selected.type);
+        const status = getStructureStatus(selected);
+        const iconHtml = isIconReady(icon)
+          ? `<img class="eden-selected-icon" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
+          : `<span class="eden-struct-dot eden-selected-dot" style="background:${meta?.color}"></span>`;
         selPanel.innerHTML = `
           <div class="eden-selected-card">
-            <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">${selected.zone}</span></div>
-            <div class="eden-selected-meta">${selected.x}:${selected.y} · ${meta?.points || 0} pts</div>
-            <label class="eden-guild-label">Guild / Team
-              <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="e.g. Team 1" />
+            <div class="eden-selected-head">
+              ${iconHtml}
+              <div>
+                <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
+                <div class="eden-selected-meta">Zone: ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
+                <div class="eden-selected-ov">⭐ Occupation Value: <strong>${meta?.points || 0}</strong></div>
+              </div>
+            </div>
+            <label class="eden-guild-label">Status
+              <select id="edenStatusSelect" class="eden-filter-select eden-status-select">
+                <option value="neutral" ${status==='neutral'?'selected':''}>⚪ Neutral</option>
+                <option value="owned" ${status==='owned'?'selected':''}>🟢 Owned</option>
+                <option value="contested" ${status==='contested'?'selected':''}>🟡 Contested</option>
+                <option value="enemy" ${status==='enemy'?'selected':''}>🔴 Enemy</option>
+              </select>
             </label>
+            <label class="eden-guild-label">Guild / Team
+              <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="e.g. Team Phoenix" />
+            </label>
+            <div class="eden-selected-meta">March from here: set speed in toolbar · est. times on paths/measures</div>
             <div class="eden-selected-actions">
               <button type="button" id="edenToggleTargetBtn" class="eden-action-btn ${(plan.targets||[]).includes(selected.id)?'active':''}">
                 ${(plan.targets||[]).includes(selected.id) ? '★ Target' : '☆ Mark Target'}
               </button>
               <button type="button" id="edenCenterBtn" class="eden-action-btn">Center</button>
+              <button type="button" id="edenZoomStructBtn" class="eden-action-btn">Zoom In</button>
+              <button type="button" id="edenCopyCoordsBtn" class="eden-action-btn" data-coords="${selected.x}:${selected.y}">Copy coords</button>
+              <button type="button" id="edenComboLinkBtn" class="eden-action-btn eden-combo-link">Build Combo</button>
             </div>
           </div>`;
-        document.getElementById('edenGuildInput')?.addEventListener('change', (e) => {
-          plan.guilds = plan.guilds || {};
-          plan.guilds[selected.id] = e.target.value.trim();
-          savePlan(plan);
-          draw();
-        });
-        document.getElementById('edenToggleTargetBtn')?.addEventListener('click', () => {
-          plan.targets = plan.targets || [];
-          const i = plan.targets.indexOf(selected.id);
-          if (i >= 0) plan.targets.splice(i, 1);
-          else plan.targets.push(selected.id);
-          savePlan(plan);
-          draw();
-        });
-        document.getElementById('edenCenterBtn')?.addEventListener('click', () => {
-          const rect = canvas.getBoundingClientRect();
-          offsetX = rect.width * 0.5 - (selected.x - selected.y) * 0.5 * scale;
-          offsetY = rect.height * 0.35 - (selected.x + selected.y) * 0.25 * scale;
-          draw();
-        });
       }
     }
 
@@ -360,70 +919,121 @@ export function initEdenMapPlanner() {
       listEl.innerHTML = filtered.map(s => {
         const meta = STRUCTURE_TYPES[s.type];
         const isTarget = (plan.targets || []).includes(s.id);
-        return `<button type="button" class="eden-struct-row ${selectedId===s.id?'active':''}" data-id="${s.id}">
-          <span class="eden-struct-dot" style="background:${meta?.color}"></span>
-          <span class="eden-struct-info"><strong>${s.type}</strong> ${s.zone} <em>${s.x}:${s.y}</em></span>
-          <span class="eden-struct-pts">${meta?.points}p</span>
+        const icon = getStructureIcon(s.type);
+        const thumb = isIconReady(icon)
+          ? `<img class="eden-struct-thumb" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
+          : `<span class="eden-struct-dot" style="background:${meta?.color}"></span>`;
+        const rowClass = CATEGORY_ROW_CLASS[meta?.category] || '';
+        const ring = STATUS_COLORS[getStructureStatus(s)] || STATUS_COLORS.neutral;
+        return `<button type="button" class="eden-struct-row ${rowClass} ${selectedId===s.id?'active':''}" data-id="${s.id}">
+          <span class="eden-status-ring" style="--ring:${ring}"></span>
+          ${thumb}
+          <span class="eden-struct-info"><strong>${getStructureLabel(s.type)}</strong> ${s.zone} <em>${s.x}:${s.y}</em></span>
+          <span class="eden-struct-pts">${meta?.points} OV</span>
           ${isTarget ? '<span class="eden-target-star">★</span>' : ''}
         </button>`;
       }).join('');
-      listEl.querySelectorAll('.eden-struct-row').forEach(btn => {
-        btn.addEventListener('click', () => { selectedId = btn.dataset.id; draw(); });
-      });
     }
 
     const statsEl = document.getElementById('edenMapStats');
     if (statsEl) {
       const pts = list.reduce((sum, s) => sum + (STRUCTURE_TYPES[s.type]?.points || 0), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
-      statsEl.textContent = `${list.length} structures · ${pts.toLocaleString()} pts · ${(plan.targets||[]).length} targets · ${(plan.paths||[]).length} paths (${pathDist.toLocaleString()} tiles)`;
+      const pathTime = formatTravelTime(estimateTravelMinutes(pathDist, plan.speed || 1));
+      const modeLabel = viewMode === 'scout' ? ' · Scout' : viewMode === 'route' ? ' · Route' : '';
+      statsEl.textContent = `${filtered.length}/${list.length} shown · ${pts.toLocaleString()} OV · ${(plan.targets||[]).length} targets · ${(plan.paths||[]).length} paths (${pathDist.toLocaleString()} tiles, ~${pathTime})${modeLabel}`;
     }
   }
 
+  function setSector(key, smooth = false) {
+    sectorKey = key;
+    markSectorExplored(key);
+    selectedId = null;
+    notifySelection();
+    pathDraft = [];
+    filtersPopulatedFor = null;
+    document.getElementById('edenSectorSelect').value = key;
+    document.querySelectorAll('[data-eden-sector]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.edenSector === key);
+    });
+    fitView();
+    if (smooth && key !== 'FULL') {
+      const b = getSectorBounds(key);
+      centerOn((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, true);
+    }
+    draw();
+  }
+
   function bindToolbar() {
-    document.getElementById('edenSectorSelect')?.addEventListener('change', (e) => {
-      sectorKey = e.target.value;
-      selectedId = null;
-      pathDraft = [];
-      fitView();
-      draw();
+    document.getElementById('edenSectorSelect')?.addEventListener('change', (e) => setSector(e.target.value));
+
+    document.querySelectorAll('[data-eden-sector]').forEach(btn => {
+      btn.addEventListener('click', () => setSector(btn.dataset.edenSector));
     });
 
     document.querySelectorAll('[data-eden-tool]').forEach(btn => {
+      btn.addEventListener('click', () => setTool(btn.dataset.edenTool));
+    });
+
+    document.getElementById('edenFitView')?.addEventListener('click', () => { fitView(); draw(); });
+
+    document.querySelectorAll('[data-eden-layer]').forEach(btn => {
+      const layer = btn.dataset.edenLayer;
+      layers[layer] = btn.classList.contains('active');
       btn.addEventListener('click', () => {
-        tool = btn.dataset.edenTool;
-        document.querySelectorAll('[data-eden-tool]').forEach(b => b.classList.toggle('active', b === btn));
-        pathDraft = [];
-        if (tool !== 'measure') { measureA = measureB = null; }
+        layers[layer] = !layers[layer];
+        btn.classList.toggle('active', layers[layer]);
         draw();
       });
     });
 
-    document.getElementById('edenZoomIn')?.addEventListener('click', () => { scale = Math.min(1.2, scale + 0.06); draw(); });
-    document.getElementById('edenZoomOut')?.addEventListener('click', () => { scale = Math.max(0.2, scale - 0.06); draw(); });
+    document.getElementById('edenSortSelect')?.addEventListener('change', (e) => {
+      listSort = e.target.value;
+      draw();
+    });
+
+    document.getElementById('edenZoomIn')?.addEventListener('click', () => {
+      scale = snapScale(Math.min(MAX_SCALE, scale * 1.15));
+      draw();
+    });
+    document.getElementById('edenZoomOut')?.addEventListener('click', () => {
+      scale = snapScale(Math.max(MIN_SCALE, scale / 1.15));
+      draw();
+    });
     document.getElementById('edenResetView')?.addEventListener('click', () => { fitView(); draw(); });
+
+    document.getElementById('edenUndoPath')?.addEventListener('click', () => {
+      pathDraft.pop();
+      draw();
+    });
 
     document.getElementById('edenFinishPath')?.addEventListener('click', () => {
       if (pathDraft.length < 2) return;
       const routed = routeThroughWaypoints(pathDraft);
+      const color = document.getElementById('edenPathColor')?.value || '#ef4444';
+      const customLabel = document.getElementById('edenPathLabel')?.value?.trim();
+      const travelMins = estimateTravelMinutes(routed.distance, plan.speed || 1);
       plan.paths = plan.paths || [];
       plan.paths.push({
-        label: `Path ${plan.paths.length + 1}`,
+        label: customLabel || `Route ${plan.paths.length + 1}`,
         points: [...pathDraft],
         routedPath: routed.path,
         distance: routed.distance,
-        color: '#ef4444',
+        travelMinutes: travelMins,
+        color,
       });
       pathDraft = [];
-      savePlan(plan);
+      savePlan();
       draw();
-      if (typeof window.showToast === 'function') window.showToast(`Path saved — ${routed.distance} tiles`, 'success');
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Path saved — ${routed.distance} tiles (~${formatTravelTime(travelMins)})`, 'success');
+      }
     });
 
     document.getElementById('edenClearPaths')?.addEventListener('click', () => {
       plan.paths = [];
       pathDraft = [];
-      savePlan(plan);
+      savePlan();
       draw();
     });
 
@@ -435,20 +1045,243 @@ export function initEdenMapPlanner() {
       a.click();
     });
 
+    document.getElementById('edenImportPlan')?.addEventListener('click', () => {
+      document.getElementById('edenImportFile')?.click();
+    });
+
+    document.getElementById('edenImportFile')?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          plan = normalizePlan(JSON.parse(reader.result));
+          savePlan();
+          draw();
+          if (typeof window.showToast === 'function') window.showToast('Plan imported', 'success');
+        } catch {
+          if (typeof window.showToast === 'function') window.showToast('Invalid plan file', 'error');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('edenSharePlan')?.addEventListener('click', sharePlanLink);
+
+    document.getElementById('edenRefOpacity')?.addEventListener('input', (e) => {
+      refOpacity = Number(e.target.value) / 100;
+      draw();
+    });
+
+    document.querySelectorAll('[data-eden-faction]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        factionFilter = btn.dataset.edenFaction;
+        document.querySelectorAll('[data-eden-faction]').forEach(b => b.classList.toggle('active', b === btn));
+        draw();
+      });
+    });
+
     document.getElementById('edenLoadX1Targets')?.addEventListener('click', () => {
       plan.customTargets = X1_PLANNING_TARGETS.filter(t => t.x && t.y).map(t => ({
         x: t.x, y: t.y, label: t.name, team: t.team,
       }));
-      savePlan(plan);
+      savePlan();
       draw();
       if (typeof window.showToast === 'function') window.showToast('Loaded X1 planning targets', 'info');
     });
+
+    document.getElementById('edenPlanSelect')?.addEventListener('change', (e) => switchPlan(e.target.value));
+    document.getElementById('edenPlanNew')?.addEventListener('click', () => {
+      const id = `plan_${Date.now()}`;
+      const name = prompt('Plan name', `Plan ${Object.keys(plansStore.plans).length + 1}`);
+      if (!name) return;
+      plansStore.plans[id] = { name, plan: createEmptyPlan() };
+      activePlanId = id;
+      plan = createEmptyPlan();
+      savePlan();
+      syncPlanSelector();
+      draw();
+    });
+    document.getElementById('edenPlanRename')?.addEventListener('click', () => {
+      const entry = plansStore.plans[activePlanId];
+      if (!entry) return;
+      const name = prompt('Rename plan', entry.name || activePlanId);
+      if (!name) return;
+      entry.name = name;
+      savePlan();
+      syncPlanSelector();
+    });
+    document.getElementById('edenPlanDelete')?.addEventListener('click', () => {
+      if (Object.keys(plansStore.plans).length <= 1) {
+        if (typeof window.showToast === 'function') window.showToast('Keep at least one plan', 'error');
+        return;
+      }
+      delete plansStore.plans[activePlanId];
+      activePlanId = Object.keys(plansStore.plans)[0];
+      plan = normalizePlan(plansStore.plans[activePlanId].plan);
+      savePlan();
+      syncPlanSelector();
+      draw();
+    });
+
+    document.getElementById('edenViewMode')?.addEventListener('change', async (e) => {
+      viewMode = e.target.value;
+      routeStart = routeEnd = null;
+      if (viewMode === 'scout' && !scoutActive) {
+        const res = await startScoutSync((intel) => {
+          if (!intel) return;
+          plan = mergeScoutIntel(plan, intel);
+          savePlan();
+          draw();
+        });
+        scoutActive = res.ok;
+        if (!res.ok && typeof window.showToast === 'function') {
+          window.showToast(`Scout offline: ${res.error}`, 'info');
+        }
+      }
+      if (viewMode !== 'scout') {
+        stopScoutSync();
+        scoutActive = false;
+      }
+      draw();
+    });
+
+    document.getElementById('edenMarchSpeed')?.addEventListener('input', (e) => {
+      plan.speed = Math.max(0.25, Number(e.target.value) / 100);
+      document.getElementById('edenMarchSpeedVal')?.replaceChildren(
+        document.createTextNode(`${(plan.speed).toFixed(2)}×`)
+      );
+      draw();
+    });
+
+    document.getElementById('edenExportImage')?.addEventListener('click', async () => {
+      if (typeof window.showToast === 'function') window.showToast('Exporting map…', 'info');
+      await exportMapAsPng(canvas, `eden-${activePlanId}.png`);
+      if (typeof window.showToast === 'function') window.showToast('Map image saved', 'success');
+    });
+
+    document.getElementById('edenScoutPull')?.addEventListener('click', async () => {
+      const intel = await pullScoutIntel();
+      if (!intel) {
+        if (typeof window.showToast === 'function') window.showToast('No scout intel found', 'info');
+        return;
+      }
+      plan = mergeScoutIntel(plan, intel);
+      savePlan();
+      draw();
+      if (typeof window.showToast === 'function') window.showToast('Scout intel merged', 'success');
+    });
+
+    document.getElementById('edenScoutPush')?.addEventListener('click', async () => {
+      const res = await pushScoutIntel(plan);
+      if (typeof window.showToast === 'function') {
+        window.showToast(res.ok ? 'Intel pushed to cloud' : `Push failed: ${res.error}`, res.ok ? 'success' : 'error');
+      }
+    });
+
+    document.getElementById('edenDeletePath')?.addEventListener('click', () => {
+      if (selectedPathIdx != null && plan.paths?.[selectedPathIdx]) {
+        plan.paths.splice(selectedPathIdx, 1);
+        selectedPathIdx = selectedWaypointIdx = null;
+        savePlan();
+        draw();
+        return;
+      }
+      if (pathDraft.length) { pathDraft.pop(); draw(); return; }
+      if (plan.paths?.length) { plan.paths.pop(); savePlan(); draw(); }
+    });
+
+    syncPlanSelector();
+    const speedInput = document.getElementById('edenMarchSpeed');
+    if (speedInput) {
+      speedInput.value = Math.round((plan.speed || 1) * 100);
+      document.getElementById('edenMarchSpeedVal')?.replaceChildren(
+        document.createTextNode(`${(plan.speed || 1).toFixed(2)}×`)
+      );
+    }
   }
+
+  sidebar.addEventListener('click', (e) => {
+    const row = e.target.closest('.eden-struct-row');
+    if (row) {
+      selectedId = row.dataset.id;
+      const s = structures().find(st => st.id === selectedId);
+      if (s) centerOn(s.x, s.y);
+      notifySelection();
+      draw();
+      return;
+    }
+    if (e.target.closest('#edenClearMeasure')) {
+      measureA = measureB = null;
+      draw();
+      return;
+    }
+    if (e.target.closest('#edenCenterBtn')) {
+      const s = structures().find(st => st.id === selectedId);
+      if (s) centerOn(s.x, s.y, true);
+      draw();
+      return;
+    }
+    if (e.target.closest('#edenZoomStructBtn')) {
+      const s = structures().find(st => st.id === selectedId);
+      if (s) zoomToStructure(s);
+      return;
+    }
+    if (e.target.closest('#edenComboLinkBtn')) {
+      const s = structures().find(st => st.id === selectedId);
+      document.getElementById('tabGenerator')?.click();
+      if (typeof window.showToast === 'function' && s) {
+        window.showToast(`Combo Creator — plan for ${s.zone} (${getStructureLabel(s.type)})`, 'info', 4000);
+      }
+      return;
+    }
+    if (e.target.closest('#edenToggleTargetBtn')) {
+      plan.targets = plan.targets || [];
+      const i = plan.targets.indexOf(selectedId);
+      if (i >= 0) plan.targets.splice(i, 1);
+      else plan.targets.push(selectedId);
+      savePlan();
+      draw();
+    }
+    if (e.target.closest('#edenCopyCoordsBtn')) {
+      const btn = e.target.closest('#edenCopyCoordsBtn');
+      const text = btn?.dataset.coords || '';
+      navigator.clipboard?.writeText(text).then(() => {
+        if (typeof window.showToast === 'function') window.showToast(`Copied ${text}`, 'success');
+      });
+    }
+  });
+
+  sidebar.addEventListener('change', (e) => {
+    if (e.target.id === 'edenGuildInput') {
+      plan.guilds = plan.guilds || {};
+      plan.guilds[selectedId] = e.target.value.trim();
+      savePlan();
+      draw();
+    }
+    if (e.target.id === 'edenStatusSelect') {
+      plan.status = plan.status || {};
+      plan.status[selectedId] = e.target.value;
+      savePlan();
+      draw();
+    }
+  });
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    scale = Math.min(1.2, Math.max(0.2, scale + (e.deltaY > 0 ? -0.04 : 0.04)));
-    draw();
+    markInteracting();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const worldBefore = screenToWorld(mx, my);
+    const factor = e.deltaY > 0 ? 0.9 : 1.11;
+    scale = snapScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor)));
+    const worldAfter = screenToWorld(mx, my);
+    offsetX += (worldAfter.x - worldBefore.x) * 0.5 * scale;
+    offsetY += (worldAfter.y - worldBefore.y) * 0.25 * scale;
+    scheduleDraw({ sidebar: false });
+    endInteraction();
   }, { passive: false });
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -457,59 +1290,298 @@ export function initEdenMapPlanner() {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     lastPointer = { x: mx, y: my };
+    dragMoved = false;
+    pointerDownHit = null;
 
-    if (tool === 'pan' || e.button === 1 || e.altKey) { panning = true; return; }
+    if (e.button === 1) {
+      panning = true;
+      markInteracting();
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
 
     const hit = hitTest(mx, my);
-    const world = hit ? { x: hit.x, y: hit.y } : screenToWorld(mx, my);
 
-    if (tool === 'select') {
-      selectedId = hit?.id || null;
+    if (viewMode === 'route') {
+      handleRoutePlannerClick(mx, my);
+      return;
+    }
+
+    if (e.altKey) {
+      const pt = snapPoint(mx, my);
+      if (!measureA) measureA = { x: pt.x, y: pt.y };
+      else if (!measureB) measureB = { x: pt.x, y: pt.y };
+      else { measureA = { x: pt.x, y: pt.y }; measureB = null; }
       draw();
       return;
     }
+
+    if (tool === 'navigate' && (plan.paths || []).length) {
+      const hit = hitTestPath(mx, my, plan.paths, (x, y) => iso(x, y));
+      if (hit) {
+        selectedPathIdx = hit.pathIdx;
+        selectedWaypointIdx = hit.waypointIdx;
+        draggingWaypoint = { pathIdx: hit.pathIdx, waypointIdx: hit.waypointIdx };
+        selectedId = null;
+        notifySelection();
+        draw();
+        return;
+      }
+    }
+
+    if (e.shiftKey || tool === 'path') {
+      addPathPoint(mx, my);
+      draw();
+      return;
+    }
+
     if (tool === 'measure') {
-      if (!measureA) measureA = world;
-      else if (!measureB) measureB = world;
-      else { measureA = world; measureB = null; }
+      const pt = snapPoint(mx, my);
+      if (!measureA) measureA = { x: pt.x, y: pt.y };
+      else if (!measureB) measureB = { x: pt.x, y: pt.y };
+      else { measureA = { x: pt.x, y: pt.y }; measureB = null; }
       draw();
       return;
     }
-    if (tool === 'path') {
-      pathDraft.push(world);
-      draw();
-      return;
-    }
+
     if (tool === 'target') {
+      const pt = snapPoint(mx, my);
       plan.customTargets = plan.customTargets || [];
-      plan.customTargets.push({ x: world.x, y: world.y, label: `T${plan.customTargets.length + 1}` });
-      savePlan(plan);
+      plan.customTargets.push({ x: pt.x, y: pt.y, label: `T${plan.customTargets.length + 1}` });
+      savePlan();
       draw();
+      return;
     }
+
+    // navigate: click structure to select, drag empty (or any) to pan
+    if (hit) {
+      pointerDownHit = hit;
+      return;
+    }
+    panning = true;
+    markInteracting();
+    canvas.style.cursor = 'grabbing';
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    if (!panning) return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    offsetX += mx - lastPointer.x;
-    offsetY += my - lastPointer.y;
-    lastPointer = { x: mx, y: my };
+
+    if (pointerDownHit && !panning && Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 5) {
+      pointerDownHit = null;
+      panning = true;
+      markInteracting();
+      canvas.style.cursor = 'grabbing';
+    }
+
+    if (draggingWaypoint) {
+      const w = screenToWorld(mx, my);
+      const p = plan.paths[draggingWaypoint.pathIdx];
+      if (p?.points?.[draggingWaypoint.waypointIdx]) {
+        p.points[draggingWaypoint.waypointIdx] = { x: w.x, y: w.y };
+        reroutePath(draggingWaypoint.pathIdx);
+        scheduleDraw({ sidebar: false });
+      }
+      return;
+    }
+
+    if (panning) {
+      if (Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 2) dragMoved = true;
+      offsetX += mx - lastPointer.x;
+      offsetY += my - lastPointer.y;
+      lastPointer = { x: mx, y: my };
+      markInteracting();
+      scheduleDraw({ sidebar: false });
+      return;
+    }
+
+    const nextPathHit = (plan.paths || []).length
+      ? hitTestPath(mx, my, plan.paths, (x, y) => iso(x, y), 14)
+      : null;
+    const pathHoverChanged = (hoverPathHit?.pathIdx !== nextPathHit?.pathIdx);
+    hoverPathHit = nextPathHit;
+
+    const nextHover = hitTest(mx, my);
+    const hoverChanged = (nextHover?.id || null) !== (hoverStruct?.id || null);
+    hoverStruct = nextHover;
+    hoverWorld = hoverStruct ? { x: hoverStruct.x, y: hoverStruct.y } : screenToWorld(mx, my);
+
+    const pathMode = tool === 'path' || e.shiftKey;
+    const snap = pathMode ? snapPoint(mx, my) : null;
+    const nextSnap = snap?.struct ? { x: snap.x, y: snap.y } : null;
+    const snapChanged = (snapPreview?.x !== nextSnap?.x || snapPreview?.y !== nextSnap?.y);
+    snapPreview = nextSnap;
+
+    updateCoordHud();
+    if (hoverChanged || snapChanged || pathHoverChanged) scheduleDraw({ sidebar: false });
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    hoverStruct = null;
+    hoverWorld = null;
+    updateCoordHud();
+  });
+
+  canvas.addEventListener('pointerup', () => {
+    if (draggingWaypoint) {
+      savePlan();
+      draggingWaypoint = null;
+    }
+    const wasPanning = panning;
+    panning = false;
+    if (!dragMoved && pointerDownHit) {
+      selectedId = pointerDownHit.id;
+      notifySelection();
+      draw();
+    } else if (wasPanning && tool === 'navigate' && !dragMoved && !pointerDownHit) {
+      selectedId = null;
+      notifySelection();
+      draw();
+    } else if (wasPanning) {
+      endInteraction();
+    }
+    syncToolButtons();
+    pointerDownHit = null;
+  });
+
+  canvas.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const hit = hitTest(mx, my);
+    if (hit) {
+      selectedId = hit.id;
+      notifySelection();
+      zoomToStructure(hit);
+      draw();
+      return;
+    }
+    fitView();
     draw();
   });
 
-  canvas.addEventListener('pointerup', () => { panning = false; });
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (tool === 'path' && pathDraft.length) {
+      pathDraft.pop();
+      draw();
+    }
+  });
 
   ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('input', () => draw());
-      el.addEventListener('change', () => draw());
+      el.addEventListener('input', refreshSidebar);
+      el.addEventListener('change', refreshSidebar);
+    }
+  });
+  const ownFilterEl = document.getElementById('edenOwnershipFilter');
+  if (ownFilterEl) {
+    ownFilterEl.addEventListener('change', () => draw());
+    ownFilterEl.addEventListener('input', () => draw());
+  }
+
+  bindToolbar();
+  syncToolButtons();
+  populateFilters(true);
+  markSectorExplored(sectorKey);
+
+  loadPlanFromHash();
+
+  initEdenMapUI({
+    getMapBounds: getMapBounds,
+    getViewBounds,
+    getStructures: structures,
+    getPaths: () => plan.paths || [],
+    getStructureMeta: (type) => STRUCTURE_TYPES[type],
+    getScale: () => scale,
+    centerOn: (x, y) => centerOn(x, y, true),
+    fitView,
+    panBy,
+    setSector: (key) => setSector(key, true),
+    redraw: () => scheduleDraw({ sidebar: false }),
+    setTool,
+    jumpToTemple,
+    zoomIn: () => { scale = snapScale(Math.min(MAX_SCALE, scale * 1.15)); draw(); },
+    zoomOut: () => { scale = snapScale(Math.max(MIN_SCALE, scale / 1.15)); draw(); },
+    clearMeasure: () => { measureA = measureB = null; draw(); },
+    clearSelection: () => { selectedId = null; draw(); },
+    undoPathPoint: () => { pathDraft.pop(); draw(); },
+    deleteSelectedPath: () => {
+      if (selectedPathIdx != null && plan.paths?.[selectedPathIdx]) {
+        plan.paths.splice(selectedPathIdx, 1);
+        selectedPathIdx = selectedWaypointIdx = null;
+        savePlan();
+        draw();
+        return;
+      }
+      if (pathDraft.length) { pathDraft.pop(); draw(); return; }
+      if ((plan.paths || []).length) {
+        plan.paths.pop();
+        savePlan();
+        draw();
+      }
+    },
+    resetLayers: () => {
+      Object.assign(layers, {
+        reference: true, terrain: false, structures: true, paths: true, targets: true,
+        labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
+      });
+      document.querySelectorAll('[data-eden-layer]').forEach(btn => {
+        btn.classList.toggle('active', layers[btn.dataset.edenLayer]);
+      });
+      draw();
+    },
+    onRedraw: (fn) => { onRedrawExtra = fn; },
+    onSelectionChange: (fn) => { onSelectionChange = fn; },
+  });
+
+  let touchPinch = null;
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const a = e.touches[0];
+      const b = e.touches[1];
+      const rect = canvas.getBoundingClientRect();
+      touchPinch = {
+        dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY),
+        mx: (a.clientX + b.clientX) / 2 - rect.left,
+        my: (a.clientY + b.clientY) / 2 - rect.top,
+        scale0: scale,
+      };
+      markInteracting();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchPinch || e.touches.length < 2) return;
+    e.preventDefault();
+    const a = e.touches[0];
+    const b = e.touches[1];
+    const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    const factor = dist / touchPinch.dist;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (a.clientX + b.clientX) / 2 - rect.left;
+    const my = (a.clientY + b.clientY) / 2 - rect.top;
+    const worldBefore = screenToWorld(touchPinch.mx, touchPinch.my);
+    scale = snapScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, touchPinch.scale0 * factor)));
+    const worldAfter = screenToWorld(mx, my);
+    offsetX += (worldAfter.x - worldBefore.x) * 0.5 * scale;
+    offsetY += (worldAfter.y - worldBefore.y) * 0.25 * scale;
+    touchPinch.mx = mx;
+    touchPinch.my = my;
+    scheduleDraw({ sidebar: false });
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => {
+    if (touchPinch) {
+      touchPinch = null;
+      endInteraction();
     }
   });
 
-  bindToolbar();
   window.addEventListener('resize', resize);
   resize();
 }

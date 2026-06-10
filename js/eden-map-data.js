@@ -2,21 +2,30 @@
 // Source: Akhenaten (S167) — full coordinate reference
 // Coordinates are raw game coords (X:Y format from images)
 
+// In-game names per Rise of Castles Eden occupation guide (Gates, Towns, Capitals, Temple).
 export const STRUCTURE_TYPES = {
-  CP1:  { label: 'Checkpoint 1',  points: 5,   color: '#94a3b8', size: 6  },
-  CP2:  { label: 'Checkpoint 2',  points: 5,   color: '#a8b4c4', size: 6  },
-  CP3:  { label: 'Checkpoint 3',  points: 5,   color: '#7dd3fc', size: 6  },
-  CP4:  { label: 'Checkpoint 4',  points: 5,   color: '#38bdf8', size: 6  },
-  CP5:  { label: 'Checkpoint 5',  points: 5,   color: '#0ea5e9', size: 6  },
-  ST1:  { label: 'Small Tower',   points: 15,  color: '#4ade80', size: 9  },
-  ST2:  { label: 'Small Tower 2', points: 20,  color: '#22c55e', size: 9  },
-  LT3:  { label: 'Large Tower',   points: 30,  color: '#3b82f6', size: 12 },
-  LT4:  { label: 'Large Tower 4', points: 50,  color: '#6366f1', size: 12 },
-  C5:   { label: 'Capital Lv5',   points: 70,  color: '#f59e0b', size: 16 },
-  C6:   { label: 'Capital Lv6',   points: 100, color: '#ef4444', size: 18 },
-  CS:   { label: 'Capital S',     points: 70,  color: '#f59e0b', size: 16 },
-  AT:   { label: 'Altar',         points: 600, color: '#ec4899', size: 20 },
+  CP1:  { label: 'Gate Lv1',           short: 'G1', category: 'gate',       points: 5,   color: '#94a3b8', size: 6  },
+  CP2:  { label: 'Gate Lv2',           short: 'G2', category: 'gate',       points: 5,   color: '#a8b4c4', size: 6  },
+  CP3:  { label: 'Gate Lv3',           short: 'G3', category: 'gate',       points: 5,   color: '#7dd3fc', size: 6  },
+  CP4:  { label: 'Gate Lv4',           short: 'G4', category: 'gate',       points: 5,   color: '#38bdf8', size: 6  },
+  CP5:  { label: 'Gate Lv5',           short: 'G5', category: 'gate',       points: 5,   color: '#0ea5e9', size: 6  },
+  ST1:  { label: 'Small Town Lv1',     short: 'ST1', category: 'town',      points: 15,  color: '#4ade80', size: 9  },
+  ST2:  { label: 'Small Town Lv2',     short: 'ST2', category: 'town',      points: 20,  color: '#22c55e', size: 9  },
+  LT3:  { label: 'Large Town Lv3',     short: 'LT3', category: 'town',      points: 30,  color: '#3b82f6', size: 12 },
+  LT4:  { label: 'Large Town Lv4',     short: 'LT4', category: 'town',      points: 50,  color: '#6366f1', size: 12 },
+  C5:   { label: 'Capital Lv5',        short: 'C5', category: 'capital',   points: 70,  color: '#f59e0b', size: 16 },
+  C6:   { label: 'Capital Lv6',        short: 'C6', category: 'capital',   points: 100, color: '#ef4444', size: 18 },
+  CS:   { label: 'Stronghold',         short: 'SH', category: 'stronghold', points: 70,  color: '#f59e0b', size: 16 },
+  AT:   { label: 'Ancient Temple',     short: 'AT', category: 'temple',    points: 600, color: '#ec4899', size: 20 },
 };
+
+export function getStructureLabel(type) {
+  return STRUCTURE_TYPES[type]?.label || type;
+}
+
+export function getStructureShort(type) {
+  return STRUCTURE_TYPES[type]?.short || type;
+}
 
 export const EDEN_SECTORS = {
 
@@ -778,6 +787,26 @@ export const EDEN_SECTORS = {
   },
 };
 
+// Eden North/South seasonal layout — cardinal + central sectors by faction half.
+export const SECTOR_FACTION = {
+  N: 'north', NE: 'north', NW: 'north', NC: 'north', EC: 'north', WC: 'north',
+  S: 'south', SE: 'south', SW: 'south', SC: 'south', E: 'south', W: 'south',
+  C: 'contested',
+};
+
+export const PATH_COLORS = [
+  { id: 'red', label: 'Red Alliance', color: '#ef4444' },
+  { id: 'blue', label: 'Blue Alliance', color: '#3b82f6' },
+  { id: 'purple', label: 'Purple Route', color: '#a855f7' },
+  { id: 'yellow', label: 'Yellow Route', color: '#eab308' },
+  { id: 'green', label: 'Green / Friendly', color: '#22c55e' },
+  { id: 'orange', label: 'Scout / Draft', color: '#f97316' },
+];
+
+export function getSectorFaction(sectorKey) {
+  return SECTOR_FACTION[sectorKey] || 'all';
+}
+
 export function getSectorStructures(sectorKey) {
   if (sectorKey === 'FULL') {
     return Object.entries(EDEN_SECTORS).flatMap(([sk, sec]) =>
@@ -793,4 +822,11 @@ export function getSectorBounds(sectorKey) {
   return EDEN_SECTORS[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 }
 
-export const X1_PLANNING_TARGETS = [];
+export const X1_PLANNING_TARGETS = [
+  { name: 'Temple Push', team: 'Alliance', x: 800, y: 800 },
+  { name: 'NC1 Cap', team: 'North', x: 551, y: 660 },
+  { name: 'W Gate Line', team: 'West', x: 280, y: 720 },
+  { name: 'E Stronghold', team: 'East', x: 1280, y: 640 },
+  { name: 'S Desert Town', team: 'South', x: 620, y: 1180 },
+  { name: 'NE Rally', team: 'North', x: 980, y: 420 },
+];

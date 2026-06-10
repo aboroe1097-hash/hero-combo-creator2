@@ -1,5 +1,6 @@
 // js/comments.js - Threaded Comments with Name Input
-import { ensureAnonymousAuth, getDb } from './firebase.js';
+import { getDb } from './firebase.js';
+import { escapeHtml } from './utils.js';
 
 let commentsListenerUnsub = null;
 
@@ -35,7 +36,9 @@ function createCommentCard(id, data, isReply = false) {
   const dt = data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000) : new Date();
   const timeStr = dt.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const displayName = data.name?.trim() || 'Anonymous';
-  const initial = displayName[0].toUpperCase();
+  const safeName = escapeHtml(displayName);
+  const safeText = escapeHtml(data.text || '');
+  const initial = escapeHtml(displayName[0].toUpperCase());
   const isOwn = data.authorId && data.authorId === currentUserId;
 
   // Pick a gradient for avatar based on name char code
@@ -60,11 +63,11 @@ function createCommentCard(id, data, isReply = false) {
     </div>
     <div class="flex-1 min-w-0">
       <div class="flex items-baseline gap-2 flex-wrap mb-1">
-        <span class="font-bold text-sm text-sky-400">${displayName}</span>
-        <span class="text-[10px] text-slate-500">${timeStr}</span>
+        <span class="font-bold text-sm text-sky-400">${safeName}</span>
+        <span class="text-[10px] text-slate-500">${escapeHtml(timeStr)}</span>
         ${isOwn ? `<button class="del-btn ml-auto text-[10px] font-bold text-slate-600 hover:text-red-400 transition-colors px-2 py-0.5 rounded bg-red-900/0 hover:bg-red-900/20 border border-transparent hover:border-red-800/40">Delete</button>` : ''}
       </div>
-      <p class="text-sm text-slate-300 leading-relaxed break-words">${data.text || ''}</p>
+      <p class="text-sm text-slate-300 leading-relaxed break-words">${safeText}</p>
       <div class="flex items-center gap-3 mt-2">
         <button class="reply-btn flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-blue-400 transition-colors">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15-6 6m0 0-6-6m6 6V9a6 6 0 0 1 12 0v3"/></svg>
@@ -168,7 +171,7 @@ window.submitReply = async (parentId) => {
   const displayName = nameInput.value.trim() || 'Guest';
 
   try {
-    await addCommentToDb(text, displayName, parentId);
+    await addCommentToDb(text, displayName, null, parentId);
     input.value = '';
     // Optional: Clear name or keep it? Keeping it is usually friendlier if they reply twice.
     document.getElementById(`reply-form-${parentId}`).classList.add('hidden');
@@ -197,13 +200,14 @@ async function deleteComment(docId) {
   }
 }
 
-async function addCommentToDb(text, name, parentId = null) {
+async function addCommentToDb(text, name, email = null, parentId = null) {
   const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-  
+
   await addDoc(collection(getDb(), 'comments'), {
     text,
     name: name || null,
-    parentId: parentId, 
+    email: email || null,
+    parentId: parentId,
     authorId: currentUserId,
     createdAt: serverTimestamp(),
     approved: true,
@@ -239,7 +243,7 @@ function wireCommentsUI() {
     
     postCommentBtn.disabled = true;
     try {
-      await addCommentToDb(text, commentName.value.trim(), null);
+      await addCommentToDb(text, commentName.value.trim(), commentEmail?.value.trim() || null, null);
       commentText.value = '';
     } catch (e) {
       console.error(e);
