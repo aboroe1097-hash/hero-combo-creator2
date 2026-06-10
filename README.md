@@ -1,15 +1,23 @@
-# Hero Combo Creator — VTS 1097 (b6.0)
+# Hero Combo Creator — VTS 1097 (b6.2)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, and more.
+
+## What's new in b6.2
+
+- **Eden toolbar hover tooltips** — every control-deck button and layer toggle shows a description on hover (i18n via `js/eden-tooltips.js`)
+- **Research game-style trees** — Basic Military and Solid Tactics use in-game layout with paged branches (`layoutMode: "game"`)
+- **Hero Atlas** — filter bar alignment and layout polish
+- **Wonder X1 dataset** — refreshed structure coords from latest screenshot extraction
+- **Structure icons** — user-authored gate, town, stronghold, and capital sprites in the icon atlas
 
 ## Features
 
 - **Manual Builder** — drag-and-drop 3-hero combos, save to Firebase, export as image/text
 - **Combo Generator** — top-5 ranked combos from your roster + "Surprise Me" random mode
 - **Combo Counters** — expandable counter matchups with hero portraits, ranks/scores, and optional notes (edit `js/combo-counters.js`)
-- **Eden Map Planner** — Season 5 Wonders map with faction-division parchment underlay, zone filters (North / Central / South), paths, and terrain-aware distance
+- **Eden Map Planner** — Season 5 Wonders map with faction-division parchment underlay, zone filters (North / Central / South), paths, terrain-aware distance, and descriptive toolbar tooltips
 - **Eden Loyalty Calculator** — processing times, poison %, upgrade paths
-- **Tech Research Calculator** — medal/resource tracking per season (S0–X2)
+- **Tech Research Calculator** — medal/resource tracking per season (S0–X2), game-layout trees for key branches
 - **Hero Atlas** — rankings, skills, synergies, season-scoped top combos (capped vs all-best toggle), adjustable hero bonuses
 - **YouTube** — VTS 1097 playlists (lazy-loaded embeds)
 - **Comments** — threaded community feedback via Firebase
@@ -28,6 +36,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/heroes-info.js` | Hero skill/synergy data |
 | `js/loyalty-calculator.js` | Loyalty upgrade math |
 | `js/eden-map.js` | Eden map planner UI |
+| `js/eden-tooltips.js` | Eden control-deck hover tooltips (i18n) |
 | `js/eden-map-data.js` | Map structure data, sector zones (N1–N4, central, S1–S4) |
 | `js/eden-map-terrain.js` | Terrain + pathfinding |
 | `js/eden-map-assets.js` | Map sprites, faction underlay, user structure icons |

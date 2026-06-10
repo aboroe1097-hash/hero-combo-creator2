@@ -1,7 +1,7 @@
 // Eden Map interactive guide — data-driven walkthrough (update EDEN_GUIDE_VERSION when features change)
 import { translations } from './translations.js';
 
-export const EDEN_GUIDE_VERSION = '2.5.0';
+export const EDEN_GUIDE_VERSION = '2.6.0';
 
 const PROGRESS_KEY = 'vts_eden_guide_progress_v1';
 

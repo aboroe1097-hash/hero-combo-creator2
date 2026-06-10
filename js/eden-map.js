@@ -29,6 +29,7 @@ import {
   EDEN_TEAM_IDS, getTeamInfo, getStructTeamMeta, setStructTeamMeta,
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
+import { initEdenControlTips } from './eden-tooltips.js';
 
 function edenT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || 'en';
@@ -226,8 +227,16 @@ export function initEdenMapPlanner() {
 
   function syncToolButtons() {
     document.querySelectorAll('[data-eden-tool]').forEach(b => {
-      b.classList.toggle('active', b.dataset.edenTool === tool);
+      const on = b.dataset.edenTool === tool;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    const pathTools = document.getElementById('edenPathTools');
+    const showPathOpts = tool === 'path' || tool === 'measure';
+    pathTools?.classList.toggle('eden-path-tools--visible', showPathOpts);
+    const root = document.getElementById('edenMapRoot');
+    root?.classList.toggle('eden-tool-path-active', tool === 'path');
+    root?.classList.toggle('eden-tool-measure-active', tool === 'measure');
     canvas.style.cursor = tool === 'navigate' ? 'grab' : 'crosshair';
   }
 
@@ -1816,6 +1825,7 @@ export function initEdenMapPlanner() {
   }
 
   mountGameClock(document.getElementById('edenGameClock'), { showUae: false });
+  initEdenControlTips();
   bindToolbar();
   syncToolButtons();
   populateFilters(true);

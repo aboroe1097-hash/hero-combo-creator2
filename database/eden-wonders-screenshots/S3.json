@@ -1,50 +1,418 @@
 [
-  {"sector":"S3","zone":"Z1","type":"ST1","x":792,"y":1511,"points":15},
-  {"sector":"S3","zone":"Z1,Z4","type":"CP1","x":778,"y":1503,"points":5},
-  {"sector":"S3","zone":"Z1","type":"CP2","x":765,"y":1485,"points":5},
-  {"sector":"S3","zone":"Z1","type":"ST1","x":650,"y":1477,"points":15},
-  {"sector":"S3","zone":"Z1","type":"ST1","x":619,"y":1470,"points":15},
-  {"sector":"S3","zone":"Z1","type":"LT4","x":647,"y":1441,"points":50},
-  {"sector":"S3","zone":"Z1","type":"ST1","x":610,"y":1406,"points":15},
-  {"sector":"S3","zone":"Z1,Z3","type":"CP2","x":590,"y":1423,"points":5},
-  {"sector":"S3","zone":"Z2","type":"CP2","x":460,"y":1465,"points":5},
-  {"sector":"S3","zone":"Z2","type":"ST1","x":460,"y":1493,"points":15},
-  {"sector":"S3","zone":"Z2","type":"ST1","x":424,"y":1509,"points":15},
-  {"sector":"S3","zone":"Z2","type":"LT4","x":401,"y":1487,"points":50},
-  {"sector":"S3","zone":"Z2","type":"ST1","x":351,"y":1437,"points":15},
-  {"sector":"S3","zone":"Z2","type":"CP1","x":312,"y":1460,"points":15},
-  {"sector":"S3","zone":"Z2,Z3","type":"CP2","x":337,"y":1382,"points":5},
-  {"sector":"S3","zone":"Z3","type":"CP3","x":289,"y":1347,"points":5},
-  {"sector":"S3","zone":"Z3,Z1","type":"ST2","x":389,"y":1318,"points":20},
-  {"sector":"S3","zone":"Z3","type":"LT4","x":458,"y":1390,"points":50},
-  {"sector":"S3","zone":"Z3","type":"CP1","x":458,"y":1415,"points":5},
-  {"sector":"S3","zone":"Z3","type":"CP1","x":504,"y":1444,"points":5},
-  {"sector":"S3","zone":"Z3","type":"ST1","x":533,"y":1466,"points":15},
-  {"sector":"S3","zone":"Z3","type":"ST1","x":537,"y":1376,"points":15},
-  {"sector":"S3","zone":"Z3,Z4","type":"CP2","x":530,"y":1318,"points":5},
-  {"sector":"S3","zone":"Z3,Z5","type":"CP2","x":473,"y":1330,"points":5},
-  {"sector":"S3","zone":"Z4","type":"ST1","x":733,"y":1400,"points":15},
-  {"sector":"S3","zone":"Z4","type":"ST2","x":648,"y":1307,"points":20},
-  {"sector":"S3","zone":"Z4","type":"STRHD","x":603,"y":1220,"points":10},
-  {"sector":"S3","zone":"Z4","type":"ST2","x":581,"y":1329,"points":20},
-  {"sector":"S3","zone":"Z4,Z6","type":"CP2","x":655,"y":1264,"points":5},
-  {"sector":"S3","zone":"Z4,Z6","type":"CP2","x":558,"y":1269,"points":100},
-  {"sector":"S3","zone":"Z4,Z6","type":"CP2","x":554,"y":1243,"points":5},
-  {"sector":"S3","zone":"Z4,Z6","type":"CP2","x":531,"y":1212,"points":5},
-  {"sector":"S3","zone":"Z5","type":"ST1","x":469,"y":1186,"points":15},
-  {"sector":"S3","zone":"Z5","type":"CP1","x":445,"y":1217,"points":5},
-  {"sector":"S3","zone":"Z5","type":"LT4","x":434,"y":1239,"points":50},
-  {"sector":"S3","zone":"Z5","type":"CP1","x":444,"y":1267,"points":5},
-  {"sector":"S3","zone":"Z5","type":"ST1","x":422,"y":1161,"points":15},
-  {"sector":"S3","zone":"Z5","type":"STRHD","x":369,"y":1149,"points":10},
-  {"sector":"S3","zone":"Z5","type":"ST2","x":352,"y":1174,"points":20},
-  {"sector":"S3","zone":"Z5,Z4-Z5","type":"CP3","x":307,"y":1172,"points":5},
-  {"sector":"S3","zone":"Z6","type":"CP3","x":685,"y":1249,"points":5},
-  {"sector":"S3","zone":"Z6","type":"LT4","x":700,"y":1247,"points":50},
-  {"sector":"S3","zone":"Z6","type":"CP1","x":718,"y":1261,"points":5},
-  {"sector":"S3","zone":"Z6","type":"ST1","x":611,"y":1198,"points":15},
-  {"sector":"S3","zone":"Z6","type":"STRHD","x":569,"y":1149,"points":10},
-  {"sector":"S3","zone":"Z6","type":"ST2","x":660,"y":1142,"points":5},
-  {"sector":"S3","zone":"Z6,Z5-Z4","type":"CP5","x":655,"y":1076,"points":5},
-  {"sector":"S3","zone":"Z6,WC-Z4","type":"CP5","x":649,"y":1080,"points":5}
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "CP2",
+    "x": 765,
+    "y": 1485,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "LT4",
+    "x": 647,
+    "y": 1441,
+    "points": 50
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 610,
+    "y": 1406,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 619,
+    "y": 1470,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 650,
+    "y": 1477,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 667,
+    "y": 1487,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1",
+    "type": "ST1",
+    "x": 792,
+    "y": 1511,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1,Z3",
+    "type": "CP2",
+    "x": 590,
+    "y": 1423,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z1,Z4",
+    "type": "CP1",
+    "x": 778,
+    "y": 1503,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "CP2",
+    "x": 460,
+    "y": 1465,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "LT4",
+    "x": 351,
+    "y": 1437,
+    "points": 50
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 312,
+    "y": 1460,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 460,
+    "y": 1493,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 404,
+    "y": 1499,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 345,
+    "y": 1507,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2",
+    "type": "ST1",
+    "x": 424,
+    "y": 1509,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z2,Z3",
+    "type": "CP2",
+    "x": 337,
+    "y": 1382,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "CP1",
+    "x": 458,
+    "y": 1415,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "CP1",
+    "x": 504,
+    "y": 1444,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "CP3",
+    "x": 289,
+    "y": 1347,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "LT4",
+    "x": 458,
+    "y": 1390,
+    "points": 50
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "ST1",
+    "x": 537,
+    "y": 1376,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "ST1",
+    "x": 533,
+    "y": 1464,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3",
+    "type": "ST2",
+    "x": 389,
+    "y": 1318,
+    "points": 20
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3,Z4",
+    "type": "CP2",
+    "x": 530,
+    "y": 1318,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z3,Z5",
+    "type": "CP2",
+    "x": 473,
+    "y": 1330,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4",
+    "type": "ST1",
+    "x": 733,
+    "y": 1400,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4",
+    "type": "ST2",
+    "x": 648,
+    "y": 1307,
+    "points": 20
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4",
+    "type": "ST2",
+    "x": 581,
+    "y": 1329,
+    "points": 20
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4",
+    "type": "STRHD",
+    "x": 603,
+    "y": 1220,
+    "points": 10
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4",
+    "type": "STRHD",
+    "x": 603,
+    "y": 1280,
+    "points": 10
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4,Z6",
+    "type": "CP2",
+    "x": 531,
+    "y": 1212,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4,Z6",
+    "type": "CP2",
+    "x": 554,
+    "y": 1243,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4,Z6",
+    "type": "CP2",
+    "x": 655,
+    "y": 1264,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z4,Z6",
+    "type": "CP2",
+    "x": 558,
+    "y": 1269,
+    "points": 100
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "CP1",
+    "x": 445,
+    "y": 1217,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "CP1",
+    "x": 444,
+    "y": 1267,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "LT4",
+    "x": 434,
+    "y": 1239,
+    "points": 50
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "ST1",
+    "x": 422,
+    "y": 1161,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "ST1",
+    "x": 469,
+    "y": 1195,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "ST2",
+    "x": 352,
+    "y": 1174,
+    "points": 20
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5",
+    "type": "STRHD",
+    "x": 369,
+    "y": 1149,
+    "points": 10
+  },
+  {
+    "sector": "S3",
+    "zone": "Z5,Z4-Z5",
+    "type": "CP3",
+    "x": 307,
+    "y": 1172,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "CP1",
+    "x": 718,
+    "y": 1261,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "CP3",
+    "x": 685,
+    "y": 1249,
+    "points": 5
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "LT4",
+    "x": 700,
+    "y": 1247,
+    "points": 50
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "ST1",
+    "x": 574,
+    "y": 114,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "ST1",
+    "x": 611,
+    "y": 1198,
+    "points": 15
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "ST2",
+    "x": 660,
+    "y": 1142,
+    "points": 20
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "STRHD",
+    "x": 631,
+    "y": 1146,
+    "points": 10
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6",
+    "type": "STRHD",
+    "x": 569,
+    "y": 1149,
+    "points": 10
+  },
+  {
+    "sector": "S3",
+    "zone": "Z6,Z5-Z4",
+    "type": "CP5",
+    "x": 655,
+    "y": 1076,
+    "points": 5
+  }
 ]
