@@ -244,27 +244,62 @@ html, body {
 
 /* ── b4.1 Mobile additions ───────────────────────────────── */
 
-/* Paid badge — smaller on mobile */
-.paid-badge { font-size: 0.48rem !important; padding: 1px 5px !important; bottom: 22px !important; }
+/* Paid badge — corner ribbon on mobile */
+.paid-badge { top: 3px !important; right: 3px !important; padding: 2px 5px 2px 3px !important; }
+.paid-badge--card .paid-gem-svg { width: 9px !important; height: 9px !important; }
+.paid-badge-text { font-size: 0.42rem !important; }
 
-/* Heroes tab — full width detail on mobile */
-.heroes-layout.has-detail { flex-direction: column !important; }
-.heroes-layout.has-detail .heroes-ranking-list { max-height: 45vh !important; overflow-y: auto !important; }
+/* Heroes tab — mobile layout */
+.heroes-layout.has-detail { flex-direction: column !important; gap: 10px !important; }
+.heroes-layout.has-detail .heroes-ranking-list {
+  max-height: 38vh !important; overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(51,65,85,0.5); border-radius: 12px; padding: 4px;
+}
+.heroes-layout.has-detail .hero-detail-panel {
+  border: 2px solid rgba(99,102,241,0.35) !important;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+}
 
-.hero-rank-row { padding: 6px 8px !important; gap: 7px !important; }
-.rank-img      { width: 32px !important; height: 32px !important; }
-.rank-name     { font-size: 0.76rem !important; }
-.rank-score    { font-size: 0.8rem !important; }
+.hero-rank-row { padding: 10px 10px !important; gap: 8px !important; min-height: 52px; }
+.rank-img      { width: 36px !important; height: 36px !important; }
+.rank-name     { font-size: 0.8rem !important; }
+.rank-score    { font-size: 0.85rem !important; min-width: 28px !important; }
+.rank-medal    { font-size: 0.8rem !important; min-width: 24px !important; }
 
-.hero-detail-panel { padding: 14px 12px !important; border-radius: 14px !important; }
-.detail-img { width: 56px !important; height: 56px !important; }
-.detail-name { font-size: 0.95rem !important; }
-.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 5px !important; }
-.detail-stat { padding: 5px 6px !important; }
+.hero-detail-panel { padding: 16px 14px !important; border-radius: 16px !important; }
+.detail-header { flex-wrap: wrap; gap: 10px !important; }
+.detail-img { width: 64px !important; height: 64px !important; }
+.detail-name { font-size: 1rem !important; line-height: 1.3 !important; }
+.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+.detail-stat { padding: 8px 6px !important; }
+.detail-stat-val { font-size: 0.85rem !important; }
 
-.detail-combo-hero img { width: 26px !important; height: 26px !important; }
-.detail-combo-hero span { font-size: 0.5rem !important; max-width: 42px !important; }
+.detail-combo-row { padding: 8px !important; gap: 6px !important; }
+.detail-combo-hero img { width: 28px !important; height: 28px !important; }
+.detail-combo-hero span { font-size: 0.52rem !important; max-width: 48px !important; }
+.combo-counters-inline { margin-top: 4px; }
 
-.heroes-season-tabs { gap: 4px !important; padding: 6px !important; }
-.hero-tab-season { padding: 4px 10px !important; font-size: 0.66rem !important; }
+.heroes-season-tabs {
+  gap: 4px !important; padding: 6px !important;
+  overflow-x: auto; flex-wrap: nowrap !important;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.heroes-season-tabs::-webkit-scrollbar { display: none; }
+.hero-tab-season { padding: 6px 12px !important; font-size: 0.68rem !important; flex-shrink: 0; }
+.heroes-filter-pill { padding: 6px 11px !important; font-size: 0.62rem !important; }
+.heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
+
+/* Generator score + counters on mobile */
+.gen-score-panel { max-width: 100% !important; margin-left: 0 !important; align-items: stretch !important; }
+.generated-combo-card, .saved-combo-display { flex-wrap: wrap !important; padding-left: 56px !important; }
+.counter-inline-heroes { font-size: 0.52rem !important; }
+
+/* Eden map mobile */
+.eden-map-body { flex-direction: column !important; }
+.eden-sidebar { max-height: 280px !important; width: 100% !important; }
+.eden-canvas-wrap { min-height: 300px !important; }
+#edenMapCanvas { min-height: 300px !important; }
+.eden-toolbar { gap: 4px !important; }
+.eden-tool-btn { padding: 5px 8px !important; font-size: 0.62rem !important; }
 

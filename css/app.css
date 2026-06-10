@@ -173,7 +173,7 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
 .s2-pill:has(input:checked) { background:#6b21a8; border-color:#a855f7; box-shadow:0 2px 12px rgba(168,85,247,0.3); }
 .s3-pill:has(input:checked) { background:#c2410c; border-color:#f97316; box-shadow:0 2px 12px rgba(249,115,22,0.3); }
 .s4-pill:has(input:checked) { background:#854d0e; border-color:#facc15; box-shadow:0 2px 12px rgba(250,204,21,0.28); }
-.s5-pill:has(input:checked) { background:#166534; border-color:#4ade80; box-shadow:0 2px 12px rgba(74,222,128,0.22); }
+.x1-pill:has(input:checked) { background:#991b1b; border-color:#f87171; box-shadow:0 2px 12px rgba(248,113,113,0.28); }
 .free-pill:has(input:checked)     { background:#065f46; border-color:#34d399; box-shadow:0 2px 10px rgba(52,211,153,0.25); }
 .paid-pill:has(input:checked)     { background:#9f1239; border-color:#fb7185; box-shadow:0 2px 10px rgba(251,113,133,0.25); }
 .archers-pill:has(input:checked)  { background:#0e7490; border-color:#22d3ee; }
@@ -535,20 +535,21 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* ── 1. Paid badge ───────────────────────────────────────── */
 .paid-badge {
-  position: absolute;
-  bottom: 28px; left: 50%; transform: translateX(-50%);
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-  color: #fff; font-size: 0.52rem; font-weight: 800;
-  padding: 2px 6px; border-radius: 99px; white-space: nowrap;
-  letter-spacing: 0.04em; z-index: 10;
-  box-shadow: 0 2px 8px rgba(168,85,247,0.5);
-  pointer-events: none;
-  animation: paid-pulse 3s ease-in-out infinite;
+  position: absolute; top: 4px; right: 4px;
+  display: inline-flex; align-items: center; gap: 3px;
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 55%, #a855f7 100%);
+  color: #fef3c7; font-size: 0.48rem; font-weight: 900;
+  padding: 2px 6px 2px 4px; border-radius: 6px;
+  letter-spacing: 0.08em; z-index: 10;
+  border: 1px solid rgba(253,230,138,0.45);
+  box-shadow: 0 2px 10px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+  pointer-events: none; line-height: 1;
 }
-@keyframes paid-pulse {
-  0%,100% { box-shadow: 0 2px 8px rgba(168,85,247,0.5); }
-  50%      { box-shadow: 0 2px 14px rgba(168,85,247,0.85); }
-}
+.paid-badge--card .paid-gem-svg { width: 11px; height: 11px; flex-shrink: 0; }
+.paid-badge-text { font-size: 0.46rem; }
+.paid-icon-inline { display: inline-flex; vertical-align: middle; margin-left: 4px; }
+.paid-icon-inline .paid-gem-svg { width: 14px; height: 14px; filter: drop-shadow(0 1px 3px rgba(168,85,247,0.6)); }
+.paid-gem-svg { display: block; }
 
 /* ── 2. Tab switch animation ─────────────────────────────── */
 @keyframes tab-enter {
@@ -597,8 +598,8 @@ section.tab-exit {
   .heroes-layout.has-detail {
     flex-direction: row; align-items: flex-start; gap: 16px;
   }
-  .heroes-layout.has-detail .heroes-ranking-list { flex: 0 0 340px; max-height: 70vh; overflow-y: auto; }
-  .heroes-layout.has-detail .hero-detail-panel   { flex: 1; min-width: 0; }
+  .heroes-layout.has-detail .heroes-ranking-list { flex: 0 0 360px; max-height: 72vh; overflow-y: auto; }
+  .heroes-layout.has-detail .hero-detail-panel   { flex: 1; min-width: 0; position: sticky; top: 12px; }
 }
 
 /* ── 3c. Ranking list rows ───────────────────────────────── */
@@ -626,7 +627,6 @@ section.tab-exit {
 .rank-img   { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(51,65,85,0.8); flex-shrink: 0; }
 .rank-info  { flex: 1; min-width: 0; }
 .rank-name  { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rank-paid  { font-size: 0.75rem; }
 .rank-meta  { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
 .rank-troop { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 .rank-apps  { font-size: 0.6rem; color: #64748b; font-weight: 600; }
@@ -676,7 +676,7 @@ section.tab-exit {
 .detail-syn-item span { font-size: 0.58rem; font-weight: 700; color: #94a3b8; text-align: center; max-width: 48px; line-height: 1.2; }
 
 .detail-combos { display: flex; flex-direction: column; gap: 6px; }
-.detail-combo-row { display: flex; align-items: center; gap: 8px; background: rgba(30,41,59,0.5); border-radius: 10px; padding: 6px 10px; }
+.detail-combo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: rgba(30,41,59,0.5); border-radius: 10px; padding: 6px 10px; }
 .detail-combo-rank { font-size: 0.65rem; font-weight: 900; color: #f97316; min-width: 28px; }
 .detail-combo-hero { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
 .detail-combo-hero img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(51,65,85,0.8); }
@@ -693,4 +693,121 @@ section.tab-exit {
 .detail-skill-target.enemy { color: #f87171; }
 .detail-skill-target.ally  { color: #34d399; }
 .detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
+
+/* ── Hero Atlas toolbar ──────────────────────────────────── */
+.heroes-toolbar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
+  margin-bottom: 12px; padding: 10px 12px;
+  background: rgba(15,23,42,0.65); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 14px;
+}
+.heroes-toolbar .hero-search-wrap { flex: 1 1 100%; min-width: 0; margin: 0; }
+.heroes-filter-pills { display: flex; flex-wrap: wrap; gap: 5px; flex: 1 1 auto; }
+@media (min-width: 640px) {
+  .heroes-toolbar .hero-search-wrap { flex: 1 1 200px; }
+}
+.heroes-filter-pill {
+  padding: 4px 10px; border-radius: 99px; font-size: 0.65rem; font-weight: 800;
+  border: 1px solid rgba(51,65,85,0.8); background: rgba(30,41,59,0.6);
+  color: #94a3b8; cursor: pointer; transition: all 0.15s;
+}
+.heroes-filter-pill.active { color: #fff; border-color: #6366f1; background: rgba(99,102,241,0.25); }
+
+/* ── Eden Map planner ──────────────────────────────────── */
+.eden-map-root { display: flex; flex-direction: column; gap: 12px; }
+.eden-map-header { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.eden-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+.eden-tool-btn {
+  padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+  background: rgba(30,41,59,0.9); border: 1px solid rgba(51,65,85,0.9);
+  color: #cbd5e1; cursor: pointer; transition: all 0.15s;
+}
+.eden-tool-btn:hover { border-color: #6366f1; color: #fff; }
+.eden-tool-btn.active { background: #4f46e5; border-color: #818cf8; color: #fff; }
+.eden-tool-accent { background: rgba(124,58,237,0.25); border-color: #a78bfa; color: #e9d5ff; }
+.eden-map-body { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 960px) {
+  .eden-map-body { flex-direction: row; align-items: stretch; }
+  .eden-canvas-wrap { flex: 1; min-width: 0; }
+  .eden-sidebar { width: 300px; flex-shrink: 0; }
+}
+.eden-canvas-wrap {
+  position: relative; border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(51,65,85,0.8); background: #1a1208;
+  min-height: 420px;
+}
+#edenMapCanvas { display: block; width: 100%; height: 100%; min-height: 420px; cursor: crosshair; }
+.eden-map-legend {
+  position: absolute; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; background: rgba(15,23,42,0.85);
+  font-size: 0.62rem; font-weight: 700; color: #94a3b8;
+}
+.eden-map-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
+.eden-sidebar {
+  display: flex; flex-direction: column; gap: 8px;
+  background: rgba(15,23,42,0.75); border: 1px solid rgba(51,65,85,0.7);
+  border-radius: 16px; padding: 12px; max-height: 520px;
+}
+.eden-stats { font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+.eden-selected-panel { min-height: 80px; }
+.eden-hint { font-size: 0.72rem; color: #64748b; font-style: italic; }
+.eden-selected-card { background: rgba(30,41,59,0.6); border-radius: 12px; padding: 10px; }
+.eden-selected-title { font-weight: 900; color: #e2e8f0; font-size: 0.85rem; }
+.eden-zone-tag { font-size: 0.62rem; background: #1e40af; color: #bfdbfe; padding: 2px 6px; border-radius: 99px; margin-left: 4px; }
+.eden-selected-meta { font-size: 0.68rem; color: #94a3b8; margin: 4px 0 8px; }
+.eden-guild-label { display: block; font-size: 0.65rem; font-weight: 700; color: #94a3b8; }
+.eden-guild-label input {
+  width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 8px;
+  background: #0f172a; border: 1px solid #334155; color: #fff; font-size: 0.75rem;
+}
+.eden-selected-actions { display: flex; gap: 6px; margin-top: 8px; }
+.eden-action-btn {
+  flex: 1; padding: 6px; border-radius: 8px; font-size: 0.65rem; font-weight: 800;
+  background: rgba(51,65,85,0.5); border: 1px solid #475569; color: #e2e8f0; cursor: pointer;
+}
+.eden-action-btn.active { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #fca5a5; }
+.eden-filter-row { display: flex; gap: 6px; }
+.eden-filter-select {
+  flex: 1; padding: 6px; border-radius: 8px; font-size: 0.7rem;
+  background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+}
+.eden-search-wrap { margin: 0 !important; }
+.eden-struct-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.eden-struct-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px;
+  background: rgba(30,41,59,0.45); border: 1px solid transparent; cursor: pointer; text-align: left; width: 100%;
+}
+.eden-struct-row:hover, .eden-struct-row.active { border-color: #6366f1; background: rgba(99,102,241,0.12); }
+.eden-struct-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.eden-struct-info { flex: 1; font-size: 0.68rem; color: #cbd5e1; }
+.eden-struct-info em { color: #64748b; font-style: normal; margin-left: 4px; }
+.eden-struct-pts { font-size: 0.62rem; font-weight: 800; color: #fbbf24; }
+.eden-target-star { color: #ef4444; font-size: 0.75rem; }
+
+/* ── Combo counters (inline by score) ───────────────────── */
+.gen-score-panel {
+  display: flex; flex-direction: column; align-items: flex-end;
+  justify-content: center; gap: 6px; margin-left: auto; min-width: 120px; max-width: 220px;
+}
+.gen-score-main { display: flex; flex-direction: column; align-items: center; }
+.combo-counters-inline {
+  width: 100%; padding: 6px 8px; border-radius: 8px;
+  background: rgba(120,53,15,0.2); border: 1px solid rgba(251,191,36,0.25);
+}
+.counter-inline-title {
+  font-size: 0.55rem; font-weight: 900; color: #fbbf24;
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;
+}
+.counter-inline-row {
+  display: flex; align-items: center; gap: 5px; font-size: 0.58rem;
+  color: #cbd5e1; padding: 2px 0; line-height: 1.25;
+}
+.counter-inline-rank { font-weight: 900; color: #f97316; min-width: 22px; }
+.counter-inline-heroes, .counter-inline-names { flex: 1; font-weight: 600; }
+.counter-inline-score { font-weight: 800; color: #60a5fa; font-size: 0.55rem; }
+.counter-hero-thumb { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+.eden-sector-select {
+  padding: 6px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 800;
+  background: #312e81; border: 1px solid #6366f1; color: #e0e7ff;
+}
 
