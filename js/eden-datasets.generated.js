@@ -1,8 +1,8 @@
 // AUTO-GENERATED — do not edit
 // Rebuild: python database/build-eden-datasets.py
-// Built: 2026-06-10T21:03:22Z
+// Built: 2026-06-10T21:47:57Z
 
-export const EDEN_DATASETS_BUILT_AT = "2026-06-10T21:03:22Z";
+export const EDEN_DATASETS_BUILT_AT = "2026-06-10T21:47:57Z";
 
 export const EDEN_DATASET_CATALOG = [
   {
@@ -222,11 +222,11 @@ export const EDEN_DATASET_SECTORS = {
         { id: "n1-z1-st1-2", zone: "Z1", type: "ST1", x: 89, y: 390, points: 15, guild: "" },
         { id: "n1-z1-st1-3", zone: "Z1", type: "ST1", x: 103, y: 440, points: 15, guild: "" },
         { id: "n1-z1-st1-4", zone: "Z1", type: "ST1", x: 70, y: 467, points: 15, guild: "" },
+        { id: "n1-z2-c5-1", zone: "Z2", type: "C5", x: 173, y: 244, points: 100, guild: "" },
         { id: "n1-z2-cp1-1", zone: "Z2", type: "CP1", x: 185, y: 249, points: 5, guild: "" },
         { id: "n1-z2-cp2-1", zone: "Z2", type: "CP2", x: 83, y: 159, points: 5, guild: "" },
         { id: "n1-z2-cp2-2", zone: "Z2", type: "CP2", x: 195, y: 215, points: 5, guild: "" },
         { id: "n1-z2-cp2-3", zone: "Z2", type: "CP2", x: 187, y: 329, points: 5, guild: "" },
-        { id: "n1-z2-cp5-1", zone: "Z2", type: "CP5", x: 173, y: 244, points: 100, guild: "" },
         { id: "n1-z2-st1-1", zone: "Z2", type: "ST1", x: 70, y: 224, points: 15, guild: "" },
         { id: "n1-z2-st2-1", zone: "Z2", type: "ST2", x: 109, y: 202, points: 20, guild: "" },
         { id: "n1-z2-st2-2", zone: "Z2", type: "ST2", x: 132, y: 266, points: 20, guild: "" },
@@ -1863,11 +1863,11 @@ export const EDEN_DATASET_OVERLAYS = {
       { id: "n1-z1-st1-2", zone: "Z1", type: "ST1", x: 89, y: 390, points: 15, guild: "" },
       { id: "n1-z1-st1-3", zone: "Z1", type: "ST1", x: 103, y: 440, points: 15, guild: "" },
       { id: "n1-z1-st1-4", zone: "Z1", type: "ST1", x: 70, y: 467, points: 15, guild: "" },
+      { id: "n1-z2-c5-1", zone: "Z2", type: "C5", x: 173, y: 244, points: 100, guild: "" },
       { id: "n1-z2-cp1-1", zone: "Z2", type: "CP1", x: 185, y: 249, points: 5, guild: "" },
       { id: "n1-z2-cp2-1", zone: "Z2", type: "CP2", x: 83, y: 159, points: 5, guild: "" },
       { id: "n1-z2-cp2-2", zone: "Z2", type: "CP2", x: 195, y: 215, points: 5, guild: "" },
       { id: "n1-z2-cp2-3", zone: "Z2", type: "CP2", x: 187, y: 329, points: 5, guild: "" },
-      { id: "n1-z2-cp5-1", zone: "Z2", type: "CP5", x: 173, y: 244, points: 100, guild: "" },
       { id: "n1-z2-st1-1", zone: "Z2", type: "ST1", x: 70, y: 224, points: 15, guild: "" },
       { id: "n1-z2-st2-1", zone: "Z2", type: "ST2", x: 109, y: 202, points: 20, guild: "" },
       { id: "n1-z2-st2-2", zone: "Z2", type: "ST2", x: 132, y: 266, points: 20, guild: "" },
