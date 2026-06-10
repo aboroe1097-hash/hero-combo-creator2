@@ -1,27 +1,32 @@
 // X1 Conqueror full-map terrain — biomes, rivers, mountains + pathfinding grid
-export const MAP_BOUNDS = { minX: 0, maxX: 1200, minY: 0, maxY: 1200 };
+import { TERRAIN_STYLES, MAP_REFERENCE, getReferenceMapImage } from './eden-map-assets.js';
+
+export const MAP_BOUNDS = { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 export const CELL_SIZE = 10;
+export const TILE_SIZE = 40;
 
 const BIOMES = [
-  { id: 'forest',  color: '#2d5a3d', color2: '#3d7a52', rects: [{ x: 0, y: 0, w: 1200, h: 320 }, { x: 700, y: 0, w: 500, h: 480 }] },
-  { id: 'plains',  color: '#7a6b42', color2: '#9a8658', rects: [{ x: 0, y: 300, w: 1200, h: 420 }] },
-  { id: 'desert',  color: '#a88452', color2: '#c9a066', rects: [{ x: 0, y: 680, w: 1200, h: 520 }, { x: 0, y: 520, w: 520, h: 700 }] },
-  { id: 'wastes',  color: '#8b7355', color2: '#6e5a40', rects: [{ x: 480, y: 580, w: 280, h: 200 }] },
+  { id: 'forest',  rects: [{ x: 0, y: 0, w: 1700, h: 380 }, { x: 900, y: 0, w: 800, h: 560 }] },
+  { id: 'plains',  rects: [{ x: 0, y: 340, w: 1700, h: 480 }] },
+  { id: 'desert',  rects: [{ x: 0, y: 760, w: 1700, h: 840 }, { x: 0, y: 600, w: 600, h: 1000 }] },
+  { id: 'wastes',  rects: [{ x: 560, y: 680, w: 360, h: 260 }] },
 ];
 
 export const RIVERS = [
-  { width: 14, points: [{ x: 180, y: 80 }, { x: 220, y: 280 }, { x: 340, y: 420 }, { x: 520, y: 520 }, { x: 680, y: 580 }, { x: 860, y: 640 }, { x: 1020, y: 720 }, { x: 1100, y: 880 }] },
-  { width: 10, points: [{ x: 600, y: 100 }, { x: 580, y: 350 }, { x: 620, y: 550 }, { x: 700, y: 780 }, { x: 750, y: 1000 }] },
-  { width: 8,  points: [{ x: 950, y: 200 }, { x: 880, y: 400 }, { x: 920, y: 600 }, { x: 1000, y: 850 }] },
+  { width: 16, points: [{ x: 200, y: 60 }, { x: 260, y: 300 }, { x: 400, y: 480 }, { x: 600, y: 600 }, { x: 780, y: 680 }, { x: 980, y: 760 }, { x: 1180, y: 860 }, { x: 1380, y: 1000 }] },
+  { width: 12, points: [{ x: 700, y: 80 }, { x: 680, y: 380 }, { x: 720, y: 600 }, { x: 820, y: 900 }, { x: 880, y: 1200 }] },
+  { width: 10, points: [{ x: 1100, y: 180 }, { x: 1020, y: 420 }, { x: 1080, y: 680 }, { x: 1180, y: 960 }] },
+  { width: 8, points: [{ x: 200, y: 1100 }, { x: 400, y: 1200 }, { x: 650, y: 1350 }] },
 ];
 
 export const MOUNTAINS = [
-  { polygon: [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 280, y: 180 }, { x: 120, y: 260 }, { x: 0, y: 200 }], height: 1 },
-  { polygon: [{ x: 1050, y: 0 }, { x: 1200, y: 0 }, { x: 1200, y: 220 }, { x: 1080, y: 180 }, { x: 1000, y: 80 }], height: 1 },
-  { polygon: [{ x: 0, y: 1050 }, { x: 180, y: 1100 }, { x: 160, y: 1200 }, { x: 0, y: 1200 }], height: 1 },
-  { polygon: [{ x: 1000, y: 1080 }, { x: 1200, y: 1040 }, { x: 1200, y: 1200 }, { x: 980, y: 1200 }], height: 1 },
-  { polygon: [{ x: 520, y: 380 }, { x: 680, y: 360 }, { x: 720, y: 460 }, { x: 600, y: 500 }, { x: 500, y: 440 }], height: 0.6 },
-  { polygon: [{ x: 80, y: 600 }, { x: 200, y: 560 }, { x: 240, y: 680 }, { x: 100, y: 720 }], height: 0.7 },
+  { polygon: [{ x: 0, y: 0 }, { x: 280, y: 0 }, { x: 360, y: 220 }, { x: 160, y: 300 }, { x: 0, y: 240 }], height: 1 },
+  { polygon: [{ x: 1380, y: 0 }, { x: 1700, y: 0 }, { x: 1700, y: 280 }, { x: 1520, y: 220 }, { x: 1320, y: 100 }], height: 1 },
+  { polygon: [{ x: 0, y: 1380 }, { x: 240, y: 1480 }, { x: 200, y: 1600 }, { x: 0, y: 1600 }], height: 1 },
+  { polygon: [{ x: 1420, y: 1320 }, { x: 1700, y: 1280 }, { x: 1700, y: 1600 }, { x: 1380, y: 1600 }], height: 1 },
+  { polygon: [{ x: 600, y: 420 }, { x: 780, y: 400 }, { x: 840, y: 520 }, { x: 700, y: 580 }, { x: 560, y: 500 }], height: 0.65 },
+  { polygon: [{ x: 100, y: 700 }, { x: 260, y: 660 }, { x: 300, y: 800 }, { x: 140, y: 860 }], height: 0.75 },
+  { polygon: [{ x: 1200, y: 500 }, { x: 1360, y: 480 }, { x: 1400, y: 600 }, { x: 1240, y: 640 }], height: 0.6 },
 ];
 
 function pointInPoly(x, y, poly) {
@@ -59,6 +64,16 @@ function inBiome(id, x, y) {
   return b.rects.some(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
 }
 
+export function getTerrainAt(x, y) {
+  if (MOUNTAINS.some(m => pointInPoly(x, y, m.polygon))) return 'mountain';
+  if (nearRiver(x, y)) return 'water';
+  if (inBiome('forest', x, y)) return 'forest';
+  if (inBiome('wastes', x, y)) return 'wastes';
+  if (inBiome('desert', x, y)) return 'desert';
+  if (inBiome('plains', x, y)) return 'plains';
+  return 'plains';
+}
+
 function buildGrid() {
   const cols = Math.ceil((MAP_BOUNDS.maxX - MAP_BOUNDS.minX) / CELL_SIZE);
   const rows = Math.ceil((MAP_BOUNDS.maxY - MAP_BOUNDS.minY) / CELL_SIZE);
@@ -70,18 +85,19 @@ function buildGrid() {
       const x = MAP_BOUNDS.minX + gx * CELL_SIZE + CELL_SIZE / 2;
       const y = MAP_BOUNDS.minY + gy * CELL_SIZE + CELL_SIZE / 2;
       const idx = gy * cols + gx;
+      const terrain = getTerrainAt(x, y);
 
-      if (MOUNTAINS.some(m => pointInPoly(x, y, m.polygon))) {
+      if (terrain === 'mountain') {
         blocked[idx] = 1;
         cost[idx] = Infinity;
         continue;
       }
 
       let c = 1;
-      if (nearRiver(x, y)) c = 2.8;
-      else if (inBiome('forest', x, y)) c = 1.35;
-      else if (inBiome('desert', x, y)) c = 1.15;
-      else if (inBiome('wastes', x, y)) c = 1.25;
+      if (terrain === 'water') c = 2.8;
+      else if (terrain === 'forest') c = 1.35;
+      else if (terrain === 'desert') c = 1.15;
+      else if (terrain === 'wastes') c = 1.25;
       cost[idx] = c;
     }
   }
@@ -116,7 +132,7 @@ export function findRoute(ax, ay, bx, by) {
   const { cols, rows, cost, blocked } = _grid;
 
   if (blocked[start.gy * cols + start.gx] || blocked[end.gy * cols + end.gx]) {
-    const direct = Math.hypot(bx - ax, by - ay);
+    const direct = Math.round(Math.hypot(bx - ax, by - ay));
     return { path: [{ x: ax, y: ay }, { x: bx, y: by }], distance: direct, blocked: true };
   }
 
@@ -188,72 +204,206 @@ export function routeThroughWaypoints(waypoints) {
   return { path: fullPath, distance: totalDist };
 }
 
-export function drawTerrainLayer(ctx, worldToIso, scale) {
-  BIOMES.forEach(biome => {
-    biome.rects.forEach(r => {
-      const corners = [
-        worldToIso(r.x, r.y, scale),
-        worldToIso(r.x + r.w, r.y, scale),
-        worldToIso(r.x + r.w, r.y + r.h, scale),
-        worldToIso(r.x, r.y + r.h, scale),
-      ];
-      const g = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-      g.addColorStop(0, biome.color);
-      g.addColorStop(1, biome.color2);
-      ctx.beginPath();
-      ctx.moveTo(corners[0].x, corners[0].y);
-      corners.slice(1).forEach(c => ctx.lineTo(c.x, c.y));
-      ctx.closePath();
-      ctx.fillStyle = g;
-      ctx.fill();
-    });
-  });
+function drawIsoDiamond(ctx, cx, cy, w, h, style, seed = 0) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h * 0.5);
+  ctx.lineTo(cx + w * 0.5, cy);
+  ctx.lineTo(cx, cy + h * 0.5);
+  ctx.lineTo(cx - w * 0.5, cy);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(cx - w, cy - h, cx + w, cy + h);
+  g.addColorStop(0, style.fill);
+  g.addColorStop(1, style.fill2);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = style.stroke;
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
 
-  RIVERS.forEach(river => {
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.beginPath();
-      river.points.forEach((pt, i) => {
-        const p = worldToIso(pt.x, pt.y, scale);
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      });
-      ctx.strokeStyle = pass === 0 ? 'rgba(30,80,140,0.35)' : 'rgba(56,189,248,0.75)';
-      ctx.lineWidth = (pass === 0 ? river.width + 6 : river.width) * scale * 0.12;
-      ctx.stroke();
-    }
-  });
-
-  MOUNTAINS.forEach(mtn => {
-    const pts = mtn.polygon.map(p => worldToIso(p.x, p.y, scale));
+  if (style.pattern === 'forest' && seed % 3 === 0) {
+    ctx.fillStyle = 'rgba(20,60,30,0.45)';
     ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-    ctx.closePath();
-    const h = mtn.height || 1;
-    ctx.fillStyle = `rgba(55,48,40,${0.55 + h * 0.25})`;
+    ctx.arc(cx - 2, cy - 1, 2.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(30,25,20,0.6)';
-    ctx.lineWidth = 1.5;
+  } else if (style.pattern === 'desert' && seed % 4 === 0) {
+    ctx.fillStyle = 'rgba(180,140,80,0.35)';
+    ctx.fillRect(cx - 1, cy, 3, 1);
+  } else if (style.pattern === 'water') {
+    ctx.strokeStyle = 'rgba(180,230,255,0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.25, cy);
+    ctx.quadraticCurveTo(cx, cy - 2, cx + w * 0.25, cy);
     ctx.stroke();
-    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-    ctx.fillStyle = 'rgba(80,70,60,0.5)';
-    for (let i = 0; i < 4; i++) {
-      const peak = worldToIso(
-        mtn.polygon[i % mtn.polygon.length].x,
-        mtn.polygon[i % mtn.polygon.length].y - 20 * h,
-        scale
-      );
-      ctx.beginPath();
-      ctx.moveTo(peak.x, peak.y - 8 * scale);
-      ctx.lineTo(peak.x + 6 * scale, peak.y);
-      ctx.lineTo(peak.x - 6 * scale, peak.y);
-      ctx.closePath();
-      ctx.fill();
+  } else if (style.pattern === 'rock') {
+    ctx.fillStyle = 'rgba(30,25,20,0.4)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - h * 0.35);
+    ctx.lineTo(cx + 4, cy - 2);
+    ctx.lineTo(cx, cy + 2);
+    ctx.lineTo(cx - 4, cy - 2);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawMountainIso(ctx, worldToIso, scale, mtn) {
+  const pts = mtn.polygon.map(p => worldToIso(p.x, p.y));
+  const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+  const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  const h = (mtn.height || 1) * 18 * scale;
+  const style = TERRAIN_STYLES.mountain;
+
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(35,30,25,0.55)';
+  ctx.fill();
+
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    const peak = worldToIso(
+      mtn.polygon[i % mtn.polygon.length].x,
+      mtn.polygon[i % mtn.polygon.length].y - 28 * (mtn.height || 1)
+    );
+    ctx.beginPath();
+    ctx.moveTo(peak.x, peak.y - h);
+    ctx.lineTo(p.x + 8 * scale, p.y);
+    ctx.lineTo(p.x - 8 * scale, p.y);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(peak.x, peak.y - h, p.x, p.y);
+    g.addColorStop(0, style.fill2);
+    g.addColorStop(1, style.fill);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = style.stroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+}
+
+function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.lineTo(p3.x, p3.y);
+  ctx.closePath();
+  ctx.clip();
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  const m11 = (p1.x - p0.x) / w;
+  const m12 = (p1.y - p0.y) / w;
+  const m21 = (p3.x - p0.x) / h;
+  const m22 = (p3.y - p0.y) / h;
+  ctx.transform(m11, m12, m21, m22, p0.x, p0.y);
+  ctx.drawImage(img, 0, 0);
+  ctx.restore();
+}
+
+export function drawReferenceLayer(ctx, worldToIso, opacity = MAP_REFERENCE.opacity) {
+  const img = getReferenceMapImage();
+  if (!img?.complete || !img.naturalWidth) return false;
+  const b = MAP_REFERENCE.bounds;
+  const p0 = worldToIso(b.minX, b.minY);
+  const p1 = worldToIso(b.maxX, b.minY);
+  const p2 = worldToIso(b.maxX, b.maxY);
+  const p3 = worldToIso(b.minX, b.maxY);
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  drawTexturedQuad(ctx, img, p0, p1, p2, p3);
+  ctx.restore();
+  return true;
+}
+
+export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
+  const {
+    showTiles = true,
+    showRivers = true,
+    showMountains = true,
+    showReference = false,
+    fastMode = false,
+    viewBounds = null,
+  } = options;
+
+  if (showReference) {
+    drawReferenceLayer(ctx, worldToIso, options.referenceOpacity);
+  }
+
+  if (fastMode && showReference) return;
+  const tileStep = TILE_SIZE;
+  const tw = tileStep * 0.5 * scale;
+  const th = tileStep * 0.25 * scale;
+  const pad = tileStep * 2;
+  const minX = viewBounds ? Math.max(MAP_BOUNDS.minX, viewBounds.minX - pad) : MAP_BOUNDS.minX;
+  const maxX = viewBounds ? Math.min(MAP_BOUNDS.maxX, viewBounds.maxX + pad) : MAP_BOUNDS.maxX;
+  const minY = viewBounds ? Math.max(MAP_BOUNDS.minY, viewBounds.minY - pad) : MAP_BOUNDS.minY;
+  const maxY = viewBounds ? Math.min(MAP_BOUNDS.maxY, viewBounds.maxY + pad) : MAP_BOUNDS.maxY;
+
+  if (showTiles) {
+    const useTiles = scale > 0.32 && !fastMode;
+    if (useTiles) {
+      for (let y = minY; y < maxY; y += tileStep) {
+        for (let x = minX; x < maxX; x += tileStep) {
+          const cx = (x + tileStep / 2);
+          const cy = (y + tileStep / 2);
+          const terrain = getTerrainAt(cx, cy);
+          const style = TERRAIN_STYLES[terrain === 'water' ? 'water' : terrain] || TERRAIN_STYLES.plains;
+          const p = worldToIso(cx, cy);
+          const seed = Math.floor(cx / tileStep) + Math.floor(cy / tileStep) * 97;
+          drawIsoDiamond(ctx, p.x, p.y, tw * 2.1, th * 2.1, style, seed);
+        }
+      }
+    } else if (!fastMode) {
+    BIOMES.forEach(biome => {
+      const style = TERRAIN_STYLES[biome.id] || TERRAIN_STYLES.plains;
+      biome.rects.forEach(r => {
+        const corners = [
+          worldToIso(r.x, r.y),
+          worldToIso(r.x + r.w, r.y),
+          worldToIso(r.x + r.w, r.y + r.h),
+          worldToIso(r.x, r.y + r.h),
+        ];
+        const g = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+        g.addColorStop(0, style.fill);
+        g.addColorStop(1, style.fill2);
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        corners.slice(1).forEach(c => ctx.lineTo(c.x, c.y));
+        ctx.closePath();
+        ctx.fillStyle = g;
+        ctx.fill();
+      });
+    });
     }
-  });
+  }
+
+  if (showRivers) {
+    RIVERS.forEach(river => {
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let pass = 0; pass < 3; pass++) {
+        ctx.beginPath();
+        river.points.forEach((pt, i) => {
+          const p = worldToIso(pt.x, pt.y);
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+        const widths = [river.width + 10, river.width + 4, river.width];
+        const colors = ['rgba(15,50,90,0.4)', 'rgba(30,100,160,0.5)', 'rgba(56,189,248,0.85)'];
+        ctx.strokeStyle = colors[pass];
+        ctx.lineWidth = widths[pass] * scale * 0.11;
+        ctx.stroke();
+      }
+    });
+  }
+
+  if (showMountains) {
+    MOUNTAINS.forEach(mtn => drawMountainIso(ctx, worldToIso, scale, mtn));
+  }
 }
 
 export { BIOMES };

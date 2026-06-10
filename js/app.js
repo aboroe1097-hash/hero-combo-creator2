@@ -11,25 +11,26 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
-import { renderCountersInline } from './combo-counters.js';
+import { renderCountersToggle } from './combo-counters.js';
+import { escapeHtml } from './utils.js';
+import { allHeroesData } from './heroes-data.js';
+import { heroBonusPoints } from './hero-bonuses.js';
 
-// ========== HERO BONUS SYSTEM (always active) ==========
-let heroBonuses = {};
-try {
-  const saved = localStorage.getItem('vts_hero_bonuses');
-  if (saved) heroBonuses = JSON.parse(saved);
-} catch(e) { console.warn(e); }
-
-function saveHeroBonuses() {
-  localStorage.setItem('vts_hero_bonuses', JSON.stringify(heroBonuses));
-}
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.counter-toggle-btn');
+  if (!btn) return;
+  const panel = document.getElementById(btn.dataset.counterTarget);
+  if (!panel) return;
+  const willOpen = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  btn.classList.toggle('counter-toggle-btn--open', willOpen);
+});
 
 function getHeroFinalScore(heroName, autoRating) {
-  const bonus = heroBonuses[heroName] || 0;
-  let final = autoRating + bonus;
-  return Math.min(100, Math.max(0, final));
+  const bonus = heroBonusPoints[heroName] || 0;
+  return Math.min(100, Math.max(0, autoRating + bonus));
 }
-// ========================================================
 
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
@@ -47,9 +48,9 @@ const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
 const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
 
 // TABS & SECTIONS
-const manualSection        = document.getElementById('manualBuilderSection');
-const generatorSection     = document.getElementById('comboGeneratorSection');
-const loyaltySection       = document.getElementById('loyaltyCalcSection');
+const manualSection        = document.getElementById('manualSection');
+const generatorSection     = document.getElementById('generatorSection');
+const loyaltySection       = document.getElementById('loyaltySection');
 const youtubeSection       = document.getElementById('youtubeSection'); 
 const researchSection      = document.getElementById('researchSection'); 
 
@@ -128,75 +129,7 @@ function paidIconHtml() {
   return `<span class="paid-icon-inline" title="Paid Hero">${PAID_GEM_SVG}</span>`;
 }
 
-// --- HERO DATA ---
-const allHeroesData = [
-  { name: "Jeanne d'Arc", season: 'S0', Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_d5f5b07c90924e6ab5b1d70e2667b693~mv2.png' },
-  { name: 'Isabella I', season: 'S0', Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_dcba45dd1c394074a0e23e3f780c6aee~mv2.png' },
-  { name: 'Jiguang Qi', season: 'S1',Type:'Footmen', State:'Free',  imageUrl: 'https://static.wixstatic.com/media/43ee96_3bb681424e034e9e8f0dea7d71c93390~mv2.png' },
-  { name: 'Mary Tudor', season: 'S0',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_7d24a8f5148b42c68e9e183ecdf1080d~mv2.png' },
-  { name: 'Leonidas', season: 'S0',Type:'Archers', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_f672d18c06904465a490ea4811cee798~mv2.png' },
-  { name: 'The Boneless', season: 'S0',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_5fec4c7d62314acfb90ea624dedd08c6~mv2.png' },
-  { name: 'Demon Spear', season: 'S0',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_39ffb285fd524cd1b7c27057b0fe4f44~mv2.png' },
-  { name: 'Kublai', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_19f2c6dda1b04b72942f1f691efd63b2~mv2.png' },
-  { name: 'The Heroine', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_80bd949738da42cc88525fd5d6dc1f81~mv2.png' },
-  { name: 'Queen Anne', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_4a70ebf4f01c444f9e238861826c0b90~mv2.png' },
-  { name: "North's Rage", season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_582201a2a5e14a29a9c186393dd0bb06~mv2.png' },
-  { name: 'William Wallace', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_860c9a1a59214245b3d65d0f1fd816de~mv2.png' },
-  { name: 'Yukimura Sanada', season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_41cdaf2c39b44127b0c9ede9da2f70b7~mv2.png' },
-  { name: "Heaven's Justice", season: 'S0',Type:'All', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_c81fb50a85d14f63b0aee9977c476c6c~mv2.png' },
-  { name: 'Alfred', season: 'S1',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_e75a942dc1c64689b140f23d905b5ca0~mv2.png' },
-  { name: 'Cao Cao', season: 'S1',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_3998355c7cae4b70a89000ee66ad8e3f~mv2.png' },
-  { name: 'Charles the Great', season: 'S1',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_e95b962e46204b6badbd6e63e1307582~mv2.png' },
-  { name: 'Black Prince', season: 'S1',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_29a333b02497463f81d329056996b8a3~mv2.png' },
-  { name: 'Lionheart', season: 'S1',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_ecf64b68a8f64ad2bd159f86f5be179c~mv2.png' },
-  { name: 'Al Fatih', season: 'S1',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_f834a1ef8d2d4de5bba80ab40e531a6f~mv2.png' },
-  { name: 'Edward the Confessor', season: 'S1',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_51538af01a9f4ec789127837e62dccfa~mv2.png' },
-  { name: 'Constantine the Great', season: 'S1',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_b738599c5a0b46deb6a4abf7273f9268~mv2.png' },
-  { name: 'Genghis Khan', season: 'S1',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_40f1c10ba0e04d4fa3e841f865cd206a~mv2.png' },
-  { name: 'William the Conqueror', season: 'S0',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_517ee1432ce04974be78d3532e48afb3~mv2.png' },
-  { name: 'Inquisitor', season: 'S2',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_5e9612fc176442b78c1fa6766b87473c~mv2.png' },
-  { name: 'BeastQueen', season: 'S2',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_6883135290314469a0daee804dd03692~mv2.png' },
-  { name: 'Jade', season: 'S2',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_61729052c05240b4b7cf34324f8ed870~mv2.png' },
-  { name: 'Immortal', season: 'S2',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_8c4e699dedc341a7a86ae4b47d3cce71~mv2.png' },
-  { name: 'Peace Bringer', season: 'S2',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_cfea192f7ad64a13be3fa40c516a8bce~mv2.png' },
-  { name: 'Witch Hunter', season: 'S2',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_82ced5fbba3f489fbb04ceb4fa7cd19c~mv2.png' },
-  { name: 'Ramses II', season: 'S2',Type:'Archers', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_2b28a06a2a1544339940724f29bf4b9d~mv2.png' },
-  { name: 'Octavius', season: 'S2',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_eeb99bc718ad488b961bb643d4a6653f~mv2.png' },
-  { name: 'Che Liu', season: 'S3',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xqrtrvc1/image-2026-01-25-212407172.png' },
-  { name: 'War Lord', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_bbbe6a8669d74ddea17b73af5e3cf05c~mv2.png' },
-  { name: 'Jane', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_d36c3be1d2d64747a59700bf41b8890d~mv2.png' },
-  { name: 'Sky Breaker', season: 'S3',Type:'Archers', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_cacde74500864a0d916746fe0945c970~mv2.png' },
-  { name: 'Rokuboshuten', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_eaf3463bf3654d0e90adb41a1cb5ad4c~mv2.png' },
-  { name: 'Bleeding Steed', season: 'S3',Type:'Footmen', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_9256fc0a80284c1ab285554dbf33a4b3~mv2.png' },
-  { name: 'Rozen Blade', season: 'S3',Type:'Cavalry', State:'Free', imageUrl: 'https://static.wixstatic.com/media/43ee96_42b02c160ac849dca0dd7e4a6b472582~mv2.png' },
-  { name: 'Cleopatra VII', season: 'S3',Type:'All', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_7109811bb55a47749090edcc8df9e7c6~mv2.png' },
-  { name: 'Caesar', season: 'S3',Type:'Cavalry', State:'Paid', imageUrl: 'https://static.wixstatic.com/media/43ee96_5cf26138c5174d4587fc025cd5fe399a~mv2.png' },
-  { name: 'Desert Storm',      season: 'S4',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/vChW2BGG/Desert-Storm.png' },
-  { name: 'Soaring Hawk',      season: 'S4',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nsypbRHh/Soaring-hawk.png' },
-  { name: 'The Brave',         season: 'S4',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/XxR25Kzy/brave.png' },
-  { name: 'Jade Eagle',        season: 'S4',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/GQzRPtZf/Jade-eagle.png' },
-  { name: 'Immortal Guardian', season: 'S4',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/mr0PCzJt/Immortal-Guardian.png' },
-  { name: 'Divine Arrow',      season: 'S4',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/6JcVTCnr/Divine-Arrow.png' },
-  { name: 'Theodora',          season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/JwtYrGzN/Theodora.png' },
-  { name: 'King Arthur',       season: 'S4',Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/4Ryx1F6P/King-Arthur.png' },
-  { name: 'Beowulf',      season: 'X1',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/SXH67JhQ/Bewoulf.png' },
-  { name: 'Hunk',         season: 'X1',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/xKmkbhjc/Hunk.png' },
-  { name: 'Boudica',      season: 'X1',Type:'Archers', State:'Paid', imageUrl: 'https://i.ibb.co/7HrC86g/Boudica.png' },
-  { name: 'Sakura',       season: 'X1',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/7t82CP32/Sakura.png' },
-  { name: 'Wind-Walker',  season: 'X1',Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/mVwJgyfX/Wind-Walker.png' },
-  { name: 'ELK',          season: 'X1',Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/zVjfLXVT/ELK.png' },
-  { name: 'Cicero',       season: 'X1',Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/B2bNr9Sw/Cicero.png' },
-  { name: 'The Avalanche',   season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/vvZqffxw/Avalanche.png' },
-  { name: 'Army Breaker',    season: 'X1', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/zTt8B3Kw/image-2026-06-09-124803909.png' },
-  { name: 'Dach Tengri',     season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/nqryD2Jp/Dach.png' },
-  { name: 'Tarantula',       season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/DD2SMtwW/image-2026-06-09-131719049.png' },
-  { name: 'Lancelot',       season: 'X2', Type:'Cavalry', State:'Paid', imageUrl: 'https://i.ibb.co/rKLkTLgN/image-2026-06-09-132226928.png' },
-  { name: 'Alexander',       season: 'X2', Type:'Footmen', State:'Paid', imageUrl: 'https://i.ibb.co/2LhYhkd/image-2026-06-09-132117177.png' },
-  { name: 'Lawman',          season: 'X2', Type:'Cavalry', State:'Free', imageUrl: 'https://i.ibb.co/Y7rCgh5L/image-2026-06-09-132925633.png' },
-  { name: 'Defender',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/bj79KD5X/image-2026-06-09-132942387.png' },
-  { name: 'Spectral Reaper', season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
-  { name: 'Valkyrie',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' }
-];
+
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
 techDatabase.forEach(tech => {
@@ -1197,7 +1130,7 @@ function renderGeneratorResults(bestCombos) {
         <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
         <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
       </div>
-      ${renderCountersInline(combo.heroes, getComboRankInfo, getHeroImageUrl, true)}
+      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, true)}
     `;
     card.appendChild(scoreBox);
 
@@ -1384,7 +1317,7 @@ async function setupFirestoreListener() {
             <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
             <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
           </div>
-          ${renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, true)}
+          ${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, true)}
         `;
         row.appendChild(scoreBox);
       }
@@ -1481,64 +1414,87 @@ tabs.forEach(tab => {
     });
   }
 
-  let _lastTab = 'generator';
-  let _pendingTab = null;
-let _isAnimating = false;
+  let _lastTab = null;
+  let _isAnimating = false;
+  let _edenMapReady = false;
+  let _heroesTabReady = false;
 
-function switchTab(tabName) {
-  if (_isAnimating) return;
-  if (tabName === _lastTab) return;
+  const tabPanels = [
+    manualSection, generatorSection, edenMapSection,
+    loyaltySection, youtubeSection, researchSection, heroesSection
+  ];
 
-  _isAnimating = true;
-  const currentSection = document.querySelector(`section:not(.hidden)`);
-  if (!currentSection) {
-    _isAnimating = false;
-    return;
+  function loadYouTubeEmbeds() {
+    document.querySelectorAll('#youtubeSection iframe[data-src]').forEach((iframe) => {
+      if (!iframe.src && iframe.dataset.src) {
+        iframe.src = iframe.dataset.src;
+      }
+    });
   }
 
-  // Exit animation
-  currentSection.classList.add('tab-exit');
-  setTimeout(() => {
-    // Hide all sections
-    const allSections = [
-      manualSection, generatorSection, edenMapSection,
-      loyaltySection, youtubeSection, researchSection, heroesSection
-    ];
-    allSections.forEach(sec => {
-      if (sec) sec.classList.add('hidden');
-      sec?.classList.remove('tab-exit');
-    });
-    if (comboFooterBar) comboFooterBar.classList.add('hidden');
+  function onTabActivated(tabName) {
+    if (tabName === 'edenMap' && !_edenMapReady) {
+      initEdenMapPlanner();
+      _edenMapReady = true;
+    }
+    if (tabName === 'heroes' && !_heroesTabReady) {
+      renderHeroesTab();
+      _heroesTabReady = true;
+    }
+    if (tabName === 'youtube') {
+      loadYouTubeEmbeds();
+    }
+  }
 
-    // Update active tab styling
-    document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
-    const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+  function switchTab(tabName, force = false) {
+    if (_isAnimating) return;
+    if (!force && tabName === _lastTab) return;
 
-    // Show new section
+    const currentSection = document.querySelector('section.tab-panel:not(.hidden)');
     const targetSection = document.getElementById(`${tabName}Section`);
-    if (targetSection) {
-      targetSection.classList.remove('hidden');
-      // Trigger reflow for animation
-      void targetSection.offsetWidth;
-    }
 
-    if (tabName === 'manual' || tabName === 'generator') {
-      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
-    } else {
-      if (globalToggleRow) globalToggleRow.classList.add('hidden');
-    }
-
-    if (tabName === 'manual') {
-      if (comboFooterBar) comboFooterBar.classList.remove('hidden');
-    } else {
+    const applyTab = () => {
+      tabPanels.forEach(sec => {
+        if (sec) {
+          sec.classList.add('hidden');
+          sec.classList.remove('tab-exit');
+        }
+      });
       if (comboFooterBar) comboFooterBar.classList.add('hidden');
+
+      document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+      const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+      if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+
+      if (targetSection) {
+        targetSection.classList.remove('hidden');
+        void targetSection.offsetWidth;
+      }
+
+      if (tabName === 'manual' || tabName === 'generator') {
+        if (globalToggleRow) globalToggleRow.classList.remove('hidden');
+      } else if (globalToggleRow) {
+        globalToggleRow.classList.add('hidden');
+      }
+
+      if (tabName === 'manual' && comboFooterBar) {
+        comboFooterBar.classList.remove('hidden');
+      }
+
+      onTabActivated(tabName);
+      _lastTab = tabName;
+      _isAnimating = false;
+    };
+
+    if (!currentSection || currentSection === targetSection) {
+      applyTab();
+      return;
     }
 
-    _lastTab = tabName;
-    _isAnimating = false;
-  }, 250); // matches animation duration
-}
+    _isAnimating = true;
+    currentSection.classList.add('tab-exit');
+    setTimeout(applyTab, 250);
+  }
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
       selectedSeasons = getCheckedValues(seasonFiltersEl);
@@ -1684,16 +1640,7 @@ function switchTab(tabName) {
       downloadComboImage(lastGeneratedCombos, t.generatorTitle || 'Best Combos', 'vts-generator-results.png');
     };
   }
-// --- ATTACH TAB CLICK LISTENERS ---
-document.getElementById('tabManual')?.addEventListener('click', () => switchTab('manual'));
-document.getElementById('tabGenerator')?.addEventListener('click', () => switchTab('generator'));
-document.getElementById('tabEdenMap')?.addEventListener('click', () => switchTab('edenMap'));
-document.getElementById('tabLoyalty')?.addEventListener('click', () => switchTab('loyalty'));
-document.getElementById('tabYouTube')?.addEventListener('click', () => switchTab('youtube'));
-document.getElementById('tabResearch')?.addEventListener('click', () => switchTab('research'));
-document.getElementById('tabHeroes')?.addEventListener('click', () => switchTab('heroes'));
-  // Force Tab Initialization to prevent desync
-  switchTab('generator');
+  switchTab('generator', true);
 }
 
 // --- TRANSLATIONS / TEXT ---
@@ -2447,7 +2394,7 @@ function calculateTechTotals(tech) {
     updateGlobalSummary();
 }
 
-// ─── HEROES TAB: detail view + auto-ranking (with bonus system) ───────────────────────────────────
+// ─── HEROES TAB: detail view + auto-ranking ───────────────────────────────────
 function computeHeroRankings() {
   const total = rankedCombos.length;
   const stats = {};
@@ -2481,10 +2428,136 @@ function computeHeroRankings() {
 }
 
 let _heroesTabState = { season: 'all', troop: 'all', state: 'all', search: '', selected: null, view: 'ranking' };
+let _heroesTabEventsWired = false;
+let _heroesSearchTimer = null;
+
+function getFilteredHeroes(state = _heroesTabState) {
+  const { season, troop, state: heroState, search } = state;
+  const q = (search || '').trim().toLowerCase();
+  let filtered = season === 'all' ? [...allHeroesData] : allHeroesData.filter(h => h.season === season);
+  if (troop !== 'all') filtered = filtered.filter(h => h.Type === troop || h.Type === 'All');
+  if (heroState !== 'all') filtered = filtered.filter(h => h.State === heroState);
+  if (q) filtered = filtered.filter(h => h.name.toLowerCase().includes(q));
+  return filtered;
+}
+
+function heroesFiltersActive(state = _heroesTabState) {
+  const { season, troop, state: heroState, search } = state;
+  return season !== 'all' || troop !== 'all' || heroState !== 'all' || !!(search || '').trim();
+}
+
+function syncHeroSelectionWithFilters() {
+  if (!_heroesTabState.selected) return;
+  const filtered = getFilteredHeroes();
+  if (!filtered.some(h => h.name === _heroesTabState.selected)) {
+    _heroesTabState.selected = null;
+  }
+}
+
+function selectHeroInAtlas(name) {
+  if (!name) return;
+  _heroesTabState.selected = _heroesTabState.selected === name ? null : name;
+  renderHeroesTab();
+}
+
+function wireHeroesTabEvents(container) {
+  if (_heroesTabEventsWired || !container) return;
+  _heroesTabEventsWired = true;
+
+  container.addEventListener('click', (e) => {
+    const seasonBtn = e.target.closest('[data-hero-season]');
+    if (seasonBtn) {
+      _heroesTabState.season = seasonBtn.dataset.heroSeason;
+      syncHeroSelectionWithFilters();
+      renderHeroesTab();
+      return;
+    }
+
+    const troopBtn = e.target.closest('[data-hero-troop]');
+    if (troopBtn) {
+      _heroesTabState.troop = troopBtn.dataset.heroTroop;
+      syncHeroSelectionWithFilters();
+      renderHeroesTab();
+      return;
+    }
+
+    const stateBtn = e.target.closest('[data-hero-state]');
+    if (stateBtn) {
+      _heroesTabState.state = stateBtn.dataset.heroState;
+      syncHeroSelectionWithFilters();
+      renderHeroesTab();
+      return;
+    }
+
+    const clearBtn = e.target.closest('[data-heroes-clear-filters]');
+    if (clearBtn) {
+      _heroesTabState.season = 'all';
+      _heroesTabState.troop = 'all';
+      _heroesTabState.state = 'all';
+      _heroesTabState.search = '';
+      syncHeroSelectionWithFilters();
+      renderHeroesTab();
+      return;
+    }
+
+    const rankRow = e.target.closest('[data-hero-name]');
+    if (rankRow) {
+      selectHeroInAtlas(rankRow.dataset.heroName);
+      return;
+    }
+
+    const pickHero = e.target.closest('[data-hero-pick]');
+    if (pickHero) {
+      e.stopPropagation();
+      _heroesTabState.selected = pickHero.dataset.heroPick;
+      renderHeroesTab();
+      return;
+    }
+
+    if (e.target.closest('[data-hero-close]')) {
+      _heroesTabState.selected = null;
+      renderHeroesTab();
+      return;
+    }
+
+    const sectionBtn = e.target.closest('[data-detail-section]');
+    if (sectionBtn) {
+      const target = container.querySelector(`#detail-section-${sectionBtn.dataset.detailSection}`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      container.querySelectorAll('[data-detail-section]').forEach(btn => {
+        btn.classList.toggle('active', btn === sectionBtn);
+      });
+      return;
+    }
+
+  });
+
+  container.addEventListener('input', (e) => {
+    if (e.target.id !== 'heroesTabSearch') return;
+    clearTimeout(_heroesSearchTimer);
+    _heroesSearchTimer = setTimeout(() => {
+      _heroesTabState.search = e.target.value;
+      syncHeroSelectionWithFilters();
+      renderHeroesTab();
+    }, 180);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !_heroesTabState.selected) return;
+    if (heroesSection?.classList.contains('hidden')) return;
+    _heroesTabState.selected = null;
+    renderHeroesTab();
+  });
+}
 
 function renderHeroesTab() {
   const container = document.getElementById('heroesTabContent');
   if (!container) return;
+
+  wireHeroesTabEvents(container);
+
+  const searchHadFocus = document.activeElement?.id === 'heroesTabSearch';
+  const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
 
   const stats = computeHeroRankings();
   const { season, troop, state, search, selected, view } = _heroesTabState;
@@ -2492,12 +2565,8 @@ function renderHeroesTab() {
   const seasons = ['all','S0','S1','S2','S3','S4','X1','X2'];
   const troops = ['all','Archers','Footmen','Cavalry'];
   const states = ['all','Free','Paid'];
-  const q = (search || '').trim().toLowerCase();
-
-  let filtered = season === 'all' ? [...allHeroesData] : allHeroesData.filter(h => h.season === season);
-  if (troop !== 'all') filtered = filtered.filter(h => h.Type === troop || h.Type === 'All');
-  if (state !== 'all') filtered = filtered.filter(h => h.State === state);
-  if (q) filtered = filtered.filter(h => h.name.toLowerCase().includes(q));
+  const filtered = getFilteredHeroes();
+  const filtersActive = heroesFiltersActive();
 
   const seasonTabsHtml = seasons.map(s => `
     <button type="button" class="hero-tab-season ${season === s ? 'active' : ''}" data-hero-season="${s}"
@@ -2515,12 +2584,6 @@ function renderHeroesTab() {
       ${st === 'all' ? 'All' : st}
     </button>`).join('');
 
-  // Reset bonuses button in toolbar
-  const resetBonusesBtnHtml = `
-    <button id="resetAllBonusesBtn" class="text-[10px] bg-red-900/30 hover:bg-red-800/50 text-red-400 border border-red-500/30 px-3 py-1 rounded-full transition-colors ml-2">
-      Reset Bonuses
-    </button>`;
-
   if (view === 'ranking') {
     const ranked = [...filtered].sort((a,b) => (stats[b.name]?.finalRating || 0) - (stats[a.name]?.finalRating || 0));
 
@@ -2531,12 +2594,12 @@ function renderHeroesTab() {
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
       const rankNumber = i < 3 ? medal : `#${i+1}`;
       return `
-        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${hero.name.replace(/"/g, '&quot;')}">
+        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}">
           <span class="rank-medal">${rankNumber}</span>
-          <img class="rank-img" src="${hero.imageUrl}" alt="${hero.name}" onerror="this.src='images/logo.png'">
+          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" onerror="this.src='images/logo.png'">
           <div class="rank-info">
             <div class="rank-name">
-              ${hero.name}
+              ${escapeHtml(hero.name)}
               ${hero.State === 'Paid' ? paidIconHtml() : ''}
             </div>
             <div class="rank-meta">
@@ -2560,7 +2623,6 @@ function renderHeroesTab() {
       const s    = stats[selected] || {};
       const tagColor = hero ? (seasonColors[hero.season] || '#f97316') : '#f97316';
       const synergies = getSynergies(selected);
-      const bonusValue = heroBonuses[selected] || 0;
 
       const heroCombos = rankedCombos
         .map((c,i) => ({...c, rank: i+1, score:(rankedCombos.length>1?100-((i/(rankedCombos.length-1))*99):100).toFixed(1)}))
@@ -2569,14 +2631,21 @@ function renderHeroesTab() {
 
       const combosHtml = heroCombos.map(c => `
         <div class="detail-combo-row">
-          <span class="detail-combo-rank">#${c.rank}</span>
-          ${c.heroes.map(hn => `
-            <div class="detail-combo-hero">
-              <img src="${getHeroImageUrl(hn)}" alt="${hn}">
-              <span>${hn}</span>
-            </div>`).join('')}
-          <span class="detail-combo-score">${parseFloat(c.score).toFixed(1)}</span>
-          ${renderCountersInline(c.heroes, getComboRankInfo, getHeroImageUrl, true)}
+          <div class="detail-combo-top">
+            <span class="detail-combo-rank">#${c.rank}</span>
+            <div class="detail-combo-scorebox">
+              <span class="detail-combo-score-lbl">Score</span>
+              <span class="detail-combo-score">${parseFloat(c.score).toFixed(1)}</span>
+            </div>
+          </div>
+          <div class="detail-combo-heroes">
+            ${c.heroes.map(hn => `
+              <button type="button" class="detail-combo-hero${hn === selected ? ' is-viewed' : ''}" data-hero-pick="${escapeHtml(hn)}" title="${escapeHtml(hn)}">
+                <img src="${getHeroImageUrl(hn)}" alt="${escapeHtml(hn)}">
+                <span>${escapeHtml(hn)}</span>
+              </button>`).join('')}
+          </div>
+          ${renderCountersToggle(c.heroes, getComboRankInfo, getHeroImageUrl, true)}
         </div>`).join('');
 
       const skillsHtml = ext ? ext.skills.map(sk => `
@@ -2590,25 +2659,21 @@ function renderHeroesTab() {
           <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
         </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
 
-      // Bonus control inside detail stats row
-      const bonusControlHtml = `
-        <div class="detail-stat bonus-control" style="grid-column: span 2;">
-          <div class="detail-stat-lbl">➕ Bonus</div>
-          <div class="detail-stat-val" style="display:flex; align-items:center; justify-content:center; gap:8px;">
-            <button class="bonus-minus" data-hero="${selected}" style="background:#334155; border:none; border-radius:20px; width:24px; height:24px; font-weight:bold; cursor:pointer;">-</button>
-            <span id="bonusValueDisplay">${bonusValue}</span>
-            <button class="bonus-plus" data-hero="${selected}" style="background:#334155; border:none; border-radius:20px; width:24px; height:24px; font-weight:bold; cursor:pointer;">+</button>
-          </div>
-        </div>
-      `;
+      const detailNavHtml = `
+        <nav class="detail-nav" aria-label="Hero detail sections">
+          ${synergies.length > 0 ? '<button type="button" class="detail-nav-btn active" data-detail-section="synergies">Synergies</button>' : ''}
+          <button type="button" class="detail-nav-btn ${synergies.length === 0 ? 'active' : ''}" data-detail-section="combos">Combos</button>
+          <button type="button" class="detail-nav-btn" data-detail-section="skills">Skills</button>
+        </nav>`;
 
       detailHtml = `
         <div class="hero-detail-panel">
-          <button type="button" class="detail-close" data-hero-close>✕ Close</button>
+          <button type="button" class="heroes-mobile-back" data-hero-close>← Back to ranking</button>
+          <button type="button" class="detail-close" data-hero-close aria-label="Close hero detail">✕</button>
           <div class="detail-header">
-            <img class="detail-img" src="${hero?.imageUrl}" alt="${selected}" onerror="this.src='images/logo.png'">
+            <img class="detail-img" src="${hero?.imageUrl}" alt="${escapeHtml(selected)}" onerror="this.src='images/logo.png'">
             <div class="detail-meta">
-              <div class="detail-name">${selected}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
+              <div class="detail-name">${escapeHtml(selected)}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
               <div class="detail-tags">
                 <span class="detail-season-tag" style="background:${tagColor};color:#000">${hero?.season}</span>
                 <span class="detail-troop-tag ${getTroopColorClass(hero?.Type)}">${getLocalizedTroop(hero?.Type||'All')}</span>
@@ -2619,120 +2684,79 @@ function renderHeroesTab() {
                 <div class="detail-stat"><div class="detail-stat-lbl">Combos</div><div class="detail-stat-val">${s.appearances||0}</div></div>
                 <div class="detail-stat"><div class="detail-stat-lbl">Best Rank</div><div class="detail-stat-val">${s.topComboRank!==Infinity?'#'+s.topComboRank:'—'}</div></div>
                 ${ext ? `<div class="detail-stat"><div class="detail-stat-lbl">Min Copies</div><div class="detail-stat-val">${ext.minCopies||34}</div></div>` : ''}
-                ${bonusControlHtml}
               </div>
             </div>
           </div>
+          ${detailNavHtml}
 
           ${synergies.length > 0 ? `
-          <div class="detail-section-title">Best Synergies</div>
-          <div class="detail-synergies">
-            ${synergies.map(syn => `
-              <div class="detail-syn-item">
-                <img src="${getHeroImageUrl(syn)}" alt="${syn}">
-                <span>${syn}</span>
-              </div>`).join('')}
+          <div id="detail-section-synergies" class="detail-section-block">
+            <div class="detail-section-title">Best Synergies</div>
+            <div class="detail-synergies">
+              ${synergies.map(syn => `
+                <button type="button" class="detail-syn-item" data-hero-pick="${escapeHtml(syn)}" title="View ${escapeHtml(syn)}">
+                  <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}">
+                  <span>${escapeHtml(syn)}</span>
+                </button>`).join('')}
+            </div>
           </div>` : ''}
 
-          <div class="detail-section-title">Top Combos</div>
-          <div class="detail-combos">${combosHtml || '<p class="text-xs text-slate-500 italic">No ranked combos yet.</p>'}</div>
+          <div id="detail-section-combos" class="detail-section-block">
+            <div class="detail-section-title">Top Combos</div>
+            <div class="detail-combos">${combosHtml || '<p class="text-xs text-slate-500 italic">No ranked combos yet.</p>'}</div>
+          </div>
 
-          <div class="detail-section-title">Skills</div>
-          <div class="detail-skills">${skillsHtml}</div>
+          <div id="detail-section-skills" class="detail-section-block">
+            <div class="detail-section-title">Skills</div>
+            <div class="detail-skills">${skillsHtml}</div>
+          </div>
         </div>`;
     }
 
+    const clearFiltersHtml = filtersActive
+      ? `<button type="button" class="heroes-clear-filters" data-heroes-clear-filters>Clear filters</button>`
+      : '';
+
     container.innerHTML = `
-      <div class="heroes-tab-inner">
-        <div class="heroes-toolbar">
-          <div class="hero-search-wrap" style="flex:1">
-            <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
-            <input id="heroesTabSearch" class="hero-search-input" type="text" placeholder="Search heroes..." value="${search.replace(/"/g, '&quot;')}" autocomplete="off" />
+      <div class="heroes-tab-inner${selected ? ' heroes-tab-inner--detail-open' : ''}">
+        <div class="heroes-toolbar-sticky">
+          <div class="heroes-toolbar">
+            <div class="hero-search-wrap heroes-search-field">
+              <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+              <input id="heroesTabSearch" class="hero-search-input" type="search" placeholder="Search heroes..." value="${escapeHtml(search)}" autocomplete="off" />
+            </div>
+            <span class="heroes-count-badge">${filtered.length} hero${filtered.length !== 1 ? 'es' : ''}</span>
+            ${clearFiltersHtml}
           </div>
-          <div class="flex items-center gap-1">
-            ${resetBonusesBtnHtml}
-          </div>
+          <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>
+          <div class="heroes-filter-pills heroes-filter-pills--state">${statePillsHtml}</div>
+          <div class="heroes-season-tabs">${seasonTabsHtml}</div>
         </div>
-        <div class="heroes-filter-pills">${troopPillsHtml}</div>
-        <div class="heroes-filter-pills">${statePillsHtml}</div>
-        <div class="heroes-season-tabs">${seasonTabsHtml}</div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
-          <div class="heroes-ranking-list">${rowsHtml}</div>
+          <div class="heroes-ranking-list" role="list">${rowsHtml}</div>
           ${selected ? detailHtml : ''}
         </div>
       </div>`;
 
-    // Attach event handlers
-    document.getElementById('heroesTabSearch')?.addEventListener('input', (e) => {
-      _heroesTabState.search = e.target.value;
-      _heroesTabState.selected = null;
-      renderHeroesTab();
-    });
-    document.querySelectorAll('[data-hero-season]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _heroesTabState.season = btn.dataset.heroSeason;
-        _heroesTabState.selected = null;
-        renderHeroesTab();
-      });
-    });
-    document.querySelectorAll('[data-hero-troop]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _heroesTabState.troop = btn.dataset.heroTroop;
-        _heroesTabState.selected = null;
-        renderHeroesTab();
-      });
-    });
-    document.querySelectorAll('[data-hero-state]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _heroesTabState.state = btn.dataset.heroState;
-        _heroesTabState.selected = null;
-        renderHeroesTab();
-      });
-    });
-    document.querySelectorAll('[data-hero-name]').forEach(row => {
-      row.addEventListener('click', () => {
-        _heroesTabState.selected = row.dataset.heroName;
-        renderHeroesTab();
-      });
-    });
-    const closeBtn = container.querySelector('[data-hero-close]');
-    if (closeBtn) closeBtn.addEventListener('click', () => {
-      _heroesTabState.selected = null;
-      renderHeroesTab();
-    });
-
-    // Bonus +/- listeners
-    document.querySelectorAll('.bonus-plus').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const hero = btn.dataset.hero;
-        heroBonuses[hero] = (heroBonuses[hero] || 0) + 1;
-        saveHeroBonuses();
-        renderHeroesTab();
-      });
-    });
-    document.querySelectorAll('.bonus-minus').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const hero = btn.dataset.hero;
-        let current = heroBonuses[hero] || 0;
-        if (current > -20) { // allow negative down to -20
-          heroBonuses[hero] = current - 1;
-          saveHeroBonuses();
-          renderHeroesTab();
+    if (searchHadFocus) {
+      const searchInput = document.getElementById('heroesTabSearch');
+      if (searchInput) {
+        searchInput.focus();
+        if (searchCaret != null) {
+          searchInput.setSelectionRange(searchCaret, searchCaret);
         }
-      });
-    });
-
-    // Reset all bonuses button
-    const resetBtn = document.getElementById('resetAllBonusesBtn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        if (confirm('Reset all hero bonuses to zero?')) {
-          heroBonuses = {};
-          saveHeroBonuses();
-          renderHeroesTab();
-        }
-      });
+      }
     }
+
+    requestAnimationFrame(() => {
+      const selectedRow = container.querySelector('.hero-rank-row.selected');
+      if (selectedRow) {
+        selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      if (selected && window.innerWidth < 900) {
+        container.querySelector('.hero-detail-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
   }
 }
 

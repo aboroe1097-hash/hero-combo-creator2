@@ -30,34 +30,39 @@ export function initFirebase() {
   return { app, db, auth };
 }
 
-// firebase.js - Updated Auth Logic
+let authInFlight = null;
+
 export async function ensureAnonymousAuth() {
   if (!auth) throw new Error("Firebase not initialized");
-  
-  // 1. Resolve immediately if already authed
   if (auth.currentUser) return auth.currentUser;
+  if (authInFlight) return authInFlight;
 
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("Auth timed out")), 10000);
-    
-    const unsubs = onAuthStateChanged(auth, async (user) => {
+  authInFlight = new Promise((resolve, reject) => {
+    let unsubs = () => {};
+    const timeout = setTimeout(() => {
+      unsubs();
+      authInFlight = null;
+      reject(new Error("Auth timed out"));
+    }, 10000);
+
+    unsubs = onAuthStateChanged(auth, (user) => {
       if (user) {
         clearTimeout(timeout);
         unsubs();
+        authInFlight = null;
         resolve(user);
-      } else {
-        try {
-          const cred = await signInAnonymously(auth);
-          clearTimeout(timeout);
-          unsubs();
-          resolve(cred.user);
-        } catch (err) {
-          clearTimeout(timeout);
-          reject(err);
-        }
       }
     });
+
+    signInAnonymously(auth).catch((err) => {
+      clearTimeout(timeout);
+      unsubs();
+      authInFlight = null;
+      reject(err);
+    });
   });
+
+  return authInFlight;
 }
 
 export function getDb() { return db; }

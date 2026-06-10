@@ -72,6 +72,18 @@ const _lookup = new Map(
   COMBO_COUNTERS.map(e => [comboKey(e.target), e.counters])
 );
 
+export function getCounterCount(heroes) {
+  if (!Array.isArray(heroes) || heroes.length !== 3) return 0;
+  return _lookup.get(comboKey(heroes))?.length || 0;
+}
+
+function counterPanelId(heroes) {
+  let h = 0;
+  const key = comboKey(heroes);
+  for (let i = 0; i < key.length; i++) h = ((h << 5) - h + key.charCodeAt(i)) | 0;
+  return `ctr-${Math.abs(h).toString(36)}`;
+}
+
 export function getTopCounters(heroes, getComboRankInfo, limit = 3) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return [];
   const counters = _lookup.get(comboKey(heroes));
@@ -116,5 +128,20 @@ export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, 
   return `<div class="combo-counters-inline">
     <div class="counter-inline-title">Counters</div>
     ${rows}
+  </div>`;
+}
+
+export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, compact = false) {
+  const count = getCounterCount(heroes);
+  if (!count) return '';
+
+  const panelId = counterPanelId(heroes);
+  const inner = renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, compact);
+
+  return `<div class="combo-counters-wrap">
+    <button type="button" class="counter-toggle-btn" data-counter-target="${panelId}" aria-expanded="false">
+      Counters (${count})
+    </button>
+    <div id="${panelId}" class="combo-counters-panel hidden">${inner}</div>
   </div>`;
 }
