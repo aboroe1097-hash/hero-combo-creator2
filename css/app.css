@@ -693,7 +693,38 @@ section.tab-exit {
 .detail-skill-target.enemy { color: #f87171; }
 .detail-skill-target.ally  { color: #34d399; }
 .detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
+/* Tighter Ranking Rows */
+.hero-rank-row {
+  padding: 6px 10px; /* Reduced padding */
+  gap: 8px;
+  min-height: 48px;
+  background: linear-gradient(90deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.4) 100%);
+  border: 1px solid rgba(51,65,85,0.5);
+}
 
+.rank-img {
+  width: 32px; /* Slightly smaller avatar */
+  height: 32px;
+  border-width: 1.5px;
+}
+
+/* Premium Detail Panel */
+.hero-detail-panel {
+  background: radial-gradient(circle at top right, rgba(30,41,59,0.95), rgba(2,6,23,0.98));
+  border: 1px solid rgba(99,102,241,0.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 12px 32px rgba(0,0,0,0.5);
+}
+
+/* Compact Season Tabs */
+.heroes-season-tabs {
+  padding: 4px;
+  background: rgba(15,23,42,0.8);
+  border-radius: 12px;
+}
+.hero-tab-season {
+  padding: 4px 10px;
+  font-size: 0.65rem;
+}
 /* ── Hero Atlas toolbar ──────────────────────────────────── */
 .heroes-toolbar {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
