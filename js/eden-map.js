@@ -1,5 +1,5 @@
 import {
-  STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES,
+  STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES, OVERVIEW_STRUCTURE_TYPES,
   getEdenSectors, getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
   getStructurePoints, getSectorFaction, syncEdenSectorSelect,
   parseCoordInput, findStructureByCoords, findSectorForCoords,
@@ -10,9 +10,9 @@ import {
 } from './eden-map-terrain.js';
 import {
   preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
-  loadStructureIcon, preloadReferenceMap,
+  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs,
 } from './eden-map-assets.js';
-import { initEdenMapUI, MAJOR_TYPES } from './eden-map-ui.js';
+import { initEdenMapUI } from './eden-map-ui.js';
 import {
   createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
   estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
@@ -33,7 +33,9 @@ function edenT(key) {
 const PLAN_KEY = 'vts_eden_map_plan_v2';
 const MIN_SCALE = 0.12;
 const MAX_SCALE = 3.2;
-const ZOOM_PRESETS = [0.25, 0.42, 0.5, 0.75, 1.0, 1.5, 2.0, MAX_SCALE];
+const ZOOM_OVERVIEW_MAX = 0.54;
+const ZOOM_DETAIL_MIN = 0.82;
+const ZOOM_PRESETS = [0.25, 0.42, 0.54, 0.75, 0.82, 1.0, 1.5, 2.0, MAX_SCALE];
 const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
 const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
 function normalizePlan(raw) {
@@ -80,7 +82,8 @@ export function initEdenMapPlanner() {
   let plansStore = loadPlansStore();
   let activePlanId = plansStore.activeId || 'default';
   let plan = normalizePlan(plansStore.plans[activePlanId]?.plan);
-  let refOpacity = 0.92;
+  let refOpacity = 0.88;
+  let screenshotOpacity = 0.72;
   let factionFilter = 'all';
   let coordSearchPin = null;
   let filtersPopulatedFor = null;
@@ -88,6 +91,7 @@ export function initEdenMapPlanner() {
 
   const layers = {
     reference: true,
+    screenshots: false,
     terrain: false,
     structures: true,
     paths: true,
@@ -143,6 +147,7 @@ export function initEdenMapPlanner() {
   preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
   onStructureIconsReady(() => scheduleDraw());
   preloadReferenceMap(() => scheduleDraw());
+  preloadScreenshotRefs(() => scheduleDraw());
 
   const iso = (x, y) => ({
     x: (x - y) * 0.5 * scale + offsetX,
@@ -169,15 +174,20 @@ export function initEdenMapPlanner() {
   }
 
   function structureRenderMode() {
-    if (scale >= 0.6) return 'full';
-    if (scale >= 0.3) return 'dot';
-    return 'major';
+    if (scale >= ZOOM_DETAIL_MIN) return 'full';
+    if (scale >= ZOOM_OVERVIEW_MAX) return 'compact';
+    return 'overview';
   }
 
   function shouldDrawStructure(s) {
-    const mode = structureRenderMode();
-    if (mode === 'major') return MAJOR_TYPES.has(s.type);
+    if (structureRenderMode() === 'overview') return OVERVIEW_STRUCTURE_TYPES.has(s.type);
     return true;
+  }
+
+  function structureIconScale(mode) {
+    if (mode === 'overview') return 2.65;
+    if (mode === 'compact') return 2.35;
+    return 3.1;
   }
 
   function notifySelection() {
@@ -428,51 +438,41 @@ export function initEdenMapPlanner() {
     const mode = structureRenderMode();
     const statusColor = STATUS_COLORS[status] || STATUS_COLORS.neutral;
 
-    if (mode === 'dot') {
-      const r = Math.max(4, 5 * scale);
+    const iconMul = structureIconScale(mode);
+    const iconSize = Math.max(mode === 'compact' ? 18 : 22, (meta.size || 9) * scale * iconMul);
+    const icon = getStructureIcon(s.type) || loadStructureIcon(s.type);
+
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + iconSize * 0.1, iconSize * 0.5, iconSize * 0.18, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(40,28,16,0.22)';
+    ctx.fill();
+
+    if (isIconReady(icon)) {
+      const iw = iconSize;
+      const ih = iconSize;
+      ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.78, iw, ih);
+    } else {
+      const r = meta.size * scale * 0.85;
       ctx.beginPath();
-      ctx.arc(p.x, p.y - r, r, 0, Math.PI * 2);
+      ctx.moveTo(p.x, p.y - r * 1.35);
+      ctx.lineTo(p.x + r, p.y - r * 0.35);
+      ctx.lineTo(p.x, p.y + r * 0.55);
+      ctx.lineTo(p.x - r, p.y - r * 0.35);
+      ctx.closePath();
       ctx.fillStyle = meta.color;
       ctx.fill();
+    }
+
+    if (mode !== 'overview' || isSel || isHover) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y - r, r + 2.5, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y - iconSize * 0.38, iconSize * 0.55, 0, Math.PI * 2);
       ctx.strokeStyle = statusColor;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    } else {
-      const iconSize = Math.max(24, (meta.size || 9) * scale * 3.1);
-      const icon = getStructureIcon(s.type) || loadStructureIcon(s.type);
-
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + iconSize * 0.12, iconSize * 0.55, iconSize * 0.2, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      ctx.fill();
-
-      if (isIconReady(icon)) {
-        const iw = iconSize;
-        const ih = iconSize;
-        ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.72, iw, ih);
-      } else {
-        const r = meta.size * scale * 0.85;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y - r * 1.35);
-        ctx.lineTo(p.x + r, p.y - r * 0.35);
-        ctx.lineTo(p.x, p.y + r * 0.55);
-        ctx.lineTo(p.x - r, p.y - r * 0.35);
-        ctx.closePath();
-        ctx.fillStyle = meta.color;
-        ctx.fill();
-      }
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y - iconSize * 0.35, iconSize * 0.58, 0, Math.PI * 2);
-      ctx.strokeStyle = statusColor;
-      ctx.lineWidth = isSel ? 3 : 2;
+      ctx.lineWidth = isSel ? 3 : (mode === 'compact' ? 1.5 : 2);
       ctx.stroke();
     }
 
     if (isSel || isHover) {
-      const ringR = mode === 'dot' ? 10 * scale : Math.max(14, 18 * scale);
+      const ringR = Math.max(12, 16 * scale);
       ctx.beginPath();
       ctx.arc(p.x, p.y - ringR * 0.5, ringR, 0, Math.PI * 2);
       ctx.strokeStyle = isSel ? '#fff' : '#a5b4fc';
@@ -751,21 +751,22 @@ export function initEdenMapPlanner() {
     const w = canvas.width / devicePixelRatio;
     const h = canvas.height / devicePixelRatio;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#14100a';
+    ctx.fillStyle = '#1a140c';
     ctx.fillRect(0, 0, w, h);
 
     const fastMode = interacting || panning;
-    if (layers.reference || layers.terrain) {
-      drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
-        showReference: layers.reference,
-        referenceOpacity: refOpacity,
-        showTiles: layers.terrain,
-        showRivers: layers.terrain && !fastMode,
-        showMountains: layers.terrain && !fastMode,
-        fastMode,
-        viewBounds: getViewBounds(),
-      });
-    }
+    drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
+      showReference: layers.reference,
+      referenceOpacity: refOpacity,
+      showScreenshots: layers.screenshots,
+      screenshotOpacity,
+      sectorKey,
+      showTiles: layers.terrain,
+      showRivers: layers.terrain && !fastMode,
+      showMountains: layers.terrain && !fastMode,
+      fastMode,
+      viewBounds: getViewBounds(),
+    });
 
     if (!fastMode) drawZoneOverlays();
     if (layers.territory && !fastMode) drawTerritoryOverlay(ctx, iso);

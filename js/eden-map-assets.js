@@ -1,11 +1,17 @@
 // Eden map visual assets — terrain patterns + structure icons.
 
+const ASSET_ROOT = 'assets/eden-reference/';
+const ICON_ROOT = `${ASSET_ROOT}icons/`;
+
 // Community reference map (riseofcastles.net Eden Bounty layout). Calibrated to MAP_BOUNDS.
 export const MAP_REFERENCE = {
-  url: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
-  opacity: 0.92,
+  url: `${ASSET_ROOT}eden-map-reference.png`,
+  fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
+  opacity: 0.88,
   bounds: { minX: 0, maxX: 1700, minY: 0, maxY: 1600 },
 };
+
+export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manifest.json`;
 
 let _refImage = null;
 let _refLoading = false;
@@ -24,36 +30,91 @@ export function preloadReferenceMap(onReady) {
     _refLoading = false;
     onReady?.(img);
   };
-  img.onerror = () => { _refLoading = false; };
+  img.onerror = () => {
+    if (img.dataset.fallback !== '1' && MAP_REFERENCE.fallbackUrl) {
+      img.dataset.fallback = '1';
+      img.src = MAP_REFERENCE.fallbackUrl;
+      return;
+    }
+    _refLoading = false;
+  };
   img.src = MAP_REFERENCE.url;
   return img;
+}
+
+let _screenshotManifest = null;
+const _screenshotImages = new Map();
+let _screenshotLoading = false;
+
+export function getScreenshotRefs() {
+  return _screenshotManifest?.screenshots || [];
+}
+
+export function getScreenshotImage(id) {
+  return _screenshotImages.get(id) || null;
+}
+
+export function preloadScreenshotRefs(onReady) {
+  if (_screenshotManifest) {
+    onReady?.(_screenshotManifest);
+    return;
+  }
+  if (_screenshotLoading) return;
+  _screenshotLoading = true;
+  fetch(EDEN_SCREENSHOT_MANIFEST_URL)
+    .then(r => r.json())
+    .then((data) => {
+      _screenshotManifest = data;
+      let pending = data.screenshots?.length || 0;
+      if (!pending) {
+        _screenshotLoading = false;
+        onReady?.(data);
+        return;
+      }
+      const done = () => {
+        pending -= 1;
+        if (pending <= 0) {
+          _screenshotLoading = false;
+          onReady?.(data);
+        }
+      };
+      data.screenshots.forEach((ref) => {
+        const img = new Image();
+        img.onload = () => { _screenshotImages.set(ref.id, img); done(); };
+        img.onerror = done;
+        img.src = ref.file.startsWith('screenshots/')
+          ? `${ASSET_ROOT}${ref.file}`
+          : `${ASSET_ROOT}screenshots/${ref.file}`;
+      });
+    })
+    .catch(() => { _screenshotLoading = false; });
 }
 
 export function getReferenceMapImage() {
   return _refImage;
 }
 
-// Paste in-game screenshot URLs per structure type to override procedural sprites.
+// In-game sprites extracted from WhatsApp reference captures (database/extract-eden-icons.py).
 export const STRUCTURE_ICON_URLS = {
-  CP1: '',
-  CP2: '',
-  CP3: '',
-  CP4: '',
-  CP5: '',
-  CP7: '',
-  ST1: '',
-  ST2: '',
-  ST3: '',
-  LT2: '',
-  LT3: '',
-  LT4: '',
-  C5:  '',
-  C6:  '',
-  CS:  '',
-  STRHD: '',
-  AT:  '',
-  WCB: '',
-  WC8: '',
+  CP1: `${ICON_ROOT}cp1.png`,
+  CP2: `${ICON_ROOT}cp1.png`,
+  CP3: `${ICON_ROOT}cp3.png`,
+  CP4: `${ICON_ROOT}cp3.png`,
+  CP5: `${ICON_ROOT}cp3.png`,
+  CP7: `${ICON_ROOT}cp7.png`,
+  ST1: `${ICON_ROOT}st1.png`,
+  ST2: `${ICON_ROOT}st2.png`,
+  ST3: `${ICON_ROOT}st3.png`,
+  LT2: `${ICON_ROOT}lt2.png`,
+  LT3: `${ICON_ROOT}lt4.png`,
+  LT4: `${ICON_ROOT}lt4.png`,
+  C5:  `${ICON_ROOT}c5.png`,
+  C6:  `${ICON_ROOT}c6.png`,
+  CS:  `${ICON_ROOT}cs.png`,
+  STRHD: `${ICON_ROOT}strhd.png`,
+  AT:  `${ICON_ROOT}at.png`,
+  WCB: `${ICON_ROOT}wc8.png`,
+  WC8: `${ICON_ROOT}wc8.png`,
 };
 
 // Radians — gates face the iso map better rotated ~90° counter-clockwise.
@@ -70,13 +131,20 @@ export function getStructureIconRotation(type) {
   return STRUCTURE_ICON_ROTATION[type] || 0;
 }
 
+export const PARCHMENT_BASE = {
+  fill: '#d4c4a0',
+  fill2: '#c9b88e',
+  stroke: '#9a8668',
+  vignette: 'rgba(72,58,38,0.18)',
+};
+
 export const TERRAIN_STYLES = {
-  forest:  { fill: '#2a5238', fill2: '#3a6b4a', stroke: '#1e3d2a', pattern: 'forest' },
-  plains:  { fill: '#6d5f3a', fill2: '#8a7848', stroke: '#52482c', pattern: 'plains' },
-  desert:  { fill: '#9a7a48', fill2: '#b89560', stroke: '#6e5530', pattern: 'desert' },
-  wastes:  { fill: '#7a6550', fill2: '#5c4a38', stroke: '#4a3c2e', pattern: 'wastes' },
-  water:   { fill: '#1a4a72', fill2: '#2d7ab8', stroke: '#0f3050', pattern: 'water' },
-  mountain:{ fill: '#4a4038', fill2: '#6a5c50', stroke: '#2a2420', pattern: 'rock' },
+  forest:  { fill: '#b8a882', fill2: '#c9b992', stroke: '#8a7858', pattern: 'forest' },
+  plains:  { fill: '#d9c9a4', fill2: '#e2d4b0', stroke: '#a89472', pattern: 'plains' },
+  desert:  { fill: '#dcc9a0', fill2: '#e8d6b2', stroke: '#b09a74', pattern: 'desert' },
+  wastes:  { fill: '#c4b08a', fill2: '#d2bf98', stroke: '#9a8668', pattern: 'wastes' },
+  water:   { fill: '#4a8ec4', fill2: '#6eb8f0', stroke: '#1e5f94', pattern: 'water' },
+  mountain:{ fill: '#a89878', fill2: '#8f7f62', stroke: '#6e5f48', pattern: 'rock' },
 };
 
 const STRUCTURE_DRAW = {
