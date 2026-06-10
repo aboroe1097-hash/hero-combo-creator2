@@ -21,6 +21,20 @@ function savePlan(plan) {
 }
 
 export function initEdenMapPlanner() {
+
+  function populateFilters(mapData) {
+  const zones = [...new Set(mapData.map(item => item.zone))].sort();
+  const types = [...new Set(mapData.map(item => item.type))].sort();
+  
+  const zoneSelect = document.getElementById('edenZoneFilter');
+  const typeSelect = document.getElementById('edenTypeFilter');
+  
+  zoneSelect.innerHTML = '<option value="all">All Zones</option>' + 
+    zones.map(z => `<option value="${z}">${z}</option>`).join('');
+    
+  typeSelect.innerHTML = '<option value="all">All Types</option>' + 
+    types.map(t => `<option value="${t}">${t}</option>`).join('');
+}
   const root = document.getElementById('edenMapRoot');
   const canvas = document.getElementById('edenMapCanvas');
   const sidebar = document.getElementById('edenMapSidebar');
