@@ -133,10 +133,12 @@ function tickGameClocks() {
     const showUae = el.dataset.showUae === '1';
     const showDay = el.dataset.showDay === '1';
     const compact = el.dataset.compact === '1';
-    const baseTitle = el.dataset.gameClockBase || 'Game time — 06:00 UAE = 00:00';
+    const baseTitle = el.dataset.gameClockBase || 'Game time';
     if (compact) {
       el.textContent = state.formatted;
-      el.title = `${baseTitle} · ${state.formattedFull} · UAE ${state.uaeFull}`;
+      el.title = showUae
+        ? `${baseTitle} · ${state.formattedFull} · UAE ${state.uaeFull}`
+        : `${baseTitle} · ${state.formattedFull}`;
       return;
     }
     const parts = [`🕐 ${state.formattedFull}`];

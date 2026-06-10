@@ -1,7 +1,7 @@
 // Eden Map interactive guide — data-driven walkthrough (update EDEN_GUIDE_VERSION when features change)
 import { translations } from './translations.js';
 
-export const EDEN_GUIDE_VERSION = '2.6.0';
+export const EDEN_GUIDE_VERSION = '2.7.0';
 
 const PROGRESS_KEY = 'vts_eden_guide_progress_v1';
 
@@ -19,7 +19,7 @@ export const EDEN_GUIDE_SECTIONS = [
     titleKey: 'edenGuideSecStart',
     steps: [
       { id: 'welcome', icon: '👋', titleKey: 'edenGuideWelcomeTitle', descKey: 'edenGuideWelcomeDesc', tips: ['edenGuideWelcomeTip1', 'edenGuideWelcomeTip2'] },
-      { id: 'layout', icon: '🧭', titleKey: 'edenGuideLayoutTitle', descKey: 'edenGuideLayoutDesc', tips: ['edenGuideLayoutTip1', 'edenGuideLayoutTip2', 'edenGuideLayoutTip3'], highlight: '#edenMapCanvas' },
+      { id: 'layout', icon: '🧭', titleKey: 'edenGuideLayoutTitle', descKey: 'edenGuideLayoutDesc', tips: ['edenGuideLayoutTip1', 'edenGuideLayoutTip2', 'edenGuideLayoutTip3', 'edenGuideLayoutTip4'], highlight: '#edenMapCanvas' },
     ],
   },
   {
@@ -31,6 +31,7 @@ export const EDEN_GUIDE_SECTIONS = [
       { id: 'pan', icon: '✋', titleKey: 'edenGuidePanTitle', descKey: 'edenGuidePanDesc', tips: ['edenGuidePanTip1', 'edenGuidePanTip2'], action: 'tool-navigate', highlight: '[data-eden-tool="navigate"]' },
       { id: 'sectors', icon: '📍', titleKey: 'edenGuideSectorTitle', descKey: 'edenGuideSectorDesc', tips: ['edenGuideSectorTip1', 'edenGuideSectorTip2'], action: 'sector-c', highlight: '#edenSectorSelect' },
       { id: 'minimap', icon: '🗾', titleKey: 'edenGuideMinimapTitle', descKey: 'edenGuideMinimapDesc', tips: ['edenGuideMinimapTip1'], highlight: '#edenMinimap' },
+      { id: 'coord-search', icon: '📌', titleKey: 'edenGuideCoordTitle', descKey: 'edenGuideCoordDesc', tips: ['edenGuideCoordTip1', 'edenGuideCoordTip2'], action: 'focus-coords', highlight: '#edenCoordSearch' },
     ],
   },
   {
@@ -40,7 +41,7 @@ export const EDEN_GUIDE_SECTIONS = [
     steps: [
       { id: 'select', icon: '👆', titleKey: 'edenGuideSelectTitle', descKey: 'edenGuideSelectDesc', tips: ['edenGuideSelectTip1', 'edenGuideSelectTip2'], action: 'tool-navigate', highlight: '#edenMapSidebar' },
       { id: 'sidebar', icon: '📋', titleKey: 'edenGuideSidebarTitle', descKey: 'edenGuideSidebarDesc', tips: ['edenGuideSidebarTip1', 'edenGuideSidebarTip2', 'edenGuideSidebarTip3'], highlight: '#edenSelectedPanel' },
-      { id: 'filters', icon: '🔎', titleKey: 'edenGuideFiltersTitle', descKey: 'edenGuideFiltersDesc', tips: ['edenGuideFiltersTip1', 'edenGuideFiltersTip2'], highlight: '#edenOwnershipFilter' },
+      { id: 'filters', icon: '🔎', titleKey: 'edenGuideFiltersTitle', descKey: 'edenGuideFiltersDesc', tips: ['edenGuideFiltersTip1', 'edenGuideFiltersTip2', 'edenGuideFiltersTip3'], highlight: '#edenOwnershipFilter' },
     ],
   },
   {
@@ -48,6 +49,7 @@ export const EDEN_GUIDE_SECTIONS = [
     icon: '🛠️',
     titleKey: 'edenGuideSecTools',
     steps: [
+      { id: 'view-modes', icon: '🎚️', titleKey: 'edenGuideViewModesTitle', descKey: 'edenGuideViewModesDesc', tips: ['edenGuideViewModesTip1', 'edenGuideViewModesTip2', 'edenGuideViewModesTip3'], highlight: '#edenViewMode' },
       { id: 'measure', icon: '📏', titleKey: 'edenGuideMeasureTitle', descKey: 'edenGuideMeasureDesc', tips: ['edenGuideMeasureTip1', 'edenGuideMeasureTip2'], action: 'tool-measure', highlight: '[data-eden-tool="measure"]' },
       { id: 'path', icon: '🛤️', titleKey: 'edenGuidePathTitle', descKey: 'edenGuidePathDesc', tips: ['edenGuidePathTip1', 'edenGuidePathTip2', 'edenGuidePathTip3'], action: 'tool-path', highlight: '[data-eden-tool="path"]' },
       { id: 'target', icon: '🎯', titleKey: 'edenGuideTargetTitle', descKey: 'edenGuideTargetDesc', tips: ['edenGuideTargetTip1'], action: 'tool-target', highlight: '[data-eden-tool="target"]' },
@@ -59,7 +61,9 @@ export const EDEN_GUIDE_SECTIONS = [
     icon: '📦',
     titleKey: 'edenGuideSecPlan',
     steps: [
-      { id: 'ownership', icon: '🟢', titleKey: 'edenGuideOwnTitle', descKey: 'edenGuideOwnDesc', tips: ['edenGuideOwnTip1', 'edenGuideOwnTip2'], highlight: '#edenStatusSelect' },
+      { id: 'ownership', icon: '🟢', titleKey: 'edenGuideOwnTitle', descKey: 'edenGuideOwnDesc', tips: ['edenGuideOwnTip1', 'edenGuideOwnTip2'], highlight: '#edenSelectedPanel' },
+      { id: 'team-plan', icon: '👥', titleKey: 'edenGuideTeamPlanTitle', descKey: 'edenGuideTeamPlanDesc', tips: ['edenGuideTeamPlanTip1', 'edenGuideTeamPlanTip2', 'edenGuideTeamPlanTip3'], action: 'enable-team-plan', highlight: '#edenTeamPanel' },
+      { id: 'game-clock', icon: '⏱️', titleKey: 'edenGuideClockTitle', descKey: 'edenGuideClockDesc', tips: ['edenGuideClockTip1'], highlight: '#edenGameClock' },
       { id: 'plans', icon: '📁', titleKey: 'edenGuidePlansTitle', descKey: 'edenGuidePlansDesc', tips: ['edenGuidePlansTip1', 'edenGuidePlansTip2'], highlight: '#edenPlanSelect' },
       { id: 'share', icon: '🔗', titleKey: 'edenGuideShareTitle', descKey: 'edenGuideShareDesc', tips: ['edenGuideShareTip1', 'edenGuideShareTip2'], highlight: '#edenSharePlan' },
       { id: 'scout', icon: '📡', titleKey: 'edenGuideScoutTitle', descKey: 'edenGuideScoutDesc', tips: ['edenGuideScoutTip1'], action: 'view-scout', highlight: '#edenScoutPull' },
@@ -70,8 +74,9 @@ export const EDEN_GUIDE_SECTIONS = [
     icon: '🎨',
     titleKey: 'edenGuideSecLayers',
     steps: [
-      { id: 'layers-toggle', icon: '👁️', titleKey: 'edenGuideLayersTitle', descKey: 'edenGuideLayersDesc', tips: ['edenGuideLayersTip1', 'edenGuideLayersTip2'], highlight: '.eden-layer-bar' },
-      { id: 'ref-opacity', icon: '🖼️', titleKey: 'edenGuideRefTitle', descKey: 'edenGuideRefDesc', tips: ['edenGuideRefTip1'], highlight: '#edenRefOpacity' },
+      { id: 'layers-toggle', icon: '👁️', titleKey: 'edenGuideLayersTitle', descKey: 'edenGuideLayersDesc', tips: ['edenGuideLayersTip1', 'edenGuideLayersTip2', 'edenGuideLayersTip3'], highlight: '.eden-layer-bar' },
+      { id: 'teams-layer', icon: '🏷️', titleKey: 'edenGuideTeamsLayerTitle', descKey: 'edenGuideTeamsLayerDesc', tips: ['edenGuideTeamsLayerTip1', 'edenGuideTeamsLayerTip2'], highlight: '[data-eden-layer="teams"]' },
+      { id: 'ref-opacity', icon: '🖼️', titleKey: 'edenGuideRefTitle', descKey: 'edenGuideRefDesc', tips: ['edenGuideRefTip1', 'edenGuideRefTip2'], highlight: '#edenRefOpacity' },
       { id: 'zones', icon: '⚔️', titleKey: 'edenGuideZoneTitle', descKey: 'edenGuideZoneDesc', tips: ['edenGuideZoneTip1', 'edenGuideZoneTip2'], highlight: '[data-eden-faction="central"]' },
     ],
   },
@@ -126,6 +131,21 @@ export function initEdenMapGuide(api) {
     'tool-target': () => api.setTool?.('target'),
     'view-route': () => { const el = document.getElementById('edenViewMode'); if (el) { el.value = 'route'; el.dispatchEvent(new Event('change')); } },
     'view-scout': () => { const el = document.getElementById('edenViewMode'); if (el) { el.value = 'scout'; el.dispatchEvent(new Event('change')); } },
+    'view-teams': () => { const el = document.getElementById('edenViewMode'); if (el) { el.value = 'teams'; el.dispatchEvent(new Event('change')); } },
+    'focus-coords': () => {
+      document.getElementById('edenMapSidebar')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      document.getElementById('edenCoordSearch')?.focus();
+    },
+    'enable-team-plan': () => {
+      const panel = document.getElementById('edenTeamPanel');
+      if (panel) panel.open = true;
+      const cb = document.getElementById('edenTeamPlanEnabled');
+      if (cb && !cb.checked) {
+        cb.checked = true;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      panel?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    },
     'sector-c': () => api.setSector?.('C'),
     'fit-view': () => { api.fitView?.(); api.redraw?.(); },
   };

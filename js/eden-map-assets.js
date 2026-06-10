@@ -6,9 +6,9 @@ const WORLD_H = 1600;
 
 /** User-cropped square faction map — trim light padding, draw as-is (no rotate/warp). */
 export const FACTION_DIVISION_MAP = {
-  url: 'assets/faction-division2.png',
+  url: `${ASSET_ROOT}faction-division-map.png`,
+  rawUrl: 'assets/faction-division2.png',
   processedUrl: `${ASSET_ROOT}faction-division-map.png`,
-  rawUrl: 'assets/faction-division.jpg',
   layout: 'rect',
   opacity: 0.96,
   bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
@@ -19,6 +19,7 @@ export const FACTION_DIVISION_MAP = {
 // Legacy overlay (baked structures + cropped edges) — fallback only.
 export const MAP_REFERENCE = {
   url: FACTION_DIVISION_MAP.url,
+  rawUrl: FACTION_DIVISION_MAP.rawUrl,
   layout: FACTION_DIVISION_MAP.layout,
   processedUrl: FACTION_DIVISION_MAP.processedUrl,
   legacyUrl: `${ASSET_ROOT}eden-map-reference.png`,
@@ -127,18 +128,23 @@ export function preloadReferenceMap(onReady) {
   el.crossOrigin = 'anonymous';
   el.onload = () => finishReferenceLoad(el, onReady);
   el.onerror = () => {
-    if (el.dataset.fallback !== '1' && MAP_REFERENCE.processedUrl) {
+    if (el.dataset.fallback !== '1' && MAP_REFERENCE.rawUrl) {
       el.dataset.fallback = '1';
+      el.src = MAP_REFERENCE.rawUrl;
+      return;
+    }
+    if (el.dataset.fallback !== '2' && MAP_REFERENCE.processedUrl && MAP_REFERENCE.processedUrl !== MAP_REFERENCE.url) {
+      el.dataset.fallback = '2';
       el.src = MAP_REFERENCE.processedUrl;
       return;
     }
-    if (el.dataset.fallback !== '2' && MAP_REFERENCE.legacyUrl) {
-      el.dataset.fallback = '2';
+    if (el.dataset.fallback !== '3' && MAP_REFERENCE.legacyUrl) {
+      el.dataset.fallback = '3';
       el.src = MAP_REFERENCE.legacyUrl;
       return;
     }
-    if (el.dataset.fallback !== '3' && MAP_REFERENCE.fallbackUrl) {
-      el.dataset.fallback = '3';
+    if (el.dataset.fallback !== '4' && MAP_REFERENCE.fallbackUrl) {
+      el.dataset.fallback = '4';
       el.src = MAP_REFERENCE.fallbackUrl;
       return;
     }
