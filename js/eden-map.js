@@ -19,6 +19,12 @@ import {
 import {
   startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
 } from './eden-map-scout.js';
+import { translations } from './translations.js';
+
+function edenT(key) {
+  const lang = localStorage.getItem('vts_hero_lang') || 'en';
+  return translations[lang]?.[key] || translations.en[key] || key;
+}
 
 const PLAN_KEY = 'vts_eden_map_plan_v2';
 const MIN_SCALE = 0.12;
@@ -207,6 +213,10 @@ export function initEdenMapPlanner() {
     return structurePassesFaction(s) && structurePassesOwnership(s);
   }
 
+  function clampScale(val) {
+    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, val));
+  }
+
   function snapScale(val) {
     let best = val;
     let bestD = 0.06;
@@ -214,7 +224,47 @@ export function initEdenMapPlanner() {
       const d = Math.abs(p - val);
       if (d < bestD) { bestD = d; best = p; }
     });
-    return best;
+    return clampScale(best);
+  }
+
+  function nextPresetScale(direction) {
+    if (direction > 0) {
+      const next = ZOOM_PRESETS.find(p => p > scale + 0.008);
+      return next ?? MAX_SCALE;
+    }
+    const prev = [...ZOOM_PRESETS].reverse().find(p => p < scale - 0.008);
+    return prev ?? MIN_SCALE;
+  }
+
+  function screenToWorldPrecise(mx, my) {
+    const sx = mx - offsetX;
+    const sy = my - offsetY;
+    return {
+      x: (sx / (0.5 * scale) + sy / (0.25 * scale)) / 2,
+      y: (sy / (0.25 * scale) - sx / (0.5 * scale)) / 2,
+    };
+  }
+
+  /** Keep world point under (mx, my) fixed while changing scale — fixes zoom drift. */
+  function zoomAt(mx, my, newScale) {
+    const world = screenToWorldPrecise(mx, my);
+    scale = clampScale(newScale);
+    const screen = iso(world.x, world.y);
+    offsetX += mx - screen.x;
+    offsetY += my - screen.y;
+    markInteracting();
+    scheduleDraw({ sidebar: false });
+    endInteraction();
+  }
+
+  function zoomStep(direction) {
+    const rect = canvas.getBoundingClientRect();
+    zoomAt(rect.width / 2, rect.height / 2, nextPresetScale(direction));
+  }
+
+  function canvasPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { mx: e.clientX - rect.left, my: e.clientY - rect.top };
   }
 
   function panBy(dx, dy) {
@@ -262,9 +312,9 @@ export function initEdenMapPlanner() {
     const prevZone = zoneSelect.value;
     const prevType = typeSelect.value;
 
-    zoneSelect.innerHTML = '<option value="all">All zones</option>' +
+    zoneSelect.innerHTML = `<option value="all">${edenT('edenAllZones')}</option>` +
       zones.map(z => `<option value="${z}">${z}</option>`).join('');
-    typeSelect.innerHTML = '<option value="all">All structure types</option>' +
+    typeSelect.innerHTML = `<option value="all">${edenT('edenAllTypes')}</option>` +
       types.map(t => `<option value="${t}">${getStructureLabel(t)}</option>`).join('');
 
     if ([...zoneSelect.options].some(o => o.value === prevZone)) zoneSelect.value = prevZone;
@@ -782,7 +832,7 @@ export function initEdenMapPlanner() {
     const pt = snapPoint(mx, my);
     if (!routeStart) {
       routeStart = { x: pt.x, y: pt.y };
-      if (typeof window.showToast === 'function') window.showToast('Route: pick destination', 'info', 2000);
+      if (typeof window.showToast === 'function') window.showToast(edenT('edenRouteStartToast'), 'info', 2000);
       draw();
       return;
     }
@@ -863,15 +913,15 @@ export function initEdenMapPlanner() {
         const travelMins = estimateTravelMinutes(route.distance, plan.speed || 1);
         selPanel.innerHTML = `
           <div class="eden-selected-card">
-            <div class="eden-selected-title">Distance A → B</div>
-            <div class="eden-selected-meta">Terrain route: <strong>${route.distance}</strong> tiles · Direct: ${direct} tiles</div>
-            <div class="eden-selected-meta">Est. march: <strong>${formatTravelTime(travelMins)}</strong> @ speed ${plan.speed || 1}×</div>
+            <div class="eden-selected-title">${edenT('edenMeasureTitle')}</div>
+            <div class="eden-selected-meta">${edenT('edenMeasureTerrain')} <strong>${route.distance}</strong> ${edenT('edenMeasureTiles')} · ${edenT('edenMeasureDirect')} ${direct} ${edenT('edenMeasureTiles')}</div>
+            <div class="eden-selected-meta">${edenT('edenMeasureMarch')} <strong>${formatTravelTime(travelMins)}</strong> @ speed ${plan.speed || 1}×</div>
             <div class="eden-selected-meta">${measureA.x}:${measureA.y} → ${measureB.x}:${measureB.y}</div>
-            ${route.blocked ? '<p class="eden-hint">Partially blocked — route may cross mountains.</p>' : ''}
-            <button type="button" id="edenClearMeasure" class="eden-action-btn">Clear Measure</button>
+            ${route.blocked ? `<p class="eden-hint">${edenT('edenMeasureBlocked')}</p>` : ''}
+            <button type="button" id="edenClearMeasure" class="eden-action-btn">${edenT('edenClearMeasure')}</button>
           </div>`;
       } else if (!selected) {
-        selPanel.innerHTML = `<p class="eden-hint">Drag pan · pinch zoom (mobile) · click structure · dbl-click zoom in · click path to select/drag waypoint · Route mode: click start→end · Arrow keys pan · Del path · 1–8 sectors</p>`;
+        selPanel.innerHTML = `<p class="eden-hint">${edenT('edenHintEmpty')} <a href="#edenHelpPanel" class="eden-help-link">${edenT('edenHelpTitle')}</a></p>`;
       } else {
         const meta = STRUCTURE_TYPES[selected.type];
         const icon = getStructureIcon(selected.type);
@@ -885,30 +935,30 @@ export function initEdenMapPlanner() {
               ${iconHtml}
               <div>
                 <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
-                <div class="eden-selected-meta">Zone: ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
-                <div class="eden-selected-ov">⭐ Occupation Value: <strong>${meta?.points || 0}</strong></div>
+                <div class="eden-selected-meta">${edenT('edenZoneLabel')} ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
+                <div class="eden-selected-ov">⭐ ${edenT('edenOvLabel')} <strong>${meta?.points || 0}</strong></div>
               </div>
             </div>
-            <label class="eden-guild-label">Status
+            <label class="eden-guild-label">${edenT('edenStatusLabel')}
               <select id="edenStatusSelect" class="eden-filter-select eden-status-select">
-                <option value="neutral" ${status==='neutral'?'selected':''}>⚪ Neutral</option>
-                <option value="owned" ${status==='owned'?'selected':''}>🟢 Owned</option>
-                <option value="contested" ${status==='contested'?'selected':''}>🟡 Contested</option>
-                <option value="enemy" ${status==='enemy'?'selected':''}>🔴 Enemy</option>
+                <option value="neutral" ${status==='neutral'?'selected':''}>${edenT('edenStatusNeutral')}</option>
+                <option value="owned" ${status==='owned'?'selected':''}>${edenT('edenStatusOwned')}</option>
+                <option value="contested" ${status==='contested'?'selected':''}>${edenT('edenStatusContested')}</option>
+                <option value="enemy" ${status==='enemy'?'selected':''}>${edenT('edenStatusEnemy')}</option>
               </select>
             </label>
-            <label class="eden-guild-label">Guild / Team
-              <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="e.g. Team Phoenix" />
+            <label class="eden-guild-label">${edenT('edenGuildLabel')}
+              <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="${edenT('edenGuildPh')}" />
             </label>
-            <div class="eden-selected-meta">March from here: set speed in toolbar · est. times on paths/measures</div>
+            <div class="eden-selected-meta">${edenT('edenMarchFromHint')}</div>
             <div class="eden-selected-actions">
               <button type="button" id="edenToggleTargetBtn" class="eden-action-btn ${(plan.targets||[]).includes(selected.id)?'active':''}">
-                ${(plan.targets||[]).includes(selected.id) ? '★ Target' : '☆ Mark Target'}
+                ${(plan.targets||[]).includes(selected.id) ? edenT('edenMarkedTarget') : edenT('edenMarkTarget')}
               </button>
-              <button type="button" id="edenCenterBtn" class="eden-action-btn">Center</button>
-              <button type="button" id="edenZoomStructBtn" class="eden-action-btn">Zoom In</button>
-              <button type="button" id="edenCopyCoordsBtn" class="eden-action-btn" data-coords="${selected.x}:${selected.y}">Copy coords</button>
-              <button type="button" id="edenComboLinkBtn" class="eden-action-btn eden-combo-link">Build Combo</button>
+              <button type="button" id="edenCenterBtn" class="eden-action-btn">${edenT('edenCenter')}</button>
+              <button type="button" id="edenZoomStructBtn" class="eden-action-btn">${edenT('edenZoomStruct')}</button>
+              <button type="button" id="edenCopyCoordsBtn" class="eden-action-btn" data-coords="${selected.x}:${selected.y}">${edenT('edenCopyCoords')}</button>
+              <button type="button" id="edenComboLinkBtn" class="eden-action-btn eden-combo-link">${edenT('edenBuildCombo')}</button>
             </div>
           </div>`;
       }
@@ -940,8 +990,8 @@ export function initEdenMapPlanner() {
       const pts = list.reduce((sum, s) => sum + (STRUCTURE_TYPES[s.type]?.points || 0), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
       const pathTime = formatTravelTime(estimateTravelMinutes(pathDist, plan.speed || 1));
-      const modeLabel = viewMode === 'scout' ? ' · Scout' : viewMode === 'route' ? ' · Route' : '';
-      statsEl.textContent = `${filtered.length}/${list.length} shown · ${pts.toLocaleString()} OV · ${(plan.targets||[]).length} targets · ${(plan.paths||[]).length} paths (${pathDist.toLocaleString()} tiles, ~${pathTime})${modeLabel}`;
+      const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : '';
+      statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} OV · ${(plan.targets||[]).length} ${edenT('edenStatsTargets')} · ${(plan.paths||[]).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
     }
   }
 
@@ -992,14 +1042,8 @@ export function initEdenMapPlanner() {
       draw();
     });
 
-    document.getElementById('edenZoomIn')?.addEventListener('click', () => {
-      scale = snapScale(Math.min(MAX_SCALE, scale * 1.15));
-      draw();
-    });
-    document.getElementById('edenZoomOut')?.addEventListener('click', () => {
-      scale = snapScale(Math.max(MIN_SCALE, scale / 1.15));
-      draw();
-    });
+    document.getElementById('edenZoomIn')?.addEventListener('click', () => zoomStep(1));
+    document.getElementById('edenZoomOut')?.addEventListener('click', () => zoomStep(-1));
     document.getElementById('edenResetView')?.addEventListener('click', () => { fitView(); draw(); });
 
     document.getElementById('edenUndoPath')?.addEventListener('click', () => {
@@ -1094,7 +1138,7 @@ export function initEdenMapPlanner() {
     document.getElementById('edenPlanSelect')?.addEventListener('change', (e) => switchPlan(e.target.value));
     document.getElementById('edenPlanNew')?.addEventListener('click', () => {
       const id = `plan_${Date.now()}`;
-      const name = prompt('Plan name', `Plan ${Object.keys(plansStore.plans).length + 1}`);
+      const name = prompt(edenT('edenPlanPrompt'), `Plan ${Object.keys(plansStore.plans).length + 1}`);
       if (!name) return;
       plansStore.plans[id] = { name, plan: createEmptyPlan() };
       activePlanId = id;
@@ -1106,7 +1150,7 @@ export function initEdenMapPlanner() {
     document.getElementById('edenPlanRename')?.addEventListener('click', () => {
       const entry = plansStore.plans[activePlanId];
       if (!entry) return;
-      const name = prompt('Rename plan', entry.name || activePlanId);
+      const name = prompt(edenT('edenPlanRenamePrompt'), entry.name || activePlanId);
       if (!name) return;
       entry.name = name;
       savePlan();
@@ -1203,6 +1247,14 @@ export function initEdenMapPlanner() {
   }
 
   sidebar.addEventListener('click', (e) => {
+    if (e.target.closest('.eden-help-link')) {
+      const panel = document.getElementById('edenHelpPanel');
+      if (panel) {
+        panel.open = true;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      return;
+    }
     const row = e.target.closest('.eden-struct-row');
     if (row) {
       selectedId = row.dataset.id;
@@ -1270,18 +1322,10 @@ export function initEdenMapPlanner() {
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    markInteracting();
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const worldBefore = screenToWorld(mx, my);
-    const factor = e.deltaY > 0 ? 0.9 : 1.11;
-    scale = snapScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor)));
-    const worldAfter = screenToWorld(mx, my);
-    offsetX += (worldAfter.x - worldBefore.x) * 0.5 * scale;
-    offsetY += (worldAfter.y - worldBefore.y) * 0.25 * scale;
-    scheduleDraw({ sidebar: false });
-    endInteraction();
+    e.stopPropagation();
+    const { mx, my } = canvasPointer(e);
+    const factor = e.deltaY > 0 ? 0.92 : 1.09;
+    zoomAt(mx, my, scale * factor);
   }, { passive: false });
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -1504,8 +1548,8 @@ export function initEdenMapPlanner() {
     redraw: () => scheduleDraw({ sidebar: false }),
     setTool,
     jumpToTemple,
-    zoomIn: () => { scale = snapScale(Math.min(MAX_SCALE, scale * 1.15)); draw(); },
-    zoomOut: () => { scale = snapScale(Math.max(MIN_SCALE, scale / 1.15)); draw(); },
+    zoomIn: () => zoomStep(1),
+    zoomOut: () => zoomStep(-1),
     clearMeasure: () => { measureA = measureB = null; draw(); },
     clearSelection: () => { selectedId = null; draw(); },
     undoPathPoint: () => { pathDraft.pop(); draw(); },
@@ -1565,14 +1609,9 @@ export function initEdenMapPlanner() {
     const rect = canvas.getBoundingClientRect();
     const mx = (a.clientX + b.clientX) / 2 - rect.left;
     const my = (a.clientY + b.clientY) / 2 - rect.top;
-    const worldBefore = screenToWorld(touchPinch.mx, touchPinch.my);
-    scale = snapScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, touchPinch.scale0 * factor)));
-    const worldAfter = screenToWorld(mx, my);
-    offsetX += (worldAfter.x - worldBefore.x) * 0.5 * scale;
-    offsetY += (worldAfter.y - worldBefore.y) * 0.25 * scale;
+    zoomAt(mx, my, touchPinch.scale0 * factor);
     touchPinch.mx = mx;
     touchPinch.my = my;
-    scheduleDraw({ sidebar: false });
   }, { passive: false });
 
   canvas.addEventListener('touchend', () => {
@@ -1580,6 +1619,11 @@ export function initEdenMapPlanner() {
       touchPinch = null;
       endInteraction();
     }
+  });
+
+  window.addEventListener('edenLanguageUpdate', () => {
+    populateFilters(true);
+    renderSidebar();
   });
 
   window.addEventListener('resize', resize);
