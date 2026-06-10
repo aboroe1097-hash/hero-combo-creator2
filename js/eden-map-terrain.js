@@ -1,16 +1,16 @@
 // X1 Conqueror full-map terrain — biomes, rivers, mountains + pathfinding grid
 import {
   TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE,
-  getReferenceMapImage, getScreenshotRefs, getScreenshotImage,
+  getReferenceMapImage, isReferenceReady, getScreenshotRefs, getScreenshotImage,
 } from './eden-map-assets.js';
 
 export const MAP_BOUNDS = { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 export const CELL_SIZE = 10;
 export const TILE_SIZE = 40;
 
+// Season 5 Eden Wonders — parchment map; no forest biomes (legacy X1 data removed).
 const BIOMES = [
-  { id: 'forest',  rects: [{ x: 0, y: 0, w: 1700, h: 380 }, { x: 900, y: 0, w: 800, h: 560 }] },
-  { id: 'plains',  rects: [{ x: 0, y: 340, w: 1700, h: 480 }] },
+  { id: 'plains',  rects: [{ x: 0, y: 0, w: 1700, h: 820 }] },
   { id: 'desert',  rects: [{ x: 0, y: 760, w: 1700, h: 840 }, { x: 0, y: 600, w: 600, h: 1000 }] },
   { id: 'wastes',  rects: [{ x: 560, y: 680, w: 360, h: 260 }] },
 ];
@@ -70,7 +70,6 @@ function inBiome(id, x, y) {
 export function getTerrainAt(x, y) {
   if (MOUNTAINS.some(m => pointInPoly(x, y, m.polygon))) return 'mountain';
   if (nearRiver(x, y)) return 'water';
-  if (inBiome('forest', x, y)) return 'forest';
   if (inBiome('wastes', x, y)) return 'wastes';
   if (inBiome('desert', x, y)) return 'desert';
   if (inBiome('plains', x, y)) return 'plains';
@@ -98,7 +97,6 @@ function buildGrid() {
 
       let c = 1;
       if (terrain === 'water') c = 2.8;
-      else if (terrain === 'forest') c = 1.35;
       else if (terrain === 'desert') c = 1.15;
       else if (terrain === 'wastes') c = 1.25;
       cost[idx] = c;
@@ -296,8 +294,9 @@ function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
   ctx.lineTo(p3.x, p3.y);
   ctx.closePath();
   ctx.clip();
-  const w = img.naturalWidth || img.width;
-  const h = img.naturalHeight || img.height;
+  const w = img.naturalWidth || img.width || 0;
+  const h = img.naturalHeight || img.height || 0;
+  if (!w || !h) return;
   const m11 = (p1.x - p0.x) / w;
   const m12 = (p1.y - p0.y) / w;
   const m21 = (p3.x - p0.x) / h;
@@ -375,7 +374,7 @@ export function drawScreenshotRefLayer(ctx, worldToIso, sectorKey, opacity = 0.7
 
 export function drawReferenceLayer(ctx, worldToIso, opacity = MAP_REFERENCE.opacity) {
   const img = getReferenceMapImage();
-  if (!img?.complete || !img.naturalWidth) return false;
+  if (!isReferenceReady(img)) return false;
   const b = MAP_REFERENCE.bounds;
   const p0 = worldToIso(b.minX, b.minY);
   const p1 = worldToIso(b.maxX, b.minY);

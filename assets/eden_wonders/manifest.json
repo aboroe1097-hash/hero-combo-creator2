@@ -5,16 +5,16 @@
   "sectors": [
     { "id": "N1", "file": "eden-wonders-map-structure-coordinates-x17-v0-zqmy81y0ufrb1.webp", "label": "North Sector 1" },
     { "id": "N2", "file": "eden-wonders-map-structure-coordinates-x17-v0-390we5g2ufrb1.webp", "label": "North Sector 2" },
-    { "id": "N3", "file": "eden-wonders-map-structure-coordinates-x17-v0-2hgnufebufrb1.webp", "label": "North Sector 3" },
+    { "id": "N3", "file": "eden-wonders-map-structure-coordinates-x17-v0-u7p6tky3ufrb1.webp", "label": "North Sector 3" },
     { "id": "N4", "file": "eden-wonders-map-structure-coordinates-x17-v0-iuj94w45ufrb1.webp", "label": "North Sector 4" },
     { "id": "W",  "file": "eden-wonders-map-structure-coordinates-x17-v0-2wxy4gh7ufrb1.webp", "label": "West Sector" },
-    { "id": "WC", "file": "eden-wonders-map-structure-coordinates-x17-v0-izhb0afztfrb1.webp", "label": "West Central Sector" },
-    { "id": "C",  "file": null, "label": "Central Sector", "note": "No screenshot yet — keep txt export" },
+    { "id": "WC", "file": "eden-wonders-map-structure-coordinates-x17-v0-2hgnufebufrb1.webp", "label": "West Central Sector" },
+    { "id": "C",  "file": "eden-wonders-map-structure-coordinates-x17-v0-nazm6m4eufrb1.webp", "label": "Central Sector" },
     { "id": "EC", "file": "eden-wonders-map-structure-coordinates-x17-v0-5g363dycufrb1.webp", "label": "East Central Sector" },
     { "id": "E",  "file": "eden-wonders-map-structure-coordinates-x17-v0-w7c8zth9ufrb1.webp", "label": "East Sector" },
     { "id": "S1", "file": "eden-wonders-map-structure-coordinates-x17-v0-eg4rb8vutfrb1.webp", "label": "South Sector 1" },
     { "id": "S2", "file": "eden-wonders-map-structure-coordinates-x17-v0-icci7iittfrb1.webp", "label": "South Sector 2" },
     { "id": "S3", "file": "eden-wonders-map-structure-coordinates-x17-v0-5ac2zjhytfrb1.webp", "label": "South Sector 3" },
-    { "id": "S4", "file": null, "label": "South Sector 4", "note": "No screenshot yet — keep txt export" }
+    { "id": "S4", "file": "eden-wonders-map-structure-coordinates-x17-v0-izhb0afztfrb1.webp", "label": "South Sector 4" }
   ]
 }

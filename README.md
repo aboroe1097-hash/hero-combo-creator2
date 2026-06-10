@@ -6,7 +6,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 
 - **Manual Builder** — drag-and-drop 3-hero combos, save to Firebase, export as image/text
 - **Combo Generator** — top-5 ranked combos from your roster + "Surprise Me" random mode
-- **Eden Map Planner** — interactive X1 map with terrain, paths, and distance measurement
+- **Eden Map Planner** — Season 5 Wonders map with faction-division parchment underlay, zone filters (North / Central / South), paths, and terrain-aware distance
 - **Eden Loyalty Calculator** — processing times, poison %, upgrade paths
 - **Tech Research Calculator** — medal/resource tracking per season (S0–X2)
 - **Hero Atlas** — rankings, skills, synergies, adjustable hero bonuses
@@ -27,8 +27,14 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/heroes-info.js` | Hero skill/synergy data |
 | `js/loyalty-calculator.js` | Loyalty upgrade math |
 | `js/eden-map.js` | Eden map planner UI |
-| `js/eden-map-data.js` | Map structure data |
+| `js/eden-map-data.js` | Map structure data, sector zones (N1–N4, central, S1–S4) |
 | `js/eden-map-terrain.js` | Terrain + pathfinding |
+| `js/eden-map-assets.js` | Faction-division map underlay |
+| `js/eden-map-guide.js` | Interactive Eden map walkthrough |
+| `js/eden-datasets.generated.js` | Generated Season 5 structure coords |
+| `assets/eden-reference/faction-division-map.png` | Processed parchment underlay |
+| `database/build-eden-from-screenshots.py` | Rebuild structure dataset from screenshots |
+| `database/prepare-faction-map.py` | Crop/upscale faction-division source image |
 | `js/tech-db.js` | Tech research costs |
 | `js/translations.js` | i18n (11 languages) |
 | `js/heroes-data.js` | Hero roster (name, season, type, image URLs) |
@@ -44,6 +50,17 @@ npx serve .
 ```
 
 Open `http://localhost:3000` (or the port shown).
+
+### Eden map data rebuild
+
+After updating screenshot JSON or the faction source image:
+
+```bash
+python database/build-eden-from-screenshots.py
+python database/prepare-faction-map.py
+```
+
+Hard-refresh the browser after regenerating assets or JS.
 
 ## Deploy
 

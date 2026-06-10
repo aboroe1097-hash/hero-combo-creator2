@@ -24,6 +24,11 @@ import {
 } from './eden-map-scout.js';
 import { translations } from './translations.js';
 import { initEdenMapGuide, openEdenGuide } from './eden-map-guide.js';
+import { mountGameClock } from './game-time.js';
+import {
+  EDEN_TEAM_IDS, getTeamInfo, getStructTeamMeta, setStructTeamMeta,
+  renderTeamBoardHtml,
+} from './eden-map-teams.js';
 
 function edenT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || 'en';
@@ -96,6 +101,7 @@ export function initEdenMapPlanner() {
     structures: true,
     paths: true,
     targets: true,
+    teams: true,
     labels: false,
     zones: false,
     fog: false,
@@ -223,10 +229,7 @@ export function initEdenMapPlanner() {
   function structurePassesFaction(s) {
     if (factionFilter === 'all') return true;
     const sk = s.sector || sectorKey;
-    const f = getSectorFaction(sk);
-    if (factionFilter === 'north') return f === 'north' || f === 'contested';
-    if (factionFilter === 'south') return f === 'south' || f === 'contested';
-    return true;
+    return getSectorFaction(sk) === factionFilter;
   }
 
   function structurePassesOwnership(s) {
@@ -497,6 +500,29 @@ export function initEdenMapPlanner() {
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 2;
       ctx.stroke();
+    }
+
+    const teamMeta = getStructTeamMeta(plan, s.id);
+    if (layers.teams && teamMeta.team) {
+      const team = getTeamInfo(plan, teamMeta.team);
+      if (team) {
+        const bx = p.x + iconSize * 0.42;
+        const by = p.y - iconSize * 0.95;
+        const br = Math.max(5, 6 * scale);
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fillStyle = team.color;
+        ctx.fill();
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        if (teamMeta.gameTime && scale > 0.3) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = `bold ${Math.max(6, 7 * scale)}px Inter`;
+          ctx.textAlign = 'center';
+          ctx.fillText(teamMeta.gameTime, bx, by - br - 2);
+        }
+      }
     }
 
     if (layers.labels && mode === 'full' && (scale > 0.35 || isSel || isHover)) {
@@ -1015,14 +1041,18 @@ export function initEdenMapPlanner() {
     const list = structures();
     const zoneFilter = document.getElementById('edenZoneFilter')?.value || 'all';
     const typeFilter = document.getElementById('edenTypeFilter')?.value || 'all';
+    const teamFilter = document.getElementById('edenTeamFilter')?.value || 'all';
     const search = (document.getElementById('edenStructSearch')?.value || '').toLowerCase();
 
     const filtered = list.filter(s => {
       if (!structureVisible(s)) return false;
       if (zoneFilter !== 'all' && s.zone !== zoneFilter) return false;
       if (typeFilter !== 'all' && s.type !== typeFilter) return false;
+      const assignedTeam = getStructTeamMeta(plan, s.id).team;
+      if (teamFilter === 'unassigned' && assignedTeam) return false;
+      if (teamFilter !== 'all' && teamFilter !== 'unassigned' && assignedTeam !== teamFilter) return false;
       const label = getStructureLabel(s.type);
-      const hay = `${s.zone} ${s.type} ${label} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(s)}`;
+      const hay = `${s.zone} ${s.type} ${label} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(s)} ${assignedTeam}`;
       if (search && !fuzzyIncludes(search, hay)) return false;
       return true;
     });
@@ -1065,6 +1095,11 @@ export function initEdenMapPlanner() {
         const meta = STRUCTURE_TYPES[selected.type];
         const icon = getStructureIcon(selected.type);
         const status = getStructureStatus(selected);
+        const tm = getStructTeamMeta(plan, selected.id);
+        const teamOptions = EDEN_TEAM_IDS.map((tid) => {
+          const t = getTeamInfo(plan, tid);
+          return `<option value="${tid}" ${tm.team === tid ? 'selected' : ''}>${t.name}</option>`;
+        }).join('');
         const iconHtml = isIconReady(icon)
           ? `<img class="eden-selected-icon" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
           : `<span class="eden-struct-dot eden-selected-dot" style="background:${meta?.color}"></span>`;
@@ -1074,7 +1109,7 @@ export function initEdenMapPlanner() {
               ${iconHtml}
               <div>
                 <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
-                <div class="eden-selected-meta">${edenT('edenZoneLabel')} ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
+                <div class="eden-selected-meta">${edenT('edenZoneFieldLabel')} ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
                 <div class="eden-selected-ov">⭐ ${edenT('edenOvLabel')} <strong>${meta?.points || 0}</strong></div>
               </div>
             </div>
@@ -1089,6 +1124,20 @@ export function initEdenMapPlanner() {
             <label class="eden-guild-label">${edenT('edenGuildLabel')}
               <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="${edenT('edenGuildPh')}" />
             </label>
+            <div class="eden-team-assign-block">
+              <label class="eden-guild-label">${edenT('edenTeamAssignLabel')}
+                <select id="edenTeamSelect" class="eden-filter-select">
+                  <option value="">${edenT('edenTeamUnassigned')}</option>
+                  ${teamOptions}
+                </select>
+              </label>
+              <label class="eden-guild-label">${edenT('edenTeamTimeLabel')}
+                <input id="edenTeamTime" type="text" inputmode="numeric" maxlength="5" value="${tm.gameTime || ''}" placeholder="${edenT('edenTeamTimePh')}" />
+              </label>
+              <label class="eden-guild-label">${edenT('edenTeamNoteLabel')}
+                <input id="edenTeamNote" type="text" maxlength="48" value="${tm.note || ''}" placeholder="${edenT('edenTeamNotePh')}" />
+              </label>
+            </div>
             <div class="eden-selected-meta">${edenT('edenMarchFromHint')}</div>
             <div class="eden-selected-actions">
               <button type="button" id="edenToggleTargetBtn" class="eden-action-btn ${(plan.targets||[]).includes(selected.id)?'active':''}">
@@ -1108,6 +1157,8 @@ export function initEdenMapPlanner() {
       listEl.innerHTML = filtered.map(s => {
         const meta = STRUCTURE_TYPES[s.type];
         const isTarget = (plan.targets || []).includes(s.id);
+        const tm = getStructTeamMeta(plan, s.id);
+        const team = tm.team ? getTeamInfo(plan, tm.team) : null;
         const icon = getStructureIcon(s.type);
         const thumb = isIconReady(icon)
           ? `<img class="eden-struct-thumb" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
@@ -1119,6 +1170,7 @@ export function initEdenMapPlanner() {
           ${thumb}
           <span class="eden-struct-info"><strong>${getStructureLabel(s.type)}</strong> ${s.zone} <em>${s.x}:${s.y}</em></span>
           <span class="eden-struct-pts">${meta?.points} OV</span>
+          ${team ? `<span class="eden-team-pill" style="--team-color:${team.color}" title="${team.name}${tm.gameTime ? ' @ ' + tm.gameTime : ''}">${tm.gameTime || team.name.slice(-1)}</span>` : ''}
           ${isTarget ? '<span class="eden-target-star">★</span>' : ''}
         </button>`;
       }).join('');
@@ -1129,8 +1181,14 @@ export function initEdenMapPlanner() {
       const pts = list.reduce((sum, s) => sum + getStructurePoints(s), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
       const pathTime = formatTravelTime(estimateTravelMinutes(pathDist, plan.speed || 1));
-      const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : '';
-      statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} OV · ${(plan.targets||[]).length} ${edenT('edenStatsTargets')} · ${(plan.paths||[]).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
+      const assignedCount = list.filter((s) => getStructTeamMeta(plan, s.id).team).length;
+      const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : viewMode === 'teams' ? ` · ${edenT('edenModeTeams')}` : '';
+      statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} OV · ${assignedCount} ${edenT('edenStatsTeams')} · ${(plan.targets||[]).length} ${edenT('edenStatsTargets')} · ${(plan.paths||[]).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
+    }
+
+    const boardEl = document.getElementById('edenTeamBoard');
+    if (boardEl) {
+      boardEl.innerHTML = renderTeamBoardHtml(plan, list, edenT);
     }
   }
 
@@ -1331,6 +1389,11 @@ export function initEdenMapPlanner() {
     document.getElementById('edenViewMode')?.addEventListener('change', async (e) => {
       viewMode = e.target.value;
       routeStart = routeEnd = null;
+      if (viewMode === 'teams') {
+        layers.teams = true;
+        document.querySelector('[data-eden-layer="teams"]')?.classList.add('active');
+        document.getElementById('edenTeamPanel')?.setAttribute('open', '');
+      }
       if (viewMode === 'scout' && !scoutActive) {
         const res = await startScoutSync((intel) => {
           if (!intel) return;
@@ -1452,6 +1515,14 @@ export function initEdenMapPlanner() {
       savePlan();
       draw();
     }
+    const teamJump = e.target.closest('[data-team-jump]');
+    if (teamJump) {
+      selectedId = teamJump.dataset.teamJump;
+      const s = structures().find((st) => st.id === selectedId);
+      if (s) zoomToStructure(s);
+      notifySelection();
+      draw();
+    }
     if (e.target.closest('#edenCopyCoordsBtn')) {
       const btn = e.target.closest('#edenCopyCoordsBtn');
       const text = btn?.dataset.coords || '';
@@ -1474,7 +1545,30 @@ export function initEdenMapPlanner() {
       savePlan();
       draw();
     }
+    if (e.target.id === 'edenTeamSelect' && selectedId) {
+      setStructTeamMeta(plan, selectedId, { team: e.target.value });
+      savePlan();
+      draw();
+    }
+    if (e.target.id === 'edenTeamTime' && selectedId) {
+      setStructTeamMeta(plan, selectedId, { gameTime: e.target.value.trim() });
+      savePlan();
+      draw();
+    }
+    if (e.target.id === 'edenTeamNote' && selectedId) {
+      setStructTeamMeta(plan, selectedId, { note: e.target.value.trim() });
+      savePlan();
+      draw();
+    }
   });
+
+  sidebar.addEventListener('blur', (e) => {
+    if (e.target.id === 'edenTeamTime' && selectedId) {
+      setStructTeamMeta(plan, selectedId, { gameTime: e.target.value.trim() });
+      savePlan();
+      draw();
+    }
+  }, true);
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -1670,7 +1764,7 @@ export function initEdenMapPlanner() {
     }
   });
 
-  ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch'].forEach(id => {
+  ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch', 'edenTeamFilter'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input', refreshSidebar);
@@ -1683,6 +1777,7 @@ export function initEdenMapPlanner() {
     ownFilterEl.addEventListener('input', () => draw());
   }
 
+  mountGameClock(document.getElementById('edenGameClock'));
   bindToolbar();
   syncToolButtons();
   populateFilters(true);
@@ -1737,7 +1832,7 @@ export function initEdenMapPlanner() {
     },
     resetLayers: () => {
       Object.assign(layers, {
-        reference: true, terrain: false, structures: true, paths: true, targets: true,
+        reference: true, terrain: false, structures: true, paths: true, targets: true, teams: true,
         labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
       });
       document.querySelectorAll('[data-eden-layer]').forEach(btn => {

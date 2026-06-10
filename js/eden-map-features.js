@@ -1,7 +1,7 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
-import { getReferenceMapImage } from './eden-map-assets.js';
+import { getReferenceMapImage, isReferenceReady } from './eden-map-assets.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';
 export const MARCH_SPEED_BASE = 3;
@@ -15,6 +15,8 @@ export function createEmptyPlan() {
     customTargets: [],
     explored: {},
     speed: 1,
+    teamNames: { t1: 'Team 1', t2: 'Team 2', t3: 'Team 3', t4: 'Team 4' },
+    teamMeta: {},
   };
 }
 
@@ -213,7 +215,7 @@ export function drawHeatmap(ctx, worldToIso, structures, scale) {
 export function drawSectorTileOverlay(ctx, worldToIso, sectorKey, opacity = 0.95) {
   if (sectorKey === 'FULL') return false;
   const img = getReferenceMapImage();
-  if (!img?.complete || !img.naturalWidth) return false;
+  if (!isReferenceReady(img)) return false;
   const b = getSectorBounds(sectorKey);
   const corners = [
     worldToIso(b.minX, b.minY),

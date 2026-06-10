@@ -11,6 +11,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
 import { initEdenMapPlanner } from './eden-map.js';
+import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { renderCountersToggle } from './combo-counters.js';
 import { escapeHtml } from './utils.js';
 import { allHeroesData } from './heroes-data.js';
@@ -89,10 +90,29 @@ const TechseasonColors = {
   X2: '#34d399'  // Emerald
 };
 
+const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+
+const TAB_BTN_IDS = {
+  manual: 'tabManual',
+  generator: 'tabGenerator',
+  heroes: 'tabHeroes',
+  research: 'tabResearch',
+  edenMap: 'tabEdenMap',
+  loyalty: 'tabLoyalty',
+  youtube: 'tabYouTube',
+};
+
+function appT(key, vars = {}) {
+  let s = (translations[currentLanguage] || translations.en)[key] || translations.en[key] || key;
+  Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, String(v)); });
+  return s;
+}
+
 // --- STATE ---
 let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
 let heroInfoEnabled            = true; 
 let activeTechSeasons          = new Set(['S4']); // Default research season
+let techSearchQuery            = '';
 
 // Manual filters
 let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
@@ -1345,11 +1365,11 @@ function wireUIActions() {
 const tabs = [
   { btn: tabManualBtn,   name: 'manual' },
   { btn: tabGeneratorBtn,name: 'generator' },
+  { btn: tabHeroesBtn,   name: 'heroes' },
+  { btn: tabResearchBtn, name: 'research' },
   { btn: tabEdenMapBtn,  name: 'edenMap' },
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
-  { btn: tabResearchBtn, name: 'research' },
-  { btn: tabHeroesBtn,   name: 'heroes' }
 ];
 
 tabs.forEach(tab => {
@@ -1420,8 +1440,8 @@ tabs.forEach(tab => {
   let _heroesTabReady = false;
 
   const tabPanels = [
-    manualSection, generatorSection, edenMapSection,
-    loyaltySection, youtubeSection, researchSection, heroesSection
+    manualSection, generatorSection, heroesSection, researchSection,
+    edenMapSection, loyaltySection, youtubeSection,
   ];
 
   function loadYouTubeEmbeds() {
@@ -1463,7 +1483,7 @@ tabs.forEach(tab => {
       if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
       document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
-      const activeBtn = document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+      const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
       if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
 
       if (targetSection) {
@@ -1480,6 +1500,9 @@ tabs.forEach(tab => {
       if (tabName === 'manual' && comboFooterBar) {
         comboFooterBar.classList.remove('hidden');
       }
+
+      document.body.classList.toggle('tab-manual-active', tabName === 'manual');
+      document.body.classList.toggle('tab-combo-active', tabName === 'manual' || tabName === 'generator');
 
       onTabActivated(tabName);
       _lastTab = tabName;
@@ -1659,6 +1682,10 @@ function updateTextContent() {
     'tabLoyalty': t.tabLoyalty,
     'tabYouTube': t.tabYouTube || 'YouTube',
     'tabEdenMap': t.tabEdenMap || 'Eden Map',
+    'tabHeroes': t.tabHeroes || 'Hero Atlas',
+    'tabResearch': t.tabResearch || 'Research',
+    'researchTitle': t.researchTitle,
+    'researchDesc': t.researchDesc,
     'filterBySeasonTitle': t.filterBySeasonTitle,
     'availableHeroesTitle': t.availableHeroesTitle,
     'createComboTitle': t.createComboTitle,
@@ -1705,6 +1732,7 @@ function updateTextContent() {
     const key = el.getAttribute('data-i18n-title');
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
+  syncGameClockTitles();
 
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     const key = el.getAttribute('data-i18n-label');
@@ -1719,6 +1747,9 @@ function updateTextContent() {
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
   updateManualComboScore();
+  if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer')) {
+    renderTechList();
+  }
 }
 
 // --- RESEARCH CALCULATOR LOGIC ---
@@ -1733,7 +1764,8 @@ window.quickMaxTech = function(e, techId) {
     });
     
     updateGlobalSummary();
-    
+    renderTechList();
+
     // Quick visual feedback on the button
     const btn = e.target;
     const originalText = btn.innerHTML;
@@ -1756,6 +1788,97 @@ window.quickMaxTech = function(e, techId) {
     }
 };
 
+function getNodeLevelMedals(node, levelIndex) {
+    const genericCost = (node.costs && node.costs[levelIndex]) || 0;
+    const wbCost = (node.warBadgeCosts && node.warBadgeCosts[levelIndex])
+        || (node.wisdomCosts && node.wisdomCosts[levelIndex])
+        || (node.wb_costs && node.wb_costs[levelIndex]) || 0;
+    const cmCost = (node.courageCosts && node.courageCosts[levelIndex])
+        || (node.cm_costs && node.cm_costs[levelIndex]) || 0;
+
+    let wb = 0;
+    let cm = 0;
+    if (node.costType === 'Dual') {
+        wb = wbCost > 0 ? wbCost : genericCost;
+        cm = cmCost;
+    } else if (node.costType === 'Courage') {
+        cm = genericCost > 0 ? genericCost : cmCost;
+    } else if (node.costType === 'Wisdom' || node.costType === 'War Badge' || node.costType === 'War Badges') {
+        wb = genericCost > 0 ? genericCost : wbCost;
+    }
+    return { wb, cm };
+}
+
+function getTechMedalTotals(tech) {
+    let wbMax = 0;
+    let wbCurrent = 0;
+    let cmMax = 0;
+    let cmCurrent = 0;
+    let levelsMax = 0;
+    let levelsCurrent = 0;
+
+    tech.nodes.forEach((node) => {
+        const savedLevel = parseInt(localStorage.getItem(`tech_${tech.id}_${node.id}`), 10) || 0;
+        levelsMax += node.maxLevel;
+        levelsCurrent += savedLevel;
+        for (let i = 0; i < node.maxLevel; i++) {
+            const { wb, cm } = getNodeLevelMedals(node, i);
+            wbMax += wb;
+            cmMax += cm;
+            if (i < savedLevel) {
+                wbCurrent += wb;
+                cmCurrent += cm;
+            }
+        }
+    });
+
+    const medalMax = wbMax + cmMax;
+    const medalCurrent = wbCurrent + cmCurrent;
+    const pct = medalMax > 0
+        ? (medalCurrent / medalMax) * 100
+        : (levelsMax > 0 ? (levelsCurrent / levelsMax) * 100 : 0);
+
+    return {
+        wbMax, wbCurrent, cmMax, cmCurrent,
+        medalMax, medalCurrent,
+        pct,
+        remainingWb: wbMax - wbCurrent,
+        remainingCm: cmMax - cmCurrent,
+    };
+}
+
+function syncTechSeasonButtons() {
+    document.querySelectorAll('.tech-season-btn').forEach((btn) => {
+        btn.classList.toggle('active', activeTechSeasons.has(btn.dataset.season));
+    });
+}
+
+function setActiveTechSeasons(seasons) {
+    activeTechSeasons = new Set(seasons);
+    syncTechSeasonButtons();
+    renderTechList();
+    document.getElementById('techCalculatorContainer')?.classList.add('hidden');
+}
+
+function getFilteredTechTrees() {
+    const q = techSearchQuery.trim().toLowerCase();
+    return techDatabase
+        .filter((tech) => activeTechSeasons.has(tech.season))
+        .filter((tech) => {
+            if (!q) return true;
+            const hay = `${tech.name} ${tech.season} ${tech.unlockCondition} ${tech.primaryResource}`.toLowerCase();
+            return hay.includes(q);
+        })
+        .sort((a, b) => {
+            const si = TECH_SEASON_ORDER.indexOf(a.season) - TECH_SEASON_ORDER.indexOf(b.season);
+            if (si !== 0) return si;
+            const ar = a.default_pos?.row || 99;
+            const br = b.default_pos?.row || 99;
+            if (ar !== br) return ar - br;
+            return (a.default_pos?.col || 99) - (b.default_pos?.col || 99);
+        });
+}
+
 function initResearchCalculator() {
     const researchSection = document.getElementById('researchSection');
     if (!researchSection) return;
@@ -1766,224 +1889,203 @@ function initResearchCalculator() {
                 <h2 class="text-2xl sm:text-3xl font-black text-amber-400 uppercase tracking-widest mb-2 drop-shadow-md">Under Construction</h2>
             </div>
         `;
-        return; 
+        return;
     }
 
     const seasonBtns = document.querySelectorAll('.tech-season-btn');
     if (!seasonBtns.length) return;
 
-    seasonBtns.forEach(btn => {
-        const season = btn.dataset.season;
-        
-        if (activeTechSeasons.has(season)) {
-            btn.classList.remove('bg-slate-700', 'text-slate-300');
-            btn.classList.add('bg-blue-600', 'text-white');
-        } else {
-            btn.classList.add('bg-slate-700', 'text-slate-300');
-            btn.classList.remove('bg-blue-600', 'text-white');
-        }
+    syncTechSeasonButtons();
 
-        btn.addEventListener('click', (e) => {
+    seasonBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const season = btn.dataset.season;
             if (activeTechSeasons.has(season)) {
-                if (activeTechSeasons.size > 1) { 
-                    activeTechSeasons.delete(season);
-                    e.target.classList.remove('bg-blue-600', 'text-white');
-                    e.target.classList.add('bg-slate-700', 'text-slate-300');
-                }
+                if (activeTechSeasons.size > 1) activeTechSeasons.delete(season);
             } else {
                 activeTechSeasons.add(season);
-                e.target.classList.remove('bg-slate-700', 'text-slate-300');
-                e.target.classList.add('bg-blue-600', 'text-white');
             }
-
+            syncTechSeasonButtons();
             renderTechList();
-            document.getElementById('techCalculatorContainer').classList.add('hidden'); 
+            document.getElementById('techCalculatorContainer')?.classList.add('hidden');
         });
     });
+
+    document.getElementById('techSeasonAllBtn')?.addEventListener('click', () => {
+        setActiveTechSeasons(TECH_SEASON_ORDER);
+    });
+
+    document.getElementById('techSeasonS4Btn')?.addEventListener('click', () => {
+        setActiveTechSeasons(['S4']);
+    });
+
+    const searchInput = document.getElementById('techSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            techSearchQuery = e.target.value;
+            renderTechList();
+        });
+    }
 
     renderTechList();
 }
 function renderTechList() {
     const container = document.getElementById('techListContainer');
-    
-    // Inject dynamic CSS to handle explicit Row/Col placements securely
+    if (!container) return;
+
     if (!document.getElementById('dynamic-tech-grid-styles')) {
         const style = document.createElement('style');
         style.id = 'dynamic-tech-grid-styles';
         style.innerHTML = `
             @media (min-width: 1024px) {
-                .tech-card-pos {
-                    grid-row: var(--desk-row);
-                    grid-column: var(--desk-col);
-                }
-            }
-            .tech-card-hover:hover {
-                box-shadow: 0 10px 25px var(--hover-color) !important;
-                border-color: var(--border-color) !important;
-                transform: translateY(-2px);
+                .tech-card-pos { grid-row: var(--desk-row); grid-column: var(--desk-col); }
             }
         `;
         document.head.appendChild(style);
     }
 
-    // Grid capped at exactly 4 columns (lg:grid-cols-4)
-    container.innerHTML = '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full relative" id="techGridWrapper"></div>';
-    const wrapper = document.getElementById('techGridWrapper');
-
-    const filteredTechs = techDatabase.filter(tech => activeTechSeasons.has(tech.season));
+    const filteredTechs = getFilteredTechTrees();
     updateGlobalSummary(filteredTechs);
 
+    const countEl = document.getElementById('techTreeCount');
+    if (countEl) {
+        countEl.textContent = appT('researchTreeCount', { n: filteredTechs.length });
+    }
+
+    container.innerHTML = '<div class="research-grid" id="techGridWrapper"></div>';
+    const wrapper = document.getElementById('techGridWrapper');
+
     if (filteredTechs.length === 0) {
-        wrapper.innerHTML = `<p class="text-slate-500 italic col-span-full text-center py-4">No research data available for selected seasons.</p>`;
+        const emptyMsg = techSearchQuery.trim()
+            ? appT('researchNoResults')
+            : appT('researchNoData');
+        wrapper.innerHTML = `<p class="research-empty">${emptyMsg}</p>`;
         return;
     }
 
-    filteredTechs.forEach(tech => {
-        const card = document.createElement('div');
-        
-        // Grab the vibrant color for this specific season
+    let lastSeason = null;
+    const showSeasonHeaders = activeTechSeasons.size > 1;
+
+    filteredTechs.forEach((tech) => {
+        if (showSeasonHeaders && tech.season !== lastSeason) {
+            lastSeason = tech.season;
+            const header = document.createElement('div');
+            header.className = 'research-season-header';
+            header.style.setProperty('--season-color', TechseasonColors[tech.season] || '#3b82f6');
+            header.innerHTML = `<span class="research-season-chip">${tech.season}</span><span class="research-season-line"></span>`;
+            wrapper.appendChild(header);
+        }
+
         const sColor = TechseasonColors[tech.season] || '#3b82f6';
-        
-        // Extract default position if it exists, otherwise auto-place
+        const totals = getTechMedalTotals(tech);
         const r = tech.default_pos?.row || 'auto';
         const c = tech.default_pos?.col || 'auto';
 
-        card.className = "tech-card-pos tech-card-hover bg-slate-800 p-4 rounded-xl border border-slate-700 cursor-pointer transition-all duration-300 flex flex-col justify-between relative overflow-hidden group w-full";
-        
-        // Feed the explicit coordinates and colors to the CSS
+        const card = document.createElement('div');
+        card.className = 'tech-card-pos tech-card-hover research-tech-card';
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
         card.style.cssText = `
-            --desk-row: ${r}; 
-            --desk-col: ${c}; 
-            --hover-color: ${sColor}40; 
+            --desk-row: ${r};
+            --desk-col: ${c};
+            --season-color: ${sColor};
+            --hover-color: ${sColor}40;
             --border-color: ${sColor};
-            border-top: 4px solid ${sColor};
         `;
-        
+
+        const resourceLabel = tech.primaryResource || '—';
+        const progressPct = Math.min(100, Math.max(0, totals.pct));
+
         card.innerHTML = `
-            <button class="absolute top-3 right-3 bg-slate-900 hover:brightness-125 border text-[10px] font-black px-2 py-1 rounded shadow cursor-pointer uppercase z-20 transition-all" style="border-color: ${sColor}80; color: ${sColor}" onclick="quickMaxTech(event, '${tech.id}')">MAX</button>
-            
-            <div class="pr-12 relative z-10">
-                <h3 class="text-lg sm:text-xl font-black text-white uppercase tracking-widest leading-tight drop-shadow-sm">${tech.name}</h3>
-                <span class="text-[10px] sm:text-xs font-black px-2 py-0.5 rounded text-slate-900 mt-2 inline-block shadow-sm" style="background-color: ${sColor};">${tech.season}</span>
+            <button type="button" class="research-card-max" onclick="quickMaxTech(event, '${tech.id}')">MAX</button>
+            <div class="research-card-head">
+                <h3 class="research-card-title">${tech.name}</h3>
+                <span class="research-card-season">${tech.season}</span>
             </div>
-            
-            <p class="text-[10px] sm:text-xs text-amber-400 mt-3 mb-4 font-bold uppercase tracking-wider line-clamp-2 leading-snug relative z-10">Unlock: ${tech.unlockCondition}</p>
-            
-            <button class="font-black py-2 sm:py-2.5 rounded-lg text-xs w-full mt-auto transition-all uppercase tracking-widest text-slate-900 shadow-md group-hover:scale-[1.02]" style="background-color: ${sColor};">Open Calculator</button>
-            
-            <div class="absolute -bottom-12 -right-12 w-36 h-36 rounded-full blur-3xl opacity-20 pointer-events-none transition-opacity group-hover:opacity-40" style="background-color: ${sColor};"></div>
+            <p class="research-card-unlock">${appT('researchUnlock')}: ${tech.unlockCondition}</p>
+            <p class="research-card-resource">${resourceLabel}</p>
+            <div class="research-card-progress">
+                <div class="research-card-progress-bar" style="width:${progressPct.toFixed(1)}%"></div>
+            </div>
+            <span class="research-card-pct">${appT('researchProgress', { pct: progressPct.toFixed(0) })}</span>
+            <span class="research-card-cta">${appT('researchOpenCalc')}</span>
         `;
-        
-        card.onclick = () => renderCalculator(tech);
+
+        const openCalc = () => renderCalculator(tech);
+        card.addEventListener('click', openCalc);
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCalc(); }
+        });
         wrapper.appendChild(card);
     });
 
     let sourceNote = document.getElementById('researchSourceNote');
     if (!sourceNote) {
-        sourceNote = document.createElement('div');
+        sourceNote = document.createElement('p');
         sourceNote.id = 'researchSourceNote';
-        sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
+        sourceNote.className = 'research-source-note';
         container.appendChild(sourceNote);
     }
-    sourceNote.innerHTML = sourceCreditText;
+    sourceNote.textContent = sourceCreditText;
 }
 function updateGlobalSummary(filteredTechs = null) {
-    if (!filteredTechs) {
-        filteredTechs = techDatabase.filter(tech => activeTechSeasons.has(tech.season));
-    }
-    
-    let totalWbMax = 0, totalWbCurrent = 0;
-    let totalCmMax = 0, totalCmCurrent = 0;
-    
-    filteredTechs.forEach(tech => {
-        tech.nodes.forEach(node => {
-            const savedLevel = parseInt(localStorage.getItem(`tech_${tech.id}_${node.id}`)) || 0;
-            
-            for (let i = 0; i < node.maxLevel; i++) {
-                let genericCost = (node.costs && node.costs[i]) || 0;
-                let wbCost = (node.warBadgeCosts && node.warBadgeCosts[i]) || (node.wisdomCosts && node.wisdomCosts[i]) || (node.wb_costs && node.wb_costs[i]) || 0;
-                let cmCost = (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
+    if (!filteredTechs) filteredTechs = getFilteredTechTrees();
 
-                let nodeWb = 0;
-                let nodeCm = 0;
+    let totalWbMax = 0;
+    let totalWbCurrent = 0;
+    let totalCmMax = 0;
+    let totalCmCurrent = 0;
 
-                if (node.costType === "Dual") {
-                    nodeWb = wbCost > 0 ? wbCost : genericCost;
-                    nodeCm = cmCost;
-                } else if (node.costType === "Courage") {
-                    nodeCm = genericCost > 0 ? genericCost : cmCost;
-                } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
-                    nodeWb = genericCost > 0 ? genericCost : wbCost;
-                }
-                
-                totalWbMax += nodeWb;
-                totalCmMax += nodeCm;
-                
-                if (i < savedLevel) {
-                    totalWbCurrent += nodeWb;
-                    totalCmCurrent += nodeCm;
-                }
-            }
-        });
+    filteredTechs.forEach((tech) => {
+        const t = getTechMedalTotals(tech);
+        totalWbMax += t.wbMax;
+        totalWbCurrent += t.wbCurrent;
+        totalCmMax += t.cmMax;
+        totalCmCurrent += t.cmCurrent;
     });
-    
-    let remainingWb = totalWbMax - totalWbCurrent;
-    let remainingCm = totalCmMax - totalCmCurrent;
-    
-    let totalMedalsMax = totalWbMax + totalCmMax;
-    let totalMedalsCurrent = totalWbCurrent + totalCmCurrent;
-    let progressPercent = totalMedalsMax > 0 ? (totalMedalsCurrent / totalMedalsMax) * 100 : 0;
-    
-    let summaryEl = document.getElementById('globalTechSummary');
-    if (!summaryEl) {
-        summaryEl = document.createElement('div');
-        summaryEl.id = 'globalTechSummary';
-        summaryEl.className = 'mb-4 sm:mb-6';
-        const container = document.getElementById('techListContainer');
-        container.parentNode.insertBefore(summaryEl, container);
-    }
-    
-    if (totalMedalsMax === 0) {
+
+    const remainingWb = totalWbMax - totalWbCurrent;
+    const remainingCm = totalCmMax - totalCmCurrent;
+    const totalMedalsMax = totalWbMax + totalCmMax;
+    const totalMedalsCurrent = totalWbCurrent + totalCmCurrent;
+    const progressPercent = totalMedalsMax > 0 ? (totalMedalsCurrent / totalMedalsMax) * 100 : 0;
+
+    const summaryEl = document.getElementById('globalTechSummary');
+    if (!summaryEl) return;
+
+    if (totalMedalsMax === 0 && filteredTechs.length === 0) {
         summaryEl.innerHTML = '';
         return;
     }
 
-    const iconCM = `<img src="images/CM.png" class="w-4 h-4 sm:w-8 sm:h-8 inline-block align-middle mr-1 sm:mr-2 object-contain" alt="CM">`;
-    const iconWB = `<img src="images/WB.png" class="w-4 h-4 sm:w-8 sm:h-8 inline-block align-middle mr-1 sm:mr-2 object-contain" alt="WB">`;
+    const iconCM = '<img src="images/CM.png" class="research-medal-icon" alt="CM">';
+    const iconWB = '<img src="images/WB.png" class="research-medal-icon" alt="WB">';
 
     summaryEl.innerHTML = `
-        <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-3 sm:p-6 rounded-xl sm:rounded-2xl border-2 border-blue-500/20 shadow-2xl relative overflow-hidden">
-            <h3 class="text-sm sm:text-lg font-black text-white uppercase tracking-widest mb-2 sm:mb-4 flex items-center gap-1.5 sm:gap-2 relative z-10">
-                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                Global Needs Summary
-            </h3>
-            
-            <div class="mb-3 sm:mb-5 relative z-10">
-                <div class="flex justify-between items-end mb-1 sm:mb-2">
-                    <span class="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Combined Completion</span>
-                    <span class="text-base sm:text-xl font-black text-sky-400 drop-shadow-md tabular-nums">${progressPercent.toFixed(1)}%</span>
+        <div class="research-summary-card">
+            <h3 class="research-summary-title">${appT('researchGlobalSummary')}</h3>
+            <div class="research-summary-progress-wrap">
+                <div class="research-summary-progress-labels">
+                    <span>${appT('researchCombinedCompletion')}</span>
+                    <span class="research-summary-pct">${progressPercent.toFixed(1)}%</span>
                 </div>
-                <div class="w-full bg-slate-950 rounded-full h-3 sm:h-5 border border-slate-700/50 overflow-hidden shadow-inner">
-                    <div class="bg-gradient-to-r from-blue-600 to-sky-400 h-full rounded-full transition-all duration-500 ease-out" style="width: ${progressPercent}%"></div>
+                <div class="research-summary-progress-track">
+                    <div class="research-summary-progress-fill" style="width:${progressPercent}%"></div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-2 gap-2 sm:gap-4 relative z-10">
+            <div class="research-summary-stats">
                 ${totalWbMax > 0 ? `
-                <div class="bg-slate-950/60 p-2 sm:p-4 rounded-lg sm:rounded-xl border border-purple-500/30 flex flex-col justify-center shadow-inner tabular-nums">
-                    <span class="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5 sm:mb-1.5">Remaining WB</span>
-                    <span class="flex items-center text-base sm:text-3xl font-black text-purple-400">${iconWB} ${remainingWb.toLocaleString()}</span>
-                    <span class="text-[8px] sm:text-xs text-slate-500 font-semibold mt-1 sm:mt-1.5 w-full">of ${totalWbMax.toLocaleString()} total</span>
-                </div>
-                ` : ''}
-                
+                <div class="research-summary-stat research-summary-stat-wb">
+                    <span class="research-summary-stat-label">${appT('researchRemainingWb')}</span>
+                    <span class="research-summary-stat-value">${iconWB} ${remainingWb.toLocaleString()}</span>
+                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalWbMax.toLocaleString() })}</span>
+                </div>` : ''}
                 ${totalCmMax > 0 ? `
-                <div class="bg-slate-950/60 p-2 sm:p-4 rounded-lg sm:rounded-xl border border-blue-500/30 flex flex-col justify-center shadow-inner tabular-nums">
-                    <span class="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5 sm:mb-1.5">Remaining CM</span>
-                    <span class="flex items-center text-base sm:text-3xl font-black text-blue-400">${iconCM} ${remainingCm.toLocaleString()}</span>
-                    <span class="text-[8px] sm:text-xs text-slate-500 font-semibold mt-1 sm:mt-1.5 w-full">of ${totalCmMax.toLocaleString()} total</span>
-                </div>
-                ` : ''}
+                <div class="research-summary-stat research-summary-stat-cm">
+                    <span class="research-summary-stat-label">${appT('researchRemainingCm')}</span>
+                    <span class="research-summary-stat-value">${iconCM} ${remainingCm.toLocaleString()}</span>
+                    <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalCmMax.toLocaleString() })}</span>
+                </div>` : ''}
             </div>
         </div>
     `;
@@ -2232,6 +2334,7 @@ function renderCalculator(tech) {
     `;
 
     container.innerHTML = html;
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     document.getElementById('closeCalcBtn').onclick = () => container.classList.add('hidden');
 
     const branchTabs = container.querySelectorAll('.branch-tab-btn');
@@ -2818,6 +2921,7 @@ function renderHeroesTab() {
 async function startApp() {
     // 1. Setup UI & Render Heroes
     updateTextContent();
+    mountGameClock(document.getElementById('globalGameClock'), { compact: true });
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();

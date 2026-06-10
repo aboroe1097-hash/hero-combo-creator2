@@ -945,13 +945,15 @@ export function getEdenSectors() {
   return activeSectors;
 }
 
-// Eden North/South seasonal layout — cardinal + central sectors by faction half.
+// Season 5: N1–N4 / S1–S4 = faction staging; C, EC, E, W, WC = central war zone.
 export const SECTOR_FACTION = {
-  N: 'north', NE: 'north', NW: 'north', NC: 'north', EC: 'north', WC: 'north',
   N1: 'north', N2: 'north', N3: 'north', N4: 'north',
-  S: 'south', SE: 'south', SW: 'south', SC: 'south', E: 'south', W: 'south',
-  S2: 'south', S3: 'south', S4: 'south',
-  C: 'contested',
+  S1: 'south', S2: 'south', S3: 'south', S4: 'south',
+  C: 'central', EC: 'central', E: 'central', W: 'central', WC: 'central',
+  // Legacy Season 3 keys
+  N: 'north', NE: 'north', NW: 'north',
+  S: 'south', SE: 'south', SW: 'south',
+  NC: 'central', SC: 'central',
 };
 
 export const PATH_COLORS = [
