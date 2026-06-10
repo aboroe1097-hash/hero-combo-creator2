@@ -73,8 +73,11 @@
       </div>
     </div>
 
-    <div class="flex justify-center mb-8 px-2 w-full relative z-40">
-      <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:calc(100vw - 2rem);backdrop-filter:blur(12px);">
+<div class="tab-nav-wrapper">
+  <button type="button" class="tab-scroll-btn" id="tabScrollLeft" aria-label="Scroll left">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1" style="overflow-x:auto; scroll-behavior:smooth;">
         <div class="relative flex-shrink-0 flex items-center"><button id="tabManual" class="tab-pill tab-pill-inactive"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>Manual Builder</button></div>
         <div class="relative flex-shrink-0 flex items-center"><button id="tabGenerator" class="tab-pill tab-pill-active"><svg class="w-3.5 h-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>Combo Generator</button></div>
         <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabEdenMap" class="tab-pill tab-pill-inactive" data-i18n="tabEdenMap"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m0 0v2.25m0-10.5V4.5m0 10.5H4.5m4.5 0h10.5M9 15l-3-3m3 3 3-3"/></svg>Eden Map</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-violet-600 text-white border border-violet-400" style="transform:translate(25%,-25%);">DEMO</span></div>
@@ -83,6 +86,10 @@
         <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabHeroes" class="tab-pill tab-pill-inactive" data-i18n="tabHeroes"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>Hero Atlas</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-sm leading-tight bg-violet-500 text-white border border-violet-400" style="transform:translate(25%,-25%);">NEW</span></div>
         <div class="relative flex-shrink-0 flex items-center" style="padding-top:10px;"><button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube"><svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>YouTube</button><span class="absolute top-0 right-0 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase pointer-events-none shadow-md leading-tight bg-red-600 text-white border border-red-400/50" style="transform:translate(25%,-25%);">HOT</span></div>
       </div>
+    </div>
+  <button type="button" class="tab-scroll-btn" id="tabScrollRight" aria-label="Scroll right">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+  </button>
     </div>
 
     <div id="globalToggleRow" class="flex justify-center mb-6 transition-all duration-300">
