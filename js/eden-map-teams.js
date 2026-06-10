@@ -3,6 +3,8 @@ import { compareGameTimeMinutes, formatGameTimeMinutes, parseGameTimeInput } fro
 import { getStructureLabel, getStructurePoints } from './eden-map-data.js';
 
 export const EDEN_TEAM_IDS = ['t1', 't2', 't3', 't4'];
+export const TEAM_COUNT_MIN = 2;
+export const TEAM_COUNT_MAX = 4;
 
 export const EDEN_TEAM_COLORS = {
   t1: '#ef4444',
@@ -15,8 +17,42 @@ export function defaultTeamNames() {
   return { t1: 'Team 1', t2: 'Team 2', t3: 'Team 3', t4: 'Team 4' };
 }
 
+export function normalizeTeamPlanSettings(plan) {
+  if (!plan) return;
+  plan.teamPlanEnabled = Boolean(plan.teamPlanEnabled);
+  const count = Number(plan.teamCount);
+  plan.teamCount = Number.isFinite(count)
+    && count >= TEAM_COUNT_MIN
+    && count <= TEAM_COUNT_MAX
+    ? Math.round(count)
+    : TEAM_COUNT_MAX;
+}
+
+export function isTeamPlanEnabled(plan) {
+  return Boolean(plan?.teamPlanEnabled);
+}
+
+export function getActiveTeamIds(plan) {
+  if (!isTeamPlanEnabled(plan)) return [];
+  const count = Math.min(TEAM_COUNT_MAX, Math.max(TEAM_COUNT_MIN, Number(plan?.teamCount) || TEAM_COUNT_MAX));
+  return EDEN_TEAM_IDS.slice(0, count);
+}
+
+export function isActiveTeam(plan, teamId) {
+  return teamId && getActiveTeamIds(plan).includes(teamId);
+}
+
+export function pruneTeamAssignments(plan) {
+  const active = new Set(getActiveTeamIds(plan));
+  if (!plan?.teamMeta) return;
+  Object.values(plan.teamMeta).forEach((tm) => {
+    if (tm?.team && !active.has(tm.team)) tm.team = '';
+  });
+}
+
 export function getTeamInfo(plan, teamId) {
   if (!teamId || !EDEN_TEAM_IDS.includes(teamId)) return null;
+  if (isTeamPlanEnabled(plan) && !isActiveTeam(plan, teamId)) return null;
   const names = { ...defaultTeamNames(), ...(plan?.teamNames || {}) };
   return { id: teamId, name: names[teamId] || teamId, color: EDEN_TEAM_COLORS[teamId] };
 }
@@ -44,6 +80,7 @@ export function collectTeamAssignments(plan, structures, edenT) {
   structures.forEach((s) => {
     const tm = meta[s.id];
     if (!tm?.team) return;
+    if (isTeamPlanEnabled(plan) && !isActiveTeam(plan, tm.team)) return;
     rows.push({
       structId: s.id,
       teamId: tm.team,
@@ -63,8 +100,9 @@ export function collectTeamAssignments(plan, structures, edenT) {
   return rows;
 }
 
-export function groupAssignmentsByTeam(rows) {
-  const groups = Object.fromEntries(EDEN_TEAM_IDS.map((id) => [id, []]));
+export function groupAssignmentsByTeam(rows, plan) {
+  const ids = isTeamPlanEnabled(plan) ? getActiveTeamIds(plan) : EDEN_TEAM_IDS;
+  const groups = Object.fromEntries(ids.map((id) => [id, []]));
   rows.forEach((r) => {
     if (groups[r.teamId]) groups[r.teamId].push(r);
   });
@@ -72,8 +110,10 @@ export function groupAssignmentsByTeam(rows) {
 }
 
 export function renderTeamBoardHtml(plan, structures, edenT) {
+  if (!isTeamPlanEnabled(plan)) return '';
+
   const rows = collectTeamAssignments(plan, structures, edenT);
-  const groups = groupAssignmentsByTeam(rows);
+  const groups = groupAssignmentsByTeam(rows, plan);
   const unassignedTargets = (plan.targets || []).filter((id) => !plan.teamMeta?.[id]?.team);
 
   let html = '';
@@ -81,7 +121,7 @@ export function renderTeamBoardHtml(plan, structures, edenT) {
     html += `<div class="eden-team-board-hint">${edenT('edenTeamUnassignedHint').replace('{n}', String(unassignedTargets.length))}</div>`;
   }
 
-  EDEN_TEAM_IDS.forEach((tid) => {
+  getActiveTeamIds(plan).forEach((tid) => {
     const team = getTeamInfo(plan, tid);
     const items = groups[tid];
     html += `<div class="eden-team-board-group" style="--team-color:${team.color}">`;

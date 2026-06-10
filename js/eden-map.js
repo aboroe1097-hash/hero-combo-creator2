@@ -17,16 +17,18 @@ import {
   createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
   estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
   drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorTileOverlay,
-  animateCamera, exportMapAsPng,
+  maskReferenceCapitals, animateCamera, exportMapAsPng,
 } from './eden-map-features.js';
 import {
   startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
 } from './eden-map-scout.js';
 import { translations } from './translations.js';
 import { initEdenMapGuide, openEdenGuide } from './eden-map-guide.js';
+import { openLoyaltyFromEden } from './loyalty-calculator.js';
 import { mountGameClock } from './game-time.js';
 import {
-  EDEN_TEAM_IDS, getTeamInfo, getStructTeamMeta, setStructTeamMeta,
+  EDEN_TEAM_IDS, getActiveTeamIds, getTeamInfo, getStructTeamMeta, isTeamPlanEnabled,
+  normalizeTeamPlanSettings, pruneTeamAssignments, setStructTeamMeta,
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
 import { initEdenControlTips } from './eden-tooltips.js';
@@ -45,7 +47,9 @@ const ZOOM_PRESETS = [0.25, 0.42, 0.54, 0.75, 0.82, 1.0, 1.5, 2.0, MAX_SCALE];
 const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
 const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
 function normalizePlan(raw) {
-  return { ...createEmptyPlan(), ...raw };
+  const plan = { ...createEmptyPlan(), ...raw };
+  normalizeTeamPlanSettings(plan);
+  return plan;
 }
 
 export function initEdenMapPlanner() {
@@ -102,7 +106,7 @@ export function initEdenMapPlanner() {
     structures: true,
     paths: true,
     targets: true,
-    teams: true,
+    teams: false,
     labels: false,
     zones: false,
     fog: false,
@@ -119,6 +123,22 @@ export function initEdenMapPlanner() {
     localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
   }
 
+  function applyTeamPlanLayerState() {
+    const teamsLayerBtn = document.querySelector('[data-eden-layer="teams"]');
+    if (isTeamPlanEnabled(plan)) {
+      layers.teams = true;
+      teamsLayerBtn?.classList.add('active');
+    } else {
+      layers.teams = false;
+      teamsLayerBtn?.classList.remove('active');
+      if (viewMode === 'teams') {
+        viewMode = 'strategic';
+        const viewModeSel = document.getElementById('edenViewMode');
+        if (viewModeSel) viewModeSel.value = 'strategic';
+      }
+    }
+  }
+
   function switchPlan(id) {
     if (!plansStore.plans[id]) return;
     activePlanId = id;
@@ -126,6 +146,7 @@ export function initEdenMapPlanner() {
     selectedId = null;
     selectedPathIdx = null;
     pathDraft = [];
+    applyTeamPlanLayerState();
     notifySelection();
     syncPlanSelector();
     draw();
@@ -206,7 +227,7 @@ export function initEdenMapPlanner() {
     gate: 1.35,
     town: 1.1,
     stronghold: 1.1,
-    capital: 1.2,
+    capital: 1.55,
     temple: 1.05,
   };
 
@@ -550,7 +571,7 @@ export function initEdenMapPlanner() {
     }
 
     const teamMeta = getStructTeamMeta(plan, s.id);
-    if (layers.teams && teamMeta.team) {
+    if (isTeamPlanEnabled(plan) && layers.teams && teamMeta.team) {
       const team = getTeamInfo(plan, teamMeta.team);
       if (team) {
         const bx = p.x + iw * 0.38;
@@ -855,6 +876,10 @@ export function initEdenMapPlanner() {
     if (!fastMode) drawZoneOverlays();
     if (layers.territory && !fastMode) drawTerritoryOverlay(ctx, iso);
     if (layers.sectorTiles && !fastMode) drawSectorTileOverlay(ctx, iso, sectorKey, refOpacity);
+    if (layers.reference && layers.structures) {
+      const capitals = structures().filter((s) => STRUCTURE_TYPES[s.type]?.category === 'capital');
+      maskReferenceCapitals(ctx, iso, capitals, scale);
+    }
     if (layers.heatmap && !fastMode) {
       const heatStructs = structures().filter(structureVisible).map(s => ({
         ...s,
@@ -1088,7 +1113,9 @@ export function initEdenMapPlanner() {
     const list = structures();
     const zoneFilter = document.getElementById('edenZoneFilter')?.value || 'all';
     const typeFilter = document.getElementById('edenTypeFilter')?.value || 'all';
-    const teamFilter = document.getElementById('edenTeamFilter')?.value || 'all';
+    const teamFilter = isTeamPlanEnabled(plan)
+      ? (document.getElementById('edenTeamFilter')?.value || 'all')
+      : 'all';
     const search = (document.getElementById('edenStructSearch')?.value || '').toLowerCase();
 
     const filtered = list.filter(s => {
@@ -1096,8 +1123,8 @@ export function initEdenMapPlanner() {
       if (zoneFilter !== 'all' && s.zone !== zoneFilter) return false;
       if (typeFilter !== 'all' && s.type !== typeFilter) return false;
       const assignedTeam = getStructTeamMeta(plan, s.id).team;
-      if (teamFilter === 'unassigned' && assignedTeam) return false;
-      if (teamFilter !== 'all' && teamFilter !== 'unassigned' && assignedTeam !== teamFilter) return false;
+      if (isTeamPlanEnabled(plan) && teamFilter === 'unassigned' && assignedTeam) return false;
+      if (isTeamPlanEnabled(plan) && teamFilter !== 'all' && teamFilter !== 'unassigned' && assignedTeam !== teamFilter) return false;
       const label = getStructureLabel(s.type);
       const hay = `${s.zone} ${s.type} ${label} ${s.x}:${s.y} ${s.guild} ${getStructureStatus(s)} ${assignedTeam}`;
       if (search && !fuzzyIncludes(search, hay)) return false;
@@ -1143,10 +1170,12 @@ export function initEdenMapPlanner() {
         const icon = getStructureIcon(selected.type);
         const status = getStructureStatus(selected);
         const tm = getStructTeamMeta(plan, selected.id);
-        const teamOptions = EDEN_TEAM_IDS.map((tid) => {
-          const t = getTeamInfo(plan, tid);
-          return `<option value="${tid}" ${tm.team === tid ? 'selected' : ''}>${t.name}</option>`;
-        }).join('');
+        const teamOptions = isTeamPlanEnabled(plan)
+          ? getActiveTeamIds(plan).map((tid) => {
+            const t = getTeamInfo(plan, tid);
+            return `<option value="${tid}" ${tm.team === tid ? 'selected' : ''}>${t.name}</option>`;
+          }).join('')
+          : '';
         const iconHtml = isIconReady(icon)
           ? `<img class="eden-selected-icon" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
           : `<span class="eden-struct-dot eden-selected-dot" style="background:${meta?.color}"></span>`;
@@ -1171,6 +1200,7 @@ export function initEdenMapPlanner() {
             <label class="eden-guild-label">${edenT('edenGuildLabel')}
               <input id="edenGuildInput" value="${selected.guild || ''}" placeholder="${edenT('edenGuildPh')}" />
             </label>
+            ${isTeamPlanEnabled(plan) ? `
             <div class="eden-team-assign-block">
               <label class="eden-guild-label">${edenT('edenTeamAssignLabel')}
                 <select id="edenTeamSelect" class="eden-filter-select">
@@ -1184,7 +1214,7 @@ export function initEdenMapPlanner() {
               <label class="eden-guild-label">${edenT('edenTeamNoteLabel')}
                 <input id="edenTeamNote" type="text" maxlength="48" value="${tm.note || ''}" placeholder="${edenT('edenTeamNotePh')}" />
               </label>
-            </div>
+            </div>` : ''}
             <div class="eden-selected-meta">${edenT('edenMarchFromHint')}</div>
             <div class="eden-selected-actions">
               <button type="button" id="edenToggleTargetBtn" class="eden-action-btn ${(plan.targets||[]).includes(selected.id)?'active':''}">
@@ -1194,6 +1224,7 @@ export function initEdenMapPlanner() {
               <button type="button" id="edenZoomStructBtn" class="eden-action-btn">${edenT('edenZoomStruct')}</button>
               <button type="button" id="edenCopyCoordsBtn" class="eden-action-btn" data-coords="${selected.x}:${selected.y}">${edenT('edenCopyCoords')}</button>
               <button type="button" id="edenComboLinkBtn" class="eden-action-btn eden-combo-link">${edenT('edenBuildCombo')}</button>
+              <button type="button" id="edenLoyaltyLinkBtn" class="eden-action-btn eden-loyalty-link">${edenT('edenOpenLoyalty')}</button>
             </div>
           </div>`;
       }
@@ -1205,7 +1236,7 @@ export function initEdenMapPlanner() {
         const meta = STRUCTURE_TYPES[s.type];
         const isTarget = (plan.targets || []).includes(s.id);
         const tm = getStructTeamMeta(plan, s.id);
-        const team = tm.team ? getTeamInfo(plan, tm.team) : null;
+        const team = isTeamPlanEnabled(plan) && tm.team ? getTeamInfo(plan, tm.team) : null;
         const icon = getStructureIcon(s.type);
         const thumb = isIconReady(icon)
           ? `<img class="eden-struct-thumb" src="${icon instanceof HTMLImageElement ? icon.src : icon.toDataURL()}" alt="">`
@@ -1228,7 +1259,9 @@ export function initEdenMapPlanner() {
       const pts = list.reduce((sum, s) => sum + getStructurePoints(s), 0);
       const pathDist = (plan.paths || []).reduce((s, p) => s + (p.distance || 0), 0);
       const pathTime = formatTravelTime(estimateTravelMinutes(pathDist, plan.speed || 1));
-      const assignedCount = list.filter((s) => getStructTeamMeta(plan, s.id).team).length;
+      const assignedCount = isTeamPlanEnabled(plan)
+        ? list.filter((s) => getStructTeamMeta(plan, s.id).team).length
+        : 0;
       const modeLabel = viewMode === 'scout' ? ` · ${edenT('edenModeScout')}` : viewMode === 'route' ? ` · ${edenT('edenModeRoute')}` : viewMode === 'teams' ? ` · ${edenT('edenModeTeams')}` : '';
       statsEl.textContent = `${filtered.length}/${list.length} ${edenT('edenStatsShown')} · ${pts.toLocaleString()} OV · ${assignedCount} ${edenT('edenStatsTeams')} · ${(plan.targets||[]).length} ${edenT('edenStatsTargets')} · ${(plan.paths||[]).length} ${edenT('edenStatsPaths')} (${pathDist.toLocaleString()} ${edenT('edenMeasureTiles')}, ~${pathTime})${modeLabel}`;
     }
@@ -1237,6 +1270,63 @@ export function initEdenMapPlanner() {
     if (boardEl) {
       boardEl.innerHTML = renderTeamBoardHtml(plan, list, edenT);
     }
+    syncTeamPlanUi();
+  }
+
+  function populateTeamFilter() {
+    const sel = document.getElementById('edenTeamFilter');
+    if (!sel) return;
+    const prev = sel.value;
+    if (!isTeamPlanEnabled(plan)) {
+      sel.innerHTML = '';
+      return;
+    }
+    let html = `<option value="all">${edenT('edenTeamFilterAll')}</option>`;
+    getActiveTeamIds(plan).forEach((tid) => {
+      const t = getTeamInfo(plan, tid);
+      if (t) html += `<option value="${tid}">${t.name}</option>`;
+    });
+    html += `<option value="unassigned">${edenT('edenTeamUnassigned')}</option>`;
+    sel.innerHTML = html;
+    if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    else sel.value = 'all';
+  }
+
+  function syncTeamPlanUi() {
+    const enabled = isTeamPlanEnabled(plan);
+    const enableCb = document.getElementById('edenTeamPlanEnabled');
+    const countSel = document.getElementById('edenTeamCount');
+    const countWrap = document.getElementById('edenTeamCountWrap');
+    const board = document.getElementById('edenTeamBoard');
+    const offHint = document.getElementById('edenTeamPlanOffHint');
+    const teamFilterWrap = document.getElementById('edenTeamFilterWrap');
+    const teamsLayerBtn = document.querySelector('[data-eden-layer="teams"]');
+    const viewModeSel = document.getElementById('edenViewMode');
+    const teamsOption = viewModeSel?.querySelector('option[value="teams"]');
+
+    if (enableCb) enableCb.checked = enabled;
+    if (countSel) countSel.value = String(plan.teamCount || 4);
+    countWrap?.classList.toggle('hidden', !enabled);
+    board?.classList.toggle('hidden', !enabled);
+    offHint?.classList.toggle('hidden', enabled);
+    teamFilterWrap?.classList.toggle('hidden', !enabled);
+
+    if (teamsLayerBtn) {
+      teamsLayerBtn.disabled = !enabled;
+      teamsLayerBtn.classList.toggle('eden-layer-disabled', !enabled);
+      if (!enabled) {
+        layers.teams = false;
+        teamsLayerBtn.classList.remove('active');
+      }
+    }
+
+    if (teamsOption) teamsOption.hidden = !enabled;
+    if (!enabled && viewMode === 'teams') {
+      viewMode = 'strategic';
+      if (viewModeSel) viewModeSel.value = 'strategic';
+    }
+
+    populateTeamFilter();
   }
 
   function setSector(key, smooth = false) {
@@ -1275,6 +1365,7 @@ export function initEdenMapPlanner() {
       const layer = btn.dataset.edenLayer;
       layers[layer] = btn.classList.contains('active');
       btn.addEventListener('click', () => {
+        if (layer === 'teams' && !isTeamPlanEnabled(plan)) return;
         layers[layer] = !layers[layer];
         btn.classList.toggle('active', layers[layer]);
         if (layer === 'reference') ensureReferenceLoaded();
@@ -1433,10 +1524,38 @@ export function initEdenMapPlanner() {
       draw();
     });
 
+    document.getElementById('edenTeamPlanEnabled')?.addEventListener('change', (e) => {
+      plan.teamPlanEnabled = e.target.checked;
+      if (plan.teamPlanEnabled) {
+        layers.teams = true;
+        document.querySelector('[data-eden-layer="teams"]')?.classList.add('active');
+        document.getElementById('edenTeamPanel')?.setAttribute('open', '');
+      }
+      syncTeamPlanUi();
+      savePlan();
+      draw();
+    });
+
+    document.getElementById('edenTeamCount')?.addEventListener('change', (e) => {
+      plan.teamCount = Number(e.target.value);
+      pruneTeamAssignments(plan);
+      syncTeamPlanUi();
+      savePlan();
+      draw();
+    });
+
     document.getElementById('edenViewMode')?.addEventListener('change', async (e) => {
       viewMode = e.target.value;
       routeStart = routeEnd = null;
       if (viewMode === 'teams') {
+        if (!isTeamPlanEnabled(plan)) {
+          viewMode = 'strategic';
+          e.target.value = 'strategic';
+          if (typeof window.showToast === 'function') {
+            window.showToast(edenT('edenTeamPlanEnableFirst') || 'Enable team plan first', 'info');
+          }
+          return;
+        }
         layers.teams = true;
         document.querySelector('[data-eden-layer="teams"]')?.classList.add('active');
         document.getElementById('edenTeamPanel')?.setAttribute('open', '');
@@ -1554,6 +1673,11 @@ export function initEdenMapPlanner() {
       }
       return;
     }
+    if (e.target.closest('#edenLoyaltyLinkBtn')) {
+      const s = structures().find(st => st.id === selectedId);
+      openLoyaltyFromEden(s ? { zone: s.zone, name: getStructureLabel(s.type) } : null);
+      return;
+    }
     if (e.target.closest('#edenToggleTargetBtn')) {
       plan.targets = plan.targets || [];
       const i = plan.targets.indexOf(selectedId);
@@ -1592,8 +1716,10 @@ export function initEdenMapPlanner() {
       savePlan();
       draw();
     }
-    if (e.target.id === 'edenTeamSelect' && selectedId) {
-      setStructTeamMeta(plan, selectedId, { team: e.target.value });
+    if (e.target.id === 'edenTeamSelect' && selectedId && isTeamPlanEnabled(plan)) {
+      const val = e.target.value;
+      if (val && !getActiveTeamIds(plan).includes(val)) return;
+      setStructTeamMeta(plan, selectedId, { team: val });
       savePlan();
       draw();
     }
@@ -1880,7 +2006,8 @@ export function initEdenMapPlanner() {
     },
     resetLayers: () => {
       Object.assign(layers, {
-        reference: true, terrain: false, structures: true, paths: true, targets: true, teams: true,
+        reference: true, terrain: false, structures: true, paths: true, targets: true,
+        teams: isTeamPlanEnabled(plan),
         labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
       });
       document.querySelectorAll('[data-eden-layer]').forEach(btn => {
@@ -1953,5 +2080,6 @@ export function initEdenMapPlanner() {
   });
 
   window.addEventListener('resize', resize);
+  applyTeamPlanLayerState();
   resize();
 }

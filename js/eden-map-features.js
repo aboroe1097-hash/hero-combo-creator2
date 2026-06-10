@@ -1,7 +1,7 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
-import { getReferenceMapImage, isReferenceReady } from './eden-map-assets.js';
+import { getReferenceMapImage, isReferenceReady, PARCHMENT_BASE } from './eden-map-assets.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';
 export const MARCH_SPEED_BASE = 3;
@@ -15,6 +15,8 @@ export function createEmptyPlan() {
     customTargets: [],
     explored: {},
     speed: 1,
+    teamPlanEnabled: false,
+    teamCount: 4,
     teamNames: { t1: 'Team 1', t2: 'Team 2', t3: 'Team 3', t4: 'Team 4' },
     teamMeta: {},
   };
@@ -210,6 +212,28 @@ export function drawHeatmap(ctx, worldToIso, structures, scale) {
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fill();
   });
+}
+
+/** Hide baked capital art on the parchment reference — coord-placed icons replace them. */
+export function maskReferenceCapitals(ctx, worldToIso, capitals, scale = 1) {
+  if (!capitals?.length) return;
+  ctx.save();
+  capitals.forEach(({ x, y }) => {
+    const p = worldToIso(x, y);
+    const r = Math.max(22, 34 * scale);
+    const cx = p.x;
+    const cy = p.y - r * 0.1;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, PARCHMENT_BASE.fill);
+    grad.addColorStop(0.45, PARCHMENT_BASE.fill2);
+    grad.addColorStop(0.78, 'rgba(201,184,142,0.72)');
+    grad.addColorStop(1, 'rgba(201,184,142,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r * 0.92, r * 0.68, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
 }
 
 export function drawSectorTileOverlay(ctx, worldToIso, sectorKey, opacity = 0.95) {

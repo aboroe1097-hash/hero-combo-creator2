@@ -17,6 +17,54 @@ const loyaltyThresholds = [
     { site: 'T16', loyalty: 8000 }
 ].sort((a, b) => a.loyalty - b.loyalty);
 
+const INPUT_IDS = [
+    'ac1Level', 'ac2Level', 'ac3Level', 'ac4Level',
+    'source1', 'source2', 'source3', 'source4', 'source5', 'source6',
+    'bonusPoints', 'savedUnits', 'totalUnitsPerPatch',
+    'processingHours', 'processingMinutes', 'processingSeconds', 'numPatches'
+];
+
+const LOYALTY_PRESETS = [
+    {
+        id: 'balanced',
+        labelKey: 'loyaltyPresetBalanced',
+        values: {
+            ac1Level: 20, ac2Level: 16, ac3Level: 12, ac4Level: 10,
+            source1: 1830, source2: 64999, source3: 78801, source4: 4855, source5: 1560, source6: 1560,
+            bonusPoints: 20, savedUnits: 2340016, totalUnitsPerPatch: 568000,
+            processingHours: 8, processingMinutes: 2, processingSeconds: 48, numPatches: 3
+        }
+    },
+    {
+        id: 'maxCamps',
+        labelKey: 'loyaltyPresetMaxCamps',
+        values: {
+            ac1Level: 20, ac2Level: 20, ac3Level: 20, ac4Level: 20, bonusPoints: 20
+        }
+    },
+    {
+        id: 'early',
+        labelKey: 'loyaltyPresetEarly',
+        values: {
+            ac1Level: 12, ac2Level: 10, ac3Level: 8, ac4Level: 6,
+            bonusPoints: 10, savedUnits: 500000, numPatches: 2
+        }
+    },
+    {
+        id: 'throughput',
+        labelKey: 'loyaltyPresetThroughput',
+        values: {
+            numPatches: 5, totalUnitsPerPatch: 620000,
+            processingHours: 7, processingMinutes: 30, processingSeconds: 0
+        }
+    }
+];
+
+function t() {
+    const lang = localStorage.getItem('vts_hero_lang') || 'en';
+    return translations[lang] || translations.en;
+}
+
 function getExtractionSite(loyalty) {
     for (let i = loyaltyThresholds.length - 1; i >= 0; i--) {
         if (loyalty >= loyaltyThresholds[i].loyalty) return loyaltyThresholds[i].site;
@@ -59,199 +107,315 @@ function calculatePoisonPercentage(currentLoyalty) {
     return percentages;
 }
 
-export function initLoyaltyCalculator() {
-    const calcBtn = document.getElementById('calcLoyaltyBtn');
-    if (!calcBtn) return;
+function readInputs() {
+    const get = (id) => document.getElementById(id);
+    const ac1Level = parseInt(get('ac1Level')?.value, 10) || 0;
+    const ac2Level = parseInt(get('ac2Level')?.value, 10) || 0;
+    const ac3Level = parseInt(get('ac3Level')?.value, 10) || 0;
+    const ac4Level = parseInt(get('ac4Level')?.value, 10) || 0;
+    const bonusLoyalty = (parseInt(get('bonusPoints')?.value, 10) || 0) * 60;
+    const savedUnits = parseInt(get('savedUnits')?.value, 10) || 0;
+    const source1 = parseFloat(get('source1')?.value) || 0;
+    const source2 = parseFloat(get('source2')?.value) || 0;
+    const source3 = parseFloat(get('source3')?.value) || 0;
+    const source4 = parseFloat(get('source4')?.value) || 0;
+    const source5 = parseFloat(get('source5')?.value) || 0;
+    const source6 = parseFloat(get('source6')?.value) || 0;
+    const p_hours = parseFloat(get('processingHours')?.value) || 0;
+    const p_mins = parseFloat(get('processingMinutes')?.value) || 0;
+    const p_secs = parseFloat(get('processingSeconds')?.value) || 0;
+    const processingTime = p_hours + (p_mins / 60) + (p_secs / 3600);
+    const unitsPerPatch = parseFloat(get('totalUnitsPerPatch')?.value) || 0;
+    const numPatches = parseInt(get('numPatches')?.value, 10) || 0;
 
-    // --- 1. LOCAL STORAGE: SAVE & LOAD ---
-    const inputIds = [
-        'ac1Level', 'ac2Level', 'ac3Level', 'ac4Level',
-        'source1', 'source2', 'source3', 'source4', 'source5', 'source6',
-        'bonusPoints', 'savedUnits', 'totalUnitsPerPatch', 
-        'processingHours', 'processingMinutes', 'processingSeconds', 'numPatches'
-    ];
+    const campHourlyProduction = source1 + source2 + source3 + source6;
+    const campDailyProduction = campHourlyProduction * 24;
+    const hourlyRatePerPatch = processingTime > 0 ? unitsPerPatch / processingTime : 0;
+    const possibleProcessingDaily = hourlyRatePerPatch * numPatches * 24;
+    const maxProcessingPerHour = hourlyRatePerPatch * numPatches;
+    const actualEffectiveHourlyRate = Math.min(maxProcessingPerHour, campHourlyProduction);
+    const safeHourlyRate = actualEffectiveHourlyRate > 0 ? actualEffectiveHourlyRate : maxProcessingPerHour;
+    const currentLoyalty = (ac1Level + ac2Level + ac3Level + ac4Level) * 100 + bonusLoyalty;
+    const extractionSite = getExtractionSite(currentLoyalty);
+    const isSurplus = campDailyProduction >= possibleProcessingDaily;
+    const balanceDiff = Math.abs(campDailyProduction - possibleProcessingDaily);
 
-    inputIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            // Load from storage on page load
-            const savedVal = localStorage.getItem(`vts_loyalty_${id}`);
-            if (savedVal !== null) {
-                el.value = savedVal;
-            }
-            // Save to storage instantly when the user changes a value
-            el.addEventListener('input', () => {
-                localStorage.setItem(`vts_loyalty_${id}`, el.value);
-            });
-        }
-    });
+    return {
+        ac1Level, ac2Level, ac3Level, ac4Level,
+        bonusLoyalty, savedUnits,
+        campHourlyProduction, campDailyProduction,
+        processingTime, unitsPerPatch, numPatches,
+        hourlyRatePerPatch, possibleProcessingDaily, safeHourlyRate,
+        currentLoyalty, extractionSite, isSurplus, balanceDiff
+    };
+}
 
-    // --- 2. CALCULATOR LOGIC ---
-    calcBtn.addEventListener('click', () => {
-        const lang = localStorage.getItem('vts_hero_lang') || 'en';
-        const t = translations[lang] || translations.en;
-        const resultContainer = document.getElementById('loyaltyResult');
-        
-        const ac1Level = parseInt(document.getElementById('ac1Level').value) || 0;
-        const ac2Level = parseInt(document.getElementById('ac2Level').value) || 0;
-        const ac3Level = parseInt(document.getElementById('ac3Level').value) || 0;
-        const ac4Level = parseInt(document.getElementById('ac4Level').value) || 0;
+function buildUpgradeSequence(data) {
+    const tr = t();
+    const levels = { AC1: data.ac1Level, AC2: data.ac2Level, AC3: data.ac3Level, AC4: data.ac4Level };
+    let currentLoyalty = data.currentLoyalty;
+    let savedUnits = data.savedUnits;
+    const upgradeSequence = [];
+    let cumulativeTime = 0;
 
-        if ([ac1Level, ac2Level, ac3Level, ac4Level].some(l => l < 0 || l > 20)) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errAcLevels || 'Please enter valid AC levels (0-20).'}</p>`;
-            return;
-        }
+    if ([data.ac1Level, data.ac2Level, data.ac3Level, data.ac4Level].some(l => l < 0 || l > 20)) {
+        return { error: tr.errAcLevels || 'Please enter valid AC levels (0-20).' };
+    }
+    if (data.processingTime <= 0) {
+        return { error: tr.errProcTime || 'Processing time must be > 0.' };
+    }
+    if (data.possibleProcessingDaily <= 0) {
+        return { error: tr.errProcRate || 'Processing rate is zero. Check patch values.' };
+    }
 
-        const bonusLoyalty = (parseInt(document.getElementById('bonusPoints').value) || 0) * 60;
-        let savedUnits = parseInt(document.getElementById('savedUnits').value) || 0;
-        
-        const source1 = parseFloat(document.getElementById('source1').value) || 0;
-        const source2 = parseFloat(document.getElementById('source2').value) || 0;
-        const source3 = parseFloat(document.getElementById('source3').value) || 0;
-        const source4 = parseFloat(document.getElementById('source4').value) || 0;
-        const source5 = parseFloat(document.getElementById('source5').value) || 0;
-        const source6 = parseFloat(document.getElementById('source6').value) || 0;
+    while (Object.values(levels).some(l => l < 20)) {
+        let minCost = Infinity;
+        let nextUpgrade = null;
 
-        const campHourlyProduction = source1 + source2 + source3 + source6;
-        const campDailyProduction = campHourlyProduction * 24;
-
-        const p_hours = parseFloat(document.getElementById('processingHours').value) || 0;
-        const p_mins = parseFloat(document.getElementById('processingMinutes').value) || 0;
-        const p_secs = parseFloat(document.getElementById('processingSeconds').value) || 0;
-        const processingTime = p_hours + (p_mins / 60) + (p_secs / 3600);
-
-        if (processingTime <= 0) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errProcTime || 'Processing time must be > 0.'}</p>`;
-            return;
-        }
-
-        const unitsPerPatch = parseFloat(document.getElementById('totalUnitsPerPatch').value) || 0;
-        const numPatches = parseInt(document.getElementById('numPatches').value) || 0;
-
-        const hourlyRatePerPatch = unitsPerPatch / processingTime;
-        const possibleProcessingDaily = hourlyRatePerPatch * numPatches * 24;
-        const maxProcessingPerHour = hourlyRatePerPatch * numPatches;
-
-        if (possibleProcessingDaily <= 0) {
-            resultContainer.innerHTML = `<p class="text-red-400 font-bold p-4 bg-red-900/20 rounded-xl">${t.errProcRate || 'Processing rate is zero. Check patch values.'}</p>`;
-            return;
-        }
-
-        const actualEffectiveHourlyRate = Math.min(maxProcessingPerHour, campHourlyProduction);
-        const safeHourlyRate = actualEffectiveHourlyRate > 0 ? actualEffectiveHourlyRate : maxProcessingPerHour;
-
-        let levels = { AC1: ac1Level, AC2: ac2Level, AC3: ac3Level, AC4: ac4Level };
-        let currentLoyalty = (ac1Level + ac2Level + ac3Level + ac4Level) * 100 + bonusLoyalty;
-        let upgradeSequence = [];
-        let cumulativeTime = 0;
-
-        while (Object.values(levels).some(l => l < 20)) {
-            let minCost = Infinity;
-            let nextUpgrade = null;
-
-            for (const building in levels) {
-                const lvl = levels[building];
-                if (lvl < 20) {
-                    const cost = lvl === 0 ? 0 : upgradeCosts[building][lvl - 1];
-                    
-                    if (cost < minCost) {
-                        minCost = cost;
-                        nextUpgrade = { building, level: lvl + 1, cost };
-                    }
+        for (const building in levels) {
+            const lvl = levels[building];
+            if (lvl < 20) {
+                const cost = lvl === 0 ? 0 : upgradeCosts[building][lvl - 1];
+                if (cost < minCost) {
+                    minCost = cost;
+                    nextUpgrade = { building, level: lvl + 1, cost };
                 }
             }
-
-            if (!nextUpgrade) break;
-
-            let effectiveCost = Math.max(0, nextUpgrade.cost - savedUnits);
-            savedUnits = Math.max(0, savedUnits - nextUpgrade.cost);
-
-            const hoursNeeded = effectiveCost / safeHourlyRate;
-            cumulativeTime += hoursNeeded;
-
-            const newLoyalty = currentLoyalty + 100;
-            const extractionSite = getExtractionSite(newLoyalty);
-            const poison = calculatePoisonPercentage(currentLoyalty);
-
-            upgradeSequence.push({
-                ...nextUpgrade,
-                hours: hoursNeeded,
-                cumulativeTime: cumulativeTime,
-                currentLoyalty: currentLoyalty,
-                newLoyalty: newLoyalty,
-                extractionSite: extractionSite,
-                poisonNext: poison.next,
-                poisonAfterNext: poison.afterNext
-            });
-
-            levels[nextUpgrade.building]++;
-            currentLoyalty = newLoyalty;
         }
 
-        const isSurplus = campDailyProduction >= possibleProcessingDaily;
-        const diff = Math.abs(campDailyProduction - possibleProcessingDaily);
-        
-        let html = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
-                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">${t.resMaxProcessing || 'Max Processing (Daily)'}</p>
-                    <p class="text-xl font-black text-blue-400">${Math.round(possibleProcessingDaily).toLocaleString()} ${t.resUnits || 'units'}</p>
-                    <p class="text-[10px] text-slate-500 mt-1">${Math.round(hourlyRatePerPatch).toLocaleString()} ${t.resHrPerPatch || '/hr per patch'}</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-md">
-                    <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">${t.resProdVsProc || 'Production vs Processing'}</p>
-                    <p class="text-lg font-black ${isSurplus ? 'text-emerald-400' : 'text-red-400'}">
-                        ${isSurplus ? (t.resSurplus || 'Surplus') : (t.resDeficit || 'Deficit')} : ${Math.round(diff).toLocaleString()}
-                    </p>
-                    <p class="text-[10px] text-slate-500 mt-1">${t.resTotalDaily || 'Total Daily Prod'} (S1, S2, S3, S6): ${Math.round(campDailyProduction).toLocaleString()}</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-amber-700/50 shadow-md relative overflow-hidden">
-                    <p class="text-xs text-amber-500 uppercase tracking-widest mb-1">${t.resTimeMax || 'Time to Max Loyalty (8000)'}</p>
-                    <p class="text-xl font-black text-amber-400">${formatDuration(cumulativeTime)}</p>
-                </div>
-            </div>
+        if (!nextUpgrade) break;
 
-            <div class="overflow-x-auto rounded-xl border border-slate-700 shadow-lg" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
-                <table class="w-full text-sm ${lang === 'ar' ? 'text-right' : 'text-left'} text-slate-300">
-                    <thead class="text-xs text-slate-400 uppercase bg-slate-800 border-b border-slate-700">
-                        <tr>
-                            <th class="px-4 py-3">${t.step || 'Step'}</th>
-                            <th class="px-4 py-3">${t.upgrade || 'Upgrade'}</th>
-                            <th class="px-4 py-3">${t.cost || 'Cost'}</th>
-                            <th class="px-4 py-3">${t.timeNeeded || 'Time Needed'}</th>
-                            <th class="px-4 py-3">${t.cumulTime || 'Cumul. Time'}</th>
-                            <th class="px-4 py-3">${t.loyaltyShift || 'Loyalty Shift'}</th>
-                            <th class="px-4 py-3">${t.poisonPct || 'Poison %'}</th>
-                            <th class="px-4 py-3">${t.siteUnlock || 'Site Unlock'}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        const effectiveCost = Math.max(0, nextUpgrade.cost - savedUnits);
+        savedUnits = Math.max(0, savedUnits - nextUpgrade.cost);
+        const hoursNeeded = effectiveCost / data.safeHourlyRate;
+        cumulativeTime += hoursNeeded;
+        const newLoyalty = currentLoyalty + 100;
+        const poison = calculatePoisonPercentage(currentLoyalty);
 
-        upgradeSequence.forEach((up, idx) => {
-            html += `
-                <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
-                    <td class="px-4 py-3 font-bold text-slate-500">${idx + 1}</td>
-                    <td class="px-4 py-3"><span class="font-bold text-white">${up.building}</span> <span class="text-slate-400">${t.lvl || 'Lvl'} ${up.level}</span></td>
-                    <td class="px-4 py-3 text-red-300 font-semibold">${up.cost.toLocaleString()}</td>
-                    <td class="px-4 py-3 text-sky-300">${formatDuration(up.hours)}</td>
-                    <td class="px-4 py-3 text-amber-300">${formatDuration(up.cumulativeTime)}</td>
-                    <td class="px-4 py-3">
-                        <span class="text-slate-400">${up.currentLoyalty}</span> 
-                        <span class="mx-1 text-slate-600">→</span> 
-                        <span class="text-emerald-400 font-bold">${up.newLoyalty}</span>
-                    </td>
-                    <td class="px-4 py-3 text-[11px]">
-                        ${t.next || 'Next'}: <span class="text-purple-400">${up.poisonNext}%</span><br>
-                        ${t.after || 'After'}: <span class="text-purple-400/60">${up.poisonAfterNext}%</span>
-                    </td>
-                    <td class="px-4 py-3 font-black text-amber-500">${up.extractionSite}</td>
-                </tr>
-            `;
+        upgradeSequence.push({
+            ...nextUpgrade,
+            hours: hoursNeeded,
+            cumulativeTime,
+            currentLoyalty,
+            newLoyalty,
+            extractionSite: getExtractionSite(newLoyalty),
+            poisonNext: poison.next,
+            poisonAfterNext: poison.afterNext
         });
 
-        html += `</tbody></table></div>`;
-        resultContainer.innerHTML = html;
-        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        levels[nextUpgrade.building]++;
+        currentLoyalty = newLoyalty;
+    }
+
+    return { upgradeSequence, cumulativeTime };
+}
+
+function renderStickySummary() {
+    const el = document.getElementById('loyaltyStickySummary');
+    if (!el) return;
+    const tr = t();
+    const data = readInputs();
+    const balanceClass = data.isSurplus ? 'loyalty-stat-surplus' : 'loyalty-stat-deficit';
+    const balanceLabel = data.isSurplus ? (tr.resSurplus || 'Surplus') : (tr.resDeficit || 'Deficit');
+
+    el.innerHTML = `
+        <h3 class="loyalty-sticky-title" data-i18n="loyaltySummaryTitle">${tr.loyaltySummaryTitle || 'Live summary'}</h3>
+        <div class="loyalty-sticky-stats">
+            <div class="loyalty-stat">
+                <span class="loyalty-stat-label" data-i18n="loyaltySummaryCurrent">${tr.loyaltySummaryCurrent || 'Current loyalty'}</span>
+                <span class="loyalty-stat-value loyalty-stat-amber">${data.currentLoyalty.toLocaleString()}</span>
+                <span class="loyalty-stat-sub">${data.extractionSite}</span>
+            </div>
+            <div class="loyalty-stat">
+                <span class="loyalty-stat-label" data-i18n="resTotalDaily">${tr.resTotalDaily || 'Total Daily Prod:'}</span>
+                <span class="loyalty-stat-value">${Math.round(data.campDailyProduction).toLocaleString()}</span>
+            </div>
+            <div class="loyalty-stat">
+                <span class="loyalty-stat-label" data-i18n="resMaxProcessing">${tr.resMaxProcessing || 'Max Processing (Daily)'}</span>
+                <span class="loyalty-stat-value loyalty-stat-blue">${Math.round(data.possibleProcessingDaily).toLocaleString()}</span>
+            </div>
+            <div class="loyalty-stat">
+                <span class="loyalty-stat-label" data-i18n="resProdVsProc">${tr.resProdVsProc || 'Production vs Processing'}</span>
+                <span class="loyalty-stat-value ${balanceClass}">${balanceLabel} ${Math.round(data.balanceDiff).toLocaleString()}</span>
+            </div>
+        </div>
+        <button type="button" id="calcLoyaltyBtn" class="loyalty-calc-btn" data-i18n="calcUpgradesBtn">${tr.calcUpgradesBtn || 'CALCULATE UPGRADES'}</button>`;
+
+    el.querySelector('#calcLoyaltyBtn')?.addEventListener('click', runCalculation);
+}
+
+function renderPresets() {
+    const wrap = document.getElementById('loyaltyPresets');
+    if (!wrap) return;
+    const tr = t();
+    wrap.innerHTML = `
+        <span class="loyalty-presets-label" data-i18n="loyaltyPresetsLabel">${tr.loyaltyPresetsLabel || 'Presets'}</span>
+        ${LOYALTY_PRESETS.map((p) => `<button type="button" class="loyalty-preset-btn" data-preset="${p.id}" data-i18n="${p.labelKey}">${tr[p.labelKey] || p.id}</button>`).join('')}`;
+}
+
+function applyPreset(presetId) {
+    const preset = LOYALTY_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    Object.entries(preset.values).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = value;
+        localStorage.setItem(`vts_loyalty_${id}`, String(value));
+    });
+    renderStickySummary();
+    document.querySelectorAll('.loyalty-preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.preset === presetId);
+    });
+    if (typeof window.showToast === 'function') {
+        const tr = t();
+        window.showToast(tr.loyaltyPresetApplied || 'Preset applied', 'info', 2000);
+    }
+}
+
+function renderResults(upgradeSequence, cumulativeTime, data) {
+    const resultContainer = document.getElementById('loyaltyResult');
+    if (!resultContainer) return;
+    const tr = t();
+    const lang = localStorage.getItem('vts_hero_lang') || 'en';
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    const isSurplus = data.isSurplus;
+
+    const summaryHtml = `
+        <div class="loyalty-result-summary" dir="${dir}">
+            <div class="loyalty-result-card">
+                <p class="loyalty-result-label">${tr.resMaxProcessing || 'Max Processing (Daily)'}</p>
+                <p class="loyalty-result-value loyalty-result-blue">${Math.round(data.possibleProcessingDaily).toLocaleString()} <span>${tr.resUnits || 'units'}</span></p>
+                <p class="loyalty-result-hint">${Math.round(data.hourlyRatePerPatch).toLocaleString()} ${tr.resHrPerPatch || '/hr per patch'}</p>
+            </div>
+            <div class="loyalty-result-card">
+                <p class="loyalty-result-label">${tr.resProdVsProc || 'Production vs Processing'}</p>
+                <p class="loyalty-result-value ${isSurplus ? 'loyalty-result-green' : 'loyalty-result-red'}">
+                    ${isSurplus ? (tr.resSurplus || 'Surplus') : (tr.resDeficit || 'Deficit')} : ${Math.round(data.balanceDiff).toLocaleString()}
+                </p>
+                <p class="loyalty-result-hint">${tr.resTotalDaily || 'Total Daily Prod'} (S1, S2, S3, S6): ${Math.round(data.campDailyProduction).toLocaleString()}</p>
+            </div>
+            <div class="loyalty-result-card loyalty-result-card-highlight">
+                <p class="loyalty-result-label">${tr.resTimeMax || 'Time to Max Loyalty (8000)'}</p>
+                <p class="loyalty-result-value loyalty-result-amber">${formatDuration(cumulativeTime)}</p>
+            </div>
+        </div>`;
+
+    const tableRows = upgradeSequence.map((up, idx) => `
+        <tr class="loyalty-table-row">
+            <td class="loyalty-td-step">${idx + 1}</td>
+            <td><span class="loyalty-td-building">${up.building}</span> <span class="loyalty-td-muted">${tr.lvl || 'Lvl'} ${up.level}</span></td>
+            <td class="loyalty-td-cost">${up.cost.toLocaleString()}</td>
+            <td class="loyalty-td-time">${formatDuration(up.hours)}</td>
+            <td class="loyalty-td-cumul">${formatDuration(up.cumulativeTime)}</td>
+            <td><span class="loyalty-td-muted">${up.currentLoyalty}</span> → <span class="loyalty-td-loyalty">${up.newLoyalty}</span></td>
+            <td class="loyalty-td-poison">${tr.next || 'Next'}: ${up.poisonNext}%<br>${tr.after || 'After'}: ${up.poisonAfterNext}%</td>
+            <td class="loyalty-td-site">${up.extractionSite}</td>
+        </tr>`).join('');
+
+    const tableHtml = `
+        <div class="loyalty-results-table-wrap" dir="${dir}">
+            <table class="loyalty-results-table">
+                <thead>
+                    <tr>
+                        <th>${tr.step || 'Step'}</th>
+                        <th>${tr.upgrade || 'Upgrade'}</th>
+                        <th>${tr.cost || 'Cost'}</th>
+                        <th>${tr.timeNeeded || 'Time Needed'}</th>
+                        <th>${tr.cumulTime || 'Cumul. Time'}</th>
+                        <th>${tr.loyaltyShift || 'Loyalty Shift'}</th>
+                        <th>${tr.poisonPct || 'Poison %'}</th>
+                        <th>${tr.siteUnlock || 'Site Unlock'}</th>
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+        </div>`;
+
+    const cardsHtml = `
+        <div class="loyalty-results-cards" dir="${dir}">
+            ${upgradeSequence.map((up, idx) => `
+                <article class="loyalty-step-card">
+                    <header class="loyalty-step-card-head">
+                        <span class="loyalty-step-card-num">${idx + 1}</span>
+                        <div>
+                            <strong>${up.building}</strong> ${tr.lvl || 'Lvl'} ${up.level}
+                            <span class="loyalty-step-card-site">${up.extractionSite}</span>
+                        </div>
+                    </header>
+                    <dl class="loyalty-step-card-grid">
+                        <div><dt>${tr.cost || 'Cost'}</dt><dd class="loyalty-td-cost">${up.cost.toLocaleString()}</dd></div>
+                        <div><dt>${tr.timeNeeded || 'Time'}</dt><dd>${formatDuration(up.hours)}</dd></div>
+                        <div><dt>${tr.loyaltyShift || 'Loyalty'}</dt><dd>${up.currentLoyalty} → <strong>${up.newLoyalty}</strong></dd></div>
+                        <div><dt>${tr.poisonPct || 'Poison'}</dt><dd>${up.poisonNext}% / ${up.poisonAfterNext}%</dd></div>
+                        <div class="loyalty-step-card-wide"><dt>${tr.cumulTime || 'Cumul.'}</dt><dd class="loyalty-td-cumul">${formatDuration(up.cumulativeTime)}</dd></div>
+                    </dl>
+                </article>`).join('')}
+        </div>`;
+
+    resultContainer.innerHTML = summaryHtml + tableHtml + cardsHtml;
+    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function runCalculation() {
+    const resultContainer = document.getElementById('loyaltyResult');
+    const data = readInputs();
+    const result = buildUpgradeSequence(data);
+    if (result.error) {
+        resultContainer.innerHTML = `<p class="loyalty-error">${result.error}</p>`;
+        return;
+    }
+    renderResults(result.upgradeSequence, result.cumulativeTime, data);
+}
+
+function initLoyaltyCrossLinks() {
+    document.getElementById('loyaltyOpenEdenBtn')?.addEventListener('click', () => {
+        document.getElementById('tabEdenMap')?.click();
+        if (typeof window.showToast === 'function') {
+            const tr = t();
+            window.showToast(tr.loyaltyOpenEdenToast || 'Opened Eden Map planner', 'info', 2500);
+        }
+    });
+}
+
+export function openLoyaltyFromEden(context) {
+    document.getElementById('tabLoyalty')?.click();
+    const tr = t();
+    if (typeof window.showToast === 'function') {
+        const msg = context?.zone
+            ? (tr.edenOpenLoyaltyToast || 'Loyalty planner — plan upgrades for {zone}')
+                .replace('{zone}', context.zone)
+                .replace('{name}', context.name || '')
+            : (tr.edenOpenLoyaltyToastGeneric || 'Opened Loyalty planner');
+        window.showToast(msg, 'info', 4000);
+    }
+    document.getElementById('loyaltySection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+export function initLoyaltyCalculator() {
+    INPUT_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const savedVal = localStorage.getItem(`vts_loyalty_${id}`);
+        if (savedVal !== null) el.value = savedVal;
+        el.addEventListener('input', () => {
+            localStorage.setItem(`vts_loyalty_${id}`, el.value);
+            renderStickySummary();
+            document.querySelectorAll('.loyalty-preset-btn').forEach((btn) => btn.classList.remove('active'));
+        });
+    });
+
+    renderPresets();
+    renderStickySummary();
+    initLoyaltyCrossLinks();
+
+    document.getElementById('loyaltyPresets')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-preset]');
+        if (!btn) return;
+        applyPreset(btn.dataset.preset);
+    });
+
+    window.addEventListener('edenLanguageUpdate', () => {
+        renderPresets();
+        renderStickySummary();
     });
 }

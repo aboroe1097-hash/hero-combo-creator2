@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b6.2";
+const APP_VERSION = "b6.5";
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
@@ -17,6 +17,7 @@ import { preloadStructureIcons } from './eden-map-assets.js';
 import { escapeHtml } from './utils.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
+import { applySeo } from './seo.js';
 
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.counter-toggle-btn');
@@ -1825,6 +1826,8 @@ function updateTextContent() {
 
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
+  applySeo(currentLanguage);
+
   updateManualComboScore();
   if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer')) {
     renderTechList();
@@ -2258,7 +2261,13 @@ function applyAutoGridToGroup(groupNodes) {
 }
 
 function usesGameTreeLayout(tech) {
-    return tech.layoutMode === 'game' || tech.nodes.every((n) => n.row && n.col);
+    if (tech.layoutMode === 'branch') return false;
+    if (tech.layoutMode === 'game') return true;
+    const hasTroopBranches = tech.nodes.some(
+        (n) => n.b == 1 || n.b == 2 || n.b == 3 || n.b === '1' || n.b === '2' || n.b === '3'
+    );
+    if (hasTroopBranches) return false;
+    return tech.nodes.every((n) => n.row && n.col);
 }
 
 function getGameTroopClass(troop) {
@@ -3343,7 +3352,7 @@ function renderHeroesTab() {
 async function startApp() {
     // 1. Setup UI & Render Heroes
     updateTextContent();
-    mountGameClock(document.getElementById('globalGameClock'), { compact: true });
+    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();

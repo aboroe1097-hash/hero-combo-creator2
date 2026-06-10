@@ -1,6 +1,12 @@
-# Hero Combo Creator — VTS 1097 (b6.2)
+# Hero Combo Creator — VTS 1097 (b6.3)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, and more.
+
+## What's new in b6.3
+
+- **Research game-style trees expanded** — Season 0 trees and military branches use in-game layouts; troop branches open in dedicated branch views (`layoutMode: "game"` / `"branch"`)
+- **Eden parchment map** — optimized faction-division asset (~5 MB); baked capital art masked so coord-placed icons replace them
+- **Eden map asset loading** — improved reference-map fallback chain for offline and CDN sources
 
 ## What's new in b6.2
 

@@ -1,5 +1,5 @@
 /* =============================================================
-   app.css — VTS Hero Combo Tool  b6.2
+   app.css — VTS Hero Combo Tool  b6.3
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
 
@@ -1105,6 +1105,67 @@ input[type=number] { -moz-appearance: textfield; }
 }
 .research-node-editor-close:hover { color: #fca5a5; border-color: rgba(239,68,68,0.45); }
 
+/* ── SEO / crawlable content ─────────────────────────────── */
+.seo-intro {
+  max-width: 52rem;
+  margin: 0 auto 1.25rem;
+  padding: 0 0.5rem;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+.seo-noscript {
+  max-width: 40rem;
+  margin: 0 auto 1rem;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(30,41,59,0.7);
+  border: 1px solid rgba(71,85,105,0.6);
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+.seo-noscript h2 { font-size: 1rem; margin: 0 0 8px; color: #e2e8f0; }
+.seo-noscript a { color: #93c5fd; }
+.site-footer {
+  margin-top: 2rem;
+  padding: 1.25rem 1rem 1.5rem;
+  border-top: 1px solid rgba(51,65,85,0.65);
+  border-radius: 0 0 14px 14px;
+  background: rgba(15,23,42,0.45);
+}
+.site-footer-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+.site-footer-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #64748b;
+  max-width: 56ch;
+}
+.site-footer-features {
+  margin: 0 0 0.85rem;
+  padding-left: 1.1rem;
+  font-size: 0.68rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+.site-footer-features li { margin-bottom: 4px; }
+.site-footer-url {
+  margin: 0;
+  font-size: 0.62rem;
+  color: #475569;
+  font-weight: 600;
+}
+.site-footer-url a { color: #818cf8; text-decoration: none; }
+.site-footer-url a:hover { text-decoration: underline; }
+
 /* ── Feedback button ─────────────────────────────────────── */
 #feedbackMailBtn:hover { box-shadow: 0 0 18px rgba(245,158,11,0.18); }
 
@@ -1117,10 +1178,179 @@ input[type=number] { -moz-appearance: textfield; }
 /* ── Comments list item animation ───────────────────────── */
 #commentsList > div { animation: fade-in-up 0.2s ease both; }
 
-/* ── Loyalty table ───────────────────────────────────────── */
-#loyaltyResult table { border-collapse: collapse; }
-#loyaltyResult tr { transition: background var(--t-fast); }
-#loyaltyResult tr:hover td { background: rgba(30,41,59,0.6); }
+/* ── Loyalty calculator (b6.4) ───────────────────────────── */
+.loyalty-root { max-width: 1180px; margin: 0 auto; }
+.loyalty-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; margin-bottom: 1.1rem; flex-wrap: wrap;
+}
+.loyalty-title {
+  font-size: 1.45rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.35rem;
+}
+.loyalty-desc {
+  margin: 0; font-size: 0.85rem; color: #94a3b8; line-height: 1.45; max-width: 52ch;
+}
+.loyalty-eden-link-btn {
+  flex-shrink: 0;
+  padding: 8px 14px; border-radius: 10px;
+  border: 1px solid rgba(99,102,241,0.45);
+  background: rgba(99,102,241,0.12);
+  color: #c7d2fe; font-size: 0.72rem; font-weight: 800;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.loyalty-eden-link-btn:hover {
+  background: rgba(99,102,241,0.22);
+  border-color: rgba(129,140,248,0.65);
+}
+.loyalty-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 1.1rem; align-items: start;
+}
+.loyalty-presets {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 0.85rem;
+  padding: 10px 12px; border-radius: 12px;
+  background: rgba(15,23,42,0.55); border: 1px solid rgba(51,65,85,0.65);
+}
+.loyalty-presets-label {
+  font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.07em; color: #64748b; margin-right: 2px;
+}
+.loyalty-preset-btn {
+  padding: 5px 11px; border-radius: 99px; font-size: 0.68rem; font-weight: 700;
+  border: 1px solid rgba(71,85,105,0.75); background: rgba(30,41,59,0.65);
+  color: #cbd5e1; cursor: pointer; transition: all 0.13s;
+}
+.loyalty-preset-btn:hover { border-color: rgba(56,189,248,0.55); color: #e0f2fe; }
+.loyalty-preset-btn.active {
+  border-color: rgba(56,189,248,0.7); background: rgba(14,116,144,0.28); color: #bae6fd;
+}
+.loyalty-sticky {
+  position: sticky; top: 12px;
+  padding: 14px; border-radius: 14px;
+  background: rgba(15,23,42,0.88); border: 1px solid rgba(51,65,85,0.75);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+}
+.loyalty-sticky-title {
+  margin: 0 0 10px; font-size: 0.68rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8;
+}
+.loyalty-sticky-stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.loyalty-stat { display: flex; flex-direction: column; gap: 2px; }
+.loyalty-stat-label {
+  font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: #64748b;
+}
+.loyalty-stat-value { font-size: 1rem; font-weight: 900; color: #e2e8f0; line-height: 1.2; }
+.loyalty-stat-sub { font-size: 0.62rem; color: #94a3b8; font-weight: 700; }
+.loyalty-stat-amber { color: #fbbf24; }
+.loyalty-stat-blue { color: #38bdf8; }
+.loyalty-stat-surplus { color: #34d399; }
+.loyalty-stat-deficit { color: #f87171; }
+.loyalty-calc-btn {
+  width: 100%; padding: 11px 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff; font-size: 0.74rem; font-weight: 900; letter-spacing: 0.04em;
+  cursor: pointer; transition: filter 0.15s, transform 0.12s;
+  box-shadow: 0 4px 16px rgba(2,132,199,0.35);
+}
+.loyalty-calc-btn:hover { filter: brightness(1.08); }
+.loyalty-calc-btn:active { transform: scale(0.98); }
+.loyalty-results { margin-top: 1.25rem; }
+.loyalty-error {
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(127,29,29,0.25); border: 1px solid rgba(248,113,113,0.35);
+  color: #fca5a5; font-weight: 700; font-size: 0.82rem;
+}
+.loyalty-result-summary {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.loyalty-result-card {
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(30,41,59,0.65); border: 1px solid rgba(51,65,85,0.7);
+}
+.loyalty-result-card-highlight { border-color: rgba(245,158,11,0.45); }
+.loyalty-result-label {
+  margin: 0 0 4px; font-size: 0.58rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em; color: #64748b;
+}
+.loyalty-result-value {
+  margin: 0; font-size: 1.15rem; font-weight: 900; color: #e2e8f0;
+}
+.loyalty-result-value span { font-size: 0.72rem; font-weight: 700; color: #94a3b8; }
+.loyalty-result-hint { margin: 4px 0 0; font-size: 0.62rem; color: #64748b; }
+.loyalty-result-blue { color: #38bdf8; }
+.loyalty-result-green { color: #34d399; }
+.loyalty-result-red { color: #f87171; }
+.loyalty-result-amber { color: #fbbf24; }
+.loyalty-results-table-wrap {
+  overflow-x: auto; border-radius: 12px;
+  border: 1px solid rgba(51,65,85,0.75); box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+}
+.loyalty-results-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.78rem; color: #cbd5e1;
+}
+.loyalty-results-table thead {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #94a3b8; background: rgba(15,23,42,0.9);
+}
+.loyalty-results-table th,
+.loyalty-results-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(51,65,85,0.55); }
+.loyalty-table-row { transition: background var(--t-fast); }
+.loyalty-table-row:hover td { background: rgba(30,41,59,0.55); }
+.loyalty-td-building { font-weight: 800; color: #f8fafc; }
+.loyalty-td-muted { color: #64748b; }
+.loyalty-td-cost { color: #fca5a5; font-weight: 700; }
+.loyalty-td-time { color: #7dd3fc; }
+.loyalty-td-cumul { color: #fcd34d; }
+.loyalty-td-loyalty { color: #6ee7b7; font-weight: 800; }
+.loyalty-td-site { color: #fbbf24; font-weight: 900; }
+.loyalty-results-cards { display: none; }
+.loyalty-step-card {
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(30,41,59,0.6); border: 1px solid rgba(51,65,85,0.65);
+}
+.loyalty-step-card-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.loyalty-step-card-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(14,116,144,0.35); color: #7dd3fc;
+  font-size: 0.72rem; font-weight: 900; flex-shrink: 0;
+}
+.loyalty-step-card-site {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 99px;
+  font-size: 0.58rem; font-weight: 800; color: #fbbf24;
+  background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35);
+}
+.loyalty-step-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0;
+}
+.loyalty-step-card-grid div { min-width: 0; }
+.loyalty-step-card-grid dt {
+  margin: 0; font-size: 0.58rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.04em; color: #64748b;
+}
+.loyalty-step-card-grid dd { margin: 2px 0 0; font-size: 0.76rem; color: #e2e8f0; font-weight: 600; }
+.loyalty-step-card-wide { grid-column: 1 / -1; }
+.eden-loyalty-link { border-color: rgba(56,189,248,0.45) !important; color: #bae6fd !important; }
+
+@media (max-width: 960px) {
+  .loyalty-layout { grid-template-columns: 1fr; }
+  .loyalty-aside { order: -1; }
+  .loyalty-sticky { position: sticky; top: 8px; z-index: 5; }
+  .loyalty-sticky-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;
+  }
+  .loyalty-result-summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .loyalty-results-table-wrap { display: none; }
+  .loyalty-results-cards { display: flex; flex-direction: column; gap: 10px; }
+}
 
 /* ── Responsive hero grid ────────────────────────────────── */
 @media (min-width: 768px) {
@@ -1138,7 +1368,7 @@ input[type=number] { -moz-appearance: textfield; }
 }
 
 /* ============================================================
-   b6.2 ADDITIONS (legacy b4.1 block below)
+   b6.3 ADDITIONS (legacy b4.1 block below)
    1. Paid badge on hero cards
    2. Tab switch animations
    3. Heroes tab: ranking + detail (enhanced)
@@ -1902,7 +2132,7 @@ section.tab-exit {
 }
 .eden-map-header > div:first-child { margin-bottom: 12px; }
 
-/* ── Eden control deck + hover tooltips (b6.2) ─────────── */
+/* ── Eden control deck + hover tooltips (b6.3) ─────────── */
 .eden-floating-tip {
   position: fixed;
   z-index: 10050;
@@ -2103,9 +2333,13 @@ section.tab-exit {
 
 .eden-map-body { display: flex; flex-direction: column; gap: 10px; }
 @media (min-width: 960px) {
-  .eden-map-body { flex-direction: row; align-items: stretch; }
+  .eden-map-body { flex-direction: row; align-items: stretch; min-height: 0; }
   .eden-canvas-wrap { flex: 1; min-width: 0; }
-  .eden-sidebar { width: 280px; flex-shrink: 0; }
+  .eden-sidebar {
+    width: 280px; flex-shrink: 0;
+    max-height: none;
+    align-self: stretch;
+  }
 }
 .eden-canvas-wrap {
   position: relative; border-radius: 14px; overflow: hidden;
@@ -2139,6 +2373,28 @@ section.tab-exit {
   display: flex; flex-direction: column; gap: 8px;
   background: rgba(13,20,37,0.9); border: 1px solid rgba(51,65,85,0.6);
   border-radius: 14px; padding: 12px; max-height: 620px;
+  min-height: 0;
+  overflow: hidden;
+}
+.eden-stats,
+.eden-hover-info,
+.eden-team-panel,
+.eden-selected-panel,
+.eden-filter-row,
+.eden-coord-search {
+  flex-shrink: 0;
+}
+.eden-selected-panel {
+  min-height: 80px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.eden-sidebar-list-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .eden-stats {
   font-size: 0.7rem; font-weight: 800; color: #475569;
@@ -2146,7 +2402,6 @@ section.tab-exit {
   padding: 5px 8px; background: rgba(15,23,42,0.6); border-radius: 7px;
   border: 1px solid rgba(51,65,85,0.4);
 }
-.eden-selected-panel { min-height: 80px; }
 .eden-hint {
   font-size: 0.7rem; color: #475569; font-style: italic; line-height: 1.5;
   padding: 8px; background: rgba(15,23,42,0.4); border-radius: 8px;
@@ -2254,9 +2509,16 @@ section.tab-exit {
 }
 .eden-coord-go-btn:hover { background: rgba(99,102,241,0.35); }
 
-.eden-search-wrap { margin: 0 !important; }
+.eden-search-wrap { margin: 0 !important; flex-shrink: 0; }
 
-.eden-struct-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.eden-struct-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .eden-struct-row {
   display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 7px;
   background: rgba(30,41,59,0.35); border: 1px solid transparent;
@@ -2314,6 +2576,52 @@ section.tab-exit {
   font-size: 0.65rem;
   color: #64748b;
   line-height: 1.45;
+}
+.eden-team-plan-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.eden-team-plan-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+.eden-team-plan-toggle input {
+  width: 14px;
+  height: 14px;
+  accent-color: #6366f1;
+}
+.eden-team-count-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.eden-team-count-label .eden-filter-select {
+  min-width: 108px;
+}
+.eden-team-plan-off-hint {
+  margin: 0 0 6px;
+  font-size: 0.62rem;
+  color: #64748b;
+  font-style: italic;
+  line-height: 1.45;
+}
+.eden-team-filter-wrap { flex: 1; min-width: 0; }
+.eden-team-filter-wrap .eden-filter-select { width: 100%; }
+.eden-layer-btn:disabled,
+.eden-layer-btn.eden-layer-disabled {
+  opacity: 0.38;
+  pointer-events: none;
 }
 .eden-team-board {
   display: flex; flex-direction: column; gap: 8px;
@@ -2512,11 +2820,14 @@ section.tab-exit {
 .eden-sidebar-close { display: none; }
 
 .eden-help-panel {
-  margin-top: 4px;
+  margin-top: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: rgba(15,23,42,0.65);
   border: 1px solid rgba(51,65,85,0.65);
+  position: relative;
+  z-index: 2;
+  clear: both;
 }
 .eden-help-summary {
   cursor: pointer;

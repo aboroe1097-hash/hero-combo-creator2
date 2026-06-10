@@ -1,5 +1,5 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool  b6.2
+   mobile.css — VTS Hero Combo Tool  b6.3
    Applied on screens ≤768px via <link media="(max-width: 768px)">
    ============================================================= */
 
@@ -293,19 +293,30 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 #globalTechSummary .h-5 { height: 10px !important; }
 
 /* ── Loyalty calculator ──────────────────────────────────── */
-#loyaltySection h2 { font-size: 1.15rem !important; }
+.loyalty-title { font-size: 1.15rem !important; }
+.loyalty-desc { font-size: 0.72rem !important; }
+.loyalty-header { gap: 10px !important; margin-bottom: 0.75rem !important; }
+.loyalty-eden-link-btn { width: 100%; text-align: center; font-size: 0.68rem !important; }
+.loyalty-presets { padding: 8px 10px !important; gap: 6px !important; }
+.loyalty-preset-btn { font-size: 0.62rem !important; padding: 5px 9px !important; }
+.loyalty-sticky { padding: 10px 12px !important; border-radius: 12px !important; }
+.loyalty-sticky-stats { grid-template-columns: 1fr 1fr !important; }
+.loyalty-stat-value { font-size: 0.88rem !important; }
+.loyalty-calc-btn { font-size: 0.72rem !important; padding: 10px 12px !important; }
 #loyaltySection .grid { gap: 10px !important; }
 #loyaltySection input, #loyaltySection select {
   font-size: 0.8rem !important; min-height: 38px;
 }
 #loyaltySection label { font-size: 0.72rem !important; }
-#loyaltySection table { font-size: 0.72rem !important; display: block; overflow-x: auto; }
-#loyaltySection th, #loyaltySection td { padding: 6px 8px !important; }
-#calcLoyaltyBtn { width: 100%; max-width: 100%; font-size: 0.82rem !important; }
-@media (max-width: 480px) {
-  #loyaltySection th:nth-child(5),
-  #loyaltySection td:nth-child(5) { display: none; }
-}
+.loyalty-inputs > .p-5 { padding: 12px !important; }
+.loyalty-result-value { font-size: 1rem !important; }
+.loyalty-step-card-grid { gap: 6px 8px !important; }
+
+/* ── SEO footer ────────────────────────────────────────── */
+.seo-intro { font-size: 0.68rem !important; padding: 0 4px !important; margin-bottom: 0.85rem !important; }
+.site-footer { padding: 1rem 0.75rem 1.25rem !important; margin-top: 1.25rem !important; }
+.site-footer-desc { font-size: 0.66rem !important; }
+.site-footer-features { font-size: 0.62rem !important; }
 
 /* ── YouTube tab ─────────────────────────────────────────── */
 #youtubeSection h2 { font-size: 0.95rem !important; letter-spacing: 0.06em !important; }
@@ -319,7 +330,7 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .comment-avatar { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 0.85rem !important; }
 .replies-container { margin-left: 1rem !important; padding-left: 0.75rem !important; }
 
-/* ── b6.2 Mobile additions (legacy b4.1 block) ─────────── */
+/* ── b6.3 Mobile additions (legacy b4.1 block) ─────────── */
 
 /* Paid badge — corner ribbon on mobile */
 .paid-badge { top: 3px !important; right: 3px !important; padding: 2px 5px 2px 3px !important; }
@@ -615,18 +626,24 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .eden-selected-actions { flex-wrap: wrap !important; }
 .eden-action-btn { min-height: 32px; flex: 1 1 auto; font-size: 0.62rem !important; }
 .eden-struct-row { min-height: 38px !important; padding: 6px 8px !important; }
-.eden-struct-list { max-height: 38vh !important; }
+.eden-struct-list { max-height: none !important; }
 
 .eden-sidebar {
   position: fixed !important;
   left: 0; right: 0; bottom: 0; z-index: 50;
   width: 100% !important;
   max-height: min(78vh, 620px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
   padding-bottom: env(safe-area-inset-bottom, 0) !important;
   transform: translateY(100%);
   transition: transform 0.22s ease;
   border-radius: 14px 14px 0 0 !important;
   box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+.eden-sidebar-list-section {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
 }
 .eden-sidebar.eden-sidebar-open { transform: translateY(0); }
 .eden-sidebar-close {
@@ -652,7 +669,7 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .eden-coord-search-row { flex-wrap: nowrap; }
 .eden-coord-go-btn { padding: 6px 10px !important; }
 
-.eden-help-panel { padding: 10px 10px !important; }
+.eden-help-panel { padding: 10px 10px !important; margin-top: 10px !important; }
 .eden-help-summary { font-size: 0.72rem !important; }
 .eden-guide-sec-label { max-width: 56px !important; }
 .eden-guide-step-pill span:not(.eden-guide-step-num) { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
