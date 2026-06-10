@@ -11,7 +11,7 @@
   {"sector":"N1","zone":"Z2","type":"ST1","x":70,"y":224,"points":15},
   {"sector":"N1","zone":"Z2","type":"ST2","x":109,"y":202,"points":20},
   {"sector":"N1","zone":"Z2","type":"ST2","x":132,"y":266,"points":20},
-  {"sector":"N1","zone":"Z2","type":"CP5","x":173,"y":244,"points":100},
+  {"sector":"N1","zone":"Z2","type":"C5","x":173,"y":244,"points":100},
   {"sector":"N1","zone":"Z2","type":"CP1","x":185,"y":249,"points":5},
   {"sector":"N1","zone":"Z2","type":"CP2","x":187,"y":329,"points":5},
   {"sector":"N1","zone":"Z2","type":"CP2","x":195,"y":215,"points":5},
