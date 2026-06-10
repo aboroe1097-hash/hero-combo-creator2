@@ -227,6 +227,7 @@
             <button type="button" id="edenZoomIn" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomInTitle" title="Zoom in (+)">+</button>
             <button type="button" id="edenResetView" class="eden-tool-btn" data-i18n="edenResetView" data-i18n-title="edenResetViewTitle">⟳ Reset</button>
             <button type="button" id="edenFitView" class="eden-tool-btn" data-i18n="edenFitView" data-i18n-title="edenFitViewTitle">⊡ Fit</button>
+            <button type="button" id="edenOpenGuide" class="eden-tool-btn eden-tool-accent" data-i18n="edenGuideBtn" data-i18n-title="edenGuideBtnTitle">📖 Guide</button>
             <div class="eden-toolbar-spacer"></div>
             <button type="button" id="edenImportPlan" class="eden-tool-btn" data-i18n="edenImport" data-i18n-title="edenImportTitle">Import</button>
             <input type="file" id="edenImportFile" accept="application/json,.json" class="hidden" />
@@ -351,44 +352,26 @@
             <div id="edenStructList" class="eden-struct-list"></div>
           </aside>
         </div>
-        <details id="edenHelpPanel" class="eden-help-panel" open>
-          <summary class="eden-help-summary" data-i18n="edenHelpTitle">How to use the Eden Map</summary>
-          <div class="eden-help-grid">
-            <section class="eden-help-card">
-              <h3 class="eden-help-heading" data-i18n="edenHelpNavTitle">Navigation &amp; zoom</h3>
-              <ul class="eden-help-list">
-                <li data-i18n="edenHelpNav1">Scroll wheel on the map zooms toward your cursor. Use + / − buttons to step zoom levels (25%–320%).</li>
-                <li data-i18n="edenHelpNav2">Drag empty map to pan. Arrow keys also pan. Double-click empty map to fit the sector; double-click a structure to zoom in.</li>
-                <li data-i18n="edenHelpNav3">Mobile: pinch with two fingers to zoom, drag with one finger to pan. Minimap (bottom-right) — click to jump.</li>
-                <li data-i18n="edenHelpNav4">Sector dropdown or Quick chips (C, W, Temple…) change view. Keys 1–8 jump common sectors. F or Space fits view.</li>
-              </ul>
-            </section>
-            <section class="eden-help-card">
-              <h3 class="eden-help-heading" data-i18n="edenHelpToolsTitle">Tools</h3>
-              <ul class="eden-help-list">
-                <li data-i18n="edenHelpTools1"><strong>Navigate</strong> — select structures, pan map, click paths to edit waypoints.</li>
-                <li data-i18n="edenHelpTools2"><strong>Measure</strong> (M) — click point A then B for terrain-aware distance and march time.</li>
-                <li data-i18n="edenHelpTools3"><strong>Path</strong> (P) — Shift+click waypoints, pick color &amp; name, Finish Path. Undo with Ctrl+Z or right-click.</li>
-                <li data-i18n="edenHelpTools4"><strong>Target</strong> — pin custom rally points on the map.</li>
-              </ul>
-            </section>
-            <section class="eden-help-card">
-              <h3 class="eden-help-heading" data-i18n="edenHelpPlanTitle">Planning &amp; sharing</h3>
-              <ul class="eden-help-list">
-                <li data-i18n="edenHelpPlan1"><strong>Route Planner</strong> view — click start, then end; a terrain route is created automatically.</li>
-                <li data-i18n="edenHelpPlan2">Sidebar: set structure status (owned/enemy), guild name, mark targets, copy coords, or open Combo Creator.</li>
-                <li data-i18n="edenHelpPlan3">Multiple plans: use the plan dropdown, + Plan, Rename, Del. Share copies a link; Export/Import saves JSON.</li>
-                <li data-i18n="edenHelpPlan4">Scout Mode + Pull/Push Intel syncs guild ownership via Firebase (optional).</li>
-              </ul>
-            </section>
-            <section class="eden-help-card">
-              <h3 class="eden-help-heading" data-i18n="edenHelpLayersTitle">Layers &amp; filters</h3>
-              <ul class="eden-help-list">
-                <li data-i18n="edenHelpLayers1">Toggle Ref, Terrain, Struct, Paths, Targets, Labels, Zones, Territory, Fog, Heat, Sector HD.</li>
-                <li data-i18n="edenHelpLayers2">Ref opacity slider adjusts the in-game reference overlay. Fog hides unexplored sectors until you visit them.</li>
-                <li data-i18n="edenHelpLayers3">Faction North/South filters structures. Sidebar filters: ownership, zone, type, search.</li>
-              </ul>
-            </section>
+        <details id="edenHelpPanel" class="eden-help-panel">
+          <summary class="eden-help-summary" data-i18n="edenGuidePanelTitle">Interactive Eden Map Guide</summary>
+          <div id="edenGuideRoot" class="eden-guide-root">
+            <div class="eden-guide-header">
+              <div class="eden-guide-header-row">
+                <p class="eden-guide-intro" data-i18n="edenGuideIntro">Step-by-step walkthrough — try each action on the real map. Progress is saved locally.</p>
+                <span class="eden-guide-version"></span>
+              </div>
+              <div class="eden-guide-progress-wrap">
+                <div class="eden-guide-progress-bar"><div class="eden-guide-progress-fill"></div></div>
+                <span class="eden-guide-progress-text"></span>
+              </div>
+              <div class="eden-guide-toolbar">
+                <button type="button" class="eden-guide-meta-btn" data-start-tour data-i18n="edenGuideStartTour">▶ Start tour</button>
+                <button type="button" class="eden-guide-meta-btn eden-guide-meta-muted" data-reset-guide data-i18n="edenGuideReset">Reset progress</button>
+              </div>
+            </div>
+            <nav class="eden-guide-sections" aria-label="Guide sections"></nav>
+            <div class="eden-guide-steps" aria-label="Steps in section"></div>
+            <div class="eden-guide-main"></div>
           </div>
         </details>
       </div>
