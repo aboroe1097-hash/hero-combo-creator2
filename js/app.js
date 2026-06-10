@@ -1658,6 +1658,7 @@ function updateTextContent() {
     'tabGenerator': t.tabGenerator,
     'tabLoyalty': t.tabLoyalty,
     'tabYouTube': t.tabYouTube || 'YouTube',
+    'tabEdenMap': t.tabEdenMap || 'Eden Map',
     'filterBySeasonTitle': t.filterBySeasonTitle,
     'availableHeroesTitle': t.availableHeroesTitle,
     'createComboTitle': t.createComboTitle,
@@ -1699,6 +1700,23 @@ function updateTextContent() {
       el.placeholder = t[key].replace('{version}', APP_VERSION);
     }
   });
+
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
+  });
+
+  document.querySelectorAll('[data-i18n-label]').forEach(el => {
+    const key = el.getAttribute('data-i18n-label');
+    if (t[key]) el.label = t[key].replace('{version}', APP_VERSION);
+  });
+
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.getAttribute('data-i18n-aria');
+    if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
+  });
+
+  window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
   updateManualComboScore();
 }

@@ -1037,7 +1037,7 @@ section.tab-exit {
 /* ── 4. Eden Map planner (fully revamped) ───────────────── */
 .eden-map-root { display: flex; flex-direction: column; gap: 10px; }
 .eden-map-header {
-  display: flex; flex-wrap: wrap; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
   justify-content: space-between; align-items: flex-start;
   padding: 14px 16px; background: rgba(15,23,42,0.7);
   border: 1px solid rgba(51,65,85,0.6); border-radius: 14px;
@@ -1125,6 +1125,9 @@ section.tab-exit {
   position: relative; border-radius: 14px; overflow: hidden;
   border: 1px solid rgba(51,65,85,0.8); background: #111810;
   min-height: 520px;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 #edenMapCanvas { display: block; width: 100%; height: 100%; min-height: 520px; cursor: crosshair; }
 .eden-coord-hud {
@@ -1333,5 +1336,67 @@ section.tab-exit {
 .eden-row-temple .eden-struct-info strong { color: #f9a8d4; }
 
 .eden-sidebar-close { display: none; }
+
+.eden-help-panel {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.65);
+  border: 1px solid rgba(51,65,85,0.65);
+}
+.eden-help-summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #a5b4fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  list-style: none;
+  user-select: none;
+}
+.eden-help-summary::-webkit-details-marker { display: none; }
+.eden-help-summary::before {
+  content: '▸ ';
+  display: inline-block;
+  transition: transform 0.15s;
+}
+.eden-help-panel[open] .eden-help-summary::before { transform: rotate(90deg); }
+.eden-help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.eden-help-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(30,41,59,0.55);
+  border: 1px solid rgba(71,85,105,0.45);
+}
+.eden-help-heading {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+.eden-help-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+.eden-help-list li { margin-bottom: 5px; }
+.eden-help-list li:last-child { margin-bottom: 0; }
+.eden-help-list strong { color: #cbd5e1; font-weight: 700; }
+.eden-help-link {
+  color: #818cf8;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.eden-help-link:hover { color: #a5b4fc; }
 
 body.hide-hero-info .info-btn { display: none !important; }

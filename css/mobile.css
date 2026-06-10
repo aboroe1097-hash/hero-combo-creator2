@@ -332,33 +332,179 @@ html, body {
 .counter-inline-heroes { font-size: 0.52rem !important; }
 
 /* Eden map mobile */
-.eden-map-body { flex-direction: column !important; }
-.eden-canvas-wrap { min-height: 340px !important; }
-#edenMapCanvas { min-height: 340px !important; }
-.eden-toolbar-primary, .eden-toolbar-tools { gap: 4px !important; padding: 5px 6px !important; }
-.eden-tool-btn { padding: 5px 8px !important; font-size: 0.62rem !important; }
-.eden-layer-bar { padding: 6px 8px !important; gap: 4px !important; }
-.eden-layer-btn { font-size: 0.58rem !important; padding: 3px 7px !important; }
-.eden-toolbar-modes { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
-.eden-quick-jump { overflow-x: auto; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
-.eden-quick-btn { flex-shrink: 0; font-size: 0.58rem !important; }
-.eden-coord-hud { font-size: 0.6rem !important; max-width: 90% !important; }
-.eden-filter-row { flex-wrap: wrap !important; }
+.eden-map-root { gap: 6px !important; }
+.eden-map-header { gap: 6px !important; }
+.eden-map-header > div:first-child h2 { font-size: 1.15rem !important; letter-spacing: 0.08em !important; }
+.eden-map-header > div:first-child p { font-size: 0.72rem !important; line-height: 1.35 !important; }
+
+.eden-map-body { flex-direction: column !important; gap: 0 !important; }
+.eden-canvas-wrap {
+  min-height: min(52vh, 420px) !important;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#edenMapCanvas { min-height: min(52vh, 420px) !important; }
+
+.eden-toolbar-primary,
+.eden-toolbar-tools,
+.eden-toolbar-modes {
+  gap: 5px !important;
+  padding: 6px 8px !important;
+  overflow-x: auto;
+  flex-wrap: nowrap !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.eden-toolbar-primary::-webkit-scrollbar,
+.eden-toolbar-tools::-webkit-scrollbar,
+.eden-toolbar-modes::-webkit-scrollbar,
+.eden-layer-bar::-webkit-scrollbar,
+.eden-quick-jump::-webkit-scrollbar { display: none; }
+
+.eden-toolbar-spacer { display: none !important; }
+.eden-toolbar-divider { height: 22px !important; margin: 0 2px !important; flex-shrink: 0; }
+
+.eden-tool-btn {
+  padding: 8px 10px !important;
+  font-size: 0.64rem !important;
+  min-height: 34px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.eden-tool-icon { min-width: 36px !important; padding: 8px !important; }
+
+.eden-sector-select,
+.eden-plan-select,
+.eden-view-select,
+.eden-path-color-select {
+  font-size: 0.64rem !important;
+  min-height: 34px;
+  flex-shrink: 0;
+}
+.eden-plan-select { min-width: 96px !important; max-width: 130px !important; }
+.eden-path-label-input { width: 88px !important; min-height: 34px; font-size: 0.62rem !important; flex-shrink: 0; }
+
+.eden-layer-bar {
+  padding: 6px 8px !important;
+  gap: 5px !important;
+  overflow-x: auto;
+  flex-wrap: nowrap !important;
+  -webkit-overflow-scrolling: touch;
+}
+.eden-layer-btn {
+  font-size: 0.6rem !important;
+  padding: 6px 9px !important;
+  min-height: 30px;
+  flex-shrink: 0;
+}
+.eden-layer-label { flex-shrink: 0; }
+.eden-ref-opacity {
+  flex-shrink: 0;
+  margin-left: 4px !important;
+}
+.eden-ref-opacity input[type="range"] { width: 64px !important; }
+
+.eden-toolbar-modes { padding-bottom: 6px !important; }
+.eden-mode-label {
+  flex-shrink: 0;
+  font-size: 0.58rem !important;
+  gap: 4px !important;
+}
+.eden-mode-label input[type="range"] { width: 72px !important; }
+.eden-speed-val { font-size: 0.6rem !important; }
+
+.eden-quick-jump {
+  overflow-x: auto;
+  flex-wrap: nowrap !important;
+  padding: 4px 2px 6px !important;
+  -webkit-overflow-scrolling: touch;
+}
+.eden-quick-btn {
+  flex-shrink: 0;
+  font-size: 0.6rem !important;
+  padding: 6px 10px !important;
+  min-height: 30px;
+}
+.eden-quick-divider { height: 22px !important; margin: 0 4px !important; }
+
+.eden-coord-hud {
+  font-size: 0.58rem !important;
+  max-width: calc(100% - 120px) !important;
+  left: 6px !important;
+  bottom: auto !important;
+  top: 6px !important;
+  padding: 4px 7px !important;
+}
+.eden-map-legend {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  gap: 8px !important;
+  max-width: calc(100% - 8px) !important;
+  font-size: 0.55rem !important;
+  padding: 4px 8px !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.eden-map-legend::-webkit-scrollbar { display: none; }
+.eden-map-legend span { flex-shrink: 0; white-space: nowrap; }
+
+.eden-minimap {
+  width: 96px !important;
+  height: 96px !important;
+  right: 4px !important;
+  bottom: 4px !important;
+  border-radius: 6px !important;
+}
+
+.eden-filter-row { flex-wrap: wrap !important; gap: 4px !important; }
+.eden-filter-select { font-size: 0.62rem !important; min-height: 34px; flex: 1 1 calc(50% - 4px); }
 .eden-sort-select { max-width: 100% !important; flex: 1 1 100% !important; }
-.eden-minimap { width: 110px !important; height: 110px !important; right: 6px !important; bottom: 6px !important; }
+.eden-search-wrap { margin-top: 4px !important; }
+.eden-stats { font-size: 0.6rem !important; padding-right: 36px !important; }
+.eden-hover-info { font-size: 0.6rem !important; }
+.eden-selected-actions { flex-wrap: wrap !important; }
+.eden-action-btn { min-height: 32px; flex: 1 1 auto; font-size: 0.62rem !important; }
+.eden-struct-row { min-height: 38px !important; padding: 6px 8px !important; }
+.eden-struct-list { max-height: 38vh !important; }
 
 .eden-sidebar {
-  position: fixed !important; left: 0; right: 0; bottom: 0; z-index: 50;
-  width: 100% !important; max-height: 72vh !important;
-  transform: translateY(100%); transition: transform 0.22s ease;
+  position: fixed !important;
+  left: 0; right: 0; bottom: 0; z-index: 50;
+  width: 100% !important;
+  max-height: min(78vh, 620px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  transform: translateY(100%);
+  transition: transform 0.22s ease;
   border-radius: 14px 14px 0 0 !important;
   box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
 }
 .eden-sidebar.eden-sidebar-open { transform: translateY(0); }
 .eden-sidebar-close {
-  display: block !important; position: absolute; top: 8px; right: 10px;
-  width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(71,85,105,0.8);
-  background: rgba(30,41,59,0.9); color: #e2e8f0; font-size: 1.1rem; line-height: 1;
-  cursor: pointer; z-index: 2;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: absolute; top: 8px; right: 10px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(71,85,105,0.8);
+  background: rgba(30,41,59,0.9);
+  color: #e2e8f0;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.eden-help-panel { padding: 10px 10px !important; }
+.eden-help-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+.eden-help-summary { font-size: 0.72rem !important; }
+.eden-help-list { font-size: 0.64rem !important; padding-left: 1rem !important; }
+
+@media (max-width: 380px) {
+  .eden-tool-btn { padding: 7px 8px !important; font-size: 0.58rem !important; }
+  .eden-minimap { width: 80px !important; height: 80px !important; }
+  .eden-canvas-wrap, #edenMapCanvas { min-height: 46vh !important; }
 }
 
