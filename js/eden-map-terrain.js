@@ -256,4 +256,4 @@ export function drawTerrainLayer(ctx, worldToIso, scale) {
   });
 }
 
-export { BIOMES, RIVERS, MOUNTAINS };
+export { BIOMES, RIVERS };
