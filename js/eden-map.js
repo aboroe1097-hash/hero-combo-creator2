@@ -82,7 +82,7 @@ export function initEdenMapPlanner() {
   let plansStore = loadPlansStore();
   let activePlanId = plansStore.activeId || 'default';
   let plan = normalizePlan(plansStore.plans[activePlanId]?.plan);
-  let refOpacity = 0.88;
+  let refOpacity = 0.96;
   let screenshotOpacity = 0.72;
   let factionFilter = 'all';
   let coordSearchPin = null;
@@ -90,9 +90,9 @@ export function initEdenMapPlanner() {
   let listSort = 'points';
 
   const layers = {
-    reference: false,
+    reference: true,
     screenshots: false,
-    terrain: true,
+    terrain: false,
     structures: true,
     paths: true,
     targets: true,
@@ -145,6 +145,7 @@ export function initEdenMapPlanner() {
   }
 
   onStructureIconsReady(() => scheduleDraw());
+  preloadReferenceMap(() => scheduleDraw());
   preloadStructureIcons([...OVERVIEW_STRUCTURE_TYPES]);
   const deferIcons = () => preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
   if (typeof requestIdleCallback === 'function') requestIdleCallback(deferIcons, { timeout: 1200 });
@@ -1736,7 +1737,7 @@ export function initEdenMapPlanner() {
     },
     resetLayers: () => {
       Object.assign(layers, {
-        reference: false, terrain: true, structures: true, paths: true, targets: true,
+        reference: true, terrain: false, structures: true, paths: true, targets: true,
         labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
       });
       document.querySelectorAll('[data-eden-layer]').forEach(btn => {

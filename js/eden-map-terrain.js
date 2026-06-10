@@ -401,10 +401,11 @@ export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
     viewBounds = null,
   } = options;
 
-  drawParchmentBase(ctx, worldToIso, scale);
+  const mapImageBase = showReference;
+  if (!mapImageBase) drawParchmentBase(ctx, worldToIso, scale);
 
   if (showReference) {
-    drawReferenceLayer(ctx, worldToIso, options.referenceOpacity);
+    drawReferenceLayer(ctx, worldToIso, options.referenceOpacity ?? MAP_REFERENCE.opacity);
   }
 
   if (showScreenshots && !fastMode) {
@@ -412,6 +413,7 @@ export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
   }
 
   if (fastMode && (showReference || showScreenshots)) return;
+  if (mapImageBase && !showTiles) return;
   const tileStep = TILE_SIZE;
   const tw = tileStep * 0.5 * scale;
   const th = tileStep * 0.25 * scale;
