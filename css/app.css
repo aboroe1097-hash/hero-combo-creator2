@@ -118,6 +118,87 @@ section:not(.hidden) { animation: fade-in-up 0.28s ease both; }
   box-shadow: 0 14px 44px rgba(0,0,0,0.55), 0 0 30px rgba(37,99,235,0.3);
 }
 
+/* ─── Tab navigation wrapper ─── */
+.tab-nav-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+.tab-scroll-btn {
+  background: rgba(30,41,59,0.9);
+  border: 1px solid rgba(51,65,85,0.8);
+  border-radius: 40px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+.tab-scroll-btn:hover {
+  background: rgba(51,65,85,0.9);
+  color: white;
+}
+@media (max-width: 768px) {
+  .tab-scroll-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+#tabNavScroll {
+  flex: 1;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  padding: 4px 2px;
+  /* fade edges on mobile – optional */
+  mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+}
+#tabNavScroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Enhanced page transition animations ─── */
+@keyframes tab-exit-anim {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    pointer-events: none;
+  }
+}
+@keyframes tab-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  80% {
+    transform: translateY(-2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+section:not(.hidden) {
+  animation: tab-enter 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1) both;
+}
+section.tab-exit {
+  animation: tab-exit-anim 0.25s ease forwards !important;
+}
+
 /* ── Tab pills ───────────────────────────────────────────── */
 .tab-pill {
   position: relative; z-index: 10;
