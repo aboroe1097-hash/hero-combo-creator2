@@ -1,0 +1,305 @@
+/* =============================================================
+   mobile.css — VTS Hero Combo Tool  b4.0
+   Applied on screens ≤768px via <link media="(max-width: 768px)">
+   ============================================================= */
+
+:root {
+  --mobile-gap: 8px;
+  --mobile-radius: 12px;
+}
+
+/* ── Base ────────────────────────────────────────────────── */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: 190px !important;
+  overscroll-behavior-y: none;
+}
+* { -webkit-tap-highlight-color: transparent; }
+
+#app {
+  padding: 10px !important;
+  border-radius: var(--mobile-radius) !important;
+}
+
+/* ── Branding ────────────────────────────────────────────── */
+.team-badge, #createComboTitle { display: none !important; }
+#appTitle { font-size: 1.65rem !important; }
+.main-logo { width: 110px !important; height: 110px !important; }
+
+/* ── Tab nav — horizontal scroll, no wrap ───────────────── */
+#tabNavScroll {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  flex-wrap: nowrap !important;
+  padding: 3px 4px !important;
+  gap: 2px !important;
+  /* Fade edges to show scrollability */
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+}
+#tabNavScroll > div { flex: 0 0 auto !important; width: auto !important; }
+.tab-pill {
+  font-size: 0.68rem !important;
+  padding: 0.42rem 0.62rem !important;
+  white-space: nowrap !important;
+  gap: 3px !important;
+}
+.tab-pill svg { width: 12px !important; height: 12px !important; }
+
+/* ── Hero grid — 4 columns ───────────────────────────────── */
+#generatorHeroes, #availableHeroes {
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 5px !important;
+}
+.hero-card, .generator-card {
+  width: 100% !important;
+  min-width: 0 !important; min-height: 0 !important;
+  aspect-ratio: 1 / 1.3;
+  padding: 5px !important; margin: 0 !important;
+}
+.hero-card img, .generator-card img {
+  width: 48px !important; height: 48px !important;
+  margin-bottom: 3px !important; border-width: 1.5px !important;
+}
+.hero-card span.text-xs, .generator-card span.text-xs {
+  font-size: 0.57rem !important; line-height: 1.1 !important;
+  white-space: normal !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hero-tag {
+  font-size: 0.46rem !important; padding: 1px 3px !important;
+  top: 2px !important; left: 2px !important;
+}
+.generator-card-selected {
+  border: 2px solid #38bdf8 !important;
+  transform: scale(0.93) !important;
+}
+
+/* ── Sticky footer ───────────────────────────────────────── */
+#comboFooterBar {
+  position: fixed !important;
+  bottom: 0 !important; left: 0 !important; right: 0 !important;
+  width: 100% !important; z-index: 100 !important;
+  border-radius: 18px 18px 0 0 !important;
+  padding: 10px 12px env(safe-area-inset-bottom, 14px) !important;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.7) !important;
+}
+
+/* ── Combo slots ─────────────────────────────────────────── */
+.combo-slot {
+  width: 68px !important; height: 68px !important;
+  margin: 0 !important; border-width: 2px !important;
+}
+#comboButtonsRow {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+}
+#comboButtonsRow button {
+  font-size: 0.7rem !important; padding: 8px 4px !important;
+  min-height: 38px !important; border-radius: 10px !important;
+}
+
+/* ── Generator buttons ───────────────────────────────────── */
+#generateCombosBtn, #generateRandomBtn, #downloadGeneratorBtn {
+  display: block; width: 100%; max-width: 100%;
+  margin: 4px auto; border-radius: 9999px;
+  font-size: 0.83rem; padding: 12px; letter-spacing: 0.04em; font-weight: 800;
+}
+#generateCombosBtn   { background: linear-gradient(135deg,#15803d,#22c55e); box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
+#generateRandomBtn   { background: linear-gradient(135deg,#b45309,#f59e0b); box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
+#downloadGeneratorBtn{ background: linear-gradient(135deg,#6d28d9,#8b5cf6); box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+
+/* ── Saved / Generated combos ────────────────────────────── */
+.saved-combo-display, .generated-combo-card {
+  padding: 10px 10px 10px 52px !important;
+  margin: 6px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-height: 110px !important;
+}
+.saved-combo-number {
+  left: 10px !important;
+  width: 28px !important; height: 28px !important;
+  font-size: 0.76rem !important;
+}
+.generated-combo-card {
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 10px !important; gap: 6px !important;
+}
+.generated-combo-card .saved-combo-slots {
+  display: flex !important; flex-direction: row !important;
+  justify-content: center !important; gap: 5px !important; width: 100% !important;
+}
+.generated-combo-card > div:last-child {
+  margin-left: 0 !important; padding-right: 0 !important; text-align: center !important;
+}
+.saved-combo-slot-item img {
+  width: 72px !important; height: 72px !important;
+}
+.saved-combo-display .saved-combo-slots { flex-wrap: wrap !important; gap: 6px !important; }
+.saved-combo-display .saved-combo-slot-item { width: 80px !important; height: 80px !important; }
+
+/* ── Scroll-to-top position ──────────────────────────────── */
+#scrollTopBtn { bottom: 5.5rem !important; right: 0.75rem !important; width: 36px !important; height: 36px !important; }
+
+/* ── Language selector ───────────────────────────────────── */
+#languageSelect { font-size: 0.78rem !important; }
+.hero-search-input { font-size: 0.8rem !important; }
+
+/* ── Research tab ────────────────────────────────────────── */
+#researchSection .tech-season-btn {
+  padding: 6px 11px !important; font-size: 0.74rem !important;
+}
+#techGridWrapper {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+}
+#techListContainer .tech-card-pos {
+  padding: 12px !important; border-radius: 10px !important;
+  border-top-width: 3px !important;
+}
+#techListContainer .tech-card-pos h3 { font-size: 0.875rem !important; line-height: 1.2 !important; }
+#techListContainer .tech-card-pos p {
+  font-size: 0.64rem !important; margin-top: 6px !important; margin-bottom: 8px !important;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+#techListContainer .tech-card-pos button:last-of-type {
+  padding: 8px !important; font-size: 0.68rem !important; border-radius: 8px !important;
+}
+#techListContainer .tech-card-pos .absolute.top-3 {
+  top: 8px !important; right: 8px !important;
+  padding: 2px 6px !important; font-size: 0.58rem !important;
+}
+
+/* ── Tech calculator ─────────────────────────────────────── */
+#techCalculatorContainer { padding: 12px !important; border-radius: 14px !important; }
+#techCalculatorContainer h3 { font-size: 1rem !important; }
+#techCalculatorContainer #closeCalcBtn { padding: 8px !important; }
+#techCalculatorContainer #resetAllTechBtn,
+#techCalculatorContainer #maxAllTechBtn {
+  font-size: 0.64rem !important; padding: 8px 6px !important;
+}
+#techCalculatorContainer .overflow-x-hidden { max-height: 55vh !important; border-radius: 10px !important; }
+
+/* Node grid — single column */
+#techCalculatorContainer .grid.grid-cols-1.sm\:grid-cols-3 {
+  grid-template-columns: 1fr !important; gap: 8px !important;
+}
+.tech-node-container {
+  width: 100% !important; max-width: 100% !important;
+  padding: 10px 12px !important; border-radius: 10px !important;
+}
+
+/* Node inputs */
+.tech-node-slider { height: 5px !important; }
+.tech-node-slider::-webkit-slider-thumb { width: 16px !important; height: 16px !important; }
+.tech-node-input { width: 36px !important; font-size: 0.75rem !important; padding: 2px 0 !important; }
+
+/* Quick-set buttons — wrap on mobile */
+.tech-node-container .flex.justify-between.gap-1 {
+  gap: 3px !important; flex-wrap: wrap !important;
+}
+.quick-set-btn {
+  padding: 4px 6px !important; font-size: 0.61rem !important;
+  flex: 1 !important; min-width: 28px !important;
+  text-align: center !important; border-radius: 5px !important;
+}
+
+/* Branch tabs */
+.branch-tab-btn {
+  font-size: 0.61rem !important; padding: 8px 4px !important; border-radius: 8px !important;
+}
+.branch-tab-btn span:first-child { font-size: 1rem !important; }
+
+/* Tree total footer */
+#totalTechCost span {
+  font-size: 0.9rem !important; padding: 8px 10px !important;
+  gap: 8px !important; border-radius: 8px !important; width: 100% !important;
+}
+#totalTechCost span img { width: 14px !important; height: 14px !important; }
+
+/* Global summary */
+#globalTechSummary > div { padding: 12px !important; border-radius: 12px !important; }
+#globalTechSummary h3 { font-size: 0.78rem !important; }
+#globalTechSummary .text-base { font-size: 0.85rem !important; }
+#globalTechSummary .text-3xl, #globalTechSummary .sm\:text-3xl { font-size: 1.1rem !important; }
+#globalTechSummary > div > div.grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+#globalTechSummary .bg-slate-950\/60 { padding: 10px !important; border-radius: 8px !important; }
+#globalTechSummary .h-5 { height: 10px !important; }
+
+/* ── Loyalty calculator ──────────────────────────────────── */
+#loyaltyCalcSection table { font-size: 0.72rem !important; }
+#loyaltyCalcSection th, #loyaltyCalcSection td { padding: 6px 8px !important; }
+@media (max-width: 480px) {
+  #loyaltyCalcSection th:nth-child(5),
+  #loyaltyCalcSection td:nth-child(5) { display: none; }
+}
+
+/* ── Comments ────────────────────────────────────────────── */
+.comment-avatar { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 0.85rem !important; }
+.replies-container { margin-left: 1rem !important; padding-left: 0.75rem !important; }
+
+/* ── b4.1 Mobile additions ───────────────────────────────── */
+
+/* Paid badge — corner ribbon on mobile */
+.paid-badge { top: 3px !important; right: 3px !important; padding: 2px 5px 2px 3px !important; }
+.paid-badge--card .paid-gem-svg { width: 9px !important; height: 9px !important; }
+.paid-badge-text { font-size: 0.42rem !important; }
+
+/* Heroes tab — mobile layout */
+.heroes-layout.has-detail { flex-direction: column !important; gap: 10px !important; }
+.heroes-layout.has-detail .heroes-ranking-list {
+  max-height: 38vh !important; overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(51,65,85,0.5); border-radius: 12px; padding: 4px;
+}
+.heroes-layout.has-detail .hero-detail-panel {
+  border: 2px solid rgba(99,102,241,0.35) !important;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+}
+
+.hero-rank-row { padding: 10px 10px !important; gap: 8px !important; min-height: 52px; }
+.rank-img      { width: 36px !important; height: 36px !important; }
+.rank-name     { font-size: 0.8rem !important; }
+.rank-score    { font-size: 0.85rem !important; min-width: 28px !important; }
+.rank-medal    { font-size: 0.8rem !important; min-width: 24px !important; }
+
+.hero-detail-panel { padding: 16px 14px !important; border-radius: 16px !important; }
+.detail-header { flex-wrap: wrap; gap: 10px !important; }
+.detail-img { width: 64px !important; height: 64px !important; }
+.detail-name { font-size: 1rem !important; line-height: 1.3 !important; }
+.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+.detail-stat { padding: 8px 6px !important; }
+.detail-stat-val { font-size: 0.85rem !important; }
+
+.detail-combo-row { padding: 8px !important; gap: 6px !important; }
+.detail-combo-hero img { width: 28px !important; height: 28px !important; }
+.detail-combo-hero span { font-size: 0.52rem !important; max-width: 48px !important; }
+.combo-counters-inline { margin-top: 4px; }
+
+.heroes-season-tabs {
+  gap: 4px !important; padding: 6px !important;
+  overflow-x: auto; flex-wrap: nowrap !important;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.heroes-season-tabs::-webkit-scrollbar { display: none; }
+.hero-tab-season { padding: 6px 12px !important; font-size: 0.68rem !important; flex-shrink: 0; }
+.heroes-filter-pill { padding: 6px 11px !important; font-size: 0.62rem !important; }
+.heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
+
+/* Generator score + counters on mobile */
+.gen-score-panel { max-width: 100% !important; margin-left: 0 !important; align-items: stretch !important; }
+.generated-combo-card, .saved-combo-display { flex-wrap: wrap !important; padding-left: 56px !important; }
+.counter-inline-heroes { font-size: 0.52rem !important; }
+
+/* Eden map mobile */
+.eden-map-body { flex-direction: column !important; }
+.eden-sidebar { max-height: 280px !important; width: 100% !important; }
+.eden-canvas-wrap { min-height: 300px !important; }
+#edenMapCanvas { min-height: 300px !important; }
+.eden-toolbar { gap: 4px !important; }
+.eden-tool-btn { padding: 5px 8px !important; font-size: 0.62rem !important; }
+
