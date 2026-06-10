@@ -1170,8 +1170,8 @@ section.tab-exit {
   margin-top: 6px; padding: 8px 10px;
 }
 .detail-combo-row .counter-card { padding: 6px 7px; }
-.detail-combo-row .counter-hero-chip-name { max-width: 72px; font-size: 0.55rem; }
-.detail-combo-row .counter-hero-chip-img { width: 20px; height: 20px; }
+.detail-combo-row .counter-hero-chip-img { width: 26px; height: 26px; }
+.detail-combo-row .counter-hero-chip-name { font-size: 0.5rem; }
 
 .detail-skills { display: flex; flex-direction: column; gap: 8px; }
 .detail-skill { background: rgba(30,41,59,0.5); border: 1px solid rgba(51,65,85,0.6); border-radius: 10px; padding: 10px 12px; }
@@ -1331,36 +1331,41 @@ section.tab-exit {
   padding: 2px 6px;
 }
 .counter-card-heroes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .counter-hero-chip {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
+  min-width: 0;
   background: rgba(30,41,59,0.85);
   border: 1px solid rgba(71,85,105,0.7);
-  border-radius: 9999px;
-  padding: 2px 7px 2px 2px;
-  max-width: 100%;
+  border-radius: 10px;
+  padding: 5px 4px 4px;
 }
 .counter-hero-chip-img {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid rgba(100,116,139,0.55);
   flex-shrink: 0;
 }
 .counter-hero-chip-name {
-  font-size: 0.58rem;
+  font-size: 0.54rem;
   font-weight: 700;
   color: #cbd5e1;
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.2;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 88px;
+  word-break: break-word;
 }
 .counter-card-reason {
   margin: 6px 0 0;

@@ -10,7 +10,7 @@ import {
 } from './eden-map-terrain.js';
 import {
   preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
-  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs,
+  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, isUserStructureIcon,
 } from './eden-map-assets.js';
 import { initEdenMapUI } from './eden-map-ui.js';
 import {
@@ -201,10 +201,23 @@ export function initEdenMapPlanner() {
     return true;
   }
 
+  const CATEGORY_ICON_BOOST = {
+    gate: 1.35,
+    town: 1.1,
+    stronghold: 1.1,
+    capital: 1.2,
+    temple: 1.05,
+  };
+
   function structureIconScale(mode) {
-    if (mode === 'overview') return 1.85;
-    if (mode === 'compact') return 1.55;
-    return 2.0;
+    if (mode === 'overview') return 1.45;
+    if (mode === 'compact') return 1.25;
+    return 1.55;
+  }
+
+  function structureCategoryBoost(type) {
+    const cat = STRUCTURE_TYPES[type]?.category;
+    return CATEGORY_ICON_BOOST[cat] || 1;
   }
 
   function notifySelection() {
@@ -452,7 +465,7 @@ export function initEdenMapPlanner() {
     const mode = structureRenderMode();
     const statusColor = STATUS_COLORS[status] || STATUS_COLORS.neutral;
 
-    const iconMul = structureIconScale(mode);
+    const iconMul = structureIconScale(mode) * structureCategoryBoost(s.type);
     const iconSize = Math.max(mode === 'compact' ? 10 : 12, (meta.size || 9) * scale * iconMul);
     const icon = getStructureIcon(s.type) || loadStructureIcon(s.type);
 
@@ -461,15 +474,35 @@ export function initEdenMapPlanner() {
     ctx.fillStyle = 'rgba(40,28,16,0.22)';
     ctx.fill();
 
+    let iw = iconSize;
+    let ih = iconSize;
+    let iconTop = p.y - iconSize * 0.82;
+    let iconBottom = p.y + iconSize * 0.08;
+
     if (isIconReady(icon)) {
-      const sw = icon.naturalWidth || icon.width || iconSize;
-      const sh = icon.naturalHeight || icon.height || iconSize;
-      const aspect = sw / Math.max(1, sh);
-      const ih = iconSize;
-      const iw = iconSize * aspect;
-      ctx.drawImage(icon, p.x - iw / 2, p.y - ih * 0.82, iw, ih);
+      const sw = icon.naturalWidth || icon.width || 1;
+      const sh = icon.naturalHeight || icon.height || 1;
+      const fit = iconSize / Math.max(sw, sh);
+      iw = sw * fit;
+      ih = sh * fit;
+      iconBottom = p.y + iconSize * 0.08;
+      iconTop = iconBottom - ih;
+      if (isUserStructureIcon(s.type)) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(15,23,42,0.5)';
+        ctx.shadowBlur = Math.max(2, 3 * scale);
+        ctx.shadowOffsetY = 1;
+        ctx.drawImage(icon, p.x - iw / 2, iconTop, iw, ih);
+        ctx.restore();
+      } else {
+        ctx.drawImage(icon, p.x - iw / 2, iconTop, iw, ih);
+      }
     } else {
       const r = meta.size * scale * 0.85;
+      iconTop = p.y - r * 1.35;
+      iconBottom = p.y + r * 0.55;
+      iw = r * 2;
+      ih = r * 1.9;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y - r * 1.35);
       ctx.lineTo(p.x + r, p.y - r * 0.35);
@@ -480,18 +513,20 @@ export function initEdenMapPlanner() {
       ctx.fill();
     }
 
+    const iconMidY = iconTop + ih * 0.45;
+
     if (mode !== 'overview' || isSel || isHover) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y - iconSize * 0.38, iconSize * 0.55, 0, Math.PI * 2);
+      ctx.arc(p.x, iconMidY, Math.min(iw, ih) * 0.52, 0, Math.PI * 2);
       ctx.strokeStyle = statusColor;
       ctx.lineWidth = isSel ? 3 : (mode === 'compact' ? 1.5 : 2);
       ctx.stroke();
     }
 
     if (isSel || isHover) {
-      const ringR = Math.max(12, 16 * scale);
+      const ringR = Math.max(12, Math.min(iw, ih) * 0.72);
       ctx.beginPath();
-      ctx.arc(p.x, p.y - ringR * 0.5, ringR, 0, Math.PI * 2);
+      ctx.arc(p.x, iconMidY, ringR, 0, Math.PI * 2);
       ctx.strokeStyle = isSel ? '#fff' : '#a5b4fc';
       ctx.lineWidth = isSel ? 2.5 : 1.5;
       ctx.stroke();
@@ -499,7 +534,7 @@ export function initEdenMapPlanner() {
 
     if (isTarget) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y - 14 * scale, 4 * scale, 0, Math.PI * 2);
+      ctx.arc(p.x, iconTop - 4 * scale, 4 * scale, 0, Math.PI * 2);
       ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 2;
       ctx.stroke();
@@ -509,8 +544,8 @@ export function initEdenMapPlanner() {
     if (layers.teams && teamMeta.team) {
       const team = getTeamInfo(plan, teamMeta.team);
       if (team) {
-        const bx = p.x + iconSize * 0.42;
-        const by = p.y - iconSize * 0.95;
+        const bx = p.x + iw * 0.38;
+        const by = iconTop + ih * 0.1;
         const br = Math.max(5, 6 * scale);
         ctx.beginPath();
         ctx.arc(bx, by, br, 0, Math.PI * 2);
@@ -533,7 +568,7 @@ export function initEdenMapPlanner() {
       ctx.fillStyle = isSel ? '#fff' : '#cbd5e1';
       ctx.font = `bold ${Math.max(7, 8 * scale)}px Inter`;
       ctx.textAlign = 'center';
-      ctx.fillText(label, p.x, p.y - 28 * scale);
+      ctx.fillText(label, p.x, iconTop - Math.max(6, 8 * scale));
     }
   }
 

@@ -1,0 +1,52 @@
+---
+pid: 10432
+cwd: "C:\Users\alsel\Downloads\hero-combo-creator2-fixed-v2\hero-combo-creator2-NewMain_test\hero-combo-creator2"
+command: "python -c \"
+from pathlib import Path
+from collections import Counter, deque
+import cv2, numpy as np
+from PIL import Image
+
+def border_bg_colors(arr, step=12, top_n=3):
+    h,w=arr.shape[:2]; border=[]
+    for x in range(w):
+        border.append(tuple(arr[0,x,:3])); border.append(tuple(arr[h-1,x,:3]))
+    for y in range(h):
+        border.append(tuple(arr[y,0,:3])); border.append(tuple(arr[y,w-1,:3]))
+    buckets=Counter(((c[0]//step)*step,(c[1]//step)*step,(c[2]//step)*step) for c in border)
+    return [np.array(k,dtype=np.int16) for k,_ in buckets.most_common(top_n)]
+
+def matches_bg(rgb, bgs, tol):
+    return any(np.max(np.abs(rgb-bg))<=tol for bg in bgs)
+
+def strip_border(path, tol):
+    arr=np.array(Image.open(path).convert('RGBA'))
+    h,w=arr.shape[:2]; rgb=arr[:,:,:3].astype(np.int16)
+    bgs=border_bg_colors(arr); tr=np.zeros((h,w),bool); q=deque()
+    def seed(y,x):
+        if tr[y,x] or not matches_bg(rgb[y,x],bgs,tol): return
+        tr[y,x]=True; q.append((y,x))
+    for x in range(w): seed(0,x); seed(h-1,x)
+    for y in range(h): seed(y,0); seed(y,w-1)
+    while q:
+        y,x=q.popleft()
+        for ny,nx in ((y-1,x),(y+1,x),(y,x-1),(y,x+1)):
+            if 0<=ny<h and 0<=nx<w and not tr[ny,nx] and matches_bg(rgb[ny,nx],bgs,tol):
+                tr[ny,nx]=True; q.append((ny,nx))
+    arr[:,:,3]=np.where(tr,0,255).astype(np.uint8)
+    out=Image.fromarray(arr)
+    return out.crop(out.getbbox()) if out.getbbox() else out
+
+for tol in [25,28,30,32,35]:
+    out=strip_border('assets/stronghold.png', tol)
+    a=np.array(out)[:,:,3]
+    print(f'border-only tol={tol} opaque={100*(a>128).sum()/a.size:.1f}% size={out.size}')
+\""
+started_at: 2026-06-10T20:17:30.565Z
+running_for_ms: 1120007  
+---
+border-only tol=25 opaque=21.0% size=(2282, 1520)
+border-only tol=28 opaque=19.4% size=(2282, 1520)
+border-only tol=30 opaque=18.1% size=(2281, 1503)
+border-only tol=32 opaque=17.0% size=(2281, 1503)
+border-only tol=35 opaque=16.0% size=(2281, 1485)
