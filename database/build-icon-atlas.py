@@ -28,8 +28,10 @@ USER_ICON_SOURCES: dict[str, Path] = {
     "ST3": ICON_DIR / "user-town.png",
     "LT2": ICON_DIR / "user-town.png",
     "LT4": ICON_DIR / "user-town.png",
-    "STRHD": ASSETS / "stronghold.png",
-    "CS": ASSETS / "stronghold.png",
+    "STRHD": ICON_DIR / "user-stronghold.png",
+    "CS": ICON_DIR / "user-stronghold.png",
+    "C5": ICON_DIR / "user-capital.png",
+    "C6": ICON_DIR / "user-capital.png",
 }
 MAX_W, MAX_H = 96, 96
 PAD = 2

@@ -34,7 +34,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/eden-map-guide.js` | Interactive Eden map walkthrough |
 | `js/eden-datasets.generated.js` | Generated Season 5 structure coords |
 | `assets/eden-reference/faction-division-map.png` | Processed parchment underlay |
-| `assets/Gate.png`, `assets/Town.png`, `assets/stronghold.png` | Hand-authored structure icons |
+| `assets/Gate.png`, `assets/Town.png`, `assets/stronghold.png`, `assets/Capital.png` | Hand-authored structure icons (capital falls back to extracted `c5.png` until you add `Capital.png`) |
 | `database/build-eden-from-screenshots.py` | Rebuild structure dataset from screenshots |
 | `database/prepare-faction-map.py` | Crop/upscale faction-division source image |
 | `database/prepare-user-icons.py` | Checkerboard removal for gate/town icons |

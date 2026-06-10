@@ -370,8 +370,10 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .detail-combo-rank { font-size: 0.68rem !important; }
 .combo-counters-inline { margin-top: 4px; padding: 0.45rem 0.55rem !important; }
 .counter-toggle-btn { font-size: 0.56rem !important; padding: 4px 9px !important; }
-.counter-hero-chip-name { max-width: 64px !important; font-size: 0.52rem !important; }
-.counter-hero-chip-img { width: 20px !important; height: 20px !important; }
+.counter-card-heroes { gap: 4px !important; }
+.counter-hero-chip { padding: 4px 2px 3px !important; }
+.counter-hero-chip-name { font-size: 0.48rem !important; }
+.counter-hero-chip-img { width: 26px !important; height: 26px !important; }
 .counter-card-reason { font-size: 0.55rem !important; }
 
 .heroes-season-tabs {

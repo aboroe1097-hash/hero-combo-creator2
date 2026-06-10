@@ -214,8 +214,10 @@ export const STRUCTURE_ICON_URLS = {
   LT2: 'assets/eden-reference/icons/user-town.png',
   LT3: 'assets/eden-reference/icons/user-town.png',
   LT4: 'assets/eden-reference/icons/user-town.png',
-  STRHD: 'assets/stronghold.png',
-  CS: 'assets/stronghold.png',
+  STRHD: 'assets/eden-reference/icons/user-stronghold.png',
+  CS: 'assets/eden-reference/icons/user-stronghold.png',
+  C5: 'assets/eden-reference/icons/user-capital.png',
+  C6: 'assets/eden-reference/icons/user-capital.png',
 };
 
 // Procedural gate placeholders only — authored Gate.png is already iso-oriented.
@@ -466,6 +468,10 @@ function usesUserIcon(type) {
   if (STRUCTURE_ICON_URLS[type]) return true;
   const key = ATLAS_TYPE_ALIASES[type] || type;
   return Boolean(STRUCTURE_ICON_URLS[key]);
+}
+
+export function isUserStructureIcon(type) {
+  return usesUserIcon(type);
 }
 
 function iconPngUrl(type) {
