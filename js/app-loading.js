@@ -74,8 +74,25 @@ function prefersReducedMotion() {
 async function dismissBootSplash() {
     const splash = getSplash();
     if (!splash) return;
+
+    // Trigger door opening and light expansion animations
+    const doorLeft = document.getElementById('doorLeft');
+    const doorRight = document.getElementById('doorRight');
+    const centerLight = document.getElementById('centerLight');
+    const statusContainer = document.getElementById('loadingStatusContainer');
+
+    if (doorLeft) doorLeft.classList.add('door-open-left');
+    if (doorRight) doorRight.classList.add('door-open-right');
+    if (centerLight) centerLight.classList.add('light-expand');
+    if (statusContainer) statusContainer.classList.add('title-fade');
+
+    // Wait for the door swinging and golden light flash animation to complete
+    await sleep(2600);
+
+    // Fade out the entire boot-splash overlay
     splash.classList.add('boot-splash--out');
-    await sleep(prefersReducedMotion() ? 80 : 520);
+    await sleep(prefersReducedMotion() ? 80 : 900);
+
     splash.classList.add('hidden');
     splash.setAttribute('aria-hidden', 'true');
 }
