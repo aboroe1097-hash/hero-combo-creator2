@@ -2495,6 +2495,9 @@ input[type=number] { -moz-appearance: textfield; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   flex: 1; min-width: 0;
 }
+.eden-quick-sector-btns {
+  display: contents;
+}
 .eden-deck-layers { align-items: center; gap: 10px; }
 .eden-deck-jump { align-items: center; gap: 8px; }
 

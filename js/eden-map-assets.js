@@ -4,16 +4,18 @@ const ASSET_ROOT = 'assets/eden-reference/';
 const WORLD_W = 1700;
 const WORLD_H = 1600;
 
-/** User-cropped square faction map — trim light padding, draw as-is (no rotate/warp). */
+/** Faction reference — 1700x1600 px, 1 world unit per pixel (see faction-division-map.json). */
 export const FACTION_DIVISION_MAP = {
   url: `${ASSET_ROOT}faction-division-map.png`,
+  metaUrl: `${ASSET_ROOT}faction-division-map.json`,
   rawUrl: 'assets/faction-division2.png',
   processedUrl: `${ASSET_ROOT}faction-division-map.png`,
   layout: 'rect',
   opacity: 0.96,
   bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
-  trimThreshold: 224,
-  trimMinContent: 0.12,
+  worldOffset: { x: -60, y: -65 },
+  pixelPerfect: true,
+  trimBaked: true,
 };
 
 // Legacy overlay (baked structures + cropped edges) — fallback only.
@@ -43,6 +45,35 @@ export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manif
 
 let _refImage = null;
 let _refLoading = false;
+let _refBounds = { ...FACTION_DIVISION_MAP.bounds };
+let _refOffset = { ...FACTION_DIVISION_MAP.worldOffset };
+
+function offsetReferenceBounds(bounds, offset = _refOffset) {
+  const ox = offset?.x ?? 0;
+  const oy = offset?.y ?? 0;
+  return {
+    minX: bounds.minX + ox,
+    maxX: bounds.maxX + ox,
+    minY: bounds.minY + oy,
+    maxY: bounds.maxY + oy,
+  };
+}
+
+export function getReferenceWorldBounds() {
+  return offsetReferenceBounds(_refBounds);
+}
+
+function applyReferenceMeta(meta) {
+  if (meta?.bounds) {
+    _refBounds = { ...meta.bounds };
+    MAP_REFERENCE.bounds = { ...meta.bounds };
+    FACTION_DIVISION_MAP.bounds = { ...meta.bounds };
+  }
+  if (meta?.worldOffset) {
+    _refOffset = { ...meta.worldOffset };
+    FACTION_DIVISION_MAP.worldOffset = { ...meta.worldOffset };
+  }
+}
 
 function trimLightBorders(source, config = MAP_REFERENCE) {
   const sw = source.naturalWidth || source.width;
@@ -92,6 +123,14 @@ function trimLightBorders(source, config = MAP_REFERENCE) {
   let right = sw - 1;
   while (right > left && !colHasContent(right)) right--;
 
+  const shave = config.trimShavePx ?? 0;
+  if (shave > 0) {
+    left = Math.min(left + shave, right);
+    top = Math.min(top + shave, bottom);
+    right = Math.max(right - shave, left);
+    bottom = Math.max(bottom - shave, top);
+  }
+
   const cw = right - left + 1;
   const ch = bottom - top + 1;
   if (cw < 8 || ch < 8 || (cw === sw && ch === sh)) return source;
@@ -100,11 +139,41 @@ function trimLightBorders(source, config = MAP_REFERENCE) {
   out.width = cw;
   out.height = ch;
   out.getContext('2d').drawImage(canvas, left, top, cw, ch, 0, 0, cw, ch);
+  out.dataset.cropLeft = String(left);
+  out.dataset.cropTop = String(top);
+  out.dataset.cropWidth = String(cw);
+  out.dataset.cropHeight = String(ch);
+  out.dataset.sourceWidth = String(sw);
+  out.dataset.sourceHeight = String(sh);
   return out;
 }
 
+function boundsFromCrop(left, top, cw, ch, sw, sh) {
+  return {
+    minX: (left / sw) * WORLD_W,
+    maxX: ((left + cw) / sw) * WORLD_W,
+    minY: (top / sh) * WORLD_H,
+    maxY: ((top + ch) / sh) * WORLD_H,
+  };
+}
+
+function syncBoundsFromImage(img) {
+  if (!img?.dataset?.cropWidth) return;
+  const b = boundsFromCrop(
+    Number(img.dataset.cropLeft),
+    Number(img.dataset.cropTop),
+    Number(img.dataset.cropWidth),
+    Number(img.dataset.cropHeight),
+    Number(img.dataset.sourceWidth),
+    Number(img.dataset.sourceHeight),
+  );
+  applyReferenceMeta({ bounds: b });
+}
+
 function finishReferenceLoad(img, onReady) {
-  _refImage = img.dataset.fallback ? img : trimLightBorders(img);
+  const skipTrim = MAP_REFERENCE.trimBaked || img.dataset.fallback;
+  _refImage = skipTrim ? img : trimLightBorders(img);
+  if (!skipTrim) syncBoundsFromImage(_refImage);
   _refLoading = false;
   onReady?.(_refImage);
 }
@@ -117,7 +186,17 @@ export function isReferenceReady(img) {
   return Boolean(img.complete && img.naturalWidth);
 }
 
+function loadReferenceMeta() {
+  const url = FACTION_DIVISION_MAP.metaUrl;
+  if (!url) return;
+  fetch(url)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((meta) => { if (meta) applyReferenceMeta(meta); })
+    .catch(() => {});
+}
+
 export function preloadReferenceMap(onReady) {
+  loadReferenceMeta();
   if (isReferenceReady(_refImage)) {
     onReady?.(_refImage);
     return _refImage;

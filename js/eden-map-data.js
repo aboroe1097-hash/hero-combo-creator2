@@ -1006,6 +1006,30 @@ export function getSectorBounds(sectorKey) {
   return sectors[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
 }
 
+/** Priority order for toolbar quick-jump buttons — filtered to active dataset sectors. */
+const QUICK_JUMP_ORDER = [
+  'C', 'EC', 'WC', 'E', 'W',
+  'NC', 'SC', 'N', 'S',
+  'N1', 'N2', 'N3', 'N4',
+  'S1', 'S2', 'S3', 'S4',
+  'NE', 'NW', 'SE', 'SW',
+];
+
+export function getQuickJumpSectors(max = 7) {
+  const available = new Set(Object.keys(getEdenSectors()));
+  const picked = [];
+  for (const key of QUICK_JUMP_ORDER) {
+    if (!available.has(key)) continue;
+    picked.push(key);
+    if (picked.length >= max) break;
+  }
+  return picked;
+}
+
+export function isEdenSectorKey(key) {
+  return key === 'FULL' || Boolean(getEdenSectors()[key]);
+}
+
 /** Parse in-game coord strings: 800:800, 800,800, 800 800, X:800 Y:800 */
 export function parseCoordInput(raw) {
   const s = String(raw || '').trim();
