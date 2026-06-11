@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Build js/eden-datasets.generated.js from database/*.txt per eden-datasets.manifest.json"""
+"""Build encoded js/eden-datasets.payload.js from database/*.txt per eden-datasets.manifest.json"""
 from __future__ import annotations
 
+import base64
 import csv
+import gzip
 import json
 import re
 from collections import defaultdict
@@ -12,7 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "database"
 MANIFEST = DB / "eden-datasets.manifest.json"
-OUT_JS = ROOT / "js" / "eden-datasets.generated.js"
+OUT_PAYLOAD = ROOT / "js" / "eden-datasets.payload.js"
+LEGACY_JS = ROOT / "js" / "eden-datasets.generated.js"
 
 SECTOR_LABELS = {
     "C": "Central Sector",
@@ -222,44 +225,6 @@ def build_full_sectors(sector_map: dict[str, list]) -> dict:
     return sectors
 
 
-def js_string(value) -> str:
-    return json.dumps(value, ensure_ascii=True)
-
-
-def emit_structure(s: dict) -> str:
-    parts = [
-        f"id: {js_string(s['id'])}",
-        f"zone: {js_string(s['zone'])}",
-        f"type: {js_string(s['type'])}",
-        f"x: {s['x']}",
-        f"y: {s['y']}",
-    ]
-    if "points" in s:
-        parts.append(f"points: {s['points']}")
-    parts.append(f"guild: {js_string(s.get('guild', ''))}")
-    return "{ " + ", ".join(parts) + " }"
-
-
-def emit_sector(sector_key: str, sector: dict, indent: str) -> list[str]:
-    lines = [f"{indent}{js_string(sector_key)}: {{"]
-    lines.append(f"{indent}  label: {js_string(sector['label'])},")
-    lines.append(f"{indent}  zones: {json.dumps(sector['zones'], ensure_ascii=True)},")
-    b = sector["bounds"]
-    lines.append(
-        f"{indent}  bounds: {{ minX: {b['minX']}, maxX: {b['maxX']}, minY: {b['minY']}, maxY: {b['maxY']} }},"
-    )
-    lines.append(f"{indent}  zoneCenters: {{")
-    for zone, center in sorted(sector["zoneCenters"].items()):
-        lines.append(f"{indent}    {js_string(zone)}: {{ x: {center['x']}, y: {center['y']} }},")
-    lines.append(f"{indent}  }},")
-    lines.append(f"{indent}  structures: [")
-    for s in sector["structures"]:
-        lines.append(f"{indent}    {emit_structure(s)},")
-    lines.append(f"{indent}  ],")
-    lines.append(f"{indent}}},")
-    return lines
-
-
 def main():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     catalog = []
@@ -292,39 +257,29 @@ def main():
                 entry["sectors"] = sorted(sector_map.keys())
         catalog.append(entry)
 
-    lines = [
-        "// AUTO-GENERATED — do not edit",
-        "// Rebuild: python database/build-eden-datasets.py",
-        f"// Built: {built_at}",
-        "",
-        "export const EDEN_DATASETS_BUILT_AT = " + js_string(built_at) + ";",
-        "",
-        "export const EDEN_DATASET_CATALOG = " + json.dumps(catalog, indent=2) + ";",
-        "",
-        "export const EDEN_DATASET_SECTORS = {",
-    ]
-    for ds_id, sectors in full_sectors.items():
-        lines.append(f"  {js_string(ds_id)}: {{")
-        for sector_key, sector in sorted(sectors.items()):
-            lines.extend(emit_sector(sector_key, sector, "    "))
-        lines.append("  },")
-    lines.append("};")
-    lines.append("")
-    lines.append("export const EDEN_DATASET_OVERLAYS = {")
-    for ds_id, sector_map in overlays.items():
-        lines.append(f"  {js_string(ds_id)}: {{")
-        for sector, structs in sorted(sector_map.items()):
-            lines.append(f"    {js_string(sector)}: [")
-            for s in structs:
-                lines.append(f"      {emit_structure(s)},")
-            lines.append("    ],")
-        lines.append("  },")
-    lines.append("};")
-    lines.append("")
+    payload_obj = {
+        "builtAt": built_at,
+        "catalog": catalog,
+        "sectors": full_sectors,
+        "overlays": overlays,
+    }
+    payload_json = json.dumps(payload_obj, separators=(",", ":"), ensure_ascii=True)
+    compressed = gzip.compress(payload_json.encode("utf-8"), compresslevel=9)
+    b64 = base64.b64encode(compressed).decode("ascii")
 
-    OUT_JS.write_text("\n".join(lines), encoding="utf-8")
+    OUT_PAYLOAD.write_text(
+        "\n".join([
+            "export const EDEN_DATASETS_BUILT_AT=" + json.dumps(built_at) + ";",
+            "export const EDEN_DATASETS_PAYLOAD=" + json.dumps(b64) + ";",
+            "",
+        ]),
+        encoding="utf-8",
+    )
+    if LEGACY_JS.exists():
+        LEGACY_JS.unlink()
+
     counts = ", ".join(f"{d['id']}={d.get('structureCount', 0)}" for d in catalog)
-    print(f"Wrote {OUT_JS} — {counts}")
+    print(f"Wrote {OUT_PAYLOAD} ({len(b64)} b64 chars) — {counts}")
 
 
 if __name__ == "__main__":

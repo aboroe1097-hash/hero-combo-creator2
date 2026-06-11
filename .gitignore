@@ -1,6 +1,15 @@
 /mcps
+agent-tools/
+terminals/
 __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
-terminals/
+node_modules/
+dist/
+js/eden-datasets.generated.js
+database/_ocr_test_crop.png
+database/spotcheck-report.txt
+.env
+.env.*
+*.log

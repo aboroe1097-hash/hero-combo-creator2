@@ -1,0 +1,14 @@
+{
+  "name": "hero-combo-creator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:eden": "python database/build-eden-datasets.py",
+    "dev": "vite",
+    "build": "npm run build:eden && vite build && node scripts/post-build.mjs",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

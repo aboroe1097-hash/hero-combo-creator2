@@ -21,7 +21,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 - **Manual Builder** — drag-and-drop 3-hero combos, save to Firebase, export as image/text
 - **Combo Generator** — top-5 ranked combos from your roster + "Surprise Me" random mode
 - **Combo Counters** — expandable counter matchups with hero portraits, ranks/scores, and optional notes (edit `js/combo-counters.js`)
-- **Eden Map Planner** — Season 5 Wonders map with faction-division parchment underlay, zone filters (North / Central / South), paths, terrain-aware distance, and descriptive toolbar tooltips
+- **Eden Map Planner** — Season 3, Wonder X1 (Season 5), and X12 reference datasets; parchment underlay, zone filters, paths, terrain-aware distance, and toolbar tooltips
 - **Eden Loyalty Calculator** — processing times, poison %, upgrade paths
 - **Tech Research Calculator** — medal/resource tracking per season (S0–X2), game-layout trees for key branches
 - **Hero Atlas** — rankings, skills, synergies, season-scoped top combos (capped vs all-best toggle), adjustable hero bonuses
@@ -47,12 +47,14 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/eden-map-terrain.js` | Terrain + pathfinding |
 | `js/eden-map-assets.js` | Map sprites, faction underlay, user structure icons |
 | `js/eden-map-guide.js` | Interactive Eden map walkthrough |
-| `js/eden-datasets.generated.js` | Generated Season 5 structure coords |
+| `js/eden-datasets.payload.js` | Encoded Eden structure datasets (gzip payload) |
+| `js/eden-datasets-loader.js` | Runtime decoder; lazy-loaded with Eden tab |
 | `assets/eden-reference/faction-division-map.png` | Processed parchment underlay |
 | `assets/Gate.png`, `assets/Town.png`, `assets/stronghold.png`, `assets/Capital.png` | Hand-authored structure icons (processed to `assets/eden-reference/icons/user-*.png`) |
-| `database/build-eden-datasets.py` | Generate `js/eden-datasets.generated.js` from `database/*.txt` |
-| `database/build-eden-from-screenshots.py` | Rebuild structure dataset from screenshots |
-| `database/prepare-faction-map.py` | Crop/upscale faction-division source image |
+| `database/build-eden-datasets.py` | Generate `js/eden-datasets.payload.js` from `database/*.txt` |
+| `database/build-eden-from-screenshots.py` | Rebuild Season 5 X1 dataset from screenshots |
+| `database/build-eden-x12.py` | Rebuild Wonder X12 reference dataset |
+| `database/mask-reference-capitals.py` | Mask baked capitals on faction-division underlay |
 | `database/prepare-user-icons.py` | Checkerboard removal + crop for gate/town/stronghold/capital icons |
 | `database/build-icon-atlas.py` | Pack structure sprites into atlas (runs `prepare-user-icons.py`) |
 | `js/tech-db.js` | Tech research costs |
@@ -79,30 +81,43 @@ Ranks and scores are resolved automatically from `combos-db.js`.
 
 ## Run locally
 
-Serve the folder with any static server, e.g.:
+**Dev (no build):** serve the repo root with any static server:
 
 ```bash
 npx serve .
 ```
 
-Open `http://localhost:3000` (or the port shown).
+**Production build** (minified bundle → `dist/`):
+
+```bash
+npm install
+npm run build
+npx serve dist
+```
+
+Open the URL shown by your static server.
 
 ### Eden map data rebuild
 
-After updating screenshot JSON or the faction source image:
+After updating screenshot JSON or map assets:
 
 ```bash
-python database/build-eden-datasets.py
-python database/build-eden-from-screenshots.py
-python database/prepare-faction-map.py
-python database/build-icon-atlas.py
+python database/build-eden-from-screenshots.py   # X1 from in-game screenshots
+python database/build-eden-x12.py                # X12 reference baseline
+python database/mask-reference-capitals.py       # refresh parchment underlay
+python database/build-icon-atlas.py              # structure icon atlas
 ```
+
+`build-eden-from-screenshots.py` and `build-eden-x12.py` both run `build-eden-datasets.py` to regenerate the encoded payload.
 
 Hard-refresh the browser after regenerating assets or JS.
 
 ## Deploy
 
-Configured for GitHub Pages via `CNAME` → `roc-vts.com`.
+Publish **`dist/`** (from `npm run build`), not the raw repo — keeps `database/` source files off the public site.
+
+- **Netlify / Firebase:** configs in `netlify.toml` and `firebase.json`
+- **Custom domain:** `CNAME` → `roc-vts.com`
 
 ## Firebase
 
