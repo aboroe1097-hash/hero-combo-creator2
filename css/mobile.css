@@ -1,6 +1,7 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool  b6.3
+   mobile.css — VTS Hero Combo Tool  b6.6
    Applied on screens ≤768px via <link media="(max-width: 768px)">
+   Light/dark theme supported (inherits from app.css variables + .dark)
    ============================================================= */
 
 :root {
