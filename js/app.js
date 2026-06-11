@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b6.5";
+const APP_VERSION = "b6.6";
 const ENABLE_RESEARCH_FEATURE = true;
 
 import { translations } from './translations.js';
