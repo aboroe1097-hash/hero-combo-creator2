@@ -60,8 +60,54 @@ function getHeroFinalScore(heroName, autoRating) {
   return Math.min(100, Math.max(0, autoRating + bonus));
 }
 
+// --- THEME (Light / Dark) ---
+// Nice toggle button next to game time + language selector
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.documentElement.classList.toggle('dark', isDark);
+
+  if (themeToggle) {
+    // Moon icon when currently in dark mode (clicking switches to light)
+    // Sun icon when currently in light mode (clicking switches to dark)
+    themeToggle.innerHTML = isDark
+      ? `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+        </svg>`;
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initial = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(initial);
+
+  // React to system preference changes only if user has not explicitly chosen
+  if (window.matchMedia) {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const currentlyDark = document.documentElement.classList.contains('dark');
+      const next = currentlyDark ? 'light' : 'dark';
+      localStorage.setItem('theme', next);
+      applyTheme(next);
+    });
+  }
+}
+
 // --- DOM ELEMENTS ---
 const languageSelect       = document.getElementById('languageSelect');
+const themeToggle          = document.getElementById('themeToggle');
 const availableHeroesEl    = document.getElementById('availableHeroes');
 const saveComboBtn         = document.getElementById('saveComboBtn');
 const clearComboBtn        = document.getElementById('clearComboBtn');
@@ -92,6 +138,8 @@ const tabEdenMapBtn        = document.getElementById('tabEdenMap');
 const heroesSection        = document.getElementById('heroesSection');
 const edenMapSection       = document.getElementById('edenMapSection');
 const globalToggleRow      = document.getElementById('globalToggleRow'); 
+
+initTheme();
 
 const comboFooterBar       = document.getElementById('comboFooterBar');
 const generatorHeroesEl    = document.getElementById('generatorHeroes');
@@ -268,22 +316,22 @@ function showHeroTooltip(e, heroName) {
   let skillsHtml = data.skills.map(s => {
     const formattedDesc = formatSkillText(s.desc);
     const isEnemy = s.target.toLowerCase().includes('enemy');
-    const targetColor = isEnemy ? 'text-red-400' : 'text-emerald-400';
+    const targetColor = isEnemy ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
 
     return `
-      <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner hover:border-slate-500 transition-colors">
-        <div class="flex justify-between items-center mb-1.5 border-b border-slate-700/50 pb-1">
-          <span class="text-[10px] sm:text-xs font-black text-slate-200 bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
+      <div class="mb-2 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 shadow-inner hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+        <div class="flex justify-between items-center mb-1.5 border-b border-slate-300 dark:border-slate-700/50 pb-1">
+          <span class="text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
           <div class="flex gap-2">
-            <span class="text-[8px] sm:text-[9.5px] text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
-            ${s.range !== '-' ? `<span class="text-[8px] sm:text-[9.5px] text-slate-500 font-bold uppercase">Range: <span class="text-white bg-slate-700 px-1 rounded">${s.range}</span></span>` : ''}
+            <span class="text-[8px] sm:text-[9.5px] text-sky-600 dark:text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
+            ${s.range !== '-' ? `<span class="text-[8px] sm:text-[9.5px] text-slate-600 dark:text-slate-500 font-bold uppercase">Range: <span class="text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 px-1 rounded">${s.range}</span></span>` : ''}
           </div>
         </div>
         <p class="text-[8.5px] sm:text-[10px] ${targetColor} font-bold mb-1.5 uppercase tracking-widest flex items-center gap-1">
           <svg class="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-5.029-5.912c.328-.521.529-1.134.529-1.788a4.991 4.991 0 00-1.854-3.791A3.99 3.99 0 0114 12H6a3.99 3.99 0 012.354-8.491A4.991 4.991 0 006.5 7.3c0 .654.2 1.267.529 1.788A5.972 5.972 0 002 15v3h14z"></path></svg>
           ${s.target}
         </p>
-        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-300">${formattedDesc}</p>
+        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">${formattedDesc}</p>
       </div>
     `;
   }).join('');
@@ -292,15 +340,15 @@ function showHeroTooltip(e, heroName) {
   const synergies = getSynergies(heroName);
   if (synergies.length > 0) {
     const synTags = synergies.map(syn => `
-      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded border border-slate-700 shadow-sm">
-         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-600 object-cover">
-         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
+      <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/80 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">
+         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-300 dark:border-slate-600 object-cover">
+         <span class="text-[9px] sm:text-[10px] font-bold text-sky-600 dark:text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
       </div>
     `).join('');
     
     synergyHtml = `
-      <div class="mt-2 pt-2 border-t border-slate-700/50">
-        <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
+      <div class="mt-2 pt-2 border-t border-slate-300 dark:border-slate-700/50">
+        <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
         <div class="flex flex-wrap gap-2">
           ${synTags}
         </div>
@@ -309,34 +357,34 @@ function showHeroTooltip(e, heroName) {
   }
 
   heroTooltip.innerHTML = `
-    <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
+    <div class="flex justify-between items-start border-b border-slate-300 dark:border-slate-700 pb-3 mb-2 shrink-0">
       <div class="flex flex-col">
-        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
-        <div class="flex gap-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 w-fit">
+        <h4 class="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
+        <div class="flex gap-3 mt-2 bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-300 dark:border-slate-700/50 w-fit">
           <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
-            <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
+            <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest">Placement</span>
+            <span class="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
           </div>
-          <div class="w-px bg-slate-700/50"></div>
+          <div class="w-px bg-slate-300 dark:bg-slate-700/50"></div>
           <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
+            <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest">Troop</span>
             <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
           </div>
         </div>
       </div>
       
-      <button id="closeTooltipBtn" class="lg:hidden bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
+      <button id="closeTooltipBtn" class="lg:hidden bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-300 dark:border-slate-600 shadow-md transition-colors shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
 
     <div class="flex justify-between items-center mb-2 px-1 shrink-0">
-      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
-      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
+      <p class="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
+      <p class="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
     </div>
 
     <div class="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-2">
-      ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
+      ${skillsHtml || '<p class="text-xs text-slate-600 dark:text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
   `;
@@ -956,7 +1004,7 @@ function renderAvailableHeroes() {
 
         <img src="${hero.imageUrl}" alt="${hero.name}">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
+            <span class="font-bold text-[10px] text-slate-900 dark:text-white truncate w-full text-center">${hero.name}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
         </div>
       `;
@@ -1074,9 +1122,9 @@ function updateManualComboScore() {
   const label = t.generatorScoreLabel || 'Score:';
   const scoreHtml = info
     ? `<div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
-        <span class="text-lg font-black text-sky-400">${info.score}</span>
-        <span class="text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
+        <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${label}</span>
+        <span class="text-lg font-black text-sky-600 dark:text-sky-400">${info.score}</span>
+        <span class="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
       </div>`
     : '';
   scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
@@ -1107,7 +1155,7 @@ function renderGeneratorHeroes() {
 
         <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
+            <span class="font-bold text-[10px] text-slate-900 dark:text-white truncate w-full text-center">${hero.name}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
         </div>
       `;
@@ -1189,7 +1237,7 @@ function renderGeneratorResults(bestCombos) {
       img.crossOrigin = 'anonymous';
       img.style.transition = 'transform 0.18s ease, box-shadow 0.18s ease';
       const label = document.createElement('span');
-      label.className = 'text-[10px] text-sky-300 font-bold truncate px-1';
+      label.className = 'text-[10px] text-sky-600 dark:text-sky-300 font-bold truncate px-1';
       label.textContent = name;
       item.appendChild(img);
       item.appendChild(label);
@@ -1228,8 +1276,8 @@ function renderGeneratorResults(bestCombos) {
     scoreBox.className = 'gen-score-panel';
     scoreBox.innerHTML = `
       <div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
-        <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+        <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${t.generatorScoreLabel}</span>
+        <span class="text-lg font-black text-sky-600 dark:text-sky-400">${combo.displayScore}</span>
       </div>
       ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
     `;
@@ -1416,8 +1464,8 @@ async function setupFirestoreListener() {
         scoreBox.className = 'gen-score-panel saved-combo-scorebox';
         const scoreHtml = rankInfo
           ? `<div class="gen-score-main">
-              <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
-              <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
+              <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${label}</span>
+              <span class="text-lg font-black text-sky-600 dark:text-sky-400">${rankInfo.score}</span>
             </div>`
           : '';
         scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
@@ -1742,6 +1790,8 @@ tabs.forEach(tab => {
     };
   }
   switchTab('generator', true);
+
+  // Close wireUIActions
 }
 
 // --- TRANSLATIONS / TEXT ---
@@ -1812,6 +1862,8 @@ function updateTextContent() {
   });
   syncGameClockTitles();
 
+  // Theme select is static (Old/New labels) — no dynamic i18n needed for options right now
+
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     const key = el.getAttribute('data-i18n-label');
     if (t[key]) el.label = t[key].replace('{version}', APP_VERSION);
@@ -1825,6 +1877,12 @@ function updateTextContent() {
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
   applySeo(currentLanguage);
+
+  // Populate footer version
+  const footerVer = document.getElementById('footerVersion');
+  if (footerVer) {
+    footerVer.textContent = `v${APP_VERSION}`;
+  }
 
   updateManualComboScore();
   if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer')) {
@@ -2620,8 +2678,8 @@ function renderCalculator(tech) {
                 <div class="tech-node-container flex flex-col bg-slate-800/95 w-full sm:w-[310px] max-w-[340px] shrink-0 p-3 sm:p-5 rounded-xl sm:rounded-2xl border relative transition-all ${maxedContainerStyle}" data-node-id="${node.id}">
                     <div class="flex justify-between items-start mb-2 sm:mb-3">
                         <div class="pr-2 flex-1 min-w-0">
-                            <span class="text-[13px] sm:text-base font-black text-white block leading-tight drop-shadow-sm break-words whitespace-normal">${node.name}</span>
-                            <span class="text-[9px] sm:text-[11px] text-sky-400 font-semibold uppercase tracking-wider mt-0.5 sm:mt-1 block break-words whitespace-normal">${node.buff}</span>
+                            <span class="text-[13px] sm:text-base font-black text-slate-900 dark:text-white block leading-tight drop-shadow-sm break-words whitespace-normal">${node.name}</span>
+                            <span class="text-[9px] sm:text-[11px] text-sky-600 dark:text-sky-400 font-semibold uppercase tracking-wider mt-0.5 sm:mt-1 block break-words whitespace-normal">${node.buff}</span>
                         </div>
                         <div class="flex flex-col items-end text-right shrink-0 min-w-[70px] sm:min-w-[90px]">
                             <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Remaining</span>
@@ -3368,24 +3426,7 @@ function renderHeroesTab() {
   }
 }
 
-// --- INITIALIZE EVERYTHING ---
-async function startApp() {
-    try {
-    // 1. Setup UI & Render Heroes
-    updateTextContent();
-    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
-    renderAvailableHeroes();
-    renderGeneratorHeroes();
-    wireUIActions();
-    // 2. Start the Local Calculators
-    initResearchCalculator();
-    
-    // RESTORED: Wake up the Loyalty Calculator!
-    if (typeof initLoyaltyCalculator === 'function') {
-        initLoyaltyCalculator();
-    }
-
-  // --- Tab scroll buttons ---
+// --- Tab scroll buttons (top level helper) ---
 function initTabScroll() {
   const scrollContainer = document.getElementById('tabNavScroll');
   const leftBtn = document.getElementById('tabScrollLeft');
@@ -3416,32 +3457,49 @@ function initTabScroll() {
   setTimeout(checkOverflow, 100);
 }
 
-// Call this after your existing DOM setup
-initTabScroll();
-  
+// --- INITIALIZE EVERYTHING ---
+async function startApp() {
+  try {
+    // 1. Setup UI & Render Heroes
+    updateTextContent();
+    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
+    renderAvailableHeroes();
+    renderGeneratorHeroes();
+    wireUIActions();
+
+    // 2. Start the Local Calculators
+    initResearchCalculator();
+
+    // RESTORED: Wake up the Loyalty Calculator!
+    if (typeof initLoyaltyCalculator === 'function') {
+      initLoyaltyCalculator();
+    }
+
+    // Tab scroll buttons
+    initTabScroll();
+
     // 3. Initialize Firebase & User Data
     try {
-        await initFirebase();
-        const user = await ensureAnonymousAuth();
-        
-        // RESTORED: Assign the actual Firebase User ID so your saved combos work!
-        if (user && user.uid) {
-            userId = user.uid;
-        }
-        
-        setupFirestoreListener();
-        
-        // RESTORED: Wake up the Comments section!
-        if (typeof initComments === 'function') {
-            initComments();
-        }
-        
+      await initFirebase();
+      const user = await ensureAnonymousAuth();
+
+      // RESTORED: Assign the actual Firebase User ID so your saved combos work!
+      if (user && user.uid) {
+        userId = user.uid;
+      }
+
+      setupFirestoreListener();
+
+      // RESTORED: Wake up the Comments section!
+      if (typeof initComments === 'function') {
+        initComments();
+      }
     } catch (error) {
-        console.warn("Firebase could not initialize (might be offline or missing config).", error);
+      console.warn("Firebase could not initialize (might be offline or missing config).", error);
     }
-    } finally {
-        await notifyAppReady();
-    }
+  } finally {
+    await notifyAppReady();
+  }
 }
 
 // Fire it up!
