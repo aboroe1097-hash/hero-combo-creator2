@@ -1,7 +1,7 @@
 import {
   STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES, OVERVIEW_STRUCTURE_TYPES,
   getEdenSectors, getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
-  getStructurePoints, getSectorFaction, syncEdenSectorSelect,
+  getStructurePoints, getSectorFaction, syncEdenSectorSelect, isEdenSectorKey,
   parseCoordInput, findStructureByCoords, findSectorForCoords,
 } from './eden-map-data.js';
 import { initEdenSeasonPicker } from './eden-map-season.js';
@@ -62,6 +62,8 @@ export function initEdenMapPlanner() {
   const ctx = canvas.getContext('2d');
   let sectorKey = 'FULL';
   let sectorIsolate = false;
+  let fitAnimGen = 0;
+  let isolateToggleLock = false;
   let tool = 'navigate';
   let snapPreview = null;
   let selectedPathIdx = null;
@@ -395,18 +397,61 @@ export function initEdenMapPlanner() {
     if ([...typeSelect.options].some(o => o.value === prevType)) typeSelect.value = prevType;
   }
 
-  function fitView() {
-    const b = sectorKey === 'FULL' ? MAP_BOUNDS : getSectorBounds(sectorKey);
+  function fitViewToBounds(b, { sectorFocus = false } = {}) {
     const rect = canvas.parentElement.getBoundingClientRect();
-    const mapW = (b.maxX - b.minX) * 0.5 * scale;
-    const mapH = (b.maxX - b.minX + b.maxY - b.minY) * 0.25 * scale;
-    offsetX = rect.width / 2 - ((b.minX + b.maxX) / 2 - (b.minY + b.maxY) / 2) * 0.5 * scale;
-    offsetY = rect.height * 0.15;
-    if (sectorKey !== 'FULL') {
-      scale = Math.min(0.75, Math.min(rect.width / mapW, rect.height / mapH) * 0.88);
-      offsetX = rect.width * 0.5 - ((b.minX + b.maxX) / 2 - (b.minY + b.maxY) / 2) * 0.5 * scale;
-      offsetY = rect.height * 0.18;
+    const pad = sectorFocus ? 0.07 : 0.1;
+    const wAt1 = Math.max((b.maxX - b.minX) * 0.5, 40);
+    const hAt1 = Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.25, 40);
+    let nextScale = Math.min(
+      (rect.width * (1 - pad * 2)) / wAt1,
+      (rect.height * (1 - pad * 2)) / hAt1,
+    );
+
+    if (sectorFocus) {
+      // Zoom into sector so gates/towns stay visible (overview mode hides them below 0.54×).
+      nextScale = clampScale(Math.max(ZOOM_DETAIL_MIN * 0.92, Math.min(MAX_SCALE, nextScale)));
+    } else {
+      nextScale = clampScale(Math.min(ZOOM_OVERVIEW_MAX, nextScale * 0.95));
     }
+
+    const snapped = snapScale(nextScale);
+    const cx = (b.minX + b.maxX) / 2;
+    const cy = (b.minY + b.maxY) / 2;
+    return {
+      scale: snapped,
+      offsetX: rect.width * 0.5 - (cx - cy) * 0.5 * snapped,
+      offsetY: rect.height * (sectorFocus ? 0.42 : 0.15) - (cx + cy) * 0.25 * snapped,
+    };
+  }
+
+  function applyCamera(target) {
+    offsetX = target.offsetX;
+    offsetY = target.offsetY;
+    scale = target.scale;
+  }
+
+  function fitView(smooth = false) {
+    const b = sectorKey === 'FULL' ? MAP_BOUNDS : getSectorBounds(sectorKey);
+    const sectorFocus = sectorKey !== 'FULL' && (sectorIsolate || smooth);
+    const target = fitViewToBounds(b, { sectorFocus });
+    const gen = ++fitAnimGen;
+
+    if (smooth && sectorKey !== 'FULL') {
+      return animateCamera(
+        () => ({ offsetX, offsetY, scale }),
+        (cam) => {
+          if (gen !== fitAnimGen) return;
+          applyCamera(cam);
+        },
+        target,
+        () => {
+          if (gen !== fitAnimGen) return;
+          scheduleDraw({ sidebar: false });
+        },
+      );
+    }
+
+    applyCamera(target);
   }
 
   function centerOn(x, y, smooth = false) {
@@ -713,22 +758,32 @@ export function initEdenMapPlanner() {
   }
 
   function toggleSectorIsolate(force) {
+    if (isolateToggleLock) return;
     if (sectorKey === 'FULL') {
       if (typeof window.showToast === 'function') {
         window.showToast(edenT('edenIsolateNeedSector'), 'info', 3200);
       }
       return;
     }
-    sectorIsolate = typeof force === 'boolean' ? force : !sectorIsolate;
+    const next = typeof force === 'boolean' ? force : !sectorIsolate;
+    if (next === sectorIsolate) return;
+
+    isolateToggleLock = true;
+    sectorIsolate = next;
     if (sectorIsolate) {
       if (!layers.sectorTiles) {
         layers.sectorTiles = true;
         document.querySelector('[data-eden-layer="sectorTiles"]')?.classList.add('active');
       }
-      fitView();
+      if (!layers.structures) {
+        layers.structures = true;
+        document.querySelector('[data-eden-layer="structures"]')?.classList.add('active');
+      }
     }
     syncIsolateUi();
+    fitView(false);
     draw();
+    setTimeout(() => { isolateToggleLock = false; }, 320);
   }
 
   function drawPaths() {
@@ -925,11 +980,16 @@ export function initEdenMapPlanner() {
     const w = canvas.width / devicePixelRatio;
     const h = canvas.height / devicePixelRatio;
     const isolated = isSectorIsolated();
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = isolated ? '#0c0a08' : '#1a140c';
     ctx.fillRect(0, 0, w, h);
 
-    if (isolated) applySectorClip(ctx, iso, sectorKey);
+    let isolateClipActive = false;
+    if (isolated) {
+      applySectorClip(ctx, iso, sectorKey);
+      isolateClipActive = true;
+    }
 
     const fastMode = interacting || panning;
     drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
@@ -967,7 +1027,7 @@ export function initEdenMapPlanner() {
     if (!fastMode) drawSectorLabel();
     if (!fastMode) drawCoordSearchPin();
 
-    if (isolated) {
+    if (isolateClipActive) {
       ctx.restore();
       if (!fastMode) drawSectorIsolateChrome(ctx, iso, sectorKey);
     }
@@ -1406,7 +1466,20 @@ export function initEdenMapPlanner() {
     populateTeamFilter();
   }
 
+  let syncQuickJump = () => {};
+
   function setSector(key, smooth = false) {
+    if (key !== 'FULL' && !isEdenSectorKey(key)) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(`Sector "${key}" is not in this season's map`, 'error', 2800);
+      }
+      return;
+    }
+    if (key === sectorKey && !smooth) {
+      syncIsolateUi();
+      syncQuickJump(key);
+      return;
+    }
     sectorKey = key;
     if (key === 'FULL') sectorIsolate = false;
     markSectorExplored(key);
@@ -1414,16 +1487,14 @@ export function initEdenMapPlanner() {
     notifySelection();
     pathDraft = [];
     filtersPopulatedFor = null;
-    document.getElementById('edenSectorSelect').value = key;
+    const sectorSel = document.getElementById('edenSectorSelect');
+    if (sectorSel && sectorSel.value !== key) sectorSel.value = key;
     document.querySelectorAll('[data-eden-sector]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.edenSector === key);
     });
     syncIsolateUi();
-    fitView();
-    if (smooth && key !== 'FULL') {
-      const b = getSectorBounds(key);
-      centerOn((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, true);
-    }
+    syncQuickJump(key);
+    fitView(smooth && key !== 'FULL' && !sectorIsolate);
     draw();
   }
 
@@ -2070,13 +2141,14 @@ export function initEdenMapPlanner() {
     edenGuide?.open?.() ?? openEdenGuide();
   });
 
-  initEdenMapUI({
+  const ui = initEdenMapUI({
     getMapBounds: getMapBounds,
     getViewBounds,
     getStructures: structures,
     getPaths: () => plan.paths || [],
     getStructureMeta: (type) => STRUCTURE_TYPES[type],
     getScale: () => scale,
+    getSectorKey: () => sectorKey,
     centerOn: (x, y) => centerOn(x, y, true),
     fitView,
     panBy,
@@ -2120,6 +2192,7 @@ export function initEdenMapPlanner() {
     onRedraw: (fn) => { onRedrawExtra = fn; },
     onSelectionChange: (fn) => { onSelectionChange = fn; },
   });
+  syncQuickJump = ui?.syncQuickJump || (() => {});
 
   let touchPinch = null;
   canvas.addEventListener('touchstart', (e) => {
@@ -2167,6 +2240,7 @@ export function initEdenMapPlanner() {
         sectorIsolate = false;
         switchSectorForNav('FULL');
       }
+      syncQuickJump(sectorKey);
       syncIsolateUi();
       filtersPopulatedFor = null;
       selectedId = null;

@@ -1,5 +1,5 @@
 // Eden Map UI — minimap, keyboard shortcuts, quick-jump, mobile sidebar
-import { OVERVIEW_STRUCTURE_TYPES } from './eden-map-data.js';
+import { OVERVIEW_STRUCTURE_TYPES, getQuickJumpSectors } from './eden-map-data.js';
 
 const MAJOR_TYPES = OVERVIEW_STRUCTURE_TYPES;
 const MINIMAP_SIZE = 150;
@@ -7,9 +7,10 @@ const MINIMAP_SIZE = 150;
 export function initEdenMapUI(api) {
   const minimap = document.getElementById('edenMinimap');
   if (minimap) setupMinimap(minimap, api);
-  setupQuickJump(api);
-  setupKeyboard(api);
+  const syncQuickJump = setupQuickJump(api);
+  setupKeyboard(api, () => getQuickJumpSectors(6));
   setupMobileSidebar(api);
+  return { syncQuickJump };
 }
 
 function setupMinimap(canvas, api) {
@@ -101,24 +102,36 @@ function setupMinimap(canvas, api) {
   render();
 }
 
-function setupQuickJump(api) {
-  document.querySelectorAll('[data-eden-jump]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.edenJump;
-      if (key === 'AT') {
-        api.jumpToTemple();
-        return;
-      }
-      api.setSector(key);
-    });
+function renderQuickJumpButtons(api, activeSector = 'FULL') {
+  const container = document.getElementById('edenQuickJumpSectors');
+  if (!container) return;
+
+  const sectors = getQuickJumpSectors(7);
+  container.innerHTML = sectors.map((key) => {
+    const active = activeSector === key ? ' active' : '';
+    return `<button type="button" data-eden-jump="${key}" class="eden-quick-btn${active}" title="Jump to ${key}">${key}</button>`;
+  }).join('');
+
+  container.querySelectorAll('[data-eden-jump]').forEach((btn) => {
+    btn.addEventListener('click', () => api.setSector(btn.dataset.edenJump));
   });
 }
 
-const SECTOR_HOTKEYS = {
-  '1': 'FULL', '2': 'N', '3': 'NE', '4': 'E', '5': 'S', '6': 'W', '7': 'C', '8': 'NC',
-};
+function setupQuickJump(api) {
+  document.querySelectorAll('[data-eden-jump="AT"]').forEach((btn) => {
+    btn.addEventListener('click', () => api.jumpToTemple());
+  });
 
-function setupKeyboard(api) {
+  const sync = (activeSector = api.getSectorKey?.() || 'FULL') => {
+    renderQuickJumpButtons(api, activeSector);
+  };
+
+  sync();
+  window.addEventListener('edenDatasetChange', () => sync(api.getSectorKey?.() || 'FULL'));
+  return sync;
+}
+
+function setupKeyboard(api, getQuickSectors) {
   const root = document.getElementById('edenMapSection');
   if (!root) return;
 
@@ -141,12 +154,17 @@ function setupKeyboard(api) {
       else if (k === 'escape') { api.setTool('navigate'); api.clearMeasure(); }
       else if (k === 'delete' || k === 'backspace') { api.deleteSelectedPath(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); api.undoPathPoint(); }
-      else if (k === 'i' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); api.toggleSectorIsolate?.(); }
+      else if (k === 'i' && !e.repeat && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        api.toggleSectorIsolate?.();
+      }
       else if (k === 'r' && !e.ctrlKey && !e.metaKey) { api.resetLayers(); }
-      else if (SECTOR_HOTKEYS[e.key]) {
-        const sk = SECTOR_HOTKEYS[e.key];
-        if (sk === 'FULL') api.setSector('FULL');
-        else api.setSector(sk);
+      else if (e.key === '1') {
+        api.setSector('FULL');
+      } else {
+        const quick = getQuickSectors();
+        const idx = Number(e.key) - 2;
+        if (idx >= 0 && idx < quick.length) api.setSector(quick[idx]);
       }
     }
   });

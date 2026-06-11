@@ -1,7 +1,8 @@
 // X1 Conqueror full-map terrain — biomes, rivers, mountains + pathfinding grid
 import {
   TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE,
-  getReferenceMapImage, isReferenceReady, getScreenshotRefs, getScreenshotImage,
+  getReferenceMapImage, isReferenceReady, getReferenceWorldBounds,
+  getScreenshotRefs, getScreenshotImage,
 } from './eden-map-assets.js';
 
 export const MAP_BOUNDS = { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
@@ -375,7 +376,7 @@ export function drawScreenshotRefLayer(ctx, worldToIso, sectorKey, opacity = 0.7
 export function drawReferenceLayer(ctx, worldToIso, opacity = MAP_REFERENCE.opacity) {
   const img = getReferenceMapImage();
   if (!isReferenceReady(img)) return false;
-  const b = MAP_REFERENCE.bounds;
+  const b = getReferenceWorldBounds();
   const p0 = worldToIso(b.minX, b.minY);
   const p1 = worldToIso(b.maxX, b.minY);
   const p2 = worldToIso(b.maxX, b.maxY);

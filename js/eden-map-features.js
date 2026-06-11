@@ -1,5 +1,6 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js';
+import { getReferenceWorldBounds } from './eden-map-assets.js';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
 import { getReferenceMapImage, isReferenceReady, PARCHMENT_BASE } from './eden-map-assets.js';
 
@@ -247,11 +248,11 @@ export function drawSectorTileOverlay(ctx, worldToIso, sectorKey, opacity = 0.95
     worldToIso(b.maxX, b.maxY),
     worldToIso(b.minX, b.maxY),
   ];
-  const fb = MAP_BOUNDS;
-  const p0 = worldToIso(fb.minX, fb.minY);
-  const p1 = worldToIso(fb.maxX, fb.minY);
-  const p2 = worldToIso(fb.maxX, fb.maxY);
-  const p3 = worldToIso(fb.minX, fb.maxY);
+  const rb = getReferenceWorldBounds();
+  const p0 = worldToIso(rb.minX, rb.minY);
+  const p1 = worldToIso(rb.maxX, rb.minY);
+  const p2 = worldToIso(rb.maxX, rb.maxY);
+  const p3 = worldToIso(rb.minX, rb.maxY);
   ctx.save();
   ctx.beginPath();
   corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));

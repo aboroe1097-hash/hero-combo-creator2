@@ -1,40 +1,25 @@
 {
-  "source": "assets/faction-division.jpg",
+  "source": "assets/faction-division2.png",
   "output": "assets/eden-reference/faction-division-map.png",
   "worldSize": [
     1700,
     1600
   ],
   "imageSize": [
-    3400,
-    3200
+    1700,
+    1600
   ],
-  "outputScale": 2,
-  "srcUpscale": 10,
-  "sourceRotation": "180",
+  "layout": "rect",
   "bounds": {
     "minX": 0,
     "maxX": 1700,
     "minY": 0,
     "maxY": 1600
   },
-  "layout": "rect",
-  "corners": {
-    "top": [
-      455.0,
-      59.0
-    ],
-    "right": [
-      697.0,
-      181.0
-    ],
-    "bottom": [
-      386.0,
-      329.0
-    ],
-    "left": [
-      60.0,
-      181.0
-    ]
-  }
+  "worldOffset": {
+    "x": -60,
+    "y": -65
+  },
+  "pixelPerfect": true,
+  "trimBaked": true
 }
