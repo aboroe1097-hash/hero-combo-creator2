@@ -281,6 +281,63 @@ export function preloadScreenshotRefs(onReady) {
     .catch(() => { _screenshotLoading = false; });
 }
 
+/** Raw sector sheets from the reference site — shown as-is (no processing). */
+export const EDEN_SECTOR_TILES_MANIFEST_URL = 'assets/eden_wonders/manifest.json';
+const EDEN_SECTOR_TILES_ROOT = 'assets/eden_wonders/';
+
+let _sectorTilesManifest = null;
+const _sectorTileImages = new Map();
+let _sectorTilesLoading = false;
+
+export function getSectorTileManifest() {
+  return _sectorTilesManifest;
+}
+
+export function getSectorTileIds() {
+  return _sectorTilesManifest?.sectors?.map((s) => s.id) || [];
+}
+
+export function getSectorTileImage(sectorKey) {
+  return _sectorTileImages.get(sectorKey) || null;
+}
+
+export function isSectorTileReady(img) {
+  return Boolean(img?.complete && (img.naturalWidth || img.width));
+}
+
+export function preloadSectorTiles(onReady) {
+  if (_sectorTilesManifest) {
+    onReady?.(_sectorTilesManifest);
+    return;
+  }
+  if (_sectorTilesLoading) return;
+  _sectorTilesLoading = true;
+  fetch(EDEN_SECTOR_TILES_MANIFEST_URL)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      if (!data?.sectors?.length) {
+        _sectorTilesLoading = false;
+        return;
+      }
+      _sectorTilesManifest = data;
+      let pending = data.sectors.length;
+      const done = () => {
+        pending -= 1;
+        if (pending <= 0) {
+          _sectorTilesLoading = false;
+          onReady?.(data);
+        }
+      };
+      data.sectors.forEach((sec) => {
+        const img = new Image();
+        img.onload = () => { _sectorTileImages.set(sec.id, img); done(); };
+        img.onerror = done;
+        img.src = `${EDEN_SECTOR_TILES_ROOT}${sec.file}`;
+      });
+    })
+    .catch(() => { _sectorTilesLoading = false; });
+}
+
 export function getReferenceMapImage() {
   return _refImage;
 }

@@ -24,6 +24,9 @@ export default defineConfig({
             || id.includes('eden-map-teams')
             || id.includes('eden-map-guide')
             || id.includes('eden-map-ui')
+            || id.includes('eden-live-map')
+            || id.includes('eden-map-construction')
+            || id.includes('eden-map-config')
           ) {
             return 'eden';
           }

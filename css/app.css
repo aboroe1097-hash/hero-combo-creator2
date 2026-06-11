@@ -731,6 +731,7 @@ input[type=number] { -moz-appearance: textfield; }
 .tab-badge-new { background: #8b5cf6; color: #fff; border: 1px solid #a78bfa; }
 .tab-badge-beta { background: #f59e0b; color: #0f172a; border: 1px solid #fbbf24; }
 .tab-badge-demo { background: #7c3aed; color: #fff; border: 1px solid #a78bfa; }
+.tab-badge-soon { background: #0ea5e9; color: #0f172a; border: 1px solid #38bdf8; }
 .tab-badge-hot { background: #dc2626; color: #fff; border: 1px solid rgba(248,113,113,0.5); }
 
 /* ── Research tab ────────────────────────────────────────── */
@@ -2364,6 +2365,72 @@ input[type=number] { -moz-appearance: textfield; }
 
 .eden-map-root { display: flex; flex-direction: column; gap: 12px; }
 .eden-map-root.eden-map-loading { opacity: 0.55; pointer-events: none; }
+.eden-map-root.eden-map-under-construction .eden-control-deck,
+.eden-map-root.eden-map-under-construction .eden-canvas-wrap,
+.eden-map-root.eden-map-under-construction .eden-sidebar {
+  pointer-events: none;
+  user-select: none;
+  filter: grayscale(0.35) brightness(0.5);
+}
+.eden-map-root.eden-map-under-construction .eden-map-body {
+  position: relative;
+  min-height: 420px;
+}
+.eden-map-construction {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(6, 8, 16, 0.78);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+}
+.eden-map-construction.hidden { display: none !important; }
+.eden-construction-card {
+  max-width: 440px;
+  text-align: center;
+  padding: 28px 32px;
+  border-radius: 16px;
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.88));
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+.eden-construction-badge {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0f172a;
+  background: #38bdf8;
+  border: 1px solid #7dd3fc;
+}
+.eden-construction-heading {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f1f5f9;
+}
+.eden-construction-body {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+.eden-construction-status {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-style: italic;
+}
 .eden-map-header {
   display: flex; flex-direction: column; gap: 0;
   padding: 16px 18px; background: rgba(15,23,42,0.82);

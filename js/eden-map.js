@@ -10,14 +10,15 @@ import {
 } from './eden-map-terrain.js';
 import {
   preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
-  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, isUserStructureIcon,
+  loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, preloadSectorTiles,
+  getSectorTileIds, getSectorTileImage, isSectorTileReady, isUserStructureIcon,
 } from './eden-map-assets.js';
 import { initEdenMapUI } from './eden-map-ui.js';
 import {
   createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
   estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
-  drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorTileOverlay,
-  maskReferenceCapitals, animateCamera, exportMapAsPng,
+  drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorSheetFlat,
+  maskReferenceCapitals, animateCamera, exportMapAsPng, drawPlanSketches,
   applySectorClip, drawSectorIsolateChrome, pathTouchesSector,
 } from './eden-map-features.js';
 import {
@@ -33,6 +34,9 @@ import {
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
 import { initEdenControlTips } from './eden-tooltips.js';
+import { EDEN_MAP_CONFIG } from './eden-map-config.js';
+
+let _edenLiveMapApi = null;
 
 function edenT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || 'en';
@@ -91,6 +95,8 @@ export function initEdenMapPlanner() {
   let pathDraft = [];
   let measureA = null;
   let measureB = null;
+  let drawDraft = null;
+  let drawing = false;
   let hoverStruct = null;
   let hoverWorld = null;
   let plansStore = loadPlansStore();
@@ -176,8 +182,41 @@ export function initEdenMapPlanner() {
     }
   }
 
+  function syncWonderSectorSelect() {
+    const el = document.getElementById('edenSectorSelect');
+    if (!el) return;
+    const prev = el.value;
+    const wonderIds = getSectorTileIds();
+    const sectors = getEdenSectors();
+    const keys = (wonderIds.length ? wonderIds : [])
+      .filter((k) => sectors[k])
+      .sort();
+    if (!keys.length) {
+      syncEdenSectorSelect(el);
+      return;
+    }
+    const opts = [`<option value="FULL">${edenT('edenSectorFull')}</option>`];
+    keys.forEach((key) => {
+      const sec = sectors[key];
+      const label = sec?.label ? `${sec.label} (${key})` : key;
+      opts.push(`<option value="${key}">${label}</option>`);
+    });
+    el.innerHTML = opts.join('');
+    const valid = prev === 'FULL' || keys.includes(prev);
+    el.value = valid ? prev : 'FULL';
+    if (!valid && prev !== 'FULL') {
+      sectorKey = 'FULL';
+      sectorIsolate = false;
+    }
+  }
+
   onStructureIconsReady(() => scheduleDraw());
   preloadReferenceMap(() => scheduleDraw());
+  preloadSectorTiles(() => {
+    syncWonderSectorSelect();
+    syncQuickJump(sectorKey);
+    scheduleDraw();
+  });
   preloadStructureIcons([...OVERVIEW_STRUCTURE_TYPES]);
   const deferIcons = () => preloadStructureIcons(Object.keys(STRUCTURE_TYPES));
   if (typeof requestIdleCallback === 'function') requestIdleCallback(deferIcons, { timeout: 1200 });
@@ -190,6 +229,9 @@ export function initEdenMapPlanner() {
   function ensureScreenshotsLoaded() {
     if (!layers.screenshots) return;
     preloadScreenshotRefs(() => scheduleDraw());
+  }
+  function ensureSectorTilesLoaded() {
+    preloadSectorTiles(() => scheduleDraw());
   }
 
   const iso = (x, y) => ({
@@ -257,18 +299,51 @@ export function initEdenMapPlanner() {
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     const pathTools = document.getElementById('edenPathTools');
+    const drawTools = document.getElementById('edenDrawTools');
     const showPathOpts = tool === 'path' || tool === 'measure';
+    const showDrawOpts = tool === 'draw';
     pathTools?.classList.toggle('eden-path-tools--visible', showPathOpts);
+    drawTools?.classList.toggle('eden-path-tools--visible', showDrawOpts);
     const root = document.getElementById('edenMapRoot');
     root?.classList.toggle('eden-tool-path-active', tool === 'path');
     root?.classList.toggle('eden-tool-measure-active', tool === 'measure');
+    root?.classList.toggle('eden-tool-draw-active', tool === 'draw');
     canvas.style.cursor = tool === 'navigate' ? 'grab' : 'crosshair';
   }
 
-  function setTool(next) {
+  function getDrawColor() {
+    return document.getElementById('edenDrawColor')?.value
+      || document.getElementById('edenPathColor')?.value
+      || '#f97316';
+  }
+
+  function finishDrawStroke() {
+    if (!drawDraft) return;
+    if (drawDraft.points.length >= 2) {
+      plan.drawings = plan.drawings || [];
+      plan.drawings.push(drawDraft);
+      savePlan();
+    }
+    drawDraft = null;
+    drawing = false;
+  }
+
+  function setTool(next, opts = {}) {
+    if (tool === 'draw') {
+      if (opts.cancelDraw) {
+        drawDraft = null;
+        drawing = false;
+      } else {
+        finishDrawStroke();
+      }
+    }
     tool = next;
     if (tool !== 'measure') measureA = measureB = null;
     if (tool !== 'path') pathDraft = [];
+    if (tool !== 'draw') {
+      drawDraft = null;
+      drawing = false;
+    }
     syncToolButtons();
     draw();
   }
@@ -322,7 +397,40 @@ export function initEdenMapPlanner() {
   }
 
   /** Keep world point under (mx, my) fixed while changing scale — fixes zoom drift. */
+  function zoomAtSheet(mx, my, newScale) {
+    const w = canvas.width / devicePixelRatio;
+    const h = canvas.height / devicePixelRatio;
+    const img = getSectorTileImage(sectorKey);
+    if (!isSectorTileReady(img)) {
+      scale = clampScale(newScale);
+      return;
+    }
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    const pad = 0.02;
+    const baseFit = Math.min((w * (1 - pad * 2)) / iw, (h * (1 - pad * 2)) / ih);
+    const prevScale = scale;
+    scale = clampScale(newScale);
+    const oldDw = iw * baseFit * prevScale;
+    const oldDh = ih * baseFit * prevScale;
+    const oldDx = (w - oldDw) * 0.5 + offsetX;
+    const oldDy = (h - oldDh) * 0.5 + offsetY;
+    const ix = oldDw > 0 ? (mx - oldDx) / oldDw : 0.5;
+    const iy = oldDh > 0 ? (my - oldDy) / oldDh : 0.5;
+    const newDw = iw * baseFit * scale;
+    const newDh = ih * baseFit * scale;
+    offsetX = mx - ix * newDw - (w - newDw) * 0.5;
+    offsetY = my - iy * newDh - (h - newDh) * 0.5;
+    markInteracting();
+    scheduleDraw({ sidebar: false });
+    endInteraction();
+  }
+
   function zoomAt(mx, my, newScale) {
+    if (isSectorSheetView()) {
+      zoomAtSheet(mx, my, newScale);
+      return;
+    }
     const world = screenToWorldPrecise(mx, my);
     scale = clampScale(newScale);
     const screen = iso(world.x, world.y);
@@ -431,8 +539,28 @@ export function initEdenMapPlanner() {
   }
 
   function fitView(smooth = false) {
+    if (isSectorSheetView()) {
+      const target = { scale: 1, offsetX: 0, offsetY: 0 };
+      const gen = ++fitAnimGen;
+      if (smooth) {
+        return animateCamera(
+          () => ({ offsetX, offsetY, scale }),
+          (cam) => {
+            if (gen !== fitAnimGen) return;
+            applyCamera(cam);
+          },
+          target,
+          () => {
+            if (gen !== fitAnimGen) return;
+            scheduleDraw({ sidebar: false });
+          },
+        );
+      }
+      applyCamera(target);
+      return;
+    }
     const b = sectorKey === 'FULL' ? MAP_BOUNDS : getSectorBounds(sectorKey);
-    const sectorFocus = sectorKey !== 'FULL' && (sectorIsolate || smooth);
+    const sectorFocus = sectorKey !== 'FULL';
     const target = fitViewToBounds(b, { sectorFocus });
     const gen = ++fitAnimGen;
 
@@ -740,6 +868,11 @@ export function initEdenMapPlanner() {
     return sectorIsolate && sectorKey !== 'FULL';
   }
 
+  /** Per-sector reference sheet — show parchment only (no planner overlays). */
+  function isSectorSheetView() {
+    return sectorKey !== 'FULL';
+  }
+
   function syncIsolateUi() {
     const btn = document.getElementById('edenIsolateSector');
     const badge = document.getElementById('edenIsolateBadge');
@@ -770,16 +903,6 @@ export function initEdenMapPlanner() {
 
     isolateToggleLock = true;
     sectorIsolate = next;
-    if (sectorIsolate) {
-      if (!layers.sectorTiles) {
-        layers.sectorTiles = true;
-        document.querySelector('[data-eden-layer="sectorTiles"]')?.classList.add('active');
-      }
-      if (!layers.structures) {
-        layers.structures = true;
-        document.querySelector('[data-eden-layer="structures"]')?.classList.add('active');
-      }
-    }
     syncIsolateUi();
     fitView(false);
     draw();
@@ -906,6 +1029,17 @@ export function initEdenMapPlanner() {
     return x >= b.minX - 8 && x <= b.maxX + 8 && y >= b.minY - 8 && y <= b.maxY + 8;
   }
 
+  function strokeInCurrentSector(stroke) {
+    if (!isSectorIsolated()) return true;
+    return stroke.points?.some((pt) => pointInCurrentSector(pt.x, pt.y));
+  }
+
+  function drawSketches() {
+    if (!layers.paths) return;
+    const strokes = (plan.drawings || []).filter(strokeInCurrentSector);
+    drawPlanSketches(ctx, iso, strokes, scale, drawDraft);
+  }
+
   function drawPlanningTargets() {
     if (!layers.targets) return;
     (plan.customTargets || []).filter((t) => pointInCurrentSector(t.x, t.y)).forEach(t => {
@@ -982,8 +1116,20 @@ export function initEdenMapPlanner() {
     const isolated = isSectorIsolated();
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = isolated ? '#0c0a08' : '#1a140c';
+    ctx.fillStyle = (isSectorSheetView() || isolated) ? '#0c0a08' : '#1a140c';
     ctx.fillRect(0, 0, w, h);
+
+    const fastMode = interacting || panning;
+    if (isSectorSheetView()) {
+      if (layers.reference) {
+        drawSectorSheetFlat(ctx, w, h, sectorKey, refOpacity, { scale, offsetX, offsetY });
+      }
+      onRedrawExtra?.();
+      document.getElementById('edenZoomLevel')?.replaceChildren(
+        document.createTextNode(`${Math.round(scale * 100)}%`)
+      );
+      return;
+    }
 
     let isolateClipActive = false;
     if (isolated) {
@@ -991,9 +1137,15 @@ export function initEdenMapPlanner() {
       isolateClipActive = true;
     }
 
-    const fastMode = interacting || panning;
+    let liveReferenceDrew = false;
+    if (layers.reference && EDEN_MAP_CONFIG.liveMapEnabled && _edenLiveMapApi?.isEdenLiveMapReady?.()) {
+      liveReferenceDrew = _edenLiveMapApi.drawEdenLiveMapLayer(
+        ctx, (x, y) => iso(x, y), scale, getViewBounds(), refOpacity,
+      );
+    }
+
     drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
-      showReference: layers.reference,
+      showReference: layers.reference && !liveReferenceDrew,
       referenceOpacity: refOpacity,
       showScreenshots: layers.screenshots,
       screenshotOpacity,
@@ -1007,7 +1159,6 @@ export function initEdenMapPlanner() {
 
     if (!fastMode) drawZoneOverlays();
     if (layers.territory && !fastMode) drawTerritoryOverlay(ctx, iso);
-    if (layers.sectorTiles && !fastMode) drawSectorTileOverlay(ctx, iso, sectorKey, refOpacity);
     if (layers.reference && layers.structures) {
       const capitals = structures().filter((s) => STRUCTURE_TYPES[s.type]?.category === 'capital');
       maskReferenceCapitals(ctx, iso, capitals, scale);
@@ -1021,6 +1172,7 @@ export function initEdenMapPlanner() {
     }
     if (layers.fog && !fastMode) drawFogOfWar(ctx, iso, plan.explored || {}, sectorKey);
     drawPaths();
+    drawSketches();
     if (layers.structures) structures().filter(structureVisible).forEach(drawStructure);
     drawSnapPreview();
     if (!fastMode) drawPlanningTargets();
@@ -1475,6 +1627,13 @@ export function initEdenMapPlanner() {
       }
       return;
     }
+    const wonderIds = getSectorTileIds();
+    if (key !== 'FULL' && wonderIds.length && !wonderIds.includes(key)) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(`No reference sheet for sector "${key}"`, 'error', 2800);
+      }
+      return;
+    }
     if (key === sectorKey && !smooth) {
       syncIsolateUi();
       syncQuickJump(key);
@@ -1494,9 +1653,15 @@ export function initEdenMapPlanner() {
     });
     syncIsolateUi();
     syncQuickJump(key);
-    fitView(smooth && key !== 'FULL' && !sectorIsolate);
+    if (key !== 'FULL') ensureSectorTilesLoaded();
+    fitView(key !== 'FULL');
     draw();
   }
+
+  window.addEventListener('edenDatasetChange', () => {
+    syncWonderSectorSelect();
+    syncQuickJump(sectorKey);
+  });
 
   function bindToolbar() {
     document.getElementById('edenSectorSelect')?.addEventListener('change', (e) => setSector(e.target.value));
@@ -1522,6 +1687,7 @@ export function initEdenMapPlanner() {
         btn.classList.toggle('active', layers[layer]);
         if (layer === 'reference') ensureReferenceLoaded();
         if (layer === 'screenshots') ensureScreenshotsLoaded();
+        if (layer === 'reference' || layer === 'sectorTiles') ensureSectorTilesLoaded();
         draw();
       });
     });
@@ -1584,6 +1750,25 @@ export function initEdenMapPlanner() {
     document.getElementById('edenClearPaths')?.addEventListener('click', () => {
       plan.paths = [];
       pathDraft = [];
+      savePlan();
+      draw();
+    });
+
+    document.getElementById('edenUndoDraw')?.addEventListener('click', () => {
+      if (drawDraft) {
+        drawDraft = null;
+        drawing = false;
+      } else if (plan.drawings?.length) {
+        plan.drawings.pop();
+        savePlan();
+      }
+      draw();
+    });
+
+    document.getElementById('edenClearDraw')?.addEventListener('click', () => {
+      drawDraft = null;
+      drawing = false;
+      plan.drawings = [];
       savePlan();
       draw();
     });
@@ -1938,6 +2123,13 @@ export function initEdenMapPlanner() {
       return;
     }
 
+    if (isSectorSheetView()) {
+      panning = true;
+      markInteracting();
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+
     const hit = hitTest(mx, my);
 
     if (viewMode === 'route') {
@@ -1991,6 +2183,14 @@ export function initEdenMapPlanner() {
       return;
     }
 
+    if (tool === 'draw') {
+      markInteracting();
+      drawing = true;
+      const w = screenToWorld(mx, my);
+      drawDraft = { color: getDrawColor(), width: 3, points: [{ x: w.x, y: w.y }] };
+      return;
+    }
+
     // navigate: click structure to select, drag empty (or any) to pan
     if (hit) {
       pointerDownHit = hit;
@@ -2006,6 +2206,21 @@ export function initEdenMapPlanner() {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
+    if (isSectorSheetView()) {
+      if (panning) {
+        if (Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 2) dragMoved = true;
+        offsetX += mx - lastPointer.x;
+        offsetY += my - lastPointer.y;
+        lastPointer = { x: mx, y: my };
+        markInteracting();
+        scheduleDraw({ sidebar: false });
+      }
+      hoverStruct = null;
+      hoverWorld = screenToWorld(mx, my);
+      updateCoordHud();
+      return;
+    }
+
     if (pointerDownHit && !panning && Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 5) {
       pointerDownHit = null;
       panning = true;
@@ -2019,6 +2234,18 @@ export function initEdenMapPlanner() {
       if (p?.points?.[draggingWaypoint.waypointIdx]) {
         p.points[draggingWaypoint.waypointIdx] = { x: w.x, y: w.y };
         reroutePath(draggingWaypoint.pathIdx);
+        scheduleDraw({ sidebar: false });
+      }
+      return;
+    }
+
+    if (drawing && tool === 'draw' && drawDraft) {
+      const w = screenToWorld(mx, my);
+      const pts = drawDraft.points;
+      const last = pts[pts.length - 1];
+      if (Math.hypot(w.x - last.x, w.y - last.y) >= 1.5) {
+        pts.push({ x: w.x, y: w.y });
+        markInteracting();
         scheduleDraw({ sidebar: false });
       }
       return;
@@ -2062,6 +2289,13 @@ export function initEdenMapPlanner() {
   });
 
   canvas.addEventListener('pointerup', () => {
+    if (drawing && tool === 'draw') {
+      finishDrawStroke();
+      endInteraction();
+      draw();
+      syncToolButtons();
+      return;
+    }
     if (draggingWaypoint) {
       savePlan();
       draggingWaypoint = null;
@@ -2104,6 +2338,17 @@ export function initEdenMapPlanner() {
     e.preventDefault();
     if (tool === 'path' && pathDraft.length) {
       pathDraft.pop();
+      draw();
+      return;
+    }
+    if (tool === 'draw') {
+      if (drawDraft) {
+        drawDraft = null;
+        drawing = false;
+      } else if (plan.drawings?.length) {
+        plan.drawings.pop();
+        savePlan();
+      }
       draw();
     }
   });
@@ -2266,9 +2511,22 @@ export function initEdenMapPlanner() {
 const EDEN_ICON_PRELOAD = ['C5', 'C6', 'CS', 'STRHD', 'CP1', 'ST2', 'LT2', 'AT', 'WC8'];
 
 export async function bootEdenMapPlanner() {
+  if (EDEN_MAP_CONFIG.underConstruction) {
+    const { initEdenMapConstruction } = await import('./eden-map-construction.js');
+    await initEdenMapConstruction();
+    return;
+  }
+
   const { ensureEdenDatasetsLoaded } = await import('./eden-map-data.js');
   await ensureEdenDatasetsLoaded();
   const { preloadStructureIcons } = await import('./eden-map-assets.js');
   preloadStructureIcons(EDEN_ICON_PRELOAD);
+
+  if (EDEN_MAP_CONFIG.liveMapEnabled) {
+    const liveMod = await import('./eden-live-map.js');
+    _edenLiveMapApi = liveMod;
+    await liveMod.preloadEdenLiveMap();
+  }
+
   initEdenMapPlanner();
 }

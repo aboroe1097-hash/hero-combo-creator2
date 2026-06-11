@@ -1,5 +1,6 @@
 // Eden Map UI — minimap, keyboard shortcuts, quick-jump, mobile sidebar
 import { OVERVIEW_STRUCTURE_TYPES, getQuickJumpSectors } from './eden-map-data.js';
+import { getSectorTileIds } from './eden-map-assets.js';
 
 const MAJOR_TYPES = OVERVIEW_STRUCTURE_TYPES;
 const MINIMAP_SIZE = 150;
@@ -106,7 +107,9 @@ function renderQuickJumpButtons(api, activeSector = 'FULL') {
   const container = document.getElementById('edenQuickJumpSectors');
   if (!container) return;
 
-  const sectors = getQuickJumpSectors(7);
+  const wonderIds = new Set(getSectorTileIds());
+  let sectors = getQuickJumpSectors(7);
+  if (wonderIds.size) sectors = sectors.filter((k) => wonderIds.has(k));
   container.innerHTML = sectors.map((key) => {
     const active = activeSector === key ? ' active' : '';
     return `<button type="button" data-eden-jump="${key}" class="eden-quick-btn${active}" title="Jump to ${key}">${key}</button>`;
@@ -151,7 +154,8 @@ function setupKeyboard(api, getQuickSectors) {
       else if (k === 'arrowdown') { e.preventDefault(); api.panBy(0, -PAN_STEP); }
       else if (k === 'p') { api.setTool('path'); }
       else if (k === 'm') { api.setTool('measure'); }
-      else if (k === 'escape') { api.setTool('navigate'); api.clearMeasure(); }
+      else if (k === 'd' && !e.ctrlKey && !e.metaKey) { api.setTool('draw'); }
+      else if (k === 'escape') { api.setTool('navigate', { cancelDraw: true }); api.clearMeasure(); }
       else if (k === 'delete' || k === 'backspace') { api.deleteSelectedPath(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); api.undoPathPoint(); }
       else if (k === 'i' && !e.repeat && !e.ctrlKey && !e.metaKey) {
