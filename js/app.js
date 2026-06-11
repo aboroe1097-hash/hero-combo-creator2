@@ -1029,7 +1029,8 @@ tabs.forEach(tab => {
 
   function loadYouTubeEmbeds() {
     document.querySelectorAll('#youtubeSection iframe[data-src]').forEach((iframe) => {
-      if (!iframe.src && iframe.dataset.src) {
+      const srcAttr = iframe.getAttribute('src');
+      if ((!srcAttr || srcAttr === '') && iframe.dataset.src) {
         iframe.src = iframe.dataset.src;
       }
     });

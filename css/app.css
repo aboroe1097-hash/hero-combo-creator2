@@ -495,11 +495,34 @@ body.first-visit-active { overflow: hidden; }
   width: 150px; height: 150px; border-radius: 24px;
   border: 2px solid rgba(59,130,246,0.2);
   box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
-  transition: transform var(--t-slow), box-shadow var(--t-slow);
+  transition: transform var(--t-slow), box-shadow var(--t-slow), border-color var(--t-slow);
 }
 .main-logo:hover {
+  animation-play-state: paused;
   transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 14px 44px rgba(0,0,0,0.55), 0 0 30px rgba(37,99,235,0.3);
+  box-shadow: 0 14px 44px rgba(0,0,0,0.55), 0 0 30px rgba(37,99,235,0.5) !important;
+}
+
+.dual-glow-logo {
+  animation: elementalPulse 3s ease-in-out infinite;
+}
+
+@keyframes elementalPulse {
+  0% {
+    /* Ice Glow */
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.8), 0 0 40px rgba(58, 123, 213, 0.4);
+    border-color: rgba(0, 210, 255, 0.4);
+  }
+  50% {
+    /* Fire Glow */
+    box-shadow: 0 0 20px rgba(255, 78, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.4);
+    border-color: rgba(255, 78, 0, 0.4);
+  }
+  100% {
+    /* Back to Ice */
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.8), 0 0 40px rgba(58, 123, 213, 0.4);
+    border-color: rgba(0, 210, 255, 0.4);
+  }
 }
 
 /* ─── Tab switch — subtle fade only ─────────────────────── */
@@ -3808,10 +3831,30 @@ body.hide-hero-info .info-btn { display: none !important; }
 
 /* Global toggle row (hero info) */
 [data-theme="light"] #globalToggleRow label {
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.04) !important;
 }
-[data-theme="light"] #globalToggleRow span { color: #475569 !important; }
+[data-theme="light"] #globalToggleRow label:hover {
+  border-color: #94a3b8 !important;
+}
+[data-theme="light"] #globalToggleRow span { 
+  color: #334155 !important; 
+}
+[data-theme="light"] #globalToggleRow input + div {
+  background-color: #cbd5e1 !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] #globalToggleRow input + div + div {
+  background-color: #ffffff !important;
+}
+[data-theme="light"] #globalToggleRow input:checked + div {
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+}
+[data-theme="light"] #globalToggleRow input:checked + div + div {
+  background-color: #ffffff !important;
+}
 
 /* Section containers */
 [data-theme="light"] .mb-6.p-4,
@@ -5010,4 +5053,37 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 
 [data-theme="light"] #commentsSection div[id^="replies-"] {
   border-color: #cbd5e1 !important;
+}
+
+/* Light theme overrides for main logo animations and glowing elements */
+[data-theme="light"] #appTitle {
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.12)) !important;
+}
+
+[data-theme="light"] .dual-glow-logo {
+  animation: elementalPulseLight 3s ease-in-out infinite !important;
+}
+
+[data-theme="light"] .main-logo:hover {
+  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.12), 0 0 25px rgba(37, 99, 235, 0.3) !important;
+  border-color: rgba(37, 99, 235, 0.5) !important;
+}
+
+[data-theme="light"] .footer-divider {
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.25), 0 0 4px rgba(3, 105, 161, 0.15) !important;
+}
+
+@keyframes elementalPulseLight {
+  0% {
+    box-shadow: 0 0 15px rgba(3, 105, 161, 0.75), 0 0 30px rgba(29, 78, 216, 0.3), 0 4px 12px rgba(15, 23, 42, 0.06);
+    border-color: rgba(3, 105, 161, 0.4) !important;
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(194, 65, 12, 0.75), 0 0 30px rgba(185, 28, 28, 0.3), 0 4px 12px rgba(15, 23, 42, 0.06);
+    border-color: rgba(194, 65, 12, 0.4) !important;
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(3, 105, 161, 0.75), 0 0 30px rgba(29, 78, 216, 0.3), 0 4px 12px rgba(15, 23, 42, 0.06);
+    border-color: rgba(3, 105, 161, 0.4) !important;
+  }
 }
