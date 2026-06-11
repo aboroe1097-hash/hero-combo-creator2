@@ -57,11 +57,11 @@
   --shadow-glow:  0 0 24px rgba(37,99,235,0.12);
   --shadow-lift:  0 16px 36px rgba(15,23,42,0.08);
 
-  /* Premium Light Soft Aurora Backdrops */
-  --body-bg: radial-gradient(circle at 80% 20%, rgba(199,210,254,0.4) 0%, transparent 60%),
-              radial-gradient(circle at 10% 80%, rgba(219,234,254,0.4) 0%, transparent 60%),
-              #f1f5f9;
-  --app-bg: rgba(255,255,255,0.9);
+  /* Premium Light Soft Aurora Backdrops - Toned down glare, richer slate tone */
+  --body-bg: radial-gradient(circle at 80% 20%, rgba(199,210,254,0.25) 0%, transparent 60%),
+              radial-gradient(circle at 10% 80%, rgba(204,251,241,0.25) 0%, transparent 60%),
+              #e2e8f0;
+  --app-bg: rgba(248,250,252,0.96);
   --dot-grid: rgba(37,99,235,0.04);
   --glass-blur: blur(20px);
 }
@@ -3727,6 +3727,22 @@ body.hide-hero-info .info-btn { display: none !important; }
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
 }
+[data-theme="light"] #commentsSection > div:first-child {
+  background: linear-gradient(to right, #f1f5f9, #f8fafc) !important;
+  border-bottom-color: #cbd5e1 !important;
+}
+[data-theme="light"] #commentsSection svg.text-blue-400 {
+  color: #2563eb !important;
+}
+[data-theme="light"] #feedbackMailBtn {
+  background-color: #fef3c7 !important;
+  border-color: rgba(245,158,11,0.4) !important;
+  color: #b45309 !important;
+}
+[data-theme="light"] #feedbackMailBtn:hover {
+  background-color: #fde68a !important;
+  border-color: #f59e0b !important;
+}
 [data-theme="light"] #commentsSection .bg-slate-900\/60,
 [data-theme="light"] #commentsSection .bg-slate-900\/40 {
   background-color: #f8fafc !important;
@@ -4199,9 +4215,113 @@ body.hide-hero-info .info-btn { display: none !important; }
   background: rgba(59,130,246,0.08) !important;
 }
 
-/* Make sure filter pill checked states have good contrast (they use white text already) */
+/* Make sure filter pill checked states have good contrast and soft pastel colors in light theme */
 [data-theme="light"] .filter-pill:has(input:checked) {
-  box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .s0-pill:has(input:checked) {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .s1-pill:has(input:checked) {
+  background: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  color: #1e40af !important;
+}
+[data-theme="light"] .s2-pill:has(input:checked) {
+  background: #f3e8ff !important;
+  border-color: #a855f7 !important;
+  color: #7e22ce !important;
+}
+[data-theme="light"] .s3-pill:has(input:checked) {
+  background: #ffedd5 !important;
+  border-color: #f97316 !important;
+  color: #c2410c !important;
+}
+[data-theme="light"] .s4-pill:has(input:checked) {
+  background: #fef9c3 !important;
+  border-color: #facc15 !important;
+  color: #854d0e !important;
+}
+[data-theme="light"] .x1-pill:has(input:checked) {
+  background: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #991b1b !important;
+}
+[data-theme="light"] .x2-pill:has(input:checked) {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  color: #065f46 !important;
+}
+[data-theme="light"] .free-pill:has(input:checked) {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  color: #065f46 !important;
+}
+[data-theme="light"] .paid-pill:has(input:checked) {
+  background: #ffe4e6 !important;
+  border-color: #fb7185 !important;
+  color: #9f1239 !important;
+}
+[data-theme="light"] .archers-pill:has(input:checked) {
+  background: #cffafe !important;
+  border-color: #22d3ee !important;
+  color: #0e7490 !important;
+}
+[data-theme="light"] .footmen-pill:has(input:checked) {
+  background: #e0e7ff !important;
+  border-color: #818cf8 !important;
+  color: #3730a3 !important;
+}
+[data-theme="light"] .cavalry-pill:has(input:checked) {
+  background: #fce7f3 !important;
+  border-color: #f472b6 !important;
+  color: #9d174d !important;
+}
+[data-theme="light"] .all-pill:has(input:checked) {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+[data-theme="light"] .filter-pill input:checked + span {
+  text-shadow: none !important;
+}
+
+/* Hero Atlas filter button light mode fixes */
+[data-theme="light"] .heroes-filter-pills,
+[data-theme="light"] .heroes-season-tabs {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .heroes-filter-pill {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+[data-theme="light"] .heroes-filter-pill:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .heroes-filter-pill.active {
+  background: rgba(37,99,235,0.1) !important;
+  border-color: rgba(37,99,235,0.35) !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.1) !important;
+}
+[data-theme="light"] .hero-tab-season {
+  color: #475569 !important;
+}
+[data-theme="light"] .hero-tab-season:hover {
+  background: rgba(15,23,42,0.06) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .hero-tab-season.active {
+  background: rgba(37,99,235,0.1) !important;
+  border-color: var(--sc, rgba(37,99,235,0.35)) !important;
+  color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.1) !important;
 }
 
 /* Ensure some JS injected panels (counter etc) look good */
