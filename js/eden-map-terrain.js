@@ -286,7 +286,7 @@ function drawMountainIso(ctx, worldToIso, scale, mtn) {
 
 }
 
-function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
+export function drawTexturedQuad(ctx, img, p0, p1, p2, p3) {
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(p0.x, p0.y);

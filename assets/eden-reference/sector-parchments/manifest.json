@@ -1,0 +1,241 @@
+{
+  "version": 2,
+  "label": "Processed sector parchments (map only \u2014 no tables/logo)",
+  "sourceManifest": "assets/eden_wonders/manifest.json",
+  "sectors": [
+    {
+      "id": "N1",
+      "label": "North Sector 1",
+      "file": "N1.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-zqmy81y0ufrb1.webp",
+      "imageSize": [
+        370,
+        292
+      ],
+      "pixelCrop": {
+        "left": 21,
+        "top": 59,
+        "width": 370,
+        "height": 292,
+        "sourceWidth": 422,
+        "sourceHeight": 848
+      }
+    },
+    {
+      "id": "N2",
+      "label": "North Sector 2",
+      "file": "N2.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-390we5g2ufrb1.webp",
+      "imageSize": [
+        308,
+        269
+      ],
+      "pixelCrop": {
+        "left": 46,
+        "top": 49,
+        "width": 308,
+        "height": 269,
+        "sourceWidth": 410,
+        "sourceHeight": 857
+      }
+    },
+    {
+      "id": "N3",
+      "label": "North Sector 3",
+      "file": "N3.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-u7p6tky3ufrb1.webp",
+      "imageSize": [
+        413,
+        194
+      ],
+      "pixelCrop": {
+        "left": 16,
+        "top": 63,
+        "width": 413,
+        "height": 194,
+        "sourceWidth": 453,
+        "sourceHeight": 852
+      }
+    },
+    {
+      "id": "N4",
+      "label": "North Sector 4",
+      "file": "N4.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-iuj94w45ufrb1.webp",
+      "imageSize": [
+        471,
+        221
+      ],
+      "pixelCrop": {
+        "left": 23,
+        "top": 64,
+        "width": 471,
+        "height": 221,
+        "sourceWidth": 497,
+        "sourceHeight": 846
+      }
+    },
+    {
+      "id": "W",
+      "label": "West Sector",
+      "file": "W.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-2wxy4gh7ufrb1.webp",
+      "imageSize": [
+        425,
+        295
+      ],
+      "pixelCrop": {
+        "left": 34,
+        "top": 67,
+        "width": 425,
+        "height": 295,
+        "sourceWidth": 497,
+        "sourceHeight": 852
+      }
+    },
+    {
+      "id": "WC",
+      "label": "West Central Sector",
+      "file": "WC.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-2hgnufebufrb1.webp",
+      "imageSize": [
+        445,
+        315
+      ],
+      "pixelCrop": {
+        "left": 22,
+        "top": 63,
+        "width": 445,
+        "height": 315,
+        "sourceWidth": 501,
+        "sourceHeight": 862
+      }
+    },
+    {
+      "id": "C",
+      "label": "Central Sector",
+      "file": "C.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-nazm6m4eufrb1.webp",
+      "imageSize": [
+        383,
+        213
+      ],
+      "pixelCrop": {
+        "left": 85,
+        "top": 99,
+        "width": 383,
+        "height": 213,
+        "sourceWidth": 551,
+        "sourceHeight": 568
+      }
+    },
+    {
+      "id": "EC",
+      "label": "East Central Sector",
+      "file": "EC.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-5g363dycufrb1.webp",
+      "imageSize": [
+        388,
+        312
+      ],
+      "pixelCrop": {
+        "left": 54,
+        "top": 61,
+        "width": 388,
+        "height": 312,
+        "sourceWidth": 503,
+        "sourceHeight": 826
+      }
+    },
+    {
+      "id": "E",
+      "label": "East Sector",
+      "file": "E.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-w7c8zth9ufrb1.webp",
+      "imageSize": [
+        360,
+        292
+      ],
+      "pixelCrop": {
+        "left": 45,
+        "top": 49,
+        "width": 360,
+        "height": 292,
+        "sourceWidth": 475,
+        "sourceHeight": 841
+      }
+    },
+    {
+      "id": "S1",
+      "label": "South Sector 1",
+      "file": "S1.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-eg4rb8vutfrb1.webp",
+      "imageSize": [
+        337,
+        283
+      ],
+      "pixelCrop": {
+        "left": 55,
+        "top": 67,
+        "width": 337,
+        "height": 283,
+        "sourceWidth": 437,
+        "sourceHeight": 852
+      }
+    },
+    {
+      "id": "S2",
+      "label": "South Sector 2",
+      "file": "S2.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-icci7iittfrb1.webp",
+      "imageSize": [
+        346,
+        253
+      ],
+      "pixelCrop": {
+        "left": 34,
+        "top": 50,
+        "width": 346,
+        "height": 253,
+        "sourceWidth": 407,
+        "sourceHeight": 837
+      }
+    },
+    {
+      "id": "S3",
+      "label": "South Sector 3",
+      "file": "S3.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-5ac2zjhytfrb1.webp",
+      "imageSize": [
+        398,
+        233
+      ],
+      "pixelCrop": {
+        "left": 24,
+        "top": 64,
+        "width": 398,
+        "height": 233,
+        "sourceWidth": 455,
+        "sourceHeight": 872
+      }
+    },
+    {
+      "id": "S4",
+      "label": "South Sector 4",
+      "file": "S4.png",
+      "source": "assets/eden_wonders/eden-wonders-map-structure-coordinates-x17-v0-izhb0afztfrb1.webp",
+      "imageSize": [
+        392,
+        234
+      ],
+      "pixelCrop": {
+        "left": 15,
+        "top": 62,
+        "width": 392,
+        "height": 234,
+        "sourceWidth": 432,
+        "sourceHeight": 857
+      }
+    }
+  ]
+}

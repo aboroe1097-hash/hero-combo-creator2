@@ -1,8 +1,9 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
 import { MAP_BOUNDS } from './eden-map-terrain.js';
-import { getReferenceWorldBounds } from './eden-map-assets.js';
+import {
+  getSectorTileImage, isSectorTileReady, getSectorTileIds, PARCHMENT_BASE,
+} from './eden-map-assets.js';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
-import { getReferenceMapImage, isReferenceReady, PARCHMENT_BASE } from './eden-map-assets.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';
 export const MARCH_SPEED_BASE = 3;
@@ -13,6 +14,7 @@ export function createEmptyPlan() {
     status: {},
     targets: [],
     paths: [],
+    drawings: [],
     customTargets: [],
     explored: {},
     speed: 1,
@@ -62,6 +64,27 @@ export function formatTravelTime(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+/** Freehand plan sketches — world-space polylines. */
+export function drawPlanSketches(ctx, worldToIso, strokes, scale = 1, draft = null) {
+  const list = [...(strokes || []), draft].filter((s) => s?.points?.length >= 2);
+  list.forEach((stroke) => {
+    const pts = stroke.points;
+    ctx.beginPath();
+    pts.forEach((pt, i) => {
+      const p = worldToIso(pt.x, pt.y);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.strokeStyle = stroke.color || '#f97316';
+    ctx.lineWidth = Math.max(2, (stroke.width || 3) * scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = stroke === draft ? 0.88 : 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
 }
 
 export function distPointToSegment(px, py, ax, ay, bx, by) {
@@ -237,43 +260,32 @@ export function maskReferenceCapitals(ctx, worldToIso, capitals, scale = 1) {
   ctx.restore();
 }
 
-export function drawSectorTileOverlay(ctx, worldToIso, sectorKey, opacity = 0.95) {
-  if (sectorKey === 'FULL') return false;
-  const img = getReferenceMapImage();
-  if (!isReferenceReady(img)) return false;
-  const b = getSectorBounds(sectorKey);
-  const corners = [
-    worldToIso(b.minX, b.minY),
-    worldToIso(b.maxX, b.minY),
-    worldToIso(b.maxX, b.maxY),
-    worldToIso(b.minX, b.maxY),
-  ];
-  const rb = getReferenceWorldBounds();
-  const p0 = worldToIso(rb.minX, rb.minY);
-  const p1 = worldToIso(rb.maxX, rb.minY);
-  const p2 = worldToIso(rb.maxX, rb.maxY);
-  const p3 = worldToIso(rb.minX, rb.maxY);
+function sheetBaseFit(canvasW, canvasH, img, pad = 0.02) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return 1;
+  return Math.min((canvasW * (1 - pad * 2)) / iw, (canvasH * (1 - pad * 2)) / ih);
+}
+
+/** Website sector sheet — flat, unchanged, aspect-ratio preserved. */
+export function drawSectorSheetFlat(ctx, canvasW, canvasH, sectorKey, opacity, camera = {}) {
+  if (sectorKey === 'FULL' || !getEdenSectors()[sectorKey]) return false;
+  if (!getSectorTileIds().includes(sectorKey)) return false;
+  const img = getSectorTileImage(sectorKey);
+  if (!isSectorTileReady(img)) return false;
+
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  const zoom = camera.scale ?? 1;
+  const fit = sheetBaseFit(canvasW, canvasH, img) * zoom;
+  const dw = iw * fit;
+  const dh = ih * fit;
+  const dx = (canvasW - dw) * 0.5 + (camera.offsetX ?? 0);
+  const dy = (canvasH - dh) * 0.5 + (camera.offsetY ?? 0);
+
   ctx.save();
-  ctx.beginPath();
-  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-  ctx.closePath();
-  ctx.clip();
   ctx.globalAlpha = opacity;
-  ctx.beginPath();
-  ctx.moveTo(p0.x, p0.y);
-  ctx.lineTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.lineTo(p3.x, p3.y);
-  ctx.closePath();
-  ctx.clip();
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-  const m11 = (p1.x - p0.x) / w;
-  const m12 = (p1.y - p0.y) / w;
-  const m21 = (p3.x - p0.x) / h;
-  const m22 = (p3.y - p0.y) / h;
-  ctx.transform(m11, m12, m21, m22, p0.x, p0.y);
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
   ctx.restore();
   return true;
 }
