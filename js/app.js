@@ -1,7 +1,80 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "b6.6";
+const APP_VERSION = "7.0";
 const ENABLE_RESEARCH_FEATURE = true;
+
+/* ===== THEME (Dark default + Light) ===== */
+function getPreferredTheme() {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'light') {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    root.removeAttribute('data-theme');
+  }
+  // Update meta theme-color for mobile browser bar
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0f172a');
+  }
+  // Update toggle button icons if present
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    const darkIcon = btn.querySelector('.theme-icon-dark');
+    const lightIcon = btn.querySelector('.theme-icon-light');
+    if (darkIcon && lightIcon) {
+      if (theme === 'light') {
+        darkIcon.classList.add('hidden');
+        lightIcon.classList.remove('hidden');
+      } else {
+        darkIcon.classList.remove('hidden');
+        lightIcon.classList.add('hidden');
+      }
+    }
+  }
+}
+
+function initTheme() {
+  const theme = getPreferredTheme();
+  applyTheme(theme);
+
+  // React to system changes if user hasn't explicitly chosen
+  if (!localStorage.getItem('theme') && window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches ? 'light' : 'dark');
+      }
+    });
+  }
+
+  // Wire toggle button (may not exist yet on very early boot, so also on DOMContentLoaded fallback)
+  const setupToggle = () => {
+    const btn = document.getElementById('themeToggle');
+    if (!btn || btn.dataset.themeWired) return;
+    btn.dataset.themeWired = '1';
+    btn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      const next = current === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', next);
+      applyTheme(next);
+    });
+    // Ensure icon state is correct now that button exists
+    const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    applyTheme(currentTheme);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupToggle, { once: true });
+  } else {
+    setupToggle();
+  }
+}
+
+initTheme();
 
 import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
@@ -18,6 +91,22 @@ import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
 import { initAppLoading, notifyAppReady } from './app-loading.js';
+
+import {
+  renderAvailableHeroes,
+  updateComboSlotDisplay,
+  updateManualComboScore,
+  setupTouchDragForManualBuilder,
+  saveCombo,
+  setupFirestoreListener
+} from './app-builder.js';
+
+import {
+  renderGeneratorHeroes,
+  renderGeneratorResults,
+  generateBestCombos,
+  generateRandomCombos
+} from './app-generator.js';
 
 initAppLoading();
 
@@ -45,7 +134,7 @@ document.addEventListener('click', (e) => {
   btn.classList.toggle('counter-toggle-btn--open', willOpen);
 });
 
-function getCounterLabels() {
+export function getCounterLabels() {
   const t = translations[currentLanguage] || translations.en;
   return {
     toggle: t.countersToggle || 'Counters ({n})',
@@ -60,100 +149,52 @@ function getHeroFinalScore(heroName, autoRating) {
   return Math.min(100, Math.max(0, autoRating + bonus));
 }
 
-// --- THEME (Light / Dark) ---
-// Nice toggle button next to game time + language selector
-function applyTheme(theme) {
-  const isDark = theme === 'dark';
-  document.documentElement.classList.toggle('dark', isDark);
-
-  if (themeToggle) {
-    // Moon icon when currently in dark mode (clicking switches to light)
-    // Sun icon when currently in light mode (clicking switches to dark)
-    themeToggle.innerHTML = isDark
-      ? `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>`
-      : `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-        </svg>`;
-  }
-}
-
-function initTheme() {
-  const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const initial = saved || (prefersDark ? 'dark' : 'light');
-  applyTheme(initial);
-
-  // React to system preference changes only if user has not explicitly chosen
-  if (window.matchMedia) {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) {
-        applyTheme(e.matches ? 'dark' : 'light');
-      }
-    });
-  }
-
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const currentlyDark = document.documentElement.classList.contains('dark');
-      const next = currentlyDark ? 'light' : 'dark';
-      localStorage.setItem('theme', next);
-      applyTheme(next);
-    });
-  }
-}
-
 // --- DOM ELEMENTS ---
-const languageSelect       = document.getElementById('languageSelect');
-const themeToggle          = document.getElementById('themeToggle');
-const availableHeroesEl    = document.getElementById('availableHeroes');
-const saveComboBtn         = document.getElementById('saveComboBtn');
-const clearComboBtn        = document.getElementById('clearComboBtn');
-const downloadCombosBtn    = document.getElementById('downloadCombosBtn');
-const shareAllCombosBtn    = document.getElementById('shareAllCombosBtn');
-const savedCombosEl        = document.getElementById('savedCombos');
-const noCombosMessage      = document.getElementById('noCombosMessage');
-const loadingSpinner       = document.getElementById('loadingSpinner');
-const messageBox           = document.getElementById('messageBox');
-const messageText          = document.getElementById('messageText');
-const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
-const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
+export const languageSelect       = document.getElementById('languageSelect');
+export const availableHeroesEl    = document.getElementById('availableHeroes');
+export const saveComboBtn         = document.getElementById('saveComboBtn');
+export const clearComboBtn        = document.getElementById('clearComboBtn');
+export const downloadCombosBtn    = document.getElementById('downloadCombosBtn');
+export const shareAllCombosBtn    = document.getElementById('shareAllCombosBtn');
+export const savedCombosEl        = document.getElementById('savedCombos');
+export const noCombosMessage      = document.getElementById('noCombosMessage');
+export const loadingSpinner       = document.getElementById('loadingSpinner');
+export const messageBox           = document.getElementById('messageBox');
+export const messageText          = document.getElementById('messageText');
+export const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
+export const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
 
 // TABS & SECTIONS
-const manualSection        = document.getElementById('manualSection');
-const generatorSection     = document.getElementById('generatorSection');
-const loyaltySection       = document.getElementById('loyaltySection');
-const youtubeSection       = document.getElementById('youtubeSection'); 
-const researchSection      = document.getElementById('researchSection'); 
+export const manualSection        = document.getElementById('manualSection');
+export const generatorSection     = document.getElementById('generatorSection');
+export const loyaltySection       = document.getElementById('loyaltySection');
+export const youtubeSection       = document.getElementById('youtubeSection'); 
+export const researchSection      = document.getElementById('researchSection'); 
 
-const tabManualBtn         = document.getElementById('tabManual');
-const tabGeneratorBtn      = document.getElementById('tabGenerator');
-const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
-const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
-const tabResearchBtn       = document.getElementById('tabResearch'); 
-const tabHeroesBtn         = document.getElementById('tabHeroes');
-const tabEdenMapBtn        = document.getElementById('tabEdenMap');
-const heroesSection        = document.getElementById('heroesSection');
-const edenMapSection       = document.getElementById('edenMapSection');
-const globalToggleRow      = document.getElementById('globalToggleRow'); 
+export const tabManualBtn         = document.getElementById('tabManual');
+export const tabGeneratorBtn      = document.getElementById('tabGenerator');
+export const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
+export const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
+export const tabResearchBtn       = document.getElementById('tabResearch'); 
+export const tabHeroesBtn         = document.getElementById('tabHeroes');
+export const tabEdenMapBtn        = document.getElementById('tabEdenMap');
+export const heroesSection        = document.getElementById('heroesSection');
+export const edenMapSection       = document.getElementById('edenMapSection');
+export const globalToggleRow      = document.getElementById('globalToggleRow'); 
 
-initTheme();
-
-const comboFooterBar       = document.getElementById('comboFooterBar');
-const generatorHeroesEl    = document.getElementById('generatorHeroes');
-const generatorResultsEl   = document.getElementById('generatorResults');
-const generateCombosBtn    = document.getElementById('generateCombosBtn');
-const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
+export const comboFooterBar       = document.getElementById('comboFooterBar');
+export const generatorHeroesEl    = document.getElementById('generatorHeroes');
+export const generatorResultsEl   = document.getElementById('generatorResults');
+export const generateCombosBtn    = document.getElementById('generateCombosBtn');
+export const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
 
 // Filter containers
-const seasonFiltersEl      = document.getElementById('seasonFilters');
-const stateFiltersEl       = document.getElementById('stateFilters');
-const troopFiltersEl       = document.getElementById('troopFilters');
-const genSeasonFiltersEl   = document.getElementById('generatorSeasonFilters');
-const genStateFiltersEl    = document.getElementById('generatorStateFilters');
-const genTroopFiltersEl    = document.getElementById('generatorTroopFilters');
+export const seasonFiltersEl      = document.getElementById('seasonFilters');
+export const stateFiltersEl       = document.getElementById('stateFilters');
+export const troopFiltersEl       = document.getElementById('troopFilters');
+export const genSeasonFiltersEl   = document.getElementById('generatorSeasonFilters');
+export const genStateFiltersEl    = document.getElementById('generatorStateFilters');
+export const genTroopFiltersEl    = document.getElementById('generatorTroopFilters');
 
 const TechseasonColors = {
   S0: '#94a3b8', // Slate
@@ -184,43 +225,42 @@ function appT(key, vars = {}) {
 }
 
 // --- STATE ---
-let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
-let heroInfoEnabled            = true; 
-let activeTechSeasons          = new Set(['X1']); // Default research season
-let techSearchQuery            = '';
+export let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
+export let heroInfoEnabled            = true; 
+export let activeTechSeasons          = new Set(['X1']); // Default research season
+export let techSearchQuery            = '';
 
 // Manual filters
-let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-let selectedStates             = ['Free', 'Paid'];              
-let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
+export let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export let selectedStates             = ['Free', 'Paid'];              
+export let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
 
 // Manual combo
-let currentCombo               = [null, null, null];
+export const currentCombo             = [null, null, null];
 
 // Generator filters
-let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-let generatorSelectedStates    = ['Free', 'Paid'];
-let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
+export let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export let generatorSelectedStates    = ['Free', 'Paid'];
+export let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
 // Generator selected heroes
-const generatorSelectedHeroes  = new Set();
+export const generatorSelectedHeroes  = new Set();
 
-let userId = 'anonymous';
-let db     = null;
-let savedCombosCache = [];
-let lastGeneratedCombos = [];
-let touchDragHero  = null;
-let touchDragGhost = null;
+export let userId = 'anonymous';
+export function getUserId() { return userId; }
+export let db     = null;
+export const savedCombosCache = [];
+export const lastGeneratedCombos = [];
 
-const sourceCreditText = "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
+export const sourceCreditText = "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
 
 const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
 
-function paidBadgeHtml(variant = 'card') {
+export function paidBadgeHtml(variant = 'card') {
   return `<span class="paid-badge paid-badge--${variant}" title="Paid Hero">${PAID_GEM_SVG}<span class="paid-badge-text">PAID</span></span>`;
 }
 
-function paidIconHtml() {
+export function paidIconHtml() {
   return `<span class="paid-icon-inline" title="Paid Hero">${PAID_GEM_SVG}</span>`;
 }
 
@@ -240,7 +280,7 @@ techDatabase.forEach(tech => {
         });
     });
 });
-const seasonColors = {
+export const seasonColors = {
   S0: '#9ca3af',
   S1: '#3b82f6',
   S2: '#a855f7',
@@ -302,7 +342,7 @@ function formatSkillText(text) {
   return formatted;
 }
 
-function showHeroTooltip(e, heroName) {
+export function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
 
   const data = heroesExtendedData[heroName];
@@ -316,22 +356,22 @@ function showHeroTooltip(e, heroName) {
   let skillsHtml = data.skills.map(s => {
     const formattedDesc = formatSkillText(s.desc);
     const isEnemy = s.target.toLowerCase().includes('enemy');
-    const targetColor = isEnemy ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400';
+    const targetColor = isEnemy ? 'text-red-400' : 'text-emerald-400';
 
     return `
-      <div class="mb-2 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 shadow-inner hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
-        <div class="flex justify-between items-center mb-1.5 border-b border-slate-300 dark:border-slate-700/50 pb-1">
-          <span class="text-[10px] sm:text-xs font-black text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
+      <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner hover:border-slate-500 transition-colors">
+        <div class="flex justify-between items-center mb-1.5 border-b border-slate-700/50 pb-1">
+          <span class="text-[10px] sm:text-xs font-black text-slate-200 bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
           <div class="flex gap-2">
-            <span class="text-[8px] sm:text-[9.5px] text-sky-600 dark:text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
-            ${s.range !== '-' ? `<span class="text-[8px] sm:text-[9.5px] text-slate-600 dark:text-slate-500 font-bold uppercase">Range: <span class="text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 px-1 rounded">${s.range}</span></span>` : ''}
+            <span class="text-[8px] sm:text-[9.5px] text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
+            ${s.range !== '-' ? `<span class="text-[8px] sm:text-[9.5px] text-slate-500 font-bold uppercase">Range: <span class="text-white bg-slate-700 px-1 rounded">${s.range}</span></span>` : ''}
           </div>
         </div>
         <p class="text-[8.5px] sm:text-[10px] ${targetColor} font-bold mb-1.5 uppercase tracking-widest flex items-center gap-1">
           <svg class="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-5.029-5.912c.328-.521.529-1.134.529-1.788a4.991 4.991 0 00-1.854-3.791A3.99 3.99 0 0114 12H6a3.99 3.99 0 012.354-8.491A4.991 4.991 0 006.5 7.3c0 .654.2 1.267.529 1.788A5.972 5.972 0 002 15v3h14z"></path></svg>
           ${s.target}
         </p>
-        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">${formattedDesc}</p>
+        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-300">${formattedDesc}</p>
       </div>
     `;
   }).join('');
@@ -340,15 +380,15 @@ function showHeroTooltip(e, heroName) {
   const synergies = getSynergies(heroName);
   if (synergies.length > 0) {
     const synTags = synergies.map(syn => `
-      <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/80 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 shadow-sm">
-         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-300 dark:border-slate-600 object-cover">
-         <span class="text-[9px] sm:text-[10px] font-bold text-sky-600 dark:text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
+      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded border border-slate-700 shadow-sm">
+         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-600 object-cover">
+         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
       </div>
     `).join('');
     
     synergyHtml = `
-      <div class="mt-2 pt-2 border-t border-slate-300 dark:border-slate-700/50">
-        <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
+      <div class="mt-2 pt-2 border-t border-slate-700/50">
+        <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
         <div class="flex flex-wrap gap-2">
           ${synTags}
         </div>
@@ -357,34 +397,34 @@ function showHeroTooltip(e, heroName) {
   }
 
   heroTooltip.innerHTML = `
-    <div class="flex justify-between items-start border-b border-slate-300 dark:border-slate-700 pb-3 mb-2 shrink-0">
+    <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
       <div class="flex flex-col">
-        <h4 class="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
-        <div class="flex gap-3 mt-2 bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-300 dark:border-slate-700/50 w-fit">
+        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
+        <div class="flex gap-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 w-fit">
           <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest">Placement</span>
-            <span class="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
+            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
+            <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
           </div>
-          <div class="w-px bg-slate-300 dark:bg-slate-700/50"></div>
+          <div class="w-px bg-slate-700/50"></div>
           <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-600 dark:text-slate-500 font-bold uppercase tracking-widest">Troop</span>
+            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
             <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
           </div>
         </div>
       </div>
       
-      <button id="closeTooltipBtn" class="lg:hidden bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-300 dark:border-slate-600 shadow-md transition-colors shrink-0">
+      <button id="closeTooltipBtn" class="lg:hidden bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
 
     <div class="flex justify-between items-center mb-2 px-1 shrink-0">
-      <p class="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
-      <p class="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
+      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
+      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
     </div>
 
     <div class="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-2">
-      ${skillsHtml || '<p class="text-xs text-slate-600 dark:text-slate-500 italic">No skill data available yet.</p>'}
+      ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
   `;
@@ -410,7 +450,7 @@ function showHeroTooltip(e, heroName) {
   }
 }
 
-function moveHeroTooltip(e) {
+export function moveHeroTooltip(e) {
   if (heroTooltip.classList.contains('hidden')) return;
   const rect = heroTooltip.getBoundingClientRect();
   
@@ -441,7 +481,7 @@ function moveHeroTooltip(e) {
   heroTooltip.style.top = `${y}px`;
 }
 
-function hideHeroTooltip() {
+export function hideHeroTooltip() {
   heroTooltip.classList.remove('opacity-100');
   heroTooltip.classList.add('opacity-0');
   setTimeout(() => {
@@ -449,19 +489,19 @@ function hideHeroTooltip() {
   }, 200);
 }
 
-function forceHideHeroTooltip() {
+export function forceHideHeroTooltip() {
   heroTooltip.classList.add('hidden', 'opacity-0');
   heroTooltip.classList.remove('opacity-100');
 }
 
 // --- UTILITIES ---
 
-function getHeroImageUrl(name) {
+export function getHeroImageUrl(name) {
   const h = allHeroesData.find(x => x.name === name);
   return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
 }
 
-function getTroopColorClass(type) {
+export function getTroopColorClass(type) {
   switch(type) {
     case 'Archers': return 'text-emerald-400';
     case 'Footmen': return 'text-amber-400';
@@ -471,7 +511,7 @@ function getTroopColorClass(type) {
   }
 }
 
-function getLocalizedTroop(type) {
+export function getLocalizedTroop(type) {
   const t = translations[currentLanguage] || translations.en;
   if (type === 'Archers') return t.troopArchers || type;
   if (type === 'Footmen') return t.troopFootmen || type;
@@ -512,7 +552,7 @@ function computeTypeSelection(container) {
   return Array.from(set);
 }
 
-function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
+export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
   if (!seasonsArr || seasonsArr.length === 0) return false;
   if (!seasonsArr.includes(hero.season)) return false;
   
@@ -527,7 +567,7 @@ function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
   return typesArr.includes(heroType);
 }
 
-function getComboRankInfo(heroes) {
+export function getComboRankInfo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return null;
   const userSorted = [...heroes].slice().sort();
   const total = rankedCombos.length;
@@ -549,7 +589,7 @@ function getComboRankInfo(heroes) {
   return null;
 }
 
-function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
+export function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
   return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
 
@@ -617,7 +657,7 @@ function getSynergies(heroName, state = _heroesTabState) {
   return sortedPartners.slice(0, 3);
 }
 
-function showAboModal(message, onConfirm = null) {
+export function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
   messageBox.classList.remove('hidden');
@@ -901,594 +941,7 @@ function captureElementAsImage(element, filename) {
     }).catch(err => console.error('html2canvas error:', err));
 }
 
-// --- TOUCH DRAG (MOBILE) ---
-function createTouchGhost(card, touch) {
-  if (!card || !touch) return;
-  if (touchDragGhost && touchDragGhost.parentNode) {
-    touchDragGhost.parentNode.removeChild(touchDragGhost);
-  }
-  const rect = card.getBoundingClientRect();
-  const ghost = card.cloneNode(true);
-  
-  ghost.style.position = 'fixed';
-  ghost.style.margin = '0';
-  ghost.style.left = `${rect.left}px`;
-  ghost.style.top  = `${rect.top}px`;
-  ghost.style.width  = `${rect.width}px`;
-  ghost.style.height = `${rect.height}px`;
-  ghost.style.minWidth  = `${rect.width}px`;
-  ghost.style.maxWidth  = `${rect.width}px`;
-  ghost.style.boxSizing = 'border-box';
-  ghost.style.opacity = '0.9';
-  ghost.style.pointerEvents = 'none';
-  ghost.style.zIndex = '9999';
-  ghost.style.transform = 'scale(1.05)';
-  ghost.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
-  
-  document.body.appendChild(ghost);
-  touchDragGhost = ghost;
-}
-
-function setupTouchDragForManualBuilder() {
-  document.addEventListener('touchmove', (e) => {
-    if (!touchDragHero || !touchDragGhost) return;
-    const touch = e.touches && e.touches[0];
-    if (!touch) return;
-    e.preventDefault();
-    const w = touchDragGhost.offsetWidth || 80;
-    const h = touchDragGhost.offsetHeight || 80;
-    touchDragGhost.style.left = `${touch.clientX - w / 2}px`;
-    touchDragGhost.style.top  = `${touch.clientY - h / 2}px`;
-  }, { passive: false });
-
-  document.addEventListener('touchend', (e) => {
-    if (!touchDragHero) return;
-    const touch = e.changedTouches && e.changedTouches[0];
-    if (touchDragGhost && touchDragGhost.parentNode) {
-      touchDragGhost.parentNode.removeChild(touchDragGhost);
-    }
-    touchDragGhost = null;
-    if (!touch) { touchDragHero = null; return; }
-    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!targetElement) { touchDragHero = null; return; }
-    const slot = targetElement.closest && targetElement.closest('.combo-slot');
-    if (!slot) { touchDragHero = null; return; }
-    const idx = parseInt(slot.dataset.slotIndex, 10);
-    if (Number.isNaN(idx)) { touchDragHero = null; return; }
-
-    if (isHeroAlreadyInCombo(touchDragHero, idx)) {
-      const t = translations[currentLanguage] || translations.en;
-      showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
-      touchDragHero = null;
-      return;
-    }
-    currentCombo[idx] = touchDragHero;
-    updateComboSlotDisplay(slot, touchDragHero, idx);
-    updateManualComboScore();
-    touchDragHero = null;
-  }, { passive: true });
-
-  document.addEventListener('touchcancel', () => {
-    if (touchDragGhost && touchDragGhost.parentNode) {
-      touchDragGhost.parentNode.removeChild(touchDragGhost);
-    }
-    touchDragGhost = null;
-    touchDragHero  = null;
-  }, { passive: true });
-}
-
-// --- RENDERING: MANUAL BUILDER ---
-
-function renderAvailableHeroes() {
-  if (!availableHeroesEl) return;
-  const t = translations[currentLanguage] || translations.en;
-  availableHeroesEl.innerHTML = '';
-  allHeroesData
-    .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
-    .forEach(hero => {
-      const card = document.createElement('div');
-      card.className = 'hero-card relative';
-      card.draggable = true;
-      card.dataset.heroName = hero.name;
-
-      const tagColor = seasonColors[hero.season] || '#f97316';
-      card.innerHTML = `
-        <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
-        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
-        
-        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-            </svg>
-        </div>
-
-        <img src="${hero.imageUrl}" alt="${hero.name}">
-        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-slate-900 dark:text-white truncate w-full text-center">${hero.name}</span>
-            <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
-        </div>
-      `;
-
-      card.addEventListener('dragstart', e => {
-        forceHideHeroTooltip();
-        e.dataTransfer.setData('text/plain', hero.name);
-      });
-
-      card.addEventListener('touchstart', (e) => {
-        forceHideHeroTooltip();
-        const touch = e.touches && e.touches[0];
-        touchDragHero = hero.name;
-        createTouchGhost(card, touch);
-      }, { passive: true });
-
-      card.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'touch') return; 
-        showHeroTooltip(e, hero.name);
-      });
-      card.addEventListener('pointermove', (e) => {
-        if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
-      });
-      card.addEventListener('pointerleave', (e) => {
-        if (e.pointerType === 'touch') return;
-        hideHeroTooltip();
-      });
-
-      const infoBtn = card.querySelector('.info-btn');
-      if (infoBtn) {
-        infoBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); 
-          e.preventDefault();
-          showHeroTooltip(e, hero.name);
-        });
-        infoBtn.addEventListener('touchstart', (e) => {
-          e.stopPropagation(); 
-        }, { passive: false });
-      }
-
-      card.style.animationDelay = (availableHeroesEl.children.length * 0.025) + 's';
-      availableHeroesEl.appendChild(card);
-    });
-
-  let sourceNote = document.getElementById('heroesSourceNote1');
-  if (!sourceNote) {
-      sourceNote = document.createElement('div');
-      sourceNote.id = 'heroesSourceNote1';
-      sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
-      availableHeroesEl.parentNode.appendChild(sourceNote);
-  }
-  sourceNote.innerHTML = sourceCreditText;
-  // Update hero count badge
-  const countEl = document.getElementById('manualHeroCount');
-  if (countEl) {
-    const count = availableHeroesEl.querySelectorAll('.hero-card').length;
-    countEl.textContent = count + ' hero' + (count !== 1 ? 's' : '');
-  }
-}
-
-function updateComboSlotDisplay(slot, name, idx) {
-  const t = translations[currentLanguage] || translations.en;
-  if (name) {
-    slot.innerHTML = `
-      <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous">
-      <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
-        ${name}
-      </span>`;
-    slot.classList.add('relative', 'p-0');
-  } else {
-    slot.innerHTML = `
-      <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
-        <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
-        <span data-i18n="dragHeroHere" class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
-          ${t.dragHeroHere}
-        </span>
-      </div>`;
-    slot.classList.remove('relative', 'p-0');
-  }
-}
-
-function updateManualComboScore() {
-  const t = translations[currentLanguage] || translations.en;
-  const bar = document.getElementById('comboFooterBar');
-  if (!bar) return;
-
-  let scoreBox = document.getElementById('manualComboScoreBox');
-  if (!scoreBox) {
-    scoreBox = document.createElement('div');
-    scoreBox.id = 'manualComboScoreBox';
-    scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox hidden';
-    const buttonsRow = document.getElementById('comboButtonsRow');
-    if (buttonsRow) bar.insertBefore(scoreBox, buttonsRow);
-    else bar.appendChild(scoreBox);
-  }
-
-  if (currentCombo.includes(null)) {
-    scoreBox.textContent = '';
-    scoreBox.classList.add('hidden');
-    return;
-  }
-
-  const info = getComboRankInfo(currentCombo);
-  const counterCount = getCounterCount(currentCombo);
-  scoreBox.classList.remove('hidden');
-
-  if (!info && !counterCount) {
-    scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center';
-    scoreBox.textContent = t.manualComboNotRanked || 'This combo is not in the ranked database.';
-    return;
-  }
-
-  scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox';
-  const label = t.generatorScoreLabel || 'Score:';
-  const scoreHtml = info
-    ? `<div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${label}</span>
-        <span class="text-lg font-black text-sky-600 dark:text-sky-400">${info.score}</span>
-        <span class="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
-      </div>`
-    : '';
-  scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
-}
-
-// --- RENDERING: GENERATOR ---
-
-function renderGeneratorHeroes() {
-  if (!generatorHeroesEl) return;
-  generatorHeroesEl.innerHTML = '';
-  allHeroesData
-    .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
-    .forEach(hero => {
-      const card = document.createElement('button');
-      card.className = `hero-card generator-card relative ${
-        generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
-      }`;
-      
-      card.innerHTML = `
-        <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
-        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
-        
-        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-            </svg>
-        </div>
-
-        <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
-        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-slate-900 dark:text-white truncate w-full text-center">${hero.name}</span>
-            <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
-        </div>
-      `;
-      
-      card.onclick = () => {
-        forceHideHeroTooltip(); 
-        
-        if (generatorSelectedHeroes.has(hero.name)) {
-          generatorSelectedHeroes.delete(hero.name);
-          card.classList.remove('generator-card-selected');
-        } else {
-          generatorSelectedHeroes.add(hero.name);
-          card.classList.add('generator-card-selected');
-        }
-        // Update selected count badge
-        const countBadge = document.getElementById('genSelectedCount');
-        if (countBadge) {
-          const n = generatorSelectedHeroes.size;
-          if (n > 0) { countBadge.textContent = n + ' selected'; countBadge.classList.remove('hidden'); }
-          else { countBadge.classList.add('hidden'); }
-        }
-      };
-
-      card.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'touch') return; 
-        showHeroTooltip(e, hero.name);
-      });
-      card.addEventListener('pointermove', (e) => {
-        if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
-      });
-      card.addEventListener('pointerleave', (e) => {
-        if (e.pointerType === 'touch') return;
-        hideHeroTooltip();
-      });
-
-      const infoBtn = card.querySelector('.info-btn');
-      if (infoBtn) {
-        infoBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); 
-          e.preventDefault();
-          showHeroTooltip(e, hero.name);
-        });
-        infoBtn.addEventListener('touchstart', (e) => {
-          e.stopPropagation(); 
-        }, { passive: false });
-      }
-
-      generatorHeroesEl.appendChild(card);
-    });
-
-    let sourceNote = document.getElementById('heroesSourceNote2');
-    if (!sourceNote) {
-        sourceNote = document.createElement('div');
-        sourceNote.id = 'heroesSourceNote2';
-        sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
-        generatorHeroesEl.parentNode.appendChild(sourceNote);
-    }
-    sourceNote.innerHTML = sourceCreditText;
-}
-
-function renderGeneratorResults(bestCombos) {
-  const t = translations[currentLanguage] || translations.en;
-  generatorResultsEl.innerHTML = '';
-
-  bestCombos.forEach((combo, i) => {
-    const card = document.createElement('div');
-    card.className = 'generated-combo-card';
-
-    const slots = document.createElement('div');
-    slots.className = 'saved-combo-slots';
-
-    combo.heroes.forEach(name => {
-      const item = document.createElement('div');
-      item.className = 'saved-combo-slot-item';
-      item.style.cursor = 'pointer';
-      const img = document.createElement('img');
-      img.src = getHeroImageUrl(name);
-      img.crossOrigin = 'anonymous';
-      img.style.transition = 'transform 0.18s ease, box-shadow 0.18s ease';
-      const label = document.createElement('span');
-      label.className = 'text-[10px] text-sky-600 dark:text-sky-300 font-bold truncate px-1';
-      label.textContent = name;
-      item.appendChild(img);
-      item.appendChild(label);
-      // Desktop: hover tooltip
-      item.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'touch') return;
-        img.style.transform = 'scale(1.12)';
-        img.style.boxShadow = '0 0 18px rgba(56,189,248,0.45)';
-        showHeroTooltip(e, name);
-      });
-      item.addEventListener('pointermove', (e) => {
-        if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
-      });
-      item.addEventListener('pointerleave', (e) => {
-        if (e.pointerType === 'touch') return;
-        img.style.transform = '';
-        img.style.boxShadow = '';
-        hideHeroTooltip();
-      });
-      // Mobile: tap to show tooltip
-      item.addEventListener('click', () => {
-        const rect = item.getBoundingClientRect();
-        const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top };
-        showHeroTooltip(fakeEvent, name);
-      });
-      slots.appendChild(item);
-    });
-
-    card.innerHTML = `
-      <span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>
-    `;
-    card.appendChild(slots);
-
-    const scoreBox = document.createElement('div');
-    scoreBox.className = 'gen-score-panel';
-    scoreBox.innerHTML = `
-      <div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${t.generatorScoreLabel}</span>
-        <span class="text-lg font-black text-sky-600 dark:text-sky-400">${combo.displayScore}</span>
-      </div>
-      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
-    `;
-    card.appendChild(scoreBox);
-
-    generatorResultsEl.appendChild(card);
-  });
-}
-
-// --- LOGIC ---
-
-async function saveCombo() {
-  const t = translations[currentLanguage] || translations.en;
-  if (currentCombo.includes(null)) {
-    showAboModal(t.messagePleaseDrag3Heroes);
-    return;
-  }
-  loadingSpinner.classList.remove('hidden');
-  try {
-    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-    await addDoc(collection(db, `users/${userId}/bestCombos`), {
-      heroes: [...currentCombo],
-      timestamp: serverTimestamp()
-    });
-    currentCombo = [null, null, null];
-    document.querySelectorAll('.combo-slot')
-      .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
-    updateManualComboScore();
-    if (typeof window.showToast === 'function') window.showToast('✅ Combo saved!', 'success');
-  } catch (err) {
-    console.error(err);
-    if (typeof window.showToast === 'function') window.showToast('❌ Could not save combo', 'error');
-  } finally {
-    loadingSpinner.classList.add('hidden');
-  }
-}
-
-function generateBestCombos() {
-  const t = translations[currentLanguage] || translations.en;
-  const selected = Array.from(generatorSelectedHeroes);
-
-  if (selected.length < 12) { 
-    showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes to generate best combos.");
-    return;
-  }
-
-  const ownedSet = new Set(selected);
-  const usedHeroesGlobal = new Set();
-  const finalSelection = [];
-  const total = rankedCombos.length;
-
-  for (let i = 0; i < total; i++) {
-    const combo = rankedCombos[i];
-    if (finalSelection.length >= 5) break;
-    const canBuild = combo.heroes.every(h => ownedSet.has(h));
-    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
-
-    if (canBuild && isUnique) {
-      let rawScore = 100;
-      if (total > 1) {
-        rawScore = 100 - ((i / (total - 1)) * 99);
-      }
-      finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
-      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
-    }
-  }
-
-  lastGeneratedCombos = finalSelection;
-  renderGeneratorResults(finalSelection);
-
-  if (finalSelection.length > 0) {
-    downloadGeneratorBtn.classList.remove('hidden');
-    if (typeof window.showToast === 'function') window.showToast(`🎯 Found ${finalSelection.length} best combo${finalSelection.length > 1 ? 's' : ''}!`, 'success');
-  } else {
-    downloadGeneratorBtn.classList.add('hidden');
-  }
-}
-
-function generateRandomCombos() {
-  const t = translations[currentLanguage] || translations.en;
-  const selected = Array.from(generatorSelectedHeroes);
-  if (selected.length < 3) {
-    showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
-    return;
-  }
-
-  const ownedSet = new Set(selected);
-  const total = rankedCombos.length;
-
-  const validCombos = rankedCombos
-    .map((combo, index) => {
-        let rawScore = 100;
-        if (total > 1) {
-          rawScore = 100 - ((index / (total - 1)) * 99);
-        }
-        return {
-          ...combo,
-          originalIndex: index,
-          displayScore: rawScore.toFixed(1)
-        };
-    })
-    .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
-
-  if (validCombos.length === 0) {
-    showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
-    return;
-  }
-
-  for (let i = validCombos.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
-  }
-
-  const randomSelection = [];
-  const usedHeroesGlobal = new Set();
-
-  for (const combo of validCombos) {
-    if (randomSelection.length >= 5) break;
-    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
-    if (isUnique) {
-      randomSelection.push(combo);
-      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
-    }
-  }
-
-  randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
-
-  if (randomSelection.length === 0) {
-     showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
-  } else {
-     lastGeneratedCombos = randomSelection;
-     renderGeneratorResults(randomSelection);
-     downloadGeneratorBtn.classList.remove('hidden');
-  }
-}
-
-async function setupFirestoreListener() {
-  const _db = getDb();
-  if (!_db || !userId) return;
-  db = _db;
-
-  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-
-  const q = query(
-    collection(db, `users/${userId}/bestCombos`),
-    orderBy('timestamp', 'desc'),
-    limit(100)
-  );
-
-  onSnapshot(q, snap => {
-    savedCombosCache = [];
-    savedCombosEl.innerHTML = '';
-    noCombosMessage.classList.toggle('hidden', !snap.empty);
-
-    let counter = 1;
-    snap.forEach(d => {
-      const heroes = d.data().heroes || [];
-      savedCombosCache.push(heroes);
-
-      const row = document.createElement('div');
-      row.className = 'saved-combo-display';
-      row.innerHTML = `
-        <span class="saved-combo-number">${counter}</span>
-        <div class="saved-combo-slots"></div>
-      `;
-
-      const slots = row.querySelector('.saved-combo-slots');
-      heroes.forEach(name => {
-        const item = document.createElement('div');
-        item.className = 'saved-combo-slot-item';
-        item.innerHTML = `
-          <img src="${getHeroImageUrl(name)}">
-          <span>${name}</span>
-        `;
-        slots.appendChild(item);
-      });
-
-      const rankInfo = getComboRankInfo(heroes);
-      const counterCount = getCounterCount(heroes);
-      if (rankInfo || counterCount) {
-        const t = translations[currentLanguage] || translations.en;
-        const label = t.generatorScoreLabel || 'Score:';
-        const scoreBox = document.createElement('div');
-        scoreBox.className = 'gen-score-panel saved-combo-scorebox';
-        const scoreHtml = rankInfo
-          ? `<div class="gen-score-main">
-              <span class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">${label}</span>
-              <span class="text-lg font-black text-sky-600 dark:text-sky-400">${rankInfo.score}</span>
-            </div>`
-          : '';
-        scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
-        row.appendChild(scoreBox);
-      }
-
-      const delBtn = document.createElement('button');
-      delBtn.className = 'remove-combo-btn';
-      delBtn.textContent = 'X';
-      delBtn.onclick = () =>
-        showAboModal(
-          translations[currentLanguage].messageConfirmRemoveCombo,
-          async () => {
-            await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
-          }
-        );
-
-      row.appendChild(delBtn);
-      savedCombosEl.appendChild(row);
-      counter++;
-    });
-  });
-}
+// --- TOUCH DRAG & RENDER MOVED TO MODULAR FILES ---
 // --- UI WIRING ---
 function wireUIActions() {
   // === TAB BUTTON HANDLERS ===
@@ -1790,8 +1243,6 @@ tabs.forEach(tab => {
     };
   }
   switchTab('generator', true);
-
-  // Close wireUIActions
 }
 
 // --- TRANSLATIONS / TEXT ---
@@ -1862,8 +1313,6 @@ function updateTextContent() {
   });
   syncGameClockTitles();
 
-  // Theme select is static (Old/New labels) — no dynamic i18n needed for options right now
-
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     const key = el.getAttribute('data-i18n-label');
     if (t[key]) el.label = t[key].replace('{version}', APP_VERSION);
@@ -1877,12 +1326,6 @@ function updateTextContent() {
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
   applySeo(currentLanguage);
-
-  // Populate footer version
-  const footerVer = document.getElementById('footerVersion');
-  if (footerVer) {
-    footerVer.textContent = `v${APP_VERSION}`;
-  }
 
   updateManualComboScore();
   if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer')) {
@@ -2678,8 +2121,8 @@ function renderCalculator(tech) {
                 <div class="tech-node-container flex flex-col bg-slate-800/95 w-full sm:w-[310px] max-w-[340px] shrink-0 p-3 sm:p-5 rounded-xl sm:rounded-2xl border relative transition-all ${maxedContainerStyle}" data-node-id="${node.id}">
                     <div class="flex justify-between items-start mb-2 sm:mb-3">
                         <div class="pr-2 flex-1 min-w-0">
-                            <span class="text-[13px] sm:text-base font-black text-slate-900 dark:text-white block leading-tight drop-shadow-sm break-words whitespace-normal">${node.name}</span>
-                            <span class="text-[9px] sm:text-[11px] text-sky-600 dark:text-sky-400 font-semibold uppercase tracking-wider mt-0.5 sm:mt-1 block break-words whitespace-normal">${node.buff}</span>
+                            <span class="text-[13px] sm:text-base font-black text-white block leading-tight drop-shadow-sm break-words whitespace-normal">${node.name}</span>
+                            <span class="text-[9px] sm:text-[11px] text-sky-400 font-semibold uppercase tracking-wider mt-0.5 sm:mt-1 block break-words whitespace-normal">${node.buff}</span>
                         </div>
                         <div class="flex flex-col items-end text-right shrink-0 min-w-[70px] sm:min-w-[90px]">
                             <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Remaining</span>
@@ -3426,7 +2869,24 @@ function renderHeroesTab() {
   }
 }
 
-// --- Tab scroll buttons (top level helper) ---
+// --- INITIALIZE EVERYTHING ---
+async function startApp() {
+    try {
+    // 1. Setup UI & Render Heroes
+    updateTextContent();
+    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
+    renderAvailableHeroes();
+    renderGeneratorHeroes();
+    wireUIActions();
+    // 2. Start the Local Calculators
+    initResearchCalculator();
+    
+    // RESTORED: Wake up the Loyalty Calculator!
+    if (typeof initLoyaltyCalculator === 'function') {
+        initLoyaltyCalculator();
+    }
+
+  // --- Tab scroll buttons ---
 function initTabScroll() {
   const scrollContainer = document.getElementById('tabNavScroll');
   const leftBtn = document.getElementById('tabScrollLeft');
@@ -3457,49 +2917,32 @@ function initTabScroll() {
   setTimeout(checkOverflow, 100);
 }
 
-// --- INITIALIZE EVERYTHING ---
-async function startApp() {
-  try {
-    // 1. Setup UI & Render Heroes
-    updateTextContent();
-    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
-    renderAvailableHeroes();
-    renderGeneratorHeroes();
-    wireUIActions();
-
-    // 2. Start the Local Calculators
-    initResearchCalculator();
-
-    // RESTORED: Wake up the Loyalty Calculator!
-    if (typeof initLoyaltyCalculator === 'function') {
-      initLoyaltyCalculator();
-    }
-
-    // Tab scroll buttons
-    initTabScroll();
-
+// Call this after your existing DOM setup
+initTabScroll();
+  
     // 3. Initialize Firebase & User Data
     try {
-      await initFirebase();
-      const user = await ensureAnonymousAuth();
-
-      // RESTORED: Assign the actual Firebase User ID so your saved combos work!
-      if (user && user.uid) {
-        userId = user.uid;
-      }
-
-      setupFirestoreListener();
-
-      // RESTORED: Wake up the Comments section!
-      if (typeof initComments === 'function') {
-        initComments();
-      }
+        await initFirebase();
+        const user = await ensureAnonymousAuth();
+        
+        // RESTORED: Assign the actual Firebase User ID so your saved combos work!
+        if (user && user.uid) {
+            userId = user.uid;
+        }
+        
+        setupFirestoreListener();
+        
+        // RESTORED: Wake up the Comments section!
+        if (typeof initComments === 'function') {
+            initComments();
+        }
+        
     } catch (error) {
-      console.warn("Firebase could not initialize (might be offline or missing config).", error);
+        console.warn("Firebase could not initialize (might be offline or missing config).", error);
     }
-  } finally {
-    await notifyAppReady();
-  }
+    } finally {
+        await notifyAppReady();
+    }
 }
 
 // Fire it up!

@@ -1,7 +1,6 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool  b6.6
+   mobile.css — VTS Hero Combo Tool  7.0
    Applied on screens ≤768px via <link media="(max-width: 768px)">
-   Light/dark theme supported (inherits from app.css variables + .dark)
    ============================================================= */
 
 :root {
@@ -709,4 +708,38 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   font-size: 0.8rem !important; min-height: 38px;
 }
 #commentSubmitBtn { width: 100%; }
+
+/* Light theme toggle on mobile (slightly smaller) */
+[data-theme="light"] #themeToggle {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* =============================================================
+   MOBILE PREMIUM STYLE ENHANCEMENTS
+   ============================================================= */
+
+/* Micro-spring touch feedback on mobile */
+.hero-card:active, .generator-card:active, .tab-pill:active, .filter-pill:active, button:active {
+  transform: scale(0.94) !important;
+  transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* Glassmorphic scrollable tab nav bar */
+#tabNavScroll {
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="light"] #tabNavScroll {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Enhanced mobile search focus styling */
+.hero-search-input:focus, .research-search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  border-color: #3b82f6 !important;
+}
 

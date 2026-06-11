@@ -1,9 +1,12 @@
-# Hero Combo Creator — VTS 1097 (b6.3)
+# Hero Combo Creator — VTS 1097 (7.0)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, and more.
 
-## What's new in b6.3
+## What's new in 7.0
 
+- **Modular Architecture** — Split the large `js/app.js` file into separate sub-modules: `js/app-builder.js` (Manual Builder) and `js/app-generator.js` (Combo Generator) for cleaner codebase structure.
+- **Type Safety & Intellisense** — Added comprehensive JSDoc annotations to `js/tech-db.js` and `js/combos-db.js` to enable type checks and IDE autocomplete.
+- **Premium Aesthetics & Transitions** — Added fluid dark-to-light theme transition curves, a premium obsidian-indigo Space Dark Aurora backdrop, soft light-theme gradients, and springy interactive micro-animations for cards/buttons.
 - **Research game-style trees expanded** — Season 0 trees and military branches use in-game layouts; troop branches open in dedicated branch views (`layoutMode: "game"` / `"branch"`)
 - **Eden parchment map** — optimized faction-division asset (~5 MB); baked capital art masked so coord-placed icons replace them
 - **Eden map asset loading** — improved reference-map fallback chain for offline and CDN sources
