@@ -1,19 +1,37 @@
 // Eden Map Structure Coordinates — base layout (Classic ~2023 reference)
-// Season datasets: database/*.txt → python database/build-eden-datasets.py
-import {
-  EDEN_DATASET_CATALOG,
-  EDEN_DATASET_OVERLAYS,
-  EDEN_DATASET_SECTORS,
-} from './eden-datasets.generated.js';
+import { loadEdenDatasetStore } from './eden-datasets-loader.js';
 
 const EDEN_DATASET_STORAGE_KEY = 'vts_eden_dataset';
 const DEFAULT_EDEN_DATASET_ID = 'season5';
 const LEGACY_DATASET_IDS = { classic: 'season3', wonders: 'season5' };
 
+let datasetStore = null;
+let datasetLoadPromise = null;
+
+export async function ensureEdenDatasetsLoaded() {
+  if (datasetStore) return datasetStore;
+  if (!datasetLoadPromise) {
+    datasetLoadPromise = loadEdenDatasetStore().then((store) => {
+      datasetStore = store;
+      return store;
+    });
+  }
+  return datasetLoadPromise;
+}
+
+function getCatalog() {
+  return datasetStore?.catalog ?? [];
+}
+
+export function getEdenDatasetCatalog() {
+  return getCatalog();
+}
+
 export function getDefaultEdenDatasetId() {
-  return EDEN_DATASET_CATALOG.some(d => d.id === DEFAULT_EDEN_DATASET_ID)
+  const catalog = getCatalog();
+  return catalog.some(d => d.id === DEFAULT_EDEN_DATASET_ID)
     ? DEFAULT_EDEN_DATASET_ID
-    : (EDEN_DATASET_CATALOG[0]?.id || '');
+    : (catalog[0]?.id || DEFAULT_EDEN_DATASET_ID);
 }
 export const TEMPLE_TYPES = new Set(['AT', 'WCB', 'WC8']);
 /** In-game overview zoom: capitals, strongholds, and temple only. */
@@ -48,8 +66,6 @@ export function getStructurePoints(s) {
   if (s?.points != null && s.points !== '') return Number(s.points) || 0;
   return STRUCTURE_TYPES[s?.type]?.points || 0;
 }
-
-export { EDEN_DATASET_CATALOG };
 
 export function getStructureLabel(type) {
   return STRUCTURE_TYPES[type]?.label || type;
@@ -897,20 +913,20 @@ export function getEdenDatasetId() {
 
 export function hasEdenDatasetChoice() {
   const id = getEdenDatasetId();
-  return !!id && EDEN_DATASET_CATALOG.some(d => d.id === id);
+  return !!id && getCatalog().some(d => d.id === id);
 }
 
 export function applyEdenDataset(id) {
   const resolvedId = migrateDatasetId(id);
-  const entry = EDEN_DATASET_CATALOG.find(d => d.id === resolvedId);
-  if (!entry) return false;
+  const entry = getCatalog().find(d => d.id === resolvedId);
+  if (!entry || !datasetStore) return false;
   activeDatasetId = resolvedId;
 
-  if (entry.sectorMode === 'full' && EDEN_DATASET_SECTORS[resolvedId]) {
-    activeSectors = JSON.parse(JSON.stringify(EDEN_DATASET_SECTORS[resolvedId]));
+  if (entry.sectorMode === 'full' && datasetStore.sectors[resolvedId]) {
+    activeSectors = JSON.parse(JSON.stringify(datasetStore.sectors[resolvedId]));
   } else {
     activeSectors = cloneBaseSectors();
-    const overlay = EDEN_DATASET_OVERLAYS[resolvedId];
+    const overlay = datasetStore.overlays[resolvedId];
     if (overlay) applyOverlay(activeSectors, overlay, entry);
   }
 
@@ -936,11 +952,15 @@ export function syncEdenSectorSelect(selectEl, { fullLabel = 'Full Map' } = {}) 
 export function getEdenSectors() {
   if (!activeSectors) {
     const saved = migrateDatasetId(localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || '');
-    const id = (saved && EDEN_DATASET_CATALOG.some(d => d.id === saved))
+    const catalog = getCatalog();
+    const id = (saved && catalog.some(d => d.id === saved))
       ? saved
       : getDefaultEdenDatasetId();
-    if (id) applyEdenDataset(id);
-    else activeSectors = cloneBaseSectors();
+    if (id && datasetStore && applyEdenDataset(id)) {
+      /* applied */
+    } else {
+      activeSectors = cloneBaseSectors();
+    }
   }
   return activeSectors;
 }

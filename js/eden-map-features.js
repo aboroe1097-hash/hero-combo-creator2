@@ -300,9 +300,90 @@ export function animateCamera(getCam, setCam, target, redraw, duration = 300) {
   });
 }
 
-export async function exportMapAsPng(mainCanvas, filename = 'eden-map.png') {
+export function getSectorScreenCorners(worldToIso, sectorKey, padWorld = 18) {
+  const b = getSectorBounds(sectorKey);
+  return [
+    worldToIso(b.minX - padWorld, b.minY - padWorld),
+    worldToIso(b.maxX + padWorld, b.minY - padWorld),
+    worldToIso(b.maxX + padWorld, b.maxY + padWorld),
+    worldToIso(b.minX - padWorld, b.maxY + padWorld),
+  ];
+}
+
+export function applySectorClip(ctx, worldToIso, sectorKey, padWorld = 18) {
+  const corners = getSectorScreenCorners(worldToIso, sectorKey, padWorld);
+  ctx.save();
+  ctx.beginPath();
+  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.clip();
+}
+
+export function drawSectorIsolateChrome(ctx, worldToIso, sectorKey) {
+  const corners = getSectorScreenCorners(worldToIso, sectorKey, 18);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(129,140,248,0.9)';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(99,102,241,0.45)';
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function pathTouchesSector(path, sectorKey) {
+  if (!path || sectorKey === 'FULL') return true;
+  const b = getSectorBounds(sectorKey);
+  const pts = path.routedPath || path.points || [];
+  return pts.some((pt) =>
+    pt.x >= b.minX - 12 && pt.x <= b.maxX + 12
+    && pt.y >= b.minY - 12 && pt.y <= b.maxY + 12
+  );
+}
+
+export async function exportMapAsPng(mainCanvas, filename = 'eden-map.png', options = {}) {
+  const { title, subtitle, footer } = options;
+  const dpr = mainCanvas.width / Math.max(1, mainCanvas.clientWidth || mainCanvas.width);
+
+  let exportCanvas = mainCanvas;
+
+  if (title || subtitle || footer) {
+    const headerH = Math.round(56 * dpr);
+    const footerH = footer ? Math.round(28 * dpr) : 0;
+    const off = document.createElement('canvas');
+    off.width = mainCanvas.width;
+    off.height = mainCanvas.height + headerH + footerH;
+    const ctx = off.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, off.width, 0);
+    grad.addColorStop(0, '#1e293b');
+    grad.addColorStop(1, '#312e81');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, off.width, headerH);
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = `bold ${Math.round(18 * dpr)}px Inter, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title || 'Eden Map Plan', 16 * dpr, headerH * 0.42);
+    if (subtitle) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `${Math.round(12 * dpr)}px Inter, sans-serif`;
+      ctx.fillText(subtitle, 16 * dpr, headerH * 0.72);
+    }
+    ctx.drawImage(mainCanvas, 0, headerH);
+    if (footer) {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, off.height - footerH, off.width, footerH);
+      ctx.fillStyle = '#64748b';
+      ctx.font = `${Math.round(10 * dpr)}px Inter, sans-serif`;
+      ctx.fillText(footer, 16 * dpr, off.height - footerH * 0.55);
+    }
+    exportCanvas = off;
+  }
+
   const link = document.createElement('a');
   link.download = filename;
-  link.href = mainCanvas.toDataURL('image/png');
+  link.href = exportCanvas.toDataURL('image/png');
   link.click();
 }

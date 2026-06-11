@@ -1,16 +1,24 @@
-"""Verify structure IDs are unique within each dataset (SECTORS export)."""
+"""Verify structure IDs are unique within each dataset (decoded payload)."""
+import base64
+import gzip
+import json
 import re
 from collections import Counter
 from pathlib import Path
 
-text = Path(__file__).resolve().parents[1].joinpath("js/eden-datasets.generated.js").read_text(encoding="utf-8")
-sectors_block = text.split("export const EDEN_DATASET_SECTORS = ", 1)[1].split("export const EDEN_DATASET_OVERLAYS", 1)[0]
-dataset_chunks = re.split(r'\n  "([^"]+)": \{\n', sectors_block)[1:]
+ROOT = Path(__file__).resolve().parents[1]
+payload_path = ROOT / "js" / "eden-datasets.payload.js"
+text = payload_path.read_text(encoding="utf-8")
+b64 = re.search(r'EDEN_DATASETS_PAYLOAD="([^"]+)"', text)
+if not b64:
+    raise SystemExit(f"Could not parse payload from {payload_path}")
+data = json.loads(gzip.decompress(base64.b64decode(b64.group(1))))
+sectors = data.get("sectors", {})
 failed = False
-for i in range(0, len(dataset_chunks), 2):
-    ds_id = dataset_chunks[i]
-    body = dataset_chunks[i + 1] if i + 1 < len(dataset_chunks) else ""
-    ids = re.findall(r'id: "([^"]+)"', body)
+for ds_id, ds_sectors in sectors.items():
+    ids = []
+    for sector in ds_sectors.values():
+        ids.extend(s["id"] for s in sector.get("structures", []))
     c = Counter(ids)
     dups = [k for k, v in c.items() if v > 1]
     if dups:

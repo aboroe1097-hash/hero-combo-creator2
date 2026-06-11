@@ -10,14 +10,16 @@ import { rankedCombos } from './combos-db.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
-import { initEdenMapPlanner } from './eden-map.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
-import { preloadStructureIcons } from './eden-map-assets.js';
 import { escapeHtml } from './utils.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
+import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
+import { initAppLoading, notifyAppReady } from './app-loading.js';
+
+initAppLoading();
 
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.counter-toggle-btn');
@@ -1515,8 +1517,8 @@ tabs.forEach(tab => {
   }
 
   let _lastTab = null;
-  let _isAnimating = false;
   let _edenMapReady = false;
+  let _edenMapBooting = false;
   let _heroesTabReady = false;
 
   const tabPanels = [
@@ -1533,9 +1535,25 @@ tabs.forEach(tab => {
   }
 
   function onTabActivated(tabName) {
-    if (tabName === 'edenMap' && !_edenMapReady) {
-      initEdenMapPlanner();
-      _edenMapReady = true;
+    if (tabName === 'edenMap' && !_edenMapReady && !_edenMapBooting) {
+      _edenMapBooting = true;
+      const root = document.getElementById('edenMapRoot');
+      root?.classList.add('eden-map-loading');
+      import('./eden-map.js')
+        .then((mod) => mod.bootEdenMapPlanner())
+        .then(() => {
+          _edenMapReady = true;
+        })
+        .catch((err) => {
+          console.error('Eden map failed to load', err);
+          _edenMapBooting = false;
+          if (typeof window.showToast === 'function') {
+            window.showToast('Eden map failed to load. Refresh and try again.', 'error', 4000);
+          }
+        })
+        .finally(() => {
+          root?.classList.remove('eden-map-loading');
+        });
     }
     if (tabName === 'heroes' && !_heroesTabReady) {
       renderHeroesTab();
@@ -1547,56 +1565,36 @@ tabs.forEach(tab => {
   }
 
   function switchTab(tabName, force = false) {
-    if (_isAnimating) return;
     if (!force && tabName === _lastTab) return;
 
-    const currentSection = document.querySelector('section.tab-panel:not(.hidden)');
     const targetSection = document.getElementById(`${tabName}Section`);
 
-    const applyTab = () => {
-      tabPanels.forEach(sec => {
-        if (sec) {
-          sec.classList.add('hidden');
-          sec.classList.remove('tab-exit');
-        }
-      });
-      if (comboFooterBar) comboFooterBar.classList.add('hidden');
+    tabPanels.forEach((sec) => {
+      if (sec) sec.classList.add('hidden');
+    });
+    if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-      document.querySelectorAll('.tab-pill').forEach(btn => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
-      const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-      if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+    document.querySelectorAll('.tab-pill').forEach((btn) => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+    const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
 
-      if (targetSection) {
-        targetSection.classList.remove('hidden');
-        void targetSection.offsetWidth;
-      }
+    if (targetSection) targetSection.classList.remove('hidden');
 
-      if (tabName === 'manual' || tabName === 'generator') {
-        if (globalToggleRow) globalToggleRow.classList.remove('hidden');
-      } else if (globalToggleRow) {
-        globalToggleRow.classList.add('hidden');
-      }
-
-      if (tabName === 'manual' && comboFooterBar) {
-        comboFooterBar.classList.remove('hidden');
-      }
-
-      document.body.classList.toggle('tab-manual-active', tabName === 'manual');
-      document.body.classList.toggle('tab-combo-active', tabName === 'manual' || tabName === 'generator');
-
-      onTabActivated(tabName);
-      _lastTab = tabName;
-      _isAnimating = false;
-    };
-
-    if (!currentSection || currentSection === targetSection) {
-      applyTab();
-      return;
+    if (tabName === 'manual' || tabName === 'generator') {
+      if (globalToggleRow) globalToggleRow.classList.remove('hidden');
+    } else if (globalToggleRow) {
+      globalToggleRow.classList.add('hidden');
     }
 
-    _isAnimating = true;
-    currentSection.classList.add('tab-exit');
-    setTimeout(applyTab, 250);
+    if (tabName === 'manual' && comboFooterBar) {
+      comboFooterBar.classList.remove('hidden');
+    }
+
+    document.body.classList.toggle('tab-manual-active', tabName === 'manual');
+    document.body.classList.toggle('tab-combo-active', tabName === 'manual' || tabName === 'generator');
+
+    onTabActivated(tabName);
+    _lastTab = tabName;
   }
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
@@ -2278,14 +2276,6 @@ function getGameTroopClass(troop) {
     return 'footmen';
 }
 
-function getGameTroopGlyph(troop) {
-    const kind = getGameTroopClass(troop);
-    if (kind === 'archer') return '🏹';
-    if (kind === 'cavalry') return '🐎';
-    if (kind === 'all') return '✦';
-    return '🛡';
-}
-
 function getStoredNodeLevel(techId, nodeId) {
     return parseInt(localStorage.getItem(`tech_${techId}_${nodeId}`), 10) || 0;
 }
@@ -2295,13 +2285,44 @@ function formatGameNodeLevel(node, level) {
     return `${level}/${node.maxLevel}`;
 }
 
+function syncGameNodeVisual(node, level, wrapEl) {
+    const wraps = wrapEl
+        ? [wrapEl]
+        : Array.from(document.querySelectorAll(`.game-tech-node-wrap[data-node-id="${node.id}"]`));
+    wraps.forEach((wrap) => {
+        const pct = node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0;
+        wrap.style.setProperty('--node-pct', `${pct}%`);
+        wrap.style.setProperty('--node-deg', String((pct / 100) * 360));
+        const tap = wrap.querySelector('.game-tech-tap');
+        const lvlEl = wrap.querySelector('.game-tech-level-badge');
+        const input = wrap.querySelector('.tech-node-input');
+        const maxBtn = wrap.querySelector('.game-tech-step--max');
+        if (lvlEl) lvlEl.textContent = formatGameNodeLevel(node, level);
+        if (input) input.value = level;
+        if (tap) {
+            tap.setAttribute('aria-label', `${node.name}: level ${level} of ${node.maxLevel}`);
+            tap.classList.toggle('game-tech-tap--maxed', level >= node.maxLevel);
+            tap.classList.toggle('game-tech-tap--progress', level > 0 && level < node.maxLevel);
+        }
+        if (maxBtn) {
+            const isMaxed = level >= node.maxLevel;
+            maxBtn.textContent = isMaxed ? '↩' : 'MAX';
+            maxBtn.dataset.step = isMaxed ? '0' : 'max';
+            maxBtn.classList.toggle('game-tech-step--undo', isMaxed);
+        }
+    });
+}
+
 function syncGameNodeButton(node, level) {
-    const btn = document.querySelector(`.game-tech-node[data-node-id="${node.id}"]`);
-    if (!btn) return;
-    const lvlEl = btn.querySelector('.game-tech-level');
-    if (lvlEl) lvlEl.textContent = formatGameNodeLevel(node, level);
-    btn.classList.toggle('game-tech-node--maxed', level >= node.maxLevel);
-    btn.classList.toggle('game-tech-node--progress', level > 0 && level < node.maxLevel);
+    syncGameNodeVisual(node, level);
+}
+
+function pulseGameNodeWrap(wrapEl) {
+    if (!wrapEl) return;
+    wrapEl.classList.remove('game-tech-node-wrap--pulse');
+    void wrapEl.offsetWidth;
+    wrapEl.classList.add('game-tech-node-wrap--pulse');
+    window.setTimeout(() => wrapEl.classList.remove('game-tech-node-wrap--pulse'), 320);
 }
 
 function buildGameTreeTierHtml(nodesInRow) {
@@ -2317,15 +2338,37 @@ function buildGameTreeTierHtml(nodesInRow) {
             const level = getStoredNodeLevel(node._techId || node.techId, node.id);
             const troopClass = getGameTroopClass(node.troop);
             const shortName = node.name.replace(/\s+(I|II|III|IV)$/i, '').trim();
+            const pct = node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0;
+            const tapState = level >= node.maxLevel
+                ? ' game-tech-tap--maxed'
+                : level > 0 ? ' game-tech-tap--progress' : '';
+            const maxLabel = level >= node.maxLevel ? '↩' : 'MAX';
+            const maxStep = level >= node.maxLevel ? '0' : 'max';
+            const maxUndo = level >= node.maxLevel ? ' game-tech-step--undo' : '';
+            const iconMeta = resolveTechNodeIcon(node);
             html += `
-              <button type="button" class="game-tech-node game-tech-node--${troopClass}${level >= node.maxLevel ? ' game-tech-node--maxed' : level > 0 ? ' game-tech-node--progress' : ''}"
-                style="--node-col:${node.col || idx + 1}" data-node-id="${node.id}" aria-label="${escapeHtml(node.name)}">
-                <span class="game-tech-frame">
-                  <span class="game-tech-glyph">${getGameTroopGlyph(node.troop)}</span>
-                  <span class="game-tech-level">${formatGameNodeLevel(node, level)}</span>
-                </span>
-                <span class="game-tech-name">${escapeHtml(shortName)}</span>
-              </button>`;
+              <div class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
+                style="--node-col:${node.col || idx + 1}; --node-pct:${pct}%; --node-deg:${(pct / 100) * 360}; --node-icon-tint:${iconMeta.tint}"
+                data-node-id="${node.id}" data-icon-id="${iconMeta.id}">
+                <button type="button" class="game-tech-tap game-tech-tap--${troopClass}${tapState}"
+                  aria-label="${escapeHtml(node.name)}: level ${level} of ${node.maxLevel}">
+                  <span class="game-tech-medallion" aria-hidden="true">
+                    <span class="game-tech-ring"></span>
+                    <span class="game-tech-core">
+                      <span class="game-tech-icon">${renderTechNodeIconSvg(node)}</span>
+                    </span>
+                    <span class="game-tech-level-badge">${formatGameNodeLevel(node, level)}</span>
+                  </span>
+                </button>
+                <div class="game-tech-stepper" role="group" aria-label="${escapeHtml(node.name)} level controls">
+                  <button type="button" class="game-tech-step" data-step="-1" aria-label="Decrease level">−</button>
+                  <button type="button" class="game-tech-step game-tech-step--max${maxUndo}" data-step="${maxStep}">${maxLabel}</button>
+                  <button type="button" class="game-tech-step" data-step="1" aria-label="Increase level">+</button>
+                </div>
+                <div class="node-cost-display game-tech-cost-pill" aria-live="polite"></div>
+                <span class="game-tech-name" title="${escapeHtml(node.name)}">${escapeHtml(shortName)}</span>
+                <input type="number" class="tech-node-input" min="0" max="${node.maxLevel}" value="${level}" tabindex="-1" aria-hidden="true" hidden>
+              </div>`;
         } else {
             html += '<span class="game-tree-slot" aria-hidden="true"></span>';
         }
@@ -2354,110 +2397,101 @@ function renderGameTreePageHtml(tech, pageNodes) {
     return html;
 }
 
-function buildNodeEditorPanelHtml(tech, node) {
-    const savedLevel = getStoredNodeLevel(tech.id, node.id);
-    const isMaxed = savedLevel === node.maxLevel;
-    let quickButtonsHtml = `<button type="button" class="quick-set-btn px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[10px] font-bold transition-colors" data-val="0">0</button>`;
-    [5, 10, 15, 20].forEach((v) => {
-        if (node.maxLevel >= v) {
-            quickButtonsHtml += `<button type="button" class="quick-set-btn px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[10px] font-bold transition-colors" data-val="${v}">${v}</button>`;
+function bindGameNodePress(el, { onTap, onLong, longMs = 480 } = {}) {
+    let timer = null;
+    let longFired = false;
+    const clear = () => {
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
         }
-    });
-    const toggleText = isMaxed ? 'UNDO' : 'MAX';
-    const toggleVal = isMaxed ? 0 : node.maxLevel;
-    const toggleColor = isMaxed
-        ? 'bg-slate-700 border-slate-500 hover:bg-slate-600 text-white'
-        : 'bg-blue-900/50 border-blue-500/50 hover:bg-blue-800/70 text-blue-300';
-    quickButtonsHtml += `<button type="button" class="quick-set-btn max-toggle-btn px-2 py-1 ${toggleColor} border rounded text-[10px] font-black transition-colors" data-val="${toggleVal}">${toggleText}</button>`;
-
-    return `
-      <div class="research-node-editor-head">
-        <div>
-          <div class="research-node-editor-title">${escapeHtml(node.name)}</div>
-          <div class="research-node-editor-buff">${escapeHtml(node.buff)}</div>
-        </div>
-        <button type="button" class="research-node-editor-close" data-close-node-editor>Close</button>
-      </div>
-      <div class="tech-node-container flex flex-col bg-slate-800/95 w-full p-3 rounded-xl border border-slate-700 relative transition-all" data-node-id="${node.id}">
-        <div class="flex justify-between items-start mb-2 gap-2">
-          <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold shrink-0">Remaining</span>
-          <div class="node-cost-display flex flex-col w-full gap-1 tabular-nums text-right text-xs"></div>
-        </div>
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-3 bg-slate-900/80 p-2 rounded-lg border border-slate-700/50">
-            <div class="flex flex-col items-center min-w-[40px]">
-              <span class="text-[9px] font-bold text-slate-400 uppercase">Lvl</span>
-              <input type="number" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-input w-12 bg-slate-800 border border-slate-600 rounded text-center text-white font-black py-1 text-sm outline-none focus:border-blue-500">
-            </div>
-            <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider flex-1 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer" style="accent-color:#3b82f6;">
-            <div class="flex flex-col items-center min-w-[32px]">
-              <span class="text-[9px] font-bold text-slate-500 uppercase">Max</span>
-              <span class="text-sm font-black text-slate-400">${node.maxLevel}</span>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-1">${quickButtonsHtml}</div>
-        </div>
-      </div>`;
-}
-
-function wireNodeEditor(tech, node, editorEl, updateFns) {
-    const cont = editorEl.querySelector('.tech-node-container');
-    if (!cont) return;
-    const slider = cont.querySelector('.tech-node-slider');
-    const input = cont.querySelector('.tech-node-input');
-    const maxBtn = cont.querySelector('.max-toggle-btn');
-    const nodeId = cont.dataset.nodeId;
-
-    const updateLevel = (val) => {
-        let v = parseInt(val, 10);
-        const max = parseInt(input.max, 10);
-        if (isNaN(v) || v < 0) v = 0;
-        if (v > max) v = max;
-        slider.value = v;
-        input.value = v;
-        localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
-        syncGameNodeButton(node, v);
-        if (v === max) {
-            if (maxBtn) {
-                maxBtn.dataset.val = 0;
-                maxBtn.textContent = 'UNDO';
-                maxBtn.className = 'quick-set-btn max-toggle-btn px-2 py-1 bg-slate-700 border border-slate-500 hover:bg-slate-600 text-white rounded text-[10px] font-black transition-colors';
-            }
-        } else if (maxBtn) {
-            maxBtn.dataset.val = max;
-            maxBtn.textContent = 'MAX';
-            maxBtn.className = 'quick-set-btn max-toggle-btn px-2 py-1 bg-blue-900/50 border border-blue-500/50 hover:bg-blue-800/70 text-blue-300 rounded text-[10px] font-black transition-colors';
-        }
-        calculateTechTotals(tech);
     };
-
-    const existing = updateFns.find((f) => f.nodeId === nodeId);
-    if (existing) existing.updateLevel = updateLevel;
-    else updateFns.push({ nodeId, updateLevel, max: parseInt(input.max, 10) });
-
-    slider.addEventListener('input', (e) => updateLevel(e.target.value));
-    input.addEventListener('input', (e) => updateLevel(e.target.value));
-    cont.addEventListener('click', (e) => {
-        const btn = e.target.closest('.quick-set-btn');
-        if (btn) updateLevel(btn.dataset.val);
+    el.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        longFired = false;
+        clear();
+        if (onLong) {
+            timer = window.setTimeout(() => {
+                longFired = true;
+                onLong();
+            }, longMs);
+        }
     });
-    calculateTechTotals(tech);
+    el.addEventListener('pointerup', clear);
+    el.addEventListener('pointerleave', clear);
+    el.addEventListener('pointercancel', clear);
+    el.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (longFired) {
+            longFired = false;
+            return;
+        }
+        onTap?.(e);
+    });
 }
 
-function openGameNodeEditor(tech, node, container, updateFns) {
-    const editor = container.querySelector('#researchNodeEditor');
-    if (!editor) return;
-    container.querySelectorAll('.game-tech-node.selected').forEach((b) => b.classList.remove('selected'));
-    const btn = container.querySelector(`.game-tech-node[data-node-id="${node.id}"]`);
-    if (btn) btn.classList.add('selected');
-    editor.classList.remove('hidden');
-    editor.innerHTML = buildNodeEditorPanelHtml(tech, node);
-    editor.querySelector('[data-close-node-editor]')?.addEventListener('click', () => {
-        editor.classList.add('hidden');
-        editor.innerHTML = '';
-        container.querySelectorAll('.game-tech-node.selected').forEach((b) => b.classList.remove('selected'));
+function wireGameTechNodeContainers(rootEl, tech) {
+    const updateFns = [];
+    rootEl.querySelectorAll('.game-tech-node-wrap').forEach((wrap) => {
+        const input = wrap.querySelector('.tech-node-input');
+        const tap = wrap.querySelector('.game-tech-tap');
+        const nodeId = wrap.dataset.nodeId;
+        const node = tech.nodes.find((n) => n.id === nodeId);
+        if (!input || !node) return;
+
+        const max = parseInt(input.max, 10);
+        let current = parseInt(input.value, 10) || 0;
+
+        const updateLevel = (val, { pulse = true } = {}) => {
+            let v = typeof val === 'string' && val === 'max' ? max : parseInt(val, 10);
+            if (isNaN(v) || v < 0) v = 0;
+            if (v > max) v = max;
+            const changed = v !== current;
+            current = v;
+            input.value = v;
+            localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
+            syncGameNodeVisual(node, v, wrap);
+            if (changed && pulse) pulseGameNodeWrap(wrap);
+            calculateTechTotals(tech);
+        };
+
+        const bump = (delta) => {
+            if (delta > 0 && current >= max) {
+                pulseGameNodeWrap(wrap);
+                return;
+            }
+            updateLevel(current + delta);
+        };
+
+        updateFns.push({ nodeId, updateLevel, max });
+
+        if (tap) {
+            bindGameNodePress(tap, {
+                onTap: () => bump(1),
+                onLong: () => updateLevel(max),
+            });
+        }
+
+        wrap.querySelectorAll('.game-tech-step').forEach((btn) => {
+            const step = btn.dataset.step;
+            if (step === '-1') {
+                bindGameNodePress(btn, {
+                    onTap: () => bump(-1),
+                    onLong: () => updateLevel(0),
+                    longMs: 520,
+                });
+                return;
+            }
+            bindGameNodePress(btn, {
+                onTap: () => {
+                    if (step === 'max') updateLevel(max);
+                    else if (step === '0') updateLevel(0);
+                    else bump(parseInt(step, 10) || 0);
+                },
+            });
+        });
     });
-    wireNodeEditor(tech, node, editor, updateFns);
+    return updateFns;
 }
 
 function renderGameCalculator(tech, container) {
@@ -2500,8 +2534,7 @@ function renderGameCalculator(tech, container) {
         <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(tech.name)}</span></div>
         ${pageTabsHtml}
         <div class="research-game-tree-viewport">${pagesHtml}</div>
-        <p class="research-game-footer">${appT('researchGameFooter')}</p>
-        <div id="researchNodeEditor" class="research-node-editor hidden"></div>
+        <p class="research-game-footer">${appT('researchGameHint')}</p>
       </div>
       <div class="research-calc-total">
         <div class="flex flex-col">
@@ -2514,13 +2547,7 @@ function renderGameCalculator(tech, container) {
     requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
 
-    const updateFns = [];
-    container.querySelectorAll('.game-tech-node').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const node = tech.nodes.find((n) => n.id === btn.dataset.nodeId);
-            if (node) openGameNodeEditor(tech, node, container, updateFns);
-        });
-    });
+    const updateFns = wireGameTechNodeContainers(container, tech);
 
     container.querySelectorAll('.research-page-tab').forEach((tab) => {
         tab.addEventListener('click', () => {
@@ -2532,22 +2559,6 @@ function renderGameCalculator(tech, container) {
             container.querySelectorAll('.research-game-page').forEach((p) => {
                 p.classList.toggle('active', p.dataset.gamePagePanel === pid);
             });
-            container.querySelector('#researchNodeEditor')?.classList.add('hidden');
-        });
-    });
-
-    tech.nodes.forEach((node) => {
-        updateFns.push({
-            nodeId: node.id,
-            max: node.maxLevel,
-            updateLevel: (val) => {
-                let v = parseInt(val, 10);
-                if (isNaN(v) || v < 0) v = 0;
-                if (v > node.maxLevel) v = node.maxLevel;
-                localStorage.setItem(`tech_${tech.id}_${node.id}`, v);
-                syncGameNodeButton(node, v);
-                calculateTechTotals(tech);
-            },
         });
     });
 
@@ -2865,17 +2876,26 @@ function calculateTechTotals(tech) {
         }
 
         if (display) {
-            if (node.costType === "Dual") {
-                display.innerHTML = `
-                    <span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>
-                    <span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30 mt-1">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>
-                `;
+            const isGamePill = display.classList.contains('game-tech-cost-pill');
+            const remainingTotal = nodeWisdom + nodeCourage + nodeOther;
+            if (isGamePill && remainingTotal === 0) {
+                display.innerHTML = '';
+            } else if (node.costType === "Dual") {
+                display.innerHTML = isGamePill
+                    ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
+                    : `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span><span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30 mt-1">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
             } else if (node.costType === "Courage") {
-                display.innerHTML = `<span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
+                display.innerHTML = isGamePill
+                    ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
+                    : `<span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
             } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
-                display.innerHTML = `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>`;
+                display.innerHTML = isGamePill
+                    ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`
+                    : `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>`;
             } else {
-                display.innerHTML = `<span class="flex items-center justify-between w-full text-amber-400 font-bold bg-amber-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-amber-500/30">${iconRes} <span>${nodeOther.toLocaleString()}</span></span>`;
+                display.innerHTML = isGamePill
+                    ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
+                    : `<span class="flex items-center justify-between w-full text-amber-400 font-bold bg-amber-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-amber-500/30">${iconRes} <span>${nodeOther.toLocaleString()}</span></span>`;
             }
         }
 
@@ -3350,14 +3370,13 @@ function renderHeroesTab() {
 
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
+    try {
     // 1. Setup UI & Render Heroes
     updateTextContent();
     mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
     renderAvailableHeroes();
     renderGeneratorHeroes();
     wireUIActions();
-    preloadStructureIcons(['C5', 'C6', 'CS', 'STRHD', 'CP1', 'ST2', 'LT2', 'AT', 'WC8']);
-    console.log('wireUIActions finished, tabs should be clickable');
     // 2. Start the Local Calculators
     initResearchCalculator();
     
@@ -3419,6 +3438,9 @@ initTabScroll();
         
     } catch (error) {
         console.warn("Firebase could not initialize (might be offline or missing config).", error);
+    }
+    } finally {
+        await notifyAppReady();
     }
 }
 

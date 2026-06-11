@@ -1,7 +1,7 @@
 // Eden map season / dataset picker
 import { translations } from './translations.js';
 import {
-  EDEN_DATASET_CATALOG,
+  getEdenDatasetCatalog,
   applyEdenDataset,
   getDefaultEdenDatasetId,
   getEdenDatasetId,
@@ -22,8 +22,10 @@ export function initEdenSeasonPicker(api) {
   const select = document.getElementById('edenDatasetSelect');
   const badge = document.getElementById('edenDatasetBadge');
 
+  const catalog = () => getEdenDatasetCatalog();
+
   function datasetLabel(id) {
-    const ds = EDEN_DATASET_CATALOG.find(d => d.id === id);
+    const ds = catalog().find(d => d.id === id);
     return ds ? t(ds.labelKey) : id;
   }
 
@@ -36,7 +38,7 @@ export function initEdenSeasonPicker(api) {
 
   function renderChoices() {
     if (!choices) return;
-    choices.innerHTML = EDEN_DATASET_CATALOG.map((ds) => {
+    choices.innerHTML = catalog().map((ds) => {
       const count = ds.structureCount
         ? t('edenDatasetCoordCount').replace('{n}', String(ds.structureCount))
         : t('edenDatasetBaseMap');
@@ -50,7 +52,7 @@ export function initEdenSeasonPicker(api) {
 
   function fillSelect() {
     if (!select) return;
-    select.innerHTML = EDEN_DATASET_CATALOG.map(ds =>
+    select.innerHTML = catalog().map(ds =>
       `<option value="${ds.id}">${t(ds.labelKey)}</option>`
     ).join('');
     select.value = getEdenDatasetId() || getDefaultEdenDatasetId();

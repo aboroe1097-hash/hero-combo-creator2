@@ -11,6 +11,15 @@
       "dataSource": "in-game screenshots (Wonder X1); gates from X12 fallback where not captured"
     },
     {
+      "id": "wonders_x12",
+      "labelKey": "edenDatasetWondersX12",
+      "descKey": "edenDatasetWondersX12Desc",
+      "file": "Eden_Wonders_NorthvSouth_X12_Map.txt",
+      "sectorMode": "full",
+      "wonderVersion": "X12",
+      "dataSource": "reference sheets (assets/eden_wonders) — full Wonder X12 baseline"
+    },
+    {
       "id": "season3",
       "labelKey": "edenDatasetSeason3",
       "descKey": "edenDatasetSeason3Desc",

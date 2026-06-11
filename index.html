@@ -67,15 +67,42 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 </head>
-<body class="p-3 sm:p-4">
-<div id="app" class="relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">    
+<body class="p-3 sm:p-4 app-booting">
+  <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
+    <div class="boot-splash-aurora" aria-hidden="true"></div>
+    <div class="boot-splash-grid" aria-hidden="true"></div>
+    <div class="boot-splash-inner">
+      <div class="boot-logo-orbit" aria-hidden="true">
+        <span class="boot-orbit-ring"></span>
+        <img src="images/logo.png"  alt="" class="boot-logo" width="88" height="88" />
+      </div>
+      <p class="boot-brand">Hero Combo Creator</p>
+      <p class="boot-sub">VTS 1097 · Rise of Empires · Rise of Castles</p>
+      <p class="boot-status-text">Loading toolkit…</p>
+      <div class="boot-progress" aria-hidden="true"><span class="boot-progress-fill"></span></div>
+    </div>
+  </div>
+
+  <div id="firstVisitIntro" class="first-visit-intro hidden" aria-hidden="true">
+    <div class="intro-aurora" aria-hidden="true"></div>
+    <div class="intro-sparks" aria-hidden="true"></div>
+    <div class="intro-content">
+      <img src="images/logo.png"  alt="" class="intro-logo" width="120" height="120" />
+      <h2 class="intro-title">Hero Combo Creator</h2>
+      <p class="intro-tagline">Combos · Eden · Research · Loyalty</p>
+      <p class="intro-team">TEAM VTS — STATE 1097</p>
+      <button type="button" class="intro-enter-btn">Enter toolkit</button>
+    </div>
+  </div>
+
+<div id="app" class="app-shell app-shell--hidden relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">    
     <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
     
     <div class="logo-container">
-      <img src="images/logo.png" onerror="this.onerror=null; this.src='images/logo.jpg';" alt="Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" class="main-logo shadow-2xl" width="120" height="120" />
+      <img src="images/logo.png"  alt="Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" class="main-logo shadow-2xl" width="120" height="120" />
       <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
       <div class="flex flex-col items-center mt-2 space-y-1">
-        <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise Of Castles: Ice & Fire</p>
+        <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise of Empires · Rise of Castles: Ice &amp; Fire</p>
         <p class="text-xs sm:text-sm font-bold text-blue-400">TEAM VTS — STATE 1097</p>
       </div>
     </div>
@@ -356,6 +383,7 @@
                     <option value="SC">South Central (SC)</option>
                   </optgroup>
                 </select>
+                <button type="button" id="edenIsolateSector" class="eden-tool-btn eden-has-tip" data-i18n="edenIsolateSector" data-i18n-title="edenIsolateSectorTitle" aria-pressed="false">⊞ Isolate</button>
               </div>
               <div class="eden-deck-cluster eden-zoom-cluster" role="group" aria-label="Zoom">
                 <button type="button" id="edenZoomOut" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomOutTitle" title="Zoom out (−)">−</button>
@@ -475,6 +503,7 @@
         </div>
         <div class="eden-map-body">
           <div class="eden-canvas-wrap">
+            <div id="edenIsolateBadge" class="eden-isolate-badge hidden" aria-live="polite"></div>
             <canvas id="edenMapCanvas"></canvas>
             <canvas id="edenMinimap" class="eden-minimap" width="150" height="150" data-i18n-title="edenMinimapTitle" title="Click to jump"></canvas>
             <div id="edenCoordHud" class="eden-coord-hud hidden"></div>

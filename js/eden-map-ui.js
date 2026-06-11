@@ -141,6 +141,7 @@ function setupKeyboard(api) {
       else if (k === 'escape') { api.setTool('navigate'); api.clearMeasure(); }
       else if (k === 'delete' || k === 'backspace') { api.deleteSelectedPath(); }
       else if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); api.undoPathPoint(); }
+      else if (k === 'i' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); api.toggleSectorIsolate?.(); }
       else if (k === 'r' && !e.ctrlKey && !e.metaKey) { api.resetLayers(); }
       else if (SECTOR_HOTKEYS[e.key]) {
         const sk = SECTOR_HOTKEYS[e.key];
