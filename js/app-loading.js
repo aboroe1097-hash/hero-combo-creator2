@@ -133,9 +133,9 @@ export async function notifyAppReady() {
     await sleep(Math.max(0, MIN_BOOT_MS - elapsed));
     stopBootAnimations(100);
 
-    const isFirstVisit = !localStorage.getItem(INTRO_STORAGE_KEY);
     await dismissBootSplash();
 
+    const isFirstVisit = !localStorage.getItem(INTRO_STORAGE_KEY);
     if (isFirstVisit) {
         await playFirstVisitIntro();
     }
