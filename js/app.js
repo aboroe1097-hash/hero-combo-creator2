@@ -1,6 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 // --- APP CONFIG --
-const APP_VERSION = "7.0";
+const APP_VERSION = "7.1";
 const ENABLE_RESEARCH_FEATURE = true;
 
 /* ===== THEME (Dark default + Light) ===== */

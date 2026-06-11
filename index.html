@@ -62,6 +62,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="css/mobile.css" media="(max-width: 768px)" />
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -926,17 +927,56 @@
 
     </main>
 
-    <footer class="site-footer" aria-label="Site information">
-      <h2 class="site-footer-title" data-i18n="seoFooterTitle">Tools included</h2>
-      <p class="site-footer-desc" data-i18n="seoFooterDesc">Hero Combo Creator is a free fan-made toolkit for Rise of Castles: Ice &amp; Fire players in VTS State 1097. No install required — works in your browser on desktop and mobile.</p>
-      <ul class="site-footer-features">
-        <li data-i18n="seoFeatureCombos">Combo Builder &amp; Generator with ranked suggestions</li>
-        <li data-i18n="seoFeatureHeroes">Hero Atlas — skills, synergies, and top combos</li>
-        <li data-i18n="seoFeatureEden">Eden Map Planner — Season 5 structures, paths, team plan</li>
-        <li data-i18n="seoFeatureLoyalty">Eden Loyalty Calculator — upgrade paths &amp; poison %</li>
-        <li data-i18n="seoFeatureResearch">Tech Research Calculator — badges, medals, game-layout trees</li>
-      </ul>
-      <p class="site-footer-url"><a href="https://roc-vts.com/">roc-vts.com</a> · Rise of Castles: Ice &amp; Fire · VTS 1097</p>
+    <footer class="roc-footer" aria-label="Site information">
+      <!-- The glowing Ice & Fire divider -->
+      <div class="footer-divider"></div>
+
+      <div class="footer-content max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Branding -->
+        <div class="footer-section brand-section flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <img src="images/logo.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
+              <h3 class="footer-logo">VTS 1097</h3>
+            </div>
+          </div>
+          <p class="footer-url mt-4"><a href="https://roc-vts.com/">roc-vts.com</a></p>
+        </div>
+
+        <!-- Middle Column: Quick Navigation -->
+        <div class="footer-section links-section">
+          <h4>Quick March (Tools)</h4>
+          <ul>
+            <li><a href="#" onclick="document.getElementById('tabManual').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabManual">Manual Builder</a></li>
+            <li><a href="#" onclick="document.getElementById('tabGenerator').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabGenerator">Combo Generator</a></li>
+            <li><a href="#" onclick="document.getElementById('tabHeroes').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabHeroes">Hero Atlas</a></li>
+            <li><a href="#" onclick="document.getElementById('tabResearch').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabResearch">Research</a></li>
+            <li><a href="#" onclick="document.getElementById('tabLoyalty').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabLoyalty">Eden Loyalty</a></li>
+          </ul>
+        </div>
+
+        <!-- Right Column: Community & Legal -->
+        <div class="footer-section community-section flex flex-col justify-between">
+          <div>
+            <h4>Community & Info</h4>
+            <ul>
+              <li><a href="https://discord.gg/roc-vts" target="_blank" rel="noopener noreferrer">Join State Discord</a></li>
+              <li><a href="mailto:aboroe1097@gmail.com">Contact Devs</a></li>
+            </ul>
+          </div>
+          <p class="disclaimer mt-6">
+            *Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="footer-bottom">
+        <p>&copy; <span id="footerYear">2026</span> VTS Community Tools. BETA 7.1 · Made for VTS 1097</p>
+      </div>
+      <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
 
     <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
