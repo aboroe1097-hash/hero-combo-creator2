@@ -2,6 +2,15 @@
 // Rank is determined by position in this array. First item = Rank 1.
 // Mapping order: [Front, Middle, Back]
 
+/**
+ * @typedef {Object} ComboEntry
+ * @property {string[]} heroes - The three hero names in the combo ordered by [Front, Middle, Back].
+ */
+
+/**
+ * High-tier combos database sorted by strategic meta-ranking.
+ * @type {ComboEntry[]}
+ */
 export const rankedCombos = [
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
   { heroes: ["King Arthur","Theodora", "Alexander"] },

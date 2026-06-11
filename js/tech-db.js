@@ -1,6 +1,43 @@
 // js/tech-db.js
 // Converted from Community Spreadsheet Data
 // , row: 4, col: 2
+
+/**
+ * @typedef {Object} TechNode
+ * @property {string} id - Node identifier (e.g. "node_1").
+ * @property {string} name - Name of the node.
+ * @property {string} troop - Troop type affected (e.g. "ALL", "Footmen", etc.).
+ * @property {string} buff - Description of the node's buff effect.
+ * @property {number} maxLevel - Maximum level of the node.
+ * @property {string} costType - Cost type category.
+ * @property {number[]} [costs] - Gold or Resource costs per level.
+ * @property {number[]} [wisdomCosts] - Wisdom medals cost per level.
+ * @property {number[]} [courageCosts] - Courage medals cost per level.
+ * @property {number[]} [wb_costs] - War Badges cost per level.
+ * @property {number[]} [cm_costs] - Courage Medals cost per level.
+ * @property {number} row - Grid layout row (1-indexed).
+ * @property {number} col - Grid layout column (1-indexed).
+ * @property {number} [b] - Branch index for branch view.
+ */
+
+/**
+ * @typedef {Object} TechTree
+ * @property {string} id - Tree unique identifier.
+ * @property {string} name - Display name of the tech tree.
+ * @property {Object} default_pos - Default grid positioning.
+ * @property {number} default_pos.row - Row coordinate.
+ * @property {number} default_pos.col - Column coordinate.
+ * @property {string} layoutMode - Layout strategy ("game" or "branch").
+ * @property {string} season - Release season (S0 to X2).
+ * @property {string} unlockCondition - Prerequisite statement.
+ * @property {string} primaryResource - Primary resource requirements explanation.
+ * @property {TechNode[]} nodes - List of tech nodes inside this tree.
+ */
+
+/**
+ * Global technology database for academy research trees.
+ * @type {TechTree[]}
+ */
 export const techDatabase = [
     {
         id: "d1956263",
