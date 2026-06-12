@@ -5650,6 +5650,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-attack-item { padding: 0.7rem 0.75rem; }
   #ocrDashboardRoot .dash-attack-name { font-size: 0.85rem; }
   #ocrDashboardRoot .dash-attack-val { font-size: 0.9rem; }
+  #ocrDashboardRoot .dash-del-btn { opacity: 1 !important; width: 28px; height: 28px; } /* Always visible on mobile */
 
   /* Table - compact */
   #ocrDashboardRoot .dash-table { font-size: 0.72rem; }
@@ -5661,9 +5662,10 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-pname { font-size: 0.72rem; }
 
   /* Card headers */
-  #ocrDashboardRoot .dash-card-hdr { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  #ocrDashboardRoot .dash-card-title { font-size: 0.9rem; }
-  #ocrDashboardRoot .dash-search-wrap { min-width: 0; }
+  #ocrDashboardRoot .dash-card-hdr { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  #ocrDashboardRoot .dash-card-title { font-size: 0.9rem; margin-bottom: 0 !important; }
+  #ocrDashboardRoot .dash-btn-xs { min-height: 32px !important; padding: 0.4rem 0.6rem !important; }
+  #ocrDashboardRoot .dash-search-wrap { min-width: 0; width: 100%; margin-top: 0.25rem; }
   #ocrDashboardRoot .dash-search-input { font-size: 0.75rem; padding: 0.45rem 0.6rem 0.45rem 1.75rem; }
   #ocrDashboardRoot .dash-search-icon { left: 8px; }
 
