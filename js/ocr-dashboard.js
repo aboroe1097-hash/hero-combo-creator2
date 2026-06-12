@@ -377,18 +377,24 @@ async function processFiles(files) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64 })
         });
-        if (netlifyRes.status === 404 || netlifyRes.status === 405) {
-           useLocalFallback = true;
-        } else {
-           const textResponse = await netlifyRes.text();
-           try {
-             data = JSON.parse(textResponse);
-             if (!netlifyRes.ok) throw new Error(data.error || 'Server Error');
-           } catch(err) {
-             if (textResponse.startsWith('<')) useLocalFallback = true;
-             else throw new Error('Invalid response from server');
-           }
-        }
+         if (netlifyRes.status === 404 || netlifyRes.status === 405) {
+            useLocalFallback = true;
+         } else if (!netlifyRes.ok) {
+            log(`Server function error (${netlifyRes.status})`, 'warn', f.name);
+            const textResponse = await netlifyRes.text();
+            try {
+               const errData = JSON.parse(textResponse);
+               log(`Server: ${errData.error}`, 'warn', f.name);
+            } catch {}
+            useLocalFallback = true;
+         } else {
+            const textResponse = await netlifyRes.text();
+            try {
+              data = JSON.parse(textResponse);
+            } catch(err) {
+              if (textResponse.startsWith('<')) { log('Server returned HTML instead of JSON — function not deployed', 'warn', f.name); useLocalFallback = true; }
+              else throw new Error('Invalid response from server');
+            }
       } catch (err) {
         useLocalFallback = true;
       }
@@ -402,7 +408,7 @@ async function processFiles(files) {
         if (!localKey) throw new Error('No API key provided for local fallback.');
         
         log(`Using local client-side Gemini API fallback...`, 'info', f.name);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${localKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${localKey}`;
         const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
