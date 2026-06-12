@@ -11,9 +11,19 @@ exports.handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    let data = null;
+    let usedModel = null;
 
-    const prompt = `Analyze this game screenshot containing an attack report.
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
 2. 'structure_level' (e.g. '5' for Lv.5. If not visible, null)
@@ -29,26 +39,28 @@ Example:
   "players": [
     {"name": "Lord_IKR", "value": 81357}
   ]
-}`;
+}` },
+              { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }
+            ]
+          }]
+        })
+      });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }
-          ]
-        }]
-      })
-    });
+      data = await response.json();
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('Gemini API Error:', data);
-      return { statusCode: 500, body: JSON.stringify({ error: data.error?.message || 'API Error' }) };
+      if (response.ok) {
+        usedModel = model;
+        break;
+      }
+
+      const errMsg = data.error?.message || '';
+      if (!errMsg.includes('not found') && !errMsg.includes('not supported')) {
+        return { statusCode: 500, body: JSON.stringify({ error: errMsg || 'API Error' }) };
+      }
+    }
+
+    if (!usedModel) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'No available Gemini model' }) };
     }
 
     let text = data.candidates[0].content.parts[0].text;
