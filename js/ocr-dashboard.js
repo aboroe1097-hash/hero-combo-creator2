@@ -151,6 +151,9 @@ function editDistance(s1, s2) {
 }
 
 function findBestMatch(name, minConfidence = 100) {
+  if (!name) return name;
+  if (typeof name === 'string' && /pixel/i.test(name)) return '༄Pixel';
+
   if (!rosterNames.length) return name;
   let best = name, maxSim = 0;
   for (const rn of rosterNames) {
