@@ -64,14 +64,18 @@ function editDistance(s1, s2) {
   return costs[s2.length];
 }
 
-function findBestMatch(name) {
+function findBestMatch(name, minConfidence = 100) {
   if (!rosterNames.length) return name;
   let best = name, maxSim = 0;
   for (const rn of rosterNames) {
     const sim = getSimilarity(name, rn);
     if (sim > maxSim) { maxSim = sim; best = rn; }
   }
-  return maxSim > 0.82 ? best : name;
+  let threshold = 0.82;
+  if (name.length < 5) threshold = 0.6;
+  else if (name.length <= 8) threshold = 0.72;
+  if (minConfidence < 70) threshold -= 0.08;
+  return maxSim > threshold ? best : name;
 }
 
 // --- Roster ---
@@ -165,7 +169,7 @@ function exportData() { if (!dashData) return; const a = document.createElement(
 function exportToCsv() {
   if (!dashData?.players_summary) return;
   let csv = 'Rank,Member Name,Total Demolition,Hits,Avg per Hit\n';
-  dashData.players_summary.forEach((p, i) => csv += `${i + 1},"${p.name}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`);
+  dashData.players_summary.forEach((p, i) => { const safeName = p.name.replace(/"/g, '""'); csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`; });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_leaderboard.csv'; a.click();
 }
 function exportToPng() {
@@ -184,7 +188,7 @@ function exportAttackCsv() {
   let csv = 'Date,Structure,Level,Player Name,Rank,Demolition Value\n';
   dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
-    (a.players||[]).forEach(p => csv += `"${date}","${a.structure_name}","${a.structure_level||''}","${p.name}",${p.rank},${p.value}\n`);
+    (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${date}","${a.structure_name}","${a.structure_level||''}","${safeName}",${p.rank},${p.value}\n`; });
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
@@ -335,6 +339,7 @@ function validateTotalDemolition(sN, sL, total) {
 // --- OCR Engine ---
 async function processFiles(files) {
   if (typeof Tesseract === 'undefined') return;
+  if (_ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
   _ocrProcessing = true; const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
   if (!valid.length) return;
   $id('dashProgress').classList.remove('hidden');
@@ -366,7 +371,7 @@ async function processFiles(files) {
     const sN = extractStructureName(text);
     log(`Scan complete (${elapsed}s, ${words.length} words) — ${format} format, ${sN || '?'}`, 'info', f.name);
     log(`Timestamp ${dt ? fmtDate(dt) : 'not found'}`, 'info', f.name);
-    allTexts.push({ filename: f.name, text, words: words.map(w => ({...w, bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })), _w: img.width, _h: img.height });
+    allTexts.push({ filename: f.name, text: correctOcrFullText(text), words: words.map(w => ({...w, text: correctOcrText(w.text), bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })), _w: img.width, _h: img.height });
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
   
@@ -423,7 +428,7 @@ async function processFiles(files) {
           const r = d[j], gn = d[j+1], b = d[j+2];
           const isGold = r > 160 && gn > 100 && b < 80 && (r - b) > 80;
           const lum = 0.299*r + 0.587*gn + 0.114*b;
-          const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : lum);
+          const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : 255);
           d[j]=d[j+1]=d[j+2]=out;
         }
         ctx.putImageData(idat,0,0);
@@ -433,7 +438,7 @@ async function processFiles(files) {
         log(`Enhanced scan: ${words.length} words (${wordDelta >= 0 ? '+' : ''}${wordDelta} vs initial)`, 'info', f.name);
         const vi = validated.findIndex(r => r.filename === f.name);
         if (vi >= 0) {
-          validated[vi] = { ...validated[vi], text, words: words.map(w => ({...w, bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })) };
+          validated[vi] = { ...validated[vi], text: correctOcrFullText(text), words: words.map(w => ({...w, text: correctOcrText(w.text), bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })) };
         }
       }
       log(`Re-analyzing with corrected OCR data...`, 'info');
@@ -477,9 +482,9 @@ async function processFiles(files) {
 
 function extractStructureName(text) {
   const m = text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-  if (m) return m[1].trim();
+  if (m) return normalizeStructureName(m[1].trim());
   const ruM = text.match(/(\w+)\s+Occupation\s+Notice/i);
-  if (ruM) return ruM[1];
+  if (ruM) return normalizeStructureName(ruM[1]);
   return null;
 }
 
@@ -493,7 +498,7 @@ function parseOcrResults(results) {
   const groups = [];
   for (const item of withMeta) {
     let f = false;
-    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 30000 && g.sN === item.sN && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
+    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 30000 && (!g.sN || !item.sN || getSimilarity(g.sN, item.sN) > 0.8) && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
     if (!f) groups.push({ dt: item.dt, sN: item.sN, sL: item.sL, results: [item.r] });
   }
   log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
@@ -508,11 +513,11 @@ function parseOcrResults(results) {
     }
     let sN = 'Structure', sL = 'Unknown';
     const m = txt.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || txt.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-    if (m) { sN = m[1].trim(); sL = m[2].trim(); }
+    if (m) { sN = normalizeStructureName(m[1].trim()); sL = m[2].trim(); }
     else {
       for (const r of g.results) {
         const m2 = r.text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || r.text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-        if (m2) { sN = m2[1].trim(); sL = m2[2].trim(); log(`Structure name found in individual image: ${sN} ${sL}`, 'info'); break; }
+        if (m2) { sN = normalizeStructureName(m2[1].trim()); sL = m2[2].trim(); log(`Structure name found in individual image: ${sN} ${sL}`, 'info'); break; }
       }
     }
     const allRaw = []; g.results.forEach(r => allRaw.push(...parseImagePlayers(r)));
@@ -521,7 +526,35 @@ function parseOcrResults(results) {
     for (const v in byV) {
       const rows = byV[v]; if (rows.length === 1) { players.push(rows[0]); continue; }
       const sgs = []; rows.forEach(r => { let f=false; sgs.forEach(sg => { if (getSimilarity(r.name, sg[0].name) > 0.55) { sg.push(r); f=true; } }); if(!f) sgs.push([r]); });
-      sgs.forEach(sg => { sg.sort((a,b) => (rosterNames.includes(a.name)?-1:1) || b.name.length - a.name.length); players.push(sg[0]); });
+      sgs.forEach(sg => { sg.sort((a,b) => { const aR = rosterNames.includes(a.name) ? 1 : 0; const bR = rosterNames.includes(b.name) ? 1 : 0; return (bR - aR) || (b.name.length - a.name.length); }); players.push(sg[0]); });
+    }
+    if (players.length > 1) {
+      const nearDedup = [];
+      const used = new Set();
+      for (let i = 0; i < players.length; i++) {
+        if (used.has(i)) continue;
+        const group = [players[i]]; used.add(i);
+        for (let j = i + 1; j < players.length; j++) {
+          if (used.has(j)) continue;
+          if (Math.abs(players[i].value - players[j].value) <= 100 && getSimilarity(players[i].name, players[j].name) > 0.55) {
+            group.push(players[j]); used.add(j);
+          }
+        }
+        group.sort((a,b) => { const aR = rosterNames.includes(a.name) ? 1 : 0; const bR = rosterNames.includes(b.name) ? 1 : 0; return (bR - aR) || (b.name.length - a.name.length); });
+        nearDedup.push(group[0]);
+      }
+      players.length = 0; players.push(...nearDedup);
+    }
+    if (players.length > 1) {
+      const nameDedup = [];
+      const nameSeen = new Map();
+      for (const p of players) {
+        const match = rosterNames.find(rn => getSimilarity(p.name, rn) > 0.9) || p.name;
+        if (!nameSeen.has(match) || nameSeen.get(match).value < p.value) {
+          nameSeen.set(match, p);
+        }
+      }
+      players.length = 0; players.push(...nameSeen.values());
     }
     if (players.length) {
       players.sort((a,b) => b.value - a.value).forEach((p,i) => p.rank = i+1);
@@ -537,10 +570,13 @@ function parseOcrResults(results) {
   if (!attacks.length) return null;
   const merged = {};
   const mergePlayers = (target, src) => {
-    const pMap = {};
-    target.players.forEach(p => pMap[p.value] = p);
-    src.players.forEach(p => { if (!pMap[p.value]) pMap[p.value] = p; });
-    target.players = Object.values(pMap).sort((x,y) => y.value - x.value);
+    const pMap = new Map();
+    target.players.forEach(p => pMap.set(`${p.name}_${p.value}`, p));
+    src.players.forEach(p => {
+      const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+      if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
+    });
+    target.players = [...pMap.values()].sort((x,y) => y.value - x.value);
     target.players.forEach((p,i) => p.rank = i+1);
     target.players_count = target.players.length;
     target.total_demolition = target.players.reduce((s,p) => s + p.value, 0);
@@ -571,19 +607,41 @@ function parseOcrResults(results) {
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
 
+function detectNameColumnBoundary(rows, imgW) {
+  if (rows.length < 3) return { nameStart: 0.18, rankBoundary: 0.22 };
+  const sampleRows = rows.slice(0, Math.min(5, rows.length));
+  const nameXCandidates = [];
+  sampleRows.forEach(row => {
+    row.sort((a,b) => a.bbox.x0 - b.bbox.x0);
+    const allXC = row.map(w => (w.bbox.x0+w.bbox.x1)/2/imgW);
+    const rankEnd = allXC.findIndex(xc => xc > 0.22);
+    const valueStart = allXC.slice().reverse().findIndex(xc => xc < 0.65);
+    if (rankEnd >= 0 && valueStart >= 0) {
+      const nameCluster = allXC.slice(rankEnd, allXC.length - valueStart);
+      if (nameCluster.length) nameXCandidates.push(Math.min(...nameCluster));
+    }
+  });
+  const nameStart = nameXCandidates.length
+    ? nameXCandidates.sort((a,b) => a-b)[Math.floor(nameXCandidates.length/2)]
+    : 0.18;
+  return { nameStart: Math.min(nameStart, 0.22), rankBoundary: 0.22 };
+}
+
 function parseImagePlayers(r) {
   const words = r.words || [], body = words.filter(w => { const yc = ((w.bbox.y0 + w.bbox.y1)/2)/r._h; return yc >= 0.04 && yc <= 0.96; });
   if (body.length < 5) return [];
   body.sort((a,b) => (a.bbox.y0 + a.bbox.y1)/2 - (b.bbox.y0 + b.bbox.y1)/2);
   const rowThresh = r._h * 0.035; const rows = []; let cur = []; body.forEach(w => { if (!cur.length || Math.abs((w.bbox.y0+w.bbox.y1)/2 - (cur[0].bbox.y0+cur[0].bbox.y1)/2) < rowThresh) cur.push(w); else { rows.push(cur); cur = [w]; } }); if (cur.length) rows.push(cur);
+  const { nameStart } = detectNameColumnBoundary(rows, r._w);
   const ps = []; rows.forEach(row => {
     row.sort((a,b) => a.bbox.x0 - b.bbox.x0);
     const rowText = row.map(w => w.text).join(' ').toLowerCase();
-    const hasDigitRank = row.some(w => (w.bbox.x0+w.bbox.x1)/2/r._w < 0.16 && /\d/.test(w.text)) || /\d{2,}/.test(rowText);
+    const hasDigitRank = row.some(w => (w.bbox.x0+w.bbox.x1)/2/r._w < 0.22 && /\d/.test(w.text)) || /\d{2,}/.test(rowText);
     const hasHeaderKeywords = /member|participant|ranking|congratulation|total|demolition|value|more|collapse|occupied|notice|isabella|occupation|alliance|guild|enjoy/i.test(rowText);
     if (!hasDigitRank && hasHeaderKeywords) return;
-    let nP = [], vT = ''; row.forEach(w => { const xc = (w.bbox.x0+w.bbox.x1)/2/r._w; if (xc > 0.65) vT += w.text; else if (xc > 0.16) nP.push(w.text); });
+    let nP = [], vT = ''; row.forEach(w => { const xc = (w.bbox.x0+w.bbox.x1)/2/r._w; if (xc > 0.65) vT += w.text; else if (xc > nameStart) nP.push(w.text); });
     let name = nP.join(' ').replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').trim().replace(/\s+members$/i, '').trim();
+    name = name.replace(/(?:^|\s)(?:Wr|wr|\d{3}\])(?:\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
     const val = parseValueFromDigits(vT);
     if (name && name.length > 1 && val !== null && val > 0) ps.push({ name, value: val });
   });
@@ -593,9 +651,37 @@ function parseImagePlayers(r) {
 }
 
 function parseValueFromDigits(t) {
-  const cleaned = t.replace(/[,.]/g, '');
-  const m = cleaned.match(/\d{3,8}$/);
-  return m && m[0].length >= 4 ? parseInt(m[0]) : null;
+  let cleaned = t.replace(/[,.]/g, '');
+  cleaned = cleaned.replace(/[oO]+$/, d => d.replace(/o/gi, '0')).replace(/[lI]+$/, d => d.replace(/[lI]/g, '1'));
+  const m = cleaned.match(/(\d{2,8})\s*$/);
+  if (!m) return null;
+  const val = parseInt(m[1]);
+  if (val < 10) return null;
+  return val;
+}
+
+function correctOcrText(t) {
+  return t
+    .replace(/(?<=[A-Za-z0-9])\$(?=[A-Za-z0-9])/g, '8')
+    .replace(/(?<=[A-Za-z])1(?=[lLiI])/g, 'l')
+    .replace(/(?<=[A-Za-z])0(?=[oO])/g, 'o')
+    .replace(/q(?= [A-Z])/g, 'g')
+    .replace(/[\[\](){}|\\\/`~@#^*=+<>"]/g, '');
+}
+
+function correctOcrFullText(t) {
+  return t
+    .replace(/(?<=[A-Za-z0-9])\$(?=[A-Za-z0-9])/g, '8')
+    .replace(/(?<=[A-Za-z])1(?=[lLiI])/g, 'l')
+    .replace(/(?<=[A-Za-z])0(?=[oO])/g, 'o')
+    .replace(/q(?= [A-Z])/g, 'g');
+}
+
+function normalizeStructureName(name) {
+  if (!name) return name;
+  const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins' };
+  const lower = name.toLowerCase().trim();
+  return corrections[lower] || name;
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
@@ -614,10 +700,10 @@ function parseParagraphFormat(text) {
   const normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
   let sN = 'Ruins', sL = '1';
   const ruM = normalized.match(/(\w+)\s+Occupation\s+Notice/i);
-  if (ruM) { sN = ruM[1]; const lM = normalized.match(/Lv\.?\s*(\d+)/i); if (lM) sL = lM[1]; }
+  if (ruM) { sN = normalizeStructureName(ruM[1]); const lM = normalized.match(/Lv\.?\s*(\d+)/i); if (lM) sL = lM[1]; }
   else {
     const occM = normalized.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-    if (occM) { sN = occM[1].trim(); sL = occM[2].trim(); }
+    if (occM) { sN = normalizeStructureName(occM[1].trim()); sL = occM[2].trim(); }
   }
 
   const mvpM = normalized.match(/MVP\s+and\s+total\s+Demolition\s+Value:\s*(.*?)(?=\s*Participants\s|$)/i);
@@ -626,7 +712,7 @@ function parseParagraphFormat(text) {
   const seen = new Map();
   for (const section of [mvpM?.[1], partM?.[1]]) {
     if (!section) continue;
-    const values = []; const vr = /(\d{4,6})(?!\d)/g; let vm;
+    const values = []; const vr = /(\d{4,8})(?!\d)/g; let vm;
     while ((vm = vr.exec(section)) !== null) values.push({ v: +vm[1], i: vm.index });
     if (values.length < 1) continue;
     const highVals = values.filter(x => x.v >= 10000);

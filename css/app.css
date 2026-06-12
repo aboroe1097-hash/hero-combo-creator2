@@ -193,7 +193,9 @@ body.first-visit-active { overflow: hidden; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.9s ease, visibility 0.9s ease;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 .boot-splash.hidden { display: none; }
 .boot-splash--out { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -215,7 +217,7 @@ body.first-visit-active { overflow: hidden; }
   height: 100vh;
   transform-style: preserve-3d;
   z-index: 10;
-  transition: transform 2.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 0 50px rgba(0,0,0,0.9);
   display: flex;
   align-items: center;
@@ -318,7 +320,7 @@ body.first-visit-active { overflow: hidden; }
   background: #ffd700;
   box-shadow: 0 0 20px 6px #ffd700, 0 0 40px 15px rgba(255, 215, 0, 0.6);
   z-index: 5;
-  transition: all 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.9s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .center-light.light-expand {
@@ -558,7 +560,8 @@ section.tab-panel:not(.hidden) {
 }
 .tab-pill-inactive { background: transparent; color: #cbd5e1; }
 
-
+.tab-scroll-btn { display: flex; font-size: 1.2rem; line-height: 1; }
+.tab-scroll-btn:hover { background: #334155; color: #fff; }
 
 /* ── Filter pills ────────────────────────────────────────── */
 .filter-pill {
@@ -4465,11 +4468,6 @@ body.hide-hero-info .info-btn { display: none !important; }
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
-.boot-splash {
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-
 /* Premium micro-interactions for buttons & interactive elements */
 button, .tab-pill, .filter-pill, .hero-card, .generator-card, .remove-combo-btn {
   cursor: pointer;
@@ -5288,7 +5286,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   padding: 0.5rem 0;
 }
 #ocrDashboardRoot .dash-insight-item {
-  display: flex; flex-direction: column; gap: 0.5rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
 }
 #ocrDashboardRoot .dash-insight-hdr {
   display: flex; justify-content: space-between; align-items: center;
@@ -5298,13 +5296,14 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-insight-val { color: var(--blue-400); font-family: 'Outfit', sans-serif; }
 
 #ocrDashboardRoot .dash-mini-pie {
-  height: 8px; background: rgba(255,255,255,0.05);
-  border-radius: 4px; overflow: hidden; display: flex;
+  height: 12px; background: rgba(255,255,255,0.06);
+  border-radius: 6px; overflow: hidden; display: flex;
 }
 #ocrDashboardRoot .dash-mini-pie > div { height: 100%; transition: width 0.8s ease; }
 
 #ocrDashboardRoot .dash-mini-trend {
-  display: flex; align-items: flex-end; gap: 4px; height: 50px;
+  display: flex; align-items: flex-end; gap: 4px; height: 160px;
+  padding: 12px 8px; background: #0f172a; border-radius: 10px;
 }
 
 /* Unified Dropdown */
@@ -5524,10 +5523,11 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-stack-labels { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; }
 
 /* Insights: activity trend */
-#ocrDashboardRoot .dash-trend-bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
+#ocrDashboardRoot .dash-trend-bars { display: flex; align-items: flex-end; gap: 6px; height: 100%; }
 #ocrDashboardRoot .dash-trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-#ocrDashboardRoot .dash-trend-bar { width: 100%; max-width: 28px; border-radius: 3px 3px 0 0; background: #3b82f6; transition: height 0.3s; min-height: 2px; flex: none; }
-#ocrDashboardRoot .dash-trend-label { font-size: 0.55rem; color: var(--text-muted); margin-top: 4px; white-space: nowrap; }
+#ocrDashboardRoot .dash-trend-bar { width: 100%; max-width: 32px; border-radius: 4px 4px 0 0; background: #3b82f6; transition: height 0.4s ease; min-height: 3px; flex: none; }
+#ocrDashboardRoot .dash-trend-bar:hover { background: #60a5fa; opacity: 0.9; }
+#ocrDashboardRoot .dash-trend-label { font-size: 0.6rem; color: var(--text-muted); margin-top: 6px; white-space: nowrap; }
 
 /* Validation badges */
 #ocrDashboardRoot .dash-val-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; margin-left: 6px; vertical-align: middle; }
@@ -5597,7 +5597,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 
   /* Insights section */
   #ocrDashboardRoot .dash-insights-body { gap: 0.85rem; }
-  #ocrDashboardRoot .dash-mini-trend { height: 40px; }
+  #ocrDashboardRoot .dash-mini-trend { height: 100px; }
   /* Override inline visual-row grid on mobile — must stack */
   #ocrDashboardRoot .dash-main-grid[style*="1.2fr"] { grid-template-columns: 1fr !important; }
 

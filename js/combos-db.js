@@ -32,7 +32,6 @@ export const rankedCombos = [
   { heroes: ["Bleeding Steed", "Ramses II", "Jade Eagle"] },
   { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"] },
   { heroes: ["King Arthur", "Cleopatra VII", "Theodora"] },
-  { heroes: ["King Arthur", "Theodora", "Cleopatra VII"] },
 
   // --- X2 Spectral Reaper Combos ---
   { heroes: ["Hunk", "Spectral Reaper", "Ramses II"] },

@@ -1,8 +1,8 @@
-# Hero Combo Creator — VTS 1097 (7.8)
+# Hero Combo Creator — VTS 1097 (8.0)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 7.8
+## What's new in 8.0
 
 - **Full date + day + GT** — game time now displays as `DD/MM/YYYY, DayOfWeek, HH:MM GT` (uses local time −6h), supports backward-compat with old format
 - **Durability auto-validation** — built-in lookup table (Gates Lv1–5, Cities/Capital Lv1–7, Temple Lv1, Stronghold Lv1) checks each attack's total demolition against expected structure HP; shows ✓/! badges in attack list
