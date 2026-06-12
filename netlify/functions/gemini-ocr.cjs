@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    const models = ['qwen-vl-ocr'];
+    const models = ['qwen-vl-ocr-2025-11-20'];
     let data = null;
     let usedModel = null;
 
