@@ -283,12 +283,23 @@ async function processFiles(files) {
   await worker.terminate(); _ocrProcessing = false; setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
 }
 
+function extractStructureName(text) {
+  const m = text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
+  if (m) return m[1].trim();
+  const ruM = text.match(/(\w+)\s+Occupation\s+Notice/i);
+  if (ruM) return ruM[1];
+  return null;
+}
+
 function parseOcrResults(results) {
-  const withDt = results.map(r => ({ dt: extractDt(r.text) || new Date(), r })).sort((a,b) => a.dt - b.dt);
+  const withMeta = results.map(r => ({ dt: extractDt(r.text) || new Date(), sN: extractStructureName(r.text), r })).sort((a,b) => a.dt - b.dt);
   const groups = [];
-  for (const item of withDt) {
-    let f = false; for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000) { g.results.push(item.r); f = true; break; } }
-    if (!f) groups.push({ dt: item.dt, results: [item.r] });
+  for (const item of withMeta) {
+    let f = false;
+    if (item.sN) {
+      for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000 && g.sN === item.sN) { g.results.push(item.r); f = true; break; } }
+    }
+    if (!f) groups.push({ dt: item.dt, sN: item.sN, results: [item.r] });
   }
   const attacks = [];
   for (const g of groups) {
