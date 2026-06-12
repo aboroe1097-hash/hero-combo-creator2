@@ -486,13 +486,27 @@ function render() {
   });
   const totalP = partSpread.high + partSpread.medium + partSpread.low;
   const $pct = $id('dashInsightPartPct');
-  if ($pct) $pct.textContent = totalP ? `${Math.round((partSpread.high/totalP)*100)}% active` : '0%';
+  if ($pct) $pct.textContent = totalP ? `${Math.round((partSpread.high/totalP)*100)}% Core` : '0%';
   const $pie = $id('dashPartChart');
   if ($pie) {
     if (totalP) {
-      $pie.innerHTML = `<div class="dash-stack-bar"><div class="dash-stack-seg dash-stack-high" style="width:${(partSpread.high/totalP)*100}%" title="High (${partSpread.high})"></div><div class="dash-stack-seg dash-stack-med" style="width:${(partSpread.medium/totalP)*100}%" title="Medium (${partSpread.medium})"></div><div class="dash-stack-seg dash-stack-low" style="width:${(partSpread.low/totalP)*100}%" title="Low (${partSpread.low})"></div></div><div class="dash-stack-labels"><span>High 50%+</span><span>Med 25%+</span><span>Low</span></div>`;
+      const highPct = Math.round((partSpread.high/totalP)*100);
+      const medPct = Math.round((partSpread.medium/totalP)*100);
+      const lowPct = Math.round((partSpread.low/totalP)*100);
+      $pie.innerHTML = `
+        <div style="display:flex;gap:4px;height:24px;border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3)">
+           <div style="width:${highPct}%;background:linear-gradient(90deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#022c22;transition:width 0.5s" title="Core Active (${partSpread.high})">${highPct>10?highPct+'%':''}</div>
+           <div style="width:${medPct}%;background:linear-gradient(90deg,#f59e0b,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#451a03;transition:width 0.5s" title="Casual (${partSpread.medium})">${medPct>10?medPct+'%':''}</div>
+           <div style="width:${lowPct}%;background:linear-gradient(90deg,#ef4444,#f87171);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:800;color:#450a0a;transition:width 0.5s" title="Inactive (${partSpread.low})">${lowPct>10?lowPct+'%':''}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#cbd5e1;font-weight:700">
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981"></span> Core (${partSpread.high})</div>
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b"></span> Casual (${partSpread.medium})</div>
+           <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444"></span> Missed (${partSpread.low})</div>
+        </div>
+      `;
     } else {
-      $pie.innerHTML = '<div class="dash-stack-bar"><div class="dash-stack-seg dash-stack-low" style="width:100%"></div></div>';
+      $pie.innerHTML = '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:1rem 0">No data available</div>';
     }
   }
   const $trend = $id('dashTrendChart');
@@ -504,7 +518,43 @@ function render() {
     });
     const days = Object.keys(dayMap).sort().slice(-7);
     const maxCount = Math.max(...days.map(d => dayMap[d]), 1);
-    $trend.innerHTML = '<div class="dash-trend-bars">' + days.map(d => `<div class="dash-trend-col"><div class="dash-trend-bar" style="height:${(dayMap[d]/maxCount)*100}%"></div><div class="dash-trend-label">${d.slice(-5)}</div></div>`).join('') + '</div>';
+
+    if (days.length === 0) {
+      $trend.innerHTML = '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:2rem 0">No activity yet</div>';
+    } else if (days.length === 1) {
+      $trend.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#3b82f6"><div style="font-size:3rem;font-weight:900;text-shadow:0 0 30px rgba(59,130,246,0.6);line-height:1">${dayMap[days[0]]}</div><div style="font-size:0.8rem;color:#94a3b8;margin-top:8px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Uploads on ${days[0].slice(0,5)}</div></div>`;
+    } else {
+      const w = 350; const h = 140;
+      const padX = 30; const padY = 30;
+      const usableW = w - padX*2; const usableH = h - padY*2;
+      
+      let pts = [];
+      days.forEach((d, i) => {
+         const x = padX + (i / (days.length - 1)) * usableW;
+         const y = h - padY - (dayMap[d] / maxCount) * usableH;
+         pts.push(`${x},${y}`);
+      });
+      
+      const polyPts = `${padX},${h-padY} ${pts.join(' ')} ${padX + usableW},${h-padY}`;
+      
+      let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="overflow:visible">`;
+      svg += `<line x1="${padX}" y1="${padY}" x2="${w-padX}" y2="${padY}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
+      svg += `<line x1="${padX}" y1="${padY + usableH/2}" x2="${w-padX}" y2="${padY + usableH/2}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
+      svg += `<line x1="${padX}" y1="${h-padY}" x2="${w-padX}" y2="${h-padY}" stroke="rgba(255,255,255,0.15)"/>`;
+      svg += `<defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(59,130,246,0.5)"/><stop offset="100%" stop-color="rgba(59,130,246,0)"/></linearGradient></defs>`;
+      svg += `<polygon points="${polyPts}" fill="url(#trendGrad)"/>`;
+      svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 4px 6px rgba(59,130,246,0.4))"/>`;
+      
+      days.forEach((d, i) => {
+         const x = padX + (i / (days.length - 1)) * usableW;
+         const y = h - padY - (dayMap[d] / maxCount) * usableH;
+         svg += `<circle cx="${x}" cy="${y}" r="5" fill="#0b0f19" stroke="#60a5fa" stroke-width="2.5" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>`;
+         svg += `<text x="${x}" y="${h-8}" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">${d.slice(0,5)}</text>`;
+         svg += `<text x="${x}" y="${y-12}" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle" font-family="sans-serif">${dayMap[d]}</text>`;
+      });
+      svg += `</svg>`;
+      $trend.innerHTML = svg;
+    }
   }
 }
 
