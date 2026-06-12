@@ -527,7 +527,8 @@ function render() {
   const top = psum.slice(0, 10), max = top[0]?.total_demolition || 1;
   top.forEach((p, i) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
-    w.innerHTML = `<div class="dash-top-bar" style="width:${(p.total_demolition/max)*100}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${pct}% + 12px)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
