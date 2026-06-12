@@ -8,10 +8,11 @@ const ROSTER_KEY = 'vts_ocr_roster';
 const FS_PATH = 'vts_admin/dashboard_data';
 
 let dashData = null;
+let searchQ = '';
+let attackSearchQ = '';
 let rosterNames = [];
 let sortCol = 'total_demolition';
 let sortDir = 'desc';
-let searchQ = '';
 let _booted = false;
 let _ocrProcessing = false;
 let _fsUnsub = null;
@@ -256,6 +257,11 @@ async function loadData() {
           }
         } catch (e) {}
         render();
+        const ind = $id('dashSyncIndicator');
+        if (ind) {
+          ind.classList.remove('hidden');
+          setTimeout(() => ind.classList.add('hidden'), 3500);
+        }
       }
     });
     // log('Cloud sync active.', 'info');
@@ -345,18 +351,41 @@ function render() {
   });
 
   const al = $id('dashAttackList'); al.innerHTML = '';
-  atts.forEach(a => {
-    const val = validateTotalDemolition(a.structure_name, a.structure_level, a.total_demolition);
-    let badge = '';
-    if (val) {
-      badge = val.match
-        ? `<span class="dash-val-badge dash-val-ok" title="✓ ${a.total_demolition.toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
-        : `<span class="dash-val-badge dash-val-warn" title="✗ ${a.total_demolition.toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
-    }
-    const d = document.createElement('div'); d.className = 'dash-attack-item';
-    d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
-    d.onclick = () => showModal('attack', a); al.appendChild(d);
+  const filteredAttacks = atts.filter(a => {
+    const term = attackSearchQ.toLowerCase();
+    const day = (a.game_time||'').split(' ')[0].toLowerCase();
+    return (a.structure_name||'').toLowerCase().includes(term) || (a.structure_level||'').toLowerCase().includes(term) || day.includes(term);
   });
+  
+  if (filteredAttacks.length === 0) {
+    al.innerHTML = '<div class="dash-empty">No matching attacks</div>';
+  } else {
+    const grouped = {};
+    filteredAttacks.forEach(a => {
+      const day = a.game_time && a.game_time.includes(',') ? a.game_time.split(',')[0] : (a.game_time||'Unknown Day').split(' ')[0];
+      if(!grouped[day]) grouped[day] = [];
+      grouped[day].push(a);
+    });
+    const sortedDays = Object.keys(grouped).sort((a,b) => new Date(b) - new Date(a));
+    sortedDays.forEach(day => {
+      const dayHeader = document.createElement('div');
+      dayHeader.style.cssText = 'padding: 6px 10px; background: rgba(255,255,255,0.06); font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; border-radius: 4px;';
+      dayHeader.textContent = day;
+      al.appendChild(dayHeader);
+      grouped[day].forEach(a => {
+        const val = validateTotalDemolition(a.structure_name, a.structure_level, a.total_demolition);
+        let badge = '';
+        if (val) {
+          badge = val.match
+            ? `<span class="dash-val-badge dash-val-ok" title="✓ ${a.total_demolition.toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
+            : `<span class="dash-val-badge dash-val-warn" title="✗ ${a.total_demolition.toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
+        }
+        const d = document.createElement('div'); d.className = 'dash-attack-item';
+        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
+        d.onclick = () => showModal('attack', a); al.appendChild(d);
+      });
+    });
+  }
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
   psum.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach((p, i) => {
@@ -412,14 +441,37 @@ function showModal(type, data) {
       else if (p.value >= 100000) tiers['100K+']++;
       else tiers['<100K']++;
     });
-    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${avg.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
+    let h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+    h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${avg.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
     data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
     const sortedAttacks = [...(data.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
-    body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round(data.total_demolition/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + 
+    const hrMap = {};
+    sortedAttacks.forEach(att => {
+      if(att.game_time) {
+        const parts = att.game_time.split(', ');
+        if(parts.length > 1) {
+          const hr = parts[1].split(':')[0];
+          hrMap[hr] = (hrMap[hr]||0)+1;
+        }
+      }
+    });
+    const hrs = Object.keys(hrMap).sort((a,b)=>parseInt(a)-parseInt(b));
+    let chartHtml = '';
+    if(hrs.length > 0) {
+      const maxHr = Math.max(...Object.values(hrMap), 1);
+      chartHtml = `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Active Hours (Game Time)</div>
+        <div style="display:flex;gap:4px;height:40px;align-items:flex-end;margin-bottom:0.5rem;background:rgba(0,0,0,0.1);padding:4px;border-radius:4px;border:1px solid var(--border)">
+        ${hrs.map(hr => `<div style="flex:1;background:#3b82f6;height:${(hrMap[hr]/maxHr)*100}%;min-height:4px;border-radius:2px" title="Hour ${hr}:00 (${hrMap[hr]} hits)"></div>`).join('')}
+        </div><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-6px;margin-bottom:12px"><span>${hrs[0]}:00</span><span>${hrs[hrs.length-1]}:00</span></div>`;
+    }
+
+    let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.exportPlayerReport('${esc(data.name).replace(/'/g,"\\'")}')">📥 Export CSV Report</button></div>`;
+    
+    body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round(data.total_demolition/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml + 
       '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + 
       sortedAttacks.map(att => `<tr><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td>${esc(att.name||'')} ${esc(att.structure_level||'')}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + 
       '</tbody></table>' +
@@ -709,6 +761,7 @@ export async function bootOcrDashboard() {
 
   $id('dashModalClose').onclick = closeModal;
   $id('dashSearch').oninput = e => { searchQ = e.target.value; render(); };
+  $id('dashAttackSearch').oninput = e => { attackSearchQ = e.target.value; render(); };
   document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; render(); });
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
@@ -720,3 +773,50 @@ export async function bootOcrDashboard() {
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
   inp.onchange = () => { if (inp.files.length) processFiles(inp.files); };
 }
+
+window.deleteAttack = async function(attId) {
+  if(!attId || !_booted || !dashData) return;
+  if(!confirm("Are you sure you want to completely delete this attack data? This will recalculate all leaderboards.")) return;
+  const idx = dashData.attacks.findIndex(a => a.id === attId);
+  if (idx !== -1) {
+    const removed = dashData.attacks[idx];
+    dashData.attacks.splice(idx, 1);
+    const mockReturn = parseOcrResults([]); 
+    dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
+    dashData.total_attacks = dashData.attacks.length;
+    await saveData(dashData);
+    render(); closeModal();
+    log(`Deleted attack: ${removed.structure_name} ${removed.structure_level}`, 'warn');
+  }
+};
+
+window.editAttack = async function(attId) {
+  if(!attId || !_booted || !dashData) return;
+  const att = dashData.attacks.find(a => a.id === attId);
+  if(!att) return;
+  const newName = prompt("Edit Structure Name (e.g. Capital, Gates, City):", att.structure_name);
+  if(newName === null) return;
+  const newLevel = prompt("Edit Structure Level (e.g. Lv.1, Lv.5):", att.structure_level);
+  if(newLevel === null) return;
+  att.structure_name = normalizeStructureName(newName.trim());
+  att.structure_level = newLevel.trim();
+  const mockReturn = parseOcrResults([]); 
+  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
+  await saveData(dashData);
+  render(); showModal('attack', att);
+  log(`Updated attack to: ${att.structure_name} ${att.structure_level}`, 'info');
+};
+
+window.exportPlayerReport = function(pName) {
+  if(!dashData) return;
+  const p = dashData.players_summary.find(x => x.name === pName);
+  if(!p) return;
+  let csv = "Time,Target,Value,Rank\n";
+  const sortedAttacks = [...(p.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
+  sortedAttacks.forEach(att => {
+    csv += `"${att.game_time}","${att.name} ${att.structure_level}",${att.val||att.value||0},${att.rank||''}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `VTS_Report_${pName.replace(/[^a-z0-9]/gi, '_')}.csv`; a.click();
+};
