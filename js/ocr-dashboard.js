@@ -417,7 +417,7 @@ Extract the following:
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
         const ZAI_URL = 'https://api.z.ai/api/paas/v4/chat/completions';
-        const localModels = ['glm-4v-flash', 'glm-4.6v'];
+        const localModels = ['glm-5v-turbo', 'glm-ocr'];
         let res, raw, localModelUsed;
         for (const m of localModels) {
           res = await fetch(ZAI_URL, {
@@ -434,7 +434,7 @@ Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. J
           raw = await res.json();
           if (res.ok) { localModelUsed = m; break; }
           const errMsg = raw.error?.message || '';
-          if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist')) break;
+          if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown Model')) break;
         }
         if (!localModelUsed) throw new Error(raw?.error?.message || 'Z.AI API Error');
         let text = raw.choices[0].message.content;
