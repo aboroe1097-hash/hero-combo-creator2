@@ -50,6 +50,7 @@ import {
   generatorSelectedHeroes,
   userId,
   getUserId,
+  setUserId,
   db,
   savedCombosCache,
   lastGeneratedCombos,
@@ -2789,7 +2790,7 @@ async function startApp() {
         await initFirebase();
         const user = await ensureAnonymousAuth();
         if (user && user.uid) {
-            userId = user.uid;
+            setUserId(user.uid);
         }
         setupFirestoreListener();
         const cloudProfile = await loadPlayerProfileFromCloud();

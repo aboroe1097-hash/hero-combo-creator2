@@ -26,6 +26,7 @@ export const generatorSelectedHeroes = new Set();
 
 export let userId = 'anonymous';
 export function getUserId() { return userId; }
+export function setUserId(uid) { userId = uid; }
 export let db = null;
 export const savedCombosCache = [];
 export const lastGeneratedCombos = [];
