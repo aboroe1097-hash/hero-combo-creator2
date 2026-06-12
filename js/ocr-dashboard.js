@@ -188,7 +188,7 @@ function showRosterModal() {
 }
 
 // --- Auth ---
-const AUTH_HASH = 'aabcabea3561ab3105dbd2156b4f4f9f713162ea29a6fcde5ffcf5a25009f043'; // admin:admin12345
+const AUTH_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'; // 12345
 const CLEAR_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
 
 async function sha256(str) {
@@ -203,10 +203,10 @@ function showApp() { $id('dashLogin')?.classList.add('hidden'); $id('dashApp')?.
 function showLogin() { $id('dashLogin')?.classList.remove('hidden'); $id('dashApp')?.classList.add('hidden'); }
 
 async function doLogin() {
-  const u = $id('dashLoginUser').value.trim(), p = $id('dashLoginPass').value, err = $id('dashLoginErr');
-  const h = await sha256(u + ':' + p);
+  const p = $id('dashLoginPass').value, err = $id('dashLoginErr');
+  const h = await sha256(p);
   if (h === AUTH_HASH) { sessionStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
-  else { err.textContent = 'Invalid credentials'; err.classList.remove('hidden'); }
+  else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
 }
 
 // --- Persistence ---
