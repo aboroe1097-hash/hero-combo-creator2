@@ -124,6 +124,7 @@ import {
   isHeroAlreadyInCombo,
   computeStateSelection,
   computeTypeSelection,
+  getCheckedValues,
   registerUiFunctions,
 } from './state.js';
 
