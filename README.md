@@ -4,7 +4,9 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 
 ## What's new in 8.2
 
-- **Gemini model update** — migrated from deprecated `gemini-1.5-flash` to `gemini-2.5-flash` on both the Netlify function and client-side fallback; auto-fallback to `gemini-1.5-flash` if the newer model is unavailable
+- **Switched to Z.AI (GLM)** — replaced Google Gemini with Zhipu AI's GLM vision models (`glm-4v-flash` / `glm-4.6v`) for OCR; free tier, no billing needed
+- **GitHub Pages migration** — moved from Netlify (credits exhausted) to GitHub Pages; no serverless functions, client-side Z.AI API calls
+- **Gemini model update** — migrated from deprecated `gemini-1.5-flash` to `gemini-2.5-flash` (before switching to Z.AI)
 - **Missing brace fix** — added missing `}` before the outer `catch` in `processFiles()` that was causing a `SyntaxError: Unexpected token 'catch'` during the Vite build
 
 ## What's new in 8.1
