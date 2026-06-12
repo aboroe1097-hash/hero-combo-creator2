@@ -180,6 +180,8 @@ export const tabHeroesBtn         = document.getElementById('tabHeroes');
 export const tabEdenMapBtn        = document.getElementById('tabEdenMap');
 export const heroesSection        = document.getElementById('heroesSection');
 export const edenMapSection       = document.getElementById('edenMapSection');
+export const ocrDashboardSection  = document.getElementById('ocrDashboardSection');
+export const tabOcrDashboardBtn   = document.getElementById('tabOcrDashboard');
 export const globalToggleRow      = document.getElementById('globalToggleRow'); 
 
 export const comboFooterBar       = document.getElementById('comboFooterBar');
@@ -216,6 +218,7 @@ const TAB_BTN_IDS = {
   edenMap: 'tabEdenMap',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
+  ocrDashboard: 'tabOcrDashboard',
 };
 
 function appT(key, vars = {}) {
@@ -953,6 +956,7 @@ const tabs = [
   { btn: tabEdenMapBtn,  name: 'edenMap' },
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
+  { btn: tabOcrDashboardBtn, name: 'ocrDashboard' },
 ];
 
 tabs.forEach(tab => {
@@ -1024,7 +1028,7 @@ tabs.forEach(tab => {
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
-    edenMapSection, loyaltySection, youtubeSection,
+    edenMapSection, loyaltySection, youtubeSection, ocrDashboardSection,
   ];
 
   function loadYouTubeEmbeds() {
@@ -1063,6 +1067,9 @@ tabs.forEach(tab => {
     }
     if (tabName === 'youtube') {
       loadYouTubeEmbeds();
+    }
+    if (tabName === 'ocrDashboard') {
+      import('./ocr-dashboard.js').then(mod => mod.bootOcrDashboard()).catch(() => {});
     }
   }
 
@@ -1264,6 +1271,7 @@ function updateTextContent() {
     'tabEdenMap': t.tabEdenMap || 'Eden Map',
     'tabHeroes': t.tabHeroes || 'Hero Atlas',
     'tabResearch': t.tabResearch || 'Research',
+    'tabOcrDashboard': t.tabOcrDashboard || 'VTS Admin',
     'researchTitle': t.researchTitle,
     'researchDesc': t.researchDesc,
     'filterBySeasonTitle': t.filterBySeasonTitle,

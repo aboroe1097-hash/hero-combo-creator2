@@ -6,7 +6,8 @@
     "build:eden": "python database/build-eden-datasets.py",
     "dev": "vite",
     "build": "npm run build:eden && vite build && node scripts/post-build.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ocr-server": "cd tools/ocr-server && node server.js"
   },
   "devDependencies": {
     "vite": "^6.3.5"
