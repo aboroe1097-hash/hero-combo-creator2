@@ -1,6 +1,11 @@
-# Hero Combo Creator — VTS 1097 (8.2)
+# Hero Combo Creator — VTS 1097 (8.3)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
+
+## What's new in 8.3
+
+- **Insights panel CSS match** — added CSS rules for JS-generated classes (`dash-stack-bar`, `dash-stack-seg`, `dash-trend-bars`, `dash-trend-col`, etc), making the participation spread & activity trend charts visible
+- **Label clipping fix** — removed `height: 12px` and `overflow: hidden` from `.dash-mini-pie` so stack-bar labels are no longer cut off
 
 ## What's new in 8.2
 
