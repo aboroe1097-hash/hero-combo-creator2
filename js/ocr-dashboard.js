@@ -89,7 +89,8 @@ function showRosterModal() {
   const m = $id('dashModal'), body = $id('dashModalBody');
   $id('dashModalTitle').textContent = 'Alliance Roster';
   $id('dashModalSub').textContent = 'Paste names (one per line) to improve OCR.';
-  body.innerHTML = `<textarea id="dashRosterInput" class="dash-input" style="height:300px;font-family:monospace;font-size:0.85rem">${localStorage.getItem(ROSTER_KEY)||''}</textarea>
+  const rosterText = esc(localStorage.getItem(ROSTER_KEY) || '');
+  body.innerHTML = `<textarea id="dashRosterInput" class="dash-input" style="height:300px;font-family:monospace;font-size:0.85rem">${rosterText}</textarea>
     <div style="margin-top:1rem;display:flex;gap:0.5rem"><button id="dashRosterSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save Roster</button><button id="dashRosterCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div>`;
   $id('dashRosterSaveBtn').onclick = () => { saveRoster($id('dashRosterInput').value); closeModal(); };
   $id('dashRosterCancelBtn').onclick = closeModal;
@@ -224,7 +225,7 @@ function render() {
   const top = psum.slice(0, 10), max = top[0]?.total_demolition || 1;
   top.forEach((p, i) => {
     const w = document.createElement('div'); w.className = 'dash-top-item';
-    w.innerHTML = `<div class="dash-top-bar" style="width:${(p.total_demolition/max)*100}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${p.name}</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${(p.total_demolition/max)*100}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -238,14 +239,14 @@ function render() {
         : `<span class="dash-val-badge dash-val-warn" title="✗ ${a.total_demolition.toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
     }
     const d = document.createElement('div'); d.className = 'dash-attack-item';
-    d.innerHTML = `<div><div class="dash-attack-name">${a.structure_name} ${a.structure_level}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
+    d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
     d.onclick = () => showModal('attack', a); al.appendChild(d);
   });
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
   psum.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach((p, i) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="dash-rank">#${i+1}</td><td class="dash-pname">${p.name}</td><td class="dash-val">${p.total_demolition.toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round(p.total_demolition/p.participation_count).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank">#${i+1}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.total_demolition.toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round(p.total_demolition/p.participation_count).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
 
@@ -281,6 +282,8 @@ function render() {
   }
 }
 
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function showModal(type, data) {
   const m = $id('dashModal'), body = $id('dashModalBody');
   $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
@@ -294,14 +297,14 @@ function showModal(type, data) {
       else if (p.value >= 100000) tiers['100K+']++;
       else tiers['<100K']++;
     });
-    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${avg.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${data.structure_name} ${data.structure_level||''}</div></div></div>`;
+    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${avg.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
-    data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${p.name}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
+    data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
     body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round(data.total_demolition/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + 
-      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${att.name}</td><td style="text-align:right">${(att.val||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + '</tbody></table>';
+      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${esc(att.name)}</td><td style="text-align:right">${(att.val||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + '</tbody></table>';
   }
   m.classList.add('active');
 }
