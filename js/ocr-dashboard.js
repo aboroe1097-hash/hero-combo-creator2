@@ -13,6 +13,7 @@ let attackSearchQ = '';
 let rosterNames = [];
 let sortCol = 'total_demolition';
 let sortDir = 'desc';
+let leaderLimit = 25;
 let _booted = false;
 let _ocrProcessing = false;
 let _fsUnsub = null;
@@ -589,11 +590,20 @@ function render() {
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
   
-  psumWithRank.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach(p => {
+  const filteredLeader = psumWithRank.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase()));
+  const toShow = filteredLeader.slice(0, leaderLimit);
+  
+  toShow.forEach(p => {
     const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
     tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition||0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition||0)/Math.max(p.participation_count,1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
+  
+  if (filteredLeader.length > leaderLimit) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" style="text-align:center; padding: 1rem;"><button class="dash-btn" style="width:100%; justify-content:center" onclick="window.loadMoreLeaderboard()">Show More (25)</button></td>`;
+    tb.appendChild(tr);
+  }
 
   // --- Insights ---
   let activeAttacks = atts;
@@ -1034,12 +1044,13 @@ export async function bootOcrDashboard() {
   };
 
   $id('dashModalClose').onclick = closeModal;
-  $id('dashSearch').oninput = e => { searchQ = e.target.value; render(); };
-  $id('dashLeaderFilter').onchange = () => render();
+  $id('dashSearch').oninput = e => { searchQ = e.target.value; leaderLimit = 25; render(); };
+  $id('dashLeaderFilter').onchange = () => { leaderLimit = 25; render(); };
   const tFilter = $id('dashTimeFilter');
-  if (tFilter) tFilter.onchange = () => render();
+  if (tFilter) tFilter.onchange = () => { leaderLimit = 25; render(); };
   $id('dashAttackSearch').oninput = e => { attackSearchQ = e.target.value; render(); };
-  document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; render(); });
+  document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; leaderLimit = 25; render(); });
+  window.loadMoreLeaderboard = () => { leaderLimit += 25; render(); };
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
