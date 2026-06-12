@@ -353,7 +353,7 @@ async function processFiles(files) {
   if (!valid.length) { _ocrProcessing = false; return; }
   
   $id('dashProgress').classList.remove('hidden');
-  log(`Starting Z.AI OCR on ${valid.length} files...`, 'info');
+  log(`Starting Qwen OCR on ${valid.length} files...`, 'info');
   
   const allJson = [];
   for (let i = 0; i < valid.length; i++) {
@@ -362,7 +362,7 @@ async function processFiles(files) {
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
     });
     
-    log(`Sending to Z.AI API...`, 'info', f.name);
+    log(`Sending to Qwen API...`, 'info', f.name);
     try {
       const before = performance.now();
       let data = null;
@@ -400,14 +400,14 @@ async function processFiles(files) {
       }
       
       if (useLocalFallback) {
-        let localKey = sessionStorage.getItem('zai_dev_key');
+        let localKey = sessionStorage.getItem('qwen_api_key');
         if (!localKey) {
-          localKey = prompt('Z.AI API key required for OCR (get one free at z.ai):');
-          if (localKey) sessionStorage.setItem('zai_dev_key', localKey);
+          localKey = prompt('Qwen (DashScope) API key required for OCR (get one at https://bailian.console.aliyun.com):');
+          if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
         }
         if (!localKey) throw new Error('No API key provided.');
         
-        log(`Using Z.AI API (client-side)...`, 'info', f.name);
+        log(`Using Qwen API (client-side)...`, 'info', f.name);
         const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
@@ -416,11 +416,11 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-        const ZAI_URL = 'https://api.z.ai/api/paas/v4/chat/completions';
-        const localModels = ['glm-5v-turbo', 'glm-ocr'];
+        const QWEN_URL = 'https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions';
+        const localModels = ['qwen-vl-ocr'];
         let res, raw, localModelUsed;
         for (const m of localModels) {
-          res = await fetch(ZAI_URL, {
+          res = await fetch(QWEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
             body: JSON.stringify({
@@ -436,7 +436,7 @@ Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. J
           const errMsg = raw.error?.message || '';
           if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown Model')) break;
         }
-        if (!localModelUsed) throw new Error(raw?.error?.message || 'Z.AI API Error');
+        if (!localModelUsed) throw new Error(raw?.error?.message || 'Qwen API Error');
         let text = raw.choices[0].message.content;
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
         data = JSON.parse(text);
