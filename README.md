@@ -1,6 +1,11 @@
-# Hero Combo Creator — VTS 1097 (8.1)
+# Hero Combo Creator — VTS 1097 (8.2)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
+
+## What's new in 8.2
+
+- **Gemini model update** — migrated from deprecated `gemini-1.5-flash` to `gemini-2.5-flash` on both the Netlify function and client-side fallback; auto-fallback to `gemini-1.5-flash` if the newer model is unavailable
+- **Missing brace fix** — added missing `}` before the outer `catch` in `processFiles()` that was causing a `SyntaxError: Unexpected token 'catch'` during the Vite build
 
 ## What's new in 8.1
 

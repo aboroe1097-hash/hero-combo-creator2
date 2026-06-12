@@ -409,7 +409,6 @@ async function processFiles(files) {
         if (!localKey) throw new Error('No API key provided for local fallback.');
         
         log(`Using local client-side Gemini API fallback...`, 'info', f.name);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${localKey}`;
         const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
@@ -418,16 +417,23 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
-          })
-        });
-        const raw = await res.json();
-        if (!res.ok) throw new Error(raw.error?.message || 'Gemini API Error');
+        const localModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+        let res, raw, localModelUsed;
+        for (const m of localModels) {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${localKey}`;
+          res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
+            })
+          });
+          raw = await res.json();
+          if (res.ok) { localModelUsed = m; break; }
+          const errMsg = raw.error?.message || '';
+          if (!errMsg.includes('not found') && !errMsg.includes('not supported')) break;
+        }
+        if (!localModelUsed) throw new Error(raw?.error?.message || 'Gemini API Error');
         let text = raw.candidates[0].content.parts[0].text;
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
         data = JSON.parse(text);
