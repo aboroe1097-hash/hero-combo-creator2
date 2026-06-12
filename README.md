@@ -1,8 +1,8 @@
-# Hero Combo Creator — VTS 1097 (8.6)
+# Hero Combo Creator — VTS 1097 (8.5)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 8.6
+## What's new in 8.5
 - **Complete Dashboard Admin Overhaul**: 
   - Edit or Delete individual attack sessions directly from the UI without wiping the database.
   - Search & Filter attack history by Structure, Level, or Day.
