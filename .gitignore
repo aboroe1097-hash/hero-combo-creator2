@@ -13,3 +13,5 @@ database/spotcheck-report.txt
 .env
 .env.*
 *.log
+tools/ocr-server/node_modules/
+tools/ocr-server/data/
