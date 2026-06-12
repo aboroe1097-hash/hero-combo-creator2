@@ -785,8 +785,12 @@ export async function bootOcrDashboard() {
 }
 
 window.deleteAttack = async function(attId) {
+  const pwd = prompt('Enter Admin Overdrive Password to delete this structure data:');
+  if (pwd !== 'wipe1097' && pwd !== '1097') {
+    if (pwd !== null) alert('Incorrect password.');
+    return;
+  }
   if(!attId || !_booted || !dashData) return;
-  if(!confirm("Are you sure you want to completely delete this attack data? This will recalculate all leaderboards.")) return;
   const idx = dashData.attacks.findIndex(a => a.id === attId);
   if (idx !== -1) {
     const removed = dashData.attacks[idx];
