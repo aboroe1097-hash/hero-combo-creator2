@@ -1,8 +1,12 @@
 // --- Fully client-side OCR Dashboard ---
 // No server needed. OCR runs in the browser via Tesseract.js.
+import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
 const STORAGE_KEY = 'vts_ocr_dashboard';
 const AUTH_KEY = 'vts_ocr_auth';
 const ROSTER_KEY = 'vts_ocr_roster';
+const FS_PATH = 'vts_admin/dashboard_data';
 
 let dashData = null;
 let rosterNames = [];
@@ -11,6 +15,7 @@ let sortDir = 'desc';
 let searchQ = '';
 let _booted = false;
 let _ocrProcessing = false;
+let _fsUnsub = null;
 
 function $id(id) { return document.getElementById(id); }
 
@@ -114,9 +119,36 @@ async function doLogin() {
 }
 
 // --- Persistence ---
-function saveData(data) { dashData = data; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }
-function loadData() { try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) { dashData = JSON.parse(saved); render(); } } catch {} }
-function clearData() { dashData = null; localStorage.removeItem(STORAGE_KEY); render(); log('Database wiped.', 'warn'); }
+function saveData(data) {
+  dashData = data;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try { setDoc(doc(getDb(), FS_PATH), data); } catch {}
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { dashData = JSON.parse(saved); render(); }
+  } catch {}
+  try {
+    if (_fsUnsub) _fsUnsub();
+    _fsUnsub = onSnapshot(doc(getDb(), FS_PATH), (snap) => {
+      if (snap.exists()) {
+        dashData = snap.data();
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch {}
+        render();
+      }
+    });
+  } catch {}
+}
+
+function clearData() {
+  dashData = null;
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { setDoc(doc(getDb(), FS_PATH), {}); } catch {}
+  render();
+  log('Database wiped.', 'warn');
+}
 
 // --- Exports ---
 function exportData() { if (!dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
