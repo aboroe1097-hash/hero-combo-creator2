@@ -347,7 +347,7 @@ function validateTotalDemolition(sN, sL, total) {
 
 // --- OCR Engine ---
 // Set this to your Cloudflare Worker URL after deploying workers/qwen-cors-proxy.js:
-const QWEN_WORKER_URL = 'https://corsproxy.io/?';
+const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
 
 async function processFiles(files) {
   if (_ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
@@ -365,19 +365,19 @@ async function processFiles(files) {
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
     });
     
-    log(`Sending to Qwen API...`, 'info', f.name);
+    log(`Sending to Gemini API...`, 'info', f.name);
     try {
       const before = performance.now();
       let data = null;
       
-      let localKey = sessionStorage.getItem('qwen_api_key');
+      let localKey = localStorage.getItem('vts_gemini_key');
       if (!localKey) {
-        localKey = prompt('Qwen (DashScope) API key required for OCR:');
-        if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
+        localKey = prompt('Please paste your Gemini API key to run OCR entirely in your browser (it will be saved to localStorage):');
+        if (localKey) localStorage.setItem('vts_gemini_key', localKey);
       }
-      if (!localKey) throw new Error('No API key provided.');
+      if (!localKey) throw new Error('No API key provided. OCR cancelled.');
       
-      log(`Using Qwen API...`, 'info', f.name);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${localKey}`;
       const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
@@ -386,24 +386,17 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-      const DIRECT_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-      const QWEN_URL = QWEN_WORKER_URL.startsWith('https://corsproxy.io')
-        ? QWEN_WORKER_URL + encodeURIComponent(DIRECT_URL)
-        : QWEN_WORKER_URL;
-      const res = await fetch(QWEN_URL, {
+
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'qwen-vl-ocr-2025-11-20',
-          messages: [{ role: 'user', content: [
-            { type: 'text', text: promptTxt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-          ]}]
+          contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
         })
       });
       const raw = await res.json();
-      if (!res.ok) throw new Error(raw.error?.message || `HTTP ${res.status}`);
-      let text = raw.choices[0].message.content;
+      if (!res.ok) throw new Error(raw.error?.message || 'Gemini API Error');
+      let text = raw.candidates[0].content.parts[0].text;
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       data = JSON.parse(text);
 
