@@ -115,48 +115,6 @@ function tryRepairJson(text) {
 
 // --- Fuzzy Matching ---
 
-// --- JSON Repair Helper ---
-// Fixes common JSON escaping issues from LLM outputs
-function tryRepairJson(text) {
-  // First, try parsing as-is
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    // Continue to repair only for common JSON errors
-    if (!e.message.includes('Bad escaped character') && 
-        !e.message.includes('Invalid escape') && 
-        !e.message.includes('Unexpected token')) {
-      throw e;
-    }
-  }
-  
-  let repaired = text;
-  
-  // Step 1: Remove trailing commas before } or ] (handle newlines/spaces)
-  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
-  
-  // Step 2: Fix bad escape sequences: replace \X (where X is not a valid escape char) with \\X
-  // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
-  repaired = repaired.replace(/\\([^"\\/bfnrtu])/g, '\\\\$1');
-  
-  // Step 3: Fix any unescaped control characters
-  repaired = repaired.replace(/[\x00-\x1f]/g, (match) => {
-    const code = match.charCodeAt(0);
-    if (code === 0x08) return '\\b';
-    if (code === 0x09) return '\\t';
-    if (code === 0x0a) return '\\n';
-    if (code === 0x0c) return '\\f';
-    if (code === 0x0d) return '\\r';
-    return '\\u' + code.toString(16).padStart(4, '0');
-  });
-  
-  try {
-    return JSON.parse(repaired);
-  } catch (e2) {
-    throw new Error(`Failed to parse JSON even after repair: ${e2.message}`);
-  }
-}
-
 function getSimilarity(s1, s2) {
   if (!s1 || !s2) return 0;
   let longer = s1, shorter = s2;
