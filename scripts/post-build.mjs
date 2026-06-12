@@ -5,7 +5,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 
 const copyDirs = ['css', 'images', 'assets'];
-const copyFiles = ['robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html'];
+const copyFiles = ['CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html'];
 
 function copyRecursive(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
