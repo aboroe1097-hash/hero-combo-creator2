@@ -345,7 +345,7 @@ function render() {
   const c = $id('dashChart'); c.innerHTML = '';
   const top = psum.slice(0, 10), max = top[0]?.total_demolition || 1;
   top.forEach((p, i) => {
-    const w = document.createElement('div'); w.className = 'dash-top-item';
+    const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     w.innerHTML = `<div class="dash-top-bar" style="width:${(p.total_demolition/max)*100}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
@@ -380,7 +380,7 @@ function render() {
             ? `<span class="dash-val-badge dash-val-ok" title="✓ ${a.total_demolition.toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
             : `<span class="dash-val-badge dash-val-warn" title="✗ ${a.total_demolition.toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
         }
-        const d = document.createElement('div'); d.className = 'dash-attack-item';
+        const d = document.createElement('div'); d.className = 'dash-attack-item'; d.style.cursor = 'pointer';
         d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
         d.onclick = () => showModal('attack', a); al.appendChild(d);
       });
@@ -389,7 +389,7 @@ function render() {
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
   psum.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach((p, i) => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
     tr.innerHTML = `<td class="dash-rank">#${i+1}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.total_demolition.toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round(p.total_demolition/p.participation_count).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
