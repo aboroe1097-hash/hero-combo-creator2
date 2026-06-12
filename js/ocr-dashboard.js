@@ -1109,8 +1109,11 @@ window.editAttack = async function(attId) {
   if(newName === null) return;
   const newLevel = prompt("Edit Structure Level (e.g. Lv.1, Lv.5):", att.structure_level);
   if(newLevel === null) return;
+  const newTime = prompt("Edit Game Time (format: YYYY-MM-DD, HH:mm):", att.game_time);
+  if(newTime === null) return;
   att.structure_name = normalizeStructureName(newName.trim());
   att.structure_level = newLevel.trim();
+  att.game_time = newTime.trim();
   const mockReturn = parseOcrResults([]); 
   dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
   await saveData(dashData);
