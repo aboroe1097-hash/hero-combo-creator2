@@ -324,6 +324,11 @@ function exportChartPng() {
      const opt = filterEl.options[filterEl.selectedIndex];
      if (opt) subTitle = opt.textContent;
   }
+  const tf = $id('dashTimeFilter');
+  if (tf && tf.value !== 'all') {
+     const opt = tf.options[tf.selectedIndex];
+     if (opt) subTitle += ` · ${opt.textContent}`;
+  }
   
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
@@ -386,6 +391,8 @@ window.shareChartImage = function() {
   const cloneBtns = clone.querySelectorAll('.dash-btn'); cloneBtns.forEach(b => b.remove());
   const filterEl = $id('dashLeaderFilter'); let subTitle = "Global Top Performers · All Time";
   if (filterEl && filterEl.value) { const opt = filterEl.options[filterEl.selectedIndex]; if (opt) subTitle = opt.textContent; }
+  const tf = $id('dashTimeFilter');
+  if (tf && tf.value !== 'all') { const opt = tf.options[tf.selectedIndex]; if (opt) subTitle += ` · ${opt.textContent}`; }
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
     titleH2.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="margin-right:10px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span style="font-size:1.4rem;text-shadow:0 0 10px rgba(59,130,246,0.5)">Top Performers</span>`;
@@ -448,8 +455,32 @@ function render() {
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
     return;
   }
-  const atts = dashData.attacks || [];
+  let atts = dashData.attacks || [];
   
+  const timeFilter = $id('dashTimeFilter');
+  if (timeFilter && atts.length > 0) {
+    const tf = timeFilter.value;
+    if (tf === 'daily' || tf === 'weekly') {
+      const gtNow = new Date(Date.now() + (new Date().getTimezoneOffset() - 120) * 60000);
+      const pad = n => n.toString().padStart(2, '0');
+      
+      if (tf === 'daily') {
+        const todayPrefix = `${pad(gtNow.getDate())}/${pad(gtNow.getMonth()+1)}/${gtNow.getFullYear()}`;
+        atts = atts.filter(a => a.game_time && a.game_time.startsWith(todayPrefix));
+      } else if (tf === 'weekly') {
+        const dayOfWeek = gtNow.getDay();
+        const daysSinceMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+        const startOfMonday = new Date(gtNow.getFullYear(), gtNow.getMonth(), gtNow.getDate() - daysSinceMonday).getTime();
+        atts = atts.filter(a => {
+          if (!a.game_time) return false;
+          const p1 = a.game_time.split(' ')[0].split('/');
+          if (p1.length !== 3) return false;
+          const attackTime = new Date(p1[2], parseInt(p1[1])-1, p1[0]).getTime();
+          return attackTime >= startOfMonday;
+        });
+      }
+    }
+  }
   // Dynamically calculate global players summary so any findBestMatch rules apply retroactively
   const globalSum = {};
   atts.forEach(a => a.players.forEach(p => { 
@@ -988,6 +1019,8 @@ export async function bootOcrDashboard() {
   $id('dashModalClose').onclick = closeModal;
   $id('dashSearch').oninput = e => { searchQ = e.target.value; render(); };
   $id('dashLeaderFilter').onchange = () => render();
+  const tFilter = $id('dashTimeFilter');
+  if (tFilter) tFilter.onchange = () => render();
   $id('dashAttackSearch').oninput = e => { attackSearchQ = e.target.value; render(); };
   document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; render(); });
   
