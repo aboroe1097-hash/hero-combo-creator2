@@ -390,7 +390,7 @@ function render() {
             : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
         }
         const d = document.createElement('div'); d.className = 'dash-attack-item'; d.style.cursor = 'pointer';
-        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${(a.total_demolition || 0).toLocaleString()}</div></div>`;
+        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
         d.onclick = () => showModal('attack', a); al.appendChild(d);
       });
     });

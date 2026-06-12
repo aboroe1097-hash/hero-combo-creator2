@@ -5436,6 +5436,14 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-attack-count {
   font-size: 0.75rem; color: var(--text-muted);
 }
+#ocrDashboardRoot .dash-del-btn {
+  background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 4px;
+  color: #ef4444; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-del-btn:hover { background: rgba(239, 68, 68, 0.25); transform: scale(1.1); }
+#ocrDashboardRoot .dash-attack-item:hover .dash-del-btn { opacity: 1; }
+@media (max-width: 768px) { #ocrDashboardRoot .dash-del-btn { opacity: 1; } }
 
 /* Badge */
 #ocrDashboardRoot .dash-badge {
