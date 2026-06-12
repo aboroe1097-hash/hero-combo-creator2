@@ -345,6 +345,9 @@ function exportChartPng() {
     titleH2.parentElement.style.marginBottom = '1rem';
   }
 
+  const cloneChart = clone.querySelector('.dash-chart');
+  if (cloneChart) cloneChart.style.gap = '0.9rem';
+
   const items = clone.querySelectorAll('.dash-top-item');
   items.forEach(item => {
      item.style.overflow = 'visible';
@@ -401,6 +404,9 @@ window.shareChartImage = function() {
     titleH2.parentElement.appendChild(subDiv); titleH2.parentElement.style.flexDirection = 'column'; titleH2.parentElement.style.alignItems = 'flex-start';
     titleH2.parentElement.style.borderBottom = '1px solid rgba(255,255,255,0.1)'; titleH2.parentElement.style.paddingBottom = '1rem'; titleH2.parentElement.style.marginBottom = '1rem';
   }
+  const cloneChart = clone.querySelector('.dash-chart');
+  if (cloneChart) cloneChart.style.gap = '0.9rem';
+
   const items = clone.querySelectorAll('.dash-top-item');
   items.forEach(item => {
      item.style.overflow = 'visible'; item.style.borderRadius = '0';
@@ -664,15 +670,27 @@ function render() {
     const dayMap = {};
     atts.forEach(a => {
       const day = a.game_time && a.game_time.includes(',') ? a.game_time.split(',')[0] : (a.game_time||'').split(' ')[0];
-      dayMap[day] = (dayMap[day] || 0) + 1;
+      if (!dayMap[day]) dayMap[day] = { targets: 0, demo: 0, participants: new Set() };
+      dayMap[day].targets++;
+      dayMap[day].demo += (a.total_demolition || 0);
+      (a.players || []).forEach(p => dayMap[day].participants.add(p.name));
     });
     const days = Object.keys(dayMap).sort().slice(-7);
-    const maxCount = Math.max(...days.map(d => dayMap[d]), 1);
+    const maxCount = Math.max(...days.map(d => dayMap[d].targets), 1);
 
     if (days.length === 0) {
       $trend.innerHTML = '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:2rem 0">No activity yet</div>';
     } else if (days.length === 1) {
-      $trend.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#3b82f6"><div style="font-size:3rem;font-weight:900;text-shadow:0 0 30px rgba(59,130,246,0.6);line-height:1">${dayMap[days[0]]}</div><div style="font-size:0.8rem;color:#94a3b8;margin-top:8px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase">Uploads on ${days[0].slice(0,5)}</div></div>`;
+      const d = dayMap[days[0]];
+      const totalDemoStr = d.demo > 1e6 ? (d.demo/1e6).toFixed(1)+'M' : (d.demo/1000).toFixed(0)+'k';
+      $trend.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;height:100%;align-items:center;text-align:center">
+          <div style="display:flex;flex-direction:column;color:#3b82f6"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(59,130,246,0.5)">${d.targets}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Targets</div></div>
+          <div style="display:flex;flex-direction:column;color:#10b981"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(16,185,129,0.5)">${totalDemoStr}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Demo</div></div>
+          <div style="display:flex;flex-direction:column;color:#8b5cf6"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(139,92,246,0.5)">${d.participants.size}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Members</div></div>
+        </div>
+        <div style="text-align:center;font-size:0.7rem;color:#64748b;margin-top:8px;font-weight:600">Activity on ${days[0]}</div>
+      `;
     } else {
       const w = 350; const h = 140;
       const padX = 30; const padY = 30;
@@ -681,7 +699,7 @@ function render() {
       let pts = [];
       days.forEach((d, i) => {
          const x = padX + (i / (days.length - 1)) * usableW;
-         const y = h - padY - (dayMap[d] / maxCount) * usableH;
+         const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
          pts.push(`${x},${y}`);
       });
       
@@ -697,10 +715,10 @@ function render() {
       
       days.forEach((d, i) => {
          const x = padX + (i / (days.length - 1)) * usableW;
-         const y = h - padY - (dayMap[d] / maxCount) * usableH;
+         const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
          svg += `<circle cx="${x}" cy="${y}" r="5" fill="#0b0f19" stroke="#60a5fa" stroke-width="2.5" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>`;
          svg += `<text x="${x}" y="${h-8}" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">${d.slice(0,5)}</text>`;
-         svg += `<text x="${x}" y="${y-12}" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle" font-family="sans-serif">${dayMap[d]}</text>`;
+         svg += `<text x="${x}" y="${y-12}" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle" font-family="sans-serif">${dayMap[d].targets}</text>`;
       });
       svg += `</svg>`;
       $trend.innerHTML = svg;
