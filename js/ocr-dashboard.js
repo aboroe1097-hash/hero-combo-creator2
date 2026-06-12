@@ -331,23 +331,31 @@ function parseOcrResults(results) {
     }
     if (players.length) {
       players.sort((a,b) => b.value - a.value).forEach((p,i) => p.rank = i+1);
-      attacks.push({ id: `${sN}_${sL}_${g.dt.getTime()}`, structure_name: sN, structure_level: sL, game_time: fmtDate(new Date(g.dt - 6*3600000)), players_count: players.length, total_demolition: players.reduce((s,p)=>s+p.value,0), players });
+      const ts = g.dt.getTime();
+      if (sN === 'Structure' && dashData) {
+        const existing = dashData.attacks.find(a => { const p = a.id.split('_'); return p[p.length-1] === String(ts); });
+        if (existing) { sN = existing.structure_name; sL = existing.structure_level; }
+      }
+      attacks.push({ id: `${sN}_${sL}_${ts}`, structure_name: sN, structure_level: sL, game_time: fmtDate(new Date(g.dt - 6*3600000)), players_count: players.length, total_demolition: players.reduce((s,p)=>s+p.value,0), players });
     }
   }
   if (!attacks.length) return null;
   const merged = {};
+  const mergePlayers = (target, src) => {
+    const pMap = {};
+    target.players.forEach(p => pMap[p.value] = p);
+    src.players.forEach(p => { if (!pMap[p.value]) pMap[p.value] = p; });
+    target.players = Object.values(pMap).sort((x,y) => y.value - x.value);
+    target.players.forEach((p,i) => p.rank = i+1);
+    target.players_count = target.players.length;
+    target.total_demolition = target.players.reduce((s,p) => s + p.value, 0);
+  };
   [...((dashData && dashData.attacks) || []), ...attacks].forEach(a => {
-    if (merged[a.id]) {
-      const pMap = {};
-      merged[a.id].players.forEach(p => pMap[p.value] = p);
-      a.players.forEach(p => { if (!pMap[p.value]) pMap[p.value] = p; });
-      merged[a.id].players = Object.values(pMap).sort((x,y) => y.value - x.value);
-      merged[a.id].players.forEach((p,i) => p.rank = i+1);
-      merged[a.id].players_count = merged[a.id].players.length;
-      merged[a.id].total_demolition = merged[a.id].players.reduce((s,p) => s + p.value, 0);
-    } else {
-      merged[a.id] = { ...a };
-    }
+    const ts = a.id.split('_').pop();
+    if (merged[a.id]) { mergePlayers(merged[a.id], a); return; }
+    const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
+    if (existing) { mergePlayers(existing, a); return; }
+    merged[a.id] = { ...a };
   });
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
   const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
