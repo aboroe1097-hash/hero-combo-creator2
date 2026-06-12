@@ -311,8 +311,9 @@ function exportChartPng() {
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
   
-  const cloneBtn = clone.querySelector('#dashExportChartBtn');
-  if (cloneBtn) cloneBtn.remove();
+  // Remove export buttons from clone
+  const cloneBtns = clone.querySelectorAll('.dash-btn');
+  cloneBtns.forEach(b => b.remove());
   
   const filterEl = $id('dashLeaderFilter');
   let subTitle = "Global Top Performers · All Time";
@@ -323,13 +324,16 @@ function exportChartPng() {
   
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
-    titleH2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Top Performers`;
+    titleH2.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="margin-right:10px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span style="font-size:1.4rem;text-shadow:0 0 10px rgba(59,130,246,0.5)">Top Performers</span>`;
     const subDiv = document.createElement('div');
-    subDiv.style.cssText = 'font-size:0.75rem; color:#94a3b8; margin-top:6px; margin-left:26px; font-weight:600; letter-spacing:0.02em;';
+    subDiv.style.cssText = 'font-size:0.85rem; color:#94a3b8; margin-top:8px; margin-left:34px; font-weight:600; letter-spacing:0.02em;';
     subDiv.textContent = subTitle;
     titleH2.parentElement.appendChild(subDiv);
     titleH2.parentElement.style.flexDirection = 'column';
     titleH2.parentElement.style.alignItems = 'flex-start';
+    titleH2.parentElement.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+    titleH2.parentElement.style.paddingBottom = '1rem';
+    titleH2.parentElement.style.marginBottom = '1rem';
   }
 
   const items = clone.querySelectorAll('.dash-top-item');
@@ -337,23 +341,74 @@ function exportChartPng() {
      item.style.overflow = 'visible';
      item.style.borderRadius = '0';
      const bar = item.querySelector('.dash-top-bar');
-     if (bar) bar.style.borderRadius = '8px';
+     if (bar) {
+       bar.style.borderRadius = '8px';
+       bar.style.background = 'linear-gradient(90deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3))';
+     }
      const spans = item.querySelectorAll('span');
-     spans.forEach(s => s.style.transform = 'translateY(2px)');
+     spans.forEach(s => s.style.transform = 'translateY(1px)');
   });
 
   clone.style.position = 'absolute';
   clone.style.top = '-9999px';
   clone.style.left = '0';
   clone.style.width = card.offsetWidth + 'px';
-  document.body.appendChild(clone);
+  clone.style.background = '#0b0f19'; // Force explicit background on clone
+  clone.style.border = '1px solid rgba(255,255,255,0.05)';
+  
+  // Append to the root so CSS applies!
+  const root = $id('ocrDashboardRoot') || document.body;
+  root.appendChild(clone);
 
   html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
     clone.remove();
-    const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_top_performers.png'; a.click(); 
+    c.toBlob(blob => {
+      const file = new File([blob], 'vts_top_performers.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // We have a share button now, maybe just download directly here unless explicitly sharing
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'vts_top_performers.png'; a.click();
+      } else {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'vts_top_performers.png'; a.click(); 
+      }
+    });
   }).catch(() => {
     clone.remove();
   });
+}
+window.shareChartImage = function() {
+  const chart = $id('dashChart');
+  if (!chart || typeof html2canvas === 'undefined') return;
+  const card = chart.closest('.dash-card');
+  const clone = card.cloneNode(true);
+  const cloneBtns = clone.querySelectorAll('.dash-btn'); cloneBtns.forEach(b => b.remove());
+  const filterEl = $id('dashLeaderFilter'); let subTitle = "Global Top Performers · All Time";
+  if (filterEl && filterEl.value) { const opt = filterEl.options[filterEl.selectedIndex]; if (opt) subTitle = opt.textContent; }
+  const titleH2 = clone.querySelector('h2.dash-card-title');
+  if (titleH2) {
+    titleH2.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="margin-right:10px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span style="font-size:1.4rem;text-shadow:0 0 10px rgba(59,130,246,0.5)">Top Performers</span>`;
+    const subDiv = document.createElement('div'); subDiv.style.cssText = 'font-size:0.85rem; color:#94a3b8; margin-top:8px; margin-left:34px; font-weight:600; letter-spacing:0.02em;'; subDiv.textContent = subTitle;
+    titleH2.parentElement.appendChild(subDiv); titleH2.parentElement.style.flexDirection = 'column'; titleH2.parentElement.style.alignItems = 'flex-start';
+    titleH2.parentElement.style.borderBottom = '1px solid rgba(255,255,255,0.1)'; titleH2.parentElement.style.paddingBottom = '1rem'; titleH2.parentElement.style.marginBottom = '1rem';
+  }
+  const items = clone.querySelectorAll('.dash-top-item');
+  items.forEach(item => {
+     item.style.overflow = 'visible'; item.style.borderRadius = '0';
+     const bar = item.querySelector('.dash-top-bar'); if (bar) { bar.style.borderRadius = '8px'; bar.style.background = 'linear-gradient(90deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3))'; }
+     const spans = item.querySelectorAll('span'); spans.forEach(s => s.style.transform = 'translateY(1px)');
+  });
+  clone.style.position = 'absolute'; clone.style.top = '-9999px'; clone.style.left = '0'; clone.style.width = card.offsetWidth + 'px'; clone.style.background = '#0b0f19'; clone.style.border = '1px solid rgba(255,255,255,0.05)';
+  const root = $id('ocrDashboardRoot') || document.body; root.appendChild(clone);
+  html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
+    clone.remove();
+    c.toBlob(blob => {
+      const file = new File([blob], 'vts_top_performers.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ title: 'Top Performers', files: [file] }).catch(()=>{});
+      } else {
+        alert('Sharing not supported on this browser. Use the download button instead.');
+      }
+    });
+  }).catch(() => { clone.remove(); });
 }
 function exportAttackCsv() {
   if (!dashData?.attacks?.length) return;
@@ -880,6 +935,7 @@ export async function bootOcrDashboard() {
   $id('dashExpPng').onclick = exportToPng;
   $id('dashExpJson').onclick = exportData;
   const chartBtn = $id('dashExportChartBtn'); if (chartBtn) chartBtn.onclick = exportChartPng;
+  const shareBtn = $id('dashShareChartBtn'); if (shareBtn) shareBtn.onclick = window.shareChartImage;
   $id('dashImportBtn').onclick = () => {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();
