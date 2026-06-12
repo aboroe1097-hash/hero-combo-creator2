@@ -37,16 +37,27 @@ import {
 
 import {
   currentLanguage,
+  setCurrentLanguage,
   heroInfoEnabled,
+  setHeroInfoEnabled,
   activeTechSeasons,
+  setActiveTechSeasons,
   techSearchQuery,
+  setTechSearchQuery,
   selectedSeasons,
+  setSelectedSeasons,
   selectedStates,
+  setSelectedStates,
   selectedTypes,
+  setSelectedTypes,
   currentCombo,
+  setCurrentCombo,
   generatorSelectedSeasons,
+  setGeneratorSelectedSeasons,
   generatorSelectedStates,
+  setGeneratorSelectedStates,
   generatorSelectedTypes,
+  setGeneratorSelectedTypes,
   generatorSelectedHeroes,
   userId,
   getUserId,
@@ -858,7 +869,7 @@ tabs.forEach(tab => {
 
   if (languageSelect) {
     languageSelect.onchange = e => {
-      currentLanguage = e.target.value;
+      setCurrentLanguage(e.target.value);
       localStorage.setItem('vts_hero_lang', currentLanguage);
       updateTextContent();
       renderAvailableHeroes();
@@ -869,7 +880,7 @@ tabs.forEach(tab => {
   const heroInfoToggle = document.getElementById('heroInfoToggle');
   if (heroInfoToggle) {
     heroInfoToggle.addEventListener('change', (e) => {
-      heroInfoEnabled = e.target.checked;
+      setHeroInfoEnabled(e.target.checked);
       forceHideHeroTooltip();
       document.body.classList.toggle('hide-hero-info', !heroInfoEnabled);
     });
@@ -961,44 +972,44 @@ tabs.forEach(tab => {
   }
   if (seasonFiltersEl) {
     seasonFiltersEl.addEventListener('change', () => {
-      selectedSeasons = getCheckedValues(seasonFiltersEl);
-      if (!selectedSeasons.length) selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+      setSelectedSeasons(getCheckedValues(seasonFiltersEl));
+      if (!selectedSeasons.length) setSelectedSeasons(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
       renderAvailableHeroes();
     });
   }
 
   if (stateFiltersEl) {
     stateFiltersEl.addEventListener('change', () => {
-      selectedStates = computeStateSelection(stateFiltersEl);
+      setSelectedStates(computeStateSelection(stateFiltersEl));
       renderAvailableHeroes();
     });
   }
 
   if (troopFiltersEl) {
     troopFiltersEl.addEventListener('change', () => {
-      selectedTypes = computeTypeSelection(troopFiltersEl);
+      setSelectedTypes(computeTypeSelection(troopFiltersEl));
       renderAvailableHeroes();
     });
   }
 
   if (genSeasonFiltersEl) {
     genSeasonFiltersEl.addEventListener('change', () => {
-      generatorSelectedSeasons = getCheckedValues(genSeasonFiltersEl);
-      if (!generatorSelectedSeasons.length) generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+      setGeneratorSelectedSeasons(getCheckedValues(genSeasonFiltersEl));
+      if (!generatorSelectedSeasons.length) setGeneratorSelectedSeasons(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
       renderGeneratorHeroes();
     });
   }
 
   if (genStateFiltersEl) {
     genStateFiltersEl.addEventListener('change', () => {
-      generatorSelectedStates = computeStateSelection(genStateFiltersEl);
+      setGeneratorSelectedStates(computeStateSelection(genStateFiltersEl));
       renderGeneratorHeroes();
     });
   }
 
   if (genTroopFiltersEl) {
     genTroopFiltersEl.addEventListener('change', () => {
-      generatorSelectedTypes = computeTypeSelection(genTroopFiltersEl);
+      setGeneratorSelectedTypes(computeTypeSelection(genTroopFiltersEl));
       renderGeneratorHeroes();
     });
   }
@@ -1036,7 +1047,7 @@ tabs.forEach(tab => {
   
   if (clearComboBtn) {
     clearComboBtn.onclick = () => {
-      currentCombo = [null, null, null];
+      setCurrentCombo([null, null, null]);
       document.querySelectorAll('.combo-slot')
         .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
       updateManualComboScore();
@@ -1324,8 +1335,8 @@ function closeTechCalculator() {
     }, 200);
 }
 
-function setActiveTechSeasons(seasons) {
-    activeTechSeasons = new Set(seasons);
+function updateTechSeasons(seasons) {
+    setActiveTechSeasons(new Set(seasons));
     syncTechSeasonButtons();
     renderTechList();
     closeTechCalculator();
@@ -1383,17 +1394,17 @@ function initResearchCalculator() {
     });
 
     document.getElementById('techSeasonAllBtn')?.addEventListener('click', () => {
-        setActiveTechSeasons(TECH_SEASON_ORDER);
+        updateTechSeasons(TECH_SEASON_ORDER);
     });
 
     document.getElementById('techSeasonX1Btn')?.addEventListener('click', () => {
-        setActiveTechSeasons(['X1']);
+        updateTechSeasons(['X1']);
     });
 
     const searchInput = document.getElementById('techSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            techSearchQuery = e.target.value;
+            setTechSearchQuery(e.target.value);
             renderTechList();
         });
     }
