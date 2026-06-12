@@ -1,6 +1,17 @@
-# Hero Combo Creator — VTS 1097 (8.3)
+# Hero Combo Creator — VTS 1097 (8.5)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
+
+## What's new in 8.5
+
+- **Cross-device sync for logs** — Terminal analysis logs are now perfectly synced across devices via Firestore, keeping the entire team's dashboard state aligned.
+- **Enhanced Player Profiles** — Clicking a player now shows a detailed participation history table tracking exact hit times, target structures, and individual rankings.
+- **Symbolic fuzzy deduplication** — Upgraded the OCR deduplication engine to strip cosmetic symbols and spaces (`~`, `●`, etc.) to effectively merge purely visual name duplicates while perfectly separating distinct players who score identical demolition values.
+
+## What's new in 8.4
+
+- **Robust OCR JSON parsing** — Introduced an auto-repair utility that silently fixes common LLM formatting errors (like trailing commas and bad escape characters) before parsing.
+- **Strict OCR prompting** — Upgraded extraction rules to enforce integer-only scores (removing commas), mandate full string matches for clan tags, and explicitly reject markdown blocks.
 
 ## What's new in 8.3
 

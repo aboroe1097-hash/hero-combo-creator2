@@ -62,8 +62,8 @@ function restoreLogs() {
     const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
     if (!logs.length) return;
     const out = $id('dashLogOutput');
-    const area = $id('dashLogArea');
     if (!out || !area) return;
+    out.innerHTML = '';
     area.classList.remove('hidden');
     logs.forEach(e => appendLogEntry(out, e));
     out.scrollTop = out.scrollHeight;
@@ -211,7 +211,11 @@ async function doLogin() {
 // --- Persistence ---
 async function saveData(data) {
   dashData = data;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  try { 
+    const localLogs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    dashData.logs = localLogs;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); 
+  } catch (e) {}
   try { 
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), data); 
@@ -226,23 +230,35 @@ async function loadData() {
   } catch (e) {}
   try {
     const db = getDb();
-    if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
+    if (!db) { /* log('Firestore not available — using local storage only.', 'warn'); */ return; }
     await ensureAnonymousAuth();
     if (_fsUnsub) _fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
       dashData = snap.data();
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch (e) {}
+      try { 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); 
+        if (dashData.logs) {
+          localStorage.setItem(LOG_KEY, JSON.stringify(dashData.logs));
+          restoreLogs();
+        }
+      } catch (e) {}
       render();
     }
     _fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
         dashData = snap.data();
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch (e) {}
+        try { 
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); 
+          if (dashData.logs) {
+            localStorage.setItem(LOG_KEY, JSON.stringify(dashData.logs));
+            restoreLogs();
+          }
+        } catch (e) {}
         render();
       }
     });
-    log('Cloud sync active.', 'info');
+    // log('Cloud sync active.', 'info');
   } catch (e) {}
 }
 
@@ -402,8 +418,12 @@ function showModal(type, data) {
     data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
+    const sortedAttacks = [...(data.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
     body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round(data.total_demolition/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + 
-      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${esc(att.name)}</td><td style="text-align:right">${(att.val||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + '</tbody></table>';
+      '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + 
+      sortedAttacks.map(att => `<tr><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td>${esc(att.name||'')} ${esc(att.structure_level||'')}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + 
+      '</tbody></table>' +
+      '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
   }
   m.classList.add('active');
 }
@@ -649,7 +669,7 @@ function parseOcrResults(results) {
   });
   
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
-  const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
+  const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: p.value, rank: p.rank }); }));
   
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
