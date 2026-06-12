@@ -126,7 +126,7 @@ async function doLogin() {
 // --- Persistence ---
 async function saveData(data) {
   dashData = data;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
   try { 
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), data); 
@@ -140,7 +140,7 @@ async function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) { dashData = JSON.parse(saved); render(); }
-  } catch {}
+  } catch (e) {}
   try {
     const db = getDb();
     if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
@@ -149,13 +149,13 @@ async function loadData() {
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
       dashData = snap.data();
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch {}
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch (e) {}
       render();
     }
     _fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
         dashData = snap.data();
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch {}
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch (e) {}
         render();
       }
     });
@@ -165,11 +165,11 @@ async function loadData() {
 
 async function clearData() {
   dashData = null;
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   try { 
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), {}); 
-  } catch {}
+  } catch (e) {}
   render();
   log('Database wiped.', 'warn');
 }
@@ -385,7 +385,7 @@ async function processFiles(files) {
             try {
                const errData = JSON.parse(textResponse);
                log(`Server: ${errData.error}`, 'warn', f.name);
-            } catch {}
+            } catch (e) {}
             useLocalFallback = true;
          } else {
             const textResponse = await netlifyRes.text();
