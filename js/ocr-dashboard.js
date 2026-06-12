@@ -198,14 +198,14 @@ async function sha256(str) {
   } catch (e) { return str === 'vtsadmin' ? CLEAR_HASH : 'insecure'; }
 }
 
-function isAuthed() { return sessionStorage.getItem(AUTH_KEY) === '1'; }
+function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1'; }
 function showApp() { $id('dashLogin')?.classList.add('hidden'); $id('dashApp')?.classList.remove('hidden'); }
 function showLogin() { $id('dashLogin')?.classList.remove('hidden'); $id('dashApp')?.classList.add('hidden'); }
 
 async function doLogin() {
   const p = $id('dashLoginPass').value, err = $id('dashLoginErr');
   const h = await sha256(p);
-  if (h === AUTH_HASH) { sessionStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
+  if (h === AUTH_HASH) { localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
   else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
 }
 
