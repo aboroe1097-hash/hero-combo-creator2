@@ -4,7 +4,7 @@ import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '8.0';
+export const APP_VERSION = '8.1';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 // --- STATE ---

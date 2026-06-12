@@ -1,5 +1,5 @@
-// --- Fully client-side OCR Dashboard ---
-// No server needed. OCR runs in the browser via Tesseract.js.
+// --- Serverless OCR Dashboard ---
+// OCR runs in the cloud via Netlify Functions + Gemini 1.5 Flash API.
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
@@ -124,10 +124,16 @@ async function doLogin() {
 }
 
 // --- Persistence ---
-function saveData(data) {
+async function saveData(data) {
   dashData = data;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
-  try { setDoc(doc(getDb(), FS_PATH), data); log('Synced to cloud.', 'info'); } catch (e) { log('Cloud sync failed: ' + e.message, 'warn'); }
+  try { 
+    await ensureAnonymousAuth();
+    await setDoc(doc(getDb(), FS_PATH), data); 
+    log('Synced to cloud.', 'info'); 
+  } catch (e) { 
+    log('Cloud sync failed: ' + e.message, 'warn'); 
+  }
 }
 
 async function loadData() {
@@ -138,6 +144,7 @@ async function loadData() {
   try {
     const db = getDb();
     if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
+    await ensureAnonymousAuth();
     if (_fsUnsub) _fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
@@ -156,10 +163,13 @@ async function loadData() {
   } catch (e) { log('Cloud sync unavailable: ' + e.message, 'warn'); }
 }
 
-function clearData() {
+async function clearData() {
   dashData = null;
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  try { setDoc(doc(getDb(), FS_PATH), {}); } catch {}
+  try { 
+    await ensureAnonymousAuth();
+    await setDoc(doc(getDb(), FS_PATH), {}); 
+  } catch {}
   render();
   log('Database wiped.', 'warn');
 }
@@ -338,123 +348,51 @@ function validateTotalDemolition(sN, sL, total) {
 
 // --- OCR Engine ---
 async function processFiles(files) {
-  if (typeof Tesseract === 'undefined') return;
   if (_ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
-  _ocrProcessing = true; const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) return;
-  $id('dashProgress').classList.remove('hidden');
-  log(`Starting OCR on ${valid.length} files...`, 'info');
-  const worker = await Tesseract.createWorker('eng', 1);
-  await worker.setParameters({ tessedit_pageseg_mode: '6' });
+  _ocrProcessing = true; 
+  const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
+  if (!valid.length) { _ocrProcessing = false; return; }
   
-  const allTexts = [];
+  $id('dashProgress').classList.remove('hidden');
+  log(`Starting Gemini API OCR on ${valid.length} files...`, 'info');
+  
+  const allJson = [];
   for (let i = 0; i < valid.length; i++) {
     const f = valid[i]; log(`Reading image data...`, 'info', f.name);
-    const img = await new Promise(res => { const r = new FileReader(); r.onload = e => { const im = new Image(); im.onload = () => res(im); im.src = e.target.result; }; r.readAsDataURL(f); });
-    const cv = document.createElement('canvas'), sc = 2.0; cv.width = img.width*sc; cv.height = img.height*sc;
-    const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, cv.width, cv.height);
-    const idat = ctx.getImageData(0,0,cv.width,cv.height), d = idat.data;
-    for (let j=0; j<d.length; j+=4) {
-      const r = d[j], gn = d[j+1], b = d[j+2];
-      const isGold = r > 160 && gn > 100 && b < 80 && (r - b) > 80;
-      const lum = 0.299*r + 0.587*gn + 0.114*b;
-      const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : 255);
-      d[j]=d[j+1]=d[j+2]=out;
+    const base64 = await new Promise(res => { 
+      const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
+    });
+    
+    log(`Sending to Gemini API...`, 'info', f.name);
+    try {
+      const before = performance.now();
+      const res = await fetch('/.netlify/functions/gemini-ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 })
+      });
+      const data = await res.json();
+      const elapsed = ((performance.now() - before) / 1000).toFixed(1);
+      
+      if (!res.ok) {
+        log(`Gemini API Error: ${data.error}`, 'err', f.name);
+      } else {
+        const pCount = data.players ? data.players.length : 0;
+        log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
+        allJson.push({ filename: f.name, json: data });
+      }
+    } catch (e) {
+      log(`Network error: ${e.message}`, 'err', f.name);
     }
-    ctx.putImageData(idat,0,0);
-    log(`Running high-precision scan...`, 'info', f.name);
-    const before = performance.now();
-    const { data: { text, words } } = await worker.recognize(cv);
-    const elapsed = ((performance.now() - before) / 1000).toFixed(1);
-    const format = /MVP/i.test(text) ? 'paragraph' : /occupied/i.test(text) ? 'table+header' : 'table';
-    const dt = extractDt(text);
-    const sN = extractStructureName(text);
-    log(`Scan complete (${elapsed}s, ${words.length} words) — ${format} format, ${sN || '?'}`, 'info', f.name);
-    log(`Timestamp ${dt ? fmtDate(dt) : 'not found'}`, 'info', f.name);
-    allTexts.push({ filename: f.name, text: correctOcrFullText(text), words: words.map(w => ({...w, text: correctOcrText(w.text), bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })), _w: img.width, _h: img.height });
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
   
+  if (!allJson.length) { log(`No valid data extracted.`, 'err'); _ocrProcessing = false; return; }
+  
   log(`Analyzing and merging results...`, 'info');
-  const validated = allTexts.filter(r => {
-    const textLower = r.text.toLowerCase();
-    const hasIsabella = textLower.includes('isabella');
-    const hasOccupied = textLower.includes('occupied');
-    const hasMVP = /mvp|demolition\s+value/i.test(r.text);
-    const hasRankValue = /[\d,]{4,}/.test(r.text);
-    if (!hasIsabella && !hasOccupied && !hasMVP && !hasRankValue) {
-      log(`Skipped — no report pattern detected`, 'warn', r.filename);
-      return false;
-    }
-    return true;
-  });
-  if (!validated.length) { log(`No valid occupation reports found among uploaded images.`, 'err'); await worker.terminate(); _ocrProcessing = false; return; }
-  if (validated.length < allTexts.length) log(`${allTexts.length - validated.length} image(s) skipped (not a report screenshot).`, 'warn');
-  let parsed = parseOcrResults(validated);
+  const parsed = parseGeminiResults(allJson);
+  
   if (parsed) {
-    const reRunIndices = [];
-    for (let ai = 0; ai < parsed.attacks.length; ai++) {
-      const att = parsed.attacks[ai];
-      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
-      if (val) {
-        if (val.match) {
-          log(`Durability: ${att.structure_name} ${att.structure_level} ✓ ${att.total_demolition.toLocaleString()} (expected ${val.expected.toLocaleString()})`, 'success');
-        } else {
-          log(`Durability: ${att.structure_name} ${att.structure_level} ✗ ${att.total_demolition.toLocaleString()} vs expected ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)`, 'warn');
-          const ts = parseInt(att.id.split('_').pop());
-          validated.forEach(r => {
-            const dt = extractDt(r.text);
-            if (dt && Math.abs(dt.getTime() - ts) < 600000) {
-              const fi = valid.findIndex(v => v.name === r.filename);
-              if (fi >= 0 && !reRunIndices.includes(fi)) reRunIndices.push(fi);
-            }
-          });
-        }
-      }
-    }
-    if (reRunIndices.length) {
-      log(`Re-running enhanced OCR on ${reRunIndices.length} image(s) from mismatched session(s)...`, 'warn');
-      const hpWorker = await Tesseract.createWorker('eng', 1);
-      await hpWorker.setParameters({ tessedit_pageseg_mode: '3' });
-      for (const fi of reRunIndices) {
-        const f = valid[fi];
-        log(`Enhanced precision scan...`, 'info', f.name);
-        const img = await new Promise(res => { const r = new FileReader(); r.onload = e => { const im = new Image(); im.onload = () => res(im); im.src = e.target.result; }; r.readAsDataURL(f); });
-        const cv = document.createElement('canvas'), sc = 3.0;
-        cv.width = img.width * sc; cv.height = img.height * sc;
-        const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, cv.width, cv.height);
-        const idat = ctx.getImageData(0,0,cv.width,cv.height), d = idat.data;
-        for (let j=0; j<d.length; j+=4) {
-          const r = d[j], gn = d[j+1], b = d[j+2];
-          const isGold = r > 160 && gn > 100 && b < 80 && (r - b) > 80;
-          const lum = 0.299*r + 0.587*gn + 0.114*b;
-          const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : 255);
-          d[j]=d[j+1]=d[j+2]=out;
-        }
-        ctx.putImageData(idat,0,0);
-        const { data: { text, words } } = await hpWorker.recognize(cv);
-        const oldEntry = allTexts.find(t => t.filename === f.name);
-        const wordDelta = words.length - (oldEntry?.words?.length || 0);
-        log(`Enhanced scan: ${words.length} words (${wordDelta >= 0 ? '+' : ''}${wordDelta} vs initial)`, 'info', f.name);
-        const vi = validated.findIndex(r => r.filename === f.name);
-        if (vi >= 0) {
-          validated[vi] = { ...validated[vi], text: correctOcrFullText(text), words: words.map(w => ({...w, text: correctOcrText(w.text), bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })) };
-        }
-      }
-      log(`Re-analyzing with corrected OCR data...`, 'info');
-      parsed = parseOcrResults(validated);
-      await hpWorker.terminate();
-      if (parsed) {
-        parsed.attacks.forEach(att => {
-          const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
-          if (val) {
-            if (val.match) log(`Durability after correction: ${att.structure_name} ${att.structure_level} ✓ ${att.total_demolition.toLocaleString()}`, 'success');
-            else log(`Durability after correction: ${att.structure_name} ${att.structure_level} still ${(val.pct*100).toFixed(1)}% off`, 'warn');
-          }
-        });
-      }
-    }
-    // Ask user about mismatched attacks to distinguish OCR error vs missing upload
     const mismatched = parsed.attacks.filter(att => {
       const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
       return val && !val.match;
@@ -465,283 +403,119 @@ async function processFiles(files) {
       const shortfall = val.expected - att.total_demolition;
       const msg = `${att.structure_name} ${att.structure_level}: got ${att.total_demolition.toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
       log(`Confirm: ${msg}`, 'warn');
-      if (confirm(`📊 ${msg}\n\nCancel = OCR couldn't read everything.\nOK = missing data, upload remaining screenshots.`)) {
-        log(`User indicated missing uploads for ${att.structure_name} ${att.structure_level} — upload remaining screenshots after this.`, 'warn');
+      if (confirm(`📊 ${msg}\n\nCancel = Missing data, wait for more uploads.\nOK = Ignore and save anyway.`)) {
+        log(`User ignored missing data for ${att.structure_name} ${att.structure_level}.`, 'warn');
       } else {
-        log(`User confirmed all uploads done — OCR limitation on ${att.structure_name} ${att.structure_level}.`, 'warn');
+        log(`Waiting for more uploads for ${att.structure_name} ${att.structure_level}.`, 'warn');
       }
     }
     saveData(parsed); render();
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
     log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
     log(`Cloud sync status: ${getDb() ? 'active' : 'local-only'}`, 'info');
-  } else log(`Failed to identify valid reports.`, 'err');
+  } else log(`Failed to parse extracted reports.`, 'err');
   
-  await worker.terminate(); _ocrProcessing = false; setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
-}
-
-function extractStructureName(text) {
-  const m = text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-  if (m) return normalizeStructureName(m[1].trim());
-  const ruM = text.match(/(\w+)\s+Occupation\s+Notice/i);
-  if (ruM) return normalizeStructureName(ruM[1]);
-  return null;
-}
-
-function extractStructureLevel(text) {
-  const m = text.match(/Lv\.?\s*(\d+)/i);
-  return m ? m[1] : null;
-}
-
-function parseOcrResults(results) {
-  const withMeta = results.map(r => ({ dt: extractDt(r.text) || new Date(), sN: extractStructureName(r.text), sL: extractStructureLevel(r.text), r })).sort((a,b) => a.dt - b.dt);
-  const groups = [];
-  for (const item of withMeta) {
-    let f = false;
-    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 30000 && (!g.sN || !item.sN || getSimilarity(g.sN, item.sN) > 0.8) && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
-    if (!f) groups.push({ dt: item.dt, sN: item.sN, sL: item.sL, results: [item.r] });
-  }
-  log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
-  groups.forEach((g, i) => log(`Group ${i+1}: ${g.results.length} image(s), time=${fmtDate(g.dt)}, structure=${g.sN || '?'}${g.sL ? ' Lv.'+g.sL : ''}`, 'info'));
-  const attacks = [];
-  for (const g of groups) {
-    const txt = g.results.map(r => r.text).join('\n');
-    if (isParagraphFormat(txt)) {
-      const att = parseParagraphFormat(txt);
-      if (att) { log(`Paragraph format: ${att.structure_name} ${att.structure_level}, ${att.players_count} players`, 'info'); attacks.push(att); }
-      continue;
-    }
-    let sN = 'Structure', sL = 'Unknown';
-    const m = txt.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || txt.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-    if (m) { sN = normalizeStructureName(m[1].trim()); sL = m[2].trim(); }
-    else {
-      for (const r of g.results) {
-        const m2 = r.text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || r.text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-        if (m2) { sN = normalizeStructureName(m2[1].trim()); sL = m2[2].trim(); log(`Structure name found in individual image: ${sN} ${sL}`, 'info'); break; }
-      }
-    }
-    const allRaw = []; g.results.forEach(r => allRaw.push(...parseImagePlayers(r)));
-    const byV = {}; allRaw.forEach(p => { if (!byV[p.value]) byV[p.value] = []; byV[p.value].push(p); });
-    const players = [];
-    for (const v in byV) {
-      const rows = byV[v]; if (rows.length === 1) { players.push(rows[0]); continue; }
-      const sgs = []; rows.forEach(r => { let f=false; sgs.forEach(sg => { if (getSimilarity(r.name, sg[0].name) > 0.55) { sg.push(r); f=true; } }); if(!f) sgs.push([r]); });
-      sgs.forEach(sg => { sg.sort((a,b) => { const aR = rosterNames.includes(a.name) ? 1 : 0; const bR = rosterNames.includes(b.name) ? 1 : 0; return (bR - aR) || (b.name.length - a.name.length); }); players.push(sg[0]); });
-    }
-    if (players.length > 1) {
-      const nearDedup = [];
-      const used = new Set();
-      for (let i = 0; i < players.length; i++) {
-        if (used.has(i)) continue;
-        const group = [players[i]]; used.add(i);
-        for (let j = i + 1; j < players.length; j++) {
-          if (used.has(j)) continue;
-          if (Math.abs(players[i].value - players[j].value) <= 100 && getSimilarity(players[i].name, players[j].name) > 0.55) {
-            group.push(players[j]); used.add(j);
-          }
-        }
-        group.sort((a,b) => { const aR = rosterNames.includes(a.name) ? 1 : 0; const bR = rosterNames.includes(b.name) ? 1 : 0; return (bR - aR) || (b.name.length - a.name.length); });
-        nearDedup.push(group[0]);
-      }
-      players.length = 0; players.push(...nearDedup);
-    }
-    if (players.length > 1) {
-      const nameDedup = [];
-      const nameSeen = new Map();
-      for (const p of players) {
-        const match = rosterNames.find(rn => getSimilarity(p.name, rn) > 0.9) || p.name;
-        if (!nameSeen.has(match) || nameSeen.get(match).value < p.value) {
-          nameSeen.set(match, p);
-        }
-      }
-      players.length = 0; players.push(...nameSeen.values());
-    }
-    if (players.length) {
-      players.sort((a,b) => b.value - a.value).forEach((p,i) => p.rank = i+1);
-      const ts = g.dt.getTime();
-      if (sN === 'Structure' && dashData) {
-        const existing = dashData.attacks.find(a => { const p = a.id.split('_'); return p[p.length-1] === String(ts); });
-        if (existing) { sN = existing.structure_name; sL = existing.structure_level; log(`Inherited structure from existing session: ${sN} ${sL}`, 'info'); }
-      }
-      log(`Table format: ${sN} ${sL}, ${players.length} players, total=${players.reduce((s,p)=>s+p.value,0).toLocaleString()}`, 'info');
-      attacks.push({ id: `${sN}_${sL}_${ts}`, structure_name: sN, structure_level: sL, game_time: fmtDate(new Date(g.dt - 6*3600000)), players_count: players.length, total_demolition: players.reduce((s,p)=>s+p.value,0), players });
-    }
-  }
-  if (!attacks.length) return null;
-  const merged = {};
-  const mergePlayers = (target, src) => {
-    const pMap = new Map();
-    target.players.forEach(p => pMap.set(`${p.name}_${p.value}`, p));
-    src.players.forEach(p => {
-      const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
-      if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
-    });
-    target.players = [...pMap.values()].sort((x,y) => y.value - x.value);
-    target.players.forEach((p,i) => p.rank = i+1);
-    target.players_count = target.players.length;
-    target.total_demolition = target.players.reduce((s,p) => s + p.value, 0);
-  };
-  [...((dashData && dashData.attacks) || []), ...attacks].forEach(a => {
-    const ts = a.id.split('_').pop();
-    if (merged[a.id]) { mergePlayers(merged[a.id], a); log(`Merged players into same-ID attack ${a.id}`, 'info'); return; }
-    const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
-    if (existing) {
-      mergePlayers(existing, a);
-      const mergedFrom = `${existing.structure_name} ${existing.structure_level}`;
-      const mergedInto = `${a.structure_name} ${a.structure_level}`;
-      if (existing.structure_name === 'Structure' && a.structure_name !== 'Structure') {
-        existing.structure_name = a.structure_name;
-        existing.structure_level = a.structure_level;
-        existing.id = a.id;
-        log(`Structure fix: "${mergedFrom}" → "${a.structure_name} ${a.structure_level}" (real name from split upload)`, 'info');
-      } else {
-        log(`Merged split upload into ${existing.structure_name} ${existing.structure_level} (${existing.players_count} players)`, 'info');
-      }
-      return;
-    }
-    merged[a.id] = { ...a };
-  });
-  const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
-  const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
-  log(`Final: ${sorted.length} attack(s), ${Object.values(sum).length} unique player(s)`, 'info');
-  return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
-}
-
-function detectNameColumnBoundary(rows, imgW) {
-  if (rows.length < 3) return { nameStart: 0.18, rankBoundary: 0.22 };
-  const sampleRows = rows.slice(0, Math.min(5, rows.length));
-  const nameXCandidates = [];
-  sampleRows.forEach(row => {
-    row.sort((a,b) => a.bbox.x0 - b.bbox.x0);
-    const allXC = row.map(w => (w.bbox.x0+w.bbox.x1)/2/imgW);
-    const rankEnd = allXC.findIndex(xc => xc > 0.22);
-    const valueStart = allXC.slice().reverse().findIndex(xc => xc < 0.65);
-    if (rankEnd >= 0 && valueStart >= 0) {
-      const nameCluster = allXC.slice(rankEnd, allXC.length - valueStart);
-      if (nameCluster.length) nameXCandidates.push(Math.min(...nameCluster));
-    }
-  });
-  const nameStart = nameXCandidates.length
-    ? nameXCandidates.sort((a,b) => a-b)[Math.floor(nameXCandidates.length/2)]
-    : 0.18;
-  return { nameStart: Math.min(nameStart, 0.22), rankBoundary: 0.22 };
-}
-
-function parseImagePlayers(r) {
-  const words = r.words || [], body = words.filter(w => { const yc = ((w.bbox.y0 + w.bbox.y1)/2)/r._h; return yc >= 0.04 && yc <= 0.96; });
-  if (body.length < 5) return [];
-  body.sort((a,b) => (a.bbox.y0 + a.bbox.y1)/2 - (b.bbox.y0 + b.bbox.y1)/2);
-  const rowThresh = r._h * 0.035; const rows = []; let cur = []; body.forEach(w => { if (!cur.length || Math.abs((w.bbox.y0+w.bbox.y1)/2 - (cur[0].bbox.y0+cur[0].bbox.y1)/2) < rowThresh) cur.push(w); else { rows.push(cur); cur = [w]; } }); if (cur.length) rows.push(cur);
-  const { nameStart } = detectNameColumnBoundary(rows, r._w);
-  const ps = []; rows.forEach(row => {
-    row.sort((a,b) => a.bbox.x0 - b.bbox.x0);
-    const rowText = row.map(w => w.text).join(' ').toLowerCase();
-    const hasDigitRank = row.some(w => (w.bbox.x0+w.bbox.x1)/2/r._w < 0.22 && /\d/.test(w.text)) || /\d{2,}/.test(rowText);
-    const hasHeaderKeywords = /member|participant|ranking|congratulation|total|demolition|value|more|collapse|occupied|notice|isabella|occupation|alliance|guild|enjoy/i.test(rowText);
-    if (!hasDigitRank && hasHeaderKeywords) return;
-    let nP = [], vT = ''; row.forEach(w => { const xc = (w.bbox.x0+w.bbox.x1)/2/r._w; if (xc > 0.65) vT += w.text; else if (xc > nameStart) nP.push(w.text); });
-    let name = nP.join(' ').replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').trim().replace(/\s+members$/i, '').trim();
-    name = name.replace(/(?:^|\s)(?:Wr|wr|\d{3}\])(?:\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
-    const val = parseValueFromDigits(vT);
-    if (name && name.length > 1 && val !== null && val > 0) ps.push({ name, value: val });
-  });
-  if (ps.length < 3) return ps;
-  const medianVal = ps.map(p => p.value).sort((a,b) => a-b)[Math.floor(ps.length/2)];
-  return ps.filter(p => p.value > medianVal * 0.001);
-}
-
-function parseValueFromDigits(t) {
-  let cleaned = t.replace(/[,.]/g, '');
-  cleaned = cleaned.replace(/[oO]+$/, d => d.replace(/o/gi, '0')).replace(/[lI]+$/, d => d.replace(/[lI]/g, '1'));
-  const m = cleaned.match(/(\d{2,8})\s*$/);
-  if (!m) return null;
-  const val = parseInt(m[1]);
-  if (val < 10) return null;
-  return val;
-}
-
-function correctOcrText(t) {
-  return t
-    .replace(/(?<=[A-Za-z0-9])\$(?=[A-Za-z0-9])/g, '8')
-    .replace(/(?<=[A-Za-z])1(?=[lLiI])/g, 'l')
-    .replace(/(?<=[A-Za-z])0(?=[oO])/g, 'o')
-    .replace(/q(?= [A-Z])/g, 'g')
-    .replace(/[\[\](){}|\\\/`~@#^*=+<>"]/g, '');
-}
-
-function correctOcrFullText(t) {
-  return t
-    .replace(/(?<=[A-Za-z0-9])\$(?=[A-Za-z0-9])/g, '8')
-    .replace(/(?<=[A-Za-z])1(?=[lLiI])/g, 'l')
-    .replace(/(?<=[A-Za-z])0(?=[oO])/g, 'o')
-    .replace(/q(?= [A-Z])/g, 'g');
+  _ocrProcessing = false; setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
 }
 
 function normalizeStructureName(name) {
   if (!name) return name;
   const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins' };
   const lower = name.toLowerCase().trim();
-  return corrections[lower] || name;
+  return corrections[lower] || name.trim();
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
+
 function displayGameTime(gt) { return gt && gt.includes(',') ? gt : (gt ? gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT' : ''); }
-function extractDt(t) {
-  let m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})[-.:](\d{2})/);
-  if (m) try { return new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5], +m[6]); } catch {}
-  m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[.:](\d{2})/);
-  if (m) try { return new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]); } catch {}
-  return null;
-}
 
-function isParagraphFormat(t) { return /MVP\s+and\s+total\s+Demolition\s+Value/i.test(t); }
-
-function parseParagraphFormat(text) {
-  const normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
-  let sN = 'Ruins', sL = '1';
-  const ruM = normalized.match(/(\w+)\s+Occupation\s+Notice/i);
-  if (ruM) { sN = normalizeStructureName(ruM[1]); const lM = normalized.match(/Lv\.?\s*(\d+)/i); if (lM) sL = lM[1]; }
-  else {
-    const occM = normalized.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
-    if (occM) { sN = normalizeStructureName(occM[1].trim()); sL = occM[2].trim(); }
-  }
-
-  const mvpM = normalized.match(/MVP\s+and\s+total\s+Demolition\s+Value:\s*(.*?)(?=\s*Participants\s|$)/i);
-  const partM = normalized.match(/Participants\s+and\s+total\s+Demolition\s+Value:\s*(.*?)$/i);
-
-  const seen = new Map();
-  for (const section of [mvpM?.[1], partM?.[1]]) {
-    if (!section) continue;
-    const values = []; const vr = /(\d{4,8})(?!\d)/g; let vm;
-    while ((vm = vr.exec(section)) !== null) values.push({ v: +vm[1], i: vm.index });
-    if (values.length < 1) continue;
-    const highVals = values.filter(x => x.v >= 10000);
-    const use = highVals.length >= 3 ? highVals : values;
-    for (let i = 0; i < use.length; i++) {
-      const start = i === 0 ? 0 : use[i-1].i + String(use[i-1].v).length;
-      const end = use[i].i;
-      let name = section.slice(start, end).replace(/^['"`~\s*@#.\-,:;&|()!\[\]{}<>\/\\+=\^%$]+|['"`~\s*@#.\-,:;&|()!\[\]{}<>\/\\+=\^%$]+$/g, '').trim();
-      if (name && name.length > 1) {
-        const val = use[i].v;
-        if (!seen.has(name) || seen.get(name) < val) seen.set(name, val);
+function parseGeminiResults(results) {
+  const groups = [];
+  for (const item of results) {
+    const j = item.json;
+    let dt = new Date();
+    if (j.timestamp) {
+       const m = j.timestamp.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})/);
+       if (m) dt = new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]);
+    }
+    
+    const sN = normalizeStructureName(j.structure_name) || null;
+    const sL = j.structure_level ? j.structure_level.replace(/[^0-9]/g, '') : null;
+    
+    let f = false;
+    for (const g of groups) {
+      if (Math.abs(g.dt - dt) < 600000 && (!g.sN || !sN || getSimilarity(g.sN, sN) > 0.8) && g.sL === sL) {
+        if (j.players) g.players.push(...j.players);
+        f = true; break;
       }
     }
+    if (!f) groups.push({ dt, sN, sL, players: j.players ? [...j.players] : [] });
   }
-
-  const players = Array.from(seen.entries()).map(([name, value]) => ({ name, value }));
-  if (!players.length) return null;
-  players.sort((a, b) => b.value - a.value);
-  players.forEach((p, i) => p.rank = i + 1);
-
-  const dt = extractDt(normalized) || new Date();
-  const id = `${sN}_${sL}_${dt.getTime()}`;
-  return {
-    id, structure_name: sN, structure_level: sL,
-    game_time: fmtDate(new Date(dt - 6 * 3600000)),
-    players_count: players.length,
-    total_demolition: players.reduce((s, p) => s + p.value, 0),
-    players
-  };
+  
+  log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
+  
+  const attacks = [];
+  groups.forEach((g) => {
+    let sN = g.sN || 'Structure';
+    let sL = g.sL || 'Unknown';
+    
+    const pMap = new Map();
+    g.players.forEach(p => {
+      if (!p.name || !p.value) return;
+      const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+      if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
+      else if (pMap.get(`${fuzzyMatch.name}_${fuzzyMatch.value}`).value < p.value) {
+         pMap.set(`${p.name}_${p.value}`, p);
+         pMap.delete(`${fuzzyMatch.name}_${fuzzyMatch.value}`);
+      }
+    });
+    
+    const deduped = [...pMap.values()].sort((a,b) => b.value - a.value);
+    deduped.forEach((p, rank) => p.rank = rank + 1);
+    
+    const id = `${sN.replace(/\s+/g,'_')}_${sL}_${g.dt.getTime()}`;
+    if (deduped.length > 0) {
+      attacks.push({
+        id,
+        game_time: displayGameTime(fmtDate(new Date(g.dt - 6*3600000))),
+        structure_name: sN,
+        structure_level: sL,
+        players: deduped,
+        players_count: deduped.length,
+        total_demolition: deduped.reduce((sum, p) => sum + p.value, 0)
+      });
+    }
+  });
+  
+  const merged = dashData?.attacks ? Object.fromEntries(dashData.attacks.map(a => [a.id, a])) : {};
+  attacks.forEach(a => {
+    const ts = a.id.split('_').pop();
+    const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
+    if (existing) {
+       const pMap = new Map();
+       existing.players.forEach(p => pMap.set(`${p.name}_${p.value}`, p));
+       a.players.forEach(p => {
+         const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+         if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
+       });
+       existing.players = [...pMap.values()].sort((x,y) => y.value - x.value);
+       existing.players.forEach((p,i) => p.rank = i+1);
+       existing.players_count = existing.players.length;
+       existing.total_demolition = existing.players.reduce((s,p) => s + p.value, 0);
+       
+       if (existing.structure_name.includes('Structure') && !a.structure_name.includes('Structure')) {
+         existing.structure_name = a.structure_name;
+         existing.structure_level = a.structure_level;
+       }
+    } else {
+       merged[a.id] = { ...a };
+    }
+  });
+  
+  const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
+  const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
+  
+  return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
 
 export async function bootOcrDashboard() {
