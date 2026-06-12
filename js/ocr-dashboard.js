@@ -523,6 +523,7 @@ function parseOcrResults(results) {
     const pMap = new Map();
     g.players.forEach(p => {
       if (!p.name || !p.value) return;
+      p.value = Number(p.value);
       const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
       if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
       else if (pMap.get(`${fuzzyMatch.name}_${fuzzyMatch.value}`).value < p.value) {
@@ -554,9 +555,10 @@ function parseOcrResults(results) {
     const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
     if (existing) {
        const pMap = new Map();
-       existing.players.forEach(p => pMap.set(`${p.name}_${p.value}`, p));
-       a.players.forEach(p => {
-         const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+        existing.players.forEach(p => { p.value = Number(p.value); pMap.set(`${p.name}_${p.value}`, p); });
+        a.players.forEach(p => {
+          p.value = Number(p.value);
+          const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
          if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
        });
        existing.players = [...pMap.values()].sort((x,y) => y.value - x.value);
