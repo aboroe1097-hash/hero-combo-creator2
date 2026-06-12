@@ -18,6 +18,8 @@ let _fsUnsub = null;
 
 function $id(id) { return document.getElementById(id); }
 
+const LOG_KEY = 'vts_ocr_log';
+
 // --- Logger ---
 function log(msg, type = 'info', file = null) {
   const out = $id('dashLogOutput');
@@ -25,15 +27,47 @@ function log(msg, type = 'info', file = null) {
   if (!out || !area) return;
   area.classList.remove('hidden');
   
+  const entry = {
+    time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    msg,
+    type,
+    file
+  };
+  appendLogEntry(out, entry);
+  persistLog(entry);
+  out.scrollTop = out.scrollHeight;
+}
+
+function appendLogEntry(out, entry) {
   const div = document.createElement('div');
   div.className = 'log-entry';
-  const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  let html = `<span class="log-time">[${time}]</span>`;
-  if (file) html += `<span class="log-file">[${file}]</span>`;
-  html += `<span class="log-msg log-${type}">${msg}</span>`;
+  let html = `<span class="log-time">[${entry.time}]</span>`;
+  if (entry.file) html += `<span class="log-file">[${entry.file}]</span>`;
+  html += `<span class="log-msg log-${entry.type}">${entry.msg}</span>`;
   div.innerHTML = html;
   out.appendChild(div);
-  out.scrollTop = out.scrollHeight;
+}
+
+function persistLog(entry) {
+  try {
+    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    logs.push(entry);
+    if (logs.length > 500) logs.splice(0, logs.length - 500);
+    localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+  } catch (e) {}
+}
+
+function restoreLogs() {
+  try {
+    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+    if (!logs.length) return;
+    const out = $id('dashLogOutput');
+    const area = $id('dashLogArea');
+    if (!out || !area) return;
+    area.classList.remove('hidden');
+    logs.forEach(e => appendLogEntry(out, e));
+    out.scrollTop = out.scrollHeight;
+  } catch (e) {}
 }
 
 // --- Fuzzy Matching ---
@@ -549,12 +583,13 @@ export async function bootOcrDashboard() {
   if (_booted) return; _booted = true; loadRoster();
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
+  restoreLogs();
   log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
-  const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => $id('dashLogOutput').innerHTML = '';
+  const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
   
   $id('dashExportMenuBtn').onclick = (e) => { e.stopPropagation(); $id('dashExportMenu').classList.toggle('active'); };
   window.addEventListener('click', () => $id('dashExportMenu').classList.remove('active'));
