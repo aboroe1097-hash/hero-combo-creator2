@@ -197,10 +197,12 @@ async function loadData() {
 async function clearData() {
   dashData = null;
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), {}); 
   } catch (e) {}
+  const out = $id('dashLogOutput'); if (out) out.innerHTML = '';
   render();
   log('Database wiped.', 'warn');
 }
