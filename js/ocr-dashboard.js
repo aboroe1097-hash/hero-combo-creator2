@@ -365,19 +365,18 @@ async function processFiles(files) {
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
     });
     
-    log(`Sending to Gemini API...`, 'info', f.name);
+    log(`Sending to Qwen API via Cloudflare Worker...`, 'info', f.name);
     try {
       const before = performance.now();
       let data = null;
       
-      let localKey = localStorage.getItem('vts_gemini_key');
+      let localKey = sessionStorage.getItem('qwen_api_key');
       if (!localKey) {
-        localKey = prompt('Please paste your Gemini API key to run OCR entirely in your browser (it will be saved to localStorage):');
-        if (localKey) localStorage.setItem('vts_gemini_key', localKey);
+        localKey = prompt('Qwen (DashScope) API key required for OCR:');
+        if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
       }
-      if (!localKey) throw new Error('No API key provided. OCR cancelled.');
+      if (!localKey) throw new Error('No API key provided.');
       
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${localKey}`;
       const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
@@ -387,16 +386,20 @@ Extract the following:
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
 
-      const res = await fetch(url, {
+      const res = await fetch(QWEN_WORKER_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
         body: JSON.stringify({
-          contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
+          model: 'qwen-vl-ocr-2025-11-20',
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+          ]}]
         })
       });
       const raw = await res.json();
-      if (!res.ok) throw new Error(raw.error?.message || 'Gemini API Error');
-      let text = raw.candidates[0].content.parts[0].text;
+      if (!res.ok) throw new Error(raw.error?.message || `Qwen API Error (HTTP ${res.status})`);
+      let text = raw.choices[0].message.content;
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       data = JSON.parse(text);
 
