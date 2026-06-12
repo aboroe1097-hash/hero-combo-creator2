@@ -1,6 +1,6 @@
-// Z.AI (GLM) OCR function — kept for reference / local testing
-// On GitHub Pages this is not called; the client falls back to browser-side Z.AI API.
-const ZAI_API_KEY = process.env.ZAI_API_KEY;
+// Qwen (DashScope) OCR function — kept for reference / local testing
+// On GitHub Pages this is not called; the client falls back to browser-side Qwen API.
+const QWEN_API_KEY = process.env.QWEN_API_KEY;
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -13,14 +13,14 @@ exports.handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    const models = ['glm-5v-turbo', 'glm-ocr'];
+    const models = ['qwen-vl-ocr'];
     let data = null;
     let usedModel = null;
 
     for (const model of models) {
-      const response = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
+        const response = await fetch('https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ZAI_API_KEY}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${QWEN_API_KEY}` },
         body: JSON.stringify({
           model,
           messages: [{
@@ -57,13 +57,13 @@ Example:
       }
 
       const errMsg = data.error?.message || '';
-      if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown Model')) {
+      if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown') && !errMsg.includes('Invalid') && !errMsg.includes('not valid')) {
         return { statusCode: 500, body: JSON.stringify({ error: errMsg || 'API Error' }) };
       }
     }
 
     if (!usedModel) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'No available Z.AI model' }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'No available Qwen model' }) };
     }
 
     let text = data.choices[0].message.content;
