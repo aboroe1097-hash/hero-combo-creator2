@@ -390,7 +390,7 @@ Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. J
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
         body: JSON.stringify({
-          model: 'qwen-vl-ocr-2025-11-20',
+          model: 'qwen-vl-plus',
           messages: [{ role: 'user', content: [
             { type: 'text', text: promptTxt },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
