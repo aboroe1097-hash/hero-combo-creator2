@@ -449,7 +449,17 @@ function render() {
     return;
   }
   const atts = dashData.attacks || [];
-  let psum = dashData.players_summary || [];
+  
+  // Dynamically calculate global players summary so any findBestMatch rules apply retroactively
+  const globalSum = {};
+  atts.forEach(a => a.players.forEach(p => { 
+    const n = findBestMatch(p.name); 
+    if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
+    globalSum[n].total_demolition += (p.value||p.val||0); 
+    globalSum[n].participation_count++; 
+    globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+  }));
+  let psum = Object.values(globalSum).sort((a,b) => b.total_demolition - a.total_demolition);
 
   const filterEl = $id('dashLeaderFilter');
   if (filterEl && atts.length > 0) {
