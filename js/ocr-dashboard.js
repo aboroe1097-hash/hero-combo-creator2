@@ -538,9 +538,12 @@ function render() {
   }
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
-  psum.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach((p, i) => {
+  // Add original rank before filtering so the search doesn't change their number
+  const psumWithRank = psum.map((p, i) => ({ ...p, original_rank: i + 1 }));
+  
+  psumWithRank.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach(p => {
     const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td class="dash-rank">#${i+1}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition||0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition||0)/Math.max(p.participation_count,1)).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition||0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition||0)/Math.max(p.participation_count,1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
 
