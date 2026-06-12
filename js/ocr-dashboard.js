@@ -188,7 +188,7 @@ function showRosterModal() {
 }
 
 // --- Auth ---
-const AUTH_HASH = 'fc0a5a30f7823e59049a4cd43ebfa55e884ec8135cc312ecfbbab4ce74c35b6d'; // admin:1097
+const AUTH_HASH = 'aabcabea3561ab3105dbd2156b4f4f9f713162ea29a6fcde5ffcf5a25009f043'; // admin:admin12345
 const CLEAR_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
 
 async function sha256(str) {
