@@ -1,7 +1,7 @@
 // Cloudflare Worker — CORS proxy for Qwen (DashScope) API
 // Deploy: wrangler deploy, or paste into Cloudflare Dashboard > Workers & Pages > Create Worker
 
-const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+const DASHSCOPE_URL = 'https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions';
 
 export default {
   async fetch(request) {
