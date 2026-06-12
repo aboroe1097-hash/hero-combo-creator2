@@ -1,7 +1,121 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
-// --- APP CONFIG --
-const APP_VERSION = "7.9";
-const ENABLE_RESEARCH_FEATURE = true;
+import { translations } from './translations.js';
+import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { initComments } from './comments.js';
+import { rankedCombos } from './combos-db.js';
+import { initLoyaltyCalculator } from './loyalty-calculator.js';
+import { heroesExtendedData } from './heroes-info.js';
+import { techDatabase } from './tech-db.js';
+import { mountGameClock, syncGameClockTitles } from './game-time.js';
+import { renderCountersToggle, getCounterCount } from './combo-counters.js';
+import { escapeHtml } from './utils.js';
+import { allHeroesData } from './heroes-data.js';
+import { heroBonusPoints } from './hero-bonuses.js';
+import { applySeo } from './seo.js';
+import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
+import { initAppLoading, notifyAppReady } from './app-loading.js';
+import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
+import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
+import { parseComboShareUrl } from './combo-share.js';
+import { parseRosterShareUrl } from './roster-share.js';
+
+import {
+  renderAvailableHeroes,
+  updateComboSlotDisplay,
+  updateManualComboScore,
+  setupTouchDragForManualBuilder,
+  saveCombo,
+  setupFirestoreListener
+} from './app-builder.js';
+
+import {
+  renderGeneratorHeroes,
+  renderGeneratorResults,
+  generateBestCombos,
+  generateRandomCombos
+} from './app-generator.js';
+
+import {
+  currentLanguage,
+  heroInfoEnabled,
+  activeTechSeasons,
+  techSearchQuery,
+  selectedSeasons,
+  selectedStates,
+  selectedTypes,
+  currentCombo,
+  generatorSelectedSeasons,
+  generatorSelectedStates,
+  generatorSelectedTypes,
+  generatorSelectedHeroes,
+  userId,
+  getUserId,
+  db,
+  savedCombosCache,
+  lastGeneratedCombos,
+  sourceCreditText,
+  APP_VERSION,
+  ENABLE_RESEARCH_FEATURE,
+  seasonColors,
+  TechseasonColors,
+  TECH_SEASON_ORDER,
+  HERO_ATLAS_ALL_SEASONS,
+  languageSelect,
+  availableHeroesEl,
+  saveComboBtn,
+  clearComboBtn,
+  downloadCombosBtn,
+  shareAllCombosBtn,
+  savedCombosEl,
+  noCombosMessage,
+  loadingSpinner,
+  messageBox,
+  messageText,
+  messageBoxOkBtn,
+  messageBoxCancelBtn,
+  manualSection,
+  generatorSection,
+  loyaltySection,
+  youtubeSection,
+  researchSection,
+  tabManualBtn,
+  tabGeneratorBtn,
+  tabLoyaltyBtn,
+  tabYouTubeBtn,
+  tabResearchBtn,
+  tabHeroesBtn,
+  tabEdenMapBtn,
+  heroesSection,
+  edenMapSection,
+  ocrDashboardSection,
+  tabOcrDashboardBtn,
+  globalToggleRow,
+  comboFooterBar,
+  generatorHeroesEl,
+  generatorResultsEl,
+  generateCombosBtn,
+  downloadGeneratorBtn,
+  seasonFiltersEl,
+  stateFiltersEl,
+  troopFiltersEl,
+  genSeasonFiltersEl,
+  genStateFiltersEl,
+  genTroopFiltersEl,
+  paidBadgeHtml,
+  paidIconHtml,
+  getTroopColorClass,
+  getLocalizedTroop,
+  getHeroImageUrl,
+  heroMatchesFilters,
+  getComboRankInfo,
+  getCounterLabels,
+  isHeroAlreadyInCombo,
+  computeStateSelection,
+  computeTypeSelection,
+  registerUiFunctions,
+} from './state.js';
+
+initAppLoading();
 
 /* ===== THEME (Dark default + Light) ===== */
 function getPreferredTheme() {
@@ -17,12 +131,10 @@ function applyTheme(theme) {
   } else {
     root.removeAttribute('data-theme');
   }
-  // Update meta theme-color for mobile browser bar
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
     meta.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0f172a');
   }
-  // Update toggle button icons if present
   const btn = document.getElementById('themeToggle');
   if (btn) {
     const darkIcon = btn.querySelector('.theme-icon-dark');
@@ -42,8 +154,6 @@ function applyTheme(theme) {
 function initTheme() {
   const theme = getPreferredTheme();
   applyTheme(theme);
-
-  // React to system changes if user hasn't explicitly chosen
   if (!localStorage.getItem('theme') && window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
       if (!localStorage.getItem('theme')) {
@@ -51,8 +161,6 @@ function initTheme() {
       }
     });
   }
-
-  // Wire toggle button (may not exist yet on very early boot, so also on DOMContentLoaded fallback)
   const setupToggle = () => {
     const btn = document.getElementById('themeToggle');
     if (!btn || btn.dataset.themeWired) return;
@@ -63,7 +171,6 @@ function initTheme() {
       localStorage.setItem('theme', next);
       applyTheme(next);
     });
-    // Ensure icon state is correct now that button exists
     const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     applyTheme(currentTheme);
   };
@@ -75,40 +182,6 @@ function initTheme() {
 }
 
 initTheme();
-
-import { translations } from './translations.js';
-import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
-import { initComments } from './comments.js';
-import { rankedCombos } from './combos-db.js';
-import { initLoyaltyCalculator } from './loyalty-calculator.js';
-import { heroesExtendedData } from './heroes-info.js';
-import { techDatabase } from './tech-db.js';
-import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { renderCountersToggle, getCounterCount } from './combo-counters.js';
-import { escapeHtml } from './utils.js';
-import { allHeroesData } from './heroes-data.js';
-import { heroBonusPoints } from './hero-bonuses.js';
-import { applySeo } from './seo.js';
-import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js';
-
-import {
-  renderAvailableHeroes,
-  updateComboSlotDisplay,
-  updateManualComboScore,
-  setupTouchDragForManualBuilder,
-  saveCombo,
-  setupFirestoreListener
-} from './app-builder.js';
-
-import {
-  renderGeneratorHeroes,
-  renderGeneratorResults,
-  generateBestCombos,
-  generateRandomCombos
-} from './app-generator.js';
-
-initAppLoading();
 
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.counter-toggle-btn');
@@ -134,81 +207,10 @@ document.addEventListener('click', (e) => {
   btn.classList.toggle('counter-toggle-btn--open', willOpen);
 });
 
-export function getCounterLabels() {
-  const t = translations[currentLanguage] || translations.en;
-  return {
-    toggle: t.countersToggle || 'Counters ({n})',
-    title: t.countersTitle || 'Counters',
-    score: t.countersScore || 'Score',
-    hide: t.countersHide || 'Hide counters',
-  };
-}
-
 function getHeroFinalScore(heroName, autoRating) {
   const bonus = heroBonusPoints[heroName] || 0;
   return Math.min(100, Math.max(0, autoRating + bonus));
 }
-
-// --- DOM ELEMENTS ---
-export const languageSelect       = document.getElementById('languageSelect');
-export const availableHeroesEl    = document.getElementById('availableHeroes');
-export const saveComboBtn         = document.getElementById('saveComboBtn');
-export const clearComboBtn        = document.getElementById('clearComboBtn');
-export const downloadCombosBtn    = document.getElementById('downloadCombosBtn');
-export const shareAllCombosBtn    = document.getElementById('shareAllCombosBtn');
-export const savedCombosEl        = document.getElementById('savedCombos');
-export const noCombosMessage      = document.getElementById('noCombosMessage');
-export const loadingSpinner       = document.getElementById('loadingSpinner');
-export const messageBox           = document.getElementById('messageBox');
-export const messageText          = document.getElementById('messageText');
-export const messageBoxOkBtn      = document.getElementById('messageBoxOkBtn');
-export const messageBoxCancelBtn  = document.getElementById('messageBoxCancelBtn');
-
-// TABS & SECTIONS
-export const manualSection        = document.getElementById('manualSection');
-export const generatorSection     = document.getElementById('generatorSection');
-export const loyaltySection       = document.getElementById('loyaltySection');
-export const youtubeSection       = document.getElementById('youtubeSection'); 
-export const researchSection      = document.getElementById('researchSection'); 
-
-export const tabManualBtn         = document.getElementById('tabManual');
-export const tabGeneratorBtn      = document.getElementById('tabGenerator');
-export const tabLoyaltyBtn        = document.getElementById('tabLoyalty');
-export const tabYouTubeBtn        = document.getElementById('tabYouTube'); 
-export const tabResearchBtn       = document.getElementById('tabResearch'); 
-export const tabHeroesBtn         = document.getElementById('tabHeroes');
-export const tabEdenMapBtn        = document.getElementById('tabEdenMap');
-export const heroesSection        = document.getElementById('heroesSection');
-export const edenMapSection       = document.getElementById('edenMapSection');
-export const ocrDashboardSection  = document.getElementById('ocrDashboardSection');
-export const tabOcrDashboardBtn   = document.getElementById('tabOcrDashboard');
-export const globalToggleRow      = document.getElementById('globalToggleRow'); 
-
-export const comboFooterBar       = document.getElementById('comboFooterBar');
-export const generatorHeroesEl    = document.getElementById('generatorHeroes');
-export const generatorResultsEl   = document.getElementById('generatorResults');
-export const generateCombosBtn    = document.getElementById('generateCombosBtn');
-export const downloadGeneratorBtn = document.getElementById('downloadGeneratorBtn');
-
-// Filter containers
-export const seasonFiltersEl      = document.getElementById('seasonFilters');
-export const stateFiltersEl       = document.getElementById('stateFilters');
-export const troopFiltersEl       = document.getElementById('troopFilters');
-export const genSeasonFiltersEl   = document.getElementById('generatorSeasonFilters');
-export const genStateFiltersEl    = document.getElementById('generatorStateFilters');
-export const genTroopFiltersEl    = document.getElementById('generatorTroopFilters');
-
-const TechseasonColors = {
-  S0: '#94a3b8', // Slate
-  S1: '#60a5fa', // Blue
-  S2: '#c084fc', // Purple
-  S3: '#fb923c', // Orange
-  S4: '#facc15', // Yellow
-  X1: '#f87171', // Red
-  X2: '#34d399'  // Emerald
-};
-
-const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 const TAB_BTN_IDS = {
   manual: 'tabManual',
@@ -227,46 +229,6 @@ function appT(key, vars = {}) {
   return s;
 }
 
-// --- STATE ---
-export let currentLanguage            = localStorage.getItem('vts_hero_lang') || 'en';
-export let heroInfoEnabled            = true; 
-export let activeTechSeasons          = new Set(['X1']); // Default research season
-export let techSearchQuery            = '';
-
-// Manual filters
-export let selectedSeasons            = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-export let selectedStates             = ['Free', 'Paid'];              
-export let selectedTypes              = ['Archers', 'Footmen', 'Cavalry', 'All']; 
-
-// Manual combo
-export const currentCombo             = [null, null, null];
-
-// Generator filters
-export let generatorSelectedSeasons   = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-export let generatorSelectedStates    = ['Free', 'Paid'];
-export let generatorSelectedTypes     = ['Archers', 'Footmen', 'Cavalry', 'All'];
-
-// Generator selected heroes
-export const generatorSelectedHeroes  = new Set();
-
-export let userId = 'anonymous';
-export function getUserId() { return userId; }
-export let db     = null;
-export const savedCombosCache = [];
-export const lastGeneratedCombos = [];
-
-export const sourceCreditText = "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
-
-const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
-
-export function paidBadgeHtml(variant = 'card') {
-  return `<span class="paid-badge paid-badge--${variant}" title="Paid Hero">${PAID_GEM_SVG}<span class="paid-badge-text">PAID</span></span>`;
-}
-
-export function paidIconHtml() {
-  return `<span class="paid-icon-inline" title="Paid Hero">${PAID_GEM_SVG}</span>`;
-}
-
 
 // --- DATA NORMALIZER (Fixes Bug #3) ---
 // Automatically patches any arrays that have 19 costs instead of 20
@@ -283,17 +245,7 @@ techDatabase.forEach(tech => {
         });
     });
 });
-export const seasonColors = {
-  S0: '#9ca3af',
-  S1: '#3b82f6',
-  S2: '#a855f7',
-  S3: '#f97316',
-  S4: '#facc15',
-  X1: '#f87171',
-  X2: '#34d399'  // Emerald Green
-};
 
-const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
@@ -345,7 +297,7 @@ function formatSkillText(text) {
   return formatted;
 }
 
-export function showHeroTooltip(e, heroName) {
+function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
 
   const data = heroesExtendedData[heroName];
@@ -453,7 +405,7 @@ export function showHeroTooltip(e, heroName) {
   }
 }
 
-export function moveHeroTooltip(e) {
+function moveHeroTooltip(e) {
   if (heroTooltip.classList.contains('hidden')) return;
   const rect = heroTooltip.getBoundingClientRect();
   
@@ -484,7 +436,7 @@ export function moveHeroTooltip(e) {
   heroTooltip.style.top = `${y}px`;
 }
 
-export function hideHeroTooltip() {
+function hideHeroTooltip() {
   heroTooltip.classList.remove('opacity-100');
   heroTooltip.classList.add('opacity-0');
   setTimeout(() => {
@@ -492,108 +444,9 @@ export function hideHeroTooltip() {
   }, 200);
 }
 
-export function forceHideHeroTooltip() {
+function forceHideHeroTooltip() {
   heroTooltip.classList.add('hidden', 'opacity-0');
   heroTooltip.classList.remove('opacity-100');
-}
-
-// --- UTILITIES ---
-
-export function getHeroImageUrl(name) {
-  const h = allHeroesData.find(x => x.name === name);
-  return h?.imageUrl || `https://placehold.co/128x128?text=${encodeURIComponent(name)}`;
-}
-
-export function getTroopColorClass(type) {
-  switch(type) {
-    case 'Archers': return 'text-emerald-400';
-    case 'Footmen': return 'text-amber-400';
-    case 'Cavalry': return 'text-sky-400';
-    case 'All': return 'text-purple-400';
-    default: return 'text-slate-400';
-  }
-}
-
-export function getLocalizedTroop(type) {
-  const t = translations[currentLanguage] || translations.en;
-  if (type === 'Archers') return t.troopArchers || type;
-  if (type === 'Footmen') return t.troopFootmen || type;
-  if (type === 'Cavalry') return t.troopCavalry || type;
-  if (type === 'All') return t.troopAll || type;
-  return type;
-}
-
-function getCheckedValues(container) {
-  if (!container) return [];
-  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
-    .map(i => i.value);
-}
-
-function computeStateSelection(container) {
-  const raw = getCheckedValues(container).map(v => v.toLowerCase());
-  const set = new Set();
-  if (raw.length === 0) return ['Free', 'Paid'];
-  if (raw.some(v => v.includes('paid') && v.includes('free'))) {
-    set.add('Free'); set.add('Paid');
-  }
-  if (raw.some(v => v === 'free')) set.add('Free');
-  if (raw.some(v => v === 'paid')) set.add('Paid');
-  if (set.size === 0) { set.add('Free'); set.add('Paid'); }
-  return Array.from(set);
-}
-
-function computeTypeSelection(container) {
-  const raw = getCheckedValues(container).map(v => v.toLowerCase());
-  if (raw.length === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  const hasAll = raw.some(v => v.includes('all') || v.includes('cavalry or archers'));
-  if (hasAll) return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  const set = new Set();
-  if (raw.some(v => v.includes('archers'))) set.add('Archers');
-  if (raw.some(v => v.includes('footmen'))) set.add('Footmen');
-  if (raw.some(v => v.includes('cavalry'))) set.add('Cavalry');
-  if (set.size === 0) return ['Archers', 'Footmen', 'Cavalry', 'All'];
-  return Array.from(set);
-}
-
-export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
-  if (!seasonsArr || seasonsArr.length === 0) return false;
-  if (!seasonsArr.includes(hero.season)) return false;
-  
-  // Safe case-insensitive state matching
-  const heroState = (hero.State || 'Free').toLowerCase();
-  const lowerStatesArr = (statesArr || []).map(s => s.toLowerCase());
-  if (lowerStatesArr.length && !lowerStatesArr.includes(heroState)) return false;
-  
-  const heroType = hero.Type || 'All';
-  if (!typesArr || !typesArr.length) return true;
-  if (heroType === 'All' || typesArr.includes('All')) return true;
-  return typesArr.includes(heroType);
-}
-
-export function getComboRankInfo(heroes) {
-  if (!Array.isArray(heroes) || heroes.length !== 3) return null;
-  const userSorted = [...heroes].slice().sort();
-  const total = rankedCombos.length;
-  for (let i = 0; i < total; i++) {
-    const combo = rankedCombos[i];
-    if (!combo.heroes || combo.heroes.length !== 3) continue;
-    const comboSorted = [...combo.heroes].slice().sort();
-    if (
-      comboSorted[0] === userSorted[0] &&
-      comboSorted[1] === userSorted[1] &&
-      comboSorted[2] === userSorted[2]
-    ) {
-      const rank = i + 1;
-      let rawScore = 100;
-      if (total > 1) rawScore = 100 - ((i / (total - 1)) * 99);
-      return { rank, score: rawScore.toFixed(1), index: i };
-    }
-  }
-  return null;
-}
-
-export function isHeroAlreadyInCombo(name, ignoreIndex = -1) {
-  return currentCombo.some((h, idx) => h === name && idx !== ignoreIndex);
 }
 
 const _heroSeasonByName = new Map(allHeroesData.map(h => [h.name, h.season]));
@@ -660,7 +513,7 @@ function getSynergies(heroName, state = _heroesTabState) {
   return sortedPartners.slice(0, 3);
 }
 
-export function showAboModal(message, onConfirm = null) {
+function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
   messageBox.classList.remove('hidden');
@@ -2878,24 +2731,7 @@ function renderHeroesTab() {
   }
 }
 
-// --- INITIALIZE EVERYTHING ---
-async function startApp() {
-    try {
-    // 1. Setup UI & Render Heroes
-    updateTextContent();
-    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
-    renderAvailableHeroes();
-    renderGeneratorHeroes();
-    wireUIActions();
-    // 2. Start the Local Calculators
-    initResearchCalculator();
-    
-    // RESTORED: Wake up the Loyalty Calculator!
-    if (typeof initLoyaltyCalculator === 'function') {
-        initLoyaltyCalculator();
-    }
-
-  // --- Tab scroll buttons ---
+// --- Tab scroll buttons ---
 function initTabScroll() {
   const scrollContainer = document.getElementById('tabNavScroll');
   const leftBtn = document.getElementById('tabScrollLeft');
@@ -2914,7 +2750,6 @@ function initTabScroll() {
     scrollContainer.scrollBy({ left: scrollStep(), behavior: 'smooth' });
   });
 
-  // Hide buttons if not needed (on desktop)
   const checkOverflow = () => {
     const hasOverflow = scrollContainer.scrollWidth > scrollContainer.clientWidth;
     if (leftBtn && rightBtn) {
@@ -2926,26 +2761,44 @@ function initTabScroll() {
   setTimeout(checkOverflow, 100);
 }
 
-// Call this after your existing DOM setup
-initTabScroll();
-  
-    // 3. Initialize Firebase & User Data
+// --- INITIALIZE EVERYTHING ---
+async function startApp() {
+    try {
+    updateTextContent();
+    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
+    renderAvailableHeroes();
+    renderGeneratorHeroes();
+    wireUIActions();
+    initResearchCalculator();
+    if (typeof initLoyaltyCalculator === 'function') {
+        initLoyaltyCalculator();
+    }
+    initTabScroll();
+
+    registerServiceWorker();
+    const comboShare = parseComboShareUrl();
+    if (comboShare) {
+      console.log('Loaded shared combos from URL', comboShare);
+    }
+    const rosterShare = parseRosterShareUrl();
+    if (rosterShare) {
+      applyRosterToGenerator(rosterShare, generatorSelectedHeroes);
+    }
+
     try {
         await initFirebase();
         const user = await ensureAnonymousAuth();
-        
-        // RESTORED: Assign the actual Firebase User ID so your saved combos work!
         if (user && user.uid) {
             userId = user.uid;
         }
-        
         setupFirestoreListener();
-        
-        // RESTORED: Wake up the Comments section!
+        const cloudProfile = await loadPlayerProfileFromCloud();
+        if (cloudProfile && cloudProfile.roster) {
+          applyRosterToGenerator(cloudProfile.roster, generatorSelectedHeroes);
+        }
         if (typeof initComments === 'function') {
             initComments();
         }
-        
     } catch (error) {
         console.warn("Firebase could not initialize (might be offline or missing config).", error);
     }
@@ -2953,6 +2806,17 @@ initTabScroll();
         await notifyAppReady();
     }
 }
+
+setupInstallPrompt();
+
+// Register UI functions for builder/generator modules
+registerUiFunctions({
+  showHeroTooltip,
+  moveHeroTooltip,
+  hideHeroTooltip,
+  forceHideHeroTooltip,
+  showAboModal,
+});
 
 // Fire it up!
 startApp();

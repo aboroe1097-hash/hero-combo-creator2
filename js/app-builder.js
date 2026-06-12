@@ -9,14 +9,9 @@ import {
   paidBadgeHtml,
   getTroopColorClass,
   getLocalizedTroop,
-  forceHideHeroTooltip,
-  showHeroTooltip,
-  moveHeroTooltip,
-  hideHeroTooltip,
   getHeroImageUrl,
   getComboRankInfo,
   getCounterLabels,
-  showAboModal,
   selectedSeasons,
   selectedStates,
   selectedTypes,
@@ -28,7 +23,8 @@ import {
   noCombosMessage,
   getUserId,
   isHeroAlreadyInCombo,
-} from './app.js';
+  __ui,
+} from './state.js';
 import { getDb } from './firebase.js';
 
 let db = null;
@@ -92,7 +88,7 @@ export function setupTouchDragForManualBuilder() {
 
     if (isHeroAlreadyInCombo(touchDragHero, idx)) {
       const t = translations[currentLanguage] || translations.en;
-      showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
+      __ui.showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
       touchDragHero = null;
       return;
     }
@@ -142,12 +138,12 @@ export function renderAvailableHeroes() {
       `;
 
       card.addEventListener('dragstart', e => {
-        forceHideHeroTooltip();
+        __ui.forceHideHeroTooltip();
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
       card.addEventListener('touchstart', (e) => {
-        forceHideHeroTooltip();
+        __ui.forceHideHeroTooltip();
         const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
@@ -155,15 +151,15 @@ export function renderAvailableHeroes() {
 
       card.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return; 
-        showHeroTooltip(e, hero.name);
+        __ui.showHeroTooltip(e, hero.name);
       });
       card.addEventListener('pointermove', (e) => {
         if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
+        __ui.moveHeroTooltip(e);
       });
       card.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch') return;
-        hideHeroTooltip();
+        __ui.hideHeroTooltip();
       });
 
       const infoBtn = card.querySelector('.info-btn');
@@ -171,7 +167,7 @@ export function renderAvailableHeroes() {
         infoBtn.addEventListener('click', (e) => {
           e.stopPropagation(); 
           e.preventDefault();
-          showHeroTooltip(e, hero.name);
+          __ui.showHeroTooltip(e, hero.name);
         });
         infoBtn.addEventListener('touchstart', (e) => {
           e.stopPropagation(); 
@@ -265,7 +261,7 @@ export function updateManualComboScore() {
 export async function saveCombo() {
   const t = translations[currentLanguage] || translations.en;
   if (currentCombo.includes(null)) {
-    showAboModal(t.messagePleaseDrag3Heroes);
+    __ui.showAboModal(t.messagePleaseDrag3Heroes);
     return;
   }
   loadingSpinner.classList.remove('hidden');
@@ -354,7 +350,7 @@ export async function setupFirestoreListener() {
       delBtn.className = 'remove-combo-btn';
       delBtn.textContent = 'X';
       delBtn.onclick = () =>
-        showAboModal(
+        __ui.showAboModal(
           translations[currentLanguage].messageConfirmRemoveCombo,
           async () => {
             await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));

@@ -10,14 +10,9 @@ import {
   paidBadgeHtml,
   getTroopColorClass,
   getLocalizedTroop,
-  forceHideHeroTooltip,
-  showHeroTooltip,
-  moveHeroTooltip,
-  hideHeroTooltip,
   getHeroImageUrl,
   getComboRankInfo,
   getCounterLabels,
-  showAboModal,
   generatorSelectedSeasons,
   generatorSelectedStates,
   generatorSelectedTypes,
@@ -27,7 +22,8 @@ import {
   generatorHeroesEl,
   generatorResultsEl,
   downloadGeneratorBtn,
-} from './app.js';
+  __ui,
+} from './state.js';
 
 export function renderGeneratorHeroes() {
   if (!generatorHeroesEl) return;
@@ -58,7 +54,7 @@ export function renderGeneratorHeroes() {
       `;
       
       card.onclick = () => {
-        forceHideHeroTooltip(); 
+        __ui.forceHideHeroTooltip(); 
         
         if (generatorSelectedHeroes.has(hero.name)) {
           generatorSelectedHeroes.delete(hero.name);
@@ -78,15 +74,15 @@ export function renderGeneratorHeroes() {
 
       card.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return; 
-        showHeroTooltip(e, hero.name);
+        __ui.showHeroTooltip(e, hero.name);
       });
       card.addEventListener('pointermove', (e) => {
         if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
+        __ui.moveHeroTooltip(e);
       });
       card.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch') return;
-        hideHeroTooltip();
+        __ui.hideHeroTooltip();
       });
 
       const infoBtn = card.querySelector('.info-btn');
@@ -94,7 +90,7 @@ export function renderGeneratorHeroes() {
         infoBtn.addEventListener('click', (e) => {
           e.stopPropagation(); 
           e.preventDefault();
-          showHeroTooltip(e, hero.name);
+          __ui.showHeroTooltip(e, hero.name);
         });
         infoBtn.addEventListener('touchstart', (e) => {
           e.stopPropagation(); 
@@ -143,23 +139,23 @@ export function renderGeneratorResults(bestCombos) {
         if (e.pointerType === 'touch') return;
         img.style.transform = 'scale(1.12)';
         img.style.boxShadow = '0 0 18px rgba(56,189,248,0.45)';
-        showHeroTooltip(e, name);
+        __ui.showHeroTooltip(e, name);
       });
       item.addEventListener('pointermove', (e) => {
         if (e.pointerType === 'touch') return;
-        moveHeroTooltip(e);
+        __ui.moveHeroTooltip(e);
       });
       item.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch') return;
         img.style.transform = '';
         img.style.boxShadow = '';
-        hideHeroTooltip();
+        __ui.hideHeroTooltip();
       });
       
       item.addEventListener('click', () => {
         const rect = item.getBoundingClientRect();
         const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top };
-        showHeroTooltip(fakeEvent, name);
+        __ui.showHeroTooltip(fakeEvent, name);
       });
       slots.appendChild(item);
     });
@@ -189,7 +185,7 @@ export function generateBestCombos() {
   const selected = Array.from(generatorSelectedHeroes);
 
   if (selected.length < 12) { 
-    showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes to generate best combos.");
+    __ui.showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes to generate best combos.");
     return;
   }
 
@@ -230,7 +226,7 @@ export function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
   if (selected.length < 3) {
-    showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
+    __ui.showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
     return;
   }
 
@@ -252,7 +248,7 @@ export function generateRandomCombos() {
     .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
   if (validCombos.length === 0) {
-    showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
+    __ui.showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
     return;
   }
 
@@ -276,7 +272,7 @@ export function generateRandomCombos() {
   randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
 
   if (randomSelection.length === 0) {
-     showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
+     __ui.showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
   } else {
      lastGeneratedCombos.length = 0;
      lastGeneratedCombos.push(...randomSelection);

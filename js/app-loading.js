@@ -3,7 +3,7 @@
  */
 
 const INTRO_STORAGE_KEY = 'vts_intro_v1_seen';
-const MIN_BOOT_MS = 1000;
+const MIN_BOOT_MS = 600;
 
 // Web Audio API cinematic synthesis for loading screen doors
 let audioCtx = null;
@@ -158,15 +158,15 @@ function startBootAnimations() {
 
     bootProgressTimer = window.setInterval(() => {
         const cap = 88;
-        const step = progress < 40 ? 4.5 : progress < 70 ? 2.2 : 0.8;
+        const step = progress < 40 ? 6.5 : progress < 70 ? 3.2 : 1.2;
         progress = Math.min(cap, progress + step);
         setBootProgress(progress);
-    }, 140);
+    }, 100);
 
     statusCycleTimer = window.setInterval(() => {
         statusIdx = (statusIdx + 1) % BOOT_STATUS_LINES.length;
         setBootStatus(BOOT_STATUS_LINES[statusIdx]);
-    }, 720);
+    }, 500);
 }
 
 function stopBootAnimations(finalPct = 100) {
@@ -200,11 +200,11 @@ async function dismissBootSplash() {
     if (statusContainer) statusContainer.classList.add('title-fade');
 
     // Wait for the door swinging and golden light flash animation to complete
-    await sleep(2600);
+    await sleep(1400);
 
     // Fade out the entire boot-splash overlay
     splash.classList.add('boot-splash--out');
-    await sleep(prefersReducedMotion() ? 80 : 900);
+    await sleep(prefersReducedMotion() ? 80 : 500);
 
     splash.classList.add('hidden');
     splash.setAttribute('aria-hidden', 'true');
