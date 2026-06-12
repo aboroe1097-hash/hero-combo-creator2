@@ -767,7 +767,7 @@ function parseOcrResults(results) {
     if (deduped.length > 0) {
       attacks.push({
         id,
-        game_time: displayGameTime(fmtDate(new Date(g.dt - 6*3600000))),
+        game_time: displayGameTime(fmtDate(new Date(g.dt.getTime() + (g.dt.getTimezoneOffset() - 120) * 60000))),
         structure_name: sN,
         structure_level: sL,
         players: deduped,
