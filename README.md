@@ -1,15 +1,19 @@
-# Hero Combo Creator — VTS 1097 (7.0)
+# Hero Combo Creator — VTS 1097 (7.7)
 
-Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, and more.
+Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 7.0
+## What's new in 7.7
 
-- **Modular Architecture** — Split the large `js/app.js` file into separate sub-modules: `js/app-builder.js` (Manual Builder) and `js/app-generator.js` (Combo Generator) for cleaner codebase structure.
-- **Type Safety & Intellisense** — Added comprehensive JSDoc annotations to `js/tech-db.js` and `js/combos-db.js` to enable type checks and IDE autocomplete.
-- **Premium Aesthetics & Transitions** — Added fluid dark-to-light theme transition curves, a premium obsidian-indigo Space Dark Aurora backdrop, soft light-theme gradients, and springy interactive micro-animations for cards/buttons.
-- **Research game-style trees expanded** — Season 0 trees and military branches use in-game layouts; troop branches open in dedicated branch views (`layoutMode: "game"` / `"branch"`)
-- **Eden parchment map** — optimized faction-division asset (~5 MB); baked capital art masked so coord-placed icons replace them
-- **Eden map asset loading** — improved reference-map fallback chain for offline and CDN sources
+- **VTS Admin Dashboard** — new tab under Tools for uploading occupation report screenshots, OCR-processed entirely client-side via Tesseract.js
+- **Multi-format OCR** — supports both the standard rank-table format (scroll captures) and the paragraph-style format (`Name'Value'Name'Value'` with MVP/Participants sections)
+- **Instant Analysis** — upload screenshots → automatic OCR → KPI cards, ranked leaderboard, attack history, and top performers chart update in real-time
+- **Cross-device Sync** — data saved to Firebase Firestore so anyone with admin login sees the same data regardless of upload device
+- **Image Validation** — checks each screenshot is a valid occupation report (Isabella header, occupied notice, or MVP section) before processing
+- **Paragraph Format Parser** — handles the game's alternate text-based report layout with structure name detection (`Ruins Occupation Notice`)
+- **Timestamp-based Grouping** — same-timestamp images from split uploads merge automatically, different structures at the same time stay separate
+- **Structure Name Fallback** — scroll-capture images without the header inherit the structure name from existing attacks with the same timestamp
+- **Export / Import** — JSON team sharing, CSV leaderboard export, PNG screenshot, and print support
+- **Mobile Optimized** — responsive layout with always-visible upload zone, 44px touch targets, full-bleed modals
 
 ## What's new in b6.2
 
@@ -28,6 +32,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 - **Eden Loyalty Calculator** — processing times, poison %, upgrade paths
 - **Tech Research Calculator** — medal/resource tracking per season (S0–X2), game-layout trees for key branches
 - **Hero Atlas** — rankings, skills, synergies, season-scoped top combos (capped vs all-best toggle), adjustable hero bonuses
+- **VTS Admin Dashboard** — client-side OCR for occupation report screenshots; supports both table and paragraph formats; cross-device sync via Firebase Firestore; auto-merges split uploads by timestamp
 - **YouTube** — VTS 1097 playlists (lazy-loaded embeds)
 - **Comments** — threaded community feedback via Firebase
 
@@ -65,6 +70,7 @@ Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planni
 | `js/heroes-data.js` | Hero roster (name, season, type, image URLs) |
 | `js/utils.js` | Shared helpers (e.g. HTML escaping) |
 | `js/combo-counters.js` | Counter matchup database + UI |
+| `js/ocr-dashboard.js` | VTS Admin client-side OCR dashboard |
 
 ## Combo counters (manual data)
 
@@ -125,3 +131,10 @@ Publish **`dist/`** (from `npm run build`), not the raw repo — keeps `database
 ## Firebase
 
 Client config lives in `js/firebase.js`. Protect data with Firestore security rules (not included in this repo).
+
+**VTS Admin**: add this rule for cross-device sync:
+```
+match /vts_admin/{document} {
+  allow read, write: if request.auth != null;
+}
+```
