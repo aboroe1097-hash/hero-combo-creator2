@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    const models = ['glm-4v-flash', 'glm-4.6v'];
+    const models = ['glm-5v-turbo', 'glm-ocr'];
     let data = null;
     let usedModel = null;
 
@@ -57,7 +57,7 @@ Example:
       }
 
       const errMsg = data.error?.message || '';
-      if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist')) {
+      if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown Model')) {
         return { statusCode: 500, body: JSON.stringify({ error: errMsg || 'API Error' }) };
       }
     }
