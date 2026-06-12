@@ -221,7 +221,10 @@ async function saveData(data) {
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), data); 
     log('Synced to cloud.', 'info'); 
-  } catch (e) { log('Save error: ' + (e.message || e.code), 'error'); }
+  } catch (e) { 
+    console.error("FIREBASE SAVE ERROR:", e);
+    log('Save error: ' + (e.message || e.code), 'error'); 
+  }
 }
 
 async function loadData() {
@@ -264,10 +267,14 @@ async function loadData() {
         }
       }
     }, (err) => {
+      console.error("FIREBASE SYNC ERROR:", err);
       log('Sync listener error: ' + (err.message || err.code), 'error');
     });
     log('Cloud sync active.', 'info');
-  } catch (e) { log('Load auth error: ' + (e.message || e.code), 'error'); }
+  } catch (e) { 
+    console.error("FIREBASE AUTH ERROR:", e);
+    log('Load auth error: ' + (e.message || e.code), 'error'); 
+  }
 }
 
 async function clearData() {
