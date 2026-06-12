@@ -221,7 +221,7 @@ async function saveData(data) {
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), data); 
     log('Synced to cloud.', 'info'); 
-  } catch (e) {}
+  } catch (e) { log('Save error: ' + (e.message || e.code), 'error'); }
 }
 
 async function loadData() {
@@ -231,7 +231,7 @@ async function loadData() {
   } catch (e) {}
   try {
     const db = getDb();
-    if (!db) { /* log('Firestore not available — using local storage only.', 'warn'); */ return; }
+    if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
     await ensureAnonymousAuth();
     if (_fsUnsub) _fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
@@ -263,9 +263,11 @@ async function loadData() {
           setTimeout(() => ind.classList.add('hidden'), 3500);
         }
       }
+    }, (err) => {
+      log('Sync listener error: ' + (err.message || err.code), 'error');
     });
-    // log('Cloud sync active.', 'info');
-  } catch (e) {}
+    log('Cloud sync active.', 'info');
+  } catch (e) { log('Load auth error: ' + (e.message || e.code), 'error'); }
 }
 
 async function clearData() {
