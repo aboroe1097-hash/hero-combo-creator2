@@ -307,7 +307,53 @@ function exportToPng() {
 function exportChartPng() {
   const chart = $id('dashChart');
   if (!chart || typeof html2canvas === 'undefined') return;
-  html2canvas(chart.closest('.dash-card') || chart, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_top_performers.png'; a.click(); }).catch(() => {});
+  
+  const card = chart.closest('.dash-card');
+  const clone = card.cloneNode(true);
+  
+  const cloneBtn = clone.querySelector('#dashExportChartBtn');
+  if (cloneBtn) cloneBtn.remove();
+  
+  const filterEl = $id('dashLeaderFilter');
+  let subTitle = "Global Top Performers · All Time";
+  if (filterEl && filterEl.value) {
+     const opt = filterEl.options[filterEl.selectedIndex];
+     if (opt) subTitle = opt.textContent;
+  }
+  
+  const titleH2 = clone.querySelector('h2.dash-card-title');
+  if (titleH2) {
+    titleH2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Top Performers`;
+    const subDiv = document.createElement('div');
+    subDiv.style.cssText = 'font-size:0.75rem; color:#94a3b8; margin-top:6px; margin-left:26px; font-weight:600; letter-spacing:0.02em;';
+    subDiv.textContent = subTitle;
+    titleH2.parentElement.appendChild(subDiv);
+    titleH2.parentElement.style.flexDirection = 'column';
+    titleH2.parentElement.style.alignItems = 'flex-start';
+  }
+
+  const items = clone.querySelectorAll('.dash-top-item');
+  items.forEach(item => {
+     item.style.overflow = 'visible';
+     item.style.borderRadius = '0';
+     const bar = item.querySelector('.dash-top-bar');
+     if (bar) bar.style.borderRadius = '8px';
+     const spans = item.querySelectorAll('span');
+     spans.forEach(s => s.style.transform = 'translateY(2px)');
+  });
+
+  clone.style.position = 'absolute';
+  clone.style.top = '-9999px';
+  clone.style.left = '0';
+  clone.style.width = card.offsetWidth + 'px';
+  document.body.appendChild(clone);
+
+  html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
+    clone.remove();
+    const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_top_performers.png'; a.click(); 
+  }).catch(() => {
+    clone.remove();
+  });
 }
 function exportAttackCsv() {
   if (!dashData?.attacks?.length) return;
