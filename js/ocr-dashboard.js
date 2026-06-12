@@ -366,49 +366,16 @@ async function processFiles(files) {
     try {
       const before = performance.now();
       let data = null;
-      let useLocalFallback = false;
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       
-      try {
-        if (isLocalhost) throw new Error('Force fallback on localhost');
-        const netlifyRes = await fetch('/.netlify/functions/gemini-ocr', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64 })
-        });
-         if (netlifyRes.status === 404 || netlifyRes.status === 405) {
-            useLocalFallback = true;
-         } else if (!netlifyRes.ok) {
-            log(`Server function error (${netlifyRes.status})`, 'warn', f.name);
-            const textResponse = await netlifyRes.text();
-            try {
-               const errData = JSON.parse(textResponse);
-               log(`Server: ${errData.error}`, 'warn', f.name);
-            } catch (e) {}
-            useLocalFallback = true;
-         } else {
-            const textResponse = await netlifyRes.text();
-            try {
-              data = JSON.parse(textResponse);
-            } catch(err) {
-              if (textResponse.startsWith('<')) { log('Server returned HTML instead of JSON — function not deployed', 'warn', f.name); useLocalFallback = true; }
-              else throw new Error('Invalid response from server');
-            }
-          }
-      } catch (err) {
-        useLocalFallback = true;
+      let localKey = sessionStorage.getItem('qwen_api_key');
+      if (!localKey) {
+        localKey = prompt('Qwen (DashScope) API key required for OCR:');
+        if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
       }
+      if (!localKey) throw new Error('No API key provided.');
       
-      if (useLocalFallback) {
-        let localKey = sessionStorage.getItem('qwen_api_key');
-        if (!localKey) {
-          localKey = prompt('Qwen (DashScope) API key required for OCR (get one at https://bailian.console.aliyun.com):');
-          if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
-        }
-        if (!localKey) throw new Error('No API key provided.');
-        
-        log(`Using Qwen API (client-side)...`, 'info', f.name);
-        const promptTxt = `Analyze this game screenshot containing an attack report.
+      log(`Using Qwen API...`, 'info', f.name);
+      const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
 2. 'structure_level' (e.g. '5' for Lv.5. If not visible, null)
@@ -416,31 +383,23 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-        const QWEN_URL = 'https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions';
-        const localModels = ['qwen-vl-ocr'];
-        let res, raw, localModelUsed;
-        for (const m of localModels) {
-          res = await fetch(QWEN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
-            body: JSON.stringify({
-              model: m,
-              messages: [{ role: 'user', content: [
-                { type: 'text', text: promptTxt },
-                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-              ]}]
-            })
-          });
-          raw = await res.json();
-          if (res.ok) { localModelUsed = m; break; }
-          const errMsg = raw.error?.message || '';
-          if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist') && !errMsg.includes('Unknown Model')) break;
-        }
-        if (!localModelUsed) throw new Error(raw?.error?.message || 'Qwen API Error');
-        let text = raw.choices[0].message.content;
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        data = JSON.parse(text);
-      }
+      const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+      const res = await fetch(QWEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
+        body: JSON.stringify({
+          model: 'qwen-vl-ocr-2025-11-20',
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+          ]}]
+        })
+      });
+      const raw = await res.json();
+      if (!res.ok) throw new Error(raw.error?.message || `HTTP ${res.status}`);
+      let text = raw.choices[0].message.content;
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      data = JSON.parse(text);
 
       const elapsed = ((performance.now() - before) / 1000).toFixed(1);
       const pCount = data.players ? data.players.length : 0;
