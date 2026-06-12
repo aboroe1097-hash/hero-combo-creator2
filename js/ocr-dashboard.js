@@ -1055,16 +1055,13 @@ export async function bootOcrDashboard() {
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();
   };
 
-  const apiBtn = $id('dashApiKeyBtn');
-  if (apiBtn) {
-    apiBtn.onclick = () => {
-      const current = sessionStorage.getItem('qwen_api_key') || '';
-      const newKey = prompt("Set Qwen API Key for image processing:", current);
-      if (newKey !== null) {
-        if (newKey.trim() === '') sessionStorage.removeItem('qwen_api_key');
-        else sessionStorage.setItem('qwen_api_key', newKey.trim());
-        alert(newKey.trim() ? "API Key saved for this session!" : "API Key cleared.");
-      }
+  const apiInput = $id('dashApiKeyInput');
+  if (apiInput) {
+    apiInput.value = sessionStorage.getItem('qwen_api_key') || '';
+    apiInput.oninput = (e) => {
+      const val = e.target.value.trim();
+      if (val) sessionStorage.setItem('qwen_api_key', val);
+      else sessionStorage.removeItem('qwen_api_key');
     };
   }
 
