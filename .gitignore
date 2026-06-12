@@ -7,6 +7,7 @@ __pycache__/
 Thumbs.db
 node_modules/
 dist/
+!docs/
 js/eden-datasets.generated.js
 database/_ocr_test_crop.png
 database/spotcheck-report.txt

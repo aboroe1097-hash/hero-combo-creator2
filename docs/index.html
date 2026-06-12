@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <meta name="description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder &amp; generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters." />
+  <meta name="keywords" content="Rise of Castles, Ice and Fire, hero combo, Eden map, VTS 1097, combo creator, loyalty calculator, tech research, Hero Atlas, ROC combos" />
+  <meta name="author" content="VTS State 1097" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="application-name" content="Hero Combo Creator" />
+  <link rel="canonical" href="https://roc-vts.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Hero Combo Creator" />
+  <meta property="og:title" content="Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097" />
+  <meta property="og:description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder, Eden map planner, loyalty calculator, tech research, and Hero Atlas." />
+  <meta property="og:url" content="https://roc-vts.com/" />
+  <meta property="og:image" content="https://roc-vts.com/images/logo.png" />
+  <meta property="og:image:alt" content="Hero Combo Creator logo" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097" />
+  <meta name="twitter:description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combos, Eden map, loyalty calculator, and tech research." />
+  <meta name="twitter:image" content="https://roc-vts.com/images/logo.png" />
+  <!-- Google Search Console: paste verification meta from search.google.com/search-console -->
+  <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" /> -->
+  <link rel="icon" type="image/png" href="/assets/logo-DcPpDRl1.png">
+  <link rel="apple-touch-icon" href="/assets/logo-DcPpDRl1.png">
+  <link rel="manifest" href="/assets/site-4WTOiQaT.webmanifest" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://roc-vts.com/#website",
+        "url": "https://roc-vts.com/",
+        "name": "Hero Combo Creator",
+        "description": "Free Rise of Castles: Ice & Fire tools for VTS State 1097.",
+        "publisher": { "@id": "https://roc-vts.com/#organization" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://roc-vts.com/#organization",
+        "name": "VTS State 1097",
+        "url": "https://roc-vts.com/",
+        "logo": { "@type": "ImageObject", "url": "https://roc-vts.com/images/logo.png" }
+      },
+      {
+        "@type": "WebApplication",
+        "name": "Hero Combo Creator",
+        "url": "https://roc-vts.com/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": ["Hero combo builder", "Combo generator", "Hero Atlas", "Eden map planner", "Loyalty calculator", "Tech research calculator"]
+      }
+    ]
+  }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/mobile-MRO921Em.css" media="(max-width: 768px)" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+
+  <script type="module" crossorigin src="/assets/index-D27daqA_.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/eden-B2pUP6mD.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-RzQMz0s1.css">
+</head>
+<body class="p-3 sm:p-4 app-booting">
+  <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
+    <div class="perspective-container">
+      <!-- Left Door (Ice) -->
+      <div id="doorLeft" class="door door-left">
+        <div class="door-emblem ice-emblem">❄️</div>
+        <div class="door-rivet top-left"></div>
+        <div class="door-rivet bottom-left"></div>
+      </div>
+      
+      <!-- Right Door (Fire) -->
+      <div id="doorRight" class="door door-right">
+        <div class="door-emblem fire-emblem">🔥</div>
+        <div class="door-rivet top-right"></div>
+        <div class="door-rivet bottom-right"></div>
+      </div>
+
+      <!-- Light cracking through the middle -->
+      <div id="centerLight" class="center-light"></div>
+    </div>
+    
+    <!-- Title & Progress Bar Container -->
+    <div id="loadingStatusContainer" class="loading-status-container">
+      <h1 id="loadingTitle" class="loading-title">HERO COMBO CREATOR</h1>
+      <p class="boot-sub">VTS 1097 • RISE OF CASTLES</p>
+      <p class="boot-status-text">Loading toolkit…</p>
+      <div class="boot-progress" aria-hidden="true"><span class="boot-progress-fill"></span></div>
+    </div>
+  </div>
+
+  <div id="firstVisitIntro" class="first-visit-intro hidden" aria-hidden="true">
+    <div class="intro-aurora" aria-hidden="true"></div>
+    <div class="intro-sparks" aria-hidden="true"></div>
+    <div class="intro-content">
+      <img src="/assets/logo-DcPpDRl1.png"  alt="" class="intro-logo" width="120" height="120" />
+      <h2 class="intro-title">Hero Combo Creator</h2>
+      <p class="intro-tagline">Combos · Eden · Research · Loyalty</p>
+      <p class="intro-team">TEAM VTS — STATE 1097</p>
+      <button type="button" class="intro-enter-btn">Enter toolkit</button>
+    </div>
+  </div>
+
+<div id="app" class="app-shell app-shell--hidden relative max-w-6xl mx-auto bg-slate-900/90 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">    
+    <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
+    
+    <div class="logo-container">
+      <img src="/assets/logo-DcPpDRl1.png"  alt="Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" class="main-logo dual-glow-logo shadow-2xl" width="120" height="120" />
+      <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
+      <div class="flex flex-col items-center mt-2 space-y-1">
+        <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise of Empires · Rise of Castles: Ice &amp; Fire</p>
+        <p class="text-xs sm:text-sm font-bold text-blue-400">TEAM VTS — STATE 1097</p>
+      </div>
+    </div>
+
+    <div class="flex justify-end items-center gap-3 mb-6 relative z-50 flex-wrap">
+      <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
+      <div class="relative inline-block group">
+        <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
+          <div class="pl-3 pr-1 text-slate-400 group-hover:text-blue-400 pointer-events-none transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
+            </svg>
+          </div>
+          <select id="languageSelect" class="appearance-none bg-transparent text-slate-200 font-semibold py-2 pl-2 pr-9 text-sm outline-none cursor-pointer w-full h-full">
+            <option value="en" class="bg-slate-800 text-white">English</option>
+            <option value="es" class="bg-slate-800 text-white">Español</option>
+            <option value="pt" class="bg-slate-800 text-white">Português</option>
+            <option value="de" class="bg-slate-800 text-white">Deutsch</option>
+            <option value="fr" class="bg-slate-800 text-white">Français</option>
+            <option value="tr" class="bg-slate-800 text-white">Türkçe</option>
+            <option value="ru" class="bg-slate-800 text-white">Русский</option>
+            <option value="id" class="bg-slate-800 text-white">Indonesia</option>
+            <option value="zh" class="bg-slate-800 text-white">中文</option>
+            <option value="ar" class="bg-slate-800 text-white">العربية</option>
+            <option value="kr" class="bg-slate-800 text-white">한국어</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 group-hover:text-blue-400 transition-colors">
+            <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Install App -->
+      <button id="installAppBtn" type="button" class="hidden items-center justify-center w-9 h-9 rounded-full border border-emerald-700 bg-emerald-800/80 hover:bg-emerald-700 hover:border-emerald-500 text-emerald-300 hover:text-white transition-all duration-200 shadow-sm" aria-label="Install app" title="Install app">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+      </button>
+
+      <!-- Theme toggle -->
+      <button id="themeToggle" type="button"
+              class="flex items-center justify-center w-9 h-9 rounded-full border border-slate-700 bg-slate-800/80 hover:bg-slate-700 hover:border-blue-500 text-slate-300 hover:text-white transition-all duration-200 shadow-sm"
+              aria-label="Toggle light/dark theme" title="Toggle theme">
+        <span class="theme-icon-dark">
+          <!-- Moon -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+        </span>
+        <span class="theme-icon-light hidden">
+          <!-- Sun -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+        </span>
+      </button>
+    </div>
+
+    <p id="seoIntro" class="seo-intro" data-i18n="seoIntro">Free community tools for Rise of Castles: Ice &amp; Fire — build hero combos, plan Eden maps, calculate loyalty upgrades, track tech research, and browse the Hero Atlas. Made for VTS State 1097.</p>
+
+    <noscript>
+      <div class="seo-noscript">
+        <h2>Hero Combo Creator — VTS 1097</h2>
+        <p>Free Rise of Castles: Ice &amp; Fire tools: hero combo builder, combo generator, Hero Atlas, Eden map planner, Eden loyalty calculator, tech research calculator, and combo counters. Visit <a href="https://roc-vts.com/">roc-vts.com</a> with JavaScript enabled for the full app.</p>
+      </div>
+    </noscript>
+
+    <main id="mainContent">
+
+    <div class="flex justify-center mb-8 px-2 w-full relative z-40">
+      <div class="flex items-center gap-1 max-w-full">
+        <button id="tabScrollLeft" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs left">&lsaquo;</button>
+        <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1 overflow-x-auto scrollbar-none" style="-webkit-overflow-scrolling:touch;max-width:calc(100vw - 7rem);backdrop-filter:blur(12px);">
+          <div class="relative flex-shrink-0 flex items-center"><button id="tabManual" class="tab-pill tab-pill-inactive"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>Manual Builder</button></div>
+          <div class="relative flex-shrink-0 flex items-center"><button id="tabGenerator" class="tab-pill tab-pill-active"><svg class="w-3.5 h-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>Combo Generator</button></div>
+          <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabHeroes" class="tab-pill tab-pill-inactive" data-i18n="tabHeroes"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>Hero Atlas</button><span class="tab-badge tab-badge-new">NEW</span></div>
+          <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabResearch" class="tab-pill tab-pill-inactive" data-i18n="tabResearch"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>Research</button><span class="tab-badge tab-badge-hot">HOT</span></div>
+          <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabEdenMap" class="tab-pill tab-pill-inactive" data-i18n="tabEdenMap"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m0 0v2.25m0-10.5V4.5m0 10.5H4.5m4.5 0h10.5M9 15l-3-3m3 3 3-3"/></svg>Eden Map</button><span class="tab-badge tab-badge-soon" data-i18n="tabEdenMapBadge">SOON</span></div>
+          <div class="relative flex-shrink-0 flex items-center"><button id="tabLoyalty" class="tab-pill tab-pill-inactive" data-i18n="tabLoyalty"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75"/></svg>Eden Loyalty</button></div>
+          <div class="relative flex-shrink-0 flex items-center"><button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube"><svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>YouTube</button></div>
+          <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabOcrDashboard" class="tab-pill tab-pill-inactive" data-i18n="tabOcrDashboard"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>VTS Admin</button><span class="tab-badge tab-badge-new">ADMIN</span></div>
+        </div>
+        <button id="tabScrollRight" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs right">&rsaquo;</button>
+      </div>
+    </div>
+
+    <div id="globalToggleRow" class="flex justify-center mb-6 transition-all duration-300">
+      <label class="flex items-center cursor-pointer gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-slate-700 shadow-sm hover:border-slate-500 transition-colors">
+        <span class="text-[10px] sm:text-xs text-slate-300 font-bold uppercase tracking-widest" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
+        <div class="relative inline-flex items-center">
+          <input type="checkbox" id="heroInfoToggle" class="sr-only peer" checked>
+          <div class="w-11 h-6 bg-slate-700 rounded-full border border-slate-600 shadow-inner transition-colors duration-300 peer-checked:bg-emerald-500 peer-checked:border-emerald-400"></div>
+          <div class="absolute left-1 top-1 w-4 h-4 bg-slate-300 rounded-full transition-all duration-300 shadow-md peer-checked:translate-x-5 peer-checked:bg-white"></div>
+        </div>
+      </label>
+    </div>
+
+    <section id="manualSection" class="tab-panel hidden">
+      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
+        <div id="seasonFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
+            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
+            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
+            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
+            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+            <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
+            <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+        </div>
+
+        <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
+        <div id="stateFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+            <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+        </div>
+
+        <h2 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h2>
+        <div id="troopFilters" class="flex flex-wrap gap-2 text-sm">
+            <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+            <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+            <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+            <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h2 id="availableHeroesTitle" class="text-xl font-semibold text-slate-100 uppercase tracking-wide">Available Heroes</h2>
+          <span id="manualHeroCount" class="text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700"></span>
+        </div>
+        <div class="hero-search-wrap">
+          <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+          <input id="manualHeroSearch" class="hero-search-input" type="text" placeholder="Search heroes..." autocomplete="off" />
+        </div>
+        <div id="availableHeroes" class="gap-3 justify-items-center"></div>
+      </div>
+
+      <div id="comboFooterBar" class="hidden sticky bottom-4 sm:bottom-6 z-[100] mt-8 p-4 sm:p-6 bg-slate-900/95 backdrop-blur-xl rounded-2xl border-2 border-slate-600 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] w-full transition-all">        
+        <h2 id="createComboTitle" class="hidden sm:block text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-widest">Create Your Combo</h2>
+        <div id="comboRow" class="flex justify-center items-center gap-1 sm:gap-4 flex-nowrap">
+          <div class="combo-slot" data-slot-index="0"></div><div class="combo-slot" data-slot-index="1"></div><div class="combo-slot" data-slot-index="2"></div>
+        </div>
+        <div id="comboButtonsRow" class="mt-4 grid grid-cols-2 sm:flex sm:flex-row gap-2 justify-center">
+          <button id="saveComboBtn" class="bg-emerald-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-emerald-700 transition disabled:opacity-50">Save</button>
+          <button id="clearComboBtn" class="bg-red-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-red-700 transition">Clear</button>
+          <button id="downloadCombosBtn" class="bg-purple-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-purple-700 transition">Image</button>
+          <button id="shareAllCombosBtn" class="bg-sky-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-sky-700 transition">Text</button>
+        </div>
+      </div>
+
+      <div class="mt-10 mb-10">
+        <h2 id="lastBestCombosTitle" class="text-xl font-semibold mb-4 text-slate-100 text-center uppercase tracking-wide">Last Best Combos</h2>
+        <p id="noCombosMessage" class="text-slate-400 text-sm mb-4 text-center">No combos saved yet. Drag heroes to start!</p>
+        <div id="savedCombos" class="flex flex-col items-center w-full"></div>
+      </div>
+    </section>
+
+    <section id="generatorSection" class="tab-panel hidden">
+      <div class="mb-6">
+          <h2 id="genToolTitle" data-i18n="generatorTitle" class="text-2xl font-semibold mb-2 text-slate-100">Combo Generator (Top 5)</h2>
+          <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
+      </div>
+
+      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
+          <div id="generatorSeasonFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
+              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" /><span data-i18n="season1">Season 1</span></label>
+              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
+              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
+              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+              <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
+              <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+          </div>
+
+          <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
+          <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+              <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+          </div>
+
+          <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
+          <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+              <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+              <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+              <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          </div>
+      </div>
+
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
+              <span id="genSelectedCount" class="text-xs font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-full border border-sky-500/40 hidden"></span>
+            </div>
+            <div class="flex gap-2">
+                <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Select All</button>
+                <button id="genClearAllBtn" data-i18n="generatorClearAll" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition">Clear All</button>
+            </div>
+        </div>
+        <div class="hero-search-wrap">
+          <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+          <input id="generatorHeroSearch" class="hero-search-input" type="text" placeholder="Search heroes..." autocomplete="off" />
+        </div>
+        <div id="generatorHeroes" class="gap-3 justify-items-center"></div>
+      </div>
+
+      <div class="mb-8 text-center flex flex-col sm:flex-row justify-center gap-3">
+        <button id="generateCombosBtn" class="px-10 py-3 bg-emerald-600 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-700 transition">GENERATE BEST COMBOS</button>
+        <button id="generateRandomBtn" class="px-10 py-3 bg-amber-600 text-white font-extrabold rounded-full shadow-lg hover:bg-amber-700 transition">SURPRISE ME</button>
+        <button id="downloadGeneratorBtn" class="px-10 py-3 bg-purple-600 text-white font-extrabold rounded-full shadow-lg hover:bg-purple-700 transition hidden">DOWNLOAD AS IMAGE</button>
+      </div>
+        
+      <div id="generatorResults" class="mb-8 space-y-3"></div>
+    </section>
+
+    <section id="heroesSection" class="tab-panel hidden animate-fade-in pb-8">
+      <div class="heroes-tab-header mb-4">
+        <h2 class="text-2xl font-semibold mb-1 text-slate-100 uppercase tracking-widest" data-i18n="tabHeroes">Hero Atlas</h2>
+        <p class="text-sm text-slate-400" data-i18n="heroesTabDesc">Rankings from the combo database. Search, filter, then tap a hero for skills, synergies &amp; top combos.</p>
+      </div>
+      <div id="heroesTabContent"></div>
+    </section>
+
+    <section id="researchSection" class="tab-panel hidden animate-fade-in pb-8">
+      <div class="research-header">
+        <div>
+          <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">Tech Research Calculator</h2>
+          <p id="researchDesc" class="research-desc" data-i18n="researchDesc">Track tech progress and calculate remaining War Badges and Courage Medals. Season 0 and military trees use in-game layouts; troop branches use dedicated branch views.</p>
+        </div>
+        <span id="techTreeCount" class="research-tree-count"></span>
+      </div>
+
+      <div id="globalTechSummary" class="research-summary-slot"></div>
+
+      <div class="research-control-deck">
+        <div class="research-deck-row">
+          <span class="research-deck-label" data-i18n="researchSeasonLabel">Seasons</span>
+          <div class="research-season-segment" role="group" aria-label="Filter by season">
+            <div class="research-season-bar">
+              <button type="button" class="tech-season-btn" data-season="S0">S0</button>
+              <button type="button" class="tech-season-btn" data-season="S1">S1</button>
+              <button type="button" class="tech-season-btn" data-season="S2">S2</button>
+              <button type="button" class="tech-season-btn" data-season="S3">S3</button>
+              <button type="button" class="tech-season-btn" data-season="S4">S4</button>
+              <button type="button" class="tech-season-btn active" data-season="X1">X1</button>
+              <button type="button" class="tech-season-btn" data-season="X2">X2</button>
+            </div>
+          </div>
+        </div>
+        <div class="research-deck-row research-deck-row-tools">
+          <span class="research-deck-label" data-i18n="researchQuickLabel">Quick</span>
+          <div class="research-quick-segment" role="group" aria-label="Season presets">
+            <button type="button" id="techSeasonAllBtn" class="research-quick-btn" data-quick="all" data-i18n="researchSelectAll">All</button>
+            <button type="button" id="techSeasonX1Btn" class="research-quick-btn active" data-quick="x1" data-i18n="researchSelectCurrent">X1</button>
+          </div>
+          <div class="research-search-wrap">
+            <svg class="research-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+            <input type="search" id="techSearchInput" class="research-search-input" data-i18n-ph="researchSearchPh" placeholder="Search tech trees..." autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <div id="techListContainer" class="research-list"></div>
+      <div id="techCalculatorContainer" class="research-calculator hidden" aria-live="polite"></div>
+    </section>
+
+    <section id="edenMapSection" class="tab-panel hidden animate-fade-in pb-4">
+      <div id="edenMapRoot" class="eden-map-root">
+        <div class="eden-map-header">
+          <div>
+            <h2 class="text-2xl font-semibold text-slate-100 uppercase tracking-widest" data-i18n="edenMapTitle">Eden Map Planner</h2>
+            <p class="text-sm text-slate-400 mt-1" data-i18n="edenMapDesc">Wonder X1 map with in-game structure coords. Pan, zoom, path routes, and layer toggles — hover any toolbar control for details.</p>
+            <span id="edenDatasetBadge" class="eden-dataset-badge hidden"></span>
+          </div>
+          <div id="edenSeasonModal" class="eden-season-modal hidden" role="dialog" aria-modal="true" aria-labelledby="edenSeasonModalTitle">
+            <div class="eden-season-card">
+              <h3 id="edenSeasonModalTitle" class="eden-season-title" data-i18n="edenSeasonPickTitle">Choose your Eden map data</h3>
+              <p class="eden-season-intro" data-i18n="edenSeasonPickDesc">Structure positions can differ by season. Pick the dataset that matches your current Eden server. You can change this anytime from the toolbar.</p>
+              <div id="edenSeasonChoices" class="eden-season-choices"></div>
+            </div>
+          </div>
+          <div class="eden-control-deck">
+            <div class="eden-deck-row eden-deck-nav">
+              <span class="eden-deck-label" data-i18n="edenDeckNav">Map</span>
+              <div class="eden-deck-cluster">
+                <label class="eden-mode-label eden-dataset-label">
+                  <span data-i18n="edenDatasetLabel">Season</span>
+                  <select id="edenDatasetSelect" class="eden-dataset-select" data-i18n-title="edenDatasetLabelTitle" title="Eden season / map data"></select>
+                </label>
+                <button type="button" id="edenChangeSeasonBtn" class="eden-tool-btn eden-tool-compact" data-i18n="edenChangeSeason" data-i18n-title="edenChangeSeasonTitle">Change</button>
+              </div>
+              <div class="eden-deck-cluster">
+                <select id="edenSectorSelect" class="eden-sector-select" data-i18n-title="edenSectorTitle" title="Sector">
+                  <option value="FULL" data-i18n="edenSectorFull">Full Map</option>
+                  <optgroup label="─ Cardinal Sectors ─" data-i18n-label="edenSectorCardinal">
+                    <option value="N">North (N)</option><option value="NE">North East (NE)</option>
+                    <option value="E">East (E)</option><option value="SE">South East (SE)</option>
+                    <option value="S">South (S)</option><option value="SW">South West (SW)</option>
+                    <option value="W">West (W)</option><option value="NW">North West (NW)</option>
+                  </optgroup>
+                  <optgroup label="─ Central Sectors ─" data-i18n-label="edenSectorCentral">
+                    <option value="C">Central (C)</option><option value="NC">North Central (NC)</option>
+                    <option value="EC">Eastern Central (EC)</option><option value="WC">West Central (WC)</option>
+                    <option value="SC">South Central (SC)</option>
+                  </optgroup>
+                </select>
+                <button type="button" id="edenIsolateSector" class="eden-tool-btn eden-has-tip" data-i18n="edenIsolateSector" data-i18n-title="edenIsolateSectorTitle" aria-pressed="false">⊞ Isolate</button>
+              </div>
+              <div class="eden-deck-cluster eden-zoom-cluster" role="group" aria-label="Zoom">
+                <button type="button" id="edenZoomOut" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomOutTitle" title="Zoom out (−)">−</button>
+                <span id="edenZoomLevel" class="eden-zoom-level">42%</span>
+                <button type="button" id="edenZoomIn" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomInTitle" title="Zoom in (+)">+</button>
+              </div>
+              <div class="eden-deck-cluster eden-deck-cluster-end">
+                <button type="button" id="edenResetView" class="eden-tool-btn" data-i18n="edenResetView" data-i18n-title="edenResetViewTitle">⟳ Reset</button>
+                <button type="button" id="edenFitView" class="eden-tool-btn" data-i18n="edenFitView" data-i18n-title="edenFitViewTitle">⊡ Fit</button>
+                <button type="button" id="edenOpenGuide" class="eden-tool-btn eden-tool-accent" data-i18n="edenGuideBtn" data-i18n-title="edenGuideBtnTitle">📖 Guide</button>
+              </div>
+            </div>
+
+            <div class="eden-deck-row eden-deck-tools">
+              <span class="eden-deck-label" data-i18n="edenDeckTools">Tools</span>
+              <div class="eden-tool-segment" role="tablist" aria-label="Map tools">
+                <button type="button" role="tab" data-eden-tool="navigate" class="eden-tool-btn active" data-i18n="edenToolNavigate" data-i18n-title="edenToolNavigateTitle">Navigate</button>
+                <button type="button" role="tab" data-eden-tool="measure" class="eden-tool-btn" data-i18n="edenToolMeasure" data-i18n-title="edenToolMeasureTitle">Measure</button>
+                <button type="button" role="tab" data-eden-tool="path" class="eden-tool-btn" data-i18n="edenToolPath" data-i18n-title="edenToolPathTitle">Path</button>
+                <button type="button" role="tab" data-eden-tool="target" class="eden-tool-btn" data-i18n="edenToolTarget" data-i18n-title="edenToolTargetTitle">Target</button>
+                <button type="button" role="tab" data-eden-tool="draw" class="eden-tool-btn" data-i18n="edenToolDraw" data-i18n-title="edenToolDrawTitle">Draw</button>
+              </div>
+              <div id="edenPathTools" class="eden-path-tools" aria-label="Path options">
+                <select id="edenPathColor" class="eden-path-color-select" data-i18n-title="edenPathColorTitle" title="Path alliance color">
+                  <option value="#ef4444" data-i18n="edenPathRed">Red</option>
+                  <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
+                  <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
+                  <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
+                  <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
+                  <option value="#f97316" data-i18n="edenPathScout">Scout</option>
+                </select>
+                <input id="edenPathLabel" class="eden-path-label-input" type="text" data-i18n-ph="edenRouteNamePh" data-i18n-title="edenRouteNameTitle" placeholder="Route name" maxlength="24" />
+                <button type="button" id="edenUndoPath" class="eden-tool-btn" data-i18n="edenUndoPath" data-i18n-title="edenUndoPathTitle">Undo</button>
+                <button type="button" id="edenFinishPath" class="eden-tool-btn eden-tool-accent" data-i18n="edenFinishPath" data-i18n-title="edenFinishPathTitle">Finish Path</button>
+                <button type="button" id="edenClearPaths" class="eden-tool-btn eden-tool-danger" data-i18n="edenClearPaths" data-i18n-title="edenClearPathsTitle">Clear</button>
+                <button type="button" id="edenLoadX1Targets" class="eden-tool-btn" data-i18n="edenX1Targets" data-i18n-title="edenX1TargetsTitle">X1 Targets</button>
+                <button type="button" id="edenDeletePath" class="eden-tool-btn eden-tool-danger" data-i18n="edenDeletePath" data-i18n-title="edenDeletePathTitle">Del Path</button>
+              </div>
+              <div id="edenDrawTools" class="eden-path-tools" aria-label="Draw options">
+                <select id="edenDrawColor" class="eden-path-color-select" data-i18n-title="edenDrawColorTitle" title="Ink color">
+                  <option value="#ef4444" data-i18n="edenPathRed">Red</option>
+                  <option value="#3b82f6" data-i18n="edenPathBlue">Blue</option>
+                  <option value="#a855f7" data-i18n="edenPathPurple">Purple</option>
+                  <option value="#eab308" data-i18n="edenPathYellow">Yellow</option>
+                  <option value="#22c55e" data-i18n="edenPathGreen">Green</option>
+                  <option value="#f97316" selected data-i18n="edenPathScout">Scout</option>
+                  <option value="#f8fafc" data-i18n="edenDrawWhite">White</option>
+                </select>
+                <button type="button" id="edenUndoDraw" class="eden-tool-btn" data-i18n="edenUndoDraw" data-i18n-title="edenUndoDrawTitle">Undo</button>
+                <button type="button" id="edenClearDraw" class="eden-tool-btn eden-tool-danger" data-i18n="edenClearDraw" data-i18n-title="edenClearDrawTitle">Clear</button>
+              </div>
+            </div>
+
+            <div class="eden-deck-row eden-deck-meta eden-toolbar-modes">
+              <div id="edenGameClock" class="eden-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
+              <label class="eden-mode-label"><span data-i18n="edenViewLabel">View</span>
+                <select id="edenViewMode" class="eden-view-select" data-i18n-title="edenViewModeTitle" title="View mode">
+                  <option value="strategic" data-i18n="edenViewStrategic">Strategic</option>
+                  <option value="scout" data-i18n="edenViewScout">Scout Mode</option>
+                  <option value="route" data-i18n="edenViewRoute">Route Planner</option>
+                  <option value="teams" data-i18n="edenViewTeams">Team Plan</option>
+                </select>
+              </label>
+              <label class="eden-mode-label eden-march-label" data-i18n-title="edenMarchSpeedTitle" title="March speed multiplier"><span data-i18n="edenMarchSpeedLabel">March speed</span>
+                <input type="range" id="edenMarchSpeed" min="25" max="300" value="100" data-i18n-title="edenMarchSpeedTitle" title="March speed multiplier" />
+                <span id="edenMarchSpeedVal" class="eden-speed-val">1.00×</span>
+              </label>
+              <div class="eden-deck-cluster eden-scout-cluster">
+                <button type="button" id="edenScoutPull" class="eden-tool-btn" data-i18n="edenScoutPull" data-i18n-title="edenScoutPullTitle">Pull Intel</button>
+                <button type="button" id="edenScoutPush" class="eden-tool-btn" data-i18n="edenScoutPush" data-i18n-title="edenScoutPushTitle">Push Intel</button>
+              </div>
+            </div>
+
+            <details class="eden-plans-panel">
+              <summary data-i18n="edenPlansPanel" data-i18n-title="edenPlansPanelTitle" title="Plans and export">Plans &amp; export</summary>
+              <div class="eden-plans-body">
+                <button type="button" id="edenImportPlan" class="eden-tool-btn" data-i18n="edenImport" data-i18n-title="edenImportTitle">Import</button>
+                <input type="file" id="edenImportFile" accept="application/json,.json" class="hidden" />
+                <button type="button" id="edenExportPlan" class="eden-tool-btn eden-tool-accent" data-i18n="edenExport" data-i18n-title="edenExportTitle">Export</button>
+                <button type="button" id="edenSharePlan" class="eden-tool-btn" data-i18n="edenShare" data-i18n-title="edenShareTitle">Share</button>
+                <button type="button" id="edenExportImage" class="eden-tool-btn" data-i18n="edenExportPng" data-i18n-title="edenExportPngTitle">PNG</button>
+                <select id="edenPlanSelect" class="eden-plan-select" data-i18n-title="edenPlanTitle" title="Saved plans"></select>
+                <button type="button" id="edenPlanNew" class="eden-tool-btn" data-i18n="edenPlanNew" data-i18n-title="edenPlanNewTitle">+ Plan</button>
+                <button type="button" id="edenPlanRename" class="eden-tool-btn" data-i18n="edenPlanRename" data-i18n-title="edenPlanRenameTitle">Rename</button>
+                <button type="button" id="edenPlanDelete" class="eden-tool-btn eden-tool-danger" data-i18n="edenPlanDelete" data-i18n-title="edenPlanDeleteTitle">Del</button>
+              </div>
+            </details>
+
+            <div class="eden-deck-row eden-deck-layers eden-layer-bar">
+              <span class="eden-layer-label" data-i18n="edenLayersLabel">Layers</span>
+              <div class="eden-layer-scroll">
+                <button type="button" data-eden-layer="reference" class="eden-layer-btn active" data-i18n="edenLayerRef" data-i18n-title="edenLayerRefTitle">Map</button>
+                <button type="button" data-eden-layer="screenshots" class="eden-layer-btn" data-i18n="edenLayerScreenshots" data-i18n-title="edenLayerScreenshotsTitle">Shots</button>
+                <button type="button" data-eden-layer="terrain" class="eden-layer-btn" data-i18n="edenLayerTerrain" data-i18n-title="edenLayerTerrainTitle">Terrain</button>
+                <button type="button" data-eden-layer="structures" class="eden-layer-btn active" data-i18n="edenLayerStruct" data-i18n-title="edenLayerStructTitle">Struct</button>
+                <button type="button" data-eden-layer="paths" class="eden-layer-btn active" data-i18n="edenLayerPaths" data-i18n-title="edenLayerPathsTitle">Paths</button>
+                <button type="button" data-eden-layer="targets" class="eden-layer-btn active" data-i18n="edenLayerTargets" data-i18n-title="edenLayerTargetsTitle">Targets</button>
+                <button type="button" data-eden-layer="teams" class="eden-layer-btn" data-i18n="edenLayerTeams" data-i18n-title="edenLayerTeamsTitle">Teams</button>
+                <button type="button" data-eden-layer="labels" class="eden-layer-btn" data-i18n="edenLayerLabels" data-i18n-title="edenLayerLabelsTitle">Labels</button>
+                <button type="button" data-eden-layer="zones" class="eden-layer-btn" data-i18n="edenLayerZones" data-i18n-title="edenLayerZonesTitle">Zones</button>
+                <button type="button" data-eden-layer="territory" class="eden-layer-btn" data-i18n="edenLayerTerritory" data-i18n-title="edenLayerTerritoryTitle">Territory</button>
+                <button type="button" data-eden-layer="fog" class="eden-layer-btn" data-i18n="edenLayerFog" data-i18n-title="edenLayerFogTitle">Fog</button>
+                <button type="button" data-eden-layer="heatmap" class="eden-layer-btn" data-i18n="edenLayerHeat" data-i18n-title="edenLayerHeatTitle">Heat</button>
+                <button type="button" data-eden-layer="sectorTiles" class="eden-layer-btn" data-i18n="edenLayerSectorHd" data-i18n-title="edenLayerSectorHdTitle">Sector HD</button>
+              </div>
+              <label class="eden-ref-opacity" data-i18n-title="edenRefOpacityTitle" title="Reference map opacity">
+                <span data-i18n="edenRefOpacityLabel">Ref</span>
+                <input type="range" id="edenRefOpacity" min="0" max="100" value="88" />
+              </label>
+            </div>
+
+            <div class="eden-deck-row eden-deck-jump eden-quick-jump">
+              <span class="eden-quick-label" data-i18n="edenZoneLabel">Zone</span>
+              <div class="eden-quick-scroll">
+                <button type="button" data-eden-faction="all" class="eden-quick-btn active" data-i18n="edenFactionAll" data-i18n-title="edenFactionAllTitle">All</button>
+                <button type="button" data-eden-faction="north" class="eden-quick-btn eden-faction-n" data-i18n="edenZoneNorth" data-i18n-title="edenZoneNorthTitle">North</button>
+                <button type="button" data-eden-faction="central" class="eden-quick-btn eden-faction-c" data-i18n="edenZoneCentral" data-i18n-title="edenZoneCentralTitle">Central</button>
+                <button type="button" data-eden-faction="south" class="eden-quick-btn eden-faction-s" data-i18n="edenZoneSouth" data-i18n-title="edenZoneSouthTitle">South</button>
+                <span class="eden-quick-divider"></span>
+                <span class="eden-quick-label" data-i18n="edenQuickLabel">Quick</span>
+                <span id="edenQuickJumpSectors" class="eden-quick-sector-btns"></span>
+                <button type="button" data-eden-jump="AT" class="eden-quick-btn eden-quick-temple" data-i18n="edenTemple" data-i18n-title="edenTempleTitle">★ Temple</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="eden-map-body">
+          <div id="edenMapConstruction" class="eden-map-construction hidden" aria-hidden="true">
+            <div class="eden-construction-card">
+              <span class="eden-construction-badge" data-i18n="edenMapConstructionBadge">Coming Soon</span>
+              <h3 class="eden-construction-heading" data-i18n="edenMapConstructionHeading">Under Construction</h3>
+              <p class="eden-construction-body" data-i18n="edenMapConstructionBody">We are stitching in-game screenshots into a full 1700×1600 live map. Check back soon.</p>
+              <p id="edenConstructionEngineStatus" class="eden-construction-status" data-i18n="edenConstructionEngineLoading">Preparing tile engine…</p>
+            </div>
+          </div>
+          <div class="eden-canvas-wrap">
+            <div id="edenIsolateBadge" class="eden-isolate-badge hidden" aria-live="polite"></div>
+            <canvas id="edenMapCanvas"></canvas>
+            <canvas id="edenMinimap" class="eden-minimap" width="150" height="150" data-i18n-title="edenMinimapTitle" title="Click to jump"></canvas>
+            <div id="edenCoordHud" class="eden-coord-hud hidden"></div>
+            <div class="eden-map-legend">
+              <span><i style="background:#8a7848"></i> <span data-i18n="edenLegendPlains">Plains</span></span>
+              <span><i style="background:#b89560"></i> <span data-i18n="edenLegendDesert">Desert</span></span>
+              <span><i style="background:#2d7ab8"></i> <span data-i18n="edenLegendRiver">River</span></span>
+              <span><i style="background:#6a5c50"></i> <span data-i18n="edenLegendMountain">Mountain</span></span>
+              <span><i style="background:#ef4444"></i> <span data-i18n="edenLegendPath">Path</span></span>
+            </div>
+          </div>
+          <aside id="edenMapSidebar" class="eden-sidebar">
+            <button type="button" id="edenSidebarClose" class="eden-sidebar-close" data-i18n-aria="edenSidebarClose" aria-label="Close sidebar">×</button>
+            <div id="edenMapStats" class="eden-stats"></div>
+            <div id="edenHoverInfo" class="eden-hover-info hidden"></div>
+            <details id="edenTeamPanel" class="eden-team-panel">
+              <summary data-i18n="edenTeamPanelTitle">Team plan</summary>
+              <div class="eden-team-plan-settings">
+                <label class="eden-team-plan-toggle">
+                  <input type="checkbox" id="edenTeamPlanEnabled" />
+                  <span data-i18n="edenTeamPlanEnable">Enable team plan</span>
+                </label>
+                <label id="edenTeamCountWrap" class="eden-team-count-label hidden">
+                  <span data-i18n="edenTeamCountLabel">Number of teams</span>
+                  <select id="edenTeamCount" class="eden-filter-select">
+                    <option value="2" data-i18n="edenTeamCount2">2 teams</option>
+                    <option value="3" data-i18n="edenTeamCount3">3 teams</option>
+                    <option value="4" data-i18n="edenTeamCount4" selected>4 teams</option>
+                  </select>
+                </label>
+              </div>
+              <p class="eden-team-panel-desc" data-i18n="edenTeamPanelDesc">Optional — assign structures to teams with game-time windows.</p>
+              <p id="edenTeamPlanOffHint" class="eden-team-plan-off-hint" data-i18n="edenTeamPlanOffHint">Turn on team plan to assign structures and show the timeline board.</p>
+              <div id="edenTeamBoard" class="eden-team-board hidden"></div>
+            </details>
+            <div id="edenSelectedPanel" class="eden-selected-panel"></div>
+            <div class="eden-filter-row">
+              <div id="edenTeamFilterWrap" class="eden-team-filter-wrap hidden">
+                <select id="edenTeamFilter" class="eden-filter-select" data-i18n-title="edenTeamFilterTitle" title="Filter structure list by team assignment"></select>
+              </div>
+              <select id="edenOwnershipFilter" class="eden-filter-select">
+                <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
+                <option value="owned" data-i18n="edenOwnershipOwned">🟢 Owned</option>
+                <option value="contested" data-i18n="edenOwnershipContested">🟡 Contested</option>
+                <option value="enemy" data-i18n="edenOwnershipEnemy">🔴 Enemy</option>
+                <option value="neutral" data-i18n="edenOwnershipNeutral">⚪ Neutral</option>
+              </select>
+              <select id="edenZoneFilter" class="eden-filter-select"></select>
+              <select id="edenTypeFilter" class="eden-filter-select"></select>
+              <select id="edenSortSelect" class="eden-filter-select eden-sort-select">
+                <option value="points" data-i18n="edenSortPoints">Sort: Points</option>
+                <option value="zone" data-i18n="edenSortZone">Sort: Zone</option>
+                <option value="type" data-i18n="edenSortType">Sort: Type</option>
+              </select>
+            </div>
+            <div class="eden-coord-search">
+              <label class="eden-coord-search-label" for="edenCoordSearch" data-i18n="edenCoordSearchLabel">Go to coords</label>
+              <div class="eden-coord-search-row">
+                <input id="edenCoordSearch" class="eden-coord-input" type="text" inputmode="numeric" data-i18n-ph="edenCoordSearchPh" placeholder="X:Y e.g. 800:800" autocomplete="off" spellcheck="false" />
+                <button type="button" id="edenCoordGo" class="eden-coord-go-btn" data-i18n="edenCoordGo" data-i18n-title="edenCoordGoTitle">Go</button>
+              </div>
+            </div>
+            <div class="eden-sidebar-list-section">
+              <div class="hero-search-wrap eden-search-wrap">
+                <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
+                <input id="edenStructSearch" class="hero-search-input" type="text" data-i18n-ph="edenSearchPh" placeholder="Search structures..." autocomplete="off" />
+              </div>
+              <div id="edenStructList" class="eden-struct-list"></div>
+            </div>
+          </aside>
+        </div>
+        <details id="edenHelpPanel" class="eden-help-panel">
+          <summary class="eden-help-summary" data-i18n="edenGuidePanelTitle">Interactive Eden Map Guide</summary>
+          <div id="edenGuideRoot" class="eden-guide-root">
+            <div class="eden-guide-header">
+              <div class="eden-guide-header-row">
+                <p class="eden-guide-intro" data-i18n="edenGuideIntro">Step-by-step walkthrough — try each action on the real map. Progress is saved locally.</p>
+                <span class="eden-guide-version"></span>
+              </div>
+              <div class="eden-guide-progress-wrap">
+                <div class="eden-guide-progress-bar"><div class="eden-guide-progress-fill"></div></div>
+                <span class="eden-guide-progress-text"></span>
+              </div>
+              <div class="eden-guide-toolbar">
+                <button type="button" class="eden-guide-meta-btn" data-start-tour data-i18n="edenGuideStartTour">▶ Start tour</button>
+                <button type="button" class="eden-guide-meta-btn eden-guide-meta-muted" data-reset-guide data-i18n="edenGuideReset">Reset progress</button>
+              </div>
+            </div>
+            <nav class="eden-guide-sections" aria-label="Guide sections"></nav>
+            <div class="eden-guide-steps" aria-label="Steps in section"></div>
+            <div class="eden-guide-main"></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+
+    <section id="loyaltySection" class="tab-panel hidden">
+      <div class="loyalty-root">
+        <header class="loyalty-header">
+          <div>
+            <h2 class="loyalty-title" data-i18n="loyaltyTitle">Loyalty Upgrade Calculator</h2>
+            <p class="loyalty-desc" data-i18n="loyaltyDesc">Calculate processing times, poison percentages, and optimal upgrade paths.</p>
+          </div>
+          <button type="button" id="loyaltyOpenEdenBtn" class="loyalty-eden-link-btn" data-i18n="loyaltyOpenEden" data-i18n-title="loyaltyOpenEdenTitle" title="Open Eden Map planner">🗺️ Eden Map</button>
+        </header>
+
+        <div class="loyalty-layout">
+          <div class="loyalty-main">
+            <div id="loyaltyPresets" class="loyalty-presets" role="group" aria-label="Loyalty presets"></div>
+            <div class="loyalty-inputs space-y-6">
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="campLevelsTitle">Coalition Base Camp Levels</h3>
+          
+          <div class="flex flex-col sm:flex-row gap-6">
+            <div class="sm:w-1/3 flex justify-center items-center">
+              <img src="/assets/ac_camp-DWO0cIh1.jpg" alt="Coalition Camps" class="w-full max-w-[200px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover aspect-auto">
+            </div>
+            
+            <div class="sm:w-2/3 flex flex-col justify-center gap-3 sm:gap-4">
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp1">Camp I Level</span>
+                <input type="number" id="ac1Level" min="0" max="20" value="20" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp2">Camp II Level</span>
+                <input type="number" id="ac2Level" min="0" max="20" value="16" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp3">Camp III Level</span>
+                <input type="number" id="ac3Level" min="0" max="20" value="12" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+              <label class="flex items-center justify-between bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                <span class="text-xs sm:text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-blue-400 transition-colors" data-i18n="camp4">Camp IV Level</span>
+                <input type="number" id="ac4Level" min="0" max="20" value="10" class="w-20 sm:w-24 bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-center text-white font-bold outline-none focus:border-blue-500 transition-colors">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="dailyProdTitle">Daily Production Sources (Units/Hour)</h3>
+          
+          <div class="flex flex-col gap-6">
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
+              <div class="sm:w-5/12 flex justify-center w-full">
+                <img src="/assets/prod_1_3-RiYgap1Y.jpg" alt="Sources 1 to 3" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
+              </div>
+              <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source1">Source 1</span>
+                  <input type="number" id="source1" value="1830" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source2">Source 2</span>
+                  <input type="number" id="source2" value="64999" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source3">Source 3</span>
+                  <input type="number" id="source3" value="78801" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+              </div>
+            </div>
+
+            <div class="h-px w-full bg-slate-700/50 rounded-full"></div>
+
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center">
+              <div class="sm:w-5/12 flex justify-center w-full">
+                <img src="/assets/prod_4_6-CZgNWe0D.jpg" alt="Sources 4 to 6" class="w-full max-w-[280px] sm:max-w-full rounded-xl border-2 border-slate-700 shadow-md object-cover">
+              </div>
+              <div class="sm:w-7/12 grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source4">Source 4</span>
+                  <input type="number" id="source4" value="4855" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source5">Source 5</span>
+                  <input type="number" id="source5" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+                <label class="flex flex-col items-center justify-center bg-slate-800 p-2 sm:p-3 rounded-xl border border-slate-700 hover:border-emerald-500 transition-colors group cursor-pointer shadow-sm">
+                  <span class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 group-hover:text-emerald-400 transition-colors" data-i18n="source6">Source 6</span>
+                  <input type="number" id="source6" value="1560" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-1 py-1.5 text-center text-white font-bold outline-none focus:border-emerald-500 transition-colors">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="modifiersTitle">Modifiers</h3>
+          <div class="flex flex-col gap-4">
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-purple-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="/assets/bonus_loyalty-CY7iBuhF.png" alt="Bonus Loyalty" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-purple-400 transition-colors" data-i18n="bonusLoyalty">Bonus Loyalty</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="bonusLoyaltyDesc">1 Tech Point = 60 Loyalty</span>
+                </div>
+                <input type="number" id="bonusPoints" min="0" value="20" max="20" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-purple-500 transition-colors shadow-inner">
+              </div>
+            </label>
+
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-amber-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-2/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="/assets/saved_units-DyFeUyrF.png" alt="Saved Units" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              <div class="md:w-3/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-amber-400 transition-colors" data-i18n="savedUnits">Saved Units</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="savedUnitsDesc">Current inventory</span>
+                </div>
+                <input type="number" id="savedUnits" min="0" value="2340016" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-amber-500 transition-colors shadow-inner">
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2" data-i18n="processingTitle">Processing Settings</h3>
+          
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 shadow-md overflow-hidden group">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="/assets/processing_time-DIav5zmS.jpg" alt="Processing Time" class="w-full max-h-32 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-5">
+                <label class="flex flex-col gap-1 cursor-pointer text-center md:text-left">
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="unitsPerPatch">Units per patch</span>
+                  <input type="number" id="totalUnitsPerPatch" value="568000" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                </label>
+                
+                <div class="flex flex-col gap-1 text-center md:text-left">
+                  <span class="text-xs text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="timePerPatch">Time per patch</span>
+                  <div class="flex gap-2 justify-center md:justify-start">
+                    <div class="relative w-full">
+                      <input type="number" id="processingHours" min="0" value="8" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">h</span>
+                    </div>
+                    <div class="relative w-full">
+                      <input type="number" id="processingMinutes" min="0" max="59" value="2" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">m</span>
+                    </div>
+                    <div class="relative w-full">
+                      <input type="number" id="processingSeconds" min="0" max="59" value="48" class="w-full bg-slate-900 border border-slate-600 rounded-lg pl-2 pr-6 py-2 text-center text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+                      <span class="absolute right-2 top-2 text-xs text-slate-500 font-bold pointer-events-none">s</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <label class="flex flex-col md:flex-row bg-slate-800 rounded-xl border border-slate-700 hover:border-sky-500 transition-all duration-300 group cursor-pointer shadow-md overflow-hidden">
+              <div class="md:w-3/5 bg-slate-900/80 border-b md:border-b-0 md:border-r border-slate-700 p-4 flex justify-center items-center">
+                <img src="/assets/patches-ByHJtxig.jpg" alt="Active Patches" class="w-full max-h-28 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105">
+              </div>
+              
+              <div class="md:w-2/5 p-4 sm:p-6 flex flex-col justify-center gap-3 text-center md:text-left">
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300 font-bold uppercase tracking-wider group-hover:text-sky-400 transition-colors" data-i18n="activePatches">Active Patches</span>
+                  <span class="text-[10px] text-slate-500" data-i18n="activePatchesDesc">Currently running workshops</span>
+                </div>
+                <input type="number" id="numPatches" value="3" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-center md:text-left text-white font-bold outline-none focus:border-sky-500 transition-colors shadow-inner">
+              </div>
+            </label>
+          </div>
+        </div>
+            </div>
+          </div>
+
+          <aside class="loyalty-aside">
+            <div id="loyaltyStickySummary" class="loyalty-sticky"></div>
+          </aside>
+        </div>
+
+        <div id="loyaltyResult" class="loyalty-results"></div>
+      </div>
+    </section>
+
+    <section id="youtubeSection" class="tab-panel hidden animate-fade-in pb-8 mt-6">
+      <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-sky-400 uppercase tracking-widest drop-shadow-md">VTS 1097 Journey & Randoms</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="mb-8 bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-emerald-400 uppercase tracking-widest drop-shadow-md">Recruitment Videos</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+      
+      <div class="bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <h2 class="text-lg sm:text-xl font-black text-amber-400 uppercase tracking-widest drop-shadow-md">Game Events & Guides</h2>
+          <a href="https://www.youtube.com/playlist?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" target="_blank" class="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 bg-red-900/20 px-3 py-1.5 rounded-full border border-red-500/30 w-max transition-colors">
+            Watch on YouTube &rarr;
+          </a>
+        </div>
+        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+          <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="ocrDashboardSection" class="tab-panel hidden">
+      <div id="ocrDashboardRoot">
+        <!-- Login Screen -->
+        <div id="dashLogin" class="dash-login-wrap">
+          <div class="dash-login-card">
+            <div class="dash-login-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <h2 class="dash-login-title">VTS Admin</h2>
+            <p class="dash-login-sub">Alliance Structure Attack Analytics</p>
+            <div id="dashLoginErr" class="dash-login-err hidden"></div>
+            <input type="text" id="dashLoginUser" class="dash-input" placeholder="Username">
+            <input type="password" id="dashLoginPass" class="dash-input" placeholder="Password">
+            <button id="dashLoginBtn" class="dash-btn dash-btn-primary">Sign In</button>
+            <p id="dashServerStatus" class="dash-server-status"></p>
+          </div>
+        </div>
+
+        <!-- Dashboard Main -->
+        <div id="dashApp" class="hidden">
+          <div class="dash-container">
+            <div class="dash-header">
+              <div>
+                <h1 class="dash-h1">Structure Attack Analytics</h1>
+                <div class="dash-subtitle"><span>Alliance Demolition Performance Tracker</span><span id="dashUpdated" class="dash-updated"></span></div>
+              </div>
+              <div class="dash-actions">
+                <button id="dashRosterBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Roster</span></button>
+                <button id="dashUploadBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Upload</span></button>
+                
+                <!-- Unified Export Dropdown -->
+                <div class="dash-dropdown">
+                  <button id="dashExportMenuBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export</span></button>
+                  <div class="dash-dropdown-content" id="dashExportMenu">
+                    <button id="dashExpCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>CSV Leaderboard</button>
+                    <button id="dashExpAttackCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>CSV Attack Details</button>
+                    <button id="dashExpPdf"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>PDF Report</button>
+                    <button id="dashExpPng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>PNG Dashboard</button>
+                    <button id="dashExpJson"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>JSON Backup</button>
+                    <hr>
+                    <button id="dashImportBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Data</button>
+                  </div>
+                </div>
+
+                <button id="dashRefreshBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span>Refresh</span></button>
+                <button id="dashClearDataBtn" class="dash-btn" style="color:#ef4444;border-color:rgba(239,68,68,0.2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Clear All</span></button>
+              </div>
+
+            </div>
+
+            <!-- Upload Zone -->
+            <div id="dashUploadZone" class="dash-upload-zone hidden">
+              <div id="dashDropZone" class="dash-dropzone">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Drop screenshots here or click to browse</p>
+                <span class="dash-hint">PNG, JPG — Multiple structures supported</span>
+                <input type="file" id="dashFileInput" accept="image/png,image/jpeg,image/jpg" multiple hidden>
+              </div>
+              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text">Uploading...</span></div>
+              <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
+              
+              <!-- Process Log Area -->
+              <div id="dashLogArea" class="dash-log-area hidden">
+                <div class="dash-log-hdr"><span>Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs" style="opacity:0.6">Clear</button></div>
+                <div id="dashLogOutput" class="dash-log-output"></div>
+              </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="dash-kpi-grid">
+              <div class="dash-card dash-kpi blue"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div><div class="dash-kpi-value" id="dashKpiAttacks">0</div><div class="dash-kpi-label">Structure Hits</div></div></div>
+              <div class="dash-card dash-kpi teal"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg></div><div><div class="dash-kpi-value" id="dashKpiDemo">0</div><div class="dash-kpi-label">Total Demolition</div></div></div>
+              <div class="dash-card dash-kpi purple"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="dash-kpi-value" id="dashKpiPlayers">0</div><div class="dash-kpi-label">Active Players</div></div></div>
+              <div class="dash-card dash-kpi orange"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="dash-kpi-value" id="dashKpiMvp" style="font-size:1.25rem">---</div><div class="dash-kpi-label" id="dashKpiMvpLabel">MVP Contributor</div></div></div>
+            </div>
+
+            <!-- Visuals Row -->
+            <div class="dash-main-grid" style="grid-template-columns: 1.2fr 1fr; margin-bottom: 1.5rem;">
+              <div class="dash-card dash-chart-card">
+                <div class="dash-card-hdr">
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Top Performers</h2>
+                  <button id="dashExportChartBtn" class="dash-btn dash-btn-xs" title="Export Chart as Image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+                </div>
+                <div id="dashChart" class="dash-chart"><div class="dash-empty">Loading...</div></div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-card-hdr">
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Insights</h2>
+                </div>
+                <div class="dash-insights-body">
+                  <div class="dash-insight-item">
+                    <div class="dash-insight-hdr"><span>Participation Spread</span><span id="dashInsightPartPct" class="dash-insight-val">0%</span></div>
+                    <div id="dashPartChart" class="dash-mini-pie"></div>
+                  </div>
+                  <div class="dash-insight-item">
+                    <div class="dash-insight-hdr"><span>Activity Trend</span></div>
+                    <div id="dashTrendChart" class="dash-mini-trend"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="dash-main-grid">
+              <div class="dash-card"><div class="dash-card-hdr"><h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Attack History</h2></div><div id="dashAttackList" class="dash-attack-list"><div class="dash-empty">Loading...</div></div></div>
+              <div class="dash-card">
+                <div class="dash-card-hdr" style="flex-wrap:wrap;gap:1rem"><h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Leaderboard</h2>
+                  <div class="dash-search-wrap"><svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="dashSearch" class="dash-search-input" placeholder="Search member name..."></div>
+                </div>
+                <div class="dash-table-wrap">
+                  <table class="dash-table">
+                    <thead><tr><th style="cursor:default;width:60px">Rank</th><th data-sort="name" style="cursor:pointer">Member Name</th><th data-sort="total_demolition" style="cursor:pointer;text-align:right">Total Demo</th><th data-sort="participation" style="cursor:pointer;text-align:center">Hits</th><th data-sort="avg_demolition" style="cursor:pointer;text-align:right">Avg/Hit</th></tr></thead>
+                    <tbody id="dashLeaderBody"><tr><td colspan="5" class="dash-empty">Loading...</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details Modal -->
+        <div id="dashModal" class="dash-modal"><div class="dash-modal-content"><button id="dashModalClose" class="dash-modal-close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div class="dash-modal-title-area"><h3 class="dash-modal-title" id="dashModalTitle">Details</h3><div class="dash-modal-sub" id="dashModalSub"></div></div><div class="dash-modal-body" id="dashModalBody"></div></div></div>
+      </div>
+    </section>
+
+    <section id="commentsSection" class="mt-8 rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl">
+      <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-slate-900 via-slate-800/80 to-slate-900 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+          </div>
+          <div>
+            <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="text-base font-black text-white uppercase tracking-widest leading-none">Comments & Suggestions</h2>
+            <p class="text-[10px] text-slate-500 font-medium mt-0.5">Share your thoughts with the VTS 1097 community</p>
+          </div>
+        </div>
+        <a id="feedbackMailBtn" href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Combo%20Tool%20-%20Feedback&body=Hi%20Abo%2C%0A%0A%5BDescribe%20your%20suggestion%20or%20bug%20here%5D%0A%0A----%0APage%3A%20Hero%20Combo%20Creator%0A" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:border-amber-400/60 transition-all duration-200 text-xs font-bold group shrink-0" title="Send feedback or report a bug to the developer">
+          <svg class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.047.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152 6.06M12 12.75c-2.883 0-5.647.508-8.208 1.44a23.916 23.916 0 0 0 1.152 6.061M12 12.75c1.955 0 3.838.354 5.574 1.003.012-.018.025-.037.038-.055A6.752 6.752 0 0 0 12 5.25a6.752 6.752 0 0 0-5.613 8.448c.013.018.025.037.038.055A14.904 14.904 0 0 1 12 12.75Z"/></svg>
+          <span class="hidden sm:inline">Report / Suggest</span>
+          <span class="sm:hidden">Report</span>
+        </a>
+      </div>
+
+      <div class="p-5 bg-slate-900/60">
+        <form id="commentForm" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
+              <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Your name (optional)" />
+            </div>
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+              <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Email (optional)" />
+            </div>
+          </div>
+          <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none leading-relaxed" placeholder="Write a suggestion, report a bug, or share feedback..."></textarea>
+          <div class="flex items-center gap-3">
+            <button type="submit" id="postCommentBtn" data-i18n="commentSubmitBtn" class="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-500 active:scale-95 transition-all shadow-lg shadow-blue-900/30">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+              Submit Comment
+            </button>
+            <a href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Tool%20-%20Bug%20Report&body=Bug%20or%20issue%3A%0A%0A" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 hover:border-red-500/50 hover:text-red-400 hover:bg-red-900/10 transition-all text-sm font-bold shrink-0 group" title="Email bug report directly to developer">
+              <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+              <span class="hidden sm:inline">Report Bug</span>
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <div class="flex items-center gap-3 px-5 py-2 bg-slate-900/40 border-t border-slate-700/40">
+        <svg class="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+        <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-widest" id="commentsCountLabel">Community comments</span>
+      </div>
+
+      <div id="commentsList" class="divide-y divide-slate-800/60 bg-slate-900/30"></div>
+    </section>
+
+    </main>
+
+    <footer class="roc-footer" aria-label="Site information">
+      <!-- The glowing Ice & Fire divider -->
+      <div class="footer-divider"></div>
+
+      <div class="footer-content max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Branding -->
+        <div class="footer-section brand-section flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <img src="/assets/logo-DcPpDRl1.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
+              <h3 class="footer-logo">VTS 1097</h3>
+            </div>
+          </div>
+          <p class="footer-url mt-4"><a href="https://roc-vts.com/">roc-vts.com</a></p>
+        </div>
+
+        <!-- Middle Column: Quick Navigation -->
+        <div class="footer-section links-section">
+          <h4>Quick March (Tools)</h4>
+          <ul>
+            <li><a href="#" onclick="document.getElementById('tabManual').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabManual">Manual Builder</a></li>
+            <li><a href="#" onclick="document.getElementById('tabGenerator').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabGenerator">Combo Generator</a></li>
+            <li><a href="#" onclick="document.getElementById('tabHeroes').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabHeroes">Hero Atlas</a></li>
+            <li><a href="#" onclick="document.getElementById('tabResearch').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabResearch">Research</a></li>
+            <li><a href="#" onclick="document.getElementById('tabLoyalty').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabLoyalty">Eden Loyalty</a></li>
+            <li><a href="#" onclick="document.getElementById('tabOcrDashboard').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabOcrDashboard">Structure Dashboard</a></li>
+          </ul>
+        </div>
+
+        <!-- Right Column: Community & Legal -->
+        <div class="footer-section community-section flex flex-col justify-between">
+          <div>
+            <h4>Community & Info</h4>
+            <ul>
+              <li><a href="https://discord.gg/roc-vts" target="_blank" rel="noopener noreferrer">Join State Discord</a></li>
+              <li><a href="mailto:aboroe1097@gmail.com">Contact Devs</a></li>
+            </ul>
+          </div>
+          <p class="disclaimer mt-6">
+            *Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v8.2</p>
+      </div>
+      <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
+    </footer>
+
+    <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+      <div class="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
+        <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
+        <div class="flex justify-center gap-3">
+          <button id="messageBoxOkBtn" class="px-8 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition">OK</button>
+          <button id="messageBoxCancelBtn" class="px-8 py-2 rounded-full bg-slate-700 text-white font-bold hover:bg-slate-600 hidden transition">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingSpinner" class="loading-spinner hidden"></div>
+  
+  <button id="scrollTopBtn" title="Back to top" aria-label="Scroll to top">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="18" height="18">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"/>
+    </svg>
+  </button>
+
+  <div id="toastContainer"></div>
+
+  <script>
+  (function() {
+    const btn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) btn.classList.add('visible');
+      else btn.classList.remove('visible');
+    }, { passive: true });
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  })();
+
+  window.showToast = function(msg, type = 'info', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toast-in 0.3s ease reverse both';
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  };
+
+  function applyHeroSearch(inputId, gridId) {
+    const input = document.getElementById(inputId);
+    const grid  = document.getElementById(gridId);
+    if (!input || !grid) return;
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      grid.querySelectorAll('.hero-card, .generator-card').forEach(card => {
+        const name = (card.dataset.heroName || card.querySelector('span')?.textContent || '').toLowerCase();
+        card.style.display = (!q || name.includes(q)) ? '' : 'none';
+      });
+    });
+  }
+  setTimeout(() => {
+    applyHeroSearch('manualHeroSearch', 'availableHeroes');
+    applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
+  }, 800);
+  </script>
+</body>
+</html>
