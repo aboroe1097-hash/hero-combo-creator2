@@ -5611,7 +5611,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-header { flex-direction: column; gap: 0.5rem; }
   #ocrDashboardRoot .dash-h1 { font-size: 1.2rem; }
   #ocrDashboardRoot .dash-actions { width: 100%; flex-wrap: wrap; gap: 0.35rem; }
-  #ocrDashboardRoot .dash-actions .dash-btn { flex: 1; min-width: 0; justify-content: center; white-space: nowrap; font-size: 0.8rem; padding: 0.65rem 0.5rem; }
+  #ocrDashboardRoot .dash-actions .dash-btn { flex: 1 1 calc(33.333% - 0.35rem); min-width: 0; justify-content: center; white-space: nowrap; font-size: 0.75rem; padding: 0.65rem 0.25rem; }
 
   /* Upload zone - always visible on mobile */
   #ocrDashboardRoot .dash-upload-zone.hidden { display: block !important; }
@@ -5631,7 +5631,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-kpi-label { font-size: 0.65rem; }
 
   /* Insights card - better spacing */
-  #ocrDashboardRoot .dash-chart-card { overflow: visible; }
+  #ocrDashboardRoot .dash-chart-card { overflow: hidden; }
 
   /* Top 10 list */
   #ocrDashboardRoot .dash-top-item { padding: 0.5rem 0.45rem; }
