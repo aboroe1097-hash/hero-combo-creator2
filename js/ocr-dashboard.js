@@ -446,6 +446,23 @@ async function processFiles(files) {
         });
       }
     }
+    // Ask user about mismatched attacks to distinguish OCR error vs missing upload
+    const mismatched = parsed.attacks.filter(att => {
+      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+      return val && !val.match;
+    });
+    for (const att of mismatched) {
+      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+      if (!val) continue;
+      const shortfall = val.expected - att.total_demolition;
+      const msg = `${att.structure_name} ${att.structure_level}: got ${att.total_demolition.toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
+      log(`Confirm: ${msg}`, 'warn');
+      if (confirm(`📊 ${msg}\n\nCancel = OCR couldn't read everything.\nOK = missing data, upload remaining screenshots.`)) {
+        log(`User indicated missing uploads for ${att.structure_name} ${att.structure_level} — upload remaining screenshots after this.`, 'warn');
+      } else {
+        log(`User confirmed all uploads done — OCR limitation on ${att.structure_name} ${att.structure_level}.`, 'warn');
+      }
+    }
     saveData(parsed); render();
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
     log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
@@ -473,7 +490,7 @@ function parseOcrResults(results) {
   const groups = [];
   for (const item of withMeta) {
     let f = false;
-    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 180000 && g.sN === item.sN && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
+    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 30000 && g.sN === item.sN && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
     if (!f) groups.push({ dt: item.dt, sN: item.sN, sL: item.sL, results: [item.r] });
   }
   log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');

@@ -5305,20 +5305,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 
 #ocrDashboardRoot .dash-mini-trend {
   display: flex; align-items: flex-end; gap: 4px; height: 50px;
-  padding-top: 5px;
 }
-#ocrDashboardRoot .dash-trend-bar {
-  flex: 1; background: var(--blue-600); border-radius: 2px 2px 0 0;
-  min-height: 2px; transition: height 0.6s ease;
-  position: relative;
-}
-#ocrDashboardRoot .dash-trend-bar:hover { background: var(--blue-400); }
-#ocrDashboardRoot .dash-trend-bar::after {
-  content: attr(data-val);
-  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-  font-size: 9px; color: var(--text-dim); opacity: 0; transition: 0.2s;
-}
-#ocrDashboardRoot .dash-trend-bar:hover::after { opacity: 1; }
 
 /* Unified Dropdown */
 #ocrDashboardRoot .dash-dropdown {
@@ -5611,6 +5598,8 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   /* Insights section */
   #ocrDashboardRoot .dash-insights-body { gap: 0.85rem; }
   #ocrDashboardRoot .dash-mini-trend { height: 40px; }
+  /* Override inline visual-row grid on mobile — must stack */
+  #ocrDashboardRoot .dash-main-grid[style*="1.2fr"] { grid-template-columns: 1fr !important; }
 
   /* Attack list - max height auto */
   #ocrDashboardRoot .dash-attack-list { max-height: none; }
