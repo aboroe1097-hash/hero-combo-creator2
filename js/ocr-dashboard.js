@@ -377,14 +377,15 @@ async function processFiles(files) {
       }
       if (!localKey) throw new Error('No API key provided.');
       
-      const promptTxt = `Analyze this game screenshot containing an attack report.
-Extract the following:
-1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
-2. 'structure_level' (e.g. '5' for Lv.5. If not visible, null)
-3. 'timestamp' (if visible, format as 'YYYY-MM-DD HH:MM:SS', otherwise null)
-4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
+      const promptTxt = `You are analyzing a game screenshot of an attack report. Extract ALL visible player entries.
 
-Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
+Rules:
+- 'structure_name': the building type (Capital / Stronghold / Temple / Gates / City / etc). If not visible, null.
+- 'structure_level': the level number only (e.g. "5"). If not visible, null.
+- 'timestamp': the date/time shown, formatted as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
+- 'players': array of {name, value}. Extract EVERY player's FULL name exactly as written — include all symbols, clan tags, emojis, numbers, spaces, and special characters. Do NOT truncate or simplify names. Each entry has ONE player — do not merge or combine entries.
+
+Output ONLY valid JSON. No markdown, no code blocks, no commentary. Just the raw JSON array/object.`;
 
       const res = await fetch(QWEN_WORKER_URL, {
         method: 'POST',
