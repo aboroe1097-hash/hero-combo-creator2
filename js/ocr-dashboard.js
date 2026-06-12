@@ -123,6 +123,14 @@ function getSimilarity(s1, s2) {
   return (longer.length - editDistance(longer, shorter)) / longer.length;
 }
 
+function getSimilarityAlphaNum(s1, s2) {
+  if (!s1 || !s2) return 0;
+  const c1 = s1.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
+  const c2 = s2.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
+  if (!c1 || !c2) return getSimilarity(s1, s2);
+  return getSimilarity(c1, c2);
+}
+
 function editDistance(s1, s2) {
   s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
   const costs = [];
@@ -589,7 +597,7 @@ function parseOcrResults(results) {
     g.players.forEach(p => {
       if (!p.name || !p.value) return;
       p.value = Number(p.value);
-      const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+      const fuzzyMatch = [...pMap.values()].find(v => (getSimilarity(v.name, p.name) > 0.8 || getSimilarityAlphaNum(v.name, p.name) > 0.8) && Math.abs(v.value - p.value) <= 100);
       if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
       else if (pMap.get(`${fuzzyMatch.name}_${fuzzyMatch.value}`).value < p.value) {
          pMap.set(`${p.name}_${p.value}`, p);
@@ -623,7 +631,7 @@ function parseOcrResults(results) {
         existing.players.forEach(p => { p.value = Number(p.value); pMap.set(`${p.name}_${p.value}`, p); });
         a.players.forEach(p => {
           p.value = Number(p.value);
-          const fuzzyMatch = [...pMap.values()].find(v => getSimilarity(v.name, p.name) > 0.8 && Math.abs(v.value - p.value) <= 100);
+          const fuzzyMatch = [...pMap.values()].find(v => (getSimilarity(v.name, p.name) > 0.8 || getSimilarityAlphaNum(v.name, p.name) > 0.8) && Math.abs(v.value - p.value) <= 100);
          if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
        });
        existing.players = [...pMap.values()].sort((x,y) => y.value - x.value);
