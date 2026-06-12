@@ -164,9 +164,7 @@ async function saveData(data) {
     await ensureAnonymousAuth();
     await setDoc(doc(getDb(), FS_PATH), data); 
     log('Synced to cloud.', 'info'); 
-  } catch (e) { 
-    log('Cloud sync failed: ' + e.message, 'warn'); 
-  }
+  } catch (e) {}
 }
 
 async function loadData() {
@@ -193,7 +191,7 @@ async function loadData() {
       }
     });
     log('Cloud sync active.', 'info');
-  } catch (e) { log('Cloud sync unavailable: ' + e.message, 'warn'); }
+  } catch (e) {}
 }
 
 async function clearData() {
