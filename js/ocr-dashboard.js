@@ -234,8 +234,9 @@ async function processFiles(files) {
     const textLower = r.text.toLowerCase();
     const hasIsabella = textLower.includes('isabella');
     const hasOccupied = textLower.includes('occupied');
+    const hasMVP = /mvp|demolition\s+value/i.test(r.text);
     const hasRankValue = /[\d,]{4,}/.test(r.text);
-    if (!hasIsabella && !hasOccupied && !hasRankValue) {
+    if (!hasIsabella && !hasOccupied && !hasMVP && !hasRankValue) {
       log(`Skipped — no report pattern detected`, 'warn', r.filename);
       return false;
     }
@@ -260,6 +261,11 @@ function parseOcrResults(results) {
   const attacks = [];
   for (const g of groups) {
     const txt = g.results.map(r => r.text).join('\n');
+    if (isParagraphFormat(txt)) {
+      const att = parseParagraphFormat(txt);
+      if (att) attacks.push(att);
+      continue;
+    }
     let sN = 'Structure', sL = 'Unknown';
     const m = txt.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || txt.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
     if (m) { sN = m[1].trim(); sL = m[2].trim(); }
@@ -315,7 +321,63 @@ function parseValueFromDigits(t) {
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
-function extractDt(t) { const m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})[-.:](\d{2})/); return m ? new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]) : null; }
+function extractDt(t) {
+  let m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})[-.:](\d{2})/);
+  if (m) try { return new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5], +m[6]); } catch {}
+  m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[.:](\d{2})/);
+  if (m) try { return new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]); } catch {}
+  return null;
+}
+
+function isParagraphFormat(t) { return /MVP\s+and\s+total\s+Demolition\s+Value/i.test(t); }
+
+function parseParagraphFormat(text) {
+  const normalized = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+  let sN = 'Ruins', sL = '1';
+  const ruM = normalized.match(/(\w+)\s+Occupation\s+Notice/i);
+  if (ruM) { sN = ruM[1]; const lM = normalized.match(/Lv\.?\s*(\d+)/i); if (lM) sL = lM[1]; }
+  else {
+    const occM = normalized.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
+    if (occM) { sN = occM[1].trim(); sL = occM[2].trim(); }
+  }
+
+  const mvpM = normalized.match(/MVP\s+and\s+total\s+Demolition\s+Value:\s*(.*?)(?=\s*Participants\s|$)/i);
+  const partM = normalized.match(/Participants\s+and\s+total\s+Demolition\s+Value:\s*(.*?)$/i);
+
+  const seen = new Map();
+  for (const section of [mvpM?.[1], partM?.[1]]) {
+    if (!section) continue;
+    const values = []; const vr = /(\d{4,6})(?!\d)/g; let vm;
+    while ((vm = vr.exec(section)) !== null) values.push({ v: +vm[1], i: vm.index });
+    if (values.length < 1) continue;
+    const highVals = values.filter(x => x.v >= 10000);
+    const use = highVals.length >= 3 ? highVals : values;
+    for (let i = 0; i < use.length; i++) {
+      const start = i === 0 ? 0 : use[i-1].i + String(use[i-1].v).length;
+      const end = use[i].i;
+      let name = section.slice(start, end).replace(/^['"`~\s*@#.\-,:;&|()!\[\]{}<>\/\\+=\^%$]+|['"`~\s*@#.\-,:;&|()!\[\]{}<>\/\\+=\^%$]+$/g, '').trim();
+      if (name && name.length > 1) {
+        const val = use[i].v;
+        if (!seen.has(name) || seen.get(name) < val) seen.set(name, val);
+      }
+    }
+  }
+
+  const players = Array.from(seen.entries()).map(([name, value]) => ({ name, value }));
+  if (!players.length) return null;
+  players.sort((a, b) => b.value - a.value);
+  players.forEach((p, i) => p.rank = i + 1);
+
+  const dt = extractDt(normalized) || new Date();
+  const id = `${sN}_${sL}_${dt.getTime()}`;
+  return {
+    id, structure_name: sN, structure_level: sL,
+    game_time: fmtDate(new Date(dt - 6 * 3600000)),
+    players_count: players.length,
+    total_demolition: players.reduce((s, p) => s + p.value, 0),
+    players
+  };
+}
 
 export async function bootOcrDashboard() {
   if (_booted) return; _booted = true; loadRoster();
