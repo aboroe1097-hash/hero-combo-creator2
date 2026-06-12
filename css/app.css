@@ -5339,9 +5339,9 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   padding: 0.75rem; height: 160px; overflow-y: auto; font-size: 0.75rem;
   line-height: 1.5; color: #94a3b8; scrollbar-width: thin;
 }
-#ocrDashboardRoot .log-entry { margin-bottom: 0.25rem; display: flex; gap: 0.5rem; }
-#ocrDashboardRoot .log-time { color: #475569; min-width: 65px; }
-#ocrDashboardRoot .log-msg { flex: 1; }
+#ocrDashboardRoot .log-entry { margin-bottom: 0.25rem; font-family: monospace; white-space: pre-wrap; line-height: 1.4; word-break: break-all; }
+#ocrDashboardRoot .log-time { color: #475569; margin-right: 0.5rem; }
+#ocrDashboardRoot .log-msg { }
 #ocrDashboardRoot .log-info { color: var(--blue-400); }
 #ocrDashboardRoot .log-warn { color: #fbbf24; }
 #ocrDashboardRoot .log-err { color: #ef4444; }

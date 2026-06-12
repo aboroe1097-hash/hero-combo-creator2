@@ -1,20 +1,64 @@
-# Hero Combo Creator — VTS 1097 (8.0)
+# Hero Combo Creator — VTS 1097 (8.1)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 8.0
+## What's new in 8.1
 
-- **Full date + day + GT** — game time now displays as `DD/MM/YYYY, DayOfWeek, HH:MM GT` (uses local time −6h), supports backward-compat with old format
+- **Gemini AI OCR** — replaced Tesseract.js with Gemini 1.5 Flash via Netlify Functions; dramatically better accuracy for occupation report screenshots, no more client-side processing limits
+- **Serverless OCR pipeline** — images sent to `/.netlify/functions/gemini-ocr` which returns structured JSON (structure name, level, timestamp, player list) — far more reliable than regex parsing of raw OCR text
+- **Streamlined codebase** — removed all client-side image preprocessing (canvas binarization, word-level parsing, column detection, paragraph format fallback) since Gemini handles vision natively
+- **Firestore auth race fix** — `saveData`/`loadData`/`clearData` now `await ensureAnonymousAuth()` before any Firestore write, preventing silent failures on cold start
+- **Export sanitization** — CSV exports escape double quotes to prevent injection
+- **Log panel UX** — monospace font, `white-space: pre-wrap` for cleaner JSON log output
+
+## What's new in 7.9
+
+- **Critical OCR accuracy fixes** — rank column boundary widened, fuzzy threshold dynamic by name length, character substitution map ($→8, 1→l, Q→O), ±100 value proximity dedup, duplicate name cleanup, adaptive column detection
+- **Boot splash performance** — faster door animations (1.4s vs 2.6s), reduced minimum boot time (600ms vs 1000ms), quicker dismiss sequence
+- **Dashboard UX polish** — taller trend charts, bigger mini-pie bars, hover effects on trend bars, improved insight spacing
+
+## What's new in 7.8
+
 - **Durability auto-validation** — built-in lookup table (Gates Lv1–5, Cities/Capital Lv1–7, Temple Lv1, Stronghold Lv1) checks each attack's total demolition against expected structure HP; shows ✓/! badges in attack list
 - **Auto-retry on mismatch** — when total demolition doesn't match expected durability (±5%), a second OCR pass runs with 3× scale / no whitelist / PSM-3 to recover missing players; logs both attempts
 - **Detailed analysis terminal** — per-image logs show OCR format (table/paragraph/table+header), timestamp detected, word count, elapsed time, structure name, and grouping decisions
-- **Merge fix: real names win** — when split uploads merge, attacks with `Structure Unknown` are overwritten by the real structure name from other images with the same timestamp (was showing "Unknown" before)
-- **Individual image structure scan** — if the combined text misses the structure header, each individual image's text is scanned independently
-- **Enhanced attack detail modal** — now shows Average per Hit, Value Distribution (1M+/500K+/100K+ tiers with proportional bars), and backward-compat game time display
+- **Merge fix: real names win** — when split uploads merge, attacks with `Structure Unknown` are overwritten by the real structure name from other images with the same timestamp
+- **Individual image structure scan** — if combined text misses the header, each individual image's text is scanned independently
+- **Enhanced attack detail modal** — shows Average per Hit, Value Distribution tiers with proportional bars, backward-compat game time
 - **Expanded insights panel** — Participation Spread (High/Medium/Low stacked bar) and Activity Trend (last-7-days bar chart) populated with real data
-- **New export: CSV Attack Details** — per-attack player breakdown with date, structure, level, player name, rank, and demolition value
-- **Chart export button** — export the Top Performers chart as standalone PNG
-- **Export menu reorganization** — added Attack Details CSV between Leaderboard CSV and PDF Report
+- **New export: CSV Attack Details** — per-attack player breakdown
+
+## What's new in 7.7
+
+- **Timestamp-based attack merging** — merge split uploads by matching timestamps across images
+- **Enhanced OCR dashboard logging** — per-image format detection, word counts, elapsed time
+- **Paragraph format support** — parse MVP + Participants sections from paragraph-style reports
+
+## What's new in 7.6
+
+- **Multi-device sync** — Firebase Firestore cross-device sync for OCR dashboard data
+- **Attack merge logic** — merge same-timestamp attacks from split uploads into single sessions
+- **Log panel** — real-time analysis terminal with per-image logs
+
+## What's new in 7.5
+
+- **Structure-based grouping** — groups occupation report images by detected structure name + level
+- **Null-guard robustness** — defensive checks against missing word data, empty text, malformed timestamps
+
+## What's new in 7.4
+
+- **Firestore sync** — cloud persistence for OCR dashboard (read/write via Firestore)
+- **Mobile UI layout** — responsive adjustments for the admin dashboard on small screens
+
+## What's new in 7.3
+
+- **Paragraph format support** — parse MVP/total demolition paragraph-style reports from occupation notices
+
+## What's new in 7.2
+
+- **Initial OCR dashboard** — client-side Tesseract.js integration, table format parsing, leaderboard rendering
+- **Rank-value extraction** — parses rank numbers and demolition values from occupation report screenshots
+- **Basic fuzzy matching** — Levenshtein-based name matching against an editable alliance roster
 
 ## What's new in b6.2
 
