@@ -175,8 +175,19 @@ Hard-refresh the browser after regenerating assets or JS.
 
 Publish **`dist/`** (from `npm run build`), not the raw repo — keeps `database/` source files off the public site.
 
-- **Netlify / Firebase:** configs in `netlify.toml` and `firebase.json`
-- **Custom domain:** `CNAME` → `roc-vts.com`
+- **GitHub Pages:** push `dist/` to `gh-pages` branch:
+  ```
+  npm run build
+  git worktree add --detach _deploy_temp
+  Remove-Item '_deploy_temp\*' -Recurse -Force
+  Copy-Item 'dist\*' '_deploy_temp\' -Recurse -Force
+  Set-Content '_deploy_temp\.nojekyll' -Value ''
+  cd _deploy_temp
+  git add -A && git commit -m "deploy"
+  git push origin HEAD:refs/heads/gh-pages --force
+  cd .. && git worktree remove _deploy_temp
+  ```
+- **Custom domain:** `roc-vts.com` (configured in GitHub repo Settings → Pages)
 
 ## Firebase
 
