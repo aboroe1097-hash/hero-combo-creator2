@@ -350,15 +350,16 @@ function render() {
   const filterEl = $id('dashLeaderFilter');
   if (filterEl && atts.length > 0) {
     const currentVal = filterEl.value;
-    const types = new Set();
-    atts.forEach(a => { if (a.structure_name) types.add(a.structure_name); });
-    const typeArr = Array.from(types).sort();
-    let opts = '<option value="">All Structures</option>';
-    typeArr.forEach(t => opts += `<option value="${t}" ${t===currentVal?'selected':''}>${esc(t)}</option>`);
+    const sortedAtts = [...atts].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
+    let opts = '<option value="">All Uploaded Targets</option>';
+    sortedAtts.forEach(a => {
+      const label = `${a.structure_name} ${a.structure_level||''} (${displayGameTime(a.game_time)})`;
+      opts += `<option value="${a.id}" ${a.id===currentVal?'selected':''}>${esc(label)}</option>`;
+    });
     filterEl.innerHTML = opts;
 
     if (currentVal) {
-      const filteredAttacks = atts.filter(a => a.structure_name === currentVal);
+      const filteredAttacks = atts.filter(a => a.id === currentVal);
       const sum = {}; 
       filteredAttacks.forEach(a => a.players.forEach(p => { 
         const n = findBestMatch(p.name); 
