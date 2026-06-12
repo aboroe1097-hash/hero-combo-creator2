@@ -366,21 +366,70 @@ async function processFiles(files) {
     log(`Sending to Gemini API...`, 'info', f.name);
     try {
       const before = performance.now();
-      const res = await fetch('/.netlify/functions/gemini-ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64 })
-      });
-      const data = await res.json();
-      const elapsed = ((performance.now() - before) / 1000).toFixed(1);
+      let data = null;
+      let useLocalFallback = false;
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       
-      if (!res.ok) {
-        log(`Gemini API Error: ${data.error}`, 'err', f.name);
-      } else {
-        const pCount = data.players ? data.players.length : 0;
-        log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
-        allJson.push({ filename: f.name, json: data });
+      try {
+        if (isLocalhost) throw new Error('Force fallback on localhost');
+        const netlifyRes = await fetch('/.netlify/functions/gemini-ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 })
+        });
+        if (netlifyRes.status === 404 || netlifyRes.status === 405) {
+           useLocalFallback = true;
+        } else {
+           const textResponse = await netlifyRes.text();
+           try {
+             data = JSON.parse(textResponse);
+             if (!netlifyRes.ok) throw new Error(data.error || 'Server Error');
+           } catch(err) {
+             if (textResponse.startsWith('<')) useLocalFallback = true;
+             else throw new Error('Invalid response from server');
+           }
+        }
+      } catch (err) {
+        useLocalFallback = true;
       }
+      
+      if (useLocalFallback) {
+        let localKey = sessionStorage.getItem('gemini_dev_key');
+        if (!localKey) {
+          localKey = prompt('Serverless functions unavailable (Netlify not detected). Please paste your Gemini API key to run OCR locally in the browser:');
+          if (localKey) sessionStorage.setItem('gemini_dev_key', localKey);
+        }
+        if (!localKey) throw new Error('No API key provided for local fallback.');
+        
+        log(`Using local client-side Gemini API fallback...`, 'info', f.name);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${localKey}`;
+        const promptTxt = `Analyze this game screenshot containing an attack report.
+Extract the following:
+1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
+2. 'structure_level' (e.g. '5' for Lv.5. If not visible, null)
+3. 'timestamp' (if visible, format as 'YYYY-MM-DD HH:MM:SS', otherwise null)
+4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
+
+Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
+          })
+        });
+        const raw = await res.json();
+        if (!res.ok) throw new Error(raw.error?.message || 'Gemini API Error');
+        let text = raw.candidates[0].content.parts[0].text;
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        data = JSON.parse(text);
+      }
+
+      const elapsed = ((performance.now() - before) / 1000).toFixed(1);
+      const pCount = data.players ? data.players.length : 0;
+      log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
+      allJson.push({ filename: f.name, json: data });
     } catch (e) {
       log(`Network error: ${e.message}`, 'err', f.name);
     }
