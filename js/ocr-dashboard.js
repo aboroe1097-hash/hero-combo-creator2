@@ -344,7 +344,33 @@ function render() {
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
     return;
   }
-  const atts = dashData.attacks || [], psum = dashData.players_summary || [];
+  const atts = dashData.attacks || [];
+  let psum = dashData.players_summary || [];
+
+  const filterEl = $id('dashLeaderFilter');
+  if (filterEl && atts.length > 0) {
+    const currentVal = filterEl.value;
+    const types = new Set();
+    atts.forEach(a => { if (a.structure_name) types.add(a.structure_name); });
+    const typeArr = Array.from(types).sort();
+    let opts = '<option value="">All Structures</option>';
+    typeArr.forEach(t => opts += `<option value="${t}" ${t===currentVal?'selected':''}>${esc(t)}</option>`);
+    filterEl.innerHTML = opts;
+
+    if (currentVal) {
+      const filteredAttacks = atts.filter(a => a.structure_name === currentVal);
+      const sum = {}; 
+      filteredAttacks.forEach(a => a.players.forEach(p => { 
+        const n = findBestMatch(p.name); 
+        if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
+        sum[n].total_demolition += (p.value||p.val||0); 
+        sum[n].participation_count++; 
+        sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+      }));
+      psum = Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition);
+    }
+  }
+
   const total = atts.reduce((s, a) => s + (a.total_demolition || 0), 0);
   $id('dashKpiAttacks').textContent = atts.length;
   $id('dashKpiDemo').textContent = total > 1e6 ? (total/1e6).toFixed(1)+'M' : total.toLocaleString();
@@ -771,6 +797,7 @@ export async function bootOcrDashboard() {
 
   $id('dashModalClose').onclick = closeModal;
   $id('dashSearch').oninput = e => { searchQ = e.target.value; render(); };
+  $id('dashLeaderFilter').onchange = () => render();
   $id('dashAttackSearch').oninput = e => { attackSearchQ = e.target.value; render(); };
   document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; render(); });
   
