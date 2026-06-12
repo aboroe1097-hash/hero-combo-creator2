@@ -17,7 +17,8 @@ export let selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 export let selectedStates = ['Free', 'Paid'];
 export let selectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
-export const currentCombo = [null, null, null];
+export let currentCombo = [null, null, null];
+export function setCurrentCombo(v) { currentCombo = v; }
 
 export let generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 export let generatorSelectedStates = ['Free', 'Paid'];
@@ -28,6 +29,18 @@ export let userId = 'anonymous';
 export function getUserId() { return userId; }
 export function setUserId(uid) { userId = uid; }
 export let db = null;
+export function setDb(d) { db = d; }
+
+export function setCurrentLanguage(lang) { currentLanguage = lang; }
+export function setHeroInfoEnabled(v) { heroInfoEnabled = v; }
+export function setSelectedSeasons(v) { selectedSeasons = v; }
+export function setSelectedStates(v) { selectedStates = v; }
+export function setSelectedTypes(v) { selectedTypes = v; }
+export function setGeneratorSelectedSeasons(v) { generatorSelectedSeasons = v; }
+export function setGeneratorSelectedStates(v) { generatorSelectedStates = v; }
+export function setGeneratorSelectedTypes(v) { generatorSelectedTypes = v; }
+export function setActiveTechSeasons(v) { activeTechSeasons = v; }
+export function setTechSearchQuery(v) { techSearchQuery = v; }
 export const savedCombosCache = [];
 export const lastGeneratedCombos = [];
 
