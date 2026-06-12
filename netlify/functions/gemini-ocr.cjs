@@ -1,10 +1,6 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-if (!GEMINI_API_KEY) {
-  console.error('GEMINI_API_KEY environment variable is not set');
-}
-
-export async function handler(event, context) {
+exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
@@ -56,10 +52,8 @@ Example:
     }
 
     let text = data.candidates[0].content.parts[0].text;
-    // Strip markdown formatting if Gemini included it despite instructions
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    // Validate it's parseable JSON
     JSON.parse(text);
 
     return {
@@ -72,4 +66,4 @@ Example:
     console.error('OCR Error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
-}
+};
