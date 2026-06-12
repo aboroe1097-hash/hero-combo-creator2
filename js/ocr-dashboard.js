@@ -395,6 +395,7 @@ async function processFiles(files) {
               if (textResponse.startsWith('<')) { log('Server returned HTML instead of JSON — function not deployed', 'warn', f.name); useLocalFallback = true; }
               else throw new Error('Invalid response from server');
             }
+          }
       } catch (err) {
         useLocalFallback = true;
       }
