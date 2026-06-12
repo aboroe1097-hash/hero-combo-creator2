@@ -1,4 +1,6 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Z.AI (GLM) OCR function — kept for reference / local testing
+// On GitHub Pages this is not called; the client falls back to browser-side Z.AI API.
+const ZAI_API_KEY = process.env.ZAI_API_KEY;
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -11,19 +13,20 @@ exports.handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'No image provided' }) };
     }
 
-    const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    const models = ['glm-4v-flash', 'glm-4.6v'];
     let data = null;
     let usedModel = null;
 
     for (const model of models) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-      const response = await fetch(url, {
+      const response = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ZAI_API_KEY}` },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: `Analyze this game screenshot containing an attack report.
+          model,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
 2. 'structure_level' (e.g. '5' for Lv.5. If not visible, null)
@@ -40,7 +43,7 @@ Example:
     {"name": "Lord_IKR", "value": 81357}
   ]
 }` },
-              { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }
+              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
             ]
           }]
         })
@@ -54,18 +57,18 @@ Example:
       }
 
       const errMsg = data.error?.message || '';
-      if (!errMsg.includes('not found') && !errMsg.includes('not supported')) {
+      if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist')) {
         return { statusCode: 500, body: JSON.stringify({ error: errMsg || 'API Error' }) };
       }
     }
 
     if (!usedModel) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'No available Gemini model' }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'No available Z.AI model' }) };
     }
 
-    let text = data.candidates[0].content.parts[0].text;
+    let text = data.choices[0].message.content;
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
+
     JSON.parse(text);
 
     return {

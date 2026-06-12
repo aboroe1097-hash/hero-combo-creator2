@@ -1,5 +1,4 @@
 // --- Serverless OCR Dashboard ---
-// OCR runs in the cloud via Netlify Functions + Gemini 1.5 Flash API.
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
@@ -354,7 +353,7 @@ async function processFiles(files) {
   if (!valid.length) { _ocrProcessing = false; return; }
   
   $id('dashProgress').classList.remove('hidden');
-  log(`Starting Gemini API OCR on ${valid.length} files...`, 'info');
+  log(`Starting Z.AI OCR on ${valid.length} files...`, 'info');
   
   const allJson = [];
   for (let i = 0; i < valid.length; i++) {
@@ -363,7 +362,7 @@ async function processFiles(files) {
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
     });
     
-    log(`Sending to Gemini API...`, 'info', f.name);
+    log(`Sending to Z.AI API...`, 'info', f.name);
     try {
       const before = performance.now();
       let data = null;
@@ -401,14 +400,14 @@ async function processFiles(files) {
       }
       
       if (useLocalFallback) {
-        let localKey = sessionStorage.getItem('gemini_dev_key');
+        let localKey = sessionStorage.getItem('zai_dev_key');
         if (!localKey) {
-          localKey = prompt('Serverless functions unavailable (Netlify not detected). Please paste your Gemini API key to run OCR locally in the browser:');
-          if (localKey) sessionStorage.setItem('gemini_dev_key', localKey);
+          localKey = prompt('Z.AI API key required for OCR (get one free at z.ai):');
+          if (localKey) sessionStorage.setItem('zai_dev_key', localKey);
         }
-        if (!localKey) throw new Error('No API key provided for local fallback.');
+        if (!localKey) throw new Error('No API key provided.');
         
-        log(`Using local client-side Gemini API fallback...`, 'info', f.name);
+        log(`Using Z.AI API (client-side)...`, 'info', f.name);
         const promptTxt = `Analyze this game screenshot containing an attack report.
 Extract the following:
 1. 'structure_name' (e.g. Capital, Stronghold, Temple, Gates, City. If not visible, null)
@@ -417,24 +416,28 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-        const localModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+        const ZAI_URL = 'https://api.z.ai/api/paas/v4/chat/completions';
+        const localModels = ['glm-4v-flash', 'glm-4.6v'];
         let res, raw, localModelUsed;
         for (const m of localModels) {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${localKey}`;
-          res = await fetch(url, {
+          res = await fetch(ZAI_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
             body: JSON.stringify({
-              contents: [{ parts: [ { text: promptTxt }, { inlineData: { mimeType: 'image/jpeg', data: base64 } } ] }]
+              model: m,
+              messages: [{ role: 'user', content: [
+                { type: 'text', text: promptTxt },
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+              ]}]
             })
           });
           raw = await res.json();
           if (res.ok) { localModelUsed = m; break; }
           const errMsg = raw.error?.message || '';
-          if (!errMsg.includes('not found') && !errMsg.includes('not supported')) break;
+          if (!errMsg.includes('not found') && !errMsg.includes('not support') && !errMsg.includes('not exist')) break;
         }
-        if (!localModelUsed) throw new Error(raw?.error?.message || 'Gemini API Error');
-        let text = raw.candidates[0].content.parts[0].text;
+        if (!localModelUsed) throw new Error(raw?.error?.message || 'Z.AI API Error');
+        let text = raw.choices[0].message.content;
         text = text.replace(/```json/g, '').replace(/```/g, '').trim();
         data = JSON.parse(text);
       }
@@ -452,7 +455,7 @@ Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. J
   if (!allJson.length) { log(`No valid data extracted.`, 'err'); _ocrProcessing = false; return; }
   
   log(`Analyzing and merging results...`, 'info');
-  const parsed = parseGeminiResults(allJson);
+  const parsed = parseOcrResults(allJson);
   
   if (parsed) {
     const mismatched = parsed.attacks.filter(att => {
@@ -491,7 +494,7 @@ function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['
 
 function displayGameTime(gt) { return gt && gt.includes(',') ? gt : (gt ? gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT' : ''); }
 
-function parseGeminiResults(results) {
+function parseOcrResults(results) {
   const groups = [];
   for (const item of results) {
     const j = item.json;
