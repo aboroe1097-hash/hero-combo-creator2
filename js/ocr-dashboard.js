@@ -383,7 +383,8 @@ Extract the following:
 4. 'players': array of objects with 'name' (string) and 'value' (integer demolition score).
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
-      const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+      const DIRECT_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+      const QWEN_URL = 'https://corsproxy.io/?' + encodeURIComponent(DIRECT_URL);
       const res = await fetch(QWEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
