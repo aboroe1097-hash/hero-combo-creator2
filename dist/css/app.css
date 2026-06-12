@@ -5455,7 +5455,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 }
 
 /* Table */
-#ocrDashboardRoot .dash-table-wrap { overflow-x: auto; }
+#ocrDashboardRoot .dash-table-wrap { overflow-x: auto; max-height: 600px; overflow-y: auto; }
 #ocrDashboardRoot .dash-table {
   width: 100%; border-collapse: collapse; font-size: 0.85rem;
 }
