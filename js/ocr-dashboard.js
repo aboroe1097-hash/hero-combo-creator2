@@ -171,7 +171,21 @@ function exportToPng() {
   if (typeof html2canvas === 'undefined') return;
   const target = $id('dashApp')?.querySelector('.dash-container') || $id('dashApp');
   if (!target) return;
-  html2canvas(target, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_dashboard.png'; a.click(); }).catch(() => {});
+  html2canvas(target, { backgroundColor: '#0b0f19', scale: 2, allowTaint: false, useCORS: true }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_dashboard.png'; a.click(); }).catch(() => {});
+}
+function exportChartPng() {
+  const chart = $id('dashChart');
+  if (!chart || typeof html2canvas === 'undefined') return;
+  html2canvas(chart.closest('.dash-card') || chart, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_top_performers.png'; a.click(); }).catch(() => {});
+}
+function exportAttackCsv() {
+  if (!dashData?.attacks?.length) return;
+  let csv = 'Date,Structure,Level,Player Name,Rank,Demolition Value\n';
+  dashData.attacks.forEach(a => {
+    const date = displayGameTime(a.game_time);
+    (a.players||[]).forEach(p => csv += `"${date}","${a.structure_name}","${a.structure_level||''}","${p.name}",${p.rank},${p.value}\n`);
+  });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
 function importData(file) {
   const r = new FileReader(); r.onload = e => {
@@ -216,8 +230,15 @@ function render() {
 
   const al = $id('dashAttackList'); al.innerHTML = '';
   atts.forEach(a => {
+    const val = validateTotalDemolition(a.structure_name, a.structure_level, a.total_demolition);
+    let badge = '';
+    if (val) {
+      badge = val.match
+        ? `<span class="dash-val-badge dash-val-ok" title="✓ ${a.total_demolition.toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
+        : `<span class="dash-val-badge dash-val-warn" title="✗ ${a.total_demolition.toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
+    }
     const d = document.createElement('div'); d.className = 'dash-attack-item';
-    d.innerHTML = `<div><div class="dash-attack-name">${a.structure_name} ${a.structure_level}</div><div class="dash-attack-time">${a.game_time.split(' ')[1]?.slice(0,5)} GT · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
+    d.innerHTML = `<div><div class="dash-attack-name">${a.structure_name} ${a.structure_level}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
     d.onclick = () => showModal('attack', a); al.appendChild(d);
   });
 
@@ -227,25 +248,86 @@ function render() {
     tr.innerHTML = `<td class="dash-rank">#${i+1}</td><td class="dash-pname">${p.name}</td><td class="dash-val">${p.total_demolition.toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round(p.total_demolition/p.participation_count).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
+
+  // --- Insights ---
+  const partSpread = { high: 0, medium: 0, low: 0 };
+  psum.forEach(p => {
+    const pct = p.participation_count / atts.length;
+    if (pct >= 0.5) partSpread.high++;
+    else if (pct >= 0.25) partSpread.medium++;
+    else partSpread.low++;
+  });
+  const totalP = partSpread.high + partSpread.medium + partSpread.low;
+  const $pct = $id('dashInsightPartPct');
+  if ($pct) $pct.textContent = totalP ? `${Math.round((partSpread.high/totalP)*100)}% active` : '0%';
+  const $pie = $id('dashPartChart');
+  if ($pie) {
+    if (totalP) {
+      $pie.innerHTML = `<div class="dash-stack-bar"><div class="dash-stack-seg dash-stack-high" style="width:${(partSpread.high/totalP)*100}%" title="High (${partSpread.high})"></div><div class="dash-stack-seg dash-stack-med" style="width:${(partSpread.medium/totalP)*100}%" title="Medium (${partSpread.medium})"></div><div class="dash-stack-seg dash-stack-low" style="width:${(partSpread.low/totalP)*100}%" title="Low (${partSpread.low})"></div></div><div class="dash-stack-labels"><span>High 50%+</span><span>Med 25%+</span><span>Low</span></div>`;
+    } else {
+      $pie.innerHTML = '<div class="dash-stack-bar"><div class="dash-stack-seg dash-stack-low" style="width:100%"></div></div>';
+    }
+  }
+  const $trend = $id('dashTrendChart');
+  if ($trend) {
+    const dayMap = {};
+    atts.forEach(a => {
+      const day = a.game_time && a.game_time.includes(',') ? a.game_time.split(',')[0] : (a.game_time||'').split(' ')[0];
+      dayMap[day] = (dayMap[day] || 0) + 1;
+    });
+    const days = Object.keys(dayMap).sort().slice(-7);
+    const maxCount = Math.max(...days.map(d => dayMap[d]), 1);
+    $trend.innerHTML = '<div class="dash-trend-bars">' + days.map(d => `<div class="dash-trend-col"><div class="dash-trend-bar" style="height:${(dayMap[d]/maxCount)*100}%"></div><div class="dash-trend-label">${d.slice(-5)}</div></div>`).join('') + '</div>';
+  }
 }
 
 function showModal(type, data) {
   const m = $id('dashModal'), body = $id('dashModalBody');
   $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
-  $id('dashModalSub').textContent = type === 'attack' ? `${data.game_time} · ${data.players_count} participants` : `${data.total_demolition.toLocaleString()} total demolition`;
+  $id('dashModalSub').textContent = type === 'attack' ? `${displayGameTime(data.game_time)} · ${data.players_count} participants` : `${data.total_demolition.toLocaleString()} total demolition`;
   if (type === 'attack') {
-    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.game_time.split(' ')[1]?.slice(0,5)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${data.structure_name} ${data.structure_level||''}</div></div></div>`;
+    const avg = Math.round(data.total_demolition / data.players_count);
+    const tiers = { '1M+': 0, '500K+': 0, '100K+': 0, '<100K': 0 };
+    data.players.forEach(p => {
+      if (p.value >= 1000000) tiers['1M+']++;
+      else if (p.value >= 500000) tiers['500K+']++;
+      else if (p.value >= 100000) tiers['100K+']++;
+      else tiers['<100K']++;
+    });
+    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${avg.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${data.structure_name} ${data.structure_level||''}</div></div></div>`;
+    h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
     data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${p.name}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
-    body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div></div>` + 
-      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${att.structure_name}</td><td style="text-align:right">${att.val.toLocaleString()}</td></tr>`).join('') + '</tbody></table>';
+    body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round(data.total_demolition/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + 
+      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${att.name}</td><td style="text-align:right">${(att.val||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + '</tbody></table>';
   }
   m.classList.add('active');
 }
 
 function closeModal() { $id('dashModal')?.classList.remove('active'); document.body.style.overflow = ''; }
+
+// --- Durability Validation ---
+const DURABILITY_TABLE = {
+  gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
+  cities:   { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
+  capital:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4500000, 7: 5000000 },
+  capitol:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4500000, 7: 5000000 },
+  temple:   { 1: 1000000 },
+  stronghold: { 1: 1000000 },
+};
+
+function validateTotalDemolition(sN, sL, total) {
+  const levelNum = parseInt(String(sL || '').replace(/[^0-9]/g, ''));
+  if (!levelNum) return null;
+  const entry = DURABILITY_TABLE[(sN || '').toLowerCase()];
+  const expected = entry && entry[levelNum];
+  if (!expected) return null;
+  const diff = Math.abs(total - expected);
+  const pct = diff / expected;
+  return { expected, diff, pct, match: pct < 0.05, levelNum };
+}
 
 // --- OCR Engine ---
 async function processFiles(files) {
@@ -267,7 +349,15 @@ async function processFiles(files) {
     for (let j=0; j<d.length; j+=4) { const g = 0.299*d[j]+0.587*d[j+1]+0.114*d[j+2]; d[j]=d[j+1]=d[j+2]=g>180?255:g<60?0:(g-60)*(255/120); }
     ctx.putImageData(idat,0,0);
     log(`Running high-precision scan...`, 'info', f.name);
+    const before = performance.now();
     const { data: { text, words } } = await worker.recognize(cv);
+    const elapsed = ((performance.now() - before) / 1000).toFixed(1);
+    const hasContent = /[\d,]{4,}/.test(text);
+    const format = /MVP/i.test(text) ? 'paragraph' : /occupied/i.test(text) ? 'table+header' : 'table';
+    const dt = extractDt(text);
+    const sN = extractStructureName(text);
+    log(`Scan complete (${elapsed}s, ${words.length} words) — ${format} format, ${sN || '?'}`, 'info', f.name);
+    log(`Timestamp ${dt ? fmtDate(dt) : 'not found'}`, 'info', f.name);
     allTexts.push({ filename: f.name, text, words: words.map(w => ({...w, bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })), _w: img.width, _h: img.height });
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
@@ -287,9 +377,69 @@ async function processFiles(files) {
   });
   if (!validated.length) { log(`No valid occupation reports found among uploaded images.`, 'err'); await worker.terminate(); _ocrProcessing = false; return; }
   if (validated.length < allTexts.length) log(`${allTexts.length - validated.length} image(s) skipped (not a report screenshot).`, 'warn');
-  const parsed = parseOcrResults(validated);
-  if (parsed) { saveData(parsed); render(); log(`Success! ${parsed.attacks.length} sessions updated.`, 'success'); }
-  else log(`Failed to identify valid reports.`, 'err');
+  let parsed = parseOcrResults(validated);
+  if (parsed) {
+    const reRunIndices = [];
+    for (let ai = 0; ai < parsed.attacks.length; ai++) {
+      const att = parsed.attacks[ai];
+      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+      if (val) {
+        if (val.match) {
+          log(`Durability: ${att.structure_name} ${att.structure_level} ✓ ${att.total_demolition.toLocaleString()} (expected ${val.expected.toLocaleString()})`, 'success');
+        } else {
+          log(`Durability: ${att.structure_name} ${att.structure_level} ✗ ${att.total_demolition.toLocaleString()} vs expected ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)`, 'warn');
+          const ts = parseInt(att.id.split('_').pop());
+          validated.forEach(r => {
+            const dt = extractDt(r.text);
+            if (dt && Math.abs(dt.getTime() - ts) < 600000) {
+              const fi = valid.findIndex(v => v.name === r.filename);
+              if (fi >= 0 && !reRunIndices.includes(fi)) reRunIndices.push(fi);
+            }
+          });
+        }
+      }
+    }
+    if (reRunIndices.length) {
+      log(`Re-running enhanced OCR on ${reRunIndices.length} image(s) from mismatched session(s)...`, 'warn');
+      const hpWorker = await Tesseract.createWorker('eng', 1);
+      await hpWorker.setParameters({ tessedit_pageseg_mode: '3' });
+      for (const fi of reRunIndices) {
+        const f = valid[fi];
+        log(`Enhanced precision scan...`, 'info', f.name);
+        const img = await new Promise(res => { const r = new FileReader(); r.onload = e => { const im = new Image(); im.onload = () => res(im); im.src = e.target.result; }; r.readAsDataURL(f); });
+        const cv = document.createElement('canvas'), sc = 3.0;
+        cv.width = img.width * sc; cv.height = img.height * sc;
+        const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        const idat = ctx.getImageData(0,0,cv.width,cv.height), d = idat.data;
+        for (let j=0; j<d.length; j+=4) { const g = 0.299*d[j]+0.587*d[j+1]+0.114*d[j+2]; d[j]=d[j+1]=d[j+2]=g>200?255:g<50?0:g; }
+        ctx.putImageData(idat,0,0);
+        const { data: { text, words } } = await hpWorker.recognize(cv);
+        const oldEntry = allTexts.find(t => t.filename === f.name);
+        const wordDelta = words.length - (oldEntry?.words?.length || 0);
+        log(`Enhanced scan: ${words.length} words (${wordDelta >= 0 ? '+' : ''}${wordDelta} vs initial)`, 'info', f.name);
+        const vi = validated.findIndex(r => r.filename === f.name);
+        if (vi >= 0) {
+          validated[vi] = { ...validated[vi], text, words: words.map(w => ({...w, bbox: { x0: w.bbox.x0/sc, y0: w.bbox.y0/sc, x1: w.bbox.x1/sc, y1: w.bbox.y1/sc } })) };
+        }
+      }
+      log(`Re-analyzing with corrected OCR data...`, 'info');
+      parsed = parseOcrResults(validated);
+      await hpWorker.terminate();
+      if (parsed) {
+        parsed.attacks.forEach(att => {
+          const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+          if (val) {
+            if (val.match) log(`Durability after correction: ${att.structure_name} ${att.structure_level} ✓ ${att.total_demolition.toLocaleString()}`, 'success');
+            else log(`Durability after correction: ${att.structure_name} ${att.structure_level} still ${(val.pct*100).toFixed(1)}% off`, 'warn');
+          }
+        });
+      }
+    }
+    saveData(parsed); render();
+    log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
+    log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
+    log(`Cloud sync status: ${getDb() ? 'active' : 'local-only'}`, 'info');
+  } else log(`Failed to identify valid reports.`, 'err');
   
   await worker.terminate(); _ocrProcessing = false; setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
 }
@@ -310,17 +460,25 @@ function parseOcrResults(results) {
     for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000 && g.sN === item.sN) { g.results.push(item.r); f = true; break; } }
     if (!f) groups.push({ dt: item.dt, sN: item.sN, results: [item.r] });
   }
+  log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
+  groups.forEach((g, i) => log(`Group ${i+1}: ${g.results.length} image(s), time=${fmtDate(g.dt)}, structure=${g.sN || '?'}`, 'info'));
   const attacks = [];
   for (const g of groups) {
     const txt = g.results.map(r => r.text).join('\n');
     if (isParagraphFormat(txt)) {
       const att = parseParagraphFormat(txt);
-      if (att) attacks.push(att);
+      if (att) { log(`Paragraph format: ${att.structure_name} ${att.structure_level}, ${att.players_count} players`, 'info'); attacks.push(att); }
       continue;
     }
     let sN = 'Structure', sL = 'Unknown';
     const m = txt.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || txt.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
     if (m) { sN = m[1].trim(); sL = m[2].trim(); }
+    else {
+      for (const r of g.results) {
+        const m2 = r.text.match(/occupied\s+the\s+(.+?)\s+(Lv\.?\s*\d+|Level\s+\d+)/i) || r.text.match(/([A-Z][A-Za-z\s'-]{2,30})\s+(Lv\.?\s*\d+|Level\s+\d+)/i);
+        if (m2) { sN = m2[1].trim(); sL = m2[2].trim(); log(`Structure name found in individual image: ${sN} ${sL}`, 'info'); break; }
+      }
+    }
     const allRaw = []; g.results.forEach(r => allRaw.push(...parseImagePlayers(r)));
     const byV = {}; allRaw.forEach(p => { if (!byV[p.value]) byV[p.value] = []; byV[p.value].push(p); });
     const players = [];
@@ -334,8 +492,9 @@ function parseOcrResults(results) {
       const ts = g.dt.getTime();
       if (sN === 'Structure' && dashData) {
         const existing = dashData.attacks.find(a => { const p = a.id.split('_'); return p[p.length-1] === String(ts); });
-        if (existing) { sN = existing.structure_name; sL = existing.structure_level; }
+        if (existing) { sN = existing.structure_name; sL = existing.structure_level; log(`Inherited structure from existing session: ${sN} ${sL}`, 'info'); }
       }
+      log(`Table format: ${sN} ${sL}, ${players.length} players, total=${players.reduce((s,p)=>s+p.value,0).toLocaleString()}`, 'info');
       attacks.push({ id: `${sN}_${sL}_${ts}`, structure_name: sN, structure_level: sL, game_time: fmtDate(new Date(g.dt - 6*3600000)), players_count: players.length, total_demolition: players.reduce((s,p)=>s+p.value,0), players });
     }
   }
@@ -352,13 +511,27 @@ function parseOcrResults(results) {
   };
   [...((dashData && dashData.attacks) || []), ...attacks].forEach(a => {
     const ts = a.id.split('_').pop();
-    if (merged[a.id]) { mergePlayers(merged[a.id], a); return; }
+    if (merged[a.id]) { mergePlayers(merged[a.id], a); log(`Merged players into same-ID attack ${a.id}`, 'info'); return; }
     const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
-    if (existing) { mergePlayers(existing, a); return; }
+    if (existing) {
+      mergePlayers(existing, a);
+      const mergedFrom = `${existing.structure_name} ${existing.structure_level}`;
+      const mergedInto = `${a.structure_name} ${a.structure_level}`;
+      if (existing.structure_name === 'Structure' && a.structure_name !== 'Structure') {
+        existing.structure_name = a.structure_name;
+        existing.structure_level = a.structure_level;
+        existing.id = a.id;
+        log(`Structure fix: "${mergedFrom}" → "${a.structure_name} ${a.structure_level}" (real name from split upload)`, 'info');
+      } else {
+        log(`Merged split upload into ${existing.structure_name} ${existing.structure_level} (${existing.players_count} players)`, 'info');
+      }
+      return;
+    }
     merged[a.id] = { ...a };
   });
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
   const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
+  log(`Final: ${sorted.length} attack(s), ${Object.values(sum).length} unique player(s)`, 'info');
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
 
@@ -393,7 +566,8 @@ function parseValueFromDigits(t) {
   return parseInt(valStr) || 0;
 }
 
-function fmtDate(d) { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
+function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
+function displayGameTime(gt) { return gt && gt.includes(',') ? gt : (gt ? gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT' : ''); }
 function extractDt(t) {
   let m = t.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})[-.:](\d{2})/);
   if (m) try { return new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5], +m[6]); } catch {}
@@ -467,9 +641,11 @@ export async function bootOcrDashboard() {
   window.addEventListener('click', () => $id('dashExportMenu').classList.remove('active'));
 
   $id('dashExpCsv').onclick = exportToCsv;
+  $id('dashExpAttackCsv').onclick = exportAttackCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
   $id('dashExpJson').onclick = exportData;
+  const chartBtn = $id('dashExportChartBtn'); if (chartBtn) chartBtn.onclick = exportChartPng;
   $id('dashImportBtn').onclick = () => {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();

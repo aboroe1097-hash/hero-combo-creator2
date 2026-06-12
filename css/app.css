@@ -5521,6 +5521,33 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   margin-bottom: 0.25rem;
 }
 
+/* Distribution bars in modal */
+#ocrDashboardRoot .dash-distrib { display: flex; flex-direction: column; gap: 4px; margin-bottom: 1rem; }
+#ocrDashboardRoot .dash-distrib-item { display: flex; align-items: center; gap: 6px; height: 20px; }
+#ocrDashboardRoot .dash-distrib-bar { height: 10px; border-radius: 5px; background: #3b82f6; transition: width 0.3s; min-width: 2px; }
+#ocrDashboardRoot .dash-distrib-label { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; min-width: 45px; }
+#ocrDashboardRoot .dash-distrib-count { font-size: 0.75rem; color: var(--text-primary); font-weight: 600; margin-left: auto; }
+
+/* Insights: participation stack bar */
+#ocrDashboardRoot .dash-stack-bar { display: flex; height: 16px; border-radius: 8px; overflow: hidden; gap: 2px; }
+#ocrDashboardRoot .dash-stack-seg { height: 100%; border-radius: 8px; transition: width 0.3s; min-width: 2px; }
+#ocrDashboardRoot .dash-stack-high { background: #22c55e; }
+#ocrDashboardRoot .dash-stack-med { background: #f59e0b; }
+#ocrDashboardRoot .dash-stack-low { background: #ef4444; }
+#ocrDashboardRoot .dash-stack-labels { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-muted); margin-top: 4px; }
+
+/* Insights: activity trend */
+#ocrDashboardRoot .dash-trend-bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
+#ocrDashboardRoot .dash-trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+#ocrDashboardRoot .dash-trend-bar { width: 100%; max-width: 28px; border-radius: 3px 3px 0 0; background: #3b82f6; transition: height 0.3s; min-height: 2px; flex: none; }
+#ocrDashboardRoot .dash-trend-label { font-size: 0.55rem; color: var(--text-muted); margin-top: 4px; white-space: nowrap; }
+
+/* Validation badges */
+#ocrDashboardRoot .dash-val-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+#ocrDashboardRoot .dash-val-ok { background: rgba(34,197,94,0.2); color: #22c55e; }
+#ocrDashboardRoot .dash-val-warn { background: rgba(245,158,11,0.2); color: #f59e0b; animation: dash-pulse 1.5s ease-in-out infinite; }
+@keyframes dash-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
 /* Light theme overrides */
 [data-theme="light"] #ocrDashboardRoot .dash-card,
 [data-theme="light"] #ocrDashboardRoot .dash-login-card,

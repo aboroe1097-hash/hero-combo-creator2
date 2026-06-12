@@ -1,19 +1,20 @@
-# Hero Combo Creator — VTS 1097 (7.7)
+# Hero Combo Creator — VTS 1097 (7.8)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 7.7
+## What's new in 7.8
 
-- **VTS Admin Dashboard** — new tab under Tools for uploading occupation report screenshots, OCR-processed entirely client-side via Tesseract.js
-- **Multi-format OCR** — supports both the standard rank-table format (scroll captures) and the paragraph-style format (`Name'Value'Name'Value'` with MVP/Participants sections)
-- **Instant Analysis** — upload screenshots → automatic OCR → KPI cards, ranked leaderboard, attack history, and top performers chart update in real-time
-- **Cross-device Sync** — data saved to Firebase Firestore so anyone with admin login sees the same data regardless of upload device
-- **Image Validation** — checks each screenshot is a valid occupation report (Isabella header, occupied notice, or MVP section) before processing
-- **Paragraph Format Parser** — handles the game's alternate text-based report layout with structure name detection (`Ruins Occupation Notice`)
-- **Timestamp-based Grouping** — same-timestamp images from split uploads merge automatically, different structures at the same time stay separate
-- **Structure Name Fallback** — scroll-capture images without the header inherit the structure name from existing attacks with the same timestamp
-- **Export / Import** — JSON team sharing, CSV leaderboard export, PNG screenshot, and print support
-- **Mobile Optimized** — responsive layout with always-visible upload zone, 44px touch targets, full-bleed modals
+- **Full date + day + GT** — game time now displays as `DD/MM/YYYY, DayOfWeek, HH:MM GT` (uses local time −6h), supports backward-compat with old format
+- **Durability auto-validation** — built-in lookup table (Gates Lv1–5, Cities/Capital Lv1–7, Temple Lv1, Stronghold Lv1) checks each attack's total demolition against expected structure HP; shows ✓/! badges in attack list
+- **Auto-retry on mismatch** — when total demolition doesn't match expected durability (±5%), a second OCR pass runs with 3× scale / no whitelist / PSM-3 to recover missing players; logs both attempts
+- **Detailed analysis terminal** — per-image logs show OCR format (table/paragraph/table+header), timestamp detected, word count, elapsed time, structure name, and grouping decisions
+- **Merge fix: real names win** — when split uploads merge, attacks with `Structure Unknown` are overwritten by the real structure name from other images with the same timestamp (was showing "Unknown" before)
+- **Individual image structure scan** — if the combined text misses the structure header, each individual image's text is scanned independently
+- **Enhanced attack detail modal** — now shows Average per Hit, Value Distribution (1M+/500K+/100K+ tiers with proportional bars), and backward-compat game time display
+- **Expanded insights panel** — Participation Spread (High/Medium/Low stacked bar) and Activity Trend (last-7-days bar chart) populated with real data
+- **New export: CSV Attack Details** — per-attack player breakdown with date, structure, level, player name, rank, and demolition value
+- **Chart export button** — export the Top Performers chart as standalone PNG
+- **Export menu reorganization** — added Attack Details CSV between Leaderboard CSV and PDF Report
 
 ## What's new in b6.2
 
