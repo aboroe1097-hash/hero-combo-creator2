@@ -430,6 +430,7 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 function showModal(type, data) {
   const m = $id('dashModal'), body = $id('dashModalBody');
+  document.body.style.overflow = 'hidden';
   $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
   $id('dashModalSub').textContent = type === 'attack' ? `${displayGameTime(data.game_time)} · ${data.players_count} participants` : `${data.total_demolition.toLocaleString()} total demolition`;
   if (type === 'attack') {
@@ -448,7 +449,7 @@ function showModal(type, data) {
     data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
-    const sortedAttacks = [...(data.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
+    const sortedAttacks = [...(data.attacks || [])].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
     const hrMap = {};
     sortedAttacks.forEach(att => {
       if(att.game_time) {
