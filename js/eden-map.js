@@ -2,7 +2,7 @@ import {
   STRUCTURE_TYPES, X1_PLANNING_TARGETS, TEMPLE_TYPES, OVERVIEW_STRUCTURE_TYPES,
   getEdenSectors, getSectorStructures, getSectorBounds, getStructureLabel, getStructureShort,
   getStructurePoints, getSectorFaction, syncEdenSectorSelect, isEdenSectorKey,
-  parseCoordInput, findStructureByCoords, findSectorForCoords,
+  parseCoordInput, findStructureByCoords, findSectorForCoords, ensureEdenDatasetsLoaded,
 } from './eden-map-data.js';
 import { initEdenSeasonPicker } from './eden-map-season.js';
 import {
@@ -2517,9 +2517,7 @@ export async function bootEdenMapPlanner() {
     return;
   }
 
-  const { ensureEdenDatasetsLoaded } = await import('./eden-map-data.js');
   await ensureEdenDatasetsLoaded();
-  const { preloadStructureIcons } = await import('./eden-map-assets.js');
   preloadStructureIcons(EDEN_ICON_PRELOAD);
 
   if (EDEN_MAP_CONFIG.liveMapEnabled) {
