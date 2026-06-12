@@ -1055,6 +1055,19 @@ export async function bootOcrDashboard() {
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();
   };
 
+  const apiBtn = $id('dashApiKeyBtn');
+  if (apiBtn) {
+    apiBtn.onclick = () => {
+      const current = sessionStorage.getItem('qwen_api_key') || '';
+      const newKey = prompt("Set Qwen API Key for image processing:", current);
+      if (newKey !== null) {
+        if (newKey.trim() === '') sessionStorage.removeItem('qwen_api_key');
+        else sessionStorage.setItem('qwen_api_key', newKey.trim());
+        alert(newKey.trim() ? "API Key saved for this session!" : "API Key cleared.");
+      }
+    };
+  }
+
   $id('dashClearDataBtn').onclick = async () => {
     const code = prompt('Enter admin override code:');
     if (!code) return;
