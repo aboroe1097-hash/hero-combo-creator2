@@ -337,7 +337,7 @@ async function processFiles(files) {
   $id('dashProgress').classList.remove('hidden');
   log(`Starting OCR on ${valid.length} files...`, 'info');
   const worker = await Tesseract.createWorker('eng', 1);
-  await worker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ,. :()-[]|?~@#*&+=' });
+  await worker.setParameters({ tessedit_pageseg_mode: '6' });
   
   const allTexts = [];
   for (let i = 0; i < valid.length; i++) {
@@ -346,13 +346,18 @@ async function processFiles(files) {
     const cv = document.createElement('canvas'), sc = 2.0; cv.width = img.width*sc; cv.height = img.height*sc;
     const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, cv.width, cv.height);
     const idat = ctx.getImageData(0,0,cv.width,cv.height), d = idat.data;
-    for (let j=0; j<d.length; j+=4) { const g = 0.299*d[j]+0.587*d[j+1]+0.114*d[j+2]; d[j]=d[j+1]=d[j+2]=g>180?255:g<60?0:(g-60)*(255/120); }
+    for (let j=0; j<d.length; j+=4) {
+      const r = d[j], gn = d[j+1], b = d[j+2];
+      const isGold = r > 160 && gn > 100 && b < 80 && (r - b) > 80;
+      const lum = 0.299*r + 0.587*gn + 0.114*b;
+      const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : 255);
+      d[j]=d[j+1]=d[j+2]=out;
+    }
     ctx.putImageData(idat,0,0);
     log(`Running high-precision scan...`, 'info', f.name);
     const before = performance.now();
     const { data: { text, words } } = await worker.recognize(cv);
     const elapsed = ((performance.now() - before) / 1000).toFixed(1);
-    const hasContent = /[\d,]{4,}/.test(text);
     const format = /MVP/i.test(text) ? 'paragraph' : /occupied/i.test(text) ? 'table+header' : 'table';
     const dt = extractDt(text);
     const sN = extractStructureName(text);
@@ -411,7 +416,13 @@ async function processFiles(files) {
         cv.width = img.width * sc; cv.height = img.height * sc;
         const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, cv.width, cv.height);
         const idat = ctx.getImageData(0,0,cv.width,cv.height), d = idat.data;
-        for (let j=0; j<d.length; j+=4) { const g = 0.299*d[j]+0.587*d[j+1]+0.114*d[j+2]; d[j]=d[j+1]=d[j+2]=g>200?255:g<50?0:g; }
+        for (let j=0; j<d.length; j+=4) {
+          const r = d[j], gn = d[j+1], b = d[j+2];
+          const isGold = r > 160 && gn > 100 && b < 80 && (r - b) > 80;
+          const lum = 0.299*r + 0.587*gn + 0.114*b;
+          const out = isGold ? 0 : (lum > 150 ? 255 : lum < 80 ? 0 : lum);
+          d[j]=d[j+1]=d[j+2]=out;
+        }
         ctx.putImageData(idat,0,0);
         const { data: { text, words } } = await hpWorker.recognize(cv);
         const oldEntry = allTexts.find(t => t.filename === f.name);
@@ -452,16 +463,21 @@ function extractStructureName(text) {
   return null;
 }
 
+function extractStructureLevel(text) {
+  const m = text.match(/Lv\.?\s*(\d+)/i);
+  return m ? m[1] : null;
+}
+
 function parseOcrResults(results) {
-  const withMeta = results.map(r => ({ dt: extractDt(r.text) || new Date(), sN: extractStructureName(r.text), r })).sort((a,b) => a.dt - b.dt);
+  const withMeta = results.map(r => ({ dt: extractDt(r.text) || new Date(), sN: extractStructureName(r.text), sL: extractStructureLevel(r.text), r })).sort((a,b) => a.dt - b.dt);
   const groups = [];
   for (const item of withMeta) {
     let f = false;
-    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000 && g.sN === item.sN) { g.results.push(item.r); f = true; break; } }
-    if (!f) groups.push({ dt: item.dt, sN: item.sN, results: [item.r] });
+    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 180000 && g.sN === item.sN && g.sL === item.sL) { g.results.push(item.r); f = true; break; } }
+    if (!f) groups.push({ dt: item.dt, sN: item.sN, sL: item.sL, results: [item.r] });
   }
   log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
-  groups.forEach((g, i) => log(`Group ${i+1}: ${g.results.length} image(s), time=${fmtDate(g.dt)}, structure=${g.sN || '?'}`, 'info'));
+  groups.forEach((g, i) => log(`Group ${i+1}: ${g.results.length} image(s), time=${fmtDate(g.dt)}, structure=${g.sN || '?'}${g.sL ? ' Lv.'+g.sL : ''}`, 'info'));
   const attacks = [];
   for (const g of groups) {
     const txt = g.results.map(r => r.text).join('\n');
@@ -557,13 +573,9 @@ function parseImagePlayers(r) {
 }
 
 function parseValueFromDigits(t) {
-  // Only extract ACTUAL digits. Don't turn letters into digits unless they are clearly in a number block.
-  const digits = t.replace(/,/g,'').match(/\d+/);
-  if (!digits) return null;
-  let valStr = digits[0];
-  // Common visual fixes ONLY if they are part of a digit string
-  valStr = valStr.replace(/S/g,'5').replace(/[IL|]/g,'1');
-  return parseInt(valStr) || 0;
+  const cleaned = t.replace(/[,.]/g, '');
+  const m = cleaned.match(/\d{3,8}$/);
+  return m && m[0].length >= 4 ? parseInt(m[0]) : null;
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
