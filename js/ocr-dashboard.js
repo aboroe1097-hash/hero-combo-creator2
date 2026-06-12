@@ -70,6 +70,49 @@ function restoreLogs() {
   } catch (e) {}
 }
 
+// --- JSON Repair Helper ---
+// Fixes common JSON escaping issues from LLM outputs
+function tryRepairJson(text) {
+  // First, try parsing as-is
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Continue to repair only for common JSON errors
+    if (!e.message.includes('Bad escaped character') && 
+        !e.message.includes('Invalid escape') && 
+        !e.message.includes('Unexpected token') &&
+        !e.message.includes('Expected')) {
+      throw e;
+    }
+  }
+  
+  let repaired = text;
+  
+  // Step 1: Remove trailing commas before } or ] (handle newlines/spaces)
+  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+  
+  // Step 2: Fix bad escape sequences: replace \X (where X is not a valid escape char) with \\X
+  // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+  repaired = repaired.replace(/\\([^"\\/bfnrtu])/g, '\\\\$1');
+  
+  // Step 3: Fix any unescaped control characters
+  repaired = repaired.replace(/[\x00-\x1f]/g, (match) => {
+    const code = match.charCodeAt(0);
+    if (code === 0x08) return '\\b';
+    if (code === 0x09) return '\\t';
+    if (code === 0x0a) return '\\n';
+    if (code === 0x0c) return '\\f';
+    if (code === 0x0d) return '\\r';
+    return '\\u' + code.toString(16).padStart(4, '0');
+  });
+  
+  try {
+    return JSON.parse(repaired);
+  } catch (e2) {
+    throw new Error(`Failed to parse JSON even after repair: ${e2.message}. Snippet: ${text.substring(0, 100)}...`);
+  }
+}
+
 // --- Fuzzy Matching ---
 function getSimilarity(s1, s2) {
   if (!s1 || !s2) return 0;
@@ -411,15 +454,32 @@ async function processFiles(files) {
       }
       if (!localKey) throw new Error('No API key provided.');
       
-      const promptTxt = `You are analyzing a game screenshot of an attack report. Extract ALL visible player entries.
+      const promptTxt = `You are an expert game data analyzer. Analyze this screenshot of an attack/demolition report.
+Extract ALL visible player entries accurately.
 
-Rules:
-- 'structure_name': the building type (Capital / Stronghold / Temple / Gates / City / etc). If not visible, null.
-- 'structure_level': the level number only (e.g. "5"). If not visible, null.
-- 'timestamp': the date/time shown, formatted as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
-- 'players': array of {name, value}. Extract EVERY player's FULL name exactly as written — include all symbols, clan tags, emojis, numbers, spaces, and special characters. Do NOT truncate or simplify names. Each entry has ONE player — do not merge or combine entries.
+RULES FOR EXTRACTION:
+1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town). If not clearly visible, null.
+2. 'structure_level': the integer level of the structure (e.g. "5"). If not visible, null.
+3. 'timestamp': the date/time shown, formatted strictly as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
+4. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
+   - 'name' (string): Extract the player's FULL name exactly as written. INCLUDE any alliance tags (e.g., "[ABC]Player"), numbers, and special characters. Do NOT truncate or simplify.
+   - 'value' (integer): Extract the Demolition damage score or points for the player. Remove any commas (e.g., convert "1,234,567" to 1234567). Only extract the demolition score, NOT troop counts or power levels.
 
-Output ONLY valid JSON. No markdown, no code blocks, no commentary. Just the raw JSON array/object.`;
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid, raw JSON.
+- Do NOT wrap the JSON in markdown blocks (no \`\`\`json).
+- Do NOT include any commentary, explanations, or text outside the JSON object.
+
+EXPECTED JSON SCHEMA:
+{
+  "structure_name": "Capital",
+  "structure_level": "5",
+  "timestamp": "2026-06-12 14:13:00",
+  "players": [
+    {"name": "[VTS]Lord_IKR", "value": 81357},
+    {"name": "Gamer123", "value": 1500}
+  ]
+}`;
 
       const res = await fetch(QWEN_WORKER_URL, {
         method: 'POST',
@@ -435,11 +495,15 @@ Output ONLY valid JSON. No markdown, no code blocks, no commentary. Just the raw
       const raw = await res.json();
       if (!res.ok) throw new Error(raw.error?.message || `Qwen API Error (HTTP ${res.status})`);
       let text = raw.choices[0].message.content;
+      log(`Received response of length ${text.length}`, 'info', f.name);
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      data = JSON.parse(text);
+      data = tryRepairJson(text);
 
       const elapsed = ((performance.now() - before) / 1000).toFixed(1);
       const pCount = data.players ? data.players.length : 0;
+      if (pCount < 10) {
+        log(`Warning: Only ${pCount} players found. Check extraction logic. Snippet: ${text.substring(0, 50)}...`, 'warn', f.name);
+      }
       log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
       allJson.push({ filename: f.name, json: data });
     } catch (e) {
