@@ -152,14 +152,21 @@ body.tab-manual-active { padding-bottom: 190px !important; }
 .generated-combo-card {
   flex-direction: column !important;
   align-items: center !important;
-  padding: 10px !important; gap: 6px !important;
+  padding: 16px 10px 10px 10px !important; gap: 10px !important;
+}
+.generated-combo-card .saved-combo-number {
+  top: 10px !important;
+  left: 10px !important;
+  transform: none !important;
 }
 .generated-combo-card .saved-combo-slots {
   display: flex !important; flex-direction: row !important;
   justify-content: center !important; gap: 5px !important; width: 100% !important;
+  margin-top: 8px !important;
 }
-.generated-combo-card > div:last-child {
+.generated-combo-card .gen-score-panel {
   margin-left: 0 !important; padding-right: 0 !important; text-align: center !important;
+  margin-top: 4px !important;
 }
 .saved-combo-slot-item img {
   width: 72px !important; height: 72px !important;

@@ -191,7 +191,7 @@ export function getCounterLabels() {
   };
 }
 
-function getCheckedValues(container) {
+export function getCheckedValues(container) {
   if (!container) return [];
   return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
 }

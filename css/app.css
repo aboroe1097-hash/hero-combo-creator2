@@ -677,8 +677,13 @@ section.tab-panel:not(.hidden) {
 .combo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem; }
 
 /* ── Saved combos & generated ────────────────────────────── */
-.saved-combo-display, .generated-combo-card {
+.saved-combo-display {
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+}
+.generated-combo-card {
+  display: flex; flex-direction: row; align-items: center; justify-content: center;
+}
+.saved-combo-display, .generated-combo-card {
   background: linear-gradient(135deg, #1e293b 0%, #162032 100%);
   border: 1px solid var(--border);
   padding: 16px 20px 16px 68px;
@@ -707,6 +712,9 @@ section.tab-panel:not(.hidden) {
   flex-grow: 1; gap: 12px; flex-wrap: nowrap;
   overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch;
 }
+.generated-combo-card .saved-combo-slots {
+  flex-grow: 0;
+}
 .saved-combo-slot-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   flex-shrink: 0; cursor: default;
@@ -723,11 +731,11 @@ section.tab-panel:not(.hidden) {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .gen-score-panel {
-  display: flex; flex-direction: column; align-items: flex-end;
-  gap: 6px; margin-left: auto; min-width: 100px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; margin-left: 32px; min-width: 100px; flex-shrink: 0;
 }
 .gen-score-main {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 .manual-combo-scorebox {
   align-items: center; margin-left: 0; width: 100%;
