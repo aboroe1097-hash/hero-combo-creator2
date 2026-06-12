@@ -122,24 +122,33 @@ async function doLogin() {
 function saveData(data) {
   dashData = data;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
-  try { setDoc(doc(getDb(), FS_PATH), data); } catch {}
+  try { setDoc(doc(getDb(), FS_PATH), data); log('Synced to cloud.', 'info'); } catch (e) { log('Cloud sync failed: ' + e.message, 'warn'); }
 }
 
-function loadData() {
+async function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) { dashData = JSON.parse(saved); render(); }
   } catch {}
   try {
+    const db = getDb();
+    if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
     if (_fsUnsub) _fsUnsub();
-    _fsUnsub = onSnapshot(doc(getDb(), FS_PATH), (snap) => {
+    const snap = await getDoc(doc(db, FS_PATH));
+    if (snap.exists()) {
+      dashData = snap.data();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch {}
+      render();
+    }
+    _fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
         dashData = snap.data();
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); } catch {}
         render();
       }
     });
-  } catch {}
+    log('Cloud sync active.', 'info');
+  } catch (e) { log('Cloud sync unavailable: ' + e.message, 'warn'); }
 }
 
 function clearData() {
@@ -208,7 +217,7 @@ function render() {
   const al = $id('dashAttackList'); al.innerHTML = '';
   atts.forEach(a => {
     const d = document.createElement('div'); d.className = 'dash-attack-item';
-    d.innerHTML = `<div><div class="dash-attack-name">${a.structure_name}</div><div class="dash-attack-time">${a.game_time.split(' ')[1]?.slice(0,5)} GT</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
+    d.innerHTML = `<div><div class="dash-attack-name">${a.structure_name} ${a.structure_level}</div><div class="dash-attack-time">${a.game_time.split(' ')[1]?.slice(0,5)} GT · ${a.players_count} players</div></div><div style="text-align:right"><div class="dash-attack-val">${a.total_demolition.toLocaleString()}</div></div>`;
     d.onclick = () => showModal('attack', a); al.appendChild(d);
   });
 
@@ -222,14 +231,16 @@ function render() {
 
 function showModal(type, data) {
   const m = $id('dashModal'), body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name : data.name;
+  $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
+  $id('dashModalSub').textContent = type === 'attack' ? `${data.game_time} · ${data.players_count} participants` : `${data.total_demolition.toLocaleString()} total demolition`;
   if (type === 'attack') {
-    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div></div><table class="dash-table"><tbody>`;
-    data.players.forEach(p => h += `<tr><td>#${p.rank}</td><td>${p.name}</td><td style="text-align:right">${p.value.toLocaleString()}</td></tr>`);
+    let h = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.game_time.split(' ')[1]?.slice(0,5)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${data.structure_name} ${data.structure_level||''}</div></div></div>`;
+    h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
+    data.players.forEach(p => h += `<tr><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname">${p.name}</td><td class="dash-val">${p.value.toLocaleString()}</td></tr>`);
     body.innerHTML = h + '</tbody></table>';
   } else {
     body.innerHTML = `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${data.total_demolition.toLocaleString()}</div></div></div>` + 
-      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${att.structure_name}</td><td style="text-align:right">${att.value.toLocaleString()}</td></tr>`).join('') + '</tbody></table>';
+      '<table class="dash-table"><thead><tr><th>Structure</th><th style="text-align:right">Value</th></tr></thead><tbody>' + data.attacks.map(att => `<tr><td>${att.structure_name}</td><td style="text-align:right">${att.val.toLocaleString()}</td></tr>`).join('') + '</tbody></table>';
   }
   m.classList.add('active');
 }
@@ -296,9 +307,7 @@ function parseOcrResults(results) {
   const groups = [];
   for (const item of withMeta) {
     let f = false;
-    if (item.sN) {
-      for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000 && g.sN === item.sN) { g.results.push(item.r); f = true; break; } }
-    }
+    for (const g of groups) { if (Math.abs(g.dt - item.dt) < 600000 && g.sN === item.sN) { g.results.push(item.r); f = true; break; } }
     if (!f) groups.push({ dt: item.dt, sN: item.sN, results: [item.r] });
   }
   const attacks = [];
@@ -326,7 +335,20 @@ function parseOcrResults(results) {
     }
   }
   if (!attacks.length) return null;
-  const merged = {}; [...((dashData && dashData.attacks) || []), ...attacks].forEach(a => merged[a.id] = a);
+  const merged = {};
+  [...((dashData && dashData.attacks) || []), ...attacks].forEach(a => {
+    if (merged[a.id]) {
+      const pMap = {};
+      merged[a.id].players.forEach(p => pMap[p.value] = p);
+      a.players.forEach(p => { if (!pMap[p.value]) pMap[p.value] = p; });
+      merged[a.id].players = Object.values(pMap).sort((x,y) => y.value - x.value);
+      merged[a.id].players.forEach((p,i) => p.rank = i+1);
+      merged[a.id].players_count = merged[a.id].players.length;
+      merged[a.id].total_demolition = merged[a.id].players.reduce((s,p) => s + p.value, 0);
+    } else {
+      merged[a.id] = { ...a };
+    }
+  });
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
   const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, val: p.value, rank: p.rank }); }));
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
@@ -424,6 +446,9 @@ function parseParagraphFormat(text) {
 
 export async function bootOcrDashboard() {
   if (_booted) return; _booted = true; loadRoster();
+  // Keep log panel always visible
+  const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
+  log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
