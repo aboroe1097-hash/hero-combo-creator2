@@ -545,6 +545,27 @@ function render() {
   });
 
   // --- Insights ---
+  let activeAttacks = atts;
+  const filterEl2 = $id('dashLeaderFilter');
+  if (filterEl2 && filterEl2.value) {
+    activeAttacks = atts.filter(a => a.id === filterEl2.value);
+  }
+
+  const $avgAttend = $id('dashAvgAttend');
+  const $avgDemo = $id('dashAvgDemo');
+  if ($avgAttend && $avgDemo) {
+    let totalAttend = 0;
+    let totalDemoObj = 0;
+    activeAttacks.forEach(a => {
+      totalAttend += (a.players || []).length;
+      totalDemoObj += (a.total_demolition || 0);
+    });
+    const avgA = activeAttacks.length ? Math.round(totalAttend / activeAttacks.length) : 0;
+    const avgD = totalAttend ? Math.round(totalDemoObj / totalAttend) : 0;
+    $avgAttend.textContent = avgA.toLocaleString();
+    $avgDemo.textContent = avgD >= 1000 ? (avgD/1000).toFixed(1) + 'k' : avgD.toLocaleString();
+  }
+
   const partSpread = { high: 0, medium: 0, low: 0 };
   psum.forEach(p => {
     const pct = p.participation_count / atts.length;
