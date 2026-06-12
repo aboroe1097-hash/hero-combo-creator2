@@ -346,6 +346,9 @@ function validateTotalDemolition(sN, sL, total) {
 }
 
 // --- OCR Engine ---
+// Set this to your Cloudflare Worker URL after deploying workers/qwen-cors-proxy.js:
+const QWEN_WORKER_URL = 'https://corsproxy.io/?';
+
 async function processFiles(files) {
   if (_ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
   _ocrProcessing = true; 
@@ -384,7 +387,9 @@ Extract the following:
 
 Return STRICTLY valid JSON ONLY. No markdown formatting, no \`\`\`json blocks. Just the raw JSON object.`;
       const DIRECT_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-      const QWEN_URL = 'https://corsproxy.io/?' + encodeURIComponent(DIRECT_URL);
+      const QWEN_URL = QWEN_WORKER_URL.startsWith('https://corsproxy.io')
+        ? QWEN_WORKER_URL + encodeURIComponent(DIRECT_URL)
+        : QWEN_WORKER_URL;
       const res = await fetch(QWEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
