@@ -523,14 +523,32 @@ function render() {
   $id('dashKpiPlayers').textContent = psum.length;
   $id('dashKpiMvp').textContent = psum[0]?.name || '---';
   
+  const psumWithRank = psum.map((p, i) => ({ ...p, original_rank: i + 1 }));
+
   const c = $id('dashChart'); c.innerHTML = '';
-  const top = psum.slice(0, 10), max = top[0]?.total_demolition || 1;
-  top.forEach((p, i) => {
+  const top = psumWithRank.slice(0, 10), max = top[0]?.total_demolition || 1;
+  top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${i+1}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${pct}% + 12px)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${pct}% + 12px)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
+
+  const lc = $id('dashLowestChart');
+  if (lc) {
+    lc.innerHTML = '';
+    const lowest = psumWithRank.slice(-10).reverse();
+    if (lowest.length === 0) {
+      lc.innerHTML = '<div class="dash-empty">No data</div>';
+    } else {
+      lowest.forEach(p => {
+        const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
+        const pct = (p.total_demolition/max)*86; 
+        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${pct}% + 12px); color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.onclick = () => showModal('player', p); lc.appendChild(w);
+      });
+    }
+  }
 
   const al = $id('dashAttackList'); al.innerHTML = '';
   const filteredAttacks = atts.filter(a => {
@@ -570,8 +588,6 @@ function render() {
   }
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
-  // Add original rank before filtering so the search doesn't change their number
-  const psumWithRank = psum.map((p, i) => ({ ...p, original_rank: i + 1 }));
   
   psumWithRank.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase())).forEach(p => {
     const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
