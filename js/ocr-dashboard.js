@@ -411,17 +411,15 @@ async function processFiles(files) {
       }
       if (!localKey) throw new Error('No API key provided.');
       
-      const promptTxt = `You MUST extract the report header AND all player entries from this occupation report screenshot.
+      const promptTxt = `You are analyzing a game screenshot of an attack report. Extract ALL visible player entries.
 
-REQUIRED FIELDS (do not return null):
-- structure_name: building type exactly as shown (Capital / Stronghold / Temple / Gates / City)
-- structure_level: single integer level number (e.g. 5)
-- timestamp: exact date/time shown in the header, format YYYY-MM-DD HH:MM:SS
-- players: EVERY row in the list — each entry MUST be {name: string, value: number}. Value must be a clean integer. Include ALL symbols, tags, spaces in name exactly.
+Rules:
+- 'structure_name': the building type (Capital / Stronghold / Temple / Gates / City / etc). If not visible, null.
+- 'structure_level': the level number only (e.g. "5"). If not visible, null.
+- 'timestamp': the date/time shown, formatted as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
+- 'players': array of {name, value}. Extract EVERY player's FULL name exactly as written — include all symbols, clan tags, emojis, numbers, spaces, and special characters. Do NOT truncate or simplify names. Each entry has ONE player — do not merge or combine entries.
 
-Output ONLY a single valid JSON object:
-{"structure_name":"...","structure_level":"...","timestamp":"...","players":[{"name":"...","value":12345},...]}
-No markdown, no extra text.`;
+Output ONLY valid JSON. No markdown, no code blocks, no commentary. Just the raw JSON array/object.`;
 
       const res = await fetch(QWEN_WORKER_URL, {
         method: 'POST',
