@@ -786,7 +786,15 @@ function render() {
          const x = padX + (i / (days.length - 1)) * usableW;
          const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
          svg += `<circle cx="${x}" cy="${y}" r="5" fill="#0b0f19" stroke="#60a5fa" stroke-width="2.5" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>`;
-         svg += `<text x="${x}" y="${h-8}" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle" font-fafunction showModal(type, data) {
+         svg += `<text x="${x}" y="${h-8}" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">${d}</text>`;
+      });
+      svg += '</svg>';
+      $trend.innerHTML = svg;
+    }
+  }
+}
+
+function showModal(type, data) {
   try {
     const m = $id('dashModal'), body = $id('dashModalBody');
     window._modalDepth = (window._modalDepth || 0) + 1;
@@ -871,7 +879,7 @@ function render() {
     }
     console.error('showModal Error:', err);
   }
-}
+
   // Escape key to close
   if (!window._modalEscListener) {
     window._modalEscListener = (e) => {
