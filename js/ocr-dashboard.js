@@ -1045,7 +1045,7 @@ EXPECTED JSON SCHEMA:
 
 function normalizeStructureName(name) {
   if (!name) return name;
-  const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins' };
+  const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins', 'structure': 'Stronghold' };
   const lower = name.toLowerCase().trim();
   return corrections[lower] || name.trim();
 }
