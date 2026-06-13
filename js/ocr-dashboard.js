@@ -582,7 +582,7 @@ function render() {
   top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span style="font-size:0.75rem; color:#94a3b8; margin-left:auto;">${p.participation_count} hits</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center;">${p.participation_count} hits</span></div><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -597,7 +597,7 @@ function render() {
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
         const pct = (p.total_demolition/lowestMax)*86; 
-        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span style="font-size:0.75rem; color:rgba(248,113,113,0.8); margin-left:auto;">${p.participation_count} hits</span><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center;">${p.participation_count} hits</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
     }
