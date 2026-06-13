@@ -153,7 +153,34 @@ function editDistance(s1, s2) {
 
 function findBestMatch(name, minConfidence = 100) {
   if (!name) return name;
-  if (typeof name === 'string' && /pixel/i.test(name)) return '༄Pixel';
+  if (typeof name === 'string') {
+    const aliasMap = {
+      'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy',
+      'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_',
+      'AK Чанай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
+      '!!Uzumaki !!': '!!Uzumaki!!', '!! Uzumaki !!': '!!Uzumaki!!', 'Uzumaki': '!!Uzumaki!!',
+      '● AGAM ●': 'AGAM', '●●AGAM ●●': 'AGAM', '●● AGAM ●●': 'AGAM', '●AGAM●': 'AGAM',
+      'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj',
+      '○UNDEADO○': 'UNDEAD', '○UNDEAD○': 'UNDEAD', '◎UNDEADO◎': 'UNDEAD', 'ØUNDEADØ': 'UNDEAD',
+      '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110',
+      '≽ Kika ≡': 'Kika', '~Kika~': 'Kika', '✨Kika✨': 'Kika',
+      'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп',
+      'REDBULL§': 'REDBULLS', 'RedBull©': 'REDBULLS', 'RedBull@': 'REDBULLS',
+      'Ar Ran★_YG+62': 'Ar Ran ★_YG+62', 'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
+      'hunter killer.': 'Hunter killer.', 'htar killer.': 'Hunter killer.', 'htubter killer.': 'Hunter killer.',
+      '+DarkPrinceSSt': 'tDarkPrinceSS$t', 'DarkPrinceSt': 'tDarkPrinceSS$t',
+      'Doedoom': 'Doedoem', 'Dneanmon': 'Dheahmon', '↑ Anne ↑': 'Anne', 'ŸAnneŸ': 'Anne',
+      'q. Immortalis': 'q. Immortal', 'D off y.': 'D offy.', 'Doffy.': 'D offy.',
+      'terribile ivan': 'terrible ivan', '★KoThawwKa★': 'KoThawwKa', '★ KoThawwKa ★': 'KoThawwKa',
+      'БратХрабрепц': 'БратХрабрец', '洋人在弄啥嘢': '洋人在弄啥嘞', '洋人在弄哈嘞': '洋人在弄啥嘞',
+      '_._5G': '_5G', 'ΛNGƎL': 'ANGEL', '-L7-': '- L7 -', '~Pink~': '~ Pink ~',
+      'DvD18 x2': 'DvD18', '..WAE.L..': '..WAEL..', 'Neutriino10': 'Neutrino10',
+      '耶比耶耶耶': '耶比耶比耶', '真庭道主-': '-真庭道主-',
+      '乃厶口毛': '乃ㄥ口毛', '乃ㄥ山毛': '乃ㄥ口毛', '乃∠口毛': '乃ㄥ口毛'
+    };
+    if (aliasMap[name]) return aliasMap[name];
+    if (/pixel/i.test(name)) return '༄Pixel';
+  }
 
   if (!rosterNames.length) return name;
   let best = name, maxSim = 0;
@@ -192,18 +219,38 @@ function showRosterModal() {
 }
 
 // --- Auth ---
-const AUTH_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'; // 12345
+const AUTH_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
 const CLEAR_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
 
 async function sha256(str) {
   try {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (e) { return str === 'vtsadmin' ? CLEAR_HASH : 'insecure'; }
+  } catch (e) { return null; }
 }
 
-function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1'; }
-function showApp() { $id('dashLogin')?.classList.add('hidden'); $id('dashApp')?.classList.remove('hidden'); }
+function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
+function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1' || isGuest(); }
+function showApp() { 
+  $id('dashLogin')?.classList.add('hidden'); 
+  $id('dashApp')?.classList.remove('hidden'); 
+  if (isGuest()) {
+    if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = 'none';
+    if ($id('dashUploadZone')) $id('dashUploadZone').style.display = 'none';
+    if ($id('dashLogArea')) $id('dashLogArea').style.display = 'none';
+    if ($id('dashApiKeyContainer')) $id('dashApiKeyContainer').style.display = 'none';
+    if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = 'none';
+    if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = 'none';
+    if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = 'none';
+  } else {
+    if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = '';
+    if ($id('dashUploadZone')) $id('dashUploadZone').style.display = '';
+    if ($id('dashApiKeyContainer')) $id('dashApiKeyContainer').style.display = 'flex';
+    if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = '';
+    if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = '';
+    if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = '';
+  }
+}
 function showLogin() { $id('dashLogin')?.classList.remove('hidden'); $id('dashApp')?.classList.add('hidden'); }
 
 async function doLogin() {
@@ -357,14 +404,12 @@ function exportChartPng() {
        bar.style.borderRadius = '8px';
        bar.style.background = 'linear-gradient(90deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3))';
      }
-     const spans = item.querySelectorAll('span');
-     spans.forEach(s => s.style.transform = 'translateY(1px)');
   });
 
   clone.style.position = 'absolute';
   clone.style.top = '-9999px';
   clone.style.left = '0';
-  clone.style.width = card.offsetWidth + 'px';
+  clone.style.width = Math.max(card.offsetWidth, 500) + 'px'; // Ensure sufficient width for export
   clone.style.background = '#0b0f19'; // Force explicit background on clone
   clone.style.border = '1px solid rgba(255,255,255,0.05)';
   
@@ -537,7 +582,7 @@ function render() {
   top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;right:12px;">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span style="font-size:0.75rem; color:#94a3b8; margin-left:auto;">${p.participation_count} hits</span><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -552,7 +597,7 @@ function render() {
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
         const pct = (p.total_demolition/lowestMax)*86; 
-        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;right:12px; color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span style="font-size:0.75rem; color:rgba(248,113,113,0.8); margin-left:auto;">${p.participation_count} hits</span><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
     }
@@ -731,6 +776,8 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 function showModal(type, data) {
   const m = $id('dashModal'), body = $id('dashModalBody');
+  // Track nesting so closeModal always restores correctly
+  window._modalDepth = (window._modalDepth || 0) + 1;
   document.body.style.overflow = 'hidden';
   $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
   $id('dashModalSub').textContent = type === 'attack' ? `${displayGameTime(data.game_time)} · ${data.players_count} participants` : `${(data.total_demolition||0).toLocaleString()} total demolition`;
@@ -743,13 +790,29 @@ function showModal(type, data) {
       else if (p.value >= 100000) tiers['100K+']++;
       else tiers['<100K']++;
     });
-    let h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+    let h = '';
+    if (!isGuest()) {
+      h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+    }
     h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
     h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
-    data.players.forEach(p => h += `<tr style="cursor:pointer" onclick="window.showPlayer('${esc(p.name).replace(/'/g,"\\'")}')"><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname" style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(p.name)}</td><td class="dash-val">${(p.value||p.val||0).toLocaleString()}</td></tr>`);
+    data.players.forEach(p => {
+      const encName = encodeURIComponent(p.name).replace(/'/g, "%27");
+      h += `<tr style="cursor:pointer" onclick="window.showPlayer('${encName}')"><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname" style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(p.name)}</td><td class="dash-val">${(p.value||p.val||0).toLocaleString()}</td></tr>`;
+    });
     body.innerHTML = h + '</tbody></table>';
   } else {
+    if (data._not_in_summary) {
+      body.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">👤</div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:0.5rem;">${esc(data.name)}</div>
+        <div style="font-size:0.82rem;">This player appeared in one attack but hasn't been fully aggregated yet.</div>
+        <div style="font-size:0.75rem;margin-top:0.5rem;opacity:0.6;">Upload more screenshots or refresh the dashboard to see their full profile.</div>
+      </div>`;
+      m.classList.add('active');
+      return;
+    }
     const sortedAttacks = [...(data.attacks || [])].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
     const hrMap = {};
     sortedAttacks.forEach(att => {
@@ -771,7 +834,8 @@ function showModal(type, data) {
         </div><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-6px;margin-bottom:12px"><span>${hrs[0]}:00</span><span>${hrs[hrs.length-1]}:00</span></div>`;
     }
 
-    let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.exportPlayerReport('${esc(data.name).replace(/'/g,"\\'")}')">📥 Export CSV Report</button></div>`;
+    const encPname = encodeURIComponent(data.name).replace(/'/g, "%27");
+    let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.exportPlayerReport('${encPname}')">📥 Export CSV Report</button></div>`;
     
     body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml + 
       '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + 
@@ -780,9 +844,32 @@ function showModal(type, data) {
       '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
   }
   m.classList.add('active');
+
+  // Click outside modal content to close
+  if (!m._backdropListener) {
+    m._backdropListener = (e) => {
+      if (e.target === m) closeModal();
+    };
+    m.addEventListener('click', m._backdropListener);
+  }
+
+  // Escape key to close
+  if (!window._modalEscListener) {
+    window._modalEscListener = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', window._modalEscListener);
+  }
 }
 
-function closeModal() { $id('dashModal')?.classList.remove('active'); document.body.style.overflow = ''; }
+function closeModal() {
+  $id('dashModal')?.classList.remove('active');
+  window._modalDepth = Math.max(0, (window._modalDepth || 1) - 1);
+  if (window._modalDepth === 0) {
+    document.body.style.overflow = '';
+    document.body.style.overflowY = '';
+  }
+}
 
 // --- Durability Validation ---
 const DURABILITY_TABLE = {
@@ -830,7 +917,7 @@ async function processFiles(files) {
       const before = performance.now();
       let data = null;
       
-      let localKey = sessionStorage.getItem('qwen_api_key');
+      let localKey = localStorage.getItem('qwen_api_key');
       if (!localKey) {
         throw new Error('No API key provided. Please enter your API key in the top bar and click Confirm.');
       }
@@ -1056,6 +1143,7 @@ export async function bootOcrDashboard() {
   log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
+  $id('dashGuestBtn').onclick = () => { sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
@@ -1078,24 +1166,24 @@ export async function bootOcrDashboard() {
   const apiInput = $id('dashApiKeyInput');
   const apiSaveBtn = $id('dashSaveApiBtn');
   if (apiInput) {
-    apiInput.value = sessionStorage.getItem('qwen_api_key') || '';
+    apiInput.value = localStorage.getItem('qwen_api_key') || '';
     apiInput.oninput = (e) => {
       const val = e.target.value.trim();
-      if (val) sessionStorage.setItem('qwen_api_key', val);
-      else sessionStorage.removeItem('qwen_api_key');
+      if (val) localStorage.setItem('qwen_api_key', val);
+      else localStorage.removeItem('qwen_api_key');
     };
   }
   if (apiSaveBtn && apiInput) {
     apiSaveBtn.onclick = () => {
       const val = apiInput.value.trim();
       if (val) {
-        sessionStorage.setItem('qwen_api_key', val);
+        localStorage.setItem('qwen_api_key', val);
         // Trigger the file input immediately to retain trusted user gesture context
         const inp = $id('dashFileInput');
         if (inp) inp.click();
         log('API accepted and added. You can now start uploading.', 'success');
       } else {
-        sessionStorage.removeItem('qwen_api_key');
+        localStorage.removeItem('qwen_api_key');
         alert('API Key cleared. Please enter an API key to upload images.');
       }
     };
@@ -1129,8 +1217,10 @@ export async function bootOcrDashboard() {
 
 window.deleteAttack = async function(attId) {
   const pwd = prompt('Enter Admin Overdrive Password to delete this structure data:');
-  if (pwd !== 'wipe1097' && pwd !== '1097') {
-    if (pwd !== null) alert('Incorrect password.');
+  if (pwd === null) return;
+  const hash = await sha256(pwd);
+  if (hash !== '857c3b259b7c496dc834575b66009ce3fedd8c1eb1503c1b927f4e415d5672a0' && hash !== '235aa062e6372588dbae00552abf36b8ff9c315e3da56cf02786980e764630e9') {
+    alert('Incorrect password.');
     return;
   }
   if(!attId || !_booted || !dashData) return;
@@ -1167,20 +1257,52 @@ window.editAttack = async function(attId) {
   log(`Updated attack to: ${att.structure_name} ${att.structure_level}`, 'info');
 };
 
-window.showPlayer = function(pName) {
-  if(!dashData) return;
-  const p = dashData.players_summary.find(x => x.name === pName);
-  if(p) showModal('player', p);
+window.showPlayer = function(pNameEncoded) {
+  if (!dashData) return;
+  const pName = decodeURIComponent(pNameEncoded);
+  const masterName = findBestMatch(pName);
+  
+  // Exact match first (using master name)
+  let p = dashData.players_summary.find(x => x.name === masterName);
+  // Fallback to raw name if master fails
+  if (!p) p = dashData.players_summary.find(x => x.name === pName);
+  // Fuzzy fallback: case-insensitive + trimmed
+  if (!p) {
+    const q = pName.trim().toLowerCase();
+    p = dashData.players_summary.find(x => x.name.trim().toLowerCase() === q);
+  }
+  // Last resort: partial match (handles OCR name variants)
+  if (!p) {
+    const q = pName.trim().toLowerCase();
+    p = dashData.players_summary.find(x =>
+      x.name.toLowerCase().includes(q) || q.includes(x.name.toLowerCase())
+    );
+  }
+  if (p) {
+    showModal('player', p);
+  } else {
+    // Player exists in attack but not aggregated yet — build a minimal view
+    const minimalPlayer = {
+      name: pName,
+      total_demolition: 0,
+      participation_count: 0,
+      attacks: [],
+      _not_in_summary: true
+    };
+    showModal('player', minimalPlayer);
+  }
 };
 
 window.showAttack = function(attId) {
   if(!dashData) return;
   const att = dashData.attacks.find(a => a.id === attId);
   if(att) showModal('attack', att);
+  else closeModal();
 };
 
-window.exportPlayerReport = function(pName) {
+window.exportPlayerReport = function(pNameEncoded) {
   if(!dashData) return;
+  const pName = decodeURIComponent(pNameEncoded);
   const p = dashData.players_summary.find(x => x.name === pName);
   if(!p) return;
   let csv = "Time,Target,Value,Rank\n";
