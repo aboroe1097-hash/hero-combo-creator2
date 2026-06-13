@@ -537,7 +537,7 @@ function render() {
   top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${Math.max(pct, 30)}% + 12px)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%"></div><span class="dash-top-rank">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;right:12px;">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -552,7 +552,7 @@ function render() {
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
         const pct = (p.total_demolition/lowestMax)*86; 
-        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;left:calc(${Math.max(pct, 30)}% + 12px); color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><span class="dash-top-name">${esc(p.name)}</span><span class="dash-top-val" style="position:absolute;right:12px; color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
     }
@@ -832,10 +832,8 @@ async function processFiles(files) {
       
       let localKey = sessionStorage.getItem('qwen_api_key');
       if (!localKey) {
-        localKey = prompt('Qwen (DashScope) API key required for OCR:');
-        if (localKey) sessionStorage.setItem('qwen_api_key', localKey);
+        throw new Error('No API key provided. Please enter your API key in the top bar and click Confirm.');
       }
-      if (!localKey) throw new Error('No API key provided.');
       
       const promptTxt = `You are an expert game data analyzer. Analyze this screenshot of an attack/demolition report.
 Extract ALL visible player entries accurately.
@@ -864,19 +862,32 @@ EXPECTED JSON SCHEMA:
   ]
 }`;
 
-      const res = await fetch(QWEN_WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
-        body: JSON.stringify({
-          model: 'qwen-vl-plus',
-          messages: [{ role: 'user', content: [
-            { type: 'text', text: promptTxt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-          ]}]
-        })
-      });
-      const raw = await res.json();
-      if (!res.ok) throw new Error(raw.error?.message || `Qwen API Error (HTTP ${res.status})`);
+      let maxRetries = 3;
+      let raw = null;
+      let res = null;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          res = await fetch(QWEN_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
+            body: JSON.stringify({
+              model: 'qwen-vl-plus',
+              messages: [{ role: 'user', content: [
+                { type: 'text', text: promptTxt },
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+              ]}]
+            })
+          });
+          raw = await res.json();
+          if (!res.ok) throw new Error(raw.error?.message || `Qwen API Error (HTTP ${res.status})`);
+          break; // Success, exit retry loop
+        } catch (err) {
+          if (attempt === maxRetries) throw err;
+          log(`Rate limit or network error, retrying (${attempt}/${maxRetries})...`, 'warn', f.name);
+          await new Promise(r => setTimeout(r, 2000 * attempt)); // backoff delay
+        }
+      }
+
       let text = raw.choices[0].message.content;
       log(`Received response of length ${text.length}`, 'info', f.name);
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -889,6 +900,15 @@ EXPECTED JSON SCHEMA:
       }
       log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
       allJson.push({ filename: f.name, json: data });
+
+      // Progressive save so the user doesn't lose data if browser is backgrounded/killed
+      if (data) {
+        const progressiveParsed = parseOcrResults([{ filename: f.name, json: data }]);
+        if (progressiveParsed) {
+          await saveData(progressiveParsed);
+          render();
+        }
+      }
     } catch (e) {
       log(`Network error: ${e.message}`, 'err', f.name);
     }
@@ -1056,12 +1076,28 @@ export async function bootOcrDashboard() {
   };
 
   const apiInput = $id('dashApiKeyInput');
+  const apiSaveBtn = $id('dashSaveApiBtn');
   if (apiInput) {
     apiInput.value = sessionStorage.getItem('qwen_api_key') || '';
     apiInput.oninput = (e) => {
       const val = e.target.value.trim();
       if (val) sessionStorage.setItem('qwen_api_key', val);
       else sessionStorage.removeItem('qwen_api_key');
+    };
+  }
+  if (apiSaveBtn && apiInput) {
+    apiSaveBtn.onclick = () => {
+      const val = apiInput.value.trim();
+      if (val) {
+        sessionStorage.setItem('qwen_api_key', val);
+        // Trigger the file input immediately to retain trusted user gesture context
+        const inp = $id('dashFileInput');
+        if (inp) inp.click();
+        log('API accepted and added. You can now start uploading.', 'success');
+      } else {
+        sessionStorage.removeItem('qwen_api_key');
+        alert('API Key cleared. Please enter an API key to upload images.');
+      }
     };
   }
 
