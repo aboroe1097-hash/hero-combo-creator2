@@ -1,33 +1,83 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool  7.0
+   mobile.css — VTS Hero Combo Tool
    Applied on screens ≤768px via <link media="(max-width: 768px)">
+
+   UPGRADE PHILOSOPHY:
+   — Finger-first: every interactive target ≥44px
+   — Spatial zones: safe areas, inset-bottom, notch aware
+   — Fluid type: rem-based scale, not px overrides
+   — Momentum scroll everywhere it should scroll
+   — No layout jank: fixed heights only where truly needed
+   — Light theme fully covered, not just dark
    ============================================================= */
 
+/* ── 0. DESIGN TOKENS (mobile overrides) ──────────────────── */
 :root {
-  --mobile-gap: 8px;
-  --mobile-radius: 12px;
+  --mobile-gap:     8px;
+  --mobile-radius:  12px;
+  --tap-min:        44px;      /* minimum touch target */
+  --nav-h:          52px;      /* tab bar height */
+  --footer-h:       80px;      /* sticky combo footer */
+  --safe-bottom:    env(safe-area-inset-bottom, 0px);
+  --safe-top:       env(safe-area-inset-top, 0px);
+  --safe-left:      env(safe-area-inset-left, 0px);
+  --safe-right:     env(safe-area-inset-right, 0px);
 }
 
-/* ── Base ────────────────────────────────────────────────── */
-html, body {
+/* ── 1. BASE ──────────────────────────────────────────────── */
+html {
   -webkit-text-size-adjust: 100%;
-  padding-bottom: 24px !important;
+  text-size-adjust: 100%;
+  /* Use dynamic viewport on supporting browsers */
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: -webkit-fill-available;
   overscroll-behavior-y: none;
+  padding-bottom: calc(24px + var(--safe-bottom)) !important;
+  /* Prevent double-tap zoom on UI */
+  touch-action: manipulation;
 }
-body.tab-manual-active { padding-bottom: 190px !important; }
+
+/* Only add footer clearance when sticky bar is visible */
+body.tab-manual-active {
+  padding-bottom: calc(var(--footer-h) + var(--safe-bottom) + 16px) !important;
+}
+
+/* Kill tap highlight globally but keep focus ring for a11y */
 * { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
+/* ── 2. APP SHELL ─────────────────────────────────────────── */
 #app {
-  padding: 10px !important;
+  padding: 8px !important;
   border-radius: var(--mobile-radius) !important;
+  /* Prevent horizontal overflow from any child */
+  overflow-x: clip;
 }
 
-/* ── Branding ────────────────────────────────────────────── */
-.team-badge, #createComboTitle { display: none !important; }
-#appTitle { font-size: 1.65rem !important; }
-.main-logo { width: 110px !important; height: 110px !important; }
+/* ── 3. BRANDING / SPLASH ─────────────────────────────────── */
+.team-badge,
+#createComboTitle { display: none !important; }
 
-/* ── Tab nav — horizontal scroll, no wrap ───────────────── */
+#appTitle { font-size: 1.55rem !important; line-height: 1.15 !important; }
+.main-logo { width: 96px !important; height: 96px !important; }
+.logo-container { margin-bottom: 1rem !important; }
+
+/* Boot splash — mobile proportions */
+.perspective-container {
+  width: 82vw !important;
+  aspect-ratio: 4 / 5;
+  perspective: 1000px;
+}
+.boot-brand { font-size: 0.92rem !important; }
+.boot-logo  { width: 72px !important; height: 72px !important; }
+.boot-logo-orbit { width: 90px !important; height: 90px !important; }
+.intro-logo { width: 88px !important; height: 88px !important; }
+.intro-enter-btn { padding: 10px 20px !important; font-size: 0.64rem !important; }
+
+/* ── 4. TAB NAV ───────────────────────────────────────────── */
 #tabNavScroll {
   overflow-x: auto !important;
   overflow-y: hidden !important;
@@ -36,124 +86,235 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   flex-wrap: nowrap !important;
   padding: 3px 4px !important;
   gap: 2px !important;
-  /* Fade edges to show scrollability */
-  -webkit-mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0px, black 12px, black calc(100% - 12px), transparent 100%);
+  /* Subtle edge fade to hint scrollability */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px, black 10px,
+    black calc(100% - 10px), transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px, black 10px,
+    black calc(100% - 10px), transparent 100%
+  );
+  /* Glass surface */
+  background: rgba(15, 23, 42, 0.78) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
 }
+#tabNavScroll::-webkit-scrollbar { display: none; }
 #tabNavScroll > div { flex: 0 0 auto !important; width: auto !important; }
+
 .tab-pill {
-  font-size: 0.68rem !important;
-  padding: 0.42rem 0.62rem !important;
+  font-size: 0.67rem !important;
+  padding: 0.42rem 0.6rem !important;
   white-space: nowrap !important;
   gap: 3px !important;
+  min-height: var(--tap-min) !important;
+  display: flex !important;
+  align-items: center !important;
 }
-.tab-pill svg { width: 12px !important; height: 12px !important; }
-.tab-badge-wrap { padding-top: 6px !important; margin-right: 6px !important; }
+.tab-pill svg { width: 11px !important; height: 11px !important; }
+
+.tab-badge-wrap { padding-top: 6px !important; margin-right: 4px !important; }
 .tab-badge {
   z-index: 20 !important;
   top: 0 !important;
-  right: -2px !important;
-  font-size: 7px !important;
-  padding: 1px 4px !important;
+  right: -1px !important;
+  font-size: 6.5px !important;
+  padding: 1px 3px !important;
   transform: translateY(0) scale(0.9) !important;
-}
-.tab-badge-wrap:has(.tab-pill-active) .tab-badge {
-  top: 0 !important;
-  transform: translateY(0) scale(0.9) !important;
+  letter-spacing: 0.03em !important;
 }
 
-/* ── Global hero-info toggle ─────────────────────────────── */
-#globalToggleRow { margin-bottom: 10px !important; }
-#globalToggleRow label { padding: 8px 12px !important; gap: 8px !important; }
-#globalToggleRow span { font-size: 0.58rem !important; }
+/* Light-theme tab nav */
+[data-theme="light"] #tabNavScroll {
+  background: rgba(248,250,252,0.88) !important;
+  border-color: rgba(0,0,0,0.07) !important;
+}
 
-/* ── Manual / Generator filters ──────────────────────────── */
-#manualSection h2, #generatorSection h3,
-#manualSection h2 + div, .filter-pill { font-size: 0.72rem !important; }
-.filter-pill { padding: 6px 10px !important; }
-#manualSection .mb-6, #generatorSection .mb-6 { padding: 12px !important; margin-bottom: 14px !important; }
-#genSelectTitle, #availableHeroesTitle { font-size: 1rem !important; }
+/* ── 5. GLOBAL CONTROLS ───────────────────────────────────── */
+#globalToggleRow { margin-bottom: 8px !important; }
+#globalToggleRow label { padding: 7px 10px !important; gap: 7px !important; }
+#globalToggleRow span { font-size: 0.56rem !important; }
 
-/* ── Hero grid — 4 columns ───────────────────────────────── */
+/* Filter pills — scrollable row, no wrap */
+.filter-pill {
+  font-size: 0.7rem !important;
+  padding: 6px 10px !important;
+  min-height: var(--tap-min) !important;
+  flex-shrink: 0;
+}
+
+/* Ensure filter rows scroll horizontally */
+#seasonFilters, #stateFilters, #troopFilters,
+#generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+#seasonFilters::-webkit-scrollbar,
+#stateFilters::-webkit-scrollbar,
+#troopFilters::-webkit-scrollbar,
+#generatorSeasonFilters::-webkit-scrollbar,
+#generatorStateFilters::-webkit-scrollbar,
+#generatorTroopFilters::-webkit-scrollbar { display: none; }
+
+#manualSection .mb-6, #generatorSection .mb-6 {
+  padding: 10px !important;
+  margin-bottom: 12px !important;
+}
+#genSelectTitle, #availableHeroesTitle {
+  font-size: 0.95rem !important;
+}
+
+/* ── 6. HERO GRID ─────────────────────────────────────────── */
 #generatorHeroes, #availableHeroes {
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 5px !important;
+  padding: 0 !important;
 }
+
+/* 3-col fallback for very narrow screens handled in @480 block */
 .hero-card, .generator-card {
   width: 100% !important;
-  min-width: 0 !important; min-height: 0 !important;
-  aspect-ratio: 1 / 1.3;
-  padding: 5px !important; margin: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1.28;
+  padding: 5px !important;
+  margin: 0 !important;
+  /* Spring feedback on tap */
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
-.hero-card img, .generator-card img {
-  width: 48px !important; height: 48px !important;
-  margin-bottom: 3px !important; border-width: 1.5px !important;
-}
-.hero-card span.text-xs, .generator-card span.text-xs {
-  font-size: 0.57rem !important; line-height: 1.1 !important;
-  white-space: normal !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.hero-tag {
-  font-size: 0.46rem !important; padding: 1px 3px !important;
-  top: 2px !important; left: 2px !important;
-}
-.generator-card-selected {
-  border: 2px solid #38bdf8 !important;
+.hero-card:active, .generator-card:active {
   transform: scale(0.93) !important;
 }
 
-/* ── Sticky footer ───────────────────────────────────────── */
+.hero-card img, .generator-card img {
+  width: 46px !important;
+  height: 46px !important;
+  margin-bottom: 2px !important;
+  border-width: 1.5px !important;
+}
+
+.hero-card span.text-xs, .generator-card span.text-xs {
+  font-size: 0.55rem !important;
+  line-height: 1.1 !important;
+  white-space: normal !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-tag {
+  font-size: 0.44rem !important;
+  padding: 1px 3px !important;
+  top: 2px !important;
+  left: 2px !important;
+}
+
+.generator-card-selected {
+  border: 2px solid #38bdf8 !important;
+  transform: scale(0.92) !important;
+  box-shadow: 0 0 12px rgba(56,189,248,0.35) !important;
+}
+
+/* Paid badge on card */
+.paid-badge {
+  top: 3px !important;
+  right: 3px !important;
+  padding: 2px 4px 2px 2px !important;
+}
+.paid-badge--card .paid-gem-svg { width: 8px !important; height: 8px !important; }
+.paid-badge-text { font-size: 0.4rem !important; }
+
+/* ── 7. STICKY COMBO FOOTER (Manual Builder) ──────────────── */
 #comboFooterBar {
   position: fixed !important;
-  bottom: 0 !important; left: 0 !important; right: 0 !important;
-  width: 100% !important; z-index: 100 !important;
-  border-radius: 18px 18px 0 0 !important;
-  padding: 10px 12px env(safe-area-inset-bottom, 14px) !important;
-  box-shadow: 0 -8px 32px rgba(0,0,0,0.7) !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 110 !important;
+  border-radius: 16px 16px 0 0 !important;
+  padding: 10px 12px calc(10px + var(--safe-bottom)) !important;
+  box-shadow: 0 -6px 28px rgba(0,0,0,0.65) !important;
+  /* Above content, below any modals */
 }
 
-/* ── Combo slots ─────────────────────────────────────────── */
 .combo-slot {
-  width: 68px !important; height: 68px !important;
-  margin: 0 !important; border-width: 2px !important;
+  width: 66px !important;
+  height: 66px !important;
+  margin: 0 !important;
+  border-width: 2px !important;
+  border-radius: 10px !important;
 }
+
 #comboButtonsRow {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 8px;
 }
 #comboButtonsRow button {
-  font-size: 0.7rem !important; padding: 8px 4px !important;
-  min-height: 38px !important; border-radius: 10px !important;
+  font-size: 0.69rem !important;
+  padding: 0 8px !important;
+  min-height: var(--tap-min) !important;
+  border-radius: 10px !important;
+  touch-action: manipulation;
 }
 
-/* ── Generator buttons ───────────────────────────────────── */
+/* ── 8. GENERATOR BUTTONS ─────────────────────────────────── */
 #generateCombosBtn, #generateRandomBtn, #downloadGeneratorBtn {
-  display: block; width: 100%; max-width: 100%;
-  margin: 4px auto; border-radius: 9999px;
-  font-size: 0.83rem; padding: 12px; letter-spacing: 0.04em; font-weight: 800;
+  display: block;
+  width: 100%;
+  margin: 4px auto;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  min-height: var(--tap-min);
+  padding: 0 16px;
+  letter-spacing: 0.04em;
+  touch-action: manipulation;
 }
-#generateCombosBtn   { background: linear-gradient(135deg,#15803d,#22c55e); box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
-#generateRandomBtn   { background: linear-gradient(135deg,#b45309,#f59e0b); box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
-#downloadGeneratorBtn{ background: linear-gradient(135deg,#6d28d9,#8b5cf6); box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+#generateCombosBtn {
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  box-shadow: 0 3px 14px rgba(34,197,94,0.28);
+}
+#generateRandomBtn {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+  box-shadow: 0 3px 14px rgba(245,158,11,0.28);
+}
+#downloadGeneratorBtn {
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+  box-shadow: 0 3px 14px rgba(139,92,246,0.28);
+}
 
-/* ── Saved / Generated combos ────────────────────────────── */
-.saved-combo-display, .generated-combo-card {
-  padding: 10px 10px 10px 52px !important;
-  margin: 6px 0 !important;
+/* ── 9. SAVED / GENERATED COMBOS ─────────────────────────── */
+.saved-combo-display {
+  padding: 10px 10px 10px 50px !important;
+  margin: 5px 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  min-height: 110px !important;
+  min-height: 100px !important;
 }
 .saved-combo-number {
-  left: 10px !important;
-  width: 28px !important; height: 28px !important;
-  font-size: 0.76rem !important;
+  left: 9px !important;
+  width: 27px !important;
+  height: 27px !important;
+  font-size: 0.72rem !important;
 }
+
 .generated-combo-card {
   flex-direction: column !important;
   align-items: center !important;
-  padding: 16px 10px 10px 10px !important; gap: 10px !important;
+  padding: 14px 10px 10px 10px !important;
+  gap: 8px !important;
+  min-height: 0 !important;
 }
 .generated-combo-card .saved-combo-number {
   top: 10px !important;
@@ -161,202 +322,34 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   transform: none !important;
 }
 .generated-combo-card .saved-combo-slots {
-  display: flex !important; flex-direction: row !important;
-  justify-content: center !important; gap: 5px !important; width: 100% !important;
-  margin-top: 8px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 .generated-combo-card .gen-score-panel {
-  margin-left: 0 !important; padding-right: 0 !important; text-align: center !important;
-  margin-top: 4px !important;
+  margin-left: 0 !important;
+  text-align: center !important;
+}
+
+.saved-combo-display .saved-combo-slots {
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+.saved-combo-display .saved-combo-slot-item,
+.generated-combo-card .saved-combo-slot-item {
+  width: 76px !important;
+  height: 76px !important;
 }
 .saved-combo-slot-item img {
-  width: 72px !important; height: 72px !important;
-}
-.saved-combo-display .saved-combo-slots { flex-wrap: wrap !important; gap: 6px !important; }
-.saved-combo-display .saved-combo-slot-item { width: 80px !important; height: 80px !important; }
-
-/* ── Scroll-to-top position ──────────────────────────────── */
-#scrollTopBtn { bottom: 5.5rem !important; right: 0.75rem !important; width: 36px !important; height: 36px !important; }
-
-/* ── Language selector ───────────────────────────────────── */
-#languageSelect { font-size: 0.78rem !important; }
-.hero-search-input { font-size: 0.8rem !important; }
-
-/* ── Research tab ────────────────────────────────────────── */
-#researchSection,
-.research-control-deck,
-.research-list {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow-x: clip;
-}
-.research-header { flex-direction: column; gap: 8px !important; margin-bottom: 12px !important; }
-.research-title { font-size: 1.15rem !important; }
-.research-desc { font-size: 0.75rem !important; }
-.research-tree-count { align-self: flex-start; font-size: 0.6rem !important; padding: 4px 10px !important; }
-.research-control-deck { gap: 6px !important; margin-bottom: 12px !important; }
-.research-deck-row { padding: 8px 10px !important; gap: 6px 8px !important; }
-.research-deck-row-tools { flex-direction: column; align-items: stretch !important; }
-.research-deck-label { font-size: 0.54rem !important; min-width: 40px !important; }
-.research-season-segment { padding: 3px !important; }
-.research-season-bar {
-  flex-wrap: nowrap !important; overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
-  padding-bottom: 2px;
-}
-.research-season-bar::-webkit-scrollbar { display: none; }
-.tech-season-btn {
-  flex-shrink: 0; padding: 6px 11px !important; font-size: 0.68rem !important;
-}
-.research-quick-segment { width: 100%; justify-content: stretch; }
-.research-quick-btn { flex: 1; font-size: 0.64rem !important; padding: 8px 10px !important; }
-.research-search-wrap { max-width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; width: 100% !important; }
-.research-search-input { font-size: 0.75rem !important; min-height: 38px; }
-.research-branch-segment { margin: 12px auto 18px !important; padding: 3px !important; }
-.research-branch-btn { padding: 8px 4px !important; font-size: 0.56rem !important; }
-.research-branch-btn span:first-child { font-size: 1rem !important; }
-.research-calc-title { font-size: 1rem !important; }
-.research-calc-actions { gap: 6px !important; }
-.research-calc-btn { font-size: 0.62rem !important; padding: 8px 10px !important; }
-.boot-brand { font-size: 1rem !important; }
-.boot-logo { width: 76px !important; height: 76px !important; }
-.boot-logo-orbit { width: 96px !important; height: 96px !important; }
-.intro-logo { width: 100px !important; height: 100px !important; }
-.intro-enter-btn { padding: 10px 22px !important; font-size: 0.66rem !important; }
-.research-game-tree-viewport { max-height: none !important; padding: 12px 8px 6px !important; }
-.game-tech-medallion { width: 76px !important; height: 84px !important; }
-.game-tech-core { width: 62px !important; height: 68px !important; }
-.game-tech-icon-svg { width: 22px !important; height: 22px !important; }
-.game-tech-level-badge { font-size: 0.48rem !important; min-width: 34px !important; }
-.game-tech-stepper, .game-tech-cost-pill { max-width: 100% !important; }
-.game-tech-step { padding: 6px 0 !important; font-size: 0.78rem !important; }
-.game-tech-step--max { font-size: 0.5rem !important; }
-
-.game-tech-name { font-size: 0.52rem !important; max-width: 82px !important; }
-.game-tree-tier { gap: 8px 8px !important; }
-.research-page-tab { font-size: 0.56rem !important; padding: 5px 9px !important; }
-.research-game-title { font-size: 0.88rem !important; }
-.research-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-}
-.research-tech-card { padding: 11px !important; border-radius: 11px !important; }
-.research-card-title { font-size: 0.82rem !important; }
-.research-card-unlock { font-size: 0.58rem !important; }
-.research-card-cta { font-size: 0.6rem !important; padding: 7px 8px !important; }
-.research-summary-card { padding: 12px !important; }
-.research-summary-title { font-size: 0.78rem !important; }
-.research-summary-pct { font-size: 0.95rem !important; }
-.research-summary-stat-value { font-size: 1rem !important; }
-.research-medal-icon { width: 16px !important; height: 16px !important; }
-.research-calculator {
-  padding: 12px !important; border-radius: 14px !important;
-  margin-top: 12px !important;
+  width: 72px !important;
+  height: 72px !important;
 }
 
-/* ── Tech calculator ─────────────────────────────────────── */
-#techCalculatorContainer { padding: 12px !important; border-radius: 14px !important; }
-#techCalculatorContainer h3 { font-size: 1rem !important; }
-#techCalculatorContainer #closeCalcBtn { padding: 8px !important; }
-#techCalculatorContainer #resetAllTechBtn,
-#techCalculatorContainer #maxAllTechBtn {
-  font-size: 0.64rem !important; padding: 8px 6px !important;
-}
-#techCalculatorContainer .overflow-x-hidden { max-height: 55vh !important; border-radius: 10px !important; }
-
-/* Node grid — single column */
-#techCalculatorContainer .grid.grid-cols-1.sm\:grid-cols-3 {
-  grid-template-columns: 1fr !important; gap: 8px !important;
-}
-.tech-node-container {
-  width: 100% !important; max-width: 100% !important;
-  padding: 10px 12px !important; border-radius: 10px !important;
-}
-
-/* Node inputs */
-.tech-node-slider { height: 5px !important; }
-.tech-node-slider::-webkit-slider-thumb { width: 16px !important; height: 16px !important; }
-.tech-node-input { width: 36px !important; font-size: 0.75rem !important; padding: 2px 0 !important; }
-
-/* Quick-set buttons — wrap on mobile */
-.tech-node-container .flex.justify-between.gap-1 {
-  gap: 3px !important; flex-wrap: wrap !important;
-}
-.quick-set-btn {
-  padding: 4px 6px !important; font-size: 0.61rem !important;
-  flex: 1 !important; min-width: 28px !important;
-  text-align: center !important; border-radius: 5px !important;
-}
-
-/* Branch tabs */
-.branch-tab-btn {
-  font-size: 0.61rem !important; padding: 8px 4px !important; border-radius: 8px !important;
-}
-.branch-tab-btn span:first-child { font-size: 1rem !important; }
-
-/* Tree total footer */
-#totalTechCost span {
-  font-size: 0.9rem !important; padding: 8px 10px !important;
-  gap: 8px !important; border-radius: 8px !important; width: 100% !important;
-}
-#totalTechCost span img { width: 14px !important; height: 14px !important; }
-
-/* Global summary */
-#globalTechSummary > div { padding: 12px !important; border-radius: 12px !important; }
-#globalTechSummary h3 { font-size: 0.78rem !important; }
-#globalTechSummary .text-base { font-size: 0.85rem !important; }
-#globalTechSummary .text-3xl, #globalTechSummary .sm\:text-3xl { font-size: 1.1rem !important; }
-#globalTechSummary > div > div.grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-#globalTechSummary .bg-slate-950\/60 { padding: 10px !important; border-radius: 8px !important; }
-#globalTechSummary .h-5 { height: 10px !important; }
-
-/* ── Loyalty calculator ──────────────────────────────────── */
-.loyalty-title { font-size: 1.15rem !important; }
-.loyalty-desc { font-size: 0.72rem !important; }
-.loyalty-header { gap: 10px !important; margin-bottom: 0.75rem !important; }
-.loyalty-eden-link-btn { width: 100%; text-align: center; font-size: 0.68rem !important; }
-.loyalty-presets { padding: 8px 10px !important; gap: 6px !important; }
-.loyalty-preset-btn { font-size: 0.62rem !important; padding: 5px 9px !important; }
-.loyalty-sticky { padding: 10px 12px !important; border-radius: 12px !important; }
-.loyalty-sticky-stats { grid-template-columns: 1fr 1fr !important; }
-.loyalty-stat-value { font-size: 0.88rem !important; }
-.loyalty-calc-btn { font-size: 0.72rem !important; padding: 10px 12px !important; }
-#loyaltySection .grid { gap: 10px !important; }
-#loyaltySection input, #loyaltySection select {
-  font-size: 0.8rem !important; min-height: 38px;
-}
-#loyaltySection label { font-size: 0.72rem !important; }
-.loyalty-inputs > .p-5 { padding: 12px !important; }
-.loyalty-result-value { font-size: 1rem !important; }
-.loyalty-step-card-grid { gap: 6px 8px !important; }
-
-/* ── SEO footer ────────────────────────────────────────── */
-.seo-intro { font-size: 0.68rem !important; padding: 0 4px !important; margin-bottom: 0.85rem !important; }
-.site-footer { padding: 1rem 0.75rem 1.25rem !important; margin-top: 1.25rem !important; }
-.site-footer-desc { font-size: 0.66rem !important; }
-.site-footer-features { font-size: 0.62rem !important; }
-
-/* ── YouTube tab ─────────────────────────────────────────── */
-#youtubeSection h2 { font-size: 0.95rem !important; letter-spacing: 0.06em !important; }
-#youtubeSection .mb-8, #youtubeSection > div {
-  padding: 12px !important; margin-bottom: 14px !important;
-  border-radius: 14px !important;
-}
-#youtubeSection a { font-size: 0.62rem !important; padding: 6px 10px !important; }
-
-/* ── Comments ────────────────────────────────────────────── */
-.comment-avatar { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 0.85rem !important; }
-.replies-container { margin-left: 1rem !important; padding-left: 0.75rem !important; }
-
-/* ── b6.3 Mobile additions (legacy b4.1 block) ─────────── */
-
-/* Paid badge — corner ribbon on mobile */
-.paid-badge { top: 3px !important; right: 3px !important; padding: 2px 5px 2px 3px !important; }
-.paid-badge--card .paid-gem-svg { width: 9px !important; height: 9px !important; }
-.paid-badge-text { font-size: 0.42rem !important; }
-
-/* Heroes tab — mobile layout */
+/* ── 10. HERO ATLAS TAB ───────────────────────────────────── */
 #heroesSection,
 #heroesTabContent,
 .heroes-tab-inner,
@@ -366,304 +359,326 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   min-width: 0 !important;
   overflow-x: clip;
 }
-.heroes-toolbar-sticky { top: 0 !important; padding-bottom: 6px !important; }
-.heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
+
+.heroes-toolbar-sticky {
+  top: 0 !important;
+  padding-bottom: 4px !important;
+  z-index: 40;
+}
+.heroes-toolbar {
+  padding: 7px 8px !important;
+  gap: 5px !important;
+}
+
+/* Season + filter pill rows — horizontal scroll */
+.heroes-season-tabs,
 .heroes-filter-pills {
-  padding: 6px 8px !important;
+  display: flex !important;
   flex-wrap: nowrap !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  gap: 4px !important;
+  padding: 5px 6px !important;
 }
+.heroes-season-tabs::-webkit-scrollbar,
 .heroes-filter-pills::-webkit-scrollbar { display: none; }
-.heroes-filter-pill { flex-shrink: 0 !important; }
-.heroes-count-badge { font-size: 0.62rem !important; padding: 3px 8px !important; }
-.heroes-clear-filters { font-size: 0.6rem !important; padding: 3px 8px !important; }
 
-.heroes-layout.has-detail { flex-direction: column !important; gap: 10px !important; }
+.hero-tab-season {
+  flex-shrink: 0;
+  padding: 6px 12px !important;
+  font-size: 0.67rem !important;
+  min-height: 34px;
+}
+.heroes-filter-pill {
+  flex-shrink: 0 !important;
+  padding: 6px 10px !important;
+  font-size: 0.62rem !important;
+  min-height: 32px;
+}
+.heroes-count-badge { font-size: 0.6rem !important; padding: 2px 7px !important; }
+.heroes-clear-filters { font-size: 0.58rem !important; }
+
+/* Detail panel: full-width bottom sheet on mobile */
+.heroes-layout.has-detail { flex-direction: column !important; gap: 8px !important; }
 .heroes-layout.has-detail .heroes-ranking-list { display: none !important; }
 .heroes-layout.has-detail .hero-detail-panel {
-  border: 2px solid rgba(99,102,241,0.35) !important;
-  box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
   width: 100% !important;
   max-height: none !important;
   position: relative !important;
   top: auto !important;
+  border: 1.5px solid rgba(99,102,241,0.3) !important;
 }
+
+/* Ranking list — constrained scroll */
 .heroes-layout:not(.has-detail) .heroes-ranking-list {
   width: 100% !important;
-  min-width: 100% !important;
   max-width: 100% !important;
-  max-height: 70vh !important;
+  max-height: 68vh !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
-  border: 1px solid rgba(51,65,85,0.5);
   border-radius: 12px;
-  padding: 4px;
+  padding: 3px;
 }
+
+/* Back button visible; desktop close hidden */
 .heroes-mobile-back { display: block !important; }
 .detail-close { display: none !important; }
-.detail-nav { top: 0 !important; }
 
+/* Hide filters when detail is open */
 .heroes-tab-inner--detail-open .heroes-filter-pills,
 .heroes-tab-inner--detail-open .heroes-season-tabs,
-.heroes-tab-inner--detail-open .heroes-toolbar {
-  display: none !important;
-}
+.heroes-tab-inner--detail-open .heroes-toolbar { display: none !important; }
 .heroes-tab-inner--detail-open .heroes-toolbar-sticky {
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
   background: transparent !important;
   backdrop-filter: none !important;
+  padding-bottom: 0 !important;
 }
 
-.hero-rank-row { padding: 10px 10px !important; gap: 8px !important; min-height: 52px; }
-.rank-medal    { font-size: 1.35rem !important; min-width: 34px !important; }
-.rank-medal--num { font-size: 1.1rem !important; min-width: 34px !important; padding: 4px 2px !important; }
-.rank-img      { width: 36px !important; height: 36px !important; }
-.rank-name     { font-size: 0.8rem !important; }
-.rank-score    { font-size: 0.85rem !important; min-width: 28px !important; }
+/* Ranking rows */
+.hero-rank-row {
+  padding: 9px 10px !important;
+  gap: 7px !important;
+  min-height: var(--tap-min) !important;
+}
+.rank-medal     { font-size: 1.25rem !important; min-width: 32px !important; }
+.rank-medal--num { font-size: 1.05rem !important; min-width: 32px !important; padding: 3px 2px !important; }
+.rank-img       { width: 34px !important; height: 34px !important; }
+.rank-name      { font-size: 0.78rem !important; }
+.rank-score     { font-size: 0.82rem !important; min-width: 26px !important; }
 
-.hero-detail-panel { padding: 16px 14px !important; border-radius: 16px !important; }
-.detail-header { flex-wrap: wrap; gap: 10px !important; }
-.detail-img { width: 64px !important; height: 64px !important; }
-.detail-name { font-size: 1rem !important; line-height: 1.3 !important; }
-.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
-.detail-stat { padding: 8px 6px !important; }
-.detail-stat-val { font-size: 0.85rem !important; }
+/* Detail panel internals */
+.hero-detail-panel { padding: 14px 12px !important; border-radius: 14px !important; }
+.detail-header { flex-wrap: wrap; gap: 8px !important; }
+.detail-img { width: 60px !important; height: 60px !important; }
+.detail-name { font-size: 0.95rem !important; line-height: 1.25 !important; }
+.detail-stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 5px !important; }
+.detail-stat { padding: 7px 5px !important; }
+.detail-stat-val { font-size: 0.82rem !important; }
 
-.detail-combo-row { padding: 10px 12px !important; gap: 8px !important; }
-.detail-combo-heroes { gap: 6px !important; }
-.detail-combo-hero { padding: 6px 3px 5px !important; }
-.detail-combo-hero img { width: 44px !important; height: 44px !important; }
-.detail-combo-hero span { font-size: 0.58rem !important; }
-.detail-combo-score { font-size: 0.95rem !important; }
-.detail-combo-rank { font-size: 0.68rem !important; }
-.combo-counters-inline { margin-top: 4px; padding: 0.45rem 0.55rem !important; }
-.counter-toggle-btn { font-size: 0.56rem !important; padding: 4px 9px !important; }
-.counter-card-heroes { gap: 4px !important; }
-.counter-hero-chip { padding: 4px 2px 3px !important; }
-.counter-hero-chip-name { font-size: 0.48rem !important; }
-.counter-hero-chip-img { width: 26px !important; height: 26px !important; }
-.counter-card-reason { font-size: 0.55rem !important; }
+.detail-combo-row { padding: 8px 10px !important; gap: 6px !important; }
+.detail-combo-hero { padding: 5px 3px 4px !important; }
+.detail-combo-hero img { width: 40px !important; height: 40px !important; }
+.detail-combo-hero span { font-size: 0.55rem !important; }
+.detail-combo-score { font-size: 0.9rem !important; }
+.detail-combo-rank { font-size: 0.65rem !important; }
 
-.heroes-season-tabs {
-  gap: 4px !important; padding: 6px !important;
+/* Combo counters in detail */
+.combo-counters-inline { margin-top: 4px; padding: 0.4rem 0.5rem !important; }
+.counter-toggle-btn { font-size: 0.55rem !important; padding: 4px 8px !important; }
+.counter-hero-chip { padding: 3px 2px !important; }
+.counter-hero-chip-name { font-size: 0.46rem !important; }
+.counter-hero-chip-img { width: 24px !important; height: 24px !important; }
+.counter-card-reason { font-size: 0.53rem !important; }
+
+/* ── 11. RESEARCH TAB ─────────────────────────────────────── */
+#researchSection,
+.research-control-deck,
+.research-list {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
-  overflow-x: auto; flex-wrap: nowrap !important;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  overflow-x: clip;
 }
-.heroes-season-tabs::-webkit-scrollbar { display: none; }
-.hero-tab-season { padding: 6px 12px !important; font-size: 0.68rem !important; flex-shrink: 0; }
-.heroes-filter-pill { padding: 6px 11px !important; font-size: 0.62rem !important; }
-.heroes-toolbar { padding: 8px 10px !important; gap: 6px !important; }
 
-/* Generator score + counters on mobile */
-.gen-score-panel { max-width: 100% !important; margin-left: 0 !important; align-items: stretch !important; }
-.generated-combo-card, .saved-combo-display { flex-wrap: wrap !important; padding-left: 56px !important; }
+.research-header { flex-direction: column; gap: 6px !important; margin-bottom: 10px !important; }
+.research-title { font-size: 1.1rem !important; }
+.research-desc { font-size: 0.72rem !important; }
+.research-tree-count { align-self: flex-start; font-size: 0.58rem !important; padding: 3px 9px !important; }
+.research-control-deck { gap: 5px !important; margin-bottom: 10px !important; }
+.research-deck-row {
+  padding: 7px 9px !important;
+  gap: 5px 7px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.research-deck-row::-webkit-scrollbar { display: none; }
+.research-deck-label { font-size: 0.52rem !important; min-width: 36px !important; }
+.research-season-segment { padding: 2px !important; }
+.research-season-bar {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.research-season-bar::-webkit-scrollbar { display: none; }
+.tech-season-btn { flex-shrink: 0; padding: 6px 10px !important; font-size: 0.66rem !important; min-height: 32px; }
+.research-quick-segment { width: 100%; }
+.research-quick-btn { flex: 1; font-size: 0.62rem !important; padding: 7px 9px !important; min-height: var(--tap-min); }
+.research-search-wrap { max-width: 100% !important; flex: 1 1 100% !important; width: 100% !important; }
+.research-search-input { font-size: 0.74rem !important; min-height: 38px; }
+.research-branch-segment { margin: 10px auto 16px !important; padding: 3px !important; }
+.research-branch-btn { padding: 8px 4px !important; font-size: 0.54rem !important; min-height: 36px; }
+.research-branch-btn span:first-child { font-size: 0.95rem !important; }
+.research-calc-title { font-size: 0.95rem !important; }
+.research-calc-actions { gap: 5px !important; }
+.research-calc-btn { font-size: 0.6rem !important; padding: 7px 9px !important; min-height: var(--tap-min); }
 
+/* Game-style tech tree */
+.research-game-tree-viewport { max-height: none !important; padding: 10px 6px 4px !important; }
+.game-tech-medallion { width: 72px !important; height: 80px !important; }
+.game-tech-core { width: 58px !important; height: 64px !important; }
+.game-tech-icon-svg { width: 20px !important; height: 20px !important; }
+.game-tech-level-badge { font-size: 0.46rem !important; min-width: 30px !important; }
+.game-tech-stepper, .game-tech-cost-pill { max-width: 100% !important; }
+.game-tech-step { padding: 5px 0 !important; font-size: 0.76rem !important; }
+.game-tech-step--max { font-size: 0.48rem !important; }
+.game-tech-name { font-size: 0.5rem !important; max-width: 78px !important; }
+.game-tree-tier { gap: 7px !important; }
+.research-page-tab { font-size: 0.54rem !important; padding: 5px 8px !important; min-height: 30px; }
+.research-game-title { font-size: 0.85rem !important; }
 
-/* Eden map mobile */
-.eden-map-root { gap: 6px !important; }
-.eden-map-header { gap: 6px !important; }
-.eden-map-header > div:first-child h2 { font-size: 1.15rem !important; letter-spacing: 0.08em !important; }
-.eden-map-header > div:first-child p { font-size: 0.72rem !important; line-height: 1.35 !important; }
+/* Research card grid — 2 cols */
+.research-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+}
+.research-tech-card { padding: 10px !important; border-radius: 10px !important; }
+.research-card-title { font-size: 0.8rem !important; }
+.research-card-unlock { font-size: 0.56rem !important; }
+.research-card-cta { font-size: 0.58rem !important; padding: 7px 6px !important; min-height: 34px; }
 
+/* Summary / totals */
+.research-summary-card { padding: 10px !important; }
+.research-summary-title { font-size: 0.75rem !important; }
+.research-summary-pct { font-size: 0.92rem !important; }
+.research-summary-stat-value { font-size: 0.96rem !important; }
+.research-medal-icon { width: 14px !important; height: 14px !important; }
+.research-calculator { padding: 10px !important; border-radius: 12px !important; margin-top: 10px !important; }
+
+/* Legacy tech calculator IDs */
+#techCalculatorContainer { padding: 10px !important; border-radius: 12px !important; }
+#techCalculatorContainer #closeCalcBtn { padding: 8px !important; min-width: var(--tap-min); min-height: var(--tap-min); }
+#techCalculatorContainer #resetAllTechBtn,
+#techCalculatorContainer #maxAllTechBtn { font-size: 0.62rem !important; padding: 7px 5px !important; min-height: var(--tap-min); }
+#techCalculatorContainer .overflow-x-hidden { max-height: 52vh !important; border-radius: 8px !important; }
+
+.tech-node-slider { height: 5px !important; }
+.tech-node-slider::-webkit-slider-thumb { width: 18px !important; height: 18px !important; }
+.tech-node-input { width: 34px !important; font-size: 0.73rem !important; padding: 2px 0 !important; }
+.tech-node-container .flex.justify-between.gap-1 { gap: 3px !important; flex-wrap: wrap !important; }
+.quick-set-btn { padding: 4px 5px !important; font-size: 0.6rem !important; flex: 1 !important; min-width: 26px !important; border-radius: 5px !important; min-height: 30px; }
+.branch-tab-btn { font-size: 0.6rem !important; padding: 7px 4px !important; border-radius: 8px !important; min-height: var(--tap-min); }
+.branch-tab-btn span:first-child { font-size: 0.95rem !important; }
+
+/* Research global summary */
+#globalTechSummary > div { padding: 10px !important; border-radius: 10px !important; }
+#globalTechSummary h3 { font-size: 0.76rem !important; }
+#globalTechSummary .text-base { font-size: 0.82rem !important; }
+#globalTechSummary .text-3xl { font-size: 1.05rem !important; }
+#globalTechSummary > div > div.grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+#globalTechSummary .bg-slate-950\/60 { padding: 9px !important; border-radius: 7px !important; }
+#globalTechSummary .h-5 { height: 8px !important; }
+
+#totalTechCost span {
+  font-size: 0.88rem !important;
+  padding: 7px 9px !important;
+  gap: 7px !important;
+  border-radius: 7px !important;
+  width: 100% !important;
+}
+#totalTechCost span img { width: 13px !important; height: 13px !important; }
+
+/* ── 12. EDEN MAP TAB ─────────────────────────────────────── */
+.eden-map-root { gap: 5px !important; }
+.eden-map-header > div:first-child h2 { font-size: 1.1rem !important; letter-spacing: 0.07em !important; }
+.eden-map-header > div:first-child p { font-size: 0.7rem !important; line-height: 1.3 !important; }
 .eden-map-body { flex-direction: column !important; gap: 0 !important; }
+
+/* Canvas — fill available width, fixed min height */
 .eden-canvas-wrap {
-  min-height: min(52vh, 420px) !important;
+  min-height: min(50vh, 380px) !important;
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
 }
-#edenMapCanvas { min-height: min(52vh, 420px) !important; }
+#edenMapCanvas { min-height: min(50vh, 380px) !important; }
 
-.eden-control-deck { gap: 6px !important; }
-.eden-deck-row {
-  padding: 8px 10px !important;
-  gap: 6px 8px !important;
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.eden-deck-row::-webkit-scrollbar { display: none; }
-.eden-deck-label { min-width: 36px !important; font-size: 0.52rem !important; }
-.eden-deck-cluster-end { margin-left: 0 !important; }
-.eden-tool-segment { flex-shrink: 0; }
-.eden-path-tools.eden-path-tools--visible {
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  max-height: none !important;
-  -webkit-overflow-scrolling: touch;
-}
-.eden-plans-panel summary { padding: 8px 12px !important; font-size: 0.62rem !important; }
-.eden-plans-body { padding: 8px 10px 10px !important; flex-wrap: nowrap !important; overflow-x: auto !important; }
-.eden-layer-scroll, .eden-quick-scroll {
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.eden-layer-scroll::-webkit-scrollbar,
-.eden-quick-scroll::-webkit-scrollbar { display: none; }
-
+/* All toolbars — horizontal scroll, no wrap */
+.eden-control-deck { gap: 5px !important; }
+.eden-deck-row,
 .eden-toolbar-primary,
 .eden-toolbar-tools,
 .eden-toolbar-modes,
 .eden-deck-nav,
 .eden-deck-tools,
-.eden-deck-meta {
-  gap: 5px !important;
+.eden-deck-meta,
+.eden-layer-bar,
+.eden-quick-jump,
+.eden-layer-scroll,
+.eden-quick-scroll {
   padding: 6px 8px !important;
-  overflow-x: auto;
+  gap: 5px !important;
   flex-wrap: nowrap !important;
+  overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.eden-deck-nav::-webkit-scrollbar,
-.eden-deck-tools::-webkit-scrollbar,
-.eden-deck-meta::-webkit-scrollbar,
+.eden-deck-row::-webkit-scrollbar,
 .eden-toolbar-primary::-webkit-scrollbar,
 .eden-toolbar-tools::-webkit-scrollbar,
 .eden-toolbar-modes::-webkit-scrollbar,
+.eden-deck-nav::-webkit-scrollbar,
+.eden-deck-tools::-webkit-scrollbar,
+.eden-deck-meta::-webkit-scrollbar,
 .eden-layer-bar::-webkit-scrollbar,
-.eden-quick-jump::-webkit-scrollbar { display: none; }
+.eden-quick-jump::-webkit-scrollbar,
+.eden-layer-scroll::-webkit-scrollbar,
+.eden-quick-scroll::-webkit-scrollbar { display: none; }
 
+.eden-deck-label { min-width: 34px !important; font-size: 0.5rem !important; }
 .eden-toolbar-spacer { display: none !important; }
-.eden-toolbar-divider { height: 22px !important; margin: 0 2px !important; flex-shrink: 0; }
+.eden-toolbar-divider { height: 20px !important; margin: 0 2px !important; flex-shrink: 0; }
 
+/* Touch-friendly tool buttons */
 .eden-tool-btn {
-  padding: 8px 11px !important;
-  font-size: 0.64rem !important;
-  min-height: 36px !important;
+  padding: 8px 10px !important;
+  font-size: 0.62rem !important;
+  min-height: var(--tap-min) !important;
+  min-width: var(--tap-min) !important;
   flex-shrink: 0;
   white-space: nowrap;
 }
-.eden-tool-icon { min-width: 38px !important; min-height: 36px !important; padding: 8px !important; }
+.eden-tool-icon { min-width: var(--tap-min) !important; min-height: var(--tap-min) !important; padding: 8px !important; }
 
 .eden-sector-select,
 .eden-plan-select,
 .eden-view-select,
-.eden-path-color-select {
-  font-size: 0.64rem !important;
-  min-height: 34px;
-  flex-shrink: 0;
-}
-.eden-plan-select { min-width: 96px !important; max-width: 130px !important; }
-.eden-path-label-input { width: 88px !important; min-height: 34px; font-size: 0.62rem !important; flex-shrink: 0; }
+.eden-path-color-select { font-size: 0.62rem !important; min-height: 36px; flex-shrink: 0; }
+.eden-plan-select { min-width: 92px !important; max-width: 120px !important; }
+.eden-path-label-input { width: 82px !important; min-height: 34px; font-size: 0.6rem !important; flex-shrink: 0; }
 
-.eden-layer-bar {
-  padding: 6px 8px !important;
-  gap: 5px !important;
-  overflow-x: auto;
-  flex-wrap: nowrap !important;
-  -webkit-overflow-scrolling: touch;
-}
 .eden-layer-btn {
-  font-size: 0.6rem !important;
-  padding: 6px 9px !important;
-  min-height: 30px;
-  flex-shrink: 0;
-}
-.eden-layer-label { flex-shrink: 0; }
-.eden-ref-opacity {
-  flex-shrink: 0;
-  margin-left: 4px !important;
-}
-.eden-ref-opacity input[type="range"] { width: 64px !important; }
-
-.global-game-clock {
-  font-size: 0.7rem !important;
-  padding: 5px 10px !important;
-}
-.eden-game-clock {
-  font-size: 0.62rem !important;
-  padding: 4px 8px !important;
-}
-.eden-toolbar-modes { padding-bottom: 6px !important; }
-.eden-team-board { max-height: 160px !important; }
-.eden-mode-label {
-  flex-shrink: 0;
   font-size: 0.58rem !important;
-  gap: 4px !important;
-}
-.eden-mode-label input[type="range"] { width: 72px !important; }
-.eden-speed-val { font-size: 0.6rem !important; }
-
-.eden-quick-jump {
-  overflow-x: auto;
-  flex-wrap: nowrap !important;
-  padding: 4px 2px 6px !important;
-  -webkit-overflow-scrolling: touch;
-}
-.eden-quick-btn {
+  padding: 6px 8px !important;
+  min-height: 28px;
   flex-shrink: 0;
-  font-size: 0.6rem !important;
-  padding: 6px 10px !important;
-  min-height: 30px;
 }
-.eden-quick-divider { height: 22px !important; margin: 0 4px !important; }
+.eden-ref-opacity input[type="range"] { width: 60px !important; }
 
-.eden-coord-hud {
-  font-size: 0.58rem !important;
-  max-width: calc(100% - 120px) !important;
-  left: 6px !important;
-  bottom: auto !important;
-  top: 6px !important;
-  padding: 4px 7px !important;
-}
-.eden-map-legend {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  gap: 8px !important;
-  max-width: calc(100% - 8px) !important;
-  font-size: 0.55rem !important;
-  padding: 4px 8px !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.eden-map-legend::-webkit-scrollbar { display: none; }
-.eden-map-legend span { flex-shrink: 0; white-space: nowrap; }
+/* Plans panel */
+.eden-plans-panel summary { padding: 8px 10px !important; font-size: 0.6rem !important; }
+.eden-plans-body { padding: 7px 9px 9px !important; flex-wrap: nowrap !important; overflow-x: auto !important; }
+.eden-path-tools.eden-path-tools--visible { flex-wrap: nowrap !important; overflow-x: auto !important; }
 
-.eden-minimap {
-  width: 96px !important;
-  height: 96px !important;
-  right: 4px !important;
-  bottom: 4px !important;
-  border-radius: 6px !important;
-}
-
-.eden-filter-row { grid-template-columns: 1fr 1fr !important; gap: 4px !important; }
-.eden-filter-select { font-size: 0.62rem !important; min-height: 34px; width: 100% !important; }
-.eden-search-wrap { margin-top: 4px !important; }
-.eden-stats { font-size: 0.6rem !important; padding-right: 36px !important; }
-.eden-hover-info { font-size: 0.6rem !important; }
-.eden-selected-actions { flex-wrap: wrap !important; }
-.eden-action-btn { min-height: 32px; flex: 1 1 auto; font-size: 0.62rem !important; }
-.eden-struct-row { min-height: 38px !important; padding: 6px 8px !important; }
-.eden-struct-list { max-height: none !important; }
-
+/* Sidebar — bottom sheet */
 .eden-sidebar {
   position: fixed !important;
-  left: 0; right: 0; bottom: 0; z-index: 50;
+  left: 0; right: 0; bottom: 0;
+  z-index: 50;
   width: 100% !important;
-  max-height: min(78vh, 620px) !important;
+  max-height: min(76vh, 600px) !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  padding-bottom: env(safe-area-inset-bottom, 0) !important;
+  padding-bottom: var(--safe-bottom) !important;
   transform: translateY(100%);
-  transition: transform 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
   border-radius: 14px 14px 0 0 !important;
-  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 -8px 28px rgba(0,0,0,0.5);
 }
-.eden-sidebar-list-section {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-}
+.eden-sidebar-list-section { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto; }
 .eden-sidebar.eden-sidebar-open { transform: translateY(0); }
 .eden-sidebar-close {
   display: flex !important;
@@ -675,79 +690,225 @@ body.tab-manual-active { padding-bottom: 190px !important; }
   border: 1px solid rgba(71,85,105,0.8);
   background: rgba(30,41,59,0.9);
   color: #e2e8f0;
-  font-size: 1.2rem;
-  line-height: 1;
+  font-size: 1.1rem;
   cursor: pointer;
   z-index: 2;
 }
 
-.eden-season-card { padding: 14px !important; }
-.eden-dataset-select { max-width: 140px; }
-.eden-toolbar-primary { flex-wrap: wrap !important; }
+/* HUD elements */
+.eden-coord-hud {
+  font-size: 0.56rem !important;
+  max-width: calc(100% - 110px) !important;
+  left: 5px !important;
+  top: 5px !important;
+  bottom: auto !important;
+  padding: 3px 6px !important;
+}
 
+.eden-map-legend {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  gap: 7px !important;
+  font-size: 0.52rem !important;
+  padding: 4px 7px !important;
+  scrollbar-width: none;
+}
+.eden-map-legend::-webkit-scrollbar { display: none; }
+.eden-map-legend span { flex-shrink: 0; white-space: nowrap; }
+
+.eden-minimap {
+  width: 90px !important;
+  height: 90px !important;
+  right: 4px !important;
+  bottom: 4px !important;
+  border-radius: 6px !important;
+}
+
+.global-game-clock { font-size: 0.68rem !important; padding: 4px 9px !important; }
+.eden-game-clock { font-size: 0.6rem !important; padding: 4px 7px !important; }
+.eden-mode-label { font-size: 0.56rem !important; flex-shrink: 0; gap: 3px !important; }
+.eden-mode-label input[type="range"] { width: 68px !important; }
+.eden-speed-val { font-size: 0.58rem !important; }
+.eden-team-board { max-height: 150px !important; }
+
+/* Quick jump bar */
+.eden-quick-btn {
+  flex-shrink: 0;
+  font-size: 0.58rem !important;
+  padding: 6px 9px !important;
+  min-height: 30px;
+}
+.eden-quick-divider { height: 20px !important; margin: 0 3px !important; }
+
+/* Filter / search */
+.eden-filter-row { grid-template-columns: 1fr 1fr !important; gap: 4px !important; }
+.eden-filter-select { font-size: 0.6rem !important; min-height: 34px; width: 100% !important; }
+.eden-stats { font-size: 0.58rem !important; padding-right: 32px !important; }
+.eden-hover-info { font-size: 0.58rem !important; }
+.eden-selected-actions { flex-wrap: wrap !important; gap: 4px !important; }
+.eden-action-btn { min-height: 34px; flex: 1 1 auto; font-size: 0.6rem !important; }
+.eden-struct-row { min-height: 40px !important; padding: 6px 7px !important; }
+.eden-struct-list { max-height: none !important; }
+
+/* Season card / dataset */
+.eden-season-card { padding: 12px !important; }
+.eden-dataset-select { max-width: 130px; }
 .eden-coord-search-row { flex-wrap: nowrap; }
-.eden-coord-go-btn { padding: 6px 10px !important; }
+.eden-coord-go-btn { padding: 6px 9px !important; min-height: var(--tap-min); }
 
-.eden-help-panel { padding: 10px 10px !important; margin-top: 10px !important; }
-.eden-help-summary { font-size: 0.72rem !important; }
-.eden-guide-sec-label { max-width: 56px !important; }
-.eden-guide-step-pill span:not(.eden-guide-step-num) { max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.eden-guide-step-title { font-size: 0.76rem !important; }
-.eden-guide-step-desc { font-size: 0.66rem !important; }
-.eden-guide-nav-row { flex-direction: column; }
-.eden-guide-nav-btn { width: 100%; text-align: center; }
+/* Help / guide panel */
+.eden-help-panel { padding: 9px !important; margin-top: 8px !important; }
+.eden-help-summary { font-size: 0.7rem !important; }
+.eden-guide-sec-label { max-width: 52px !important; }
+.eden-guide-step-title { font-size: 0.74rem !important; }
+.eden-guide-step-desc { font-size: 0.64rem !important; }
+.eden-guide-nav-row { flex-direction: column; gap: 4px; }
+.eden-guide-nav-btn { width: 100%; text-align: center; min-height: var(--tap-min); }
 
-@media (max-width: 380px) {
-  .tab-pill { font-size: 0.62rem !important; padding: 0.38rem 0.5rem !important; }
-  .research-grid { grid-template-columns: 1fr !important; }
-  .eden-tool-btn { padding: 7px 8px !important; font-size: 0.58rem !important; }
-  .eden-minimap { width: 80px !important; height: 80px !important; }
-  .eden-canvas-wrap, #edenMapCanvas { min-height: 46vh !important; }
+/* ── 13. LOYALTY / EDEN LOYALTY TAB ──────────────────────── */
+.loyalty-title { font-size: 1.1rem !important; }
+.loyalty-desc { font-size: 0.7rem !important; }
+.loyalty-header { gap: 8px !important; margin-bottom: 0.6rem !important; }
+.loyalty-eden-link-btn { width: 100%; text-align: center; font-size: 0.66rem !important; }
+.loyalty-presets { padding: 7px 9px !important; gap: 5px !important; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.loyalty-presets::-webkit-scrollbar { display: none; }
+.loyalty-preset-btn { font-size: 0.6rem !important; padding: 5px 8px !important; flex-shrink: 0; min-height: 32px; }
+.loyalty-sticky { padding: 9px 11px !important; border-radius: 11px !important; }
+.loyalty-sticky-stats { grid-template-columns: 1fr 1fr !important; }
+.loyalty-stat-value { font-size: 0.85rem !important; }
+.loyalty-calc-btn { font-size: 0.7rem !important; min-height: var(--tap-min); padding: 0 14px !important; }
+#loyaltySection .grid { gap: 9px !important; }
+#loyaltySection input, #loyaltySection select { font-size: 0.78rem !important; min-height: 38px; }
+#loyaltySection label { font-size: 0.7rem !important; }
+.loyalty-inputs > .p-5 { padding: 10px !important; }
+.loyalty-result-value { font-size: 0.96rem !important; }
+.loyalty-step-card-grid { gap: 5px 7px !important; }
+
+/* ── 14. VTS ADMIN / OCR TAB ──────────────────────────────── */
+/* Already covered by app.css @640px block.
+   Add any gap-fills here: */
+#ocrDashboardRoot .dash-main-grid[style*="1.2fr"] {
+  grid-template-columns: 1fr !important;
+}
+#ocrDashboardRoot .dash-upload-zone.hidden { display: block !important; }
+#ocrDashboardRoot .dash-log-output { height: 110px; font-size: 0.68rem; }
+#ocrDashboardRoot .dash-modal { align-items: flex-end; padding: 0; }
+#ocrDashboardRoot .dash-modal-content {
+  max-height: 90vh;
+  border-radius: 1rem 1rem 0 0;
+  border-bottom: 0;
+  padding: 1.15rem;
 }
 
-/* ── Heroes tab header ───────────────────────────────────── */
-.heroes-tab-header h2 { font-size: 1.15rem !important; }
-.heroes-tab-header p { font-size: 0.75rem !important; }
-
-/* ── Comments section ────────────────────────────────────── */
-#commentsSection { margin-top: 16px !important; border-radius: 14px !important; }
-#commentsSection h2 { font-size: 0.82rem !important; }
-#commentForm textarea, #commentForm input {
-  font-size: 0.8rem !important; min-height: 38px;
+/* ── 15. YOUTUBE TAB ──────────────────────────────────────── */
+#youtubeSection h2 { font-size: 0.92rem !important; letter-spacing: 0.05em !important; }
+#youtubeSection .mb-8, #youtubeSection > div {
+  padding: 10px !important;
+  margin-bottom: 12px !important;
+  border-radius: 12px !important;
 }
-#commentSubmitBtn { width: 100%; }
+#youtubeSection a { font-size: 0.6rem !important; padding: 5px 9px !important; }
 
-/* Light theme toggle on mobile (slightly smaller) */
-[data-theme="light"] #themeToggle {
-  width: 32px !important;
-  height: 32px !important;
+/* ── 16. COMMENTS SECTION ─────────────────────────────────── */
+#commentsSection { margin-top: 14px !important; border-radius: 12px !important; }
+#commentsSection h2 { font-size: 0.8rem !important; }
+#commentForm textarea, #commentForm input { font-size: 0.78rem !important; min-height: 38px; }
+#commentSubmitBtn { width: 100%; min-height: var(--tap-min); }
+.comment-avatar { width: 28px !important; height: 28px !important; min-width: 28px !important; font-size: 0.82rem !important; }
+.replies-container { margin-left: 0.75rem !important; padding-left: 0.6rem !important; }
+
+/* ── 17. UI UTILITIES ─────────────────────────────────────── */
+/* Scroll-to-top button */
+#scrollTopBtn {
+  bottom: calc(5rem + var(--safe-bottom)) !important;
+  right: 0.65rem !important;
+  width: 34px !important;
+  height: 34px !important;
 }
 
-/* =============================================================
-   MOBILE PREMIUM STYLE ENHANCEMENTS
-   ============================================================= */
+/* Language select */
+#languageSelect { font-size: 0.76rem !important; }
+.hero-search-input { font-size: 0.78rem !important; }
+.hero-search-input:focus { box-shadow: 0 0 0 3px rgba(59,130,246,0.18) !important; }
+.research-search-input:focus { box-shadow: 0 0 0 3px rgba(59,130,246,0.18) !important; }
 
-/* Micro-spring touch feedback on mobile */
-.hero-card:active, .generator-card:active, .tab-pill:active, .filter-pill:active, button:active {
+/* SEO footer */
+.seo-intro { font-size: 0.66rem !important; padding: 0 3px !important; margin-bottom: 0.75rem !important; }
+.site-footer { padding: 0.85rem 0.65rem 1rem !important; margin-top: 1rem !important; }
+.site-footer-desc { font-size: 0.64rem !important; }
+.site-footer-features { font-size: 0.6rem !important; }
+
+/* Theme toggle */
+[data-theme="light"] #themeToggle { width: 30px !important; height: 30px !important; }
+
+/* Heroes tab header */
+.heroes-tab-header h2 { font-size: 1.1rem !important; }
+.heroes-tab-header p { font-size: 0.72rem !important; }
+
+/* ── 18. MICRO-INTERACTIONS ───────────────────────────────── */
+/* Spring feedback on all tappable elements */
+.tab-pill:active,
+.filter-pill:active,
+.hero-card:active,
+.generator-card:active,
+button:not([disabled]):active,
+.eden-tool-btn:active,
+.loyalty-preset-btn:active,
+.research-quick-btn:active,
+.hero-tab-season:active {
   transform: scale(0.94) !important;
   transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-/* Glassmorphic scrollable tab nav bar */
-#tabNavScroll {
-  background: rgba(15, 23, 42, 0.75) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+/* Generator/combo action buttons — bigger spring */
+#generateCombosBtn:active,
+#generateRandomBtn:active,
+#downloadGeneratorBtn:active {
+  transform: scale(0.97) !important;
 }
+
+/* ── 19. LIGHT THEME OVERRIDES ────────────────────────────── */
 [data-theme="light"] #tabNavScroll {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: rgba(248,250,252,0.9) !important;
+  border-color: rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] #comboFooterBar {
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12) !important;
+}
+[data-theme="light"] .eden-sidebar {
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.15) !important;
+}
+[data-theme="light"] .hero-card:hover,
+[data-theme="light"] .generator-card:hover {
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12) !important;
 }
 
-/* Enhanced mobile search focus styling */
-.hero-search-input:focus, .research-search-input:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
-  border-color: #3b82f6 !important;
+/* ── 20. NARROW PHONE BREAKPOINTS ────────────────────────── */
+@media (max-width: 480px) {
+  /* 3 columns for very small phones */
+  #generatorHeroes, #availableHeroes {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .hero-card img, .generator-card img { width: 52px !important; height: 52px !important; }
+  .hero-card span.text-xs, .generator-card span.text-xs { font-size: 0.58rem !important; }
+
+  .tab-pill { font-size: 0.63rem !important; padding: 0.38rem 0.48rem !important; }
+  .research-grid { grid-template-columns: 1fr !important; }
+  .eden-tool-btn { padding: 7px 8px !important; font-size: 0.57rem !important; }
+  .eden-minimap { width: 78px !important; height: 78px !important; }
+  .eden-canvas-wrap, #edenMapCanvas { min-height: 44vh !important; }
+  .detail-stats-row { grid-template-columns: 1fr 1fr !important; }
 }
 
+@media (max-width: 360px) {
+  /* Extreme small — Galaxy S22 Ultra min width */
+  #appTitle { font-size: 1.35rem !important; }
+  .tab-pill { font-size: 0.58rem !important; padding: 0.35rem 0.42rem !important; }
+  #generatorHeroes, #availableHeroes {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+  }
+  .research-grid { grid-template-columns: 1fr !important; }
+  .combo-slot { width: 58px !important; height: 58px !important; }
+}
