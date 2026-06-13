@@ -1059,8 +1059,12 @@ function parseOcrResults(results) {
     
     let f = false;
     for (const g of groups) {
-      if (Math.abs(g.dt - dt) < 600000 && (!g.sN || !sN || getSimilarity(g.sN, sN) > 0.8) && g.sL === sL) {
+      const nameMatch = (!g.sN || !sN || getSimilarity(g.sN, sN) > 0.8);
+      const levelMatch = (!g.sL || !sL || g.sL === sL);
+      if (Math.abs(g.dt - dt) < 600000 && nameMatch && levelMatch) {
         if (j.players) g.players.push(...j.players);
+        if (!g.sN && sN) g.sN = sN;
+        if (!g.sL && sL) g.sL = sL;
         f = true; break;
       }
     }
