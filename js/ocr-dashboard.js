@@ -1156,6 +1156,10 @@ function parseOcrResults(results) {
        if (existing.structure_name.includes('Structure') && !a.structure_name.includes('Structure')) {
          existing.structure_name = a.structure_name;
          existing.structure_level = a.structure_level;
+         const oldId = existing.id;
+         existing.id = a.id;
+         merged[a.id] = existing;
+         delete merged[oldId];
        }
     } else {
        merged[a.id] = { ...a };
