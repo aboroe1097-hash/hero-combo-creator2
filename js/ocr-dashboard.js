@@ -487,11 +487,15 @@ function importData(file) {
       const imp = JSON.parse(e.target.result); if (!imp.attacks) throw 'Invalid';
       const m = {}; (dashData?.attacks||[]).forEach(a => m[a.id]=a); (imp.attacks||[]).forEach(a => m[a.id]=a);
       const sorted = Object.values(m).sort((a,b) => b.game_time.localeCompare(a.game_time));
-      const sum = {}; sorted.forEach(a => a.players.forEach(p => {
-        const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] };
-        sum[n].total_demolition += p.value; sum[n].participation_count++;
-        sum[n].attacks.push({ attack_id: a.id, structure_name: a.structure_name, game_time: a.game_time, value: p.value, rank: p.rank });
-      }));
+      const sum = {}; sorted.forEach(a => {
+        const seen = new Set();
+        a.players.forEach(p => {
+          const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] };
+          sum[n].total_demolition += p.value; 
+          if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); }
+          sum[n].attacks.push({ attack_id: a.id, structure_name: a.structure_name, game_time: a.game_time, value: p.value, rank: p.rank });
+        });
+      });
       saveData({ last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b)=>b.total_demolition-a.total_demolition)});
       render(); log('Import successful.', 'success');
     } catch (err) { alert('Import failed'); }
@@ -535,13 +539,16 @@ function render() {
   }
   // Dynamically calculate global players summary so any findBestMatch rules apply retroactively
   const globalSum = {};
-  atts.forEach(a => a.players.forEach(p => { 
-    const n = findBestMatch(p.name); 
-    if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
-    globalSum[n].total_demolition += (p.value||p.val||0); 
-    globalSum[n].participation_count++; 
-    globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
-  }));
+  atts.forEach(a => {
+    const seen = new Set();
+    a.players.forEach(p => { 
+      const n = findBestMatch(p.name); 
+      if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
+      globalSum[n].total_demolition += (p.value||p.val||0); 
+      if (!seen.has(n)) { globalSum[n].participation_count++; seen.add(n); }
+      globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+    });
+  });
   let psum = Object.values(globalSum).sort((a,b) => b.total_demolition - a.total_demolition);
 
   const filterEl = $id('dashLeaderFilter');
@@ -558,13 +565,16 @@ function render() {
     if (currentVal) {
       const filteredAttacks = atts.filter(a => a.id === currentVal);
       const sum = {}; 
-      filteredAttacks.forEach(a => a.players.forEach(p => { 
-        const n = findBestMatch(p.name); 
-        if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
-        sum[n].total_demolition += (p.value||p.val||0); 
-        sum[n].participation_count++; 
-        sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
-      }));
+      filteredAttacks.forEach(a => {
+        const seen = new Set();
+        a.players.forEach(p => { 
+          const n = findBestMatch(p.name); 
+          if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
+          sum[n].total_demolition += (p.value||p.val||0); 
+          if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); }
+          sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+        });
+      });
       psum = Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition);
     }
   }
@@ -1134,7 +1144,16 @@ function parseOcrResults(results) {
   });
   
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
-  const sum = {}; sorted.forEach(a => a.players.forEach(p => { const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; sum[n].total_demolition += p.value; sum[n].participation_count++; sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: p.value, rank: p.rank }); }));
+  const sum = {}; sorted.forEach(a => {
+    const seen = new Set();
+    a.players.forEach(p => { 
+      const n = findBestMatch(p.name); 
+      if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] }; 
+      sum[n].total_demolition += p.value; 
+      if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); }
+      sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: p.value, rank: p.rank }); 
+    });
+  });
   
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
