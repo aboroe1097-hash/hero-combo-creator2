@@ -1323,7 +1323,7 @@ window.editAttack = async function(attId) {
   if(newLevel === null) return;
   const newTime = prompt("Edit End Time (Game Time) (format: YYYY-MM-DD, HH:mm):", att.game_time);
   if(newTime === null) return;
-  const newStartTime = prompt("Edit Start Time (Optional, leave blank if unknown):", att.start_time || "");
+  const newStartTime = prompt("Edit Start Time (Game Time) (Optional, leave blank if unknown):", att.start_time || "");
   if(newStartTime === null) return;
   att.structure_name = normalizeStructureName(newName.trim());
   att.structure_level = newLevel.trim();
