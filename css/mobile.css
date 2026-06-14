@@ -148,21 +148,12 @@ body.tab-manual-active {
   flex-shrink: 0;
 }
 
-/* Ensure filter rows scroll horizontally */
+/* Let filter rows wrap naturally to prevent screen stretching */
 #seasonFilters, #stateFilters, #troopFilters,
 #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters {
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 2px;
+  flex-wrap: wrap !important;
+  justify-content: center;
 }
-#seasonFilters::-webkit-scrollbar,
-#stateFilters::-webkit-scrollbar,
-#troopFilters::-webkit-scrollbar,
-#generatorSeasonFilters::-webkit-scrollbar,
-#generatorStateFilters::-webkit-scrollbar,
-#generatorTroopFilters::-webkit-scrollbar { display: none; }
 
 #manualSection .mb-6, #generatorSection .mb-6 {
   padding: 10px !important;
@@ -198,6 +189,10 @@ body.tab-manual-active {
   width: 46px !important;
   height: 46px !important;
   margin-bottom: 2px !important;
+}
+
+/* Prevent info-btn from overlapping the paid-badge on mobile */
+.hero-card:has(.paid-badge) .info-btn { top: 26px !important; }
   border-width: 1.5px !important;
 }
 
@@ -531,15 +526,20 @@ body.tab-manual-active {
 .research-page-tab { font-size: 0.54rem !important; padding: 5px 8px !important; min-height: 30px; }
 .research-game-title { font-size: 0.85rem !important; }
 
-/* Research card grid — 2 cols */
+/* Research card grid — 3 cols on mobile */
 .research-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 9px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
 }
-.research-tech-card { padding: 10px !important; border-radius: 10px !important; }
-.research-card-title { font-size: 0.8rem !important; }
-.research-card-unlock { font-size: 0.56rem !important; }
-.research-card-cta { font-size: 0.58rem !important; padding: 7px 6px !important; min-height: 34px; }
+.research-tech-card { padding: 6px !important; border-radius: 8px !important; }
+.research-card-title { font-size: 0.65rem !important; }
+.research-card-unlock { font-size: 0.5rem !important; }
+.research-card-cta { font-size: 0.5rem !important; padding: 5px 4px !important; min-height: 28px !important; }
+.research-card-resource { font-size: 0.65rem !important; margin-right: 4px !important; }
+.research-card-icon { width: 12px !important; height: 12px !important; }
+.research-card-head { margin-bottom: 4px !important; padding-right: 28px !important; }
+.research-card-progress { gap: 4px !important; }
+.research-card-max { padding: 2px 4px !important; font-size: 0.5rem !important; }
 
 /* Summary / totals */
 .research-summary-card { padding: 10px !important; }
@@ -895,7 +895,7 @@ button:not([disabled]):active,
   .hero-card span.text-xs, .generator-card span.text-xs { font-size: 0.58rem !important; }
 
   .tab-pill { font-size: 0.63rem !important; padding: 0.38rem 0.48rem !important; }
-  .research-grid { grid-template-columns: 1fr !important; }
+  .research-grid { grid-template-columns: repeat(3, 1fr) !important; }
   .eden-tool-btn { padding: 7px 8px !important; font-size: 0.57rem !important; }
   .eden-minimap { width: 78px !important; height: 78px !important; }
   .eden-canvas-wrap, #edenMapCanvas { min-height: 44vh !important; }
@@ -910,6 +910,6 @@ button:not([disabled]):active,
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 4px !important;
   }
-  .research-grid { grid-template-columns: 1fr !important; }
+  .research-grid { grid-template-columns: repeat(3, 1fr) !important; }
   .combo-slot { width: 58px !important; height: 58px !important; }
 }
