@@ -5268,7 +5268,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-top-rank,
 #ocrDashboardRoot .dash-top-name,
 #ocrDashboardRoot .dash-top-val,
-#ocrDashboardRoot .dash-top-pct { position: relative; z-index: 1; }
+#ocrDashboardRoot .dash-top-pct { position: relative; z-index: 1; transform: translateY(-2px); }
 
 #ocrDashboardRoot .dash-top-rank {
   font-weight: 800; font-size: 0.75rem; color: var(--text-dim);
@@ -5279,7 +5279,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-top-rank.rank-3 { color: #d97706; }
 #ocrDashboardRoot .dash-top-name {
   flex: 1; font-weight: 600; font-size: 0.85rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  word-break: break-word; white-space: normal; line-height: 1.2;
 }
 #ocrDashboardRoot .dash-top-val {
   font-weight: 700; font-size: 0.85rem; color: #10b981;
@@ -5649,8 +5649,11 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 
   /* Attack list - max height auto */
   #ocrDashboardRoot .dash-attack-list { max-height: none; }
-  #ocrDashboardRoot .dash-attack-item { padding: 0.7rem 0.75rem; }
-  #ocrDashboardRoot .dash-attack-name { font-size: 0.85rem; }
+  #ocrDashboardRoot .dash-attack-item { padding: 0.7rem 0.75rem; flex-wrap: wrap; gap: 6px; }
+  #ocrDashboardRoot .dash-attack-item > div { min-width: 0; }
+  #ocrDashboardRoot .dash-attack-item > div:first-child { flex: 1 1 100%; }
+  #ocrDashboardRoot .dash-attack-item > div:last-child { flex: 1 1 100%; justify-content: space-between; margin-top: 4px; }
+  #ocrDashboardRoot .dash-attack-name { font-size: 0.85rem; white-space: normal; word-break: break-word; }
   #ocrDashboardRoot .dash-attack-val { font-size: 0.9rem; }
   #ocrDashboardRoot .dash-del-btn { opacity: 1 !important; width: 28px; height: 28px; } /* Always visible on mobile */
 
@@ -5658,10 +5661,10 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-table { font-size: 0.72rem; }
   #ocrDashboardRoot .dash-table th,
   #ocrDashboardRoot .dash-table td { padding: 0.4rem 0.4rem; }
-  #ocrDashboardRoot .dash-table-wrap { margin: 0 -0.5rem; }
-  #ocrDashboardRoot .dash-table-wrap table { min-width: 380px; }
+  #ocrDashboardRoot .dash-table-wrap { margin: 0; width: 100%; }
+  #ocrDashboardRoot .dash-table-wrap table { min-width: 100%; }
   #ocrDashboardRoot .dash-rank { font-size: 0.75rem; }
-  #ocrDashboardRoot .dash-pname { font-size: 0.72rem; }
+  #ocrDashboardRoot .dash-pname { font-size: 0.72rem; white-space: normal; word-break: break-word; }
 
   /* Card headers */
   #ocrDashboardRoot .dash-card-hdr { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }

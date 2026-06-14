@@ -63,13 +63,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/mobile-Br1OhPxR.css" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="/assets/mobile-wQjtJv0M.css?v=20260614_5" media="(max-width: 768px)" />
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 
-  <script type="module" crossorigin src="/assets/index-AEB4aR61.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/eden-DoVNAS_-.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-DU0ghhCH.css">
+  <script type="module" crossorigin src="/assets/index-MXGyx18N.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/eden-KN5jQnvR.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-hjWycSG_.css">
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -127,7 +127,7 @@
 
     <div class="flex justify-end items-center gap-3 mb-6 relative z-50 flex-wrap">
       <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
-      <div class="relative inline-block group">
+      <div class="relative inline-block group lang-select-wrapper">
         <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
           <div class="pl-3 pr-1 text-slate-400 group-hover:text-blue-400 pointer-events-none transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
@@ -894,11 +894,12 @@
             <div class="dash-login-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
-            <h2 class="dash-login-title">VTS Admin</h2>
-            <p class="dash-login-sub">Alliance Structure Attack Analytics</p>
+            <h2 class="dash-login-title" data-i18n="adminLoginTitle">VTS Admin</h2>
+            <p class="dash-login-sub" data-i18n="adminLoginSub">Alliance Structure Attack Analytics</p>
             <div id="dashLoginErr" class="dash-login-err hidden"></div>
-            <input type="password" id="dashLoginPass" class="dash-input" placeholder="Password">
-            <button id="dashLoginBtn" class="dash-btn dash-btn-primary">Sign In</button>
+            <input type="password" id="dashLoginPass" class="dash-input" placeholder="Password" data-i18n-ph="adminLoginPass">
+            <button id="dashLoginBtn" class="dash-btn dash-btn-primary" data-i18n="adminLoginBtn">Sign In as Admin</button>
+            <button id="dashGuestBtn" class="dash-btn" style="margin-top:0.5rem; background:rgba(255,255,255,0.05); color:var(--text-dim); width:100%; border:1px solid rgba(255,255,255,0.1);" data-i18n="adminGuestBtn">Enter as Guest</button>
             <p id="dashServerStatus" class="dash-server-status"></p>
           </div>
         </div>
@@ -908,34 +909,41 @@
           <div class="dash-container">
             <div class="dash-header">
               <div>
-                <h1 class="dash-h1">Structure Attack Analytics</h1>
-                <div class="dash-subtitle"><span>Alliance Demolition Tracker</span><span id="dashUpdated" class="dash-updated"></span><span id="dashSyncIndicator" class="text-[10px] text-emerald-400 ml-2 hidden font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Live</span></div>
-                <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Optional: If you want to upload images, insert API Code here:</span>
-                  <div class="dash-search-wrap" style="margin: 0; flex-grow: 1; max-width: 320px;"><input type="password" id="dashApiKeyInput" class="dash-search-input" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; width: 100%; min-width: 220px; background: rgba(0,0,0,0.2);" placeholder="Paste your API here" /></div>
+                <h1 class="dash-h1" data-i18n="adminHeaderTitle">Structure Attack Analytics</h1>
+                <div class="dash-subtitle"><span data-i18n="adminHeaderSub">Alliance Demolition Tracker</span><span id="dashUpdated" class="dash-updated"></span><span id="dashSyncIndicator" class="text-[10px] text-emerald-400 ml-2 hidden font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span data-i18n="adminHeaderLive">Live</span></span></div>
+                <div id="dashApiKeyContainer" style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;" data-i18n="adminApiPrompt">Optional: If you want to upload images, insert API Code here:</span>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; max-width: 360px;">
+                    <div class="dash-search-wrap" style="margin: 0; flex-grow: 1;"><input type="password" id="dashApiKeyInput" class="dash-search-input" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; width: 100%; min-width: 180px; background: rgba(0,0,0,0.2);" placeholder="Paste your API here" data-i18n-ph="adminApiPh" /></div>
+                    <button id="dashSaveApiBtn" class="dash-btn" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; min-height: 0; background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #10b981; display: flex; align-items: center; gap: 4px;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span data-i18n="adminApiBtn">Confirm & Attach</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="dash-actions">
-                <button id="dashRosterBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Roster</span></button>
-                <button id="dashUploadBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Upload</span></button>
+                <button id="dashRosterBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-i18n="adminBtnRoster">Roster</span></button>
+                <button id="dashUploadBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminBtnUpload">Upload</span></button>
                 
                 <!-- Unified Export Dropdown -->
                 <div class="dash-dropdown">
-                  <button id="dashExportMenuBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export</span></button>
+                  <button id="dashExportMenuBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="adminBtnExport">Export</span></button>
                   <div class="dash-dropdown-content" id="dashExportMenu">
-                    <button id="dashExpCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>CSV Leaderboard</button>
-                    <button id="dashExpAttackCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>CSV Attack Details</button>
-                    <button id="dashExpPdf"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>PDF Report</button>
-                    <button id="dashExpPng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>PNG Dashboard</button>
-                    <button id="dashExpJson"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>JSON Backup</button>
+                    <button id="dashExpCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span data-i18n="adminExpCsvLead">CSV Leaderboard</span></button>
+                    <button id="dashExpAttackCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span data-i18n="adminExpCsvAtt">CSV Attack Details</span></button>
+                    <button id="dashExpDebugCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Debug Data</span></button>
+                    <button id="dashExpPdf"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span data-i18n="adminExpPdf">PDF Report</span></button>
+                    <button id="dashExpPng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="adminExpPng">PNG Dashboard</span></button>
+                    <button id="dashExpJson"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminExpJson">JSON Backup</span></button>
                     <hr>
-                    <button id="dashImportBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Data</button>
+                    <button id="dashImportBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminExpImport">Import Data</span></button>
                   </div>
                 </div>
 
-                <button id="dashRefreshBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span>Refresh</span></button>
+                <button id="dashRefreshBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="adminBtnRefresh">Refresh</span></button>
 
-                <button id="dashClearDataBtn" class="dash-btn" style="color:#ef4444;border-color:rgba(239,68,68,0.2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span>Clear All</span></button>
+                <button id="dashClearDataBtn" class="dash-btn" style="color:#ef4444;border-color:rgba(239,68,68,0.2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span data-i18n="adminBtnClear">Clear All</span></button>
               </div>
 
             </div>
@@ -944,58 +952,58 @@
             <div id="dashUploadZone" class="dash-upload-zone hidden">
               <div id="dashDropZone" class="dash-dropzone">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <p>Drop screenshots here or click to browse</p>
-                <span class="dash-hint">PNG, JPG — Multiple structures supported</span>
-                <input type="file" id="dashFileInput" accept="image/png,image/jpeg,image/jpg" multiple hidden>
+                <p data-i18n="adminUploadDrop">Drop screenshots here or click to browse</p>
+                <span class="dash-hint" data-i18n="adminUploadHint">PNG, JPG — Multiple structures supported</span>
+                <input type="file" id="dashFileInput" accept="image/png,image/jpeg,image/jpg" multiple style="opacity: 0; position: absolute; z-index: -1; width: 1px; height: 1px;">
               </div>
-              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text">Uploading...</span></div>
+              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span></div>
               <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
               
               <!-- Process Log Area -->
               <div id="dashLogArea" class="dash-log-area hidden">
-                <div class="dash-log-hdr"><span>Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs" style="opacity:0.6">Clear</button></div>
+                <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs" style="opacity:0.6" data-i18n="adminTerminalClear">Clear</button></div>
                 <div id="dashLogOutput" class="dash-log-output"></div>
               </div>
             </div>
 
             <!-- KPIs -->
             <div class="dash-kpi-grid">
-              <div class="dash-card dash-kpi blue"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div><div class="dash-kpi-value" id="dashKpiAttacks">0</div><div class="dash-kpi-label">Structure Hits</div></div></div>
-              <div class="dash-card dash-kpi teal"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg></div><div><div class="dash-kpi-value" id="dashKpiDemo">0</div><div class="dash-kpi-label">Total Demolition</div></div></div>
-              <div class="dash-card dash-kpi purple"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="dash-kpi-value" id="dashKpiPlayers">0</div><div class="dash-kpi-label">Active Players</div></div></div>
-              <div class="dash-card dash-kpi orange"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="dash-kpi-value" id="dashKpiMvp" style="font-size:1.25rem">---</div><div class="dash-kpi-label" id="dashKpiMvpLabel">MVP Contributor</div></div></div>
+              <div class="dash-card dash-kpi blue"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div><div class="dash-kpi-value" id="dashKpiAttacks">0</div><div class="dash-kpi-label" data-i18n="adminKpiHits">Structure Hits</div></div></div>
+              <div class="dash-card dash-kpi teal"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg></div><div><div class="dash-kpi-value" id="dashKpiDemo">0</div><div class="dash-kpi-label" data-i18n="adminKpiDemo">Total Demolition</div></div></div>
+              <div class="dash-card dash-kpi purple"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="dash-kpi-value" id="dashKpiPlayers">0</div><div class="dash-kpi-label" data-i18n="adminKpiPlayers">Active Players</div></div></div>
+              <div class="dash-card dash-kpi orange"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="dash-kpi-value" id="dashKpiMvp" style="font-size:1.25rem">---</div><div class="dash-kpi-label" id="dashKpiMvpLabel" data-i18n="adminKpiMvp">MVP Contributor</div></div></div>
             </div>
 
             <!-- Visuals Row -->
             <div class="dash-main-grid" style="grid-template-columns: 1.2fr 1fr; margin-bottom: 1.5rem;">
               <div class="dash-card dash-chart-card">
                 <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Top Performers</h2>
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span data-i18n="adminChartTop">Top Performers</span></h2>
                   <div style="display:flex;gap:8px">
                     <button id="dashShareChartBtn" class="dash-btn dash-btn-xs" title="Share via Device"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
                     <button id="dashExportChartBtn" class="dash-btn dash-btn-xs" title="Download Image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
                   </div>
                 </div>
-                <div id="dashChart" class="dash-chart"><div class="dash-empty">Loading...</div></div>
+                <div id="dashChart" class="dash-chart"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
               </div>
-              <div class="dash-card">
+              <div id="dashInsightsCard" class="dash-card">
                 <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Insights</h2>
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span data-i18n="adminChartInsights">Insights</span></h2>
                 </div>
                 <div class="dash-insights-body">
                   <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span>Performance Averages</span></div>
+                    <div class="dash-insight-hdr"><span data-i18n="adminInsightAvg">Performance Averages</span></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-                       <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.65rem;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em">Avg Attendance</div><div id="dashAvgAttend" style="font-size:1.15rem;font-weight:700;color:#e2e8f0">--</div></div>
-                       <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.65rem;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em">Demo / Player</div><div id="dashAvgDemo" style="font-size:1.15rem;font-weight:700;color:#e2e8f0">--</div></div>
+                       <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.65rem;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em"><span data-i18n="adminInsightAvgAtt">Avg Attendance</span></div><div id="dashAvgAttend" style="font-size:1.15rem;font-weight:700;color:#e2e8f0">--</div></div>
+                       <div style="background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center"><div style="font-size:0.65rem;color:#94a3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em"><span data-i18n="adminInsightAvgDemo">Demo / Player</span></div><div id="dashAvgDemo" style="font-size:1.15rem;font-weight:700;color:#e2e8f0">--</div></div>
                     </div>
                   </div>
                   <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span>Participation Spread</span><span id="dashInsightPartPct" class="dash-insight-val">0%</span></div>
+                    <div class="dash-insight-hdr"><span data-i18n="adminInsightPart">Participation Spread</span><span id="dashInsightPartPct" class="dash-insight-val">0%</span></div>
                     <div id="dashPartChart" class="dash-mini-pie"></div>
                   </div>
                   <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span>Activity Trend</span></div>
+                    <div class="dash-insight-hdr"><span data-i18n="adminInsightTrend">Activity Trend</span></div>
                     <div id="dashTrendChart" class="dash-mini-trend"></div>
                   </div>
                 </div>
@@ -1004,40 +1012,40 @@
 
             <!-- Main Grid -->
             <div class="dash-main-grid">
-              <div class="dash-card">
+              <div id="dashAttackHistoryCard" class="dash-card">
                 <div class="dash-card-hdr" style="flex-wrap:wrap;gap:1rem">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Attack History</h2>
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="adminHistoryTitle">Attack History</span></h2>
                   <div class="dash-search-wrap" style="flex:1;min-width:180px">
                     <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="dashAttackSearch" class="dash-search-input" placeholder="Filter by structure, level, day...">
+                    <input type="text" id="dashAttackSearch" class="dash-search-input" placeholder="Filter by structure, level, day..." data-i18n-ph="adminHistoryPh">
                   </div>
                 </div>
-                <div id="dashAttackList" class="dash-attack-list"><div class="dash-empty">Loading...</div></div>
+                <div id="dashAttackList" class="dash-attack-list"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
               </div>
-              <div class="dash-card">
-                <div class="dash-card-hdr" style="flex-wrap:wrap;gap:1rem"><h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Leaderboard</h2>
+              <div id="dashLeaderboardCard" class="dash-card">
+                <div class="dash-card-hdr" style="flex-wrap:wrap;gap:1rem"><h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span data-i18n="adminLeaderboard">Leaderboard</span></h2>
                   <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end">
                     <select id="dashTimeFilter" class="dash-search-input" style="padding-left:8px;width:140px;max-width:100%;cursor:pointer">
-                      <option value="all">All Time</option>
-                      <option value="weekly">This Week (Mon-Sun)</option>
-                      <option value="daily">Today (0:00-23:59 GT)</option>
+                      <option value="all" data-i18n="adminTimeAll">All Time</option>
+                      <option value="weekly" data-i18n="adminTimeWeek">This Week (Mon-Sun)</option>
+                      <option value="daily" data-i18n="adminTimeToday">Today (0:00-23:59 GT)</option>
                     </select>
-                    <select id="dashLeaderFilter" class="dash-search-input" style="padding-left:8px;width:220px;max-width:100%;cursor:pointer"><option value="">All Uploaded Targets</option></select>
-                    <div class="dash-search-wrap" style="flex:1;min-width:160px;max-width:300px"><svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="dashSearch" class="dash-search-input" placeholder="Search member name..."></div>
+                    <select id="dashLeaderFilter" class="dash-search-input" style="padding-left:8px;width:220px;max-width:100%;cursor:pointer"><option value="" data-i18n="adminFilterAll">All Uploaded Targets</option></select>
+                    <div class="dash-search-wrap" style="flex:1;min-width:160px;max-width:300px"><svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="dashSearch" class="dash-search-input" placeholder="Search member name..." data-i18n-ph="adminSearchPh"></div>
                   </div>
                 </div>
                 <div class="dash-table-wrap">
                   <table class="dash-table">
-                    <thead><tr><th style="cursor:default;width:60px">Rank</th><th data-sort="name" style="cursor:pointer">Member Name</th><th data-sort="total_demolition" style="cursor:pointer;text-align:right">Total Demo</th><th data-sort="participation" style="cursor:pointer;text-align:center">Hits</th><th data-sort="avg_demolition" style="cursor:pointer;text-align:right">Avg/Hit</th></tr></thead>
+                    <thead><tr><th style="cursor:default;width:60px" data-i18n="adminThRank">Rank</th><th data-sort="name" style="cursor:pointer" data-i18n="adminThName">Member Name</th><th data-sort="total_demolition" style="cursor:pointer;text-align:right" data-i18n="adminThDemo">Total Demo</th><th data-sort="participation" style="cursor:pointer;text-align:center" data-i18n="adminThHits">Hits</th><th data-sort="avg_demolition" style="cursor:pointer;text-align:right" data-i18n="adminThAvg">Avg/Hit</th></tr></thead>
                     <tbody id="dashLeaderBody"><tr><td colspan="5" class="dash-empty">Loading...</td></tr></tbody>
                   </table>
                 </div>
               </div>
               <div class="dash-card dash-chart-card" style="align-self: flex-start;">
                 <div class="dash-card-hdr">
-                  <h2 class="dash-card-title" style="color: #f87171;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Lowest Performers</h2>
+                  <h2 class="dash-card-title" style="color: #f87171;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-i18n="adminChartLow">Lowest Performers</span></h2>
                 </div>
-                <div id="dashLowestChart" class="dash-chart"><div class="dash-empty">Loading...</div></div>
+                <div id="dashLowestChart" class="dash-chart"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
               </div>
             </div>
           </div>
