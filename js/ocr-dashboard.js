@@ -19,6 +19,16 @@ let _ocrProcessing = false;
 let _fsUnsub = null;
 
 function $id(id) { return document.getElementById(id); }
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>'"]/g, match => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[match]);
+}
 
 const LOG_KEY = 'vts_ocr_log';
 
