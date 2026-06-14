@@ -671,7 +671,12 @@ function render() {
             : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
         }
         const d = document.createElement('div'); d.className = 'dash-attack-item'; d.style.cursor = 'pointer';
-        let timeStr = a.start_time ? `${esc(a.start_time)} - ${displayGameTime(a.game_time)}` : displayGameTime(a.game_time);
+        let timeStr = displayGameTime(a.game_time);
+        if (a.start_time) {
+           const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
+           if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
+           else timeStr = `${esc(a.start_time)} - ${timeStr}`;
+        }
         d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
         d.onclick = () => showModal('attack', a); al.appendChild(d);
       });
@@ -1100,7 +1105,16 @@ function normalizeStructureName(name) {
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
 
-function displayGameTime(gt) { return gt && gt.includes(',') ? gt : (gt ? gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT' : ''); }
+function displayGameTime(gt) { 
+  if (!gt) return '';
+  const m = gt.match(/^(\d{4})-(\d{2})-(\d{2}),\s*(\d{2}:\d{2})$/);
+  if (m) {
+     const dt = new Date(+m[1], m[2]-1, +m[3]);
+     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+     return `${m[3]}/${m[2]}/${m[1]}, ${days[dt.getDay()]}, ${m[4]} GT`;
+  }
+  return gt.includes(',') ? gt : (gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT'); 
+}
 
 function parseOcrResults(results) {
   const groups = [];
