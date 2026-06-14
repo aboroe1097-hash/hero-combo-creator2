@@ -5677,9 +5677,9 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   /* Log panel */
   #ocrDashboardRoot .dash-log-output { height: 120px; font-size: 0.7rem; }
 
-  /* Modal - full width on mobile */
-  #ocrDashboardRoot .dash-modal { padding: 0; align-items: flex-end; }
-  #ocrDashboardRoot .dash-modal-content { max-height: 92vh; border-radius: 1rem 1rem 0 0; border-bottom: 0; padding: 1.25rem; }
+  /* Modal - centered on mobile */
+  #ocrDashboardRoot .dash-modal { padding: 1rem; align-items: center; }
+  #ocrDashboardRoot .dash-modal-content { max-height: 90vh; border-radius: 1rem; border-bottom: 1px solid var(--border); padding: 1.25rem; width: 100%; }
   #ocrDashboardRoot .dash-modal-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   #ocrDashboardRoot .dash-modal-stat { padding: 0.5rem 0.6rem; }
   #ocrDashboardRoot .dash-modal-stat > div:first-child { font-size: 0.6rem; }
