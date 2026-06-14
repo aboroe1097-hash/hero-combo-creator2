@@ -67,8 +67,9 @@ body.tab-manual-active {
 
 /* Boot splash — mobile proportions */
 .perspective-container {
-  width: 82vw !important;
-  aspect-ratio: 4 / 5;
+  width: 100vw !important;
+  height: 100vh !important;
+  aspect-ratio: auto;
   perspective: 1000px;
 }
 .boot-brand { font-size: 0.92rem !important; }

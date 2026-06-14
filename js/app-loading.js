@@ -35,12 +35,8 @@ if (typeof window !== 'undefined') {
 }
 
 function playTransitionSound() {
-    initAudio();
-    if (!audioCtx) return;
-
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
-    }
+    // Disabled as per user request
+    return;
 
     try {
         const now = audioCtx.currentTime;
