@@ -5684,3 +5684,11 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   #ocrDashboardRoot .dash-modal-stat { padding: 0.5rem 0.6rem; }
   #ocrDashboardRoot .dash-modal-stat > div:first-child { font-size: 0.6rem; }
 }
+
+/* Fix for modal positioning relative to viewport when body is locked */
+body[style*="overflow: hidden"] .app-shell,
+body[style*="overflow: hidden"] .tab-panel {
+    transform: none !important;
+    animation: none !important;
+    filter: none !important;
+}
