@@ -5268,7 +5268,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-top-rank,
 #ocrDashboardRoot .dash-top-name,
 #ocrDashboardRoot .dash-top-val,
-#ocrDashboardRoot .dash-top-pct { position: relative; z-index: 1; }
+#ocrDashboardRoot .dash-top-pct { position: relative; z-index: 1; transform: translateY(-2px); }
 
 #ocrDashboardRoot .dash-top-rank {
   font-weight: 800; font-size: 0.75rem; color: var(--text-dim);

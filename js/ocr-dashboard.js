@@ -617,7 +617,7 @@ function render() {
   top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
     const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px;"></div><span class="dash-top-rank">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1;">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px;"></div><span class="dash-top-rank">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1; transform:translateY(-2px);">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -632,7 +632,7 @@ function render() {
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
         const pct = (p.total_demolition/lowestMax)*86; 
-        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1;">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1; transform:translateY(-2px);">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
     }
@@ -942,16 +942,16 @@ async function processFiles(files) {
   if (!valid.length) { _ocrProcessing = false; return; }
   
   $id('dashProgress').classList.remove('hidden');
-  log(`Starting Qwen OCR on ${valid.length} files...`, 'info');
+  log(`Preparing to scan ${valid.length} screenshots...`, 'info');
   
   const allJson = [];
   for (let i = 0; i < valid.length; i++) {
-    const f = valid[i]; log(`Reading image data...`, 'info', f.name);
+    const f = valid[i];
+    $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length}...`;
     const base64 = await new Promise(res => { 
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f); 
     });
     
-    log(`Sending to Qwen API via Cloudflare Worker...`, 'info', f.name);
     try {
       const before = performance.now();
       let data = null;
@@ -1015,7 +1015,6 @@ EXPECTED JSON SCHEMA:
       }
 
       let text = raw.choices[0].message.content;
-      log(`Received response of length ${text.length}`, 'info', f.name);
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       data = tryRepairJson(text);
 
@@ -1024,7 +1023,7 @@ EXPECTED JSON SCHEMA:
       if (pCount < 10) {
         log(`Warning: Only ${pCount} players found. Check extraction logic. Snippet: ${text.substring(0, 50)}...`, 'warn', f.name);
       }
-      log(`Scan complete (${elapsed}s) — ${data.structure_name || '?'} ${data.structure_level || '?'}, ${pCount} players found.`, 'success', f.name);
+      log(`Successfully read screenshot ${i+1}/${valid.length} — ${data.structure_name || '?'} ${data.structure_level || '?'}, found ${pCount} players.`, 'success', f.name);
       allJson.push({ filename: f.name, json: data });
 
       // Progressive save so the user doesn't lose data if browser is backgrounded/killed
