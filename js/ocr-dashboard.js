@@ -486,22 +486,24 @@ window.shareChartImage = function() {
 }
 function exportAttackCsv() {
   if (!dashData?.attacks?.length) return;
-  let csv = 'Date,Structure,Level,Player Name,Rank,Demolition Value\n';
+  let csv = 'Start Time,End Time,Structure,Level,Player Name,Rank,Demolition Value\n';
   dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
-    (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${date}","${a.structure_name}","${a.structure_level||''}","${safeName}",${p.rank},${p.value}\n`; });
+    const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
+    (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${start}","${date}","${a.structure_name}","${a.structure_level||''}","${safeName}",${p.rank},${p.value}\n`; });
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
 function exportDebugCsv() {
   if (!dashData?.attacks?.length) return;
-  let csv = 'Attack ID,Date,Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
+  let csv = 'Attack ID,Start Time,End Time,Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
   dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
+    const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     (a.players||[]).forEach(p => { 
       const rawName = p.name.replace(/"/g, '""'); 
       const groupedName = findBestMatch(p.name).replace(/"/g, '""');
-      csv += `"${a.id}","${date}","${a.structure_name}","${a.structure_level||''}","${rawName}","${groupedName}",${p.value},${p.rank}\n`; 
+      csv += `"${a.id}","${start}","${date}","${a.structure_name}","${a.structure_level||''}","${rawName}","${groupedName}",${p.value},${p.rank}\n`; 
     });
   });
   const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' })); link.download = `vts_debug_export_${new Date().getTime()}.csv`; link.click();
@@ -669,7 +671,8 @@ function render() {
             : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
         }
         const d = document.createElement('div'); d.className = 'dash-attack-item'; d.style.cursor = 'pointer';
-        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${displayGameTime(a.game_time)} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
+        let timeStr = a.start_time ? `${esc(a.start_time)} - ${displayGameTime(a.game_time)}` : displayGameTime(a.game_time);
+        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
         d.onclick = () => showModal('attack', a); al.appendChild(d);
       });
     });
@@ -824,14 +827,18 @@ function showModal(type, data) {
       });
       let h = '';
       if (!isGuest()) {
-        h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+        h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.addPlayer('${data.id}')">➕ Add Player</button><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
       }
-      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Game Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
+      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
       h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
-      h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th></tr></thead><tbody>`;
+      h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th>${!isGuest()?'<th style="width:30px"></th>':''}</tr></thead><tbody>`;
       data.players.forEach(p => {
         const encName = encodeURIComponent(p.name).replace(/'/g, "%27");
-        h += `<tr style="cursor:pointer" onclick="window.showPlayer('${encName}')"><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname" style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(p.name)}</td><td class="dash-val">${(p.value||p.val||0).toLocaleString()}</td></tr>`;
+        h += `<tr style="cursor:pointer" onclick="window.showPlayer('${encName}')"><td class="dash-rank ${p.rank<=3?'rank-'+p.rank:''}">#${p.rank}</td><td class="dash-pname" style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(p.name)}</td><td class="dash-val">${(p.value||p.val||0).toLocaleString()}</td>`;
+        if (!isGuest()) {
+          h += `<td style="text-align:right"><button class="dash-btn dash-btn-xs" style="padding:2px 6px; font-size:0.7rem; background:transparent" onclick="event.stopPropagation(); window.editPlayer('${data.id}', '${encName}')">✏️</button></td>`;
+        }
+        h += `</tr>`;
       });
       body.innerHTML = h + '</tbody></table>';
     } else {
@@ -1301,16 +1308,74 @@ window.editAttack = async function(attId) {
   if(newName === null) return;
   const newLevel = prompt("Edit Structure Level (e.g. Lv.1, Lv.5):", att.structure_level);
   if(newLevel === null) return;
-  const newTime = prompt("Edit Game Time (format: YYYY-MM-DD, HH:mm):", att.game_time);
+  const newTime = prompt("Edit End Time (Game Time) (format: YYYY-MM-DD, HH:mm):", att.game_time);
   if(newTime === null) return;
+  const newStartTime = prompt("Edit Start Time (Optional, leave blank if unknown):", att.start_time || "");
+  if(newStartTime === null) return;
   att.structure_name = normalizeStructureName(newName.trim());
   att.structure_level = newLevel.trim();
   att.game_time = newTime.trim();
+  att.start_time = newStartTime.trim();
   const mockReturn = parseOcrResults([]); 
   dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
   await saveData(dashData);
   render(); showModal('attack', att);
   log(`Updated attack to: ${att.structure_name} ${att.structure_level}`, 'info');
+};
+
+window.addPlayer = async function(attId) {
+  if(!attId || !_booted || !dashData) return;
+  const att = dashData.attacks.find(a => a.id === attId);
+  if(!att) return;
+  const pName = prompt("Enter new Player Name:");
+  if(!pName) return;
+  const pVal = prompt(`Enter Demolition Value for ${pName}:`);
+  if(!pVal || isNaN(pVal)) return;
+  
+  att.players.push({ name: pName.trim(), value: Number(pVal), rank: 0 });
+  att.players.sort((a,b) => b.value - a.value);
+  att.players.forEach((p, i) => p.rank = i + 1);
+  att.players_count = att.players.length;
+  att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
+  
+  const mockReturn = parseOcrResults([]); 
+  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
+  await saveData(dashData);
+  render(); showModal('attack', att);
+  log(`Added player ${pName} to ${att.structure_name}`, 'info');
+};
+
+window.editPlayer = async function(attId, encName) {
+  if(!attId || !_booted || !dashData) return;
+  const att = dashData.attacks.find(a => a.id === attId);
+  if(!att) return;
+  const pName = decodeURIComponent(encName);
+  const pIdx = att.players.findIndex(p => p.name === pName);
+  if(pIdx === -1) return;
+  
+  const action = prompt(`Editing ${pName}.\nType new Demolition Value to update, or type 'DELETE' to remove this player:`, att.players[pIdx].value || att.players[pIdx].val);
+  if(!action) return;
+  
+  if (action.trim().toUpperCase() === 'DELETE') {
+     att.players.splice(pIdx, 1);
+  } else {
+     const pVal = Number(action);
+     if(isNaN(pVal)) { alert('Invalid value'); return; }
+     const newName = prompt(`Edit Player Name:`, pName);
+     if (newName) att.players[pIdx].name = newName.trim();
+     att.players[pIdx].value = pVal;
+  }
+  
+  att.players.sort((a,b) => b.value - a.value);
+  att.players.forEach((p, i) => p.rank = i + 1);
+  att.players_count = att.players.length;
+  att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
+  
+  const mockReturn = parseOcrResults([]); 
+  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
+  await saveData(dashData);
+  render(); showModal('attack', att);
+  log(`Edited player ${pName} in ${att.structure_name}`, 'info');
 };
 
 window.showPlayer = function(pNameEncoded) {
