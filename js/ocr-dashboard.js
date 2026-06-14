@@ -812,6 +812,19 @@ function render() {
 function showModal(type, data) {
   try {
     const m = $id('dashModal'), body = $id('dashModalBody');
+    if (m && m.parentElement && m.parentElement.id !== 'ocrDashboardRoot_portal_inner') {
+      const portal = document.createElement('div');
+      portal.id = 'ocrDashModalPortal';
+      const fakeRoot = document.createElement('div');
+      fakeRoot.id = 'ocrDashboardRoot_portal_inner';
+      // We will temporarily rename the CSS selectors in app.css to match both the real root and this inner portal class.
+      // Actually, if we just use the ID 'ocrDashboardRoot', we'll have duplicate IDs, but that's fine for CSS matching.
+      // Let's just use the exact duplicate ID to make 100% sure the CSS matches perfectly.
+      fakeRoot.id = 'ocrDashboardRoot';
+      fakeRoot.appendChild(m);
+      portal.appendChild(fakeRoot);
+      document.body.appendChild(portal);
+    }
     window._modalDepth = (window._modalDepth || 0) + 1;
     document.body.style.overflow = 'hidden';
     $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
