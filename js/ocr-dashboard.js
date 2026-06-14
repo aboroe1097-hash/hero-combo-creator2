@@ -1187,7 +1187,7 @@ function parseOcrResults(results) {
     });
   });
   
-  return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition) };
+  return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).map(p => { p.unique_structures = p.unique_structures.size; return p; }).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
 
 export async function bootOcrDashboard() {
