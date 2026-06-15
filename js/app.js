@@ -838,16 +838,16 @@ tabs.forEach(tab => {
     // 2. Setup Desktop Drag-and-Drop zones
     slot.addEventListener('dragover', e => {
       e.preventDefault(); // Required to allow dropping
-      slot.classList.add('ring-2', 'ring-blue-500', 'bg-slate-800/50'); // Highlight effect
+      slot.classList.add('drag-over'); // Highlight effect
     });
     
     slot.addEventListener('dragleave', e => {
-      slot.classList.remove('ring-2', 'ring-blue-500', 'bg-slate-800/50');
+      slot.classList.remove('drag-over');
     });
 
     slot.addEventListener('drop', e => {
       e.preventDefault();
-      slot.classList.remove('ring-2', 'ring-blue-500', 'bg-slate-800/50');
+      slot.classList.remove('drag-over');
       
       const heroName = e.dataTransfer.getData('text/plain');
       if (!heroName) return;
@@ -2364,6 +2364,7 @@ let _heroesTabState = {
   selected: null,
   view: 'ranking',
   comboScope: 'season-capped',
+  limit: 20
 };
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
@@ -2453,6 +2454,7 @@ function wireHeroesTabEvents(container) {
       _heroesTabState.troop = 'all';
       _heroesTabState.state = 'all';
       _heroesTabState.search = '';
+      _heroesTabState.limit = 20;
       syncHeroSelectionWithFilters();
       renderHeroesTab();
       return;
@@ -2495,6 +2497,12 @@ function wireHeroesTabEvents(container) {
       return;
     }
 
+    if (e.target.closest('.hero-tab-show-more')) {
+      _heroesTabState.limit += 20;
+      renderHeroesTab();
+      return;
+    }
+
   });
 
   container.addEventListener('input', (e) => {
@@ -2502,6 +2510,7 @@ function wireHeroesTabEvents(container) {
     clearTimeout(_heroesSearchTimer);
     _heroesSearchTimer = setTimeout(() => {
       _heroesTabState.search = e.target.value;
+      _heroesTabState.limit = 20;
       syncHeroSelectionWithFilters();
       renderHeroesTab();
     }, 180);
@@ -2558,7 +2567,8 @@ function renderHeroesTab() {
   if (view === 'ranking') {
     const ranked = [...filtered].sort((a,b) => (stats[b.name]?.finalRating || 0) - (stats[a.name]?.finalRating || 0));
 
-    const rowsHtml = ranked.length ? ranked.map((hero, i) => {
+    const visibleRanked = ranked.slice(0, _heroesTabState.limit);
+    const rowsHtml = visibleRanked.length ? visibleRanked.map((hero, i) => {
       const s = stats[hero.name] || {};
       const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
@@ -2586,6 +2596,13 @@ function renderHeroesTab() {
           <div class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</div>
         </div>`;
     }).join('') : '<p class="text-sm text-slate-500 italic p-4 text-center">No heroes match your filters.</p>';
+
+    const showMoreHtml = ranked.length > _heroesTabState.limit ? `
+      <div class="flex justify-center p-4">
+        <button type="button" class="hero-tab-show-more bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2 rounded-full text-sm font-bold transition">
+          Show More (${ranked.length - _heroesTabState.limit} remaining)
+        </button>
+      </div>` : '';
 
     // Detail panel for selected hero
     let detailHtml = '';
@@ -2717,7 +2734,10 @@ function renderHeroesTab() {
           <div class="heroes-season-tabs" role="group" aria-label="Filter by season (multi-select)">${seasonTabsHtml}</div>
         </div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
-          <div class="heroes-ranking-list" role="list">${rowsHtml}</div>
+          <div class="heroes-ranking-list" role="list">
+            ${rowsHtml}
+            ${showMoreHtml}
+          </div>
           ${selected ? detailHtml : ''}
         </div>
       </div>`;
