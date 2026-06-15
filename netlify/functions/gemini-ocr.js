@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyB8YNQ-mozTNHwWxcAytXE8wVZVaXA-bVQ';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 function tryRepairJson(text) {
   try { return JSON.parse(text); } catch (e) {
