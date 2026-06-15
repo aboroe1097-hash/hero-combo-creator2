@@ -1016,8 +1016,8 @@ async function processFiles(files) {
 Extract ALL visible player entries accurately.
 
 RULES FOR EXTRACTION:
-1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town). If not clearly visible, null.
-2. 'structure_level': the integer level of the structure (e.g. "5"). If not visible, null.
+1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town). This is usually located at the very top of the report in the header or title. Look carefully. Even if partially cut off or obscured, provide your best guess. Only return null if it is completely missing from the image.
+2. 'structure_level': the integer level of the structure (e.g. "5" from "Lv.5"). Look closely at the header next to the structure name. Provide your best guess if partially obscured. Only return null if completely missing.
 3. 'timestamp': the date/time shown, formatted strictly as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
 4. 'start_time': the "Start Time" of the attack if clearly visible (e.g., "14:30"). If not visible, null.
 5. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
