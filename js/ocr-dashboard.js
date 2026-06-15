@@ -898,23 +898,35 @@ function showModal(type, data) {
       }
       const sortedAttacks = [...(data.attacks || [])].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
       const hrMap = {};
+      for(let i=0; i<24; i++) hrMap[i] = 0;
       sortedAttacks.forEach(att => {
-        if(att.game_time) {
+        let hr = null;
+        if(att.start_time) {
+          hr = parseInt(att.start_time.split(':')[0], 10);
+        } else if(att.game_time) {
           const parts = att.game_time.split(', ');
-          if(parts.length > 1) {
-            const hr = parts[1].split(':')[0];
-            hrMap[hr] = (hrMap[hr]||0)+1;
+          if(parts.length > 2) {
+            hr = parseInt(parts[2].split(':')[0], 10);
           }
         }
+        if (hr !== null && !isNaN(hr) && hr >= 0 && hr <= 23) hrMap[hr]++;
       });
-      const hrs = Object.keys(hrMap).sort((a,b)=>parseInt(a)-parseInt(b));
+      const hrs = Object.keys(hrMap).map(Number).sort((a,b)=>a-b);
       let chartHtml = '';
-      if(hrs.length > 0) {
+      if(hrs.some(h => hrMap[h] > 0)) {
         const maxHr = Math.max(...Object.values(hrMap), 1);
         chartHtml = `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Active Hours (Game Time)</div>
-          <div style="display:flex;gap:4px;height:40px;align-items:flex-end;margin-bottom:0.5rem;background:rgba(0,0,0,0.1);padding:4px;border-radius:4px;border:1px solid var(--border)">
-          ${hrs.map(hr => `<div style="flex:1;background:#3b82f6;height:${(hrMap[hr]/maxHr)*100}%;min-height:4px;border-radius:2px" title="Hour ${hr}:00 (${hrMap[hr]} hits)"></div>`).join('')}
-          </div><div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-6px;margin-bottom:12px"><span>${hrs[0]}:00</span><span>${hrs[hrs.length-1]}:00</span></div>`;
+          <div style="display:flex;gap:2px;height:50px;align-items:flex-end;margin-bottom:0.5rem;background:rgba(0,0,0,0.1);padding:4px 4px 0 4px;border-radius:4px;border:1px solid var(--border)">
+          ${hrs.map(hr => {
+             const val = hrMap[hr];
+             const pct = (val/maxHr)*100;
+             const bg = val > 0 ? (pct>70?'#3b82f6':(pct>30?'#60a5fa':'#93c5fd')) : 'transparent';
+             return \`<div style="flex:1;background:\${bg};height:\${pct}%;min-height:\${val>0?'4px':'0'};border-radius:2px 2px 0 0" title="\${hr}:00 - \${hr}:59 GT (\${val} hits)"></div>\`;
+          }).join('')}
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-4px;margin-bottom:12px;padding:0 2px">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+          </div>`;
       }
 
       const encPname = encodeURIComponent(data.name).replace(/'/g, "%27");
