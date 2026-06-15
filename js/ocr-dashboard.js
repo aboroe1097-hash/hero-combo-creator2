@@ -213,7 +213,8 @@ function findBestMatch(name, minConfidence = 100) {
       'yousef المحارب': 'المحارب yousef',
       '*DEAN JR*': '*DEAN*',
       'Moldo1313': 'Moldo1313', 'MalakAdo': 'MalakAdo', 'MalakAbo': 'MalakAbo',
-      'WICKED RUSSIANO': 'WICKED RUSSIAN'
+      'WICKED RUSSIANO': 'WICKED RUSSIAN',
+      'Indomie.telor': 'Indomie.telor....'
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
