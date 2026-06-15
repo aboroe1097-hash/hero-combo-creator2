@@ -195,7 +195,7 @@ function findBestMatch(name, minConfidence = 100) {
       '★Mariska★': 'Mariska', '☆Mariska☆': 'Mariska', '*Mariska*': 'Mariska', 'Opua 2025': 'Opwa 2025', 'Орша 2025': 'Opwa 2025',
       'Sarafino~': '~Sarafino~', 'Sarafino': '~Sarafino~',
       '*Molly*': 'Molly',
-      'jJamaica pete': 'Jjamaica pete', 'Jjamaica pete': 'jJamaica pete',
+      'jJamaica pete': 'Jjamaica pete',
       '*Lisavetka*': '•Lisavetka•',
       'Surtiiiiii': 'Surtiiiii',
       'Феюшка))': 'Феечка))', 'Φελώσκα))': 'Феечка))',
