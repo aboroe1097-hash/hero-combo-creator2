@@ -5,10 +5,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
 let app = null;
 let db = null;
 let auth = null;
+let analytics = null;
 
 export const firebaseConfig = {
   apiKey: "__REDACTED_FIREBASE_API_KEY__",
@@ -21,11 +23,19 @@ export const firebaseConfig = {
 };
 
 export function initFirebase() {
-  if (app) return { app, db, auth };
+  if (app) return { app, db, auth, analytics };
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  return { app, db, auth };
+  
+  // Analytics automatically logs page_view and tracks active users for free without quotas
+  try {
+    analytics = getAnalytics(app);
+  } catch(e) {
+    console.warn("Analytics blocked or failed to initialize", e);
+  }
+  
+  return { app, db, auth, analytics };
 }
 
 let authInFlight = null;
