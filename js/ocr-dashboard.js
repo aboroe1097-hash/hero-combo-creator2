@@ -280,6 +280,18 @@ function showApp() {
     if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = 'none';
     if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = 'none';
     if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = 'none';
+    
+    let guestBanner = $id('dashGuestBanner');
+    if (!guestBanner) {
+      guestBanner = document.createElement('div');
+      guestBanner.id = 'dashGuestBanner';
+      guestBanner.style.cssText = 'background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); padding: 15px; margin-bottom: 20px; border-radius: 8px; color: #93c5fd; font-size: 0.9rem; text-align: center;';
+      guestBanner.innerHTML = '<strong>Guest Mode:</strong> You are viewing the dashboard in read-only mode. Uploads are disabled. If charts are stuck on "Loading...", there is no data to display.';
+      const dashContainer = $id('dashApp').querySelector('.dash-container');
+      if (dashContainer) {
+        dashContainer.insertBefore(guestBanner, dashContainer.firstChild);
+      }
+    }
   } else {
     if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = '';
     if ($id('dashUploadZone')) $id('dashUploadZone').style.display = '';
@@ -442,11 +454,13 @@ function exportChartPng() {
        bar.style.borderRadius = '8px';
        bar.style.background = 'linear-gradient(90deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3))';
      }
+     const spans = item.querySelectorAll('span');
+     spans.forEach(s => s.style.transform = 'translateY(1px)');
   });
 
   clone.style.position = 'absolute';
-  clone.style.top = '-9999px';
-  clone.style.left = '0';
+  clone.style.top = '0px';
+  clone.style.left = '-9999px';
   clone.style.width = Math.max(card.offsetWidth, 500) + 'px'; // Ensure sufficient width for export
   clone.style.background = '#0b0f19'; // Force explicit background on clone
   clone.style.border = '1px solid rgba(255,255,255,0.05)';
@@ -496,7 +510,7 @@ window.shareChartImage = function() {
      const bar = item.querySelector('.dash-top-bar'); if (bar) { bar.style.borderRadius = '8px'; bar.style.background = 'linear-gradient(90deg, rgba(59,130,246,0.1), rgba(59,130,246,0.3))'; }
      const spans = item.querySelectorAll('span'); spans.forEach(s => s.style.transform = 'translateY(1px)');
   });
-  clone.style.position = 'absolute'; clone.style.top = '-9999px'; clone.style.left = '0'; clone.style.width = card.offsetWidth + 'px'; clone.style.background = '#0b0f19'; clone.style.border = '1px solid rgba(255,255,255,0.05)';
+  clone.style.position = 'absolute'; clone.style.top = '0px'; clone.style.left = '-9999px'; clone.style.width = card.offsetWidth + 'px'; clone.style.background = '#0b0f19'; clone.style.border = '1px solid rgba(255,255,255,0.05)';
   const root = $id('ocrDashboardRoot') || document.body; root.appendChild(clone);
   html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
     clone.remove();
@@ -644,8 +658,9 @@ function render() {
   const top = psumWithRank.slice(0, 10), max = top[0]?.total_demolition || 1;
   top.forEach((p) => {
     const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
-    const pct = (p.total_demolition/max)*86; // limit to 86% to leave room for text
-    w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px;"></div><span class="dash-top-rank">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1; transform:translateY(-2px);">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+    w.style.display = 'grid'; w.style.gridTemplateColumns = '36px 1fr auto'; w.style.gap = '0 12px'; w.style.alignItems = 'center';
+    const pct = Math.round((p.total_demolition/max)*100);
+    w.innerHTML = `<span class="dash-top-rank">#${p.original_rank}</span><div style="position:relative; display:flex; align-items:center; min-width:0; padding:4px 0;"><div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px;"></div><span class="dash-top-name" style="position:relative; z-index:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(p.name)}</span><span style="position:relative; z-index:1; margin-left:auto; margin-right:8px; font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; flex-shrink:0;">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val">${(p.total_demolition/1000).toFixed(0)}k</span>`;
     w.onclick = () => showModal('player', p); c.appendChild(w);
   });
 
@@ -659,8 +674,9 @@ function render() {
       const lowestMax = Math.max(...lowest.map(p => p.total_demolition), 1);
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
-        const pct = (p.total_demolition/lowestMax)*86; 
-        w.innerHTML = `<div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><div style="flex:1; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; min-width:0;"><span class="dash-top-name" style="flex:unset; word-break:break-all;">${esc(p.name)}</span><span style="margin-left:auto; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; position:relative; z-index:1; transform:translateY(-2px);">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
+        w.style.display = 'grid'; w.style.gridTemplateColumns = '36px 1fr auto'; w.style.gap = '0 12px'; w.style.alignItems = 'center';
+        const pct = Math.round((p.total_demolition/lowestMax)*100); 
+        w.innerHTML = `<span class="dash-top-rank" style="color:#f87171">#${p.original_rank}</span><div style="position:relative; display:flex; align-items:center; min-width:0; padding:4px 0;"><div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-name" style="position:relative; z-index:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(p.name)}</span><span style="position:relative; z-index:1; margin-left:auto; margin-right:8px; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; flex-shrink:0;">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3)">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
     }
