@@ -164,6 +164,10 @@ function editDistance(s1, s2) {
 function findBestMatch(name, minConfidence = 100) {
   if (!name) return name;
   if (typeof name === 'string') {
+    if (name.includes('UNDEAD')) {
+      name = name.replace(/[○◎ØODQ]{1,2}$/i, '').trim();
+    }
+    name = name.replace(/^Н/, 'H'); // Replace Cyrillic Н with Latin H at start
     const aliasMap = {
       'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy',
       'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
@@ -993,7 +997,8 @@ RULES FOR EXTRACTION:
 1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town). If not clearly visible, null.
 2. 'structure_level': the integer level of the structure (e.g. "5"). If not visible, null.
 3. 'timestamp': the date/time shown, formatted strictly as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
-4. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
+4. 'start_time': the "Start Time" of the attack if clearly visible (e.g., "14:30"). If not visible, null.
+5. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
    - 'name' (string): Extract the player's FULL name exactly as written. INCLUDE any alliance tags (e.g., "[ABC]Player"), numbers, and special characters. Do NOT truncate or simplify.
    - 'value' (integer): Extract the Demolition damage score or points for the player. Remove any commas (e.g., convert "1,234,567" to 1234567). Only extract the demolition score, NOT troop counts or power levels.
 
@@ -1007,6 +1012,7 @@ EXPECTED JSON SCHEMA:
   "structure_name": "Capital",
   "structure_level": "5",
   "timestamp": "2026-06-12 14:13:00",
+  "start_time": "14:00",
   "players": [
     {"name": "[VTS]Lord_IKR", "value": 81357},
     {"name": "Gamer123", "value": 1500}
@@ -1127,7 +1133,10 @@ function parseOcrResults(results) {
     }
     
     const sN = normalizeStructureName(j.structure_name) || null;
-    const sL = j.structure_level ? j.structure_level.replace(/[^0-9]/g, '') : null;
+    let sL = j.structure_level ? String(j.structure_level).replace(/^(?:Lv|Level)\s*/i, '').trim() : null;
+    if (sL) sL = 'Lv' + sL.replace(/[^0-9]/g, '');
+
+    let start_time = j.start_time || null;
     
     let f = false;
     for (const g of groups) {
@@ -1137,10 +1146,11 @@ function parseOcrResults(results) {
         if (j.players) g.players.push(...j.players);
         if (!g.sN && sN) g.sN = sN;
         if (!g.sL && sL) g.sL = sL;
+        if (!g.start_time && start_time) g.start_time = start_time;
         f = true; break;
       }
     }
-    if (!f) groups.push({ dt, sN, sL, players: j.players ? [...j.players] : [] });
+    if (!f) groups.push({ dt, sN, sL, start_time, players: j.players ? [...j.players] : [] });
   }
   
   log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
@@ -1170,6 +1180,7 @@ function parseOcrResults(results) {
       attacks.push({
         id,
         game_time: displayGameTime(fmtDate(new Date(g.dt.getTime() + (g.dt.getTimezoneOffset() - 120) * 60000))),
+        start_time: g.start_time || null,
         structure_name: sN,
         structure_level: sL,
         players: deduped,
