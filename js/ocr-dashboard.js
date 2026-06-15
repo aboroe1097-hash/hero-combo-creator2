@@ -921,7 +921,7 @@ function showModal(type, data) {
              const val = hrMap[hr];
              const pct = (val/maxHr)*100;
              const bg = val > 0 ? (pct>70?'#3b82f6':(pct>30?'#60a5fa':'#93c5fd')) : 'transparent';
-             return \`<div style="flex:1;background:\${bg};height:\${pct}%;min-height:\${val>0?'4px':'0'};border-radius:2px 2px 0 0" title="\${hr}:00 - \${hr}:59 GT (\${val} hits)"></div>\`;
+             return `<div style="flex:1;background:${bg};height:${pct}%;min-height:${val>0?'4px':'0'};border-radius:2px 2px 0 0" title="${hr}:00 - ${hr}:59 GT (${val} hits)"></div>`;
           }).join('')}
           </div>
           <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-4px;margin-bottom:12px;padding:0 2px">
