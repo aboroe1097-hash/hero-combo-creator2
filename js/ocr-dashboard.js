@@ -1820,8 +1820,6 @@ export async function bootOcrDashboard() {
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();
   };
 
-  const apiInput = $id('dashApiKeyInput');
-  const apiSaveBtn = $id('dashSaveApiBtn');
   if (apiInput) {
     apiInput.value = localStorage.getItem('qwen_api_key') || '';
     apiInput.oninput = (e) => {
