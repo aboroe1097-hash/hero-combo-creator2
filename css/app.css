@@ -1,5 +1,5 @@
 /* =============================================================
-   app.css — VTS Hero Combo Tool  7.0
+   app.css — VTS Hero Combo Tool  8.9
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
 
@@ -4338,6 +4338,25 @@ body.hide-hero-info .info-btn { display: none !important; }
 [data-theme="light"] .game-tech-icon-svg[data-icon-id="storage"] { color: #b45309 !important; }
 [data-theme="light"] .game-tech-icon-svg[data-icon-id="build"] { color: #c2410c !important; }
 [data-theme="light"] .game-tech-icon-svg[data-icon-id="fire"] { color: #c2410c !important; }
+[data-theme="light"] .game-tree-connector::before {
+  background: linear-gradient(180deg, #c9a227 0%, #8b6914 100%);
+  box-shadow: 0 0 6px rgba(201,162,39,0.25);
+}
+[data-theme="light"] .game-tree-connector--wide::after {
+  background: linear-gradient(90deg, transparent, #c9a227, transparent);
+}
+[data-theme="light"] .game-tech-tap--maxed .game-tech-level-badge {
+  color: #78350f;
+  border-color: rgba(217,119,6,0.55);
+  background: #fef3c7;
+}
+[data-theme="light"] .game-tech-tap--maxed .game-tech-ring {
+  background: conic-gradient(from -90deg, #d97706 0deg, #fbbf24 360deg);
+}
+[data-theme="light"] .game-tech-tap--progress .game-tech-core {
+  border-color: rgba(37,99,235,0.45);
+  box-shadow: 0 0 10px rgba(37,99,235,0.12);
+}
 
 /* SEO / footer */
 [data-theme="light"] .seo-intro { color: #64748b; }
@@ -4473,6 +4492,11 @@ body.hide-hero-info .info-btn { display: none !important; }
   background: #ffffff;
   border-color: #e2e8f0;
   color: #0f172a;
+}
+[data-theme="light"] .combo-counters-inline {
+  background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(120,53,15,0.04));
+  border-color: rgba(249,115,22,0.15);
+  border-left-color: #f97316;
 }
 
 /* =============================================================
@@ -5594,6 +5618,30 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 [data-theme="light"] #ocrDashboardRoot .dash-upload-zone,
 [data-theme="light"] #ocrDashboardRoot .dash-modal-content {
   background: #fff; border-color: #e2e8f0;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-mini-trend {
+  background: #f8fafc;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-dropdown-content {
+  background: #ffffff; border-color: #e2e8f0;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-dropdown-content button {
+  color: #475569;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-dropdown-content button:hover {
+  background: #f1f5f9; color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-log-hdr {
+  background: #f1f5f9; border-bottom-color: #e2e8f0; color: #64748b;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-stack-bar {
+  background: rgba(0,0,0,0.06);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-mini-pie {
+  background: rgba(0,0,0,0.04);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-trend-bar {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
 }
 [data-theme="light"] #ocrDashboardRoot .dash-input { background: #f1f5f9; border-color: #cbd5e1; color: #1e293b; }
 [data-theme="light"] #ocrDashboardRoot input[type="password"].dash-input { color: #1e293b; }
