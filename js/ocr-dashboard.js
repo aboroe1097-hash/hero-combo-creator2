@@ -8,6 +8,7 @@ const ROSTER_KEY = 'vts_ocr_roster';
 const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
 const BANNER_KEY = 'vts_ocr_banners';
 const FS_PATH = 'vts_admin/dashboard_data';
+const FS_ROSTER_PATH = 'vts_admin/roster_data';
 
 let dashData = null;
 let searchQ = '';
@@ -20,7 +21,9 @@ let sortDir = 'desc';
 let leaderLimit = 25;
 let _booted = false;
 let _ocrProcessing = false;
+let _rosterProcessing = false;
 let _fsUnsub = null;
+let _fsRosterUnsub = null;
 
 function $id(id) { return document.getElementById(id); }
 function esc(str) {
@@ -272,7 +275,7 @@ function switchDashSubtab(name) {
   if (name === 'banners') renderBanners();
 }
 
-// ── Roster Snapshots ─────────────────────────────────────
+// ── Roster Snapshots (local + Firestore) ──────────────────
 function loadRosterSnapshots() {
   try {
     const raw = localStorage.getItem(ROSTER_SNAPSHOTS_KEY);
@@ -282,6 +285,42 @@ function loadRosterSnapshots() {
 }
 function saveRosterSnapshots() {
   try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots)); } catch (e) {}
+  saveRosterSnapshotsToFirestore();
+}
+async function saveRosterSnapshotsToFirestore() {
+  try {
+    await ensureAnonymousAuth();
+    await setDoc(doc(getDb(), FS_ROSTER_PATH), { snapshots: rosterSnapshots, updated: new Date().toISOString() });
+  } catch (e) {
+    console.error('ROSTER FIRESTORE SAVE ERROR:', e);
+  }
+}
+async function loadRosterSnapshotsFromFirestore() {
+  try {
+    const db = getDb();
+    await ensureAnonymousAuth();
+    if (_fsRosterUnsub) _fsRosterUnsub();
+    const snap = await getDoc(doc(db, FS_ROSTER_PATH));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.snapshots)) {
+        rosterSnapshots = data.snapshots;
+        localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots));
+      }
+    }
+    _fsRosterUnsub = onSnapshot(doc(db, FS_ROSTER_PATH), (s) => {
+      if (s.exists()) {
+        const d = s.data();
+        if (Array.isArray(d.snapshots)) {
+          rosterSnapshots = d.snapshots;
+          localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots));
+          renderRoster();
+        }
+      }
+    }, (err) => console.error('ROSTER SYNC ERROR:', err));
+  } catch (e) {
+    console.error('ROSTER FIRESTORE LOAD ERROR:', e);
+  }
 }
 function computeRosterDiff(oldMembers, newMembers) {
   const oldSet = new Set(oldMembers.map(n => n.trim().toLowerCase()));
@@ -300,6 +339,7 @@ function computeRosterDiff(oldMembers, newMembers) {
 }
 function takeRosterSnapshot(namesText) {
   const members = namesText.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!members.length) { log('No members to save.', 'warn'); return; }
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
   const prev = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1] : null;
@@ -319,6 +359,110 @@ function deleteRosterSnapshot(index) {
   saveRosterSnapshots();
   renderRoster();
   log('Roster snapshot deleted.', 'warn');
+}
+
+// ── Roster Image OCR ─────────────────────────────────────
+async function processRosterImages(files) {
+  if (_rosterProcessing) { log('Roster OCR already running...', 'warn'); return; }
+  _rosterProcessing = true;
+  const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
+  if (!valid.length) { _rosterProcessing = false; return; }
+
+  const prog = $id('dashRosterProgress');
+  const progText = $id('dashRosterProgressText');
+  if (prog) prog.classList.remove('hidden');
+
+  log(`Scanning ${valid.length} roster screenshot(s)...`, 'info');
+  let allNames = [];
+
+  for (let i = 0; i < valid.length; i++) {
+    const f = valid[i];
+    if (progText) progText.textContent = `Scanning roster image ${i + 1}/${valid.length}...`;
+    const base64 = await new Promise(res => {
+      const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f);
+    });
+
+    try {
+      let localKey = localStorage.getItem('qwen_api_key');
+      if (!localKey) throw new Error('No API key. Enter one in the top bar.');
+
+      const promptTxt = `You are analyzing a game alliance roster or member list screenshot.
+
+Extract ALL player names visible in the image. Return them as a flat JSON array of strings.
+
+RULES:
+- Output ONLY valid JSON: an array of strings like ["Name1", "Name2", ...]
+- Do NOT wrap in markdown blocks. No commentary.
+- Include alliance/clan tags if visible (e.g. "[VTS]PlayerName").
+- Remove duplicate names.
+- Ignore headers, column titles, rank numbers, power levels, or any non-name text.
+- If no names are clearly visible, return [].
+
+JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
+
+      let raw = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch(QWEN_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
+            body: JSON.stringify({
+              model: 'qwen-vl-plus',
+              messages: [{ role: 'user', content: [
+                { type: 'text', text: promptTxt },
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+              ]}]
+            })
+          });
+          raw = await res.json();
+          if (raw?.choices?.[0]?.message?.content) break;
+        } catch (e) {
+          if (attempt === 3) throw e;
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+        }
+      }
+
+      const text = raw?.choices?.[0]?.message?.content || '';
+      let names = [];
+      try {
+        const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+        names = JSON.parse(cleaned);
+      } catch (e) {
+        // Fallback: try line-by-line extraction
+        names = text.split('\n').map(l => l.replace(/^[\d\s."'[\],]+/, '').trim()).filter(Boolean);
+      }
+      if (!Array.isArray(names)) names = [];
+      names = names.filter(n => typeof n === 'string' && n.trim().length > 0).map(n => n.trim());
+      allNames.push(...names);
+    } catch (e) {
+      log(`Roster OCR error (${f.name}): ${e.message}`, 'error');
+    }
+  }
+
+  if (prog) prog.classList.add('hidden');
+  _rosterProcessing = false;
+
+  // Deduplicate and sort
+  const unique = [...new Set(allNames.map(n => n.toLowerCase()))].map(k => allNames.find(n => n.toLowerCase() === k)).filter(Boolean).sort();
+
+  if (!unique.length) {
+    log('No member names found in the screenshot(s).', 'warn');
+    return;
+  }
+
+  log(`Extracted ${unique.length} unique member names from roster image(s).`, 'info');
+
+  // Ask user to confirm or edit
+  const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
+  const input = prompt(
+    `Edit extracted member names (one per line):\n${unique.length} names found from image.`,
+    unique.join('\n')
+  );
+  if (input !== null && input.trim()) {
+    takeRosterSnapshot(input);
+  } else {
+    log('Roster snapshot cancelled.', 'warn');
+  }
 }
 function renderRoster() {
   const body = $id('dashRosterBody');
@@ -1549,6 +1693,7 @@ function parseOcrResults(results) {
 export async function bootOcrDashboard() {
   if (_booted) return; _booted = true; loadRoster();
   loadRosterSnapshots();
+  loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
@@ -1560,11 +1705,36 @@ export async function bootOcrDashboard() {
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => btn.onclick = () => switchDashSubtab(btn.dataset.subtab));
-  const newSnapBtn = $id('dashRosterSnapshotBtn'); if (newSnapBtn) newSnapBtn.onclick = () => {
-    const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
-    const input = prompt('Paste member names (one per line):', prevText);
-    if (input !== null && input.trim()) takeRosterSnapshot(input);
-  };
+
+  // Roster: manual snapshot button with dynamic day name
+  const newSnapBtn = $id('dashRosterSnapshotBtn');
+  if (newSnapBtn) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    newSnapBtn.querySelector('span').textContent = `New Snapshot (${days[new Date().getDay()]})`;
+    newSnapBtn.onclick = () => {
+      const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
+      const input = prompt('Paste member names (one per line):', prevText);
+      if (input !== null && input.trim()) takeRosterSnapshot(input);
+    };
+  }
+
+  // Roster: image upload
+  const rosterZone = $id('dashRosterUploadZone');
+  const rosterDrop = $id('dashRosterDropZone');
+  const rosterInput = $id('dashRosterFileInput');
+  if (rosterDrop && rosterInput) {
+    rosterDrop.onclick = () => rosterInput.click();
+    rosterDrop.ondragover = e => { e.preventDefault(); rosterDrop.classList.add('dragover'); };
+    rosterDrop.ondragleave = () => rosterDrop.classList.remove('dragover');
+    rosterDrop.ondrop = e => {
+      e.preventDefault(); rosterDrop.classList.remove('dragover');
+      if (e.dataTransfer.files.length) processRosterImages(e.dataTransfer.files);
+    };
+    rosterInput.onchange = () => {
+      if (rosterInput.files.length) processRosterImages(rosterInput.files);
+    };
+  }
+
   const newBannerBtn = $id('dashBannerAddBtn'); if (newBannerBtn) newBannerBtn.onclick = () => showBannerForm();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
   
