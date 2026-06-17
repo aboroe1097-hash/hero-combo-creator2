@@ -5,12 +5,16 @@ import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebas
 const STORAGE_KEY = 'vts_ocr_dashboard';
 const AUTH_KEY = 'vts_ocr_auth';
 const ROSTER_KEY = 'vts_ocr_roster';
+const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
+const BANNER_KEY = 'vts_ocr_banners';
 const FS_PATH = 'vts_admin/dashboard_data';
 
 let dashData = null;
 let searchQ = '';
 let attackSearchQ = '';
 let rosterNames = [];
+let rosterSnapshots = [];
+let bannerRecords = [];
 let sortCol = 'total_demolition';
 let sortDir = 'desc';
 let leaderLimit = 25;
@@ -254,6 +258,263 @@ function showRosterModal() {
   $id('dashRosterSaveBtn').onclick = () => { saveRoster($id('dashRosterInput').value); closeModal(); };
   $id('dashRosterCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+
+// ── Sub-tab Switching ────────────────────────────────────
+function switchDashSubtab(name) {
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(b => b.classList.remove('dash-subtab-active'));
+  const panel = $id('dashSubtab' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (panel) panel.classList.remove('hidden');
+  const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
+  if (btn) btn.classList.add('dash-subtab-active');
+  if (name === 'roster') renderRoster();
+  if (name === 'banners') renderBanners();
+}
+
+// ── Roster Snapshots ─────────────────────────────────────
+function loadRosterSnapshots() {
+  try {
+    const raw = localStorage.getItem(ROSTER_SNAPSHOTS_KEY);
+    rosterSnapshots = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(rosterSnapshots)) rosterSnapshots = [];
+  } catch (e) { rosterSnapshots = []; }
+}
+function saveRosterSnapshots() {
+  try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots)); } catch (e) {}
+}
+function computeRosterDiff(oldMembers, newMembers) {
+  const oldSet = new Set(oldMembers.map(n => n.trim().toLowerCase()));
+  const newSet = new Set(newMembers.map(n => n.trim().toLowerCase()));
+  const stayed = [], joined = [], left = [];
+  newMembers.forEach(n => {
+    const key = n.trim().toLowerCase();
+    if (oldSet.has(key)) stayed.push(n.trim());
+    else joined.push(n.trim());
+  });
+  oldMembers.forEach(n => {
+    const key = n.trim().toLowerCase();
+    if (!newSet.has(key)) left.push(n.trim());
+  });
+  return { stayed, joined, left };
+}
+function takeRosterSnapshot(namesText) {
+  const members = namesText.split('\n').map(l => l.trim()).filter(Boolean);
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+  const prev = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1] : null;
+  const diff = prev ? computeRosterDiff(prev.members, members) : null;
+  const snapshot = { date: dateStr, members, diff };
+  rosterSnapshots.push(snapshot);
+  saveRosterSnapshots();
+  // Also update legacy roster for OCR matching
+  localStorage.setItem(ROSTER_KEY, namesText);
+  loadRoster();
+  log(`Roster snapshot saved: ${members.length} members (${dateStr})`, 'success');
+  renderRoster();
+}
+function deleteRosterSnapshot(index) {
+  if (!confirm('Delete this roster snapshot?')) return;
+  rosterSnapshots.splice(index, 1);
+  saveRosterSnapshots();
+  renderRoster();
+  log('Roster snapshot deleted.', 'warn');
+}
+function renderRoster() {
+  const body = $id('dashRosterBody');
+  if (!body) return;
+  if (!rosterSnapshots.length) {
+    body.innerHTML = '<div class="dash-empty">No roster snapshots yet. Click "New Snapshot" to save this week\'s roster.</div>';
+    return;
+  }
+  let html = '';
+  for (let i = rosterSnapshots.length - 1; i >= 0; i--) {
+    const snap = rosterSnapshots[i];
+    const diff = snap.diff;
+    const isLatest = i === rosterSnapshots.length - 1;
+    html += `<div class="dash-roster-snapshot">
+      <div class="dash-roster-head" onclick="this.nextElementSibling.classList.toggle('open')">
+        <div class="dash-roster-date">
+          <span>${esc(snap.date)}</span>
+          <span class="dash-roster-count">${snap.members.length} members</span>
+          ${isLatest ? '<span style="font-size:0.6rem;background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 8px;border-radius:99px;font-weight:700">Latest</span>' : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${diff ? `<span style="font-size:0.72rem;color:#34d399">+${diff.joined.length}</span><span style="font-size:0.72rem;color:#f87171">-${diff.left.length}</span>` : ''}
+          <button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(${i})" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="dash-roster-body${isLatest ? ' open' : ''}">
+        ${diff ? `<div class="dash-roster-diff-summary">
+          <span class="dash-roster-diff-chip stayed">↔ ${diff.stayed.length} Stayed</span>
+          <span class="dash-roster-diff-chip joined">+ ${diff.joined.length} Joined</span>
+          <span class="dash-roster-diff-chip left">− ${diff.left.length} Left</span>
+        </div>` : '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;font-style:italic">First snapshot — no previous to compare.</div>'}
+        <div class="dash-roster-grid">
+          ${snap.members.map(n => {
+            let cls = 'dash-roster-name';
+            if (diff && diff.joined.some(j => j.toLowerCase() === n.trim().toLowerCase())) cls += ' joined';
+            if (diff && diff.left.some(l => l.toLowerCase() === n.trim().toLowerCase())) cls += ' left';
+            return `<span class="${cls}">${esc(n)}</span>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+  body.innerHTML = html;
+}
+
+// ── Banner Records ────────────────────────────────────────
+function loadBannerRecords() {
+  try {
+    const raw = localStorage.getItem(BANNER_KEY);
+    bannerRecords = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(bannerRecords)) bannerRecords = [];
+  } catch (e) { bannerRecords = []; }
+}
+function saveBannerRecords() {
+  try { localStorage.setItem(BANNER_KEY, JSON.stringify(bannerRecords)); } catch (e) {}
+}
+function showBannerForm(existingIndex = null) {
+  const m = $id('dashModal'), body = $id('dashModalBody');
+  const edit = existingIndex !== null && bannerRecords[existingIndex];
+  $id('dashModalTitle').textContent = edit ? 'Edit Banner Day' : 'New Banner Day';
+  $id('dashModalSub').textContent = edit ? '' : 'Record banner assignments for a structure attack day.';
+
+  const roster = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members : [];
+  const memberOptions = roster.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+
+  const rec = edit ? bannerRecords[existingIndex] : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
+  const teamNames = Object.keys(rec.teams);
+
+  body.innerHTML = `<div class="dash-banner-form-row">
+    <label>Date</label>
+    <input type="date" id="dashBannerFormDate" value="${rec.date}" style="flex:1">
+  </div>
+  <div class="dash-banner-form-row">
+    <label>Event</label>
+    <input type="text" id="dashBannerFormEvent" value="${esc(rec.event || '')}" placeholder="e.g. Capital Attack, KE, SvS" style="flex:1">
+  </div>
+  <div style="margin:1rem 0;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px">
+    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Team / Banner Assignments</div>
+    <div id="dashBannerTeamsList">
+      ${teamNames.length ? teamNames.map((team, ti) => `<div class="dash-banner-form-row" data-team-idx="${ti}">
+        <label>Team</label>
+        <input type="text" class="dash-banner-team-name" value="${esc(team)}" placeholder="Dawn/Dusk/Etc" style="flex:1">
+        <label style="min-width:40px">Members</label>
+        <select class="dash-banner-team-members" multiple style="flex:2;min-height:60px">${memberOptions}</select>
+        <button class="dash-banner-del-btn dash-banner-remove-team" style="font-size:1rem">✕</button>
+      </div>`).join('') : '<div style="color:var(--text-dim);font-size:0.85rem;text-align:center;padding:1rem">No teams added yet. Add a team below.</div>'}
+    </div>
+    <button id="dashBannerAddTeamBtn" class="dash-btn" style="margin-top:0.5rem;width:100%">+ Add Team</button>
+  </div>
+  <div style="display:flex;gap:0.5rem">
+    <button id="dashBannerSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${edit ? 'Update' : 'Save'} Banner Day</button>
+    <button id="dashBannerFormCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+  </div>`;
+
+  // Wire up "Add Team" — keeps previous entries
+  $id('dashBannerAddTeamBtn').onclick = () => {
+    const list = $id('dashBannerTeamsList');
+    const firstEmpty = list.querySelector('.dash-empty');
+    if (firstEmpty) firstEmpty.remove();
+    const div = document.createElement('div'); div.className = 'dash-banner-form-row';
+    div.innerHTML = `<label>Team</label>
+      <input type="text" class="dash-banner-team-name" value="" placeholder="Dawn/Dusk/Etc" style="flex:1">
+      <label style="min-width:40px">Members</label>
+      <select class="dash-banner-team-members" multiple style="flex:2;min-height:60px">${memberOptions}</select>
+      <button class="dash-banner-del-btn dash-banner-remove-team" style="font-size:1rem">✕</button>`;
+    div.querySelector('.dash-banner-remove-team').onclick = () => div.remove();
+    list.appendChild(div);
+  };
+  document.querySelectorAll('.dash-banner-remove-team').forEach(btn => btn.onclick = () => btn.closest('.dash-banner-form-row').remove());
+
+  $id('dashBannerSaveBtn').onclick = () => {
+    const date = $id('dashBannerFormDate').value;
+    const event = $id('dashBannerFormEvent').value.trim();
+    const teamRows = document.querySelectorAll('#dashBannerTeamsList .dash-banner-form-row');
+    const teams = {};
+    let hasError = false;
+    teamRows.forEach(row => {
+      const name = row.querySelector('.dash-banner-team-name').value.trim();
+      if (!name) return;
+      const sel = row.querySelector('.dash-banner-team-members');
+      const members = Array.from(sel.selectedOptions).map(o => o.value);
+      if (!members.length) return;
+      teams[name] = members;
+    });
+    if (!Object.keys(teams).length) { alert('Add at least one team with members.'); return; }
+    const record = { date, event, teams };
+    if (edit) { bannerRecords[existingIndex] = record; }
+    else { bannerRecords.push(record); }
+    saveBannerRecords();
+    closeModal();
+    renderBanners();
+    log(`Banner day ${edit ? 'updated' : 'saved'}: ${date}${event ? ' - ' + event : ''}`, 'success');
+  };
+  $id('dashBannerFormCancelBtn').onclick = closeModal;
+  m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+function deleteBannerRecord(index) {
+  if (!confirm('Delete this banner record?')) return;
+  bannerRecords.splice(index, 1);
+  saveBannerRecords();
+  renderBanners();
+  log('Banner record deleted.', 'warn');
+}
+function renderBanners() {
+  const body = $id('dashBannerBody');
+  if (!body) return;
+  if (!bannerRecords.length) {
+    body.innerHTML = '<div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>';
+    return;
+  }
+  let html = '';
+  for (let i = bannerRecords.length - 1; i >= 0; i--) {
+    const rec = bannerRecords[i];
+    const teamEntries = Object.entries(rec.teams);
+    const totalMembers = teamEntries.reduce((s, [, m]) => s + m.length, 0);
+    html += `<div class="dash-banner-card">
+      <div class="dash-banner-head">
+        <div class="dash-banner-date">
+          <span>${esc(rec.date)}</span>
+          ${rec.event ? `<span class="dash-banner-event">${esc(rec.event)}</span>` : ''}
+          <span class="dash-banner-count">${teamEntries.length} teams, ${totalMembers} players</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="showBannerForm(${i})">Edit</button>
+          <button class="dash-banner-del-btn" onclick="deleteBannerRecord(${i})" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="dash-banner-body">
+        <table class="dash-banner-table">
+          <thead><tr><th>Team</th><th>Members</th><th>Count</th></tr></thead>
+          <tbody>
+            ${teamEntries.map(([team, members]) => `<tr>
+              <td><span class="dash-banner-team-tag" style="background:${getTeamColor(team)};color:#fff">${esc(team)}</span></td>
+              <td>${members.map(m => esc(m)).join(', ')}</td>
+              <td style="text-align:right;font-weight:700;color:var(--text-muted)">${members.length}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+  body.innerHTML = html;
+}
+function getTeamColor(teamName) {
+  const colors = {
+    'dawn': '#f59e0b', 'dusk': '#6366f1', 'ice': '#06b6d4', 'fire': '#ef4444',
+    'frost': '#0ea5e9', 'ember': '#f97316', 'storm': '#8b5cf6', 'shadow': '#6b7280',
+    'light': '#eab308', 'void': '#8b5cf6', 'crystal': '#14b8a6', 'iron': '#64748b',
+  };
+  const key = teamName.toLowerCase().trim();
+  return colors[key] || `hsl(${Math.abs(hashCode(teamName)) % 360}, 55%, 50%)`;
+}
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); hash = ((hash << 5) - hash) + c; hash |= 0; }
+  return Math.abs(hash);
 }
 
 // --- Auth ---
@@ -1287,6 +1548,8 @@ function parseOcrResults(results) {
 
 export async function bootOcrDashboard() {
   if (_booted) return; _booted = true; loadRoster();
+  loadRosterSnapshots();
+  loadBannerRecords();
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
@@ -1296,6 +1559,13 @@ export async function bootOcrDashboard() {
   $id('dashGuestBtn').onclick = () => { sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => btn.onclick = () => switchDashSubtab(btn.dataset.subtab));
+  const newSnapBtn = $id('dashRosterSnapshotBtn'); if (newSnapBtn) newSnapBtn.onclick = () => {
+    const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
+    const input = prompt('Paste member names (one per line):', prevText);
+    if (input !== null && input.trim()) takeRosterSnapshot(input);
+  };
+  const newBannerBtn = $id('dashBannerAddBtn'); if (newBannerBtn) newBannerBtn.onclick = () => showBannerForm();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
   
   $id('dashExportMenuBtn').onclick = (e) => { e.stopPropagation(); $id('dashExportMenu').classList.toggle('active'); };
