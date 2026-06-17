@@ -1740,16 +1740,60 @@ export async function bootOcrDashboard() {
     };
   }
 
+  // ── API status watcher ──────────────────────────────────
+  function updateApiStatus() {
+    const key = localStorage.getItem('qwen_api_key');
+    const ok = key && key.trim().length > 20;
+    const els = [
+      { id: 'dashRosterApiStatus', zone: 'dashRosterUploadZone', drop: 'dashRosterDropZone', input: 'dashRosterFileInput' },
+      { id: 'dashApiUploadStatus', zone: 'dashUploadZone', drop: 'dashDropZone', input: 'dashFileInput' },
+    ];
+    els.forEach(({ id, zone, drop, input }) => {
+      const statusEl = $id(id);
+      const zoneEl = $id(zone);
+      const dropEl = $id(drop);
+      const inputEl = $id(input);
+      if (!statusEl) return;
+      if (ok) {
+        statusEl.className = 'dash-roster-api-status dash-api-ok';
+        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> API key set & verified';
+        if (dropEl) { dropEl.style.opacity = '1'; dropEl.style.pointerEvents = ''; }
+        if (inputEl) inputEl.disabled = false;
+      } else {
+        statusEl.className = 'dash-roster-api-status dash-api-missing';
+        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>API key required</b> — paste a Qwen API key above & click <b>Confirm</b> before uploading';
+        if (dropEl) { dropEl.style.opacity = '0.5'; dropEl.style.pointerEvents = 'none'; }
+        if (inputEl) inputEl.disabled = true;
+      }
+    });
+  }
+
+  // Run on boot and whenever key input changes
+  updateApiStatus();
+  const apiInput = $id('dashApiKeyInput');
+  if (apiInput) {
+    apiInput.addEventListener('input', updateApiStatus);
+    apiInput.addEventListener('change', updateApiStatus);
+  }
+  const apiSaveBtn = $id('dashSaveApiBtn');
+  if (apiSaveBtn) apiSaveBtn.addEventListener('click', updateApiStatus);
+
   // Roster: image upload
   const rosterZone = $id('dashRosterUploadZone');
   const rosterDrop = $id('dashRosterDropZone');
   const rosterInput = $id('dashRosterFileInput');
   if (rosterDrop && rosterInput) {
-    rosterDrop.onclick = () => rosterInput.click();
+    rosterDrop.onclick = () => {
+      const key = localStorage.getItem('qwen_api_key');
+      if (!key || key.trim().length <= 20) { updateApiStatus(); return; }
+      rosterInput.click();
+    };
     rosterDrop.ondragover = e => { e.preventDefault(); rosterDrop.classList.add('dragover'); };
     rosterDrop.ondragleave = () => rosterDrop.classList.remove('dragover');
     rosterDrop.ondrop = e => {
       e.preventDefault(); rosterDrop.classList.remove('dragover');
+      const key = localStorage.getItem('qwen_api_key');
+      if (!key || key.trim().length <= 20) { updateApiStatus(); return; }
       if (e.dataTransfer.files.length) processRosterImages(e.dataTransfer.files);
     };
     rosterInput.onchange = () => {
@@ -1820,11 +1864,11 @@ export async function bootOcrDashboard() {
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
-  $id('dashUploadBtn').onclick = () => inp.click();
-  drop.onclick = () => inp.click();
+  $id('dashUploadBtn').onclick = () => { const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } inp.click(); };
+  drop.onclick = () => { const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } inp.click(); };
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
   drop.ondragleave = () => drop.classList.remove('dragover');
-  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
   inp.onchange = () => { if (inp.files.length) processFiles(inp.files); };
 }
 
