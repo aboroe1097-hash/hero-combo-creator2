@@ -1,21 +1,13 @@
-# Hero Combo Creator — VTS 1097 (8.7)
+# Hero Combo Creator — VTS 1097 (8.8)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
 
-## What's new in 8.7
-- **Complete Dashboard Admin Overhaul**: 
-  - Edit or Delete individual attack sessions directly from the UI without wiping the database.
-  - Search & Filter attack history by Structure, Level, or Day.
-  - Attack history now elegantly grouped by Day.
-  - Player profiles now feature an "Active Hours" mini-chart based on their game-time attack habits.
-  - Export Player Report directly to CSV from the modal.
-  - Live Sync indicator flashes green when fresh cloud data arrives.
+## What's new in 8.8
 
-## What's new in 8.7
-
-- **Cross-device sync for logs** — Terminal analysis logs are now perfectly synced across devices via Firestore, keeping the entire team's dashboard state aligned.
-- **Enhanced Player Profiles** — Clicking a player now shows a detailed participation history table tracking exact hit times, target structures, and individual rankings.
-- **Symbolic fuzzy deduplication** — Upgraded the OCR deduplication engine to strip cosmetic symbols and spaces (`~`, `●`, etc.) to effectively merge purely visual name duplicates while perfectly separating distinct players who score identical demolition values.
+- **VTS Admin Roster & Banner sub-tabs** — Save weekly roster snapshots with auto-diff (stayed/joined/left), record banner day team assignments, all persisted in localStorage.
+- **Hero Atlas light theme** — Added missing light theme overrides for toolbar, ranking rows, detail panel, skills, and mobile back button.
+- **Firebase Analytics** — Guest activity tracking via Firebase Analytics.
+- **VTS Admin light theme** — Fixed light theme gaps across the admin dashboard.
 
 ## What's new in 8.4
 
@@ -200,21 +192,19 @@ Hard-refresh the browser after regenerating assets or JS.
 
 ## Deploy
 
-Publish **`dist/`** (from `npm run build`), not the raw repo — keeps `database/` source files off the public site.
+**`gh-pages` is the main branch.** The repo root is published directly via GitHub Pages — no separate `dist/` commit needed.
 
-- **GitHub Pages:** push `dist/` to `gh-pages` branch:
-  ```
-  npm run build
-  git worktree add --detach _deploy_temp
-  Remove-Item '_deploy_temp\*' -Recurse -Force
-  Copy-Item 'dist\*' '_deploy_temp\' -Recurse -Force
-  Set-Content '_deploy_temp\.nojekyll' -Value ''
-  cd _deploy_temp
-  git add -A && git commit -m "deploy"
-  git push origin HEAD:refs/heads/gh-pages --force
-  cd .. && git worktree remove _deploy_temp
-  ```
-- **Custom domain:** `roc-vts.com` (configured in GitHub repo Settings → Pages)
+```bash
+git push origin gh-pages
+```
+
+The site auto-deploys at **https://roc-vts.com/** (custom domain configured in repo Settings → Pages).
+
+For local testing before pushing, run:
+
+```bash
+npx serve .
+```
 
 ## Firebase
 
