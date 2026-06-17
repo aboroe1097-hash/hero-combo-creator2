@@ -373,6 +373,16 @@ async function processRosterImages(files) {
   if (prog) prog.classList.remove('hidden');
 
   log(`Scanning ${valid.length} roster screenshot(s)...`, 'info');
+
+  let localKey = localStorage.getItem('qwen_api_key');
+  if (!localKey) {
+    log('No API key set. Enter it in the top bar and try again.', 'error');
+    if (prog) prog.classList.add('hidden');
+    _rosterProcessing = false;
+    alert('No API key found. Please enter your API key in the top bar and click Confirm, then upload again.');
+    return;
+  }
+
   let allNames = [];
 
   for (let i = 0; i < valid.length; i++) {
@@ -383,9 +393,6 @@ async function processRosterImages(files) {
     });
 
     try {
-      let localKey = localStorage.getItem('qwen_api_key');
-      if (!localKey) throw new Error('No API key. Enter one in the top bar.');
-
       const promptTxt = `You are analyzing a game alliance roster or member list screenshot.
 
 Extract ALL player names visible in the image. Return them as a flat JSON array of strings.
@@ -401,6 +408,7 @@ RULES:
 JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
       let raw = null;
+      let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           const res = await fetch(QWEN_WORKER_URL, {
@@ -414,9 +422,14 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
               ]}]
             })
           });
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            throw new Error(`API ${res.status}${errText ? ': ' + errText.slice(0, 80) : ''}`);
+          }
           raw = await res.json();
           if (raw?.choices?.[0]?.message?.content) break;
         } catch (e) {
+          lastErr = e;
           if (attempt === 3) throw e;
           await new Promise(r => setTimeout(r, 2000 * attempt));
         }
@@ -428,7 +441,6 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
         const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
         names = JSON.parse(cleaned);
       } catch (e) {
-        // Fallback: try line-by-line extraction
         names = text.split('\n').map(l => l.replace(/^[\d\s."'[\],]+/, '').trim()).filter(Boolean);
       }
       if (!Array.isArray(names)) names = [];
@@ -442,17 +454,16 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   if (prog) prog.classList.add('hidden');
   _rosterProcessing = false;
 
-  // Deduplicate and sort
   const unique = [...new Set(allNames.map(n => n.toLowerCase()))].map(k => allNames.find(n => n.toLowerCase() === k)).filter(Boolean).sort();
 
   if (!unique.length) {
     log('No member names found in the screenshot(s).', 'warn');
+    alert('Could not extract any member names from the image. Check the log panel for details.');
     return;
   }
 
   log(`Extracted ${unique.length} unique member names from roster image(s).`, 'info');
 
-  // Ask user to confirm or edit
   const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
   const input = prompt(
     `Edit extracted member names (one per line):\n${unique.length} names found from image.`,
@@ -521,6 +532,17 @@ function saveBannerRecords() {
 }
 function showBannerForm(existingIndex = null) {
   const m = $id('dashModal'), body = $id('dashModalBody');
+  // Re-parent modal to body-level portal to avoid position:fixed breakage from ancestor transforms/filters
+  if (m && m.parentElement && !document.getElementById('ocrDashModalPortal')) {
+    const portal = document.createElement('div');
+    portal.id = 'ocrDashModalPortal';
+    const fakeRoot = document.createElement('div');
+    fakeRoot.id = 'ocrDashboardRoot';
+    m.remove();
+    fakeRoot.appendChild(m);
+    portal.appendChild(fakeRoot);
+    document.body.appendChild(portal);
+  }
   const edit = existingIndex !== null && bannerRecords[existingIndex];
   $id('dashModalTitle').textContent = edit ? 'Edit Banner Day' : 'New Banner Day';
   $id('dashModalSub').textContent = edit ? '' : 'Record banner assignments for a structure attack day.';
