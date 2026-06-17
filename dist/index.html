@@ -962,8 +962,14 @@
             <!-- Sub-tab: Dashboard -->
             <div class="dash-subtab-panel" id="dashSubtabDashboard">
 
-            <!-- Upload Zone -->
+            <!-- Process Log Area (always visible, at top) -->
+            <div id="dashLogArea" class="dash-log-area">
+              <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs" style="opacity:0.6" data-i18n="adminTerminalClear">Clear</button></div>
+              <div id="dashLogOutput" class="dash-log-output"></div>
+            </div>
+
             <div id="dashUploadZone" class="dash-upload-zone hidden">
+              <div id="dashApiUploadStatus" class="dash-roster-api-status"></div>
               <div id="dashDropZone" class="dash-dropzone">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 <p data-i18n="adminUploadDrop">Drop screenshots here or click to browse</p>
@@ -972,12 +978,6 @@
               </div>
               <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span></div>
               <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
-              
-              <!-- Process Log Area -->
-              <div id="dashLogArea" class="dash-log-area hidden">
-                <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs" style="opacity:0.6" data-i18n="adminTerminalClear">Clear</button></div>
-                <div id="dashLogOutput" class="dash-log-output"></div>
-              </div>
             </div>
 
             <!-- KPIs -->
@@ -1076,6 +1076,7 @@
                 </div>
                 <!-- Roster Upload Zone -->
                 <div id="dashRosterUploadZone" class="dash-roster-upload-zone">
+                  <div id="dashRosterApiStatus" class="dash-roster-api-status"></div>
                   <div id="dashRosterDropZone" class="dash-roster-dropzone">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <span>Drop member-list screenshot here, or <u>click to upload</u></span>
