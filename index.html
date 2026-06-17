@@ -950,6 +950,16 @@
 
             </div>
 
+            <!-- Sub-tab Navigation -->
+            <div class="dash-subtab-nav">
+              <button class="dash-subtab-btn dash-subtab-active" data-subtab="dashboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></button>
+              <button class="dash-subtab-btn" data-subtab="roster"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Roster</span></button>
+              <button class="dash-subtab-btn" data-subtab="banners"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h12l2 4-2 4H4"/><path d="M20 21V3"/></svg><span>Banners</span></button>
+            </div>
+
+            <!-- Sub-tab: Dashboard -->
+            <div class="dash-subtab-panel" id="dashSubtabDashboard">
+
             <!-- Upload Zone -->
             <div id="dashUploadZone" class="dash-upload-zone hidden">
               <div id="dashDropZone" class="dash-dropzone">
@@ -1050,6 +1060,37 @@
                 <div id="dashLowestChart" class="dash-chart"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
               </div>
             </div>
+            </div><!-- /dashSubtabDashboard -->
+
+            <!-- Sub-tab: Roster -->
+            <div class="dash-subtab-panel hidden" id="dashSubtabRoster">
+              <div class="dash-card">
+                <div class="dash-card-hdr">
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Roster Snapshots</span></h2>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button id="dashRosterSnapshotBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>New Snapshot (Friday)</span></button>
+                    <button id="dashRosterExportBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export</span></button>
+                  </div>
+                </div>
+                <div id="dashRosterBody">
+                  <div class="dash-empty">No roster snapshots yet. Click "New Snapshot" to save this week's roster.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-tab: Banners -->
+            <div class="dash-subtab-panel hidden" id="dashSubtabBanners">
+              <div class="dash-card">
+                <div class="dash-card-hdr">
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h12l2 4-2 4H4"/><path d="M20 21V3"/></svg><span>Banner Assignments</span></h2>
+                  <button id="dashBannerAddBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>New Banner Day</span></button>
+                </div>
+                <div id="dashBannerBody">
+                  <div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 

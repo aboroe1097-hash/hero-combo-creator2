@@ -4835,6 +4835,72 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   color: #64748b !important;
 }
 
+/* ── Hero Atlas — additional missing overrides ───────────── */
+[data-theme="light"] .heroes-toolbar-sticky {
+  background: linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(248,250,252,0.92) 85%, transparent 100%) !important;
+  backdrop-filter: blur(8px);
+}
+[data-theme="light"] .heroes-toolbar {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .heroes-count-badge {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+[data-theme="light"] .heroes-season-hint {
+  color: #94a3b8 !important;
+}
+[data-theme="light"] .heroes-mobile-back {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #6366f1 !important;
+}
+[data-theme="light"] .heroes-mobile-back:hover {
+  background: #eef2ff !important;
+  color: #4f46e5 !important;
+  border-color: #a5b4fc !important;
+}
+[data-theme="light"] .detail-img {
+  border-color: rgba(99,102,241,0.3) !important;
+}
+[data-theme="light"] .rank-img {
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .detail-season-tag {
+  border: 1px solid rgba(0,0,0,0.1);
+}
+[data-theme="light"] .detail-state-tag.paid {
+  background: rgba(124,58,237,0.08) !important;
+  color: #7c3aed !important;
+}
+[data-theme="light"] .detail-state-tag.free {
+  background: rgba(16,185,129,0.08) !important;
+  color: #059669 !important;
+}
+[data-theme="light"] .detail-syn-item img {
+  border-color: rgba(99,102,241,0.25) !important;
+}
+[data-theme="light"] .detail-skill-type {
+  color: #0369a1 !important;
+}
+[data-theme="light"] .detail-skill-desc {
+  color: #334155 !important;
+}
+[data-theme="light"] .detail-combo-hero span {
+  color: #475569 !important;
+}
+[data-theme="light"] .detail-combo-hero img {
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] .hero-rank-row:hover::after {
+  background: rgba(99,102,241,0.3) !important;
+}
+[data-theme="light"] .hover\:bg-slate-700:hover {
+  background-color: #e2e8f0 !important;
+}
+
 /* ── Eden Loyalty Tab Overrides ──────────────────────────── */
 [data-theme="light"] .loyalty-title {
   color: #0f172a !important;
@@ -5747,4 +5813,179 @@ body[style*="overflow: hidden"] .tab-panel {
     transform: none !important;
     animation: none !important;
     filter: none !important;
+}
+
+/* ── VTS Admin Sub-tab Navigation ──────────────────────────── */
+#ocrDashboardRoot .dash-subtab-nav {
+  display: flex; gap: 4px; margin-bottom: 1rem; padding: 4px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); overflow-x: auto;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+#ocrDashboardRoot .dash-subtab-nav::-webkit-scrollbar { display: none; }
+#ocrDashboardRoot .dash-subtab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0.5rem 1rem; border-radius: var(--radius-pill);
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: var(--t-fast);
+  font-family: inherit;
+}
+#ocrDashboardRoot .dash-subtab-btn:hover {
+  color: var(--text-primary); background: rgba(255,255,255,0.06);
+}
+#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active {
+  background: var(--brand); color: #fff;
+  box-shadow: 0 2px 10px var(--brand-glow);
+}
+#ocrDashboardRoot .dash-subtab-btn svg { flex-shrink: 0; }
+#ocrDashboardRoot .dash-subtab-panel { animation: tab-fade-in 0.12s ease both; }
+
+/* ── Roster tab ────────────────────────────────────────────── */
+#ocrDashboardRoot .dash-roster-snapshot {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-card); margin-bottom: 0.75rem;
+  overflow: hidden; transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-roster-snapshot:hover {
+  border-color: var(--border-hover);
+}
+#ocrDashboardRoot .dash-roster-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; cursor: pointer;
+  background: var(--surface-3); border-bottom: 1px solid var(--border);
+  transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-roster-head:hover { background: var(--surface); }
+#ocrDashboardRoot .dash-roster-date {
+  font-weight: 800; font-size: 0.85rem; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+#ocrDashboardRoot .dash-roster-count {
+  font-size: 0.75rem; color: var(--text-muted); font-weight: 600;
+}
+#ocrDashboardRoot .dash-roster-body {
+  padding: 0.75rem 1rem; display: none;
+}
+#ocrDashboardRoot .dash-roster-body.open { display: block; }
+#ocrDashboardRoot .dash-roster-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px;
+}
+#ocrDashboardRoot .dash-roster-name {
+  padding: 4px 8px; font-size: 0.8rem; font-weight: 600;
+  color: var(--text-primary); border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+}
+#ocrDashboardRoot .dash-roster-name.joined {
+  background: rgba(16,185,129,0.12); color: #34d399;
+}
+#ocrDashboardRoot .dash-roster-name.left {
+  background: rgba(239,68,68,0.12); color: #f87171;
+  text-decoration: line-through; opacity: 0.7;
+}
+#ocrDashboardRoot .dash-roster-diff-summary {
+  display: flex; gap: 12px; margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+#ocrDashboardRoot .dash-roster-diff-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  font-size: 0.72rem; font-weight: 700;
+}
+#ocrDashboardRoot .dash-roster-diff-chip.stayed {
+  background: rgba(59,130,246,0.1); color: #60a5fa;
+}
+#ocrDashboardRoot .dash-roster-diff-chip.joined {
+  background: rgba(16,185,129,0.12); color: #34d399;
+}
+#ocrDashboardRoot .dash-roster-diff-chip.left {
+  background: rgba(239,68,68,0.12); color: #f87171;
+}
+#ocrDashboardRoot .dash-roster-modal-textarea {
+  width: 100%; min-height: 250px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem; padding: 0.75rem; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-primary); resize: vertical; outline: none;
+}
+#ocrDashboardRoot .dash-roster-modal-textarea:focus {
+  border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+/* ── Banners tab ───────────────────────────────────────────── */
+#ocrDashboardRoot .dash-banner-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-card); margin-bottom: 0.75rem;
+  overflow: hidden; transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-banner-card:hover { border-color: var(--border-hover); }
+#ocrDashboardRoot .dash-banner-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; background: var(--surface-3);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+}
+#ocrDashboardRoot .dash-banner-date {
+  font-weight: 800; font-size: 0.85rem; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+#ocrDashboardRoot .dash-banner-event {
+  font-size: 0.72rem; color: var(--brand-light); font-weight: 700;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  background: rgba(59,130,246,0.1);
+}
+#ocrDashboardRoot .dash-banner-count { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+#ocrDashboardRoot .dash-banner-body { padding: 0.75rem 1rem; }
+#ocrDashboardRoot .dash-banner-table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+#ocrDashboardRoot .dash-banner-table th {
+  text-align: left; padding: 0.5rem 0.6rem; font-size: 0.65rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-muted); border-bottom: 1px solid var(--border);
+}
+#ocrDashboardRoot .dash-banner-table td {
+  padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(51,65,85,0.25);
+  color: var(--text-primary);
+}
+#ocrDashboardRoot .dash-banner-team-tag {
+  display: inline-block; padding: 2px 8px; border-radius: var(--radius-pill);
+  font-size: 0.7rem; font-weight: 800;
+}
+#ocrDashboardRoot .dash-banner-del-btn {
+  background: none; border: none; color: var(--text-dim); cursor: pointer;
+  padding: 4px; border-radius: 4px; transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-banner-del-btn:hover {
+  background: rgba(239,68,68,0.15); color: #ef4444;
+}
+#ocrDashboardRoot .dash-banner-empty { text-align: center; padding: 2rem 1rem; color: var(--text-dim); }
+#ocrDashboardRoot .dash-banner-form-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;
+}
+#ocrDashboardRoot .dash-banner-form-row label {
+  font-size: 0.75rem; font-weight: 700; color: var(--text-muted); min-width: 60px;
+}
+#ocrDashboardRoot .dash-banner-form-row input,
+#ocrDashboardRoot .dash-banner-form-row select {
+  padding: 0.5rem 0.75rem; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-primary); font-size: 0.8rem; outline: none;
+  font-family: inherit; transition: var(--t-fast);
+}
+#ocrDashboardRoot .dash-banner-form-row input:focus,
+#ocrDashboardRoot .dash-banner-form-row select:focus {
+  border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+/* Light theme overrides for sub-tabs */
+[data-theme="light"] #ocrDashboardRoot .dash-subtab-nav {
+  background: #f1f5f9; border-color: #e2e8f0;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-subtab-btn:hover {
+  background: rgba(15,23,42,0.05); color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-roster-name {
+  background: rgba(0,0,0,0.02);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-banner-table td {
+  border-bottom-color: #e2e8f0;
 }
