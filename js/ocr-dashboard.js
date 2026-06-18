@@ -14,257 +14,28 @@ import { processFiles, normalizeStructureName, parseOcrResults, fmtDate, display
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import {
+  STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
+  ROSTER_USERS, ROSTER_PASS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
+  LOG_KEY, AUTH_HASH, CLEAR_HASH, QWEN_WORKER_URL, DURABILITY_TABLE,
+  state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
+  tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
+  validateTotalDemolition
+} from './ocr-shared.js';
 
-const STORAGE_KEY = 'vts_ocr_dashboard';
-const AUTH_KEY = 'vts_ocr_auth';
-const ROSTER_KEY = 'vts_ocr_roster';
-const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
-const BANNER_KEY = 'vts_ocr_banners';
-const FS_PATH = 'vts_admin/dashboard_data';
-const FS_ROSTER_PATH = 'vts_admin/roster_data';
+// --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
+state.dashData = null;
+state.searchQ = '';
+state.attackSearchQ = '';
+state.rosterNames = [];
+state.rosterSnapshots = [];
+state.bannerRecords = [];
+state.sortCol = 'total_demolition';
+state.sortDir = 'desc';
 
-let dashData = null;
-let searchQ = '';
-let attackSearchQ = '';
-let rosterNames = [];
-let rosterSnapshots = [];
-let bannerRecords = [];
-let sortCol = 'total_demolition';
-let sortDir = 'desc';
-let leaderLimit = 25;
-let _booted = false;
-let _ocrProcessing = false;
-let _rosterProcessing = false;
-let _fsUnsub = null;
-let _fsRosterUnsub = null;
+// --- Roster Admin Functions (remain in dashboard scope) ---
 
-const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
-const ROSTER_PASS = '1097';
-const ROSTER_AUTH_KEY = 'vts_roster_auth';
-const ALLIANCE_KEY = 'vts_ocr_alliances';
-const ALLIANCE_COUNT = 5;
-let allianceList = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
-let _rosterLoggedUser = '';
-let _rosterFilterStatus = 'all';
-let _rosterFilterAlliance = 'all';
-let _rosterSearchQ = '';
-let _rosterSelectedIndices = new Set();
-
-
-function $id(id) { return document.getElementById(id); }
-function esc(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>'"]/g, match => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  })[match]);
-}
-
-const LOG_KEY = 'vts_ocr_log';
-
-// --- Logger ---
-function log(msg, type = 'info', file = null) {
-  const out = $id('dashLogOutput');
-  const area = $id('dashLogArea');
-  if (!out || !area) return;
-  area.classList.remove('hidden');
-  
-  const entry = {
-    time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    msg,
-    type,
-    file
-  };
-  appendLogEntry(out, entry);
-  persistLog(entry);
-  out.scrollTop = out.scrollHeight;
-}
-
-function appendLogEntry(out, entry) {
-  const div = document.createElement('div');
-  div.className = 'log-entry';
-  let html = `<span class="log-time">[${entry.time}]</span>`;
-  if (entry.file) html += `<span class="log-file">[${entry.file}]</span>`;
-  html += `<span class="log-msg log-${entry.type}">${entry.msg}</span>`;
-  div.innerHTML = html;
-  out.appendChild(div);
-}
-
-function persistLog(entry) {
-  try {
-    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    logs.push(entry);
-    if (logs.length > 500) logs.splice(0, logs.length - 500);
-    localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-  } catch (e) {}
-}
-
-function restoreLogs() {
-  try {
-    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    if (!logs.length) return;
-    const out = $id('dashLogOutput');
-    if (!out || !area) return;
-    out.innerHTML = '';
-    area.classList.remove('hidden');
-    logs.forEach(e => appendLogEntry(out, e));
-    out.scrollTop = out.scrollHeight;
-  } catch (e) {}
-}
-
-// --- JSON Repair Helper ---
-// Fixes common JSON escaping issues from LLM outputs
-function tryRepairJson(text) {
-  // First, try parsing as-is
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    // Continue to repair only for common JSON errors
-    if (!e.message.includes('Bad escaped character') && 
-        !e.message.includes('Invalid escape') && 
-        !e.message.includes('Unexpected token') &&
-        !e.message.includes('Expected')) {
-      throw e;
-    }
-  }
-  
-  let repaired = text;
-  
-  // Step 1: Remove trailing commas before } or ] (handle newlines/spaces)
-  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
-  
-  // Step 2: Fix bad escape sequences: replace \X (where X is not a valid escape char) with \\X
-  // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
-  repaired = repaired.replace(/\\([^"\\/bfnrtu])/g, '\\\\$1');
-  
-  // Step 3: Fix any unescaped control characters
-  repaired = repaired.replace(/[\x00-\x1f]/g, (match) => {
-    const code = match.charCodeAt(0);
-    if (code === 0x08) return '\\b';
-    if (code === 0x09) return '\\t';
-    if (code === 0x0a) return '\\n';
-    if (code === 0x0c) return '\\f';
-    if (code === 0x0d) return '\\r';
-    return '\\u' + code.toString(16).padStart(4, '0');
-  });
-  
-  try {
-    return JSON.parse(repaired);
-  } catch (e2) {
-    throw new Error(`Failed to parse JSON even after repair: ${e2.message}. Snippet: ${text.substring(0, 100)}...`);
-  }
-}
-
-// --- Fuzzy Matching ---
-
-function getSimilarity(s1, s2) {
-  if (!s1 || !s2) return 0;
-  let longer = s1, shorter = s2;
-  if (s1.length < s2.length) { longer = s2; shorter = s1; }
-  if (longer.length === 0) return 1.0;
-  return (longer.length - editDistance(longer, shorter)) / longer.length;
-}
-
-function getSimilarityAlphaNum(s1, s2) {
-  if (!s1 || !s2) return 0;
-  const c1 = s1.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
-  const c2 = s2.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
-  if (!c1 || !c2) return getSimilarity(s1, s2);
-  return getSimilarity(c1, c2);
-}
-
-function editDistance(s1, s2) {
-  s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
-  const costs = [];
-  for (let i = 0; i <= s1.length; i++) {
-    let lv = i;
-    for (let j = 0; j <= s2.length; j++) {
-      if (i === 0) costs[j] = j;
-      else if (j > 0) {
-        let nv = costs[j - 1];
-        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) nv = Math.min(Math.min(nv, lv), costs[j]) + 1;
-        costs[j - 1] = lv; lv = nv;
-      }
-    }
-    if (i > 0) costs[s2.length] = lv;
-  }
-  return costs[s2.length];
-}
-
-function findBestMatch(name, minConfidence = 100) {
-  if (!name) return name;
-  if (typeof name === 'string') {
-    if (name.includes('UNDEAD')) {
-      name = name.replace(/^[○◎ØODQ]{1,2}/i, '').replace(/[○◎ØODQ]{1,2}$/i, '').trim();
-    }
-    name = name.replace(/^Н/, 'H'); // Replace Cyrillic Н with Latin H at start
-    const aliasMap = {
-      'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy', '키키 kimmy': '키미 kimmy',
-      'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
-      'AK Чанай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
-      '!!Uzumaki !!': '!!Uzumaki!!', '!! Uzumaki !!': '!!Uzumaki!!', 'Uzumaki': '!!Uzumaki!!', 'UzuBanner': '!!Uzumaki!!',
-      '● AGAM ●': 'AGAM', '●●AGAM ●●': 'AGAM', '●● AGAM ●●': 'AGAM', '●AGAM●': 'AGAM',
-      'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj', 'MasterVjso': 'MasterVj',
-      '○UNDEADO○': 'UNDEAD', '○UNDEAD○': 'UNDEAD', '◎UNDEADO◎': 'UNDEAD', 'ØUNDEADØ': 'UNDEAD', 'UNDEADO': 'UNDEAD',
-      '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110', '© I N d ō/Made3110': 'Made3110', 'yind?Made3110': 'Made3110',
-      '≽ Kika ≡': 'Kika', '~Kika~': 'Kika', '✨Kika✨': 'Kika', ' Kika ': 'Kika', '✨Kika-banner✨': 'Kika-banner', '~Kika ~': 'Kika',
-      'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп', 'тynгзахyp': 'түнгзахурп', 'тyHГ3ахур': 'түнгзахурп', 'тyнгзахур': 'түнгзахурп',
-      'REDBULL§': 'REDBULLS', 'RedBull©': 'REDBULLS', 'RedBull@': 'REDBULLS', 'RedBull®': 'REDBULLS', 'Redbull@': 'REDBULLS', 'REDBULL$': 'REDBULLS',
-      'Ar Ran★_YG+62': 'Ar Ran ★_YG+62', 'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
-      'hunter killer.': 'Hunter killer.', 'htar killer.': 'Hunter killer.', 'htubter killer.': 'Hunter killer.', 'hunster killer.': 'Hunter killer.', 'һunter killer.': 'Hunter killer.',
-      '+DarkPrinceSSt': 'tDarkPrinceSS$t', 'DarkPrinceSt': 'tDarkPrinceSS$t',
-      'Doedoom': 'Doedoem', 'Dneanmon': 'Dheahmon', '↑ Anne ↑': 'Anne', 'ŸAnneŸ': 'Anne', '^ Anne ^': 'Anne', '^Anne ^': 'Anne', '^^ Anne ^^': 'Anne',
-      'q. Immortalis': 'q. Immortal', 'D off y.': 'D offy.', 'Doffy.': 'D offy.', 'D off.y.': 'D offy.', 'D o f f y.': 'D offy.',
-      'terribile ivan': 'terrible ivan', '★KoThawwKa★': 'KoThawwKa', '★ KoThawwKa ★': 'KoThawwKa',
-      'БратХрабрепц': 'БратХрабрец', '洋人在弄啥嘢': '洋人在弄啥嘞', '洋人在弄哈嘞': '洋人在弄啥嘞',
-      '_._5G': '_5G', '-----5G': '_5G', '___5G': '_5G', '__5G': '_5G', 'ΛNGƎL': 'ANGEL', 'ΛNGEL': 'ANGEL', 'ANGƎL': 'ANGEL', '-L7-': '- L7 -', '~Pink~': '~ Pink ~',
-      'DvD18 x2': 'DvD18', '..WAE.L..': '..WAEL..', '..WAEI..': '..WAEL..', 'Neutriino10': 'Neutrino10',
-      '耶比耶耶耶': '耶比耶比耶', '真庭道主-': '-真庭道主-', '真庭道主': '-真庭道主-',
-      '乃厶口毛': '乃ㄥ口毛', '乃ㄥ山毛': '乃ㄥ口毛', '乃∠口毛': '乃ㄥ口毛',
-      'ylii90': 'ylli90', '~★RuCCaK★~': '~RuCCaK~', 'Lord Chandu!': 'Lord Chandu !',
-      '★Mariska★': 'Mariska', '☆Mariska☆': 'Mariska', '*Mariska*': 'Mariska', 'Opua 2025': 'Opwa 2025', 'Орша 2025': 'Opwa 2025',
-      'Sarafino~': '~Sarafino~', 'Sarafino': '~Sarafino~',
-      '*Molly*': 'Molly',
-      'jJamaica pete': 'Jjamaica pete',
-      '*Lisavetka*': '•Lisavetka•',
-      'Surtiiiiii': 'Surtiiiii',
-      'Феюшка))': 'Феечка))', 'Φελώσκα))': 'Феечка))',
-      'БрюHerKaЯ': 'БрюНетКаЯ',
-      'A n d ē R $': 'A n d e R $', 'АηdεR$': 'A n d e R $', 'Anders': 'A n d e R $',
-      'Dizz..': 'Dizz.',
-      '★★★ 3BEPb ★★★': '3BEPb', 'ЗВЕРЬ': '3BEPb', '*** 3BEPb ***': '3BEPb', '*** ЗВЕРЬ ***': '3BEPb',
-      'REFORMASIJILID2*': 'REFORMASIJILID2·',
-      'СоBob': 'CoBoP', 'СоБоР': 'CoBoP',
-      '★ Aqua ★': '★Aqua★', '*Aqua*': '★Aqua★', '☆Aqua☆': '★Aqua★', '☆Aqua ☆': '★Aqua★',
-      '.Jasper.@': '@.Jasper.@', '.Jasper.': '@.Jasper.@',
-      '*r@mze$$$*': '★r@mze$$$★', '☆r@nze$$$☆': '★r@mze$$$★',
-      'I D NÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDN°/Dragon.Gold': 'IDN Dragon.Gold', '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
-      'МяТная Лапка': 'Мятная Лапка',
-      'yousef المحارب': 'المحارب yousef',
-      '*DEAN JR*': '*DEAN*',
-      'Moldo1313': 'Moldo1313', 'MalakAdo': 'MalakAdo', 'MalakAbo': 'MalakAbo',
-      'WICKED RUSSIANO': 'WICKED RUSSIAN',
-      'Indomie.telor': 'Indomie.telor....'
-    };
-    if (aliasMap[name]) return aliasMap[name];
-    if (/pixel/i.test(name)) return '༄Pixel';
-  }
-
-  if (!rosterNames.length) return name;
-  let best = name, maxSim = 0;
-  for (const rn of rosterNames) {
-    const sim = getSimilarity(name, rn);
-    if (sim > maxSim) { maxSim = sim; best = rn; }
-  }
-  let threshold = 0.82;
-  if (name.length < 5) threshold = 0.6;
-  else if (name.length <= 8) threshold = 0.72;
-  if (minConfidence < 70) threshold -= 0.08;
-  return maxSim > threshold ? best : name;
-}
+// --- Sub-tab Switching ---
 
 // --- Roster ---
 
@@ -283,10 +54,10 @@ function switchDashSubtab(name) {
 }
 
 // ── Roster Snapshots (local + Firestore) ──────────────────
-async function saveRosterSnapshotsToFirestore() {
+export async function saveRosterSnapshotsToFirestore() {
   try {
     await ensureAnonymousAuth();
-    await setDoc(doc(getDb(), FS_ROSTER_PATH), { snapshots: rosterSnapshots, updated: new Date().toISOString() });
+    await setDoc(doc(getDb(), FS_ROSTER_PATH), { snapshots: state.rosterSnapshots, updated: new Date().toISOString() });
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
   }
@@ -295,21 +66,21 @@ async function loadRosterSnapshotsFromFirestore() {
   try {
     const db = getDb();
     await ensureAnonymousAuth();
-    if (_fsRosterUnsub) _fsRosterUnsub();
+    if (state._fsRosterUnsub) state._fsRosterUnsub();
     const snap = await getDoc(doc(db, FS_ROSTER_PATH));
     if (snap.exists()) {
       const data = snap.data();
       if (Array.isArray(data.snapshots)) {
-        rosterSnapshots = data.snapshots;
-        localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots));
+        state.rosterSnapshots = data.snapshots;
+        localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
       }
     }
-    _fsRosterUnsub = onSnapshot(doc(db, FS_ROSTER_PATH), (s) => {
+    state._fsRosterUnsub = onSnapshot(doc(db, FS_ROSTER_PATH), (s) => {
       if (s.exists()) {
         const d = s.data();
         if (Array.isArray(d.snapshots)) {
-          rosterSnapshots = d.snapshots;
-          localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots));
+          state.rosterSnapshots = d.snapshots;
+          localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
           renderRoster();
         }
       }
@@ -321,10 +92,10 @@ async function loadRosterSnapshotsFromFirestore() {
 
 // ── Roster Image OCR ─────────────────────────────────────
 async function processRosterImages(files) {
-  if (_rosterProcessing) { log('Roster OCR already running...', 'warn'); return; }
-  _rosterProcessing = true;
+  if (state._rosterProcessing) { log('Roster OCR already running...', 'warn'); return; }
+  state._rosterProcessing = true;
   const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) { _rosterProcessing = false; return; }
+  if (!valid.length) { state._rosterProcessing = false; return; }
 
   const prog = $id('dashRosterProgress');
   const progText = $id('dashRosterProgressText');
@@ -336,7 +107,7 @@ async function processRosterImages(files) {
   if (!localKey) {
     log('No API key set. Enter it in the top bar and try again.', 'error');
     if (prog) prog.classList.add('hidden');
-    _rosterProcessing = false;
+    state._rosterProcessing = false;
     alert('No API key found. Please enter your API key in the top bar and click Confirm, then upload again.');
     return;
   }
@@ -410,7 +181,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   }
 
   if (prog) prog.classList.add('hidden');
-  _rosterProcessing = false;
+  state._rosterProcessing = false;
 
   const unique = [...new Set(allNames.map(n => n.toLowerCase()))].map(k => allNames.find(n => n.toLowerCase() === k)).filter(Boolean).sort();
 
@@ -422,7 +193,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
   log(`Extracted ${unique.length} unique member names from roster image(s).`, 'info');
 
-  const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
+  const prevText = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members.join('\n') : '';
   const input = prompt(
     `Edit extracted member names (one per line):\n${unique.length} names found from image.`,
     unique.join('\n')
@@ -439,9 +210,6 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 // ── Banner Records ────────────────────────────────────────
 
-// --- Auth ---
-const AUTH_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
-const CLEAR_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
 
 async function sha256(str) {
   try {
@@ -450,7 +218,7 @@ async function sha256(str) {
   } catch (e) { return null; }
 }
 
-function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
+export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1' || isGuest(); }
 function showApp() { 
   $id('dashLogin')?.classList.add('hidden'); 
@@ -494,11 +262,11 @@ async function doLogin() {
 }
 
 // --- Persistence ---
-async function saveData(data) {
-  dashData = data;
+export async function saveData(data) {
+  state.dashData = data;
   try { 
     const localLogs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    dashData.logs = localLogs;
+    state.dashData.logs = localLogs;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); 
   } catch (e) {}
   try { 
@@ -514,32 +282,32 @@ async function saveData(data) {
 async function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { dashData = JSON.parse(saved); render(); }
+    if (saved) { state.dashData = JSON.parse(saved); render(); }
   } catch (e) {}
   try {
     const db = getDb();
     if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
     await ensureAnonymousAuth();
-    if (_fsUnsub) _fsUnsub();
+    if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
-      dashData = snap.data();
+      state.dashData = snap.data();
       try { 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); 
-        if (dashData.logs) {
-          localStorage.setItem(LOG_KEY, JSON.stringify(dashData.logs));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
+        if (state.dashData.logs) {
+          localStorage.setItem(LOG_KEY, JSON.stringify(state.dashData.logs));
           restoreLogs();
         }
       } catch (e) {}
       render();
     }
-    _fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
+    state._fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
-        dashData = snap.data();
+        state.dashData = snap.data();
         try { 
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(dashData)); 
-          if (dashData.logs) {
-            localStorage.setItem(LOG_KEY, JSON.stringify(dashData.logs));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
+          if (state.dashData.logs) {
+            localStorage.setItem(LOG_KEY, JSON.stringify(state.dashData.logs));
             restoreLogs();
           }
         } catch (e) {}
@@ -562,7 +330,7 @@ async function loadData() {
 }
 
 async function clearData() {
-  dashData = null;
+  state.dashData = null;
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
@@ -575,11 +343,11 @@ async function clearData() {
 }
 
 // --- Exports ---
-function exportData() { if (!dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
+function exportData() { if (!state.dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state.dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
 function exportToCsv() {
-  if (!dashData?.players_summary) return;
+  if (!state.dashData?.players_summary) return;
   let csv = 'Rank,Member Name,Total Demolition,Hits,Avg per Hit\n';
-  dashData.players_summary.forEach((p, i) => { const safeName = p.name.replace(/"/g, '""'); csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`; });
+  state.dashData.players_summary.forEach((p, i) => { const safeName = p.name.replace(/"/g, '""'); csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`; });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_leaderboard.csv'; a.click();
 }
 async function exportToPng() {
@@ -710,9 +478,9 @@ window.shareChartImage = async function() {
   }).catch(() => { clone.remove(); });
 }
 function exportAttackCsv() {
-  if (!dashData?.attacks?.length) return;
+  if (!state.dashData?.attacks?.length) return;
   let csv = 'Start Time,End Time,Structure,Level,Player Name,Rank,Demolition Value\n';
-  dashData.attacks.forEach(a => {
+  state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${start}","${date}","${a.structure_name}","${a.structure_level||''}","${safeName}",${p.rank},${p.value}\n`; });
@@ -720,9 +488,9 @@ function exportAttackCsv() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
 function exportDebugCsv() {
-  if (!dashData?.attacks?.length) return;
+  if (!state.dashData?.attacks?.length) return;
   let csv = 'Attack ID,Start Time,End Time,Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
-  dashData.attacks.forEach(a => {
+  state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     (a.players||[]).forEach(p => { 
@@ -737,7 +505,7 @@ function importData(file) {
   const r = new FileReader(); r.onload = e => {
     try {
       const imp = JSON.parse(e.target.result); if (!imp.attacks) throw 'Invalid';
-      const m = {}; (dashData?.attacks||[]).forEach(a => m[a.id]=a); (imp.attacks||[]).forEach(a => m[a.id]=a);
+      const m = {}; (state.dashData?.attacks||[]).forEach(a => m[a.id]=a); (imp.attacks||[]).forEach(a => m[a.id]=a);
       const sorted = Object.values(m).sort((a,b) => b.game_time.localeCompare(a.game_time));
       const sum = {}; sorted.forEach(a => {
         const seen = new Set();
@@ -758,30 +526,6 @@ function importData(file) {
 
 
 
-// --- Durability Validation ---
-const DURABILITY_TABLE = {
-  gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
-  cities:   { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
-  capital:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
-  capitol:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
-  temple:   { 1: 1000000 },
-  stronghold: { 1: 1000000 },
-};
-
-function validateTotalDemolition(sN, sL, total) {
-  const levelNum = parseInt(String(sL || '').replace(/[^0-9]/g, ''));
-  if (!levelNum) return null;
-  const entry = DURABILITY_TABLE[(sN || '').toLowerCase()];
-  const expected = entry && entry[levelNum];
-  if (!expected) return null;
-  const diff = Math.abs(total - expected);
-  const pct = diff / expected;
-  return { expected, diff, pct, match: pct < 0.05, levelNum };
-}
-
-// --- OCR Engine ---
-// Set this to your Cloudflare Worker URL after deploying workers/qwen-cors-proxy.js:
-const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
 
 
 
@@ -789,7 +533,7 @@ const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
 
 
 export async function bootOcrDashboard() {
-  if (_booted) return; _booted = true; loadRoster();
+  if (state._booted) return; state._booted = true; loadRoster();
   loadRosterSnapshots();
   loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
@@ -813,7 +557,7 @@ export async function bootOcrDashboard() {
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     newSnapBtn.querySelector('span').textContent = `New Snapshot (${days[new Date().getDay()]})`;
     newSnapBtn.onclick = () => {
-      const prevText = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members.join('\n') : '';
+      const prevText = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members.join('\n') : '';
       const input = prompt('Paste member names (one per line):', prevText);
       if (input !== null && input.trim()) takeRosterSnapshot(input);
     };
@@ -931,13 +675,13 @@ export async function bootOcrDashboard() {
   };
 
   $id('dashModalClose').onclick = closeModal;
-  $id('dashSearch').oninput = e => { searchQ = e.target.value; leaderLimit = 25; render(); };
-  $id('dashLeaderFilter').onchange = () => { leaderLimit = 25; render(); };
+  $id('dashSearch').oninput = e => { state.searchQ = e.target.value; state.leaderLimit = 25; render(); };
+  $id('dashLeaderFilter').onchange = () => { state.leaderLimit = 25; render(); };
   const tFilter = $id('dashTimeFilter');
-  if (tFilter) tFilter.onchange = () => { leaderLimit = 25; render(); };
-  $id('dashAttackSearch').oninput = e => { attackSearchQ = e.target.value; render(); };
-  document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; sortDir=sortCol===c?(sortDir==='desc'?'asc':'desc'):'desc'; sortCol=c; leaderLimit = 25; render(); });
-  window.loadMoreLeaderboard = () => { leaderLimit += 25; render(); };
+  if (tFilter) tFilter.onchange = () => { state.leaderLimit = 25; render(); };
+  $id('dashAttackSearch').oninput = e => { state.attackSearchQ = e.target.value; render(); };
+  document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; state.sortDir=state.sortCol===c?(state.sortDir==='desc'?'asc':'desc'):'desc'; state.sortCol=c; state.leaderLimit = 25; render(); });
+  window.loadMoreLeaderboard = () => { state.leaderLimit += 25; render(); };
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
@@ -957,23 +701,23 @@ window.deleteAttack = async function(attId) {
     alert('Incorrect password.');
     return;
   }
-  if(!attId || !_booted || !dashData) return;
-  const idx = dashData.attacks.findIndex(a => a.id === attId);
+  if(!attId || !state._booted || !state.dashData) return;
+  const idx = state.dashData.attacks.findIndex(a => a.id === attId);
   if (idx !== -1) {
-    const removed = dashData.attacks[idx];
-    dashData.attacks.splice(idx, 1);
+    const removed = state.dashData.attacks[idx];
+    state.dashData.attacks.splice(idx, 1);
     const mockReturn = parseOcrResults([]); 
-    dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
-    dashData.total_attacks = dashData.attacks.length;
-    await saveData(dashData);
+    state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+    state.dashData.total_attacks = state.dashData.attacks.length;
+    await saveData(state.dashData);
     render(); closeModal();
     log(`Deleted attack: ${removed.structure_name} ${removed.structure_level}`, 'warn');
   }
 };
 
 window.editAttack = async function(attId) {
-  if(!attId || !_booted || !dashData) return;
-  const att = dashData.attacks.find(a => a.id === attId);
+  if(!attId || !state._booted || !state.dashData) return;
+  const att = state.dashData.attacks.find(a => a.id === attId);
   if(!att) return;
   const newName = prompt("Edit Structure Name (e.g. Capital, Gates, City):", att.structure_name);
   if(newName === null) return;
@@ -988,15 +732,15 @@ window.editAttack = async function(attId) {
   att.game_time = newTime.trim();
   att.start_time = newStartTime.trim();
   const mockReturn = parseOcrResults([]); 
-  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
-  await saveData(dashData);
+  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Updated attack to: ${att.structure_name} ${att.structure_level}`, 'info');
 };
 
 window.addPlayer = async function(attId) {
-  if(!attId || !_booted || !dashData) return;
-  const att = dashData.attacks.find(a => a.id === attId);
+  if(!attId || !state._booted || !state.dashData) return;
+  const att = state.dashData.attacks.find(a => a.id === attId);
   if(!att) return;
   const pName = prompt("Enter new Player Name:");
   if(!pName) return;
@@ -1010,15 +754,15 @@ window.addPlayer = async function(attId) {
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
   
   const mockReturn = parseOcrResults([]); 
-  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
-  await saveData(dashData);
+  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Added player ${pName} to ${att.structure_name}`, 'info');
 };
 
 window.editPlayer = async function(attId, encName) {
-  if(!attId || !_booted || !dashData) return;
-  const att = dashData.attacks.find(a => a.id === attId);
+  if(!attId || !state._booted || !state.dashData) return;
+  const att = state.dashData.attacks.find(a => a.id === attId);
   if(!att) return;
   const pName = decodeURIComponent(encName);
   const pIdx = att.players.findIndex(p => p.name === pName);
@@ -1043,30 +787,30 @@ window.editPlayer = async function(attId, encName) {
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
   
   const mockReturn = parseOcrResults([]); 
-  dashData.players_summary = mockReturn ? mockReturn.players_summary : dashData.players_summary;
-  await saveData(dashData);
+  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Edited player ${pName} in ${att.structure_name}`, 'info');
 };
 
 window.showPlayer = function(pNameEncoded) {
-  if (!dashData) return;
+  if (!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
   const masterName = findBestMatch(pName);
   
   // Exact match first (using master name)
-  let p = dashData.players_summary.find(x => x.name === masterName);
+  let p = state.dashData.players_summary.find(x => x.name === masterName);
   // Fallback to raw name if master fails
-  if (!p) p = dashData.players_summary.find(x => x.name === pName);
+  if (!p) p = state.dashData.players_summary.find(x => x.name === pName);
   // Fuzzy fallback: case-insensitive + trimmed
   if (!p) {
     const q = pName.trim().toLowerCase();
-    p = dashData.players_summary.find(x => x.name.trim().toLowerCase() === q);
+    p = state.dashData.players_summary.find(x => x.name.trim().toLowerCase() === q);
   }
   // Last resort: partial match (handles OCR name variants)
   if (!p) {
     const q = pName.trim().toLowerCase();
-    p = dashData.players_summary.find(x =>
+    p = state.dashData.players_summary.find(x =>
       x.name.toLowerCase().includes(q) || q.includes(x.name.toLowerCase())
     );
   }
@@ -1086,16 +830,16 @@ window.showPlayer = function(pNameEncoded) {
 };
 
 window.showAttack = function(attId) {
-  if(!dashData) return;
-  const att = dashData.attacks.find(a => a.id === attId);
+  if(!state.dashData) return;
+  const att = state.dashData.attacks.find(a => a.id === attId);
   if(att) showModal('attack', att);
   else closeModal();
 };
 
 window.exportPlayerReport = function(pNameEncoded) {
-  if(!dashData) return;
+  if(!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
-  const p = dashData.players_summary.find(x => x.name === pName);
+  const p = state.dashData.players_summary.find(x => x.name === pName);
   if(!p) return;
   let csv = "Time,Target,Value,Rank\n";
   const sortedAttacks = [...(p.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
@@ -1124,8 +868,8 @@ window.deleteBannerRecord = deleteBannerRecord;
 window.closeModal = closeModal;
 window.renderRoster = renderRoster;
 window.setRosterFilter = function(key, val) {
-  if (key === 'alliance') _rosterFilterAlliance = val;
-  else if (key === 'status') _rosterFilterStatus = val;
+  if (key === 'alliance') state._rosterFilterAlliance = val;
+  else if (key === 'status') state._rosterFilterStatus = val;
   else if (key === 'search') _rosterSearchQ = val;
   renderRoster();
 };

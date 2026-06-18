@@ -1,8 +1,14 @@
-// Extracted Roster System Module
+import {
+  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
+  ROSTER_USERS, ROSTER_PASS, ALLIANCE_COUNT,
+  state, $id, esc, log
+} from './ocr-shared.js';
+import { closeModal } from './ocr-render.js';
+import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
 
 function loadRoster() {
   const raw = localStorage.getItem(ROSTER_KEY);
-  rosterNames = raw ? raw.split('\n').map(n => n.trim()).filter(n => n.length > 0) : [];
+  state.rosterNames = raw ? raw.split('\n').map(n => n.trim()).filter(n => n.length > 0) : [];
 }
 
 function saveRoster(text) {
@@ -25,13 +31,13 @@ function showRosterModal() {
 function loadRosterSnapshots() {
   try {
     const raw = localStorage.getItem(ROSTER_SNAPSHOTS_KEY);
-    rosterSnapshots = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(rosterSnapshots)) rosterSnapshots = [];
-  } catch (e) { rosterSnapshots = []; }
+    state.rosterSnapshots = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.rosterSnapshots)) state.rosterSnapshots = [];
+  } catch (e) { state.rosterSnapshots = []; }
 }
 
 function saveRosterSnapshots() {
-  try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(rosterSnapshots)); } catch (e) {}
+  try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
   saveRosterSnapshotsToFirestore();
 }
 
@@ -56,12 +62,11 @@ function takeRosterSnapshot(namesText) {
   if (!members.length) { log('No members to save.', 'warn'); return; }
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
-  const prev = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1] : null;
+  const prev = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1] : null;
   const diff = prev ? computeRosterDiff(prev.members, members) : null;
   const snapshot = { date: dateStr, members, diff };
-  rosterSnapshots.push(snapshot);
+  state.rosterSnapshots.push(snapshot);
   saveRosterSnapshots();
-  // Also update legacy roster for OCR matching
   localStorage.setItem(ROSTER_KEY, namesText);
   loadRoster();
   log(`Roster snapshot saved: ${members.length} members (${dateStr})`, 'success');
@@ -70,7 +75,7 @@ function takeRosterSnapshot(namesText) {
 
 function deleteRosterSnapshot(index) {
   if (!confirm('Delete this roster snapshot?')) return;
-  rosterSnapshots.splice(index, 1);
+  state.rosterSnapshots.splice(index, 1);
   saveRosterSnapshots();
   renderRoster();
   log('Roster snapshot deleted.', 'warn');
@@ -79,36 +84,36 @@ function deleteRosterSnapshot(index) {
 function loadAllianceList() {
   try {
     const raw = localStorage.getItem(ALLIANCE_KEY);
-    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length === ALLIANCE_COUNT) allianceList = a; }
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length === ALLIANCE_COUNT) state.allianceList = a; }
   } catch (e) {}
 }
 
 function saveAllianceList() {
-  try { localStorage.setItem(ALLIANCE_KEY, JSON.stringify(allianceList)); } catch (e) {}
+  try { localStorage.setItem(ALLIANCE_KEY, JSON.stringify(state.allianceList)); } catch (e) {}
 }
 
 function loadRosterAuth() {
-  try { _rosterLoggedUser = localStorage.getItem(ROSTER_AUTH_KEY) || ''; } catch (e) { _rosterLoggedUser = ''; }
+  try { state._rosterLoggedUser = localStorage.getItem(ROSTER_AUTH_KEY) || ''; } catch (e) { state._rosterLoggedUser = ''; }
 }
 
 function saveRosterAuth() {
-  try { localStorage.setItem(ROSTER_AUTH_KEY, _rosterLoggedUser); } catch (e) {}
+  try { localStorage.setItem(ROSTER_AUTH_KEY, state._rosterLoggedUser); } catch (e) {}
 }
 
 function rosterLogin() {
   const user = $id('dashRosterLoginUser')?.value;
   const pass = $id('dashRosterLoginPass')?.value;
   if (!user || pass !== ROSTER_PASS) { log('Invalid roster login credentials.', 'error'); return; }
-  _rosterLoggedUser = user;
+  state._rosterLoggedUser = user;
   saveRosterAuth();
   log('Roster logged in as ' + user, 'success');
-  const ai = allianceList.indexOf(user);
-  if (ai >= 0) _rosterFilterAlliance = String(ai);
+  const ai = state.allianceList.indexOf(user);
+  if (ai >= 0) state._rosterFilterAlliance = String(ai);
   renderRoster();
 }
 
 function rosterLogout() {
-  _rosterLoggedUser = '';
+  state._rosterLoggedUser = '';
   saveRosterAuth();
   renderRoster();
 }
@@ -122,79 +127,79 @@ function _ensureMember(m) {
 }
 
 function setRosterStatus(snapIndex, memberIndex, status) {
-  const snap = rosterSnapshots[snapIndex];
+  const snap = state.rosterSnapshots[snapIndex];
   if (!snap) return;
   let m = snap.members[memberIndex];
   if (!m) return;
   m = snap.members[memberIndex] = _ensureMember(m);
   if (status === 'spy' && m.status === 'spy') status = 'unknown';
   m.status = status;
-  if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
   saveRosterSnapshots();
   renderRoster();
 }
 
 function setRosterAlliance(snapIndex, memberIndex, allianceIdx) {
-  const snap = rosterSnapshots[snapIndex];
+  const snap = state.rosterSnapshots[snapIndex];
   if (!snap) return;
   let m = snap.members[memberIndex];
   if (!m) return;
   m = snap.members[memberIndex] = _ensureMember(m);
   m.alliance = m.alliance === allianceIdx ? -1 : allianceIdx;
-  if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
   saveRosterSnapshots();
   renderRoster();
 }
 
 function toggleBulkCheck(mi) {
-  if (_rosterSelectedIndices.has(mi)) _rosterSelectedIndices.delete(mi);
-  else _rosterSelectedIndices.add(mi);
+  if (state._rosterSelectedIndices.has(mi)) state._rosterSelectedIndices.delete(mi);
+  else state._rosterSelectedIndices.add(mi);
   renderRoster();
 }
 
 function toggleBulkSelectAll(jsonStr) {
   const indices = JSON.parse(jsonStr);
-  if (_rosterSelectedIndices.size === indices.length) _rosterSelectedIndices.clear();
-  else indices.forEach(function(i) { _rosterSelectedIndices.add(i); });
+  if (state._rosterSelectedIndices.size === indices.length) state._rosterSelectedIndices.clear();
+  else indices.forEach(function(i) { state._rosterSelectedIndices.add(i); });
   renderRoster();
 }
 
 function applyBulkStatus(status) {
-  if (!_rosterSelectedIndices.size) return;
-  const snap = rosterSnapshots[rosterSnapshots.length - 1];
-  _rosterSelectedIndices.forEach(function(mi) {
+  if (!state._rosterSelectedIndices.size) return;
+  const snap = state.rosterSnapshots[state.rosterSnapshots.length - 1];
+  state._rosterSelectedIndices.forEach(function(mi) {
     let m = snap.members[mi];
     m = snap.members[mi] = _ensureMember(m);
     m.status = status;
-    if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+    if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
   });
-  _rosterSelectedIndices.clear();
+  state._rosterSelectedIndices.clear();
   saveRosterSnapshots();
   renderRoster();
 }
 
 function applyBulkAlliance(allianceIdx) {
-  if (!_rosterSelectedIndices.size) return;
-  const snap = rosterSnapshots[rosterSnapshots.length - 1];
-  _rosterSelectedIndices.forEach(function(mi) {
+  if (!state._rosterSelectedIndices.size) return;
+  const snap = state.rosterSnapshots[state.rosterSnapshots.length - 1];
+  state._rosterSelectedIndices.forEach(function(mi) {
     let m = snap.members[mi];
     m = snap.members[mi] = _ensureMember(m);
     m.alliance = allianceIdx;
-    if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+    if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
   });
-  _rosterSelectedIndices.clear();
+  state._rosterSelectedIndices.clear();
   saveRosterSnapshots();
   renderRoster();
 }
 
 function exportRosterCSV() {
-  if (!rosterSnapshots.length) return;
-  const latest = rosterSnapshots[rosterSnapshots.length - 1];
-  let csv = 'Name,Status,Alliance,VerifiedBy,LastModified\\n';
+  if (!state.rosterSnapshots.length) return;
+  const latest = state.rosterSnapshots[state.rosterSnapshots.length - 1];
+  let csv = 'Name,Status,Alliance,VerifiedBy,LastModified\n';
   latest.members.forEach(function(m) {
     const mem = _ensureMember(m);
-    const a = mem.alliance >= 0 ? allianceList[mem.alliance] : '';
-    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"\\n';
+    const a = mem.alliance >= 0 ? state.allianceList[mem.alliance] : '';
+    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"\n';
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -207,19 +212,19 @@ function exportRosterCSV() {
 }
 
 function copyRosterNames(type) {
-  if (!rosterSnapshots.length) return;
-  const latest = rosterSnapshots[rosterSnapshots.length - 1];
+  if (!state.rosterSnapshots.length) return;
+  const latest = state.rosterSnapshots[state.rosterSnapshots.length - 1];
   const names = latest.members
     .map(function(m) { return _ensureMember(m); })
     .filter(function(m) { return type === 'unassigned' ? m.alliance === -1 : m.status === type; })
     .map(function(m) { return m.name; })
-    .join('\\n');
+    .join('\n');
   navigator.clipboard.writeText(names);
-  log('Copied ' + names.split('\\n').length + ' names.', 'success');
+  log('Copied ' + names.split('\n').length + ' names.', 'success');
 }
 
 function showRosterSnapshotModal(index) {
-  const snap = rosterSnapshots[index];
+  const snap = state.rosterSnapshots[index];
   const diff = snap.diff;
   const m = $id('dashModal'), body = $id('dashModalBody');
   $id('dashModalTitle').textContent = 'Snapshot: ' + snap.date;
@@ -245,14 +250,14 @@ function configureAlliances() {
   $id('dashModalTitle').textContent = 'Configure Alliances';
   $id('dashModalSub').textContent = 'Name your 5 alliances for member assignment.';
   let inputsHtml = '';
-  allianceList.forEach(function(a, i) {
+  state.allianceList.forEach(function(a, i) {
     inputsHtml += '<label style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><span style="width:24px;font-weight:700;color:var(--text-muted)">' + (i + 1) + '</span><input id="dashAllianceInput' + i + '" class="dash-input" value="' + esc(a) + '" style="flex:1;padding:6px 10px"></label>';
   });
   body.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + inputsHtml + '<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div></div>';
   $id('dashAllianceSaveBtn').onclick = function() {
     for (var i = 0; i < ALLIANCE_COUNT; i++) {
       var v = $id('dashAllianceInput' + i);
-      if (v && v.value.trim()) allianceList[i] = v.value.trim();
+      if (v && v.value.trim()) state.allianceList[i] = v.value.trim();
     }
     saveAllianceList();
     closeModal();
@@ -265,12 +270,12 @@ function configureAlliances() {
 function renderRoster() {
   const body = $id('dashRosterBody');
   if (!body) return;
-  if (!rosterSnapshots.length) {
+  if (!state.rosterSnapshots.length) {
     body.innerHTML = '<div class="dash-empty">No roster snapshots yet. Click "New Snapshot" to save this week\'s roster.</div>';
     return;
   }
-  const snapIndex = rosterSnapshots.length - 1;
-  const latest = rosterSnapshots[snapIndex];
+  const snapIndex = state.rosterSnapshots.length - 1;
+  const latest = state.rosterSnapshots[snapIndex];
   const diff = latest.diff;
   const members = latest.members;
   function mn(m) { return typeof m === 'string' ? m : m.name; }
@@ -287,32 +292,32 @@ function renderRoster() {
   var total = members.length;
   var unassigned = total - assigned;
   var ocrMap = {};
-  if (dashData && dashData.players_summary) {
-    dashData.players_summary.forEach(function(p) { ocrMap[p.name.toLowerCase()] = p; });
+  if (state.dashData && state.dashData.players_summary) {
+    state.dashData.players_summary.forEach(function(p) { ocrMap[p.name.toLowerCase()] = p; });
   }
   var filtered = [];
   members.forEach(function(m, mi) {
     var s = mstatus(m);
     var a = malliance(m);
     var name = mn(m);
-    if (_rosterFilterStatus !== 'all' && s !== _rosterFilterStatus) return;
-    if (_rosterFilterAlliance !== 'all') {
-      if (_rosterFilterAlliance === 'unassigned' && a >= 0) return;
-      if (_rosterFilterAlliance !== 'unassigned' && a !== parseInt(_rosterFilterAlliance)) return;
+    if (state._rosterFilterStatus !== 'all' && s !== state._rosterFilterStatus) return;
+    if (state._rosterFilterAlliance !== 'all') {
+      if (state._rosterFilterAlliance === 'unassigned' && a >= 0) return;
+      if (state._rosterFilterAlliance !== 'unassigned' && a !== parseInt(state._rosterFilterAlliance)) return;
     }
-    if (_rosterSearchQ && name.toLowerCase().indexOf(_rosterSearchQ.toLowerCase()) === -1) return;
+    if (state._rosterSearchQ && name.toLowerCase().indexOf(state._rosterSearchQ.toLowerCase()) === -1) return;
     filtered.push({ mi: mi, name: name, status: s, alliance: a });
   });
-  var isLoggedIn = !!_rosterLoggedUser;
+  var isLoggedIn = !!state._rosterLoggedUser;
   var loginHtml = isLoggedIn
-    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">🔓 ' + esc(_rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
+    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">🔓 ' + esc(state._rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
     : '<div class="dash-roster-login-bar"><span>🔒 Roster Login:</span><select id="dashRosterLoginUser">' + ROSTER_USERS.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('') + '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input" style="width:90px;padding:3px 6px;font-size:0.78rem"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
   var bulkHtml = '';
-  if (_rosterSelectedIndices.size > 0 && isLoggedIn) {
-    var allyOpts = allianceList.map(function(a, i) { return '<option value="' + i + '">' + esc(a) + '</option>'; }).join('');
-    bulkHtml = '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' + _rosterSelectedIndices.size + ' selected:</span><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'trusted\')">Mark Trusted</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'spy\')">Mark Spy</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'unknown\')">Clear Status</button><select class="dash-input" style="font-size:0.75rem;padding:2px;width:100px" onchange="if(this.value){applyBulkAlliance(parseInt(this.value));this.value=\'\'}"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' + allyOpts + '</select></div>';
+  if (state._rosterSelectedIndices.size > 0 && isLoggedIn) {
+    var allyOpts = state.allianceList.map(function(a, i) { return '<option value="' + i + '">' + esc(a) + '</option>'; }).join('');
+    bulkHtml = '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' + state._rosterSelectedIndices.size + ' selected:</span><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'trusted\')">Mark Trusted</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'spy\')">Mark Spy</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'unknown\')">Clear Status</button><select class="dash-input" style="font-size:0.75rem;padding:2px;width:100px" onchange="if(this.value){applyBulkAlliance(parseInt(this.value));this.value=\'\'}"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' + allyOpts + '</select></div>';
   }
-  var filterAllyOpts = allianceList.map(function(a, i) { return '<option value="' + i + '"' + (_rosterFilterAlliance === String(i) ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+  var filterAllyOpts = state.allianceList.map(function(a, i) { return '<option value="' + i + '"' + (state._rosterFilterAlliance === String(i) ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
   var rowsHtml = '';
   var indicesJson = JSON.stringify(filtered.map(function(f) { return f.mi; })).replace(/"/g, '&quot;');
   filtered.forEach(function(item) {
@@ -332,39 +337,38 @@ function renderRoster() {
       : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">⚔️ —</span>';
     var auditHtml = '';
     if (vb) auditHtml += '<span class="dash-roster-row-vb" title="Verified by ' + esc(vb) + (lm ? ' on ' + lm.slice(0,10) : '') + '">@' + esc(vb) + '</span>';
-    var allySelectHtml = '<select class="dash-roster-row-alliance" ' + disabledAttr + ' onchange="setRosterAlliance(' + snapIndex + ',' + mi + ',parseInt(this.value))"><option value="-1">—</option>' + allianceList.map(function(a, ai) { return '<option value="' + ai + '"' + (alliance === ai ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>';
-    rowsHtml += '<div class="' + rowCls + '"><label style="margin-right:8px;display:flex;align-items:center;cursor:pointer"><input type="checkbox" class="bulk-cb" onchange="toggleBulkCheck(' + mi + ')"' + (_rosterSelectedIndices.has(mi) ? ' checked' : '') + ' ' + disabledAttr + '></label><span class="dash-roster-row-name" style="flex:1">' + esc(name) + ocrHtml + '</span>' + allySelectHtml + auditHtml + '<span class="dash-roster-row-spy' + (status === 'spy' ? ' active' : '') + '" onclick="setRosterStatus(' + snapIndex + ',' + mi + ',\'spy\')" title="Toggle spy">🚫</span></div>';
+    var allySelectHtml = '<select class="dash-roster-row-alliance" ' + disabledAttr + ' onchange="setRosterAlliance(' + snapIndex + ',' + mi + ',parseInt(this.value))"><option value="-1">—</option>' + state.allianceList.map(function(a, ai) { return '<option value="' + ai + '"' + (alliance === ai ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>';
+    rowsHtml += '<div class="' + rowCls + '"><label style="margin-right:8px;display:flex;align-items:center;cursor:pointer"><input type="checkbox" class="bulk-cb" onchange="toggleBulkCheck(' + mi + ')"' + (state._rosterSelectedIndices.has(mi) ? ' checked' : '') + ' ' + disabledAttr + '></label><span class="dash-roster-row-name" style="flex:1">' + esc(name) + ocrHtml + '</span>' + allySelectHtml + auditHtml + '<span class="dash-roster-row-spy' + (status === 'spy' ? ' active' : '') + '" onclick="setRosterStatus(' + snapIndex + ',' + mi + ',\'spy\')" title="Toggle spy">🚫</span></div>';
   });
   var historyHtml = '';
-  for (var i = rosterSnapshots.length - 2; i >= 0; i--) {
-    var s = rosterSnapshots[i];
+  for (var i = state.rosterSnapshots.length - 2; i >= 0; i--) {
+    var s = state.rosterSnapshots[i];
     var d = s.diff;
     historyHtml += '<div class="dash-roster-history-item"><span class="dash-roster-history-date">' + esc(s.date) + '</span><span class="dash-roster-history-count">' + s.members.length + '</span>' + (d ? '<span class="dash-roster-history-diff">+' + d.joined.length + '/-' + d.left.length + '</span>' : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>') + '<button class="dash-btn" style="padding:2px 8px;font-size:0.7rem" onclick="showRosterSnapshotModal(' + i + ')">View</button><button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(' + i + ')" title="Delete">✕</button></div>';
   }
   if (!historyHtml) historyHtml = '<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">No older snapshots.</div>';
   body.innerHTML = loginHtml
     + '<div class="dash-roster-summary"><span class="dash-roster-summary-total">Total: ' + total + '</span><span class="dash-roster-summary-trusted">✅ ' + trusted + ' Trusted</span><span class="dash-roster-summary-unknown">⬜ ' + unknown + ' Unknown</span><span class="dash-roster-summary-spy">🚫 ' + spy + ' Spy</span><span class="dash-roster-summary-assigned">📋 ' + assigned + ' Assigned</span><span class="dash-roster-summary-unassigned">❓ ' + unassigned + ' Unassigned</span><button class="dash-banner-del-btn" onclick="if(confirm(\'Delete this snapshot?\'))deleteRosterSnapshot(' + snapIndex + ')" title="Delete current snapshot" style="margin-left:auto">✕</button></div>'
-    + '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select onchange="setRosterFilter(\'alliance\',this.value)"><option value="all">All</option>' + filterAllyOpts + '<option value="unassigned"' + (_rosterFilterAlliance === 'unassigned' ? ' selected' : '') + '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select onchange="setRosterFilter(\'status\',this.value)"><option value="all">All</option><option value="trusted"' + (_rosterFilterStatus === 'trusted' ? ' selected' : '') + '>Trusted</option><option value="unknown"' + (_rosterFilterStatus === 'unknown' ? ' selected' : '') + '>Unknown</option><option value="spy"' + (_rosterFilterStatus === 'spy' ? ' selected' : '') + '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' + esc(_rosterSearchQ) + '" oninput="setRosterFilter(\'search\',this.value)" class="dash-input" style="width:140px;padding:4px 8px;font-size:0.78rem"></div><div class="dash-roster-toolbar-actions">' + bulkHtml + '<button class="dash-btn dash-btn-sm" onclick="configureAlliances()" title="Edit alliance names">⚙️</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'unassigned\')" title="Copy unassigned names">📋 Unassigned</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'spy\')" title="Copy spy names">📋 Spies</button></div></div>'
-    + '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" onchange="toggleBulkSelectAll(\'' + indicesJson + '\')"' + (_rosterSelectedIndices.size > 0 && _rosterSelectedIndices.size === filtered.length ? ' checked' : '') + ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' + rowsHtml + (filtered.length === 0 ? '<div class="dash-roster-empty">No members match filters.</div>' : '') + '</div>'
+    + '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select onchange="setRosterFilter(\'alliance\',this.value)"><option value="all">All</option>' + filterAllyOpts + '<option value="unassigned"' + (state._rosterFilterAlliance === 'unassigned' ? ' selected' : '') + '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select onchange="setRosterFilter(\'status\',this.value)"><option value="all">All</option><option value="trusted"' + (state._rosterFilterStatus === 'trusted' ? ' selected' : '') + '>Trusted</option><option value="unknown"' + (state._rosterFilterStatus === 'unknown' ? ' selected' : '') + '>Unknown</option><option value="spy"' + (state._rosterFilterStatus === 'spy' ? ' selected' : '') + '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' + esc(state._rosterSearchQ) + '" oninput="setRosterFilter(\'search\',this.value)" class="dash-input" style="width:140px;padding:4px 8px;font-size:0.78rem"></div><div class="dash-roster-toolbar-actions">' + bulkHtml + '<button class="dash-btn dash-btn-sm" onclick="configureAlliances()" title="Edit alliance names">⚙️</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'unassigned\')" title="Copy unassigned names">📋 Unassigned</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'spy\')" title="Copy spy names">📋 Spies</button></div></div>'
+    + '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" onchange="toggleBulkSelectAll(\'' + indicesJson + '\')"' + (state._rosterSelectedIndices.size > 0 && state._rosterSelectedIndices.size === filtered.length ? ' checked' : '') + ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' + rowsHtml + (filtered.length === 0 ? '<div class="dash-roster-empty">No members match filters.</div>' : '') + '</div>'
     + '<div class="dash-roster-total-rows">Showing ' + filtered.length + ' of ' + total + ' members</div>'
-    + '<div class="dash-roster-history"><div class="dash-roster-history-head" onclick="var b=this.nextElementSibling;b.classList.toggle(\'open\');this.querySelector(\'.dash-roster-history-arrow\').textContent=b.classList.contains(\'open\')?\'▼\':\'▶\'"><span>📁 Snapshot History (' + (rosterSnapshots.length - 1) + ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' + historyHtml + '</div></div>';
+    + '<div class="dash-roster-history"><div class="dash-roster-history-head" onclick="var b=this.nextElementSibling;b.classList.toggle(\'open\');this.querySelector(\'.dash-roster-history-arrow\').textContent=b.classList.contains(\'open\')?\'▼\':\'▶\'"><span>📁 Snapshot History (' + (state.rosterSnapshots.length - 1) + ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' + historyHtml + '</div></div>';
 }
 
 function loadBannerRecords() {
   try {
     const raw = localStorage.getItem(BANNER_KEY);
-    bannerRecords = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(bannerRecords)) bannerRecords = [];
-  } catch (e) { bannerRecords = []; }
+    state.bannerRecords = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.bannerRecords)) state.bannerRecords = [];
+  } catch (e) { state.bannerRecords = []; }
 }
 
 function saveBannerRecords() {
-  try { localStorage.setItem(BANNER_KEY, JSON.stringify(bannerRecords)); } catch (e) {}
+  try { localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords)); } catch (e) {}
 }
 
 function showBannerForm(existingIndex = null) {
   const m = $id('dashModal'), body = $id('dashModalBody');
-  // Re-parent modal to body-level portal to avoid position:fixed breakage from ancestor transforms/filters
   if (m && m.parentElement && !document.getElementById('ocrDashModalPortal')) {
     const portal = document.createElement('div');
     portal.id = 'ocrDashModalPortal';
@@ -375,16 +379,13 @@ function showBannerForm(existingIndex = null) {
     portal.appendChild(fakeRoot);
     document.body.appendChild(portal);
   }
-  const edit = existingIndex !== null && bannerRecords[existingIndex];
+  const edit = existingIndex !== null && state.bannerRecords[existingIndex];
   $id('dashModalTitle').textContent = edit ? 'Edit Banner Day' : 'New Banner Day';
   $id('dashModalSub').textContent = edit ? '' : 'Record banner assignments for a structure attack day.';
-
-  const roster = rosterSnapshots.length ? rosterSnapshots[rosterSnapshots.length - 1].members : [];
+  const roster = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members : [];
   const memberOptions = roster.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-
-  const rec = edit ? bannerRecords[existingIndex] : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
+  const rec = edit ? state.bannerRecords[existingIndex] : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
   const teamNames = Object.keys(rec.teams);
-
   body.innerHTML = `<div class="dash-banner-form-row">
     <label>Date</label>
     <input type="date" id="dashBannerFormDate" value="${rec.date}" style="flex:1">
@@ -411,7 +412,6 @@ function showBannerForm(existingIndex = null) {
     <button id="dashBannerFormCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
   </div>`;
 
-  // Wire up "Add Team" — keeps previous entries
   $id('dashBannerAddTeamBtn').onclick = () => {
     const list = $id('dashBannerTeamsList');
     const firstEmpty = list.querySelector('.dash-empty');
@@ -443,8 +443,8 @@ function showBannerForm(existingIndex = null) {
     });
     if (!Object.keys(teams).length) { alert('Add at least one team with members.'); return; }
     const record = { date, event, teams };
-    if (edit) { bannerRecords[existingIndex] = record; }
-    else { bannerRecords.push(record); }
+    if (edit) { state.bannerRecords[existingIndex] = record; }
+    else { state.bannerRecords.push(record); }
     saveBannerRecords();
     closeModal();
     renderBanners();
@@ -456,7 +456,7 @@ function showBannerForm(existingIndex = null) {
 
 function deleteBannerRecord(index) {
   if (!confirm('Delete this banner record?')) return;
-  bannerRecords.splice(index, 1);
+  state.bannerRecords.splice(index, 1);
   saveBannerRecords();
   renderBanners();
   log('Banner record deleted.', 'warn');
@@ -465,13 +465,13 @@ function deleteBannerRecord(index) {
 function renderBanners() {
   const body = $id('dashBannerBody');
   if (!body) return;
-  if (!bannerRecords.length) {
+  if (!state.bannerRecords.length) {
     body.innerHTML = '<div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>';
     return;
   }
   let html = '';
-  for (let i = bannerRecords.length - 1; i >= 0; i--) {
-    const rec = bannerRecords[i];
+  for (let i = state.bannerRecords.length - 1; i >= 0; i--) {
+    const rec = state.bannerRecords[i];
     const teamEntries = Object.entries(rec.teams);
     const totalMembers = teamEntries.reduce((s, [, m]) => s + m.length, 0);
     html += `<div class="dash-banner-card">
@@ -519,7 +519,7 @@ function hashCode(str) {
   return Math.abs(hash);
 }
 
-export { 
+export {
   loadRoster, saveRoster, showRosterModal,
   loadRosterSnapshots, saveRosterSnapshots, computeRosterDiff, takeRosterSnapshot, deleteRosterSnapshot,
   loadAllianceList, saveAllianceList, loadRosterAuth, saveRosterAuth, rosterLogin, rosterLogout,
