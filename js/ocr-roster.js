@@ -103,7 +103,7 @@ function saveRosterAuth() {
 function rosterLogin() {
   const user = $id('dashRosterLoginUser')?.value;
   const pass = $id('dashRosterLoginPass')?.value;
-  if (!user || pass !== ROSTER_PASS) { log('Invalid roster login credentials.', 'error'); return; }
+  if (!user || !ROSTER_PASS[user] || pass !== ROSTER_PASS[user]) { log('Invalid roster login credentials.', 'error'); return; }
   state._rosterLoggedUser = user;
   saveRosterAuth();
   log('Roster logged in as ' + user, 'success');

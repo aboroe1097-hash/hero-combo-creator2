@@ -12,7 +12,7 @@ export const LOG_KEY = 'vts_ocr_log';
 
 // --- Roster Auth ---
 export const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
-export const ROSTER_PASS = '1097';
+export const ROSTER_PASS = { V3S: '1097', VTS: '1097', PP5: '1111', BIG: '1116', NM5: '1111' };
 export const ROSTER_AUTH_KEY = 'vts_roster_auth';
 export const ALLIANCE_KEY = 'vts_ocr_alliances';
 export const ALLIANCE_COUNT = 5;
