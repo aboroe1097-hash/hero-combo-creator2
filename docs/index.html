@@ -70,11 +70,11 @@
   <link rel="stylesheet" href="/assets/mobile-wQjtJv0M.css?v=20260614_5" media="(max-width: 768px)" />
   
 
-  <script type="module" crossorigin src="/assets/index-BlBYQRvd.js"></script>
+  <script type="module" crossorigin src="/assets/index-4LMYjvXB.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/i18n-D-gEPfwD.js">
   <link rel="modulepreload" crossorigin href="/assets/eden-D51RIvJH.js">
   <link rel="modulepreload" crossorigin href="/assets/tech-data-S0_hqYq5.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-CG88tzes.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-DBpWRqjr.css">
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -313,6 +313,16 @@
               <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
               <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
               <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          </div>
+
+          <h3 class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Hero Skins</h3>
+          <div class="flex items-center gap-3">
+              <label id="genSkinToggleLabel" class="toggle-switch">
+                  <input type="checkbox" id="genSkinToggle" />
+                  <span class="toggle-slider"></span>
+              </label>
+              <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Heroes with skins</span>
+              <span id="genSkinCount" class="text-[10px] text-amber-400 bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-500/30 hidden"></span>
           </div>
       </div>
 

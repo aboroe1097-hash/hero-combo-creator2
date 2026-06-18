@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
+import { hasSkin, getSkinCount, SKIN_TYPES } from './skins-db.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -17,6 +18,7 @@ import {
   generatorSelectedStates,
   generatorSelectedTypes,
   generatorSelectedHeroes,
+  generatorSkinsOnly,
   lastGeneratedCombos,
   sourceCreditText,
   generatorHeroesEl,
@@ -28,17 +30,35 @@ import {
 export function renderGeneratorHeroes() {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
-  allHeroesData
-    .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
-    .forEach(hero => {
+
+  let filtered = allHeroesData.filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes));
+
+  if (generatorSkinsOnly) {
+    filtered = filtered.sort((a, b) => {
+      const aHas = hasSkin(a.name);
+      const bHas = hasSkin(b.name);
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      return getSkinCount(b.name) - getSkinCount(a.name);
+    });
+  }
+
+  filtered.forEach(hero => {
+      const hasSkinFlag = hasSkin(hero.name);
+      const skinCount = getSkinCount(hero.name);
+      const skinColors = Object.values(SKIN_TYPES).map(s => s.color);
+      const hasSkinClass = hasSkinFlag && generatorSkinsOnly ? ' has-skin' : '';
       const card = document.createElement('button');
-      card.className = `hero-card generator-card relative ${
+      card.className = `hero-card generator-card relative${hasSkinClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       
+      const skinBadge = hasSkinFlag ? `<span class="generator-skin-badge" title="${skinCount} skin${skinCount > 1 ? 's' : ''} available" style="background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})">✦${skinCount > 1 ? skinCount : ''}</span>` : '';
+
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
         ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
+        ${skinBadge}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
