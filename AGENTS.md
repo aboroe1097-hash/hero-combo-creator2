@@ -5,12 +5,13 @@
 ## Quick Start
 
 ```bash
+npm install
 npm run dev      # Start dev server (Vite)
 npm run build    # Build to dist/ + docs/
 npm run preview  # Preview production build
 ```
 
-Tech: Vanilla HTML/JS/CSS, Vite bundler, Firebase Firestore, Qwen VL API.
+Tech: Vanilla HTML/JS/CSS, Vite bundler, Tailwind CDN, Firebase Firestore, Qwen VL API.
 
 ---
 
@@ -22,7 +23,7 @@ Tech: Vanilla HTML/JS/CSS, Vite bundler, Firebase Firestore, Qwen VL API.
 ### Module Dependency Graph
 ```
 index.html
- └─ js/app.js (2855 lines) — main app, imports all sub-modules, global scope
+ └─ js/app.js — main app, imports all sub-modules, global scope
      ├─ js/translations.js      — i18n strings (en + others)
      ├─ js/firebase.js           — Firebase init, anonymous auth, getDb
      ├─ js/comments.js           — Firestore snapshot comments
@@ -31,25 +32,47 @@ index.html
      ├─ js/heroes-data.js        — allHeroesData (68 heroes, base info)
      ├─ js/heroes-info.js        — heroesExtendedData (skills, placement)
      ├─ js/hero-bonuses.js       — manual rating adjustments
+     ├─ js/skins-db.js           — heroSkinTypes + heroSkins (skin data)
      ├─ js/state.js              — getComboRankInfo, troop colors, helpers
      ├─ js/utils.js              — escapeHtml, etc.
      ├─ js/seo.js                — JSON-LD, meta tags
      ├─ js/game-time.js          — game clock, sync titles
      ├─ js/tech-db.js            — tech tree database
      ├─ js/research-node-icons.js— tech node SVG icons
-     ├─ js/app-loading.js        — boot splash
+     ├─ js/app-loading.js        — boot splash, loading progress, 5s timeout
      ├─ js/pwa-register.js       — service worker + install prompt
      ├─ js/player-profile.js     — cloud profile sync
      ├─ js/combo-share.js        — share combo via URL
      ├─ js/roster-share.js       — share roster via URL
      ├─ js/eden-live-map.js      — live map overlay
      ├─ js/app-builder.js        — manual builder UI + logic
-     └─ js/app-generator.js      — combo generator UI + logic
+     ├─ js/app-generator.js      — combo generator UI + logic
+     ├─ js/app-hero-atlas.js     — Hero Atlas tab (search, skills, skins)
+     ├─ js/app-research.js       — Tech Research Calculator tab
+     ├─ js/app-export.js         — Export (html2canvas, CSV, text)
+     └─ js/app-hero-tooltip.js   — Hero tooltip hover logic
 
-  js/ocr-dashboard.js (777 lines) — VTS Admin dashboard (loaded via HTML tab)
-  js/eden-map.js (2310 lines)     — Eden Map planner (separate tab)
-  js/loyalty-calculator.js        — Eden Loyalty calculator
-  js/research-advanced.js         — Advanced research view
+     Lazy-loaded by tab switch or explicit import():
+     ├─ js/ocr-dashboard.js      — VTS Admin dashboard
+     ├─ js/ocr-roster.js         — Roster checklist, login, alliances
+     ├─ js/ocr-render.js         — Dashboard UI rendering
+     ├─ js/ocr-engine.js         — OCR parsing logic
+     ├─ js/ocr-shared.js         — Shared const/state/helpers for OCR
+     ├─ js/eden-map.js           — Eden Map planner
+     ├─ js/eden-map-data.js      — Eden map static data
+     ├─ js/eden-map-assets.js    — Image preloading, icon management
+     ├─ js/eden-map-terrain.js   — Terrain layer, pathfinding
+     ├─ js/eden-map-ui.js        — Map UI controls, toolbars
+     ├─ js/eden-map-features.js  — Structure features, filters
+     ├─ js/eden-map-guide.js     — Guide/help overlay
+     ├─ js/eden-map-season.js    — Season picker
+     ├─ js/eden-map-teams.js     — Team management
+     ├─ js/eden-map-scout.js     — Scout report overlay
+     ├─ js/eden-map-construction.js — Construction timeline
+     ├─ js/eden-map-config.js    — Constants
+     ├─ js/eden-datasets-loader.js  — Decode Eden dataset payload
+     ├─ js/loyalty-calculator.js — Eden Loyalty calculator
+     └─ js/research-advanced.js  — Advanced research view
 ```
 
 ### Global State Variables (shared across modules via window scope)
@@ -67,6 +90,7 @@ User selects 3 heroes → `updateManualComboScore()` → `getComboRankInfo()` �
 
 #### 2. Combo Generator
 User picks ≥12 owned heroes → `generateBestCombos()` → iterates `rankedCombos` → selects top 5 without overlap.
+Skin toggle sorts skinned heroes to top and adds gradient skin badge (✦).
 
 #### 3. OCR Roster (VTS Admin)
 Upload screenshot → Qwen API extracts names → `takeRosterSnapshot()` → save to localStorage + Firestore → `renderRoster()` → checklist with alliance/status/verifiedBy.
@@ -93,18 +117,20 @@ Select season → view map → place/remove structures → plan routes → share
 ### `/js/` — Core Application
 | File | Lines | Purpose |
 |------|-------|---------|
-| `app.js` | ~835 | Main app: tabs, theme, event wiring |
-| `app-builder.js` | 332 | Manual combo builder: drag-drop, slot rendering, save |
-| `app-generator.js` | 253 | Auto combo generator: best & random modes |
-| `app-loading.js` | 221 | Boot splash animation, loading progress |
-| `app-hero-atlas.js` | ~560 | Hero Atlas tab |
-| `app-research.js` | ~1090| Research Calculator tab |
+| `app.js` | ~860 | Main app: tabs, theme, event wiring, error boundaries, tab lazy-loader |
+| `app-builder.js` | ~335 | Manual combo builder: drag-drop, slot rendering, save |
+| `app-generator.js` | ~260 | Auto combo generator: best & random modes, skin toggle |
+| `app-loading.js` | ~225 | Boot splash animation, loading progress, 5s timeout fallback |
+| `app-hero-atlas.js` | ~565 | Hero Atlas tab: search, skills, synergies, top combos, skins |
+| `app-research.js` | ~1095 | Research Calculator tab |
 | `app-export.js` | ~250 | Export functions (html2canvas, rendering) |
 | `app-hero-tooltip.js` | ~150 | Hero tooltip hover logic |
-| `ocr-dashboard.js` | ~1130| VTS Admin: main dashboard logic |
-| `ocr-roster.js` | ~535 | Roster checklist, login, alliances |
+| `skins-db.js` | ~180 | Skin database: types (Mythic/Legendary/Everlasting), hero skin entries |
+| `ocr-dashboard.js` | ~1135 | VTS Admin: main dashboard logic |
+| `ocr-roster.js` | ~540 | Roster checklist, login, alliances |
 | `ocr-render.js` | ~200 | Dashboard UI rendering |
-| `ocr-engine.js` | ~300 | OCR parsing logic |
+| `ocr-engine.js` | ~305 | OCR parsing logic, structure name normalization, durability |
+| `ocr-shared.js` | ~120 | Shared constants, state object, $id/esc/log helpers |
 | `eden-map.js` | 2310 | Eden Map planner: map render, plans, routing |
 | `eden-map-data.js` | 1042 | Eden map static data, sector definitions |
 | `eden-map-assets.js` | 688 | Image preloading, icon management |
@@ -125,7 +151,7 @@ Select season → view map → place/remove structures → plan routes → share
 | `heroes-data.js` | 69 | Hero base data (name, season, troop, state) |
 | `heroes-info.js` | 585 | Hero skills, placement, copies |
 | `hero-bonuses.js` | 15 | Manual rating adjustments |
-| `state.js` | 198 | Rank info, filters, troop colors |
+| `state.js` | ~200 | Rank info, filters, troop colors, generatorSkinsOnly state |
 | `translations.js` | 1740 | i18n string tables |
 | `tech-db.js` | 1065 | Tech tree database |
 | `research-node-icons.js` | 192 | SVG icons for tech nodes |
@@ -140,23 +166,34 @@ Select season → view map → place/remove structures → plan routes → share
 | `utils.js` | 10 | escapeHtml utility |
 | `eden-datasets.payload.js` | 2 | Base64-encoded Eden datasets |
 | `eden-datasets-loader.js` | 25 | Decode and load Eden datasets |
+| `eden-tooltips.js` | ~30 | Eden control-deck hover tooltips |
 
 ### `/css/`
 | File | Lines | Purpose |
 |------|-------|---------|
-| `app.css` | 5963 | All styles (may split into features) |
+| `app.css` | ~6150 | All styles (custom CSS + Tailwind utilities section) |
 | `mobile.css` | 832 | Mobile-specific responsive overrides |
 
-### Other Key Files
+### `/tabs/` — Lazy-loaded Tab Templates
+| File | Size | Purpose |
+|------|------|---------|
+| `admin.html` | ~25KB | VTS Admin dashboard HTML template |
+| `eden-map.html` | ~23KB | Eden Map planner HTML template |
+| `loyalty.html` | ~17KB | Eden Loyalty calculator HTML template |
+
+### Root Config Files
 | File | Purpose |
 |------|---------|
-| `index.html` | Single-page app shell, all tab templates |
-| `sw.js` | Service worker for PWA |
-| `firebase.json` | Firebase hosting config |
-| `netlify.toml` | Netlify deployment config |
-| `vite.config.js` | Vite build config |
-| `scripts/post-build.mjs` | Post-build: copy assets to dist/ + docs/ |
-| `database/build-eden-datasets.py` | Build Eden dataset payload |
+| `index.html` | Single-page app shell (~650 lines, 54KB) |
+| `vite.config.js` | Vite build config: entry, chunking, output |
+| `postcss.config.js` | PostCSS plugins: Tailwind + Autoprefixer + cssnano (prod) |
+| `tailwind.config.js` | Tailwind config (preflight disabled, content paths) |
+| `scripts/post-build.mjs` | Post-build: copy assets (css/js/images/tabs) to dist/ + docs/ |
+| `site.webmanifest` | PWA manifest (display: standalone, theme-color) |
+| `public/sw.js` | Service worker for PWA |
+| `public/404.html` | Custom 404 page |
+| `workers/qwen-cors-proxy.js` | Cloudflare Worker: Qwen API CORS proxy |
+| `database/build-eden-datasets.py` | Generate Eden dataset payload |
 
 ---
 
@@ -171,6 +208,24 @@ Select season → view map → place/remove structures → plan routes → share
 - **Template literals** for HTML generation (backtick strings).
 - **CSS** uses `#ocrDashboardRoot` namespace for admin dashboard styles.
 - **Event handlers** prefer inline `onclick=` in generated HTML for simplicity (matches existing pattern).
+
+### Deployment Model
+GitHub Pages serves from the **root** of the `gh-pages` branch. Source files (`index.html`, `js/`, `css/`) are served directly. The `dist/` and `docs/` folders are build artifacts for alternative hosting.
+
+### Tailwind CSS
+- Runtime: loaded via CDN (`cdn.tailwindcss.com`) with `preflight: false`
+- Dev: Vite PostCSS plugin processes `@tailwind` directives from a separate entry
+- `postcss.config.js` + `tailwind.config.js` enable Vite dev-server processing
+- `cssnano` minifies in production builds
+
+### Tab Lazy-Loading Pattern
+Heavy tab templates (Admin, Eden Map, Loyalty) extracted from `index.html` into `tabs/` directory. Fetched on first tab activation via `loadTabTemplate()`, cached in `_tabTemplatesLoaded` map. Heavy JS modules (eden, ocr) use dynamic `import()`.
+
+### Error Boundary Pattern
+- Each module init wrapped in `safeInit()` wrapper in `startApp()`
+- One failing tab doesn't block others
+- Global `error` + `unhandledrejection` listeners at bottom of `app.js`
+- 5-second loading screen timeout in `initAppLoading()` force-dismisses splash
 
 ### Firebase Rules
 - Anonymous auth only.
@@ -189,19 +244,43 @@ Select season → view map → place/remove structures → plan routes → share
 | `vts_ocr_banners` | Banner records array |
 | `qwen_api_key` | Qwen API key (user-set) |
 
-### Vite Config Notes
-- Entry: `index.html`
-- Output: `dist/` (primary) + `docs/` (GitHub Pages)
-- Static assets in `public/` copied as-is
-- No framework plugins (vanilla setup)
+### Skin Database Schema
+`js/skins-db.js` exports:
+- `heroSkinTypes` — { mythic, legendary, everlasting } with color/gradient config
+- `heroSkins` — per-hero array: { name, type, bioAttributes, inheritingSkill, preservingSkill, hiddenPower }
+- `hasSkin(name)`, `getSkinCount(name)`, `SKIN_TYPES` helpers
 
 ---
 
 ## Change Log
 
+### 2026-06-19 — v9.2.2 — Deployment Fix & Code Review
+- **Viewport fix** — removed `maximum-scale=1, user-scalable=0` (ADA/WCAG accessibility)
+- **JSON-LD fix** — removed fake `aggregateRating` (4.9/89 stars) to avoid Google manual action
+- **Hero images** — added `loading="lazy"` to all hero portrait `<img>` tags (builder, generator, atlas)
+- **PWA manifest** — `"display": "standalone"` (was `"browser"`)
+- **cssnano added** — CSS minification in production builds
+- **Dead configs removed** — `netlify.toml`, `firebase.json`, `.htaccess`, Netlify functions
+- **Tailwind CDN restored** — removed `@tailwind utilities;` from `app.css`, added CDN script back (GH Pages serves raw source files from root, no PostCSS processing)
+- **Post-build updated** — now copies `js/`, `workers/`, source `index.html`, `sw.js` to `dist/`/`docs/` for self-contained deployment
+- **Footer version** — updated to v9.2.2
+- **OCR fixes** — Fixed Stronghold reading as "Stronghold Unknown" (strip suffix in normalizeStructureName); added Large Town Lv4 durability (3.75M)
+- **Vite config updated** — PostCSS + Tailwind for dev server only
+
+### 2026-06-19 — v9.2 — Skin System & Lazy-Load Tabs
+- **Skin database** — Created `js/skins-db.js` with full schema (Mythic/Legendary/Everlasting types, bio attributes, inheriting skill tree, Hidden Power bonuses)
+- **Combo generator skin toggle** — Added "Heroes with skins" toggle that sorts skinned heroes to top with gradient badge
+- **Hero Atlas skins section** — Added "Skins" nav button + detail panel showing skin attributes, skills, bonuses
+- **State management** — Added `generatorSkinsOnly` state + `setGeneratorSkinsOnly()` setter
+- **Error boundaries** — Added `safeInit()` wrapper per module, global error/unhandledrejection handlers
+- **Loading screen timeout** — 5s hard fallback in `initAppLoading()`
+- **Tailwind CDN → Built CSS** — Created `postcss.config.js` + `tailwind.config.js`, added `@tailwind utilities` to app.css, removed CDN script
+- **Lazy-load tab templates** — Extracted 3 heaviest tabs (admin 25KB, eden-map 23KB, loyalty 17KB) from `index.html` into `tabs/` directory; fetched on first tab click; HTML dropped 120KB→54KB (-55%)
+- **Cache-busters bumped** — All `?v=20260614_*` → `?v=20260619_1`
+
 ### 2026-06-18 — Codebase Refactoring & Modularity
 - **App.js Split** — Extracted app-hero-atlas.js, app-research.js, app-export.js, app-hero-tooltip.js to break down the monolithic file.
-- **OCR Dashboard Split** — Extracted ocr-roster.js, ocr-engine.js, and ocr-render.js.
+- **OCR Dashboard Split** — Extracted ocr-roster.js, ocr-engine.js, and ocr-render.js; created ocr-shared.js for shared state/constants.
 - **State Management** — Properly wired shared state variables via state.js for isolated modules.
 - **Vite Chunking** — Updated vite.config.js to manually chunk i18n, tech-data, admin, and eden modules for better caching.
 - **Roster Enhancements** — Implemented bulk actions, alliance filtering, and OCR demolition overlay.
