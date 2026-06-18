@@ -190,13 +190,11 @@ function applyBulkAlliance(allianceIdx) {
 function exportRosterCSV() {
   if (!rosterSnapshots.length) return;
   const latest = rosterSnapshots[rosterSnapshots.length - 1];
-  let csv = 'Name,Status,Alliance,VerifiedBy,LastModified
-';
+  let csv = 'Name,Status,Alliance,VerifiedBy,LastModified\\n';
   latest.members.forEach(function(m) {
     const mem = _ensureMember(m);
     const a = mem.alliance >= 0 ? allianceList[mem.alliance] : '';
-    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"
-';
+    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"\\n';
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -215,11 +213,9 @@ function copyRosterNames(type) {
     .map(function(m) { return _ensureMember(m); })
     .filter(function(m) { return type === 'unassigned' ? m.alliance === -1 : m.status === type; })
     .map(function(m) { return m.name; })
-    .join('
-');
+    .join('\\n');
   navigator.clipboard.writeText(names);
-  log('Copied ' + names.split('
-').length + ' names.', 'success');
+  log('Copied ' + names.split('\\n').length + ' names.', 'success');
 }
 
 function showRosterSnapshotModal(index) {
