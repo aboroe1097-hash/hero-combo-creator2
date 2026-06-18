@@ -25,9 +25,9 @@
   <meta name="twitter:image" content="https://roc-vts.com/images/logo.png" />
   <!-- Google Search Console: paste verification meta from search.google.com/search-console -->
   <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" /> -->
-  <link rel="icon" type="image/png" href="/assets/logo-DcPpDRl1.png">
-  <link rel="apple-touch-icon" href="/assets/logo-DcPpDRl1.png">
-  <link rel="manifest" href="/assets/site-DhRXWzQW.webmanifest" />
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/logo.png">
+  <link rel="manifest" href="site.webmanifest" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -61,14 +61,12 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/mobile-wQjtJv0M.css?v=20260619_1" media="(max-width: 768px)" />
-  
-
-  <script type="module" crossorigin src="/assets/index-B212Yw3d.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/i18n-D-gEPfwD.js">
-  <link rel="modulepreload" crossorigin href="/assets/eden-vwS75Phq.js">
-  <link rel="modulepreload" crossorigin href="/assets/tech-data-S0_hqYq5.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-BKRr9X1K.css">
+  <link rel="stylesheet" href="css/app.css?v=20260619_1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260619_1" media="(max-width: 768px)" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { corePlugins: { preflight: false } }
+  </script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -104,7 +102,7 @@
     <div class="intro-aurora" aria-hidden="true"></div>
     <div class="intro-sparks" aria-hidden="true"></div>
     <div class="intro-content">
-      <img src="/assets/logo-DcPpDRl1.png"  alt="" class="intro-logo" width="120" height="120" />
+      <img src="images/logo.png"  alt="" class="intro-logo" width="120" height="120" />
       <h2 class="intro-title">Hero Combo Creator</h2>
       <p class="intro-tagline">Combos · Eden · Research · Loyalty</p>
       <p class="intro-team">TEAM VTS — STATE 1097</p>
@@ -116,7 +114,7 @@
     <div id="betaNote" class="text-center mb-8 p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
     
     <div class="logo-container">
-      <img src="/assets/logo-DcPpDRl1.png"  alt="Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" class="main-logo dual-glow-logo shadow-2xl" width="120" height="120" />
+      <img src="images/logo.png"  alt="Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" class="main-logo dual-glow-logo shadow-2xl" width="120" height="120" />
       <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
       <div class="flex flex-col items-center mt-2 space-y-1">
         <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise of Castles: Ice &amp; Fire</p>
@@ -518,7 +516,7 @@
         <div class="footer-section brand-section flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-3 mb-3">
-              <img src="/assets/logo-DcPpDRl1.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
+              <img src="images/logo.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
               <h3 class="footer-logo">VTS 1097</h3>
             </div>
           </div>
@@ -555,7 +553,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v8.9</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v9.2.2</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
@@ -620,6 +618,7 @@
     applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
   }, 800);
   </script>
+  <script type="module" src="js/app.js?v=20260619_1"></script>
 
 <script>
   // Lazy-load YouTube iframes

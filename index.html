@@ -63,8 +63,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css?v=20260619_1" />
   <link rel="stylesheet" href="css/mobile.css?v=20260619_1" media="(max-width: 768px)" />
-  
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { corePlugins: { preflight: false } }
+  </script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -551,7 +553,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v8.9</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v9.2.2</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
