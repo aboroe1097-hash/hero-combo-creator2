@@ -205,12 +205,19 @@ These functions are referenced by inline `onclick=` in generated HTML:
 - **Note:** Tailwind CDN + PostCSS configs were added but should be evaluated — may not be needed if tooltip is rewritten with custom CSS
 - **Status:** Codebase is at clean HEAD + README.md changes + new untracked files (`AGENTS.md`, `postcss.config.js`, `tailwind.config.js`, `css/ocr-dashboard.css`, `css/app.css.rej`)
 
-### 2026-06-18 — Session: Roster Improvements (Reverted)
-- **Attempted** roster bulk actions, CSV export, alliance auto-filter, audit trail, OCR overlay
-- **Method used:** Python patch scripts to replace functions in `ocr-dashboard.js`
-- **Outcome:** Changes applied successfully and built, but reverted for stability
-- **Root cause:** Python string replacement on large JS files is fragile — PowerShell escaping issues caused repeated failures
-- **Lesson learned:** Use `replace_file_content` / `multi_replace_file_content` tools with narrow scopes, or write new modules and import them
+### 2026-06-18 — Session: Roster Improvements (Re-implemented & Completed)
+- **Implemented** roster bulk actions, CSV export, alliance auto-filter, audit trail, OCR overlay.
+- **Method used:** Subagent `roster_implementer` generated the new `ocr-roster.js` module.
+- **Outcome:** Changes applied successfully, syntax errors fixed (literal newlines converted to escaped 
+), and deployed.
+- **Lesson learned:** Vite dynamic imports `import('./module.js?v=...')` block esbuild from parsing unbundled JS files. Cache-busting strings must be removed to allow proper `manualChunks` bundling.
+
+### 2026-06-18 — Session: Bug Fixes & Stabilization
+- **Fixed:** `app-hero-tooltip.js` missing imports (`heroInfoEnabled`, `heroTooltip` element, `formatSkillText`, etc).
+- **Fixed:** `SyntaxError: Unexpected reserved word` in `ocr-dashboard.js` (missing `async` on `exportChartPng`).
+- **Fixed:** Vite build failure caused by unescaped multiline strings in `ocr-roster.js`.
+- **Fixed:** Removed `?v=` from dynamic imports in `app.js` so Vite can bundle `ocr-dashboard.js` into the `admin` chunk properly.
+- **Fixed:** Restored Tailwind CDN in `index.html` and empty fetch handler in `sw.js` per user request.
 
 ### 2026-06-18 — Session: app.js Code Splitting (Phase 1 Complete)
 - **Executed** Phase 1 of refactoring plan: extracted 4 modules from `app.js`
