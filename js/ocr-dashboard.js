@@ -25,6 +25,19 @@ let _rosterProcessing = false;
 let _fsUnsub = null;
 let _fsRosterUnsub = null;
 
+const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
+const ROSTER_PASS = '1097';
+const ROSTER_AUTH_KEY = 'vts_roster_auth';
+const ALLIANCE_KEY = 'vts_ocr_alliances';
+const ALLIANCE_COUNT = 5;
+let allianceList = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
+let _rosterLoggedUser = '';
+let _rosterFilterStatus = 'all';
+let _rosterFilterAlliance = 'all';
+let _rosterSearchQ = '';
+let _rosterSelectedIndices = new Set();
+
+
 function $id(id) { return document.getElementById(id); }
 function esc(str) {
   if (!str) return '';
@@ -475,6 +488,181 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
     log('Roster snapshot cancelled.', 'warn');
   }
 }
+
+function loadAllianceList() {
+  try {
+    const raw = localStorage.getItem(ALLIANCE_KEY);
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length === ALLIANCE_COUNT) allianceList = a; }
+  } catch (e) {}
+}
+function saveAllianceList() {
+  try { localStorage.setItem(ALLIANCE_KEY, JSON.stringify(allianceList)); } catch (e) {}
+}
+function loadRosterAuth() {
+  try { _rosterLoggedUser = localStorage.getItem(ROSTER_AUTH_KEY) || ''; } catch (e) { _rosterLoggedUser = ''; }
+}
+function saveRosterAuth() {
+  try { localStorage.setItem(ROSTER_AUTH_KEY, _rosterLoggedUser); } catch (e) {}
+}
+function rosterLogin() {
+  const user = $id('dashRosterLoginUser')?.value;
+  const pass = $id('dashRosterLoginPass')?.value;
+  if (!user || pass !== ROSTER_PASS) { log('Invalid roster login credentials.', 'error'); return; }
+  _rosterLoggedUser = user;
+  saveRosterAuth();
+  log('Roster logged in as ' + user, 'success');
+  const ai = allianceList.indexOf(user);
+  if (ai >= 0) _rosterFilterAlliance = String(ai);
+  renderRoster();
+}
+function rosterLogout() {
+  _rosterLoggedUser = '';
+  saveRosterAuth();
+  renderRoster();
+}
+function _ensureMember(m) {
+  if (typeof m === 'string') return { name: m, status: 'unknown', alliance: -1, verifiedBy: '', lastModified: '' };
+  if (m.alliance === undefined) m.alliance = -1;
+  if (m.verifiedBy === undefined) m.verifiedBy = '';
+  if (m.lastModified === undefined) m.lastModified = '';
+  return m;
+}
+function setRosterStatus(snapIndex, memberIndex, status) {
+  const snap = rosterSnapshots[snapIndex];
+  if (!snap) return;
+  let m = snap.members[memberIndex];
+  if (!m) return;
+  m = snap.members[memberIndex] = _ensureMember(m);
+  if (status === 'spy' && m.status === 'spy') status = 'unknown';
+  m.status = status;
+  if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  saveRosterSnapshots();
+  renderRoster();
+}
+function setRosterAlliance(snapIndex, memberIndex, allianceIdx) {
+  const snap = rosterSnapshots[snapIndex];
+  if (!snap) return;
+  let m = snap.members[memberIndex];
+  if (!m) return;
+  m = snap.members[memberIndex] = _ensureMember(m);
+  m.alliance = m.alliance === allianceIdx ? -1 : allianceIdx;
+  if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  saveRosterSnapshots();
+  renderRoster();
+}
+function toggleBulkCheck(mi) {
+  if (_rosterSelectedIndices.has(mi)) _rosterSelectedIndices.delete(mi);
+  else _rosterSelectedIndices.add(mi);
+  renderRoster();
+}
+function toggleBulkSelectAll(jsonStr) {
+  const indices = JSON.parse(jsonStr);
+  if (_rosterSelectedIndices.size === indices.length) _rosterSelectedIndices.clear();
+  else indices.forEach(function(i) { _rosterSelectedIndices.add(i); });
+  renderRoster();
+}
+function applyBulkStatus(status) {
+  if (!_rosterSelectedIndices.size) return;
+  const snap = rosterSnapshots[rosterSnapshots.length - 1];
+  _rosterSelectedIndices.forEach(function(mi) {
+    let m = snap.members[mi];
+    m = snap.members[mi] = _ensureMember(m);
+    m.status = status;
+    if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  });
+  _rosterSelectedIndices.clear();
+  saveRosterSnapshots();
+  renderRoster();
+}
+function applyBulkAlliance(allianceIdx) {
+  if (!_rosterSelectedIndices.size) return;
+  const snap = rosterSnapshots[rosterSnapshots.length - 1];
+  _rosterSelectedIndices.forEach(function(mi) {
+    let m = snap.members[mi];
+    m = snap.members[mi] = _ensureMember(m);
+    m.alliance = allianceIdx;
+    if (_rosterLoggedUser) { m.verifiedBy = _rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  });
+  _rosterSelectedIndices.clear();
+  saveRosterSnapshots();
+  renderRoster();
+}
+function exportRosterCSV() {
+  if (!rosterSnapshots.length) return;
+  const latest = rosterSnapshots[rosterSnapshots.length - 1];
+  let csv = 'Name,Status,Alliance,VerifiedBy,LastModified
+';
+  latest.members.forEach(function(m) {
+    const mem = _ensureMember(m);
+    const a = mem.alliance >= 0 ? allianceList[mem.alliance] : '';
+    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"
+';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'roster_export_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  log('Roster exported to CSV.', 'success');
+}
+function copyRosterNames(type) {
+  if (!rosterSnapshots.length) return;
+  const latest = rosterSnapshots[rosterSnapshots.length - 1];
+  const names = latest.members
+    .map(function(m) { return _ensureMember(m); })
+    .filter(function(m) { return type === 'unassigned' ? m.alliance === -1 : m.status === type; })
+    .map(function(m) { return m.name; })
+    .join('
+');
+  navigator.clipboard.writeText(names);
+  log('Copied ' + names.split('
+').length + ' names.', 'success');
+}
+function showRosterSnapshotModal(index) {
+  const snap = rosterSnapshots[index];
+  const diff = snap.diff;
+  const m = $id('dashModal'), body = $id('dashModalBody');
+  $id('dashModalTitle').textContent = 'Snapshot: ' + snap.date;
+  $id('dashModalSub').textContent = snap.members.length + ' members';
+  let gridHtml = '';
+  snap.members.forEach(function(mem) {
+    const mObj = _ensureMember(mem);
+    const name = mObj.name;
+    const status = mObj.status;
+    let cls = 'dash-roster-name';
+    if (status === 'trusted') cls += ' trusted';
+    if (status === 'spy') cls += ' spy';
+    if (diff && diff.joined.some(function(j) { return j.toLowerCase() === name.trim().toLowerCase(); })) cls += ' joined';
+    if (diff && diff.left.some(function(l) { return l.toLowerCase() === name.trim().toLowerCase(); })) cls += ' left';
+    gridHtml += '<div class="' + cls + '"><span>' + esc(name) + '</span></div>';
+  });
+  body.innerHTML = '<div class="dash-roster-grid">' + gridHtml + '</div><div style="margin-top:12px;text-align:right"><button class="dash-btn" onclick="closeModal()">Close</button></div>';
+  m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+function configureAlliances() {
+  const m = $id('dashModal'), body = $id('dashModalBody');
+  $id('dashModalTitle').textContent = 'Configure Alliances';
+  $id('dashModalSub').textContent = 'Name your 5 alliances for member assignment.';
+  let inputsHtml = '';
+  allianceList.forEach(function(a, i) {
+    inputsHtml += '<label style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><span style="width:24px;font-weight:700;color:var(--text-muted)">' + (i + 1) + '</span><input id="dashAllianceInput' + i + '" class="dash-input" value="' + esc(a) + '" style="flex:1;padding:6px 10px"></label>';
+  });
+  body.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + inputsHtml + '<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div></div>';
+  $id('dashAllianceSaveBtn').onclick = function() {
+    for (var i = 0; i < ALLIANCE_COUNT; i++) {
+      var v = $id('dashAllianceInput' + i);
+      if (v && v.value.trim()) allianceList[i] = v.value.trim();
+    }
+    saveAllianceList();
+    closeModal();
+    renderRoster();
+  };
+  $id('dashAllianceCancelBtn').onclick = closeModal;
+  m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+
 function renderRoster() {
   const body = $id('dashRosterBody');
   if (!body) return;
@@ -482,42 +670,87 @@ function renderRoster() {
     body.innerHTML = '<div class="dash-empty">No roster snapshots yet. Click "New Snapshot" to save this week\'s roster.</div>';
     return;
   }
-  let html = '';
-  for (let i = rosterSnapshots.length - 1; i >= 0; i--) {
-    const snap = rosterSnapshots[i];
-    const diff = snap.diff;
-    const isLatest = i === rosterSnapshots.length - 1;
-    html += `<div class="dash-roster-snapshot">
-      <div class="dash-roster-head" onclick="this.nextElementSibling.classList.toggle('open')">
-        <div class="dash-roster-date">
-          <span>${esc(snap.date)}</span>
-          <span class="dash-roster-count">${snap.members.length} members</span>
-          ${isLatest ? '<span style="font-size:0.6rem;background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 8px;border-radius:99px;font-weight:700">Latest</span>' : ''}
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${diff ? `<span style="font-size:0.72rem;color:#34d399">+${diff.joined.length}</span><span style="font-size:0.72rem;color:#f87171">-${diff.left.length}</span>` : ''}
-          <button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(${i})" title="Delete">✕</button>
-        </div>
-      </div>
-      <div class="dash-roster-body${isLatest ? ' open' : ''}">
-        ${diff ? `<div class="dash-roster-diff-summary">
-          <span class="dash-roster-diff-chip stayed">↔ ${diff.stayed.length} Stayed</span>
-          <span class="dash-roster-diff-chip joined">+ ${diff.joined.length} Joined</span>
-          <span class="dash-roster-diff-chip left">− ${diff.left.length} Left</span>
-        </div>` : '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;font-style:italic">First snapshot — no previous to compare.</div>'}
-        <div class="dash-roster-grid">
-          ${snap.members.map(n => {
-            let cls = 'dash-roster-name';
-            if (diff && diff.joined.some(j => j.toLowerCase() === n.trim().toLowerCase())) cls += ' joined';
-            if (diff && diff.left.some(l => l.toLowerCase() === n.trim().toLowerCase())) cls += ' left';
-            return `<span class="${cls}">${esc(n)}</span>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>`;
+  const snapIndex = rosterSnapshots.length - 1;
+  const latest = rosterSnapshots[snapIndex];
+  const diff = latest.diff;
+  const members = latest.members;
+  function mn(m) { return typeof m === 'string' ? m : m.name; }
+  function mstatus(m) { return typeof m === 'string' ? 'unknown' : (m.status || 'unknown'); }
+  function malliance(m) { return typeof m === 'string' ? -1 : (m.alliance !== undefined ? m.alliance : -1); }
+  var trusted = 0, spy = 0, unknown = 0, assigned = 0;
+  members.forEach(function(m) {
+    var s = mstatus(m);
+    if (s === 'trusted') trusted++;
+    else if (s === 'spy') spy++;
+    else unknown++;
+    if (malliance(m) >= 0) assigned++;
+  });
+  var total = members.length;
+  var unassigned = total - assigned;
+  var ocrMap = {};
+  if (dashData && dashData.players_summary) {
+    dashData.players_summary.forEach(function(p) { ocrMap[p.name.toLowerCase()] = p; });
   }
-  body.innerHTML = html;
+  var filtered = [];
+  members.forEach(function(m, mi) {
+    var s = mstatus(m);
+    var a = malliance(m);
+    var name = mn(m);
+    if (_rosterFilterStatus !== 'all' && s !== _rosterFilterStatus) return;
+    if (_rosterFilterAlliance !== 'all') {
+      if (_rosterFilterAlliance === 'unassigned' && a >= 0) return;
+      if (_rosterFilterAlliance !== 'unassigned' && a !== parseInt(_rosterFilterAlliance)) return;
+    }
+    if (_rosterSearchQ && name.toLowerCase().indexOf(_rosterSearchQ.toLowerCase()) === -1) return;
+    filtered.push({ mi: mi, name: name, status: s, alliance: a });
+  });
+  var isLoggedIn = !!_rosterLoggedUser;
+  var loginHtml = isLoggedIn
+    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">🔓 ' + esc(_rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
+    : '<div class="dash-roster-login-bar"><span>🔒 Roster Login:</span><select id="dashRosterLoginUser">' + ROSTER_USERS.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('') + '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input" style="width:90px;padding:3px 6px;font-size:0.78rem"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
+  var bulkHtml = '';
+  if (_rosterSelectedIndices.size > 0 && isLoggedIn) {
+    var allyOpts = allianceList.map(function(a, i) { return '<option value="' + i + '">' + esc(a) + '</option>'; }).join('');
+    bulkHtml = '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' + _rosterSelectedIndices.size + ' selected:</span><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'trusted\')">Mark Trusted</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'spy\')">Mark Spy</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'unknown\')">Clear Status</button><select class="dash-input" style="font-size:0.75rem;padding:2px;width:100px" onchange="if(this.value){applyBulkAlliance(parseInt(this.value));this.value=\'\'}"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' + allyOpts + '</select></div>';
+  }
+  var filterAllyOpts = allianceList.map(function(a, i) { return '<option value="' + i + '"' + (_rosterFilterAlliance === String(i) ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+  var rowsHtml = '';
+  var indicesJson = JSON.stringify(filtered.map(function(f) { return f.mi; })).replace(/"/g, '&quot;');
+  filtered.forEach(function(item) {
+    var mi = item.mi, name = item.name, status = item.status, alliance = item.alliance;
+    var m = members[mi];
+    var vb = typeof m === 'string' ? '' : (m.verifiedBy || '');
+    var lm = typeof m === 'string' ? '' : (m.lastModified || '');
+    var rowCls = 'dash-roster-row';
+    if (status === 'trusted') rowCls += ' trusted';
+    if (status === 'spy') rowCls += ' spy';
+    if (diff && diff.joined.some(function(j) { return j.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' joined';
+    if (diff && diff.left.some(function(l) { return l.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' left';
+    var disabledAttr = isLoggedIn ? '' : 'disabled';
+    var pStats = ocrMap[name.toLowerCase()];
+    var ocrHtml = pStats
+      ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' + pStats.total_demolition + ' Demolition / ' + pStats.participation_count + ' Attacks">⚔️ ' + pStats.total_demolition + '</span>'
+      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">⚔️ —</span>';
+    var auditHtml = '';
+    if (vb) auditHtml += '<span class="dash-roster-row-vb" title="Verified by ' + esc(vb) + (lm ? ' on ' + lm.slice(0,10) : '') + '">@' + esc(vb) + '</span>';
+    var allySelectHtml = '<select class="dash-roster-row-alliance" ' + disabledAttr + ' onchange="setRosterAlliance(' + snapIndex + ',' + mi + ',parseInt(this.value))"><option value="-1">—</option>' + allianceList.map(function(a, ai) { return '<option value="' + ai + '"' + (alliance === ai ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>';
+    rowsHtml += '<div class="' + rowCls + '"><label style="margin-right:8px;display:flex;align-items:center;cursor:pointer"><input type="checkbox" class="bulk-cb" onchange="toggleBulkCheck(' + mi + ')"' + (_rosterSelectedIndices.has(mi) ? ' checked' : '') + ' ' + disabledAttr + '></label><span class="dash-roster-row-name" style="flex:1">' + esc(name) + ocrHtml + '</span>' + allySelectHtml + auditHtml + '<span class="dash-roster-row-spy' + (status === 'spy' ? ' active' : '') + '" onclick="setRosterStatus(' + snapIndex + ',' + mi + ',\'spy\')" title="Toggle spy">🚫</span></div>';
+  });
+  var historyHtml = '';
+  for (var i = rosterSnapshots.length - 2; i >= 0; i--) {
+    var s = rosterSnapshots[i];
+    var d = s.diff;
+    historyHtml += '<div class="dash-roster-history-item"><span class="dash-roster-history-date">' + esc(s.date) + '</span><span class="dash-roster-history-count">' + s.members.length + '</span>' + (d ? '<span class="dash-roster-history-diff">+' + d.joined.length + '/-' + d.left.length + '</span>' : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>') + '<button class="dash-btn" style="padding:2px 8px;font-size:0.7rem" onclick="showRosterSnapshotModal(' + i + ')">View</button><button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(' + i + ')" title="Delete">✕</button></div>';
+  }
+  if (!historyHtml) historyHtml = '<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">No older snapshots.</div>';
+  body.innerHTML = loginHtml
+    + '<div class="dash-roster-summary"><span class="dash-roster-summary-total">Total: ' + total + '</span><span class="dash-roster-summary-trusted">✅ ' + trusted + ' Trusted</span><span class="dash-roster-summary-unknown">⬜ ' + unknown + ' Unknown</span><span class="dash-roster-summary-spy">🚫 ' + spy + ' Spy</span><span class="dash-roster-summary-assigned">📋 ' + assigned + ' Assigned</span><span class="dash-roster-summary-unassigned">❓ ' + unassigned + ' Unassigned</span><button class="dash-banner-del-btn" onclick="if(confirm(\'Delete this snapshot?\'))deleteRosterSnapshot(' + snapIndex + ')" title="Delete current snapshot" style="margin-left:auto">✕</button></div>'
+    + '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select onchange="setRosterFilter(\'alliance\',this.value)"><option value="all">All</option>' + filterAllyOpts + '<option value="unassigned"' + (_rosterFilterAlliance === 'unassigned' ? ' selected' : '') + '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select onchange="setRosterFilter(\'status\',this.value)"><option value="all">All</option><option value="trusted"' + (_rosterFilterStatus === 'trusted' ? ' selected' : '') + '>Trusted</option><option value="unknown"' + (_rosterFilterStatus === 'unknown' ? ' selected' : '') + '>Unknown</option><option value="spy"' + (_rosterFilterStatus === 'spy' ? ' selected' : '') + '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' + esc(_rosterSearchQ) + '" oninput="setRosterFilter(\'search\',this.value)" class="dash-input" style="width:140px;padding:4px 8px;font-size:0.78rem"></div><div class="dash-roster-toolbar-actions">' + bulkHtml + '<button class="dash-btn dash-btn-sm" onclick="configureAlliances()" title="Edit alliance names">⚙️</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'unassigned\')" title="Copy unassigned names">📋 Unassigned</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'spy\')" title="Copy spy names">📋 Spies</button></div></div>'
+    + '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" onchange="toggleBulkSelectAll(\'' + indicesJson + '\')"' + (_rosterSelectedIndices.size > 0 && _rosterSelectedIndices.size === filtered.length ? ' checked' : '') + ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' + rowsHtml + (filtered.length === 0 ? '<div class="dash-roster-empty">No members match filters.</div>' : '') + '</div>'
+    + '<div class="dash-roster-total-rows">Showing ' + filtered.length + ' of ' + total + ' members</div>'
+    + '<div class="dash-roster-history"><div class="dash-roster-history-head" onclick="var b=this.nextElementSibling;b.classList.toggle(\'open\');this.querySelector(\'.dash-roster-history-arrow\').textContent=b.classList.contains(\'open\')?\'▼\':\'▶\'"><span>📁 Snapshot History (' + (rosterSnapshots.length - 1) + ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' + historyHtml + '</div></div>';
 }
+
 
 // ── Banner Records ────────────────────────────────────────
 function loadBannerRecords() {
@@ -826,15 +1059,16 @@ function exportToCsv() {
   dashData.players_summary.forEach((p, i) => { const safeName = p.name.replace(/"/g, '""'); csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`; });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_leaderboard.csv'; a.click();
 }
-function exportToPng() {
-  if (typeof html2canvas === 'undefined') return;
+async function exportToPng() {
+  const html2canvas = await window.loadHtml2Canvas();
   const target = $id('dashApp')?.querySelector('.dash-container') || $id('dashApp');
   if (!target) return;
   html2canvas(target, { backgroundColor: '#0b0f19', scale: 2, allowTaint: false, useCORS: true }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_dashboard.png'; a.click(); }).catch(() => {});
 }
-function exportChartPng() {
+async function exportChartPng() {
   const chart = $id('dashChart');
-  if (!chart || typeof html2canvas === 'undefined') return;
+  if (!chart) return;
+  const html2canvas = await window.loadHtml2Canvas();
   
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
@@ -913,7 +1147,8 @@ function exportChartPng() {
 }
 window.shareChartImage = function() {
   const chart = $id('dashChart');
-  if (!chart || typeof html2canvas === 'undefined') return;
+  if (!chart) return;
+  const html2canvas = await window.loadHtml2Canvas();
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
   const cloneBtns = clone.querySelectorAll('.dash-btn'); cloneBtns.forEach(b => b.remove());
@@ -1717,6 +1952,8 @@ export async function bootOcrDashboard() {
   loadRosterSnapshots();
   loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
+  loadAllianceList();
+  loadRosterAuth();
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
@@ -1726,6 +1963,7 @@ export async function bootOcrDashboard() {
   $id('dashGuestBtn').onclick = () => { sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
+  const expBtn = $id('dashRosterExportBtn'); if (expBtn) expBtn.onclick = exportRosterCSV;
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => btn.onclick = () => switchDashSubtab(btn.dataset.subtab));
 
   // Roster: manual snapshot button with dynamic day name
@@ -2026,4 +2264,27 @@ window.exportPlayerReport = function(pNameEncoded) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `VTS_Report_${pName.replace(/[^a-z0-9]/gi, '_')}.csv`; a.click();
+};
+
+window.rosterLogin = rosterLogin;
+window.rosterLogout = rosterLogout;
+window.setRosterStatus = setRosterStatus;
+window.setRosterAlliance = setRosterAlliance;
+window.toggleBulkCheck = toggleBulkCheck;
+window.toggleBulkSelectAll = toggleBulkSelectAll;
+window.applyBulkStatus = applyBulkStatus;
+window.applyBulkAlliance = applyBulkAlliance;
+window.copyRosterNames = copyRosterNames;
+window.showRosterSnapshotModal = showRosterSnapshotModal;
+window.configureAlliances = configureAlliances;
+window.deleteRosterSnapshot = deleteRosterSnapshot;
+window.showBannerForm = showBannerForm;
+window.deleteBannerRecord = deleteBannerRecord;
+window.closeModal = closeModal;
+window.renderRoster = renderRoster;
+window.setRosterFilter = function(key, val) {
+  if (key === 'alliance') _rosterFilterAlliance = val;
+  else if (key === 'status') _rosterFilterStatus = val;
+  else if (key === 'search') _rosterSearchQ = val;
+  renderRoster();
 };
