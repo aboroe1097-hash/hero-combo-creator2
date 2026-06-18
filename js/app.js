@@ -412,7 +412,7 @@ tabs.forEach(tab => {
       loadYouTubeEmbeds();
     }
     if (tabName === 'ocrDashboard') {
-      import('./ocr-dashboard.js?v=' + new Date().getTime()).then(mod => mod.bootOcrDashboard()).catch(e => console.error('OCR dashboard load failed:', e));
+      import('./ocr-dashboard.js').then(mod => mod.bootOcrDashboard()).catch(e => console.error('OCR dashboard load failed:', e));
     }
   }
 

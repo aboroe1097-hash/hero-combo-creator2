@@ -1,6 +1,11 @@
 // Extracted Hero Tooltip Module
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
+import { heroInfoEnabled, getTroopColorClass, getLocalizedTroop, getHeroImageUrl } from './state.js';
+import { formatSkillText, getSynergies } from './app-hero-atlas.js';
+
+const heroTooltip = document.getElementById('heroTooltip');
+
 
 function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
