@@ -13,7 +13,7 @@ import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260614_3';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260619_1';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -385,26 +385,43 @@ tabs.forEach(tab => {
     });
   }
 
+  const _tabTemplatesLoaded = {};
+
+  async function loadTabTemplate(tabName) {
+    const section = document.getElementById(`${tabName}Section`);
+    if (!section || _tabTemplatesLoaded[tabName]) return;
+    const src = section.dataset.tabSrc;
+    if (!src) { _tabTemplatesLoaded[tabName] = true; return; }
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+      section.innerHTML = html;
+      _tabTemplatesLoaded[tabName] = true;
+    } catch (err) {
+      console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
+      section.innerHTML = `<div class="p-8 text-center text-sm text-red-400">Failed to load this tab. <button onclick="location.reload()" class="underline">Reload</button></div>`;
+    }
+  }
+
   function onTabActivated(tabName) {
     if (tabName === 'edenMap' && !_edenMapReady && !_edenMapBooting) {
       _edenMapBooting = true;
-      const root = document.getElementById('edenMapRoot');
-      root?.classList.add('eden-map-loading');
-      import('./eden-map.js')
-        .then((mod) => mod.bootEdenMapPlanner())
-        .then(() => {
-          _edenMapReady = true;
-        })
-        .catch((err) => {
-          console.error('Eden map failed to load', err);
-          _edenMapBooting = false;
-          if (typeof window.showToast === 'function') {
-            window.showToast('Eden map failed to load. Refresh and try again.', 'error', 4000);
-          }
-        })
-        .finally(() => {
-          root?.classList.remove('eden-map-loading');
-        });
+      loadTabTemplate('edenMap').then(() => {
+        const root = document.getElementById('edenMapRoot');
+        root?.classList.add('eden-map-loading');
+        import('./eden-map.js')
+          .then((mod) => mod.bootEdenMapPlanner())
+          .then(() => { _edenMapReady = true; })
+          .catch((err) => {
+            console.error('Eden map failed to load', err);
+            _edenMapBooting = false;
+            if (typeof window.showToast === 'function') {
+              window.showToast('Eden map failed to load. Refresh and try again.', 'error', 4000);
+            }
+          })
+          .finally(() => root?.classList.remove('eden-map-loading'));
+      });
     }
     if (tabName === 'heroes' && !_heroesTabReady) {
       renderHeroesTab();
@@ -414,7 +431,14 @@ tabs.forEach(tab => {
       loadYouTubeEmbeds();
     }
     if (tabName === 'ocrDashboard') {
-      import('./ocr-dashboard.js').then(mod => mod.bootOcrDashboard()).catch(e => console.error('OCR dashboard load failed:', e));
+      loadTabTemplate('ocrDashboard').then(() => {
+        import('./ocr-dashboard.js').then(mod => mod.bootOcrDashboard()).catch(e => console.error('OCR dashboard load failed:', e));
+      });
+    }
+    if (tabName === 'loyalty') {
+      loadTabTemplate('loyalty').then(() => {
+        if (typeof initLoyaltyCalculator === 'function') initLoyaltyCalculator();
+      });
     }
   }
 
@@ -787,28 +811,25 @@ function initTabScroll() {
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
     try {
-    updateTextContent();
-    mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
-    renderAvailableHeroes();
-    renderGeneratorHeroes();
-    wireUIActions();
-    initResearchCalculator();
-    if (typeof initLoyaltyCalculator === 'function') {
-        initLoyaltyCalculator();
-    }
-    initTabScroll();
+    await safeInit('updateTextContent', () => updateTextContent());
+    safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
+    safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
+    safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes());
+    safeInit('wireUIActions', () => wireUIActions());
+    safeInit('initResearchCalculator', () => initResearchCalculator());
+    safeInit('initTabScroll', () => initTabScroll());
 
-    registerServiceWorker();
-    const comboShare = parseComboShareUrl();
+    safeInit('registerServiceWorker', () => registerServiceWorker());
+    const comboShare = safeInit('parseComboShareUrl', () => parseComboShareUrl());
     if (comboShare) {
       console.log('Loaded shared combos from URL', comboShare);
     }
-    const rosterShare = parseRosterShareUrl();
+    const rosterShare = safeInit('parseRosterShareUrl', () => parseRosterShareUrl());
     if (rosterShare) {
-      applyRosterToGenerator(rosterShare, generatorSelectedHeroes);
+      safeInit('applyRosterShare', () => applyRosterToGenerator(rosterShare, generatorSelectedHeroes));
     }
 
-    try {
+    await safeInit('firebase', async () => {
         await initFirebase();
         const user = await ensureAnonymousAuth();
         if (user && user.uid) {
@@ -822,12 +843,31 @@ async function startApp() {
         if (typeof initComments === 'function') {
             initComments();
         }
-    } catch (error) {
-        console.warn("Firebase could not initialize (might be offline or missing config).", error);
-    }
+    });
     } finally {
         await notifyAppReady();
     }
+}
+
+function safeInit(name, fn) {
+  try {
+    const result = fn();
+    if (result && typeof result.catch === 'function') {
+      return result.catch(err => {
+        console.warn(`[${name}] async init failed:`, err);
+        if (typeof window.showToast === 'function') {
+          window.showToast(`⚠ ${name} failed to load`, 'warn', 3000);
+        }
+      });
+    }
+    return result;
+  } catch (err) {
+    console.warn(`[${name}] init failed:`, err);
+    if (typeof window.showToast === 'function') {
+      window.showToast(`⚠ ${name} failed to load`, 'warn', 3000);
+    }
+    return undefined;
+  }
 }
 
 setupInstallPrompt();
@@ -842,4 +882,14 @@ registerUiFunctions({
 });
 
 // Fire it up!
-startApp();
+window.addEventListener('error', (e) => {
+  console.error('[global] Uncaught error:', e.error || e.message);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[global] Unhandled promise rejection:', e.reason);
+});
+if (typeof startApp === 'function') {
+  startApp().catch(err => console.error('[global] startApp failed:', err));
+} else {
+  console.error('[global] startApp not defined — module import may have failed');
+}

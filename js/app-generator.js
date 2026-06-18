@@ -66,7 +66,7 @@ export function renderGeneratorHeroes() {
             </svg>
         </div>
 
-        <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous">
+        <img src="${hero.imageUrl}" alt="${hero.name}" crossorigin="anonymous" loading="lazy">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
