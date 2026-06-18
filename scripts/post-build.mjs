@@ -4,8 +4,9 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 
-const copyDirs = ['css', 'images', 'assets', 'tabs'];
-const copyFiles = ['CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html'];
+const copyDirs = ['css', 'js', 'images', 'assets', 'tabs', 'workers'];
+const copyFiles = ['index.html', 'CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html', 'public/sw.js'];
+const copyDest = { 'public/404.html': '404.html', 'public/sw.js': 'sw.js' };
 
 function copyRecursive(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
@@ -25,7 +26,7 @@ for (const dir of copyDirs) {
 for (const file of copyFiles) {
   const src = path.join(root, file);
   if (!fs.existsSync(src)) continue;
-  const destName = file === 'public/404.html' ? '404.html' : path.basename(file);
+  const destName = copyDest[file] || path.basename(file);
   fs.copyFileSync(src, path.join(dist, destName));
 }
 
