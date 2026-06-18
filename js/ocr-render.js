@@ -1,22 +1,24 @@
-// Extracted OCR Render Module
+import { state, $id, esc, findBestMatch, validateTotalDemolition } from './ocr-shared.js';
+import { displayGameTime } from './ocr-engine.js';
+import { isGuest } from './ocr-dashboard.js';
 
 function render() {
-  if (!dashData) {
+  if (!state.dashData) {
     ['dashKpiAttacks','dashKpiDemo','dashKpiPlayers'].forEach(id => $id(id).textContent = '0');
     $id('dashKpiMvp').textContent = '---'; $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
     return;
   }
-  let atts = dashData.attacks || [];
-  
+  let atts = state.dashData.attacks || [];
+
   const timeFilter = $id('dashTimeFilter');
   if (timeFilter && atts.length > 0) {
     const tf = timeFilter.value;
     if (tf === 'daily' || tf === 'weekly') {
       const gtNow = new Date(Date.now() + (new Date().getTimezoneOffset() - 120) * 60000);
       const pad = n => n.toString().padStart(2, '0');
-      
+
       if (tf === 'daily') {
         const todayPrefix = `${pad(gtNow.getDate())}/${pad(gtNow.getMonth()+1)}/${gtNow.getFullYear()}`;
         atts = atts.filter(a => a.game_time && a.game_time.startsWith(todayPrefix));
@@ -34,16 +36,15 @@ function render() {
       }
     }
   }
-  // Dynamically calculate global players summary so any findBestMatch rules apply retroactively
   const globalSum = {};
   atts.forEach(a => {
     const seen = new Set();
-    a.players.forEach(p => { 
-      const n = findBestMatch(p.name); 
-      if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() }; 
-      globalSum[n].total_demolition += (p.value||p.val||0); 
+    a.players.forEach(p => {
+      const n = findBestMatch(p.name);
+      if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
+      globalSum[n].total_demolition += (p.value||p.val||0);
       if (!seen.has(n)) { globalSum[n].participation_count++; seen.add(n); globalSum[n].unique_structures.add((a.structure_name||'') + '_' + (a.structure_level||'')); }
-      globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+      globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank });
     });
   });
   let psum = Object.values(globalSum).sort((a,b) => b.total_demolition - a.total_demolition);
@@ -61,15 +62,15 @@ function render() {
 
     if (currentVal) {
       const filteredAttacks = atts.filter(a => a.id === currentVal);
-      const sum = {}; 
+      const sum = {};
       filteredAttacks.forEach(a => {
         const seen = new Set();
-        a.players.forEach(p => { 
-          const n = findBestMatch(p.name); 
-          if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() }; 
-          sum[n].total_demolition += (p.value||p.val||0); 
+        a.players.forEach(p => {
+          const n = findBestMatch(p.name);
+          if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
+          sum[n].total_demolition += (p.value||p.val||0);
           if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + (a.structure_level||'')); }
-          sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank }); 
+          sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank });
         });
       });
       psum = Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition);
@@ -81,7 +82,7 @@ function render() {
   $id('dashKpiDemo').textContent = total > 1e6 ? (total/1e6).toFixed(1)+'M' : total.toLocaleString();
   $id('dashKpiPlayers').textContent = psum.length;
   $id('dashKpiMvp').textContent = psum[0]?.name || '---';
-  
+
   const psumWithRank = psum.map((p, i) => ({ ...p, original_rank: i + 1 }));
 
   const c = $id('dashChart'); c.innerHTML = '';
@@ -105,7 +106,7 @@ function render() {
       lowest.forEach(p => {
         const w = document.createElement('div'); w.className = 'dash-top-item'; w.style.cursor = 'pointer';
         w.style.display = 'flex'; w.style.alignItems = 'stretch'; w.style.gap = '12px';
-        const pct = Math.round((p.total_demolition/lowestMax)*100); 
+        const pct = Math.round((p.total_demolition/lowestMax)*100);
         w.innerHTML = `<span class="dash-top-rank" style="color:#f87171; flex: 0 0 36px; display:flex; align-items:center;">#${p.original_rank}</span><div style="flex: 1; position:relative; display:flex; align-items:center; min-width:0; padding:4px 0;"><div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-name" style="position:relative; z-index:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(p.name)}</span><span style="position:relative; z-index:1; margin-left:auto; margin-right:8px; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; flex-shrink:0;">${p.participation_count} hits (${p.unique_structures?.size||0} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3); flex: 0 0 auto; display:flex; align-items:center;">${(p.total_demolition/1000).toFixed(0)}k</span>`;
         w.onclick = () => showModal('player', p); lc.appendChild(w);
       });
@@ -114,11 +115,11 @@ function render() {
 
   const al = $id('dashAttackList'); al.innerHTML = '';
   const filteredAttacks = atts.filter(a => {
-    const term = attackSearchQ.toLowerCase();
+    const term = state.attackSearchQ.toLowerCase();
     const day = (a.game_time||'').split(' ')[0].toLowerCase();
     return (a.structure_name||'').toLowerCase().includes(term) || (a.structure_level||'').toLowerCase().includes(term) || day.includes(term);
   });
-  
+
   if (filteredAttacks.length === 0) {
     al.innerHTML = '<div class="dash-empty">No matching attacks</div>';
   } else {
@@ -156,23 +157,22 @@ function render() {
   }
 
   const tb = $id('dashLeaderBody'); tb.innerHTML = '';
-  
-  const filteredLeader = psumWithRank.filter(p => p.name.toLowerCase().includes(searchQ.toLowerCase()));
-  const toShow = filteredLeader.slice(0, leaderLimit);
-  
+
+  const filteredLeader = psumWithRank.filter(p => p.name.toLowerCase().includes(state.searchQ.toLowerCase()));
+  const toShow = filteredLeader.slice(0, state.leaderLimit);
+
   toShow.forEach(p => {
     const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
     tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition||0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition||0)/Math.max(p.participation_count,1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
-  
-  if (filteredLeader.length > leaderLimit) {
+
+  if (filteredLeader.length > state.leaderLimit) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="5" style="text-align:center; padding: 1rem;"><button class="dash-btn" style="width:100%; justify-content:center" onclick="window.loadMoreLeaderboard()">Show More (25)</button></td>`;
     tb.appendChild(tr);
   }
 
-  // --- Insights ---
   let activeAttacks = atts;
   const filterEl2 = $id('dashLeaderFilter');
   if (filterEl2 && filterEl2.value) {
@@ -256,16 +256,16 @@ function render() {
       const w = 350; const h = 140;
       const padX = 30; const padY = 30;
       const usableW = w - padX*2; const usableH = h - padY*2;
-      
+
       let pts = [];
       days.forEach((d, i) => {
          const x = padX + (i / (days.length - 1)) * usableW;
          const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
          pts.push(`${x},${y}`);
       });
-      
+
       const polyPts = `${padX},${h-padY} ${pts.join(' ')} ${padX + usableW},${h-padY}`;
-      
+
       let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="overflow:visible">`;
       svg += `<line x1="${padX}" y1="${padY}" x2="${w-padX}" y2="${padY}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
       svg += `<line x1="${padX}" y1="${padY + usableH/2}" x2="${w-padX}" y2="${padY + usableH/2}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
@@ -273,7 +273,7 @@ function render() {
       svg += `<defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(59,130,246,0.5)"/><stop offset="100%" stop-color="rgba(59,130,246,0)"/></linearGradient></defs>`;
       svg += `<polygon points="${polyPts}" fill="url(#trendGrad)"/>`;
       svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 4px 6px rgba(59,130,246,0.4))"/>`;
-      
+
       days.forEach((d, i) => {
          const x = padX + (i / (days.length - 1)) * usableW;
          const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
@@ -294,9 +294,6 @@ function showModal(type, data) {
       portal.id = 'ocrDashModalPortal';
       const fakeRoot = document.createElement('div');
       fakeRoot.id = 'ocrDashboardRoot_portal_inner';
-      // We will temporarily rename the CSS selectors in app.css to match both the real root and this inner portal class.
-      // Actually, if we just use the ID 'ocrDashboardRoot', we'll have duplicate IDs, but that's fine for CSS matching.
-      // Let's just use the exact duplicate ID to make 100% sure the CSS matches perfectly.
       fakeRoot.id = 'ocrDashboardRoot';
       fakeRoot.appendChild(m);
       portal.appendChild(fakeRoot);
@@ -377,10 +374,10 @@ function showModal(type, data) {
 
       const encPname = encodeURIComponent(data.name).replace(/'/g, "%27");
       let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.exportPlayerReport('${encPname}')">📥 Export CSV Report</button></div>`;
-      
-      body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml + 
-        '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' + 
-        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(att.name||att.structure_name||'')} ${esc(att.structure_level||'')}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') + 
+
+      body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml +
+        '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' +
+        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(att.name||att.structure_name||'')} ${esc(att.structure_level||'')}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') +
         '</tbody></table>' +
         '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
     }
@@ -401,7 +398,6 @@ function showModal(type, data) {
     console.error('showModal Error:', err);
   }
 
-  // Escape key to close
   if (!window._modalEscListener) {
     window._modalEscListener = (e) => {
       if (e.key === 'Escape') closeModal();
