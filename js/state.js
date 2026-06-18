@@ -24,6 +24,7 @@ export let generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']
 export let generatorSelectedStates = ['Free', 'Paid'];
 export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 export const generatorSelectedHeroes = new Set();
+export let generatorSkinsOnly = false;
 
 export let userId = 'anonymous';
 export function getUserId() { return userId; }
@@ -39,6 +40,7 @@ export function setSelectedTypes(v) { selectedTypes = v; }
 export function setGeneratorSelectedSeasons(v) { generatorSelectedSeasons = v; }
 export function setGeneratorSelectedStates(v) { generatorSelectedStates = v; }
 export function setGeneratorSelectedTypes(v) { generatorSelectedTypes = v; }
+export function setGeneratorSkinsOnly(v) { generatorSkinsOnly = v; }
 export function setActiveTechSeasons(v) { activeTechSeasons = v; }
 export function setTechSearchQuery(v) { techSearchQuery = v; }
 export const savedCombosCache = [];

@@ -6,6 +6,7 @@ import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
+import { hasSkin, getHeroSkins, getSkinCount, getHiddenPowerBonus, SKIN_TYPES } from './skins-db.js';
 
 import { renderCountersToggle } from './combo-counters.js';
 
@@ -440,10 +441,58 @@ function renderHeroesTab() {
           <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
         </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
 
+      const heroSkinsList = getHeroSkins(selected);
+      const skinsHtml = heroSkinsList.length > 0 ? heroSkinsList.map(skin => {
+        const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
+        const ba = skin.bioAttributes;
+        const mba = skin.maxBioAttributes;
+        const hpBonus = getHiddenPowerBonus(heroSkinsList.length);
+        return `
+        <div class="detail-skin-card">
+          <div class="detail-skin-header">
+            <span class="detail-skin-name">${escapeHtml(skin.name)}</span>
+            <span class="detail-skin-type" style="color:${typeInfo.color};border-color:${typeInfo.color}">${typeInfo.icon} ${skin.type}</span>
+          </div>
+          <div class="detail-skin-attributes">
+            <div class="detail-skin-attr-title">Biography Attributes</div>
+            <div class="detail-skin-attr-grid">
+              <span class="detail-skin-attr">Might: ${ba.might}% <span class="detail-skin-max">→ ${mba.might}%</span></span>
+              <span class="detail-skin-attr">Resistance: ${ba.resistance}% <span class="detail-skin-max">→ ${mba.resistance}%</span></span>
+              <span class="detail-skin-attr">Tac. Might: ${ba.tacticalMight}% <span class="detail-skin-max">→ ${mba.tacticalMight}%</span></span>
+              <span class="detail-skin-attr">Tac. Res: ${ba.tacticalResistance}% <span class="detail-skin-max">→ ${mba.tacticalResistance}%</span></span>
+              <span class="detail-skin-attr">HP: ${ba.hp}% <span class="detail-skin-max">→ ${mba.hp}%</span></span>
+              <span class="detail-skin-attr">Damage: ${ba.damage}% <span class="detail-skin-max">→ ${mba.damage}%</span></span>
+            </div>
+          </div>
+          <div class="detail-skin-skill">
+            <div class="detail-skin-skill-title">Inheriting Skill (Slot ${skin.inheritingSkill.replacesSlot})</div>
+            <div class="detail-skin-skill-name">${escapeHtml(skin.inheritingSkill.name)}</div>
+            <p class="detail-skin-skill-desc">${escapeHtml(skin.inheritingSkill.description)}</p>
+            <div class="detail-skin-levels">
+              ${skin.inheritingSkill.levels.map(lv => `
+                <div class="detail-skin-level">
+                  <span class="detail-skin-level-num">★${lv.level}</span>
+                  <span>${escapeHtml(lv.desc)}</span>
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="detail-skin-skill">
+            <div class="detail-skin-skill-title">Preserving Skill</div>
+            <div class="detail-skin-skill-name">${escapeHtml(skin.preservingSkill.name)}</div>
+            <p class="detail-skin-skill-desc">${escapeHtml(skin.preservingSkill.description)}</p>
+          </div>
+          ${hpBonus ? `<div class="detail-skin-hidden-power">
+            <span class="detail-skin-hidden-label">Hidden Power (${heroSkinsList.length} skins)</span>
+            <span class="detail-skin-hidden-value">${escapeHtml(hpBonus.label)}</span>
+          </div>` : ''}
+        </div>`;
+      }).join('') : '';
+
       const detailNavHtml = `
         <nav class="detail-nav" aria-label="Hero detail sections">
           ${synergies.length > 0 ? '<button type="button" class="detail-nav-btn active" data-detail-section="synergies">Synergies</button>' : ''}
           <button type="button" class="detail-nav-btn ${synergies.length === 0 ? 'active' : ''}" data-detail-section="combos">Combos</button>
+          ${heroSkinsList.length > 0 ? '<button type="button" class="detail-nav-btn" data-detail-section="skins">Skins</button>' : ''}
           <button type="button" class="detail-nav-btn" data-detail-section="skills">Skills</button>
         </nav>`;
 
@@ -502,6 +551,12 @@ function renderHeroesTab() {
             <div class="detail-section-title">Skills</div>
             <div class="detail-skills">${skillsHtml}</div>
           </div>
+
+          ${heroSkinsList.length > 0 ? `
+          <div id="detail-section-skins" class="detail-section-block">
+            <div class="detail-section-title">Bio Skins <span class="detail-skin-count">${heroSkinsList.length}</span></div>
+            <div class="detail-skins">${skinsHtml}</div>
+          </div>` : ''}
         </div>`;
     }
 

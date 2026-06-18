@@ -310,6 +310,16 @@
               <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
               <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
           </div>
+
+          <h3 class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Hero Skins</h3>
+          <div class="flex items-center gap-3">
+              <label id="genSkinToggleLabel" class="toggle-switch">
+                  <input type="checkbox" id="genSkinToggle" />
+                  <span class="toggle-slider"></span>
+              </label>
+              <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Heroes with skins</span>
+              <span id="genSkinCount" class="text-[10px] text-amber-400 bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-500/30 hidden"></span>
+          </div>
       </div>
 
       <div class="mb-6">

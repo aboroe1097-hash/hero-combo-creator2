@@ -62,6 +62,8 @@ import {
   setGeneratorSelectedStates,
   generatorSelectedTypes,
   setGeneratorSelectedTypes,
+  generatorSkinsOnly,
+  setGeneratorSkinsOnly,
   generatorSelectedHeroes,
   userId,
   getUserId,
@@ -488,6 +490,14 @@ tabs.forEach(tab => {
   if (genTroopFiltersEl) {
     genTroopFiltersEl.addEventListener('change', () => {
       setGeneratorSelectedTypes(computeTypeSelection(genTroopFiltersEl));
+      renderGeneratorHeroes();
+    });
+  }
+
+  const genSkinToggle = document.getElementById('genSkinToggle');
+  if (genSkinToggle) {
+    genSkinToggle.addEventListener('change', () => {
+      setGeneratorSkinsOnly(genSkinToggle.checked);
       renderGeneratorHeroes();
     });
   }
