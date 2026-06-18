@@ -142,9 +142,10 @@ EXPECTED JSON SCHEMA:
 
 function normalizeStructureName(name) {
   if (!name) return name;
+  let cleaned = name.trim().replace(/\s+unknown$/i, '');
   const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins', 'structure': 'Stronghold' };
-  const lower = name.toLowerCase().trim();
-  return corrections[lower] || name.trim();
+  const lower = cleaned.toLowerCase().trim();
+  return corrections[lower] || cleaned;
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }

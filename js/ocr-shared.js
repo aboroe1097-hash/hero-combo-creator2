@@ -28,6 +28,7 @@ export const DURABILITY_TABLE = {
   capitol:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
   temple:   { 1: 1000000 },
   stronghold: { 1: 1000000 },
+  'large town': { 4: 3750000 },
 };
 
 // --- Mutable State ---
