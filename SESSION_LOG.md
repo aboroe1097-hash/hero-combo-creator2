@@ -99,3 +99,21 @@ Refactored the OCR/VTS Admin module to eliminate `ReferenceError` crashes caused
 2. Meta tier lists — updated on new seasons
 3. Shareable combo links (`roc-vts.com/combo/83DJ92`)
 4. PWA installability — home screen app experience
+
+---
+
+### Audit — Issues & Improvement Areas
+
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| **Weak admin auth** | Security | "Sign in as Admin" / "Enter as Guest" is basic client-side enforcement. Sensitive alliance data deserves OAuth/passkey. |
+| **Accessibility not verified** | Needs audit | No ARIA roles or skip links. Drag-and-drop likely not keyboard accessible. Screen reader experience unknown. |
+| **Mobile viewport locked** | UX | `<meta>` sets `maximum-scale=1, user-scalable=0` — prevents pinch-zoom. |
+| **Qwen API key in-browser** | Security | User pastes API key into a text field. Key exposed in browser — should be proxied server-side. |
+| **No PWA offline support** | Missing | `sw.js` and `pwa-register.js` exist but may not be active or sufficient for offline caching. Service worker was registered but behavior unclear. |
+| **Comments system unclear** | Unclear | "Loading comments..." suggests async/third-party system. Unclear if robust or actively used. |
+
+**Existing mitigations:**
+- `sw.js` + `pwa-register.js` are in the repo — service worker infrastructure exists, but offline caching reliability needs verification.
+- Comments use Firebase Firestore `onSnapshot` — real-time, but relies on anonymous auth.
+- Qwen key is `localStorage`-persisted — not transmitted except to the Cloudflare worker proxy (`qwen-cors-proxy.js`).
