@@ -252,6 +252,14 @@ export function initAppLoading() {
     bootStartedAt = performance.now();
     document.body.classList.add('app-booting');
     startBootAnimations();
+
+    setTimeout(() => {
+        const splash = getSplash();
+        if (splash && !splash.classList.contains('hidden')) {
+            console.warn('[Boot] Force-dismissing loading screen after timeout');
+            dismissBootSplash().then(() => revealAppShell()).catch(() => {});
+        }
+    }, 5000);
 }
 
 export async function notifyAppReady() {

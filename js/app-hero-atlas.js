@@ -423,7 +423,7 @@ function renderHeroesTab() {
           <div class="detail-combo-heroes">
             ${c.heroes.map(hn => `
               <button type="button" class="detail-combo-hero${hn === selected ? ' is-viewed' : ''}" data-hero-pick="${escapeHtml(hn)}" title="${escapeHtml(hn)}">
-                <img src="${getHeroImageUrl(hn)}" alt="${escapeHtml(hn)}">
+                <img src="${getHeroImageUrl(hn)}" alt="${escapeHtml(hn)}" loading="lazy">
                 <span>${escapeHtml(hn)}</span>
               </button>`).join('')}
           </div>
@@ -525,7 +525,7 @@ function renderHeroesTab() {
             <div class="detail-synergies">
               ${synergies.map(syn => `
                 <button type="button" class="detail-syn-item" data-hero-pick="${escapeHtml(syn)}" title="View ${escapeHtml(syn)}">
-                  <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}">
+                  <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}" loading="lazy">
                   <span>${escapeHtml(syn)}</span>
                 </button>`).join('')}
             </div>

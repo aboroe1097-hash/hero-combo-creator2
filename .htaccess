@@ -1,6 +1,0 @@
-# Block raw source data from static hosting (Apache / cPanel)
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteRule ^database/ - [F,L]
-  RewriteRule ^js/eden-datasets\.generated\.js$ - [F,L]
-</IfModule>

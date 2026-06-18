@@ -4,7 +4,7 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 
-const copyDirs = ['css', 'images', 'assets'];
+const copyDirs = ['css', 'images', 'assets', 'tabs'];
 const copyFiles = ['CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html'];
 
 function copyRecursive(src, dest) {

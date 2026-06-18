@@ -4,7 +4,7 @@
   "description": "Rise of Castles: Ice & Fire tools — hero combos, Eden map, loyalty calculator, and tech research for VTS State 1097.",
   "start_url": "/",
   "scope": "/",
-  "display": "browser",
+  "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "lang": "en",
