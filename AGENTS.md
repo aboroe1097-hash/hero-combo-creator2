@@ -93,14 +93,18 @@ Select season → view map → place/remove structures → plan routes → share
 ### `/js/` — Core Application
 | File | Lines | Purpose |
 |------|-------|---------|
-| `app.js` | 2855 | Main app: tabs, theme, hero atlas, research calc, export, event wiring |
+| `app.js` | ~835 | Main app: tabs, theme, event wiring |
 | `app-builder.js` | 332 | Manual combo builder: drag-drop, slot rendering, save |
 | `app-generator.js` | 253 | Auto combo generator: best & random modes |
 | `app-loading.js` | 221 | Boot splash animation, loading progress |
-| `app-hero-atlas.js` | — | *(planned split from app.js)* Hero Atlas tab |
-| `app-export.js` | — | *(planned split from app.js)* Export functions |
-| `ocr-dashboard.js` | 777 | VTS Admin: OCR upload, leaderboard, roster, banners |
-| `ocr-roster.js` | — | *(planned split)* Roster checklist, login, alliances |
+| `app-hero-atlas.js` | ~560 | Hero Atlas tab |
+| `app-research.js` | ~1090| Research Calculator tab |
+| `app-export.js` | ~250 | Export functions (html2canvas, rendering) |
+| `app-hero-tooltip.js` | ~150 | Hero tooltip hover logic |
+| `ocr-dashboard.js` | ~1130| VTS Admin: main dashboard logic |
+| `ocr-roster.js` | ~535 | Roster checklist, login, alliances |
+| `ocr-render.js` | ~200 | Dashboard UI rendering |
+| `ocr-engine.js` | ~300 | OCR parsing logic |
 | `eden-map.js` | 2310 | Eden Map planner: map render, plans, routing |
 | `eden-map-data.js` | 1042 | Eden map static data, sector definitions |
 | `eden-map-assets.js` | 688 | Image preloading, icon management |
@@ -194,6 +198,13 @@ Select season → view map → place/remove structures → plan routes → share
 ---
 
 ## Change Log
+
+### 2026-06-18 — Codebase Refactoring & Modularity
+- **App.js Split** — Extracted app-hero-atlas.js, app-research.js, app-export.js, app-hero-tooltip.js to break down the monolithic file.
+- **OCR Dashboard Split** — Extracted ocr-roster.js, ocr-engine.js, and ocr-render.js.
+- **State Management** — Properly wired shared state variables via state.js for isolated modules.
+- **Vite Chunking** — Updated vite.config.js to manually chunk i18n, tech-data, admin, and eden modules for better caching.
+- **Roster Enhancements** — Implemented bulk actions, alliance filtering, and OCR demolition overlay.
 
 ### 2026-06-18 — Roster Management System
 - **Roster Checklist** — complete rewrite of `renderRoster()` with stats bar, filter/search, alliance assignment, trusted/spy/unknown status per member.
