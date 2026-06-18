@@ -13,23 +13,10 @@ export default defineConfig({
       input: resolve(__dirname, 'index.html'),
       output: {
         manualChunks(id) {
-          if (
-            id.includes('eden-map')
-            || id.includes('eden-datasets')
-            || id.includes('eden-tooltips')
-            || id.includes('eden-map-terrain')
-            || id.includes('eden-map-assets')
-            || id.includes('eden-map-features')
-            || id.includes('eden-map-scout')
-            || id.includes('eden-map-teams')
-            || id.includes('eden-map-guide')
-            || id.includes('eden-map-ui')
-            || id.includes('eden-live-map')
-            || id.includes('eden-map-construction')
-            || id.includes('eden-map-config')
-          ) {
-            return 'eden';
-          }
+          if (id.includes('eden-map') || id.includes('eden-datasets') || id.includes('eden-')) return 'eden';
+          if (id.includes('ocr-dashboard') || id.includes('ocr-')) return 'admin';
+          if (id.includes('translations')) return 'i18n';
+          if (id.includes('tech-db')) return 'tech-data';
         },
       },
     },
