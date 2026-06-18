@@ -668,7 +668,7 @@ async function exportChartPng() {
     clone.remove();
   });
 }
-window.shareChartImage = function() {
+window.shareChartImage = async function() {
   const chart = $id('dashChart');
   if (!chart) return;
   const html2canvas = await window.loadHtml2Canvas();
