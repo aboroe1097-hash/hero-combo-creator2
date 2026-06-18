@@ -1,20 +1,12 @@
+
+import { currentLanguage, selectedSeasons, db, seasonColors, HERO_ATLAS_ALL_SEASONS, paidIconHtml, heroesSection, getTroopColorClass, getLocalizedTroop, getHeroImageUrl, getComboRankInfo, getCounterLabels } from './state.js';
 import { translations } from './translations.js';
 import { rankedCombos } from './combos-db.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
-import {
-  currentLanguage,
-  HERO_ATLAS_ALL_SEASONS,
-  seasonColors,
-  getTroopColorClass,
-  getLocalizedTroop,
-  getHeroImageUrl,
-  paidIconHtml,
-  getComboRankInfo,
-  getCounterLabels,
-} from './state.js';
+
 import { renderCountersToggle } from './combo-counters.js';
 
 function getHeroFinalScore(heroName, autoRating) {
