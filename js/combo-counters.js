@@ -54,6 +54,7 @@ export const COMBO_COUNTERS = [
   {
     target: ['King Arthur', 'Cleopatra VII', 'Theodora'],
     counters: [
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Rozen burst + Octavius control shuts down sustain backline' },
       ['Octavius', 'Cleopatra VII', 'Caesar'],
       ['Ramses II', 'Cleopatra VII', 'Jade Eagle'],
       ['Lawman', 'Defender', 'The Avalanche'],
@@ -86,11 +87,36 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Cleopatra VII', 'Caesar'],
     counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur shields mitigate burst while Cleo sustains' },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['Theodora', 'Boudica', 'Jade Eagle'],
+      ['Theodora', 'Ramses II', 'Jade Eagle'],
       ['Ramses II', 'Cleopatra VII', 'Jade Eagle'],
     ],
   },
+  {
+    target: ['Immortal Guardian', 'ELK', 'Tarantula'],
+    counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Heavy sustain outlasts their damage output' },
+      ['Lawman', 'Rozen Blade', 'The Avalanche'],
+      ['Defender', 'Sakura', 'Jade Eagle'],
+    ],
+  },
+  {
+    target: ['Black Prince', 'Lancelot', 'The Avalanche'],
+    counters: [
+      { heroes: ['Ramses II', 'Leonidas', 'Beowulf'], reason: 'Leonidas disrupts their initial burst setup' },
+      ['Lawman', 'Defender', 'The Avalanche'],
+      ['Defender', 'Tarantula', 'Sakura'],
+    ],
+  },
+  {
+    target: ['Hunk', 'Spectral Reaper', 'Ramses II'],
+    counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'], reason: 'Cleo cleanses debuffs and outheals the pressure' },
+      ['Immortal Guardian', 'Ramses II', 'Beowulf'],
+      ['Lawman', 'Lancelot', 'The Avalanche'],
+    ],
+  }
 ];
 
 const _lookup = new Map(

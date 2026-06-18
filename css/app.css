@@ -6045,3 +6045,55 @@ body[style*="overflow: hidden"] .tab-panel {
 [data-theme="light"] #ocrDashboardRoot .dash-roster-dropzone.dragover {
   border-color: #2563eb; color: #2563eb; background: #eef2ff;
 }
+
+/* ── Roster Checklist ────────────────────────────────────── */
+.dash-roster-login-bar { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; font-size:0.8rem; flex-wrap:wrap; }
+.dash-roster-login-bar.logged { background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.25); }
+.dash-roster-login-user { font-weight:700; color:#34d399; }
+.dash-roster-login-bar select, .dash-roster-login-bar input { font-size:0.78rem; padding:3px 6px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; }
+.dash-roster-summary { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; font-size:0.78rem; flex-wrap:wrap; }
+.dash-roster-summary-trusted { color:#34d399; font-weight:600; }
+.dash-roster-summary-spy { color:#f87171; font-weight:600; }
+.dash-roster-summary-unknown { color:var(--text-muted); font-weight:600; }
+.dash-roster-summary-assigned { color:#60a5fa; font-weight:600; }
+.dash-roster-summary-unassigned { color:#fbbf24; font-weight:600; }
+.dash-roster-summary-total { font-weight:800; color:var(--text); }
+.dash-roster-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; flex-wrap:wrap; }
+.dash-roster-toolbar-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.dash-roster-toolbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.dash-roster-toolbar-label { font-size:0.75rem; color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:4px; }
+.dash-roster-toolbar-label select { font-size:0.75rem; padding:2px 6px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; }
+.dash-roster-bulk-actions { display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:8px; flex-wrap:wrap; }
+.dash-roster-checklist { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.dash-roster-row { display:flex; align-items:center; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; font-size:0.82rem; }
+.dash-roster-row:hover { background:rgba(255,255,255,0.03); }
+.dash-roster-row.trusted { background:rgba(34,197,94,0.06); }
+.dash-roster-row.spy { background:rgba(248,113,113,0.08); }
+.dash-roster-row.joined { border-left:3px solid #34d399; }
+.dash-roster-row.left { border-left:3px solid #f87171; opacity:0.6; }
+.dash-roster-row-name { font-weight:500; }
+.dash-roster-row-alliance { font-size:0.72rem; padding:2px 4px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:5px; margin:0 6px; min-width:60px; }
+.dash-roster-row-vb { font-size:0.65rem; color:var(--text-dim); margin:0 6px; white-space:nowrap; }
+.dash-roster-row-spy { cursor:pointer; font-size:0.9rem; opacity:0.3; transition:opacity 0.15s; padding:2px 4px; }
+.dash-roster-row-spy:hover { opacity:0.7; }
+.dash-roster-row-spy.active { opacity:1; }
+.dash-roster-empty { padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem; }
+.dash-roster-total-rows { text-align:right; font-size:0.72rem; color:var(--text-dim); padding:4px 12px; margin-bottom:8px; }
+.dash-roster-history { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.dash-roster-history-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--text-muted); }
+.dash-roster-history-head:hover { background:rgba(255,255,255,0.03); }
+.dash-roster-history-body { display:none; padding:4px 8px; }
+.dash-roster-history-body.open { display:block; }
+.dash-roster-history-item { display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:0.78rem; border-bottom:1px solid rgba(255,255,255,0.04); }
+.dash-roster-history-date { font-weight:600; min-width:90px; }
+.dash-roster-history-count { color:var(--text-muted); min-width:30px; }
+.dash-roster-history-diff { color:var(--brand-light); min-width:60px; font-size:0.72rem; }
+/* Light theme roster overrides */
+[data-theme="light"] .dash-roster-row:hover { background:rgba(0,0,0,0.03); }
+[data-theme="light"] .dash-roster-row.trusted { background:rgba(34,197,94,0.08); }
+[data-theme="light"] .dash-roster-row.spy { background:rgba(248,113,113,0.1); }
+[data-theme="light"] .dash-roster-login-bar { background:var(--surface); }
+[data-theme="light"] .dash-roster-login-bar.logged { background:rgba(34,197,94,0.06); }
+[data-theme="light"] .dash-roster-history-head:hover { background:rgba(0,0,0,0.03); }
+[data-theme="light"] .dash-roster-row { border-bottom-color:rgba(0,0,0,0.06); }
+[data-theme="light"] .dash-roster-history-item { border-bottom-color:rgba(0,0,0,0.06); }

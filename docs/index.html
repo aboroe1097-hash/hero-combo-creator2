@@ -66,14 +66,13 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/mobile-wQjtJv0M.css?v=20260614_5" media="(max-width: 768px)" />
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  
 
-
-  <script type="module" crossorigin src="/assets/index-DQVURqip.js"></script>
+  <script type="module" crossorigin src="/assets/index-D7g2kZwQ.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/eden-CvkF5RaB.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-D15xTyPY.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-Cm1rO3Yf.css">
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -1284,6 +1283,35 @@
     applyHeroSearch('manualHeroSearch', 'availableHeroes');
     applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
   }, 800);
-  </script>
+  </script>
+
+<script>
+  // Lazy-load YouTube iframes
+  (function() {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var iframe = entry.target;
+          if (iframe.dataset.src) { iframe.src = iframe.dataset.src; iframe.removeAttribute('data-src'); }
+          obs.unobserve(iframe);
+        }
+      });
+    }, { rootMargin: '200px' });
+    document.querySelectorAll('iframe[data-src]').forEach(function(el) { obs.observe(el); });
+  })();
+
+  // Lazy-load html2canvas
+  window.loadHtml2Canvas = function() {
+    if (window._h2cPromise) return window._h2cPromise;
+    window._h2cPromise = new Promise(function(resolve) {
+      if (window.html2canvas) return resolve(window.html2canvas);
+      var s = document.createElement('script');
+      s.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+      s.onload = function() { resolve(window.html2canvas); };
+      document.head.appendChild(s);
+    });
+    return window._h2cPromise;
+  };
+</script>
 </body>
 </html>

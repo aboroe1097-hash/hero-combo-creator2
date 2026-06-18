@@ -1,6 +1,12 @@
-# Hero Combo Creator — VTS 1097 (8.8)
+# Hero Combo Creator — VTS 1097 (8.9)
 
 Static web tool for **Rise of Castles: Ice & Fire** — hero combos, Eden planning, loyalty math, OCR report analysis, and more.
+
+## What's new in 8.9
+
+- **Roster Auth & Alliances** — Added login credentials to verify roster status changes. You can now configure up to 5 alliance names and assign members to them.
+- **Roster Snapshot Modal** — View historical roster differences and copy lists of unassigned or tagged members directly to the clipboard.
+- **Improved Light Theme** — Fixed hover states, history item highlights, and login bar styling for the admin roster dashboard in light mode.
 
 ## What's new in 8.8
 
