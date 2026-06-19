@@ -1,248 +1,117 @@
-// Code-defined counter combos — edit COMBO_COUNTERS below to add/update matchups.
-// Each counter can be a hero array OR { heroes: [...], reason: "optional note" }.
-
+// js/combo-counters.js
+// Counter helpers and reusable counter UI renderers.
 import { escapeHtml } from './utils.js';
+import {
+  comboKey,
+  getAllCounterMatchups,
+  getCombosCounteredByHero,
+  getCountersAgainstHero,
+  getCountersForCombo,
+  validateCounterDatabase,
+} from './counter-db.js';
 
-function comboKey(heroes) {
-  return [...heroes].sort().join('|');
-}
-
-/** @typedef {{ heroes: string[], reason: string|null }} CounterEntry */
-
-/**
- * @param {string[] | { heroes: string[], reason?: string }} raw
- * @returns {CounterEntry | null}
- */
-function normalizeCounter(raw) {
-  if (Array.isArray(raw) && raw.length === 3) {
-    return { heroes: raw, reason: null };
-  }
-  if (raw && Array.isArray(raw.heroes) && raw.heroes.length === 3) {
-    const reason = typeof raw.reason === 'string' ? raw.reason.trim() : '';
-    return { heroes: raw.heroes, reason: reason || null };
-  }
-  return null;
-}
-
-/**
- * Each entry: target combo (3 heroes) → up to 3 counter lineups.
- * Ranks are resolved automatically from combos-db.js at runtime.
- *
- * Example with optional reasoning:
- *   counters: [
- *     ['King Arthur', 'Theodora', 'Alexander'],
- *     { heroes: ['Lawman', 'Lancelot', 'The Avalanche'], reason: 'Silence + burst before their skills land' },
- *   ]
- */
-export const COMBO_COUNTERS = [
-  {
-    target: ['Alexander', 'Cleopatra VII', 'Theodora'],
-    counters: [
-      ['King Arthur', 'Theodora', 'Alexander'],
-      ['Immortal Guardian', 'Ramses II', 'Beowulf'],
-      ['Lawman', 'Lancelot', 'The Avalanche'],
-    ],
-  },
-  {
-    target: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['King Arthur', 'Theodora', 'Alexander'],
-      ['Defender', 'Tarantula', 'Sakura'],
-      ['Lawman', 'Army Breaker', 'The Avalanche'],
-      ['Hunk', 'Spectral Reaper', 'Ramses II'],
-    ],
-  },
-  {
-    target: ['King Arthur', 'Cleopatra VII', 'Theodora'],
-    counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
-      ['Lawman', 'Defender', 'The Avalanche'],
-    ],
-  },
-  {
-    target: ['Ramses II', 'Leonidas', 'Beowulf'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['King Arthur', 'Theodora', 'Alexander'],
-      ['Lawman', 'Rozen Blade', 'The Avalanche'],
-      ['Immortal Guardian', 'ELK', 'Tarantula'],
-    ],
-  },
-  {
-    target: ['Hunk', 'Ramses II', 'Beowulf'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['King Arthur', 'Theodora', 'Alexander'],
-    ],
-  },
-  {
-    target: ['Bleeding Steed', 'Ramses II', 'Beowulf'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['King Arthur', 'Theodora', 'Alexander'],
-    ],
-  },
-  {
-    target: ['Rozen Blade', 'Ramses II', 'Beowulf'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['King Arthur', 'Theodora', 'Alexander'],
-    ],
-  },
-  {
-    target: ['King Arthur', 'Theodora', 'Alexander'],
-    counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
-    ],
-  },
-  {
-    target: ['King Arthur', 'Cleopatra VII', 'Alexander'],
-    counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
-    ],
-  },
-  {
-    target: ['Lawman', 'Lancelot', 'The Avalanche'],
-    counters: [
-      ['Defender', 'Tarantula', 'Sakura'],
-      ['Black Prince', 'Lancelot', 'The Avalanche'],
-      ['Ramses II', 'Leonidas', 'Jade Eagle'],
-    ],
-  },
-  {
-    target: ['Defender', 'Tarantula', 'Sakura'],
-    counters: [
-      ['Ramses II', 'Leonidas', 'Beowulf'],
-      ['Lawman', 'War Lord', 'Jane'],
-      ['Immortal Guardian', 'Ramses II', 'Beowulf'],
-    ],
-  },
-  {
-    target: ['Octavius', 'Cleopatra VII', 'Caesar'],
-    counters: [
-      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Caesar cavalry' },
-      ['Hunk', 'Ramses II', 'Beowulf'],
-      ['Bleeding Steed', 'Ramses II', 'Beowulf'],
-      ['Rozen Blade', 'Ramses II', 'Beowulf'],
-      ['Ramses II', 'Leonidas', 'Beowulf'],
-    ],
-  },
-  {
-    target: ['Octavius', 'Rozen Blade', 'Caesar'],
-    counters: [
-      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar' },
-      ['Hunk', 'Ramses II', 'Beowulf'],
-      ['Bleeding Steed', 'Ramses II', 'Beowulf'],
-      ['Rozen Blade', 'Ramses II', 'Beowulf'],
-      ['Ramses II', 'Leonidas', 'Beowulf'],
-    ],
-  },
-  {
-    target: ['Immortal Guardian', 'ELK', 'Tarantula'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Heavy sustain outlasts their damage output' },
-      ['Lawman', 'Rozen Blade', 'The Avalanche'],
-      ['Defender', 'Sakura', 'Jade Eagle'],
-    ],
-  },
-  {
-    target: ['Black Prince', 'Lancelot', 'The Avalanche'],
-    counters: [
-      { heroes: ['Ramses II', 'Leonidas', 'Beowulf'], reason: 'Leonidas disrupts their initial burst setup' },
-      ['Lawman', 'Defender', 'The Avalanche'],
-      ['Defender', 'Tarantula', 'Sakura'],
-    ],
-  },
-  {
-    target: ['Hunk', 'Spectral Reaper', 'Ramses II'],
-    counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Alexander'], reason: 'Cleo cleanses debuffs and outheals the pressure' },
-      ['Immortal Guardian', 'Ramses II', 'Beowulf'],
-      ['Lawman', 'Lancelot', 'The Avalanche'],
-    ],
-  }
-];
-
-const _lookup = new Map(
-  COMBO_COUNTERS.map((entry) => {
-    const counters = (entry.counters || [])
-      .map(normalizeCounter)
-      .filter(Boolean);
-    return [comboKey(entry.target), counters];
-  }),
-);
+export {
+  getAllCounterMatchups,
+  getCombosCounteredByHero,
+  getCountersAgainstHero,
+  getCountersForCombo,
+  validateCounterDatabase,
+};
 
 const DEFAULT_LABELS = {
   toggle: 'Counters ({n})',
   title: 'Counters',
   score: 'Score',
   hide: 'Hide counters',
+  noCounters: 'No known counters',
+  useCounter: 'Use this counter',
 };
 
+let counterPanelSeq = 0;
+
 export function getCounterCount(heroes) {
-  if (!Array.isArray(heroes) || heroes.length !== 3) return 0;
-  return _lookup.get(comboKey(heroes))?.length || 0;
+  return getCountersForCombo(heroes).length;
 }
 
 function counterPanelId(heroes) {
   let h = 0;
   const key = comboKey(heroes);
   for (let i = 0; i < key.length; i++) h = ((h << 5) - h + key.charCodeAt(i)) | 0;
-  return `ctr-${Math.abs(h).toString(36)}`;
+  counterPanelSeq += 1;
+  return `ctr-${Math.abs(h).toString(36)}-${counterPanelSeq}`;
 }
 
-export function getTopCounters(heroes, getComboRankInfo, limit = 3) {
+export function getTopCounters(heroes, getComboRankInfo, limit = Infinity) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return [];
-  const counters = _lookup.get(comboKey(heroes));
-  if (!counters?.length) return [];
+  const counters = getCountersForCombo(heroes);
+  if (!counters.length) return [];
 
   return counters.slice(0, limit).map((counter) => {
     const info = getComboRankInfo(counter.heroes);
     return {
       heroes: counter.heroes,
       reason: counter.reason,
+      confidence: counter.confidence,
       rank: info?.rank ?? null,
       score: info?.score ?? null,
     };
   });
 }
 
-function renderHeroChips(heroes, getHeroImageUrl) {
+function renderHeroChips(heroes, getHeroImageUrl, variant = '') {
+  const variantClass = variant ? ` counter-hero-chip--${variant}` : '';
   return heroes.map((name) => `
-    <span class="counter-hero-chip" title="${escapeHtml(name)}">
+    <span class="counter-hero-chip${variantClass}" title="${escapeHtml(name)}">
       <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" class="counter-hero-chip-img" loading="lazy">
       <span class="counter-hero-chip-name">${escapeHtml(name)}</span>
     </span>`).join('');
 }
 
-export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS) {
-  const counters = getTopCounters(heroes, getComboRankInfo);
-  if (!counters.length) return '';
+function renderCounterReason(reason) {
+  return reason
+    ? `<p class="counter-card-reason"><span>Why</span>${escapeHtml(reason)}</p>`
+    : '';
+}
 
+function renderCounterUseButton(heroes, labels) {
+  return `<button type="button" class="counter-use-btn" data-counter-use="${escapeHtml(heroes.join('|'))}">
+    ${escapeHtml(labels.useCounter || DEFAULT_LABELS.useCounter)}
+  </button>`;
+}
+
+function renderCounterCard(counter, index, getHeroImageUrl, labels, options = {}) {
+  const rankLabel = counter.rank ? `#${counter.rank}` : 'Unranked';
+  const scoreLabel = counter.score ? `${labels.score} ${counter.score}` : '';
+  const confidenceHtml = counter.confidence
+    ? `<span class="counter-card-confidence">${escapeHtml(counter.confidence)}</span>`
+    : '';
+  const actionHtml = options.showUseAction ? renderCounterUseButton(counter.heroes, labels) : '';
+
+  return `<article class="counter-card counter-card--mini-combo" style="--counter-delay:${index * 55}ms">
+    <div class="counter-card-head">
+      <span class="counter-card-idx">${index + 1}</span>
+      <span class="counter-card-rank">${escapeHtml(rankLabel)}</span>
+      ${scoreLabel ? `<span class="counter-card-score">${escapeHtml(scoreLabel)}</span>` : ''}
+      ${confidenceHtml}
+    </div>
+    <div class="counter-card-heroes">${renderHeroChips(counter.heroes, getHeroImageUrl, 'counter')}</div>
+    ${renderCounterReason(counter.reason)}
+    ${actionHtml}
+  </article>`;
+}
+
+export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
   const t = { ...DEFAULT_LABELS, ...labels };
-  const rows = counters.map((c, i) => {
-    const rankLabel = c.rank ? `#${c.rank}` : '—';
-    const scoreLabel = c.score ? `${t.score} ${c.score}` : '';
-    const reasonHtml = c.reason
-      ? `<p class="counter-card-reason">${escapeHtml(c.reason)}</p>`
+  const counters = getTopCounters(heroes, getComboRankInfo, options.limit ?? Infinity);
+  if (!counters.length) {
+    return options.showEmpty
+      ? `<div class="combo-counters-inline combo-counters-inline--empty"><p class="counter-empty-state">${escapeHtml(t.noCounters)}</p></div>`
       : '';
+  }
 
-    return `<article class="counter-card" style="--counter-delay:${i * 60}ms">
-      <div class="counter-card-head">
-        <span class="counter-card-idx">${i + 1}</span>
-        <span class="counter-card-rank">${rankLabel}</span>
-        ${scoreLabel ? `<span class="counter-card-score">${escapeHtml(scoreLabel)}</span>` : ''}
-      </div>
-      <div class="counter-card-heroes">${renderHeroChips(c.heroes, getHeroImageUrl)}</div>
-      ${reasonHtml}
-    </article>`;
-  }).join('');
+  const rows = counters.map((counter, i) =>
+    renderCounterCard(counter, i, getHeroImageUrl, t, options)
+  ).join('');
 
   return `<div class="combo-counters-inline">
     <div class="counter-inline-title">${escapeHtml(t.title)}</div>
@@ -250,21 +119,63 @@ export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, 
   </div>`;
 }
 
-export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS) {
+export function renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
   const count = getCounterCount(heroes);
-  if (!count) return '';
-
   const t = { ...DEFAULT_LABELS, ...labels };
+  if (!count) {
+    return options.showEmpty
+      ? `<div class="combo-counters-wrap combo-counters-wrap--empty"><p class="counter-empty-state">${escapeHtml(t.noCounters)}</p></div>`
+      : '';
+  }
+
   const panelId = counterPanelId(heroes);
-  const inner = renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, t);
+  const inner = renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, t, options);
   const toggleLabel = (t.toggle || DEFAULT_LABELS.toggle).replace('{n}', String(count));
 
-  return `<div class="combo-counters-wrap">
+  return `<div class="combo-counters-wrap" data-counter-count="${count}">
     <button type="button" class="counter-toggle-btn" data-counter-target="${panelId}" aria-expanded="false" aria-controls="${panelId}">
-      <span class="counter-toggle-icon" aria-hidden="true">⚔</span>
+      <span class="counter-toggle-icon" aria-hidden="true">CTR</span>
       <span class="counter-toggle-label">${escapeHtml(toggleLabel)}</span>
       <span class="counter-toggle-chevron" aria-hidden="true"></span>
     </button>
     <div id="${panelId}" class="combo-counters-panel hidden" role="region" aria-label="${escapeHtml(t.title)}">${inner}</div>
+  </div>`;
+}
+
+export function renderCounterMatchupList(matchups, getComboRankInfo, getHeroImageUrl, labels = DEFAULT_LABELS, options = {}) {
+  const t = { ...DEFAULT_LABELS, ...labels };
+  const visible = matchups.slice(0, options.limit ?? 6);
+
+  if (!visible.length) {
+    return `<p class="counter-empty-state">${escapeHtml(options.emptyText || t.noCounters)}</p>`;
+  }
+
+  return `<div class="counter-matchup-list">
+    ${visible.map((matchup, index) => {
+      const targetInfo = getComboRankInfo(matchup.target);
+      const counterInfo = getComboRankInfo(matchup.counter);
+      const actionHtml = options.showUseAction ? renderCounterUseButton(matchup.counter, t) : '';
+      return `<article class="counter-matchup-card" style="--counter-delay:${index * 55}ms">
+        <div class="counter-matchup-head">
+          <span class="counter-matchup-label">${escapeHtml(options.label || t.title)}</span>
+          ${matchup.confidence ? `<span class="counter-card-confidence">${escapeHtml(matchup.confidence)}</span>` : ''}
+        </div>
+        <div class="counter-matchup-grid">
+          <div class="counter-matchup-side counter-matchup-side--winner">
+            <span class="counter-matchup-side-title">${escapeHtml(options.counterLabel || 'Counter')}</span>
+            <span class="counter-matchup-rank">${counterInfo?.rank ? `#${counterInfo.rank}` : 'Unranked'}</span>
+            <div class="counter-card-heroes">${renderHeroChips(matchup.counter, getHeroImageUrl, 'counter')}</div>
+          </div>
+          <div class="counter-matchup-vs">beats</div>
+          <div class="counter-matchup-side">
+            <span class="counter-matchup-side-title">${escapeHtml(options.targetLabel || 'Target')}</span>
+            <span class="counter-matchup-rank">${targetInfo?.rank ? `#${targetInfo.rank}` : 'Unranked'}</span>
+            <div class="counter-card-heroes">${renderHeroChips(matchup.target, getHeroImageUrl, 'target')}</div>
+          </div>
+        </div>
+        ${renderCounterReason(matchup.reason)}
+        ${actionHtml}
+      </article>`;
+    }).join('')}
   </div>`;
 }

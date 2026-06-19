@@ -5,7 +5,7 @@ import { skinHeroesData } from './skin-heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '10.0.0';
+export const APP_VERSION = '10.1.0';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 // --- STATE ---

@@ -7,7 +7,6 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { escapeHtml, appT } from './utils.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
@@ -240,7 +239,36 @@ function initTheme() {
 
 initTheme();
 
+function updateGeneratorSelectedCountBadge() {
+  const countBadge = document.getElementById('genSelectedCount');
+  if (!countBadge) return;
+  const n = generatorSelectedHeroes.size;
+  if (n > 0) {
+    countBadge.textContent = n + ' selected';
+    countBadge.classList.remove('hidden');
+  } else {
+    countBadge.classList.add('hidden');
+  }
+}
+
+function addCounterHeroesToGenerator(heroNames) {
+  heroNames.filter(Boolean).forEach(name => generatorSelectedHeroes.add(name));
+  renderGeneratorHeroes(syncGeneratorControlState());
+  updateGeneratorSelectedCountBadge();
+  if (typeof window.showToast === 'function') {
+    window.showToast('Counter heroes added to Generator selection.', 'success');
+  }
+}
+
 document.addEventListener('click', (e) => {
+  const useCounterBtn = e.target.closest('.counter-use-btn');
+  if (useCounterBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    addCounterHeroesToGenerator((useCounterBtn.dataset.counterUse || '').split('|'));
+    return;
+  }
+
   const btn = e.target.closest('.counter-toggle-btn');
   if (!btn) return;
   const panel = document.getElementById(btn.dataset.counterTarget);
@@ -726,14 +754,6 @@ tabs.forEach(tab => {
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
 
-  const updateGenCountBadge = () => {
-    const countBadge = document.getElementById('genSelectedCount');
-    if (!countBadge) return;
-    const n = generatorSelectedHeroes.size;
-    if (n > 0) { countBadge.textContent = n + ' selected'; countBadge.classList.remove('hidden'); }
-    else { countBadge.classList.add('hidden'); }
-  };
-
   if (genSelectAllBtn) {
     genSelectAllBtn.onclick = () => {
       const options = syncGeneratorControlState();
@@ -741,7 +761,7 @@ tabs.forEach(tab => {
         .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
         .forEach(h => generatorSelectedHeroes.add(h.name));
       renderGeneratorHeroes(options);
-      updateGenCountBadge();
+      updateGeneratorSelectedCountBadge();
     };
   }
 
@@ -749,7 +769,7 @@ tabs.forEach(tab => {
     genClearAllBtn.onclick = () => {
       generatorSelectedHeroes.clear();
       renderGeneratorHeroes(syncGeneratorControlState());
-      updateGenCountBadge();
+      updateGeneratorSelectedCountBadge();
     };
   }
 
