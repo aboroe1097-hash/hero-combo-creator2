@@ -1,5 +1,5 @@
 // sw.js - versioned runtime cache for the GitHub Pages app shell.
-const CACHE_VERSION = 'vts-v20260620-3';
+const CACHE_VERSION = 'vts-v20260620-5';
 const APP_SHELL = [
   '/',
   '/index.html',

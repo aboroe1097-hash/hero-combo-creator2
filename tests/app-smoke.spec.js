@@ -101,6 +101,44 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#detail-section-skins')).toContainText("The hero's squad gains 4% HP and takes 2% less damage.");
   });
 
+  test('counter database and upgraded counter panels work', async ({ page }) => {
+    await openApp(page);
+
+    const counterIssues = await page.evaluate(async () => {
+      const mod = await import('/js/counter-db.js');
+      return mod.validateCounterDatabase();
+    });
+    expect(counterIssues).toEqual([]);
+
+    for (const seasonPill of ['.s2-pill', '.s3-pill', '.s4-pill', '.x1-pill', '.x2-pill']) {
+      await page.locator(`#generatorSeasonFilters ${seasonPill}`).click();
+    }
+    await page.locator('#genSelectAllBtn').click();
+    await expect(page.locator('#genSelectedCount')).toContainText('selected');
+    await page.locator('#generateCombosBtn').click();
+
+    const firstGenerated = page.locator('#generatorResults .generated-combo-card').first();
+    await expect(firstGenerated).toBeVisible();
+    await expect(firstGenerated.locator('.counter-summary-badge')).toContainText('counters known');
+    await firstGenerated.locator('.counter-toggle-btn').click();
+    await expect(firstGenerated.locator('.counter-card--mini-combo').first()).toBeVisible();
+    await expect(firstGenerated.locator('.counter-use-btn').first()).toBeVisible();
+
+    await page.locator('#genClearAllBtn').click();
+    await firstGenerated.locator('.counter-use-btn').first().click();
+    await expect(page.locator('#genSelectedCount')).toContainText('3 selected');
+
+    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
+    await page.locator('#heroesTabSearch').fill('King Arthur');
+    await expect(page.locator('[data-hero-name="King Arthur"]')).toBeVisible();
+    await page.locator('[data-hero-name="King Arthur"]').click();
+    await expect(page.locator('[data-detail-section="counters"]')).toBeVisible();
+    await page.locator('[data-detail-section="counters"]').click();
+    await expect(page.locator('#detail-section-counters')).toContainText('Counters involving King Arthur');
+    await expect(page.locator('#detail-section-counters')).toContainText('This hero counters');
+    await expect(page.locator('#detail-section-counters')).toContainText('This hero is countered by');
+  });
+
   test('admin guest mode can return to admin login', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');

@@ -8,7 +8,12 @@ import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
 import { hasSkin, getHeroSkins, getSkinCount, getHeroHiddenPower, SKIN_TYPES } from './skins-db.js';
 
-import { renderCountersToggle } from './combo-counters.js';
+import {
+  getCombosCounteredByHero,
+  getCountersAgainstHero,
+  renderCounterMatchupList,
+  renderCountersToggle
+} from './combo-counters.js';
 
 function getHeroFinalScore(heroName, autoRating) {
   const bonus = heroBonusPoints[heroName] || 0;
@@ -451,6 +456,32 @@ function renderHeroesTab() {
         ? (t.heroesComboScopeHint || 'Combos using heroes up to {season} within your season filters.')
             .replace('{season}', hero?.season || '')
         : (t.heroesComboScopeAllHint || 'All ranked combos from the full database.');
+      const heroCounterWins = getCombosCounteredByHero(selected);
+      const heroCounterLosses = getCountersAgainstHero(selected);
+      const hasHeroCounters = heroCounterWins.length > 0 || heroCounterLosses.length > 0;
+      const heroCountersHtml = hasHeroCounters ? `
+        <div class="hero-counter-section-grid">
+          <div class="hero-counter-column">
+            <div class="hero-counter-subhead">This hero counters</div>
+            ${renderCounterMatchupList(heroCounterWins, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
+              limit: 6,
+              label: 'Counter path',
+              targetLabel: 'Target',
+              counterLabel: 'Counter lineup',
+              emptyText: 'No known lineups yet'
+            })}
+          </div>
+          <div class="hero-counter-column">
+            <div class="hero-counter-subhead">This hero is countered by</div>
+            ${renderCounterMatchupList(heroCounterLosses, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
+              limit: 6,
+              label: 'Threat',
+              targetLabel: 'Hero lineup',
+              counterLabel: 'Counter lineup',
+              emptyText: 'No known counters yet'
+            })}
+          </div>
+        </div>` : '';
 
       const combosHtml = heroCombos.map(c => `
         <div class="detail-combo-row">
@@ -554,6 +585,7 @@ function renderHeroesTab() {
         <nav class="detail-nav" aria-label="Hero detail sections">
           ${synergies.length > 0 ? '<button type="button" class="detail-nav-btn active" data-detail-section="synergies">Synergies</button>' : ''}
           <button type="button" class="detail-nav-btn ${synergies.length === 0 ? 'active' : ''}" data-detail-section="combos">Combos</button>
+          ${hasHeroCounters ? '<button type="button" class="detail-nav-btn" data-detail-section="counters">Counters</button>' : ''}
           ${heroSkinsList.length > 0 ? '<button type="button" class="detail-nav-btn" data-detail-section="skins">Skins</button>' : ''}
           <button type="button" class="detail-nav-btn" data-detail-section="skills">Skills</button>
         </nav>`;
@@ -608,6 +640,12 @@ function renderHeroesTab() {
             <p class="heroes-combo-scope-hint">${comboScopeHint}</p>
             <div class="detail-combos">${combosHtml || `<p class="text-xs text-slate-500 italic">${t.heroesNoCombos || 'No ranked combos yet.'}</p>`}</div>
           </div>
+
+          ${hasHeroCounters ? `
+          <div id="detail-section-counters" class="detail-section-block">
+            <div class="detail-section-title">Counters involving ${escapeHtml(selected)}</div>
+            ${heroCountersHtml}
+          </div>` : ''}
 
           <div id="detail-section-skills" class="detail-section-block">
             <div class="detail-section-title">${t.heroesSkillsTitle || 'Skills'}</div>

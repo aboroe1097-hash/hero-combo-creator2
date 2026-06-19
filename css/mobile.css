@@ -478,6 +478,35 @@ body.tab-manual-active {
 .counter-hero-chip-name { font-size: 0.46rem !important; }
 .counter-hero-chip-img { width: 24px !important; height: 24px !important; }
 .counter-card-reason { font-size: 0.53rem !important; }
+.counter-use-btn {
+  width: 100% !important;
+  min-height: 34px !important;
+  font-size: 0.55rem !important;
+}
+.counter-summary-badge {
+  font-size: 0.48rem !important;
+  padding: 2px 6px !important;
+}
+.hero-counter-section-grid {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+.hero-counter-column {
+  padding: 8px !important;
+}
+.counter-matchup-grid {
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+}
+.counter-matchup-vs {
+  text-align: center !important;
+}
+.counter-matchup-card {
+  padding: 8px !important;
+}
+.counter-matchup-side {
+  padding: 6px !important;
+}
 
 /* ── 11. RESEARCH TAB ─────────────────────────────────────── */
 #researchSection,

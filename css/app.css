@@ -2730,7 +2730,7 @@ input[type=number] { -moz-appearance: textfield; }
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg) translateY(-1px);
-  transition: transform 0.2s ease;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin-left: 2px;
 }
 .counter-toggle-btn--open .counter-toggle-chevron {
@@ -2740,31 +2740,37 @@ input[type=number] { -moz-appearance: textfield; }
   margin-top: 6px;
   width: 100%;
   overflow: hidden;
-  max-height: 0;
   opacity: 0;
-  transform: translateY(-4px);
-  transition: max-height 0.28s ease, opacity 0.22s ease, transform 0.22s ease;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top center;
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 .combo-counters-panel.counter-panel--open {
-  max-height: 520px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  max-height: none;
+  overflow: visible;
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+  animation: counter-panel-open 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .combo-counters-panel.counter-panel--closing {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-4px);
+  animation: counter-panel-close 0.2s ease both;
+  pointer-events: none;
 }
 .combo-counters-panel.hidden {
-  display: block;
-  max-height: 0;
+  display: none;
   opacity: 0;
   pointer-events: none;
 }
 .combo-counters-panel.hidden:not(.counter-panel--open):not(.counter-panel--closing) {
   margin-top: 0;
+}
+@keyframes counter-panel-open {
+  from { opacity:0; transform:translateY(-8px) scale(0.98); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes counter-panel-close {
+  from { opacity:1; transform:translateY(0) scale(1); }
+  to { opacity:0; transform:translateY(-8px) scale(0.98); }
 }
 
 /* Counter cards */
@@ -2790,14 +2796,17 @@ input[type=number] { -moz-appearance: textfield; }
   gap: 6px;
 }
 .counter-card {
-  background: rgba(15,23,42,0.55);
-  border: 1px solid rgba(51,65,85,0.65);
-  border-radius: 10px;
-  padding: 7px 8px;
+  background:
+    linear-gradient(145deg,rgba(15,23,42,0.9),rgba(30,41,59,0.62)),
+    rgba(15,23,42,0.78);
+  border: 1px solid rgba(251,191,36,0.18);
+  border-radius: 12px;
+  padding: 9px 10px;
   opacity: 0;
   transform: translateY(6px);
-  animation: counter-card-in 0.32s ease forwards;
+  animation: counter-card-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   animation-delay: var(--counter-delay, 0ms);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
 }
 @keyframes counter-card-in {
   to { opacity: 1; transform: translateY(0); }
@@ -2834,6 +2843,17 @@ input[type=number] { -moz-appearance: textfield; }
   border: 1px solid rgba(96,165,250,0.25);
   border-radius: 6px;
   padding: 2px 6px;
+}
+.counter-card-confidence {
+  font-size: 0.56rem;
+  font-weight: 900;
+  color: #fef3c7;
+  background: rgba(120,53,15,0.34);
+  border: 1px solid rgba(251,191,36,0.34);
+  border-radius: 999px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .counter-card-heroes {
   display: grid;
@@ -2874,13 +2894,216 @@ input[type=number] { -moz-appearance: textfield; }
 }
 .counter-card-reason {
   margin: 6px 0 0;
-  padding: 5px 7px;
+  padding: 6px 8px;
   font-size: 0.6rem;
   line-height: 1.4;
   color: #fcd34d;
   background: rgba(120,53,15,0.22);
   border-radius: 7px;
-  border-left: 2px solid rgba(251,191,36,0.55);
+  border-left: 3px solid rgba(251,191,36,0.75);
+  font-style: italic;
+}
+.counter-card-reason span {
+  display:inline-block;
+  margin-right:6px;
+  color:#fdba74;
+  font-style:normal;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.counter-use-btn {
+  margin-top:8px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  padding:5px 10px;
+  border-radius:9px;
+  border:1px solid rgba(34,211,238,0.38);
+  background:rgba(8,145,178,0.16);
+  color:#67e8f9;
+  font-size:0.58rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  cursor:pointer;
+  transition:background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+.counter-use-btn:hover {
+  background:rgba(8,145,178,0.28);
+  border-color:rgba(34,211,238,0.7);
+  transform:translateY(-1px);
+}
+.counter-empty-state {
+  margin:0;
+  color:#64748b;
+  font-size:0.62rem;
+  font-weight:800;
+  font-style:italic;
+}
+.combo-counters-wrap--empty {
+  margin-top:6px;
+}
+.combo-counters-inline--empty {
+  border-color:rgba(100,116,139,0.22);
+  border-left-color:rgba(100,116,139,0.45);
+  background:rgba(15,23,42,0.38);
+}
+.counter-summary-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:3px;
+  padding:2px 7px;
+  border-radius:999px;
+  color:#fbbf24;
+  background:rgba(120,53,15,0.24);
+  border:1px solid rgba(251,191,36,0.24);
+  font-size:0.56rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+}
+.counter-summary-badge--empty {
+  color:#94a3b8;
+  background:rgba(51,65,85,0.28);
+  border-color:rgba(100,116,139,0.24);
+}
+.generated-combo-card {
+  opacity:0;
+  transform:translateY(10px);
+  animation:generated-combo-in 0.32s ease forwards;
+  animation-delay:var(--result-delay, 0ms);
+}
+.generated-combo-card--top {
+  position:relative;
+  overflow:hidden;
+}
+.generated-combo-card--top::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(110deg,transparent 0%,rgba(251,191,36,0.12) 42%,transparent 70%);
+  transform:translateX(-100%);
+  animation:generated-top-shimmer 2.8s ease-in-out 0.5s infinite;
+}
+@keyframes generated-combo-in {
+  to { opacity:1; transform:translateY(0); }
+}
+@keyframes generated-top-shimmer {
+  0%, 55% { transform:translateX(-100%); }
+  100% { transform:translateX(100%); }
+}
+.hero-counter-section-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.hero-counter-column {
+  min-width:0;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(51,65,85,0.55);
+  background:rgba(15,23,42,0.38);
+}
+.hero-counter-subhead,
+.counter-lookup-subtitle {
+  margin-bottom:8px;
+  color:#f8fafc;
+  font-size:0.68rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.counter-matchup-list {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.counter-matchup-card {
+  padding:9px;
+  border-radius:12px;
+  border:1px solid rgba(251,191,36,0.18);
+  background:linear-gradient(145deg,rgba(15,23,42,0.88),rgba(30,41,59,0.5));
+  opacity:0;
+  transform:translateY(6px);
+  animation:counter-card-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay:var(--counter-delay, 0ms);
+}
+.counter-matchup-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.counter-matchup-label {
+  color:#fbbf24;
+  font-size:0.58rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.counter-matchup-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+}
+.counter-matchup-side {
+  min-width:0;
+  padding:7px;
+  border-radius:10px;
+  border:1px solid rgba(71,85,105,0.52);
+  background:rgba(15,23,42,0.45);
+}
+.counter-matchup-side--winner {
+  border-color:rgba(34,197,94,0.24);
+  background:rgba(6,78,59,0.16);
+}
+.counter-matchup-side-title {
+  display:block;
+  color:#94a3b8;
+  font-size:0.52rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.counter-matchup-rank {
+  display:inline-block;
+  margin:3px 0 6px;
+  color:#f97316;
+  font-size:0.62rem;
+  font-weight:900;
+}
+.counter-matchup-vs {
+  color:#67e8f9;
+  font-size:0.54rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.counter-lookup-sections {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combo-counters-panel,
+  .combo-counters-panel.counter-panel--open,
+  .combo-counters-panel.counter-panel--closing,
+  .counter-card,
+  .counter-matchup-card,
+  .generated-combo-card,
+  .generated-combo-card--top::after {
+    animation:none !important;
+    transition:none !important;
+    transform:none !important;
+    opacity:1 !important;
+  }
 }
 
 /* Admin toggle for manual ranking */

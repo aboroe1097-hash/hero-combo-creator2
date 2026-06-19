@@ -34,6 +34,16 @@ const SKIN_TYPE_PRIORITY = {
   Mythic: 2
 };
 
+function showGeneratorMessage(message) {
+  if (typeof __ui.showAboModal === 'function') {
+    __ui.showAboModal(message);
+    return;
+  }
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, 'warning');
+  }
+}
+
 export function renderGeneratorHeroes(options = {}) {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
@@ -180,7 +190,8 @@ export function renderGeneratorResults(bestCombos) {
 
   bestCombos.forEach((combo, i) => {
     const card = document.createElement('div');
-    card.className = 'generated-combo-card';
+    card.className = `generated-combo-card${i === 0 ? ' generated-combo-card--top' : ''}`;
+    card.style.setProperty('--result-delay', `${i * 70}ms`);
 
     const slots = document.createElement('div');
     slots.className = 'saved-combo-slots';
@@ -231,12 +242,21 @@ export function renderGeneratorResults(bestCombos) {
 
     const scoreBox = document.createElement('div');
     scoreBox.className = 'gen-score-panel';
+    const counterCount = getCounterCount(combo.heroes);
+    const counterBadge = counterCount
+      ? `<span class="counter-summary-badge">${counterCount} counters known</span>`
+      : `<span class="counter-summary-badge counter-summary-badge--empty">No known counters</span>`;
     scoreBox.innerHTML = `
       <div class="gen-score-main">
         <span class="text-[10px] uppercase tracking-widest text-slate-400">${t.generatorScoreLabel}</span>
         <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+        ${counterBadge}
       </div>
-      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
+      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
+        showEmpty: true,
+        showUseAction: true,
+        context: 'generator',
+      })}
     `;
     card.appendChild(scoreBox);
 
@@ -249,7 +269,7 @@ export function generateBestCombos() {
   const selected = Array.from(generatorSelectedHeroes);
 
   if (selected.length < 12) { 
-    __ui.showAboModal(t.generatorMinHeroesMessage || "Select at least 12 heroes to generate best combos.");
+    showGeneratorMessage(t.generatorMinHeroesMessage || "Select at least 12 heroes to generate best combos.");
     return;
   }
 
@@ -294,7 +314,7 @@ export function generateRandomCombos() {
   const t = translations[currentLanguage] || translations.en;
   const selected = Array.from(generatorSelectedHeroes);
   if (selected.length < 3) {
-    __ui.showAboModal(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
+    showGeneratorMessage(t.messagePleaseDrag3Heroes || "Select at least 3 heroes!");
     return;
   }
 
@@ -316,7 +336,7 @@ export function generateRandomCombos() {
     .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
   if (validCombos.length === 0) {
-    __ui.showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
+    showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
     return;
   }
 
@@ -340,7 +360,7 @@ export function generateRandomCombos() {
   randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
 
   if (randomSelection.length === 0) {
-     __ui.showAboModal(t.generatorNoCombosAvailable || "No ranked combos found.");
+     showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
   } else {
      lastGeneratedCombos.length = 0;
      lastGeneratedCombos.push(...randomSelection);
