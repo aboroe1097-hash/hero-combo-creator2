@@ -1294,6 +1294,31 @@ button:not([disabled]):active,
   inset: 58px 18px !important;
 }
 
+.boot-halo {
+  top: 18px !important;
+  width: 58px !important;
+  height: 14px !important;
+}
+
+.door-wing {
+  top: 88px !important;
+  width: 185px !important;
+  height: 116px !important;
+  opacity: 0.58 !important;
+}
+
+.door-wing-left {
+  right: -4px !important;
+}
+
+.door-wing-right {
+  left: -4px !important;
+}
+
+.door-wing span {
+  height: max(7px, calc(var(--feather-h, 14px) * 0.72)) !important;
+}
+
 .door-emblem {
   width: 104px !important;
   height: 104px !important;
