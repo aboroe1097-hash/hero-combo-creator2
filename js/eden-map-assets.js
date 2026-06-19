@@ -43,6 +43,15 @@ const ATLAS_TYPE_ALIASES = {
 
 export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manifest.json`;
 
+export const EDEN_STRATEGY_FLOOR = {
+  url: `${ASSET_ROOT}base-floor-v1.webp`,
+  metaUrl: `${ASSET_ROOT}base-floor-v1.json`,
+  label: 'Strategy Floor V1',
+  opacity: 0.92,
+  bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
+  focusSectors: ['WC', 'EC'],
+};
+
 let _refImage = null;
 let _refLoading = false;
 let _refBounds = { ...FACTION_DIVISION_MAP.bounds };
@@ -236,6 +245,8 @@ export function preloadReferenceMap(onReady) {
 let _screenshotManifest = null;
 const _screenshotImages = new Map();
 let _screenshotLoading = false;
+let _strategyFloorImage = null;
+let _strategyFloorLoading = false;
 
 export function getScreenshotRefs() {
   return _screenshotManifest?.screenshots || [];
@@ -757,4 +768,26 @@ export function isIconReady(icon) {
   if (!icon) return false;
   if (icon instanceof HTMLCanvasElement) return true;
   return icon.complete && icon.naturalWidth > 0;
+}
+
+export function getStrategyFloorImage() {
+  return _strategyFloorImage;
+}
+
+export function preloadStrategyFloor(onReady) {
+  if (isReferenceReady(_strategyFloorImage)) {
+    onReady?.(_strategyFloorImage);
+    return _strategyFloorImage;
+  }
+  if (_strategyFloorLoading) return _strategyFloorImage;
+  _strategyFloorLoading = true;
+  const img = new Image();
+  img.onload = () => {
+    _strategyFloorImage = img;
+    _strategyFloorLoading = false;
+    onReady?.(img);
+  };
+  img.onerror = () => { _strategyFloorLoading = false; };
+  img.src = EDEN_STRATEGY_FLOOR.url;
+  return _strategyFloorImage;
 }

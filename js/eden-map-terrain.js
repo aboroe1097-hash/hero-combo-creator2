@@ -1,7 +1,7 @@
 // X1 Conqueror full-map terrain — biomes, rivers, mountains + pathfinding grid
 import {
-  TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE,
-  getReferenceMapImage, isReferenceReady, getReferenceWorldBounds,
+  TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE, EDEN_STRATEGY_FLOOR,
+  getReferenceMapImage, getStrategyFloorImage, isReferenceReady, getReferenceWorldBounds,
   getScreenshotRefs, getScreenshotImage,
 } from './eden-map-assets.js';
 
@@ -388,11 +388,27 @@ export function drawReferenceLayer(ctx, worldToIso, opacity = MAP_REFERENCE.opac
   return true;
 }
 
+export function drawStrategyFloorLayer(ctx, worldToIso, opacity = EDEN_STRATEGY_FLOOR.opacity) {
+  const img = getStrategyFloorImage();
+  if (!isReferenceReady(img)) return false;
+  const b = EDEN_STRATEGY_FLOOR.bounds;
+  const p0 = worldToIso(b.minX, b.minY);
+  const p1 = worldToIso(b.maxX, b.minY);
+  const p2 = worldToIso(b.maxX, b.maxY);
+  const p3 = worldToIso(b.minX, b.maxY);
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  drawTexturedQuad(ctx, img, p0, p1, p2, p3);
+  ctx.restore();
+  return true;
+}
+
 export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
   const {
     showTiles = true,
     showRivers = true,
     showMountains = true,
+    showStrategyFloor = false,
     showReference = false,
     showScreenshots = false,
     screenshotOpacity = 0.72,
@@ -401,8 +417,12 @@ export function drawTerrainLayer(ctx, worldToIso, scale, options = {}) {
     viewBounds = null,
   } = options;
 
-  const mapImageBase = showReference;
+  const mapImageBase = showReference || showStrategyFloor;
   if (!mapImageBase) drawParchmentBase(ctx, worldToIso, scale);
+
+  if (showStrategyFloor) {
+    drawStrategyFloorLayer(ctx, worldToIso, options.strategyFloorOpacity ?? EDEN_STRATEGY_FLOOR.opacity);
+  }
 
   if (showReference) {
     drawReferenceLayer(ctx, worldToIso, options.referenceOpacity ?? MAP_REFERENCE.opacity);
