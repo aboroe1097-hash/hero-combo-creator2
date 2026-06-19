@@ -61,8 +61,8 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260619_2" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260619_2" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/app.css?v=20260619_3" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260619_3" media="(max-width: 768px)" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { corePlugins: { preflight: false } }
@@ -70,27 +70,43 @@
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
+    <div class="boot-atmosphere" aria-hidden="true"></div>
+    <div class="boot-scanlines" aria-hidden="true"></div>
     <div class="perspective-container">
       <!-- Left Door (Ice) -->
       <div id="doorLeft" class="door door-left">
-        <div class="door-emblem ice-emblem">❄️</div>
+        <div class="door-panel-lines" aria-hidden="true"></div>
+        <div class="door-emblem ice-emblem" aria-hidden="true">
+          <span class="door-emblem-mark">ICE</span>
+          <span class="door-emblem-ring"></span>
+        </div>
+        <div class="door-faction">FROST WING</div>
         <div class="door-rivet top-left"></div>
         <div class="door-rivet bottom-left"></div>
       </div>
       
       <!-- Right Door (Fire) -->
       <div id="doorRight" class="door door-right">
-        <div class="door-emblem fire-emblem">🔥</div>
+        <div class="door-panel-lines" aria-hidden="true"></div>
+        <div class="door-emblem fire-emblem" aria-hidden="true">
+          <span class="door-emblem-mark">FIRE</span>
+          <span class="door-emblem-ring"></span>
+        </div>
+        <div class="door-faction">EMBER WING</div>
         <div class="door-rivet top-right"></div>
         <div class="door-rivet bottom-right"></div>
       </div>
 
       <!-- Light cracking through the middle -->
       <div id="centerLight" class="center-light"></div>
+      <div class="gate-lock" aria-hidden="true">
+        <img src="images/logo.png" alt="" width="88" height="88" />
+      </div>
     </div>
     
     <!-- Title & Progress Bar Container -->
     <div id="loadingStatusContainer" class="loading-status-container">
+      <div class="boot-kicker">V10 WAR GATE</div>
       <h1 id="loadingTitle" class="loading-title">HERO COMBO CREATOR</h1>
       <p class="boot-sub">VTS 1097 • RISE OF CASTLES</p>
       <p class="boot-status-text">Loading toolkit…</p>
@@ -625,7 +641,7 @@
     applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
   }, 800);
   </script>
-  <script type="module" src="js/app.js?v=20260619_1"></script>
+  <script type="module" src="js/app.js?v=20260619_3"></script>
 
 <script>
   // Lazy-load YouTube iframes

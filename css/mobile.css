@@ -1246,3 +1246,95 @@ button:not([disabled]):active,
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%) !important;
   color: #e0f2fe !important;
 }
+
+/* 10.0.0 mobile boot gate */
+.boot-splash {
+  justify-content: center !important;
+  gap: 18px !important;
+}
+
+.boot-atmosphere {
+  background-size: 36px 36px, 36px 36px, auto !important;
+}
+
+.perspective-container {
+  width: min(92vw, 420px) !important;
+  height: min(68vh, 560px) !important;
+  min-height: 390px;
+  border: 1px solid rgba(103, 232, 249, 0.18);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  background: rgba(2, 6, 14, 0.62);
+}
+
+.door {
+  width: 50.5% !important;
+  height: 100% !important;
+}
+
+.door::before {
+  inset: 28px 14px !important;
+}
+
+.door-panel-lines {
+  inset: 58px 18px !important;
+}
+
+.door-emblem {
+  width: 104px !important;
+  height: 104px !important;
+  font-size: 0.86rem !important;
+}
+
+.door-emblem-ring {
+  inset: 10px !important;
+}
+
+.door-faction {
+  bottom: 42px !important;
+  font-size: 0.54rem !important;
+  padding: 5px 8px !important;
+}
+
+.door-left .door-faction {
+  right: 16px !important;
+}
+
+.door-right .door-faction {
+  left: 16px !important;
+}
+
+.gate-lock {
+  top: 48% !important;
+  width: 76px !important;
+  height: 76px !important;
+}
+
+.loading-status-container {
+  width: min(88vw, 390px) !important;
+  max-width: none !important;
+  margin-top: 0 !important;
+  padding: 14px 16px !important;
+}
+
+.boot-kicker {
+  font-size: 0.5rem !important;
+  margin-bottom: 6px !important;
+}
+
+.loading-title {
+  font-size: 1rem !important;
+}
+
+.boot-sub {
+  font-size: 0.52rem !important;
+  margin-bottom: 8px !important;
+}
+
+.boot-status-text {
+  font-size: 0.62rem !important;
+  margin-bottom: 8px !important;
+}
+
+.boot-progress {
+  height: 5px !important;
+}
