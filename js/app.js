@@ -33,6 +33,7 @@ import {
 } from './app-builder.js';
 
 import {
+  renderSkinMetaCombosTable,
   renderGeneratorHeroes,
   renderGeneratorResults,
   generateBestCombos,
@@ -814,6 +815,7 @@ async function startApp() {
     await safeInit('updateTextContent', () => updateTextContent());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
+    safeInit('renderSkinMetaCombosTable', () => renderSkinMetaCombosTable());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes());
     safeInit('wireUIActions', () => wireUIActions());
     safeInit('initResearchCalculator', () => initResearchCalculator());

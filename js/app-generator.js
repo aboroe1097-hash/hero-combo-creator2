@@ -5,6 +5,7 @@ import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getSkinCount, SKIN_TYPES } from './skins-db.js';
+import { skinMetaCombos, SKIN_STATUS_LABELS } from './skin-combos-db.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -22,11 +23,58 @@ import {
   generatorSkinsOnly,
   lastGeneratedCombos,
   sourceCreditText,
+  skinMetaCombosTableEl,
   generatorHeroesEl,
   generatorResultsEl,
   downloadGeneratorBtn,
   __ui,
 } from './state.js';
+
+function renderSkinStatus(hero) {
+  const label = SKIN_STATUS_LABELS[hero.skinStatus] || hero.skinStatus || 'Skin status';
+  const className = `skin-status-chip skin-status-chip--${hero.skinStatus || 'base'}`;
+  const title = hero.note ? `${label}. ${hero.note}` : label;
+  return `<span class="${className}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+}
+
+export function renderSkinMetaCombosTable() {
+  if (!skinMetaCombosTableEl) return;
+
+  skinMetaCombosTableEl.innerHTML = `
+    <div class="skin-meta-heading">
+      <div>
+        <span class="skin-meta-kicker">S1-X1 skin meta</span>
+        <h3 class="skin-meta-title">Skin Max Combos</h3>
+      </div>
+      <p class="skin-meta-summary">Maxed means Star 3: biography attributes, inheriting skill, preserving skill, and the moving icon.</p>
+    </div>
+    <div class="skin-meta-list">
+      ${skinMetaCombos.map(combo => `
+        <article class="skin-meta-row">
+          <div class="skin-meta-rank">
+            <span class="skin-meta-rank-number">#${combo.rank}</span>
+            <span class="skin-meta-range">${escapeHtml(combo.seasonRange)}</span>
+          </div>
+          <div class="skin-meta-content">
+            <div class="skin-meta-heroes">
+              ${combo.heroes.map(hero => `
+                <div class="skin-meta-hero">
+                  <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
+                  <div class="skin-meta-hero-copy">
+                    <span class="skin-meta-position">${escapeHtml(hero.position)}</span>
+                    <span class="skin-meta-name">${escapeHtml(hero.name)}</span>
+                    ${renderSkinStatus(hero)}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <p class="skin-meta-note">${escapeHtml(combo.note)}</p>
+          </div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
 
 export function renderGeneratorHeroes() {
   if (!generatorHeroesEl) return;
