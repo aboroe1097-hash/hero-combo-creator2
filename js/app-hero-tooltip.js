@@ -1,3 +1,4 @@
+import { escapeHtml } from './utils.js';
 // Extracted Hero Tooltip Module
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
@@ -47,7 +48,7 @@ function showHeroTooltip(e, heroName) {
     const synTags = synergies.map(syn => `
       <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded border border-slate-700 shadow-sm">
          <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-600 object-cover">
-         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${syn}</span>
+         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${escapeHtml(syn)}</span>
       </div>
     `).join('');
     
@@ -64,7 +65,7 @@ function showHeroTooltip(e, heroName) {
   heroTooltip.innerHTML = `
     <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
       <div class="flex flex-col">
-        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${heroName}</h4>
+        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${escapeHtml(heroName)}</h4>
         <div class="flex gap-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 w-fit">
           <div class="flex flex-col">
             <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>

@@ -914,3 +914,335 @@ button:not([disabled]):active,
   .research-grid { grid-template-columns: repeat(3, 1fr) !important; }
   .combo-slot { width: 58px !important; height: 58px !important; }
 }
+
+/* 10.0.0 mobile flow refresh */
+@media (max-width: 768px) {
+  body {
+    padding: 8px !important;
+    background-attachment: scroll !important;
+  }
+
+  #app.app-shell {
+    width: 100% !important;
+    padding: 10px !important;
+    border-radius: 16px !important;
+  }
+
+  .command-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .command-brand,
+  .command-actions {
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .version-ribbon {
+    justify-self: stretch !important;
+    font-size: 0.64rem !important;
+    padding: 7px 9px !important;
+  }
+
+  .command-logo {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+    column-gap: 10px !important;
+  }
+
+  .command-logo .main-logo {
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 13px !important;
+  }
+
+  .command-logo #appTitle {
+    font-size: clamp(1.45rem, 9vw, 2.05rem) !important;
+    line-height: 0.98 !important;
+    text-align: left !important;
+  }
+
+  .command-logo > div {
+    align-items: flex-start !important;
+  }
+
+  .command-logo > div p {
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .command-copy.seo-intro {
+    font-size: 0.68rem !important;
+    line-height: 1.45 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+  }
+
+  .command-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .command-kicker {
+    align-self: stretch !important;
+    justify-content: center !important;
+    font-size: 0.6rem !important;
+    padding: 6px 8px !important;
+  }
+
+  .app-control-row {
+    justify-content: space-between !important;
+    gap: 6px !important;
+  }
+
+  .tool-nav-shell {
+    top: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .tool-nav-inner {
+    border-radius: 14px !important;
+    padding: 4px !important;
+    gap: 4px !important;
+  }
+
+  #tabNavScroll {
+    max-width: calc(100vw - 78px) !important;
+    gap: 4px !important;
+    padding: 1px !important;
+  }
+
+  .tab-scroll-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+  }
+
+  .tab-pill {
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 0.66rem !important;
+    gap: 5px !important;
+  }
+
+  .tab-pill svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  #globalToggleRow {
+    margin-bottom: 9px !important;
+  }
+
+  #globalToggleRow label {
+    width: 100% !important;
+    justify-content: space-between !important;
+    border-radius: 12px !important;
+  }
+
+  #manualSection > .mb-6.p-4,
+  #generatorSection > .mb-6.p-4,
+  .research-control-deck,
+  .research-summary-card,
+  .loyalty-sticky,
+  #commentsSection {
+    border-radius: 13px !important;
+    padding: 10px !important;
+  }
+
+  #availableHeroes,
+  #generatorHeroes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .hero-card,
+  .generator-card {
+    min-height: 112px !important;
+    padding: 7px !important;
+    border-radius: 12px !important;
+  }
+
+  .hero-card img,
+  .generator-card img {
+    width: 58px !important;
+    height: 58px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .hero-card span.text-xs,
+  .generator-card span.text-xs {
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+  }
+
+  #comboFooterBar {
+    bottom: 8px !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  #comboButtonsRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  #comboButtonsRow button {
+    min-height: 38px !important;
+    padding: 7px 4px !important;
+    font-size: 0.62rem !important;
+  }
+}
+
+/* 10.0.0 mobile HUD correction */
+.command-header {
+  padding: 9px !important;
+  border-radius: 8px !important;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px) !important;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.16), transparent 42%),
+    linear-gradient(315deg, rgba(251, 191, 36, 0.12), transparent 38%),
+    repeating-linear-gradient(90deg, rgba(148, 163, 184, 0.045) 0 1px, transparent 1px 30px),
+    rgba(3, 8, 18, 0.96) !important;
+}
+
+.command-brand,
+.command-actions {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.command-brand {
+  gap: 7px !important;
+  padding: 0 !important;
+}
+
+.version-ribbon {
+  justify-self: start !important;
+  width: auto !important;
+  max-width: 100% !important;
+  padding: 5px 9px !important;
+  font-size: 0.56rem !important;
+  border-radius: 0 !important;
+  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%) !important;
+}
+
+.command-logo {
+  grid-template-columns: 54px minmax(0, 1fr) !important;
+  column-gap: 9px !important;
+}
+
+.command-logo .main-logo {
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 8px !important;
+  transform: rotate(-1.5deg);
+}
+
+.command-logo #appTitle {
+  font-size: clamp(1.4rem, 8.2vw, 2rem) !important;
+  line-height: 0.92 !important;
+  text-align: left !important;
+}
+
+.command-logo > div p {
+  font-size: 0.55rem !important;
+}
+
+.command-copy.seo-intro {
+  display: none !important;
+}
+
+.command-actions {
+  padding: 7px !important;
+  border: 1px solid rgba(103, 232, 249, 0.18) !important;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px) !important;
+  background: rgba(2, 6, 14, 0.56) !important;
+}
+
+.command-kicker {
+  align-self: stretch !important;
+  border-radius: 0 !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
+  font-size: 0.56rem !important;
+  color: #06121d !important;
+}
+
+.app-control-row {
+  justify-content: space-between !important;
+}
+
+.global-game-clock,
+.lang-select-wrapper > div,
+#themeToggle,
+#installAppBtn {
+  border-radius: 8px !important;
+}
+
+.tool-nav-inner {
+  border-radius: 8px !important;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px) !important;
+}
+
+.tab-pill {
+  border-radius: 0 !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
+  font-size: 0.64rem !important;
+}
+
+.generator-selection-actions {
+  gap: 5px !important;
+}
+
+.selection-action-btn,
+#genSelectAllBtn,
+#genClearAllBtn {
+  min-height: 32px !important;
+  padding: 7px 9px !important;
+  border-radius: 0 !important;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
+  color: #eaffff !important;
+  font-size: 0.56rem !important;
+  line-height: 1.05 !important;
+}
+
+#generatorSection .mb-6 > .flex.items-center.justify-between {
+  gap: 8px !important;
+  align-items: flex-start !important;
+}
+
+.filter-pill:not(.free-pill):not(.paid-pill),
+.heroes-filter-pill,
+.hero-tab-season,
+.tech-season-btn,
+.research-quick-btn,
+.loyalty-preset-btn {
+  border-radius: 0 !important;
+  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%) !important;
+  border-color: rgba(103, 232, 249, 0.24) !important;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(15, 23, 42, 0.72)) !important;
+  color: #cde7f7 !important;
+}
+
+.filter-pill:not(.free-pill):not(.paid-pill):has(input:checked),
+.heroes-filter-pill.active,
+.hero-tab-season.active,
+.tech-season-btn.active,
+.research-quick-btn.active,
+.loyalty-preset-btn.active {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  background:
+    linear-gradient(135deg, #22d3ee, #5eead4 58%, #fbbf24) !important;
+  color: #06121d !important;
+}
+
+.research-card-max {
+  border-radius: 0 !important;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%) !important;
+  color: #e0f2fe !important;
+}

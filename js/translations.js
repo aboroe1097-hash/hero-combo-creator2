@@ -67,7 +67,7 @@ export const translations = {
     seoFeatureEden: "Eden Map Planner — Season 5 structures, paths, team plan",
     seoFeatureLoyalty: "Eden Loyalty Calculator — upgrade paths & poison %",
     seoFeatureResearch: "Tech Research Calculator — badges, medals, game-layout trees",
-    betaNote: "BETA {version} — VTS s1097 Community Tool",
+    betaNote: "v{version} — VTS s1097 Community Tool",
     tabManual: "Manual Builder", 
     tabGenerator: "Combo Generator",
     tabYouTube: "YouTube", tabHeroes: "Hero Atlas", tabEdenMap: "Eden Map", tabEdenMapBadge: "Beta",
@@ -557,7 +557,7 @@ export const translations = {
     seoFeatureEden: "Mapa Eden — estruturas Temporada 5, rotas, plano de equipes",
     seoFeatureLoyalty: "Calculadora de Lealdade — caminhos de melhoria e % veneno",
     seoFeatureResearch: "Calculadora de Pesquisa — medalhas, distintivos e árvores in-game",
-    betaNote: "BETA {version} — Ferramenta da Comunidade VTS s1097",
+    betaNote: "v{version} — Ferramenta da Comunidade VTS s1097",
     tabManual: "Construtor Manual", tabGenerator: "Gerador de Combos",
     tabYouTube: "YouTube", tabHeroes: "Atlas de Heróis", tabEdenMap: "Mapa Eden", tabEdenMapBadge: "Beta", tabLoyalty: "Calculadora de Lealdade", tabResearch: "Pesquisa", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Rankings do banco de combos. Busque, filtre e toque um herói para skills, sinergias e melhores combos.",
@@ -928,7 +928,7 @@ export const translations = {
     adminChartLow: "En Düşük Performans Gösterenler",
     adminLoading: "Yükleniyor...",
 
-    appTitle: "Kombo Oluşturucu", betaNote: "BETA {version} — VTS s1097 Topluluk Aracı",
+    appTitle: "Kombo Oluşturucu", betaNote: "v{version} — VTS s1097 Topluluk Aracı",
     tabManual: "Manuel Mod", tabGenerator: "Kombo Oluşturucu",
     tabYouTube: "YouTube", tabHeroes: "Kahraman Atlası", tabEdenMap: "Eden Haritası", tabLoyalty: "Eden Sadakat", tabResearch: "Araştırma", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Kombo veritabanı sıralamaları. Ara, filtrele ve bir kahramana dokunarak becerileri, sinerjileri ve en iyi komboları gör.",
@@ -1036,7 +1036,7 @@ export const translations = {
     adminChartLow: "Худшие результаты",
     adminLoading: "Загрузка...",
 
-    appTitle: "Создатель Комбо", betaNote: "БЕТА {version} — Инструмент сообщества VTS s1097",
+    appTitle: "Создатель Комбо", betaNote: "v{version} — Инструмент сообщества VTS s1097",
     tabManual: "Ручной Режим", tabGenerator: "Генератор Комбо",
     tabYouTube: "YouTube", tabHeroes: "Атлас героев", tabEdenMap: "Карта Эдема", tabLoyalty: "Калькулятор лояльности", tabResearch: "Исследования", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Рейтинг из базы комбо. Ищите, фильтруйте и откройте героя для навыков, синергий и лучших комбо.",
@@ -1140,7 +1140,7 @@ export const translations = {
     adminChartLow: "Peores Rendimientos",
     adminLoading: "Cargando...",
 
-    appTitle: "Creador de Combos", betaNote: "BETA {version} — Herramienta de la Comunidad VTS s1097",
+    appTitle: "Creador de Combos", betaNote: "v{version} — Herramienta de la Comunidad VTS s1097",
     tabManual: "Constructor Manual", tabGenerator: "Generador de Combos",
     tabYouTube: "YouTube", tabHeroes: "Atlas de Héroes", tabEdenMap: "Mapa Eden", tabLoyalty: "Calc. de Lealtad", tabResearch: "Investigación", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Rankings de la base de combos. Busca, filtra y toca un héroe para ver habilidades, sinergias y mejores combos.",
@@ -1243,7 +1243,7 @@ export const translations = {
     adminChartLow: "Moins Bons Performeurs",
     adminLoading: "Chargement...",
 
-    appTitle: "Créateur de Combos", betaNote: "BETA {version} — Outil Communautaire VTS s1097",
+    appTitle: "Créateur de Combos", betaNote: "v{version} — Outil Communautaire VTS s1097",
     tabManual: "Mode Manuel", tabGenerator: "Générateur de Combos",
     tabYouTube: "YouTube", tabHeroes: "Atlas des Héros", tabEdenMap: "Carte Eden", tabLoyalty: "Calc. Fidélité Eden", tabResearch: "Recherche", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Classements de la base de combos. Recherchez, filtrez et touchez un héros pour skills, synergies et meilleurs combos.",
@@ -1346,7 +1346,7 @@ export const translations = {
     adminChartLow: "Schwächste Performer",
     adminLoading: "Wird geladen...",
 
-    appTitle: "Kombi-Ersteller", betaNote: "BETA {version} — VTS s1097 Community-Tool",
+    appTitle: "Kombi-Ersteller", betaNote: "v{version} — VTS s1097 Community-Tool",
     tabManual: "Manueller Bau", tabGenerator: "Kombi-Generator",
     tabYouTube: "YouTube", tabHeroes: "Helden-Atlas", tabEdenMap: "Eden-Karte", tabLoyalty: "Eden Loyalität", tabResearch: "Forschung", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Rankings aus der Combo-Datenbank. Suchen, filtern und Helden antippen für Skills, Synergien und Top-Kombos.",
@@ -1448,7 +1448,7 @@ export const translations = {
     adminChartLow: "Performa Terendah",
     adminLoading: "Memuat...",
 
-    appTitle: "Pembuat Kombo", betaNote: "BETA {version} — Alat Komunitas VTS s1097",
+    appTitle: "Pembuat Kombo", betaNote: "v{version} — Alat Komunitas VTS s1097",
     tabManual: "Mode Manual", tabGenerator: "Generator Kombo",
     tabYouTube: "YouTube", tabHeroes: "Atlas Hero", tabEdenMap: "Peta Eden", tabLoyalty: "Kalkulator Loyalitas", tabResearch: "Penelitian", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "Peringkat dari database kombo. Cari, filter, lalu ketuk hero untuk skill, sinergi & kombo terbaik.",
@@ -1549,7 +1549,7 @@ export const translations = {
     adminChartLow: "最差表现",
     adminLoading: "加载中...",
 
-    appTitle: "英雄组合创建器", betaNote: "测试版 {version} — VTS s1097 社区工具",
+    appTitle: "英雄组合创建器", betaNote: "v{version} — VTS s1097 社区工具",
     tabManual: "手动模式", tabGenerator: "组合生成器",
     tabYouTube: "YouTube", tabHeroes: "英雄图鉴", tabEdenMap: "伊甸地图", tabLoyalty: "伊甸忠诚度计算", tabResearch: "科技研究", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "来自组合数据库的排名。搜索、筛选后点击英雄查看技能、协同与最佳组合。",
@@ -1655,7 +1655,7 @@ export const translations = {
     adminChartLow: "أسوأ الأداء",
     adminLoading: "جاري التحميل...",
 
-    appTitle: "صانع تشكيلات الأبطال", betaNote: "نسخة تجريبية {version} — أداة مجتمع VTS s1097",
+    appTitle: "صانع تشكيلات الأبطال", betaNote: "v{version} — أداة مجتمع VTS s1097",
     tabManual: "بناء يدوي", tabGenerator: "مولد التشكيلات",
     tabYouTube: "يوتيوب", tabHeroes: "أطلس الأبطال", tabEdenMap: "خريطة إيدن", tabLoyalty: "حاسبة ولاء إيدن", tabResearch: "الأبحاث", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "تصنيفات من قاعدة التشكيلات. ابحث وفلتر ثم اضغط بطلاً للمهارات والتآزر وأفضل التشكيلات.",
@@ -1702,7 +1702,7 @@ export const translations = {
     edenToolNavigate: "تنقل", edenToolPath: "مسار", edenSearchPh: "بحث عن المباني...", edenBuildCombo: "إنشاء تشكيلة",
   },
   kr: {
-    appTitle: "영웅 조합 생성기", betaNote: "베타 {version} — VTS s1097 커뮤니티 도구",
+    appTitle: "영웅 조합 생성기", betaNote: "v{version} — VTS s1097 커뮤니티 도구",
     tabManual: "수동 빌더", tabGenerator: "조합 생성기",
     tabYouTube: "YouTube", tabHeroes: "영웅 도감", tabEdenMap: "에덴 맵", tabLoyalty: "에덴 충성도 계산기", tabResearch: "연구", tabOcrDashboard: "VTS Admin",
     heroesTabDesc: "콤보 DB 순위. 검색·필터 후 영웅을 눌러 스킬, 시너지, 최고 콤보를 확인하세요.",
