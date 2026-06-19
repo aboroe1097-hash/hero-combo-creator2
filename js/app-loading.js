@@ -3,7 +3,7 @@
  */
 
 const INTRO_STORAGE_KEY = 'vts_intro_v1_seen';
-const MIN_BOOT_MS = 600;
+const MIN_BOOT_MS = 850;
 
 // Web Audio API cinematic synthesis for loading screen doors
 let audioCtx = null;
@@ -113,11 +113,11 @@ function playTransitionSound() {
 }
 
 const BOOT_STATUS_LINES = [
-    'Warming up hero database…',
-    'Syncing combo rankings…',
-    'Preparing Eden map layers…',
-    'Loading academy tech trees…',
-    'Almost ready…',
+    'Sealing the war gate...',
+    'Syncing hero command deck...',
+    'Charging combo matrix...',
+    'Priming Eden map layers...',
+    'Opening VTS command...',
 ];
 
 let bootStartedAt = performance.now();
