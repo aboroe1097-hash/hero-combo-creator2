@@ -133,6 +133,161 @@ import {
 
 initAppLoading();
 
+// Maintenance switch: set MAINTENANCE_MODE to true, commit, and push to show the update screen.
+// Leave it false for the normal app. Preview anytime with ?maintenancePreview=1.
+const MAINTENANCE_MODE = true;
+const MAINTENANCE_PREVIEW_PARAM = 'maintenancePreview';
+const MAINTENANCE_CONFIG = {
+  kicker: 'VTS 1097 WAR ROOM',
+  title: 'Down for Update',
+  message: 'Hero Combo Creator is being upgraded. We are tuning the 10.0.0 layout, skins, datasets, and war tools.',
+  status: 'Maintenance in progress',
+};
+
+function shouldShowMaintenanceMode() {
+  try {
+    return MAINTENANCE_MODE || new URLSearchParams(window.location.search).has(MAINTENANCE_PREVIEW_PARAM);
+  } catch {
+    return MAINTENANCE_MODE;
+  }
+}
+
+function renderMaintenanceMode() {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  document.title = `${MAINTENANCE_CONFIG.title} | Hero Combo Creator`;
+  document.body.classList.add('maintenance-active');
+  app.className = 'maintenance-shell app-shell--hidden';
+  app.innerHTML = `
+    <style>
+      body.maintenance-active {
+        min-height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 30% 22%, rgba(34, 211, 238, 0.2), transparent 32%),
+          radial-gradient(circle at 72% 36%, rgba(251, 191, 36, 0.16), transparent 34%),
+          #020611;
+      }
+      #app.maintenance-shell,
+      [data-theme="light"] #app.maintenance-shell {
+        max-width: none !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .maintenance-shell {
+        width: min(100%, 1120px);
+        min-height: calc(100vh - 32px);
+        margin: 0 auto;
+        display: grid;
+        place-items: center;
+      }
+      .maintenance-card {
+        position: relative;
+        width: min(92vw, 620px);
+        padding: clamp(28px, 5vw, 54px);
+        text-align: center;
+        color: #e5f8ff;
+        background:
+          linear-gradient(135deg, rgba(34, 211, 238, 0.13), rgba(251, 191, 36, 0.09)),
+          rgba(2, 6, 17, 0.88);
+        border: 1px solid rgba(103, 232, 249, 0.34);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255,255,255,0.08);
+        clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+        overflow: hidden;
+      }
+      .maintenance-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(34, 211, 238, 0.1) 0 1px, transparent 1px 64px),
+          linear-gradient(180deg, rgba(251, 191, 36, 0.06) 0 1px, transparent 1px 64px);
+        opacity: 0.38;
+      }
+      .maintenance-logo {
+        position: relative;
+        width: 92px;
+        height: 92px;
+        margin: 0 auto 18px;
+        border-radius: 18px;
+        box-shadow: 0 0 32px rgba(34, 211, 238, 0.28), 0 0 54px rgba(251, 191, 36, 0.14);
+      }
+      .maintenance-kicker,
+      .maintenance-title,
+      .maintenance-message,
+      .maintenance-status {
+        position: relative;
+      }
+      .maintenance-kicker {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 7px 13px;
+        color: #06121d;
+        background: linear-gradient(90deg, #67e8f9, #fbbf24);
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+      }
+      .maintenance-title {
+        margin: 0;
+        font-family: "Cinzel", serif;
+        font-size: clamp(2.2rem, 8vw, 4.8rem);
+        line-height: 0.95;
+        color: #f8fdff;
+        text-shadow: 0 0 28px rgba(34, 211, 238, 0.34);
+      }
+      .maintenance-message {
+        max-width: 480px;
+        margin: 18px auto 24px;
+        color: #b8c7d9;
+        font-size: clamp(0.95rem, 2.8vw, 1.08rem);
+        line-height: 1.65;
+      }
+      .maintenance-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        color: #fef3c7;
+        background: rgba(15, 23, 42, 0.68);
+        border: 1px solid rgba(251, 191, 36, 0.32);
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .maintenance-status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #22d3ee;
+        box-shadow: 0 0 16px #22d3ee;
+      }
+      @media (max-width: 640px) {
+        body.maintenance-active { overflow: auto; }
+        .maintenance-shell { min-height: calc(100vh - 24px); }
+      }
+    </style>
+    <section class="maintenance-card" role="status" aria-live="polite">
+      <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
+      <div class="maintenance-kicker">${escapeHtml(MAINTENANCE_CONFIG.kicker)}</div>
+      <h1 class="maintenance-title">${escapeHtml(MAINTENANCE_CONFIG.title)}</h1>
+      <p class="maintenance-message">${escapeHtml(MAINTENANCE_CONFIG.message)}</p>
+      <div class="maintenance-status">
+        <span class="maintenance-status-dot" aria-hidden="true"></span>
+        ${escapeHtml(MAINTENANCE_CONFIG.status)}
+      </div>
+    </section>
+  `;
+}
+
 /* ===== THEME (Dark default + Light) ===== */
 function getPreferredTheme() {
   const stored = localStorage.getItem('theme');
@@ -939,16 +1094,11 @@ function safeInit(name, fn) {
   }
 }
 
-setupInstallPrompt();
-
-// Register UI functions for builder/generator modules
-registerUiFunctions({
-  showHeroTooltip,
-  moveHeroTooltip,
-  hideHeroTooltip,
-  forceHideHeroTooltip,
-  showAboModal,
-});
+async function startMaintenanceMode() {
+  renderMaintenanceMode();
+  safeInit('registerServiceWorker', () => registerServiceWorker());
+  await notifyAppReady({ skipIntro: true });
+}
 
 // Fire it up!
 window.addEventListener('error', (e) => {
@@ -957,7 +1107,20 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[global] Unhandled promise rejection:', e.reason);
 });
-if (typeof startApp === 'function') {
+if (shouldShowMaintenanceMode()) {
+  startMaintenanceMode().catch(err => console.error('[global] maintenance mode failed:', err));
+} else if (typeof startApp === 'function') {
+  setupInstallPrompt();
+
+  // Register UI functions for builder/generator modules
+  registerUiFunctions({
+    showHeroTooltip,
+    moveHeroTooltip,
+    hideHeroTooltip,
+    forceHideHeroTooltip,
+    showAboModal,
+  });
+
   startApp().catch(err => console.error('[global] startApp failed:', err));
 } else {
   console.error('[global] startApp not defined — module import may have failed');
