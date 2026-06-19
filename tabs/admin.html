@@ -62,6 +62,7 @@
             <!-- Sub-tab Navigation -->
             <div class="dash-subtab-nav">
               <button class="dash-subtab-btn dash-subtab-active" data-subtab="dashboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></button>
+              <button class="dash-subtab-btn" data-subtab="analytics"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/><circle cx="7" cy="15" r="1"/><circle cx="10" cy="12" r="1"/><circle cx="13" cy="14" r="1"/><circle cx="18" cy="7" r="1"/></svg><span data-i18n="adminAnalyticsTab">Analytics</span></button>
               <button class="dash-subtab-btn" data-subtab="roster"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Roster</span></button>
               <button class="dash-subtab-btn" data-subtab="banners"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h12l2 4-2 4H4"/><path d="M20 21V3"/></svg><span>Banners</span></button>
             </div>
@@ -170,6 +171,68 @@
               </div>
             </div>
             </div><!-- /dashSubtabDashboard -->
+
+            <!-- Sub-tab: Analytics -->
+            <div class="dash-subtab-panel hidden" id="dashSubtabAnalytics">
+              <div class="dash-card dash-analytics-lead">
+                <div>
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/></svg><span data-i18n="adminAnalyticsTitle">Advanced Insights</span></h2>
+                  <p data-i18n="adminAnalyticsSub">Structure performance, player consistency, participation heat, and roster gaps from uploaded attack data.</p>
+                </div>
+                <div id="dashAnalyticsSummary" class="dash-analytics-summary"></div>
+              </div>
+
+              <div class="dash-analytics-grid">
+                <div class="dash-card dash-analytics-card dash-analytics-card-wide">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span data-i18n="adminAnalyticsStructure">Structure Performance</span></h2>
+                  </div>
+                  <div id="dashStructureChart" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg><span data-i18n="adminAnalyticsTrends">Player Trends</span></h2>
+                  </div>
+                  <div id="dashPlayerTrends" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span data-i18n="adminAnalyticsHeatmap">Participation Heatmap</span></h2>
+                  </div>
+                  <div id="dashHeatmap" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5"/><path d="M8 19v-6"/><path d="M12 19V8"/><path d="M16 19v-9"/><path d="M20 19v-3"/></svg><span data-i18n="adminAnalyticsDistribution">Hit Value Distribution</span></h2>
+                  </div>
+                  <div id="dashHitDistribution" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg><span data-i18n="adminAnalyticsConsistency">Consistency & Movement</span></h2>
+                  </div>
+                  <div id="dashConsistencyInsights" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M2 21v-2a4 4 0 0 1 3-3.87"/></svg><span data-i18n="adminAnalyticsAlliance">Roster Gaps</span></h2>
+                  </div>
+                  <div id="dashAllianceInsights" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+
+                <div class="dash-card dash-analytics-card">
+                  <div class="dash-card-hdr">
+                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l4-4 4 4 8-8"/><path d="M20 9v6h-6"/></svg><span data-i18n="adminAnalyticsStreaks">Attendance Streaks</span></h2>
+                  </div>
+                  <div id="dashStreaks" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
+                </div>
+              </div>
+            </div>
 
             <!-- Sub-tab: Roster -->
             <div class="dash-subtab-panel hidden" id="dashSubtabRoster">

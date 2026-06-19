@@ -2,52 +2,546 @@ import { state, $id, esc, findBestMatch, validateTotalDemolition } from './ocr-s
 import { displayGameTime } from './ocr-engine.js';
 import { isGuest } from './ocr-dashboard.js';
 
+function valueOf(input) {
+  const n = Number(input || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function attackPlayers(attack) {
+  return Array.isArray(attack?.players) ? attack.players : [];
+}
+
+function compactValue(value) {
+  const n = valueOf(value);
+  if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return n.toLocaleString();
+}
+
+function parseGameTimeDate(gameTime) {
+  const text = String(gameTime || '').trim();
+  if (!text) return null;
+  const dmY = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/);
+  if (dmY) {
+    return new Date(
+      Number(dmY[3]),
+      Number(dmY[2]) - 1,
+      Number(dmY[1]),
+      Number(dmY[4] || 0),
+      Number(dmY[5] || 0)
+    );
+  }
+  const iso = new Date(text);
+  return Number.isNaN(iso.getTime()) ? null : iso;
+}
+
+function sortAttacksChrono(attacks) {
+  return [...(attacks || [])].sort((a, b) => {
+    const ad = parseGameTimeDate(a.game_time)?.getTime() || 0;
+    const bd = parseGameTimeDate(b.game_time)?.getTime() || 0;
+    return ad - bd;
+  });
+}
+
+function getTimeFilteredAttacks(attacks) {
+  let atts = [...(attacks || [])];
+  const timeFilter = $id('dashTimeFilter');
+  if (!timeFilter || !atts.length) return atts;
+
+  const tf = timeFilter.value;
+  if (tf !== 'daily' && tf !== 'weekly') return atts;
+
+  const gtNow = new Date(Date.now() + (new Date().getTimezoneOffset() - 120) * 60000);
+  const pad = n => n.toString().padStart(2, '0');
+
+  if (tf === 'daily') {
+    const todayPrefix = `${pad(gtNow.getDate())}/${pad(gtNow.getMonth() + 1)}/${gtNow.getFullYear()}`;
+    return atts.filter(a => a.game_time && a.game_time.startsWith(todayPrefix));
+  }
+
+  const dayOfWeek = gtNow.getDay();
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const startOfMonday = new Date(gtNow.getFullYear(), gtNow.getMonth(), gtNow.getDate() - daysSinceMonday).getTime();
+  return atts.filter(a => {
+    const attackDate = parseGameTimeDate(a.game_time);
+    return attackDate ? attackDate.getTime() >= startOfMonday : false;
+  });
+}
+
+function normalizeStructureLabel(name) {
+  return String(name || 'Unknown')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function structureKey(attack) {
+  const name = normalizeStructureLabel(attack?.structure_name);
+  const level = String(attack?.structure_level || '').toLowerCase().replace(/\s+/g, '').trim();
+  return `${name}|${level}`;
+}
+
+function structureLabel(attack) {
+  return `${attack?.structure_name || 'Unknown Structure'} ${attack?.structure_level || ''}`.trim();
+}
+
+function normalizePlayerName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+}
+
+function rosterMemberName(member) {
+  if (!member) return '';
+  if (typeof member === 'string') return member;
+  return member.name || '';
+}
+
+function rosterMemberAlliance(member) {
+  return typeof member === 'object' && member ? Number(member.alliance ?? -1) : -1;
+}
+
+function rosterMemberStatus(member) {
+  return typeof member === 'object' && member ? (member.status || 'unknown') : 'unknown';
+}
+
+function buildPlayerSummary(attacks) {
+  const globalSum = {};
+  (attacks || []).forEach(a => {
+    const seen = new Set();
+    attackPlayers(a).forEach(p => {
+      const n = findBestMatch(p.name);
+      const val = valueOf(p.value ?? p.val);
+      if (!globalSum[n]) {
+        globalSum[n] = {
+          name: n,
+          total_demolition: 0,
+          participation_count: 0,
+          attacks: [],
+          unique_structures: new Set()
+        };
+      }
+      globalSum[n].total_demolition += val;
+      if (!seen.has(n)) {
+        globalSum[n].participation_count++;
+        seen.add(n);
+        globalSum[n].unique_structures.add(structureKey(a));
+      }
+      globalSum[n].attacks.push({
+        id: a.id,
+        attack_id: a.id,
+        name: a.structure_name,
+        structure_name: a.structure_name,
+        structure_level: a.structure_level,
+        game_time: a.game_time,
+        val,
+        value: val,
+        rank: p.rank
+      });
+    });
+  });
+  return Object.values(globalSum).sort((a, b) => b.total_demolition - a.total_demolition);
+}
+
+function renderSparkline(values, color = '#60a5fa') {
+  const w = 150;
+  const h = 48;
+  const safe = values.length ? values : [0];
+  const max = Math.max(...safe, 1);
+  const min = Math.min(...safe, 0);
+  const range = Math.max(max - min, 1);
+  const pts = safe.map((v, i) => {
+    const x = safe.length === 1 ? w / 2 : (i / (safe.length - 1)) * w;
+    const y = h - 5 - ((v - min) / range) * (h - 10);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const fillPts = `0,${h} ${pts.join(' ')} ${w},${h}`;
+  return `<svg class="dash-sparkline" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polygon points="${fillPts}" fill="${color}" opacity="0.12"></polygon><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
+}
+
+function setAnalyticsEmpty() {
+  ['dashStructureChart', 'dashPlayerTrends', 'dashHeatmap', 'dashHitDistribution', 'dashConsistencyInsights', 'dashAllianceInsights', 'dashStreaks'].forEach(id => {
+    const el = $id(id);
+    if (el) el.innerHTML = '<div class="dash-empty">No attack data yet</div>';
+  });
+  const summary = $id('dashAnalyticsSummary');
+  if (summary) summary.innerHTML = '<span>No data</span>';
+}
+
+function animateAnalyticsCards() {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const cards = document.querySelectorAll('#dashSubtabAnalytics .dash-analytics-card');
+  cards.forEach((card, index) => {
+    card.style.setProperty('--dash-stagger', `${index * 45}ms`);
+    card.classList.remove('dash-analytics-in');
+    requestAnimationFrame(() => card.classList.add('dash-analytics-in'));
+  });
+}
+
+function renderStructurePerformance(attacks) {
+  const host = $id('dashStructureChart');
+  if (!host) return;
+
+  const groups = new Map();
+  attacks.forEach(a => {
+    const key = structureKey(a);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        label: structureLabel(a),
+        attacks: 0,
+        total: 0,
+        attendance: 0,
+        players: new Map()
+      });
+    }
+    const group = groups.get(key);
+    group.attacks++;
+    group.total += valueOf(a.total_demolition);
+    group.attendance += attackPlayers(a).length;
+    attackPlayers(a).forEach(p => {
+      const n = findBestMatch(p.name);
+      group.players.set(n, (group.players.get(n) || 0) + valueOf(p.value ?? p.val));
+    });
+  });
+
+  const rows = [...groups.values()]
+    .map(group => {
+      const mvp = [...group.players.entries()].sort((a, b) => b[1] - a[1])[0];
+      return {
+        ...group,
+        avgDemo: group.attacks ? Math.round(group.total / group.attacks) : 0,
+        avgAttendance: group.attacks ? Math.round(group.attendance / group.attacks) : 0,
+        mvpName: mvp?.[0] || '---',
+        mvpValue: mvp?.[1] || 0
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  if (!rows.length) {
+    host.innerHTML = '<div class="dash-empty">No structure data yet</div>';
+    return;
+  }
+
+  const max = Math.max(...rows.map(r => r.total), 1);
+  const activeRow = rows.find(r => r.key === state.structureFilterKey);
+  const filterNote = activeRow
+    ? `<div class="dash-analytics-filter-note">Leaderboard filtered by <strong>${esc(activeRow.label)}</strong><button id="dashClearStructureFilter" type="button">Clear</button></div>`
+    : '';
+
+  host.innerHTML = filterNote + rows.map(row => {
+    const pct = Math.max(4, Math.round((row.total / max) * 100));
+    const isActive = row.key === state.structureFilterKey ? ' is-active' : '';
+    return `<button type="button" class="dash-structure-item${isActive}" data-structure-key="${esc(row.key)}">
+      <span class="dash-structure-bar" style="width:${pct}%"></span>
+      <span class="dash-structure-main">
+        <strong>${esc(row.label)}</strong>
+        <span>${row.attacks} hits · ${compactValue(row.avgDemo)} avg demo · ${row.avgAttendance} avg players</span>
+      </span>
+      <span class="dash-structure-side">
+        <strong>${compactValue(row.total)}</strong>
+        <span>MVP ${esc(row.mvpName)} · ${compactValue(row.mvpValue)}</span>
+      </span>
+    </button>`;
+  }).join('');
+
+  host.querySelectorAll('[data-structure-key]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.structureFilterKey = btn.dataset.structureKey || '';
+      state.leaderLimit = 25;
+      const filter = $id('dashLeaderFilter');
+      if (filter) filter.value = '';
+      render();
+    });
+  });
+  $id('dashClearStructureFilter')?.addEventListener('click', () => {
+    state.structureFilterKey = '';
+    render();
+  });
+}
+
+function renderPlayerTrends(attacks, psum) {
+  const host = $id('dashPlayerTrends');
+  if (!host) return;
+  const ordered = sortAttacksChrono(attacks).slice(-12);
+  const top = psum.slice(0, 6);
+  if (!ordered.length || !top.length) {
+    host.innerHTML = '<div class="dash-empty">No player trend data yet</div>';
+    return;
+  }
+
+  host.innerHTML = top.map((player, index) => {
+    const vals = ordered.map(attack => attackPlayers(attack).reduce((sum, p) => {
+      return findBestMatch(p.name) === player.name ? sum + valueOf(p.value ?? p.val) : sum;
+    }, 0));
+    const first = vals.find(v => v > 0) || 0;
+    const last = [...vals].reverse().find(v => v > 0) || 0;
+    const delta = last - first;
+    const color = index % 3 === 0 ? '#60a5fa' : index % 3 === 1 ? '#34d399' : '#fbbf24';
+    return `<div class="dash-trend-row">
+      <div class="dash-trend-person">
+        <strong>${esc(player.name)}</strong>
+        <span>${player.participation_count} hits · ${compactValue(player.total_demolition)}</span>
+      </div>
+      ${renderSparkline(vals, color)}
+      <span class="dash-trend-delta ${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '+' : ''}${compactValue(delta)}</span>
+    </div>`;
+  }).join('');
+}
+
+function attackHour(attack) {
+  if (attack?.start_time && /^\d{1,2}:\d{2}/.test(attack.start_time)) return Number(attack.start_time.split(':')[0]);
+  const date = parseGameTimeDate(attack?.game_time);
+  return date ? date.getHours() : 0;
+}
+
+function renderHeatmap(attacks) {
+  const host = $id('dashHeatmap');
+  if (!host) return;
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const buckets = [
+    { label: '00-05', from: 0, to: 5 },
+    { label: '06-11', from: 6, to: 11 },
+    { label: '12-17', from: 12, to: 17 },
+    { label: '18-23', from: 18, to: 23 }
+  ];
+  const cells = new Map();
+  attacks.forEach(a => {
+    const date = parseGameTimeDate(a.game_time);
+    if (!date) return;
+    const hour = attackHour(a);
+    const bucket = buckets.find(b => hour >= b.from && hour <= b.to) || buckets[0];
+    const key = `${date.getDay()}|${bucket.label}`;
+    const current = cells.get(key) || { count: 0, demo: 0 };
+    current.count++;
+    current.demo += valueOf(a.total_demolition);
+    cells.set(key, current);
+  });
+
+  if (!cells.size) {
+    host.innerHTML = '<div class="dash-empty">No timestamped attacks yet</div>';
+    return;
+  }
+
+  const max = Math.max(...[...cells.values()].map(c => c.count), 1);
+  let html = '<div class="dash-heatmap-grid"><span></span>';
+  buckets.forEach(b => { html += `<span class="dash-heatmap-label">${b.label}</span>`; });
+  weekdays.forEach((day, dayIndex) => {
+    html += `<span class="dash-heatmap-day">${day}</span>`;
+    buckets.forEach(bucket => {
+      const cell = cells.get(`${dayIndex}|${bucket.label}`) || { count: 0, demo: 0 };
+      const heat = cell.count ? (0.15 + (cell.count / max) * 0.85).toFixed(2) : 0;
+      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.label}: ${cell.count} attacks, ${compactValue(cell.demo)} demo">
+        ${cell.count ? `<strong>${cell.count}</strong><small>${compactValue(cell.demo)}</small>` : ''}
+      </span>`;
+    });
+  });
+  html += '</div><div class="dash-analytics-hint">Cells show attack count and total demolition by game-time window.</div>';
+  host.innerHTML = html;
+}
+
+function renderDistribution(attacks) {
+  const host = $id('dashHitDistribution');
+  if (!host) return;
+  const buckets = [
+    { label: '<100K', min: 0, max: 100000 },
+    { label: '100K-250K', min: 100000, max: 250000 },
+    { label: '250K-500K', min: 250000, max: 500000 },
+    { label: '500K-1M', min: 500000, max: 1000000 },
+    { label: '1M+', min: 1000000, max: Infinity }
+  ].map(b => ({ ...b, count: 0, total: 0 }));
+
+  attacks.forEach(a => attackPlayers(a).forEach(p => {
+    const val = valueOf(p.value ?? p.val);
+    const bucket = buckets.find(b => val >= b.min && val < b.max);
+    if (bucket) {
+      bucket.count++;
+      bucket.total += val;
+    }
+  }));
+
+  const totalHits = buckets.reduce((sum, b) => sum + b.count, 0);
+  if (!totalHits) {
+    host.innerHTML = '<div class="dash-empty">No hit values yet</div>';
+    return;
+  }
+  const maxCount = Math.max(...buckets.map(b => b.count), 1);
+  host.innerHTML = buckets.map(bucket => {
+    const pct = Math.round((bucket.count / maxCount) * 100);
+    const share = Math.round((bucket.count / totalHits) * 100);
+    return `<div class="dash-dist-row">
+      <span class="dash-dist-label">${bucket.label}</span>
+      <span class="dash-dist-track"><span class="dash-dist-fill" style="width:${Math.max(3, pct)}%"></span></span>
+      <span class="dash-dist-value">${bucket.count} <small>${share}%</small></span>
+    </div>`;
+  }).join('') + `<div class="dash-analytics-hint">${totalHits.toLocaleString()} recorded player hits · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0))} demolition total.</div>`;
+}
+
+function average(values) {
+  return values.length ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
+}
+
+function renderConsistency(psum) {
+  const host = $id('dashConsistencyInsights');
+  if (!host) return;
+  const scored = psum
+    .filter(p => (p.attacks || []).length >= 2)
+    .map(p => {
+      const values = sortAttacksChrono(p.attacks).map(a => valueOf(a.val ?? a.value));
+      const avg = average(values);
+      const variance = average(values.map(v => Math.pow(v - avg, 2)));
+      const coeff = avg ? Math.sqrt(variance) / avg : 99;
+      const first = average(values.slice(0, Math.min(5, Math.ceil(values.length / 2))));
+      const last = average(values.slice(-Math.min(5, Math.ceil(values.length / 2))));
+      return { ...p, values, coeff, delta: last - first };
+    });
+
+  if (!scored.length) {
+    host.innerHTML = '<div class="dash-empty">Need at least two hits per player</div>';
+    return;
+  }
+
+  const consistent = [...scored].sort((a, b) => a.coeff - b.coeff).slice(0, 5);
+  const improvers = [...scored].filter(p => p.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 4);
+  const decliners = [...scored].filter(p => p.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 4);
+  const list = (title, rows, kind) => `<div class="dash-insight-list">
+    <strong>${title}</strong>
+    ${rows.length ? rows.map(p => `<span><em>${esc(p.name)}</em><b class="${kind}">${kind === 'steady' ? `${Math.round((1 - Math.min(p.coeff, 1)) * 100)}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
+  </div>`;
+
+  host.innerHTML = list('Most consistent', consistent, 'steady') + list('Biggest improvers', improvers, 'up') + list('Decliners to watch', decliners, 'down');
+}
+
+function renderAllianceInsights(psum) {
+  const host = $id('dashAllianceInsights');
+  if (!host) return;
+  const latest = state.rosterSnapshots?.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1] : null;
+  const roster = latest?.members || [];
+  if (!roster.length) {
+    host.innerHTML = '<div class="dash-empty">No roster snapshot yet. Add a roster to compare participation gaps.</div>';
+    return;
+  }
+
+  const participantNorm = new Set(psum.map(p => normalizePlayerName(p.name)).filter(Boolean));
+  const rosterRows = roster.map(member => ({
+    name: rosterMemberName(member),
+    norm: normalizePlayerName(rosterMemberName(member)),
+    alliance: rosterMemberAlliance(member),
+    status: rosterMemberStatus(member)
+  })).filter(r => r.norm);
+  const missing = rosterRows.filter(r => !participantNorm.has(r.norm));
+  const rosterNorm = new Set(rosterRows.map(r => r.norm));
+  const unmapped = psum.filter(p => !rosterNorm.has(normalizePlayerName(p.name)));
+  const byAlliance = new Map();
+  rosterRows.forEach(row => {
+    const label = row.alliance >= 0 ? (state.allianceList?.[row.alliance] || `Team ${row.alliance + 1}`) : 'Unassigned';
+    const current = byAlliance.get(label) || { total: 0, active: 0 };
+    current.total++;
+    if (participantNorm.has(row.norm)) current.active++;
+    byAlliance.set(label, current);
+  });
+  const trustedMisses = missing.filter(m => m.status === 'trusted').length;
+
+  host.innerHTML = `
+    <div class="dash-roster-stats">
+      <span><strong>${rosterRows.length}</strong><small>Roster</small></span>
+      <span><strong>${rosterRows.length - missing.length}</strong><small>Active</small></span>
+      <span><strong>${missing.length}</strong><small>Missing</small></span>
+      <span><strong>${unmapped.length}</strong><small>Unmapped</small></span>
+    </div>
+    <div class="dash-insight-list">
+      <strong>Alliance participation</strong>
+      ${[...byAlliance.entries()].map(([label, stat]) => {
+        const pct = stat.total ? Math.round((stat.active / stat.total) * 100) : 0;
+        return `<span><em>${esc(label)}</em><b>${pct}% · ${stat.active}/${stat.total}</b></span>`;
+      }).join('')}
+    </div>
+    <div class="dash-analytics-hint">${trustedMisses ? `${trustedMisses} trusted members did not appear in the filtered data.` : 'No trusted roster gaps detected in this view.'}${unmapped.length ? ` Unmapped hits: ${unmapped.slice(0, 4).map(p => esc(p.name)).join(', ')}${unmapped.length > 4 ? '...' : ''}` : ''}</div>`;
+}
+
+function renderStreaks(attacks, psum) {
+  const host = $id('dashStreaks');
+  if (!host) return;
+  const ordered = sortAttacksChrono(attacks);
+  if (!ordered.length) {
+    host.innerHTML = '<div class="dash-empty">No attacks yet</div>';
+    return;
+  }
+  const attackSets = ordered.map(a => new Set(attackPlayers(a).map(p => normalizePlayerName(findBestMatch(p.name)))));
+  const latestRoster = state.rosterSnapshots?.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members : [];
+  const rosterNames = latestRoster.map(rosterMemberName).filter(Boolean);
+  const names = [...new Set([...psum.map(p => p.name), ...rosterNames])].filter(Boolean);
+  const rows = names.map(name => {
+    const norm = normalizePlayerName(name);
+    let streak = 0;
+    for (let i = attackSets.length - 1; i >= 0; i--) {
+      if (!attackSets[i].has(norm)) break;
+      streak++;
+    }
+    const recent = attackSets.slice(-Math.min(3, attackSets.length));
+    const missedRecent = recent.length ? recent.every(set => !set.has(norm)) : false;
+    return { name, streak, missedRecent };
+  });
+  const top = rows.filter(r => r.streak > 0).sort((a, b) => b.streak - a.streak).slice(0, 6);
+  const atRisk = rows.filter(r => r.missedRecent).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
+
+  host.innerHTML = `<div class="dash-streak-columns">
+    <div class="dash-insight-list">
+      <strong>Current streaks</strong>
+      ${top.length ? top.map(r => `<span><em>${esc(r.name)}</em><b class="up">${r.streak} in a row</b></span>`).join('') : '<span class="muted">No active streaks yet</span>'}
+    </div>
+    <div class="dash-insight-list">
+      <strong>At risk</strong>
+      ${atRisk.length ? atRisk.map(r => `<span><em>${esc(r.name)}</em><b class="down">missed last ${Math.min(3, attackSets.length)}</b></span>`).join('') : '<span class="muted">No one missed the latest run window</span>'}
+    </div>
+  </div>`;
+}
+
+function renderAnalytics(attacks, psum) {
+  if (!$id('dashSubtabAnalytics')) return;
+  if (!attacks.length) {
+    setAnalyticsEmpty();
+    return;
+  }
+  const totalDemo = attacks.reduce((sum, a) => sum + valueOf(a.total_demolition), 0);
+  const summary = $id('dashAnalyticsSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <span><strong>${attacks.length}</strong><small>Structures</small></span>
+      <span><strong>${psum.length}</strong><small>Players</small></span>
+      <span><strong>${compactValue(totalDemo)}</strong><small>Demo</small></span>`;
+  }
+  renderStructurePerformance(attacks);
+  renderPlayerTrends(attacks, psum);
+  renderHeatmap(attacks);
+  renderDistribution(attacks);
+  renderConsistency(psum);
+  renderAllianceInsights(psum);
+  renderStreaks(attacks, psum);
+  animateAnalyticsCards();
+}
+
+window.clearStructureLeaderboardFilter = function() {
+  state.structureFilterKey = '';
+  state.leaderLimit = 25;
+  render();
+};
+
 function render() {
   if (!state.dashData) {
     ['dashKpiAttacks','dashKpiDemo','dashKpiPlayers'].forEach(id => $id(id).textContent = '0');
     $id('dashKpiMvp').textContent = '---'; $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
+    setAnalyticsEmpty();
     return;
   }
-  let atts = state.dashData.attacks || [];
-
-  const timeFilter = $id('dashTimeFilter');
-  if (timeFilter && atts.length > 0) {
-    const tf = timeFilter.value;
-    if (tf === 'daily' || tf === 'weekly') {
-      const gtNow = new Date(Date.now() + (new Date().getTimezoneOffset() - 120) * 60000);
-      const pad = n => n.toString().padStart(2, '0');
-
-      if (tf === 'daily') {
-        const todayPrefix = `${pad(gtNow.getDate())}/${pad(gtNow.getMonth()+1)}/${gtNow.getFullYear()}`;
-        atts = atts.filter(a => a.game_time && a.game_time.startsWith(todayPrefix));
-      } else if (tf === 'weekly') {
-        const dayOfWeek = gtNow.getDay();
-        const daysSinceMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-        const startOfMonday = new Date(gtNow.getFullYear(), gtNow.getMonth(), gtNow.getDate() - daysSinceMonday).getTime();
-        atts = atts.filter(a => {
-          if (!a.game_time) return false;
-          const p1 = a.game_time.split(' ')[0].split('/');
-          if (p1.length !== 3) return false;
-          const attackTime = new Date(p1[2], parseInt(p1[1])-1, p1[0]).getTime();
-          return attackTime >= startOfMonday;
-        });
-      }
-    }
-  }
-  const globalSum = {};
-  atts.forEach(a => {
-    const seen = new Set();
-    a.players.forEach(p => {
-      const n = findBestMatch(p.name);
-      if (!globalSum[n]) globalSum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
-      globalSum[n].total_demolition += (p.value||p.val||0);
-      if (!seen.has(n)) { globalSum[n].participation_count++; seen.add(n); globalSum[n].unique_structures.add((a.structure_name||'') + '_' + (a.structure_level||'')); }
-      globalSum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank });
-    });
-  });
-  let psum = Object.values(globalSum).sort((a,b) => b.total_demolition - a.total_demolition);
+  let atts = getTimeFilteredAttacks(state.dashData.attacks || []);
+  const globalPsum = buildPlayerSummary(atts);
+  let psum = globalPsum;
+  let structureFilterLabel = '';
 
   const filterEl = $id('dashLeaderFilter');
   if (filterEl && atts.length > 0) {
@@ -62,20 +556,16 @@ function render() {
 
     if (currentVal) {
       const filteredAttacks = atts.filter(a => a.id === currentVal);
-      const sum = {};
-      filteredAttacks.forEach(a => {
-        const seen = new Set();
-        a.players.forEach(p => {
-          const n = findBestMatch(p.name);
-          if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
-          sum[n].total_demolition += (p.value||p.val||0);
-          if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + (a.structure_level||'')); }
-          sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: (p.value||p.val||0), rank: p.rank });
-        });
-      });
-      psum = Object.values(sum).sort((a,b) => b.total_demolition - a.total_demolition);
+      psum = buildPlayerSummary(filteredAttacks);
+    } else if (state.structureFilterKey) {
+      const filteredAttacks = atts.filter(a => structureKey(a) === state.structureFilterKey);
+      if (filteredAttacks.length) {
+        structureFilterLabel = structureLabel(filteredAttacks[0]);
+        psum = buildPlayerSummary(filteredAttacks);
+      }
     }
   }
+  renderAnalytics(atts, globalPsum);
 
   const total = atts.reduce((s, a) => s + (a.total_demolition || 0), 0);
   $id('dashKpiAttacks').textContent = atts.length;
@@ -161,11 +651,23 @@ function render() {
   const filteredLeader = psumWithRank.filter(p => p.name.toLowerCase().includes(state.searchQ.toLowerCase()));
   const toShow = filteredLeader.slice(0, state.leaderLimit);
 
+  if (structureFilterLabel) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
+    tb.appendChild(tr);
+  }
+
   toShow.forEach(p => {
     const tr = document.createElement('tr'); tr.style.cursor = 'pointer';
     tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition||0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition||0)/Math.max(p.participation_count,1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p); tb.appendChild(tr);
   });
+
+  if (!filteredLeader.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="5" class="dash-empty">No matching members</td>';
+    tb.appendChild(tr);
+  }
 
   if (filteredLeader.length > state.leaderLimit) {
     const tr = document.createElement('tr');
@@ -177,6 +679,9 @@ function render() {
   const filterEl2 = $id('dashLeaderFilter');
   if (filterEl2 && filterEl2.value) {
     activeAttacks = atts.filter(a => a.id === filterEl2.value);
+  } else if (state.structureFilterKey) {
+    const filtered = atts.filter(a => structureKey(a) === state.structureFilterKey);
+    if (filtered.length) activeAttacks = filtered;
   }
 
   const $avgAttend = $id('dashAvgAttend');

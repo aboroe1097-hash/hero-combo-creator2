@@ -33,6 +33,7 @@ state.rosterSnapshots = [];
 state.bannerRecords = [];
 state.sortCol = 'total_demolition';
 state.sortDir = 'desc';
+state.structureFilterKey = '';
 
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
@@ -50,6 +51,7 @@ function switchDashSubtab(name) {
   if (panel) panel.classList.remove('hidden');
   const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
   if (btn) btn.classList.add('dash-subtab-active');
+  if (name === 'analytics') render();
   if (name === 'roster') renderRoster();
   if (name === 'banners') renderBanners();
 }
@@ -679,7 +681,7 @@ export async function bootOcrDashboard() {
 
   $id('dashModalClose').onclick = closeModal;
   $id('dashSearch').oninput = e => { state.searchQ = e.target.value; state.leaderLimit = 25; render(); };
-  $id('dashLeaderFilter').onchange = () => { state.leaderLimit = 25; render(); };
+  $id('dashLeaderFilter').onchange = () => { state.structureFilterKey = ''; state.leaderLimit = 25; render(); };
   const tFilter = $id('dashTimeFilter');
   if (tFilter) tFilter.onchange = () => { state.leaderLimit = 25; render(); };
   $id('dashAttackSearch').oninput = e => { state.attackSearchQ = e.target.value; render(); };

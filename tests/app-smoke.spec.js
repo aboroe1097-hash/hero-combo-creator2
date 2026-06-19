@@ -191,4 +191,96 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashApp')).not.toBeVisible();
     expect(await page.evaluate(() => sessionStorage.getItem('vts_guest'))).toBeNull();
   });
+
+  test('admin analytics renders seeded OCR insights and filters leaderboard', async ({ page }) => {
+    await openApp(page);
+    await page.route('https://firestore.googleapis.com/**', route => route.abort());
+    const seededDash = {
+      last_updated: '20/06/2026, 12:00',
+      total_attacks: 3,
+      attacks: [
+        {
+          id: 'att-cap-1',
+          structure_name: 'Capital',
+          structure_level: 'Lv.5',
+          game_time: '18/06/2026, 18:30',
+          start_time: '18:00',
+          total_demolition: 1800000,
+          players_count: 3,
+          players: [
+            { name: 'Alpha', value: 900000, rank: 1 },
+            { name: 'Bravo', value: 600000, rank: 2 },
+            { name: 'Charlie', value: 300000, rank: 3 }
+          ]
+        },
+        {
+          id: 'att-gate-1',
+          structure_name: 'Gate',
+          structure_level: 'Lv.3',
+          game_time: '19/06/2026, 12:30',
+          start_time: '12:00',
+          total_demolition: 900000,
+          players_count: 2,
+          players: [
+            { name: 'Alpha', value: 500000, rank: 1 },
+            { name: 'Delta', value: 400000, rank: 2 }
+          ]
+        },
+        {
+          id: 'att-cap-2',
+          structure_name: 'Capital',
+          structure_level: 'Lv.5',
+          game_time: '20/06/2026, 20:30',
+          start_time: '20:00',
+          total_demolition: 2100000,
+          players_count: 3,
+          players: [
+            { name: 'Bravo', value: 1000000, rank: 1 },
+            { name: 'Alpha', value: 700000, rank: 2 },
+            { name: 'Echo', value: 400000, rank: 3 }
+          ]
+        }
+      ],
+      players_summary: []
+    };
+    const seededRoster = [{
+      date: '20/06/2026',
+      members: [
+        { name: 'Alpha', status: 'trusted', alliance: 0 },
+        { name: 'Bravo', status: 'trusted', alliance: 0 },
+        { name: 'Foxtrot', status: 'trusted', alliance: 1 }
+      ]
+    }];
+    await page.evaluate(({ seededDash, seededRoster }) => {
+      localStorage.setItem('vts_ocr_dashboard', JSON.stringify(seededDash));
+      localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
+    }, { seededDash, seededRoster });
+
+    await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
+    await page.locator('#dashGuestBtn').click();
+    await page.evaluate(async ({ seededDash, seededRoster }) => {
+      const shared = await import('/js/ocr-shared.js');
+      const renderer = await import('/js/ocr-render.js');
+      if (typeof shared.state._fsUnsub === 'function') {
+        shared.state._fsUnsub();
+        shared.state._fsUnsub = null;
+      }
+      shared.state.dashData = seededDash;
+      shared.state.rosterSnapshots = seededRoster;
+      localStorage.setItem('vts_ocr_dashboard', JSON.stringify(seededDash));
+      localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
+      renderer.render();
+    }, { seededDash, seededRoster });
+    await page.locator('[data-subtab="analytics"]').click();
+    await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
+    await expect(page.locator('#dashStructureChart')).toContainText('Capital');
+    await expect(page.locator('#dashPlayerTrends')).toContainText('Alpha');
+    await expect(page.locator('#dashHitDistribution')).toContainText('1M+');
+    await expect(page.locator('#dashAllianceInsights')).toContainText('Unmapped');
+
+    await page.locator('#dashStructureChart .dash-structure-item', { hasText: 'Capital' }).first().click();
+    await page.locator('[data-subtab="dashboard"]').click();
+    await expect(page.locator('#dashLeaderBody')).toContainText('Filtered by Capital');
+    await expect(page.locator('#dashLeaderBody')).toContainText('Bravo');
+  });
 });
