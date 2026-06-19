@@ -58,4 +58,26 @@ test.describe('app smoke tabs', () => {
     );
     expect(seasonsWithS2).toContain('S2');
   });
+
+  test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {
+    await openApp(page);
+
+    await page.locator('#generatorSeasonFilters .s4-pill').click();
+    await page.locator('#genSkinToggleLabel').click();
+    await expect(page.locator('#genSkinToggle')).toBeChecked();
+
+    const firstGeneratorCard = page.locator('#generatorHeroes .generator-card').first();
+    await expect(firstGeneratorCard).toContainText('King Arthur');
+    await expect(firstGeneratorCard).toHaveClass(/skin-priority-card/);
+    await expect(firstGeneratorCard.locator('.generator-skin-badge--priority')).toHaveText('E');
+    await expect(page.locator('#generatorHeroes .generator-card.skin-priority-muted').first()).toBeVisible();
+
+    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
+    await page.locator('#heroesTabSearch').fill('King Arthur');
+    await expect(page.locator('[data-hero-name="King Arthur"]')).toBeVisible();
+    await page.locator('[data-hero-name="King Arthur"]').click();
+    await page.locator('[data-detail-section="skins"]').click();
+    await expect(page.locator('#detail-section-skins')).toContainText('Upgrades Skill 2: Wheel of Fortune -> Eternity');
+    await expect(page.locator('#detail-section-skins')).not.toContainText('Slot 8');
+  });
 });

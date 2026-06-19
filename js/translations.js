@@ -1755,7 +1755,7 @@ export const translations = {
 
 const supplementalTranslations = {
   en: {
-    genSkinsOnly: "Heroes with skins",
+    genSkinsOnly: "Skin priority",
     heroSearchPh: "Search heroes...",
     heroesSkillsTitle: "Skills",
     heroesBioSkinsTitle: "Bio Skins",
@@ -1810,7 +1810,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "X1 hero skin is treated as unavailable until X2."
   },
   pt: {
-    genSkinsOnly: "Heróis com skins",
+    genSkinsOnly: "Prioridade de skins",
     heroSearchPh: "Pesquisar heróis...",
     heroesSkillsTitle: "Habilidades",
     heroesBioSkinsTitle: "Skins bio",
@@ -1847,7 +1847,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "A skin do herói X1 é tratada como indisponível até X2."
   },
   tr: {
-    genSkinsOnly: "Skinli kahramanlar",
+    genSkinsOnly: "Skin önceliği",
     heroSearchPh: "Kahraman ara...",
     heroesSkillsTitle: "Beceriler",
     heroesBioSkinsTitle: "Bio skinler",
@@ -1884,7 +1884,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "X1 kahraman skini X2'ye kadar kullanılamaz kabul edilir."
   },
   ru: {
-    genSkinsOnly: "Герои со скинами",
+    genSkinsOnly: "Приоритет скинов",
     heroSearchPh: "Поиск героев...",
     heroesSkillsTitle: "Навыки",
     heroesBioSkinsTitle: "Био-скины",
@@ -1921,7 +1921,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "Скин героя X1 считается недоступным до X2."
   },
   es: {
-    genSkinsOnly: "Héroes con skins",
+    genSkinsOnly: "Prioridad de skins",
     heroSearchPh: "Buscar héroes...",
     heroesSkillsTitle: "Habilidades",
     heroesBioSkinsTitle: "Skins bio",
@@ -1958,7 +1958,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "La skin del héroe X1 se trata como no disponible hasta X2."
   },
   fr: {
-    genSkinsOnly: "Héros avec skins",
+    genSkinsOnly: "Priorité skins",
     heroSearchPh: "Rechercher des héros...",
     heroesSkillsTitle: "Compétences",
     heroesBioSkinsTitle: "Skins bio",
@@ -1995,7 +1995,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "Le skin du héros X1 est considéré indisponible jusqu'à X2."
   },
   de: {
-    genSkinsOnly: "Helden mit Skins",
+    genSkinsOnly: "Skin-Priorität",
     heroSearchPh: "Helden suchen...",
     heroesSkillsTitle: "Fähigkeiten",
     heroesBioSkinsTitle: "Bio-Skins",
@@ -2032,7 +2032,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "Der X1-Heldenskin gilt bis X2 als nicht verfügbar."
   },
   id: {
-    genSkinsOnly: "Hero dengan skin",
+    genSkinsOnly: "Prioritas skin",
     heroSearchPh: "Cari hero...",
     heroesSkillsTitle: "Skill",
     heroesBioSkinsTitle: "Skin Bio",
@@ -2069,7 +2069,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "Skin hero X1 dianggap belum tersedia sampai X2."
   },
   zh: {
-    genSkinsOnly: "拥有皮肤的英雄",
+    genSkinsOnly: "皮肤优先",
     heroSearchPh: "搜索英雄...",
     heroesSkillsTitle: "技能",
     heroesBioSkinsTitle: "传记皮肤",
@@ -2106,7 +2106,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "X1 英雄皮肤在 X2 前视为不可用。"
   },
   ar: {
-    genSkinsOnly: "أبطال لديهم سكنات",
+    genSkinsOnly: "أولوية السكنات",
     heroSearchPh: "ابحث عن الأبطال...",
     heroesSkillsTitle: "المهارات",
     heroesBioSkinsTitle: "سكنات السيرة",
@@ -2143,7 +2143,7 @@ const supplementalTranslations = {
     skinMetaBeowulfTimingNote: "سكن بطل X1 يعتبر غير متاح حتى X2."
   },
   kr: {
-    genSkinsOnly: "스킨 보유 영웅",
+    genSkinsOnly: "스킨 우선",
     heroSearchPh: "영웅 검색...",
     heroesSkillsTitle: "스킬",
     heroesBioSkinsTitle: "전기 스킨",
