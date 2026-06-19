@@ -9,7 +9,6 @@ import { techDatabase } from './tech-db.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { escapeHtml, appT } from './utils.js';
-import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
@@ -33,7 +32,6 @@ import {
 } from './app-builder.js';
 
 import {
-  renderSkinMetaCombosTable,
   renderGeneratorHeroes,
   renderGeneratorResults,
   generateBestCombos,
@@ -128,6 +126,7 @@ import {
   computeStateSelection,
   computeTypeSelection,
   getCheckedValues,
+  getGeneratorHeroPool,
   registerUiFunctions,
 } from './state.js';
 
@@ -738,7 +737,7 @@ tabs.forEach(tab => {
   if (genSelectAllBtn) {
     genSelectAllBtn.onclick = () => {
       const options = syncGeneratorControlState();
-      allHeroesData
+      getGeneratorHeroPool(options.skinsOnly)
         .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
         .forEach(h => generatorSelectedHeroes.add(h.name));
       renderGeneratorHeroes(options);
@@ -897,7 +896,6 @@ function updateTextContent() {
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
   syncGameClockTitles();
-  renderSkinMetaCombosTable();
 
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     const key = el.getAttribute('data-i18n-label');
@@ -1014,7 +1012,6 @@ async function startApp() {
     await safeInit('updateTextContent', () => updateTextContent());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
-    safeInit('renderSkinMetaCombosTable', () => renderSkinMetaCombosTable());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('wireUIActions', () => wireUIActions());
     safeInit('initResearchCalculator', () => initResearchCalculator());

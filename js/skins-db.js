@@ -152,6 +152,10 @@ export function getHeroSkins(heroName) {
   return heroSkins[heroName] || [];
 }
 
+export function getSkinForHero(heroName) {
+  return getHeroSkins(heroName)[0] || null;
+}
+
 export function hasSkin(heroName) {
   return !!heroSkins[heroName];
 }
@@ -162,6 +166,12 @@ export function getSkinCount(heroName) {
 
 export function getHeroHiddenPower(heroName) {
   return heroHiddenPowers[heroName] || null;
+}
+
+export function getSkinTypeColor(heroName) {
+  const skin = getSkinForHero(heroName);
+  if (!skin) return null;
+  return (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic).color;
 }
 
 export function getSkinIconHtml(skin, maximized = false) {

@@ -68,15 +68,20 @@ test.describe('app smoke tabs', () => {
 
   test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {
     await openApp(page);
+    await expect(page.locator('#skinMetaCombosTable')).toHaveCount(0);
 
     await page.locator('#generatorSeasonFilters .s4-pill').click();
+    const normalFilteredCount = await page.locator('#generatorHeroes .generator-card').count();
     await page.locator('#genSkinToggleLabel').click();
     await expect(page.locator('#genSkinToggle')).toBeChecked();
+    await expect(page.locator('#generatorHeroes .generator-card')).toHaveCount(normalFilteredCount);
 
     const firstGeneratorCard = page.locator('#generatorHeroes .generator-card').first();
     await expect(firstGeneratorCard).toHaveClass(/skin-priority-card/);
+    await expect(firstGeneratorCard).toHaveClass(/skin-animated-portrait/);
     await expect(firstGeneratorCard.locator('.generator-skin-badge--priority')).toBeVisible();
     await expect(page.locator('#generatorHeroes .generator-card.skin-priority-muted').first()).toBeVisible();
+    await expect(page.locator('#generatorHeroes .generator-card.skin-no-skin').first()).toBeVisible();
 
     const arthurGeneratorCard = page.locator('#generatorHeroes .generator-card').filter({ hasText: 'King Arthur' }).first();
     await expect(arthurGeneratorCard).toBeVisible();
