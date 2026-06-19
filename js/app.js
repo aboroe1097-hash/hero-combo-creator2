@@ -72,7 +72,6 @@ import {
   db,
   savedCombosCache,
   lastGeneratedCombos,
-  sourceCreditText,
   APP_VERSION,
   ENABLE_RESEARCH_FEATURE,
   seasonColors,
@@ -399,6 +398,7 @@ tabs.forEach(tab => {
       const html = await res.text();
       section.innerHTML = html;
       _tabTemplatesLoaded[tabName] = true;
+      updateTextContent();
     } catch (err) {
       console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
       section.innerHTML = `<div class="p-8 text-center text-sm text-red-400">Failed to load this tab. <button onclick="location.reload()" class="underline">Reload</button></div>`;
@@ -418,7 +418,8 @@ tabs.forEach(tab => {
             console.error('Eden map failed to load', err);
             _edenMapBooting = false;
             if (typeof window.showToast === 'function') {
-              window.showToast('Eden map failed to load. Refresh and try again.', 'error', 4000);
+              const t = translations[currentLanguage] || translations.en;
+              window.showToast(t.edenMapLoadFailed || 'Eden map failed to load. Refresh and try again.', 'error', 4000);
             }
           })
           .finally(() => root?.classList.remove('eden-map-loading'));
@@ -699,6 +700,7 @@ function updateTextContent() {
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
   syncGameClockTitles();
+  renderSkinMetaCombosTable();
 
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     const key = el.getAttribute('data-i18n-label');
@@ -858,7 +860,8 @@ function safeInit(name, fn) {
       return result.catch(err => {
         console.warn(`[${name}] async init failed:`, err);
         if (typeof window.showToast === 'function') {
-          window.showToast(`⚠ ${name} failed to load`, 'warn', 3000);
+          const t = translations[currentLanguage] || translations.en;
+          window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);
         }
       });
     }
@@ -866,7 +869,8 @@ function safeInit(name, fn) {
   } catch (err) {
     console.warn(`[${name}] init failed:`, err);
     if (typeof window.showToast === 'function') {
-      window.showToast(`⚠ ${name} failed to load`, 'warn', 3000);
+      const t = translations[currentLanguage] || translations.en;
+      window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);
     }
     return undefined;
   }

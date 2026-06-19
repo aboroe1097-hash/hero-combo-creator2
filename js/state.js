@@ -46,7 +46,11 @@ export function setTechSearchQuery(v) { techSearchQuery = v; }
 export const savedCombosCache = [];
 export const lastGeneratedCombos = [];
 
-export const sourceCreditText = "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
+export function getSourceCreditText() {
+  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
+  const t = translations[lang] || translations.en;
+  return t.sourceCreditText || translations.en.sourceCreditText || "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
+}
 
 // --- COLORS ---
 export const TechseasonColors = {

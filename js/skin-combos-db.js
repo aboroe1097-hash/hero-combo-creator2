@@ -8,10 +8,10 @@ export const SKIN_STATUS = {
   NEXT_SEASON: 'next-season',
 };
 
-export const SKIN_STATUS_LABELS = {
-  [SKIN_STATUS.MAXED]: '3-star max',
-  [SKIN_STATUS.BASE]: 'Base / no skin listed',
-  [SKIN_STATUS.NEXT_SEASON]: 'Skin opens X2',
+export const SKIN_STATUS_LABEL_KEYS = {
+  [SKIN_STATUS.MAXED]: 'skinStatusMaxed',
+  [SKIN_STATUS.BASE]: 'skinStatusBase',
+  [SKIN_STATUS.NEXT_SEASON]: 'skinStatusNextSeason',
 };
 
 export const skinMetaCombos = [
@@ -23,7 +23,7 @@ export const skinMetaCombos = [
       { name: 'Cleopatra VII', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
       { name: 'Theodora', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
     ],
-    note: 'All three skins maxed to 3 stars with the dynamic icon unlocked.',
+    noteKey: 'skinMetaCombo1Note',
   },
   {
     rank: 2,
@@ -35,10 +35,10 @@ export const skinMetaCombos = [
         name: 'Beowulf',
         position: 'Back',
         skinStatus: SKIN_STATUS.NEXT_SEASON,
-        note: 'X1 hero skin is treated as unavailable until X2.',
+        noteKey: 'skinMetaBeowulfTimingNote',
       },
     ],
-    note: 'Use Beowulf as the hero in X1; his skin timing is delayed until the next season.',
+    noteKey: 'skinMetaCombo2Note',
   },
   {
     rank: 3,
@@ -48,7 +48,7 @@ export const skinMetaCombos = [
       { name: 'Rozen Blade', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
       { name: 'Caesar', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
     ],
-    note: 'All three skins maxed to 3 stars with the dynamic icon unlocked.',
+    noteKey: 'skinMetaCombo3Note',
   },
   {
     rank: 4,
@@ -58,7 +58,7 @@ export const skinMetaCombos = [
       { name: 'Boudica', position: 'Middle', skinStatus: SKIN_STATUS.BASE },
       { name: 'Jade Eagle', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
     ],
-    note: 'Bleeding Steed and Jade Eagle are the skin-max anchors; Boudica stays base here until her skin data is confirmed.',
+    noteKey: 'skinMetaCombo4Note',
   },
   {
     rank: 5,
@@ -68,6 +68,6 @@ export const skinMetaCombos = [
       { name: 'The Brave', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
       { name: 'Immortal', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
     ],
-    note: 'All three skins maxed to 3 stars with the dynamic icon unlocked.',
+    noteKey: 'skinMetaCombo5Note',
   },
 ];

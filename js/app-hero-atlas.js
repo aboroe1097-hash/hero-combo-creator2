@@ -569,21 +569,22 @@ function renderHeroesTab() {
           </div>
 
           <div id="detail-section-skills" class="detail-section-block">
-            <div class="detail-section-title">Skills</div>
+            <div class="detail-section-title">${t.heroesSkillsTitle || 'Skills'}</div>
             <div class="detail-skills">${skillsHtml}</div>
           </div>
 
           ${heroSkinsList.length > 0 ? `
           <div id="detail-section-skins" class="detail-section-block">
-            <div class="detail-section-title">Bio Skins <span class="detail-skin-count">${heroSkinsList.length}</span></div>
+            <div class="detail-section-title">${t.heroesBioSkinsTitle || 'Bio Skins'} <span class="detail-skin-count">${heroSkinsList.length}</span></div>
             <div class="detail-skins">${skinsHtml}</div>
           </div>` : ''}
         </div>`;
     }
 
     const clearFiltersHtml = filtersActive
-      ? `<button type="button" class="heroes-clear-filters" data-heroes-clear-filters>Clear filters</button>`
+      ? `<button type="button" class="heroes-clear-filters" data-heroes-clear-filters>${t.heroesClearFilters || 'Clear filters'}</button>`
       : '';
+    const heroCountLabel = filtered.length === 1 ? (t.heroCountOne || '{n} hero') : (t.heroCountMany || '{n} heroes');
 
     container.innerHTML = `
       <div class="heroes-tab-inner${selected ? ' heroes-tab-inner--detail-open' : ''}">
@@ -591,14 +592,14 @@ function renderHeroesTab() {
           <div class="heroes-toolbar">
             <div class="hero-search-wrap heroes-search-field">
               <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
-              <input id="heroesTabSearch" class="hero-search-input" type="search" placeholder="Search heroes..." value="${escapeHtml(search)}" autocomplete="off" />
+              <input id="heroesTabSearch" class="hero-search-input" type="search" placeholder="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" value="${escapeHtml(search)}" autocomplete="off" />
             </div>
-            <span class="heroes-count-badge">${filtered.length} hero${filtered.length !== 1 ? 'es' : ''}</span>
+            <span class="heroes-count-badge">${escapeHtml(heroCountLabel.replace('{n}', filtered.length))}</span>
             ${clearFiltersHtml}
           </div>
           <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>
           <div class="heroes-filter-pills heroes-filter-pills--state">${statePillsHtml}</div>
-          <p class="heroes-season-hint">Seasons — select multiple</p>
+          <p class="heroes-season-hint">${t.heroesSeasonHint || 'Seasons - select multiple'}</p>
           <div class="heroes-season-tabs" role="group" aria-label="Filter by season (multi-select)">${seasonTabsHtml}</div>
         </div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">

@@ -1,5 +1,5 @@
 import { escapeHtml } from './utils.js';
-import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setActiveTechSeasons, setTechSearchQuery, sourceCreditText, TechseasonColors, TECH_SEASON_ORDER, researchSection } from './state.js';
+import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setActiveTechSeasons, setTechSearchQuery, getSourceCreditText, TechseasonColors, TECH_SEASON_ORDER, researchSection } from './state.js';
 // Extracted Research Calculator Module
 import { techDatabase } from './tech-db.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
@@ -277,7 +277,7 @@ function renderTechList() {
         sourceNote.className = 'research-source-note';
         container.appendChild(sourceNote);
     }
-    sourceNote.textContent = sourceCreditText;
+    sourceNote.textContent = getSourceCreditText();
     requestAnimationFrame(() => container.classList.remove('research-list--updating'));
 }
 
