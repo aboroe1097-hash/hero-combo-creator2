@@ -447,15 +447,32 @@ function renderHeroesTab() {
         const ba = skin.bioAttributes;
         const mba = skin.maxBioAttributes;
         const hpBonus = getHiddenPowerBonus(heroSkinsList.length);
+        const hiddenPower = skin.hiddenPower || hpBonus;
         return `
         <div class="detail-skin-card">
           <div class="detail-skin-header">
             <span class="detail-skin-name">${escapeHtml(skin.name)}</span>
-            <span class="detail-skin-type" style="color:${typeInfo.color};border-color:${typeInfo.color}">${typeInfo.icon} ${skin.type}</span>
+            <span class="detail-skin-type" style="color:${typeInfo.color};border-color:${typeInfo.color}">${escapeHtml(typeInfo.label || skin.type)}</span>
           </div>
+          ${skin.fullName ? `<div class="detail-skin-subtitle">${escapeHtml(skin.fullName)}</div>` : ''}
+          ${skin.starStages ? `<div class="detail-skin-stage-track">
+            ${skin.starStages.map(stage => `
+              <div class="detail-skin-stage">
+                <span class="detail-skin-stage-num">Star ${stage.star}</span>
+                <span class="detail-skin-stage-title">${escapeHtml(stage.title)}</span>
+                <span class="detail-skin-stage-detail">${escapeHtml(stage.detail)}</span>
+              </div>
+            `).join('')}
+          </div>` : ''}
           <div class="detail-skin-attributes">
-            <div class="detail-skin-attr-title">Biography Attributes</div>
-            <div class="detail-skin-attr-grid">
+            <div class="detail-skin-attr-title">Star 1 - Biography Attributes</div>
+            ${skin.biographyAttributes?.effectiveOn ? `<div class="detail-skin-effect">Effective on: ${escapeHtml(skin.biographyAttributes.effectiveOn)}</div>` : ''}
+            ${skin.biographyAttributes?.attributes ? `<div class="detail-skin-attr-grid">
+              ${skin.biographyAttributes.attributes.map(attr => `
+                <span class="detail-skin-attr">${escapeHtml(attr.label)}: <span class="detail-skin-max">${escapeHtml(attr.value)}</span></span>
+              `).join('')}
+            </div>` : ''}
+            <div class="detail-skin-attr-grid ${skin.biographyAttributes?.attributes ? 'detail-skin-attr-grid--legacy-hidden' : ''}">
               <span class="detail-skin-attr">Might: ${ba.might}% <span class="detail-skin-max">→ ${mba.might}%</span></span>
               <span class="detail-skin-attr">Resistance: ${ba.resistance}% <span class="detail-skin-max">→ ${mba.resistance}%</span></span>
               <span class="detail-skin-attr">Tac. Might: ${ba.tacticalMight}% <span class="detail-skin-max">→ ${mba.tacticalMight}%</span></span>
@@ -465,11 +482,13 @@ function renderHeroesTab() {
             </div>
           </div>
           <div class="detail-skin-skill">
-            <div class="detail-skin-skill-title">Inheriting Skill (Slot ${skin.inheritingSkill.replacesSlot})</div>
+            <div class="detail-skin-skill-title">Star 2 - Inheriting Skill (Slot ${skin.inheritingSkill.replacesSlot})</div>
             <div class="detail-skin-skill-name">${escapeHtml(skin.inheritingSkill.name)}</div>
+            ${skin.inheritingSkill.fromSkill ? `<div class="detail-skin-effect">Upgrades: ${escapeHtml(skin.inheritingSkill.fromSkill)} -> ${escapeHtml(skin.inheritingSkill.name)}</div>` : ''}
+            ${skin.inheritingSkill.worksOn ? `<div class="detail-skin-effect">Works on: ${escapeHtml(skin.inheritingSkill.worksOn)} | Range ${escapeHtml(String(skin.inheritingSkill.effectiveRange))} | Target: ${escapeHtml(skin.inheritingSkill.target)}</div>` : ''}
             <p class="detail-skin-skill-desc">${escapeHtml(skin.inheritingSkill.description)}</p>
             <div class="detail-skin-levels">
-              ${skin.inheritingSkill.levels.map(lv => `
+              ${(skin.inheritingSkill.levels || []).map(lv => `
                 <div class="detail-skin-level">
                   <span class="detail-skin-level-num">★${lv.level}</span>
                   <span>${escapeHtml(lv.desc)}</span>
@@ -477,13 +496,15 @@ function renderHeroesTab() {
             </div>
           </div>
           <div class="detail-skin-skill">
-            <div class="detail-skin-skill-title">Preserving Skill</div>
+            <div class="detail-skin-skill-title">Star 3 - Preserving Skill</div>
             <div class="detail-skin-skill-name">${escapeHtml(skin.preservingSkill.name)}</div>
+            ${skin.preservingSkill.type ? `<div class="detail-skin-effect">${escapeHtml(skin.preservingSkill.type)} | Range ${escapeHtml(String(skin.preservingSkill.effectiveRange))} | Target: ${escapeHtml(skin.preservingSkill.target)}</div>` : ''}
             <p class="detail-skin-skill-desc">${escapeHtml(skin.preservingSkill.description)}</p>
+            ${skin.preservingSkill.dynamicIconNote ? `<p class="detail-skin-skill-desc detail-skin-motion-note">${escapeHtml(skin.preservingSkill.dynamicIconNote)}</p>` : ''}
           </div>
-          ${hpBonus ? `<div class="detail-skin-hidden-power">
-            <span class="detail-skin-hidden-label">Hidden Power (${heroSkinsList.length} skins)</span>
-            <span class="detail-skin-hidden-value">${escapeHtml(hpBonus.label)}</span>
+          ${hiddenPower ? `<div class="detail-skin-hidden-power">
+            <span class="detail-skin-hidden-label">${hiddenPower.label ? escapeHtml(hiddenPower.label) : 'Hidden Power'}</span>
+            <span class="detail-skin-hidden-value">${escapeHtml(hiddenPower.description || hiddenPower.status || hiddenPower.label)}</span>
           </div>` : ''}
         </div>`;
       }).join('') : '';
