@@ -46,6 +46,9 @@ export const COMBO_COUNTERS = [
   {
     target: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
     counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      ['King Arthur', 'Cleopatra VII', 'Alexander'],
+      ['King Arthur', 'Theodora', 'Alexander'],
       ['Defender', 'Tarantula', 'Sakura'],
       ['Lawman', 'Army Breaker', 'The Avalanche'],
       ['Hunk', 'Spectral Reaper', 'Ramses II'],
@@ -54,18 +57,54 @@ export const COMBO_COUNTERS = [
   {
     target: ['King Arthur', 'Cleopatra VII', 'Theodora'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Rozen burst + Octavius control shuts down sustain backline' },
-      ['Octavius', 'Cleopatra VII', 'Caesar'],
-      ['Ramses II', 'Cleopatra VII', 'Jade Eagle'],
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
       ['Lawman', 'Defender', 'The Avalanche'],
     ],
   },
   {
     target: ['Ramses II', 'Leonidas', 'Beowulf'],
     counters: [
-      ['Defender', 'Sakura', 'Jade Eagle'],
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      ['King Arthur', 'Cleopatra VII', 'Alexander'],
+      ['King Arthur', 'Theodora', 'Alexander'],
       ['Lawman', 'Rozen Blade', 'The Avalanche'],
       ['Immortal Guardian', 'ELK', 'Tarantula'],
+    ],
+  },
+  {
+    target: ['Hunk', 'Ramses II', 'Beowulf'],
+    counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      ['King Arthur', 'Cleopatra VII', 'Alexander'],
+      ['King Arthur', 'Theodora', 'Alexander'],
+    ],
+  },
+  {
+    target: ['Bleeding Steed', 'Ramses II', 'Beowulf'],
+    counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      ['King Arthur', 'Cleopatra VII', 'Alexander'],
+      ['King Arthur', 'Theodora', 'Alexander'],
+    ],
+  },
+  {
+    target: ['Rozen Blade', 'Ramses II', 'Beowulf'],
+    counters: [
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      ['King Arthur', 'Cleopatra VII', 'Alexander'],
+      ['King Arthur', 'Theodora', 'Alexander'],
+    ],
+  },
+  {
+    target: ['King Arthur', 'Theodora', 'Alexander'],
+    counters: [
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
+    ],
+  },
+  {
+    target: ['King Arthur', 'Cleopatra VII', 'Alexander'],
+    counters: [
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
     ],
   },
   {
@@ -87,10 +126,21 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Cleopatra VII', 'Caesar'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur shields mitigate burst while Cleo sustains' },
-      ['King Arthur', 'Cleopatra VII', 'Alexander'],
-      ['Theodora', 'Ramses II', 'Jade Eagle'],
-      ['Ramses II', 'Cleopatra VII', 'Jade Eagle'],
+      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Caesar cavalry' },
+      ['Hunk', 'Ramses II', 'Beowulf'],
+      ['Bleeding Steed', 'Ramses II', 'Beowulf'],
+      ['Rozen Blade', 'Ramses II', 'Beowulf'],
+      ['Ramses II', 'Leonidas', 'Beowulf'],
+    ],
+  },
+  {
+    target: ['Octavius', 'Rozen Blade', 'Caesar'],
+    counters: [
+      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar' },
+      ['Hunk', 'Ramses II', 'Beowulf'],
+      ['Bleeding Steed', 'Ramses II', 'Beowulf'],
+      ['Rozen Blade', 'Ramses II', 'Beowulf'],
+      ['Ramses II', 'Leonidas', 'Beowulf'],
     ],
   },
   {

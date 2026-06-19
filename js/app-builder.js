@@ -1,3 +1,4 @@
+import { escapeHtml } from './utils.js';
 // js/app-builder.js
 import { translations } from './translations.js';
 let builderFirestoreUnsub = null;
@@ -131,9 +132,9 @@ export function renderAvailableHeroes() {
             </svg>
         </div>
 
-        <img src="${hero.imageUrl}" alt="${hero.name}" loading="lazy">
+        <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-white truncate w-full text-center">${hero.name}</span>
+            <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
         </div>
       `;
@@ -199,9 +200,9 @@ export function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
   if (name) {
     slot.innerHTML = `
-      <img src="${getHeroImageUrl(name)}" alt="${name}" crossorigin="anonymous" loading="lazy">
+      <img src="${getHeroImageUrl(name)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">
       <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
-        ${name}
+        ${escapeHtml(name)}
       </span>`;
     slot.classList.add('relative', 'p-0');
   } else {
@@ -326,7 +327,7 @@ export async function setupFirestoreListener() {
         item.className = 'saved-combo-slot-item';
         item.innerHTML = `
           <img src="${getHeroImageUrl(name)}" loading="lazy">
-          <span>${name}</span>
+          <span>${escapeHtml(name)}</span>
         `;
         slots.appendChild(item);
       });
