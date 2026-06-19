@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { initComments } from './comments.js';
 import { rankedCombos } from './combos-db.js';
+import { allHeroesData } from './heroes-data.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
@@ -142,6 +143,13 @@ const MAINTENANCE_CONFIG = {
   ...(window.VTS_MAINTENANCE_CONFIG || {}),
 };
 const MAINTENANCE_MODE = window.VTS_MAINTENANCE_MODE === true;
+const HERO_DRAG_MIME = 'application/x-vts-hero-name';
+
+function resolveDroppedHeroName(dataTransfer) {
+  const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
+  const heroName = rawName.trim();
+  return allHeroesData.some(hero => hero.name === heroName) ? heroName : '';
+}
 
 function shouldShowMaintenanceMode() {
   try {
@@ -617,6 +625,7 @@ tabs.forEach(tab => {
     // 2. Setup Desktop Drag-and-Drop zones
     slot.addEventListener('dragover', e => {
       e.preventDefault(); // Required to allow dropping
+      e.dataTransfer.dropEffect = 'copy';
       slot.classList.add('drag-over'); // Highlight effect
     });
     
@@ -628,7 +637,7 @@ tabs.forEach(tab => {
       e.preventDefault();
       slot.classList.remove('drag-over');
       
-      const heroName = e.dataTransfer.getData('text/plain');
+      const heroName = resolveDroppedHeroName(e.dataTransfer);
       if (!heroName) return;
 
       if (isHeroAlreadyInCombo(heroName, i)) {
