@@ -230,7 +230,10 @@ def main():
     catalog = []
     overlays = {}
     full_sectors = {}
-    built_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    source_paths = [MANIFEST]
+    source_paths.extend(DB / ds["file"] for ds in manifest["datasets"] if ds.get("file") and (DB / ds["file"]).exists())
+    source_mtime = max(path.stat().st_mtime for path in source_paths)
+    built_at = datetime.fromtimestamp(source_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     for ds in manifest["datasets"]:
         entry = {
@@ -264,7 +267,7 @@ def main():
         "overlays": overlays,
     }
     payload_json = json.dumps(payload_obj, separators=(",", ":"), ensure_ascii=True)
-    compressed = gzip.compress(payload_json.encode("utf-8"), compresslevel=9)
+    compressed = gzip.compress(payload_json.encode("utf-8"), compresslevel=9, mtime=0)
     b64 = base64.b64encode(compressed).decode("ascii")
 
     OUT_PAYLOAD.write_text(
