@@ -20,7 +20,7 @@ import {
   LOG_KEY, AUTH_HASH, CLEAR_HASH, QWEN_WORKER_URL, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
-  validateTotalDemolition
+  validateTotalDemolition, sha256
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -209,14 +209,6 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 
 // ── Banner Records ────────────────────────────────────────
-
-
-async function sha256(str) {
-  try {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (e) { return null; }
-}
 
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1' || isGuest(); }
@@ -870,6 +862,6 @@ window.renderRoster = renderRoster;
 window.setRosterFilter = function(key, val) {
   if (key === 'alliance') state._rosterFilterAlliance = val;
   else if (key === 'status') state._rosterFilterStatus = val;
-  else if (key === 'search') _rosterSearchQ = val;
+  else if (key === 'search') state._rosterSearchQ = val;
   renderRoster();
 };

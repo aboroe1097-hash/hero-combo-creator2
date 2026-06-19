@@ -1,7 +1,7 @@
 import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
-  ROSTER_USERS, ROSTER_PASS, ALLIANCE_COUNT,
-  state, $id, esc, log
+  ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
+  state, $id, esc, log, sha256
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -100,10 +100,12 @@ function saveRosterAuth() {
   try { localStorage.setItem(ROSTER_AUTH_KEY, state._rosterLoggedUser); } catch (e) {}
 }
 
-function rosterLogin() {
+async function rosterLogin() {
   const user = $id('dashRosterLoginUser')?.value;
   const pass = $id('dashRosterLoginPass')?.value;
-  if (!user || !ROSTER_PASS[user] || pass !== ROSTER_PASS[user]) { log('Invalid roster login credentials.', 'error'); return; }
+  if (!user || !ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }
+  const hashed = await sha256(pass);
+  if (hashed !== ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }
   state._rosterLoggedUser = user;
   saveRosterAuth();
   log('Roster logged in as ' + user, 'success');
