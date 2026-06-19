@@ -717,6 +717,7 @@ section.tab-panel:not(.hidden) {
 .s3-pill:has(input:checked) { background:#c2410c; border-color:#f97316; box-shadow:0 2px 12px rgba(249,115,22,0.3); }
 .s4-pill:has(input:checked) { background:#854d0e; border-color:#facc15; box-shadow:0 2px 12px rgba(250,204,21,0.28); }
 .x1-pill:has(input:checked) { background:#991b1b; border-color:#f87171; box-shadow:0 2px 12px rgba(248,113,113,0.28); }
+.x8-pill:has(input:checked) { background:#155e75; border-color:#22d3ee; box-shadow:0 2px 12px rgba(34,211,238,0.28); }
 .free-pill:has(input:checked)     { background:#065f46; border-color:#34d399; box-shadow:0 2px 10px rgba(52,211,153,0.25); }
 .paid-pill:has(input:checked)     { background:#9f1239; border-color:#fb7185; box-shadow:0 2px 10px rgba(251,113,133,0.25); }
 .archers-pill:has(input:checked)  { background:#0e7490; border-color:#22d3ee; }
@@ -857,6 +858,36 @@ section.tab-panel:not(.hidden) {
   font-size: 0.62rem; font-weight: 800;
   color: #0b1120; background: var(--accent);
   letter-spacing: 0.04em; box-shadow: 0 2px 6px rgba(249,115,22,0.3);
+}
+.hero-origin-tag {
+  position: absolute;
+  top: 28px;
+  left: 6px;
+  z-index: 9;
+  padding: 2px 6px;
+  border-radius: 0;
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(14, 165, 233, 0.35));
+  border: 1px solid rgba(103, 232, 249, 0.35);
+  color: #cffafe;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(8, 47, 73, 0.35);
+}
+.season-catchup-hint {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(15, 23, 42, 0.78)),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.18), transparent 62%);
+  color: #cde7f7;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  font-weight: 700;
 }
 
 /* ── Generator cards ─────────────────────────────────────── */
@@ -2461,6 +2492,11 @@ input[type=number] { -moz-appearance: textfield; }
 .detail-name { font-size: 1.05rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
 .detail-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
 .detail-season-tag { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
+.detail-origin-season-tag {
+  background: rgba(14, 165, 233, 0.16) !important;
+  border: 1px solid rgba(103, 232, 249, 0.35);
+  color: #a5f3fc !important;
+}
 .detail-troop-tag  { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; background: rgba(30,41,59,0.8); border: 1px solid rgba(51,65,85,0.8); }
 .detail-state-tag  { font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 99px; }
 .detail-state-tag.paid { background: rgba(124,58,237,0.2); border: 1px solid #7c3aed; color: #c084fc; }
@@ -5032,6 +5068,20 @@ body.hide-hero-info .info-btn { display: none !important; }
 /* Make sure filter pill checked states have good contrast (they use white text already) */
 [data-theme="light"] .filter-pill:has(input:checked) {
   box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+}
+
+[data-theme="light"] .season-catchup-hint {
+  background:
+    linear-gradient(135deg, rgba(8, 145, 178, 0.12), rgba(255, 255, 255, 0.9)),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.12), transparent 62%);
+  color: #0f3f4a;
+  border-color: rgba(8, 145, 178, 0.25);
+}
+
+[data-theme="light"] .hero-origin-tag {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(14, 165, 233, 0.22));
+  color: #0e7490;
+  border-color: rgba(8, 145, 178, 0.28);
 }
 
 /* Ensure some JS injected panels (counter etc) look good */

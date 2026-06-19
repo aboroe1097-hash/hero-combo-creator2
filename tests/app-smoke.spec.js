@@ -90,6 +90,15 @@ test.describe('app smoke tabs', () => {
       [...new Set(nodes.map(node => node.textContent.trim()))].sort()
     );
     expect(seasonsWithS2).toContain('S2');
+
+    await page.locator('#generatorSeasonFilters .x8-pill').click();
+    await expect(page.locator('#generatorSeasonFilters input[value="X8"]')).toBeChecked();
+    await expect(page.locator('#generatorSeasonCatchupHint')).toContainText('X8 catch-up');
+    const seasonsWithX8 = await page.locator('#generatorHeroes .hero-tag').evaluateAll(nodes =>
+      [...new Set(nodes.map(node => node.textContent.trim()))].sort()
+    );
+    expect(seasonsWithX8).toContain('X8');
+    await expect(page.locator('#generatorHeroes .generator-card').filter({ hasText: 'Rainforest Ranger' }).first()).toBeVisible();
   });
 
   test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {
@@ -136,7 +145,7 @@ test.describe('app smoke tabs', () => {
     });
     expect(counterIssues).toEqual([]);
 
-    for (const seasonPill of ['.s2-pill', '.s3-pill', '.s4-pill', '.x1-pill', '.x2-pill']) {
+    for (const seasonPill of ['.s2-pill', '.s3-pill', '.s4-pill', '.x1-pill', '.x2-pill', '.x8-pill']) {
       await page.locator(`#generatorSeasonFilters ${seasonPill}`).click();
     }
     await page.locator('#genSelectAllBtn').click();

@@ -5,7 +5,7 @@ import { skinHeroesData } from './skin-heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '10.3.0';
+export const APP_VERSION = '10.4.0';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 // --- STATE ---
@@ -61,16 +61,36 @@ export function getSourceCreditText() {
 // --- COLORS ---
 export const TechseasonColors = {
   S0: '#94a3b8', S1: '#60a5fa', S2: '#c084fc', S3: '#fb923c',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399'
+  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
 };
 export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
 
 export const seasonColors = {
   S0: '#9ca3af', S1: '#3b82f6', S2: '#a855f7', S3: '#f97316',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399'
+  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
 };
 
-export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+
+const SEASON_CATCHUP_HINT_KEYS = {
+  X1: 'seasonCatchupX1',
+  X2: 'seasonCatchupX2',
+  X8: 'seasonCatchupX8',
+};
+
+export function getSeasonCatchupHint(seasons = []) {
+  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
+  const t = translations[lang] || translations.en;
+  const en = translations.en || {};
+  const ordered = HERO_ATLAS_ALL_SEASONS.filter(season => seasons.includes(season));
+  return ordered
+    .map(season => {
+      const key = SEASON_CATCHUP_HINT_KEYS[season];
+      return key ? (t[key] || en[key] || '') : '';
+    })
+    .filter(Boolean)
+    .join(' ');
+}
 
 const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 10.4.0 - 2026-06-20
+
+- Added the X8 catch-up hero wave covering original X4, X5, X6, X7, X8, and SP heroes.
+- Added local in-game hero icon assets cropped from the supplied screenshots.
+- Added max-level skill data for the new heroes, plus the missing X1 Ragnar entry.
+- Added X8 season filters and catch-up helper notes for X1, X2, and X8 season brackets.
+- Added original-release badges so X8 cards can still show their source season.
+- Synced app version and service-worker cache versions for the new dataset.
+
 ## 10.3.0 - 2026-06-20
 
 - Upgraded the boot splash to use the real Dreamy Wings and Blazing Soul wing assets as layered door art.

@@ -583,5 +583,173 @@ export const heroesExtendedData = {
             { id: 5, type: "Pre-Battle Skills", range: 5, target: "1 Random Ally", desc: "The hero cannot launch normal attacks (the effect cannot be lifted). In each round, 100% chance to deal 356% damage to 1 random enemy squad(s), while the hero gains one of the seals out of Courage/Justice/Mercy (Courage: damage increased by 20%; Justice: Evasion Rate increased by 10%; Mercy: the seal carrier can restore some troop power each round when taking actions, recovery rate: 67%), lasting till the battle ends and stackable for up to 2 layers; when all three seals are gained, the skill will target all enemy squads instead." },
             { id: 8, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "At the beginning of the battle, applies an effect to all friendly squads: when they cast a prep skill, 80% chance to skip 1 round(s) (effective for up to 3 time(s)). Upon gaining the effect and using up the attempts of the effect, applies 1 seal(s) to the carrier." }
         ]
+    },
+    "Ragnar the Demon's Lord": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X1",
+        effects: [],
+        buffs: ["Grants Fatal Blow", "Grants Destructive Strike"],
+        debuffs: [],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 4, target: "1 Random Enemy", desc: "50% chance to deal 420% damage to a random enemy squad within valid range." },
+            { id: 5, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "In round 1 deals 160% damage, in round 3 deals 320% damage, in round 5 deals 480% damage, and in round 7 deals 640% damage to all enemy squads respectively." },
+            { id: 8, type: "Pre-Battle Skills", range: 5, target: "3 Random Ally", desc: "After dealing damage, 50% chance for the hero's squad and the back-row squad to gain 8% chance to launch Fatal Blow and Destructive Strike, lasting until the battle ends and stackable for up to 5 layers. The final screenshot line needs confirmation." }
+        ]
+    },
+    "Bjorn": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X4",
+        effects: ["Confusion"],
+        buffs: ["Increase Damage"],
+        debuffs: ["Control debuff extender", "Reduction Damage Dealt"],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "40% chance to attack 1 random enemy squad within range 2 times, each time dealing 348% damage. Each attack randomly targets one enemy." },
+            { id: 5, type: "Pre-Battle Skills", range: 5, target: "3 Random Ally", desc: "All friendly squads deal +70% damage to Silenced, Disarmed, Suppressed, and Confused enemy squads. Enemy squads have a 30% chance to extend Control Debuff duration by 1 turn (Silenced, Disarmed, Suppressed, and Confused)." },
+            { id: 8, type: "Pre-Battle Skills", range: 5, target: "2 Random Enemy", desc: "On the first 3 turns, 2 random enemy squads within range deal -30% damage. On turn 4, these squads become Confused, attacking and casting skills on random targets for 2 turns." }
+        ]
+    },
+    "Skanda": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X4",
+        effects: ["Suppression", "Dodging", "Remove debuff"],
+        buffs: ["Recovery"],
+        debuffs: [],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 2, target: "2 Random Ally", desc: "50% chance to heal self and front-row squad (247% recovery rate). If already in the front row, double the heal." },
+            { id: 5, type: "Combat Skill", range: 3, target: "1 Random Enemy", desc: "70% chance to deal 260% damage to the furthest enemy squad within range and Suppress them for 1 turn." },
+            { id: 8, type: "Pre-Battle Skills", range: 2, target: "1 Random Ally", desc: "On turn 5, remove friendly front-row debuffs. When the target takes damage, 100% chance to Dodge and become immune to this damage, lasting 2 turns." }
+        ]
+    },
+    "Liberator": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X5",
+        effects: ["Counterattack", "Clarity"],
+        buffs: ["Reduction Skill Damage Taken", "Immune control debuff", "Recovery", "Reduction Damage Taken"],
+        debuffs: ["Recovery Blocked"],
+        skills: [
+            { id: 2, type: "Status Skill", range: 0, target: "1 Random Ally", desc: "50% chance to counterattack for 150% damage when hit by normal attacks. Also, a 50% chance for your own squad to take -60% Skill Damage each turn, lasting 1 turn." },
+            { id: 5, type: "Additional Attack", range: 5, target: "1 Random Ally", desc: "Normal attacks have an 80% chance to apply Troop Recovery Block, lasting 1 turn. There is also a 70% chance to bestow Clear-Minded to your back row, making it immune to Silence, Disarmed, Suppressed, and Confused for 1 turn." },
+            { id: 8, type: "Pre-Battle Skills", range: 2, target: "3 Random Ally", desc: "When the hero's squad is in the front row, all allied squads take -20% less damage for the first 3 rounds. Starting from the 4th round, 40% of the damage your back row squad deals is converted into recovering front row troops after the effect ends." }
+        ]
+    },
+    "Ashen Verdict": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X5",
+        effects: ["Disarm", "Silence", "Confusion", "Interruption"],
+        buffs: ["Additional Damage", "Immune Disarmed"],
+        debuffs: ["Recovery Blocked"],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "3 Random Enemy", desc: "Ashen Verdict gains 1 Mark of Pursuit for each normal attack performed by your squads. When Marks accumulate to 7, all enemy squads receive an additional 400% damage and all existing marks are removed." },
+            { id: 5, type: "Combat Skill", range: 1, target: "1 Random Ally", desc: "35% chance for the hero's squad to have 1 additional normal attack each turn, lasting for 2 turns. The squad is immune to Disarmed for the duration." },
+            { id: 8, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "The hero's squad has a 35% chance to apply one condition to a random enemy squad after every 2 normal attacks: Disarmed, Silenced, Confused, Interrupted, or Troop Recovery Blocked. Probability is determined independently for each effect. All effects last 1 turn." }
+        ]
+    },
+    "Warden": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X6",
+        effects: [],
+        buffs: ["Increase chance to cast skills", "Additional Damage", "Reduction Damage Taken", "+1 Normal Attacks", "Increase Damage"],
+        debuffs: [],
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 2, target: "2 Random Ally", desc: "On the first 4 turns, the skill cast chance of your two other heroes' 5th skill is increased by 10% (limited to Combat skills and Passive skills). On turn 5, skill cast chance is increased by 30%, but only for the 5th skill of one of the two other heroes." },
+            { id: 5, type: "Pre-Battle Skills", range: 4, target: "3 Random Enemy, Random Ally", desc: "When subject to a control status (Silenced, Disarmed, Suppressed, or Confused), your squad takes -70% damage. The effect can trigger up to 3 times on a squad in battle. In round 1 and 5, deal 510% damage to a random enemy squad." },
+            { id: 8, type: "Pre-Battle Skills", range: 2, target: "3 Random Enemy", desc: "During battles, normal attacks are disabled for the hero's squad, but your back row squad gains a buff: +1 normal attack per round. Each normal attack increases the damage of their next skill by 12%, stacking up to 5 rounds." }
+        ]
+    },
+    "Warhammer": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X6",
+        effects: ["Reflecting"],
+        buffs: ["Shield"],
+        debuffs: ["Reduction Recovery"],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy, Random Ally", desc: "Gain +1 layer of Reflecting Armor Charge each time a friendly squad takes damage. When the armor reaches 9 layers, bestow a layer of Reflecting Shield to a random friendly squad, with a 30% chance to add another layer. The shield can nullify 100% of the next incoming damage to the attacker itself and protect the shield holder from any damage this time. After a shield is bestowed, all stacked layers of Reflecting Armor reset." },
+            { id: 5, type: "Combat Skill", range: 5, target: "3 Random Enemy, Random Ally", desc: "100% chance to deal 108% damage to all enemy squads, but all friendly squads receive 20% of the damage dealt to enemy squads. This damage provides charges for Reflecting Armor." },
+            { id: 8, type: "Pre-Battle Skills", range: 5, target: "3 Random Enemy, Random Ally", desc: "Reduce Troop Recovery for both enemy and friendly squads by -25%. Starting on turn 4, reduce Troop Recovery Effect for all enemy squads by -15% per turn. This effect stacks and lasts until the end of combat." }
+        ]
+    },
+    "Eidolon": {
+        placement: "Front Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X7",
+        effects: ["Dodging"],
+        buffs: ["Additional Damage", "Reduction Damage Taken", "Recovery"],
+        debuffs: ["Steal Resistance", "Steal Might", "Increase Damage Taken"],
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 1, target: "1 Random Ally", desc: "The hero's squad has a 10% base Evasion Rate and gains a bonus 25% each time they receive damage, stacking up to 100%. Once the squad successfully evades an attack, the bonus Evasion Rate is cleared." },
+            { id: 5, type: "Combat Skill", range: 2, target: "2 Random Ally", desc: "40% chance to trigger: 2 other friendly squads siphon 60% Might and Resistance from 1 random enemy squad. Also, each basic attack has a 100% chance to deal 250% bonus damage for 1 turn." },
+            { id: 8, type: "Pre-Battle Skills", range: 4, target: "2 Random Enemy", desc: "The hero's squad has a 33% chance to recover 80% troops after a successful Evasion, a 33% chance to take -35% reduced damage, and a 33% chance to cause 2 random enemy squads to take 15% more damage. Each chance is calculated independently and does not stack. Each effect lasts for 2 turns." }
+        ]
+    },
+    "Scarlet Reaver": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X7",
+        effects: ["Disarm", "Silence", "Burning"],
+        buffs: ["Additional Damage", "Increase countering", "Increase Skill Damage Dealt"],
+        debuffs: [],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "100% chance to deal 100% damage to the enemy front row squad, with a 40% chance to deal an additional 500% damage to the enemy squad with the lowest troops." },
+            { id: 5, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "1 turn prep. 40% chance to attack 5 times, with each attack selecting a random enemy squad and dealing 150% damage. Each attack also has a 65% chance to apply a status for 1 turn based on the enemy squad: Disarm for Archers, Silence for Footmen and Cavalry. Disarm and Silence can stack up to 2 stacks." },
+            { id: 8, type: "Pre-Battle Skills", range: 6, target: "2 Random Enemy", desc: "On turn 1, 4, and 7, set Burning status on 2 random enemy squads for 2 turns, dealing 150% damage each turn. The hero's squad gains 35% countering against Cavalry, and all allied squads deal +50% skill damage against Burning targets." }
+        ]
+    },
+    "Rainforest Ranger": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X8",
+        effects: ["Suppression"],
+        buffs: ["Ignore Base Resistance", "Additional Damage", "Increase Additional Attack"],
+        debuffs: [],
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 1, target: "1 Random Ally", desc: "Damage this hero's squad deals ignores 25% of the enemy squad's basic resistance. For the first 3 turns, this hero's squad's normal attacks lock onto the enemy squad in the same position and ignore double the amount of basic resistance." },
+            { id: 5, type: "Additional Attack", range: 5, target: "1 Random Enemy", desc: "50% chance after a normal attack to deal 350% bonus damage to the target. There is a 50% chance when the bonus damage is triggered to inflict Suppression on 1 random enemy for 1 turn." },
+            { id: 8, type: "Additional Attack", range: 5, target: "1 Random Ally", desc: "35% chance after a normal attack to deal 600% Additional Damage to the target. This additional damage is increased to 810% if the target squad's Troop Power is 50% lower than at the start of battle." }
+        ]
+    },
+    "Fortuneteller": {
+        placement: "Back Row",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X8",
+        effects: ["Chain", "Suppression"],
+        buffs: [],
+        debuffs: ["Reduction Recovery", "Reduction Skill Damage Dealt", "Increase Damage Taken", "Reduction Physical Damage Dealt", "Linked damage"],
+        skills: [
+            { id: 2, type: "Pre-Battle Skills", range: 5, target: "1 Random Enemy", desc: "Mark 1 random enemy squad and reduce their Troop Recovery by -70%, then afflict a debuff based on the marked squad's troop type. Footmen: all enemy squads take +20% less normal attack damage. Archers: all enemy squads deal -40% less normal attack damage. Cavalries: all enemy squads deal -30% less Skill Damage." },
+            { id: 5, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "50% chance to link 1 random enemy squad with the marked squad for 2 turns. When either squad takes damage, the other squad takes 50% of that damage." },
+            { id: 8, type: "Combat Skill", range: 5, target: "1 Random Enemy", desc: "Gain +1 Charge each time any friendly squad casts a combat skill. Once 6 Charges are accumulated, deal 750% damage to the marked squad and Suppress them for 1 turn." }
+        ]
+    },
+    "Cyrus": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "SP",
+        effects: ["Storm Cavalry", "Dodging", "Pierce Attack", "Sober"],
+        buffs: ["Increase Damage", "Reduction Damage Taken", "Increase chance to cast skills"],
+        debuffs: ["Recovery Blocked"],
+        skills: [
+            { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "1 round prep. 65% chance to deal 325% damage to 2 random enemy squads, preventing them from restoring troop power for 1 round. This skill has an 80% chance to bypass the prep stage and be cast directly." },
+            { id: 5, type: "Status Skill", range: 2, target: "1 Random Ally", desc: "All friendly Cavalry squads gain the Storm Cavalry effect: when casting an active skill, deal 40% more damage; when casting a pursuit skill, damage taken is reduced by 40%, lasting 2 rounds. When any of your squads triggers the Storm Cavalry effect, Cyrus gains 50% of its effect, stackable for up to 5 layers, lasting until the end of battle." },
+            { id: 8, type: "Status Skill", range: 2, target: "1 Random Ally", desc: "Cyrus' squad has a 10% chance to Dodge. After each successful Dodge, randomly gain one of the following effects from the captured screenshot: First to Attack, Sober, or a third effect that needs confirmation. If Dodge fails, all your squads immediately become Sober for 1 round and gain a skill reducing damage taken by 50% for the next incoming attack, effective once per round. The final screenshot line needs confirmation." }
+        ]
     }
 };

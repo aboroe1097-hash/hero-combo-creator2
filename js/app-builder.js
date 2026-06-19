@@ -122,8 +122,12 @@ export function renderAvailableHeroes() {
       card.dataset.heroName = hero.name;
 
       const tagColor = seasonColors[hero.season] || '#f97316';
+      const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
+        ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
+        : '';
       card.innerHTML = `
         <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        ${originTag}
         ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
