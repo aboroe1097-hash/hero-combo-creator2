@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "label": "Strategy Floor V1 - East/West Central base",
+  "source": "User supplied clean map floor, 2026-06-20",
+  "worldSize": [
+    1700,
+    1600
+  ],
+  "bounds": {
+    "minX": 0,
+    "maxX": 1700,
+    "minY": 0,
+    "maxY": 1600
+  },
+  "imageSize": [
+    2400,
+    1595
+  ],
+  "sourceImageSize": [
+    6250,
+    10938
+  ],
+  "sourceCrop": {
+    "left": 0,
+    "top": 3392,
+    "width": 6250,
+    "height": 4154
+  },
+  "transparentWhitespace": true,
+  "focusSectors": [
+    "WC",
+    "EC"
+  ],
+  "notes": "Partial floor reference covering West Central, East Central, and nearby East/West sector edges. Replace with full stitched floor when available."
+}

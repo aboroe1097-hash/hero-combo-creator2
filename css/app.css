@@ -3495,6 +3495,12 @@ input[type=number] { -moz-appearance: textfield; }
 .eden-layer-btn.active {
   background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.6); color: #c7d2fe;
 }
+.eden-layer-btn.eden-layer-floor.active {
+  background: linear-gradient(135deg, rgba(34,211,238,0.22), rgba(250,204,21,0.18));
+  border-color: rgba(34,211,238,0.65);
+  color: #ecfeff;
+  box-shadow: 0 0 18px rgba(34,211,238,0.12);
+}
 
 .eden-sector-chips {
   display: flex; flex-wrap: wrap; gap: 4px;

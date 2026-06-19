@@ -11,7 +11,8 @@ import {
 import {
   preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
   loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, preloadSectorTiles,
-  getSectorTileIds, getSectorTileImage, isSectorTileReady, isUserStructureIcon,
+  preloadStrategyFloor, getSectorTileIds, getSectorTileImage, isSectorTileReady,
+  isUserStructureIcon, EDEN_STRATEGY_FLOOR,
 } from './eden-map-assets.js';
 import { initEdenMapUI } from './eden-map-ui.js';
 import {
@@ -110,10 +111,11 @@ export function initEdenMapPlanner() {
   let listSort = 'points';
 
   const layers = {
-    reference: true,
+    strategyFloor: true,
+    reference: false,
     screenshots: false,
     terrain: false,
-    structures: true,
+    structures: false,
     paths: true,
     targets: true,
     teams: false,
@@ -211,6 +213,7 @@ export function initEdenMapPlanner() {
   }
 
   onStructureIconsReady(() => scheduleDraw());
+  preloadStrategyFloor(() => scheduleDraw());
   preloadReferenceMap(() => scheduleDraw());
   preloadSectorTiles(() => {
     syncWonderSectorSelect();
@@ -225,6 +228,10 @@ export function initEdenMapPlanner() {
   function ensureReferenceLoaded() {
     if (!layers.reference) return;
     preloadReferenceMap(() => scheduleDraw());
+  }
+  function ensureStrategyFloorLoaded() {
+    if (!layers.strategyFloor) return;
+    preloadStrategyFloor(() => scheduleDraw());
   }
   function ensureScreenshotsLoaded() {
     if (!layers.screenshots) return;
@@ -675,6 +682,59 @@ export function initEdenMapPlanner() {
         ctx.fillText(zone, p.x, p.y + 4);
       }
     });
+  }
+
+  function drawStrategyFocusSectors() {
+    if (!layers.strategyFloor) return;
+    const focus = EDEN_STRATEGY_FLOOR.focusSectors || [];
+    if (!focus.length) return;
+
+    ctx.save();
+    focus.forEach((key, index) => {
+      if (sectorKey !== 'FULL' && sectorKey !== key) return;
+      const bounds = getSectorBounds(key);
+      const sec = getEdenSectors()[key];
+      if (!bounds || !sec) return;
+      const p0 = iso(bounds.minX, bounds.minY);
+      const p1 = iso(bounds.maxX, bounds.minY);
+      const p2 = iso(bounds.maxX, bounds.maxY);
+      const p3 = iso(bounds.minX, bounds.maxY);
+      const color = index % 2 === 0 ? '#facc15' : '#22d3ee';
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.lineTo(p3.x, p3.y);
+      ctx.closePath();
+      ctx.fillStyle = index % 2 === 0 ? 'rgba(250,204,21,0.08)' : 'rgba(34,211,238,0.08)';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1.5, 2.5 * scale);
+      ctx.setLineDash([Math.max(8, 16 * scale), Math.max(5, 10 * scale)]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const cx = (bounds.minX + bounds.maxX) / 2;
+      const cy = (bounds.minY + bounds.maxY) / 2;
+      const label = `${edenT('edenStrategyFocusPrefix')} ${sec.label.replace(' Sector', '')}`;
+      const lp = iso(cx, cy);
+      ctx.font = `900 ${Math.max(11, 15 * scale)}px Inter, sans-serif`;
+      const tw = ctx.measureText(label).width + 18;
+      ctx.fillStyle = 'rgba(2,6,23,0.78)';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect?.(lp.x - tw / 2, lp.y - 15, tw, 30, 9);
+      if (!ctx.roundRect) ctx.rect(lp.x - tw / 2, lp.y - 15, tw, 30);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, lp.x, lp.y);
+    });
+    ctx.restore();
   }
 
   function drawStructure(s) {
@@ -1145,6 +1205,8 @@ export function initEdenMapPlanner() {
     }
 
     drawTerrainLayer(ctx, (x, y) => iso(x, y), scale, {
+      showStrategyFloor: layers.strategyFloor,
+      strategyFloorOpacity: refOpacity,
       showReference: layers.reference && !liveReferenceDrew,
       referenceOpacity: refOpacity,
       showScreenshots: layers.screenshots,
@@ -1157,6 +1219,7 @@ export function initEdenMapPlanner() {
       viewBounds: getViewBounds(),
     });
 
+    if (!fastMode) drawStrategyFocusSectors();
     if (!fastMode) drawZoneOverlays();
     if (layers.territory && !fastMode) drawTerritoryOverlay(ctx, iso);
     if (layers.reference && layers.structures) {
@@ -1685,6 +1748,7 @@ export function initEdenMapPlanner() {
         if (layer === 'teams' && !isTeamPlanEnabled(plan)) return;
         layers[layer] = !layers[layer];
         btn.classList.toggle('active', layers[layer]);
+        if (layer === 'strategyFloor') ensureStrategyFloorLoaded();
         if (layer === 'reference') ensureReferenceLoaded();
         if (layer === 'screenshots') ensureScreenshotsLoaded();
         if (layer === 'reference' || layer === 'sectorTiles') ensureSectorTilesLoaded();
@@ -2439,7 +2503,9 @@ export function initEdenMapPlanner() {
     },
     resetLayers: () => {
       Object.assign(layers, {
-        reference: true, terrain: false, structures: true, paths: true, targets: true,
+        strategyFloor: true,
+        reference: false,
+        terrain: false, structures: false, paths: true, targets: true,
         teams: isTeamPlanEnabled(plan),
         labels: false, zones: false, fog: false, heatmap: false, territory: false, sectorTiles: false,
       });

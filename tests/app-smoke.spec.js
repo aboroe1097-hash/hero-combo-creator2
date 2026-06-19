@@ -32,6 +32,32 @@ test.describe('app smoke tabs', () => {
   test('lazy-loaded eden map, loyalty, and admin tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabEdenMap', '#edenMapSection', '#edenMapRoot');
+    await expect(page.locator('#edenMapConstruction')).toHaveClass(/hidden/);
+    await expect(page.locator('[data-eden-layer="strategyFloor"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-eden-layer="reference"]')).not.toHaveClass(/active/);
+    await expect(page.locator('[data-eden-layer="structures"]')).not.toHaveClass(/active/);
+    await expect(page.locator('#edenMapCanvas')).toBeVisible();
+    await expect.poll(async () => page.locator('#edenMapCanvas').evaluate((canvas) => {
+      const ctx = canvas.getContext('2d');
+      const { width, height } = canvas;
+      if (!ctx || !width || !height) return 0;
+      const data = ctx.getImageData(0, 0, width, height).data;
+      let terrainPixels = 0;
+      let total = 0;
+      const step = 20;
+      for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+          const i = (y * width + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+          total += 1;
+          if (a > 120 && g > 55 && g > b * 1.05 && g >= r * 0.75) terrainPixels += 1;
+        }
+      }
+      return total ? terrainPixels / total : 0;
+    }), { timeout: 10000 }).toBeGreaterThan(0.03);
     await expectTab(page, '#tabLoyalty', '#loyaltySection', '#loyaltyPresets');
     await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
   });

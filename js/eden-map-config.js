@@ -1,7 +1,7 @@
 /** Eden map feature flags — flip underConstruction when the live map is ready. */
 export const EDEN_MAP_CONFIG = {
   /** When true, tab shows construction screen; full planner does not boot. */
-  underConstruction: true,
+  underConstruction: false,
   /** Use screenshot tile pyramid instead of single reference PNG. */
   liveMapEnabled: true,
   manifestUrl: 'assets/eden-live/manifest.json',
