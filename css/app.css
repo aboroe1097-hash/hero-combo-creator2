@@ -6654,9 +6654,10 @@ body {
    ============================================================= */
 .command-header {
   position: relative;
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 330px);
-  gap: clamp(0.75rem, 1.8vw, 1.2rem);
-  padding: clamp(0.85rem, 1.9vw, 1.25rem);
+  grid-template-columns: minmax(0, 1fr) minmax(286px, 330px);
+  align-items: start;
+  gap: clamp(0.7rem, 1.6vw, 1.05rem);
+  padding: clamp(0.78rem, 1.65vw, 1.08rem);
   overflow: hidden;
   border: 1px solid rgba(103, 232, 249, 0.26);
   border-radius: 8px;
@@ -6706,15 +6707,21 @@ body {
 }
 
 .command-brand {
-  gap: 0.75rem;
+  gap: clamp(0.55rem, 1.05vw, 0.75rem);
   padding: 0;
+  align-content: start;
 }
 
 .command-actions {
   align-self: start;
+  justify-self: end;
+  width: min(100%, 330px);
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: max-content;
   justify-content: flex-start;
-  gap: 0.75rem;
-  padding: clamp(0.65rem, 1.4vw, 0.9rem);
+  gap: 0.62rem;
+  padding: clamp(0.58rem, 1.15vw, 0.76rem);
   border: 1px solid rgba(103, 232, 249, 0.22);
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
   background:
@@ -6725,20 +6732,27 @@ body {
 
 .version-ribbon {
   justify-self: start;
-  padding: 0.42rem 0.72rem !important;
+  padding: 0.36rem 0.68rem !important;
   border-radius: 0 !important;
   clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   color: #06121d !important;
   background: linear-gradient(90deg, #fbbf24, #67e8f9) !important;
   border: 0 !important;
   box-shadow: 0 0 22px rgba(34, 211, 238, 0.16) !important;
+  font-size: clamp(0.62rem, 1vw, 0.78rem) !important;
 }
 
 .command-logo {
-  column-gap: clamp(0.8rem, 1.7vw, 1.15rem);
+  grid-template-columns: clamp(82px, 7vw, 106px) minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(0.82rem, 1.55vw, 1.08rem);
+  row-gap: 0.35rem;
 }
 
 .command-logo .main-logo {
+  width: clamp(82px, 7vw, 106px);
+  height: clamp(82px, 7vw, 106px);
+  align-self: center;
   border-radius: 8px;
   border: 1px solid rgba(251, 191, 36, 0.5);
   background: #050914;
@@ -6751,6 +6765,9 @@ body {
 
 .command-logo #appTitle {
   font-family: "Cinzel", serif;
+  font-size: clamp(2.4rem, 4.25vw, 4.2rem);
+  line-height: 0.9;
+  max-width: 790px;
   text-shadow:
     0 0 18px rgba(34, 211, 238, 0.35),
     0 2px 0 rgba(0, 0, 0, 0.4);
@@ -6768,7 +6785,10 @@ body {
 
 .command-copy.seo-intro {
   color: #b9c6dc;
-  max-width: 76ch;
+  max-width: 64ch;
+  margin-left: calc(clamp(82px, 7vw, 106px) + clamp(0.82rem, 1.55vw, 1.08rem));
+  font-size: clamp(0.76rem, 1.1vw, 0.9rem);
+  line-height: 1.55;
 }
 
 .command-kicker {
@@ -6780,10 +6800,13 @@ body {
   background: linear-gradient(90deg, #22d3ee, #5eead4);
   border: 0;
   box-shadow: 0 0 24px rgba(34, 211, 238, 0.18);
+  min-height: 1.9rem;
+  white-space: nowrap;
 }
 
 .app-control-row {
   justify-content: center !important;
+  gap: 0.55rem !important;
 }
 
 .global-game-clock,
@@ -6804,6 +6827,7 @@ body {
 .tool-nav-inner {
   border-radius: 8px;
   clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  padding: 0.34rem 0.42rem;
   background:
     linear-gradient(90deg, rgba(34, 211, 238, 0.12), rgba(245, 158, 11, 0.08)),
     rgba(2, 6, 14, 0.9);
@@ -6811,7 +6835,8 @@ body {
 }
 
 .tab-pill {
-  min-height: 2.6rem;
+  min-height: 2.28rem;
+  padding: 0.44rem 0.78rem;
   border-radius: 0 !important;
   clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
   color: #c8d3e7;
@@ -6828,6 +6853,34 @@ body {
 .tab-badge {
   border-radius: 0 !important;
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
+@media (max-width: 980px) and (min-width: 769px) {
+  .command-header {
+    grid-template-columns: 1fr;
+  }
+
+  .command-actions {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.62rem 0.72rem;
+  }
+
+  .command-kicker {
+    flex: 0 0 auto;
+    min-width: 150px;
+    align-self: center;
+    padding-inline: 0.8rem;
+  }
+
+  .app-control-row {
+    flex: 1 1 auto;
+    justify-content: flex-end !important;
+  }
 }
 
 #manualSection > .mb-6.p-4,
