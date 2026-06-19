@@ -1010,6 +1010,10 @@ button:not([disabled]):active,
   }
 
   #tabNavScroll {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+    width: auto !important;
+    margin-inline: 0 !important;
     max-width: calc(100vw - 78px) !important;
     gap: 4px !important;
     padding: 1px !important;

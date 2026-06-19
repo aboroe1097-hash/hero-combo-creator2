@@ -6407,6 +6407,7 @@ body {
 .tool-nav-inner {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   width: 100%;
   padding: 0.45rem;
@@ -6424,8 +6425,13 @@ body {
 }
 
 #tabNavScroll {
-  flex: 1 1 auto;
-  max-width: none !important;
+  display: flex;
+  justify-content: center;
+  flex: 0 1 auto;
+  width: max-content;
+  min-width: 0;
+  max-width: 100% !important;
+  margin-inline: auto;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
