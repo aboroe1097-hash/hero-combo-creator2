@@ -448,6 +448,9 @@ function renderHeroesTab() {
         const mba = skin.maxBioAttributes;
         const hpBonus = getHiddenPowerBonus(heroSkinsList.length);
         const hiddenPower = skin.hiddenPower || hpBonus;
+        const inheritingSkillRef = skin.inheritingSkill?.replacesSlot ? `Skill ${skin.inheritingSkill.replacesSlot}` : 'Base skill';
+        const inheritingFrom = skin.inheritingSkill?.fromSkill || inheritingSkillRef;
+        const inheritingName = skin.inheritingSkill?.name || 'Inheriting skill';
         return `
         <div class="detail-skin-card">
           <div class="detail-skin-header">
@@ -482,10 +485,11 @@ function renderHeroesTab() {
             </div>
           </div>
           <div class="detail-skin-skill">
-            <div class="detail-skin-skill-title">Star 2 - Inheriting Skill (Slot ${skin.inheritingSkill.replacesSlot})</div>
-            <div class="detail-skin-skill-name">${escapeHtml(skin.inheritingSkill.name)}</div>
-            ${skin.inheritingSkill.fromSkill ? `<div class="detail-skin-effect">Upgrades: ${escapeHtml(skin.inheritingSkill.fromSkill)} -> ${escapeHtml(skin.inheritingSkill.name)}</div>` : ''}
+            <div class="detail-skin-skill-title">Star 2 - Inheriting Skill</div>
+            <div class="detail-skin-skill-name">${escapeHtml(inheritingName)}</div>
+            <div class="detail-skin-effect">Upgrades ${escapeHtml(inheritingSkillRef)}: ${escapeHtml(inheritingFrom)} -> ${escapeHtml(inheritingName)}</div>
             ${skin.inheritingSkill.worksOn ? `<div class="detail-skin-effect">Works on: ${escapeHtml(skin.inheritingSkill.worksOn)} | Range ${escapeHtml(String(skin.inheritingSkill.effectiveRange))} | Target: ${escapeHtml(skin.inheritingSkill.target)}</div>` : ''}
+            ${skin.inheritingSkill.influencedBy ? `<div class="detail-skin-effect">Influenced by: ${escapeHtml(skin.inheritingSkill.influencedBy)}</div>` : ''}
             <p class="detail-skin-skill-desc">${escapeHtml(skin.inheritingSkill.description)}</p>
             <div class="detail-skin-levels">
               ${(skin.inheritingSkill.levels || []).map(lv => `

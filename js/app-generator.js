@@ -4,7 +4,7 @@ import { translations } from './translations.js';
 import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
-import { hasSkin, getSkinCount, SKIN_TYPES } from './skins-db.js';
+import { hasSkin, getHeroSkins, getSkinCount, SKIN_TYPES } from './skins-db.js';
 import { skinMetaCombos, SKIN_STATUS_LABEL_KEYS } from './skin-combos-db.js';
 import {
   currentLanguage,
@@ -104,15 +104,24 @@ export function renderGeneratorHeroes() {
 
   filtered.forEach(hero => {
       const hasSkinFlag = hasSkin(hero.name);
+      const heroSkinsList = getHeroSkins(hero.name);
+      const primarySkin = heroSkinsList[0] || null;
       const skinCount = getSkinCount(hero.name);
-      const skinColors = Object.values(SKIN_TYPES).map(s => s.color);
-      const hasSkinClass = hasSkinFlag && generatorSkinsOnly ? ' has-skin' : '';
+      const skinTypeInfo = primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic) : null;
+      const skinColors = heroSkinsList.length
+        ? heroSkinsList.map(skin => (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic).color)
+        : Object.values(SKIN_TYPES).map(s => s.color);
+      const skinPriorityClass = generatorSkinsOnly
+        ? (hasSkinFlag ? ' skin-priority-card has-skin' : ' skin-priority-muted')
+        : '';
       const card = document.createElement('button');
-      card.className = `hero-card generator-card relative${hasSkinClass} ${
+      card.className = `hero-card generator-card relative${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
-      
-      const skinBadge = hasSkinFlag ? `<span class="generator-skin-badge" title="${skinCount} skin${skinCount > 1 ? 's' : ''} available" style="background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})">✦${skinCount > 1 ? skinCount : ''}</span>` : '';
+
+      const skinBadge = hasSkinFlag
+        ? `<span class="generator-skin-badge${generatorSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${generatorSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})`}">${escapeHtml(generatorSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+        : '';
 
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>

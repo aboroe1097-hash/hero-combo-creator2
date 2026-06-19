@@ -95,7 +95,7 @@ export const heroSkins = {
       },
       inheritingSkill: {
         unlockStar: 2,
-        replacesSlot: 8,
+        replacesSlot: 2,
         fromSkill: 'Wheel of Fortune',
         name: 'Eternity',
         maxLevel: 10,
