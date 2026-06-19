@@ -5,7 +5,8 @@ export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/' });
+      const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/', updateViaCache: 'none' });
+      reg.update();
       console.log('SW registered:', reg.scope);
     } catch (err) {
       console.warn('SW registration failed:', err);
