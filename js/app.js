@@ -49,11 +49,8 @@ import {
   setActiveTechSeasons,
   techSearchQuery,
   setTechSearchQuery,
-  selectedSeasons,
   setSelectedSeasons,
-  selectedStates,
   setSelectedStates,
-  selectedTypes,
   setSelectedTypes,
   currentCombo,
   setCurrentCombo,
@@ -63,7 +60,6 @@ import {
   setGeneratorSelectedStates,
   generatorSelectedTypes,
   setGeneratorSelectedTypes,
-  generatorSkinsOnly,
   setGeneratorSkinsOnly,
   generatorSelectedHeroes,
   userId,
@@ -78,6 +74,7 @@ import {
   TechseasonColors,
   TECH_SEASON_ORDER,
   HERO_ATLAS_ALL_SEASONS,
+  DEFAULT_HERO_FILTER_SEASONS,
   languageSelect,
   availableHeroesEl,
   saveComboBtn,
@@ -290,6 +287,74 @@ function showAboModal(message, onConfirm = null) {
 }
 
 // --- TOUCH DRAG & RENDER MOVED TO MODULAR FILES ---
+const DEFAULT_STATE_FILTER_VALUES = ['free', 'paid'];
+const DEFAULT_TROOP_FILTER_VALUES = ['All'];
+
+function syncCheckboxValues(container, values) {
+  if (!container) return;
+  const wanted = new Set(values.map(v => String(v).toLowerCase()));
+  container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = wanted.has(String(input.value).toLowerCase());
+  });
+}
+
+function readSeasonFilterSelection(container) {
+  const checked = getCheckedValues(container);
+  if (checked.length > 0) return checked;
+  syncCheckboxValues(container, DEFAULT_HERO_FILTER_SEASONS);
+  return [...DEFAULT_HERO_FILTER_SEASONS];
+}
+
+function readStateFilterSelection(container) {
+  if (!getCheckedValues(container).length) {
+    syncCheckboxValues(container, DEFAULT_STATE_FILTER_VALUES);
+  }
+  return computeStateSelection(container);
+}
+
+function readTroopFilterSelection(container, changedInput) {
+  if (!container) return ['Archers', 'Footmen', 'Cavalry', 'All'];
+
+  if (changedInput?.matches?.('input[type="checkbox"]')) {
+    const changedValue = changedInput.value.toLowerCase();
+    if (changedValue === 'all' && changedInput.checked) {
+      container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = input === changedInput;
+      });
+    } else if (changedValue !== 'all' && changedInput.checked) {
+      const allInput = Array.from(container.querySelectorAll('input[type="checkbox"]'))
+        .find(input => input.value.toLowerCase() === 'all');
+      if (allInput) allInput.checked = false;
+    }
+  }
+
+  if (!getCheckedValues(container).length) {
+    syncCheckboxValues(container, DEFAULT_TROOP_FILTER_VALUES);
+  }
+
+  return computeTypeSelection(container);
+}
+
+function wireFilterControls(container, onChange) {
+  if (!container || typeof onChange !== 'function') return;
+
+  container.addEventListener('click', (event) => {
+    const pill = event.target.closest('label.filter-pill');
+    if (!pill || !container.contains(pill) || event.target.matches('input[type="checkbox"]')) return;
+    const input = pill.querySelector('input[type="checkbox"]');
+    if (!input || input.disabled) return;
+
+    event.preventDefault();
+    input.checked = !input.checked;
+    onChange(input);
+  });
+
+  container.addEventListener('change', (event) => {
+    if (!event.target.matches('input[type="checkbox"]')) return;
+    onChange(event.target);
+  });
+}
+
 // --- UI WIRING ---
 function wireUIActions() {
   // === TAB BUTTON HANDLERS ===
@@ -477,45 +542,43 @@ tabs.forEach(tab => {
     _lastTab = tabName;
   }
   if (seasonFiltersEl) {
-    seasonFiltersEl.addEventListener('change', () => {
-      setSelectedSeasons(getCheckedValues(seasonFiltersEl));
-      if (!selectedSeasons.length) setSelectedSeasons(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
+    wireFilterControls(seasonFiltersEl, () => {
+      setSelectedSeasons(readSeasonFilterSelection(seasonFiltersEl));
       renderAvailableHeroes();
     });
   }
 
   if (stateFiltersEl) {
-    stateFiltersEl.addEventListener('change', () => {
-      setSelectedStates(computeStateSelection(stateFiltersEl));
+    wireFilterControls(stateFiltersEl, () => {
+      setSelectedStates(readStateFilterSelection(stateFiltersEl));
       renderAvailableHeroes();
     });
   }
 
   if (troopFiltersEl) {
-    troopFiltersEl.addEventListener('change', () => {
-      setSelectedTypes(computeTypeSelection(troopFiltersEl));
+    wireFilterControls(troopFiltersEl, (input) => {
+      setSelectedTypes(readTroopFilterSelection(troopFiltersEl, input));
       renderAvailableHeroes();
     });
   }
 
   if (genSeasonFiltersEl) {
-    genSeasonFiltersEl.addEventListener('change', () => {
-      setGeneratorSelectedSeasons(getCheckedValues(genSeasonFiltersEl));
-      if (!generatorSelectedSeasons.length) setGeneratorSelectedSeasons(['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2']);
+    wireFilterControls(genSeasonFiltersEl, () => {
+      setGeneratorSelectedSeasons(readSeasonFilterSelection(genSeasonFiltersEl));
       renderGeneratorHeroes();
     });
   }
 
   if (genStateFiltersEl) {
-    genStateFiltersEl.addEventListener('change', () => {
-      setGeneratorSelectedStates(computeStateSelection(genStateFiltersEl));
+    wireFilterControls(genStateFiltersEl, () => {
+      setGeneratorSelectedStates(readStateFilterSelection(genStateFiltersEl));
       renderGeneratorHeroes();
     });
   }
 
   if (genTroopFiltersEl) {
-    genTroopFiltersEl.addEventListener('change', () => {
-      setGeneratorSelectedTypes(computeTypeSelection(genTroopFiltersEl));
+    wireFilterControls(genTroopFiltersEl, (input) => {
+      setGeneratorSelectedTypes(readTroopFilterSelection(genTroopFiltersEl, input));
       renderGeneratorHeroes();
     });
   }
