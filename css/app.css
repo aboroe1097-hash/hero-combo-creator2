@@ -732,6 +732,17 @@ section.tab-panel:not(.hidden) {
 .toggle-switch input:checked + .toggle-slider { background:linear-gradient(135deg,#f59e0b,#a855f7); }
 .toggle-switch input:checked + .toggle-slider::before { transform:translateX(18px); }
 
+@keyframes skin-portrait-breathe {
+  0%, 100% { transform: scale(1) translateY(0); filter: saturate(1.05) brightness(1); }
+  50% { transform: scale(1.035) translateY(-2px); filter: saturate(1.22) brightness(1.08); }
+}
+
+@keyframes skin-eye-blink {
+  0%, 86%, 100% { opacity:0; transform:translateX(-50%) scaleX(0.82); }
+  88%, 91% { opacity:0.7; transform:translateX(-50%) scaleX(1); }
+  93% { opacity:0; transform:translateX(-50%) scaleX(0.86); }
+}
+
 .generator-skin-badge {
   position:absolute; top:4px; right:4px; z-index:25;
   display:flex; align-items:center; justify-content:center;
@@ -772,6 +783,41 @@ section.tab-panel:not(.hidden) {
 .generator-card.generator-card-selected.skin-priority-muted {
   opacity:0.86;
   filter:none;
+}
+.generator-card.skin-no-skin {
+  cursor:pointer;
+}
+.generator-card.skin-animated-portrait img {
+  animation:skin-portrait-breathe 4.4s ease-in-out infinite;
+  transform-origin:center 58%;
+  border-color:rgba(251,191,36,0.72);
+  box-shadow:0 0 16px rgba(251,191,36,0.24), 0 0 0 3px rgba(245,158,11,0.1);
+}
+.generator-card.skin-animated-portrait::before {
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50px;
+  width:42px;
+  height:8px;
+  border-radius:999px;
+  pointer-events:none;
+  z-index:14;
+  background:linear-gradient(90deg, transparent, rgba(250,204,21,0.85), rgba(34,211,238,0.65), transparent);
+  filter:blur(1px);
+  opacity:0;
+  animation:skin-eye-blink 5.6s ease-in-out infinite;
+}
+.generator-card.generator-card-selected.skin-animated-portrait img {
+  border-color:#67e8f9;
+  box-shadow:0 0 18px rgba(34,211,238,0.34), 0 0 0 3px rgba(34,211,238,0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generator-card.skin-animated-portrait img,
+  .generator-card.skin-animated-portrait::before {
+    animation:none !important;
+  }
 }
 
 /* ── Hero cards ──────────────────────────────────────────── */

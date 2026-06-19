@@ -1,6 +1,7 @@
 // js/state.js - Shared state hub. No imports from app.js/builder.js/generator.js.
 import { translations } from './translations.js';
 import { allHeroesData } from './heroes-data.js';
+import { skinHeroesData } from './skin-heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 
 // --- APP CONFIG ---
@@ -45,6 +46,9 @@ export function setGeneratorSelectedTypes(v) { generatorSelectedTypes = v; }
 export function setGeneratorSkinsOnly(v) { generatorSkinsOnly = v; }
 export function setActiveTechSeasons(v) { activeTechSeasons = v; }
 export function setTechSearchQuery(v) { techSearchQuery = v; }
+export function getGeneratorHeroPool(skinsOnly = generatorSkinsOnly) {
+  return skinsOnly ? skinHeroesData : allHeroesData;
+}
 export const savedCombosCache = [];
 export const lastGeneratedCombos = [];
 
@@ -113,7 +117,6 @@ export const tabOcrDashboardBtn = document.getElementById('tabOcrDashboard');
 export const globalToggleRow = document.getElementById('globalToggleRow');
 
 export const comboFooterBar = document.getElementById('comboFooterBar');
-export const skinMetaCombosTableEl = document.getElementById('skinMetaCombosTable');
 export const generatorHeroesEl = document.getElementById('generatorHeroes');
 export const generatorResultsEl = document.getElementById('generatorResults');
 export const generateCombosBtn = document.getElementById('generateCombosBtn');

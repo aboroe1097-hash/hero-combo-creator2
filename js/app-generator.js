@@ -1,11 +1,9 @@
 import { escapeHtml } from './utils.js';
 // js/app-generator.js
 import { translations } from './translations.js';
-import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
-import { hasSkin, getHeroSkins, getSkinCount, SKIN_TYPES } from './skins-db.js';
-import { skinMetaCombos, SKIN_STATUS_LABEL_KEYS } from './skin-combos-db.js';
+import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -23,68 +21,18 @@ import {
   generatorSkinsOnly,
   lastGeneratedCombos,
   getSourceCreditText,
-  skinMetaCombosTableEl,
+  getGeneratorHeroPool,
   generatorHeroesEl,
   generatorResultsEl,
   downloadGeneratorBtn,
   __ui,
 } from './state.js';
 
-const SKIN_POSITION_KEYS = {
-  Front: 'skinPositionFront',
-  Middle: 'skinPositionMiddle',
-  Back: 'skinPositionBack',
+const SKIN_TYPE_PRIORITY = {
+  Everlasting: 0,
+  Legendary: 1,
+  Mythic: 2
 };
-
-function renderSkinStatus(hero, t) {
-  const labelKey = SKIN_STATUS_LABEL_KEYS[hero.skinStatus];
-  const label = (labelKey && t[labelKey]) || hero.skinStatus || t.skinStatusFallback || 'Skin status';
-  const className = `skin-status-chip skin-status-chip--${hero.skinStatus || 'base'}`;
-  const heroNote = hero.noteKey ? t[hero.noteKey] : '';
-  const title = heroNote ? `${label}. ${heroNote}` : label;
-  return `<span class="${className}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
-}
-
-export function renderSkinMetaCombosTable() {
-  if (!skinMetaCombosTableEl) return;
-  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
-  const t = translations[lang] || translations.en;
-
-  skinMetaCombosTableEl.innerHTML = `
-    <div class="skin-meta-heading">
-      <div>
-        <span class="skin-meta-kicker">${escapeHtml(t.skinMetaKicker || 'S1-X1 skin meta')}</span>
-        <h3 class="skin-meta-title">${escapeHtml(t.skinMetaTitle || 'Skin Max Combos')}</h3>
-      </div>
-      <p class="skin-meta-summary">${escapeHtml(t.skinMetaSummary || 'Maxed means Star 3: biography attributes, inheriting skill, preserving skill, and the moving icon.')}</p>
-    </div>
-    <div class="skin-meta-list">
-      ${skinMetaCombos.map(combo => `
-        <article class="skin-meta-row">
-          <div class="skin-meta-rank">
-            <span class="skin-meta-rank-number">#${combo.rank}</span>
-            <span class="skin-meta-range">${escapeHtml(combo.seasonRange)}</span>
-          </div>
-          <div class="skin-meta-content">
-            <div class="skin-meta-heroes">
-              ${combo.heroes.map(hero => `
-                <div class="skin-meta-hero">
-                  <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
-                  <div class="skin-meta-hero-copy">
-                    <span class="skin-meta-position">${escapeHtml(t[SKIN_POSITION_KEYS[hero.position]] || hero.position)}</span>
-                    <span class="skin-meta-name">${escapeHtml(hero.name)}</span>
-                    ${renderSkinStatus(hero, t)}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-            <p class="skin-meta-note">${escapeHtml(t[combo.noteKey] || '')}</p>
-          </div>
-        </article>
-      `).join('')}
-    </div>
-  `;
-}
 
 export function renderGeneratorHeroes(options = {}) {
   if (!generatorHeroesEl) return;
@@ -95,29 +43,52 @@ export function renderGeneratorHeroes(options = {}) {
   const activeTypes = options.types || generatorSelectedTypes;
   const activeSkinsOnly = options.skinsOnly ?? generatorSkinsOnly;
 
-  let filtered = allHeroesData.filter(h => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes));
+  const pool = getGeneratorHeroPool(activeSkinsOnly);
+  let filtered = pool.filter(h => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes));
 
   if (activeSkinsOnly) {
     filtered = filtered.sort((a, b) => {
-      const aHas = hasSkin(a.name);
-      const bHas = hasSkin(b.name);
+      const aHas = Boolean(a.hasSkin);
+      const bHas = Boolean(b.hasSkin);
       if (aHas && !bHas) return -1;
       if (!aHas && bHas) return 1;
-      return getSkinCount(b.name) - getSkinCount(a.name);
+      if (aHas && bHas) {
+        const aPriority = SKIN_TYPE_PRIORITY[a.skinType] ?? 99;
+        const bPriority = SKIN_TYPE_PRIORITY[b.skinType] ?? 99;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+      }
+      return a.name.localeCompare(b.name);
     });
   }
 
   filtered.forEach(hero => {
-      const hasSkinFlag = hasSkin(hero.name);
+      const hasSkinFlag = activeSkinsOnly ? Boolean(hero.hasSkin) : hasSkin(hero.name);
       const heroSkinsList = getHeroSkins(hero.name);
-      const primarySkin = heroSkinsList[0] || null;
+      const primarySkin = activeSkinsOnly && hero.hasSkin
+        ? {
+          name: hero.skinName,
+          type: hero.skinType
+        }
+        : getSkinForHero(hero.name);
       const skinCount = getSkinCount(hero.name);
-      const skinTypeInfo = primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic) : null;
+      const skinTypeInfo = activeSkinsOnly && hero.hasSkin
+        ? {
+          label: hero.skinType,
+          color: hero.skinTypeColor,
+          icon: hero.skinTypeIcon
+        }
+        : (primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic) : null);
       const skinColors = heroSkinsList.length
         ? heroSkinsList.map(skin => (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic).color)
         : Object.values(SKIN_TYPES).map(s => s.color);
+      const normalSkinBadgeColors = skinCount > 1
+        ? skinColors.slice(0, skinCount).join(',')
+        : `${skinColors[0] || '#f59e0b'},#fbbf24`;
+      const portraitUrl = activeSkinsOnly && hero.hasSkin
+        ? (hero.skinImageUrl || hero.imageUrl)
+        : hero.imageUrl;
       const skinPriorityClass = activeSkinsOnly
-        ? (hasSkinFlag ? ' skin-priority-card has-skin' : ' skin-priority-muted')
+        ? (hasSkinFlag ? ' skin-priority-card skin-animated-portrait has-skin' : ' skin-priority-muted skin-no-skin')
         : '';
       const card = document.createElement('button');
       card.className = `hero-card generator-card relative${skinPriorityClass} ${
@@ -125,7 +96,7 @@ export function renderGeneratorHeroes(options = {}) {
       }`;
 
       const skinBadge = hasSkinFlag
-        ? `<span class="generator-skin-badge${activeSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${activeSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})`}">${escapeHtml(activeSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+        ? `<span class="generator-skin-badge${activeSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${activeSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${normalSkinBadgeColors})`}">${escapeHtml(activeSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
         : '';
 
       card.innerHTML = `
@@ -139,7 +110,7 @@ export function renderGeneratorHeroes(options = {}) {
             </svg>
         </div>
 
-        <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
+        <img src="${escapeHtml(portraitUrl)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>

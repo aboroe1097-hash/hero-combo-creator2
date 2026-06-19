@@ -190,6 +190,20 @@ body.tab-manual-active {
   height: 46px !important;
   margin-bottom: 2px !important;
 }
+.generator-card.skin-animated-portrait::before {
+  top: 31px !important;
+  width: 28px !important;
+  height: 6px !important;
+}
+.generator-card.skin-animated-portrait img {
+  box-shadow: 0 0 10px rgba(251,191,36,0.2), 0 0 0 2px rgba(245,158,11,0.1) !important;
+}
+.generator-card.skin-priority-muted {
+  opacity: 0.54 !important;
+}
+.generator-card.generator-card-selected.skin-priority-muted {
+  opacity: 0.88 !important;
+}
 
 /* Prevent info-btn from overlapping the paid-badge on mobile */
 .hero-card:has(.paid-badge) .info-btn { top: 26px !important; }
