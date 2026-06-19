@@ -13,14 +13,16 @@ export let heroInfoEnabled = true;
 export let activeTechSeasons = new Set(['X1']);
 export let techSearchQuery = '';
 
-export let selectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];
+
+export let selectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
 export let selectedStates = ['Free', 'Paid'];
 export let selectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 
 export let currentCombo = [null, null, null];
 export function setCurrentCombo(v) { currentCombo = v; }
 
-export let generatorSelectedSeasons = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export let generatorSelectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
 export let generatorSelectedStates = ['Free', 'Paid'];
 export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 export const generatorSelectedHeroes = new Set();

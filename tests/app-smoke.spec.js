@@ -31,4 +31,31 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabLoyalty', '#loyaltySection', '#loyaltyPresets');
     await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
   });
+
+  test('generator filters default to S0/S1 and update visible heroes', async ({ page }) => {
+    await openApp(page);
+    const cards = page.locator('#generatorHeroes .generator-card');
+    await expect(cards.first()).toBeVisible();
+
+    await expect(page.locator('#generatorSeasonFilters input[value="S0"]')).toBeChecked();
+    await expect(page.locator('#generatorSeasonFilters input[value="S1"]')).toBeChecked();
+
+    const initialSeasons = await page.locator('#generatorHeroes .hero-tag').evaluateAll(nodes =>
+      [...new Set(nodes.map(node => node.textContent.trim()))].sort()
+    );
+    expect(initialSeasons).toEqual(['S0', 'S1']);
+
+    const initialCount = await cards.count();
+    await page.locator('#generatorTroopFilters .archers-pill').click();
+    await expect(page.locator('#generatorTroopFilters input[value="All"]')).not.toBeChecked();
+    await expect(page.locator('#generatorTroopFilters input[value="Archers"]')).toBeChecked();
+    expect(await cards.count()).toBeLessThan(initialCount);
+
+    await page.locator('#generatorSeasonFilters .s2-pill').click();
+    await expect(page.locator('#generatorSeasonFilters input[value="S2"]')).toBeChecked();
+    const seasonsWithS2 = await page.locator('#generatorHeroes .hero-tag').evaluateAll(nodes =>
+      [...new Set(nodes.map(node => node.textContent.trim()))].sort()
+    );
+    expect(seasonsWithS2).toContain('S2');
+  });
 });
