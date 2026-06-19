@@ -6,8 +6,9 @@
     "build:eden": "python database/build-eden-datasets.py",
     "dev": "vite",
     "build": "npm run build:eden && vite build && node scripts/post-build.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "smoke": "playwright test",
-    "check": "npm run build && npm run smoke",
+    "check": "npm run i18n:check && npm run build && npm run smoke",
     "preview": "vite preview",
     "ocr-server": "cd tools/ocr-server && node server.js"
   },

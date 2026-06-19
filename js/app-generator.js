@@ -5,7 +5,7 @@ import { allHeroesData } from './heroes-data.js';
 import { rankedCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getSkinCount, SKIN_TYPES } from './skins-db.js';
-import { skinMetaCombos, SKIN_STATUS_LABELS } from './skin-combos-db.js';
+import { skinMetaCombos, SKIN_STATUS_LABEL_KEYS } from './skin-combos-db.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -22,7 +22,7 @@ import {
   generatorSelectedHeroes,
   generatorSkinsOnly,
   lastGeneratedCombos,
-  sourceCreditText,
+  getSourceCreditText,
   skinMetaCombosTableEl,
   generatorHeroesEl,
   generatorResultsEl,
@@ -30,23 +30,33 @@ import {
   __ui,
 } from './state.js';
 
-function renderSkinStatus(hero) {
-  const label = SKIN_STATUS_LABELS[hero.skinStatus] || hero.skinStatus || 'Skin status';
+const SKIN_POSITION_KEYS = {
+  Front: 'skinPositionFront',
+  Middle: 'skinPositionMiddle',
+  Back: 'skinPositionBack',
+};
+
+function renderSkinStatus(hero, t) {
+  const labelKey = SKIN_STATUS_LABEL_KEYS[hero.skinStatus];
+  const label = (labelKey && t[labelKey]) || hero.skinStatus || t.skinStatusFallback || 'Skin status';
   const className = `skin-status-chip skin-status-chip--${hero.skinStatus || 'base'}`;
-  const title = hero.note ? `${label}. ${hero.note}` : label;
+  const heroNote = hero.noteKey ? t[hero.noteKey] : '';
+  const title = heroNote ? `${label}. ${heroNote}` : label;
   return `<span class="${className}" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
 }
 
 export function renderSkinMetaCombosTable() {
   if (!skinMetaCombosTableEl) return;
+  const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
+  const t = translations[lang] || translations.en;
 
   skinMetaCombosTableEl.innerHTML = `
     <div class="skin-meta-heading">
       <div>
-        <span class="skin-meta-kicker">S1-X1 skin meta</span>
-        <h3 class="skin-meta-title">Skin Max Combos</h3>
+        <span class="skin-meta-kicker">${escapeHtml(t.skinMetaKicker || 'S1-X1 skin meta')}</span>
+        <h3 class="skin-meta-title">${escapeHtml(t.skinMetaTitle || 'Skin Max Combos')}</h3>
       </div>
-      <p class="skin-meta-summary">Maxed means Star 3: biography attributes, inheriting skill, preserving skill, and the moving icon.</p>
+      <p class="skin-meta-summary">${escapeHtml(t.skinMetaSummary || 'Maxed means Star 3: biography attributes, inheriting skill, preserving skill, and the moving icon.')}</p>
     </div>
     <div class="skin-meta-list">
       ${skinMetaCombos.map(combo => `
@@ -61,14 +71,14 @@ export function renderSkinMetaCombosTable() {
                 <div class="skin-meta-hero">
                   <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
                   <div class="skin-meta-hero-copy">
-                    <span class="skin-meta-position">${escapeHtml(hero.position)}</span>
+                    <span class="skin-meta-position">${escapeHtml(t[SKIN_POSITION_KEYS[hero.position]] || hero.position)}</span>
                     <span class="skin-meta-name">${escapeHtml(hero.name)}</span>
-                    ${renderSkinStatus(hero)}
+                    ${renderSkinStatus(hero, t)}
                   </div>
                 </div>
               `).join('')}
             </div>
-            <p class="skin-meta-note">${escapeHtml(combo.note)}</p>
+            <p class="skin-meta-note">${escapeHtml(t[combo.noteKey] || '')}</p>
           </div>
         </article>
       `).join('')}
@@ -176,7 +186,7 @@ export function renderGeneratorHeroes() {
         sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
         generatorHeroesEl.parentNode.appendChild(sourceNote);
     }
-    sourceNote.innerHTML = sourceCreditText;
+    sourceNote.textContent = getSourceCreditText();
 }
 
 export function renderGeneratorResults(bestCombos) {
@@ -285,7 +295,11 @@ export function generateBestCombos() {
 
   if (finalSelection.length > 0) {
     downloadGeneratorBtn.classList.remove('hidden');
-    if (typeof window.showToast === 'function') window.showToast(`🎯 Found ${finalSelection.length} best combo${finalSelection.length > 1 ? 's' : ''}!`, 'success');
+    if (typeof window.showToast === 'function') {
+      const key = finalSelection.length === 1 ? 'generatorFoundComboOne' : 'generatorFoundComboMany';
+      const message = (t[key] || 'Found {n} best combos!').replace('{n}', finalSelection.length);
+      window.showToast(message, 'success');
+    }
   } else {
     downloadGeneratorBtn.classList.add('hidden');
   }

@@ -1,4 +1,5 @@
-import { getHeroImageUrl } from './state.js';
+import { translations } from './translations.js';
+import { currentLanguage, getHeroImageUrl } from './state.js';
 
 async function loadImageCrossOrigin(url) {
   return new Promise((resolve) => {
@@ -214,17 +215,18 @@ async function renderCombosToCanvas(combosData, title) {
 
 async function downloadComboImage(combosData, title, filename) {
   if (!combosData || !combosData.length) return;
-  if (typeof window.showToast === 'function') window.showToast('⏳ Building image…', 'info', 2000);
+  const t = translations[currentLanguage] || translations.en;
+  if (typeof window.showToast === 'function') window.showToast(t.exportBuildingImage || 'Building image...', 'info', 2000);
   try {
     const canvas = await renderCombosToCanvas(combosData, title);
     const link = document.createElement('a');
     link.download = filename;
     link.href = canvas.toDataURL('image/png');
     link.click();
-    if (typeof window.showToast === 'function') window.showToast('✅ Image downloaded!', 'success');
+    if (typeof window.showToast === 'function') window.showToast(t.exportImageDownloaded || 'Image downloaded!', 'success');
   } catch (err) {
     console.error('Canvas render error:', err);
-    if (typeof window.showToast === 'function') window.showToast('❌ Image failed', 'error');
+    if (typeof window.showToast === 'function') window.showToast(t.exportImageFailed || 'Image failed', 'error');
   }
 }
 

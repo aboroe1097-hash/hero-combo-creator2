@@ -18,7 +18,7 @@ import {
   selectedStates,
   selectedTypes,
   currentCombo,
-  sourceCreditText,
+  getSourceCreditText,
   availableHeroesEl,
   loadingSpinner,
   savedCombosEl,
@@ -187,12 +187,13 @@ export function renderAvailableHeroes() {
       sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
       availableHeroesEl.parentNode.appendChild(sourceNote);
   }
-  sourceNote.innerHTML = sourceCreditText;
+  sourceNote.textContent = getSourceCreditText();
   
   const countEl = document.getElementById('manualHeroCount');
   if (countEl) {
     const count = availableHeroesEl.querySelectorAll('.hero-card').length;
-    countEl.textContent = count + ' hero' + (count !== 1 ? 's' : '');
+    const label = count === 1 ? (t.heroCountOne || '{n} hero') : (t.heroCountMany || '{n} heroes');
+    countEl.textContent = label.replace('{n}', count);
   }
 }
 
@@ -280,10 +281,10 @@ export async function saveCombo() {
     document.querySelectorAll('.combo-slot')
       .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
     updateManualComboScore();
-    if (typeof window.showToast === 'function') window.showToast('✅ Combo saved!', 'success');
+    if (typeof window.showToast === 'function') window.showToast(t.toastComboSaved || t.messageComboSavedSuccess || 'Combo saved!', 'success');
   } catch (err) {
     console.error(err);
-    if (typeof window.showToast === 'function') window.showToast('❌ Could not save combo', 'error');
+    if (typeof window.showToast === 'function') window.showToast(t.toastComboSaveFailed || 'Could not save combo', 'error');
   } finally {
     loadingSpinner.classList.add('hidden');
   }

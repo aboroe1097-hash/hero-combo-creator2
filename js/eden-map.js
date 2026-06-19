@@ -463,7 +463,7 @@ export function initEdenMapPlanner() {
     try {
       plan = normalizePlan(JSON.parse(decodeURIComponent(escape(atob(m[1])))));
       savePlan();
-      if (typeof window.showToast === 'function') window.showToast('Plan loaded from share link', 'success');
+      if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanLoadedToast'), 'success');
     } catch { /* ignore bad hash */ }
   }
 
@@ -472,10 +472,10 @@ export function initEdenMapPlanner() {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify(plan))));
       const url = `${location.origin}${location.pathname}#eden=${payload}`;
       navigator.clipboard?.writeText(url).then(() => {
-        if (typeof window.showToast === 'function') window.showToast('Share link copied', 'success');
+        if (typeof window.showToast === 'function') window.showToast(edenT('edenShareCopiedToast'), 'success');
       });
     } catch {
-      if (typeof window.showToast === 'function') window.showToast('Could not create share link', 'error');
+      if (typeof window.showToast === 'function') window.showToast(edenT('edenShareFailedToast'), 'error');
     }
   }
 
@@ -1285,7 +1285,7 @@ export function initEdenMapPlanner() {
     savePlan();
     draw();
     if (typeof window.showToast === 'function') {
-      window.showToast(`Route planned — ${routed.distance} tiles`, 'success');
+      window.showToast(edenT('edenRoutePlannedToast').replace('{distance}', String(routed.distance)), 'success');
     }
   }
 
@@ -1623,14 +1623,14 @@ export function initEdenMapPlanner() {
   function setSector(key, smooth = false) {
     if (key !== 'FULL' && !isEdenSectorKey(key)) {
       if (typeof window.showToast === 'function') {
-        window.showToast(`Sector "${key}" is not in this season's map`, 'error', 2800);
+        window.showToast(edenT('edenSectorUnavailableToast').replace('{sector}', key), 'error', 2800);
       }
       return;
     }
     const wonderIds = getSectorTileIds();
     if (key !== 'FULL' && wonderIds.length && !wonderIds.includes(key)) {
       if (typeof window.showToast === 'function') {
-        window.showToast(`No reference sheet for sector "${key}"`, 'error', 2800);
+        window.showToast(edenT('edenSectorReferenceMissingToast').replace('{sector}', key), 'error', 2800);
       }
       return;
     }
@@ -1743,7 +1743,12 @@ export function initEdenMapPlanner() {
       savePlan();
       draw();
       if (typeof window.showToast === 'function') {
-        window.showToast(`Path saved — ${routed.distance} tiles (~${formatTravelTime(travelMins)})`, 'success');
+        window.showToast(
+          edenT('edenPathSavedToast')
+            .replace('{distance}', String(routed.distance))
+            .replace('{time}', formatTravelTime(travelMins)),
+          'success'
+        );
       }
     });
 
@@ -1794,9 +1799,9 @@ export function initEdenMapPlanner() {
           plan = normalizePlan(JSON.parse(reader.result));
           savePlan();
           draw();
-          if (typeof window.showToast === 'function') window.showToast('Plan imported', 'success');
+          if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanImportedToast'), 'success');
         } catch {
-          if (typeof window.showToast === 'function') window.showToast('Invalid plan file', 'error');
+          if (typeof window.showToast === 'function') window.showToast(edenT('edenInvalidPlanToast'), 'error');
         }
       };
       reader.readAsText(file);
@@ -1824,7 +1829,7 @@ export function initEdenMapPlanner() {
       }));
       savePlan();
       draw();
-      if (typeof window.showToast === 'function') window.showToast('Loaded X1 planning targets', 'info');
+      if (typeof window.showToast === 'function') window.showToast(edenT('edenX1TargetsLoadedToast'), 'info');
     });
 
     document.getElementById('edenPlanSelect')?.addEventListener('change', (e) => switchPlan(e.target.value));
@@ -1850,7 +1855,7 @@ export function initEdenMapPlanner() {
     });
     document.getElementById('edenPlanDelete')?.addEventListener('click', () => {
       if (Object.keys(plansStore.plans).length <= 1) {
-        if (typeof window.showToast === 'function') window.showToast('Keep at least one plan', 'error');
+        if (typeof window.showToast === 'function') window.showToast(edenT('edenKeepOnePlanToast'), 'error');
         return;
       }
       delete plansStore.plans[activePlanId];
@@ -1906,7 +1911,7 @@ export function initEdenMapPlanner() {
         });
         scoutActive = res.ok;
         if (!res.ok && typeof window.showToast === 'function') {
-          window.showToast(`Scout offline: ${res.error}`, 'info');
+          window.showToast(edenT('edenScoutOfflineToast').replace('{error}', res.error || ''), 'info');
         }
       }
       if (viewMode !== 'scout') {
@@ -1952,19 +1957,22 @@ export function initEdenMapPlanner() {
     document.getElementById('edenScoutPull')?.addEventListener('click', async () => {
       const intel = await pullScoutIntel();
       if (!intel) {
-        if (typeof window.showToast === 'function') window.showToast('No scout intel found', 'info');
+        if (typeof window.showToast === 'function') window.showToast(edenT('edenNoScoutIntelToast'), 'info');
         return;
       }
       plan = mergeScoutIntel(plan, intel);
       savePlan();
       draw();
-      if (typeof window.showToast === 'function') window.showToast('Scout intel merged', 'success');
+      if (typeof window.showToast === 'function') window.showToast(edenT('edenScoutIntelMergedToast'), 'success');
     });
 
     document.getElementById('edenScoutPush')?.addEventListener('click', async () => {
       const res = await pushScoutIntel(plan);
       if (typeof window.showToast === 'function') {
-        window.showToast(res.ok ? 'Intel pushed to cloud' : `Push failed: ${res.error}`, res.ok ? 'success' : 'error');
+        window.showToast(
+          res.ok ? edenT('edenIntelPushedToast') : edenT('edenPushFailedToast').replace('{error}', res.error || ''),
+          res.ok ? 'success' : 'error'
+        );
       }
     });
 
@@ -2025,7 +2033,13 @@ export function initEdenMapPlanner() {
       const s = structures().find(st => st.id === selectedId);
       document.getElementById('tabGenerator')?.click();
       if (typeof window.showToast === 'function' && s) {
-        window.showToast(`Combo Creator — plan for ${s.zone} (${getStructureLabel(s.type)})`, 'info', 4000);
+        window.showToast(
+          edenT('edenComboPlannerToast')
+            .replace('{zone}', s.zone)
+            .replace('{type}', getStructureLabel(s.type)),
+          'info',
+          4000
+        );
       }
       return;
     }
@@ -2054,7 +2068,7 @@ export function initEdenMapPlanner() {
       const btn = e.target.closest('#edenCopyCoordsBtn');
       const text = btn?.dataset.coords || '';
       navigator.clipboard?.writeText(text).then(() => {
-        if (typeof window.showToast === 'function') window.showToast(`Copied ${text}`, 'success');
+        if (typeof window.showToast === 'function') window.showToast(edenT('edenCopiedToast').replace('{text}', text), 'success');
       });
     }
   });
