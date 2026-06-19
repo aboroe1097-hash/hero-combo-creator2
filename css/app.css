@@ -474,7 +474,9 @@ body.first-visit-active { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .boot-orbit-ring, .boot-logo, .boot-brand, .intro-logo, .intro-title,
-  .boot-splash-aurora { animation: none !important; }
+  .boot-splash-aurora, .boot-atmosphere, .boot-scanlines, .boot-halo,
+  .door-wing, .door-wing::before, .door-wing::after, .door-wing span,
+  .gate-lock, .door-faction { animation: none !important; }
   body.app-ready .app-shell--revealed { animation: fade-in-up 0.2s ease both; filter: none; }
   section.tab-panel:not(.hidden) { animation: none !important; }
 }
@@ -7388,8 +7390,8 @@ body {
    10.0.0 boot gate refresh
    ============================================================= */
 @keyframes boot-energy-pan {
-  from { background-position: 0 0, 0 0, 0 0; }
-  to { background-position: 240px 0, -180px 120px, 0 120px; }
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 0 0, 42px -120px, -36px -132px, 240px 0, -180px 120px, 0 120px; }
 }
 
 @keyframes boot-scan-fade {
@@ -7400,11 +7402,17 @@ body {
 @keyframes gate-lock-pulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), 0 0 34px rgba(34, 211, 238, 0.24);
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.38),
+      0 0 34px rgba(34, 211, 238, 0.26),
+      0 0 58px rgba(244, 63, 94, 0.14);
   }
   50% {
     transform: translate(-50%, -50%) scale(1.045);
-    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.52), 0 0 54px rgba(251, 191, 36, 0.3);
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.56),
+      0 0 54px rgba(251, 191, 36, 0.34),
+      0 0 76px rgba(217, 70, 239, 0.2);
   }
 }
 
@@ -7415,18 +7423,50 @@ body {
 
 @keyframes wing-breathe {
   0%, 100% {
-    transform: translate3d(0, 0, 0) scaleX(var(--wing-scale-x, 1)) rotate(var(--wing-tilt, 0deg)) scale(1);
-    opacity: 0.74;
+    transform: translate3d(0, 0, 0) scaleX(var(--wing-scale-x, 1)) rotate(var(--wing-tilt, 0deg)) scale(0.985);
+    opacity: 0.8;
   }
   50% {
-    transform: translate3d(var(--wing-shift-x, 0), -8px, 0) scaleX(var(--wing-scale-x, 1)) rotate(calc(var(--wing-tilt, 0deg) + var(--wing-flutter, 2deg))) scale(1.035);
-    opacity: 0.96;
+    transform: translate3d(var(--wing-shift-x, 0), -10px, 0) scaleX(var(--wing-scale-x, 1)) rotate(calc(var(--wing-tilt, 0deg) + var(--wing-flutter, 2deg))) scale(1.045);
+    opacity: 1;
   }
 }
 
 @keyframes wing-feather-glint {
-  0%, 100% { filter: brightness(0.92) saturate(1.05); }
-  50% { filter: brightness(1.35) saturate(1.35); }
+  0%, 100% {
+    filter: brightness(0.96) saturate(1.08);
+    opacity: 0.26;
+  }
+  45% {
+    filter: brightness(1.48) saturate(1.42);
+    opacity: 0.58;
+  }
+  70% {
+    filter: brightness(1.08) saturate(1.24);
+    opacity: 0.34;
+  }
+}
+
+@keyframes wing-spirit-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.36;
+  }
+  50% {
+    transform: translate3d(var(--spark-shift-x, 0), -16px, 0) scale(1.16);
+    opacity: 0.8;
+  }
+}
+
+@keyframes wing-core-flare {
+  0%, 100% {
+    filter: brightness(0.9) saturate(1.1);
+    opacity: 0.76;
+  }
+  50% {
+    filter: brightness(1.45) saturate(1.35);
+    opacity: 1;
+  }
 }
 
 @keyframes boot-halo-float {
@@ -7442,9 +7482,11 @@ body {
 
 .boot-splash {
   background:
-    radial-gradient(circle at 50% 44%, rgba(34, 211, 238, 0.18), transparent 24%),
-    radial-gradient(circle at 18% 18%, rgba(14, 165, 233, 0.18), transparent 36%),
-    radial-gradient(circle at 82% 82%, rgba(245, 158, 11, 0.14), transparent 32%),
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.12), transparent 12%),
+    radial-gradient(ellipse at 31% 42%, rgba(217, 70, 239, 0.24), transparent 34%),
+    radial-gradient(ellipse at 27% 57%, rgba(34, 211, 238, 0.24), transparent 34%),
+    radial-gradient(ellipse at 70% 42%, rgba(251, 113, 133, 0.24), transparent 34%),
+    radial-gradient(ellipse at 74% 58%, rgba(251, 191, 36, 0.2), transparent 36%),
     #020611 !important;
 }
 
@@ -7458,9 +7500,13 @@ body {
 .boot-atmosphere {
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(34, 211, 238, 0.09) 0 1px, transparent 1px 56px),
+    radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.18), transparent 6%),
+    radial-gradient(circle at 42% 48%, rgba(34, 211, 238, 0.22), transparent 2px),
+    radial-gradient(circle at 58% 52%, rgba(251, 191, 36, 0.2), transparent 2px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.08) 0 1px, transparent 1px 56px),
     linear-gradient(180deg, rgba(251, 191, 36, 0.045) 0 1px, transparent 1px 56px),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), transparent 16%);
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.08), transparent 18%);
+  background-size: auto, 118px 142px, 134px 156px, 56px 56px, 56px 56px, auto;
   animation: boot-energy-pan 8s linear infinite;
 }
 
@@ -7560,18 +7606,26 @@ body {
   --wing-primary: #f8fafc;
   --wing-secondary: #67e8f9;
   --wing-accent: #fcd34d;
+  --wing-hot: #d946ef;
+  --wing-deep: #1d4ed8;
+  --wing-core: #fef08a;
+  --wing-smoke: rgba(15, 23, 42, 0.12);
   --wing-tilt: 0deg;
   --wing-flutter: 2deg;
   --wing-shift-x: 0;
+  --spark-shift-x: 0;
   position: absolute;
-  top: clamp(116px, 20vh, 206px);
-  width: clamp(250px, 28vw, 430px);
-  height: clamp(138px, 19vh, 210px);
+  top: clamp(92px, 17vh, 178px);
+  width: clamp(320px, 35vw, 560px);
+  height: clamp(178px, 25vh, 292px);
   z-index: 1;
   pointer-events: none;
-  opacity: 0.86;
+  opacity: 0.94;
+  isolation: isolate;
   mix-blend-mode: screen;
-  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--wing-secondary) 58%, transparent));
+  filter:
+    drop-shadow(0 0 18px color-mix(in srgb, var(--wing-secondary) 72%, transparent))
+    drop-shadow(0 0 42px color-mix(in srgb, var(--wing-hot) 36%, transparent));
   transform-origin: 100% 50%;
   animation: wing-breathe 3.4s ease-in-out infinite;
 }
@@ -7584,26 +7638,42 @@ body {
 }
 
 .door-wing::before {
-  right: 2%;
-  top: 40%;
-  width: 24%;
-  height: 24%;
-  border-radius: 50%;
+  right: 3%;
+  top: 41%;
+  width: 34%;
+  height: 18%;
+  border-radius: 999px 999px 999px 12px;
   background:
-    radial-gradient(circle, rgba(255,255,255,0.92), var(--wing-secondary) 42%, transparent 72%);
+    radial-gradient(circle at 83% 50%, rgba(255,255,255,0.95), var(--wing-core) 16%, transparent 31%),
+    linear-gradient(90deg, transparent 0 10%, var(--wing-hot) 32%, var(--wing-secondary) 56%, var(--wing-primary) 78%, var(--wing-core) 100%);
   box-shadow:
-    0 0 18px var(--wing-secondary),
-    0 0 40px color-mix(in srgb, var(--wing-accent) 42%, transparent);
+    0 0 16px var(--wing-secondary),
+    0 0 36px color-mix(in srgb, var(--wing-hot) 48%, transparent),
+    inset 0 0 12px rgba(255,255,255,0.34);
+  clip-path: polygon(0 55%, 16% 22%, 76% 0, 100% 50%, 76% 100%, 16% 78%);
+  animation: wing-core-flare 2.4s ease-in-out infinite;
+  z-index: 3;
 }
 
 .door-wing::after {
-  right: 8%;
-  top: 48%;
-  width: 64%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--wing-primary), transparent);
-  box-shadow: 0 0 20px var(--wing-secondary);
-  opacity: 0.52;
+  right: 4%;
+  top: 14%;
+  width: 88%;
+  height: 86%;
+  background:
+    var(--wing-art, none) var(--wing-art-position, center) / contain no-repeat,
+    radial-gradient(circle at 84% 46%, rgba(255,255,255,0.72) 0 4px, transparent 5px),
+    radial-gradient(circle at 64% 28%, color-mix(in srgb, var(--wing-primary) 78%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 46% 62%, color-mix(in srgb, var(--wing-hot) 70%, transparent) 0 2px, transparent 3px),
+    radial-gradient(circle at 28% 48%, color-mix(in srgb, var(--wing-secondary) 72%, transparent) 0 2px, transparent 3px),
+    radial-gradient(ellipse at 72% 50%, color-mix(in srgb, var(--wing-accent) 24%, transparent), transparent 52%);
+  opacity: 0.34;
+  filter: blur(0.35px) saturate(1.28) contrast(1.12);
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse at var(--wing-mask-x, 72%) 50%, #000 0 46%, transparent 72%);
+  mask-image: radial-gradient(ellipse at var(--wing-mask-x, 72%) 50%, #000 0 46%, transparent 72%);
+  animation: wing-spirit-drift 3.2s ease-in-out infinite;
+  z-index: 2;
 }
 
 .door-wing span {
@@ -7612,46 +7682,68 @@ body {
   top: 50%;
   width: var(--feather-w, 82%);
   height: var(--feather-h, 14px);
-  border-radius: 999px 10px 999px 999px;
+  border-radius: 999px 12px 999px 999px;
   transform-origin: 96% 50%;
   transform: rotate(var(--feather-rot, 0deg)) translateX(var(--feather-x, 0));
   background:
-    linear-gradient(90deg, transparent 0 8%, color-mix(in srgb, var(--wing-secondary) 74%, transparent) 22%, var(--wing-primary) 72%, var(--wing-accent) 100%);
+    linear-gradient(90deg,
+      transparent 0 5%,
+      color-mix(in srgb, var(--wing-deep) 82%, transparent) 12%,
+      color-mix(in srgb, var(--wing-hot) 84%, transparent) 31%,
+      var(--wing-secondary) 53%,
+      var(--wing-primary) 77%,
+      var(--wing-core) 100%);
   box-shadow:
-    0 0 10px color-mix(in srgb, var(--wing-secondary) 72%, transparent),
-    inset 0 0 9px rgba(255,255,255,0.35);
-  clip-path: polygon(0 50%, 18% 7%, 80% 0, 100% 50%, 80% 100%, 18% 93%);
-  animation: wing-feather-glint 2.2s ease-in-out infinite;
+    0 0 10px color-mix(in srgb, var(--wing-secondary) 76%, transparent),
+    0 0 18px color-mix(in srgb, var(--wing-hot) 34%, transparent),
+    inset 0 1px 8px rgba(255,255,255,0.42);
+  clip-path: polygon(0 52%, 13% 15%, 34% 4%, 76% 0, 100% 50%, 76% 100%, 34% 96%, 13% 85%);
+  animation: wing-feather-glint 2.35s ease-in-out infinite;
   animation-delay: var(--feather-delay, 0s);
+  z-index: 2;
 }
 
-.door-wing span:nth-child(1) { --feather-w: 82%; --feather-h: 12px; --feather-rot: -38deg; --feather-x: 0; top: 23%; --feather-delay: 0s; }
-.door-wing span:nth-child(2) { --feather-w: 92%; --feather-h: 15px; --feather-rot: -28deg; --feather-x: -5px; top: 31%; --feather-delay: 0.12s; }
-.door-wing span:nth-child(3) { --feather-w: 98%; --feather-h: 18px; --feather-rot: -16deg; --feather-x: -8px; top: 41%; --feather-delay: 0.24s; }
-.door-wing span:nth-child(4) { --feather-w: 92%; --feather-h: 19px; --feather-rot: -4deg; --feather-x: -10px; top: 52%; --feather-delay: 0.36s; }
-.door-wing span:nth-child(5) { --feather-w: 78%; --feather-h: 17px; --feather-rot: 10deg; --feather-x: -3px; top: 62%; --feather-delay: 0.48s; }
-.door-wing span:nth-child(6) { --feather-w: 62%; --feather-h: 15px; --feather-rot: 23deg; --feather-x: 4px; top: 70%; --feather-delay: 0.6s; }
-.door-wing span:nth-child(7) { --feather-w: 46%; --feather-h: 12px; --feather-rot: 35deg; --feather-x: 10px; top: 77%; --feather-delay: 0.72s; }
+.door-wing span:nth-child(1) { --feather-w: 68%; --feather-h: 13px; --feather-rot: -48deg; --feather-x: 16px; top: 17%; --feather-delay: 0s; }
+.door-wing span:nth-child(2) { --feather-w: 84%; --feather-h: 16px; --feather-rot: -36deg; --feather-x: 5px; top: 26%; --feather-delay: 0.1s; }
+.door-wing span:nth-child(3) { --feather-w: 101%; --feather-h: 20px; --feather-rot: -24deg; --feather-x: -8px; top: 37%; --feather-delay: 0.2s; }
+.door-wing span:nth-child(4) { --feather-w: 108%; --feather-h: 22px; --feather-rot: -10deg; --feather-x: -17px; top: 49%; --feather-delay: 0.32s; }
+.door-wing span:nth-child(5) { --feather-w: 96%; --feather-h: 19px; --feather-rot: 7deg; --feather-x: -12px; top: 60%; --feather-delay: 0.44s; }
+.door-wing span:nth-child(6) { --feather-w: 78%; --feather-h: 16px; --feather-rot: 25deg; --feather-x: 1px; top: 70%; --feather-delay: 0.56s; }
+.door-wing span:nth-child(7) { --feather-w: 58%; --feather-h: 13px; --feather-rot: 43deg; --feather-x: 15px; top: 78%; --feather-delay: 0.68s; }
 
 .door-wing-left {
-  --wing-primary: #e0fbff;
+  --wing-primary: #f8fdff;
   --wing-secondary: #22d3ee;
-  --wing-accent: #93c5fd;
+  --wing-accent: #f0abfc;
+  --wing-hot: #d946ef;
+  --wing-deep: #1d4ed8;
+  --wing-core: #fef08a;
+  --wing-art: url("../images/boot/dreamy-wing-left.png");
+  --wing-art-position: right center;
+  --wing-mask-x: 70%;
   --wing-tilt: -5deg;
-  --wing-flutter: -2deg;
-  --wing-shift-x: -10px;
-  right: clamp(36px, 8vw, 132px);
+  --wing-flutter: -2.8deg;
+  --wing-shift-x: -12px;
+  --spark-shift-x: -12px;
+  right: clamp(16px, 5vw, 96px);
 }
 
 .door-wing-right {
   --wing-primary: #fff7ed;
   --wing-secondary: #fb7185;
-  --wing-accent: #fbbf24;
+  --wing-accent: #f97316;
+  --wing-hot: #facc15;
+  --wing-deep: #7f1d1d;
+  --wing-core: #fef08a;
+  --wing-art: url("../images/boot/blazing-wing-right.png");
+  --wing-art-position: left center;
+  --wing-mask-x: 30%;
   --wing-scale-x: 1;
   --wing-tilt: -5deg;
-  --wing-flutter: 2deg;
-  --wing-shift-x: 10px;
-  left: clamp(36px, 8vw, 132px);
+  --wing-flutter: 2.8deg;
+  --wing-shift-x: 12px;
+  --spark-shift-x: 12px;
+  left: clamp(16px, 5vw, 96px);
   transform-origin: 0% 50%;
   animation-delay: 0.22s;
 }
@@ -7659,10 +7751,15 @@ body {
 .door-wing-right::before {
   left: 2%;
   right: auto;
+  border-radius: 999px 999px 12px 999px;
+  background:
+    radial-gradient(circle at 17% 50%, rgba(255,255,255,0.96), var(--wing-core) 16%, transparent 31%),
+    linear-gradient(270deg, transparent 0 10%, var(--wing-secondary) 32%, var(--wing-hot) 58%, var(--wing-primary) 80%, var(--wing-core) 100%);
+  clip-path: polygon(0 50%, 24% 0, 84% 22%, 100% 55%, 84% 78%, 24% 100%);
 }
 
 .door-wing-right::after {
-  left: 8%;
+  left: 4%;
   right: auto;
 }
 
@@ -7671,7 +7768,13 @@ body {
   right: auto;
   transform-origin: 4% 50%;
   background:
-    linear-gradient(270deg, transparent 0 8%, color-mix(in srgb, var(--wing-secondary) 74%, transparent) 22%, var(--wing-primary) 72%, var(--wing-accent) 100%);
+    linear-gradient(270deg,
+      transparent 0 5%,
+      color-mix(in srgb, var(--wing-deep) 82%, transparent) 12%,
+      color-mix(in srgb, var(--wing-secondary) 84%, transparent) 33%,
+      var(--wing-hot) 57%,
+      var(--wing-primary) 80%,
+      var(--wing-core) 100%);
 }
 
 .door-wing-right span:nth-child(1) { --feather-rot: 38deg; }

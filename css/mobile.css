@@ -1273,7 +1273,7 @@ button:not([disabled]):active,
 }
 
 .boot-atmosphere {
-  background-size: 36px 36px, 36px 36px, auto !important;
+  background-size: auto, 82px 108px, 92px 118px, 36px 36px, 36px 36px, auto !important;
 }
 
 .perspective-container {
@@ -1305,22 +1305,33 @@ button:not([disabled]):active,
 }
 
 .door-wing {
-  top: 88px !important;
-  width: 185px !important;
-  height: 116px !important;
-  opacity: 0.58 !important;
+  top: 72px !important;
+  width: 222px !important;
+  height: 144px !important;
+  opacity: 0.84 !important;
+  filter:
+    drop-shadow(0 0 13px color-mix(in srgb, var(--wing-secondary) 66%, transparent))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--wing-hot) 28%, transparent)) !important;
 }
 
 .door-wing-left {
-  right: -4px !important;
+  right: -28px !important;
 }
 
 .door-wing-right {
-  left: -4px !important;
+  left: -28px !important;
 }
 
 .door-wing span {
-  height: max(7px, calc(var(--feather-h, 14px) * 0.72)) !important;
+  height: max(7px, calc(var(--feather-h, 14px) * 0.66)) !important;
+}
+
+.door-wing::before {
+  height: 16% !important;
+}
+
+.door-wing::after {
+  opacity: 0.32 !important;
 }
 
 .door-emblem {
