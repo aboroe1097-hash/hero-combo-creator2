@@ -20,7 +20,7 @@ import { parseComboShareUrl } from './combo-share.js';
 import { parseRosterShareUrl } from './roster-share.js';
 import { renderHeroesTab, getSynergies, formatSkillText } from './app-hero-atlas.js';
 import { downloadComboImage } from './app-export.js';
-import { initResearchCalculator, renderTechList, updateGlobalSummary } from './app-research.js';
+import { initResearchCalculator, renderTechList, updateGlobalSummary, renderCalculator } from './app-research.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 
 import {

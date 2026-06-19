@@ -1,5 +1,6 @@
 // js/app-builder.js
 import { translations } from './translations.js';
+let builderFirestoreUnsub = null;
 import { allHeroesData } from './heroes-data.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import {
@@ -301,7 +302,8 @@ export async function setupFirestoreListener() {
     limit(100)
   );
 
-  onSnapshot(q, snap => {
+  if (builderFirestoreUnsub) builderFirestoreUnsub();
+  builderFirestoreUnsub = onSnapshot(q, snap => {
     savedCombosCache.length = 0;
     savedCombosEl.innerHTML = '';
     noCombosMessage.classList.toggle('hidden', !snap.empty);

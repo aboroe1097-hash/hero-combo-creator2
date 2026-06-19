@@ -224,11 +224,11 @@ async function startCommentsListener() {
   const db = getDb();
   const { collection, query, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
   const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+  const auth = getAuth();
 
   const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
 
   commentsListenerUnsub = onSnapshot(q, (snap) => {
-    const auth = getAuth();
     currentUserId = auth.currentUser?.uid || null;
     renderCommentsTree(snap);
   });

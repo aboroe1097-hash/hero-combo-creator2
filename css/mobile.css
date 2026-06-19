@@ -193,8 +193,6 @@ body.tab-manual-active {
 
 /* Prevent info-btn from overlapping the paid-badge on mobile */
 .hero-card:has(.paid-badge) .info-btn { top: 26px !important; }
-  border-width: 1.5px !important;
-}
 
 .hero-card span.text-xs, .generator-card span.text-xs {
   font-size: 0.55rem !important;

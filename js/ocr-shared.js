@@ -12,10 +12,24 @@ export const LOG_KEY = 'vts_ocr_log';
 
 // --- Roster Auth ---
 export const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
-export const ROSTER_PASS = { V3S: '1097', VTS: '1097', PP5: '1111', BIG: '1116', NM5: '1111' };
+export const ROSTER_PASS_HASH = {
+  V3S: '9cf95dacd226dcf43da376cdb6cbba7035218921d5285d3f2e8f4e9f0564112f',
+  VTS: '9cf95dacd226dcf43da376cdb6cbba7035218921d5285d3f2e8f4e9f0564112f',
+  PP5: '011c945f30ce2cbafc452f39840f025693339c4226140d34208226d0b30bb22d',
+  BIG: '2f4a56d953930b809d3b0709d3db39c7eb46fc9a95759ef4c1c9c57d5c7c2505',
+  NM5: '011c945f30ce2cbafc452f39840f025693339c4226140d34208226d0b30bb22d'
+};
 export const ROSTER_AUTH_KEY = 'vts_roster_auth';
 export const ALLIANCE_KEY = 'vts_ocr_alliances';
 export const ALLIANCE_COUNT = 5;
+
+// --- General Utils ---
+export async function sha256(str) {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) { return null; }
+}
 
 // --- OCR ---
 export const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
