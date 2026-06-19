@@ -124,12 +124,7 @@ EXPECTED JSON SCHEMA:
       if (!val) continue;
       const shortfall = val.expected - att.total_demolition;
       const msg = `${att.structure_name} ${att.structure_level}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
-      log(`Confirm: ${msg}`, 'warn');
-      if (confirm(`📊 ${msg}\n\nCancel = Missing data, wait for more uploads.\nOK = Ignore and save anyway.`)) {
-        log(`User ignored missing data for ${att.structure_name} ${att.structure_level}.`, 'warn');
-      } else {
-        log(`Waiting for more uploads for ${att.structure_name} ${att.structure_level}.`, 'warn');
-      }
+      log(`⚠ ${msg} — auto-saved. Check terminal for details.`, 'warn');
     }
     saveData(parsed); render();
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
@@ -197,7 +192,7 @@ function parseOcrResults(results) {
   const attacks = [];
   groups.forEach((g) => {
     let sN = g.sN || 'Structure';
-    let sL = g.sL || 'Unknown';
+    let sL = g.sL || '';
 
     const pMap = new Map();
     g.players.forEach(p => {
