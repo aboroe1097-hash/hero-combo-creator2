@@ -25,9 +25,26 @@ export const SKIN_STAR_STAGES = {
   }
 };
 
-export const HIDDEN_POWER_BONUSES = {
-  2: { mightPct: 4, hpPct: 2, label: '4% Might, 2% HP' },
-  3: { tacticalMightPct: 2, tacticalResistancePct: 2, label: '2% Tactical Might, 2% Tactical Resistance' }
+export const heroHiddenPowers = {
+  'King Arthur': {
+    title: 'Biography: Hidden Power',
+    capturedVariants: 1,
+    totalVariants: 2,
+    requirement: 'Own 2 Biography Skin variants',
+    mechanic: 'Some heroes have more than one Biography Skin variant. Those variants share the same Biography Attributes and progress; owning more than one variant unlocks Hidden Power.',
+    scalingNote: 'More unlocked Biography Skin variants can add stronger Hidden Power when a hero has additional variants.',
+    tiers: [
+      {
+        collected: 2,
+        name: 'Solid Shield',
+        effect: "The hero's squad gains 4% HP and takes 2% less damage.",
+        stats: [
+          { label: 'Army HP', value: '+4%' },
+          { label: 'Damage taken', value: '-2%' }
+        ]
+      }
+    ]
+  }
 };
 
 export const heroSkins = {
@@ -126,9 +143,6 @@ export const heroSkins = {
         description: "The Hero's squad takes -10% Skill Damage; the Hero's Legion gains 13% Resistance.",
         dynamicIcon: true,
         dynamicIconNote: 'Star 3 uses the same unique icon with a small in-place movement.'
-      },
-      hiddenPower: {
-        status: 'Visible on the skin page; detailed bonus still needs a dedicated screenshot.'
       }
     }
   ]
@@ -146,8 +160,8 @@ export function getSkinCount(heroName) {
   return (heroSkins[heroName] || []).length;
 }
 
-export function getHiddenPowerBonus(count) {
-  return HIDDEN_POWER_BONUSES[count] || null;
+export function getHeroHiddenPower(heroName) {
+  return heroHiddenPowers[heroName] || null;
 }
 
 export function getSkinIconHtml(skin, maximized = false) {

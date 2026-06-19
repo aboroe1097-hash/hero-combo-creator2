@@ -6,7 +6,7 @@ import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
-import { hasSkin, getHeroSkins, getSkinCount, getHiddenPowerBonus, SKIN_TYPES } from './skins-db.js';
+import { hasSkin, getHeroSkins, getSkinCount, getHeroHiddenPower, SKIN_TYPES } from './skins-db.js';
 
 import { renderCountersToggle } from './combo-counters.js';
 
@@ -51,6 +51,47 @@ function formatSkillText(text) {
   }
 
   return formatted;
+}
+
+function renderHiddenPowerCard(hiddenPower) {
+  if (!hiddenPower) return '';
+
+  const progressText = Number.isFinite(hiddenPower.capturedVariants) && Number.isFinite(hiddenPower.totalVariants)
+    ? `${hiddenPower.capturedVariants}/${hiddenPower.totalVariants} variants captured`
+    : '';
+
+  const tiersHtml = (hiddenPower.tiers || []).map(tier => `
+    <div class="detail-skin-hidden-tier">
+      <div class="detail-skin-hidden-tier-mark">x${escapeHtml(String(tier.collected))}</div>
+      <div class="detail-skin-hidden-tier-body">
+        <div class="detail-skin-hidden-tier-name">${escapeHtml(tier.name)}</div>
+        <p class="detail-skin-hidden-tier-effect">${escapeHtml(tier.effect)}</p>
+        ${tier.stats ? `<div class="detail-skin-hidden-stats">
+          ${tier.stats.map(stat => `
+            <span class="detail-skin-hidden-stat">
+              <span>${escapeHtml(stat.label)}</span>
+              <strong>${escapeHtml(stat.value)}</strong>
+            </span>
+          `).join('')}
+        </div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="detail-skin-card detail-skin-hidden-power-card">
+      <div class="detail-skin-hidden-head">
+        <div>
+          <div class="detail-skin-hidden-kicker">Limited hero mechanic</div>
+          <div class="detail-skin-hidden-title">${escapeHtml(hiddenPower.title || 'Biography: Hidden Power')}</div>
+        </div>
+        ${progressText ? `<span class="detail-skin-hidden-progress">${escapeHtml(progressText)}</span>` : ''}
+      </div>
+      ${hiddenPower.requirement ? `<div class="detail-skin-hidden-requirement">${escapeHtml(hiddenPower.requirement)}</div>` : ''}
+      ${hiddenPower.mechanic ? `<p class="detail-skin-hidden-copy">${escapeHtml(hiddenPower.mechanic)}</p>` : ''}
+      ${tiersHtml}
+      ${hiddenPower.scalingNote ? `<p class="detail-skin-hidden-note">${escapeHtml(hiddenPower.scalingNote)}</p>` : ''}
+    </div>`;
 }
 
 const _heroSeasonByName = new Map(allHeroesData.map(h => [h.name, h.season]));
@@ -442,12 +483,12 @@ function renderHeroesTab() {
         </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
 
       const heroSkinsList = getHeroSkins(selected);
+      const hiddenPower = getHeroHiddenPower(selected);
+      const hiddenPowerHtml = renderHiddenPowerCard(hiddenPower);
       const skinsHtml = heroSkinsList.length > 0 ? heroSkinsList.map(skin => {
         const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
         const ba = skin.bioAttributes;
         const mba = skin.maxBioAttributes;
-        const hpBonus = getHiddenPowerBonus(heroSkinsList.length);
-        const hiddenPower = skin.hiddenPower || hpBonus;
         const inheritingSkillRef = skin.inheritingSkill?.replacesSlot ? `Skill ${skin.inheritingSkill.replacesSlot}` : 'Base skill';
         const inheritingFrom = skin.inheritingSkill?.fromSkill || inheritingSkillRef;
         const inheritingName = skin.inheritingSkill?.name || 'Inheriting skill';
@@ -506,10 +547,6 @@ function renderHeroesTab() {
             <p class="detail-skin-skill-desc">${escapeHtml(skin.preservingSkill.description)}</p>
             ${skin.preservingSkill.dynamicIconNote ? `<p class="detail-skin-skill-desc detail-skin-motion-note">${escapeHtml(skin.preservingSkill.dynamicIconNote)}</p>` : ''}
           </div>
-          ${hiddenPower ? `<div class="detail-skin-hidden-power">
-            <span class="detail-skin-hidden-label">${hiddenPower.label ? escapeHtml(hiddenPower.label) : 'Hidden Power'}</span>
-            <span class="detail-skin-hidden-value">${escapeHtml(hiddenPower.description || hiddenPower.status || hiddenPower.label)}</span>
-          </div>` : ''}
         </div>`;
       }).join('') : '';
 
@@ -580,7 +617,7 @@ function renderHeroesTab() {
           ${heroSkinsList.length > 0 ? `
           <div id="detail-section-skins" class="detail-section-block">
             <div class="detail-section-title">${t.heroesBioSkinsTitle || 'Bio Skins'} <span class="detail-skin-count">${heroSkinsList.length}</span></div>
-            <div class="detail-skins">${skinsHtml}</div>
+            <div class="detail-skins">${skinsHtml}${hiddenPowerHtml}</div>
           </div>` : ''}
         </div>`;
     }

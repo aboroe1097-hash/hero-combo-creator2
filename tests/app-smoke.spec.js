@@ -90,6 +90,10 @@ test.describe('app smoke tabs', () => {
     await page.locator('[data-detail-section="skins"]').click();
     await expect(page.locator('#detail-section-skins')).toContainText('Upgrades Skill 2: Wheel of Fortune -> Eternity');
     await expect(page.locator('#detail-section-skins')).not.toContainText('Slot 8');
+    await expect(page.locator('#detail-section-skins')).toContainText('Biography: Hidden Power');
+    await expect(page.locator('#detail-section-skins')).toContainText('Own 2 Biography Skin variants');
+    await expect(page.locator('#detail-section-skins')).toContainText('Solid Shield');
+    await expect(page.locator('#detail-section-skins')).toContainText("The hero's squad gains 4% HP and takes 2% less damage.");
   });
 
   test('admin guest mode can return to admin login', async ({ page }) => {
