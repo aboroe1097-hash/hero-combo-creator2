@@ -1,5 +1,13 @@
 # Changelog
 
+## 10.3.0 - 2026-06-20
+
+- Upgraded the boot splash to use the real Dreamy Wings and Blazing Soul wing assets as layered door art.
+- Added lightweight boot particles, parallax tilt, a pulsing gate beam, and smoother status text swaps.
+- Reworked the center gate lock into a glowing portal-style emblem without adding extra image dependencies.
+- Removed the remaining old gate/deck UI wording from the header and boot label.
+- Synced app version and service-worker cache versions for the new boot animation.
+
 ## 10.2.0 - 2026-06-20
 
 - Activated the Eden Map planner from the construction gate for the next planning pass.

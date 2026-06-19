@@ -11,7 +11,7 @@ import { escapeHtml, appT } from './utils.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260619_6';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_7';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
