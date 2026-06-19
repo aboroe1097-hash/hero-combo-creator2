@@ -104,6 +104,9 @@ export function renderGeneratorHeroes(options = {}) {
       card.className = `hero-card generator-card relative${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
+      const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
+        ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
+        : '';
 
       const skinBadge = hasSkinFlag
         ? `<span class="generator-skin-badge${activeSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${activeSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${normalSkinBadgeColors})`}">${escapeHtml(activeSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
@@ -111,6 +114,7 @@ export function renderGeneratorHeroes(options = {}) {
 
       card.innerHTML = `
         <span class="hero-tag" style="background:${seasonColors[hero.season]}">${hero.season}</span>
+        ${originTag}
         ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         ${skinBadge}
         

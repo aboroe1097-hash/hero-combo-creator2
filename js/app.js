@@ -11,7 +11,7 @@ import { escapeHtml, appT } from './utils.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_7';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_8';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -119,6 +119,7 @@ import {
   getLocalizedTroop,
   getHeroImageUrl,
   heroMatchesFilters,
+  getSeasonCatchupHint,
   getComboRankInfo,
   getCounterLabels,
   isHeroAlreadyInCombo,
@@ -374,6 +375,26 @@ function readSeasonFilterSelection(container) {
   return [...DEFAULT_HERO_FILTER_SEASONS];
 }
 
+function updateSeasonCatchupHint(container) {
+  if (!container) return;
+  const targetId = container.id === 'seasonFilters'
+    ? 'seasonCatchupHint'
+    : container.id === 'generatorSeasonFilters'
+      ? 'generatorSeasonCatchupHint'
+      : '';
+  if (!targetId) return;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const hint = getSeasonCatchupHint(getCheckedValues(container));
+  el.textContent = hint;
+  el.classList.toggle('hidden', !hint);
+}
+
+function updateAllSeasonCatchupHints() {
+  updateSeasonCatchupHint(document.getElementById('seasonFilters') || seasonFiltersEl);
+  updateSeasonCatchupHint(document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl);
+}
+
 function readStateFilterSelection(container) {
   if (!getCheckedValues(container).length) {
     syncCheckboxValues(container, DEFAULT_STATE_FILTER_VALUES);
@@ -425,6 +446,7 @@ function wireFilterSets() {
 
   wireFilterControls(manualSeasonFilters, () => {
     setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
+    updateSeasonCatchupHint(manualSeasonFilters);
     renderAvailableHeroes();
   });
 
@@ -439,6 +461,7 @@ function wireFilterSets() {
   });
 
   wireFilterControls(generatorSeasonFilters, () => {
+    updateSeasonCatchupHint(generatorSeasonFilters);
     renderGeneratorHeroes(syncGeneratorControlState());
   });
 
@@ -449,6 +472,8 @@ function wireFilterSets() {
   wireFilterControls(generatorTroopFilters, (input) => {
     renderGeneratorHeroes(syncGeneratorControlState(input));
   });
+
+  updateAllSeasonCatchupHints();
 }
 
 function wireGeneratorSkinToggle() {
@@ -475,6 +500,7 @@ function syncGeneratorControlState(changedTroopInput = null) {
   setGeneratorSelectedStates(states);
   setGeneratorSelectedTypes(types);
   setGeneratorSkinsOnly(skinsOnly);
+  updateSeasonCatchupHint(seasonContainer);
 
   return { seasons, states, types, skinsOnly };
 }
@@ -483,6 +509,7 @@ function applyFilterSelection(container, input) {
   if (!container) return;
   if (container.id === 'seasonFilters') {
     setSelectedSeasons(readSeasonFilterSelection(container));
+    updateSeasonCatchupHint(container);
     renderAvailableHeroes();
   } else if (container.id === 'stateFilters') {
     setSelectedStates(readStateFilterSelection(container));
@@ -491,6 +518,7 @@ function applyFilterSelection(container, input) {
     setSelectedTypes(readTroopFilterSelection(container, input));
     renderAvailableHeroes();
   } else if (container.id === 'generatorSeasonFilters') {
+    updateSeasonCatchupHint(container);
     renderGeneratorHeroes(syncGeneratorControlState());
   } else if (container.id === 'generatorStateFilters') {
     renderGeneratorHeroes(syncGeneratorControlState());
@@ -927,6 +955,7 @@ function updateTextContent() {
     if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
   });
 
+  updateAllSeasonCatchupHints();
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
 
   applySeo(currentLanguage);

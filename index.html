@@ -61,9 +61,9 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <script src="js/maintenance-config.js?v=20260620_7"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260620_7" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260620_7" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260620_8"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260620_8" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260620_8" media="(max-width: 768px)" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { corePlugins: { preflight: false } }
@@ -275,7 +275,9 @@
             <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
             <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
             <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+            <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
         </div>
+        <p id="seasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
 
         <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
         <div id="stateFilters" class="flex flex-wrap gap-2 text-sm">
@@ -340,7 +342,9 @@
               <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
               <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
               <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+              <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
           </div>
+          <p id="generatorSeasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
 
           <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
           <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
@@ -602,7 +606,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.3.0</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.4.0</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>

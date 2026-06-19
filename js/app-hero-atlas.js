@@ -426,6 +426,7 @@ function renderHeroesTab() {
             </div>
             <div class="rank-meta">
               <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
+              ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="rank-apps">Original ${escapeHtml(hero.releaseSeason)}</span>` : ''}
               <span class="rank-troop ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
               ${s.appearances ? `<span class="rank-apps">${s.appearances} combo${s.appearances!==1?'s':''}</span>` : '<span class="rank-apps rank-apps-zero">Not ranked</span>'}
             </div>
@@ -600,6 +601,7 @@ function renderHeroesTab() {
               <div class="detail-name">${escapeHtml(selected)}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
               <div class="detail-tags">
                 <span class="detail-season-tag" style="background:${tagColor};color:#000">${hero?.season}</span>
+                ${hero?.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="detail-season-tag detail-origin-season-tag">Original ${escapeHtml(hero.releaseSeason)}</span>` : ''}
                 <span class="detail-troop-tag ${getTroopColorClass(hero?.Type)}">${getLocalizedTroop(hero?.Type||'All')}</span>
                 <span class="detail-state-tag ${hero?.State==='Paid'?'paid':'free'}">${hero?.State||'Free'}</span>
               </div>
