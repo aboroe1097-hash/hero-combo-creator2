@@ -11,6 +11,7 @@ import {
 
 import { render, showModal, closeModal } from './ocr-render.js';
 import { processFiles, normalizeStructureName, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
+import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
@@ -191,6 +192,59 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1' || isGuest(); }
+
+function dashT(key) {
+  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  return translations[lang]?.[key] || translations.en?.[key] || key;
+}
+
+function restoreAdminControls() {
+  if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = '';
+  if ($id('dashUploadZone')) $id('dashUploadZone').style.display = '';
+  if ($id('dashLogArea')) $id('dashLogArea').style.display = '';
+  if ($id('dashApiKeyContainer')) $id('dashApiKeyContainer').style.display = 'flex';
+  if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = '';
+  if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = '';
+  if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = '';
+}
+
+function removeGuestBanner() {
+  $id('dashGuestBanner')?.remove();
+}
+
+function returnToAdminLogin() {
+  sessionStorage.removeItem('vts_guest');
+  localStorage.removeItem(AUTH_KEY);
+  removeGuestBanner();
+  restoreAdminControls();
+  const err = $id('dashLoginErr');
+  if (err) err.classList.add('hidden');
+  const input = $id('dashLoginPass');
+  if (input) input.value = '';
+  showLogin();
+  window.setTimeout(() => input?.focus(), 0);
+}
+
+function renderGuestBanner(guestBanner) {
+  guestBanner.className = 'dash-guest-banner';
+  guestBanner.innerHTML = `
+    <div class="dash-guest-copy">
+      <strong>${esc(dashT('adminGuestModeTitle'))}</strong>
+      <span>${esc(dashT('adminGuestModeBody'))}</span>
+    </div>
+    <div class="dash-guest-actions">
+      <button id="dashGuestAdminBtn" class="dash-btn dash-guest-admin-btn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        <span>${esc(dashT('adminGuestLoginAdminBtn'))}</span>
+      </button>
+    </div>`;
+  guestBanner.querySelector('#dashGuestAdminBtn')?.addEventListener('click', returnToAdminLogin);
+}
+
 function showApp() { 
   $id('dashLogin')?.classList.add('hidden'); 
   $id('dashApp')?.classList.remove('hidden'); 
@@ -207,28 +261,28 @@ function showApp() {
     if (!guestBanner) {
       guestBanner = document.createElement('div');
       guestBanner.id = 'dashGuestBanner';
-      guestBanner.style.cssText = 'background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); padding: 15px; margin-bottom: 20px; border-radius: 8px; color: #93c5fd; font-size: 0.9rem; text-align: center;';
-      guestBanner.innerHTML = '<strong>Guest Mode:</strong> You are viewing the dashboard in read-only mode. Uploads are disabled. If charts are stuck on "Loading...", there is no data to display.';
       const dashContainer = $id('dashApp').querySelector('.dash-container');
       if (dashContainer) {
         dashContainer.insertBefore(guestBanner, dashContainer.firstChild);
       }
     }
+    renderGuestBanner(guestBanner);
   } else {
-    if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = '';
-    if ($id('dashUploadZone')) $id('dashUploadZone').style.display = '';
-    if ($id('dashApiKeyContainer')) $id('dashApiKeyContainer').style.display = 'flex';
-    if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = '';
-    if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = '';
-    if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = '';
+    removeGuestBanner();
+    restoreAdminControls();
   }
 }
-function showLogin() { $id('dashLogin')?.classList.remove('hidden'); $id('dashApp')?.classList.add('hidden'); }
+function showLogin() {
+  removeGuestBanner();
+  restoreAdminControls();
+  $id('dashLogin')?.classList.remove('hidden');
+  $id('dashApp')?.classList.add('hidden');
+}
 
 async function doLogin() {
   const p = $id('dashLoginPass').value, err = $id('dashLoginErr');
   const h = await sha256(p);
-  if (h === AUTH_HASH) { localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
+  if (h === AUTH_HASH) { sessionStorage.removeItem('vts_guest'); localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
   else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
 }
 
@@ -516,7 +570,7 @@ export async function bootOcrDashboard() {
   log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
-  $id('dashGuestBtn').onclick = () => { sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
+  $id('dashGuestBtn').onclick = () => { localStorage.removeItem(AUTH_KEY); sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
   const expBtn = $id('dashRosterExportBtn'); if (expBtn) expBtn.onclick = exportRosterCSV;
