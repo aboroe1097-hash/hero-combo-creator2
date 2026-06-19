@@ -33,6 +33,11 @@ let db = null;
 const savedCombosCache = [];
 let touchDragHero = null;
 let touchDragGhost = null;
+const HERO_DRAG_MIME = 'application/x-vts-hero-name';
+
+function getKnownHero(name) {
+  return allHeroesData.find(hero => hero.name === name) || null;
+}
 
 function createTouchGhost(card, touch) {
   if (!card || !touch) return;
@@ -136,7 +141,7 @@ export function renderAvailableHeroes() {
             </svg>
         </div>
 
-        <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy">
+        <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
@@ -145,6 +150,9 @@ export function renderAvailableHeroes() {
 
       card.addEventListener('dragstart', e => {
         __ui.forceHideHeroTooltip();
+        e.dataTransfer.clearData();
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData(HERO_DRAG_MIME, hero.name);
         e.dataTransfer.setData('text/plain', hero.name);
       });
 
@@ -203,14 +211,21 @@ export function renderAvailableHeroes() {
 
 export function updateComboSlotDisplay(slot, name, idx) {
   const t = translations[currentLanguage] || translations.en;
+  const hero = name ? getKnownHero(name) : null;
+  if (name && !hero) {
+    currentCombo[idx] = null;
+    name = null;
+  }
   if (name) {
+    slot.dataset.heroName = name;
     slot.innerHTML = `
-      <img src="${getHeroImageUrl(name)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy">
+      <img src="${hero.imageUrl || getHeroImageUrl(name)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
       <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
         ${escapeHtml(name)}
       </span>`;
     slot.classList.add('relative', 'p-0');
   } else {
+    delete slot.dataset.heroName;
     slot.innerHTML = `
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
         <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>

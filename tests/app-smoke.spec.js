@@ -20,6 +20,29 @@ test.describe('app smoke tabs', () => {
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
+    const firstHero = page.locator('#availableHeroes .hero-card').first();
+    const firstHeroName = await firstHero.getAttribute('data-hero-name');
+    await expect(firstHero.locator('img')).toHaveAttribute('draggable', 'false');
+    await page.evaluate(() => {
+      const card = document.querySelector('#availableHeroes .hero-card');
+      const slot = document.querySelectorAll('.combo-slot')[0];
+      const dt = new DataTransfer();
+      dt.setData('application/x-vts-hero-name', card.dataset.heroName);
+      dt.setData('text/plain', 'https://static.wixstatic.com/media/not-a-hero.png');
+      slot.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    });
+    await expect(page.locator('.combo-slot').nth(0)).toContainText(firstHeroName);
+    await expect(page.locator('.combo-slot').nth(0).locator('img')).toHaveAttribute('alt', firstHeroName);
+    await expect(page.locator('.combo-slot').nth(0)).not.toContainText('https://');
+
+    await page.evaluate(() => {
+      const slot = document.querySelectorAll('.combo-slot')[1];
+      const dt = new DataTransfer();
+      dt.setData('text/plain', 'https://static.wixstatic.com/media/not-a-hero.png');
+      slot.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    });
+    await expect(page.locator('.combo-slot').nth(1)).not.toContainText('static.wixstatic.com');
+    await expect(page.locator('.combo-slot').nth(1)).toContainText(/Drag|Arraste|Buraya|Перетащите|Arrastra|Glissez|Hierher|Seret|拖到|اسحب|여기로/);
     await expectTab(page, '#tabGenerator', '#generatorSection', '#generatorHeroes');
   });
 
