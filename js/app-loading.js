@@ -113,7 +113,7 @@ function playTransitionSound() {
 }
 
 const BOOT_STATUS_LINES = [
-    'Sealing the war gate...',
+    'Sealing the aurora gate...',
     'Unfurling wing sigils...',
     'Syncing hero command deck...',
     'Charging combo matrix...',
@@ -124,6 +124,8 @@ const BOOT_STATUS_LINES = [
 let bootStartedAt = performance.now();
 let bootProgressTimer = null;
 let statusCycleTimer = null;
+let statusSwapTimer = null;
+let bootParallaxWired = false;
 
 function sleep(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -137,9 +139,27 @@ function getIntro() {
     return document.getElementById('firstVisitIntro');
 }
 
-function setBootStatus(text) {
+function setBootStatus(text, options = {}) {
     const el = document.querySelector('.boot-status-text');
-    if (el) el.textContent = text;
+    if (!el || el.textContent === text) return;
+
+    if (statusSwapTimer) {
+        window.clearTimeout(statusSwapTimer);
+        statusSwapTimer = null;
+    }
+
+    if (options.instant || prefersReducedMotion()) {
+        el.classList.remove('is-swapping');
+        el.textContent = text;
+        return;
+    }
+
+    el.classList.add('is-swapping');
+    statusSwapTimer = window.setTimeout(() => {
+        el.textContent = text;
+        el.classList.remove('is-swapping');
+        statusSwapTimer = null;
+    }, 120);
 }
 
 function setBootProgress(pct) {
@@ -150,8 +170,10 @@ function setBootProgress(pct) {
 function startBootAnimations() {
     let progress = 8;
     let statusIdx = 0;
+    seedBootParticles();
+    initBootParallax();
     setBootProgress(progress);
-    setBootStatus(BOOT_STATUS_LINES[0]);
+    setBootStatus(BOOT_STATUS_LINES[0], { instant: true });
 
     bootProgressTimer = window.setInterval(() => {
         const cap = 88;
@@ -169,14 +191,72 @@ function startBootAnimations() {
 function stopBootAnimations(finalPct = 100) {
     if (bootProgressTimer) window.clearInterval(bootProgressTimer);
     if (statusCycleTimer) window.clearInterval(statusCycleTimer);
+    if (statusSwapTimer) window.clearTimeout(statusSwapTimer);
     bootProgressTimer = null;
     statusCycleTimer = null;
+    statusSwapTimer = null;
     setBootProgress(finalPct);
-    setBootStatus('Ready');
+    setBootStatus('Ready', { instant: true });
 }
 
 function prefersReducedMotion() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function seedBootParticles() {
+    const layer = document.getElementById('bootParticles');
+    if (!layer || layer.dataset.seeded === '1' || prefersReducedMotion()) return;
+
+    layer.dataset.seeded = '1';
+    layer.textContent = '';
+
+    const makeParticle = (side, index) => {
+        const el = document.createElement('span');
+        const isIce = side === 'ice';
+        el.className = `boot-particle boot-particle--${side}`;
+        const left = isIce ? 5 + Math.random() * 39 : 56 + Math.random() * 39;
+        const drift = (isIce ? 1 : -1) * (14 + Math.random() * 46);
+        const size = 2 + Math.random() * 5;
+        const duration = 3.8 + Math.random() * 3.4;
+        const delay = -Math.random() * duration + index * 0.025;
+        el.style.setProperty('--particle-left', `${left.toFixed(2)}%`);
+        el.style.setProperty('--particle-drift', `${drift.toFixed(1)}px`);
+        el.style.setProperty('--particle-size', `${size.toFixed(1)}px`);
+        el.style.setProperty('--particle-duration', `${duration.toFixed(2)}s`);
+        el.style.setProperty('--particle-delay', `${delay.toFixed(2)}s`);
+        el.style.setProperty('--particle-opacity', `${(0.42 + Math.random() * 0.48).toFixed(2)}`);
+        return el;
+    };
+
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 42; i += 1) {
+        frag.appendChild(makeParticle(i % 2 === 0 ? 'ice' : 'fire', i));
+    }
+    layer.appendChild(frag);
+}
+
+function initBootParallax() {
+    if (bootParallaxWired || prefersReducedMotion()) return;
+    const container = document.getElementById('perspectiveContainer');
+    const splash = getSplash();
+    if (!container || !splash) return;
+
+    bootParallaxWired = true;
+    let raf = 0;
+    let nextX = 0;
+    let nextY = 0;
+
+    window.addEventListener('pointermove', (event) => {
+        if (splash.classList.contains('hidden') || splash.classList.contains('boot-splash--out')) return;
+        nextX = ((event.clientX / Math.max(1, window.innerWidth)) - 0.5) * 12;
+        nextY = ((event.clientY / Math.max(1, window.innerHeight)) - 0.5) * 10;
+        if (raf) return;
+        raf = window.requestAnimationFrame(() => {
+            container.style.setProperty('--boot-tilt-x', `${nextX.toFixed(2)}px`);
+            container.style.setProperty('--boot-tilt-y', `${nextY.toFixed(2)}px`);
+            raf = 0;
+        });
+    }, { passive: true });
 }
 
 async function dismissBootSplash() {
@@ -184,6 +264,7 @@ async function dismissBootSplash() {
     if (!splash) return;
 
     playTransitionSound();
+    splash.classList.add('boot-splash--opening');
 
     // Trigger door opening and light expansion animations
     const doorLeft = document.getElementById('doorLeft');

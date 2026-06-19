@@ -61,9 +61,9 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <script src="js/maintenance-config.js?v=20260620_6"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260620_6" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260620_6" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260620_7"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260620_7" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260620_7" media="(max-width: 768px)" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { corePlugins: { preflight: false } }
@@ -86,12 +86,14 @@
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
     <div class="boot-atmosphere" aria-hidden="true"></div>
     <div class="boot-scanlines" aria-hidden="true"></div>
-    <div class="perspective-container">
+    <div class="perspective-container" id="perspectiveContainer">
       <div class="boot-halo" aria-hidden="true"></div>
       <!-- Left Door (Ice) -->
       <div id="doorLeft" class="door door-left">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-left" aria-hidden="true">
+          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--aura" width="720" height="430" />
+          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--front" width="720" height="430" />
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem ice-emblem" aria-hidden="true">
@@ -107,6 +109,8 @@
       <div id="doorRight" class="door door-right">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-right" aria-hidden="true">
+          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--aura" width="720" height="430" />
+          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--front" width="720" height="430" />
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem fire-emblem" aria-hidden="true">
@@ -120,6 +124,7 @@
 
       <!-- Light cracking through the middle -->
       <div id="centerLight" class="center-light"></div>
+      <div id="bootParticles" class="boot-particles-layer" aria-hidden="true"></div>
       <div class="gate-lock" aria-hidden="true">
         <img src="images/logo.png" alt="" width="88" height="88" />
       </div>
@@ -127,7 +132,7 @@
     
     <!-- Title & Progress Bar Container -->
     <div id="loadingStatusContainer" class="loading-status-container">
-      <div class="boot-kicker">V10 WAR GATE</div>
+      <div class="boot-kicker">V10 AURORA GATE</div>
       <h1 id="loadingTitle" class="loading-title">HERO COMBO CREATOR</h1>
       <p class="boot-sub">VTS 1097 • RISE OF CASTLES</p>
       <p class="boot-status-text">Loading toolkit…</p>
@@ -165,7 +170,7 @@
       </div>
 
       <div class="command-actions">
-        <div class="command-kicker">S1097 War Deck</div>
+        <div class="command-kicker">S1097 Deck</div>
         <div class="app-control-row flex justify-end items-center gap-3 relative z-50 flex-wrap">
       <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
       <div class="relative inline-block group lang-select-wrapper">
@@ -597,7 +602,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.2.0</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.3.0</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
