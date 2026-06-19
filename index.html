@@ -61,7 +61,8 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260619_9" />
+  <script src="js/maintenance-config.js?v=20260620_1"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260620_1" />
   <link rel="stylesheet" href="css/mobile.css?v=20260619_8" media="(max-width: 768px)" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -69,6 +70,19 @@
   </script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
+  <div id="maintenanceSplash" class="maintenance-preload" role="status" aria-live="polite" aria-label="Site maintenance">
+    <section class="maintenance-card">
+      <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
+      <div class="maintenance-kicker" data-maintenance-kicker>VTS 1097 TOOLKIT</div>
+      <h1 class="maintenance-title" data-maintenance-title>Down for Update</h1>
+      <p class="maintenance-message" data-maintenance-message>Hero Combo Creator is being upgraded. We are tuning the layout, skins, datasets, and performance.</p>
+      <div class="maintenance-status">
+        <span class="maintenance-status-dot" aria-hidden="true"></span>
+        <span data-maintenance-status>Maintenance in progress</span>
+      </div>
+    </section>
+  </div>
+
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
     <div class="boot-atmosphere" aria-hidden="true"></div>
     <div class="boot-scanlines" aria-hidden="true"></div>
@@ -650,7 +664,7 @@
     applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
   }, 800);
   </script>
-  <script type="module" src="js/app.js?v=20260619_10"></script>
+  <script type="module" src="js/app.js?v=20260620_1"></script>
 
 <script>
   // Lazy-load YouTube iframes

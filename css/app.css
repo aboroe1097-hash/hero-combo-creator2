@@ -184,7 +184,136 @@ body.app-ready .app-shell--revealed {
 }
 body.first-visit-active { overflow: hidden; }
 
-/* ── The War Room Doors 3D Splash ── */
+/* Maintenance screen */
+.maintenance-preload {
+  display: none;
+}
+
+html.maintenance-mode body {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(34, 211, 238, 0.2), transparent 32%),
+    radial-gradient(circle at 72% 36%, rgba(251, 191, 36, 0.16), transparent 34%),
+    #020611;
+}
+
+html.maintenance-mode .maintenance-preload {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+html.maintenance-mode .boot-splash,
+html.maintenance-mode .first-visit-intro,
+html.maintenance-mode #app {
+  display: none !important;
+}
+
+.maintenance-card {
+  position: relative;
+  width: min(92vw, 620px);
+  padding: clamp(28px, 5vw, 54px);
+  text-align: center;
+  color: #e5f8ff;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.13), rgba(251, 191, 36, 0.09)),
+    rgba(2, 6, 17, 0.88);
+  border: 1px solid rgba(103, 232, 249, 0.34);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62), inset 0 1px 0 rgba(255,255,255,0.08);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  overflow: hidden;
+}
+
+.maintenance-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.1) 0 1px, transparent 1px 64px),
+    linear-gradient(180deg, rgba(251, 191, 36, 0.06) 0 1px, transparent 1px 64px);
+  opacity: 0.38;
+}
+
+.maintenance-logo {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 18px;
+  border-radius: 18px;
+  box-shadow: 0 0 32px rgba(34, 211, 238, 0.28), 0 0 54px rgba(251, 191, 36, 0.14);
+}
+
+.maintenance-kicker,
+.maintenance-title,
+.maintenance-message,
+.maintenance-status {
+  position: relative;
+}
+
+.maintenance-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 7px 13px;
+  color: #06121d;
+  background: linear-gradient(90deg, #67e8f9, #fbbf24);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+.maintenance-title {
+  margin: 0;
+  font-family: "Cinzel", serif;
+  font-size: clamp(2.2rem, 8vw, 4.8rem);
+  line-height: 0.95;
+  color: #f8fdff;
+  text-shadow: 0 0 28px rgba(34, 211, 238, 0.34);
+}
+
+.maintenance-message {
+  max-width: 480px;
+  margin: 18px auto 24px;
+  color: #b8c7d9;
+  font-size: clamp(0.95rem, 2.8vw, 1.08rem);
+  line-height: 1.65;
+}
+
+.maintenance-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: #fef3c7;
+  background: rgba(15, 23, 42, 0.68);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.maintenance-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 16px #22d3ee;
+}
+
+@media (max-width: 640px) {
+  html.maintenance-mode body {
+    overflow: auto;
+  }
+}
+
+/* 3D boot gate splash */
 .boot-splash {
   position: fixed; inset: 0; z-index: 20000;
   background: #020617;
