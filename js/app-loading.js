@@ -114,6 +114,7 @@ function playTransitionSound() {
 
 const BOOT_STATUS_LINES = [
     'Sealing the war gate...',
+    'Unfurling wing sigils...',
     'Syncing hero command deck...',
     'Charging combo matrix...',
     'Priming Eden map layers...',

@@ -61,8 +61,8 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260619_5" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260619_5" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/app.css?v=20260619_6" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260619_6" media="(max-width: 768px)" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { corePlugins: { preflight: false } }
@@ -73,9 +73,13 @@
     <div class="boot-atmosphere" aria-hidden="true"></div>
     <div class="boot-scanlines" aria-hidden="true"></div>
     <div class="perspective-container">
+      <div class="boot-halo" aria-hidden="true"></div>
       <!-- Left Door (Ice) -->
       <div id="doorLeft" class="door door-left">
         <div class="door-panel-lines" aria-hidden="true"></div>
+        <div class="door-wing door-wing-left" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
         <div class="door-emblem ice-emblem" aria-hidden="true">
           <span class="door-emblem-mark">ICE</span>
           <span class="door-emblem-ring"></span>
@@ -88,6 +92,9 @@
       <!-- Right Door (Fire) -->
       <div id="doorRight" class="door door-right">
         <div class="door-panel-lines" aria-hidden="true"></div>
+        <div class="door-wing door-wing-right" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
         <div class="door-emblem fire-emblem" aria-hidden="true">
           <span class="door-emblem-mark">FIRE</span>
           <span class="door-emblem-ring"></span>
@@ -641,7 +648,7 @@
     applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
   }, 800);
   </script>
-  <script type="module" src="js/app.js?v=20260619_5"></script>
+  <script type="module" src="js/app.js?v=20260619_6"></script>
 
 <script>
   // Lazy-load YouTube iframes
