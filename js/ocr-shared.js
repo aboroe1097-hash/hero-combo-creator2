@@ -34,6 +34,33 @@ export async function sha256(str) {
 // --- OCR ---
 export const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
 
+export async function checkOcrService() {
+  try {
+    const res = await fetch(`${QWEN_WORKER_URL}/status`, { cache: 'no-store' });
+    if (!res.ok) return { configured: false, error: `Worker status ${res.status}` };
+    const data = await res.json();
+    return { configured: data.configured === true, error: data.error || '' };
+  } catch (err) {
+    return { configured: false, error: err?.message || 'OCR worker unavailable' };
+  }
+}
+
+export async function qwenVisionRequest(messages) {
+  const res = await fetch(QWEN_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'qwen-vl-plus', messages }),
+  });
+  const rawText = await res.text();
+  let body = null;
+  try { body = rawText ? JSON.parse(rawText) : null; } catch {}
+  if (!res.ok) {
+    const msg = body?.error?.message || body?.error || rawText || `Qwen API Error (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
+  return body;
+}
+
 // --- Durability ---
 export const DURABILITY_TABLE = {
   gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },

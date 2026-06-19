@@ -1091,4 +1091,4 @@ window.closeTechCalculator = closeTechCalculator;
 window.syncTechSeasonButtons = syncTechSeasonButtons;
 window.syncResearchQuickButtons = syncResearchQuickButtons;
 
-export { initResearchCalculator, renderTechList, updateGlobalSummary };
+export { initResearchCalculator, renderTechList, updateGlobalSummary, renderCalculator };

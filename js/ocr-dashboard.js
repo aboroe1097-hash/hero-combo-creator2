@@ -16,11 +16,11 @@ import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import {
   STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
-  ROSTER_USERS, ROSTER_PASS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
-  LOG_KEY, AUTH_HASH, CLEAR_HASH, QWEN_WORKER_URL, DURABILITY_TABLE,
+  ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
+  LOG_KEY, AUTH_HASH, CLEAR_HASH, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
-  validateTotalDemolition, sha256
+  validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -103,15 +103,6 @@ async function processRosterImages(files) {
 
   log(`Scanning ${valid.length} roster screenshot(s)...`, 'info');
 
-  let localKey = localStorage.getItem('qwen_api_key');
-  if (!localKey) {
-    log('No API key set. Enter it in the top bar and try again.', 'error');
-    if (prog) prog.classList.add('hidden');
-    state._rosterProcessing = false;
-    alert('No API key found. Please enter your API key in the top bar and click Confirm, then upload again.');
-    return;
-  }
-
   let allNames = [];
 
   for (let i = 0; i < valid.length; i++) {
@@ -140,22 +131,10 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
       let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const res = await fetch(QWEN_WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
-            body: JSON.stringify({
-              model: 'qwen-vl-plus',
-              messages: [{ role: 'user', content: [
-                { type: 'text', text: promptTxt },
-                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-              ]}]
-            })
-          });
-          if (!res.ok) {
-            const errText = await res.text().catch(() => '');
-            throw new Error(`API ${res.status}${errText ? ': ' + errText.slice(0, 80) : ''}`);
-          }
-          raw = await res.json();
+          raw = await qwenVisionRequest([{ role: 'user', content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+          ]}]);
           if (raw?.choices?.[0]?.message?.content) break;
         } catch (e) {
           lastErr = e;
@@ -556,40 +535,42 @@ export async function bootOcrDashboard() {
   }
 
   // ── API status watcher ──────────────────────────────────
-  function updateApiStatus() {
-    const key = localStorage.getItem('qwen_api_key');
-    const ok = key && key.trim().length > 20;
+  let ocrReady = false;
+  async function updateApiStatus() {
+    const result = await checkOcrService();
+    ocrReady = result.configured === true;
     const els = [
       { id: 'dashRosterApiStatus', zone: 'dashRosterUploadZone', drop: 'dashRosterDropZone', input: 'dashRosterFileInput' },
       { id: 'dashApiUploadStatus', zone: 'dashUploadZone', drop: 'dashDropZone', input: 'dashFileInput' },
+      { id: 'dashOcrServiceStatus' },
     ];
     els.forEach(({ id, zone, drop, input }) => {
       const statusEl = $id(id);
-      const zoneEl = $id(zone);
       const dropEl = $id(drop);
       const inputEl = $id(input);
       if (!statusEl) return;
-      if (ok) {
+      if (ocrReady) {
         statusEl.className = 'dash-roster-api-status dash-api-ok';
-        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> API key set & verified';
+        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> OCR service ready';
         if (dropEl) { dropEl.style.opacity = '1'; dropEl.style.pointerEvents = ''; }
         if (inputEl) inputEl.disabled = false;
       } else {
         statusEl.className = 'dash-roster-api-status dash-api-missing';
-        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>API key required</b> — paste a Qwen API key above & click <b>Confirm</b> before uploading';
+        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>OCR unavailable</b> - configure DASHSCOPE_API_KEY in the Worker';
         if (dropEl) { dropEl.style.opacity = '0.5'; dropEl.style.pointerEvents = 'none'; }
         if (inputEl) inputEl.disabled = true;
       }
     });
+    return ocrReady;
+  }
+  function canUseOcr() {
+    if (ocrReady) return true;
+    updateApiStatus();
+    return false;
   }
 
   // Run on boot and whenever key input changes
   updateApiStatus();
-  const apiInput = $id('dashApiKeyInput');
-  if (apiInput) {
-    apiInput.addEventListener('input', updateApiStatus);
-    apiInput.addEventListener('change', updateApiStatus);
-  }
   const apiSaveBtn = $id('dashSaveApiBtn');
   if (apiSaveBtn) apiSaveBtn.addEventListener('click', updateApiStatus);
 
@@ -599,16 +580,14 @@ export async function bootOcrDashboard() {
   const rosterInput = $id('dashRosterFileInput');
   if (rosterDrop && rosterInput) {
     rosterDrop.onclick = () => {
-      const key = localStorage.getItem('qwen_api_key');
-      if (!key || key.trim().length <= 20) { updateApiStatus(); return; }
+      if (!canUseOcr()) return;
       rosterInput.click();
     };
     rosterDrop.ondragover = e => { e.preventDefault(); rosterDrop.classList.add('dragover'); };
     rosterDrop.ondragleave = () => rosterDrop.classList.remove('dragover');
     rosterDrop.ondrop = e => {
       e.preventDefault(); rosterDrop.classList.remove('dragover');
-      const key = localStorage.getItem('qwen_api_key');
-      if (!key || key.trim().length <= 20) { updateApiStatus(); return; }
+      if (!canUseOcr()) return;
       if (e.dataTransfer.files.length) processRosterImages(e.dataTransfer.files);
     };
     rosterInput.onchange = () => {
@@ -635,29 +614,7 @@ export async function bootOcrDashboard() {
     inp.onchange = () => { if (inp.files.length) importData(inp.files[0]); }; inp.click();
   };
 
-  if (apiInput) {
-    apiInput.value = localStorage.getItem('qwen_api_key') || '';
-    apiInput.oninput = (e) => {
-      const val = e.target.value.trim();
-      if (val) localStorage.setItem('qwen_api_key', val);
-      else localStorage.removeItem('qwen_api_key');
-    };
-  }
-  if (apiSaveBtn && apiInput) {
-    apiSaveBtn.onclick = () => {
-      const val = apiInput.value.trim();
-      if (val) {
-        localStorage.setItem('qwen_api_key', val);
-        // Trigger the file input immediately to retain trusted user gesture context
-        const inp = $id('dashFileInput');
-        if (inp) inp.click();
-        log('API accepted and added. You can now start uploading.', 'success');
-      } else {
-        localStorage.removeItem('qwen_api_key');
-        alert('API Key cleared. Please enter an API key to upload images.');
-      }
-    };
-  }
+  try { localStorage.removeItem('qwen_api_key'); } catch (e) {}
 
   $id('dashClearDataBtn').onclick = async () => {
     const code = prompt('Enter admin override code:');
@@ -677,11 +634,11 @@ export async function bootOcrDashboard() {
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
-  $id('dashUploadBtn').onclick = () => { const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } inp.click(); };
-  drop.onclick = () => { const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } inp.click(); };
+  $id('dashUploadBtn').onclick = () => { if (!canUseOcr()) return; inp.click(); };
+  drop.onclick = () => { if (!canUseOcr()) return; inp.click(); };
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
   drop.ondragleave = () => drop.classList.remove('dragover');
-  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); const key = localStorage.getItem('qwen_api_key'); if (!key || key.trim().length <= 20) { updateApiStatus(); return; } if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (!canUseOcr()) return; if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
   inp.onchange = () => { if (inp.files.length) processFiles(inp.files); };
 }
 

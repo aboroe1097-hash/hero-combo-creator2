@@ -23,12 +23,12 @@
                 <h1 class="dash-h1" data-i18n="adminHeaderTitle">Structure Attack Analytics</h1>
                 <div class="dash-subtitle"><span data-i18n="adminHeaderSub">Alliance Demolition Tracker</span><span id="dashUpdated" class="dash-updated"></span><span id="dashSyncIndicator" class="text-[10px] text-emerald-400 ml-2 hidden font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span data-i18n="adminHeaderLive">Live</span></span></div>
                 <div id="dashApiKeyContainer" style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <label for="dashApiKeyInput" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;" data-i18n="adminApiPrompt">Optional: If you want to upload images, insert Qwen API Key here:</label>
-                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; max-width: 360px;">
-                    <div class="dash-search-wrap" style="margin: 0; flex-grow: 1;"><input type="password" id="dashApiKeyInput" class="dash-search-input" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; width: 100%; min-width: 180px; background: rgba(0,0,0,0.2);" placeholder="Paste your API here" data-i18n-ph="adminApiPh" /></div>
+                  <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">OCR uploads use the secured Worker key.</span>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; max-width: 420px;">
+                    <span id="dashOcrServiceStatus" class="dash-roster-api-status"></span>
                     <button id="dashSaveApiBtn" class="dash-btn" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; min-height: 0; background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #10b981; display: flex; align-items: center; gap: 4px;">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span data-i18n="adminApiBtn">Confirm & Attach</span>
+                      <span>Check OCR</span>
                     </button>
                   </div>
                 </div>

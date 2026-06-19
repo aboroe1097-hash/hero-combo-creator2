@@ -1,4 +1,4 @@
-import { QWEN_WORKER_URL, state, $id, log, tryRepairJson, validateTotalDemolition, findBestMatch, getSimilarity, getSimilarityAlphaNum } from './ocr-shared.js';
+import { state, $id, log, qwenVisionRequest, tryRepairJson, validateTotalDemolition, findBestMatch, getSimilarity, getSimilarityAlphaNum } from './ocr-shared.js';
 import { render } from './ocr-render.js';
 import { saveData } from './ocr-dashboard.js';
 import { getDb } from './firebase.js';
@@ -23,11 +23,6 @@ async function processFiles(files) {
     try {
       const before = performance.now();
       let data = null;
-
-      let localKey = localStorage.getItem('qwen_api_key');
-      if (!localKey) {
-        throw new Error('No API key provided. Please enter your API key in the top bar and click Confirm.');
-      }
 
       const promptTxt = `You are an expert game data analyzer. Analyze this screenshot of an attack/demolition report.
 Extract ALL visible player entries accurately.
@@ -60,22 +55,12 @@ EXPECTED JSON SCHEMA:
 
       let maxRetries = 3;
       let raw = null;
-      let res = null;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          res = await fetch(QWEN_WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localKey}` },
-            body: JSON.stringify({
-              model: 'qwen-vl-plus',
-              messages: [{ role: 'user', content: [
-                { type: 'text', text: promptTxt },
-                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-              ]}]
-            })
-          });
-          raw = await res.json();
-          if (!res.ok) throw new Error(raw.error?.message || `Qwen API Error (HTTP ${res.status})`);
+          raw = await qwenVisionRequest([{ role: 'user', content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+          ]}]);
           break;
         } catch (err) {
           if (attempt === maxRetries) throw err;

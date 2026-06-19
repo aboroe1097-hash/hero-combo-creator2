@@ -30,8 +30,4 @@ for (const file of copyFiles) {
   fs.copyFileSync(src, path.join(dist, destName));
 }
 
-// Also copy to docs/ for GitHub Pages deployment on same branch
-const docs = path.join(root, 'docs');
-if (fs.existsSync(docs)) fs.rmSync(docs, { recursive: true });
-fs.cpSync(dist, docs, { recursive: true });
-console.log('Copied static assets into dist/ and docs/');
+console.log('Copied static assets into dist/. GitHub Pages serves the gh-pages branch root.');
