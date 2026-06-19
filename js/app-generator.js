@@ -86,13 +86,18 @@ export function renderSkinMetaCombosTable() {
   `;
 }
 
-export function renderGeneratorHeroes() {
+export function renderGeneratorHeroes(options = {}) {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
 
-  let filtered = allHeroesData.filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes));
+  const activeSeasons = options.seasons || generatorSelectedSeasons;
+  const activeStates = options.states || generatorSelectedStates;
+  const activeTypes = options.types || generatorSelectedTypes;
+  const activeSkinsOnly = options.skinsOnly ?? generatorSkinsOnly;
 
-  if (generatorSkinsOnly) {
+  let filtered = allHeroesData.filter(h => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes));
+
+  if (activeSkinsOnly) {
     filtered = filtered.sort((a, b) => {
       const aHas = hasSkin(a.name);
       const bHas = hasSkin(b.name);
@@ -111,7 +116,7 @@ export function renderGeneratorHeroes() {
       const skinColors = heroSkinsList.length
         ? heroSkinsList.map(skin => (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic).color)
         : Object.values(SKIN_TYPES).map(s => s.color);
-      const skinPriorityClass = generatorSkinsOnly
+      const skinPriorityClass = activeSkinsOnly
         ? (hasSkinFlag ? ' skin-priority-card has-skin' : ' skin-priority-muted')
         : '';
       const card = document.createElement('button');
@@ -120,7 +125,7 @@ export function renderGeneratorHeroes() {
       }`;
 
       const skinBadge = hasSkinFlag
-        ? `<span class="generator-skin-badge${generatorSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${generatorSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})`}">${escapeHtml(generatorSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+        ? `<span class="generator-skin-badge${activeSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${activeSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${skinColors.slice(0,skinCount).join(',')})`}">${escapeHtml(activeSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
         : '';
 
       card.innerHTML = `

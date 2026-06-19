@@ -379,22 +379,156 @@ function readTroopFilterSelection(container, changedInput) {
 
 function wireFilterControls(container, onChange) {
   if (!container || typeof onChange !== 'function') return;
-
-  container.addEventListener('click', (event) => {
-    const pill = event.target.closest('label.filter-pill');
-    if (!pill || !container.contains(pill) || event.target.matches('input[type="checkbox"]')) return;
-    const input = pill.querySelector('input[type="checkbox"]');
-    if (!input || input.disabled) return;
-
-    event.preventDefault();
-    input.checked = !input.checked;
-    onChange(input);
-  });
+  if (container.dataset.filterWired === '1') return;
+  container.dataset.filterWired = '1';
 
   container.addEventListener('change', (event) => {
     if (!event.target.matches('input[type="checkbox"]')) return;
     onChange(event.target);
   });
+}
+
+function wireFilterSets() {
+  const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
+  const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
+  const manualTroopFilters = document.getElementById('troopFilters') || troopFiltersEl;
+  const generatorSeasonFilters = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
+  const generatorStateFilters = document.getElementById('generatorStateFilters') || genStateFiltersEl;
+  const generatorTroopFilters = document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
+
+  wireFilterControls(manualSeasonFilters, () => {
+    setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
+    renderAvailableHeroes();
+  });
+
+  wireFilterControls(manualStateFilters, () => {
+    setSelectedStates(readStateFilterSelection(manualStateFilters));
+    renderAvailableHeroes();
+  });
+
+  wireFilterControls(manualTroopFilters, (input) => {
+    setSelectedTypes(readTroopFilterSelection(manualTroopFilters, input));
+    renderAvailableHeroes();
+  });
+
+  wireFilterControls(generatorSeasonFilters, () => {
+    renderGeneratorHeroes(syncGeneratorControlState());
+  });
+
+  wireFilterControls(generatorStateFilters, () => {
+    renderGeneratorHeroes(syncGeneratorControlState());
+  });
+
+  wireFilterControls(generatorTroopFilters, (input) => {
+    renderGeneratorHeroes(syncGeneratorControlState(input));
+  });
+}
+
+function wireGeneratorSkinToggle() {
+  const genSkinToggle = document.getElementById('genSkinToggle');
+  if (!genSkinToggle || genSkinToggle.dataset.skinToggleWired === '1') return;
+  genSkinToggle.dataset.skinToggleWired = '1';
+
+  const syncGeneratorSkinToggle = () => {
+    renderGeneratorHeroes(syncGeneratorControlState());
+  };
+  genSkinToggle.addEventListener('change', syncGeneratorSkinToggle);
+}
+
+function syncGeneratorControlState(changedTroopInput = null) {
+  const seasonContainer = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
+  const stateContainer = document.getElementById('generatorStateFilters') || genStateFiltersEl;
+  const troopContainer = document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
+  const skinsOnly = !!document.getElementById('genSkinToggle')?.checked;
+  const seasons = readSeasonFilterSelection(seasonContainer);
+  const states = readStateFilterSelection(stateContainer);
+  const types = readTroopFilterSelection(troopContainer, changedTroopInput);
+
+  setGeneratorSelectedSeasons(seasons);
+  setGeneratorSelectedStates(states);
+  setGeneratorSelectedTypes(types);
+  setGeneratorSkinsOnly(skinsOnly);
+
+  return { seasons, states, types, skinsOnly };
+}
+
+function applyFilterSelection(container, input) {
+  if (!container) return;
+  if (container.id === 'seasonFilters') {
+    setSelectedSeasons(readSeasonFilterSelection(container));
+    renderAvailableHeroes();
+  } else if (container.id === 'stateFilters') {
+    setSelectedStates(readStateFilterSelection(container));
+    renderAvailableHeroes();
+  } else if (container.id === 'troopFilters') {
+    setSelectedTypes(readTroopFilterSelection(container, input));
+    renderAvailableHeroes();
+  } else if (container.id === 'generatorSeasonFilters') {
+    renderGeneratorHeroes(syncGeneratorControlState());
+  } else if (container.id === 'generatorStateFilters') {
+    renderGeneratorHeroes(syncGeneratorControlState());
+  } else if (container.id === 'generatorTroopFilters') {
+    renderGeneratorHeroes(syncGeneratorControlState(input));
+  }
+}
+
+function wireGlobalControlDelegates() {
+  if (document.documentElement.dataset.vtsControlDelegatesWired === '1') return;
+  document.documentElement.dataset.vtsControlDelegatesWired = '1';
+  let suppressClick = false;
+
+  document.addEventListener('pointerdown', (event) => {
+    const skinLabel = event.target.closest?.('#genSkinToggleLabel');
+    if (skinLabel) {
+      const toggle = document.getElementById('genSkinToggle');
+      if (!toggle || toggle.disabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = true;
+      window.setTimeout(() => { suppressClick = false; }, 350);
+      toggle.checked = !toggle.checked;
+      renderGeneratorHeroes(syncGeneratorControlState());
+      return;
+    }
+
+    const pill = event.target.closest?.('label.filter-pill');
+    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
+    if (!pill || !container) return;
+    const input = pill.querySelector('input[type="checkbox"]');
+    if (!input || input.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClick = true;
+    window.setTimeout(() => { suppressClick = false; }, 350);
+    input.checked = !input.checked;
+    applyFilterSelection(container, input);
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    const skinLabel = event.target.closest?.('#genSkinToggleLabel');
+    if (skinLabel) {
+      const toggle = document.getElementById('genSkinToggle');
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      window.setTimeout(() => {
+        if (!toggle) return;
+        renderGeneratorHeroes(syncGeneratorControlState());
+      }, 0);
+      return;
+    }
+
+    const pill = event.target.closest?.('label.filter-pill');
+    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
+    if (!pill || !container) return;
+    const input = pill.querySelector('input[type="checkbox"]');
+    if (suppressClick) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.setTimeout(() => applyFilterSelection(container, input), 0);
+  }, true);
 }
 
 // --- UI WIRING ---
@@ -416,6 +550,10 @@ tabs.forEach(tab => {
     tab.btn.addEventListener('click', () => switchTab(tab.name));
   }
 });
+  wireGlobalControlDelegates();
+  wireFilterSets();
+  wireGeneratorSkinToggle();
+
   // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
     // 1. Draw the initial '+' signs
@@ -460,7 +598,7 @@ tabs.forEach(tab => {
       localStorage.setItem('vts_hero_lang', currentLanguage);
       updateTextContent();
       renderAvailableHeroes();
-      renderGeneratorHeroes();
+      renderGeneratorHeroes(syncGeneratorControlState());
     };
   }
 
@@ -583,55 +721,8 @@ tabs.forEach(tab => {
     onTabActivated(tabName);
     _lastTab = tabName;
   }
-  if (seasonFiltersEl) {
-    wireFilterControls(seasonFiltersEl, () => {
-      setSelectedSeasons(readSeasonFilterSelection(seasonFiltersEl));
-      renderAvailableHeroes();
-    });
-  }
-
-  if (stateFiltersEl) {
-    wireFilterControls(stateFiltersEl, () => {
-      setSelectedStates(readStateFilterSelection(stateFiltersEl));
-      renderAvailableHeroes();
-    });
-  }
-
-  if (troopFiltersEl) {
-    wireFilterControls(troopFiltersEl, (input) => {
-      setSelectedTypes(readTroopFilterSelection(troopFiltersEl, input));
-      renderAvailableHeroes();
-    });
-  }
-
-  if (genSeasonFiltersEl) {
-    wireFilterControls(genSeasonFiltersEl, () => {
-      setGeneratorSelectedSeasons(readSeasonFilterSelection(genSeasonFiltersEl));
-      renderGeneratorHeroes();
-    });
-  }
-
-  if (genStateFiltersEl) {
-    wireFilterControls(genStateFiltersEl, () => {
-      setGeneratorSelectedStates(readStateFilterSelection(genStateFiltersEl));
-      renderGeneratorHeroes();
-    });
-  }
-
-  if (genTroopFiltersEl) {
-    wireFilterControls(genTroopFiltersEl, (input) => {
-      setGeneratorSelectedTypes(readTroopFilterSelection(genTroopFiltersEl, input));
-      renderGeneratorHeroes();
-    });
-  }
-
-  const genSkinToggle = document.getElementById('genSkinToggle');
-  if (genSkinToggle) {
-    genSkinToggle.addEventListener('change', () => {
-      setGeneratorSkinsOnly(genSkinToggle.checked);
-      renderGeneratorHeroes();
-    });
-  }
+  wireFilterSets();
+  wireGeneratorSkinToggle();
 
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
@@ -646,10 +737,11 @@ tabs.forEach(tab => {
 
   if (genSelectAllBtn) {
     genSelectAllBtn.onclick = () => {
+      const options = syncGeneratorControlState();
       allHeroesData
-        .filter(h => heroMatchesFilters(h, generatorSelectedSeasons, generatorSelectedStates, generatorSelectedTypes))
+        .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
         .forEach(h => generatorSelectedHeroes.add(h.name));
-      renderGeneratorHeroes();
+      renderGeneratorHeroes(options);
       updateGenCountBadge();
     };
   }
@@ -657,7 +749,7 @@ tabs.forEach(tab => {
   if (genClearAllBtn) {
     genClearAllBtn.onclick = () => {
       generatorSelectedHeroes.clear();
-      renderGeneratorHeroes();
+      renderGeneratorHeroes(syncGeneratorControlState());
       updateGenCountBadge();
     };
   }
@@ -923,7 +1015,7 @@ async function startApp() {
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
     safeInit('renderSkinMetaCombosTable', () => renderSkinMetaCombosTable());
-    safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes());
+    safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('wireUIActions', () => wireUIActions());
     safeInit('initResearchCalculator', () => initResearchCalculator());
     safeInit('initTabScroll', () => initTabScroll());

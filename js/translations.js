@@ -2188,6 +2188,69 @@ for (const [lang, values] of Object.entries(supplementalTranslations)) {
   Object.assign(translations[lang], values);
 }
 
+const adminGuestModeTranslations = {
+  en: {
+    adminGuestModeTitle: "Guest Mode",
+    adminGuestModeBody: "You are viewing the dashboard in read-only mode. Uploads are disabled. If charts are stuck on \"Loading...\", there is no data to display.",
+    adminGuestLoginAdminBtn: "Log in as Admin"
+  },
+  pt: {
+    adminGuestModeTitle: "Modo convidado",
+    adminGuestModeBody: "Voce esta vendo o painel em modo somente leitura. Uploads estao desativados. Se os graficos ficarem em \"Loading...\", nao ha dados para mostrar.",
+    adminGuestLoginAdminBtn: "Entrar como admin"
+  },
+  tr: {
+    adminGuestModeTitle: "Misafir Modu",
+    adminGuestModeBody: "Paneli salt okunur modda goruntuluyorsunuz. Yuklemeler kapali. Grafikler \"Loading...\" durumunda kalirsa gosterilecek veri yoktur.",
+    adminGuestLoginAdminBtn: "Admin olarak giris yap"
+  },
+  ru: {
+    adminGuestModeTitle: "Гостевой режим",
+    adminGuestModeBody: "Панель открыта только для чтения. Загрузки отключены. Если графики зависли на \"Loading...\", данных для показа нет.",
+    adminGuestLoginAdminBtn: "Войти как админ"
+  },
+  es: {
+    adminGuestModeTitle: "Modo invitado",
+    adminGuestModeBody: "Estas viendo el panel en modo de solo lectura. Las cargas estan desactivadas. Si los graficos se quedan en \"Loading...\", no hay datos para mostrar.",
+    adminGuestLoginAdminBtn: "Ingresar como admin"
+  },
+  fr: {
+    adminGuestModeTitle: "Mode invite",
+    adminGuestModeBody: "Vous consultez le tableau de bord en lecture seule. Les envois sont desactives. Si les graphiques restent sur \"Loading...\", aucune donnee n'est disponible.",
+    adminGuestLoginAdminBtn: "Connexion admin"
+  },
+  de: {
+    adminGuestModeTitle: "Gastmodus",
+    adminGuestModeBody: "Du siehst das Dashboard im Lesemodus. Uploads sind deaktiviert. Wenn Diagramme bei \"Loading...\" bleiben, gibt es keine Daten zum Anzeigen.",
+    adminGuestLoginAdminBtn: "Als Admin anmelden"
+  },
+  id: {
+    adminGuestModeTitle: "Mode tamu",
+    adminGuestModeBody: "Anda melihat dasbor dalam mode baca saja. Upload dinonaktifkan. Jika grafik tetap di \"Loading...\", tidak ada data untuk ditampilkan.",
+    adminGuestLoginAdminBtn: "Masuk sebagai admin"
+  },
+  zh: {
+    adminGuestModeTitle: "访客模式",
+    adminGuestModeBody: "你正在以只读模式查看仪表板。上传已禁用。如果图表停在“Loading...”，表示没有可显示的数据。",
+    adminGuestLoginAdminBtn: "以管理员登录"
+  },
+  ar: {
+    adminGuestModeTitle: "وضع الضيف",
+    adminGuestModeBody: "أنت تشاهد لوحة التحكم بوضع القراءة فقط. تم تعطيل الرفع. إذا بقيت الرسوم على \"Loading...\" فلا توجد بيانات لعرضها.",
+    adminGuestLoginAdminBtn: "تسجيل الدخول كمشرف"
+  },
+  kr: {
+    adminGuestModeTitle: "게스트 모드",
+    adminGuestModeBody: "대시보드를 읽기 전용으로 보고 있습니다. 업로드는 비활성화됩니다. 차트가 \"Loading...\"에 멈춰 있으면 표시할 데이터가 없습니다.",
+    adminGuestLoginAdminBtn: "관리자로 로그인"
+  }
+};
+
+for (const [lang, values] of Object.entries(adminGuestModeTranslations)) {
+  translations[lang] ||= {};
+  Object.assign(translations[lang], values);
+}
+
 const englishTranslationKeys = Object.keys(translations.en);
 
 for (const [lang, values] of Object.entries(translations)) {
