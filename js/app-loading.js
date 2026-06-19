@@ -263,18 +263,19 @@ export function initAppLoading() {
     }, 5000);
 }
 
-export async function notifyAppReady() {
+export async function notifyAppReady(options = {}) {
+    const { skipIntro = false } = options;
     const elapsed = performance.now() - bootStartedAt;
     await sleep(Math.max(0, MIN_BOOT_MS - elapsed));
     stopBootAnimations(100);
 
-    const isFirstVisit = !localStorage.getItem(INTRO_STORAGE_KEY);
+    const isFirstVisit = !skipIntro && !localStorage.getItem(INTRO_STORAGE_KEY);
     await dismissBootSplash();
 
     if (isFirstVisit) {
         await playFirstVisitIntro();
     }
-    if (!localStorage.getItem(INTRO_STORAGE_KEY)) {
+    if (!skipIntro && !localStorage.getItem(INTRO_STORAGE_KEY)) {
         localStorage.setItem(INTRO_STORAGE_KEY, '1');
     }
 
