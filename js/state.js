@@ -107,6 +107,7 @@ export const tabOcrDashboardBtn = document.getElementById('tabOcrDashboard');
 export const globalToggleRow = document.getElementById('globalToggleRow');
 
 export const comboFooterBar = document.getElementById('comboFooterBar');
+export const skinMetaCombosTableEl = document.getElementById('skinMetaCombosTable');
 export const generatorHeroesEl = document.getElementById('generatorHeroes');
 export const generatorResultsEl = document.getElementById('generatorResults');
 export const generateCombosBtn = document.getElementById('generateCombosBtn');
