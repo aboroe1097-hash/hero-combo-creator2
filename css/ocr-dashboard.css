@@ -6,9 +6,14 @@
 #ocrDashboardRoot {
   font-family: Inter, system-ui, sans-serif;
   color: var(--text-primary);
+  min-width: 0;
 }
 #ocrDashboardRoot .hidden { display: none !important; }
 #ocrDashboardRoot * { box-sizing: border-box; }
+#ocrDashboardRoot svg {
+  max-width: 100%;
+  flex-shrink: 0;
+}
 
 /* Login */
 #ocrDashboardRoot .dash-login-wrap {
@@ -185,6 +190,7 @@
 #ocrDashboardRoot .dash-card {
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius-card); padding: 1.25rem;
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-kpi {
   display: flex; align-items: center; gap: 1rem;
@@ -416,6 +422,13 @@
 #ocrDashboardRoot .dash-mini-trend {
   display: flex; align-items: flex-end; gap: 4px; height: 160px;
   padding: 12px 8px; background: #0f172a; border-radius: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+#ocrDashboardRoot .dash-mini-trend svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Unified Dropdown */
@@ -775,6 +788,7 @@ body[style*="overflow: hidden"] .tab-panel {
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius-xl); overflow-x: auto;
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 #ocrDashboardRoot .dash-subtab-nav::-webkit-scrollbar { display: none; }
 #ocrDashboardRoot .dash-subtab-btn {
@@ -813,11 +827,15 @@ body[style*="overflow: hidden"] .tab-panel {
 
 /* Analytics tab */
 #ocrDashboardRoot .dash-analytics-lead {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  justify-content: stretch;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+#ocrDashboardRoot .dash-analytics-lead > div:first-child {
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-analytics-lead p {
   margin: 0.35rem 0 0;
@@ -827,13 +845,15 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-analytics-summary,
 #ocrDashboardRoot .dash-roster-stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
   gap: 0.6rem;
-  flex-wrap: wrap;
+  align-items: stretch;
+  min-width: min(360px, 100%);
 }
 #ocrDashboardRoot .dash-analytics-summary span,
 #ocrDashboardRoot .dash-roster-stats span {
-  min-width: 92px;
+  min-width: 0;
   padding: 0.7rem 0.85rem;
   border: 1px solid rgba(96,165,250,0.18);
   border-radius: 12px;
@@ -860,6 +880,7 @@ body[style*="overflow: hidden"] .tab-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  align-items: start;
 }
 #ocrDashboardRoot .dash-analytics-card-wide { grid-column: 1 / -1; }
 #ocrDashboardRoot .dash-analytics-body {
@@ -867,9 +888,11 @@ body[style*="overflow: hidden"] .tab-panel {
   flex-direction: column;
   gap: 0.7rem;
   margin-top: 0.75rem;
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-analytics-card {
   opacity: 1;
+  overflow: hidden;
 }
 #ocrDashboardRoot .dash-analytics-card.dash-analytics-in {
   animation: dash-analytics-rise 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -941,6 +964,9 @@ body[style*="overflow: hidden"] .tab-panel {
 #ocrDashboardRoot .dash-structure-side strong {
   display: block;
   font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #ocrDashboardRoot .dash-structure-main span,
 #ocrDashboardRoot .dash-structure-side span {
@@ -963,6 +989,7 @@ body[style*="overflow: hidden"] .tab-panel {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: rgba(255,255,255,0.025);
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-trend-person strong {
   display: block;
@@ -975,9 +1002,10 @@ body[style*="overflow: hidden"] .tab-panel {
   font-weight: 700;
 }
 #ocrDashboardRoot .dash-sparkline {
+  display: block;
   width: 100%;
   height: 48px;
-  overflow: visible;
+  overflow: hidden;
 }
 #ocrDashboardRoot .dash-trend-delta {
   justify-self: end;
@@ -996,6 +1024,7 @@ body[style*="overflow: hidden"] .tab-panel {
   display: grid;
   grid-template-columns: 42px repeat(4, minmax(54px, 1fr));
   gap: 0.35rem;
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-heatmap-label,
 #ocrDashboardRoot .dash-heatmap-day {
@@ -1079,6 +1108,7 @@ body[style*="overflow: hidden"] .tab-panel {
   align-items: center;
   color: var(--text-primary);
   font-size: 0.76rem;
+  min-width: 0;
 }
 #ocrDashboardRoot .dash-insight-list span.muted {
   color: var(--text-muted);
@@ -1112,6 +1142,12 @@ body[style*="overflow: hidden"] .tab-panel {
 @media (max-width: 900px) {
   #ocrDashboardRoot .dash-analytics-lead { align-items: flex-start; flex-direction: column; }
   #ocrDashboardRoot .dash-analytics-grid { grid-template-columns: 1fr; }
+  #ocrDashboardRoot .dash-analytics-lead { grid-template-columns: 1fr; }
+  #ocrDashboardRoot .dash-analytics-summary,
+  #ocrDashboardRoot .dash-roster-stats {
+    width: 100%;
+    min-width: 0;
+  }
 }
 @media (max-width: 640px) {
   #ocrDashboardRoot .dash-structure-item,
@@ -1129,6 +1165,13 @@ body[style*="overflow: hidden"] .tab-panel {
     gap: 0.25rem;
   }
   #ocrDashboardRoot .dash-heatmap-cell { min-height: 42px; }
+  #ocrDashboardRoot .dash-analytics-summary,
+  #ocrDashboardRoot .dash-roster-stats {
+    grid-template-columns: 1fr;
+  }
+  #ocrDashboardRoot .dash-sparkline {
+    height: 38px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   #ocrDashboardRoot .dash-analytics-card.dash-analytics-in,
