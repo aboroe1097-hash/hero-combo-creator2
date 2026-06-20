@@ -198,11 +198,11 @@ test.describe('app smoke tabs', () => {
     await expect(arthurGeneratorCard).toBeVisible();
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toHaveText('E');
-    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveText('Skin');
+    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveAttribute('aria-checked', 'true');
     await arthurGeneratorCard.locator('.generator-skin-toggle').click();
     await expect(arthurGeneratorCard).not.toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard).not.toHaveClass(/skin-animated-portrait/);
-    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveText('Base');
+    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveAttribute('aria-checked', 'false');
     await arthurGeneratorCard.click();
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
     await arthurGeneratorCard.locator('.generator-skin-toggle').click();

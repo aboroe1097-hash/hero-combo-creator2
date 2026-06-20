@@ -151,21 +151,30 @@ export function renderGeneratorHeroes(options = {}) {
       const skinPriorityClass = activeSkinsOnly
         ? (skinOwned ? ' skin-priority-card skin-animated-portrait has-skin skin-owned' : ' skin-mode-card')
         : '';
-      const card = document.createElement('button');
+      const card = document.createElement('div');
       card.className = `hero-card generator-card relative season-${String(hero.season || '').toLowerCase()}${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
       card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');
       card.setAttribute('aria-label', `${generatorSelectedHeroes.has(hero.name) ? 'Deselect' : 'Select'} ${hero.name}`);
       const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
         ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
         : '';
 
-      const skinBadge = hasSkinFlag
-        ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo?.label || primarySkin.type})${skinOwned ? '' : ' available'}` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${skinOwned && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${normalSkinBadgeColors})`}">${escapeHtml(skinOwned && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+      const skinBadgeTitle = escapeHtml(primarySkin
+        ? `${primarySkin.name} (${skinTypeInfo?.label || primarySkin.type})${skinOwned ? '' : ' available'}`
+        : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`);
+      const skinBadgeLabel = escapeHtml(skinOwned && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`);
+      const skinBadgeStyle = skinOwned && skinTypeInfo
+        ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);`
+        : `background:linear-gradient(135deg,${normalSkinBadgeColors})`;
+      const skinBadge = hasSkinFlag && !activeSkinsOnly
+        ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${skinBadgeTitle}" style="${skinBadgeStyle}">${skinBadgeLabel}</span>`
         : '';
       const skinToggle = activeSkinsOnly && hasSkinFlag
-        ? `<span class="generator-skin-toggle${skinOwned ? ' is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}">${skinOwned ? 'Skin' : 'Base'}</span>`
+        ? `<span class="generator-skin-toggle generator-skin-badge${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${skinBadgeStyle}">${skinBadgeLabel}</span>`
         : '';
 
       card.innerHTML = `
@@ -190,7 +199,8 @@ export function renderGeneratorHeroes(options = {}) {
         </div>
       `;
       
-      card.onclick = () => {
+      card.onclick = (e) => {
+        if (e.target.closest('.generator-skin-toggle')) return;
         __ui.forceHideHeroTooltip(); 
         
         if (generatorSelectedHeroes.has(hero.name)) {
@@ -212,6 +222,12 @@ export function renderGeneratorHeroes(options = {}) {
           else { countBadge.classList.add('hidden'); }
         }
       };
+      card.addEventListener('keydown', (e) => {
+        if (e.target.closest('.generator-skin-toggle')) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        card.click();
+      });
 
       card.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return; 
@@ -252,6 +268,11 @@ export function renderGeneratorHeroes(options = {}) {
             skinsOnly: activeSkinsOnly
           });
         };
+        ['pointerdown', 'pointerup', 'touchstart'].forEach(eventName => {
+          skinToggleEl.addEventListener(eventName, (e) => {
+            e.stopPropagation();
+          }, { passive: false });
+        });
         skinToggleEl.addEventListener('click', toggleSkin);
         skinToggleEl.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') toggleSkin(e);

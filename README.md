@@ -222,7 +222,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 | `vts_roster_user` | Logged-in roster user |
 | `vts_ocr_banners` | Banner records array |
 | `qwen_api_key` | Qwen API key (user-set) |
-| `vts_skin_ownership_v1` | Per-hero skin/base ownership toggles in the combo generator |
+| `vts_generator_owned_skins_v1` | Per-hero skin/base ownership toggles in the combo generator |
 
 ## Firebase
 

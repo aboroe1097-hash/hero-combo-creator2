@@ -270,12 +270,25 @@ body.tab-manual-active {
 
 .hero-card .generator-skin-toggle,
 .generator-card .generator-skin-toggle {
-  right: 4px !important;
-  bottom: 4px !important;
-  min-width: 32px !important;
-  height: 16px !important;
-  padding: 0 5px !important;
-  font-size: 7px !important;
+  top: 3px !important;
+  right: 3px !important;
+  bottom: auto !important;
+  width: 21px !important;
+  min-width: 0 !important;
+  height: 21px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  font-size: 8px !important;
+}
+
+.hero-card .generator-skin-toggle:not(.is-on)::after,
+.generator-card .generator-skin-toggle:not(.is-on)::after {
+  width: 19px !important;
+}
+
+.generator-card:has(.generator-skin-toggle) .info-btn {
+  top: 27px !important;
+  right: 3px !important;
 }
 
 .hero-card:has(.generator-skin-badge) .paid-badge,
