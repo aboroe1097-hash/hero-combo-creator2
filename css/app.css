@@ -209,6 +209,7 @@ html.maintenance-mode .maintenance-preload {
 
 html.maintenance-mode .boot-splash,
 html.maintenance-mode .first-visit-intro,
+html.maintenance-mode .app-shell,
 html.maintenance-mode #app {
   display: none !important;
 }
@@ -6052,6 +6053,11 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   font-family: Inter, system-ui, sans-serif;
   color: var(--text-primary);
 }
+
+.admin-page-header a {
+  text-decoration: none !important;
+}
+
 #ocrDashboardRoot .hidden { display: none !important; }
 #ocrDashboardRoot * { box-sizing: border-box; }
 

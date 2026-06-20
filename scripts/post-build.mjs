@@ -12,6 +12,7 @@ const copyDirs = ['css', 'images', 'assets', 'tabs', 'workers'];
 // in js/ are bundled by Vite; only plain non-module scripts are copied.
 const copyFiles = [
   'CNAME',
+  'CHANGELOG.md',
   'robots.txt',
   'sitemap.xml',
   'site.webmanifest',

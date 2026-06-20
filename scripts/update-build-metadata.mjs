@@ -8,7 +8,7 @@ const assetExtensions = new Set([
   '.css', '.html', '.js', '.json', '.manifest', '.png', '.jpg', '.jpeg', '.svg', '.webp'
 ]);
 const assetDirs = ['css', 'js', 'images', 'assets', 'tabs', 'workers'];
-const rootFiles = ['/', '/index.html', '/CNAME', '/robots.txt', '/sitemap.xml', '/site.webmanifest', '/404.html'];
+const rootFiles = ['/', '/index.html', '/admin.html', '/CNAME', '/robots.txt', '/sitemap.xml', '/site.webmanifest', '/404.html'];
 
 function makeBuildVersion() {
   const d = new Date();
@@ -33,9 +33,12 @@ function writeText(file, text) {
 }
 
 function updateCacheBusters() {
-  const index = readText('index.html')
-    .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`);
-  writeText('index.html', index);
+  for (const file of ['index.html', 'admin.html']) {
+    if (!fs.existsSync(path.join(root, file))) continue;
+    const html = readText(file)
+      .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`);
+    writeText(file, html);
+  }
 
   const appPath = path.join(root, 'js', 'app.js');
   if (fs.existsSync(appPath)) {
@@ -86,7 +89,9 @@ function normalizedRequestKey(request) {
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_VERSION).then((cache) =>
+      Promise.allSettled(APP_SHELL.map((url) => cache.add(url)))
+    )
   );
 });
 

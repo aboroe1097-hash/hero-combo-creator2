@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_035911';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_085916';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -96,8 +96,6 @@ import {
   tabEdenMapBtn,
   heroesSection,
   edenMapSection,
-  ocrDashboardSection,
-  tabOcrDashboardBtn,
   globalToggleRow,
   comboFooterBar,
   generatorHeroesEl,
@@ -308,7 +306,6 @@ const TAB_BTN_IDS = {
   edenMap: 'tabEdenMap',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
-  ocrDashboard: 'tabOcrDashboard',
 };
 
 // --- HERO HOVER TOOLTIP ---
@@ -609,7 +606,6 @@ const tabs = [
   { btn: tabEdenMapBtn,  name: 'edenMap' },
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
-  { btn: tabOcrDashboardBtn, name: 'ocrDashboard' },
 ];
 
 tabs.forEach(tab => {
@@ -692,7 +688,7 @@ tabs.forEach(tab => {
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
-    edenMapSection, loyaltySection, youtubeSection, ocrDashboardSection,
+    edenMapSection, loyaltySection, youtubeSection,
   ];
 
   function loadYouTubeEmbeds() {
@@ -780,11 +776,6 @@ tabs.forEach(tab => {
     }
     if (tabName === 'youtube') {
       loadYouTubeEmbeds();
-    }
-    if (tabName === 'ocrDashboard') {
-      loadTabTemplate('ocrDashboard').then(() => {
-        import('./ocr-dashboard.js').then(mod => mod.bootOcrDashboard()).catch(e => console.error('OCR dashboard load failed:', e));
-      });
     }
     if (tabName === 'loyalty') {
       loadTabTemplate('loyalty').then(() => {

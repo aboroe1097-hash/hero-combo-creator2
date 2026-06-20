@@ -25,6 +25,16 @@ async function expectTab(page, buttonId, sectionId, marker) {
   await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
 }
 
+async function openAdmin(page) {
+  await page.route('**/js/maintenance-config.js*', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
+  }));
+  await page.route('https://www.googletagmanager.com/**', route => route.abort());
+  await page.goto('/admin.html');
+  await expect(page.locator('#dashLogin')).toBeVisible({ timeout: 20000 });
+}
+
 test.describe('app smoke tabs', () => {
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
@@ -91,7 +101,7 @@ test.describe('app smoke tabs', () => {
       return total ? terrainPixels / total : 0;
     }), { timeout: 10000 }).toBeGreaterThan(0.03);
     await expectTab(page, '#tabLoyalty', '#loyaltySection', '#loyaltyPresets');
-    await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
+    await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
   });
 
   test('generator filters default to S0/S1 and update visible heroes', async ({ page }) => {
@@ -243,8 +253,7 @@ test.describe('app smoke tabs', () => {
   });
 
   test('admin guest mode can return to admin login', async ({ page }) => {
-    await openApp(page);
-    await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
+    await openAdmin(page);
 
     await page.locator('#dashGuestBtn').click();
     await expect(page.locator('#dashGuestBanner')).toBeVisible();
@@ -261,8 +270,8 @@ test.describe('app smoke tabs', () => {
   });
 
   test('admin analytics renders seeded OCR insights and filters leaderboard', async ({ page }) => {
-    await openApp(page);
     await page.route('https://firestore.googleapis.com/**', route => route.abort());
+    await openAdmin(page);
     const seededDash = {
       last_updated: '20/06/2026, 12:00',
       total_attacks: 3,
@@ -324,7 +333,6 @@ test.describe('app smoke tabs', () => {
       localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
     }, { seededDash, seededRoster });
 
-    await expectTab(page, '#tabOcrDashboard', '#ocrDashboardSection', '#dashLogin');
     await page.locator('#dashGuestBtn').click();
     await page.evaluate(async ({ seededDash, seededRoster }) => {
       const shared = await import('/js/ocr-shared.js');
