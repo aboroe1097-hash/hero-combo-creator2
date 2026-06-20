@@ -53,10 +53,15 @@ npm run i18n:check
 npm run build
 ```
 
+## Pull Requests
+
+- Keep changes focused and explain the player/community impact.
+- Link related issues when one exists.
+- Include screenshots for visual changes.
+- Include source evidence for hero, combo, skin, OCR, research, or Eden data changes.
+- Call out any skipped checks and why.
+- Do not commit secrets, private API keys, admin credentials, or private alliance data.
+
 ## Release Notes
 
-Every user-visible change should update `CHANGELOG.md`. Follow `VERSIONING.md` when deciding whether the change is major, minor, or patch.
-
-## Internal Notes
-
-Maintainer and AI-agent notes live in `docs/dev/`. They are useful for project continuity, but community-facing contribution instructions should stay here.
+Every user-visible change should update `CHANGELOG.md`. Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.

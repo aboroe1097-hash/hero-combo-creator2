@@ -8,7 +8,8 @@ const WORLD_H = 1600;
 export const FACTION_DIVISION_MAP = {
   url: `${ASSET_ROOT}faction-division-map.png`,
   metaUrl: `${ASSET_ROOT}faction-division-map.json`,
-  rawUrl: 'assets/faction-division2.png',
+  rawUrl: 'assets/faction-division2.webp',
+  rawFallbackUrl: 'assets/faction-division2.png',
   processedUrl: `${ASSET_ROOT}faction-division-map.png`,
   layout: 'rect',
   opacity: 0.96,
@@ -22,9 +23,11 @@ export const FACTION_DIVISION_MAP = {
 export const MAP_REFERENCE = {
   url: FACTION_DIVISION_MAP.url,
   rawUrl: FACTION_DIVISION_MAP.rawUrl,
+  rawFallbackUrl: FACTION_DIVISION_MAP.rawFallbackUrl,
   layout: FACTION_DIVISION_MAP.layout,
   processedUrl: FACTION_DIVISION_MAP.processedUrl,
-  legacyUrl: `${ASSET_ROOT}eden-map-reference.png`,
+  legacyUrl: `${ASSET_ROOT}eden-map-reference.webp`,
+  legacyFallbackUrl: `${ASSET_ROOT}eden-map-reference.png`,
   fallbackUrl: 'https://static.wixstatic.com/media/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png/v1/fill/w_1700,h_1600,al_c,q_90,usm_0.66_1.00_0.01,enc_auto/43ee96_3a8d3b6b92b247abb829f82b23585943~mv2.png',
   opacity: FACTION_DIVISION_MAP.opacity,
   bounds: FACTION_DIVISION_MAP.bounds,
@@ -223,18 +226,28 @@ export function preloadReferenceMap(onReady) {
       el.src = MAP_REFERENCE.rawUrl;
       return;
     }
-    if (el.dataset.fallback !== '2' && MAP_REFERENCE.processedUrl && MAP_REFERENCE.processedUrl !== MAP_REFERENCE.url) {
+    if (el.dataset.fallback !== '2' && MAP_REFERENCE.rawFallbackUrl) {
       el.dataset.fallback = '2';
+      el.src = MAP_REFERENCE.rawFallbackUrl;
+      return;
+    }
+    if (el.dataset.fallback !== '3' && MAP_REFERENCE.processedUrl && MAP_REFERENCE.processedUrl !== MAP_REFERENCE.url) {
+      el.dataset.fallback = '3';
       el.src = MAP_REFERENCE.processedUrl;
       return;
     }
-    if (el.dataset.fallback !== '3' && MAP_REFERENCE.legacyUrl) {
-      el.dataset.fallback = '3';
+    if (el.dataset.fallback !== '4' && MAP_REFERENCE.legacyUrl) {
+      el.dataset.fallback = '4';
       el.src = MAP_REFERENCE.legacyUrl;
       return;
     }
-    if (el.dataset.fallback !== '4' && MAP_REFERENCE.fallbackUrl) {
-      el.dataset.fallback = '4';
+    if (el.dataset.fallback !== '5' && MAP_REFERENCE.legacyFallbackUrl) {
+      el.dataset.fallback = '5';
+      el.src = MAP_REFERENCE.legacyFallbackUrl;
+      return;
+    }
+    if (el.dataset.fallback !== '6' && MAP_REFERENCE.fallbackUrl) {
+      el.dataset.fallback = '6';
       el.src = MAP_REFERENCE.fallbackUrl;
       return;
     }

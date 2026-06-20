@@ -1,0 +1,41 @@
+{
+  "extends": ["eslint:recommended"],
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "ignorePatterns": [
+    "dist/",
+    "docs/",
+    "node_modules/",
+    "coverage/",
+    "playwright-report/",
+    "test-results/"
+  ],
+  "globals": {
+    "firebase": "readonly"
+  },
+  "overrides": [
+    {
+      "files": [
+        "*.js",
+        "*.mjs",
+        "scripts/**/*.js",
+        "scripts/**/*.mjs",
+        "tests/**/*.js",
+        "tests/**/*.mjs",
+        "vite.config.js",
+        "playwright.config.js",
+        "postcss.config.js",
+        "tailwind.config.js",
+        "workers/**/*.js"
+      ],
+      "env": {
+        "node": true
+      }
+    }
+  ]
+}

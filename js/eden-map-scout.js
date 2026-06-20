@@ -2,7 +2,7 @@
 import { initFirebase, ensureAnonymousAuth } from './firebase.js';
 import {
   doc, getDoc, setDoc, onSnapshot, serverTimestamp,
-} from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+} from 'firebase/firestore';
 
 const INTEL_PATH = ['eden_map', 'shared_intel'];
 

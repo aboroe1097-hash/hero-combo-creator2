@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { translations, translationCoverage } from '../js/translations.js';
+import { availableLanguages, loadTranslationsForLanguage, translations, translationCoverage } from '../js/translations.js';
+
+await Promise.all(availableLanguages.map(lang => loadTranslationsForLanguage(lang)));
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const htmlFiles = [

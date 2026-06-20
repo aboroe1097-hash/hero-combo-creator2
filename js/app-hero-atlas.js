@@ -209,6 +209,60 @@ let _heroesTabState = {
 };
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
+let _heroesUrlParamsApplied = false;
+
+function normalizeTroopParam(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (!v || v === 'all') return 'all';
+  if (v.startsWith('arch')) return 'Archers';
+  if (v.startsWith('foot')) return 'Footmen';
+  if (v.startsWith('cav')) return 'Cavalry';
+  return 'all';
+}
+
+function applyHeroAtlasUrlParams() {
+  if (_heroesUrlParamsApplied) return;
+  _heroesUrlParamsApplied = true;
+  const params = new URLSearchParams(window.location.search);
+  const seasonParam = params.get('season') || params.get('seasons');
+  if (seasonParam) {
+    const seasons = seasonParam.split(',').map(s => s.trim().toUpperCase()).filter(s => HERO_ATLAS_ALL_SEASONS.includes(s));
+    if (seasons.length) _heroesTabState.seasons = seasons;
+  }
+  if (params.has('troop')) _heroesTabState.troop = normalizeTroopParam(params.get('troop'));
+  if (params.has('state')) {
+    const state = params.get('state');
+    _heroesTabState.state = ['Free', 'Paid'].includes(state) ? state : 'all';
+  }
+  const search = params.get('heroSearch') || params.get('search') || '';
+  if (search) _heroesTabState.search = search;
+  const selected = params.get('hero');
+  if (selected && allHeroesData.some(h => h.name.toLowerCase() === selected.toLowerCase())) {
+    _heroesTabState.selected = allHeroesData.find(h => h.name.toLowerCase() === selected.toLowerCase()).name;
+  }
+}
+
+function updateHeroAtlasUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const normalizedSeasons = normalizeHeroAtlasSeasons(_heroesTabState.seasons);
+  if (normalizedSeasons.length === HERO_ATLAS_ALL_SEASONS.length) params.delete('season');
+  else params.set('season', normalizedSeasons.join(','));
+
+  if (_heroesTabState.troop === 'all') params.delete('troop');
+  else params.set('troop', _heroesTabState.troop.toLowerCase());
+
+  if (_heroesTabState.state === 'all') params.delete('state');
+  else params.set('state', _heroesTabState.state);
+
+  if ((_heroesTabState.search || '').trim()) params.set('search', _heroesTabState.search.trim());
+  else params.delete('search');
+
+  if (_heroesTabState.selected) params.set('hero', _heroesTabState.selected);
+  else params.delete('hero');
+
+  const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+  window.history.replaceState(null, '', next);
+}
 
 function normalizeHeroAtlasSeasons(seasons) {
   const picked = HERO_ATLAS_ALL_SEASONS.filter(s => (seasons || []).includes(s));
@@ -314,6 +368,7 @@ function syncHeroSelectionWithFilters() {
 function selectHeroInAtlas(name) {
   if (!name) return;
   _heroesTabState.selected = _heroesTabState.selected === name ? null : name;
+  updateHeroAtlasUrlParams();
   renderHeroesTab();
 }
 
@@ -326,6 +381,7 @@ function wireHeroesTabEvents(container) {
     if (seasonBtn) {
       toggleHeroAtlasSeason(seasonBtn.dataset.heroSeason);
       syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
@@ -334,6 +390,7 @@ function wireHeroesTabEvents(container) {
     if (troopBtn) {
       _heroesTabState.troop = troopBtn.dataset.heroTroop;
       syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
@@ -342,6 +399,7 @@ function wireHeroesTabEvents(container) {
     if (stateBtn) {
       _heroesTabState.state = stateBtn.dataset.heroState;
       syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
@@ -355,6 +413,7 @@ function wireHeroesTabEvents(container) {
       _heroesTabState.sort = 'rating';
       _heroesTabState.limit = 20;
       syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
@@ -376,12 +435,14 @@ function wireHeroesTabEvents(container) {
     if (pickHero) {
       e.stopPropagation();
       _heroesTabState.selected = pickHero.dataset.heroPick;
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
 
     if (e.target.closest('[data-hero-close]')) {
       _heroesTabState.selected = null;
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
       return;
     }
@@ -413,6 +474,7 @@ function wireHeroesTabEvents(container) {
     if (e.target.id !== 'heroesSortSelect') return;
     _heroesTabState.sort = e.target.value;
     _heroesTabState.limit = 20;
+    updateHeroAtlasUrlParams();
     renderHeroesTab();
   });
 
@@ -423,6 +485,7 @@ function wireHeroesTabEvents(container) {
       _heroesTabState.search = e.target.value;
       _heroesTabState.limit = 20;
       syncHeroSelectionWithFilters();
+      updateHeroAtlasUrlParams();
       renderHeroesTab();
     }, 180);
   });
@@ -431,6 +494,7 @@ function wireHeroesTabEvents(container) {
     if (e.key !== 'Escape' || !_heroesTabState.selected) return;
     if (document.getElementById('heroesSection')?.classList.contains('hidden')) return;
     _heroesTabState.selected = null;
+    updateHeroAtlasUrlParams();
     renderHeroesTab();
   });
 }
@@ -438,6 +502,7 @@ function wireHeroesTabEvents(container) {
 function renderHeroesTab() {
   const container = document.getElementById('heroesTabContent');
   if (!container) return;
+  applyHeroAtlasUrlParams();
 
   wireHeroesTabEvents(container);
 

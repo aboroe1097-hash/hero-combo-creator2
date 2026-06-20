@@ -1,6 +1,10 @@
 // js/comments.js - Threaded Comments with Name Input
-import { getDb } from './firebase.js';
 import { escapeHtml } from './utils.js';
+
+async function getFirestoreDb() {
+  const { getDb } = await import('./firebase.js');
+  return getDb();
+}
 
 let commentsListenerUnsub = null;
 
@@ -193,17 +197,17 @@ function toggleReplyForm(id) {
 async function deleteComment(docId) {
   if (!confirm('Delete this comment?')) return;
   try {
-    const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-    await deleteDoc(doc(getDb(), 'comments', docId));
+    const { deleteDoc, doc } = await import('firebase/firestore');
+    await deleteDoc(doc(await getFirestoreDb(), 'comments', docId));
   } catch (e) {
     console.error(e);
   }
 }
 
 async function addCommentToDb(text, name, email = null, parentId = null) {
-  const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
 
-  await addDoc(collection(getDb(), 'comments'), {
+  await addDoc(collection(await getFirestoreDb(), 'comments'), {
     text,
     name: name || null,
     email: email || null,
@@ -221,9 +225,9 @@ async function addCommentToDb(text, name, email = null, parentId = null) {
 
 async function startCommentsListener() {
   if (commentsListenerUnsub) commentsListenerUnsub();
-  const db = getDb();
-  const { collection, query, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
-  const { getAuth } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+  const db = await getFirestoreDb();
+  const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
+  const { getAuth } = await import('firebase/auth');
   const auth = getAuth();
 
   const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));

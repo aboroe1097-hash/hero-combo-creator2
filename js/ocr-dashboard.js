@@ -14,11 +14,11 @@ import { processFiles, normalizeStructureName, parseOcrResults, fmtDate, display
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
-import { doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import {
   STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
   ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
-  LOG_KEY, AUTH_HASH, CLEAR_HASH, DURABILITY_TABLE,
+  LOG_KEY, AUTH_HASH, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest
@@ -193,7 +193,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 // ── Banner Records ────────────────────────────────────────
 
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
-function isAuthed() { return localStorage.getItem(AUTH_KEY) === '1' || isGuest(); }
+function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
 
 function dashT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
@@ -283,6 +283,12 @@ function showLogin() {
 
 async function doLogin() {
   const p = $id('dashLoginPass').value, err = $id('dashLoginErr');
+  if (!AUTH_HASH) {
+    localStorage.removeItem(AUTH_KEY);
+    err.textContent = 'Admin auth is not configured for this deployment.';
+    err.classList.remove('hidden');
+    return;
+  }
   const h = await sha256(p);
   if (h === AUTH_HASH) { sessionStorage.removeItem('vts_guest'); localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
   else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
@@ -673,6 +679,10 @@ export async function bootOcrDashboard() {
   try { localStorage.removeItem('qwen_api_key'); } catch (e) {}
 
   $id('dashClearDataBtn').onclick = async () => {
+    if (!CLEAR_HASH) {
+      alert('Admin override is not configured for this deployment.');
+      return;
+    }
     const code = prompt('Enter admin override code:');
     if (!code) return;
     const h = await sha256(code);
@@ -691,6 +701,14 @@ export async function bootOcrDashboard() {
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
   $id('dashUploadBtn').onclick = () => { if (!canUseOcr()) return; inp.click(); };
+  const cancelBtn = $id('dashCancelOcrBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      state._ocrCancelRequested = true;
+      state._ocrAbortController?.abort?.();
+      log('Cancelling OCR scan...', 'warn');
+    };
+  }
   drop.onclick = () => { if (!canUseOcr()) return; inp.click(); };
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
   drop.ondragleave = () => drop.classList.remove('dragover');
@@ -702,7 +720,7 @@ window.deleteAttack = async function(attId) {
   const pwd = prompt('Enter Admin Overdrive Password to delete this structure data:');
   if (pwd === null) return;
   const hash = await sha256(pwd);
-  if (hash !== '857c3b259b7c496dc834575b66009ce3fedd8c1eb1503c1b927f4e415d5672a0' && hash !== '235aa062e6372588dbae00552abf36b8ff9c315e3da56cf02786980e764630e9') {
+  if (!DELETE_HASHES.size || !DELETE_HASHES.has(hash)) {
     alert('Incorrect password.');
     return;
   }
