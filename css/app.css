@@ -2697,6 +2697,82 @@ input[type=number] { -moz-appearance: textfield; }
 .detail-skill-target.enemy { color: #f87171; }
 .detail-skill-target.ally  { color: #34d399; }
 .detail-skill-desc { font-size: 0.72rem; line-height: 1.55; color: #cbd5e1; }
+.detail-skill-type-help { display: inline-flex; }
+.skill-help-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border-radius: 5px;
+  outline: none;
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.skill-help-chip--type {
+  color: #7dd3fc;
+  text-decoration-color: rgba(125,211,252,0.58);
+}
+.skill-help-chip--term {
+  color: #c084fc;
+  font-weight: 900;
+  text-decoration-color: rgba(192,132,252,0.58);
+}
+.skill-help-chip:hover,
+.skill-help-chip:focus-visible {
+  color: #f8fafc;
+  background: rgba(56,189,248,0.14);
+  box-shadow: 0 0 0 2px rgba(56,189,248,0.18);
+}
+.skill-help-chip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 80;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  width: max-content;
+  max-width: min(300px, 78vw);
+  padding: 8px 10px;
+  border: 1px solid rgba(125,211,252,0.28);
+  border-radius: 8px;
+  background: rgba(2,6,23,0.97);
+  color: #dbeafe;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.42);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.skill-help-chip::before {
+  content: "";
+  position: absolute;
+  z-index: 81;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  border: 5px solid transparent;
+  border-top-color: rgba(2,6,23,0.97);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 0.12s ease;
+}
+.skill-help-chip:hover::after,
+.skill-help-chip:hover::before,
+.skill-help-chip:focus-visible::after,
+.skill-help-chip:focus-visible::before {
+  opacity: 1;
+}
+.skill-help-chip:hover::after,
+.skill-help-chip:focus-visible::after {
+  transform: translate(-50%, 0);
+}
 
 /* ── Skins ──────────────────────────────────────────────── */
 .detail-skins { display:flex; flex-direction:column; gap:16px; }

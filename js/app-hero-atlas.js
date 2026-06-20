@@ -20,6 +20,88 @@ function getHeroFinalScore(heroName, autoRating) {
   return Math.min(100, Math.max(0, autoRating + bonus));
 }
 
+const SKILL_TYPE_TOOLTIPS = {
+  'Active Skill': 'A skill that can trigger during battle when its conditions and chance roll are met.',
+  'Additional Attack': 'Adds or modifies normal attacks, often creating extra hits or effects after attacks.',
+  'Combat Skill': 'A castable battle skill. Some have prep time, chance to trigger, range, and target rules.',
+  'Leadership Skill': 'A commander-style passive effect that usually applies as long as the hero is in the legion.',
+  'Pre-Battle Skills': 'Applies before or at battle start, often setting buffs, debuffs, opening conditions, or early-round rules.',
+  'Status Skill': 'A passive/status-driven skill that changes states, immunities, damage rules, or ongoing battle behavior.',
+};
+
+const SKILL_TERM_TOOLTIPS = {
+  'Armor break': 'Reduces defensive value, making affected squads take more damage.',
+  'Bleeding': 'A damage-over-time style status that keeps hurting the affected squad while active.',
+  'Chain': 'Damage or effects can jump from one squad to another.',
+  'Clarity': 'A cleansing or control-resistance state that helps remove or avoid negative effects.',
+  'Combat Skill Damage': 'Damage dealt specifically by combat skills, not normal attacks.',
+  'Confuse': 'Affected squad may attack or cast skills on random targets.',
+  'Confused': 'Affected squad may attack or cast skills on random targets.',
+  'Control Debuff': 'A disabling status such as Silence, Disarm, Suppress, or Confuse.',
+  'Counter-attack': 'Deals damage back after being attacked or after a matching trigger.',
+  'Counterattack': 'Deals damage back after being attacked or after a matching trigger.',
+  'Cursed': 'Punishes the affected squad when it performs certain actions, often skill casting.',
+  'Destructive Strike': 'A special damage effect that can bypass or punish defenses depending on the skill.',
+  'Disarm': 'Prevents normal attacks while active.',
+  'Disarmed': 'Prevents normal attacks while active.',
+  'Dodge': 'Avoids an incoming damage instance or attack while active.',
+  'Dodging': 'Avoids an incoming damage instance or attack while active.',
+  'Fatal Blow': 'A special strike effect with its own chance and damage rate, often scaling with buffs.',
+  'Faltering': 'A weakening status that reduces effectiveness while active.',
+  'Feverish': 'A stackable buff used by some heroes to increase follow-up effects, damage, or trigger chances.',
+  'First-Aid': 'Healing or recovery effect that restores troop power.',
+  'First to Attack': 'Acts before enemy squads, which can unlock extra skill effects for some heroes.',
+  'Flammable': 'A status that makes the target vulnerable to fire-related effects.',
+  'Healing': 'Restores troop power to one or more squads.',
+  'Interrupting': 'Stops a channeling or prep skill before it completes.',
+  'Mass Attack': 'A normal attack state that hits additional enemy squads beyond the main target.',
+  'Normal Attack': 'The basic attack a squad performs without casting a combat skill.',
+  'Physical Damage': 'Damage type usually tied to normal or physical strikes.',
+  'Poisoned': 'A damage-over-time status that keeps hurting the affected squad while active.',
+  'Prep Skills': 'Skills that need one or more rounds of preparation before firing.',
+  'Recovery': 'Restores troop power; usually shown as a recovery rate.',
+  'Revived': 'Returns or restores a defeated or heavily damaged squad effect depending on the skill.',
+  'Silence': 'Prevents combat skill casting while active.',
+  'Silenced': 'Prevents combat skill casting while active.',
+  'Skill Damage': 'Damage dealt by a skill rather than a normal attack.',
+  'Sober': 'A control-immunity or cleansing state; usually protects from disabling effects for its duration.',
+  'Splash': 'Damage spills onto nearby or additional squads.',
+  'Suppress': 'Prevents the squad from acting or casting depending on the skill wording.',
+  'Suppressed': 'Prevents the squad from acting or casting depending on the skill wording.',
+  'Taunt': 'Forces or redirects enemy attacks toward the taunting squad.',
+  'Taunting': 'Forces or redirects enemy attacks toward the taunting squad.',
+  'Troop Recovery Block': 'Prevents affected squads from recovering troop power while active.',
+  'Vulnerable': 'Affected squad takes more damage or loses protection while active.',
+};
+
+function normalizeHelpKey(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+const SKILL_TYPE_HELP_BY_KEY = Object.fromEntries(
+  Object.entries(SKILL_TYPE_TOOLTIPS).map(([term, desc]) => [normalizeHelpKey(term), { term, desc }])
+);
+
+const SKILL_TERM_HELP_BY_KEY = Object.fromEntries(
+  Object.entries(SKILL_TERM_TOOLTIPS).map(([term, desc]) => [normalizeHelpKey(term), { term, desc }])
+);
+
+function renderHelpChip(label, description, className = '') {
+  const safeLabel = escapeHtml(String(label || ''));
+  const safeDescription = escapeHtml(String(description || ''));
+  return `<span class="skill-help-chip ${className}" tabindex="0" title="${safeDescription}" aria-label="${safeLabel}: ${safeDescription}" data-tooltip="${safeDescription}">${safeLabel}</span>`;
+}
+
+function renderSkillType(type) {
+  const info = SKILL_TYPE_HELP_BY_KEY[normalizeHelpKey(type)];
+  if (!info) return `<span class="detail-skill-type">${escapeHtml(type)}</span>`;
+  return `<span class="detail-skill-type detail-skill-type-help">${renderHelpChip(type, info.desc, 'skill-help-chip--type')}</span>`;
+}
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function formatSkillText(text) {
   let counter = 0;
   const tokens = {};
@@ -31,7 +113,7 @@ function formatSkillText(text) {
     return token;
   }
 
-  let formatted = text.replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
+  let formatted = escapeHtml(String(text || '')).replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
 
   formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) => 
     tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
@@ -41,11 +123,20 @@ function formatSkillText(text) {
     tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
   );
   
-  const statuses = ['Silence', 'Silenced', 'Disarm', 'Disarmed', 'Suppress', 'Suppressed', 'Confuse', 'Confused', 'First-Aid', 'Flammable', 'Counter-attack', 'Counterattack', 'Taunting', 'Taunt', 'Dodging', 'Dodge', 'Feverish', 'Sober', 'Vulnerable', 'Armor break', 'Destructive Strike', 'Revived', 'Clarity', 'Cursed', 'Poisoned', 'Chain', 'Splash', 'Interrupting', 'Bleeding', 'bleeding', 'Faltering', 'First to Attack', 'Fatal Blow'];  
-  const statusRegex = new RegExp(`\\b(${statuses.join('|')})\\b`, 'gi');
-  formatted = formatted.replace(statusRegex, (match) => 
-    tokenize(`<span class="font-black text-purple-400 underline decoration-purple-500/50 underline-offset-2">${match}</span>`)
-  );
+  const termPattern = Object.keys(SKILL_TERM_HELP_BY_KEY)
+    .map(key => SKILL_TERM_HELP_BY_KEY[key].term)
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
+    .join('|');
+
+  if (termPattern) {
+    const termRegex = new RegExp(`(^|[^A-Za-z])(${termPattern})(?=$|[^A-Za-z])`, 'gi');
+    formatted = formatted.replace(termRegex, (match, prefix, term) => {
+      const info = SKILL_TERM_HELP_BY_KEY[normalizeHelpKey(term)];
+      if (!info) return match;
+      return `${prefix}${tokenize(renderHelpChip(term, info.desc, 'skill-help-chip--term'))}`;
+    });
+  }
 
   formatted = formatted.replace(/\b(\d+)\b/g, (match) => 
     tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
@@ -643,7 +734,7 @@ function renderHeroesTab() {
         <div class="detail-skill">
           <div class="detail-skill-header">
             <span class="detail-skill-id">SKILL ${sk.id}</span>
-            <span class="detail-skill-type">${sk.type}</span>
+            ${renderSkillType(sk.type)}
             ${sk.range && sk.range !== '-' ? `<span class="detail-skill-range">Range ${sk.range}</span>` : ''}
           </div>
           <p class="detail-skill-target ${sk.target.toLowerCase().includes('enemy') ? 'enemy' : 'ally'}">${sk.target}</p>
