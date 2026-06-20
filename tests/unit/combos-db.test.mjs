@@ -50,8 +50,14 @@ test('skin codes use 3 as must, 2 as recommended, and 1 as optional', () => {
       { code: '1', requirement: 'optional' },
     ]
   );
-  assert.equal(comboMeetsSkinRequirements(combo, hero => hero === 'A'), true);
-  assert.equal(comboMeetsSkinRequirements(combo, hero => hero === 'B'), false);
+  assert.equal(
+    comboMeetsSkinRequirements(combo, (hero) => hero === 'A'),
+    true
+  );
+  assert.equal(
+    comboMeetsSkinRequirements(combo, (hero) => hero === 'B'),
+    false
+  );
 });
 
 test('missing skin metadata and 111 behave like normal combos', () => {
