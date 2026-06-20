@@ -1,7 +1,7 @@
 import { escapeHtml } from './utils.js';
 // js/app-generator.js
 import { translations } from './translations.js';
-import { rankedCombos, filterCombosForSkinMode, getComboSkinRequirements, selectNonOverlappingCombos } from './combos-db.js';
+import { rankedCombos, filterCombosForSkinMode, selectNonOverlappingCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import { getSkinHeroByName } from './skin-heroes-data.js';
@@ -68,6 +68,19 @@ function setGeneratorSkinOwned(heroName, owned) {
 function getGeneratorResultHeroImageUrl(heroName) {
   if (!generatorSkinsOnly || !isGeneratorSkinOwned(heroName)) return getHeroImageUrl(heroName);
   return getSkinHeroByName(heroName)?.skinImageUrl || getSkinForHero(heroName)?.imageUrl || getHeroImageUrl(heroName);
+}
+
+function getStableSkinMotionStyle(heroName, offset = 0) {
+  const text = String(heroName || '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i) + offset) % 9973;
+  }
+  const delay = -((hash % 320) / 100);
+  const duration = 2.85 + ((hash % 95) / 100);
+  const shift = ((hash % 7) - 3) * 0.45;
+  const scale = 1.015 + ((hash % 5) * 0.006);
+  return `--skin-anim-delay:${delay.toFixed(2)}s;--skin-anim-duration:${duration.toFixed(2)}s;--skin-anim-shift:${shift.toFixed(2)}px;--skin-anim-scale:${scale.toFixed(3)};`;
 }
 
 function showGeneratorMessage(message) {
@@ -161,6 +174,7 @@ export function renderGeneratorHeroes(options = {}) {
       card.className = `hero-card generator-card relative season-${String(hero.season || '').toLowerCase()}${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
+      if (skinOwned) card.style.cssText += getStableSkinMotionStyle(hero.name);
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
       card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');
@@ -318,13 +332,14 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     slots.className = 'saved-combo-slots';
 
     combo.heroes.forEach(name => {
+      const isSkinResult = generatorSkinsOnly && isGeneratorSkinOwned(name) && hasSkin(name);
       const item = document.createElement('div');
-      item.className = 'saved-combo-slot-item';
+      item.className = `saved-combo-slot-item${isSkinResult ? ' saved-combo-slot-item--skin' : ''}`;
+      if (isSkinResult) item.style.cssText += getStableSkinMotionStyle(name, i + 17);
       item.style.cursor = 'pointer';
       const img = document.createElement('img');
       img.src = getGeneratorResultHeroImageUrl(name);
       img.crossOrigin = 'anonymous';
-      img.style.transition = 'transform 0.18s ease, box-shadow 0.18s ease';
       const label = document.createElement('span');
       label.className = 'text-[10px] text-sky-300 font-bold truncate px-1';
       label.textContent = name;
@@ -333,8 +348,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       
       item.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return;
-        img.style.transform = 'scale(1.12)';
-        img.style.boxShadow = '0 0 18px rgba(56,189,248,0.45)';
+        item.classList.add('saved-combo-slot-item--hover');
         __ui.showHeroTooltip(e, name);
       });
       item.addEventListener('pointermove', (e) => {
@@ -343,8 +357,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       });
       item.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch') return;
-        img.style.transform = '';
-        img.style.boxShadow = '';
+        item.classList.remove('saved-combo-slot-item--hover');
         __ui.hideHeroTooltip();
       });
       
@@ -360,17 +373,6 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       <span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>
     `;
     card.appendChild(slots);
-
-    if (combo.note) {
-      const skinNote = document.createElement('div');
-      skinNote.className = 'generated-skin-overlay-note';
-      const skinRequirements = getComboSkinRequirements(combo)
-        .filter(item => item.requirement && item.requirement !== 'none')
-        .map(item => `${item.hero}: ${item.requirement}`)
-        .join(' | ');
-      skinNote.textContent = skinRequirements ? `${combo.note} (${skinRequirements})` : combo.note;
-      card.appendChild(skinNote);
-    }
 
     const scoreBox = document.createElement('div');
     scoreBox.className = 'gen-score-panel';

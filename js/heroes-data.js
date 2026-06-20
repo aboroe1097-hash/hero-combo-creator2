@@ -67,7 +67,7 @@ export const allHeroesData = [
   { name: 'Spectral Reaper', season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
   { name: 'Valkyrie',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' },
 
-  { name: "Ragnar the Demon's Lord", season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
+  { name: 'Ragnar', season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
 
   { name: 'Bjorn',             season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/bjorn.avif?v=20260620_11' },
   { name: 'Skanda',            season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/skanda.png?v=20260620_10' },
