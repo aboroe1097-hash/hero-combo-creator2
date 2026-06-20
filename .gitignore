@@ -1,3 +1,7 @@
 /node_modules
 /dist
-/docs
+/docs/*
+!/docs/dev/
+!/docs/dev/**
+!/docs/media/
+!/docs/media/**

@@ -5,7 +5,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 
 const copyDirs = ['css', 'js', 'images', 'assets', 'tabs', 'workers'];
-const copyFiles = ['index.html', 'CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.htaccess', 'public/404.html', 'public/sw.js'];
+const copyFiles = ['index.html', 'CNAME', 'robots.txt', 'sitemap.xml', 'site.webmanifest', '.nojekyll', '.htaccess', 'public/404.html', 'public/sw.js'];
 const copyDest = { 'public/404.html': '404.html', 'public/sw.js': 'sw.js' };
 
 function copyRecursive(src, dest) {

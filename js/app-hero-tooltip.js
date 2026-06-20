@@ -5,11 +5,24 @@ import { allHeroesData } from './heroes-data.js';
 import { heroInfoEnabled, getTroopColorClass, getLocalizedTroop, getHeroImageUrl } from './state.js';
 import { formatSkillText, getSynergies } from './app-hero-atlas.js';
 
-const heroTooltip = document.getElementById('heroTooltip');
+let heroTooltip = null;
+
+function getHeroTooltip() {
+  if (heroTooltip && document.body.contains(heroTooltip)) return heroTooltip;
+  heroTooltip = document.getElementById('heroTooltip');
+  if (heroTooltip) return heroTooltip;
+
+  heroTooltip = document.createElement('div');
+  heroTooltip.id = 'heroTooltip';
+  heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  document.body.appendChild(heroTooltip);
+  return heroTooltip;
+}
 
 
 function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
+  const tooltip = getHeroTooltip();
 
   const data = heroesExtendedData[heroName];
   if (!data) return; 
@@ -62,7 +75,7 @@ function showHeroTooltip(e, heroName) {
     `;
   }
 
-  heroTooltip.innerHTML = `
+  tooltip.innerHTML = `
     <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
       <div class="flex flex-col">
         <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${escapeHtml(heroName)}</h4>
@@ -95,10 +108,10 @@ function showHeroTooltip(e, heroName) {
     </div>
   `;
 
-  heroTooltip.classList.remove('hidden');
+  tooltip.classList.remove('hidden');
   requestAnimationFrame(() => {
-    heroTooltip.classList.remove('opacity-0');
-    heroTooltip.classList.add('opacity-100');
+    tooltip.classList.remove('opacity-0');
+    tooltip.classList.add('opacity-100');
   });
   moveHeroTooltip(e);
 
@@ -117,19 +130,20 @@ function showHeroTooltip(e, heroName) {
 }
 
 function moveHeroTooltip(e) {
-  if (heroTooltip.classList.contains('hidden')) return;
-  const rect = heroTooltip.getBoundingClientRect();
+  const tooltip = getHeroTooltip();
+  if (tooltip.classList.contains('hidden')) return;
+  const rect = tooltip.getBoundingClientRect();
   
   if (window.innerWidth < 1024) {
-    heroTooltip.style.left = '50%';
-    heroTooltip.style.top = '50%';
-    heroTooltip.style.transform = 'translate(-50%, -50%)';
-    heroTooltip.style.maxHeight = '90vh'; 
+    tooltip.style.left = '50%';
+    tooltip.style.top = '50%';
+    tooltip.style.transform = 'translate(-50%, -50%)';
+    tooltip.style.maxHeight = '90vh'; 
     return;
   }
 
-  heroTooltip.style.transform = 'none';
-  heroTooltip.style.maxHeight = '85vh';
+  tooltip.style.transform = 'none';
+  tooltip.style.maxHeight = '85vh';
 
   let clientX = e.clientX !== undefined ? e.clientX : window.innerWidth / 2;
   let clientY = e.clientY !== undefined ? e.clientY : window.innerHeight / 2;
@@ -143,21 +157,23 @@ function moveHeroTooltip(e) {
   if (y < 10) y = 10;
   if (x < 10) x = 10;
 
-  heroTooltip.style.left = `${x}px`;
-  heroTooltip.style.top = `${y}px`;
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${y}px`;
 }
 
 function hideHeroTooltip() {
-  heroTooltip.classList.remove('opacity-100');
-  heroTooltip.classList.add('opacity-0');
+  const tooltip = getHeroTooltip();
+  tooltip.classList.remove('opacity-100');
+  tooltip.classList.add('opacity-0');
   setTimeout(() => {
-    if(heroTooltip.classList.contains('opacity-0')) heroTooltip.classList.add('hidden');
+    if(tooltip.classList.contains('opacity-0')) tooltip.classList.add('hidden');
   }, 200);
 }
 
 function forceHideHeroTooltip() {
-  heroTooltip.classList.add('hidden', 'opacity-0');
-  heroTooltip.classList.remove('opacity-100');
+  const tooltip = getHeroTooltip();
+  tooltip.classList.add('hidden', 'opacity-0');
+  tooltip.classList.remove('opacity-100');
 }
 
 window.showHeroTooltip = showHeroTooltip;

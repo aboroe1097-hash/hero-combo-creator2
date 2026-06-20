@@ -26,6 +26,53 @@ service cloud.firestore {
       && request.resource.data.public == true;
     }
 
+    function validUserProfile() {
+      return request.resource.data.keys().hasOnly(['playerProfile'])
+      && request.resource.data.playerProfile is map
+      && request.resource.data.playerProfile.keys().hasOnly(['roster'])
+      && request.resource.data.playerProfile.roster is list
+      && request.resource.data.playerProfile.roster.size() <= 120;
+    }
+
+    function validBestCombo() {
+      return request.resource.data.keys().hasOnly(['heroes', 'timestamp'])
+      && request.resource.data.heroes is list
+      && request.resource.data.heroes.size() == 3
+      && request.resource.data.heroes[0] is string
+      && request.resource.data.heroes[1] is string
+      && request.resource.data.heroes[2] is string
+      && request.resource.data.heroes[0].size() <= 80
+      && request.resource.data.heroes[1].size() <= 80
+      && request.resource.data.heroes[2].size() <= 80
+      && request.resource.data.timestamp is timestamp;
+    }
+
+    function validSharedIntel() {
+      return request.resource.data.keys().hasOnly(['guilds', 'status', 'updatedAt', 'updatedBy'])
+      && (!('guilds' in request.resource.data) || request.resource.data.guilds is map)
+      && (!('status' in request.resource.data) || request.resource.data.status is map)
+      && request.resource.data.updatedAt is timestamp
+      && request.resource.data.updatedBy == 'eden-map-planner';
+    }
+
+    function validDashboardData() {
+      return request.resource.data.keys().hasOnly([
+        'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs'
+      ])
+      && (!('last_updated' in request.resource.data) || request.resource.data.last_updated is string)
+      && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
+      && (!('attacks' in request.resource.data) || request.resource.data.attacks is list)
+      && (!('players_summary' in request.resource.data) || request.resource.data.players_summary is list)
+      && (!('logs' in request.resource.data) || request.resource.data.logs is list);
+    }
+
+    function validRosterData() {
+      return request.resource.data.keys().hasOnly(['snapshots', 'updated'])
+      && request.resource.data.snapshots is list
+      && request.resource.data.snapshots.size() <= 250
+      && request.resource.data.updated is string;
+    }
+
     match /comments/{commentId} {
       allow read: if true;
       allow create: if signedIn() && validComment();
@@ -34,21 +81,38 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read, create, update: if isOwner(uid);
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validUserProfile();
       allow delete: if false;
 
       match /bestCombos/{comboId} {
-        allow read, create, update, delete: if isOwner(uid);
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && validBestCombo();
+        allow update: if false;
+        allow delete: if isOwner(uid);
       }
     }
 
     match /eden_map/shared_intel {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && validSharedIntel();
+      allow delete: if false;
+    }
+
+    match /vts_admin/dashboard_data {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && validDashboardData();
+      allow delete: if false;
+    }
+
+    match /vts_admin/roster_data {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && validRosterData();
+      allow delete: if false;
     }
 
     match /vts_admin/{document=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if false;
     }
 
     match /{document=**} {

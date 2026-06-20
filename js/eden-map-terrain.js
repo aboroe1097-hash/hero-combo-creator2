@@ -398,7 +398,23 @@ export function drawStrategyFloorLayer(ctx, worldToIso, opacity = EDEN_STRATEGY_
   const p3 = worldToIso(b.minX, b.maxY);
   ctx.save();
   ctx.globalAlpha = opacity;
-  drawTexturedQuad(ctx, img, p0, p1, p2, p3);
+  if (EDEN_STRATEGY_FLOOR.layout === 'screen') {
+    const xs = [p0.x, p1.x, p2.x, p3.x];
+    const ys = [p0.y, p1.y, p2.y, p3.y];
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const targetW = maxX - minX;
+    const imgAspect = (img.naturalWidth || img.width || 1) / (img.naturalHeight || img.height || 1);
+    const aspect = EDEN_STRATEGY_FLOOR.screenAspect || imgAspect || 1.6;
+    const targetH = targetW / aspect;
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    ctx.drawImage(img, cx - targetW / 2, cy - targetH / 2, targetW, targetH);
+  } else {
+    drawTexturedQuad(ctx, img, p0, p1, p2, p3);
+  }
   ctx.restore();
   return true;
 }

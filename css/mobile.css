@@ -1348,21 +1348,24 @@ button:not([disabled]):active,
 }
 
 .door-wing {
-  top: 72px !important;
-  width: 222px !important;
-  height: 144px !important;
-  opacity: 0.84 !important;
+  top: 46px !important;
+  width: 330px !important;
+  height: 292px !important;
+  opacity: 0.94 !important;
   filter:
     drop-shadow(0 0 13px color-mix(in srgb, var(--wing-secondary) 66%, transparent))
     drop-shadow(0 0 26px color-mix(in srgb, var(--wing-hot) 28%, transparent)) !important;
 }
 
 .door-wing-left {
-  right: -28px !important;
+  right: -86px !important;
 }
 
 .door-wing-right {
-  left: -28px !important;
+  top: 24px !important;
+  left: -92px !important;
+  width: 310px !important;
+  height: 326px !important;
 }
 
 .door-wing span {

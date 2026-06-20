@@ -92,8 +92,8 @@
       <div id="doorLeft" class="door door-left">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-left" aria-hidden="true">
-          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--aura" width="720" height="430" />
-          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--front" width="720" height="430" />
+          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--aura" width="783" height="814" />
+          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--front" width="783" height="814" />
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem ice-emblem" aria-hidden="true">
@@ -109,8 +109,8 @@
       <div id="doorRight" class="door door-right">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-right" aria-hidden="true">
-          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--aura" width="720" height="430" />
-          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--front" width="720" height="430" />
+          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--aura" width="675" height="951" />
+          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--front" width="675" height="951" />
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem fire-emblem" aria-hidden="true">
@@ -135,7 +135,7 @@
       <div class="boot-kicker">V10 AURORA GATE</div>
       <h1 id="loadingTitle" class="loading-title">HERO COMBO CREATOR</h1>
       <p class="boot-sub">VTS 1097 • RISE OF CASTLES</p>
-      <p class="boot-status-text">Loading toolkit…</p>
+      <p class="boot-status-text">Opening Aurora Gate…</p>
       <div class="boot-progress" aria-hidden="true"><span class="boot-progress-fill"></span></div>
     </div>
   </div>
@@ -606,7 +606,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.5.2</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.5.3</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
@@ -654,22 +654,6 @@
     }, duration);
   };
 
-  function applyHeroSearch(inputId, gridId) {
-    const input = document.getElementById(inputId);
-    const grid  = document.getElementById(gridId);
-    if (!input || !grid) return;
-    input.addEventListener('input', () => {
-      const q = input.value.trim().toLowerCase();
-      grid.querySelectorAll('.hero-card, .generator-card').forEach(card => {
-        const name = (card.dataset.heroName || card.querySelector('span')?.textContent || '').toLowerCase();
-        card.style.display = (!q || name.includes(q)) ? '' : 'none';
-      });
-    });
-  }
-  setTimeout(() => {
-    applyHeroSearch('manualHeroSearch', 'availableHeroes');
-    applyHeroSearch('generatorHeroSearch', 'generatorHeroes');
-  }, 800);
   </script>
   <script type="module" src="js/app.js"></script>
 

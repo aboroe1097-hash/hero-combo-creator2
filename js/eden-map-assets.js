@@ -47,9 +47,11 @@ export const EDEN_STRATEGY_FLOOR = {
   url: `${ASSET_ROOT}base-floor-v1.webp`,
   metaUrl: `${ASSET_ROOT}base-floor-v1.json`,
   label: 'Strategy Floor V1',
+  layout: 'screen',
+  screenAspect: 1.6,
   opacity: 0.92,
   bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
-  focusSectors: ['WC', 'EC'],
+  focusSectors: [],
 };
 
 let _refImage = null;

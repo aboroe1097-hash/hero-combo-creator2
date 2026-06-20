@@ -17,3 +17,11 @@ export function appT(key, vars = {}) {
   Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, String(v)); });
   return s;
 }
+
+export function debounce(fn, wait = 180) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
+}
