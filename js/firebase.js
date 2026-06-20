@@ -13,17 +13,23 @@ let auth = null;
 let analytics = null;
 
 export const firebaseConfig = {
-  apiKey: "__REDACTED_FIREBASE_API_KEY__",
-  authDomain: "abocombo.firebaseapp.com",
-  projectId: "abocombo",
-  storageBucket: "abocombo.firebasestorage.app",
-  messagingSenderId: "103195597389",
-  appId: "1:103195597389:web:97788d99356b4e59839a04",
-  measurementId: "G-ZV9X180WLS"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 export function initFirebase() {
   if (app) return { app, db, auth, analytics };
+  if (!firebaseConfig.apiKey) {
+    throw new Error(
+      'Firebase API key is missing. ' +
+      'Create a .env file from .env.example and set VITE_FIREBASE_API_KEY.'
+    );
+  }
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
