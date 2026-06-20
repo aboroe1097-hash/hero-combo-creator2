@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_121725';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_174345';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -719,6 +719,36 @@ tabs.forEach(tab => {
     }
   }
 
+  function isDynamicImportLoadFailure(err) {
+    const message = String(err?.message || err || '');
+    return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message);
+  }
+
+  async function recoverFromStaleAssetGraph(reason) {
+    const storageKey = 'vts_stale_asset_recovery_v1';
+    try {
+      if (sessionStorage.getItem(storageKey) === '1') return false;
+      sessionStorage.setItem(storageKey, '1');
+    } catch {}
+
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.update()));
+      }
+    } catch (err) {
+      console.warn('[assets] stale asset recovery cleanup failed:', err);
+    }
+
+    console.warn('[assets] refreshing after stale asset graph:', reason);
+    window.location.reload();
+    return true;
+  }
+
   function onTabActivated(tabName) {
     if (tabName === 'edenMap' && !_edenMapReady && !_edenMapBooting) {
       _edenMapBooting = true;
@@ -731,6 +761,10 @@ tabs.forEach(tab => {
           .catch((err) => {
             console.error('Eden map failed to load', err);
             _edenMapBooting = false;
+            if (isDynamicImportLoadFailure(err)) {
+              recoverFromStaleAssetGraph(err);
+              return;
+            }
             if (typeof window.showToast === 'function') {
               const t = translations[currentLanguage] || translations.en;
               window.showToast(t.edenMapLoadFailed || 'Eden map failed to load. Refresh and try again.', 'error', 4000);
