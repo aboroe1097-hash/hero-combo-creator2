@@ -279,6 +279,30 @@ function showLogin() {
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
   $id('dashApp')?.classList.add('hidden');
+  const loginBtn = $id('dashLoginBtn');
+  const guestBtn = $id('dashGuestBtn');
+  const passInput = $id('dashLoginPass');
+  const err = $id('dashLoginErr');
+  if (!AUTH_HASH) {
+    if (loginBtn) loginBtn.disabled = true;
+    if (passInput) {
+      passInput.disabled = true;
+      passInput.placeholder = 'Admin password not configured';
+    }
+    if (guestBtn) guestBtn.classList.add('dash-btn-primary');
+    if (err) {
+      err.textContent = 'Admin auth is not configured. Enter as Guest for read-only local testing.';
+      err.classList.remove('hidden');
+    }
+  } else {
+    if (loginBtn) loginBtn.disabled = false;
+    if (passInput) {
+      passInput.disabled = false;
+      passInput.placeholder = dashT('adminLoginPass');
+    }
+    if (guestBtn) guestBtn.classList.remove('dash-btn-primary');
+    if (err) err.classList.add('hidden');
+  }
 }
 
 async function doLogin() {

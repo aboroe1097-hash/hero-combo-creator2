@@ -8,20 +8,6 @@ function getLanguage() {
   }
 }
 
-function applyMaintenanceCopy() {
-  const config = window.VTS_MAINTENANCE_CONFIG || {};
-  const pairs = [
-    ['[data-maintenance-kicker]', config.kicker],
-    ['[data-maintenance-title]', config.title],
-    ['[data-maintenance-message]', config.message],
-    ['[data-maintenance-status]', config.status],
-  ];
-  for (const [selector, text] of pairs) {
-    const el = document.querySelector(selector);
-    if (el && text) el.textContent = text;
-  }
-}
-
 function updateTextContent(lang) {
   const t = translations[lang] || translations.en;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -60,7 +46,6 @@ async function loadAdminTemplate() {
 }
 
 async function bootAdminPage() {
-  applyMaintenanceCopy();
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
   await loadAdminTemplate();

@@ -12,6 +12,7 @@ let app = null;
 let db = null;
 let auth = null;
 let analytics = null;
+let missingConfigLogged = false;
 
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
@@ -28,13 +29,20 @@ export const firebaseConfig = {
   measurementId: envValue('VITE_FIREBASE_MEASUREMENT_ID')
 };
 
+export function isFirebaseConfigured() {
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+}
+
 export function initFirebase() {
   if (app) return { app, db, auth, analytics };
-  if (!firebaseConfig.apiKey) {
-    throw new Error(
-      'Firebase API key is missing. ' +
-      'Create a .env file from .env.example and set VITE_FIREBASE_API_KEY.'
-    );
+  if (!isFirebaseConfigured()) {
+    if (!missingConfigLogged) {
+      missingConfigLogged = true;
+      console.info(
+        '[firebase] Cloud sync disabled: create a .env file from .env.example and set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID to enable Firebase.'
+      );
+    }
+    return { app, db, auth, analytics, configured: false };
   }
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
@@ -61,7 +69,7 @@ export function initFirebase() {
     console.warn("Analytics blocked or failed to initialize", e);
   }
 
-  return { app, db, auth, analytics };
+  return { app, db, auth, analytics, configured: true };
 }
 
 let authInFlight = null;

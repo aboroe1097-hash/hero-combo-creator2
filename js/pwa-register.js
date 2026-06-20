@@ -3,10 +3,16 @@ const SW_PATH = '/sw.js';
 
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+  if (import.meta.env?.DEV) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.getRegistration('/').then((reg) => reg?.unregister()).catch(() => {});
+    });
+    return;
+  }
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/', updateViaCache: 'none' });
-      reg.update();
+      await reg.update();
       console.log('SW registered:', reg.scope);
     } catch (err) {
       console.warn('SW registration failed:', err);

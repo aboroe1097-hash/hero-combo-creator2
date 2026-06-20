@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 async function openApp(page) {
-  await page.route('**/js/maintenance-config.js*', route => route.fulfill({
-    contentType: 'application/javascript',
-    body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
-  }));
   await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_intro_v1_seen', '1');
@@ -26,10 +22,6 @@ async function expectTab(page, buttonId, sectionId, marker) {
 }
 
 async function openAdmin(page) {
-  await page.route('**/js/maintenance-config.js*', route => route.fulfill({
-    contentType: 'application/javascript',
-    body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
-  }));
   await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.goto('/admin.html');
   await expect(page.locator('#dashLogin')).toBeVisible({ timeout: 20000 });
@@ -106,6 +98,12 @@ test.describe('app smoke tabs', () => {
 
   test('generator filters default to S0/S1 and update visible heroes', async ({ page }) => {
     await openApp(page);
+    await page.locator('#heroInfoToggleLabel').click();
+    await expect(page.locator('body')).toHaveClass(/hide-hero-info/);
+    await expect(page.locator('#generatorHeroes .generator-card .info-btn').first()).toBeHidden();
+    await page.locator('#heroInfoToggleLabel').click();
+    await expect(page.locator('body')).not.toHaveClass(/hide-hero-info/);
+
     const cards = page.locator('#generatorHeroes .generator-card');
     await expect(cards.first()).toBeVisible();
     await cards.first().click();
@@ -146,7 +144,7 @@ test.describe('app smoke tabs', () => {
       [...new Set(nodes.map(node => node.textContent.trim()))].sort()
     );
     expect(seasonsWithX8).toContain('X8');
-    await expect(page.locator('#generatorHeroes .generator-card').filter({ hasText: 'Rainforest Ranger' }).first()).toBeVisible();
+    await expect(page.locator('#generatorHeroes .generator-card').filter({ hasText: 'Eidolon' }).first()).toBeVisible();
   });
 
   test('Arabic locale enables RTL without overflowing generator controls', async ({ page }) => {
@@ -193,13 +191,23 @@ test.describe('app smoke tabs', () => {
     await expect(firstGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(firstGeneratorCard).toHaveClass(/skin-animated-portrait/);
     await expect(firstGeneratorCard.locator('.generator-skin-badge--priority')).toBeVisible();
-    await expect(page.locator('#generatorHeroes .generator-card.skin-priority-muted').first()).toBeVisible();
-    await expect(page.locator('#generatorHeroes .generator-card.skin-no-skin').first()).toBeVisible();
+    await expect(page.locator('#generatorHeroes .generator-card.skin-priority-muted')).toHaveCount(0);
+    await expect(page.locator('#generatorHeroes .generator-card.skin-no-skin')).toHaveCount(0);
 
     const arthurGeneratorCard = page.locator('#generatorHeroes .generator-card').filter({ hasText: 'King Arthur' }).first();
     await expect(arthurGeneratorCard).toBeVisible();
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toHaveText('E');
+    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveText('Skin');
+    await arthurGeneratorCard.locator('.generator-skin-toggle').click();
+    await expect(arthurGeneratorCard).not.toHaveClass(/skin-priority-card/);
+    await expect(arthurGeneratorCard).not.toHaveClass(/skin-animated-portrait/);
+    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveText('Base');
+    await arthurGeneratorCard.click();
+    await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
+    await arthurGeneratorCard.locator('.generator-skin-toggle').click();
+    await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
+    await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
     await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
     await page.locator('#heroesTabSearch').fill('King Arthur');

@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 async function openApp(page) {
-  await page.route('**/js/maintenance-config.js*', route => route.fulfill({
-    contentType: 'application/javascript',
-    body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
-  }));
   await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_intro_v1_seen', '1');

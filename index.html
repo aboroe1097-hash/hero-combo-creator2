@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests" />
   <meta name="description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder &amp; generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters." />
   <meta name="author" content="VTS State 1097" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -62,26 +62,12 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <script src="js/maintenance-config.js?v=20260620_085916"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260620_085916" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260620_085916" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260620_085916" media="(max-width: 768px)" />
-  <script src="js/admin-auth-config.js?v=20260620_085916"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260620_111952" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260620_111952" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260620_111952" media="(max-width: 768px)" />
+  <script src="js/admin-auth-config.js?v=20260620_111952"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
-  <div id="maintenanceSplash" class="maintenance-preload" role="status" aria-live="polite" aria-label="Site maintenance">
-    <section class="maintenance-card">
-      <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
-      <div class="maintenance-kicker" data-maintenance-kicker>VTS 1097 TOOLKIT</div>
-      <h1 class="maintenance-title" data-maintenance-title>Down for Update</h1>
-      <p class="maintenance-message" data-maintenance-message>Hero Combo Creator is being upgraded. We are tuning the layout, skins, datasets, and performance.</p>
-      <div class="maintenance-status">
-        <span class="maintenance-status-dot" aria-hidden="true"></span>
-        <span data-maintenance-status>Maintenance in progress</span>
-      </div>
-    </section>
-  </div>
-
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
     <div class="boot-atmosphere" aria-hidden="true"></div>
     <div class="boot-scanlines" aria-hidden="true"></div>
@@ -101,11 +87,6 @@
           </picture>
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="door-emblem ice-emblem" aria-hidden="true">
-          <span class="door-emblem-mark">ICE</span>
-          <span class="door-emblem-ring"></span>
-        </div>
-        <div class="door-faction">DREAMY WINGS</div>
         <div class="door-rivet top-left"></div>
         <div class="door-rivet bottom-left"></div>
       </div>
@@ -124,11 +105,6 @@
           </picture>
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="door-emblem fire-emblem" aria-hidden="true">
-          <span class="door-emblem-mark">FIRE</span>
-          <span class="door-emblem-ring"></span>
-        </div>
-        <div class="door-faction">BLAZING SOUL</div>
         <div class="door-rivet top-right"></div>
         <div class="door-rivet bottom-right"></div>
       </div>
@@ -265,7 +241,7 @@
     </nav>
 
     <div id="globalToggleRow" class="flex justify-center mb-6 transition-all duration-300">
-      <label class="flex items-center cursor-pointer gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-slate-700 shadow-sm hover:border-slate-500 transition-colors">
+      <label id="heroInfoToggleLabel" class="flex items-center cursor-pointer gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-slate-700 shadow-sm hover:border-slate-500 transition-colors" role="switch" aria-checked="true" tabindex="0">
         <span class="text-[10px] sm:text-xs text-slate-300 font-bold uppercase tracking-widest" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
         <div class="relative inline-flex items-center">
           <input type="checkbox" id="heroInfoToggle" class="sr-only peer" checked>
@@ -279,11 +255,11 @@
       <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
         <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
         <div id="seasonFilters" class="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm" style="-webkit-overflow-scrolling:touch; mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); padding-right: 20px;">
-            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
-            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">Season 1</span></label>
-            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
-            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
-            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
+            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
+            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
+            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
+            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
             <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
             <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
             <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
@@ -346,11 +322,11 @@
       <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
           <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
           <div id="generatorSeasonFilters" class="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm" style="-webkit-overflow-scrolling:touch; mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); padding-right: 20px;">
-              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">Season 0</span></label>
-              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">Season 1</span></label>
-              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">Season 2</span></label>
-              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">Season 3</span></label>
-              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">Season 4</span></label>
+              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
+              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
+              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
+              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
+              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
               <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
               <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
               <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
@@ -613,7 +589,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v10.5.3</p>
+        <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v11.0.0</p>
       </div>
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>

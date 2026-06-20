@@ -4,7 +4,13 @@
 export const SKIN_TYPES = {
   Mythic: { label: 'Mythic', color: '#f59e0b', icon: 'M' },
   Legendary: { label: 'Legendary', color: '#a855f7', icon: 'L' },
-  Everlasting: { label: 'Everlasting', color: '#ef4444', icon: 'E' }
+  Everlasting: { label: 'Everlasting', color: '#ef4444', icon: 'E' },
+  SP: { label: 'SP', color: '#fbbf24', icon: 'SP' },
+  S: { label: 'S', color: '#f59e0b', icon: 'S' },
+  S1: { label: 'S1', color: '#fbbf24', icon: 'S1' },
+  S4: { label: 'S4', color: '#22d3ee', icon: 'S4' },
+  S3: { label: 'S3', color: '#c084fc', icon: 'S3' },
+  S2: { label: 'S2', color: '#60a5fa', icon: 'S2' }
 };
 
 export const SKIN_STAR_STAGES = {
@@ -47,7 +53,119 @@ export const heroHiddenPowers = {
   }
 };
 
+const pendingBioAttributes = {
+  might: 0,
+  resistance: 0,
+  tacticalMight: 0,
+  tacticalResistance: 0,
+  hp: 0,
+  damage: 0
+};
+
+const pendingStarStages = [
+  {
+    star: 1,
+    title: 'Biography',
+    detail: 'Skin ownership grants biography attributes once details are captured.'
+  },
+  {
+    star: 2,
+    title: 'Inheriting',
+    detail: 'Inheriting skill details pending.'
+  },
+  {
+    star: 3,
+    title: 'Preserving',
+    detail: 'Preserving skill and dynamic icon details pending.'
+  }
+];
+
+function createPendingSkin(heroName, {
+  id,
+  name = `${heroName} Biography Skin`,
+  title = 'Biography skin details pending',
+  type = 'Mythic',
+  rank = null,
+  imageUrl
+}) {
+  return {
+    id,
+    name,
+    title,
+    fullName: name,
+    type,
+    rank,
+    rarity: rank || type,
+    detailsStatus: 'pending',
+    imageUrl,
+    maxStars: 3,
+    defaultUnlockedStar: 1,
+    starStages: pendingStarStages,
+    iconBehavior: {
+      star2: 'Unique skin icon available when the inheriting skill is unlocked.',
+      star3: 'Dynamic icon behavior pending capture.'
+    },
+    bioAttributes: { ...pendingBioAttributes },
+    maxBioAttributes: { ...pendingBioAttributes },
+    biographyAttributes: {
+      unlockStar: 1,
+      effectiveOn: "The Hero's squad",
+      attributes: [
+        { label: 'Biography attributes', value: 'Details pending' }
+      ],
+      status: 'Details pending'
+    },
+    inheritingSkill: {
+      unlockStar: 2,
+      replacesSlot: null,
+      fromSkill: 'Details pending',
+      name: 'Details pending',
+      maxLevel: null,
+      type: 'Details pending',
+      effectiveRange: 'TBD',
+      target: 'Details pending',
+      description: 'Inheriting skill details will be added after capture.',
+      status: 'Details pending',
+      levels: []
+    },
+    preservingSkill: {
+      unlockStar: 3,
+      name: 'Details pending',
+      type: 'Details pending',
+      effectiveRange: 'TBD',
+      target: 'Details pending',
+      description: 'Preserving skill details will be added after capture.',
+      dynamicIcon: true,
+      dynamicIconNote: 'Dynamic icon capture pending.'
+    }
+  };
+}
+
 export const heroSkins = {
+  "Jeanne d'Arc": [
+    createPendingSkin("Jeanne d'Arc", {
+      id: 'jeanne-darc-idling',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/jeanne-darc-idling-icon.webp'
+    })
+  ],
+  'Alfred': [
+    createPendingSkin('Alfred', {
+      id: 'alfred-idling',
+      type: 'S1',
+      rank: 'S1',
+      imageUrl: 'assets/skins/alfred-idling-icon.webp'
+    })
+  ],
+  'Mary Tudor': [
+    createPendingSkin('Mary Tudor', {
+      id: 'mary-tudor-skin',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/mary-tudor-skin-icon.webp'
+    })
+  ],
   'King Arthur': [
     {
       id: 'king-arthur-arthur-pendragon',
@@ -146,6 +264,158 @@ export const heroSkins = {
         dynamicIconNote: 'Star 3 uses the same unique icon with a small in-place movement.'
       }
     }
+  ],
+  'Cleopatra VII': [
+    createPendingSkin('Cleopatra VII', {
+      id: 'cleopatra-vii-legion-i',
+      type: 'S3',
+      rank: 'S3',
+      imageUrl: 'assets/skins/cleopatra-vii-legion-i-icon.webp'
+    })
+  ],
+  'Theodora': [
+    createPendingSkin('Theodora', {
+      id: 'theodora-royal',
+      type: 'S4',
+      rank: 'S4',
+      imageUrl: 'assets/skins/theodora-royal-icon.webp'
+    })
+  ],
+  'Octavius': [
+    createPendingSkin('Octavius', {
+      id: 'octavius-legion-ii',
+      type: 'S2',
+      rank: 'S2',
+      imageUrl: 'assets/skins/octavius-legion-ii-icon.webp'
+    })
+  ],
+  'Black Prince': [
+    createPendingSkin('Black Prince', {
+      id: 'black-prince-skin',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/black-prince-skin-icon.webp'
+    })
+  ],
+  'Lionheart': [
+    createPendingSkin('Lionheart', {
+      id: 'lionheart-skin',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/lionheart-skin-icon.webp'
+    })
+  ],
+  'Edward the Confessor': [
+    createPendingSkin('Edward the Confessor', {
+      id: 'edward-the-confessor-skin',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/edward-the-confessor-skin-icon.webp'
+    })
+  ],
+  'BeastQueen': [
+    createPendingSkin('BeastQueen', {
+      id: 'beastqueen-skin',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/beastqueen-skin-icon.webp'
+    })
+  ],
+  'Jade': [
+    createPendingSkin('Jade', {
+      id: 'jade-rakshasa',
+      type: 'S2',
+      rank: 'S2',
+      imageUrl: 'assets/skins/jade-rakshasa-skin-icon.webp'
+    })
+  ],
+  'Immortal': [
+    createPendingSkin('Immortal', {
+      id: 'immortal-skin',
+      type: 'S2',
+      rank: 'S2',
+      imageUrl: 'assets/skins/immortal-skin-icon.webp'
+    })
+  ],
+  'Sky Breaker': [
+    createPendingSkin('Sky Breaker', {
+      id: 'sky-breaker-skin',
+      type: 'S3',
+      rank: 'S3',
+      imageUrl: 'assets/skins/sky-breaker-skin-icon.webp'
+    })
+  ],
+  'Rozen Blade': [
+    createPendingSkin('Rozen Blade', {
+      id: 'rozen-blade-legion-ii',
+      type: 'S3',
+      rank: 'S3',
+      imageUrl: 'assets/skins/rozen-blade-legion-ii-icon.webp'
+    })
+  ],
+  'Caesar': [
+    createPendingSkin('Caesar', {
+      id: 'caesar-legion-iii',
+      type: 'SP',
+      rank: 'SP',
+      imageUrl: 'assets/skins/caesar-legion-iii-icon.webp'
+    })
+  ],
+  'Bleeding Steed': [
+    createPendingSkin('Bleeding Steed', {
+      id: 'bleeding-steed-legion-iii',
+      type: 'S2',
+      rank: 'S2',
+      imageUrl: 'assets/skins/bleeding-steed-legion-iii-icon.webp'
+    })
+  ],
+  'Jade Eagle': [
+    createPendingSkin('Jade Eagle', {
+      id: 'jade-eagle-legion-iii',
+      type: 'S4',
+      rank: 'S4',
+      imageUrl: 'assets/skins/jade-eagle-dragon-icon.webp'
+    })
+  ],
+  'Charles the Great': [
+    createPendingSkin('Charles the Great', {
+      id: 'charles-the-great-reflection',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/charles-the-great-skin-icon.webp'
+    })
+  ],
+  'Al Fatih': [
+    createPendingSkin('Al Fatih', {
+      id: 'al-fatih-reflection',
+      type: 'S',
+      rank: 'S',
+      imageUrl: 'assets/skins/al-fatih-skin-icon.webp'
+    })
+  ],
+  'Immortal Guardian': [
+    createPendingSkin('Immortal Guardian', {
+      id: 'immortal-guardian-tass-legion',
+      type: 'S4',
+      rank: 'S4',
+      imageUrl: 'assets/skins/immortal-guardian-tass-legion-icon.webp'
+    })
+  ],
+  'Ramses II': [
+    createPendingSkin('Ramses II', {
+      id: 'ramses-ii-tass-legion',
+      type: 'SP',
+      rank: 'SP',
+      imageUrl: 'assets/skins/ramses-ii-tass-legion-icon.webp'
+    })
+  ],
+  'Beowulf': [
+    createPendingSkin('Beowulf', {
+      id: 'beowulf-tass-legion',
+      type: 'SP',
+      rank: 'SP',
+      imageUrl: 'assets/skins/beowulf-tass-legion-icon.webp'
+    })
   ]
 };
 

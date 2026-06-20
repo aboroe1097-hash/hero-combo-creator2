@@ -34,6 +34,36 @@ const SKIN_TYPE_PRIORITY = {
   Mythic: 2
 };
 
+const GENERATOR_SKIN_OWNERSHIP_KEY = 'vts_generator_owned_skins_v1';
+let generatorSkinOwnership = null;
+
+function getStoredSkinOwnership() {
+  if (generatorSkinOwnership) return generatorSkinOwnership;
+  try {
+    const raw = localStorage.getItem(GENERATOR_SKIN_OWNERSHIP_KEY);
+    generatorSkinOwnership = raw ? JSON.parse(raw) : {};
+  } catch {
+    generatorSkinOwnership = {};
+  }
+  return generatorSkinOwnership;
+}
+
+function isGeneratorSkinOwned(heroName) {
+  const ownership = getStoredSkinOwnership();
+  if (Object.prototype.hasOwnProperty.call(ownership, heroName)) return ownership[heroName] !== false;
+  return hasSkin(heroName);
+}
+
+function setGeneratorSkinOwned(heroName, owned) {
+  const ownership = getStoredSkinOwnership();
+  ownership[heroName] = Boolean(owned);
+  try {
+    localStorage.setItem(GENERATOR_SKIN_OWNERSHIP_KEY, JSON.stringify(ownership));
+  } catch {
+    // Ignore storage failures; the current render still reflects the click.
+  }
+}
+
 function showGeneratorMessage(message) {
   if (typeof __ui.showAboModal === 'function') {
     __ui.showAboModal(message);
@@ -92,20 +122,21 @@ export function renderGeneratorHeroes(options = {}) {
   }
 
   filtered.forEach(hero => {
-      const hasSkinFlag = activeSkinsOnly ? Boolean(hero.hasSkin) : hasSkin(hero.name);
+      const hasSkinFlag = activeSkinsOnly ? Boolean(hero.hasSkin || hasSkin(hero.name)) : hasSkin(hero.name);
+      const skinOwned = activeSkinsOnly && hasSkinFlag && isGeneratorSkinOwned(hero.name);
       const heroSkinsList = getHeroSkins(hero.name);
-      const primarySkin = activeSkinsOnly && hero.hasSkin
+      const primarySkin = activeSkinsOnly && hasSkinFlag
         ? {
-          name: hero.skinName,
-          type: hero.skinType
+          name: hero.skinName || getSkinForHero(hero.name)?.name,
+          type: hero.skinType || getSkinForHero(hero.name)?.type
         }
         : getSkinForHero(hero.name);
       const skinCount = getSkinCount(hero.name);
-      const skinTypeInfo = activeSkinsOnly && hero.hasSkin
+      const skinTypeInfo = activeSkinsOnly && hasSkinFlag
         ? {
-          label: hero.skinType,
-          color: hero.skinTypeColor,
-          icon: hero.skinTypeIcon
+          label: hero.skinType || primarySkin?.type,
+          color: hero.skinTypeColor || (primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic).color : null),
+          icon: hero.skinTypeIcon || (primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic).icon : null)
         }
         : (primarySkin ? (SKIN_TYPES[primarySkin.type] || SKIN_TYPES.Mythic) : null);
       const skinColors = heroSkinsList.length
@@ -114,14 +145,14 @@ export function renderGeneratorHeroes(options = {}) {
       const normalSkinBadgeColors = skinCount > 1
         ? skinColors.slice(0, skinCount).join(',')
         : `${skinColors[0] || '#f59e0b'},#fbbf24`;
-      const portraitUrl = activeSkinsOnly && hero.hasSkin
+      const portraitUrl = skinOwned
         ? (hero.skinImageUrl || hero.imageUrl)
         : hero.imageUrl;
       const skinPriorityClass = activeSkinsOnly
-        ? (hasSkinFlag ? ' skin-priority-card skin-animated-portrait has-skin' : ' skin-priority-muted skin-no-skin')
+        ? (skinOwned ? ' skin-priority-card skin-animated-portrait has-skin skin-owned' : ' skin-mode-card')
         : '';
       const card = document.createElement('button');
-      card.className = `hero-card generator-card relative${skinPriorityClass} ${
+      card.className = `hero-card generator-card relative season-${String(hero.season || '').toLowerCase()}${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');
@@ -131,7 +162,10 @@ export function renderGeneratorHeroes(options = {}) {
         : '';
 
       const skinBadge = hasSkinFlag
-        ? `<span class="generator-skin-badge${activeSkinsOnly ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo.label || primarySkin.type})` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${activeSkinsOnly && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${normalSkinBadgeColors})`}">${escapeHtml(activeSkinsOnly && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+        ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${escapeHtml(primarySkin ? `${primarySkin.name} (${skinTypeInfo?.label || primarySkin.type})${skinOwned ? '' : ' available'}` : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`)}" style="${skinOwned && skinTypeInfo ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);` : `background:linear-gradient(135deg,${normalSkinBadgeColors})`}">${escapeHtml(skinOwned && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`)}</span>`
+        : '';
+      const skinToggle = activeSkinsOnly && hasSkinFlag
+        ? `<span class="generator-skin-toggle${skinOwned ? ' is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}">${skinOwned ? 'Skin' : 'Base'}</span>`
         : '';
 
       card.innerHTML = `
@@ -139,6 +173,7 @@ export function renderGeneratorHeroes(options = {}) {
         ${originTag}
         ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         ${skinBadge}
+        ${skinToggle}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -146,7 +181,9 @@ export function renderGeneratorHeroes(options = {}) {
             </svg>
         </div>
 
-        <img src="${escapeHtml(portraitUrl)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
+        <span class="hero-portrait-frame">
+          <img src="${escapeHtml(portraitUrl)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
+        </span>
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
@@ -199,6 +236,26 @@ export function renderGeneratorHeroes(options = {}) {
         infoBtn.addEventListener('touchstart', (e) => {
           e.stopPropagation(); 
         }, { passive: false });
+      }
+
+      const skinToggleEl = card.querySelector('.generator-skin-toggle');
+      if (skinToggleEl) {
+        const toggleSkin = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const nextOwned = skinToggleEl.dataset.skinOwned !== 'true';
+          setGeneratorSkinOwned(hero.name, nextOwned);
+          renderGeneratorHeroes({
+            seasons: activeSeasons,
+            states: activeStates,
+            types: activeTypes,
+            skinsOnly: activeSkinsOnly
+          });
+        };
+        skinToggleEl.addEventListener('click', toggleSkin);
+        skinToggleEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') toggleSkin(e);
+        });
       }
 
       generatorHeroesEl.appendChild(card);

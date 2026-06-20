@@ -78,6 +78,7 @@ async function showHeroTooltip(e, heroName) {
   const tooltip = getHeroTooltip();
 
   const heroesExtendedData = await loadHeroInfoData();
+  if (!heroInfoEnabled) return;
   const data = heroesExtendedData[heroName];
   if (!data) return; 
 

@@ -152,7 +152,7 @@ export function renderAvailableHeroes() {
     .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
     .forEach(hero => {
       const card = document.createElement('div');
-      card.className = 'hero-card relative';
+      card.className = `hero-card relative season-${String(hero.season || '').toLowerCase()}`;
       card.draggable = true;
       card.dataset.heroName = hero.name;
       card.tabIndex = 0;
@@ -174,7 +174,9 @@ export function renderAvailableHeroes() {
             </svg>
         </div>
 
-        <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
+        <span class="hero-portrait-frame">
+          <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
+        </span>
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
             <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>

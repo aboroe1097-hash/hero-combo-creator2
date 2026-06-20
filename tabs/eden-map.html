@@ -47,7 +47,53 @@
               <div class="eden-deck-cluster eden-deck-cluster-end">
                 <button type="button" id="edenResetView" class="eden-tool-btn" data-i18n="edenResetView" data-i18n-title="edenResetViewTitle">⟳ Reset</button>
                 <button type="button" id="edenFitView" class="eden-tool-btn" data-i18n="edenFitView" data-i18n-title="edenFitViewTitle">⊡ Fit</button>
+                <button type="button" id="edenFullscreen" class="eden-tool-btn" title="Fullscreen map" aria-pressed="false">Fullscreen</button>
                 <button type="button" id="edenOpenGuide" class="eden-tool-btn eden-tool-accent" data-i18n="edenGuideBtn" data-i18n-title="edenGuideBtnTitle">📖 Guide</button>
+              </div>
+            </div>
+
+            <div class="eden-mission-panel" aria-label="Mission controls">
+              <div class="eden-mission-head">
+                <span class="eden-mission-title">Mission</span>
+                <span id="edenMissionPreview" class="eden-mission-preview">VTS</span>
+              </div>
+              <div class="eden-mission-grid">
+                <label class="eden-mission-field eden-mission-field--alliance">
+                  <span>Alliance</span>
+                  <select id="edenMissionAlliance" class="eden-mission-select" title="Alliance color for targets, paths, and drawing">
+                    <option value="vts" data-color="#22d3ee" data-side="ours">VTS</option>
+                    <option value="ally-north" data-color="#38bdf8" data-side="ours">Our ally N</option>
+                    <option value="ally-south" data-color="#22c55e" data-side="ours">Our ally S</option>
+                    <option value="enemy-red" data-color="#ef4444" data-side="enemy">Enemy red</option>
+                    <option value="enemy-purple" data-color="#a855f7" data-side="enemy">Enemy purple</option>
+                    <option value="enemy-gold" data-color="#f59e0b" data-side="enemy">Enemy gold</option>
+                    <option value="neutral" data-color="#94a3b8" data-side="neutral">Neutral</option>
+                  </select>
+                </label>
+                <label class="eden-mission-field">
+                  <span>Label</span>
+                  <input id="edenMissionLabel" class="eden-mission-input" type="text" placeholder="Gate / Rally" maxlength="24" />
+                </label>
+                <label class="eden-mission-field eden-mission-field--time">
+                  <span>Time</span>
+                  <input id="edenMissionTime" class="eden-mission-input" type="text" inputmode="numeric" placeholder="07:30" maxlength="5" />
+                </label>
+                <div class="eden-mission-field eden-mission-teams" role="group" aria-label="VTS teams">
+                  <span>VTS team</span>
+                  <div class="eden-mission-team-row">
+                    <button type="button" class="eden-mission-team-btn active" data-eden-mission-team="all">VTS</button>
+                    <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t1">1</button>
+                    <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t2">2</button>
+                    <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t3">3</button>
+                    <button type="button" class="eden-mission-team-btn" data-eden-mission-team="t4">4</button>
+                  </div>
+                </div>
+                <div class="eden-mission-actions">
+                  <button type="button" id="edenMissionUseTarget" class="eden-tool-btn eden-tool-accent">Place target</button>
+                  <button type="button" id="edenMissionUsePath" class="eden-tool-btn">Path</button>
+                  <button type="button" id="edenMissionUseDraw" class="eden-tool-btn">Draw</button>
+                  <button type="button" id="edenDeleteLastTarget" class="eden-tool-btn eden-tool-danger">Undo target</button>
+                </div>
               </div>
             </div>
 

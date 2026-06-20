@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_085916';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_111952';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -126,57 +126,15 @@ import {
   registerUiFunctions,
 } from './state.js';
 
-const MAINTENANCE_PREVIEW_PARAM = 'maintenancePreview';
-const MAINTENANCE_DEFAULT_CONFIG = {
-  kicker: 'VTS 1097 TOOLKIT',
-  title: 'Down for Update',
-  message: 'Hero Combo Creator is being upgraded. We are tuning the layout, skins, datasets, and performance.',
-  status: 'Maintenance in progress',
-};
-const MAINTENANCE_CONFIG = {
-  ...MAINTENANCE_DEFAULT_CONFIG,
-  ...(window.VTS_MAINTENANCE_CONFIG || {}),
-};
-const MAINTENANCE_MODE = window.VTS_MAINTENANCE_MODE === true;
 const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), 160);
 const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), 160);
+const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 
 function resolveDroppedHeroName(dataTransfer) {
   const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
   const heroName = rawName.trim();
   return allHeroesData.some(hero => hero.name === heroName) ? heroName : '';
-}
-
-function shouldShowMaintenanceMode() {
-  try {
-    return MAINTENANCE_MODE || new URLSearchParams(window.location.search).has(MAINTENANCE_PREVIEW_PARAM);
-  } catch {
-    return MAINTENANCE_MODE;
-  }
-}
-
-function setMaintenanceText(selector, value) {
-  const el = document.querySelector(selector);
-  if (el) el.textContent = value;
-}
-
-function renderMaintenanceMode() {
-  document.title = `${MAINTENANCE_CONFIG.title} | Hero Combo Creator`;
-  document.documentElement.classList.add('maintenance-mode');
-  document.body.classList.add('maintenance-active');
-  document.body.classList.remove('app-booting');
-
-  const bootSplash = document.getElementById('appBootSplash');
-  if (bootSplash) {
-    bootSplash.classList.add('hidden');
-    bootSplash.setAttribute('aria-hidden', 'true');
-  }
-
-  setMaintenanceText('[data-maintenance-kicker]', MAINTENANCE_CONFIG.kicker);
-  setMaintenanceText('[data-maintenance-title]', MAINTENANCE_CONFIG.title);
-  setMaintenanceText('[data-maintenance-message]', MAINTENANCE_CONFIG.message);
-  setMaintenanceText('[data-maintenance-status]', MAINTENANCE_CONFIG.status);
 }
 
 /* ===== THEME (Dark default + Light) ===== */
@@ -496,6 +454,17 @@ function wireHeroSearchInputs() {
   }
 }
 
+function applyHeroInfoPanelState(enabled) {
+  setHeroInfoEnabled(enabled);
+  localStorage.setItem(HERO_INFO_ENABLED_KEY, enabled ? '1' : '0');
+  const toggle = document.getElementById('heroInfoToggle');
+  const label = document.getElementById('heroInfoToggleLabel');
+  if (toggle) toggle.checked = enabled;
+  if (label) label.setAttribute('aria-checked', enabled ? 'true' : 'false');
+  document.body.classList.toggle('hide-hero-info', !enabled);
+  if (!enabled) forceHideHeroTooltip();
+}
+
 function syncGeneratorControlState(changedTroopInput = null) {
   const seasonContainer = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
   const stateContainer = document.getElementById('generatorStateFilters') || genStateFiltersEl;
@@ -542,6 +511,18 @@ function wireGlobalControlDelegates() {
   let suppressClick = false;
 
   document.addEventListener('pointerdown', (event) => {
+    const heroInfoLabel = event.target.closest?.('#heroInfoToggleLabel');
+    if (heroInfoLabel) {
+      const toggle = document.getElementById('heroInfoToggle');
+      if (!toggle || toggle.disabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = true;
+      window.setTimeout(() => { suppressClick = false; }, 350);
+      applyHeroInfoPanelState(!toggle.checked);
+      return;
+    }
+
     const skinLabel = event.target.closest?.('#genSkinToggleLabel');
     if (skinLabel) {
       const toggle = document.getElementById('genSkinToggle');
@@ -569,6 +550,15 @@ function wireGlobalControlDelegates() {
   }, true);
 
   document.addEventListener('click', (event) => {
+    const heroInfoLabel = event.target.closest?.('#heroInfoToggleLabel');
+    if (heroInfoLabel) {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
+
     const skinLabel = event.target.closest?.('#genSkinToggleLabel');
     if (skinLabel) {
       const toggle = document.getElementById('genSkinToggle');
@@ -670,11 +660,20 @@ tabs.forEach(tab => {
   }
 
   const heroInfoToggle = document.getElementById('heroInfoToggle');
-  if (heroInfoToggle) {
+  const heroInfoToggleLabel = document.getElementById('heroInfoToggleLabel');
+  if (heroInfoToggle && heroInfoToggle.dataset.heroInfoWired !== '1') {
+    heroInfoToggle.dataset.heroInfoWired = '1';
+    const storedHeroInfo = localStorage.getItem(HERO_INFO_ENABLED_KEY);
+    applyHeroInfoPanelState(storedHeroInfo === null ? heroInfoToggle.checked : storedHeroInfo !== '0');
+
     heroInfoToggle.addEventListener('change', (e) => {
-      setHeroInfoEnabled(e.target.checked);
-      forceHideHeroTooltip();
-      document.body.classList.toggle('hide-hero-info', !heroInfoEnabled);
+      applyHeroInfoPanelState(e.target.checked);
+    });
+
+    heroInfoToggleLabel?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      applyHeroInfoPanelState(!heroInfoToggle.checked);
     });
   }
 
@@ -1048,10 +1047,14 @@ function initQuickTour() {
   } catch {}
 
   const steps = [
-    { selector: '#tabManual', title: 'Build', body: 'Pick three heroes and check their ranked score, counters, and save options.' },
-    { selector: '#tabGenerator', title: 'Generate', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
-    { selector: '#tabHeroes', title: 'Atlas', body: 'Browse hero ratings, skills, skins, counters, and export filtered hero data.' },
-    { selector: '#tabEdenMap', title: 'Plan', body: 'Open Eden tools for map routes, structures, loyalty, and season planning.' }
+    { selector: '#tabManual', title: 'Manual Builder', body: 'Pick three heroes and check their ranked score, counters, and save options.' },
+    { selector: '#tabGenerator', title: 'Combo Generator', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
+    { selector: '#tabHeroes', title: 'Hero Atlas', body: 'Browse hero ratings, skills, skins, counters, and top ranked pairings.' },
+    { selector: '#tabResearch', title: 'Research', body: 'Plan tech upgrades, compare costs, and keep your research path organized.' },
+    { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
+    { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
+    { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' },
+    { selector: '#tabOcrDashboard', title: 'VTS Admin', body: 'Open roster, attack analytics, banner records, and admin review tools.' }
   ].filter(step => document.querySelector(step.selector));
   if (!steps.length) return;
 
@@ -1067,7 +1070,7 @@ function initQuickTour() {
       <p class="quick-tour-body"></p>
       <div class="quick-tour-dots"></div>
       <div class="quick-tour-actions">
-        <button type="button" class="quick-tour-skip">Skip</button>
+        <button type="button" class="quick-tour-skip">Skip tour</button>
         <button type="button" class="quick-tour-next">Next</button>
       </div>
     </section>`;
@@ -1080,6 +1083,54 @@ function initQuickTour() {
   const kicker = overlay.querySelector('.quick-tour-kicker');
   const dots = overlay.querySelector('.quick-tour-dots');
   const nextBtn = overlay.querySelector('.quick-tour-next');
+
+  function clamp(n, min, max) {
+    return Math.min(Math.max(n, min), max);
+  }
+
+  function placeTourCard(target) {
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    const gap = 14;
+    const margin = 16;
+    const cardWidth = Math.min(390, window.innerWidth - margin * 2);
+
+    spotlight.style.left = `${clamp(rect.left - pad, margin, window.innerWidth - margin)}px`;
+    spotlight.style.top = `${clamp(rect.top - pad, margin, window.innerHeight - margin)}px`;
+    spotlight.style.width = `${Math.max(42, Math.min(rect.width + pad * 2, window.innerWidth - margin * 2))}px`;
+    spotlight.style.height = `${Math.max(34, Math.min(rect.height + pad * 2, window.innerHeight - margin * 2))}px`;
+    spotlight.style.borderRadius = `${Math.min(18, Math.max(12, rect.height / 2))}px`;
+
+    card.style.width = `${cardWidth}px`;
+    card.style.left = '0px';
+    card.style.top = '0px';
+
+    const cardHeight = Math.min(card.offsetHeight || 190, window.innerHeight - margin * 2);
+    const canPlaceBelow = rect.bottom + gap + cardHeight <= window.innerHeight - margin;
+    const canPlaceAbove = rect.top - gap - cardHeight >= margin;
+    const canPlaceRight = rect.right + gap + cardWidth <= window.innerWidth - margin;
+    const canPlaceLeft = rect.left - gap - cardWidth >= margin;
+
+    let left = rect.left + rect.width / 2 - cardWidth / 2;
+    let top = rect.bottom + gap;
+
+    if (canPlaceBelow) {
+      top = rect.bottom + gap;
+    } else if (canPlaceAbove) {
+      top = rect.top - gap - cardHeight;
+    } else if (canPlaceRight) {
+      left = rect.right + gap;
+      top = rect.top + rect.height / 2 - cardHeight / 2;
+    } else if (canPlaceLeft) {
+      left = rect.left - gap - cardWidth;
+      top = rect.top + rect.height / 2 - cardHeight / 2;
+    } else {
+      top = window.innerHeight - cardHeight - margin;
+    }
+
+    card.style.left = `${clamp(left, margin, window.innerWidth - cardWidth - margin)}px`;
+    card.style.top = `${clamp(top, margin, window.innerHeight - cardHeight - margin)}px`;
+  }
 
   function finishTour() {
     overlay.classList.add('hidden');
@@ -1096,27 +1147,14 @@ function initQuickTour() {
     }
     document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
     target.classList.add('quick-tour-target');
-    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    const rect = target.getBoundingClientRect();
-    const pad = 8;
-    spotlight.style.left = `${rect.left - pad}px`;
-    spotlight.style.top = `${rect.top - pad}px`;
-    spotlight.style.width = `${rect.width + pad * 2}px`;
-    spotlight.style.height = `${rect.height + pad * 2}px`;
-    spotlight.style.borderRadius = `${Math.min(18, Math.max(12, rect.height / 2))}px`;
     title.textContent = step.title;
     body.textContent = step.body;
     kicker.textContent = `Step ${index + 1} of ${steps.length}`;
     dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
     nextBtn.textContent = index === steps.length - 1 ? 'Done' : 'Next';
-
-    const cardWidth = Math.min(360, window.innerWidth - 32);
-    const preferredTop = rect.bottom + 16;
-    const cardTop = preferredTop + 190 < window.innerHeight ? preferredTop : Math.max(16, rect.top - 210);
-    const cardLeft = Math.min(Math.max(16, rect.left + rect.width / 2 - cardWidth / 2), window.innerWidth - cardWidth - 16);
-    card.style.width = `${cardWidth}px`;
-    card.style.left = `${cardLeft}px`;
-    card.style.top = `${cardTop}px`;
+    target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
+    requestAnimationFrame(() => placeTourCard(target));
+    window.setTimeout(() => placeTourCard(target), 80);
   }
 
   overlay.querySelector('.quick-tour-skip')?.addEventListener('click', finishTour);
@@ -1127,6 +1165,9 @@ function initQuickTour() {
       index++;
       renderStep();
     }
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !overlay.classList.contains('hidden')) finishTour();
   });
   window.addEventListener('resize', () => {
     if (!overlay.classList.contains('hidden')) renderStep();
@@ -1166,7 +1207,8 @@ async function startApp() {
 
     await safeInit('firebase', async () => {
         const { initFirebase, ensureAnonymousAuth } = await import('./firebase.js');
-        await initFirebase();
+        const firebase = await initFirebase();
+        if (!firebase.configured) return;
         const user = await ensureAnonymousAuth();
         if (user && user.uid) {
             setUserId(user.uid);
@@ -1212,11 +1254,6 @@ function safeInit(name, fn) {
   }
 }
 
-async function startMaintenanceMode() {
-  renderMaintenanceMode();
-  safeInit('registerServiceWorker', () => registerServiceWorker());
-}
-
 // Fire it up!
 window.addEventListener('error', (e) => {
   console.error('[global] Uncaught error:', e.error || e.message);
@@ -1224,9 +1261,7 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[global] Unhandled promise rejection:', e.reason);
 });
-if (shouldShowMaintenanceMode()) {
-  startMaintenanceMode().catch(err => console.error('[global] maintenance mode failed:', err));
-} else if (typeof startApp === 'function') {
+if (typeof startApp === 'function') {
   initAppLoading();
   setupInstallPrompt();
 

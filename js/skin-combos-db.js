@@ -8,20 +8,55 @@ export const SKIN_STATUS = {
   NEXT_SEASON: 'next-season',
 };
 
+export const HERO_VARIANT = {
+  BASE: 'base',
+  SKIN: 'skin',
+};
+
 export const SKIN_STATUS_LABEL_KEYS = {
   [SKIN_STATUS.MAXED]: 'skinStatusMaxed',
   [SKIN_STATUS.BASE]: 'skinStatusBase',
   [SKIN_STATUS.NEXT_SEASON]: 'skinStatusNextSeason',
 };
 
+export function baseHero(name, position, options = {}) {
+  return {
+    name,
+    position,
+    variant: HERO_VARIANT.BASE,
+    skinStatus: SKIN_STATUS.BASE,
+    ...options,
+  };
+}
+
+export function skinHero(name, position, options = {}) {
+  return {
+    name,
+    position,
+    variant: HERO_VARIANT.SKIN,
+    skinStatus: SKIN_STATUS.MAXED,
+    skinId: options.skinId || null,
+    skinStars: options.skinStars ?? 3,
+    ...options,
+  };
+}
+
+export function getSkinComboHeroKey(hero) {
+  if (!hero || !hero.name) return '';
+  if (hero.variant === HERO_VARIANT.SKIN) {
+    return `${hero.name}::skin:${hero.skinId || 'default'}:${hero.skinStars || 'any'}`;
+  }
+  return `${hero.name}::base`;
+}
+
 export const skinMetaCombos = [
   {
     rank: 1,
     seasonRange: 'S1-X1',
     heroes: [
-      { name: 'King Arthur', position: 'Front', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Cleopatra VII', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Theodora', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
+      skinHero('King Arthur', 'Front', { skinId: 'king-arthur-arthur-pendragon' }),
+      skinHero('Cleopatra VII', 'Middle', { skinId: 'cleopatra-vii-legion-i' }),
+      skinHero('Theodora', 'Back', { skinId: 'theodora-royal' }),
     ],
     noteKey: 'skinMetaCombo1Note',
   },
@@ -29,14 +64,9 @@ export const skinMetaCombos = [
     rank: 2,
     seasonRange: 'S1-X1',
     heroes: [
-      { name: 'Immortal Guardian', position: 'Front', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Ramses II', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
-      {
-        name: 'Beowulf',
-        position: 'Back',
-        skinStatus: SKIN_STATUS.NEXT_SEASON,
-        noteKey: 'skinMetaBeowulfTimingNote',
-      },
+      skinHero('Immortal Guardian', 'Front', { skinId: 'immortal-guardian-tass-legion' }),
+      skinHero('Ramses II', 'Middle', { skinId: 'ramses-ii-tass-legion' }),
+      skinHero('Beowulf', 'Back', { skinId: 'beowulf-tass-legion' }),
     ],
     noteKey: 'skinMetaCombo2Note',
   },
@@ -44,9 +74,9 @@ export const skinMetaCombos = [
     rank: 3,
     seasonRange: 'S1-X1',
     heroes: [
-      { name: 'Octavius', position: 'Front', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Rozen Blade', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Caesar', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
+      skinHero('Octavius', 'Front', { skinId: 'octavius-legion-ii' }),
+      skinHero('Rozen Blade', 'Middle', { skinId: 'rozen-blade-legion-ii' }),
+      skinHero('Caesar', 'Back', { skinId: 'caesar-legion-iii' }),
     ],
     noteKey: 'skinMetaCombo3Note',
   },
@@ -54,9 +84,9 @@ export const skinMetaCombos = [
     rank: 4,
     seasonRange: 'S1-X1',
     heroes: [
-      { name: 'Bleeding Steed', position: 'Front', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Boudica', position: 'Middle', skinStatus: SKIN_STATUS.BASE },
-      { name: 'Jade Eagle', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
+      skinHero('Bleeding Steed', 'Front', { skinId: 'bleeding-steed-legion-iii' }),
+      baseHero('Boudica', 'Middle'),
+      skinHero('Jade Eagle', 'Back', { skinId: 'jade-eagle-legion-iii' }),
     ],
     noteKey: 'skinMetaCombo4Note',
   },
@@ -64,9 +94,9 @@ export const skinMetaCombos = [
     rank: 5,
     seasonRange: 'S1-X1',
     heroes: [
-      { name: 'BeastQueen', position: 'Front', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'The Brave', position: 'Middle', skinStatus: SKIN_STATUS.MAXED },
-      { name: 'Immortal', position: 'Back', skinStatus: SKIN_STATUS.MAXED },
+      skinHero('BeastQueen', 'Front'),
+      skinHero('The Brave', 'Middle'),
+      skinHero('Immortal', 'Back'),
     ],
     noteKey: 'skinMetaCombo5Note',
   },

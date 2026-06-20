@@ -52,6 +52,13 @@ const ZOOM_DETAIL_MIN = 0.82;
 const ZOOM_PRESETS = [0.25, 0.42, 0.54, 0.75, 0.82, 1.0, 1.5, 2.0, MAX_SCALE];
 const STATUS_COLORS = { owned: '#22c55e', contested: '#f59e0b', enemy: '#ef4444', neutral: '#94a3b8' };
 const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capital: 'eden-row-capital', stronghold: 'eden-row-capital', temple: 'eden-row-temple' };
+const MISSION_FALLBACK = { id: 'vts', name: 'VTS', color: '#22d3ee', side: 'ours', teams: ['all'], time: '', label: '' };
+const CANVAS_RENDER_SCALE_MIN = 2;
+const CANVAS_RENDER_SCALE_MAX = 2.5;
+function getCanvasRenderScale() {
+  const dpr = Number(window.devicePixelRatio) || 1;
+  return Math.min(CANVAS_RENDER_SCALE_MAX, Math.max(CANVAS_RENDER_SCALE_MIN, dpr));
+}
 function normalizePlan(raw) {
   const plan = { ...createEmptyPlan(), ...raw };
   normalizeTeamPlanSettings(plan);
@@ -341,9 +348,71 @@ export function initEdenMapPlanner() {
   }
 
   function getDrawColor() {
-    return document.getElementById('edenDrawColor')?.value
+    return getMissionConfig().color
+      || document.getElementById('edenDrawColor')?.value
       || document.getElementById('edenPathColor')?.value
       || '#f97316';
+  }
+
+  function getMissionConfig() {
+    const allianceSelect = document.getElementById('edenMissionAlliance');
+    const option = allianceSelect?.selectedOptions?.[0];
+    const selectedTeams = [...document.querySelectorAll('[data-eden-mission-team].active')]
+      .map((btn) => btn.dataset.edenMissionTeam)
+      .filter(Boolean);
+    const teams = selectedTeams.includes('all') || !selectedTeams.length
+      ? ['all']
+      : selectedTeams.filter((team) => EDEN_TEAM_IDS.includes(team));
+    return {
+      ...MISSION_FALLBACK,
+      id: allianceSelect?.value || MISSION_FALLBACK.id,
+      name: option?.textContent?.trim() || MISSION_FALLBACK.name,
+      color: option?.dataset?.color || MISSION_FALLBACK.color,
+      side: option?.dataset?.side || MISSION_FALLBACK.side,
+      teams,
+      time: document.getElementById('edenMissionTime')?.value?.trim() || '',
+      label: document.getElementById('edenMissionLabel')?.value?.trim() || '',
+    };
+  }
+
+  function syncMissionControls() {
+    const mission = getMissionConfig();
+    const pathColor = document.getElementById('edenPathColor');
+    const drawColor = document.getElementById('edenDrawColor');
+    const preview = document.getElementById('edenMissionPreview');
+    if (pathColor?.querySelector(`option[value="${mission.color}"]`)) pathColor.value = mission.color;
+    if (drawColor?.querySelector(`option[value="${mission.color}"]`)) drawColor.value = mission.color;
+    if (preview) {
+      const teams = mission.teams.includes('all')
+        ? 'VTS'
+        : mission.teams.map((team) => team.replace('t', '')).join('+');
+      preview.textContent = mission.id === 'vts' ? teams : mission.name;
+      preview.style.setProperty('--mission-color', mission.color);
+    }
+    root?.style.setProperty('--eden-mission-color', mission.color);
+    draw();
+  }
+
+  function createMissionPayload(fallbackLabel = '') {
+    const mission = getMissionConfig();
+    return {
+      alliance: mission.id,
+      allianceName: mission.name,
+      side: mission.side,
+      color: mission.color,
+      teams: [...mission.teams],
+      time: mission.time,
+      label: mission.label || fallbackLabel,
+    };
+  }
+
+  function formatTargetTeamLabel(target) {
+    if (!target?.teams?.length || target.teams.includes('all')) return target?.alliance === 'vts' ? 'VTS' : '';
+    return target.teams.map((team) => team.replace('t', '')).join('+');
+  }
+
+  function targetDisplayLabel(target, fallback = '') {
+    return target?.label || target?.allianceName || fallback;
   }
 
   function finishDrawStroke() {
@@ -427,8 +496,9 @@ export function initEdenMapPlanner() {
 
   /** Keep world point under (mx, my) fixed while changing scale — fixes zoom drift. */
   function zoomAtSheet(mx, my, newScale) {
-    const w = canvas.width / devicePixelRatio;
-    const h = canvas.height / devicePixelRatio;
+    const dpr = getCanvasRenderScale();
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
     const img = getSectorTileImage(sectorKey);
     if (!isSectorTileReady(img)) {
       scale = clampScale(newScale);
@@ -680,13 +750,51 @@ export function initEdenMapPlanner() {
 
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = Math.floor(rect.width * devicePixelRatio);
-    canvas.height = Math.floor(rect.height * devicePixelRatio);
+    const dpr = getCanvasRenderScale();
+    const cssWidth = Math.max(1, Math.floor(rect.width));
+    const cssHeight = Math.max(1, Math.floor(rect.height));
+    canvas.width = Math.floor(cssWidth * dpr);
+    canvas.height = Math.floor(cssHeight * dpr);
     canvas.style.width = rect.width + 'px';
-    canvas.style.height = Math.max(480, rect.height) + 'px';
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    canvas.style.height = cssHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     if (!offsetX && !offsetY) fitView();
     draw();
+  }
+
+  function syncFullscreenState() {
+    const active = document.fullscreenElement === root || root.classList.contains('eden-map-fullscreen-fallback');
+    root.classList.toggle('eden-map-fullscreen', active);
+    const btn = document.getElementById('edenFullscreen');
+    if (btn) {
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.textContent = active ? 'Exit Fullscreen' : 'Fullscreen';
+      btn.title = active ? 'Exit fullscreen map' : 'Fullscreen map';
+    }
+    window.setTimeout(() => {
+      resize();
+      scheduleDraw({ sidebar: true });
+    }, 80);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === root) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (root.requestFullscreen) {
+        await root.requestFullscreen();
+        return;
+      }
+    } catch {
+      // Fall through to the CSS fallback below.
+    }
+    root.classList.toggle('eden-map-fullscreen-fallback');
+    syncFullscreenState();
   }
 
   function drawSectorLabel() {
@@ -1033,13 +1141,13 @@ export function initEdenMapPlanner() {
 
     if (pathDraft.length >= 2) {
       const preview = routeThroughWaypoints(pathDraft);
-      const draftColor = document.getElementById('edenPathColor')?.value || '#f97316';
+      const draftColor = getMissionConfig().color || document.getElementById('edenPathColor')?.value || '#f97316';
       drawRoutedPath(preview.path, draftColor, 'Draft', preview.distance, { dashed: true, arrows: true });
     } else if (pathDraft.length === 1) {
       const p = iso(pathDraft[0].x, pathDraft[0].y);
       ctx.beginPath();
       ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = '#f97316';
+      ctx.fillStyle = getMissionConfig().color || '#f97316';
       ctx.fill();
     }
 
@@ -1139,15 +1247,45 @@ export function initEdenMapPlanner() {
     if (!layers.targets) return;
     (plan.customTargets || []).filter((t) => pointInCurrentSector(t.x, t.y)).forEach(t => {
       const p = iso(t.x, t.y);
+      const color = t.color || '#ef4444';
+      const teamLabel = formatTargetTeamLabel(t);
+      const title = targetDisplayLabel(t);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(239,68,68,0.35)';
+      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = `${color}55`;
       ctx.fill();
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
       ctx.stroke();
-      if (layers.labels && t.label) {
-        ctx.fillStyle = '#fecaca';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      if (t.time || teamLabel || title) {
+        const top = p.y - 20;
+        if (t.time) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 10px Inter';
+          ctx.textAlign = 'center';
+          ctx.strokeStyle = 'rgba(2,6,23,0.86)';
+          ctx.lineWidth = 3;
+          ctx.strokeText(t.time, p.x, top);
+          ctx.fillText(t.time, p.x, top);
+        }
+        if (layers.labels || scale > 0.34) {
+          const meta = [teamLabel, title].filter(Boolean).join(' · ');
+          if (meta) {
+            ctx.fillStyle = color;
+            ctx.font = 'bold 8px Inter';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'rgba(2,6,23,0.88)';
+            ctx.lineWidth = 3;
+            ctx.strokeText(meta, p.x, top + 12);
+            ctx.fillText(meta, p.x, top + 12);
+          }
+        }
+      } else if (layers.labels && t.label) {
+        ctx.fillStyle = color;
         ctx.font = 'bold 8px Inter';
         ctx.textAlign = 'center';
         ctx.fillText(t.label, p.x, p.y - 14);
@@ -1191,11 +1329,12 @@ export function initEdenMapPlanner() {
   }
 
   function getViewBounds() {
+    const dpr = getCanvasRenderScale();
     const corners = [
       screenToWorld(0, 0),
-      screenToWorld(canvas.width / devicePixelRatio, 0),
-      screenToWorld(0, canvas.height / devicePixelRatio),
-      screenToWorld(canvas.width / devicePixelRatio, canvas.height / devicePixelRatio),
+      screenToWorld(canvas.width / dpr, 0),
+      screenToWorld(0, canvas.height / dpr),
+      screenToWorld(canvas.width / dpr, canvas.height / dpr),
     ];
     return {
       minX: Math.min(...corners.map(c => c.x)),
@@ -1206,10 +1345,13 @@ export function initEdenMapPlanner() {
   }
 
   function drawCanvas() {
-    const w = canvas.width / devicePixelRatio;
-    const h = canvas.height / devicePixelRatio;
+    const dpr = getCanvasRenderScale();
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
     const isolated = isSectorIsolated();
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = (isSectorSheetView() || isolated) ? '#0c0a08' : '#1a140c';
     ctx.fillRect(0, 0, w, h);
@@ -1369,7 +1511,8 @@ export function initEdenMapPlanner() {
     }
     routeEnd = { x: pt.x, y: pt.y };
     const routed = routeThroughWaypoints([routeStart, routeEnd]);
-    const color = document.getElementById('edenPathColor')?.value || '#3b82f6';
+    const mission = createMissionPayload(`Route ${(plan.paths?.length || 0) + 1}`);
+    const color = mission.color || document.getElementById('edenPathColor')?.value || '#3b82f6';
     plan.paths = plan.paths || [];
     plan.paths.push({
       label: document.getElementById('edenPathLabel')?.value?.trim() || `Route ${plan.paths.length + 1}`,
@@ -1378,6 +1521,11 @@ export function initEdenMapPlanner() {
       distance: routed.distance,
       travelMinutes: estimateTravelMinutes(routed.distance, plan.speed || 1),
       color,
+      alliance: mission.alliance,
+      allianceName: mission.allianceName,
+      side: mission.side,
+      teams: mission.teams,
+      time: mission.time,
     });
     routeStart = routeEnd = null;
     savePlan();
@@ -1774,6 +1922,36 @@ export function initEdenMapPlanner() {
       btn.addEventListener('click', () => setTool(btn.dataset.edenTool));
     });
 
+    document.getElementById('edenMissionAlliance')?.addEventListener('change', syncMissionControls);
+    document.getElementById('edenMissionLabel')?.addEventListener('input', syncMissionControls);
+    document.getElementById('edenMissionTime')?.addEventListener('input', syncMissionControls);
+    document.querySelectorAll('[data-eden-mission-team]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const team = btn.dataset.edenMissionTeam;
+        const allBtn = document.querySelector('[data-eden-mission-team="all"]');
+        if (team === 'all') {
+          document.querySelectorAll('[data-eden-mission-team]').forEach((b) => b.classList.toggle('active', b === btn));
+        } else {
+          allBtn?.classList.remove('active');
+          btn.classList.toggle('active');
+          const anyTeam = [...document.querySelectorAll('[data-eden-mission-team]:not([data-eden-mission-team="all"])')]
+            .some((b) => b.classList.contains('active'));
+          if (!anyTeam) allBtn?.classList.add('active');
+        }
+        syncMissionControls();
+      });
+    });
+    document.getElementById('edenMissionUseTarget')?.addEventListener('click', () => setTool('target'));
+    document.getElementById('edenMissionUsePath')?.addEventListener('click', () => setTool('path'));
+    document.getElementById('edenMissionUseDraw')?.addEventListener('click', () => setTool('draw'));
+    document.getElementById('edenDeleteLastTarget')?.addEventListener('click', () => {
+      if (!plan.customTargets?.length) return;
+      plan.customTargets.pop();
+      savePlan();
+      draw();
+    });
+    syncMissionControls();
+
     document.getElementById('edenFitView')?.addEventListener('click', () => { fitView(); draw(); });
 
     document.querySelectorAll('[data-eden-layer]').forEach(btn => {
@@ -1817,6 +1995,7 @@ export function initEdenMapPlanner() {
     document.getElementById('edenZoomIn')?.addEventListener('click', () => zoomStep(1));
     document.getElementById('edenZoomOut')?.addEventListener('click', () => zoomStep(-1));
     document.getElementById('edenResetView')?.addEventListener('click', () => { fitView(); draw(); });
+    document.getElementById('edenFullscreen')?.addEventListener('click', toggleFullscreen);
 
     document.getElementById('edenUndoPath')?.addEventListener('click', () => {
       pathDraft.pop();
@@ -1826,17 +2005,23 @@ export function initEdenMapPlanner() {
     document.getElementById('edenFinishPath')?.addEventListener('click', () => {
       if (pathDraft.length < 2) return;
       const routed = routeThroughWaypoints(pathDraft);
-      const color = document.getElementById('edenPathColor')?.value || '#ef4444';
+      const mission = createMissionPayload(`Route ${(plan.paths?.length || 0) + 1}`);
+      const color = mission.color || document.getElementById('edenPathColor')?.value || '#ef4444';
       const customLabel = document.getElementById('edenPathLabel')?.value?.trim();
       const travelMins = estimateTravelMinutes(routed.distance, plan.speed || 1);
       plan.paths = plan.paths || [];
       plan.paths.push({
-        label: customLabel || `Route ${plan.paths.length + 1}`,
+        label: customLabel || mission.label || `Route ${plan.paths.length + 1}`,
         points: [...pathDraft],
         routedPath: routed.path,
         distance: routed.distance,
         travelMinutes: travelMins,
         color,
+        alliance: mission.alliance,
+        allianceName: mission.allianceName,
+        side: mission.side,
+        teams: mission.teams,
+        time: mission.time,
       });
       pathDraft = [];
       savePlan();
@@ -2236,7 +2421,7 @@ export function initEdenMapPlanner() {
       return;
     }
 
-    if (isSectorSheetView()) {
+    if (isSectorSheetView() && !['target', 'path', 'measure', 'draw'].includes(tool) && viewMode !== 'route') {
       panning = true;
       markInteracting();
       canvas.style.cursor = 'grabbing';
@@ -2290,7 +2475,12 @@ export function initEdenMapPlanner() {
     if (tool === 'target') {
       const pt = snapPoint(mx, my);
       plan.customTargets = plan.customTargets || [];
-      plan.customTargets.push({ x: pt.x, y: pt.y, label: `T${plan.customTargets.length + 1}` });
+      const label = `T${plan.customTargets.length + 1}`;
+      plan.customTargets.push({
+        x: pt.x,
+        y: pt.y,
+        ...createMissionPayload(label),
+      });
       savePlan();
       draw();
       return;
@@ -2618,6 +2808,7 @@ export function initEdenMapPlanner() {
   });
 
   window.addEventListener('resize', resize);
+  document.addEventListener('fullscreenchange', syncFullscreenState);
   applyTeamPlanLayerState();
   syncIsolateUi();
   resize();

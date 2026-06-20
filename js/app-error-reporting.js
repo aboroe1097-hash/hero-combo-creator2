@@ -1,5 +1,3 @@
-import { getDb } from './firebase.js';
-
 const ERROR_QUEUE_KEY = 'vts_error_report_queue';
 let flushing = false;
 
@@ -42,6 +40,7 @@ export function logClientError(source, error, extra = {}) {
 
 export async function flushClientErrors() {
   if (flushing) return;
+  const { getDb } = await import('./firebase.js');
   const db = getDb();
   const queue = readQueue();
   if (!db || !queue.length) return;

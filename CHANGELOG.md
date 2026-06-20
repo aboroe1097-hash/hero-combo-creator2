@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 11.0.0 - 2026-06-20
 
+- Removed the maintenance splash and startup gate for the live release.
+- Bumped the public app version to 11.0.0.
+- Added dynamic loading for heavier Research, Hero Atlas, translation, Firebase, and Eden-related modules/assets.
+- Expanded the skin database with pending-detail biography skin records and local WebP skin icons for the S0-X1 skin combo pool.
+- Improved small-screen Research tab layout and generated combo card sizing.
 - Added a What's New version banner, global keyboard shortcuts, undo toasts for destructive actions, and JSON user data import/export.
 - Added Firestore-backed client error reporting plus a floating bug report widget with screenshot capture.
 - Improved OCR scan feedback with retry/status progress and a cancel action.

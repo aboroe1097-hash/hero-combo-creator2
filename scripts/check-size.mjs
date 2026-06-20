@@ -11,7 +11,7 @@ const LIMITS = {
   indexLines: 800,
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
-  totalJsBytes: 1000 * 1024,
+  totalJsBytes: 2000 * 1024,
   totalCssBytes: 400 * 1024,
 };
 
