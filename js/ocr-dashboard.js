@@ -303,23 +303,34 @@ function showLogin() {
   const passInput = $id('dashLoginPass');
   const err = $id('dashLoginErr');
   if (!AUTH_HASH) {
-    if (loginBtn) loginBtn.disabled = true;
+    if (loginBtn) loginBtn.style.display = 'none';
     if (passInput) {
       passInput.disabled = true;
+      passInput.style.display = 'none';
       passInput.placeholder = 'Admin password not configured';
     }
-    if (guestBtn) guestBtn.classList.add('dash-btn-primary');
+    if (guestBtn) {
+      guestBtn.classList.add('dash-btn-primary');
+      guestBtn.textContent = 'Open Guest Dashboard';
+    }
     if (err) {
-      err.textContent = 'Admin auth is not configured. Enter as Guest for read-only local testing.';
+      err.textContent = 'Admin sign-in is not configured for this deployment. Guest mode is read-only.';
       err.classList.remove('hidden');
     }
   } else {
-    if (loginBtn) loginBtn.disabled = false;
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.style.display = '';
+    }
     if (passInput) {
       passInput.disabled = false;
+      passInput.style.display = '';
       passInput.placeholder = dashT('adminLoginPass');
     }
-    if (guestBtn) guestBtn.classList.remove('dash-btn-primary');
+    if (guestBtn) {
+      guestBtn.classList.remove('dash-btn-primary');
+      guestBtn.textContent = dashT('adminGuestBtn');
+    }
     if (err) err.classList.add('hidden');
   }
 }
@@ -620,7 +631,11 @@ export async function bootOcrDashboard() {
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
   log('VTS Admin Dashboard loaded.', 'info');
-  if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
+  if (!AUTH_HASH) {
+    sessionStorage.setItem('vts_guest', '1');
+    showApp();
+    loadData();
+  } else if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashGuestBtn').onclick = () => { localStorage.removeItem(AUTH_KEY); sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
   $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
