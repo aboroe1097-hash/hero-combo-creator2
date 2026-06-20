@@ -6,6 +6,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 let app = null;
 let db = null;
@@ -33,14 +34,28 @@ export function initFirebase() {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  
+
+  // Initialize App Check with reCAPTCHA Enterprise when a site key is configured.
+  // Enforcement is controlled in the Firebase Console; the app still works if unset.
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  if (recaptchaSiteKey) {
+    try {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+    } catch (e) {
+      console.warn("App Check initialization failed; continuing without it.", e);
+    }
+  }
+
   // Analytics automatically logs page_view and tracks active users for free without quotas
   try {
     analytics = getAnalytics(app);
   } catch(e) {
     console.warn("Analytics blocked or failed to initialize", e);
   }
-  
+
   return { app, db, auth, analytics };
 }
 
