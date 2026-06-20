@@ -5,7 +5,7 @@
 const INTRO_STORAGE_KEY = 'vts_intro_v1_seen';
 const MIN_BOOT_MS = 850;
 
-// Web Audio API cinematic synthesis for loading screen doors
+// Web Audio API cinematic synthesis for loading screen transition
 let audioCtx = null;
 
 function initAudio() {
@@ -266,7 +266,7 @@ async function dismissBootSplash() {
     playTransitionSound();
     splash.classList.add('boot-splash--opening');
 
-    // Trigger door opening and light expansion animations
+    // Trigger the wing reveal and light expansion animations.
     const doorLeft = document.getElementById('doorLeft');
     const doorRight = document.getElementById('doorRight');
     const centerLight = document.getElementById('centerLight');
@@ -277,7 +277,7 @@ async function dismissBootSplash() {
     if (centerLight) centerLight.classList.add('light-expand');
     if (statusContainer) statusContainer.classList.add('title-fade');
 
-    // Wait for the door swinging and golden light flash animation to complete
+    // Wait for the wing unfurl and light flash animation to complete.
     await sleep(1400);
 
     // Fade out the entire boot-splash overlay

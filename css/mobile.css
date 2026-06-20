@@ -1599,6 +1599,46 @@ button:not([disabled]):active,
   margin-bottom: 6px !important;
 }
 
+/* Mobile wing-led boot reveal */
+.perspective-container {
+  border: 0 !important;
+  clip-path: none !important;
+  background: transparent !important;
+}
+
+.door {
+  width: 50vw !important;
+  height: 100vh !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+.door::before,
+.door::after,
+.door-panel-lines,
+.door-rivet {
+  display: none !important;
+}
+
+.door-wing-left {
+  right: calc(50% - 66px) !important;
+}
+
+.door-wing-right {
+  left: calc(50% - 66px) !important;
+}
+
+.door-open-left .door-wing {
+  animation-name: boot-wing-unfurl-left !important;
+}
+
+.door-open-right .door-wing {
+  animation-name: boot-wing-unfurl-right !important;
+}
+
 .loading-title {
   font-size: 1rem !important;
 }
@@ -2208,9 +2248,27 @@ button:not([disabled]):active,
     flex: 0 0 auto !important;
   }
 
-  .eden-mission-actions .eden-tool-btn {
+.eden-mission-actions .eden-tool-btn {
     min-height: 36px !important;
     padding: 7px 9px !important;
     flex: 0 0 auto !important;
   }
+}
+
+/* Final mobile boot overrides live at the end so old gate sizing cannot win. */
+.boot-splash .perspective-container {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  clip-path: none !important;
+  background: transparent !important;
+}
+
+.boot-splash .center-light {
+  width: min(54vw, 210px) !important;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0 32%, transparent 74%) !important;
+  mask-image: radial-gradient(ellipse at center, #000 0 32%, transparent 74%) !important;
 }

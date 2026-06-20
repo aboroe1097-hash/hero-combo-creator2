@@ -9592,6 +9592,185 @@ body {
   opacity: 0;
 }
 
+/* V11 wing-led boot reveal: the wings are the gate, not decoration on doors. */
+@keyframes boot-wing-unfurl-left {
+  0% {
+    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.35), calc(var(--boot-tilt-y, 0px) * 0.35), 0) scale(0.98) rotate(-5deg);
+    opacity: 1;
+    filter:
+      drop-shadow(0 0 18px rgba(34, 211, 238, 0.58))
+      drop-shadow(0 0 36px rgba(217, 70, 239, 0.34));
+  }
+  42% {
+    transform: translate3d(-8vw, -4vh, 0) scale(1.12) rotate(-15deg);
+    opacity: 1;
+    filter:
+      drop-shadow(0 0 30px rgba(34, 211, 238, 0.8))
+      drop-shadow(0 0 74px rgba(217, 70, 239, 0.48));
+  }
+  100% {
+    transform: translate3d(-34vw, -7vh, 0) scale(1.22) rotate(-29deg);
+    opacity: 0.3;
+    filter:
+      drop-shadow(0 0 28px rgba(34, 211, 238, 0.72))
+      drop-shadow(0 0 82px rgba(217, 70, 239, 0.4))
+      blur(0.3px);
+  }
+}
+
+@keyframes boot-wing-unfurl-right {
+  0% {
+    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.35), calc(var(--boot-tilt-y, 0px) * 0.35), 0) scale(0.98) rotate(5deg);
+    opacity: 1;
+    filter:
+      drop-shadow(0 0 18px rgba(251, 191, 36, 0.58))
+      drop-shadow(0 0 38px rgba(244, 63, 94, 0.36));
+  }
+  42% {
+    transform: translate3d(8vw, -4vh, 0) scale(1.12) rotate(15deg);
+    opacity: 1;
+    filter:
+      drop-shadow(0 0 31px rgba(251, 191, 36, 0.82))
+      drop-shadow(0 0 76px rgba(244, 63, 94, 0.48));
+  }
+  100% {
+    transform: translate3d(34vw, -7vh, 0) scale(1.2) rotate(29deg);
+    opacity: 0.3;
+    filter:
+      drop-shadow(0 0 30px rgba(251, 191, 36, 0.74))
+      drop-shadow(0 0 82px rgba(244, 63, 94, 0.42))
+      blur(0.3px);
+  }
+}
+
+@keyframes boot-wing-veil-drift {
+  0%, 100% {
+    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.22), calc(var(--boot-tilt-y, 0px) * 0.22), 0) scale(0.985) rotate(var(--asset-tilt, 0deg));
+  }
+  50% {
+    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.22 + var(--asset-drift-x, 0px) * 0.28), calc(var(--boot-tilt-y, 0px) * 0.22 - 11px), 0) scale(1.035) rotate(calc(var(--asset-tilt, 0deg) + var(--asset-flutter, 2deg)));
+  }
+}
+
+@keyframes boot-light-bloom {
+  0% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.9;
+    filter: blur(0.2px);
+  }
+  45% {
+    transform: translateX(-50%) scaleX(8.4);
+    opacity: 1;
+    filter: blur(4px);
+  }
+  100% {
+    transform: translateX(-50%) scaleX(15);
+    opacity: 0;
+    filter: blur(12px);
+  }
+}
+
+.perspective-container {
+  display: block;
+}
+
+.door {
+  width: 50vw !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transition: none !important;
+  pointer-events: none;
+}
+
+.door::before,
+.door::after,
+.door-panel-lines,
+.door-rivet {
+  display: none !important;
+}
+
+.door-left,
+.door-right,
+.door-open-left,
+.door-open-right {
+  transform: none !important;
+}
+
+.door-wing {
+  z-index: 16;
+  will-change: transform, opacity, filter;
+}
+
+.door-wing-left {
+  right: calc(50% - clamp(112px, 9vw, 178px));
+}
+
+.door-wing-right {
+  left: calc(50% - clamp(112px, 9vw, 178px));
+}
+
+.door-wing-art--front {
+  animation-name: boot-wing-veil-drift;
+}
+
+.door-open-left .door-wing,
+.door-open-right .door-wing {
+  animation-duration: 1.35s;
+  animation-timing-function: cubic-bezier(0.2, 0.82, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.door-open-left .door-wing {
+  animation-name: boot-wing-unfurl-left;
+}
+
+.door-open-right .door-wing {
+  animation-name: boot-wing-unfurl-right;
+}
+
+.door-open-left .door-wing-art,
+.door-open-right .door-wing-art {
+  transform: none !important;
+  opacity: 0.96 !important;
+  transition: opacity 0.25s ease, filter 0.25s ease !important;
+}
+
+.door-open-left .door-wing-art--aura,
+.door-open-right .door-wing-art--aura {
+  opacity: 0.58 !important;
+}
+
+.boot-splash:has(.door-open-left) .center-light,
+.center-light.light-expand {
+  animation: boot-light-bloom 1.2s cubic-bezier(0.18, 0.78, 0.2, 1) both !important;
+}
+
+.boot-splash .center-light {
+  width: clamp(110px, 12vw, 190px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.72), transparent 12%),
+    linear-gradient(180deg, transparent 0%, rgba(103,232,249,0.1) 10%, rgba(103,232,249,0.42) 30%, rgba(255,255,255,0.54) 49%, rgba(251,191,36,0.42) 68%, rgba(251,191,36,0.08) 90%, transparent 100%) !important;
+  box-shadow:
+    0 0 34px 12px rgba(103,232,249,0.28),
+    0 0 82px 26px rgba(251,191,36,0.16) !important;
+  filter: blur(16px) saturate(1.25);
+  opacity: 0.72;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0 34%, transparent 76%);
+  mask-image: radial-gradient(ellipse at center, #000 0 34%, transparent 76%);
+}
+
+.boot-splash:has(.door-open-left) .gate-lock {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.85) rotate(18deg);
+  filter: blur(6px);
+  transition: opacity 0.45s ease, transform 0.7s cubic-bezier(0.2, 0.82, 0.2, 1), filter 0.7s ease;
+}
+
 @media (max-width: 768px) {
   .door-wing {
     --boot-wing-w: 128%;
