@@ -34,8 +34,26 @@ state.bannerRecords = [];
 state.sortCol = 'total_demolition';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
+state.cloudSyncConfigured = false;
 
 // --- Roster Admin Functions (remain in dashboard scope) ---
+
+async function initDashboardFirebase() {
+  const firebase = initFirebase();
+  state.cloudSyncConfigured = Boolean(firebase?.configured && firebase.db && firebase.auth);
+  if (!state.cloudSyncConfigured) {
+    log('Cloud sync disabled; using local storage only.', 'warn');
+  }
+  return state.cloudSyncConfigured;
+}
+
+async function ensureCloudSyncReady() {
+  if (!state.cloudSyncConfigured) return null;
+  const db = getDb();
+  if (!db) return null;
+  await ensureAnonymousAuth();
+  return db;
+}
 
 // --- Sub-tab Switching ---
 
@@ -59,16 +77,17 @@ function switchDashSubtab(name) {
 // ── Roster Snapshots (local + Firestore) ──────────────────
 export async function saveRosterSnapshotsToFirestore() {
   try {
-    await ensureAnonymousAuth();
-    await setDoc(doc(getDb(), FS_ROSTER_PATH), { snapshots: state.rosterSnapshots, updated: new Date().toISOString() });
+    const db = await ensureCloudSyncReady();
+    if (!db) return;
+    await setDoc(doc(db, FS_ROSTER_PATH), { snapshots: state.rosterSnapshots, updated: new Date().toISOString() });
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
   }
 }
 async function loadRosterSnapshotsFromFirestore() {
   try {
-    const db = getDb();
-    await ensureAnonymousAuth();
+    const db = await ensureCloudSyncReady();
+    if (!db) return;
     if (state._fsRosterUnsub) state._fsRosterUnsub();
     const snap = await getDoc(doc(db, FS_ROSTER_PATH));
     if (snap.exists()) {
@@ -327,8 +346,9 @@ export async function saveData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); 
   } catch (e) {}
   try { 
-    await ensureAnonymousAuth();
-    await setDoc(doc(getDb(), FS_PATH), data); 
+    const db = await ensureCloudSyncReady();
+    if (!db) return;
+    await setDoc(doc(db, FS_PATH), data); 
     log('Synced to cloud.', 'info'); 
   } catch (e) { 
     console.error("FIREBASE SAVE ERROR:", e);
@@ -342,9 +362,8 @@ async function loadData() {
     if (saved) { state.dashData = JSON.parse(saved); render(); }
   } catch (e) {}
   try {
-    const db = getDb();
+    const db = await ensureCloudSyncReady();
     if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
-    await ensureAnonymousAuth();
     if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
@@ -391,8 +410,8 @@ async function clearData() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
-    await ensureAnonymousAuth();
-    await setDoc(doc(getDb(), FS_PATH), {}); 
+    const db = await ensureCloudSyncReady();
+    if (db) await setDoc(doc(db, FS_PATH), {}); 
   } catch (e) {}
   const out = $id('dashLogOutput'); if (out) out.innerHTML = '';
   render();
@@ -591,6 +610,7 @@ function importData(file) {
 
 export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
+  await initDashboardFirebase();
   loadRosterSnapshots();
   loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
