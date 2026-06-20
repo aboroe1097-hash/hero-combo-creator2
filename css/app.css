@@ -9189,9 +9189,12 @@ body {
 
 /* V10.4 larger generated wing cutouts */
 .door-wing {
-  top: clamp(36px, 7.5vh, 104px);
-  width: clamp(440px, 46vw, 790px);
-  height: clamp(360px, 59vh, 690px);
+  --boot-wing-w: clamp(440px, 43vw, 760px);
+  --boot-wing-h: clamp(360px, 58vh, 680px);
+  top: 50%;
+  width: var(--boot-wing-w);
+  height: var(--boot-wing-h);
+  margin-top: calc(var(--boot-wing-h) / -2);
   mix-blend-mode: normal;
 }
 
@@ -9200,14 +9203,13 @@ body {
 }
 
 .door-wing-left {
-  right: clamp(-132px, -7vw, -48px);
+  right: calc(50% - clamp(4px, 0.5vw, 12px));
 }
 
 .door-wing-right {
-  top: clamp(24px, 6.3vh, 92px);
-  left: clamp(-140px, -7.8vw, -54px);
-  width: clamp(410px, 42vw, 720px);
-  height: clamp(390px, 62vh, 740px);
+  --boot-wing-w: clamp(410px, 40vw, 700px);
+  --boot-wing-h: clamp(390px, 61vh, 720px);
+  left: calc(50% - clamp(4px, 0.5vw, 12px));
 }
 
 .door-wing-left .door-wing-art {
@@ -9324,17 +9326,20 @@ body {
 
 @media (max-width: 768px) {
   .door-wing {
-    top: 20%;
-    width: 112%;
-    height: 46%;
+    --boot-wing-w: 128%;
+    --boot-wing-h: 52%;
+    top: 50%;
+    width: var(--boot-wing-w);
+    height: var(--boot-wing-h);
+    margin-top: calc(var(--boot-wing-h) / -2);
   }
 
   .door-wing-left {
-    right: -10%;
+    right: 50%;
   }
 
   .door-wing-right {
-    left: -10%;
+    left: 50%;
   }
 }
 

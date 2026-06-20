@@ -1491,9 +1491,12 @@ button:not([disabled]):active,
 }
 
 .door-wing {
-  top: 46px !important;
-  width: 330px !important;
-  height: 292px !important;
+  --boot-wing-w: min(58vw, 310px);
+  --boot-wing-h: min(44vh, 330px);
+  top: 50% !important;
+  width: var(--boot-wing-w) !important;
+  height: var(--boot-wing-h) !important;
+  margin-top: calc(var(--boot-wing-h) / -2) !important;
   opacity: 0.94 !important;
   filter:
     drop-shadow(0 0 13px color-mix(in srgb, var(--wing-secondary) 66%, transparent))
@@ -1501,14 +1504,13 @@ button:not([disabled]):active,
 }
 
 .door-wing-left {
-  right: -86px !important;
+  right: 50% !important;
 }
 
 .door-wing-right {
-  top: 38px !important;
-  left: -92px !important;
-  width: 310px !important;
-  height: 326px !important;
+  --boot-wing-w: min(56vw, 292px);
+  --boot-wing-h: min(48vh, 354px);
+  left: 50% !important;
 }
 
 .door-wing span {
