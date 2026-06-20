@@ -5,10 +5,12 @@
   "scripts": {
     "build:eden": "python database/build-eden-datasets.py",
     "dev": "vite",
-    "build": "npm run build:eden && vite build && node scripts/post-build.mjs",
+    "build": "npm run data:check && npm run build:eden && vite build && node scripts/post-build.mjs",
+    "data:check": "node scripts/check-tech-db.mjs",
     "i18n:check": "node scripts/check-i18n.mjs",
+    "size:check": "node scripts/check-size.mjs",
     "smoke": "playwright test",
-    "check": "npm run i18n:check && npm run build && npm run smoke",
+    "check": "npm run i18n:check && npm run build && npm run size:check && npm run smoke",
     "preview": "vite preview",
     "ocr-server": "cd tools/ocr-server && node server.js"
   },

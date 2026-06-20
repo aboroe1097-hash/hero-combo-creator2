@@ -8,6 +8,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     minify: 'esbuild',
+    sourcemap: process.env.VITE_SOURCEMAP !== 'false',
     target: 'es2022',
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),

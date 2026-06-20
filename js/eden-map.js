@@ -127,6 +127,28 @@ export function initEdenMapPlanner() {
     sectorTiles: false,
   };
 
+  function syncOfflineStatus() {
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    const status = document.getElementById('edenOfflineStatus');
+    root.classList.toggle('eden-map-offline', offline);
+    if (!status) return;
+    status.classList.toggle('hidden', !offline);
+    status.textContent = offline
+      ? 'Offline mode: saved plans and core map tools are available; reference images may be unavailable.'
+      : '';
+  }
+
+  syncOfflineStatus();
+  window.addEventListener('online', () => {
+    syncOfflineStatus();
+    ensureStrategyFloorLoaded();
+    ensureReferenceLoaded();
+    ensureScreenshotsLoaded();
+    ensureSectorTilesLoaded();
+    scheduleDraw();
+  });
+  window.addEventListener('offline', syncOfflineStatus);
+
   function savePlan() {
     plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
     plansStore.plans[activePlanId].plan = plan;
@@ -515,8 +537,16 @@ export function initEdenMapPlanner() {
   function fitViewToBounds(b, { sectorFocus = false } = {}) {
     const rect = canvas.parentElement.getBoundingClientRect();
     const pad = sectorFocus ? 0.07 : 0.1;
-    const wAt1 = Math.max((b.maxX - b.minX) * 0.5, 40);
-    const hAt1 = Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.25, 40);
+    const flatStrategyFloor = !sectorFocus && sectorKey === 'FULL'
+      && layers.strategyFloor
+      && EDEN_STRATEGY_FLOOR.layout === 'screen';
+    const projectedWAt1 = Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.5, 40);
+    const wAt1 = flatStrategyFloor
+      ? projectedWAt1
+      : Math.max((b.maxX - b.minX) * 0.5, 40);
+    const hAt1 = flatStrategyFloor
+      ? Math.max(projectedWAt1 / (EDEN_STRATEGY_FLOOR.screenAspect || 1.6), 40)
+      : Math.max((b.maxX - b.minX + b.maxY - b.minY) * 0.25, 40);
     let nextScale = Math.min(
       (rect.width * (1 - pad * 2)) / wAt1,
       (rect.height * (1 - pad * 2)) / hAt1,
@@ -535,7 +565,7 @@ export function initEdenMapPlanner() {
     return {
       scale: snapped,
       offsetX: rect.width * 0.5 - (cx - cy) * 0.5 * snapped,
-      offsetY: rect.height * (sectorFocus ? 0.42 : 0.15) - (cx + cy) * 0.25 * snapped,
+      offsetY: rect.height * (flatStrategyFloor ? 0.5 : (sectorFocus ? 0.42 : 0.15)) - (cx + cy) * 0.25 * snapped,
     };
   }
 
@@ -714,25 +744,6 @@ export function initEdenMapPlanner() {
       ctx.fill();
       ctx.stroke();
       ctx.setLineDash([]);
-
-      const cx = (bounds.minX + bounds.maxX) / 2;
-      const cy = (bounds.minY + bounds.maxY) / 2;
-      const label = `${edenT('edenStrategyFocusPrefix')} ${sec.label.replace(' Sector', '')}`;
-      const lp = iso(cx, cy);
-      ctx.font = `900 ${Math.max(11, 15 * scale)}px Inter, sans-serif`;
-      const tw = ctx.measureText(label).width + 18;
-      ctx.fillStyle = 'rgba(2,6,23,0.78)';
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect?.(lp.x - tw / 2, lp.y - 15, tw, 30, 9);
-      if (!ctx.roundRect) ctx.rect(lp.x - tw / 2, lp.y - 15, tw, 30);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#f8fafc';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, lp.x, lp.y);
     });
     ctx.restore();
   }

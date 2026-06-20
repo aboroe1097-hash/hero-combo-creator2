@@ -33,10 +33,38 @@ let db = null;
 const savedCombosCache = [];
 let touchDragHero = null;
 let touchDragGhost = null;
+let keyboardSelectedHero = null;
 const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 
 function getKnownHero(name) {
   return allHeroesData.find(hero => hero.name === name) || null;
+}
+
+function announceManualCombo(message) {
+  let live = document.getElementById('manualComboLiveRegion');
+  if (!live) {
+    live = document.createElement('div');
+    live.id = 'manualComboLiveRegion';
+    live.className = 'sr-only';
+    live.setAttribute('aria-live', 'polite');
+    live.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(live);
+  }
+  live.textContent = message;
+}
+
+function placeHeroInSlot(slot, heroName, idx) {
+  if (!slot || !heroName || Number.isNaN(idx)) return;
+  if (isHeroAlreadyInCombo(heroName, idx)) {
+    const t = translations[currentLanguage] || translations.en;
+    __ui.showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
+    announceManualCombo(`${heroName} is already in this combo.`);
+    return;
+  }
+  currentCombo[idx] = heroName;
+  updateComboSlotDisplay(slot, heroName, idx);
+  updateManualComboScore();
+  announceManualCombo(`${heroName} placed in combo slot ${idx + 1}.`);
 }
 
 function createTouchGhost(card, touch) {
@@ -117,14 +145,19 @@ export function setupTouchDragForManualBuilder() {
 export function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
   const t = translations[currentLanguage] || translations.en;
+  const searchQuery = (document.getElementById('manualHeroSearch')?.value || '').trim().toLowerCase();
   availableHeroesEl.innerHTML = '';
   allHeroesData
     .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
+    .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
     .forEach(hero => {
       const card = document.createElement('div');
       card.className = 'hero-card relative';
       card.draggable = true;
       card.dataset.heroName = hero.name;
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `Select ${hero.name} for a combo slot`);
 
       const tagColor = seasonColors[hero.season] || '#f97316';
       const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
@@ -154,6 +187,14 @@ export function renderAvailableHeroes() {
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData(HERO_DRAG_MIME, hero.name);
         e.dataTransfer.setData('text/plain', hero.name);
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        keyboardSelectedHero = hero.name;
+        announceManualCombo(`${hero.name} selected. Focus a combo slot and press Enter to place.`);
+        document.querySelector('.combo-slot')?.focus();
       });
 
       card.addEventListener('touchstart', (e) => {
@@ -218,6 +259,7 @@ export function updateComboSlotDisplay(slot, name, idx) {
   }
   if (name) {
     slot.dataset.heroName = name;
+    slot.setAttribute('aria-label', `Combo slot ${idx + 1}: ${name}. Press Delete to clear.`);
     slot.innerHTML = `
       <img src="${hero.imageUrl || getHeroImageUrl(name)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
       <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
@@ -226,6 +268,7 @@ export function updateComboSlotDisplay(slot, name, idx) {
     slot.classList.add('relative', 'p-0');
   } else {
     delete slot.dataset.heroName;
+    slot.setAttribute('aria-label', `Combo slot ${idx + 1}: empty. Select a hero, then press Enter here to place.`);
     slot.innerHTML = `
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
         <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
@@ -247,6 +290,8 @@ export function updateManualComboScore() {
     scoreBox = document.createElement('div');
     scoreBox.id = 'manualComboScoreBox';
     scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox hidden';
+    scoreBox.setAttribute('role', 'status');
+    scoreBox.setAttribute('aria-live', 'polite');
     const buttonsRow = document.getElementById('comboButtonsRow');
     if (buttonsRow) bar.insertBefore(scoreBox, buttonsRow);
     else bar.appendChild(scoreBox);
@@ -265,6 +310,7 @@ export function updateManualComboScore() {
   if (!info && !counterCount) {
     scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center';
     scoreBox.textContent = t.manualComboNotRanked || 'This combo is not in the ranked database.';
+    announceManualCombo(scoreBox.textContent);
     return;
   }
 
@@ -278,6 +324,33 @@ export function updateManualComboScore() {
       </div>`
     : '';
   scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
+  if (info) announceManualCombo(`Combo score ${info.score}, rank ${info.rank}.`);
+}
+
+export function setupKeyboardComboSlots() {
+  document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
+    if (slot.dataset.keyboardWired === '1') return;
+    slot.dataset.keyboardWired = '1';
+    slot.tabIndex = 0;
+    slot.setAttribute('role', 'button');
+    slot.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        currentCombo[idx] = null;
+        updateComboSlotDisplay(slot, null, idx);
+        updateManualComboScore();
+        announceManualCombo(`Combo slot ${idx + 1} cleared.`);
+        return;
+      }
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      if (keyboardSelectedHero) {
+        placeHeroInSlot(slot, keyboardSelectedHero, idx);
+        return;
+      }
+      announceManualCombo('Select a hero card first, then focus this slot to place it.');
+    });
+  });
 }
 
 export async function saveCombo() {

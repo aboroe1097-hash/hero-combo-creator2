@@ -23,6 +23,18 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Sharing** | Share combos and rosters via URL; export combos as image (html2canvas) |
 | **PWA** | Service worker registration, standalone display mode, themed splash screen |
 
+## Screenshots And Demos
+
+Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes.
+
+| Area | Preview |
+|------|---------|
+| Eden Map Planner | ![Eden Map Planner](docs/media/eden-map-planner.png) |
+| OCR Admin Entry | ![OCR Admin Entry](docs/media/ocr-admin-entry.png) |
+| Combo Generator | ![Combo Generator](docs/media/combo-generator.png) |
+
+Short GIFs are welcome for workflows that static screenshots cannot show well, especially OCR upload parsing and Eden route planning. Keep media optimized before committing so the GitHub Pages branch stays light.
+
 ## Quick Start
 
 ```bash
@@ -204,6 +216,14 @@ git push origin gh-pages
 ```
 
 The site auto-deploys at **https://roc-vts.com/** (custom domain configured in repo Settings → Pages).
+
+## Contributing
+
+Community data updates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the preferred formats for hero stats, combo corrections, skin data, OCR examples, and Eden screenshots.
+
+For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) and [VERSIONING.md](VERSIONING.md) updated with every user-visible change.
+
+Internal project notes for maintainers and AI agents live in [docs/dev/](docs/dev/README.md).
 
 ## Eden Map Data
 

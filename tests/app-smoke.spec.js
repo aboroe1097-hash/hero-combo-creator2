@@ -5,9 +5,16 @@ async function openApp(page) {
     contentType: 'application/javascript',
     body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
   }));
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_intro_v1_seen', '1');
+    localStorage.setItem('vts_quick_tour_done', '1');
+  });
   await page.goto('/');
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
+  await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
 }
 
 async function expectTab(page, buttonId, sectionId, marker) {
@@ -89,6 +96,12 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     const cards = page.locator('#generatorHeroes .generator-card');
     await expect(cards.first()).toBeVisible();
+    await cards.first().click();
+    await expect(cards.first()).toHaveClass(/generator-card-selected/);
+    await expect(page.locator('#genSelectedCount')).toContainText('1 selected');
+    await cards.first().click();
+    await expect(cards.first()).not.toHaveClass(/generator-card-selected/);
+    await expect(page.locator('#genSelectedCount')).toHaveClass(/hidden/);
 
     await expect(page.locator('#generatorSeasonFilters input[value="S0"]')).toBeChecked();
     await expect(page.locator('#generatorSeasonFilters input[value="S1"]')).toBeChecked();
@@ -122,6 +135,36 @@ test.describe('app smoke tabs', () => {
     );
     expect(seasonsWithX8).toContain('X8');
     await expect(page.locator('#generatorHeroes .generator-card').filter({ hasText: 'Rainforest Ranger' }).first()).toBeVisible();
+  });
+
+  test('Arabic locale enables RTL without overflowing generator controls', async ({ page }) => {
+    await openApp(page);
+    await page.locator('#languageSelect').selectOption('ar');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('#tabGenerator')).toContainText('مولد');
+    await expect(page.locator('#generatorHeroes .generator-card').first()).toBeVisible();
+
+    const layout = await page.locator('#generatorSection').evaluate((section) => {
+      const search = document.querySelector('#generatorHeroSearch');
+      const icon = document.querySelector('#generatorSection .hero-search-icon');
+      const select = document.querySelector('#languageSelect');
+      const searchStyle = window.getComputedStyle(search);
+      const iconStyle = window.getComputedStyle(icon);
+      return {
+        noSectionOverflow: section.scrollWidth <= section.clientWidth + 2,
+        noDocumentOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 2,
+        searchPaddingRight: parseFloat(searchStyle.paddingRight),
+        searchPaddingLeft: parseFloat(searchStyle.paddingLeft),
+        iconRight: iconStyle.right,
+        selectValue: select.value,
+      };
+    });
+    expect(layout.noSectionOverflow).toBe(true);
+    expect(layout.noDocumentOverflow).toBe(true);
+    expect(layout.searchPaddingRight).toBeGreaterThan(layout.searchPaddingLeft);
+    expect(layout.iconRight).not.toBe('auto');
+    expect(layout.selectValue).toBe('ar');
   });
 
   test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {

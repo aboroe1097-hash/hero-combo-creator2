@@ -204,6 +204,7 @@ let _heroesTabState = {
   selected: null,
   view: 'ranking',
   comboScope: 'season-capped',
+  sort: 'rating',
   limit: 20
 };
 let _heroesTabEventsWired = false;
@@ -223,6 +224,63 @@ function getFilteredHeroes(state = _heroesTabState) {
   if (heroState !== 'all') filtered = filtered.filter(h => h.State === heroState);
   if (q) filtered = filtered.filter(h => h.name.toLowerCase().includes(q));
   return filtered;
+}
+
+function getSortedHeroes(heroes, stats, sort = _heroesTabState.sort) {
+  return [...heroes].sort((a, b) => {
+    const aStats = stats[a.name] || {};
+    const bStats = stats[b.name] || {};
+    if (sort === 'appearances') {
+      return (bStats.appearances || 0) - (aStats.appearances || 0) || a.name.localeCompare(b.name);
+    }
+    if (sort === 'best-rank') {
+      const aRank = aStats.topComboRank === Infinity ? Number.MAX_SAFE_INTEGER : (aStats.topComboRank || Number.MAX_SAFE_INTEGER);
+      const bRank = bStats.topComboRank === Infinity ? Number.MAX_SAFE_INTEGER : (bStats.topComboRank || Number.MAX_SAFE_INTEGER);
+      return aRank - bRank || a.name.localeCompare(b.name);
+    }
+    if (sort === 'name') {
+      return a.name.localeCompare(b.name);
+    }
+    return (bStats.finalRating || 0) - (aStats.finalRating || 0) || a.name.localeCompare(b.name);
+  });
+}
+
+function csvCell(value) {
+  const raw = value == null ? '' : String(value);
+  return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
+
+function exportHeroAtlasCsv() {
+  const stats = computeHeroRankings();
+  const rows = getSortedHeroes(getFilteredHeroes(), stats);
+  const header = ['Name', 'Season', 'Original Season', 'Troop', 'State', 'Rating', 'Appearances', 'Best Rank', 'Skins'];
+  const lines = [header.map(csvCell).join(',')];
+  rows.forEach(hero => {
+    const s = stats[hero.name] || {};
+    lines.push([
+      hero.name,
+      hero.season,
+      hero.releaseSeason || '',
+      hero.Type,
+      hero.State || 'Free',
+      s.finalRating > 0 ? Math.min(100, s.finalRating).toFixed(1) : '',
+      s.appearances || 0,
+      s.topComboRank !== Infinity ? s.topComboRank : '',
+      getSkinCount(hero.name)
+    ].map(csvCell).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `hero-atlas-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  if (typeof window.showToast === 'function') {
+    window.showToast(`Exported ${rows.length} heroes to CSV.`, 'success');
+  }
 }
 
 function heroesFiltersActive(state = _heroesTabState) {
@@ -294,6 +352,7 @@ function wireHeroesTabEvents(container) {
       _heroesTabState.troop = 'all';
       _heroesTabState.state = 'all';
       _heroesTabState.search = '';
+      _heroesTabState.sort = 'rating';
       _heroesTabState.limit = 20;
       syncHeroSelectionWithFilters();
       renderHeroesTab();
@@ -343,6 +402,18 @@ function wireHeroesTabEvents(container) {
       return;
     }
 
+    if (e.target.closest('[data-heroes-export]')) {
+      exportHeroAtlasCsv();
+      return;
+    }
+
+  });
+
+  container.addEventListener('change', (e) => {
+    if (e.target.id !== 'heroesSortSelect') return;
+    _heroesTabState.sort = e.target.value;
+    _heroesTabState.limit = 20;
+    renderHeroesTab();
   });
 
   container.addEventListener('input', (e) => {
@@ -374,7 +445,7 @@ function renderHeroesTab() {
   const searchCaret = document.getElementById('heroesTabSearch')?.selectionStart ?? null;
 
   const stats = computeHeroRankings();
-  const { seasons: selectedSeasons, troop, state, search, selected, view, comboScope } = _heroesTabState;
+  const { seasons: selectedSeasons, troop, state, search, selected, view, comboScope, sort } = _heroesTabState;
   const t = translations[currentLanguage] || translations.en;
 
   const troops = ['all','Archers','Footmen','Cavalry'];
@@ -405,7 +476,7 @@ function renderHeroesTab() {
     </button>`).join('');
 
   if (view === 'ranking') {
-    const ranked = [...filtered].sort((a,b) => (stats[b.name]?.finalRating || 0) - (stats[a.name]?.finalRating || 0));
+    const ranked = getSortedHeroes(filtered, stats, sort);
 
     const visibleRanked = ranked.slice(0, _heroesTabState.limit);
     const rowsHtml = visibleRanked.length ? visibleRanked.map((hero, i) => {
@@ -676,6 +747,16 @@ function renderHeroesTab() {
               <input id="heroesTabSearch" class="hero-search-input" type="search" placeholder="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" value="${escapeHtml(search)}" autocomplete="off" />
             </div>
             <span class="heroes-count-badge">${escapeHtml(heroCountLabel.replace('{n}', filtered.length))}</span>
+            <label class="heroes-sort-control" title="Sort visible heroes">
+              <span>Sort</span>
+              <select id="heroesSortSelect">
+                <option value="rating"${sort === 'rating' ? ' selected' : ''}>Rating</option>
+                <option value="appearances"${sort === 'appearances' ? ' selected' : ''}>Appearances</option>
+                <option value="best-rank"${sort === 'best-rank' ? ' selected' : ''}>Best rank</option>
+                <option value="name"${sort === 'name' ? ' selected' : ''}>Name</option>
+              </select>
+            </label>
+            <button type="button" class="heroes-export-btn" data-heroes-export>Export CSV</button>
             ${clearFiltersHtml}
           </div>
           <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>

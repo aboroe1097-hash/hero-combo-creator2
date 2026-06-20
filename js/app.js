@@ -8,7 +8,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { techDatabase } from './tech-db.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { escapeHtml, appT } from './utils.js';
+import { escapeHtml, appT, debounce } from './utils.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { applySeo } from './seo.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
@@ -27,6 +27,7 @@ import {
   updateComboSlotDisplay,
   updateManualComboScore,
   setupTouchDragForManualBuilder,
+  setupKeyboardComboSlots,
   saveCombo,
   setupFirestoreListener
 } from './app-builder.js';
@@ -144,6 +145,8 @@ const MAINTENANCE_CONFIG = {
 };
 const MAINTENANCE_MODE = window.VTS_MAINTENANCE_MODE === true;
 const HERO_DRAG_MIME = 'application/x-vts-hero-name';
+const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), 160);
+const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), 160);
 
 function resolveDroppedHeroName(dataTransfer) {
   const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
@@ -312,23 +315,6 @@ const TAB_BTN_IDS = {
   ocrDashboard: 'tabOcrDashboard',
 };
 
-// --- DATA NORMALIZER (Fixes Bug #3) ---
-// Automatically patches any arrays that have 19 costs instead of 20
-techDatabase.forEach(tech => {
-    tech.nodes.forEach(node => {
-        ['costs', 'wisdomCosts', 'courageCosts', 'wb_costs', 'cm_costs'].forEach(arrName => {
-            let arr = node[arrName];
-            if (arr && arr.length > 0 && arr.length < node.maxLevel) {
-                let lastVal = arr[arr.length - 1];
-                while (arr.length < node.maxLevel) {
-                    arr.push(lastVal);
-                }
-            }
-        });
-    });
-});
-
-
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'heroTooltip';
@@ -495,6 +481,20 @@ function wireGeneratorSkinToggle() {
   genSkinToggle.addEventListener('change', syncGeneratorSkinToggle);
 }
 
+function wireHeroSearchInputs() {
+  const manualSearch = document.getElementById('manualHeroSearch');
+  if (manualSearch && manualSearch.dataset.searchWired !== '1') {
+    manualSearch.dataset.searchWired = '1';
+    manualSearch.addEventListener('input', renderAvailableHeroesDebounced);
+  }
+
+  const generatorSearch = document.getElementById('generatorHeroSearch');
+  if (generatorSearch && generatorSearch.dataset.searchWired !== '1') {
+    generatorSearch.dataset.searchWired = '1';
+    generatorSearch.addEventListener('input', renderGeneratorHeroesDebounced);
+  }
+}
+
 function syncGeneratorControlState(changedTroopInput = null) {
   const seasonContainer = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
   const stateContainer = document.getElementById('generatorStateFilters') || genStateFiltersEl;
@@ -616,6 +616,7 @@ tabs.forEach(tab => {
   wireGlobalControlDelegates();
   wireFilterSets();
   wireGeneratorSkinToggle();
+  wireHeroSearchInputs();
 
   // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
   document.querySelectorAll('.combo-slot').forEach((slot, i) => {
@@ -654,6 +655,7 @@ tabs.forEach(tab => {
 
   // 3. Turn on Mobile Touch Dragging
   setupTouchDragForManualBuilder();
+  setupKeyboardComboSlots();
   // --------------------------------------------------------
 
   if (languageSelect) {
@@ -1064,6 +1066,103 @@ function initTabScroll() {
   setTimeout(checkOverflow, 100);
 }
 
+function initQuickTour() {
+  const storageKey = 'vts_quick_tour_done';
+  try {
+    if (localStorage.getItem(storageKey) === '1') return;
+  } catch {}
+
+  const steps = [
+    { selector: '#tabManual', title: 'Build', body: 'Pick three heroes and check their ranked score, counters, and save options.' },
+    { selector: '#tabGenerator', title: 'Generate', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
+    { selector: '#tabHeroes', title: 'Atlas', body: 'Browse hero ratings, skills, skins, counters, and export filtered hero data.' },
+    { selector: '#tabEdenMap', title: 'Plan', body: 'Open Eden tools for map routes, structures, loyalty, and season planning.' }
+  ].filter(step => document.querySelector(step.selector));
+  if (!steps.length) return;
+
+  let index = 0;
+  const overlay = document.createElement('div');
+  overlay.className = 'quick-tour-overlay hidden';
+  overlay.innerHTML = `
+    <div class="quick-tour-backdrop"></div>
+    <div class="quick-tour-spotlight"></div>
+    <section class="quick-tour-card" role="dialog" aria-modal="true" aria-live="polite">
+      <div class="quick-tour-kicker"></div>
+      <h3 class="quick-tour-title"></h3>
+      <p class="quick-tour-body"></p>
+      <div class="quick-tour-dots"></div>
+      <div class="quick-tour-actions">
+        <button type="button" class="quick-tour-skip">Skip</button>
+        <button type="button" class="quick-tour-next">Next</button>
+      </div>
+    </section>`;
+  document.body.appendChild(overlay);
+
+  const card = overlay.querySelector('.quick-tour-card');
+  const spotlight = overlay.querySelector('.quick-tour-spotlight');
+  const title = overlay.querySelector('.quick-tour-title');
+  const body = overlay.querySelector('.quick-tour-body');
+  const kicker = overlay.querySelector('.quick-tour-kicker');
+  const dots = overlay.querySelector('.quick-tour-dots');
+  const nextBtn = overlay.querySelector('.quick-tour-next');
+
+  function finishTour() {
+    overlay.classList.add('hidden');
+    document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
+    try { localStorage.setItem(storageKey, '1'); } catch {}
+  }
+
+  function renderStep() {
+    const step = steps[index];
+    const target = document.querySelector(step.selector);
+    if (!target) {
+      finishTour();
+      return;
+    }
+    document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
+    target.classList.add('quick-tour-target');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    spotlight.style.left = `${rect.left - pad}px`;
+    spotlight.style.top = `${rect.top - pad}px`;
+    spotlight.style.width = `${rect.width + pad * 2}px`;
+    spotlight.style.height = `${rect.height + pad * 2}px`;
+    spotlight.style.borderRadius = `${Math.min(18, Math.max(12, rect.height / 2))}px`;
+    title.textContent = step.title;
+    body.textContent = step.body;
+    kicker.textContent = `Step ${index + 1} of ${steps.length}`;
+    dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
+    nextBtn.textContent = index === steps.length - 1 ? 'Done' : 'Next';
+
+    const cardWidth = Math.min(360, window.innerWidth - 32);
+    const preferredTop = rect.bottom + 16;
+    const cardTop = preferredTop + 190 < window.innerHeight ? preferredTop : Math.max(16, rect.top - 210);
+    const cardLeft = Math.min(Math.max(16, rect.left + rect.width / 2 - cardWidth / 2), window.innerWidth - cardWidth - 16);
+    card.style.width = `${cardWidth}px`;
+    card.style.left = `${cardLeft}px`;
+    card.style.top = `${cardTop}px`;
+  }
+
+  overlay.querySelector('.quick-tour-skip')?.addEventListener('click', finishTour);
+  overlay.querySelector('.quick-tour-backdrop')?.addEventListener('click', finishTour);
+  nextBtn?.addEventListener('click', () => {
+    if (index >= steps.length - 1) finishTour();
+    else {
+      index++;
+      renderStep();
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (!overlay.classList.contains('hidden')) renderStep();
+  });
+
+  setTimeout(() => {
+    overlay.classList.remove('hidden');
+    renderStep();
+  }, 900);
+}
+
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
     try {
@@ -1100,6 +1199,7 @@ async function startApp() {
             initComments();
         }
     });
+    safeInit('quickTour', () => initQuickTour());
     } finally {
         await notifyAppReady();
     }

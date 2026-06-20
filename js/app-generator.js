@@ -44,6 +44,23 @@ function showGeneratorMessage(message) {
   }
 }
 
+function setGeneratorBusy(isBusy) {
+  ['generateCombosBtn', 'generateRandomBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (isBusy) {
+      if (!btn.dataset.idleText) btn.dataset.idleText = btn.textContent;
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.textContent = 'Generating...';
+    } else {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      if (btn.dataset.idleText) btn.textContent = btn.dataset.idleText;
+    }
+  });
+}
+
 export function renderGeneratorHeroes(options = {}) {
   if (!generatorHeroesEl) return;
   generatorHeroesEl.innerHTML = '';
@@ -52,9 +69,12 @@ export function renderGeneratorHeroes(options = {}) {
   const activeStates = options.states || generatorSelectedStates;
   const activeTypes = options.types || generatorSelectedTypes;
   const activeSkinsOnly = options.skinsOnly ?? generatorSkinsOnly;
+  const searchQuery = (document.getElementById('generatorHeroSearch')?.value || '').trim().toLowerCase();
 
   const pool = getGeneratorHeroPool(activeSkinsOnly);
-  let filtered = pool.filter(h => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes));
+  let filtered = pool
+    .filter(h => heroMatchesFilters(h, activeSeasons, activeStates, activeTypes))
+    .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery));
 
   if (activeSkinsOnly) {
     filtered = filtered.sort((a, b) => {
@@ -104,6 +124,8 @@ export function renderGeneratorHeroes(options = {}) {
       card.className = `hero-card generator-card relative${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
+      card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');
+      card.setAttribute('aria-label', `${generatorSelectedHeroes.has(hero.name) ? 'Deselect' : 'Select'} ${hero.name}`);
       const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
         ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
         : '';
@@ -137,9 +159,13 @@ export function renderGeneratorHeroes(options = {}) {
         if (generatorSelectedHeroes.has(hero.name)) {
           generatorSelectedHeroes.delete(hero.name);
           card.classList.remove('generator-card-selected');
+          card.setAttribute('aria-pressed', 'false');
+          card.setAttribute('aria-label', `Select ${hero.name}`);
         } else {
           generatorSelectedHeroes.add(hero.name);
           card.classList.add('generator-card-selected');
+          card.setAttribute('aria-pressed', 'true');
+          card.setAttribute('aria-label', `Deselect ${hero.name}`);
         }
         
         const countBadge = document.getElementById('genSelectedCount');
@@ -188,9 +214,16 @@ export function renderGeneratorHeroes(options = {}) {
     sourceNote.textContent = getSourceCreditText();
 }
 
-export function renderGeneratorResults(bestCombos) {
+export function renderGeneratorResults(bestCombos, meta = {}) {
   const t = translations[currentLanguage] || translations.en;
   generatorResultsEl.innerHTML = '';
+
+  if (Number.isFinite(meta.durationMs)) {
+    const summary = document.createElement('div');
+    summary.className = 'generator-run-meta';
+    summary.textContent = `Generated ${bestCombos.length} combo${bestCombos.length === 1 ? '' : 's'} in ${meta.durationMs} ms`;
+    generatorResultsEl.appendChild(summary);
+  }
 
   bestCombos.forEach((combo, i) => {
     const card = document.createElement('div');
@@ -277,40 +310,48 @@ export function generateBestCombos() {
     return;
   }
 
-  const ownedSet = new Set(selected);
-  const usedHeroesGlobal = new Set();
-  const finalSelection = [];
-  const total = rankedCombos.length;
+  setGeneratorBusy(true);
+  const startedAt = performance.now();
 
-  for (let i = 0; i < total; i++) {
-    const combo = rankedCombos[i];
-    if (finalSelection.length >= 5) break;
-    const canBuild = combo.heroes.every(h => ownedSet.has(h));
-    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
+  try {
+    const ownedSet = new Set(selected);
+    const usedHeroesGlobal = new Set();
+    const finalSelection = [];
+    const total = rankedCombos.length;
 
-    if (canBuild && isUnique) {
-      let rawScore = 100;
-      if (total > 1) {
-        rawScore = 100 - ((i / (total - 1)) * 99);
+    for (let i = 0; i < total; i++) {
+      const combo = rankedCombos[i];
+      if (finalSelection.length >= 5) break;
+      const canBuild = combo.heroes.every(h => ownedSet.has(h));
+      const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
+
+      if (canBuild && isUnique) {
+        let rawScore = 100;
+        if (total > 1) {
+          rawScore = 100 - ((i / (total - 1)) * 99);
+        }
+        finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
+        combo.heroes.forEach(h => usedHeroesGlobal.add(h));
       }
-      finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
-      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
     }
-  }
 
-  lastGeneratedCombos.length = 0;
-  lastGeneratedCombos.push(...finalSelection);
-  renderGeneratorResults(finalSelection);
+    const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
+    lastGeneratedCombos.length = 0;
+    lastGeneratedCombos.push(...finalSelection);
+    renderGeneratorResults(finalSelection, { durationMs });
 
-  if (finalSelection.length > 0) {
-    downloadGeneratorBtn.classList.remove('hidden');
-    if (typeof window.showToast === 'function') {
-      const key = finalSelection.length === 1 ? 'generatorFoundComboOne' : 'generatorFoundComboMany';
-      const message = (t[key] || 'Found {n} best combos!').replace('{n}', finalSelection.length);
-      window.showToast(message, 'success');
+    if (finalSelection.length > 0) {
+      downloadGeneratorBtn.classList.remove('hidden');
+      if (typeof window.showToast === 'function') {
+        const key = finalSelection.length === 1 ? 'generatorFoundComboOne' : 'generatorFoundComboMany';
+        const message = (t[key] || 'Found {n} best combos!').replace('{n}', finalSelection.length);
+        window.showToast(`${message} Generated in ${durationMs} ms.`, 'success');
+      }
+    } else {
+      downloadGeneratorBtn.classList.add('hidden');
     }
-  } else {
-    downloadGeneratorBtn.classList.add('hidden');
+  } finally {
+    setGeneratorBusy(false);
   }
 }
 
@@ -322,53 +363,64 @@ export function generateRandomCombos() {
     return;
   }
 
-  const ownedSet = new Set(selected);
-  const total = rankedCombos.length;
+  setGeneratorBusy(true);
+  const startedAt = performance.now();
 
-  const validCombos = rankedCombos
-    .map((combo, index) => {
-        let rawScore = 100;
-        if (total > 1) {
-          rawScore = 100 - ((index / (total - 1)) * 99);
-        }
-        return {
-          ...combo,
-          originalIndex: index,
-          displayScore: rawScore.toFixed(1)
-        };
-    })
-    .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
+  try {
+    const ownedSet = new Set(selected);
+    const total = rankedCombos.length;
 
-  if (validCombos.length === 0) {
-    showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
-    return;
-  }
+    const validCombos = rankedCombos
+      .map((combo, index) => {
+          let rawScore = 100;
+          if (total > 1) {
+            rawScore = 100 - ((index / (total - 1)) * 99);
+          }
+          return {
+            ...combo,
+            originalIndex: index,
+            displayScore: rawScore.toFixed(1)
+          };
+      })
+      .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
 
-  for (let i = validCombos.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
-  }
-
-  const randomSelection = [];
-  const usedHeroesGlobal = new Set();
-
-  for (const combo of validCombos) {
-    if (randomSelection.length >= 5) break;
-    const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
-    if (isUnique) {
-      randomSelection.push(combo);
-      combo.heroes.forEach(h => usedHeroesGlobal.add(h));
+    if (validCombos.length === 0) {
+      showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
+      return;
     }
-  }
 
-  randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
+    for (let i = validCombos.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
+    }
 
-  if (randomSelection.length === 0) {
-     showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
-  } else {
-     lastGeneratedCombos.length = 0;
-     lastGeneratedCombos.push(...randomSelection);
-     renderGeneratorResults(randomSelection);
-     downloadGeneratorBtn.classList.remove('hidden');
+    const randomSelection = [];
+    const usedHeroesGlobal = new Set();
+
+    for (const combo of validCombos) {
+      if (randomSelection.length >= 5) break;
+      const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
+      if (isUnique) {
+        randomSelection.push(combo);
+        combo.heroes.forEach(h => usedHeroesGlobal.add(h));
+      }
+    }
+
+    randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
+
+    if (randomSelection.length === 0) {
+       showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");
+    } else {
+       const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
+       lastGeneratedCombos.length = 0;
+       lastGeneratedCombos.push(...randomSelection);
+       renderGeneratorResults(randomSelection, { durationMs });
+       downloadGeneratorBtn.classList.remove('hidden');
+       if (typeof window.showToast === 'function') {
+         window.showToast(`Generated ${randomSelection.length} random combos in ${durationMs} ms.`, 'success');
+       }
+    }
+  } finally {
+    setGeneratorBusy(false);
   }
 }

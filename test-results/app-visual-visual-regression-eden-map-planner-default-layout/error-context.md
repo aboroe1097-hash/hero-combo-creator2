@@ -1,0 +1,4378 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: app-visual.spec.js >> visual regression >> eden map planner default layout
+- Location: tests\app-visual.spec.js:73:3
+
+# Error details
+
+```
+Error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0.25
+Received:   0
+
+Call Log:
+- Timeout 10000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner "VTS 1097 toolkit" [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: v10.5.3 — VTS s1097 Community Tool
+        - generic [ref=e6]:
+          - img "Hero Combo Creator — Rise of Castles Ice and Fire VTS 1097" [ref=e7]
+          - heading "Hero Combo Creator" [level=1] [ref=e8]
+          - generic [ref=e9]:
+            - paragraph [ref=e10]: "Rise of Castles: Ice & Fire"
+            - paragraph [ref=e11]: TEAM VTS — STATE 1097
+        - paragraph [ref=e12]: "Free community tools for Rise of Castles: Ice & Fire — build hero combos, plan Eden maps, calculate loyalty upgrades, track tech research, and browse the Hero Atlas. Made for VTS State 1097."
+      - generic [ref=e13]:
+        - generic [ref=e14]: S1097 Deck
+        - generic [ref=e15]:
+          - generic "Game time · 22:36:03" [ref=e16]: 🕐 22:36
+          - generic [ref=e18] [cursor=pointer]:
+            - generic:
+              - img
+            - combobox [ref=e19]:
+              - option "English" [selected]
+              - option "Español"
+              - option "Português"
+              - option "Deutsch"
+              - option "Français"
+              - option "Türkçe"
+              - option "Русский"
+              - option "Indonesia"
+              - option "中文"
+              - option "العربية"
+              - option "한국어"
+            - generic:
+              - img
+          - button "Toggle light/dark theme" [ref=e20] [cursor=pointer]:
+            - img [ref=e22]
+    - main [ref=e24]:
+      - navigation "Primary tools" [ref=e25]:
+        - generic [ref=e27]:
+          - button "Manual Builder" [ref=e29] [cursor=pointer]
+          - button "Combo Generator" [ref=e31] [cursor=pointer]
+          - generic [ref=e32]:
+            - button "Hero Atlas" [ref=e33] [cursor=pointer]
+            - generic: NEW
+          - generic [ref=e34]:
+            - button "Research" [ref=e35] [cursor=pointer]
+            - generic: HOT
+          - generic [ref=e36]:
+            - button "Eden Map" [active] [ref=e37] [cursor=pointer]
+            - generic: Beta
+          - button "Eden Loyalty" [ref=e39] [cursor=pointer]
+          - button "YouTube" [ref=e41] [cursor=pointer]
+          - generic [ref=e42]:
+            - button "VTS Admin" [ref=e43] [cursor=pointer]
+            - generic: ADMIN
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - heading "Eden Map Planner" [level=2] [ref=e48]
+            - paragraph [ref=e49]: Wonder X1 map with in-game structure coords. Pan, zoom, path routes, and layer toggles — hover any toolbar control for details.
+            - generic [ref=e50]: Season 5 — Wonder X1
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - generic [ref=e53]: Map
+              - generic [ref=e54]:
+                - generic [ref=e55]:
+                  - generic [ref=e56]: Season
+                  - combobox "Season" [ref=e57]:
+                    - option "Season 5 — Wonder X1" [selected]
+                    - option "Wonder X12 — Reference"
+                    - option "Season 3 — Normal"
+                - button "Change" [ref=e58] [cursor=pointer]
+              - generic [ref=e59]:
+                - combobox [ref=e60] [cursor=pointer]:
+                  - option "Full Map" [selected]
+                  - option "Central Sector (C)"
+                  - option "East Sector (E)"
+                  - option "Eastern Central Sector (EC)"
+                  - option "North Sector 1 (N1)"
+                  - option "North Sector 2 (N2)"
+                  - option "North Sector 3 (N3)"
+                  - option "North Sector 4 (N4)"
+                  - option "S1 Sector (S1)"
+                  - option "South Sector 2 (S2)"
+                  - option "South Sector 3 (S3)"
+                  - option "South Sector 4 (S4)"
+                  - option "West Sector (W)"
+                  - option "West Central Sector (WC)"
+                - button "⊞ Isolate" [disabled] [ref=e61]
+              - group "Zoom" [ref=e62]:
+                - button "−" [ref=e63] [cursor=pointer]
+                - generic [ref=e64]: 42%
+                - button "+" [ref=e65] [cursor=pointer]
+              - generic [ref=e66]:
+                - button "⟳ Reset" [ref=e67] [cursor=pointer]
+                - button "⊡ Fit" [ref=e68] [cursor=pointer]
+                - button "📖 Guide" [ref=e69] [cursor=pointer]
+            - generic [ref=e70]:
+              - generic [ref=e71]: Tools
+              - tablist "Map tools" [ref=e72]:
+                - tab "Navigate" [selected] [ref=e73] [cursor=pointer]
+                - tab "Measure" [ref=e74] [cursor=pointer]
+                - tab "Path" [ref=e75] [cursor=pointer]
+                - tab "Target" [ref=e76] [cursor=pointer]
+                - tab "Draw" [ref=e77] [cursor=pointer]
+              - generic "Path options":
+                - combobox:
+                  - option "Red" [selected]
+                  - option "Blue"
+                  - option "Purple"
+                  - option "Yellow"
+                  - option "Green"
+                  - option "Scout"
+                - textbox "Route name"
+                - button "Undo"
+                - button "Finish Path"
+                - button "Clear"
+                - button "X1 Targets"
+                - button "Del Path"
+              - generic "Draw options":
+                - combobox:
+                  - option "Red"
+                  - option "Blue"
+                  - option "Purple"
+                  - option "Yellow"
+                  - option "Green"
+                  - option "Scout" [selected]
+                  - option "White"
+                - button "Undo"
+                - button "Clear"
+            - generic [ref=e78]:
+              - generic "Game time" [ref=e79]: 🕐 🕐 22:36:03 · Day 2026-06-19
+              - generic [ref=e80]:
+                - generic [ref=e81]: View
+                - combobox "View" [ref=e82] [cursor=pointer]:
+                  - option "Strategic" [selected]
+                  - option "Scout Mode"
+                  - option "Route Planner"
+              - generic [ref=e83]:
+                - generic [ref=e84]: March speed
+                - slider "March speed 1.00×" [ref=e85]: "100"
+                - generic [ref=e86]: 1.00×
+              - generic [ref=e87]:
+                - button "Pull Intel" [ref=e88] [cursor=pointer]
+                - button "Push Intel" [ref=e89] [cursor=pointer]
+            - group [ref=e90]:
+              - generic "▸ Plans & export" [ref=e91] [cursor=pointer]
+              - option "Main Plan" [selected]
+            - generic [ref=e92]:
+              - generic [ref=e93]: Layers
+              - generic [ref=e94]:
+                - button "Floor" [ref=e95] [cursor=pointer]
+                - button "Map" [ref=e96] [cursor=pointer]
+                - button "Shots" [ref=e97] [cursor=pointer]
+                - button "Terrain" [ref=e98] [cursor=pointer]
+                - button "Struct" [ref=e99] [cursor=pointer]
+                - button "Paths" [ref=e100] [cursor=pointer]
+                - button "Targets" [ref=e101] [cursor=pointer]
+                - button "Teams" [disabled]
+                - button "Labels" [ref=e102] [cursor=pointer]
+                - button "Zones" [ref=e103] [cursor=pointer]
+                - button "Territory" [ref=e104] [cursor=pointer]
+                - button "Fog" [ref=e105] [cursor=pointer]
+                - button "Heat" [ref=e106] [cursor=pointer]
+                - button "Sector HD" [ref=e107] [cursor=pointer]
+              - generic [ref=e108]:
+                - generic [ref=e109]: Map
+                - slider "Map" [ref=e110] [cursor=pointer]: "88"
+            - generic [ref=e111]:
+              - generic [ref=e112]: Zone
+              - generic [ref=e113]:
+                - button "All" [ref=e114] [cursor=pointer]
+                - button "North" [ref=e115] [cursor=pointer]
+                - button "Central" [ref=e116] [cursor=pointer]
+                - button "South" [ref=e117] [cursor=pointer]
+                - generic [ref=e119]: Quick
+                - generic [ref=e120]:
+                  - button "C" [ref=e121] [cursor=pointer]
+                  - button "EC" [ref=e122] [cursor=pointer]
+                  - button "WC" [ref=e123] [cursor=pointer]
+                  - button "E" [ref=e124] [cursor=pointer]
+                  - button "W" [ref=e125] [cursor=pointer]
+                  - button "N1" [ref=e126] [cursor=pointer]
+                  - button "N2" [ref=e127] [cursor=pointer]
+                - button "★ Temple" [ref=e128] [cursor=pointer]
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - generic "Click to jump" [ref=e132] [cursor=pointer]
+            - generic [ref=e133]:
+              - generic [ref=e134]: Plains
+              - generic [ref=e136]: Desert
+              - generic [ref=e138]: River
+              - generic [ref=e140]: Mountain
+              - generic [ref=e142]: Path
+          - complementary [ref=e144]:
+            - generic [ref=e145]: 622/622 shown · 11,135 OV · 0 assigned · 0 targets · 0 paths (0 tiles, ~1 min)
+            - group [ref=e146]:
+              - generic "▸ Team plan" [ref=e147] [cursor=pointer]
+            - paragraph [ref=e149]:
+              - text: Select a structure on the map, or see
+              - link "📖 Guide" [ref=e150] [cursor=pointer]:
+                - /url: "#edenHelpPanel"
+            - generic [ref=e151]:
+              - combobox [ref=e152]:
+                - option "All ownership" [selected]
+                - option "🟢 Owned"
+                - option "🟡 Contested"
+                - option "🔴 Enemy"
+                - option "⚪ Neutral"
+              - combobox [ref=e153]:
+                - option "All zones" [selected]
+                - option "C"
+                - option "Z1"
+                - option "Z1,C"
+                - option "Z1,EC-Z5"
+                - option "Z1,Z2"
+                - option "Z1,Z22"
+                - option "Z1,Z3"
+                - option "Z1,Z4"
+                - option "Z1,Z5"
+                - option "Z1.E-23"
+                - option "Z2"
+                - option "Z2,C"
+                - option "Z2,Z22"
+                - option "Z2,Z23"
+                - option "Z2,Z24"
+                - option "Z2,Z3"
+                - option "Z2,Z4"
+                - option "Z2,Z5"
+                - option "Z2,Z6"
+                - option "Z3"
+                - option "Z3,N4-Z1"
+                - option "Z3,S3-Z4"
+                - option "Z3,S3-Z6"
+                - option "Z3,WC-Z4"
+                - option "Z3,Z24"
+                - option "Z3,Z25"
+                - option "Z3,Z4"
+                - option "Z3,Z5"
+                - option "Z3,Z6"
+                - option "Z4"
+                - option "Z4,C"
+                - option "Z4,EC-Z3"
+                - option "Z4,EC-Z5"
+                - option "Z4,N4-Z6"
+                - option "Z4,W-Z3"
+                - option "Z4,WC-Z2"
+                - option "Z4,WC1"
+                - option "Z4,Z25"
+                - option "Z4,Z5"
+                - option "Z4,Z6"
+                - option "Z5"
+                - option "Z5,C"
+                - option "Z5,E-Z1"
+                - option "Z5,E-Z4"
+                - option "Z5,EC-Z1"
+                - option "Z5,EC-Z2"
+                - option "Z5,EC-Z5"
+                - option "Z5,N2-Z1"
+                - option "Z5,N4-Z4"
+                - option "Z5,WC-Z3"
+                - option "Z5,Z4-Z5"
+                - option "Z5,Z6"
+                - option "Z6"
+                - option "Z6,E-Z3"
+                - option "Z6,N2-Z4"
+                - option "Z6,S3-Z6"
+                - option "Z6,W-Z3"
+                - option "Z6,WC-Z4"
+                - option "Z6,WC-Z5"
+                - option "Z6,Z5-Z4"
+              - combobox [ref=e154]:
+                - option "All structure types" [selected]
+                - option "Capital Lv5"
+                - option "Capital Lv6"
+                - option "Gate Lv1"
+                - option "Gate Lv2"
+                - option "Gate Lv3"
+                - option "Gate Lv4"
+                - option "Gate Lv5"
+                - option "Gate Lv7"
+                - option "Large Town Lv4"
+                - option "Small Town Lv1"
+                - option "Small Town Lv2"
+                - option "Stronghold"
+                - option "Wonder Capital Lv8"
+              - combobox [ref=e155]:
+                - 'option "Sort: Points" [selected]'
+                - 'option "Sort: Zone"'
+                - 'option "Sort: Type"'
+            - generic [ref=e156]:
+              - generic [ref=e157]: Go to coords
+              - generic [ref=e158]:
+                - textbox "Go to coords" [ref=e159]:
+                  - /placeholder: X:Y e.g. 800:800
+                - button "Go" [ref=e160] [cursor=pointer]
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - img
+                - textbox "Search structures..." [ref=e163]
+              - generic [ref=e164]:
+                - button "Wonder Capital Lv8 C 800:800 600 OV" [ref=e165] [cursor=pointer]:
+                  - generic [ref=e167]:
+                    - strong [ref=e168]: Wonder Capital Lv8
+                    - text: C
+                    - emphasis [ref=e169]: 800:800
+                  - generic [ref=e170]: 600 OV
+                - button "Capital Lv6 Z2 635:845 100 OV" [ref=e171] [cursor=pointer]:
+                  - generic [ref=e173]:
+                    - strong [ref=e174]: Capital Lv6
+                    - text: Z2
+                    - emphasis [ref=e175]: 635:845
+                  - generic [ref=e176]: 100 OV
+                - button "Capital Lv6 Z4 965:755 100 OV" [ref=e177] [cursor=pointer]:
+                  - generic [ref=e179]:
+                    - strong [ref=e180]: Capital Lv6
+                    - text: Z4
+                    - emphasis [ref=e181]: 965:755
+                  - generic [ref=e182]: 100 OV
+                - button "Capital Lv6 Z3 1312:824 100 OV" [ref=e183] [cursor=pointer]:
+                  - generic [ref=e185]:
+                    - strong [ref=e186]: Capital Lv6
+                    - text: Z3
+                    - emphasis [ref=e187]: 1312:824
+                  - generic [ref=e188]: 100 OV
+                - button "Capital Lv6 Z4 235:726 100 OV" [ref=e189] [cursor=pointer]:
+                  - generic [ref=e191]:
+                    - strong [ref=e192]: Capital Lv6
+                    - text: Z4
+                    - emphasis [ref=e193]: 235:726
+                  - generic [ref=e194]: 100 OV
+                - button "Capital Lv5 Z2 173:244 70 OV" [ref=e195] [cursor=pointer]:
+                  - generic [ref=e197]:
+                    - strong [ref=e198]: Capital Lv5
+                    - text: Z2
+                    - emphasis [ref=e199]: 173:244
+                  - generic [ref=e200]: 70 OV
+                - button "Capital Lv5 Z4 1318:418 70 OV" [ref=e201] [cursor=pointer]:
+                  - generic [ref=e203]:
+                    - strong [ref=e204]: Capital Lv5
+                    - text: Z4
+                    - emphasis [ref=e205]: 1318:418
+                  - generic [ref=e206]: 70 OV
+                - button "Capital Lv5 Z4 1402:1263 70 OV" [ref=e207] [cursor=pointer]:
+                  - generic [ref=e209]:
+                    - strong [ref=e210]: Capital Lv5
+                    - text: Z4
+                    - emphasis [ref=e211]: 1402:1263
+                  - generic [ref=e212]: 70 OV
+                - button "Gate Lv2 Z4,Z6 558:1269 5 OV" [ref=e213] [cursor=pointer]:
+                  - generic [ref=e216]:
+                    - strong [ref=e217]: Gate Lv2
+                    - text: Z4,Z6
+                    - emphasis [ref=e218]: 558:1269
+                  - generic [ref=e219]: 5 OV
+                - button "Capital Lv5 Z5 590:258 70 OV" [ref=e220] [cursor=pointer]:
+                  - generic [ref=e222]:
+                    - strong [ref=e223]: Capital Lv5
+                    - text: Z5
+                    - emphasis [ref=e224]: 590:258
+                  - generic [ref=e225]: 70 OV
+                - button "Capital Lv5 Z5 1017:233 70 OV" [ref=e226] [cursor=pointer]:
+                  - generic [ref=e228]:
+                    - strong [ref=e229]: Capital Lv5
+                    - text: Z5
+                    - emphasis [ref=e230]: 1017:233
+                  - generic [ref=e231]: 70 OV
+                - button "Capital Lv5 Z5 961:1248 70 OV" [ref=e232] [cursor=pointer]:
+                  - generic [ref=e234]:
+                    - strong [ref=e235]: Capital Lv5
+                    - text: Z5
+                    - emphasis [ref=e236]: 961:1248
+                  - generic [ref=e237]: 70 OV
+                - button "Capital Lv5 Z5 216:1130 70 OV" [ref=e238] [cursor=pointer]:
+                  - generic [ref=e240]:
+                    - strong [ref=e241]: Capital Lv5
+                    - text: Z5
+                    - emphasis [ref=e242]: 216:1130
+                  - generic [ref=e243]: 70 OV
+                - button "Large Town Lv4 Z1 1450:803 50 OV" [ref=e244] [cursor=pointer]:
+                  - generic [ref=e247]:
+                    - strong [ref=e248]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e249]: 1450:803
+                  - generic [ref=e250]: 50 OV
+                - button "Large Town Lv4 Z1 923:944 50 OV" [ref=e251] [cursor=pointer]:
+                  - generic [ref=e254]:
+                    - strong [ref=e255]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e256]: 923:944
+                  - generic [ref=e257]: 50 OV
+                - button "Large Town Lv4 Z1 108:356 50 OV" [ref=e258] [cursor=pointer]:
+                  - generic [ref=e261]:
+                    - strong [ref=e262]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e263]: 108:356
+                  - generic [ref=e264]: 50 OV
+                - button "Large Town Lv4 Z1 312:135 50 OV" [ref=e265] [cursor=pointer]:
+                  - generic [ref=e268]:
+                    - strong [ref=e269]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e270]: 312:135
+                  - generic [ref=e271]: 50 OV
+                - button "Large Town Lv4 Z1 855:178 50 OV" [ref=e272] [cursor=pointer]:
+                  - generic [ref=e275]:
+                    - strong [ref=e276]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e277]: 855:178
+                  - generic [ref=e278]: 50 OV
+                - button "Large Town Lv4 Z1 938:348 50 OV" [ref=e279] [cursor=pointer]:
+                  - generic [ref=e282]:
+                    - strong [ref=e283]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e284]: 938:348
+                  - generic [ref=e285]: 50 OV
+                - button "Large Town Lv4 Z1 1435:128 50 OV" [ref=e286] [cursor=pointer]:
+                  - generic [ref=e289]:
+                    - strong [ref=e290]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e291]: 1435:128
+                  - generic [ref=e292]: 50 OV
+                - button "Large Town Lv4 Z1 1402:1070 50 OV" [ref=e293] [cursor=pointer]:
+                  - generic [ref=e296]:
+                    - strong [ref=e297]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e298]: 1402:1070
+                  - generic [ref=e299]: 50 OV
+                - button "Large Town Lv4 Z1 1464:1097 50 OV" [ref=e300] [cursor=pointer]:
+                  - generic [ref=e303]:
+                    - strong [ref=e304]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e305]: 1464:1097
+                  - generic [ref=e306]: 50 OV
+                - button "Large Town Lv4 Z1 1269:1377 50 OV" [ref=e307] [cursor=pointer]:
+                  - generic [ref=e310]:
+                    - strong [ref=e311]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e312]: 1269:1377
+                  - generic [ref=e313]: 50 OV
+                - button "Large Town Lv4 Z1 647:1441 50 OV" [ref=e314] [cursor=pointer]:
+                  - generic [ref=e317]:
+                    - strong [ref=e318]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e319]: 647:1441
+                  - generic [ref=e320]: 50 OV
+                - button "Large Town Lv4 Z1 174:1398 50 OV" [ref=e321] [cursor=pointer]:
+                  - generic [ref=e324]:
+                    - strong [ref=e325]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e326]: 174:1398
+                  - generic [ref=e327]: 50 OV
+                - button "Large Town Lv4 Z1 71:706 50 OV" [ref=e328] [cursor=pointer]:
+                  - generic [ref=e331]:
+                    - strong [ref=e332]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e333]: 71:706
+                  - generic [ref=e334]: 50 OV
+                - button "Large Town Lv4 Z1 615:524 50 OV" [ref=e335] [cursor=pointer]:
+                  - generic [ref=e338]:
+                    - strong [ref=e339]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e340]: 615:524
+                  - generic [ref=e341]: 50 OV
+                - button "Large Town Lv4 Z2 1061:1020 50 OV" [ref=e342] [cursor=pointer]:
+                  - generic [ref=e345]:
+                    - strong [ref=e346]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e347]: 1061:1020
+                  - generic [ref=e348]: 50 OV
+                - button "Large Town Lv4 Z2 1570:948 50 OV" [ref=e349] [cursor=pointer]:
+                  - generic [ref=e352]:
+                    - strong [ref=e353]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e354]: 1570:948
+                  - generic [ref=e355]: 50 OV
+                - button "Large Town Lv4 Z2 1061:1020 50 OV" [ref=e356] [cursor=pointer]:
+                  - generic [ref=e359]:
+                    - strong [ref=e360]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e361]: 1061:1020
+                  - generic [ref=e362]: 50 OV
+                - button "Large Town Lv4 Z2 494:139 50 OV" [ref=e363] [cursor=pointer]:
+                  - generic [ref=e366]:
+                    - strong [ref=e367]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e368]: 494:139
+                  - generic [ref=e369]: 50 OV
+                - button "Large Town Lv4 Z2 1044:117 50 OV" [ref=e370] [cursor=pointer]:
+                  - generic [ref=e373]:
+                    - strong [ref=e374]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e375]: 1044:117
+                  - generic [ref=e376]: 50 OV
+                - button "Large Town Lv4 Z2 1453:329 50 OV" [ref=e377] [cursor=pointer]:
+                  - generic [ref=e380]:
+                    - strong [ref=e381]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e382]: 1453:329
+                  - generic [ref=e383]: 50 OV
+                - button "Large Town Lv4 Z2 1518:1260 50 OV" [ref=e384] [cursor=pointer]:
+                  - generic [ref=e387]:
+                    - strong [ref=e388]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e389]: 1518:1260
+                  - generic [ref=e390]: 50 OV
+                - button "Large Town Lv4 Z2 1062:1049 50 OV" [ref=e391] [cursor=pointer]:
+                  - generic [ref=e394]:
+                    - strong [ref=e395]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e396]: 1062:1049
+                  - generic [ref=e397]: 50 OV
+                - button "Large Town Lv4 Z2 1062:1409 50 OV" [ref=e398] [cursor=pointer]:
+                  - generic [ref=e401]:
+                    - strong [ref=e402]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e403]: 1062:1409
+                  - generic [ref=e404]: 50 OV
+                - button "Large Town Lv4 Z2 351:1437 50 OV" [ref=e405] [cursor=pointer]:
+                  - generic [ref=e408]:
+                    - strong [ref=e409]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e410]: 351:1437
+                  - generic [ref=e411]: 50 OV
+                - button "Large Town Lv4 Z2 96:1237 50 OV" [ref=e412] [cursor=pointer]:
+                  - generic [ref=e415]:
+                    - strong [ref=e416]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e417]: 96:1237
+                  - generic [ref=e418]: 50 OV
+                - button "Large Town Lv4 Z2 86:573 50 OV" [ref=e419] [cursor=pointer]:
+                  - generic [ref=e422]:
+                    - strong [ref=e423]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e424]: 86:573
+                  - generic [ref=e425]: 50 OV
+                - button "Large Town Lv4 Z2 102:576 50 OV" [ref=e426] [cursor=pointer]:
+                  - generic [ref=e429]:
+                    - strong [ref=e430]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e431]: 102:576
+                  - generic [ref=e432]: 50 OV
+                - button "Large Town Lv4 Z3 1004:616 50 OV" [ref=e433] [cursor=pointer]:
+                  - generic [ref=e436]:
+                    - strong [ref=e437]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e438]: 1004:616
+                  - generic [ref=e439]: 50 OV
+                - button "Large Town Lv4 Z3 506:762 50 OV" [ref=e440] [cursor=pointer]:
+                  - generic [ref=e443]:
+                    - strong [ref=e444]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e445]: 506:762
+                  - generic [ref=e446]: 50 OV
+                - button "Large Town Lv4 Z3 1004:616 50 OV" [ref=e447] [cursor=pointer]:
+                  - generic [ref=e450]:
+                    - strong [ref=e451]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e452]: 1004:616
+                  - generic [ref=e453]: 50 OV
+                - button "Large Town Lv4 Z3 111:92 50 OV" [ref=e454] [cursor=pointer]:
+                  - generic [ref=e457]:
+                    - strong [ref=e458]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e459]: 111:92
+                  - generic [ref=e460]: 50 OV
+                - button "Large Town Lv4 Z3 666:131 50 OV" [ref=e461] [cursor=pointer]:
+                  - generic [ref=e464]:
+                    - strong [ref=e465]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e466]: 666:131
+                  - generic [ref=e467]: 50 OV
+                - button "Large Town Lv4 Z3 686:131 50 OV" [ref=e468] [cursor=pointer]:
+                  - generic [ref=e471]:
+                    - strong [ref=e472]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e473]: 686:131
+                  - generic [ref=e474]: 50 OV
+                - button "Large Town Lv4 Z3 706:134 50 OV" [ref=e475] [cursor=pointer]:
+                  - generic [ref=e478]:
+                    - strong [ref=e479]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e480]: 706:134
+                  - generic [ref=e481]: 50 OV
+                - button "Large Town Lv4 Z3 1249:94 50 OV" [ref=e482] [cursor=pointer]:
+                  - generic [ref=e485]:
+                    - strong [ref=e486]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e487]: 1249:94
+                  - generic [ref=e488]: 50 OV
+                - button "Large Town Lv4 Z3 1410:522 50 OV" [ref=e489] [cursor=pointer]:
+                  - generic [ref=e492]:
+                    - strong [ref=e493]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e494]: 1410:522
+                  - generic [ref=e495]: 50 OV
+                - button "Large Town Lv4 Z3 1524:1416 50 OV" [ref=e496] [cursor=pointer]:
+                  - generic [ref=e499]:
+                    - strong [ref=e500]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e501]: 1524:1416
+                  - generic [ref=e502]: 50 OV
+                - button "Large Town Lv4 Z3 837:1351 50 OV" [ref=e503] [cursor=pointer]:
+                  - generic [ref=e506]:
+                    - strong [ref=e507]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e508]: 837:1351
+                  - generic [ref=e509]: 50 OV
+                - button "Large Town Lv4 Z3 458:1390 50 OV" [ref=e510] [cursor=pointer]:
+                  - generic [ref=e513]:
+                    - strong [ref=e514]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e515]: 458:1390
+                  - generic [ref=e516]: 50 OV
+                - button "Large Town Lv4 Z3 120:1085 50 OV" [ref=e517] [cursor=pointer]:
+                  - generic [ref=e520]:
+                    - strong [ref=e521]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e522]: 120:1085
+                  - generic [ref=e523]: 50 OV
+                - button "Large Town Lv4 Z3 258:847 50 OV" [ref=e524] [cursor=pointer]:
+                  - generic [ref=e527]:
+                    - strong [ref=e528]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e529]: 258:847
+                  - generic [ref=e530]: 50 OV
+                - button "Large Town Lv4 Z3 506:762 50 OV" [ref=e531] [cursor=pointer]:
+                  - generic [ref=e534]:
+                    - strong [ref=e535]: Large Town Lv4
+                    - text: Z3
+                    - emphasis [ref=e536]: 506:762
+                  - generic [ref=e537]: 50 OV
+                - button "Large Town Lv4 Z4 1220:729 50 OV" [ref=e538] [cursor=pointer]:
+                  - generic [ref=e541]:
+                    - strong [ref=e542]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e543]: 1220:729
+                  - generic [ref=e544]: 50 OV
+                - button "Large Town Lv4 Z4 219:414 50 OV" [ref=e545] [cursor=pointer]:
+                  - generic [ref=e548]:
+                    - strong [ref=e549]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e550]: 219:414
+                  - generic [ref=e551]: 50 OV
+                - button "Large Town Lv4 Z4 479:296 50 OV" [ref=e552] [cursor=pointer]:
+                  - generic [ref=e555]:
+                    - strong [ref=e556]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e557]: 479:296
+                  - generic [ref=e558]: 50 OV
+                - button "Large Town Lv4 Z4 1131:1197 50 OV" [ref=e559] [cursor=pointer]:
+                  - generic [ref=e562]:
+                    - strong [ref=e563]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e564]: 1131:1197
+                  - generic [ref=e565]: 50 OV
+                - button "Large Town Lv4 Z4 172:862 50 OV" [ref=e566] [cursor=pointer]:
+                  - generic [ref=e569]:
+                    - strong [ref=e570]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e571]: 172:862
+                  - generic [ref=e572]: 50 OV
+                - button "Large Town Lv4 Z4 172:887 50 OV" [ref=e573] [cursor=pointer]:
+                  - generic [ref=e576]:
+                    - strong [ref=e577]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e578]: 172:887
+                  - generic [ref=e579]: 50 OV
+                - button "Large Town Lv4 Z4 500:900 50 OV" [ref=e580] [cursor=pointer]:
+                  - generic [ref=e583]:
+                    - strong [ref=e584]: Large Town Lv4
+                    - text: Z4
+                    - emphasis [ref=e585]: 500:900
+                  - generic [ref=e586]: 50 OV
+                - button "Large Town Lv4 Z5 870:508 50 OV" [ref=e587] [cursor=pointer]:
+                  - generic [ref=e590]:
+                    - strong [ref=e591]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e592]: 870:508
+                  - generic [ref=e593]: 50 OV
+                - button "Large Town Lv4 Z5 762:973 50 OV" [ref=e594] [cursor=pointer]:
+                  - generic [ref=e597]:
+                    - strong [ref=e598]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e599]: 762:973
+                  - generic [ref=e600]: 50 OV
+                - button "Large Town Lv4 Z5 1200:875 50 OV" [ref=e601] [cursor=pointer]:
+                  - generic [ref=e604]:
+                    - strong [ref=e605]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e606]: 1200:875
+                  - generic [ref=e607]: 50 OV
+                - button "Large Town Lv4 Z5 870:508 50 OV" [ref=e608] [cursor=pointer]:
+                  - generic [ref=e611]:
+                    - strong [ref=e612]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e613]: 870:508
+                  - generic [ref=e614]: 50 OV
+                - button "Large Town Lv4 Z5 246:191 50 OV" [ref=e615] [cursor=pointer]:
+                  - generic [ref=e618]:
+                    - strong [ref=e619]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e620]: 246:191
+                  - generic [ref=e621]: 50 OV
+                - button "Large Town Lv4 Z5 1325:576 50 OV" [ref=e622] [cursor=pointer]:
+                  - generic [ref=e625]:
+                    - strong [ref=e626]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e627]: 1325:576
+                  - generic [ref=e628]: 50 OV
+                - button "Large Town Lv4 Z5 1217:1070 50 OV" [ref=e629] [cursor=pointer]:
+                  - generic [ref=e632]:
+                    - strong [ref=e633]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e634]: 1217:1070
+                  - generic [ref=e635]: 50 OV
+                - button "Large Town Lv4 Z5 434:1239 50 OV" [ref=e636] [cursor=pointer]:
+                  - generic [ref=e639]:
+                    - strong [ref=e640]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e641]: 434:1239
+                  - generic [ref=e642]: 50 OV
+                - button "Large Town Lv4 Z5 331:578 50 OV" [ref=e643] [cursor=pointer]:
+                  - generic [ref=e646]:
+                    - strong [ref=e647]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e648]: 331:578
+                  - generic [ref=e649]: 50 OV
+                - button "Large Town Lv4 Z5 762:973 50 OV" [ref=e650] [cursor=pointer]:
+                  - generic [ref=e653]:
+                    - strong [ref=e654]: Large Town Lv4
+                    - text: Z5
+                    - emphasis [ref=e655]: 762:973
+                  - generic [ref=e656]: 50 OV
+                - button "Large Town Lv4 Z6 361:370 50 OV" [ref=e657] [cursor=pointer]:
+                  - generic [ref=e660]:
+                    - strong [ref=e661]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e662]: 361:370
+                  - generic [ref=e663]: 50 OV
+                - button "Large Town Lv4 Z6 749:296 50 OV" [ref=e664] [cursor=pointer]:
+                  - generic [ref=e667]:
+                    - strong [ref=e668]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e669]: 749:296
+                  - generic [ref=e670]: 50 OV
+                - button "Large Town Lv4 Z6 1197:202 50 OV" [ref=e671] [cursor=pointer]:
+                  - generic [ref=e674]:
+                    - strong [ref=e675]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e676]: 1197:202
+                  - generic [ref=e677]: 50 OV
+                - button "Large Town Lv4 Z6 1145:530 50 OV" [ref=e678] [cursor=pointer]:
+                  - generic [ref=e681]:
+                    - strong [ref=e682]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e683]: 1145:530
+                  - generic [ref=e684]: 50 OV
+                - button "Large Town Lv4 Z6 1258:1194 50 OV" [ref=e685] [cursor=pointer]:
+                  - generic [ref=e688]:
+                    - strong [ref=e689]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e690]: 1258:1194
+                  - generic [ref=e691]: 50 OV
+                - button "Large Town Lv4 Z6 873:1277 50 OV" [ref=e692] [cursor=pointer]:
+                  - generic [ref=e695]:
+                    - strong [ref=e696]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e697]: 873:1277
+                  - generic [ref=e698]: 50 OV
+                - button "Large Town Lv4 Z6 700:1247 50 OV" [ref=e699] [cursor=pointer]:
+                  - generic [ref=e702]:
+                    - strong [ref=e703]: Large Town Lv4
+                    - text: Z6
+                    - emphasis [ref=e704]: 700:1247
+                  - generic [ref=e705]: 50 OV
+                - button "Small Town Lv1 Z6 345:1002 15 OV" [ref=e706] [cursor=pointer]:
+                  - generic [ref=e709]:
+                    - strong [ref=e710]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e711]: 345:1002
+                  - generic [ref=e712]: 15 OV
+                - button "Small Town Lv2 Z1 668:536 20 OV" [ref=e713] [cursor=pointer]:
+                  - generic [ref=e716]:
+                    - strong [ref=e717]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e718]: 668:536
+                  - generic [ref=e719]: 20 OV
+                - button "Small Town Lv2 Z1 936:863 20 OV" [ref=e720] [cursor=pointer]:
+                  - generic [ref=e723]:
+                    - strong [ref=e724]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e725]: 936:863
+                  - generic [ref=e726]: 20 OV
+                - button "Small Town Lv2 Z1 1372:758 20 OV" [ref=e727] [cursor=pointer]:
+                  - generic [ref=e730]:
+                    - strong [ref=e731]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e732]: 1372:758
+                  - generic [ref=e733]: 20 OV
+                - button "Small Town Lv2 Z1 1546:790 20 OV" [ref=e734] [cursor=pointer]:
+                  - generic [ref=e737]:
+                    - strong [ref=e738]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e739]: 1546:790
+                  - generic [ref=e740]: 20 OV
+                - button "Small Town Lv2 Z1 936:863 20 OV" [ref=e741] [cursor=pointer]:
+                  - generic [ref=e744]:
+                    - strong [ref=e745]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e746]: 936:863
+                  - generic [ref=e747]: 20 OV
+                - button "Small Town Lv2 Z1 822:111 20 OV" [ref=e748] [cursor=pointer]:
+                  - generic [ref=e751]:
+                    - strong [ref=e752]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e753]: 822:111
+                  - generic [ref=e754]: 20 OV
+                - button "Small Town Lv2 Z1 1427:82 20 OV" [ref=e755] [cursor=pointer]:
+                  - generic [ref=e758]:
+                    - strong [ref=e759]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e760]: 1427:82
+                  - generic [ref=e761]: 20 OV
+                - button "Small Town Lv2 Z1 37:658 20 OV" [ref=e762] [cursor=pointer]:
+                  - generic [ref=e765]:
+                    - strong [ref=e766]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e767]: 37:658
+                  - generic [ref=e768]: 20 OV
+                - button "Small Town Lv2 Z1 96:763 20 OV" [ref=e769] [cursor=pointer]:
+                  - generic [ref=e772]:
+                    - strong [ref=e773]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e774]: 96:763
+                  - generic [ref=e775]: 20 OV
+                - button "Small Town Lv2 Z1 668:536 20 OV" [ref=e776] [cursor=pointer]:
+                  - generic [ref=e779]:
+                    - strong [ref=e780]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e781]: 668:536
+                  - generic [ref=e782]: 20 OV
+                - button "Small Town Lv2 Z2 553:579 20 OV" [ref=e783] [cursor=pointer]:
+                  - generic [ref=e786]:
+                    - strong [ref=e787]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e788]: 553:579
+                  - generic [ref=e789]: 20 OV
+                - button "Small Town Lv2 Z2 613:800 20 OV" [ref=e790] [cursor=pointer]:
+                  - generic [ref=e793]:
+                    - strong [ref=e794]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e795]: 613:800
+                  - generic [ref=e796]: 20 OV
+                - button "Small Town Lv2 Z2 987:975 20 OV" [ref=e797] [cursor=pointer]:
+                  - generic [ref=e800]:
+                    - strong [ref=e801]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e802]: 987:975
+                  - generic [ref=e803]: 20 OV
+                - button "Small Town Lv2 Z2 1494:893 20 OV" [ref=e804] [cursor=pointer]:
+                  - generic [ref=e807]:
+                    - strong [ref=e808]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e809]: 1494:893
+                  - generic [ref=e810]: 20 OV
+                - button "Small Town Lv2 Z2 1507:977 20 OV" [ref=e811] [cursor=pointer]:
+                  - generic [ref=e814]:
+                    - strong [ref=e815]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e816]: 1507:977
+                  - generic [ref=e817]: 20 OV
+                - button "Small Town Lv2 Z2 1072:809 20 OV" [ref=e818] [cursor=pointer]:
+                  - generic [ref=e821]:
+                    - strong [ref=e822]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e823]: 1072:809
+                  - generic [ref=e824]: 20 OV
+                - button "Small Town Lv2 Z2 987:975 20 OV" [ref=e825] [cursor=pointer]:
+                  - generic [ref=e828]:
+                    - strong [ref=e829]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e830]: 987:975
+                  - generic [ref=e831]: 20 OV
+                - button "Small Town Lv2 Z2 109:202 20 OV" [ref=e832] [cursor=pointer]:
+                  - generic [ref=e835]:
+                    - strong [ref=e836]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e837]: 109:202
+                  - generic [ref=e838]: 20 OV
+                - button "Small Town Lv2 Z2 132:266 20 OV" [ref=e839] [cursor=pointer]:
+                  - generic [ref=e842]:
+                    - strong [ref=e843]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e844]: 132:266
+                  - generic [ref=e845]: 20 OV
+                - button "Small Town Lv2 Z2 1474:1118 20 OV" [ref=e846] [cursor=pointer]:
+                  - generic [ref=e849]:
+                    - strong [ref=e850]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e851]: 1474:1118
+                  - generic [ref=e852]: 20 OV
+                - button "Small Town Lv2 Z2 1474:1188 20 OV" [ref=e853] [cursor=pointer]:
+                  - generic [ref=e856]:
+                    - strong [ref=e857]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e858]: 1474:1188
+                  - generic [ref=e859]: 20 OV
+                - button "Small Town Lv2 Z2 1032:1423 20 OV" [ref=e860] [cursor=pointer]:
+                  - generic [ref=e863]:
+                    - strong [ref=e864]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e865]: 1032:1423
+                  - generic [ref=e866]: 20 OV
+                - button "Small Town Lv2 Z2 133:1267 20 OV" [ref=e867] [cursor=pointer]:
+                  - generic [ref=e870]:
+                    - strong [ref=e871]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e872]: 133:1267
+                  - generic [ref=e873]: 20 OV
+                - button "Small Town Lv2 Z2 153:1267 20 OV" [ref=e874] [cursor=pointer]:
+                  - generic [ref=e877]:
+                    - strong [ref=e878]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e879]: 153:1267
+                  - generic [ref=e880]: 20 OV
+                - button "Small Town Lv2 Z2 45:553 20 OV" [ref=e881] [cursor=pointer]:
+                  - generic [ref=e884]:
+                    - strong [ref=e885]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e886]: 45:553
+                  - generic [ref=e887]: 20 OV
+                - button "Small Town Lv2 Z2 160:566 20 OV" [ref=e888] [cursor=pointer]:
+                  - generic [ref=e891]:
+                    - strong [ref=e892]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e893]: 160:566
+                  - generic [ref=e894]: 20 OV
+                - button "Small Town Lv2 Z2 553:579 20 OV" [ref=e895] [cursor=pointer]:
+                  - generic [ref=e898]:
+                    - strong [ref=e899]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e900]: 553:579
+                  - generic [ref=e901]: 20 OV
+                - button "Small Town Lv2 Z2 613:800 20 OV" [ref=e902] [cursor=pointer]:
+                  - generic [ref=e905]:
+                    - strong [ref=e906]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e907]: 613:800
+                  - generic [ref=e908]: 20 OV
+                - button "Small Town Lv2 Z3 1006:559 20 OV" [ref=e909] [cursor=pointer]:
+                  - generic [ref=e912]:
+                    - strong [ref=e913]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e914]: 1006:559
+                  - generic [ref=e915]: 20 OV
+                - button "Small Town Lv2 Z3 1069:672 20 OV" [ref=e916] [cursor=pointer]:
+                  - generic [ref=e919]:
+                    - strong [ref=e920]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e921]: 1069:672
+                  - generic [ref=e922]: 20 OV
+                - button "Small Town Lv2 Z3 463:684 20 OV" [ref=e923] [cursor=pointer]:
+                  - generic [ref=e926]:
+                    - strong [ref=e927]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e928]: 463:684
+                  - generic [ref=e929]: 20 OV
+                - button "Small Town Lv2 Z3 526:815 20 OV" [ref=e930] [cursor=pointer]:
+                  - generic [ref=e933]:
+                    - strong [ref=e934]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e935]: 526:815
+                  - generic [ref=e936]: 20 OV
+                - button "Small Town Lv2 Z3 1238:811 20 OV" [ref=e937] [cursor=pointer]:
+                  - generic [ref=e940]:
+                    - strong [ref=e941]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e942]: 1238:811
+                  - generic [ref=e943]: 20 OV
+                - button "Small Town Lv2 Z3 1400:882 20 OV" [ref=e944] [cursor=pointer]:
+                  - generic [ref=e947]:
+                    - strong [ref=e948]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e949]: 1400:882
+                  - generic [ref=e950]: 20 OV
+                - button "Small Town Lv2 Z3 1006:559 20 OV" [ref=e951] [cursor=pointer]:
+                  - generic [ref=e954]:
+                    - strong [ref=e955]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e956]: 1006:559
+                  - generic [ref=e957]: 20 OV
+                - button "Small Town Lv2 Z3 1069:672 20 OV" [ref=e958] [cursor=pointer]:
+                  - generic [ref=e961]:
+                    - strong [ref=e962]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e963]: 1069:672
+                  - generic [ref=e964]: 20 OV
+                - button "Small Town Lv2 Z3 608:104 20 OV" [ref=e965] [cursor=pointer]:
+                  - generic [ref=e968]:
+                    - strong [ref=e969]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e970]: 608:104
+                  - generic [ref=e971]: 20 OV
+                - button "Small Town Lv2 Z3 389:1318 20 OV" [ref=e972] [cursor=pointer]:
+                  - generic [ref=e975]:
+                    - strong [ref=e976]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e977]: 389:1318
+                  - generic [ref=e978]: 20 OV
+                - button "Small Town Lv2 Z3 199:824 20 OV" [ref=e979] [cursor=pointer]:
+                  - generic [ref=e982]:
+                    - strong [ref=e983]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e984]: 199:824
+                  - generic [ref=e985]: 20 OV
+                - button "Small Town Lv2 Z3 463:684 20 OV" [ref=e986] [cursor=pointer]:
+                  - generic [ref=e989]:
+                    - strong [ref=e990]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e991]: 463:684
+                  - generic [ref=e992]: 20 OV
+                - button "Small Town Lv2 Z3 526:815 20 OV" [ref=e993] [cursor=pointer]:
+                  - generic [ref=e996]:
+                    - strong [ref=e997]: Small Town Lv2
+                    - text: Z3
+                    - emphasis [ref=e998]: 526:815
+                  - generic [ref=e999]: 20 OV
+                - button "Small Town Lv2 Z3,Z5 1258:811 20 OV" [ref=e1000] [cursor=pointer]:
+                  - generic [ref=e1003]:
+                    - strong [ref=e1004]: Small Town Lv2
+                    - text: Z3,Z5
+                    - emphasis [ref=e1005]: 1258:811
+                  - generic [ref=e1006]: 20 OV
+                - button "Small Town Lv2 Z4 890:631 20 OV" [ref=e1007] [cursor=pointer]:
+                  - generic [ref=e1010]:
+                    - strong [ref=e1011]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1012]: 890:631
+                  - generic [ref=e1013]: 20 OV
+                - button "Small Town Lv2 Z4 923:722 20 OV" [ref=e1014] [cursor=pointer]:
+                  - generic [ref=e1017]:
+                    - strong [ref=e1018]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1019]: 923:722
+                  - generic [ref=e1020]: 20 OV
+                - button "Small Town Lv2 Z4 423:883 20 OV" [ref=e1021] [cursor=pointer]:
+                  - generic [ref=e1024]:
+                    - strong [ref=e1025]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1026]: 423:883
+                  - generic [ref=e1027]: 20 OV
+                - button "Small Town Lv2 Z4 1169:671 20 OV" [ref=e1028] [cursor=pointer]:
+                  - generic [ref=e1031]:
+                    - strong [ref=e1032]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1033]: 1169:671
+                  - generic [ref=e1034]: 20 OV
+                - button "Small Town Lv2 Z4 903:631 20 OV" [ref=e1035] [cursor=pointer]:
+                  - generic [ref=e1038]:
+                    - strong [ref=e1039]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1040]: 903:631
+                  - generic [ref=e1041]: 20 OV
+                - button "Small Town Lv2 Z4 923:722 20 OV" [ref=e1042] [cursor=pointer]:
+                  - generic [ref=e1045]:
+                    - strong [ref=e1046]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1047]: 923:722
+                  - generic [ref=e1048]: 20 OV
+                - button "Small Town Lv2 Z4 179:438 20 OV" [ref=e1049] [cursor=pointer]:
+                  - generic [ref=e1052]:
+                    - strong [ref=e1053]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1054]: 179:438
+                  - generic [ref=e1055]: 20 OV
+                - button "Small Town Lv2 Z4 418:250 20 OV" [ref=e1056] [cursor=pointer]:
+                  - generic [ref=e1059]:
+                    - strong [ref=e1060]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1061]: 418:250
+                  - generic [ref=e1062]: 20 OV
+                - button "Small Town Lv2 Z4 418:270 20 OV" [ref=e1063] [cursor=pointer]:
+                  - generic [ref=e1066]:
+                    - strong [ref=e1067]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1068]: 418:270
+                  - generic [ref=e1069]: 20 OV
+                - button "Small Town Lv2 Z4 1310:302 20 OV" [ref=e1070] [cursor=pointer]:
+                  - generic [ref=e1073]:
+                    - strong [ref=e1074]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1075]: 1310:302
+                  - generic [ref=e1076]: 20 OV
+                - button "Small Town Lv2 Z4 1310:358 20 OV" [ref=e1077] [cursor=pointer]:
+                  - generic [ref=e1080]:
+                    - strong [ref=e1081]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1082]: 1310:358
+                  - generic [ref=e1083]: 20 OV
+                - button "Small Town Lv2 Z4 1237:398 20 OV" [ref=e1084] [cursor=pointer]:
+                  - generic [ref=e1087]:
+                    - strong [ref=e1088]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1089]: 1237:398
+                  - generic [ref=e1090]: 20 OV
+                - button "Gate Lv2 Z4 1380:1399 5 OV" [ref=e1091] [cursor=pointer]:
+                  - generic [ref=e1094]:
+                    - strong [ref=e1095]: Gate Lv2
+                    - text: Z4
+                    - emphasis [ref=e1096]: 1380:1399
+                  - generic [ref=e1097]: 5 OV
+                - button "Small Town Lv2 Z4 1383:1173 20 OV" [ref=e1098] [cursor=pointer]:
+                  - generic [ref=e1101]:
+                    - strong [ref=e1102]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1103]: 1383:1173
+                  - generic [ref=e1104]: 20 OV
+                - button "Small Town Lv2 Z4 1380:1339 20 OV" [ref=e1105] [cursor=pointer]:
+                  - generic [ref=e1108]:
+                    - strong [ref=e1109]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1110]: 1380:1339
+                  - generic [ref=e1111]: 20 OV
+                - button "Small Town Lv2 Z4 1238:1301 20 OV" [ref=e1112] [cursor=pointer]:
+                  - generic [ref=e1115]:
+                    - strong [ref=e1116]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1117]: 1238:1301
+                  - generic [ref=e1118]: 20 OV
+                - button "Small Town Lv2 Z4 648:1307 20 OV" [ref=e1119] [cursor=pointer]:
+                  - generic [ref=e1122]:
+                    - strong [ref=e1123]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1124]: 648:1307
+                  - generic [ref=e1125]: 20 OV
+                - button "Small Town Lv2 Z4 581:1329 20 OV" [ref=e1126] [cursor=pointer]:
+                  - generic [ref=e1129]:
+                    - strong [ref=e1130]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1131]: 581:1329
+                  - generic [ref=e1132]: 20 OV
+                - button "Small Town Lv2 Z4 203:949 20 OV" [ref=e1133] [cursor=pointer]:
+                  - generic [ref=e1136]:
+                    - strong [ref=e1137]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1138]: 203:949
+                  - generic [ref=e1139]: 20 OV
+                - button "Small Town Lv2 Z4 254:673 20 OV" [ref=e1140] [cursor=pointer]:
+                  - generic [ref=e1143]:
+                    - strong [ref=e1144]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1145]: 254:673
+                  - generic [ref=e1146]: 20 OV
+                - button "Small Town Lv2 Z4 168:700 20 OV" [ref=e1147] [cursor=pointer]:
+                  - generic [ref=e1150]:
+                    - strong [ref=e1151]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1152]: 168:700
+                  - generic [ref=e1153]: 20 OV
+                - button "Small Town Lv2 Z4 423:883 20 OV" [ref=e1154] [cursor=pointer]:
+                  - generic [ref=e1157]:
+                    - strong [ref=e1158]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e1159]: 423:883
+                  - generic [ref=e1160]: 20 OV
+                - button "Small Town Lv2 Z5 927:465 20 OV" [ref=e1161] [cursor=pointer]:
+                  - generic [ref=e1164]:
+                    - strong [ref=e1165]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1166]: 927:465
+                  - generic [ref=e1167]: 20 OV
+                - button "Small Town Lv2 Z5 633:987 20 OV" [ref=e1168] [cursor=pointer]:
+                  - generic [ref=e1171]:
+                    - strong [ref=e1172]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1173]: 633:987
+                  - generic [ref=e1174]: 20 OV
+                - button "Small Town Lv2 Z5 708:1012 20 OV" [ref=e1175] [cursor=pointer]:
+                  - generic [ref=e1178]:
+                    - strong [ref=e1179]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1180]: 708:1012
+                  - generic [ref=e1181]: 20 OV
+                - button "Small Town Lv2 Z5 1261:924 20 OV" [ref=e1182] [cursor=pointer]:
+                  - generic [ref=e1185]:
+                    - strong [ref=e1186]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1187]: 1261:924
+                  - generic [ref=e1188]: 20 OV
+                - button "Small Town Lv2 Z5 927:465 20 OV" [ref=e1189] [cursor=pointer]:
+                  - generic [ref=e1192]:
+                    - strong [ref=e1193]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1194]: 927:465
+                  - generic [ref=e1195]: 20 OV
+                - button "Small Town Lv2 Z5 268:247 20 OV" [ref=e1196] [cursor=pointer]:
+                  - generic [ref=e1199]:
+                    - strong [ref=e1200]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1201]: 268:247
+                  - generic [ref=e1202]: 20 OV
+                - button "Small Town Lv2 Z5 596:209 20 OV" [ref=e1203] [cursor=pointer]:
+                  - generic [ref=e1206]:
+                    - strong [ref=e1207]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1208]: 596:209
+                  - generic [ref=e1209]: 20 OV
+                - button "Small Town Lv2 Z5 596:290 20 OV" [ref=e1210] [cursor=pointer]:
+                  - generic [ref=e1213]:
+                    - strong [ref=e1214]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1215]: 596:290
+                  - generic [ref=e1216]: 20 OV
+                - button "Small Town Lv2 Z5 608:325 20 OV" [ref=e1217] [cursor=pointer]:
+                  - generic [ref=e1220]:
+                    - strong [ref=e1221]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1222]: 608:325
+                  - generic [ref=e1223]: 20 OV
+                - button "Small Town Lv2 Z5 955:176 20 OV" [ref=e1224] [cursor=pointer]:
+                  - generic [ref=e1227]:
+                    - strong [ref=e1228]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1229]: 955:176
+                  - generic [ref=e1230]: 20 OV
+                - button "Small Town Lv2 Z5 1054:302 20 OV" [ref=e1231] [cursor=pointer]:
+                  - generic [ref=e1234]:
+                    - strong [ref=e1235]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1236]: 1054:302
+                  - generic [ref=e1237]: 20 OV
+                - button "Small Town Lv2 Z5 1242:482 20 OV" [ref=e1238] [cursor=pointer]:
+                  - generic [ref=e1241]:
+                    - strong [ref=e1242]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1243]: 1242:482
+                  - generic [ref=e1244]: 20 OV
+                - button "Small Town Lv2 Z5 1239:1104 20 OV" [ref=e1245] [cursor=pointer]:
+                  - generic [ref=e1248]:
+                    - strong [ref=e1249]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1250]: 1239:1104
+                  - generic [ref=e1251]: 20 OV
+                - button "Small Town Lv2 Z5 896:1210 20 OV" [ref=e1252] [cursor=pointer]:
+                  - generic [ref=e1255]:
+                    - strong [ref=e1256]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1257]: 896:1210
+                  - generic [ref=e1258]: 20 OV
+                - button "Small Town Lv2 Z5 1025:1252 20 OV" [ref=e1259] [cursor=pointer]:
+                  - generic [ref=e1262]:
+                    - strong [ref=e1263]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1264]: 1025:1252
+                  - generic [ref=e1265]: 20 OV
+                - button "Small Town Lv2 Z5 352:1174 20 OV" [ref=e1266] [cursor=pointer]:
+                  - generic [ref=e1269]:
+                    - strong [ref=e1270]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1271]: 352:1174
+                  - generic [ref=e1272]: 20 OV
+                - button "Small Town Lv2 Z5 200:1038 20 OV" [ref=e1273] [cursor=pointer]:
+                  - generic [ref=e1276]:
+                    - strong [ref=e1277]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1278]: 200:1038
+                  - generic [ref=e1279]: 20 OV
+                - button "Small Town Lv2 Z5 211:1078 20 OV" [ref=e1280] [cursor=pointer]:
+                  - generic [ref=e1283]:
+                    - strong [ref=e1284]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1285]: 211:1078
+                  - generic [ref=e1286]: 20 OV
+                - button "Small Town Lv2 Z5 211:1212 20 OV" [ref=e1287] [cursor=pointer]:
+                  - generic [ref=e1290]:
+                    - strong [ref=e1291]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1292]: 211:1212
+                  - generic [ref=e1293]: 20 OV
+                - button "Small Town Lv2 Z5 352:670 20 OV" [ref=e1294] [cursor=pointer]:
+                  - generic [ref=e1297]:
+                    - strong [ref=e1298]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1299]: 352:670
+                  - generic [ref=e1300]: 20 OV
+                - button "Small Town Lv2 Z5 633:987 20 OV" [ref=e1301] [cursor=pointer]:
+                  - generic [ref=e1304]:
+                    - strong [ref=e1305]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1306]: 633:987
+                  - generic [ref=e1307]: 20 OV
+                - button "Small Town Lv2 Z5 708:1012 20 OV" [ref=e1308] [cursor=pointer]:
+                  - generic [ref=e1311]:
+                    - strong [ref=e1312]: Small Town Lv2
+                    - text: Z5
+                    - emphasis [ref=e1313]: 708:1012
+                  - generic [ref=e1314]: 20 OV
+                - button "Small Town Lv1 Z6 328:296 15 OV" [ref=e1315] [cursor=pointer]:
+                  - generic [ref=e1318]:
+                    - strong [ref=e1319]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e1320]: 328:296
+                  - generic [ref=e1321]: 15 OV
+                - button "Small Town Lv2 Z6 801:338 20 OV" [ref=e1322] [cursor=pointer]:
+                  - generic [ref=e1325]:
+                    - strong [ref=e1326]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1327]: 801:338
+                  - generic [ref=e1328]: 20 OV
+                - button "Small Town Lv2 Z6 1146:206 20 OV" [ref=e1329] [cursor=pointer]:
+                  - generic [ref=e1332]:
+                    - strong [ref=e1333]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1334]: 1146:206
+                  - generic [ref=e1335]: 20 OV
+                - button "Small Town Lv2 Z6 1217:578 20 OV" [ref=e1336] [cursor=pointer]:
+                  - generic [ref=e1339]:
+                    - strong [ref=e1340]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1341]: 1217:578
+                  - generic [ref=e1342]: 20 OV
+                - button "Small Town Lv2 Z6 1224:1193 20 OV" [ref=e1343] [cursor=pointer]:
+                  - generic [ref=e1346]:
+                    - strong [ref=e1347]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1348]: 1224:1193
+                  - generic [ref=e1349]: 20 OV
+                - button "Small Town Lv2 Z6 846:1239 20 OV" [ref=e1350] [cursor=pointer]:
+                  - generic [ref=e1353]:
+                    - strong [ref=e1354]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1355]: 846:1239
+                  - generic [ref=e1356]: 20 OV
+                - button "Small Town Lv2 Z6 660:1142 20 OV" [ref=e1357] [cursor=pointer]:
+                  - generic [ref=e1360]:
+                    - strong [ref=e1361]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1362]: 660:1142
+                  - generic [ref=e1363]: 20 OV
+                - button "Small Town Lv2 Z6 328:1070 20 OV" [ref=e1364] [cursor=pointer]:
+                  - generic [ref=e1367]:
+                    - strong [ref=e1368]: Small Town Lv2
+                    - text: Z6
+                    - emphasis [ref=e1369]: 328:1070
+                  - generic [ref=e1370]: 20 OV
+                - button "Small Town Lv1 Z1 586:453 15 OV" [ref=e1371] [cursor=pointer]:
+                  - generic [ref=e1374]:
+                    - strong [ref=e1375]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1376]: 586:453
+                  - generic [ref=e1377]: 15 OV
+                - button "Small Town Lv1 Z1 911:1122 15 OV" [ref=e1378] [cursor=pointer]:
+                  - generic [ref=e1381]:
+                    - strong [ref=e1382]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1383]: 911:1122
+                  - generic [ref=e1384]: 15 OV
+                - button "Small Town Lv1 Z1 761:468 15 OV" [ref=e1385] [cursor=pointer]:
+                  - generic [ref=e1388]:
+                    - strong [ref=e1389]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1390]: 761:468
+                  - generic [ref=e1391]: 15 OV
+                - button "Small Town Lv1 Z1 911:1122 15 OV" [ref=e1392] [cursor=pointer]:
+                  - generic [ref=e1395]:
+                    - strong [ref=e1396]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1397]: 911:1122
+                  - generic [ref=e1398]: 15 OV
+                - button "Small Town Lv1 Z1 56:287 15 OV" [ref=e1399] [cursor=pointer]:
+                  - generic [ref=e1402]:
+                    - strong [ref=e1403]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1404]: 56:287
+                  - generic [ref=e1405]: 15 OV
+                - button "Small Town Lv1 Z1 89:390 15 OV" [ref=e1406] [cursor=pointer]:
+                  - generic [ref=e1409]:
+                    - strong [ref=e1410]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1411]: 89:390
+                  - generic [ref=e1412]: 15 OV
+                - button "Small Town Lv1 Z1 103:440 15 OV" [ref=e1413] [cursor=pointer]:
+                  - generic [ref=e1416]:
+                    - strong [ref=e1417]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1418]: 103:440
+                  - generic [ref=e1419]: 15 OV
+                - button "Small Town Lv1 Z1 70:467 15 OV" [ref=e1420] [cursor=pointer]:
+                  - generic [ref=e1423]:
+                    - strong [ref=e1424]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1425]: 70:467
+                  - generic [ref=e1426]: 15 OV
+                - button "Large Town Lv4 Z1 312:86 50 OV" [ref=e1427] [cursor=pointer]:
+                  - generic [ref=e1430]:
+                    - strong [ref=e1431]: Large Town Lv4
+                    - text: Z1
+                    - emphasis [ref=e1432]: 312:86
+                  - generic [ref=e1433]: 50 OV
+                - button "Small Town Lv1 Z1 288:76 15 OV" [ref=e1434] [cursor=pointer]:
+                  - generic [ref=e1437]:
+                    - strong [ref=e1438]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1439]: 288:76
+                  - generic [ref=e1440]: 15 OV
+                - button "Small Town Lv1 Z1 240:90 15 OV" [ref=e1441] [cursor=pointer]:
+                  - generic [ref=e1444]:
+                    - strong [ref=e1445]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1446]: 240:90
+                  - generic [ref=e1447]: 15 OV
+                - button "Small Town Lv1 Z1 354:105 15 OV" [ref=e1448] [cursor=pointer]:
+                  - generic [ref=e1451]:
+                    - strong [ref=e1452]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1453]: 354:105
+                  - generic [ref=e1454]: 15 OV
+                - button "Small Town Lv1 Z1 398:177 15 OV" [ref=e1455] [cursor=pointer]:
+                  - generic [ref=e1458]:
+                    - strong [ref=e1459]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1460]: 398:177
+                  - generic [ref=e1461]: 15 OV
+                - button "Small Town Lv1 Z1 866:85 15 OV" [ref=e1462] [cursor=pointer]:
+                  - generic [ref=e1465]:
+                    - strong [ref=e1466]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1467]: 866:85
+                  - generic [ref=e1468]: 15 OV
+                - button "Small Town Lv1 Z1 911:228 15 OV" [ref=e1469] [cursor=pointer]:
+                  - generic [ref=e1472]:
+                    - strong [ref=e1473]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1474]: 911:228
+                  - generic [ref=e1475]: 15 OV
+                - button "Small Town Lv1 Z1 857:274 15 OV" [ref=e1476] [cursor=pointer]:
+                  - generic [ref=e1479]:
+                    - strong [ref=e1480]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1481]: 857:274
+                  - generic [ref=e1482]: 15 OV
+                - button "Small Town Lv1 Z1 961:309 15 OV" [ref=e1483] [cursor=pointer]:
+                  - generic [ref=e1486]:
+                    - strong [ref=e1487]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1488]: 961:309
+                  - generic [ref=e1489]: 15 OV
+                - button "Small Town Lv1 Z1 1480:89 15 OV" [ref=e1490] [cursor=pointer]:
+                  - generic [ref=e1493]:
+                    - strong [ref=e1494]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1495]: 1480:89
+                  - generic [ref=e1496]: 15 OV
+                - button "Small Town Lv1 Z1 1464:175 15 OV" [ref=e1497] [cursor=pointer]:
+                  - generic [ref=e1500]:
+                    - strong [ref=e1501]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1502]: 1464:175
+                  - generic [ref=e1503]: 15 OV
+                - button "Small Town Lv1 Z1 1484:175 15 OV" [ref=e1504] [cursor=pointer]:
+                  - generic [ref=e1507]:
+                    - strong [ref=e1508]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1509]: 1484:175
+                  - generic [ref=e1510]: 15 OV
+                - button "Small Town Lv1 Z1 1405:1032 15 OV" [ref=e1511] [cursor=pointer]:
+                  - generic [ref=e1514]:
+                    - strong [ref=e1515]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1516]: 1405:1032
+                  - generic [ref=e1517]: 15 OV
+                - button "Small Town Lv1 Z1 1373:1062 15 OV" [ref=e1518] [cursor=pointer]:
+                  - generic [ref=e1521]:
+                    - strong [ref=e1522]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1523]: 1373:1062
+                  - generic [ref=e1524]: 15 OV
+                - button "Small Town Lv1 Z1 1492:1070 15 OV" [ref=e1525] [cursor=pointer]:
+                  - generic [ref=e1528]:
+                    - strong [ref=e1529]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1530]: 1492:1070
+                  - generic [ref=e1531]: 15 OV
+                - button "Small Town Lv1 Z1 1511:1125 15 OV" [ref=e1532] [cursor=pointer]:
+                  - generic [ref=e1535]:
+                    - strong [ref=e1536]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1537]: 1511:1125
+                  - generic [ref=e1538]: 15 OV
+                - button "Small Town Lv1 Z1 1162:1361 15 OV" [ref=e1539] [cursor=pointer]:
+                  - generic [ref=e1542]:
+                    - strong [ref=e1543]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1544]: 1162:1361
+                  - generic [ref=e1545]: 15 OV
+                - button "Small Town Lv1 Z1 1312:1362 15 OV" [ref=e1546] [cursor=pointer]:
+                  - generic [ref=e1549]:
+                    - strong [ref=e1550]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1551]: 1312:1362
+                  - generic [ref=e1552]: 15 OV
+                - button "Small Town Lv1 Z1 1302:1416 15 OV" [ref=e1553] [cursor=pointer]:
+                  - generic [ref=e1556]:
+                    - strong [ref=e1557]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1558]: 1302:1416
+                  - generic [ref=e1559]: 15 OV
+                - button "Small Town Lv1 Z1 1371:1441 15 OV" [ref=e1560] [cursor=pointer]:
+                  - generic [ref=e1563]:
+                    - strong [ref=e1564]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1565]: 1371:1441
+                  - generic [ref=e1566]: 15 OV
+                - button "Small Town Lv1 Z1 1274:1443 15 OV" [ref=e1567] [cursor=pointer]:
+                  - generic [ref=e1570]:
+                    - strong [ref=e1571]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1572]: 1274:1443
+                  - generic [ref=e1573]: 15 OV
+                - button "Small Town Lv1 Z1 610:1406 15 OV" [ref=e1574] [cursor=pointer]:
+                  - generic [ref=e1577]:
+                    - strong [ref=e1578]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1579]: 610:1406
+                  - generic [ref=e1580]: 15 OV
+                - button "Small Town Lv1 Z1 619:1470 15 OV" [ref=e1581] [cursor=pointer]:
+                  - generic [ref=e1584]:
+                    - strong [ref=e1585]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1586]: 619:1470
+                  - generic [ref=e1587]: 15 OV
+                - button "Small Town Lv1 Z1 650:1477 15 OV" [ref=e1588] [cursor=pointer]:
+                  - generic [ref=e1591]:
+                    - strong [ref=e1592]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1593]: 650:1477
+                  - generic [ref=e1594]: 15 OV
+                - button "Small Town Lv1 Z1 667:1487 15 OV" [ref=e1595] [cursor=pointer]:
+                  - generic [ref=e1598]:
+                    - strong [ref=e1599]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1600]: 667:1487
+                  - generic [ref=e1601]: 15 OV
+                - button "Small Town Lv1 Z1 792:1511 15 OV" [ref=e1602] [cursor=pointer]:
+                  - generic [ref=e1605]:
+                    - strong [ref=e1606]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1607]: 792:1511
+                  - generic [ref=e1608]: 15 OV
+                - button "Small Town Lv1 Z1 245:1356 15 OV" [ref=e1609] [cursor=pointer]:
+                  - generic [ref=e1612]:
+                    - strong [ref=e1613]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1614]: 245:1356
+                  - generic [ref=e1615]: 15 OV
+                - button "Small Town Lv1 Z1 112:1431 15 OV" [ref=e1616] [cursor=pointer]:
+                  - generic [ref=e1619]:
+                    - strong [ref=e1620]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1621]: 112:1431
+                  - generic [ref=e1622]: 15 OV
+                - button "Small Town Lv1 Z1 142:1431 15 OV" [ref=e1623] [cursor=pointer]:
+                  - generic [ref=e1626]:
+                    - strong [ref=e1627]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1628]: 142:1431
+                  - generic [ref=e1629]: 15 OV
+                - button "Small Town Lv1 Z1 221:1483 15 OV" [ref=e1630] [cursor=pointer]:
+                  - generic [ref=e1633]:
+                    - strong [ref=e1634]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1635]: 221:1483
+                  - generic [ref=e1636]: 15 OV
+                - button "Small Town Lv1 Z1 142:1498 15 OV" [ref=e1637] [cursor=pointer]:
+                  - generic [ref=e1640]:
+                    - strong [ref=e1641]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1642]: 142:1498
+                  - generic [ref=e1643]: 15 OV
+                - button "Small Town Lv1 Z1 586:453 15 OV" [ref=e1644] [cursor=pointer]:
+                  - generic [ref=e1647]:
+                    - strong [ref=e1648]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e1649]: 586:453
+                  - generic [ref=e1650]: 15 OV
+                - button "Small Town Lv1 Z2 70:224 15 OV" [ref=e1651] [cursor=pointer]:
+                  - generic [ref=e1654]:
+                    - strong [ref=e1655]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1656]: 70:224
+                  - generic [ref=e1657]: 15 OV
+                - button "Large Town Lv4 Z2 463:99 50 OV" [ref=e1658] [cursor=pointer]:
+                  - generic [ref=e1661]:
+                    - strong [ref=e1662]: Large Town Lv4
+                    - text: Z2
+                    - emphasis [ref=e1663]: 463:99
+                  - generic [ref=e1664]: 50 OV
+                - button "Small Town Lv1 Z2 463:69 15 OV" [ref=e1665] [cursor=pointer]:
+                  - generic [ref=e1668]:
+                    - strong [ref=e1669]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1670]: 463:69
+                  - generic [ref=e1671]: 15 OV
+                - button "Small Town Lv1 Z2 427:93 15 OV" [ref=e1672] [cursor=pointer]:
+                  - generic [ref=e1675]:
+                    - strong [ref=e1676]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1677]: 427:93
+                  - generic [ref=e1678]: 15 OV
+                - button "Small Town Lv1 Z2 525:103 15 OV" [ref=e1679] [cursor=pointer]:
+                  - generic [ref=e1682]:
+                    - strong [ref=e1683]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1684]: 525:103
+                  - generic [ref=e1685]: 15 OV
+                - button "Small Town Lv1 Z2 533:168 15 OV" [ref=e1686] [cursor=pointer]:
+                  - generic [ref=e1689]:
+                    - strong [ref=e1690]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1691]: 533:168
+                  - generic [ref=e1692]: 15 OV
+                - button "Small Town Lv1 Z2 1088:77 15 OV" [ref=e1693] [cursor=pointer]:
+                  - generic [ref=e1696]:
+                    - strong [ref=e1697]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1698]: 1088:77
+                  - generic [ref=e1699]: 15 OV
+                - button "Small Town Lv1 Z2 969:78 15 OV" [ref=e1700] [cursor=pointer]:
+                  - generic [ref=e1703]:
+                    - strong [ref=e1704]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1705]: 969:78
+                  - generic [ref=e1706]: 15 OV
+                - button "Small Town Lv1 Z2 1019:139 15 OV" [ref=e1707] [cursor=pointer]:
+                  - generic [ref=e1710]:
+                    - strong [ref=e1711]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1712]: 1019:139
+                  - generic [ref=e1713]: 15 OV
+                - button "Small Town Lv1 Z2 1123:141 15 OV" [ref=e1714] [cursor=pointer]:
+                  - generic [ref=e1717]:
+                    - strong [ref=e1718]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1719]: 1123:141
+                  - generic [ref=e1720]: 15 OV
+                - button "Small Town Lv1 Z2 1480:256 15 OV" [ref=e1721] [cursor=pointer]:
+                  - generic [ref=e1724]:
+                    - strong [ref=e1725]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1726]: 1480:256
+                  - generic [ref=e1727]: 15 OV
+                - button "Small Town Lv1 Z2 1418:263 15 OV" [ref=e1728] [cursor=pointer]:
+                  - generic [ref=e1731]:
+                    - strong [ref=e1732]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1733]: 1418:263
+                  - generic [ref=e1734]: 15 OV
+                - button "Small Town Lv1 Z2 1369:285 15 OV" [ref=e1735] [cursor=pointer]:
+                  - generic [ref=e1738]:
+                    - strong [ref=e1739]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1740]: 1369:285
+                  - generic [ref=e1741]: 15 OV
+                - button "Small Town Lv1 Z2 1428:357 15 OV" [ref=e1742] [cursor=pointer]:
+                  - generic [ref=e1745]:
+                    - strong [ref=e1746]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1747]: 1428:357
+                  - generic [ref=e1748]: 15 OV
+                - button "Small Town Lv1 Z2 1541:1256 15 OV" [ref=e1749] [cursor=pointer]:
+                  - generic [ref=e1752]:
+                    - strong [ref=e1753]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1754]: 1541:1256
+                  - generic [ref=e1755]: 15 OV
+                - button "Small Town Lv1 Z2 1581:1258 15 OV" [ref=e1756] [cursor=pointer]:
+                  - generic [ref=e1759]:
+                    - strong [ref=e1760]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1761]: 1581:1258
+                  - generic [ref=e1762]: 15 OV
+                - button "Small Town Lv1 Z2 1517:1301 15 OV" [ref=e1763] [cursor=pointer]:
+                  - generic [ref=e1766]:
+                    - strong [ref=e1767]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1768]: 1517:1301
+                  - generic [ref=e1769]: 15 OV
+                - button "Small Town Lv1 Z2 1144:1428 15 OV" [ref=e1770] [cursor=pointer]:
+                  - generic [ref=e1773]:
+                    - strong [ref=e1774]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1775]: 1144:1428
+                  - generic [ref=e1776]: 15 OV
+                - button "Small Town Lv1 Z2 1122:1497 15 OV" [ref=e1777] [cursor=pointer]:
+                  - generic [ref=e1780]:
+                    - strong [ref=e1781]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1782]: 1122:1497
+                  - generic [ref=e1783]: 15 OV
+                - button "Small Town Lv1 Z2 312:1460 15 OV" [ref=e1784] [cursor=pointer]:
+                  - generic [ref=e1787]:
+                    - strong [ref=e1788]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1789]: 312:1460
+                  - generic [ref=e1790]: 15 OV
+                - button "Small Town Lv1 Z2 460:1493 15 OV" [ref=e1791] [cursor=pointer]:
+                  - generic [ref=e1794]:
+                    - strong [ref=e1795]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1796]: 460:1493
+                  - generic [ref=e1797]: 15 OV
+                - button "Small Town Lv1 Z2 404:1499 15 OV" [ref=e1798] [cursor=pointer]:
+                  - generic [ref=e1801]:
+                    - strong [ref=e1802]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1803]: 404:1499
+                  - generic [ref=e1804]: 15 OV
+                - button "Small Town Lv1 Z2 345:1507 15 OV" [ref=e1805] [cursor=pointer]:
+                  - generic [ref=e1808]:
+                    - strong [ref=e1809]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1810]: 345:1507
+                  - generic [ref=e1811]: 15 OV
+                - button "Small Town Lv1 Z2 424:1509 15 OV" [ref=e1812] [cursor=pointer]:
+                  - generic [ref=e1815]:
+                    - strong [ref=e1816]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1817]: 424:1509
+                  - generic [ref=e1818]: 15 OV
+                - button "Small Town Lv1 Z2 123:1198 15 OV" [ref=e1819] [cursor=pointer]:
+                  - generic [ref=e1822]:
+                    - strong [ref=e1823]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1824]: 123:1198
+                  - generic [ref=e1825]: 15 OV
+                - button "Small Town Lv1 Z2 155:1219 15 OV" [ref=e1826] [cursor=pointer]:
+                  - generic [ref=e1829]:
+                    - strong [ref=e1830]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1831]: 155:1219
+                  - generic [ref=e1832]: 15 OV
+                - button "Small Town Lv1 Z2 153:1251 15 OV" [ref=e1833] [cursor=pointer]:
+                  - generic [ref=e1836]:
+                    - strong [ref=e1837]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1838]: 153:1251
+                  - generic [ref=e1839]: 15 OV
+                - button "Small Town Lv1 Z2 80:1291 15 OV" [ref=e1840] [cursor=pointer]:
+                  - generic [ref=e1843]:
+                    - strong [ref=e1844]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e1845]: 80:1291
+                  - generic [ref=e1846]: 15 OV
+                - button "Small Town Lv1 Z3 104:47 15 OV" [ref=e1847] [cursor=pointer]:
+                  - generic [ref=e1850]:
+                    - strong [ref=e1851]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1852]: 104:47
+                  - generic [ref=e1853]: 15 OV
+                - button "Small Town Lv1 Z3 141:54 15 OV" [ref=e1854] [cursor=pointer]:
+                  - generic [ref=e1857]:
+                    - strong [ref=e1858]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1859]: 141:54
+                  - generic [ref=e1860]: 15 OV
+                - button "Small Town Lv1 Z3 88:116 15 OV" [ref=e1861] [cursor=pointer]:
+                  - generic [ref=e1864]:
+                    - strong [ref=e1865]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1866]: 88:116
+                  - generic [ref=e1867]: 15 OV
+                - button "Small Town Lv1 Z3 36:117 15 OV" [ref=e1868] [cursor=pointer]:
+                  - generic [ref=e1871]:
+                    - strong [ref=e1872]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1873]: 36:117
+                  - generic [ref=e1874]: 15 OV
+                - button "Small Town Lv1 Z3 689:96 15 OV" [ref=e1875] [cursor=pointer]:
+                  - generic [ref=e1878]:
+                    - strong [ref=e1879]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1880]: 689:96
+                  - generic [ref=e1881]: 15 OV
+                - button "Small Town Lv1 Z3 708:96 15 OV" [ref=e1882] [cursor=pointer]:
+                  - generic [ref=e1885]:
+                    - strong [ref=e1886]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1887]: 708:96
+                  - generic [ref=e1888]: 15 OV
+                - button "Small Town Lv1 Z3 722:173 15 OV" [ref=e1889] [cursor=pointer]:
+                  - generic [ref=e1892]:
+                    - strong [ref=e1893]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1894]: 722:173
+                  - generic [ref=e1895]: 15 OV
+                - button "Small Town Lv1 Z3 1175:61 15 OV" [ref=e1896] [cursor=pointer]:
+                  - generic [ref=e1899]:
+                    - strong [ref=e1900]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1901]: 1175:61
+                  - generic [ref=e1902]: 15 OV
+                - button "Small Town Lv1 Z3 1305:61 15 OV" [ref=e1903] [cursor=pointer]:
+                  - generic [ref=e1906]:
+                    - strong [ref=e1907]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1908]: 1305:61
+                  - generic [ref=e1909]: 15 OV
+                - button "Small Town Lv1 Z3 1348:110 15 OV" [ref=e1910] [cursor=pointer]:
+                  - generic [ref=e1913]:
+                    - strong [ref=e1914]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1915]: 1348:110
+                  - generic [ref=e1916]: 15 OV
+                - button "Small Town Lv1 Z3 1290:120 15 OV" [ref=e1917] [cursor=pointer]:
+                  - generic [ref=e1920]:
+                    - strong [ref=e1921]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1922]: 1290:120
+                  - generic [ref=e1923]: 15 OV
+                - button "Small Town Lv1 Z3 1436:478 15 OV" [ref=e1924] [cursor=pointer]:
+                  - generic [ref=e1927]:
+                    - strong [ref=e1928]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1929]: 1436:478
+                  - generic [ref=e1930]: 15 OV
+                - button "Small Town Lv1 Z3 1487:545 15 OV" [ref=e1931] [cursor=pointer]:
+                  - generic [ref=e1934]:
+                    - strong [ref=e1935]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1936]: 1487:545
+                  - generic [ref=e1937]: 15 OV
+                - button "Small Town Lv1 Z3 1415:579 15 OV" [ref=e1938] [cursor=pointer]:
+                  - generic [ref=e1941]:
+                    - strong [ref=e1942]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1943]: 1415:579
+                  - generic [ref=e1944]: 15 OV
+                - button "Small Town Lv1 Z3 1487:606 15 OV" [ref=e1945] [cursor=pointer]:
+                  - generic [ref=e1948]:
+                    - strong [ref=e1949]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1950]: 1487:606
+                  - generic [ref=e1951]: 15 OV
+                - button "Gate Lv1 Z3 1567:1416 5 OV" [ref=e1952] [cursor=pointer]:
+                  - generic [ref=e1955]:
+                    - strong [ref=e1956]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e1957]: 1567:1416
+                  - generic [ref=e1958]: 5 OV
+                - button "Small Town Lv1 Z3 1499:1378 15 OV" [ref=e1959] [cursor=pointer]:
+                  - generic [ref=e1962]:
+                    - strong [ref=e1963]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1964]: 1499:1378
+                  - generic [ref=e1965]: 15 OV
+                - button "Small Town Lv1 Z3 1577:1399 15 OV" [ref=e1966] [cursor=pointer]:
+                  - generic [ref=e1969]:
+                    - strong [ref=e1970]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1971]: 1577:1399
+                  - generic [ref=e1972]: 15 OV
+                - button "Small Town Lv1 Z3 1554:1486 15 OV" [ref=e1973] [cursor=pointer]:
+                  - generic [ref=e1976]:
+                    - strong [ref=e1977]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1978]: 1554:1486
+                  - generic [ref=e1979]: 15 OV
+                - button "Small Town Lv1 Z3 1486:1499 15 OV" [ref=e1980] [cursor=pointer]:
+                  - generic [ref=e1983]:
+                    - strong [ref=e1984]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1985]: 1486:1499
+                  - generic [ref=e1986]: 15 OV
+                - button "Small Town Lv1 Z3 901:1398 15 OV" [ref=e1987] [cursor=pointer]:
+                  - generic [ref=e1990]:
+                    - strong [ref=e1991]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1992]: 901:1398
+                  - generic [ref=e1993]: 15 OV
+                - button "Small Town Lv1 Z3 832:1435 15 OV" [ref=e1994] [cursor=pointer]:
+                  - generic [ref=e1997]:
+                    - strong [ref=e1998]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e1999]: 832:1435
+                  - generic [ref=e2000]: 15 OV
+                - button "Small Town Lv1 Z3 980:1436 15 OV" [ref=e2001] [cursor=pointer]:
+                  - generic [ref=e2004]:
+                    - strong [ref=e2005]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2006]: 980:1436
+                  - generic [ref=e2007]: 15 OV
+                - button "Small Town Lv1 Z3 901:1464 15 OV" [ref=e2008] [cursor=pointer]:
+                  - generic [ref=e2011]:
+                    - strong [ref=e2012]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2013]: 901:1464
+                  - generic [ref=e2014]: 15 OV
+                - button "Small Town Lv1 Z3 537:1376 15 OV" [ref=e2015] [cursor=pointer]:
+                  - generic [ref=e2018]:
+                    - strong [ref=e2019]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2020]: 537:1376
+                  - generic [ref=e2021]: 15 OV
+                - button "Small Town Lv1 Z3 533:1464 15 OV" [ref=e2022] [cursor=pointer]:
+                  - generic [ref=e2025]:
+                    - strong [ref=e2026]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2027]: 533:1464
+                  - generic [ref=e2028]: 15 OV
+                - button "Small Town Lv1 Z3 76:959 15 OV" [ref=e2029] [cursor=pointer]:
+                  - generic [ref=e2032]:
+                    - strong [ref=e2033]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2034]: 76:959
+                  - generic [ref=e2035]: 15 OV
+                - button "Small Town Lv1 Z3 124:978 15 OV" [ref=e2036] [cursor=pointer]:
+                  - generic [ref=e2039]:
+                    - strong [ref=e2040]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2041]: 124:978
+                  - generic [ref=e2042]: 15 OV
+                - button "Small Town Lv1 Z3 119:1008 15 OV" [ref=e2043] [cursor=pointer]:
+                  - generic [ref=e2046]:
+                    - strong [ref=e2047]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2048]: 119:1008
+                  - generic [ref=e2049]: 15 OV
+                - button "Small Town Lv1 Z3 48:1027 15 OV" [ref=e2050] [cursor=pointer]:
+                  - generic [ref=e2053]:
+                    - strong [ref=e2054]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2055]: 48:1027
+                  - generic [ref=e2056]: 15 OV
+                - button "Small Town Lv1 Z3 111:1073 15 OV" [ref=e2057] [cursor=pointer]:
+                  - generic [ref=e2060]:
+                    - strong [ref=e2061]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2062]: 111:1073
+                  - generic [ref=e2063]: 15 OV
+                - button "Small Town Lv1 Z3 90:1129 15 OV" [ref=e2064] [cursor=pointer]:
+                  - generic [ref=e2067]:
+                    - strong [ref=e2068]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2069]: 90:1129
+                  - generic [ref=e2070]: 15 OV
+                - button "Small Town Lv1 Z3 326:859 15 OV" [ref=e2071] [cursor=pointer]:
+                  - generic [ref=e2074]:
+                    - strong [ref=e2075]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e2076]: 326:859
+                  - generic [ref=e2077]: 15 OV
+                - button "Small Town Lv1 Z3,Z24 1455:1466 15 OV" [ref=e2078] [cursor=pointer]:
+                  - generic [ref=e2081]:
+                    - strong [ref=e2082]: Small Town Lv1
+                    - text: Z3,Z24
+                    - emphasis [ref=e2083]: 1455:1466
+                  - generic [ref=e2084]: 15 OV
+                - button "Small Town Lv1 Z4 535:979 15 OV" [ref=e2085] [cursor=pointer]:
+                  - generic [ref=e2088]:
+                    - strong [ref=e2089]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2090]: 535:979
+                  - generic [ref=e2091]: 15 OV
+                - button "Small Town Lv1 Z4 1255:687 15 OV" [ref=e2092] [cursor=pointer]:
+                  - generic [ref=e2095]:
+                    - strong [ref=e2096]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2097]: 1255:687
+                  - generic [ref=e2098]: 15 OV
+                - button "Small Town Lv1 Z4 1525:687 15 OV" [ref=e2099] [cursor=pointer]:
+                  - generic [ref=e2102]:
+                    - strong [ref=e2103]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2104]: 1525:687
+                  - generic [ref=e2105]: 15 OV
+                - button "Small Town Lv1 Z4 221:335 15 OV" [ref=e2106] [cursor=pointer]:
+                  - generic [ref=e2109]:
+                    - strong [ref=e2110]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2111]: 221:335
+                  - generic [ref=e2112]: 15 OV
+                - button "Small Town Lv1 Z4 289:449 15 OV" [ref=e2113] [cursor=pointer]:
+                  - generic [ref=e2116]:
+                    - strong [ref=e2117]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2118]: 289:449
+                  - generic [ref=e2119]: 15 OV
+                - button "Gate Lv1 Z4 479:246 5 OV" [ref=e2120] [cursor=pointer]:
+                  - generic [ref=e2123]:
+                    - strong [ref=e2124]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e2125]: 479:246
+                  - generic [ref=e2126]: 5 OV
+                - button "Gate Lv1 Z4 454:347 5 OV" [ref=e2127] [cursor=pointer]:
+                  - generic [ref=e2130]:
+                    - strong [ref=e2131]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e2132]: 454:347
+                  - generic [ref=e2133]: 5 OV
+                - button "Small Town Lv1 Z4 537:316 15 OV" [ref=e2134] [cursor=pointer]:
+                  - generic [ref=e2137]:
+                    - strong [ref=e2138]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2139]: 537:316
+                  - generic [ref=e2140]: 15 OV
+                - button "Small Town Lv1 Z4 484:337 15 OV" [ref=e2141] [cursor=pointer]:
+                  - generic [ref=e2144]:
+                    - strong [ref=e2145]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2146]: 484:337
+                  - generic [ref=e2147]: 15 OV
+                - button "Small Town Lv1 Z4 1173:345 15 OV" [ref=e2148] [cursor=pointer]:
+                  - generic [ref=e2151]:
+                    - strong [ref=e2152]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2153]: 1173:345
+                  - generic [ref=e2154]: 15 OV
+                - button "Small Town Lv1 Z4 1430:1327 15 OV" [ref=e2155] [cursor=pointer]:
+                  - generic [ref=e2158]:
+                    - strong [ref=e2159]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2160]: 1430:1327
+                  - generic [ref=e2161]: 15 OV
+                - button "Small Town Lv1 Z4 1113:1252 15 OV" [ref=e2162] [cursor=pointer]:
+                  - generic [ref=e2165]:
+                    - strong [ref=e2166]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2167]: 1113:1252
+                  - generic [ref=e2168]: 15 OV
+                - button "Small Town Lv1 Z4 1153:1253 15 OV" [ref=e2169] [cursor=pointer]:
+                  - generic [ref=e2172]:
+                    - strong [ref=e2173]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2174]: 1153:1253
+                  - generic [ref=e2175]: 15 OV
+                - button "Small Town Lv1 Z4 733:1400 15 OV" [ref=e2176] [cursor=pointer]:
+                  - generic [ref=e2179]:
+                    - strong [ref=e2180]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2181]: 733:1400
+                  - generic [ref=e2182]: 15 OV
+                - button "Small Town Lv1 Z4 151:873 15 OV" [ref=e2183] [cursor=pointer]:
+                  - generic [ref=e2186]:
+                    - strong [ref=e2187]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2188]: 151:873
+                  - generic [ref=e2189]: 15 OV
+                - button "Small Town Lv1 Z4 100:877 15 OV" [ref=e2190] [cursor=pointer]:
+                  - generic [ref=e2193]:
+                    - strong [ref=e2194]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2195]: 100:877
+                  - generic [ref=e2196]: 15 OV
+                - button "Small Town Lv1 Z4 142:927 15 OV" [ref=e2197] [cursor=pointer]:
+                  - generic [ref=e2200]:
+                    - strong [ref=e2201]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2202]: 142:927
+                  - generic [ref=e2203]: 15 OV
+                - button "Small Town Lv1 Z4 535:979 15 OV" [ref=e2204] [cursor=pointer]:
+                  - generic [ref=e2207]:
+                    - strong [ref=e2208]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e2209]: 535:979
+                  - generic [ref=e2210]: 15 OV
+                - button "Small Town Lv1 Z5 761:468 15 OV" [ref=e2211] [cursor=pointer]:
+                  - generic [ref=e2214]:
+                    - strong [ref=e2215]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2216]: 761:468
+                  - generic [ref=e2217]: 15 OV
+                - button "Small Town Lv1 Z5 1195:953 15 OV" [ref=e2218] [cursor=pointer]:
+                  - generic [ref=e2221]:
+                    - strong [ref=e2222]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2223]: 1195:953
+                  - generic [ref=e2224]: 15 OV
+                - button "Small Town Lv1 Z5 202:120 15 OV" [ref=e2225] [cursor=pointer]:
+                  - generic [ref=e2228]:
+                    - strong [ref=e2229]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2230]: 202:120
+                  - generic [ref=e2231]: 15 OV
+                - button "Small Town Lv1 Z5 182:169 15 OV" [ref=e2232] [cursor=pointer]:
+                  - generic [ref=e2235]:
+                    - strong [ref=e2236]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2237]: 182:169
+                  - generic [ref=e2238]: 15 OV
+                - button "Small Town Lv1 Z5 202:170 15 OV" [ref=e2239] [cursor=pointer]:
+                  - generic [ref=e2242]:
+                    - strong [ref=e2243]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2244]: 202:170
+                  - generic [ref=e2245]: 15 OV
+                - button "Small Town Lv1 Z5 660:357 15 OV" [ref=e2246] [cursor=pointer]:
+                  - generic [ref=e2249]:
+                    - strong [ref=e2250]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2251]: 660:357
+                  - generic [ref=e2252]: 15 OV
+                - button "Small Town Lv1 Z5 693:358 15 OV" [ref=e2253] [cursor=pointer]:
+                  - generic [ref=e2256]:
+                    - strong [ref=e2257]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2258]: 693:358
+                  - generic [ref=e2259]: 15 OV
+                - button "Small Town Lv1 Z5 1083:249 15 OV" [ref=e2260] [cursor=pointer]:
+                  - generic [ref=e2263]:
+                    - strong [ref=e2264]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2265]: 1083:249
+                  - generic [ref=e2266]: 15 OV
+                - button "Small Town Lv1 Z5 1294:617 15 OV" [ref=e2267] [cursor=pointer]:
+                  - generic [ref=e2270]:
+                    - strong [ref=e2271]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2272]: 1294:617
+                  - generic [ref=e2273]: 15 OV
+                - button "Small Town Lv1 Z5 1429:696 15 OV" [ref=e2274] [cursor=pointer]:
+                  - generic [ref=e2277]:
+                    - strong [ref=e2278]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2279]: 1429:696
+                  - generic [ref=e2280]: 15 OV
+                - button "Small Town Lv1 Z5 1274:1059 15 OV" [ref=e2281] [cursor=pointer]:
+                  - generic [ref=e2284]:
+                    - strong [ref=e2285]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2286]: 1274:1059
+                  - generic [ref=e2287]: 15 OV
+                - button "Small Town Lv1 Z5 1148:1060 15 OV" [ref=e2288] [cursor=pointer]:
+                  - generic [ref=e2291]:
+                    - strong [ref=e2292]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2293]: 1148:1060
+                  - generic [ref=e2294]: 15 OV
+                - button "Small Town Lv1 Z5 959:1308 15 OV" [ref=e2295] [cursor=pointer]:
+                  - generic [ref=e2298]:
+                    - strong [ref=e2299]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2300]: 959:1308
+                  - generic [ref=e2301]: 15 OV
+                - button "Small Town Lv1 Z5 422:1161 15 OV" [ref=e2302] [cursor=pointer]:
+                  - generic [ref=e2305]:
+                    - strong [ref=e2306]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2307]: 422:1161
+                  - generic [ref=e2308]: 15 OV
+                - button "Small Town Lv1 Z5 469:1195 15 OV" [ref=e2309] [cursor=pointer]:
+                  - generic [ref=e2312]:
+                    - strong [ref=e2313]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2314]: 469:1195
+                  - generic [ref=e2315]: 15 OV
+                - button "Small Town Lv1 Z5 273:1210 15 OV" [ref=e2316] [cursor=pointer]:
+                  - generic [ref=e2319]:
+                    - strong [ref=e2320]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2321]: 273:1210
+                  - generic [ref=e2322]: 15 OV
+                - button "Small Town Lv1 Z5 389:531 15 OV" [ref=e2323] [cursor=pointer]:
+                  - generic [ref=e2326]:
+                    - strong [ref=e2327]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e2328]: 389:531
+                  - generic [ref=e2329]: 15 OV
+                - button "Small Town Lv1 Z6 356:302 15 OV" [ref=e2330] [cursor=pointer]:
+                  - generic [ref=e2333]:
+                    - strong [ref=e2334]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2335]: 356:302
+                  - generic [ref=e2336]: 15 OV
+                - button "Small Town Lv1 Z6 452:415 15 OV" [ref=e2337] [cursor=pointer]:
+                  - generic [ref=e2340]:
+                    - strong [ref=e2341]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2342]: 452:415
+                  - generic [ref=e2343]: 15 OV
+                - button "Small Town Lv1 Z6 684:230 15 OV" [ref=e2344] [cursor=pointer]:
+                  - generic [ref=e2347]:
+                    - strong [ref=e2348]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2349]: 684:230
+                  - generic [ref=e2350]: 15 OV
+                - button "Small Town Lv1 Z6 775:261 15 OV" [ref=e2351] [cursor=pointer]:
+                  - generic [ref=e2354]:
+                    - strong [ref=e2355]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2356]: 775:261
+                  - generic [ref=e2357]: 15 OV
+                - button "Small Town Lv1 Z6 1192:148 15 OV" [ref=e2358] [cursor=pointer]:
+                  - generic [ref=e2361]:
+                    - strong [ref=e2362]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2363]: 1192:148
+                  - generic [ref=e2364]: 15 OV
+                - button "Small Town Lv1 Z6 1246:233 15 OV" [ref=e2365] [cursor=pointer]:
+                  - generic [ref=e2368]:
+                    - strong [ref=e2369]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2370]: 1246:233
+                  - generic [ref=e2371]: 15 OV
+                - button "Small Town Lv1 Z6 1131:474 15 OV" [ref=e2372] [cursor=pointer]:
+                  - generic [ref=e2375]:
+                    - strong [ref=e2376]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2377]: 1131:474
+                  - generic [ref=e2378]: 15 OV
+                - button "Small Town Lv1 Z6 1055:491 15 OV" [ref=e2379] [cursor=pointer]:
+                  - generic [ref=e2382]:
+                    - strong [ref=e2383]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2384]: 1055:491
+                  - generic [ref=e2385]: 15 OV
+                - button "Small Town Lv1 Z6 1317:1169 15 OV" [ref=e2386] [cursor=pointer]:
+                  - generic [ref=e2389]:
+                    - strong [ref=e2390]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2391]: 1317:1169
+                  - generic [ref=e2392]: 15 OV
+                - button "Small Town Lv1 Z6 1293:1242 15 OV" [ref=e2393] [cursor=pointer]:
+                  - generic [ref=e2396]:
+                    - strong [ref=e2397]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2398]: 1293:1242
+                  - generic [ref=e2399]: 15 OV
+                - button "Small Town Lv1 Z6 796:1238 15 OV" [ref=e2400] [cursor=pointer]:
+                  - generic [ref=e2403]:
+                    - strong [ref=e2404]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2405]: 796:1238
+                  - generic [ref=e2406]: 15 OV
+                - button "Small Town Lv1 Z6 910:1324 15 OV" [ref=e2407] [cursor=pointer]:
+                  - generic [ref=e2410]:
+                    - strong [ref=e2411]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2412]: 910:1324
+                  - generic [ref=e2413]: 15 OV
+                - button "Small Town Lv1 Z6 574:114 15 OV" [ref=e2414] [cursor=pointer]:
+                  - generic [ref=e2417]:
+                    - strong [ref=e2418]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2419]: 574:114
+                  - generic [ref=e2420]: 15 OV
+                - button "Small Town Lv1 Z6 611:1198 15 OV" [ref=e2421] [cursor=pointer]:
+                  - generic [ref=e2424]:
+                    - strong [ref=e2425]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2426]: 611:1198
+                  - generic [ref=e2427]: 15 OV
+                - button "Small Town Lv1 Z6 414:1038 15 OV" [ref=e2428] [cursor=pointer]:
+                  - generic [ref=e2431]:
+                    - strong [ref=e2432]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2433]: 414:1038
+                  - generic [ref=e2434]: 15 OV
+                - button "Small Town Lv1 Z6 460:1091 15 OV" [ref=e2435] [cursor=pointer]:
+                  - generic [ref=e2438]:
+                    - strong [ref=e2439]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e2440]: 460:1091
+                  - generic [ref=e2441]: 15 OV
+                - button "Stronghold Z1 886:329 10 OV" [ref=e2442] [cursor=pointer]:
+                  - generic [ref=e2445]:
+                    - strong [ref=e2446]: Stronghold
+                    - text: Z1
+                    - emphasis [ref=e2447]: 886:329
+                  - generic [ref=e2448]: 10 OV
+                - button "Stronghold Z1 61:744 10 OV" [ref=e2449] [cursor=pointer]:
+                  - generic [ref=e2452]:
+                    - strong [ref=e2453]: Stronghold
+                    - text: Z1
+                    - emphasis [ref=e2454]: 61:744
+                  - generic [ref=e2455]: 10 OV
+                - button "Stronghold Z1,Z3 1368:726 10 OV" [ref=e2456] [cursor=pointer]:
+                  - generic [ref=e2459]:
+                    - strong [ref=e2460]: Stronghold
+                    - text: Z1,Z3
+                    - emphasis [ref=e2461]: 1368:726
+                  - generic [ref=e2462]: 10 OV
+                - button "Stronghold Z2 1522:923 10 OV" [ref=e2463] [cursor=pointer]:
+                  - generic [ref=e2466]:
+                    - strong [ref=e2467]: Stronghold
+                    - text: Z2
+                    - emphasis [ref=e2468]: 1522:923
+                  - generic [ref=e2469]: 10 OV
+                - button "Stronghold Z2 106:533 10 OV" [ref=e2470] [cursor=pointer]:
+                  - generic [ref=e2473]:
+                    - strong [ref=e2474]: Stronghold
+                    - text: Z2
+                    - emphasis [ref=e2475]: 106:533
+                  - generic [ref=e2476]: 10 OV
+                - button "Stronghold Z3 1405:912 10 OV" [ref=e2477] [cursor=pointer]:
+                  - generic [ref=e2480]:
+                    - strong [ref=e2481]: Stronghold
+                    - text: Z3
+                    - emphasis [ref=e2482]: 1405:912
+                  - generic [ref=e2483]: 10 OV
+                - button "Stronghold Z3 312:817 10 OV" [ref=e2484] [cursor=pointer]:
+                  - generic [ref=e2487]:
+                    - strong [ref=e2488]: Stronghold
+                    - text: Z3
+                    - emphasis [ref=e2489]: 312:817
+                  - generic [ref=e2490]: 10 OV
+                - button "Stronghold Z4 226:382 10 OV" [ref=e2491] [cursor=pointer]:
+                  - generic [ref=e2494]:
+                    - strong [ref=e2495]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2496]: 226:382
+                  - generic [ref=e2497]: 10 OV
+                - button "Stronghold Z4 514:340 10 OV" [ref=e2498] [cursor=pointer]:
+                  - generic [ref=e2501]:
+                    - strong [ref=e2502]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2503]: 514:340
+                  - generic [ref=e2504]: 10 OV
+                - button "Stronghold Z4 1214:335 10 OV" [ref=e2505] [cursor=pointer]:
+                  - generic [ref=e2508]:
+                    - strong [ref=e2509]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2510]: 1214:335
+                  - generic [ref=e2511]: 10 OV
+                - button "Stronghold Z4 1214:355 10 OV" [ref=e2512] [cursor=pointer]:
+                  - generic [ref=e2515]:
+                    - strong [ref=e2516]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2517]: 1214:355
+                  - generic [ref=e2518]: 10 OV
+                - button "Stronghold Z4 1395:1304 10 OV" [ref=e2519] [cursor=pointer]:
+                  - generic [ref=e2522]:
+                    - strong [ref=e2523]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2524]: 1395:1304
+                  - generic [ref=e2525]: 10 OV
+                - button "Stronghold Z4 1083:1220 10 OV" [ref=e2526] [cursor=pointer]:
+                  - generic [ref=e2529]:
+                    - strong [ref=e2530]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2531]: 1083:1220
+                  - generic [ref=e2532]: 10 OV
+                - button "Stronghold Z4 603:1220 10 OV" [ref=e2533] [cursor=pointer]:
+                  - generic [ref=e2536]:
+                    - strong [ref=e2537]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2538]: 603:1220
+                  - generic [ref=e2539]: 10 OV
+                - button "Stronghold Z4 603:1280 10 OV" [ref=e2540] [cursor=pointer]:
+                  - generic [ref=e2543]:
+                    - strong [ref=e2544]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2545]: 603:1280
+                  - generic [ref=e2546]: 10 OV
+                - button "Stronghold Z4 135:885 10 OV" [ref=e2547] [cursor=pointer]:
+                  - generic [ref=e2550]:
+                    - strong [ref=e2551]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2552]: 135:885
+                  - generic [ref=e2553]: 10 OV
+                - button "Stronghold Z4 135:905 10 OV" [ref=e2554] [cursor=pointer]:
+                  - generic [ref=e2557]:
+                    - strong [ref=e2558]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2559]: 135:905
+                  - generic [ref=e2560]: 10 OV
+                - button "Stronghold Z4 211:692 10 OV" [ref=e2561] [cursor=pointer]:
+                  - generic [ref=e2564]:
+                    - strong [ref=e2565]: Stronghold
+                    - text: Z4
+                    - emphasis [ref=e2566]: 211:692
+                  - generic [ref=e2567]: 10 OV
+                - button "Stronghold Z5 1222:907 10 OV" [ref=e2568] [cursor=pointer]:
+                  - generic [ref=e2571]:
+                    - strong [ref=e2572]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2573]: 1222:907
+                  - generic [ref=e2574]: 10 OV
+                - button "Stronghold Z5 302:236 10 OV" [ref=e2575] [cursor=pointer]:
+                  - generic [ref=e2578]:
+                    - strong [ref=e2579]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2580]: 302:236
+                  - generic [ref=e2581]: 10 OV
+                - button "Stronghold Z5 1051:256 10 OV" [ref=e2582] [cursor=pointer]:
+                  - generic [ref=e2585]:
+                    - strong [ref=e2586]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2587]: 1051:256
+                  - generic [ref=e2588]: 10 OV
+                - button "Stronghold Z5 1228:535 10 OV" [ref=e2589] [cursor=pointer]:
+                  - generic [ref=e2592]:
+                    - strong [ref=e2593]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2594]: 1228:535
+                  - generic [ref=e2595]: 10 OV
+                - button "Stronghold Z5 1289:535 10 OV" [ref=e2596] [cursor=pointer]:
+                  - generic [ref=e2599]:
+                    - strong [ref=e2600]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2601]: 1289:535
+                  - generic [ref=e2602]: 10 OV
+                - button "Stronghold Z5 1181:1037 10 OV" [ref=e2603] [cursor=pointer]:
+                  - generic [ref=e2606]:
+                    - strong [ref=e2607]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2608]: 1181:1037
+                  - generic [ref=e2609]: 10 OV
+                - button "Stronghold Z5 988:1230 10 OV" [ref=e2610] [cursor=pointer]:
+                  - generic [ref=e2613]:
+                    - strong [ref=e2614]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2615]: 988:1230
+                  - generic [ref=e2616]: 10 OV
+                - button "Stronghold Z5 369:1149 10 OV" [ref=e2617] [cursor=pointer]:
+                  - generic [ref=e2620]:
+                    - strong [ref=e2621]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2622]: 369:1149
+                  - generic [ref=e2623]: 10 OV
+                - button "Stronghold Z5 259:1163 10 OV" [ref=e2624] [cursor=pointer]:
+                  - generic [ref=e2627]:
+                    - strong [ref=e2628]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2629]: 259:1163
+                  - generic [ref=e2630]: 10 OV
+                - button "Stronghold Z5 354:555 10 OV" [ref=e2631] [cursor=pointer]:
+                  - generic [ref=e2634]:
+                    - strong [ref=e2635]: Stronghold
+                    - text: Z5
+                    - emphasis [ref=e2636]: 354:555
+                  - generic [ref=e2637]: 10 OV
+                - button "Stronghold Z6 403:444 10 OV" [ref=e2638] [cursor=pointer]:
+                  - generic [ref=e2641]:
+                    - strong [ref=e2642]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2643]: 403:444
+                  - generic [ref=e2644]: 10 OV
+                - button "Stronghold Z6 815:331 10 OV" [ref=e2645] [cursor=pointer]:
+                  - generic [ref=e2648]:
+                    - strong [ref=e2649]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2650]: 815:331
+                  - generic [ref=e2651]: 10 OV
+                - button "Stronghold Z6 1175:239 10 OV" [ref=e2652] [cursor=pointer]:
+                  - generic [ref=e2655]:
+                    - strong [ref=e2656]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2657]: 1175:239
+                  - generic [ref=e2658]: 10 OV
+                - button "Stronghold Z6 1037:459 10 OV" [ref=e2659] [cursor=pointer]:
+                  - generic [ref=e2662]:
+                    - strong [ref=e2663]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2664]: 1037:459
+                  - generic [ref=e2665]: 10 OV
+                - button "Stronghold Z6 1212:1149 10 OV" [ref=e2666] [cursor=pointer]:
+                  - generic [ref=e2669]:
+                    - strong [ref=e2670]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2671]: 1212:1149
+                  - generic [ref=e2672]: 10 OV
+                - button "Stronghold Z6 803:1271 10 OV" [ref=e2673] [cursor=pointer]:
+                  - generic [ref=e2676]:
+                    - strong [ref=e2677]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2678]: 803:1271
+                  - generic [ref=e2679]: 10 OV
+                - button "Stronghold Z6 631:1146 10 OV" [ref=e2680] [cursor=pointer]:
+                  - generic [ref=e2683]:
+                    - strong [ref=e2684]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2685]: 631:1146
+                  - generic [ref=e2686]: 10 OV
+                - button "Stronghold Z6 569:1149 10 OV" [ref=e2687] [cursor=pointer]:
+                  - generic [ref=e2690]:
+                    - strong [ref=e2691]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2692]: 569:1149
+                  - generic [ref=e2693]: 10 OV
+                - button "Stronghold Z6 397:1054 10 OV" [ref=e2694] [cursor=pointer]:
+                  - generic [ref=e2697]:
+                    - strong [ref=e2698]: Stronghold
+                    - text: Z6
+                    - emphasis [ref=e2699]: 397:1054
+                  - generic [ref=e2700]: 10 OV
+                - button "Gate Lv3 C 787:716 5 OV" [ref=e2701] [cursor=pointer]:
+                  - generic [ref=e2704]:
+                    - strong [ref=e2705]: Gate Lv3
+                    - text: C
+                    - emphasis [ref=e2706]: 787:716
+                  - generic [ref=e2707]: 5 OV
+                - button "Gate Lv3 C 884:788 5 OV" [ref=e2708] [cursor=pointer]:
+                  - generic [ref=e2711]:
+                    - strong [ref=e2712]: Gate Lv3
+                    - text: C
+                    - emphasis [ref=e2713]: 884:788
+                  - generic [ref=e2714]: 5 OV
+                - button "Gate Lv3 C 836:889 5 OV" [ref=e2715] [cursor=pointer]:
+                  - generic [ref=e2718]:
+                    - strong [ref=e2719]: Gate Lv3
+                    - text: C
+                    - emphasis [ref=e2720]: 836:889
+                  - generic [ref=e2721]: 5 OV
+                - button "Gate Lv7 C 827:757 5 OV" [ref=e2722] [cursor=pointer]:
+                  - generic [ref=e2725]:
+                    - strong [ref=e2726]: Gate Lv7
+                    - text: C
+                    - emphasis [ref=e2727]: 827:757
+                  - generic [ref=e2728]: 5 OV
+                - button "Gate Lv7 C 761:767 5 OV" [ref=e2729] [cursor=pointer]:
+                  - generic [ref=e2732]:
+                    - strong [ref=e2733]: Gate Lv7
+                    - text: C
+                    - emphasis [ref=e2734]: 761:767
+                  - generic [ref=e2735]: 5 OV
+                - button "Gate Lv7 C 771:828 5 OV" [ref=e2736] [cursor=pointer]:
+                  - generic [ref=e2739]:
+                    - strong [ref=e2740]: Gate Lv7
+                    - text: C
+                    - emphasis [ref=e2741]: 771:828
+                  - generic [ref=e2742]: 5 OV
+                - button "Gate Lv7 C 847:832 5 OV" [ref=e2743] [cursor=pointer]:
+                  - generic [ref=e2746]:
+                    - strong [ref=e2747]: Gate Lv7
+                    - text: C
+                    - emphasis [ref=e2748]: 847:832
+                  - generic [ref=e2749]: 5 OV
+                - button "Gate Lv1 Z1 1492:783 5 OV" [ref=e2750] [cursor=pointer]:
+                  - generic [ref=e2753]:
+                    - strong [ref=e2754]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2755]: 1492:783
+                  - generic [ref=e2756]: 5 OV
+                - button "Gate Lv1 Z1 1459:819 5 OV" [ref=e2757] [cursor=pointer]:
+                  - generic [ref=e2760]:
+                    - strong [ref=e2761]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2762]: 1459:819
+                  - generic [ref=e2763]: 5 OV
+                - button "Gate Lv1 Z1 885:962 5 OV" [ref=e2764] [cursor=pointer]:
+                  - generic [ref=e2767]:
+                    - strong [ref=e2768]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2769]: 885:962
+                  - generic [ref=e2770]: 5 OV
+                - button "Small Town Lv2 Z1 927:913 20 OV" [ref=e2771] [cursor=pointer]:
+                  - generic [ref=e2774]:
+                    - strong [ref=e2775]: Small Town Lv2
+                    - text: Z1
+                    - emphasis [ref=e2776]: 927:913
+                  - generic [ref=e2777]: 20 OV
+                - button "Gate Lv1 Z1 101:378 5 OV" [ref=e2778] [cursor=pointer]:
+                  - generic [ref=e2781]:
+                    - strong [ref=e2782]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2783]: 101:378
+                  - generic [ref=e2784]: 5 OV
+                - button "Gate Lv2 Z1 114:316 5 OV" [ref=e2785] [cursor=pointer]:
+                  - generic [ref=e2788]:
+                    - strong [ref=e2789]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2790]: 114:316
+                  - generic [ref=e2791]: 5 OV
+                - button "Gate Lv2 Z1 126:405 5 OV" [ref=e2792] [cursor=pointer]:
+                  - generic [ref=e2795]:
+                    - strong [ref=e2796]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2797]: 126:405
+                  - generic [ref=e2798]: 5 OV
+                - button "Gate Lv1 Z1 357:120 5 OV" [ref=e2799] [cursor=pointer]:
+                  - generic [ref=e2802]:
+                    - strong [ref=e2803]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2804]: 357:120
+                  - generic [ref=e2805]: 5 OV
+                - button "Gate Lv1 Z1 876:97 5 OV" [ref=e2806] [cursor=pointer]:
+                  - generic [ref=e2809]:
+                    - strong [ref=e2810]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2811]: 876:97
+                  - generic [ref=e2812]: 5 OV
+                - button "Gate Lv1 Z1 831:163 5 OV" [ref=e2813] [cursor=pointer]:
+                  - generic [ref=e2816]:
+                    - strong [ref=e2817]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2818]: 831:163
+                  - generic [ref=e2819]: 5 OV
+                - button "Gate Lv1 Z1 1479:114 5 OV" [ref=e2820] [cursor=pointer]:
+                  - generic [ref=e2823]:
+                    - strong [ref=e2824]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2825]: 1479:114
+                  - generic [ref=e2826]: 5 OV
+                - button "Gate Lv1 Z1 1460:126 5 OV" [ref=e2827] [cursor=pointer]:
+                  - generic [ref=e2830]:
+                    - strong [ref=e2831]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2832]: 1460:126
+                  - generic [ref=e2833]: 5 OV
+                - button "Small Town Lv1 Z1 1419:122 15 OV" [ref=e2834] [cursor=pointer]:
+                  - generic [ref=e2837]:
+                    - strong [ref=e2838]: Small Town Lv1
+                    - text: Z1
+                    - emphasis [ref=e2839]: 1419:122
+                  - generic [ref=e2840]: 15 OV
+                - button "Gate Lv1 Z1 1424:1022 5 OV" [ref=e2841] [cursor=pointer]:
+                  - generic [ref=e2844]:
+                    - strong [ref=e2845]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2846]: 1424:1022
+                  - generic [ref=e2847]: 5 OV
+                - button "Gate Lv1 Z1 1342:1044 5 OV" [ref=e2848] [cursor=pointer]:
+                  - generic [ref=e2851]:
+                    - strong [ref=e2852]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2853]: 1342:1044
+                  - generic [ref=e2854]: 5 OV
+                - button "Gate Lv2 Z1 1330:1063 5 OV" [ref=e2855] [cursor=pointer]:
+                  - generic [ref=e2858]:
+                    - strong [ref=e2859]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2860]: 1330:1063
+                  - generic [ref=e2861]: 5 OV
+                - button "Gate Lv2 Z1 1356:1064 5 OV" [ref=e2862] [cursor=pointer]:
+                  - generic [ref=e2865]:
+                    - strong [ref=e2866]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2867]: 1356:1064
+                  - generic [ref=e2868]: 5 OV
+                - button "Gate Lv1 Z1 1125:1331 5 OV" [ref=e2869] [cursor=pointer]:
+                  - generic [ref=e2872]:
+                    - strong [ref=e2873]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2874]: 1125:1331
+                  - generic [ref=e2875]: 5 OV
+                - button "Gate Lv1 Z1 1351:1392 5 OV" [ref=e2876] [cursor=pointer]:
+                  - generic [ref=e2879]:
+                    - strong [ref=e2880]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2881]: 1351:1392
+                  - generic [ref=e2882]: 5 OV
+                - button "Gate Lv1 Z1 1316:1395 5 OV" [ref=e2883] [cursor=pointer]:
+                  - generic [ref=e2886]:
+                    - strong [ref=e2887]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2888]: 1316:1395
+                  - generic [ref=e2889]: 5 OV
+                - button "Gate Lv2 Z1 765:1485 5 OV" [ref=e2890] [cursor=pointer]:
+                  - generic [ref=e2893]:
+                    - strong [ref=e2894]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2895]: 765:1485
+                  - generic [ref=e2896]: 5 OV
+                - button "Gate Lv1 Z1 261:1361 5 OV" [ref=e2897] [cursor=pointer]:
+                  - generic [ref=e2900]:
+                    - strong [ref=e2901]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2902]: 261:1361
+                  - generic [ref=e2903]: 5 OV
+                - button "Gate Lv1 Z1 214:1436 5 OV" [ref=e2904] [cursor=pointer]:
+                  - generic [ref=e2907]:
+                    - strong [ref=e2908]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2909]: 214:1436
+                  - generic [ref=e2910]: 5 OV
+                - button "Gate Lv2 Z1 44:678 5 OV" [ref=e2911] [cursor=pointer]:
+                  - generic [ref=e2914]:
+                    - strong [ref=e2915]: Gate Lv2
+                    - text: Z1
+                    - emphasis [ref=e2916]: 44:678
+                  - generic [ref=e2917]: 5 OV
+                - button "Gate Lv1 Z1 594:525 5 OV" [ref=e2918] [cursor=pointer]:
+                  - generic [ref=e2921]:
+                    - strong [ref=e2922]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2923]: 594:525
+                  - generic [ref=e2924]: 5 OV
+                - button "Gate Lv1 Z1 655:539 5 OV" [ref=e2925] [cursor=pointer]:
+                  - generic [ref=e2928]:
+                    - strong [ref=e2929]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2930]: 655:539
+                  - generic [ref=e2931]: 5 OV
+                - button "Gate Lv1 Z1 681:539 5 OV" [ref=e2932] [cursor=pointer]:
+                  - generic [ref=e2935]:
+                    - strong [ref=e2936]: Gate Lv1
+                    - text: Z1
+                    - emphasis [ref=e2937]: 681:539
+                  - generic [ref=e2938]: 5 OV
+                - button "Gate Lv1 Z1,C 888:867 5 OV" [ref=e2939] [cursor=pointer]:
+                  - generic [ref=e2942]:
+                    - strong [ref=e2943]: Gate Lv1
+                    - text: Z1,C
+                    - emphasis [ref=e2944]: 888:867
+                  - generic [ref=e2945]: 5 OV
+                - button "Gate Lv5 Z1,EC-Z5 702:519 5 OV" [ref=e2946] [cursor=pointer]:
+                  - generic [ref=e2949]:
+                    - strong [ref=e2950]: Gate Lv5
+                    - text: Z1,EC-Z5
+                    - emphasis [ref=e2951]: 702:519
+                  - generic [ref=e2952]: 5 OV
+                - button "Gate Lv2 Z1,Z2 1484:846 5 OV" [ref=e2953] [cursor=pointer]:
+                  - generic [ref=e2956]:
+                    - strong [ref=e2957]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2958]: 1484:846
+                  - generic [ref=e2959]: 5 OV
+                - button "Gate Lv2 Z1,Z2 952:843 5 OV" [ref=e2960] [cursor=pointer]:
+                  - generic [ref=e2963]:
+                    - strong [ref=e2964]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2965]: 952:843
+                  - generic [ref=e2966]: 5 OV
+                - button "Gate Lv2 Z1,Z2 969:955 5 OV" [ref=e2967] [cursor=pointer]:
+                  - generic [ref=e2970]:
+                    - strong [ref=e2971]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2972]: 969:955
+                  - generic [ref=e2973]: 5 OV
+                - button "Gate Lv2 Z1,Z2 380:93 5 OV" [ref=e2974] [cursor=pointer]:
+                  - generic [ref=e2977]:
+                    - strong [ref=e2978]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2979]: 380:93
+                  - generic [ref=e2980]: 5 OV
+                - button "Gate Lv2 Z1,Z2 463:193 5 OV" [ref=e2981] [cursor=pointer]:
+                  - generic [ref=e2984]:
+                    - strong [ref=e2985]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2986]: 463:193
+                  - generic [ref=e2987]: 5 OV
+                - button "Gate Lv2 Z1,Z2 370:205 5 OV" [ref=e2988] [cursor=pointer]:
+                  - generic [ref=e2991]:
+                    - strong [ref=e2992]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e2993]: 370:205
+                  - generic [ref=e2994]: 5 OV
+                - button "Small Town Lv1 Z1,Z2 381:165 15 OV" [ref=e2995] [cursor=pointer]:
+                  - generic [ref=e2998]:
+                    - strong [ref=e2999]: Small Town Lv1
+                    - text: Z1,Z2
+                    - emphasis [ref=e3000]: 381:165
+                  - generic [ref=e3001]: 15 OV
+                - button "Gate Lv2 Z1,Z2 925:51 5 OV" [ref=e3002] [cursor=pointer]:
+                  - generic [ref=e3005]:
+                    - strong [ref=e3006]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e3007]: 925:51
+                  - generic [ref=e3008]: 5 OV
+                - button "Gate Lv2 Z1,Z2 1438:203 5 OV" [ref=e3009] [cursor=pointer]:
+                  - generic [ref=e3012]:
+                    - strong [ref=e3013]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e3014]: 1438:203
+                  - generic [ref=e3015]: 5 OV
+                - button "Gate Lv2 Z1,Z2 1118:1374 5 OV" [ref=e3016] [cursor=pointer]:
+                  - generic [ref=e3019]:
+                    - strong [ref=e3020]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e3021]: 1118:1374
+                  - generic [ref=e3022]: 5 OV
+                - button "Gate Lv2 Z1,Z2 25:602 5 OV" [ref=e3023] [cursor=pointer]:
+                  - generic [ref=e3026]:
+                    - strong [ref=e3027]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e3028]: 25:602
+                  - generic [ref=e3029]: 5 OV
+                - button "Gate Lv2 Z1,Z2 590:549 5 OV" [ref=e3030] [cursor=pointer]:
+                  - generic [ref=e3033]:
+                    - strong [ref=e3034]: Gate Lv2
+                    - text: Z1,Z2
+                    - emphasis [ref=e3035]: 590:549
+                  - generic [ref=e3036]: 5 OV
+                - button "Gate Lv1 Z1,Z22 1468:1146 5 OV" [ref=e3037] [cursor=pointer]:
+                  - generic [ref=e3040]:
+                    - strong [ref=e3041]: Gate Lv1
+                    - text: Z1,Z22
+                    - emphasis [ref=e3042]: 1468:1146
+                  - generic [ref=e3043]: 5 OV
+                - button "Gate Lv2 Z1,Z22 1453:1042 5 OV" [ref=e3044] [cursor=pointer]:
+                  - generic [ref=e3047]:
+                    - strong [ref=e3048]: Gate Lv2
+                    - text: Z1,Z22
+                    - emphasis [ref=e3049]: 1453:1042
+                  - generic [ref=e3050]: 5 OV
+                - button "Gate Lv2 Z1,Z3 1373:824 5 OV" [ref=e3051] [cursor=pointer]:
+                  - generic [ref=e3054]:
+                    - strong [ref=e3055]: Gate Lv2
+                    - text: Z1,Z3
+                    - emphasis [ref=e3056]: 1373:824
+                  - generic [ref=e3057]: 5 OV
+                - button "Gate Lv2 Z1,Z3 590:1423 5 OV" [ref=e3058] [cursor=pointer]:
+                  - generic [ref=e3061]:
+                    - strong [ref=e3062]: Gate Lv2
+                    - text: Z1,Z3
+                    - emphasis [ref=e3063]: 590:1423
+                  - generic [ref=e3064]: 5 OV
+                - button "Gate Lv2 Z1,Z3 140:806 5 OV" [ref=e3065] [cursor=pointer]:
+                  - generic [ref=e3068]:
+                    - strong [ref=e3069]: Gate Lv2
+                    - text: Z1,Z3
+                    - emphasis [ref=e3070]: 140:806
+                  - generic [ref=e3071]: 5 OV
+                - button "Gate Lv2 Z1,Z4 1318:731 5 OV" [ref=e3072] [cursor=pointer]:
+                  - generic [ref=e3075]:
+                    - strong [ref=e3076]: Gate Lv2
+                    - text: Z1,Z4
+                    - emphasis [ref=e3077]: 1318:731
+                  - generic [ref=e3078]: 5 OV
+                - button "Gate Lv2 Z1,Z4 960:281 5 OV" [ref=e3079] [cursor=pointer]:
+                  - generic [ref=e3082]:
+                    - strong [ref=e3083]: Gate Lv2
+                    - text: Z1,Z4
+                    - emphasis [ref=e3084]: 960:281
+                  - generic [ref=e3085]: 5 OV
+                - button "Gate Lv2 Z1,Z4 1215:1335 5 OV" [ref=e3086] [cursor=pointer]:
+                  - generic [ref=e3089]:
+                    - strong [ref=e3090]: Gate Lv2
+                    - text: Z1,Z4
+                    - emphasis [ref=e3091]: 1215:1335
+                  - generic [ref=e3092]: 5 OV
+                - button "Gate Lv1 Z1,Z4 778:1503 5 OV" [ref=e3093] [cursor=pointer]:
+                  - generic [ref=e3096]:
+                    - strong [ref=e3097]: Gate Lv1
+                    - text: Z1,Z4
+                    - emphasis [ref=e3098]: 778:1503
+                  - generic [ref=e3099]: 5 OV
+                - button "Gate Lv2 Z1,Z4 112:698 5 OV" [ref=e3100] [cursor=pointer]:
+                  - generic [ref=e3103]:
+                    - strong [ref=e3104]: Gate Lv2
+                    - text: Z1,Z4
+                    - emphasis [ref=e3105]: 112:698
+                  - generic [ref=e3106]: 5 OV
+                - button "Gate Lv2 Z1,Z5 1088:1308 5 OV" [ref=e3107] [cursor=pointer]:
+                  - generic [ref=e3110]:
+                    - strong [ref=e3111]: Gate Lv2
+                    - text: Z1,Z5
+                    - emphasis [ref=e3112]: 1088:1308
+                  - generic [ref=e3113]: 5 OV
+                - button "Gate Lv2 Z1,Z5 278:1176 5 OV" [ref=e3114] [cursor=pointer]:
+                  - generic [ref=e3117]:
+                    - strong [ref=e3118]: Gate Lv2
+                    - text: Z1,Z5
+                    - emphasis [ref=e3119]: 278:1176
+                  - generic [ref=e3120]: 5 OV
+                - button "Gate Lv2 Z1,Z5 218:1320 5 OV" [ref=e3121] [cursor=pointer]:
+                  - generic [ref=e3124]:
+                    - strong [ref=e3125]: Gate Lv2
+                    - text: Z1,Z5
+                    - emphasis [ref=e3126]: 218:1320
+                  - generic [ref=e3127]: 5 OV
+                - button "Gate Lv4 Z1.E-23 1417:995 5 OV" [ref=e3128] [cursor=pointer]:
+                  - generic [ref=e3131]:
+                    - strong [ref=e3132]: Gate Lv4
+                    - text: Z1.E-23
+                    - emphasis [ref=e3133]: 1417:995
+                  - generic [ref=e3134]: 5 OV
+                - button "Gate Lv1 Z2 1495:862 5 OV" [ref=e3135] [cursor=pointer]:
+                  - generic [ref=e3138]:
+                    - strong [ref=e3139]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3140]: 1495:862
+                  - generic [ref=e3141]: 5 OV
+                - button "Gate Lv1 Z2 1499:954 5 OV" [ref=e3142] [cursor=pointer]:
+                  - generic [ref=e3145]:
+                    - strong [ref=e3146]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3147]: 1499:954
+                  - generic [ref=e3148]: 5 OV
+                - button "Gate Lv1 Z2 1000:820 5 OV" [ref=e3149] [cursor=pointer]:
+                  - generic [ref=e3152]:
+                    - strong [ref=e3153]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3154]: 1000:820
+                  - generic [ref=e3155]: 5 OV
+                - button "Gate Lv2 Z2 998:844 5 OV" [ref=e3156] [cursor=pointer]:
+                  - generic [ref=e3159]:
+                    - strong [ref=e3160]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3161]: 998:844
+                  - generic [ref=e3162]: 5 OV
+                - button "Gate Lv2 Z2 83:159 5 OV" [ref=e3163] [cursor=pointer]:
+                  - generic [ref=e3166]:
+                    - strong [ref=e3167]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3168]: 83:159
+                  - generic [ref=e3169]: 5 OV
+                - button "Gate Lv2 Z2 195:215 5 OV" [ref=e3170] [cursor=pointer]:
+                  - generic [ref=e3173]:
+                    - strong [ref=e3174]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3175]: 195:215
+                  - generic [ref=e3176]: 5 OV
+                - button "Gate Lv2 Z2 187:329 5 OV" [ref=e3177] [cursor=pointer]:
+                  - generic [ref=e3180]:
+                    - strong [ref=e3181]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3182]: 187:329
+                  - generic [ref=e3183]: 5 OV
+                - button "Gate Lv1 Z2 506:118 5 OV" [ref=e3184] [cursor=pointer]:
+                  - generic [ref=e3187]:
+                    - strong [ref=e3188]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3189]: 506:118
+                  - generic [ref=e3190]: 5 OV
+                - button "Small Town Lv1 Z2 551:198 15 OV" [ref=e3191] [cursor=pointer]:
+                  - generic [ref=e3194]:
+                    - strong [ref=e3195]: Small Town Lv1
+                    - text: Z2
+                    - emphasis [ref=e3196]: 551:198
+                  - generic [ref=e3197]: 15 OV
+                - button "Gate Lv1 Z2 1041:64 5 OV" [ref=e3198] [cursor=pointer]:
+                  - generic [ref=e3201]:
+                    - strong [ref=e3202]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3203]: 1041:64
+                  - generic [ref=e3204]: 5 OV
+                - button "Gate Lv1 Z2 988:104 5 OV" [ref=e3205] [cursor=pointer]:
+                  - generic [ref=e3208]:
+                    - strong [ref=e3209]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3210]: 988:104
+                  - generic [ref=e3211]: 5 OV
+                - button "Gate Lv1 Z2 1067:122 5 OV" [ref=e3212] [cursor=pointer]:
+                  - generic [ref=e3215]:
+                    - strong [ref=e3216]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3217]: 1067:122
+                  - generic [ref=e3218]: 5 OV
+                - button "Small Town Lv2 Z2 974:127 20 OV" [ref=e3219] [cursor=pointer]:
+                  - generic [ref=e3222]:
+                    - strong [ref=e3223]: Small Town Lv2
+                    - text: Z2
+                    - emphasis [ref=e3224]: 974:127
+                  - generic [ref=e3225]: 20 OV
+                - button "Gate Lv1 Z2 1434:324 5 OV" [ref=e3226] [cursor=pointer]:
+                  - generic [ref=e3229]:
+                    - strong [ref=e3230]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3231]: 1434:324
+                  - generic [ref=e3232]: 5 OV
+                - button "Gate Lv1 Z2 1549:1282 5 OV" [ref=e3233] [cursor=pointer]:
+                  - generic [ref=e3236]:
+                    - strong [ref=e3237]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3238]: 1549:1282
+                  - generic [ref=e3239]: 5 OV
+                - button "Gate Lv1 Z2 1034:1385 5 OV" [ref=e3240] [cursor=pointer]:
+                  - generic [ref=e3243]:
+                    - strong [ref=e3244]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3245]: 1034:1385
+                  - generic [ref=e3246]: 5 OV
+                - button "Gate Lv1 Z2 1054:1423 5 OV" [ref=e3247] [cursor=pointer]:
+                  - generic [ref=e3250]:
+                    - strong [ref=e3251]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3252]: 1054:1423
+                  - generic [ref=e3253]: 5 OV
+                - button "Gate Lv2 Z2 460:1465 5 OV" [ref=e3254] [cursor=pointer]:
+                  - generic [ref=e3257]:
+                    - strong [ref=e3258]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3259]: 460:1465
+                  - generic [ref=e3260]: 5 OV
+                - button "Gate Lv1 Z2 140:1210 5 OV" [ref=e3261] [cursor=pointer]:
+                  - generic [ref=e3264]:
+                    - strong [ref=e3265]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3266]: 140:1210
+                  - generic [ref=e3267]: 5 OV
+                - button "Gate Lv1 Z2 143:1292 5 OV" [ref=e3268] [cursor=pointer]:
+                  - generic [ref=e3271]:
+                    - strong [ref=e3272]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3273]: 143:1292
+                  - generic [ref=e3274]: 5 OV
+                - button "Gate Lv2 Z2 51:1153 5 OV" [ref=e3275] [cursor=pointer]:
+                  - generic [ref=e3278]:
+                    - strong [ref=e3279]: Gate Lv2
+                    - text: Z2
+                    - emphasis [ref=e3280]: 51:1153
+                  - generic [ref=e3281]: 5 OV
+                - button "Gate Lv1 Z2 121:607 5 OV" [ref=e3282] [cursor=pointer]:
+                  - generic [ref=e3285]:
+                    - strong [ref=e3286]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3287]: 121:607
+                  - generic [ref=e3288]: 5 OV
+                - button "Gate Lv1 Z2 547:545 5 OV" [ref=e3289] [cursor=pointer]:
+                  - generic [ref=e3292]:
+                    - strong [ref=e3293]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3294]: 547:545
+                  - generic [ref=e3295]: 5 OV
+                - button "Gate Lv1 Z2 583:738 5 OV" [ref=e3296] [cursor=pointer]:
+                  - generic [ref=e3299]:
+                    - strong [ref=e3300]: Gate Lv1
+                    - text: Z2
+                    - emphasis [ref=e3301]: 583:738
+                  - generic [ref=e3302]: 5 OV
+                - button "Gate Lv1 Z2,C 709:704 5 OV" [ref=e3303] [cursor=pointer]:
+                  - generic [ref=e3306]:
+                    - strong [ref=e3307]: Gate Lv1
+                    - text: Z2,C
+                    - emphasis [ref=e3308]: 709:704
+                  - generic [ref=e3309]: 5 OV
+                - button "Gate Lv2 Z2,Z22 1526:1338 5 OV" [ref=e3310] [cursor=pointer]:
+                  - generic [ref=e3313]:
+                    - strong [ref=e3314]: Gate Lv2
+                    - text: Z2,Z22
+                    - emphasis [ref=e3315]: 1526:1338
+                  - generic [ref=e3316]: 5 OV
+                - button "Gate Lv2 Z2,Z23 1090:714 5 OV" [ref=e3317] [cursor=pointer]:
+                  - generic [ref=e3320]:
+                    - strong [ref=e3321]: Gate Lv2
+                    - text: Z2,Z23
+                    - emphasis [ref=e3322]: 1090:714
+                  - generic [ref=e3323]: 5 OV
+                - button "Gate Lv2 Z2,Z23 1461:1259 5 OV" [ref=e3324] [cursor=pointer]:
+                  - generic [ref=e3327]:
+                    - strong [ref=e3328]: Gate Lv2
+                    - text: Z2,Z23
+                    - emphasis [ref=e3329]: 1461:1259
+                  - generic [ref=e3330]: 5 OV
+                - button "Gate Lv1 Z2,Z24 1028:821 5 OV" [ref=e3331] [cursor=pointer]:
+                  - generic [ref=e3334]:
+                    - strong [ref=e3335]: Gate Lv1
+                    - text: Z2,Z24
+                    - emphasis [ref=e3336]: 1028:821
+                  - generic [ref=e3337]: 5 OV
+                - button "Gate Lv1 Z2,Z24 1454:1383 5 OV" [ref=e3338] [cursor=pointer]:
+                  - generic [ref=e3341]:
+                    - strong [ref=e3342]: Gate Lv1
+                    - text: Z2,Z24
+                    - emphasis [ref=e3343]: 1454:1383
+                  - generic [ref=e3344]: 5 OV
+                - button "Gate Lv2 Z2,Z3 1471:934 5 OV" [ref=e3345] [cursor=pointer]:
+                  - generic [ref=e3348]:
+                    - strong [ref=e3349]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3350]: 1471:934
+                  - generic [ref=e3351]: 5 OV
+                - button "Gate Lv2 Z2,Z3 577:155 5 OV" [ref=e3352] [cursor=pointer]:
+                  - generic [ref=e3355]:
+                    - strong [ref=e3356]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3357]: 577:155
+                  - generic [ref=e3358]: 5 OV
+                - button "Gate Lv2 Z2,Z3 1134:48 5 OV" [ref=e3359] [cursor=pointer]:
+                  - generic [ref=e3362]:
+                    - strong [ref=e3363]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3364]: 1134:48
+                  - generic [ref=e3365]: 5 OV
+                - button "Gate Lv2 Z2,Z3 1373:341 5 OV" [ref=e3366] [cursor=pointer]:
+                  - generic [ref=e3369]:
+                    - strong [ref=e3370]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3371]: 1373:341
+                  - generic [ref=e3372]: 5 OV
+                - button "Gate Lv2 Z2,Z3 1477:463 5 OV" [ref=e3373] [cursor=pointer]:
+                  - generic [ref=e3376]:
+                    - strong [ref=e3377]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3378]: 1477:463
+                  - generic [ref=e3379]: 5 OV
+                - button "Gate Lv2 Z2,Z3 1021:1460 5 OV" [ref=e3380] [cursor=pointer]:
+                  - generic [ref=e3383]:
+                    - strong [ref=e3384]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3385]: 1021:1460
+                  - generic [ref=e3386]: 5 OV
+                - button "Gate Lv2 Z2,Z3 337:1382 5 OV" [ref=e3387] [cursor=pointer]:
+                  - generic [ref=e3390]:
+                    - strong [ref=e3391]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3392]: 337:1382
+                  - generic [ref=e3393]: 5 OV
+                - button "Gate Lv2 Z2,Z3 541:754 5 OV" [ref=e3394] [cursor=pointer]:
+                  - generic [ref=e3397]:
+                    - strong [ref=e3398]: Gate Lv2
+                    - text: Z2,Z3
+                    - emphasis [ref=e3399]: 541:754
+                  - generic [ref=e3400]: 5 OV
+                - button "Gate Lv2 Z2,Z4 155:655 5 OV" [ref=e3401] [cursor=pointer]:
+                  - generic [ref=e3404]:
+                    - strong [ref=e3405]: Gate Lv2
+                    - text: Z2,Z4
+                    - emphasis [ref=e3406]: 155:655
+                  - generic [ref=e3407]: 5 OV
+                - button "Gate Lv2 Z2,Z5 1023:1358 5 OV" [ref=e3408] [cursor=pointer]:
+                  - generic [ref=e3411]:
+                    - strong [ref=e3412]: Gate Lv2
+                    - text: Z2,Z5
+                    - emphasis [ref=e3413]: 1023:1358
+                  - generic [ref=e3414]: 5 OV
+                - button "Gate Lv2 Z2,Z5 239:570 5 OV" [ref=e3415] [cursor=pointer]:
+                  - generic [ref=e3418]:
+                    - strong [ref=e3419]: Gate Lv2
+                    - text: Z2,Z5
+                    - emphasis [ref=e3420]: 239:570
+                  - generic [ref=e3421]: 5 OV
+                - button "Gate Lv2 Z2,Z5 702:960 5 OV" [ref=e3422] [cursor=pointer]:
+                  - generic [ref=e3425]:
+                    - strong [ref=e3426]: Gate Lv2
+                    - text: Z2,Z5
+                    - emphasis [ref=e3427]: 702:960
+                  - generic [ref=e3428]: 5 OV
+                - button "Gate Lv2 Z2,Z6 1140:141 5 OV" [ref=e3429] [cursor=pointer]:
+                  - generic [ref=e3432]:
+                    - strong [ref=e3433]: Gate Lv2
+                    - text: Z2,Z6
+                    - emphasis [ref=e3434]: 1140:141
+                  - generic [ref=e3435]: 5 OV
+                - button "Gate Lv1 Z3 1353:839 5 OV" [ref=e3436] [cursor=pointer]:
+                  - generic [ref=e3439]:
+                    - strong [ref=e3440]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3441]: 1353:839
+                  - generic [ref=e3442]: 5 OV
+                - button "Gate Lv1 Z3 1320:872 5 OV" [ref=e3443] [cursor=pointer]:
+                  - generic [ref=e3446]:
+                    - strong [ref=e3447]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3448]: 1320:872
+                  - generic [ref=e3449]: 5 OV
+                - button "Gate Lv1 Z3 1012:546 5 OV" [ref=e3450] [cursor=pointer]:
+                  - generic [ref=e3453]:
+                    - strong [ref=e3454]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3455]: 1012:546
+                  - generic [ref=e3456]: 5 OV
+                - button "Gate Lv1 Z3 1074:693 5 OV" [ref=e3457] [cursor=pointer]:
+                  - generic [ref=e3460]:
+                    - strong [ref=e3461]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3462]: 1074:693
+                  - generic [ref=e3463]: 5 OV
+                - button "Gate Lv1 Z3 152:72 5 OV" [ref=e3464] [cursor=pointer]:
+                  - generic [ref=e3467]:
+                    - strong [ref=e3468]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3469]: 152:72
+                  - generic [ref=e3470]: 5 OV
+                - button "Gate Lv1 Z3 160:96 5 OV" [ref=e3471] [cursor=pointer]:
+                  - generic [ref=e3474]:
+                    - strong [ref=e3475]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3476]: 160:96
+                  - generic [ref=e3477]: 5 OV
+                - button "Gate Lv1 Z3 140:102 5 OV" [ref=e3478] [cursor=pointer]:
+                  - generic [ref=e3481]:
+                    - strong [ref=e3482]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3483]: 140:102
+                  - generic [ref=e3484]: 5 OV
+                - button "Gate Lv1 Z3 619:130 5 OV" [ref=e3485] [cursor=pointer]:
+                  - generic [ref=e3488]:
+                    - strong [ref=e3489]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3490]: 619:130
+                  - generic [ref=e3491]: 5 OV
+                - button "Gate Lv3 Z3 724:109 5 OV" [ref=e3492] [cursor=pointer]:
+                  - generic [ref=e3495]:
+                    - strong [ref=e3496]: Gate Lv3
+                    - text: Z3
+                    - emphasis [ref=e3497]: 724:109
+                  - generic [ref=e3498]: 5 OV
+                - button "Gate Lv1 Z3 1263:83 5 OV" [ref=e3499] [cursor=pointer]:
+                  - generic [ref=e3502]:
+                    - strong [ref=e3503]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3504]: 1263:83
+                  - generic [ref=e3505]: 5 OV
+                - button "Gate Lv1 Z3 1249:109 5 OV" [ref=e3506] [cursor=pointer]:
+                  - generic [ref=e3509]:
+                    - strong [ref=e3510]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3511]: 1249:109
+                  - generic [ref=e3512]: 5 OV
+                - button "Gate Lv1 Z3 1453:466 5 OV" [ref=e3513] [cursor=pointer]:
+                  - generic [ref=e3516]:
+                    - strong [ref=e3517]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3518]: 1453:466
+                  - generic [ref=e3519]: 5 OV
+                - button "Gate Lv1 Z3 1443:500 5 OV" [ref=e3520] [cursor=pointer]:
+                  - generic [ref=e3523]:
+                    - strong [ref=e3524]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3525]: 1443:500
+                  - generic [ref=e3526]: 5 OV
+                - button "Gate Lv1 Z3 1390:806 5 OV" [ref=e3527] [cursor=pointer]:
+                  - generic [ref=e3530]:
+                    - strong [ref=e3531]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3532]: 1390:806
+                  - generic [ref=e3533]: 5 OV
+                - button "Small Town Lv1 Z3 1406:1499 15 OV" [ref=e3534] [cursor=pointer]:
+                  - generic [ref=e3537]:
+                    - strong [ref=e3538]: Small Town Lv1
+                    - text: Z3
+                    - emphasis [ref=e3539]: 1406:1499
+                  - generic [ref=e3540]: 15 OV
+                - button "Gate Lv1 Z3 861:1350 5 OV" [ref=e3541] [cursor=pointer]:
+                  - generic [ref=e3544]:
+                    - strong [ref=e3545]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3546]: 861:1350
+                  - generic [ref=e3547]: 5 OV
+                - button "Gate Lv1 Z3 830:1415 5 OV" [ref=e3548] [cursor=pointer]:
+                  - generic [ref=e3551]:
+                    - strong [ref=e3552]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3553]: 830:1415
+                  - generic [ref=e3554]: 5 OV
+                - button "Gate Lv1 Z3 854:1440 5 OV" [ref=e3555] [cursor=pointer]:
+                  - generic [ref=e3558]:
+                    - strong [ref=e3559]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3560]: 854:1440
+                  - generic [ref=e3561]: 5 OV
+                - button "Gate Lv2 Z3 864:1331 5 OV" [ref=e3562] [cursor=pointer]:
+                  - generic [ref=e3565]:
+                    - strong [ref=e3566]: Gate Lv2
+                    - text: Z3
+                    - emphasis [ref=e3567]: 864:1331
+                  - generic [ref=e3568]: 5 OV
+                - button "Gate Lv1 Z3 458:1415 5 OV" [ref=e3569] [cursor=pointer]:
+                  - generic [ref=e3572]:
+                    - strong [ref=e3573]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3574]: 458:1415
+                  - generic [ref=e3575]: 5 OV
+                - button "Gate Lv1 Z3 504:1444 5 OV" [ref=e3576] [cursor=pointer]:
+                  - generic [ref=e3579]:
+                    - strong [ref=e3580]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3581]: 504:1444
+                  - generic [ref=e3582]: 5 OV
+                - button "Gate Lv3 Z3 289:1347 5 OV" [ref=e3583] [cursor=pointer]:
+                  - generic [ref=e3586]:
+                    - strong [ref=e3587]: Gate Lv3
+                    - text: Z3
+                    - emphasis [ref=e3588]: 289:1347
+                  - generic [ref=e3589]: 5 OV
+                - button "Gate Lv1 Z3 46:1072 5 OV" [ref=e3590] [cursor=pointer]:
+                  - generic [ref=e3593]:
+                    - strong [ref=e3594]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3595]: 46:1072
+                  - generic [ref=e3596]: 5 OV
+                - button "Gate Lv1 Z3 111:1111 5 OV" [ref=e3597] [cursor=pointer]:
+                  - generic [ref=e3600]:
+                    - strong [ref=e3601]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3602]: 111:1111
+                  - generic [ref=e3603]: 5 OV
+                - button "Gate Lv2 Z3 109:937 5 OV" [ref=e3604] [cursor=pointer]:
+                  - generic [ref=e3607]:
+                    - strong [ref=e3608]: Gate Lv2
+                    - text: Z3
+                    - emphasis [ref=e3609]: 109:937
+                  - generic [ref=e3610]: 5 OV
+                - button "Gate Lv2 Z3 164:1033 5 OV" [ref=e3611] [cursor=pointer]:
+                  - generic [ref=e3614]:
+                    - strong [ref=e3615]: Gate Lv2
+                    - text: Z3
+                    - emphasis [ref=e3616]: 164:1033
+                  - generic [ref=e3617]: 5 OV
+                - button "Gate Lv1 Z3 252:823 5 OV" [ref=e3618] [cursor=pointer]:
+                  - generic [ref=e3621]:
+                    - strong [ref=e3622]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3623]: 252:823
+                  - generic [ref=e3624]: 5 OV
+                - button "Gate Lv1 Z3 523:783 5 OV" [ref=e3625] [cursor=pointer]:
+                  - generic [ref=e3628]:
+                    - strong [ref=e3629]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3630]: 523:783
+                  - generic [ref=e3631]: 5 OV
+                - button "Gate Lv1 Z3 516:831 5 OV" [ref=e3632] [cursor=pointer]:
+                  - generic [ref=e3635]:
+                    - strong [ref=e3636]: Gate Lv1
+                    - text: Z3
+                    - emphasis [ref=e3637]: 516:831
+                  - generic [ref=e3638]: 5 OV
+                - button "Gate Lv3 Z3,N4-Z1 1375:116 5 OV" [ref=e3639] [cursor=pointer]:
+                  - generic [ref=e3642]:
+                    - strong [ref=e3643]: Gate Lv3
+                    - text: Z3,N4-Z1
+                    - emphasis [ref=e3644]: 1375:116
+                  - generic [ref=e3645]: 5 OV
+                - button "Gate Lv3 Z3,S3-Z4 799:1390 5 OV" [ref=e3646] [cursor=pointer]:
+                  - generic [ref=e3649]:
+                    - strong [ref=e3650]: Gate Lv3
+                    - text: Z3,S3-Z4
+                    - emphasis [ref=e3651]: 799:1390
+                  - generic [ref=e3652]: 5 OV
+                - button "Gate Lv3 Z3,S3-Z6 774:1302 5 OV" [ref=e3653] [cursor=pointer]:
+                  - generic [ref=e3656]:
+                    - strong [ref=e3657]: Gate Lv3
+                    - text: Z3,S3-Z6
+                    - emphasis [ref=e3658]: 774:1302
+                  - generic [ref=e3659]: 5 OV
+                - button "Gate Lv5 Z3,WC-Z4 385:853 5 OV" [ref=e3660] [cursor=pointer]:
+                  - generic [ref=e3663]:
+                    - strong [ref=e3664]: Gate Lv5
+                    - text: Z3,WC-Z4
+                    - emphasis [ref=e3665]: 385:853
+                  - generic [ref=e3666]: 5 OV
+                - button "Gate Lv2 Z3,Z24 940:608 5 OV" [ref=e3667] [cursor=pointer]:
+                  - generic [ref=e3670]:
+                    - strong [ref=e3671]: Gate Lv2
+                    - text: Z3,Z24
+                    - emphasis [ref=e3672]: 940:608
+                  - generic [ref=e3673]: 5 OV
+                - button "Gate Lv2 Z3,Z25 951:531 5 OV" [ref=e3674] [cursor=pointer]:
+                  - generic [ref=e3677]:
+                    - strong [ref=e3678]: Gate Lv2
+                    - text: Z3,Z25
+                    - emphasis [ref=e3679]: 951:531
+                  - generic [ref=e3680]: 5 OV
+                - button "Gate Lv2 Z3,Z4 1239:784 5 OV" [ref=e3681] [cursor=pointer]:
+                  - generic [ref=e3684]:
+                    - strong [ref=e3685]: Gate Lv2
+                    - text: Z3,Z4
+                    - emphasis [ref=e3686]: 1239:784
+                  - generic [ref=e3687]: 5 OV
+                - button "Gate Lv2 Z3,Z4 1234:849 5 OV" [ref=e3688] [cursor=pointer]:
+                  - generic [ref=e3691]:
+                    - strong [ref=e3692]: Gate Lv2
+                    - text: Z3,Z4
+                    - emphasis [ref=e3693]: 1234:849
+                  - generic [ref=e3694]: 5 OV
+                - button "Gate Lv2 Z3,Z4 530:1318 5 OV" [ref=e3695] [cursor=pointer]:
+                  - generic [ref=e3698]:
+                    - strong [ref=e3699]: Gate Lv2
+                    - text: Z3,Z4
+                    - emphasis [ref=e3700]: 530:1318
+                  - generic [ref=e3701]: 5 OV
+                - button "Gate Lv2 Z3,Z4 525:848 5 OV" [ref=e3702] [cursor=pointer]:
+                  - generic [ref=e3705]:
+                    - strong [ref=e3706]: Gate Lv2
+                    - text: Z3,Z4
+                    - emphasis [ref=e3707]: 525:848
+                  - generic [ref=e3708]: 5 OV
+                - button "Gate Lv2 Z3,Z5 1390:598 5 OV" [ref=e3709] [cursor=pointer]:
+                  - generic [ref=e3712]:
+                    - strong [ref=e3713]: Gate Lv2
+                    - text: Z3,Z5
+                    - emphasis [ref=e3714]: 1390:598
+                  - generic [ref=e3715]: 5 OV
+                - button "Gate Lv2 Z3,Z5 473:1330 5 OV" [ref=e3716] [cursor=pointer]:
+                  - generic [ref=e3719]:
+                    - strong [ref=e3720]: Gate Lv2
+                    - text: Z3,Z5
+                    - emphasis [ref=e3721]: 473:1330
+                  - generic [ref=e3722]: 5 OV
+                - button "Gate Lv2 Z3,Z5 601:919 5 OV" [ref=e3723] [cursor=pointer]:
+                  - generic [ref=e3726]:
+                    - strong [ref=e3727]: Gate Lv2
+                    - text: Z3,Z5
+                    - emphasis [ref=e3728]: 601:919
+                  - generic [ref=e3729]: 5 OV
+                - button "Gate Lv2 Z3,Z6 1257:139 5 OV" [ref=e3730] [cursor=pointer]:
+                  - generic [ref=e3733]:
+                    - strong [ref=e3734]: Gate Lv2
+                    - text: Z3,Z6
+                    - emphasis [ref=e3735]: 1257:139
+                  - generic [ref=e3736]: 5 OV
+                - button "Gate Lv1 Z4 1243:666 5 OV" [ref=e3737] [cursor=pointer]:
+                  - generic [ref=e3740]:
+                    - strong [ref=e3741]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3742]: 1243:666
+                  - generic [ref=e3743]: 5 OV
+                - button "Gate Lv1 Z4 1201:731 5 OV" [ref=e3744] [cursor=pointer]:
+                  - generic [ref=e3747]:
+                    - strong [ref=e3748]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3749]: 1201:731
+                  - generic [ref=e3750]: 5 OV
+                - button "Gate Lv1 Z4 1217:750 5 OV" [ref=e3751] [cursor=pointer]:
+                  - generic [ref=e3754]:
+                    - strong [ref=e3755]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3756]: 1217:750
+                  - generic [ref=e3757]: 5 OV
+                - button "Gate Lv1 Z4 890:675 5 OV" [ref=e3758] [cursor=pointer]:
+                  - generic [ref=e3761]:
+                    - strong [ref=e3762]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3763]: 890:675
+                  - generic [ref=e3764]: 5 OV
+                - button "Gate Lv1 Z4 930:699 5 OV" [ref=e3765] [cursor=pointer]:
+                  - generic [ref=e3768]:
+                    - strong [ref=e3769]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3770]: 930:699
+                  - generic [ref=e3771]: 5 OV
+                - button "Gate Lv1 Z4 269:436 5 OV" [ref=e3772] [cursor=pointer]:
+                  - generic [ref=e3775]:
+                    - strong [ref=e3776]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3777]: 269:436
+                  - generic [ref=e3778]: 5 OV
+                - button "Small Town Lv1 Z4 476:181 15 OV" [ref=e3779] [cursor=pointer]:
+                  - generic [ref=e3782]:
+                    - strong [ref=e3783]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e3784]: 476:181
+                  - generic [ref=e3785]: 15 OV
+                - button "Gate Lv1 Z4 973:353 5 OV" [ref=e3786] [cursor=pointer]:
+                  - generic [ref=e3789]:
+                    - strong [ref=e3790]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3791]: 973:353
+                  - generic [ref=e3792]: 5 OV
+                - button "Gate Lv1 Z4 991:373 5 OV" [ref=e3793] [cursor=pointer]:
+                  - generic [ref=e3796]:
+                    - strong [ref=e3797]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3798]: 991:373
+                  - generic [ref=e3799]: 5 OV
+                - button "Gate Lv1 Z4 1159:409 5 OV" [ref=e3800] [cursor=pointer]:
+                  - generic [ref=e3803]:
+                    - strong [ref=e3804]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3805]: 1159:409
+                  - generic [ref=e3806]: 5 OV
+                - button "Gate Lv1 Z4 1337:420 5 OV" [ref=e3807] [cursor=pointer]:
+                  - generic [ref=e3810]:
+                    - strong [ref=e3811]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3812]: 1337:420
+                  - generic [ref=e3813]: 5 OV
+                - button "Small Town Lv2 Z4 1254:372 20 OV" [ref=e3814] [cursor=pointer]:
+                  - generic [ref=e3817]:
+                    - strong [ref=e3818]: Small Town Lv2
+                    - text: Z4
+                    - emphasis [ref=e3819]: 1254:372
+                  - generic [ref=e3820]: 20 OV
+                - button "Gate Lv1 Z4 1381:1233 5 OV" [ref=e3821] [cursor=pointer]:
+                  - generic [ref=e3824]:
+                    - strong [ref=e3825]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3826]: 1381:1233
+                  - generic [ref=e3827]: 5 OV
+                - button "Gate Lv1 Z4 1423:1261 5 OV" [ref=e3828] [cursor=pointer]:
+                  - generic [ref=e3831]:
+                    - strong [ref=e3832]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3833]: 1423:1261
+                  - generic [ref=e3834]: 5 OV
+                - button "Gate Lv2 Z4 1358:1205 5 OV" [ref=e3835] [cursor=pointer]:
+                  - generic [ref=e3838]:
+                    - strong [ref=e3839]: Gate Lv2
+                    - text: Z4
+                    - emphasis [ref=e3840]: 1358:1205
+                  - generic [ref=e3841]: 5 OV
+                - button "Gate Lv1 Z4 1130:1225 5 OV" [ref=e3842] [cursor=pointer]:
+                  - generic [ref=e3845]:
+                    - strong [ref=e3846]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3847]: 1130:1225
+                  - generic [ref=e3848]: 5 OV
+                - button "Gate Lv1 Z4 1176:1271 5 OV" [ref=e3849] [cursor=pointer]:
+                  - generic [ref=e3852]:
+                    - strong [ref=e3853]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3854]: 1176:1271
+                  - generic [ref=e3855]: 5 OV
+                - button "Small Town Lv1 Z4 283:722 15 OV" [ref=e3856] [cursor=pointer]:
+                  - generic [ref=e3859]:
+                    - strong [ref=e3860]: Small Town Lv1
+                    - text: Z4
+                    - emphasis [ref=e3861]: 283:722
+                  - generic [ref=e3862]: 15 OV
+                - button "Gate Lv1 Z4 509:894 5 OV" [ref=e3863] [cursor=pointer]:
+                  - generic [ref=e3866]:
+                    - strong [ref=e3867]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3868]: 509:894
+                  - generic [ref=e3869]: 5 OV
+                - button "Gate Lv1 Z4 519:980 5 OV" [ref=e3870] [cursor=pointer]:
+                  - generic [ref=e3873]:
+                    - strong [ref=e3874]: Gate Lv1
+                    - text: Z4
+                    - emphasis [ref=e3875]: 519:980
+                  - generic [ref=e3876]: 5 OV
+                - button "Gate Lv1 Z4,C 836:691 5 OV" [ref=e3877] [cursor=pointer]:
+                  - generic [ref=e3880]:
+                    - strong [ref=e3881]: Gate Lv1
+                    - text: Z4,C
+                    - emphasis [ref=e3882]: 836:691
+                  - generic [ref=e3883]: 5 OV
+                - button "Gate Lv5 Z4,EC-Z3 1128:658 5 OV" [ref=e3884] [cursor=pointer]:
+                  - generic [ref=e3887]:
+                    - strong [ref=e3888]: Gate Lv5
+                    - text: Z4,EC-Z3
+                    - emphasis [ref=e3889]: 1128:658
+                  - generic [ref=e3890]: 5 OV
+                - button "Gate Lv5 Z4,EC-Z3 1000:460 5 OV" [ref=e3891] [cursor=pointer]:
+                  - generic [ref=e3894]:
+                    - strong [ref=e3895]: Gate Lv5
+                    - text: Z4,EC-Z3
+                    - emphasis [ref=e3896]: 1000:460
+                  - generic [ref=e3897]: 5 OV
+                - button "Gate Lv5 Z4,EC-Z5 929:414 5 OV" [ref=e3898] [cursor=pointer]:
+                  - generic [ref=e3901]:
+                    - strong [ref=e3902]: Gate Lv5
+                    - text: Z4,EC-Z5
+                    - emphasis [ref=e3903]: 929:414
+                  - generic [ref=e3904]: 5 OV
+                - button "Gate Lv3 Z4,N4-Z6 1063:415 5 OV" [ref=e3905] [cursor=pointer]:
+                  - generic [ref=e3908]:
+                    - strong [ref=e3909]: Gate Lv3
+                    - text: Z4,N4-Z6
+                    - emphasis [ref=e3910]: 1063:415
+                  - generic [ref=e3911]: 5 OV
+                - button "Gate Lv2 Z4,W-Z3 218:914 5 OV" [ref=e3912] [cursor=pointer]:
+                  - generic [ref=e3915]:
+                    - strong [ref=e3916]: Gate Lv2
+                    - text: Z4,W-Z3
+                    - emphasis [ref=e3917]: 218:914
+                  - generic [ref=e3918]: 5 OV
+                - button "Gate Lv2 Z4,W-Z3 300:971 5 OV" [ref=e3919] [cursor=pointer]:
+                  - generic [ref=e3922]:
+                    - strong [ref=e3923]: Gate Lv2
+                    - text: Z4,W-Z3
+                    - emphasis [ref=e3924]: 300:971
+                  - generic [ref=e3925]: 5 OV
+                - button "Gate Lv4 Z4,WC-Z2 190:509 5 OV" [ref=e3926] [cursor=pointer]:
+                  - generic [ref=e3929]:
+                    - strong [ref=e3930]: Gate Lv4
+                    - text: Z4,WC-Z2
+                    - emphasis [ref=e3931]: 190:509
+                  - generic [ref=e3932]: 5 OV
+                - button "Gate Lv5 Z4,WC1 561:401 5 OV" [ref=e3933] [cursor=pointer]:
+                  - generic [ref=e3936]:
+                    - strong [ref=e3937]: Gate Lv5
+                    - text: Z4,WC1
+                    - emphasis [ref=e3938]: 561:401
+                  - generic [ref=e3939]: 5 OV
+                - button "Gate Lv2 Z4,Z25 893:553 5 OV" [ref=e3940] [cursor=pointer]:
+                  - generic [ref=e3943]:
+                    - strong [ref=e3944]: Gate Lv2
+                    - text: Z4,Z25
+                    - emphasis [ref=e3945]: 893:553
+                  - generic [ref=e3946]: 5 OV
+                - button "Gate Lv2 Z4,Z25 850:647 5 OV" [ref=e3947] [cursor=pointer]:
+                  - generic [ref=e3950]:
+                    - strong [ref=e3951]: Gate Lv2
+                    - text: Z4,Z25
+                    - emphasis [ref=e3952]: 850:647
+                  - generic [ref=e3953]: 5 OV
+                - button "Gate Lv2 Z4,Z5 1020:316 5 OV" [ref=e3954] [cursor=pointer]:
+                  - generic [ref=e3957]:
+                    - strong [ref=e3958]: Gate Lv2
+                    - text: Z4,Z5
+                    - emphasis [ref=e3959]: 1020:316
+                  - generic [ref=e3960]: 5 OV
+                - button "Gate Lv2 Z4,Z5 1201:464 5 OV" [ref=e3961] [cursor=pointer]:
+                  - generic [ref=e3964]:
+                    - strong [ref=e3965]: Gate Lv2
+                    - text: Z4,Z5
+                    - emphasis [ref=e3966]: 1201:464
+                  - generic [ref=e3967]: 5 OV
+                - button "Gate Lv2 Z4,Z5 1109:1271 5 OV" [ref=e3968] [cursor=pointer]:
+                  - generic [ref=e3971]:
+                    - strong [ref=e3972]: Gate Lv2
+                    - text: Z4,Z5
+                    - emphasis [ref=e3973]: 1109:1271
+                  - generic [ref=e3974]: 5 OV
+                - button "Gate Lv2 Z4,Z5 313:715 5 OV" [ref=e3975] [cursor=pointer]:
+                  - generic [ref=e3978]:
+                    - strong [ref=e3979]: Gate Lv2
+                    - text: Z4,Z5
+                    - emphasis [ref=e3980]: 313:715
+                  - generic [ref=e3981]: 5 OV
+                - button "Gate Lv2 Z4,Z5 592:968 5 OV" [ref=e3982] [cursor=pointer]:
+                  - generic [ref=e3985]:
+                    - strong [ref=e3986]: Gate Lv2
+                    - text: Z4,Z5
+                    - emphasis [ref=e3987]: 592:968
+                  - generic [ref=e3988]: 5 OV
+                - button "Gate Lv2 Z4,Z6 286:354 5 OV" [ref=e3989] [cursor=pointer]:
+                  - generic [ref=e3992]:
+                    - strong [ref=e3993]: Gate Lv2
+                    - text: Z4,Z6
+                    - emphasis [ref=e3994]: 286:354
+                  - generic [ref=e3995]: 5 OV
+                - button "Gate Lv2 Z4,Z6 531:1212 5 OV" [ref=e3996] [cursor=pointer]:
+                  - generic [ref=e3999]:
+                    - strong [ref=e4000]: Gate Lv2
+                    - text: Z4,Z6
+                    - emphasis [ref=e4001]: 531:1212
+                  - generic [ref=e4002]: 5 OV
+                - button "Gate Lv2 Z4,Z6 554:1243 5 OV" [ref=e4003] [cursor=pointer]:
+                  - generic [ref=e4006]:
+                    - strong [ref=e4007]: Gate Lv2
+                    - text: Z4,Z6
+                    - emphasis [ref=e4008]: 554:1243
+                  - generic [ref=e4009]: 5 OV
+                - button "Gate Lv2 Z4,Z6 655:1264 5 OV" [ref=e4010] [cursor=pointer]:
+                  - generic [ref=e4013]:
+                    - strong [ref=e4014]: Gate Lv2
+                    - text: Z4,Z6
+                    - emphasis [ref=e4015]: 655:1264
+                  - generic [ref=e4016]: 5 OV
+                - button "Gate Lv1 Z5 1180:805 5 OV" [ref=e4017] [cursor=pointer]:
+                  - generic [ref=e4020]:
+                    - strong [ref=e4021]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4022]: 1180:805
+                  - generic [ref=e4023]: 5 OV
+                - button "Gate Lv1 Z5 1210:843 5 OV" [ref=e4024] [cursor=pointer]:
+                  - generic [ref=e4027]:
+                    - strong [ref=e4028]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4029]: 1210:843
+                  - generic [ref=e4030]: 5 OV
+                - button "Gate Lv1 Z5 1249:882 5 OV" [ref=e4031] [cursor=pointer]:
+                  - generic [ref=e4034]:
+                    - strong [ref=e4035]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4036]: 1249:882
+                  - generic [ref=e4037]: 5 OV
+                - button "Gate Lv1 Z5 925:450 5 OV" [ref=e4038] [cursor=pointer]:
+                  - generic [ref=e4041]:
+                    - strong [ref=e4042]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4043]: 925:450
+                  - generic [ref=e4044]: 5 OV
+                - button "Gate Lv1 Z5 889:514 5 OV" [ref=e4045] [cursor=pointer]:
+                  - generic [ref=e4048]:
+                    - strong [ref=e4049]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4050]: 889:514
+                  - generic [ref=e4051]: 5 OV
+                - button "Gate Lv1 Z5 262:197 5 OV" [ref=e4052] [cursor=pointer]:
+                  - generic [ref=e4055]:
+                    - strong [ref=e4056]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4057]: 262:197
+                  - generic [ref=e4058]: 5 OV
+                - button "Gate Lv1 Z5 306:300 5 OV" [ref=e4059] [cursor=pointer]:
+                  - generic [ref=e4062]:
+                    - strong [ref=e4063]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4064]: 306:300
+                  - generic [ref=e4065]: 5 OV
+                - button "Gate Lv3 Z5 244:130 5 OV" [ref=e4066] [cursor=pointer]:
+                  - generic [ref=e4069]:
+                    - strong [ref=e4070]: Gate Lv3
+                    - text: Z5
+                    - emphasis [ref=e4071]: 244:130
+                  - generic [ref=e4072]: 5 OV
+                - button "Gate Lv1 Z5 600:231 5 OV" [ref=e4073] [cursor=pointer]:
+                  - generic [ref=e4076]:
+                    - strong [ref=e4077]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4078]: 600:231
+                  - generic [ref=e4079]: 5 OV
+                - button "Gate Lv1 Z5 1051:241 5 OV" [ref=e4080] [cursor=pointer]:
+                  - generic [ref=e4083]:
+                    - strong [ref=e4084]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4085]: 1051:241
+                  - generic [ref=e4086]: 5 OV
+                - button "Gate Lv1 Z5 1087:263 5 OV" [ref=e4087] [cursor=pointer]:
+                  - generic [ref=e4090]:
+                    - strong [ref=e4091]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4092]: 1087:263
+                  - generic [ref=e4093]: 5 OV
+                - button "Gate Lv1 Z5 1017:269 5 OV" [ref=e4094] [cursor=pointer]:
+                  - generic [ref=e4097]:
+                    - strong [ref=e4098]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4099]: 1017:269
+                  - generic [ref=e4100]: 5 OV
+                - button "Gate Lv1 Z5 1317:593 5 OV" [ref=e4101] [cursor=pointer]:
+                  - generic [ref=e4104]:
+                    - strong [ref=e4105]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4106]: 1317:593
+                  - generic [ref=e4107]: 5 OV
+                - button "Gate Lv1 Z5 1280:610 5 OV" [ref=e4108] [cursor=pointer]:
+                  - generic [ref=e4111]:
+                    - strong [ref=e4112]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4113]: 1280:610
+                  - generic [ref=e4114]: 5 OV
+                - button "Gate Lv1 Z5 1245:1066 5 OV" [ref=e4115] [cursor=pointer]:
+                  - generic [ref=e4118]:
+                    - strong [ref=e4119]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4120]: 1245:1066
+                  - generic [ref=e4121]: 5 OV
+                - button "Gate Lv1 Z5 1218:1100 5 OV" [ref=e4122] [cursor=pointer]:
+                  - generic [ref=e4125]:
+                    - strong [ref=e4126]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4127]: 1218:1100
+                  - generic [ref=e4128]: 5 OV
+                - button "Gate Lv4 Z5 1270:1020 5 OV" [ref=e4129] [cursor=pointer]:
+                  - generic [ref=e4132]:
+                    - strong [ref=e4133]: Gate Lv4
+                    - text: Z5
+                    - emphasis [ref=e4134]: 1270:1020
+                  - generic [ref=e4135]: 5 OV
+                - button "Small Town Lv1 Z5 1126:1031 15 OV" [ref=e4136] [cursor=pointer]:
+                  - generic [ref=e4139]:
+                    - strong [ref=e4140]: Small Town Lv1
+                    - text: Z5
+                    - emphasis [ref=e4141]: 1126:1031
+                  - generic [ref=e4142]: 15 OV
+                - button "Gate Lv1 Z5 941:1234 5 OV" [ref=e4143] [cursor=pointer]:
+                  - generic [ref=e4146]:
+                    - strong [ref=e4147]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4148]: 941:1234
+                  - generic [ref=e4149]: 5 OV
+                - button "Gate Lv1 Z5 445:1217 5 OV" [ref=e4150] [cursor=pointer]:
+                  - generic [ref=e4153]:
+                    - strong [ref=e4154]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4155]: 445:1217
+                  - generic [ref=e4156]: 5 OV
+                - button "Gate Lv1 Z5 444:1267 5 OV" [ref=e4157] [cursor=pointer]:
+                  - generic [ref=e4160]:
+                    - strong [ref=e4161]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4162]: 444:1267
+                  - generic [ref=e4163]: 5 OV
+                - button "Gate Lv1 Z5 179:1057 5 OV" [ref=e4164] [cursor=pointer]:
+                  - generic [ref=e4167]:
+                    - strong [ref=e4168]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4169]: 179:1057
+                  - generic [ref=e4170]: 5 OV
+                - button "Gate Lv2 Z5 254:1024 5 OV" [ref=e4171] [cursor=pointer]:
+                  - generic [ref=e4174]:
+                    - strong [ref=e4175]: Gate Lv2
+                    - text: Z5
+                    - emphasis [ref=e4176]: 254:1024
+                  - generic [ref=e4177]: 5 OV
+                - button "Gate Lv1 Z5 356:611 5 OV" [ref=e4178] [cursor=pointer]:
+                  - generic [ref=e4181]:
+                    - strong [ref=e4182]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4183]: 356:611
+                  - generic [ref=e4184]: 5 OV
+                - button "Gate Lv1 Z5 614:985 5 OV" [ref=e4185] [cursor=pointer]:
+                  - generic [ref=e4188]:
+                    - strong [ref=e4189]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4190]: 614:985
+                  - generic [ref=e4191]: 5 OV
+                - button "Gate Lv1 Z5 708:987 5 OV" [ref=e4192] [cursor=pointer]:
+                  - generic [ref=e4195]:
+                    - strong [ref=e4196]: Gate Lv1
+                    - text: Z5
+                    - emphasis [ref=e4197]: 708:987
+                  - generic [ref=e4198]: 5 OV
+                - button "Gate Lv1 Z5,C 720:887 5 OV" [ref=e4199] [cursor=pointer]:
+                  - generic [ref=e4202]:
+                    - strong [ref=e4203]: Gate Lv1
+                    - text: Z5,C
+                    - emphasis [ref=e4204]: 720:887
+                  - generic [ref=e4205]: 5 OV
+                - button "Gate Lv4 Z5,E-Z1 1063:415 5 OV" [ref=e4206] [cursor=pointer]:
+                  - generic [ref=e4209]:
+                    - strong [ref=e4210]: Gate Lv4
+                    - text: Z5,E-Z1
+                    - emphasis [ref=e4211]: 1063:415
+                  - generic [ref=e4212]: 5 OV
+                - button "Gate Lv4 Z5,E-Z4 1131:643 5 OV" [ref=e4213] [cursor=pointer]:
+                  - generic [ref=e4216]:
+                    - strong [ref=e4217]: Gate Lv4
+                    - text: Z5,E-Z4
+                    - emphasis [ref=e4218]: 1131:643
+                  - generic [ref=e4219]: 5 OV
+                - button "Gate Lv5 Z5,EC-Z1 828:991 5 OV" [ref=e4220] [cursor=pointer]:
+                  - generic [ref=e4223]:
+                    - strong [ref=e4224]: Gate Lv5
+                    - text: Z5,EC-Z1
+                    - emphasis [ref=e4225]: 828:991
+                  - generic [ref=e4226]: 5 OV
+                - button "Gate Lv2 Z5,EC-Z2 1141:874 5 OV" [ref=e4227] [cursor=pointer]:
+                  - generic [ref=e4230]:
+                    - strong [ref=e4231]: Gate Lv2
+                    - text: Z5,EC-Z2
+                    - emphasis [ref=e4232]: 1141:874
+                  - generic [ref=e4233]: 5 OV
+                - button "Gate Lv5 Z5,EC-Z5 698:417 5 OV" [ref=e4234] [cursor=pointer]:
+                  - generic [ref=e4237]:
+                    - strong [ref=e4238]: Gate Lv5
+                    - text: Z5,EC-Z5
+                    - emphasis [ref=e4239]: 698:417
+                  - generic [ref=e4240]: 5 OV
+                - button "Gate Lv1 Z5,N2-Z1 223:127 5 OV" [ref=e4241] [cursor=pointer]:
+                  - generic [ref=e4244]:
+                    - strong [ref=e4245]: Gate Lv1
+                    - text: Z5,N2-Z1
+                    - emphasis [ref=e4246]: 223:127
+                  - generic [ref=e4247]: 5 OV
+                - button "Gate Lv3 Z5,N4-Z4 1117:305 5 OV" [ref=e4248] [cursor=pointer]:
+                  - generic [ref=e4251]:
+                    - strong [ref=e4252]: Gate Lv3
+                    - text: Z5,N4-Z4
+                    - emphasis [ref=e4253]: 1117:305
+                  - generic [ref=e4254]: 5 OV
+                - button "Gate Lv5 Z5,WC-Z3 443:637 5 OV" [ref=e4255] [cursor=pointer]:
+                  - generic [ref=e4258]:
+                    - strong [ref=e4259]: Gate Lv5
+                    - text: Z5,WC-Z3
+                    - emphasis [ref=e4260]: 443:637
+                  - generic [ref=e4261]: 5 OV
+                - button "Gate Lv3 Z5,Z4-Z5 307:1172 5 OV" [ref=e4262] [cursor=pointer]:
+                  - generic [ref=e4265]:
+                    - strong [ref=e4266]: Gate Lv3
+                    - text: Z5,Z4-Z5
+                    - emphasis [ref=e4267]: 307:1172
+                  - generic [ref=e4268]: 5 OV
+                - button "Gate Lv2 Z5,Z6 684:209 5 OV" [ref=e4269] [cursor=pointer]:
+                  - generic [ref=e4272]:
+                    - strong [ref=e4273]: Gate Lv2
+                    - text: Z5,Z6
+                    - emphasis [ref=e4274]: 684:209
+                  - generic [ref=e4275]: 5 OV
+                - button "Gate Lv2 Z5,Z6 1113:236 5 OV" [ref=e4276] [cursor=pointer]:
+                  - generic [ref=e4279]:
+                    - strong [ref=e4280]: Gate Lv2
+                    - text: Z5,Z6
+                    - emphasis [ref=e4281]: 1113:236
+                  - generic [ref=e4282]: 5 OV
+                - button "Gate Lv2 Z5,Z6 1260:597 5 OV" [ref=e4283] [cursor=pointer]:
+                  - generic [ref=e4286]:
+                    - strong [ref=e4287]: Gate Lv2
+                    - text: Z5,Z6
+                    - emphasis [ref=e4288]: 1260:597
+                  - generic [ref=e4289]: 5 OV
+                - button "Gate Lv2 Z5,Z6 917:1282 5 OV" [ref=e4290] [cursor=pointer]:
+                  - generic [ref=e4293]:
+                    - strong [ref=e4294]: Gate Lv2
+                    - text: Z5,Z6
+                    - emphasis [ref=e4295]: 917:1282
+                  - generic [ref=e4296]: 5 OV
+                - button "Gate Lv2 Z5,Z6 283:1032 5 OV" [ref=e4297] [cursor=pointer]:
+                  - generic [ref=e4300]:
+                    - strong [ref=e4301]: Gate Lv2
+                    - text: Z5,Z6
+                    - emphasis [ref=e4302]: 283:1032
+                  - generic [ref=e4303]: 5 OV
+                - button "Gate Lv1 Z6 357:339 5 OV" [ref=e4304] [cursor=pointer]:
+                  - generic [ref=e4307]:
+                    - strong [ref=e4308]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4309]: 357:339
+                  - generic [ref=e4310]: 5 OV
+                - button "Gate Lv1 Z6 730:260 5 OV" [ref=e4311] [cursor=pointer]:
+                  - generic [ref=e4314]:
+                    - strong [ref=e4315]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4316]: 730:260
+                  - generic [ref=e4317]: 5 OV
+                - button "Gate Lv3 Z6 802:260 5 OV" [ref=e4318] [cursor=pointer]:
+                  - generic [ref=e4321]:
+                    - strong [ref=e4322]: Gate Lv3
+                    - text: Z6
+                    - emphasis [ref=e4323]: 802:260
+                  - generic [ref=e4324]: 5 OV
+                - button "Small Town Lv1 Z6 753:357 15 OV" [ref=e4325] [cursor=pointer]:
+                  - generic [ref=e4328]:
+                    - strong [ref=e4329]: Small Town Lv1
+                    - text: Z6
+                    - emphasis [ref=e4330]: 753:357
+                  - generic [ref=e4331]: 15 OV
+                - button "Gate Lv1 Z6 1166:145 5 OV" [ref=e4332] [cursor=pointer]:
+                  - generic [ref=e4335]:
+                    - strong [ref=e4336]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4337]: 1166:145
+                  - generic [ref=e4338]: 5 OV
+                - button "Gate Lv1 Z6 1184:167 5 OV" [ref=e4339] [cursor=pointer]:
+                  - generic [ref=e4342]:
+                    - strong [ref=e4343]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4344]: 1184:167
+                  - generic [ref=e4345]: 5 OV
+                - button "Gate Lv1 Z6 1167:200 5 OV" [ref=e4346] [cursor=pointer]:
+                  - generic [ref=e4349]:
+                    - strong [ref=e4350]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4351]: 1167:200
+                  - generic [ref=e4352]: 5 OV
+                - button "Gate Lv1 Z6 1136:493 5 OV" [ref=e4353] [cursor=pointer]:
+                  - generic [ref=e4356]:
+                    - strong [ref=e4357]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4358]: 1136:493
+                  - generic [ref=e4359]: 5 OV
+                - button "Gate Lv1 Z6 1128:521 5 OV" [ref=e4360] [cursor=pointer]:
+                  - generic [ref=e4363]:
+                    - strong [ref=e4364]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4365]: 1128:521
+                  - generic [ref=e4366]: 5 OV
+                - button "Gate Lv1 Z6 1228:589 5 OV" [ref=e4367] [cursor=pointer]:
+                  - generic [ref=e4370]:
+                    - strong [ref=e4371]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4372]: 1228:589
+                  - generic [ref=e4373]: 5 OV
+                - button "Gate Lv1 Z6 1336:1180 5 OV" [ref=e4374] [cursor=pointer]:
+                  - generic [ref=e4377]:
+                    - strong [ref=e4378]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4379]: 1336:1180
+                  - generic [ref=e4380]: 5 OV
+                - button "Gate Lv1 Z6 1286:1200 5 OV" [ref=e4381] [cursor=pointer]:
+                  - generic [ref=e4384]:
+                    - strong [ref=e4385]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4386]: 1286:1200
+                  - generic [ref=e4387]: 5 OV
+                - button "Gate Lv1 Z6 1279:1230 5 OV" [ref=e4388] [cursor=pointer]:
+                  - generic [ref=e4391]:
+                    - strong [ref=e4392]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4393]: 1279:1230
+                  - generic [ref=e4394]: 5 OV
+                - button "Gate Lv3 Z6 1224:1236 5 OV" [ref=e4395] [cursor=pointer]:
+                  - generic [ref=e4398]:
+                    - strong [ref=e4399]: Gate Lv3
+                    - text: Z6
+                    - emphasis [ref=e4400]: 1224:1236
+                  - generic [ref=e4401]: 5 OV
+                - button "Gate Lv1 Z6 828:1254 5 OV" [ref=e4402] [cursor=pointer]:
+                  - generic [ref=e4405]:
+                    - strong [ref=e4406]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4407]: 828:1254
+                  - generic [ref=e4408]: 5 OV
+                - button "Gate Lv1 Z6 718:1261 5 OV" [ref=e4409] [cursor=pointer]:
+                  - generic [ref=e4412]:
+                    - strong [ref=e4413]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4414]: 718:1261
+                  - generic [ref=e4415]: 5 OV
+                - button "Gate Lv3 Z6 685:1249 5 OV" [ref=e4416] [cursor=pointer]:
+                  - generic [ref=e4419]:
+                    - strong [ref=e4420]: Gate Lv3
+                    - text: Z6
+                    - emphasis [ref=e4421]: 685:1249
+                  - generic [ref=e4422]: 5 OV
+                - button "Gate Lv1 Z6 305:1001 5 OV" [ref=e4423] [cursor=pointer]:
+                  - generic [ref=e4426]:
+                    - strong [ref=e4427]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4428]: 305:1001
+                  - generic [ref=e4429]: 5 OV
+                - button "Gate Lv1 Z6 380:1015 5 OV" [ref=e4430] [cursor=pointer]:
+                  - generic [ref=e4433]:
+                    - strong [ref=e4434]: Gate Lv1
+                    - text: Z6
+                    - emphasis [ref=e4435]: 380:1015
+                  - generic [ref=e4436]: 5 OV
+                - button "Gate Lv2 Z6 222:1000 5 OV" [ref=e4437] [cursor=pointer]:
+                  - generic [ref=e4440]:
+                    - strong [ref=e4441]: Gate Lv2
+                    - text: Z6
+                    - emphasis [ref=e4442]: 222:1000
+                  - generic [ref=e4443]: 5 OV
+                - button "Gate Lv5 Z6,E-Z3 1033:528 5 OV" [ref=e4444] [cursor=pointer]:
+                  - generic [ref=e4447]:
+                    - strong [ref=e4448]: Gate Lv5
+                    - text: Z6,E-Z3
+                    - emphasis [ref=e4449]: 1033:528
+                  - generic [ref=e4450]: 5 OV
+                - button "Gate Lv3 Z6,N2-Z4 470:359 5 OV" [ref=e4451] [cursor=pointer]:
+                  - generic [ref=e4454]:
+                    - strong [ref=e4455]: Gate Lv3
+                    - text: Z6,N2-Z4
+                    - emphasis [ref=e4456]: 470:359
+                  - generic [ref=e4457]: 5 OV
+                - button "Gate Lv3 Z6,S3-Z6 753:1221 5 OV" [ref=e4458] [cursor=pointer]:
+                  - generic [ref=e4461]:
+                    - strong [ref=e4462]: Gate Lv3
+                    - text: Z6,S3-Z6
+                    - emphasis [ref=e4463]: 753:1221
+                  - generic [ref=e4464]: 5 OV
+                - button "Gate Lv1 Z6,W-Z3 339:929 5 OV" [ref=e4465] [cursor=pointer]:
+                  - generic [ref=e4468]:
+                    - strong [ref=e4469]: Gate Lv1
+                    - text: Z6,W-Z3
+                    - emphasis [ref=e4470]: 339:929
+                  - generic [ref=e4471]: 5 OV
+                - button "Gate Lv5 Z6,WC-Z4 493:493 5 OV" [ref=e4472] [cursor=pointer]:
+                  - generic [ref=e4475]:
+                    - strong [ref=e4476]: Gate Lv5
+                    - text: Z6,WC-Z4
+                    - emphasis [ref=e4477]: 493:493
+                  - generic [ref=e4478]: 5 OV
+                - button "Gate Lv5 Z6,WC-Z4 450:1012 5 OV" [ref=e4479] [cursor=pointer]:
+                  - generic [ref=e4482]:
+                    - strong [ref=e4483]: Gate Lv5
+                    - text: Z6,WC-Z4
+                    - emphasis [ref=e4484]: 450:1012
+                  - generic [ref=e4485]: 5 OV
+                - button "Gate Lv4 Z6,WC-Z5 365:465 5 OV" [ref=e4486] [cursor=pointer]:
+                  - generic [ref=e4489]:
+                    - strong [ref=e4490]: Gate Lv4
+                    - text: Z6,WC-Z5
+                    - emphasis [ref=e4491]: 365:465
+                  - generic [ref=e4492]: 5 OV
+                - button "Gate Lv5 Z6,WC-Z5 804:1214 5 OV" [ref=e4493] [cursor=pointer]:
+                  - generic [ref=e4496]:
+                    - strong [ref=e4497]: Gate Lv5
+                    - text: Z6,WC-Z5
+                    - emphasis [ref=e4498]: 804:1214
+                  - generic [ref=e4499]: 5 OV
+                - button "Gate Lv5 Z6,Z5-Z4 655:1076 5 OV" [ref=e4500] [cursor=pointer]:
+                  - generic [ref=e4503]:
+                    - strong [ref=e4504]: Gate Lv5
+                    - text: Z6,Z5-Z4
+                    - emphasis [ref=e4505]: 655:1076
+                  - generic [ref=e4506]: 5 OV
+        - group [ref=e4507]:
+          - generic "▸ Interactive Eden Map Guide" [ref=e4508] [cursor=pointer]
+          - generic [ref=e4509]:
+            - generic [ref=e4510]:
+              - generic [ref=e4511]:
+                - paragraph [ref=e4512]: Step-by-step walkthrough — try each action on the real map. Progress is saved locally.
+                - generic [ref=e4513]: Guide v2.7.0
+              - generic [ref=e4514]: 0% complete · 0/28 steps
+              - generic [ref=e4516]:
+                - button "▶ Start tour" [ref=e4517] [cursor=pointer]
+                - button "Reset progress" [ref=e4518] [cursor=pointer]
+            - navigation "Guide sections" [ref=e4519]:
+              - button "🗺️ Start 0/2" [ref=e4520] [cursor=pointer]:
+                - generic [ref=e4521]: 🗺️
+                - generic [ref=e4522]: Start
+                - generic [ref=e4523]: 0/2
+              - button "🔍 Navigate 0/5" [ref=e4524] [cursor=pointer]:
+                - generic [ref=e4525]: 🔍
+                - generic [ref=e4526]: Navigate
+                - generic [ref=e4527]: 0/5
+              - button "🏰 Explore 0/3" [ref=e4528] [cursor=pointer]:
+                - generic [ref=e4529]: 🏰
+                - generic [ref=e4530]: Explore
+                - generic [ref=e4531]: 0/3
+              - button "🛠️ Tools 0/5" [ref=e4532] [cursor=pointer]:
+                - generic [ref=e4533]: 🛠️
+                - generic [ref=e4534]: Tools
+                - generic [ref=e4535]: 0/5
+              - button "📦 Plan 0/6" [ref=e4536] [cursor=pointer]:
+                - generic [ref=e4537]: 📦
+                - generic [ref=e4538]: Plan
+                - generic [ref=e4539]: 0/6
+              - button "🎨 Layers 0/4" [ref=e4540] [cursor=pointer]:
+                - generic [ref=e4541]: 🎨
+                - generic [ref=e4542]: Layers
+                - generic [ref=e4543]: 0/4
+              - button "⌨️ Shortcuts 0/3" [ref=e4544] [cursor=pointer]:
+                - generic [ref=e4545]: ⌨️
+                - generic [ref=e4546]: Shortcuts
+                - generic [ref=e4547]: 0/3
+            - generic "Steps in section" [ref=e4548]:
+              - button "1 Welcome to the Eden Map" [ref=e4549] [cursor=pointer]:
+                - generic [ref=e4550]: "1"
+                - generic [ref=e4551]: Welcome to the Eden Map
+              - button "2 Map layout" [ref=e4552] [cursor=pointer]:
+                - generic [ref=e4553]: "2"
+                - generic [ref=e4554]: Map layout
+            - generic [ref=e4555]:
+              - generic [ref=e4556]:
+                - generic [ref=e4557]:
+                  - generic [ref=e4558]: 👋
+                  - generic [ref=e4559]:
+                    - generic [ref=e4560]: 🗺️ Start · Step 1/2
+                    - heading "Welcome to the Eden Map" [level=4] [ref=e4561]
+                - paragraph [ref=e4562]: Season 5 planner with parchment underlay, structure icons, paths, optional team timelines, and alliance intel. Follow this guide to learn every feature hands-on.
+                - list [ref=e4563]:
+                  - listitem [ref=e4564]: Use Next to advance, or jump to any section from the tabs above.
+                  - listitem [ref=e4565]: Try it buttons activate the real control — practice on the live map.
+                - button "Mark done" [ref=e4567] [cursor=pointer]
+              - generic [ref=e4568]:
+                - button "← Previous" [disabled] [ref=e4569]
+                - button "Next →" [ref=e4570] [cursor=pointer]
+      - generic [ref=e4571]:
+        - generic [ref=e4572]:
+          - generic [ref=e4573]:
+            - img [ref=e4575]
+            - generic [ref=e4577]:
+              - heading "Comments & Suggestions" [level=2] [ref=e4578]
+              - paragraph [ref=e4579]: Share your thoughts with the VTS 1097 community
+          - link "Send feedback or report a bug to the developer" [ref=e4580] [cursor=pointer]:
+            - /url: mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Combo%20Tool%20-%20Feedback&body=Hi%20Abo%2C%0A%0A%5BDescribe%20your%20suggestion%20or%20bug%20here%5D%0A%0A----%0APage%3A%20Hero%20Combo%20Creator%0A
+            - img [ref=e4581]
+        - generic [ref=e4584]:
+          - generic [ref=e4585]:
+            - generic [ref=e4586]:
+              - img
+              - textbox "Your name (optional)" [ref=e4587]
+            - generic [ref=e4588]:
+              - img
+              - textbox "Email (optional)" [ref=e4589]
+          - textbox "Write a suggestion..." [ref=e4590]
+          - generic [ref=e4591]:
+            - button "Submit Comment" [ref=e4592] [cursor=pointer]
+            - link "Email bug report directly to developer" [ref=e4593] [cursor=pointer]:
+              - /url: mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Tool%20-%20Bug%20Report&body=Bug%20or%20issue%3A%0A%0A
+              - img [ref=e4594]
+        - generic [ref=e4596]:
+          - img [ref=e4597]
+          - generic [ref=e4599]: 8 comments
+        - generic [ref=e4600]:
+          - generic [ref=e4601]:
+            - generic [ref=e4603]: "N"
+            - generic [ref=e4604]:
+              - generic [ref=e4605]:
+                - generic [ref=e4606]: Neutrino10
+                - generic [ref=e4607]: Apr 20, 2026, 10:38 PM
+              - paragraph [ref=e4608]: In real battles found Beast Queen, Brave, Immortal combo better than BRI combo given all 4 heores are maxed out.
+              - button "Reply" [ref=e4610] [cursor=pointer]:
+                - img [ref=e4611]
+                - text: Reply
+          - generic [ref=e4613]:
+            - generic [ref=e4615]: B
+            - generic [ref=e4616]:
+              - generic [ref=e4617]:
+                - generic [ref=e4618]: Bigfoot
+                - generic [ref=e4619]: Apr 4, 2026, 08:47 PM
+              - paragraph [ref=e4620]: On the hero combination generator, it doesn’t show combos of mixed legions
+              - button "Reply" [ref=e4622] [cursor=pointer]:
+                - img [ref=e4623]
+                - text: Reply
+              - generic [ref=e4626]:
+                - generic [ref=e4628]: A
+                - generic [ref=e4629]:
+                  - generic [ref=e4630]:
+                    - generic [ref=e4631]: Abo
+                    - generic [ref=e4632]: Apr 12, 2026, 11:40 AM
+                  - paragraph [ref=e4633]: if you choose mixed heroes, it should generate mixed combos
+                  - button "Reply" [ref=e4635] [cursor=pointer]:
+                    - img [ref=e4636]
+                    - text: Reply
+          - generic [ref=e4638]:
+            - generic [ref=e4640]: A
+            - generic [ref=e4641]:
+              - generic [ref=e4642]:
+                - generic [ref=e4643]: A.s.khan
+                - generic [ref=e4644]: Feb 21, 2026, 12:06 AM
+              - paragraph [ref=e4645]: 🤔
+              - button "Reply" [ref=e4647] [cursor=pointer]:
+                - img [ref=e4648]
+                - text: Reply
+          - generic [ref=e4650]:
+            - generic [ref=e4652]: A
+            - generic [ref=e4653]:
+              - generic [ref=e4654]:
+                - generic [ref=e4655]: A.s.khan
+                - generic [ref=e4656]: Feb 21, 2026, 12:04 AM
+              - paragraph [ref=e4657]: Okay
+              - button "Reply" [ref=e4659] [cursor=pointer]:
+                - img [ref=e4660]
+                - text: Reply
+          - generic [ref=e4662]:
+            - generic [ref=e4664]: A
+            - generic [ref=e4665]:
+              - generic [ref=e4666]:
+                - generic [ref=e4667]: A.s.khan
+                - generic [ref=e4668]: Feb 21, 2026, 12:01 AM
+              - paragraph [ref=e4669]: I select then what next
+              - button "Reply" [ref=e4671] [cursor=pointer]:
+                - img [ref=e4672]
+                - text: Reply
+          - generic [ref=e4674]:
+            - generic [ref=e4676]: D
+            - generic [ref=e4677]:
+              - generic [ref=e4678]:
+                - generic [ref=e4679]: Dragon Master
+                - generic [ref=e4680]: Jan 25, 2026, 07:40 AM
+              - paragraph [ref=e4681]: When selecting it only selected by name tag and clear button doesn't work . It should ideally tell the score for the combo.
+              - button "Reply" [ref=e4683] [cursor=pointer]:
+                - img [ref=e4684]
+                - text: Reply
+              - generic [ref=e4687]:
+                - generic [ref=e4689]: G
+                - generic [ref=e4690]:
+                  - generic [ref=e4691]:
+                    - generic [ref=e4692]: Guest
+                    - generic [ref=e4693]: Jan 25, 2026, 08:09 PM
+                  - paragraph [ref=e4694]: test2
+                  - button "Reply" [ref=e4696] [cursor=pointer]:
+                    - img [ref=e4697]
+                    - text: Reply
+          - generic [ref=e4699]:
+            - generic [ref=e4701]: R
+            - generic [ref=e4702]:
+              - generic [ref=e4703]:
+                - generic [ref=e4704]: Roha
+                - generic [ref=e4705]: Jan 22, 2026, 11:32 PM
+              - paragraph [ref=e4706]: Hi, What I noticed is that on my mobile and tablet, I can only drag the heros by their names. When I tap on the image, it wants to save the image.
+              - button "Reply" [ref=e4708] [cursor=pointer]:
+                - img [ref=e4709]
+                - text: Reply
+          - generic [ref=e4711]:
+            - generic [ref=e4713]: A
+            - generic [ref=e4714]:
+              - generic [ref=e4715]:
+                - generic [ref=e4716]: abo
+                - generic [ref=e4717]: Jan 22, 2026, 11:07 PM
+              - paragraph [ref=e4718]: test1
+              - button "Reply" [ref=e4720] [cursor=pointer]:
+                - img [ref=e4721]
+                - text: Reply
+    - contentinfo "Site information" [ref=e4723]:
+      - generic [ref=e4725]:
+        - generic [ref=e4726]:
+          - heading "VTS 1097" [level=3] [ref=e4729]
+          - paragraph [ref=e4730]:
+            - link "roc-vts.com" [ref=e4731] [cursor=pointer]:
+              - /url: https://roc-vts.com/
+        - generic [ref=e4732]:
+          - heading "Quick March (Tools)" [level=4] [ref=e4733]
+          - list [ref=e4734]:
+            - listitem [ref=e4735]:
+              - link "Manual Builder" [ref=e4736] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e4737]:
+              - link "Combo Generator" [ref=e4738] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e4739]:
+              - link "Hero Atlas" [ref=e4740] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e4741]:
+              - link "Research" [ref=e4742] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e4743]:
+              - link "Eden Loyalty" [ref=e4744] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e4745]:
+              - link "VTS Admin" [ref=e4746] [cursor=pointer]:
+                - /url: "#"
+        - generic [ref=e4747]:
+          - generic [ref=e4748]:
+            - heading "Community & Info" [level=4] [ref=e4749]
+            - list [ref=e4750]:
+              - listitem [ref=e4751]:
+                - link "Contact Devs" [ref=e4752] [cursor=pointer]:
+                  - /url: mailto:aboroe1097@gmail.com
+          - paragraph [ref=e4753]: "*Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool."
+      - paragraph [ref=e4755]: © 2026 VTS 1097 · v10.5.3
+  - tooltip
+```
+
+# Test source
+
+```ts
+  1  | import { expect, test } from '@playwright/test';
+  2  | 
+  3  | async function openApp(page) {
+  4  |   await page.route('**/js/maintenance-config.js*', route => route.fulfill({
+  5  |     contentType: 'application/javascript',
+  6  |     body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
+  7  |   }));
+  8  |   await page.addInitScript(() => {
+  9  |     localStorage.setItem('vts_intro_v1_seen', '1');
+  10 |     localStorage.setItem('vts_quick_tour_done', '1');
+  11 |   });
+  12 |   await page.setViewportSize({ width: 1440, height: 1000 });
+  13 |   await page.goto('/');
+  14 |   await page.emulateMedia({ reducedMotion: 'reduce' });
+  15 |   await page.addStyleTag({
+  16 |     content: `
+  17 |       *, *::before, *::after {
+  18 |         animation-duration: 0s !important;
+  19 |         animation-delay: 0s !important;
+  20 |         transition-duration: 0s !important;
+  21 |         transition-delay: 0s !important;
+  22 |         caret-color: transparent !important;
+  23 |       }
+  24 |     `
+  25 |   });
+  26 |   await expect(page.locator('#tabGenerator')).toBeVisible();
+  27 |   await expect(page.locator('#generatorSection')).toBeVisible();
+  28 |   await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
+  29 |   await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
+  30 |   await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
+  31 | }
+  32 | 
+  33 | async function expectCanvasPainted(page, selector) {
+  34 |   await expect.poll(async () => page.locator(selector).evaluate((canvas) => {
+  35 |     const ctx = canvas.getContext('2d');
+  36 |     const { width, height } = canvas;
+  37 |     if (!ctx || !width || !height) return 0;
+  38 |     const data = ctx.getImageData(0, 0, width, height).data;
+  39 |     let painted = 0;
+  40 |     let total = 0;
+  41 |     const step = 24;
+  42 |     for (let y = 0; y < height; y += step) {
+  43 |       for (let x = 0; x < width; x += step) {
+  44 |         const i = (y * width + x) * 4;
+  45 |         total += 1;
+  46 |         if (data[i + 3] > 120 && (data[i] + data[i + 1] + data[i + 2]) > 60) painted += 1;
+  47 |       }
+  48 |     }
+  49 |     return total ? painted / total : 0;
+> 50 |   }), { timeout: 10000 }).toBeGreaterThan(0.25);
+     |                           ^ Error: expect(received).toBeGreaterThan(expected)
+  51 | }
+  52 | 
+  53 | test.describe('visual regression', () => {
+  54 |   test('combo generator default layout', async ({ page }) => {
+  55 |     await openApp(page);
+  56 |     await expect(page.locator('#generatorHeroes .generator-card').first()).toBeVisible();
+  57 |     await page.waitForTimeout(500);
+  58 |     const box = await page.locator('#generatorSection').boundingBox();
+  59 |     expect(box).not.toBeNull();
+  60 |     const screenshot = await page.screenshot({
+  61 |       animations: 'disabled',
+  62 |       mask: [page.locator('#generatorSection img')],
+  63 |       clip: {
+  64 |         x: Math.max(0, Math.floor(box.x)),
+  65 |         y: Math.max(0, Math.floor(box.y)),
+  66 |         width: Math.ceil(Math.min(box.width, 1440)),
+  67 |         height: Math.ceil(Math.min(box.height, 404))
+  68 |       }
+  69 |     });
+  70 |     expect(screenshot).toMatchSnapshot('combo-generator-default.png', { maxDiffPixelRatio: 0.02 });
+  71 |   });
+  72 | 
+  73 |   test('eden map planner default layout', async ({ page }) => {
+  74 |     await openApp(page);
+  75 |     await page.locator('#tabEdenMap').click();
+  76 |     await expect(page.locator('#edenMapSection')).toBeVisible();
+  77 |     await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 15000 });
+  78 |     await expectCanvasPainted(page, '#edenMapCanvas');
+  79 |     const screenshot = await page.locator('#edenMapRoot').screenshot({
+  80 |       animations: 'disabled',
+  81 |     });
+  82 |     expect(screenshot).toMatchSnapshot('eden-map-default.png', { maxDiffPixelRatio: 0.06 });
+  83 |   });
+  84 | });
+  85 | 
+```
