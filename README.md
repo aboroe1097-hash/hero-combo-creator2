@@ -1,4 +1,4 @@
-# Hero Combo Creator — VTS 1097 (v9.2.2)
+# Hero Combo Creator — VTS 1097 (v11.0.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management — all in a single-page web app.
 
@@ -10,7 +10,7 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Combo Generator** | Select ≥12 owned heroes → generates top-5 ranked combos without overlap; "Surprise Me" random mode |
 | **Combo Counters** | Expandable counter matchups with hero portraits, ranks/scores, and optional notes |
 | **Hero Atlas** | Searchable database of 68+ heroes — skills, synergies, top combos, seasonal filters, adjustable bonuses |
-| **Skin System** | Toggle "Heroes with skins" to sort/badge skinned heroes; skin details in Hero Atlas (bio attributes, inheriting skill, Hidden Power) |
+| **Skin System** | Toggle "Heroes with skins" to sort/badge owned skins; skin records include pending-detail placeholders, portrait icons, type colors, and combo references |
 | **Eden Map Planner** | Canvas-based 1700×1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
 | **Tech Research Calculator** | Full Academy tracker across S0–X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
 | **Eden Loyalty Calculator** | Poison mitigation, camp presets, deficit/surplus calculations |
@@ -21,7 +21,7 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Comments** | Threaded community feedback via Firebase Firestore |
 | **i18n** | 11 languages (English, Español, Português, Deutsch, Français, Türkçe, Русский, Indonesia, 中文, العربية, 한국어) |
 | **Sharing** | Share combos and rosters via URL; export combos as image (html2canvas) |
-| **PWA** | Service worker registration, standalone display mode, themed splash screen |
+| **PWA** | Service worker registration, standalone display mode, hashed cache-busted assets, dev-mode SW unregister guard |
 
 ## Screenshots And Demos
 
@@ -45,14 +45,24 @@ npm run preview  # Preview production build
 npx serve .      # Static serve from root (no build)
 ```
 
+## Release Checks
+
+Run the full local gate before shipping:
+
+```bash
+npm run check
+```
+
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.0 release passed with 12/12 unit tests and 9/9 smoke tests.
+
 ## Tech Stack
 
 | Layer | Choice |
 |-------|--------|
 | **Language** | Vanilla JavaScript (ES6 modules), no framework |
 | **Bundler** | Vite 6 (dev server + build) |
-| **CSS** | Custom `app.css` + Tailwind CSS (via CDN at runtime) |
-| **Backend** | Firebase Firestore (comments, combos, roster sync) |
+| **CSS** | Custom `app.css`, responsive `mobile.css`, compiled Tailwind CSS |
+| **Backend** | Firebase Firestore bundled via the npm Firebase SDK (comments, combos, roster sync) |
 | **Auth** | Firebase anonymous auth |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
 | **Maps** | HTML Canvas (Eden Map) |
@@ -120,7 +130,8 @@ js/
   player-profile.js     Cloud profile save/load
   pwa-register.js       Service worker registration + install prompt
   game-time.js          Game clock display, sync titles
-  translations.js       i18n string tables (11 languages)
+  translations.js       Default English i18n loader + dynamic language imports
+  i18n/                 Per-language modules loaded on demand
 
   tech-db.js            Tech tree database
   research-node-icons.js    SVG icons for tech nodes
@@ -145,7 +156,7 @@ js/
   eden-map-scout.js     Scout report overlay
   eden-map-construction.js  Construction timeline
   eden-map-config.js    Constants
-  eden-datasets.payload.js  Base64-encoded Eden structure datasets
+  eden-datasets.payload.json  Encoded Eden structure dataset payload
   eden-datasets-loader.js   Runtime decoder
   eden-live-map.js      Live map overlay
   eden-tooltips.js      Eden hover tooltips (i18n)
@@ -160,10 +171,16 @@ GitHub Pages serves from the **root** of the `gh-pages` branch. Source files (`i
 Tailwind utilities are compiled at build time from `css/tailwind-input.css` into `css/tailwind-build.css`; production does not load `cdn.tailwindcss.com`. `preflight: false` avoids conflicts with `app.css` reset styles. `cssnano` is used in production.
 
 ### Tab Lazy-Loading
-Three heavy tab templates (Admin 25KB, Eden Map 23KB, Loyalty 17KB) were extracted from `index.html` into `tabs/` and fetched on first tab click via `loadTabTemplate()`. This reduced `index.html` from 120KB → 54KB (-55%).
+Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click via `loadTabTemplate()`. Research, Hero Atlas, OCR dashboard, Eden Map code, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules.
+
+### Release Mode
+The old maintenance splash/config gate has been removed. `index.html` and `admin.html` load the standard UI directly, and `js/maintenance-config.js` is no longer part of the app or service-worker precache.
 
 ### Admin Auth
 The committed `js/admin-auth-config.js` contains no usable password hashes, so admin mode is disabled by default in public checkouts. Deployments that need admin access must provide strong SHA-256 hashes through `window.VTS_ADMIN_AUTH`; guest mode remains available for read-only dashboard views.
+
+### Firebase
+Firebase is imported from the pinned npm package (`firebase@11.6.1`) instead of the gstatic CDN. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
 
 ### Error Boundaries
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.
@@ -205,6 +222,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 | `vts_roster_user` | Logged-in roster user |
 | `vts_ocr_banners` | Banner records array |
 | `qwen_api_key` | Qwen API key (user-set) |
+| `vts_skin_ownership_v1` | Per-hero skin/base ownership toggles in the combo generator |
 
 ## Firebase
 
@@ -232,7 +250,7 @@ For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) updated with every us
 
 ## Eden Map Data
 
-Dataset JSON is stored encoded in `js/eden-datasets.payload.js`. After updating screenshots or map assets:
+Dataset JSON is stored in `js/eden-datasets.payload.json`. After updating screenshots or map assets:
 
 ```bash
 python scripts/eden/build-eden-from-screenshots.py   # X1 from in-game screenshots
