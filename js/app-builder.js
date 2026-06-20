@@ -25,9 +25,9 @@ import {
   noCombosMessage,
   getUserId,
   isHeroAlreadyInCombo,
+  pushUndoAction,
   __ui,
 } from './state.js';
-import { getDb } from './firebase.js';
 
 let db = null;
 const savedCombosCache = [];
@@ -361,7 +361,7 @@ export async function saveCombo() {
   }
   loadingSpinner.classList.remove('hidden');
   try {
-    const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
     await addDoc(collection(db, `users/${getUserId()}/bestCombos`), {
       heroes: [...currentCombo],
       timestamp: serverTimestamp()
@@ -383,12 +383,13 @@ export async function saveCombo() {
 }
 
 export async function setupFirestoreListener() {
+  const { getDb } = await import('./firebase.js');
   const _db = getDb();
   const userId = getUserId();
   if (!_db || !userId) return;
   db = _db;
 
-  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('firebase/firestore');
 
   const q = query(
     collection(db, `users/${userId}/bestCombos`),
@@ -449,6 +450,16 @@ export async function setupFirestoreListener() {
         __ui.showAboModal(
           translations[currentLanguage].messageConfirmRemoveCombo,
           async () => {
+            pushUndoAction({
+              label: 'Saved combo',
+              undo: async () => {
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                await addDoc(collection(db, `users/${userId}/bestCombos`), {
+                  heroes: [...heroes],
+                  timestamp: serverTimestamp(),
+                });
+              },
+            });
             await deleteDoc(doc(db, `users/${userId}/bestCombos`, d.id));
           }
         );

@@ -12,8 +12,12 @@ export async function loadEdenDatasetStore() {
   if (cachedStore) return cachedStore;
   if (!loadPromise) {
     loadPromise = (async () => {
-      const mod = await import('./eden-datasets.payload.js');
-      const data = await decodePayload(mod.EDEN_DATASETS_PAYLOAD);
+      const res = await fetch('js/eden-datasets.payload.json');
+      if (!res.ok) throw new Error(`Eden dataset payload failed: HTTP ${res.status}`);
+      const payload = await res.json();
+      const data = payload?.encoding === 'gzip-base64'
+        ? await decodePayload(payload.payload)
+        : payload;
       cachedStore = {
         builtAt: data.builtAt,
         catalog: data.catalog || [],

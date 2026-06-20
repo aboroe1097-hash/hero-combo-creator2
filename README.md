@@ -77,9 +77,13 @@ tabs/
   eden-map.html         Eden Map tab template (lazy-loaded)
   loyalty.html          Eden Loyalty tab template (lazy-loaded)
 database/
-  build-eden-datasets.py  Generate encoded Eden dataset payload
+  eden-datasets.manifest.json  Eden dataset catalog
+  Eden_*.txt                   Source map datasets
+  eden-wonders-screenshots/    Extracted sector data
+scripts/eden/
+  build-eden-datasets.py       Generate encoded Eden dataset payload
   build-eden-from-screenshots.py  Rebuild X1 dataset from screenshots
-  build-eden-x12.py      Rebuild X12 reference dataset
+  build-eden-x12.py            Rebuild X12 reference dataset
   (and more Python tools for Eden data)
 
 css/
@@ -153,10 +157,13 @@ js/
 GitHub Pages serves from the **root** of the `gh-pages` branch. Source files (`index.html`, `js/`, `css/`) are served directly. The `dist/` and `docs/` folders are build artifacts for alternative hosting.
 
 ### Tailwind CSS
-Tailwind is loaded via CDN at runtime (`cdn.tailwindcss.com`). The `postcss.config.js` + `tailwind.config.js` files enable Vite dev-server processing. `preflight: false` avoids conflicts with `app.css` reset styles. `cssnano` is used in production.
+Tailwind utilities are compiled at build time from `css/tailwind-input.css` into `css/tailwind-build.css`; production does not load `cdn.tailwindcss.com`. `preflight: false` avoids conflicts with `app.css` reset styles. `cssnano` is used in production.
 
 ### Tab Lazy-Loading
 Three heavy tab templates (Admin 25KB, Eden Map 23KB, Loyalty 17KB) were extracted from `index.html` into `tabs/` and fetched on first tab click via `loadTabTemplate()`. This reduced `index.html` from 120KB → 54KB (-55%).
+
+### Admin Auth
+The committed `js/admin-auth-config.js` contains no usable password hashes, so admin mode is disabled by default in public checkouts. Deployments that need admin access must provide strong SHA-256 hashes through `window.VTS_ADMIN_AUTH`; guest mode remains available for read-only dashboard views.
 
 ### Error Boundaries
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.
@@ -221,17 +228,15 @@ The site auto-deploys at **https://roc-vts.com/** (custom domain configured in r
 
 Community data updates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the preferred formats for hero stats, combo corrections, skin data, OCR examples, and Eden screenshots.
 
-For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) and [VERSIONING.md](VERSIONING.md) updated with every user-visible change.
-
-Internal project notes for maintainers and AI agents live in [docs/dev/](docs/dev/README.md).
+For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) updated with every user-visible change.
 
 ## Eden Map Data
 
 Dataset JSON is stored encoded in `js/eden-datasets.payload.js`. After updating screenshots or map assets:
 
 ```bash
-python database/build-eden-from-screenshots.py   # X1 from in-game screenshots
-python database/build-eden-x12.py                # X12 reference baseline
+python scripts/eden/build-eden-from-screenshots.py   # X1 from in-game screenshots
+python scripts/eden/build-eden-x12.py                # X12 reference baseline
 ```
 
 Both run `build-eden-datasets.py` to regenerate the payload. Then `npm run build` to rebuild.

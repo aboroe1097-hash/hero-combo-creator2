@@ -3,23 +3,32 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:eden": "python database/build-eden-datasets.py",
+    "build:eden": "python scripts/eden/build-eden-datasets.py",
+    "build:tailwind": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-build.css --minify",
     "dev": "vite",
-    "build": "npm run data:check && npm run build:eden && vite build && node scripts/post-build.mjs",
+    "build": "npm run data:check && npm run build:eden && npm run build:tailwind && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs",
     "data:check": "node scripts/check-tech-db.mjs",
+    "lint": "eslint js/loyalty-calculator.js js/combos-db.js js/app-generator.js js/ocr-engine.js js/counter-db.js tests/unit/*.mjs",
+    "format": "prettier --write .github/**/*.yml .eslintrc.json .prettierrc.json package.json tests/unit/**/*.mjs",
+    "format:check": "prettier --check .github/**/*.yml .eslintrc.json .prettierrc.json package.json tests/unit/**/*.mjs",
     "i18n:check": "node scripts/check-i18n.mjs",
     "size:check": "node scripts/check-size.mjs",
-    "smoke": "playwright test",
-    "check": "npm run i18n:check && npm run build && npm run size:check && npm run smoke",
-    "preview": "vite preview",
-    "ocr-server": "cd tools/ocr-server && node server.js"
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "smoke": "playwright test tests/app-smoke.spec.js --reporter=line",
+    "check": "npm run lint && npm run format:check && npm run test:unit && npm run i18n:check && npm run build && npm run size:check && npm run smoke",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "autoprefixer": "^10.5.0",
     "cssnano": "^8.0.2",
+    "eslint": "^8.57.1",
     "postcss": "^8.5.15",
+    "prettier": "^3.8.4",
     "tailwindcss": "^3.4.19",
     "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "firebase": "^11.6.1"
   }
 }

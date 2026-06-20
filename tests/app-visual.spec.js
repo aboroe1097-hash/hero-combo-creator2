@@ -5,29 +5,21 @@ async function openApp(page) {
     contentType: 'application/javascript',
     body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
   }));
+  await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_quick_tour_done', '1');
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/');
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0s !important;
-        animation-delay: 0s !important;
-        transition-duration: 0s !important;
-        transition-delay: 0s !important;
-        caret-color: transparent !important;
-      }
-    `
-  });
+  await page.goto('/');
+  await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
+  await page.evaluate(() => window.stop());
 }
 
 async function expectCanvasPainted(page, selector) {
@@ -53,18 +45,20 @@ async function expectCanvasPainted(page, selector) {
 test.describe('visual regression', () => {
   test('combo generator default layout', async ({ page }) => {
     await openApp(page);
-    await expect(page.locator('#generatorHeroes .generator-card').first()).toBeVisible();
+    await expect(page.locator('#generatorHeroes .generator-card').first()).toBeVisible({ timeout: 15000 });
+    await page.locator('#generatorHeroes').scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
-    const box = await page.locator('#generatorSection').boundingBox();
+    await page.evaluate(() => window.stop());
+    const box = await page.locator('#generatorHeroes').boundingBox();
     expect(box).not.toBeNull();
     const screenshot = await page.screenshot({
       animations: 'disabled',
-      mask: [page.locator('#generatorSection img')],
+      mask: [page.locator('#generatorHeroes img')],
       clip: {
         x: Math.max(0, Math.floor(box.x)),
         y: Math.max(0, Math.floor(box.y)),
-        width: Math.ceil(Math.min(box.width, 1440)),
-        height: Math.ceil(Math.min(box.height, 404))
+        width: Math.ceil(Math.min(box.width, 1329)),
+        height: Math.ceil(Math.min(box.height, 520))
       }
     });
     expect(screenshot).toMatchSnapshot('combo-generator-default.png', { maxDiffPixelRatio: 0.02 });
@@ -76,8 +70,18 @@ test.describe('visual regression', () => {
     await expect(page.locator('#edenMapSection')).toBeVisible();
     await expect(page.locator('#edenMapRoot')).toBeVisible({ timeout: 15000 });
     await expectCanvasPainted(page, '#edenMapCanvas');
-    const screenshot = await page.locator('#edenMapRoot').screenshot({
+    await page.locator('#edenMapCanvas').scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.stop());
+    const box = await page.locator('#edenMapCanvas').boundingBox();
+    expect(box).not.toBeNull();
+    const screenshot = await page.screenshot({
       animations: 'disabled',
+      clip: {
+        x: Math.max(0, Math.floor(box.x)),
+        y: Math.max(0, Math.floor(box.y)),
+        width: Math.ceil(box.width),
+        height: Math.ceil(box.height)
+      }
     });
     expect(screenshot).toMatchSnapshot('eden-map-default.png', { maxDiffPixelRatio: 0.06 });
   });

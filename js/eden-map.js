@@ -487,10 +487,27 @@ export function initEdenMapPlanner() {
   }
 
   function loadPlanFromHash() {
-    const m = location.hash.match(/eden=([^&]+)/);
-    if (!m) return;
+    const storeMatch = location.hash.match(/edenStore=([^&]+)/);
+    const planMatch = location.hash.match(/eden=([^&]+)/);
     try {
-      plan = normalizePlan(JSON.parse(decodeURIComponent(escape(atob(m[1])))));
+      if (storeMatch) {
+        const payload = JSON.parse(decodeURIComponent(atob(storeMatch[1])));
+        if (payload?.plans && typeof payload.plans === 'object') {
+          plansStore = {
+            activeId: payload.activeId || Object.keys(payload.plans)[0] || 'default',
+            plans: payload.plans,
+          };
+          activePlanId = plansStore.activeId;
+          plan = normalizePlan(plansStore.plans[activePlanId]?.plan);
+          savePlansStore(plansStore);
+          savePlan();
+          syncPlanSelector();
+          if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanLoadedToast'), 'success');
+        }
+        return;
+      }
+      if (!planMatch) return;
+      plan = normalizePlan(JSON.parse(decodeURIComponent(atob(planMatch[1]))));
       savePlan();
       if (typeof window.showToast === 'function') window.showToast(edenT('edenPlanLoadedToast'), 'success');
     } catch { /* ignore bad hash */ }
@@ -498,8 +515,15 @@ export function initEdenMapPlanner() {
 
   function sharePlanLink() {
     try {
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(plan))));
-      const url = `${location.origin}${location.pathname}#eden=${payload}`;
+      plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
+      plansStore.plans[activePlanId].plan = plan;
+      plansStore.activeId = activePlanId;
+      const payload = btoa(encodeURIComponent(JSON.stringify({
+        version: 2,
+        activeId: activePlanId,
+        plans: plansStore.plans,
+      })));
+      const url = `${location.origin}${location.pathname}#edenStore=${payload}`;
       navigator.clipboard?.writeText(url).then(() => {
         if (typeof window.showToast === 'function') window.showToast(edenT('edenShareCopiedToast'), 'success');
       });

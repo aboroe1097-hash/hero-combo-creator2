@@ -80,23 +80,30 @@ function renderCounterUseButton(heroes, labels) {
 }
 
 function renderCounterCard(counter, index, getHeroImageUrl, labels, options = {}) {
-  const rankLabel = counter.rank ? `#${counter.rank}` : 'Unranked';
+  const rankLabel = counter.rank ? `Rank #${counter.rank}` : 'Unranked';
   const scoreLabel = counter.score ? `${labels.score} ${counter.score}` : '';
   const confidenceHtml = counter.confidence
     ? `<span class="counter-card-confidence">${escapeHtml(counter.confidence)}</span>`
     : '';
   const actionHtml = options.showUseAction ? renderCounterUseButton(counter.heroes, labels) : '';
+  const reasonHtml = renderCounterReason(counter.reason);
+  const footerHtml = (reasonHtml || actionHtml)
+    ? `<div class="counter-card-foot">${reasonHtml}${actionHtml}</div>`
+    : '';
+  const reasonClass = reasonHtml ? ' counter-card--has-reason' : '';
 
-  return `<article class="counter-card counter-card--mini-combo" style="--counter-delay:${index * 55}ms">
+  return `<article class="counter-card counter-card--mini-combo${reasonClass}" style="--counter-delay:${index * 55}ms">
     <div class="counter-card-head">
-      <span class="counter-card-idx">${index + 1}</span>
+      <span class="counter-card-idx">Counter ${index + 1}</span>
       <span class="counter-card-rank">${escapeHtml(rankLabel)}</span>
       ${scoreLabel ? `<span class="counter-card-score">${escapeHtml(scoreLabel)}</span>` : ''}
       ${confidenceHtml}
     </div>
-    <div class="counter-card-heroes">${renderHeroChips(counter.heroes, getHeroImageUrl, 'counter')}</div>
-    ${renderCounterReason(counter.reason)}
-    ${actionHtml}
+    <div class="counter-lineup-block">
+      <span class="counter-lineup-label">Counter lineup</span>
+      <div class="counter-card-heroes">${renderHeroChips(counter.heroes, getHeroImageUrl, 'counter')}</div>
+    </div>
+    ${footerHtml}
   </article>`;
 }
 
@@ -113,8 +120,22 @@ export function renderCountersInline(heroes, getComboRankInfo, getHeroImageUrl, 
     renderCounterCard(counter, i, getHeroImageUrl, t, options)
   ).join('');
 
-  return `<div class="combo-counters-inline">
-    <div class="counter-inline-title">${escapeHtml(t.title)}</div>
+  const contextClass = options.context ? ` combo-counters-inline--${escapeHtml(options.context)}` : '';
+  const helperText = options.showUseAction
+    ? 'Pick a listed lineup to replace the current generator selection.'
+    : 'These lineups are favored into the current combo.';
+  return `<div class="combo-counters-inline${contextClass}">
+    <div class="counter-inline-head">
+      <div class="counter-inline-copy">
+        <span class="counter-inline-title">${escapeHtml(t.title)}</span>
+        <strong>${counters.length} known counter path${counters.length === 1 ? '' : 's'}</strong>
+        <small>${escapeHtml(helperText)}</small>
+      </div>
+      <div class="counter-target-preview">
+        <span>Target combo</span>
+        <div class="counter-target-chips">${renderHeroChips(heroes, getHeroImageUrl, 'target-mini')}</div>
+      </div>
+    </div>
     <div class="counter-cards">${rows}</div>
   </div>`;
 }

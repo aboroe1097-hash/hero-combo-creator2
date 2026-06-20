@@ -65,14 +65,14 @@ function t() {
     return translations[lang] || translations.en;
 }
 
-function getExtractionSite(loyalty) {
+export function getExtractionSite(loyalty) {
     for (let i = loyaltyThresholds.length - 1; i >= 0; i--) {
         if (loyalty >= loyaltyThresholds[i].loyalty) return loyaltyThresholds[i].site;
     }
     return 'T1';
 }
 
-function formatDuration(hours) {
+export function formatDuration(hours) {
     const totalSeconds = Math.round(hours * 3600);
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -80,7 +80,7 @@ function formatDuration(hours) {
     return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
 }
 
-function calculatePoisonPercentage(currentLoyalty) {
+export function calculatePoisonPercentage(currentLoyalty) {
     let nextTier = null;
     let afterNextTier = null;
 
@@ -118,8 +118,6 @@ function readInputs() {
     const source1 = parseFloat(get('source1')?.value) || 0;
     const source2 = parseFloat(get('source2')?.value) || 0;
     const source3 = parseFloat(get('source3')?.value) || 0;
-    const source4 = parseFloat(get('source4')?.value) || 0;
-    const source5 = parseFloat(get('source5')?.value) || 0;
     const source6 = parseFloat(get('source6')?.value) || 0;
     const p_hours = parseFloat(get('processingHours')?.value) || 0;
     const p_mins = parseFloat(get('processingMinutes')?.value) || 0;
@@ -150,7 +148,7 @@ function readInputs() {
     };
 }
 
-function buildUpgradeSequence(data) {
+export function buildUpgradeSequence(data) {
     const tr = t();
     const levels = { AC1: data.ac1Level, AC2: data.ac2Level, AC3: data.ac3Level, AC4: data.ac4Level };
     let currentLoyalty = data.currentLoyalty;

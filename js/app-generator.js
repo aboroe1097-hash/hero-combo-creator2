@@ -1,7 +1,7 @@
 import { escapeHtml } from './utils.js';
 // js/app-generator.js
 import { translations } from './translations.js';
-import { rankedCombos } from './combos-db.js';
+import { rankedCombos, selectNonOverlappingCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import {
@@ -289,13 +289,17 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
         <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
         ${counterBadge}
       </div>
-      ${renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
-        showEmpty: true,
-        showUseAction: true,
-        context: 'generator',
-      })}
     `;
     card.appendChild(scoreBox);
+
+    const counterRow = document.createElement('div');
+    counterRow.className = 'generated-counter-row';
+    counterRow.innerHTML = renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
+      showEmpty: true,
+      showUseAction: true,
+      context: 'generator',
+    });
+    card.appendChild(counterRow);
 
     generatorResultsEl.appendChild(card);
   });
@@ -314,26 +318,7 @@ export function generateBestCombos() {
   const startedAt = performance.now();
 
   try {
-    const ownedSet = new Set(selected);
-    const usedHeroesGlobal = new Set();
-    const finalSelection = [];
-    const total = rankedCombos.length;
-
-    for (let i = 0; i < total; i++) {
-      const combo = rankedCombos[i];
-      if (finalSelection.length >= 5) break;
-      const canBuild = combo.heroes.every(h => ownedSet.has(h));
-      const isUnique = !combo.heroes.some(h => usedHeroesGlobal.has(h));
-
-      if (canBuild && isUnique) {
-        let rawScore = 100;
-        if (total > 1) {
-          rawScore = 100 - ((i / (total - 1)) * 99);
-        }
-        finalSelection.push({ ...combo, displayScore: rawScore.toFixed(1) });
-        combo.heroes.forEach(h => usedHeroesGlobal.add(h));
-      }
-    }
+    const finalSelection = selectNonOverlappingCombos(rankedCombos, selected, 5);
 
     const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
     lastGeneratedCombos.length = 0;

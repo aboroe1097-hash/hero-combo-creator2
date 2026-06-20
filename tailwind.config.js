@@ -2,6 +2,7 @@
 export default {
   content: [
     './index.html',
+    './tabs/**/*.html',
     './js/**/*.js',
     './css/**/*.css',
   ],

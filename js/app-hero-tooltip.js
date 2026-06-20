@@ -1,11 +1,64 @@
 import { escapeHtml } from './utils.js';
 // Extracted Hero Tooltip Module
-import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroInfoEnabled, getTroopColorClass, getLocalizedTroop, getHeroImageUrl } from './state.js';
-import { formatSkillText, getSynergies } from './app-hero-atlas.js';
+import { rankedCombos } from './combos-db.js';
 
 let heroTooltip = null;
+let heroInfoPromise = null;
+
+function loadHeroInfoData() {
+  if (!heroInfoPromise) {
+    heroInfoPromise = import('./heroes-info.js').then(mod => mod.heroesExtendedData || {});
+  }
+  return heroInfoPromise;
+}
+
+function formatSkillText(text = '') {
+  let counter = 0;
+  const tokens = {};
+  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+  function tokenize(html) {
+    const token = `_TK${alpha[counter++]}_`;
+    tokens[token] = html;
+    return token;
+  }
+
+  let formatted = text.replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
+  formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) =>
+    tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
+  );
+  formatted = formatted.replace(/(\d+\s*(?:turns|turn|rounds|round|times|time|layers|layer|roun|min|hr))/gi, (match) =>
+    tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
+  );
+  formatted = formatted.replace(/\b(\d+)\b/g, (match) =>
+    tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
+  );
+
+  for (const [token, html] of Object.entries(tokens)) {
+    formatted = formatted.replace(token, html);
+  }
+  return formatted;
+}
+
+function getSynergies(heroName) {
+  const containingCombos = rankedCombos.filter(c => c?.heroes?.includes(heroName));
+  const top5 = containingCombos.slice(0, 5);
+  if (top5.length === 0) return [];
+
+  const counts = {};
+  top5.forEach(combo => {
+    combo.heroes.forEach(h => {
+      if (h !== heroName) counts[h] = (counts[h] || 0) + 1;
+    });
+  });
+
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => entry[0])
+    .slice(0, 3);
+}
 
 function getHeroTooltip() {
   if (heroTooltip && document.body.contains(heroTooltip)) return heroTooltip;
@@ -20,10 +73,11 @@ function getHeroTooltip() {
 }
 
 
-function showHeroTooltip(e, heroName) {
+async function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
   const tooltip = getHeroTooltip();
 
+  const heroesExtendedData = await loadHeroInfoData();
   const data = heroesExtendedData[heroName];
   if (!data) return; 
 

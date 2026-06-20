@@ -84,7 +84,7 @@
                 <span class="dash-hint" data-i18n="adminUploadHint">PNG, JPG — Multiple structures supported</span>
                 <input type="file" id="dashFileInput" accept="image/png,image/jpeg,image/jpg" multiple style="opacity: 0; position: absolute; z-index: -1; width: 1px; height: 1px;">
               </div>
-              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span></div>
+              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span><button id="dashCancelOcrBtn" type="button" class="dash-btn dash-btn-sm dash-cancel-ocr hidden">Cancel</button></div>
               <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
             </div>
 
@@ -94,6 +94,20 @@
               <div class="dash-card dash-kpi teal"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg></div><div><div class="dash-kpi-value" id="dashKpiDemo">0</div><div class="dash-kpi-label" data-i18n="adminKpiDemo">Total Demolition</div></div></div>
               <div class="dash-card dash-kpi purple"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="dash-kpi-value" id="dashKpiPlayers">0</div><div class="dash-kpi-label" data-i18n="adminKpiPlayers">Active Players</div></div></div>
               <div class="dash-card dash-kpi orange"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="dash-kpi-value" id="dashKpiMvp" style="font-size:1.25rem">---</div><div class="dash-kpi-label" id="dashKpiMvpLabel" data-i18n="adminKpiMvp">MVP Contributor</div></div></div>
+            </div>
+
+            <div id="dashOpsOverview" class="dash-ops-overview">
+              <div class="dash-ops-lead">
+                <span class="dash-ops-kicker">Officer Snapshot</span>
+                <strong>Command signals from uploaded structure hits</strong>
+                <button id="dashOpenAnalyticsBtn" class="dash-btn dash-btn-primary dash-ops-analytics-btn" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/></svg>
+                  <span>Open Analytics</span>
+                </button>
+              </div>
+              <div id="dashOpsCards" class="dash-ops-grid">
+                <div class="dash-ops-card dash-ops-card-empty">Upload attack screenshots to unlock officer insights.</div>
+              </div>
             </div>
 
             <!-- Visuals Row -->

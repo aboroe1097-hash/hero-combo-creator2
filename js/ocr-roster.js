@@ -5,6 +5,7 @@ import {
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
+import { pushUndoAction } from './state.js';
 
 function loadRoster() {
   const raw = localStorage.getItem(ROSTER_KEY);
@@ -12,8 +13,20 @@ function loadRoster() {
 }
 
 function saveRoster(text) {
+  const previous = localStorage.getItem(ROSTER_KEY) || '';
   localStorage.setItem(ROSTER_KEY, text);
   loadRoster();
+  if (previous !== text) {
+    pushUndoAction({
+      label: 'Roster edit',
+      undo: () => {
+        localStorage.setItem(ROSTER_KEY, previous);
+        loadRoster();
+        renderRoster();
+        log('Roster edit undone.', 'success');
+      },
+    });
+  }
 }
 
 function showRosterModal() {
@@ -75,7 +88,16 @@ function takeRosterSnapshot(namesText) {
 
 function deleteRosterSnapshot(index) {
   if (!confirm('Delete this roster snapshot?')) return;
-  state.rosterSnapshots.splice(index, 1);
+  const [removed] = state.rosterSnapshots.splice(index, 1);
+  pushUndoAction({
+    label: 'Roster snapshot',
+    undo: () => {
+      state.rosterSnapshots.splice(index, 0, removed);
+      saveRosterSnapshots();
+      renderRoster();
+      log('Roster snapshot restored.', 'success');
+    },
+  });
   saveRosterSnapshots();
   renderRoster();
   log('Roster snapshot deleted.', 'warn');
@@ -103,6 +125,7 @@ function saveRosterAuth() {
 async function rosterLogin() {
   const user = $id('dashRosterLoginUser')?.value;
   const pass = $id('dashRosterLoginPass')?.value;
+  if (!Object.keys(ROSTER_PASS_HASH).length) { log('Roster auth is not configured for this deployment.', 'error'); return; }
   if (!user || !ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }
   const hashed = await sha256(pass);
   if (hashed !== ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }

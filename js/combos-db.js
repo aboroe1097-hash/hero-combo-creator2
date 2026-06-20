@@ -192,3 +192,31 @@ export const rankedCombos = [
   { heroes: ["North's Rage", "The Boneless", "The Heroine"] },    
   { heroes: ["North's Rage", "The Boneless", "Heaven's Justice"] }
 ];
+
+export function scoreComboByRank(index, total) {
+  if (total <= 1) return '100.0';
+  return (100 - ((index / (total - 1)) * 99)).toFixed(1);
+}
+
+export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
+  const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);
+  const usedHeroes = new Set();
+  const total = combos.length;
+  const selected = [];
+
+  for (let i = 0; i < total; i++) {
+    if (selected.length >= limit) break;
+
+    const combo = combos[i];
+    if (!combo?.heroes?.every(hero => ownedSet.has(hero))) continue;
+    if (combo.heroes.some(hero => usedHeroes.has(hero))) continue;
+
+    selected.push({
+      ...combo,
+      displayScore: scoreComboByRank(i, total),
+    });
+    combo.heroes.forEach(hero => usedHeroes.add(hero));
+  }
+
+  return selected;
+}

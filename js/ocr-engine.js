@@ -6,16 +6,27 @@ import { getDb } from './firebase.js';
 async function processFiles(files) {
   if (state._ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
   state._ocrProcessing = true;
+  state._ocrCancelRequested = false;
+  state._ocrAbortController = new AbortController();
   const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) { state._ocrProcessing = false; return; }
+  if (!valid.length) {
+    state._ocrProcessing = false;
+    state._ocrAbortController = null;
+    return;
+  }
 
   $id('dashProgress').classList.remove('hidden');
+  const cancelBtn = $id('dashCancelOcrBtn');
+  if (cancelBtn) cancelBtn.classList.remove('hidden');
+  $id('dashProgressFill').style.width = '0%';
   log(`Preparing to scan ${valid.length} screenshots...`, 'info');
 
   const allJson = [];
   for (let i = 0; i < valid.length; i++) {
+    if (state._ocrCancelRequested) break;
     const f = valid[i];
-    $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length}...`;
+    const startedAt = performance.now();
+    $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - preparing...`;
     const base64 = await new Promise(res => {
       const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f);
     });
@@ -56,13 +67,16 @@ EXPECTED JSON SCHEMA:
       let maxRetries = 3;
       let raw = null;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        if (state._ocrCancelRequested) throw new DOMException('OCR cancelled', 'AbortError');
         try {
+          $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - Qwen OCR attempt ${attempt}/${maxRetries}...`;
           raw = await qwenVisionRequest([{ role: 'user', content: [
             { type: 'text', text: promptTxt },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
-          ]}]);
+          ]}], { signal: state._ocrAbortController?.signal });
           break;
         } catch (err) {
+          if (err?.name === 'AbortError' || state._ocrCancelRequested) throw err;
           if (attempt === maxRetries) throw err;
           log(`Rate limit or network error, retrying (${attempt}/${maxRetries})...`, 'warn', f.name);
           await new Promise(r => setTimeout(r, 2000 * attempt));
@@ -78,7 +92,7 @@ EXPECTED JSON SCHEMA:
       if (pCount < 10) {
         log(`Warning: Only ${pCount} players found. Check extraction logic. Snippet: ${text.substring(0, 50)}...`, 'warn', f.name);
       }
-      log(`Successfully read screenshot ${i+1}/${valid.length} — ${data.structure_name || '?'} ${data.structure_level || '?'}, found ${pCount} players.`, 'success', f.name);
+      log(`Successfully read screenshot ${i+1}/${valid.length} — ${data.structure_name || '?'} ${data.structure_level || '?'}, found ${pCount} players in ${elapsed}s.`, 'success', f.name);
       allJson.push({ filename: f.name, json: data });
 
       if (data) {
@@ -89,12 +103,32 @@ EXPECTED JSON SCHEMA:
         }
       }
     } catch (e) {
+      if (e?.name === 'AbortError' || state._ocrCancelRequested) {
+        log(`OCR cancelled after ${i}/${valid.length} screenshots.`, 'warn');
+        break;
+      }
       log(`Network error: ${e.message}`, 'err', f.name);
     }
+    const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+    $id('dashProgressText').textContent = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
 
-  if (!allJson.length) { log(`No valid data extracted.`, 'err'); state._ocrProcessing = false; return; }
+  if (state._ocrCancelRequested) {
+    state._ocrProcessing = false;
+    state._ocrAbortController = null;
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+    setTimeout(() => $id('dashProgress').classList.add('hidden'), 800);
+    return;
+  }
+
+  if (!allJson.length) {
+    log(`No valid data extracted.`, 'err');
+    state._ocrProcessing = false;
+    state._ocrAbortController = null;
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+    return;
+  }
 
   log(`Analyzing and merging results...`, 'info');
   const parsed = parseOcrResults(allJson);
@@ -117,7 +151,10 @@ EXPECTED JSON SCHEMA:
     log(`Cloud sync status: ${getDb() ? 'active' : 'local-only'}`, 'info');
   } else log(`Failed to parse extracted reports.`, 'err');
 
-  state._ocrProcessing = false; setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
+  state._ocrProcessing = false;
+  state._ocrAbortController = null;
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+  setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
 }
 
 function normalizeStructureName(name) {

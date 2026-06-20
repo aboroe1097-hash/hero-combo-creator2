@@ -58,6 +58,7 @@ export const heroSkins = {
       rarity: 'Royal Exclusive',
       combatStyle: 'Melee',
       troopType: 'Footmen',
+      imageUrl: 'assets/skins/king-arthur-arthur-pendragon-icon.webp',
       maxStars: 3,
       defaultUnlockedStar: 1,
       starStages: [

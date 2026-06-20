@@ -12,13 +12,8 @@ export const LOG_KEY = 'vts_ocr_log';
 
 // --- Roster Auth ---
 export const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
-export const ROSTER_PASS_HASH = {
-  V3S: '9cf95dacd226dcf43da376cdb6cbba7035218921d5285d3f2e8f4e9f0564112f',
-  VTS: '9cf95dacd226dcf43da376cdb6cbba7035218921d5285d3f2e8f4e9f0564112f',
-  PP5: '011c945f30ce2cbafc452f39840f025693339c4226140d34208226d0b30bb22d',
-  BIG: '2f4a56d953930b809d3b0709d3db39c7eb46fc9a95759ef4c1c9c57d5c7c2505',
-  NM5: '011c945f30ce2cbafc452f39840f025693339c4226140d34208226d0b30bb22d'
-};
+const ADMIN_AUTH_CONFIG = window.VTS_ADMIN_AUTH || {};
+export const ROSTER_PASS_HASH = ADMIN_AUTH_CONFIG.rosterPassHashes || {};
 export const ROSTER_AUTH_KEY = 'vts_roster_auth';
 export const ALLIANCE_KEY = 'vts_ocr_alliances';
 export const ALLIANCE_COUNT = 5;
@@ -45,11 +40,12 @@ export async function checkOcrService() {
   }
 }
 
-export async function qwenVisionRequest(messages) {
+export async function qwenVisionRequest(messages, options = {}) {
   const res = await fetch(QWEN_WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'qwen-vl-plus', messages }),
+    signal: options.signal,
   });
   const rawText = await res.text();
   let body = null;
@@ -97,8 +93,9 @@ export const state = {
 };
 
 // --- Auth ---
-export const AUTH_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
-export const CLEAR_HASH = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
+export const AUTH_HASH = ADMIN_AUTH_CONFIG.adminHash || '';
+export const CLEAR_HASH = ADMIN_AUTH_CONFIG.clearHash || '';
+export const DELETE_HASHES = new Set(ADMIN_AUTH_CONFIG.deleteHashes || []);
 
 // --- DOM Helper ---
 export function $id(id) { return document.getElementById(id); }

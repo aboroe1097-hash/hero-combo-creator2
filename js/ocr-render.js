@@ -523,6 +523,76 @@ function renderAnalytics(attacks, psum) {
   animateAnalyticsCards();
 }
 
+function renderOpsOverview(attacks, psum) {
+  const host = $id('dashOpsCards');
+  const jumpBtn = $id('dashOpenAnalyticsBtn');
+  if (jumpBtn) {
+    jumpBtn.onclick = () => {
+      document.querySelector('#ocrDashboardRoot .dash-subtab-btn[data-subtab="analytics"]')?.click();
+      $id('dashSubtabAnalytics')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  }
+  if (!host) return;
+
+  if (!attacks.length) {
+    host.innerHTML = '<div class="dash-ops-card dash-ops-card-empty">Upload attack screenshots to unlock officer insights.</div>';
+    return;
+  }
+
+  const grouped = new Map();
+  attacks.forEach(attack => {
+    const key = structureKey(attack);
+    const current = grouped.get(key) || { label: structureLabel(attack), count: 0, total: 0, players: 0 };
+    current.count++;
+    current.total += valueOf(attack.total_demolition);
+    current.players += attackPlayers(attack).length;
+    grouped.set(key, current);
+  });
+  const structures = [...grouped.values()].sort((a, b) => b.total - a.total);
+  const topStructure = structures[0] || { label: 'Unknown', count: 0, total: 0, players: 0 };
+  const avgAttendance = attacks.length
+    ? Math.round(attacks.reduce((sum, a) => sum + attackPlayers(a).length, 0) / attacks.length)
+    : 0;
+  const bestPlayer = psum
+    .map(player => ({
+      ...player,
+      avg: valueOf(player.total_demolition) / Math.max(valueOf(player.participation_count), 1)
+    }))
+    .sort((a, b) => b.avg - a.avg)[0];
+  const lowParticipation = psum
+    .filter(player => valueOf(player.participation_count) / Math.max(attacks.length, 1) < 0.25)
+    .sort((a, b) => a.participation_count - b.participation_count)
+    .slice(0, 3);
+  const latest = sortAttacksChrono(attacks).at(-1);
+  const validationIssues = attacks.reduce((sum, attack) => {
+    const result = validateTotalDemolition?.(attack.structure_name, attack.structure_level, attack.total_demolition);
+    return sum + (result?.isValid === false ? 1 : 0);
+  }, 0);
+
+  const lowNames = lowParticipation.map(p => esc(p.name)).join(', ');
+  host.innerHTML = `
+    <div class="dash-ops-card dash-ops-card-target">
+      <span class="dash-ops-label">Target Mix</span>
+      <strong>${esc(topStructure.label)}</strong>
+      <p>${topStructure.count} hit${topStructure.count === 1 ? '' : 's'} · ${compactValue(topStructure.total)} demo · ${structures.length} unique target groups</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-attendance">
+      <span class="dash-ops-label">Attendance Risk</span>
+      <strong>${avgAttendance} avg players</strong>
+      <p>${lowParticipation.length ? `${lowParticipation.length} low-frequency names: ${lowNames}` : 'No low-frequency names in the current filter.'}</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-mvp">
+      <span class="dash-ops-label">Best Per Hit</span>
+      <strong>${esc(bestPlayer?.name || '---')}</strong>
+      <p>${bestPlayer ? `${compactValue(bestPlayer.avg)} avg · ${bestPlayer.participation_count} hit${bestPlayer.participation_count === 1 ? '' : 's'}` : 'No player data yet.'}</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-health">
+      <span class="dash-ops-label">Data Health</span>
+      <strong>${validationIssues ? `${validationIssues} review` : 'Clean'}</strong>
+      <p>${latest ? `Latest: ${esc(latest.structure_name || 'Unknown')} ${esc(latest.structure_level || '')} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
+    </div>`;
+}
+
 window.clearStructureLeaderboardFilter = function() {
   state.structureFilterKey = '';
   state.leaderLimit = 25;
@@ -535,6 +605,7 @@ function render() {
     $id('dashKpiMvp').textContent = '---'; $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
+    renderOpsOverview([], []);
     setAnalyticsEmpty();
     return;
   }
@@ -566,6 +637,7 @@ function render() {
     }
   }
   renderAnalytics(atts, globalPsum);
+  renderOpsOverview(atts, globalPsum);
 
   const total = atts.reduce((s, a) => s + (a.total_demolition || 0), 0);
   $id('dashKpiAttacks').textContent = atts.length;

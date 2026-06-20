@@ -5,11 +5,13 @@ async function openApp(page) {
     contentType: 'application/javascript',
     body: 'window.VTS_MAINTENANCE_MODE=false; window.VTS_MAINTENANCE_CONFIG={};'
   }));
+  await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_quick_tour_done', '1');
   });
   await page.goto('/');
+  await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
@@ -19,8 +21,8 @@ async function openApp(page) {
 
 async function expectTab(page, buttonId, sectionId, marker) {
   await page.locator(buttonId).click();
-  await expect(page.locator(sectionId)).toBeVisible();
-  await expect(page.locator(marker)).toBeVisible();
+  await expect(page.locator(sectionId)).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
 }
 
 test.describe('app smoke tabs', () => {

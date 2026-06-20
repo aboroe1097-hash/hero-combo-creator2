@@ -1,6 +1,10 @@
 // js/player-profile.js - Roster persistence to localStorage + Firebase
-import { getDb } from './firebase.js';
 import { getUserId } from './state.js';
+
+async function getFirestoreDb() {
+  const { getDb } = await import('./firebase.js');
+  return getDb();
+}
 
 const PROFILE_KEY = 'vts_player_profile';
 
@@ -16,11 +20,11 @@ export function savePlayerProfileLocal(profile) {
 }
 
 export async function syncPlayerProfileToCloud(profile) {
-  const db = getDb();
+  const db = await getFirestoreDb();
   const uid = getUserId();
   if (!db || !uid || uid === 'anonymous') return;
   try {
-    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const { doc, setDoc } = await import('firebase/firestore');
     await setDoc(doc(db, 'users', uid), { playerProfile: profile }, { merge: true });
   } catch (e) {
     console.warn('Profile cloud sync failed:', e);
@@ -28,11 +32,11 @@ export async function syncPlayerProfileToCloud(profile) {
 }
 
 export async function loadPlayerProfileFromCloud() {
-  const db = getDb();
+  const db = await getFirestoreDb();
   const uid = getUserId();
   if (!db || !uid || uid === 'anonymous') return null;
   try {
-    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const { doc, getDoc } = await import('firebase/firestore');
     const snap = await getDoc(doc(db, 'users', uid));
     if (snap.exists() && snap.data().playerProfile) {
       const profile = snap.data().playerProfile;

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com; frame-src https://www.youtube.com; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests" />
   <meta name="description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder &amp; generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters." />
   <meta name="author" content="VTS State 1097" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -61,13 +62,11 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <script src="js/maintenance-config.js?v=20260620_8"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260620_8" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260620_8" media="(max-width: 768px)" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { corePlugins: { preflight: false } }
-  </script>
+  <script src="js/maintenance-config.js?v=20260620_022706"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260620_022706" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260620_022706" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260620_022706" media="(max-width: 768px)" />
+  <script src="js/admin-auth-config.js?v=20260620_022706"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="maintenanceSplash" class="maintenance-preload" role="status" aria-live="polite" aria-label="Site maintenance">
@@ -92,8 +91,14 @@
       <div id="doorLeft" class="door door-left">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-left" aria-hidden="true">
-          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--aura" width="783" height="814" />
-          <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--front" width="783" height="814" />
+          <picture>
+            <source srcset="images/boot/dreamy-wing-left.webp" type="image/webp" />
+            <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--aura" width="400" height="416" />
+          </picture>
+          <picture>
+            <source srcset="images/boot/dreamy-wing-left.webp" type="image/webp" />
+            <img src="images/boot/dreamy-wing-left.png" alt="" class="door-wing-art door-wing-art--front" width="400" height="416" />
+          </picture>
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem ice-emblem" aria-hidden="true">
@@ -109,8 +114,14 @@
       <div id="doorRight" class="door door-right">
         <div class="door-panel-lines" aria-hidden="true"></div>
         <div class="door-wing door-wing-right" aria-hidden="true">
-          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--aura" width="675" height="951" />
-          <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--front" width="675" height="951" />
+          <picture>
+            <source srcset="images/boot/blazing-wing-right.webp" type="image/webp" />
+            <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--aura" width="341" height="480" />
+          </picture>
+          <picture>
+            <source srcset="images/boot/blazing-wing-right.webp" type="image/webp" />
+            <img src="images/boot/blazing-wing-right.png" alt="" class="door-wing-art door-wing-art--front" width="341" height="480" />
+          </picture>
           <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
         <div class="door-emblem fire-emblem" aria-hidden="true">
@@ -366,7 +377,7 @@
                   <input type="checkbox" id="genSkinToggle" />
                   <span class="toggle-slider"></span>
               </label>
-              <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Skin mode</span>
+              <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Apply skin effects & skin icons</span>
               <span id="genSkinCount" class="text-[10px] text-amber-400 bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-500/30 hidden"></span>
           </div>
       </div>

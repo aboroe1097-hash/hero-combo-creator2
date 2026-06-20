@@ -1,26 +1,24 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
-import { translations } from './translations.js';
-import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { translations, loadTranslationsForLanguage } from './translations.js';
 import { initComments } from './comments.js';
-import { rankedCombos } from './combos-db.js';
 import { allHeroesData } from './heroes-data.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
-import { heroesExtendedData } from './heroes-info.js';
-import { techDatabase } from './tech-db.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { escapeHtml, appT, debounce } from './utils.js';
-import { heroBonusPoints } from './hero-bonuses.js';
+import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_8';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_022706';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
 import { parseRosterShareUrl } from './roster-share.js';
-import { renderHeroesTab, getSynergies, formatSkillText } from './app-hero-atlas.js';
 import { downloadComboImage } from './app-export.js';
-import { initResearchCalculator, renderTechList, updateGlobalSummary, renderCalculator } from './app-research.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
+import { initUndoToasts } from './app-undo.js';
+import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
+import { initWhatsNewBanner } from './app-whats-new.js';
+import { initKeyboardShortcuts } from './app-shortcuts.js';
+import { initUserDataPortability } from './user-data-portability.js';
+import { initBugReportWidget } from './bug-widget.js';
 
 import {
   renderAvailableHeroes,
@@ -34,7 +32,6 @@ import {
 
 import {
   renderGeneratorHeroes,
-  renderGeneratorResults,
   generateBestCombos,
   generateRandomCombos
 } from './app-generator.js';
@@ -61,10 +58,8 @@ import {
   setGeneratorSelectedTypes,
   setGeneratorSkinsOnly,
   generatorSelectedHeroes,
-  userId,
   getUserId,
   setUserId,
-  db,
   savedCombosCache,
   lastGeneratedCombos,
   APP_VERSION,
@@ -122,6 +117,7 @@ import {
   getHeroImageUrl,
   heroMatchesFilters,
   getSeasonCatchupHint,
+  getSeasonCatchupItems,
   getComboRankInfo,
   getCounterLabels,
   isHeroAlreadyInCombo,
@@ -379,9 +375,17 @@ function updateSeasonCatchupHint(container) {
   if (!targetId) return;
   const el = document.getElementById(targetId);
   if (!el) return;
-  const hint = getSeasonCatchupHint(getCheckedValues(container));
-  el.textContent = hint;
-  el.classList.toggle('hidden', !hint);
+  const items = getSeasonCatchupItems(getCheckedValues(container));
+  el.innerHTML = items.map(item => `
+    <span class="season-catchup-card season-catchup-card--${escapeHtml(item.season.toLowerCase())}">
+      <span class="season-catchup-badge">${escapeHtml(item.season)}</span>
+      <span class="season-catchup-copy">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.body)}</span>
+      </span>
+    </span>
+  `).join('');
+  el.classList.toggle('hidden', !items.length);
 }
 
 function updateAllSeasonCatchupHints() {
@@ -659,9 +663,10 @@ tabs.forEach(tab => {
   // --------------------------------------------------------
 
   if (languageSelect) {
-    languageSelect.onchange = e => {
+    languageSelect.onchange = async e => {
       setCurrentLanguage(e.target.value);
       localStorage.setItem('vts_hero_lang', currentLanguage);
+      await loadTranslationsForLanguage(currentLanguage);
       updateTextContent();
       renderAvailableHeroes();
       renderGeneratorHeroes(syncGeneratorControlState());
@@ -681,6 +686,9 @@ tabs.forEach(tab => {
   let _edenMapReady = false;
   let _edenMapBooting = false;
   let _heroesTabReady = false;
+  let _heroesTabBooting = false;
+  let _researchReady = false;
+  let _researchBooting = false;
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
@@ -737,8 +745,38 @@ tabs.forEach(tab => {
       });
     }
     if (tabName === 'heroes' && !_heroesTabReady) {
-      renderHeroesTab();
-      _heroesTabReady = true;
+      if (_heroesTabBooting) return;
+      _heroesTabBooting = true;
+      import('./app-hero-atlas.js')
+        .then((mod) => {
+          mod.renderHeroesTab();
+          _heroesTabReady = true;
+        })
+        .catch((err) => {
+          _heroesTabBooting = false;
+          console.error('Hero Atlas failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Hero Atlas') || 'Hero Atlas failed to load.', 'error', 4000);
+          }
+        });
+    }
+    if (tabName === 'research' && !_researchReady) {
+      if (_researchBooting) return;
+      _researchBooting = true;
+      import('./app-research.js')
+        .then((mod) => {
+          mod.initResearchCalculator();
+          _researchReady = true;
+        })
+        .catch((err) => {
+          _researchBooting = false;
+          console.error('Research failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.', 'error', 4000);
+          }
+        });
     }
     if (tabName === 'youtube') {
       loadYouTubeEmbeds();
@@ -787,6 +825,8 @@ tabs.forEach(tab => {
     onTabActivated(tabName);
     _lastTab = tabName;
   }
+  window.vtsSwitchTab = switchTab;
+  initKeyboardShortcuts({ switchTab });
   wireFilterSets();
   wireGeneratorSkinToggle();
 
@@ -972,68 +1012,12 @@ function updateTextContent() {
   applySeo(currentLanguage);
 
   updateManualComboScore();
-  if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer')) {
-    renderTechList();
+  if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer') && !researchSection?.classList.contains('hidden')) {
+    import('./app-research.js')
+      .then((mod) => mod.renderTechList())
+      .catch((err) => console.warn('[research] refresh failed:', err));
   }
 }
-
-// --- RESEARCH CALCULATOR LOGIC ---
-window.quickMaxTech = function(e, techId) {
-    e.stopPropagation(); 
-    const tech = techDatabase.find(t => t.id === techId);
-    if(!tech) return;
-    
-    // Max out every node in the background
-    tech.nodes.forEach(n => {
-        localStorage.setItem(`tech_${tech.id}_${n.id}`, n.maxLevel);
-    });
-    
-    updateGlobalSummary();
-    renderTechList();
-
-    // Quick visual feedback on the button
-    const btn = e.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="w-3 h-3 inline pb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
-    btn.classList.replace('text-blue-300', 'text-emerald-300');
-    btn.classList.replace('border-blue-500/50', 'border-emerald-500/50');
-    btn.classList.replace('bg-blue-900/80', 'bg-emerald-900/80');
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.replace('text-emerald-300', 'text-blue-300');
-        btn.classList.replace('border-emerald-500/50', 'border-blue-500/50');
-        btn.classList.replace('bg-emerald-900/80', 'bg-blue-900/80');
-    }, 1000);
-    
-    // Refresh calculator UI if it's currently open
-    const calcContainer = document.getElementById('techCalculatorContainer');
-    if (!calcContainer.classList.contains('hidden')) {
-        renderCalculator(tech);
-    }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // --- Tab scroll buttons ---
@@ -1166,12 +1150,17 @@ function initQuickTour() {
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
     try {
+    await safeInit('loadTranslations', () => loadTranslationsForLanguage(currentLanguage));
     await safeInit('updateTextContent', () => updateTextContent());
+    safeInit('errorReporting', () => initErrorReporting());
+    safeInit('undoToasts', () => initUndoToasts());
+    safeInit('whatsNew', () => initWhatsNewBanner(APP_VERSION));
+    safeInit('userDataPortability', () => initUserDataPortability());
+    safeInit('bugReportWidget', () => initBugReportWidget());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('wireUIActions', () => wireUIActions());
-    safeInit('initResearchCalculator', () => initResearchCalculator());
     safeInit('initTabScroll', () => initTabScroll());
 
     safeInit('registerServiceWorker', () => registerServiceWorker());
@@ -1185,6 +1174,7 @@ async function startApp() {
     }
 
     await safeInit('firebase', async () => {
+        const { initFirebase, ensureAnonymousAuth } = await import('./firebase.js');
         await initFirebase();
         const user = await ensureAnonymousAuth();
         if (user && user.uid) {
@@ -1198,6 +1188,7 @@ async function startApp() {
         if (typeof initComments === 'function') {
             initComments();
         }
+        flushClientErrors();
     });
     safeInit('quickTour', () => initQuickTour());
     } finally {
@@ -1211,6 +1202,7 @@ function safeInit(name, fn) {
     if (result && typeof result.catch === 'function') {
       return result.catch(err => {
         console.warn(`[${name}] async init failed:`, err);
+        logClientError(`safeInit:${name}`, err);
         if (typeof window.showToast === 'function') {
           const t = translations[currentLanguage] || translations.en;
           window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);
@@ -1220,6 +1212,7 @@ function safeInit(name, fn) {
     return result;
   } catch (err) {
     console.warn(`[${name}] init failed:`, err);
+    logClientError(`safeInit:${name}`, err);
     if (typeof window.showToast === 'function') {
       const t = translations[currentLanguage] || translations.en;
       window.showToast((t.moduleLoadFailed || '{name} failed to load').replace('{name}', name), 'warn', 3000);

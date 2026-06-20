@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Added a What's New version banner, global keyboard shortcuts, undo toasts for destructive actions, and JSON user data import/export.
+- Added Firestore-backed client error reporting plus a floating bug report widget with screenshot capture.
+- Improved OCR scan feedback with retry/status progress and a cancel action.
+- Added Hero Atlas URL filter params and expanded Eden map share links to include the full plan store.
+- Added README screenshot previews for the Combo Generator, Eden Map Planner, and OCR Admin entry view.
+- Added `CONTRIBUTING.md` with community data-update guidance for heroes, combos, skins, Eden screenshots, OCR examples, and translations.
+- Removed overlapping internal maintainer and AI-agent notes so public docs consolidate around README, CONTRIBUTING, and CHANGELOG.
+- Added `docs/media/` as the home for README screenshots and future workflow GIFs.
+- Moved Eden Python tooling from `database/` to `scripts/eden/`, leaving `database/` for source datasets.
+- Removed stale one-off helper scripts and the obsolete Firebase hosting config.
+
 ## 10.4.0 - 2026-06-20
 
 - Added the X8 catch-up hero wave covering original X4, X5, X6, X7, X8, and SP heroes.
@@ -33,4 +46,4 @@
 - Upgraded counter panels with animated open states, compact matchup cards, reasons, and "Use this counter" actions in the Generator.
 - Added Hero Atlas counter sections so each hero can show lineups they counter and lineups that counter them.
 - Added smoke coverage for the counter database, Generator counter panels, counter reuse action, and Hero Atlas counter view.
-- Started the repo versioning flow with this changelog and `VERSIONING.md`.
+- Started the repo versioning flow with this changelog.

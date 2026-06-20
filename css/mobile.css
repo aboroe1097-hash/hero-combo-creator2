@@ -155,6 +155,17 @@ body.tab-manual-active {
   justify-content: center;
 }
 
+.season-catchup-hint {
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+  padding: 8px !important;
+}
+
+.season-catchup-card {
+  gap: 7px !important;
+  padding: 8px !important;
+}
+
 #manualSection .mb-6, #generatorSection .mb-6 {
   padding: 10px !important;
   margin-bottom: 12px !important;
@@ -196,7 +207,7 @@ body.tab-manual-active {
   height: 6px !important;
 }
 .generator-card.skin-animated-portrait img {
-  box-shadow: 0 0 10px rgba(251,191,36,0.2), 0 0 0 2px rgba(245,158,11,0.1) !important;
+  box-shadow: 0 0 16px rgba(251,191,36,0.32), 0 0 0 2px rgba(245,158,11,0.16) !important;
 }
 .generator-card.skin-priority-muted {
   opacity: 0.54 !important;
@@ -239,6 +250,48 @@ body.tab-manual-active {
 }
 .paid-badge--card .paid-gem-svg { width: 8px !important; height: 8px !important; }
 .paid-badge-text { font-size: 0.4rem !important; }
+
+.hero-card .generator-skin-badge,
+.generator-card .generator-skin-badge {
+  top: 3px !important;
+  right: 3px !important;
+  width: 18px !important;
+  height: 18px !important;
+  font-size: 8px !important;
+  z-index: 36 !important;
+}
+
+.hero-card .generator-skin-badge--priority,
+.generator-card .generator-skin-badge--priority {
+  width: 21px !important;
+  height: 21px !important;
+  border-radius: 6px !important;
+}
+
+.hero-card:has(.generator-skin-badge) .paid-badge,
+.generator-card:has(.generator-skin-badge) .paid-badge {
+  right: 27px !important;
+}
+
+.hero-card:has(.generator-skin-badge) .paid-badge-text,
+.generator-card:has(.generator-skin-badge) .paid-badge-text {
+  display: none !important;
+}
+
+.hero-card:has(.generator-skin-badge) .paid-badge--card,
+.generator-card:has(.generator-skin-badge) .paid-badge--card {
+  width: 19px !important;
+  height: 19px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+}
+
+.hero-card:has(.generator-skin-badge) .paid-badge--card .paid-gem-svg,
+.generator-card:has(.generator-skin-badge) .paid-badge--card .paid-gem-svg {
+  width: 11px !important;
+  height: 11px !important;
+}
 
 /* ── 7. STICKY COMBO FOOTER (Manual Builder) ──────────────── */
 #comboFooterBar {
@@ -318,30 +371,42 @@ body.tab-manual-active {
 }
 
 .generated-combo-card {
-  flex-direction: column !important;
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "rank heroes"
+    "score score" !important;
   align-items: center !important;
-  padding: 14px 10px 10px 10px !important;
-  gap: 8px !important;
+  padding: 12px 10px !important;
+  gap: 10px !important;
   min-height: 0 !important;
 }
 .generated-combo-card .saved-combo-number {
-  top: 10px !important;
-  left: 10px !important;
+  grid-area: rank !important;
+  position: static !important;
   transform: none !important;
+  width: 30px !important;
+  height: 30px !important;
 }
 .generated-combo-card .saved-combo-slots {
+  grid-area: heroes !important;
   display: flex !important;
   flex-direction: row !important;
-  justify-content: center !important;
-  gap: 6px !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
   width: 100% !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
+  padding: 0 2px !important;
 }
 .generated-combo-card .gen-score-panel {
+  grid-area: score !important;
   margin-left: 0 !important;
+  width: 100% !important;
+  align-items: center !important;
   text-align: center !important;
 }
+.generated-combo-card .gen-score-main { align-items: center !important; }
 
 .saved-combo-display .saved-combo-slots {
   gap: 6px !important;
@@ -349,12 +414,17 @@ body.tab-manual-active {
 }
 .saved-combo-display .saved-combo-slot-item,
 .generated-combo-card .saved-combo-slot-item {
-  width: 76px !important;
-  height: 76px !important;
+  width: 74px !important;
+  min-width: 74px !important;
+  height: auto !important;
 }
-.saved-combo-slot-item img {
+.saved-combo-display .saved-combo-slot-item img,
+.generated-combo-card .saved-combo-slot-item img {
   width: 72px !important;
   height: 72px !important;
+}
+.generated-combo-card .saved-combo-slot-item span {
+  max-width: 74px !important;
 }
 
 /* ── 10. HERO ATLAS TAB ───────────────────────────────────── */
@@ -472,12 +542,85 @@ body.tab-manual-active {
 .detail-combo-rank { font-size: 0.65rem !important; }
 
 /* Combo counters in detail */
-.combo-counters-inline { margin-top: 4px; padding: 0.4rem 0.5rem !important; }
+.generated-counter-row {
+  width: 100% !important;
+  margin-top: 6px !important;
+}
+.generated-counter-row .combo-counters-wrap {
+  width: 100% !important;
+}
+.combo-counters-inline {
+  margin-top: 4px;
+  padding: 0.55rem !important;
+  border-radius: 12px !important;
+}
+.counter-inline-head {
+  grid-template-columns: 1fr !important;
+  gap: 6px !important;
+  margin-bottom: 6px !important;
+}
+.counter-inline-copy,
+.counter-target-preview {
+  padding: 0.5rem !important;
+  border-radius: 10px !important;
+}
+.counter-inline-title,
+.counter-target-preview > span,
+.counter-lineup-label {
+  font-size: 0.5rem !important;
+  letter-spacing: 0.08em !important;
+}
+.counter-inline-copy strong {
+  font-size: 0.78rem !important;
+}
+.counter-inline-copy small {
+  font-size: 0.58rem !important;
+}
+.counter-target-chips {
+  gap: 4px !important;
+  margin-top: 5px !important;
+}
 .counter-toggle-btn { font-size: 0.55rem !important; padding: 4px 8px !important; }
-.counter-hero-chip { padding: 3px 2px !important; }
-.counter-hero-chip-name { font-size: 0.46rem !important; }
-.counter-hero-chip-img { width: 24px !important; height: 24px !important; }
-.counter-card-reason { font-size: 0.53rem !important; }
+.counter-card {
+  padding: 0.55rem !important;
+  border-radius: 12px !important;
+}
+.counter-card-head {
+  gap: 5px !important;
+  margin-bottom: 0.5rem !important;
+}
+.counter-card-idx {
+  min-height: 18px !important;
+  padding: 0.14rem 0.42rem !important;
+  font-size: 0.5rem !important;
+}
+.counter-card-rank,
+.counter-card-score,
+.counter-card-confidence {
+  font-size: 0.5rem !important;
+}
+.counter-lineup-block {
+  padding: 0.45rem !important;
+  border-radius: 10px !important;
+}
+.counter-card-heroes {
+  gap: 4px !important;
+}
+.counter-hero-chip { padding: 4px 2px !important; border-radius: 9px !important; }
+.counter-hero-chip-name { font-size: 0.48rem !important; }
+.counter-hero-chip-img { width: 28px !important; height: 28px !important; }
+.counter-hero-chip--target-mini .counter-hero-chip-img { width: 22px !important; height: 22px !important; }
+.counter-card-foot {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 6px !important;
+  margin-top: 0.55rem !important;
+}
+.counter-card-reason {
+  width: 100% !important;
+  padding: 0.48rem 0.55rem !important;
+  font-size: 0.53rem !important;
+}
 .counter-use-btn {
   width: 100% !important;
   min-height: 34px !important;

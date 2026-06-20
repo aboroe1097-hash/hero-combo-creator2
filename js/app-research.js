@@ -174,6 +174,38 @@ function initResearchCalculator() {
     renderTechList();
 }
 
+window.quickMaxTech = function(e, techId) {
+    e.stopPropagation();
+    const tech = techDatabase.find(t => t.id === techId);
+    if (!tech) return;
+
+    tech.nodes.forEach(n => {
+        localStorage.setItem(`tech_${tech.id}_${n.id}`, n.maxLevel);
+    });
+
+    updateGlobalSummary();
+    renderTechList();
+
+    const btn = e.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="w-3 h-3 inline pb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
+    btn.classList.replace('text-blue-300', 'text-emerald-300');
+    btn.classList.replace('border-blue-500/50', 'border-emerald-500/50');
+    btn.classList.replace('bg-blue-900/80', 'bg-emerald-900/80');
+
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.replace('text-emerald-300', 'text-blue-300');
+        btn.classList.replace('border-emerald-500/50', 'border-blue-500/50');
+        btn.classList.replace('bg-emerald-900/80', 'bg-blue-900/80');
+    }, 1000);
+
+    const calcContainer = document.getElementById('techCalculatorContainer');
+    if (calcContainer && !calcContainer.classList.contains('hidden')) {
+        renderCalculator(tech);
+    }
+};
+
 function renderTechList() {
     const container = document.getElementById('techListContainer');
     if (!container) return;

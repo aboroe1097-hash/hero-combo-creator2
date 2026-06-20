@@ -51,6 +51,28 @@ export function getGeneratorHeroPool(skinsOnly = generatorSkinsOnly) {
 }
 export const savedCombosCache = [];
 export const lastGeneratedCombos = [];
+export const undoHistoryStack = [];
+
+export function pushUndoAction(action) {
+  if (!action || typeof action.undo !== 'function') return;
+  undoHistoryStack.push({
+    id: action.id || `undo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    label: action.label || 'Change',
+    undo: action.undo,
+    createdAt: Date.now(),
+  });
+  if (undoHistoryStack.length > 12) undoHistoryStack.shift();
+  window.dispatchEvent(new CustomEvent('vts:undo-available', {
+    detail: undoHistoryStack[undoHistoryStack.length - 1],
+  }));
+}
+
+export async function undoLastAction() {
+  const action = undoHistoryStack.pop();
+  if (!action) return false;
+  await action.undo();
+  return action;
+}
 
 export function getSourceCreditText() {
   const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
@@ -79,6 +101,10 @@ const SEASON_CATCHUP_HINT_KEYS = {
 };
 
 export function getSeasonCatchupHint(seasons = []) {
+  return getSeasonCatchupItems(seasons).map(item => item.text).join(' ');
+}
+
+export function getSeasonCatchupItems(seasons = []) {
   const lang = localStorage.getItem('vts_hero_lang') || currentLanguage || 'en';
   const t = translations[lang] || translations.en;
   const en = translations.en || {};
@@ -86,10 +112,16 @@ export function getSeasonCatchupHint(seasons = []) {
   return ordered
     .map(season => {
       const key = SEASON_CATCHUP_HINT_KEYS[season];
-      return key ? (t[key] || en[key] || '') : '';
+      const text = key ? (t[key] || en[key] || '') : '';
+      const parts = text.split(':');
+      return {
+        season,
+        text,
+        title: parts.length > 1 ? parts.shift().trim() : season,
+        body: parts.length > 0 ? parts.join(':').trim() : text,
+      };
     })
-    .filter(Boolean)
-    .join(' ');
+    .filter(item => item.text);
 }
 
 const PAID_GEM_SVG = `<svg class="paid-gem-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.8 5.55 15.7l.85-5L2.8 7.2l5-.7L10 2z" fill="#a855f7" stroke="#fde68a" stroke-width=".7"/></svg>`;
