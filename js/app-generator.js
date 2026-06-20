@@ -4,6 +4,7 @@ import { translations } from './translations.js';
 import { rankedCombos, filterCombosForSkinMode, getComboSkinRequirements, selectNonOverlappingCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
+import { getSkinHeroByName } from './skin-heroes-data.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -62,6 +63,11 @@ function setGeneratorSkinOwned(heroName, owned) {
   } catch {
     // Ignore storage failures; the current render still reflects the click.
   }
+}
+
+function getGeneratorResultHeroImageUrl(heroName) {
+  if (!generatorSkinsOnly || !isGeneratorSkinOwned(heroName)) return getHeroImageUrl(heroName);
+  return getSkinHeroByName(heroName)?.skinImageUrl || getSkinForHero(heroName)?.imageUrl || getHeroImageUrl(heroName);
 }
 
 function showGeneratorMessage(message) {
@@ -316,7 +322,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       item.className = 'saved-combo-slot-item';
       item.style.cursor = 'pointer';
       const img = document.createElement('img');
-      img.src = getHeroImageUrl(name);
+      img.src = getGeneratorResultHeroImageUrl(name);
       img.crossOrigin = 'anonymous';
       img.style.transition = 'transform 0.18s ease, box-shadow 0.18s ease';
       const label = document.createElement('span');
@@ -383,7 +389,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
 
     const counterRow = document.createElement('div');
     counterRow.className = 'generated-counter-row';
-    counterRow.innerHTML = renderCountersToggle(combo.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
+    counterRow.innerHTML = renderCountersToggle(combo.heroes, getComboRankInfo, getGeneratorResultHeroImageUrl, getCounterLabels(), {
       showEmpty: true,
       showUseAction: true,
       context: 'generator',
