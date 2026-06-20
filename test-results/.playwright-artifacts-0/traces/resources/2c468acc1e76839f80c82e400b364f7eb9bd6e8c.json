@@ -1,0 +1,9 @@
+{
+  "name": "projects/103195597389/installations/cE7APSTgjt2WvgM3QLjrMB",
+  "fid": "cE7APSTgjt2WvgM3QLjrMB",
+  "refreshToken": "3_AS3qfwJ5AyOHGsRZYYqkupkYEwKEjNLR98a3T-9EzFzPjfBkMBnLokyqJAUkcAIKpIHFPWngYpy9d5RXPwYFaZWdyWOGes9-Tq6HDsgAVncm5wI",
+  "authToken": {
+    "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJZCI6IjE6MTAzMTk1NTk3Mzg5OndlYjo5Nzc4OGQ5OTM1NmI0ZTU5ODM5YTA0IiwiZXhwIjoxNzgyNTIwNzE3LCJmaWQiOiJjRTdBUFNUZ2p0Mld2Z00zUUxqck1CIiwicHJvamVjdE51bWJlciI6MTAzMTk1NTk3Mzg5fQ.AB2LPV8wRQIhAIG0fZ9B-0XmIpViHnxvu7Y8P5joCrKDpLrwzuXsImz2AiA0SSNH1QT2TIfCHgljs8212h5esd2q7t1hZWiIOKxr6A",
+    "expiresIn": "604800s"
+  }
+}
