@@ -1,7 +1,7 @@
 // Toggle this before pushing:
 // true  = show the maintenance page immediately
 // false = run the normal app
-window.VTS_MAINTENANCE_MODE = false;
+window.VTS_MAINTENANCE_MODE = true;
 
 window.VTS_MAINTENANCE_CONFIG = {
   kicker: 'VTS 1097 TOOLKIT',
