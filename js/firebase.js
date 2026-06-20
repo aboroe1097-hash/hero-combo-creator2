@@ -13,14 +13,18 @@ let db = null;
 let auth = null;
 let analytics = null;
 
+const viteEnv = import.meta.env || {};
+const nodeEnv = typeof process !== 'undefined' ? process.env : {};
+const env = { ...nodeEnv, ...viteEnv };
+
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 export function initFirebase() {
@@ -37,7 +41,7 @@ export function initFirebase() {
 
   // Initialize App Check with reCAPTCHA Enterprise when a site key is configured.
   // Enforcement is controlled in the Firebase Console; the app still works if unset.
-  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const recaptchaSiteKey = env.VITE_RECAPTCHA_SITE_KEY;
   if (recaptchaSiteKey) {
     try {
       initializeAppCheck(app, {
