@@ -1709,8 +1709,8 @@ button:not([disabled]):active,
 
 .hero-card.season-x8 img,
 .generator-card.season-x8 img {
-  object-position: 50% 31% !important;
-  transform: translateY(20%) scale(2.28) !important;
+  object-position: center !important;
+  transform: none !important;
 }
 
 /* Research small-screen polish: keep the dense tool surface usable without tiny cards. */

@@ -9796,14 +9796,14 @@ body.hide-hero-info #heroTooltip {
 .hero-card.season-x8 img,
 .generator-card.season-x8 img {
   object-fit: cover !important;
-  object-position: 50% 31% !important;
-  transform: translateY(20%) scale(2.28);
+  object-position: center !important;
+  transform: none !important;
   transform-origin: center;
 }
 
 .hero-card.season-x8:hover img,
 .generator-card.season-x8:hover img {
-  transform: translateY(20%) scale(2.36) !important;
+  transform: none !important;
 }
 
 @media (max-width: 640px) {

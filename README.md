@@ -1,4 +1,4 @@
-# Hero Combo Creator — VTS 1097 (v11.0.0)
+# Hero Combo Creator — VTS 1097 (v11.0.2)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management — all in a single-page web app.
 
@@ -53,7 +53,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.0 release passed with 12/12 unit tests and 9/9 smoke tests.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.2 release passed with 19/19 unit tests.
 
 ## Tech Stack
 
@@ -245,6 +245,10 @@ The site auto-deploys at **https://roc-vts.com/** (custom domain configured in r
 ## Contributing
 
 Community data updates are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the preferred formats for hero stats, combo corrections, skin data, OCR examples, and Eden screenshots.
+
+### Combo Dataset Attribution
+
+The optional combo audit tool (`npm run combos:audit`) uses public combo candidate data from [tools.riseofcastles.net/combos-data](https://tools.riseofcastles.net/combos-data/). Credit to the Rise of Castles Tools team/community for publishing and maintaining those datasets. Imported records are treated as review candidates and are not automatically merged into the curated ranking database.
 
 For release bookkeeping, keep [CHANGELOG.md](CHANGELOG.md) updated with every user-visible change.
 

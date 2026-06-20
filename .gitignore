@@ -12,3 +12,5 @@ docs/
 *.tgz
 test-results/
 playwright-report/
+work/roc-combo-import/
+/.codex-remote-attachments

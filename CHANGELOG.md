@@ -1,5 +1,13 @@
 # Changelog
 
+## 11.0.2 - 2026-06-20
+
+- Added an audit-first importer for public Rise of Castles combo datasets, with S0-X8 filtering, local hero alias mapping, duplicate detection, and review-only candidate output.
+- Added attribution for the Rise of Castles Tools team/community in the importer outputs and README.
+- Added unit coverage for the combo importer normalization, skin-code conversion, acceptance rules, and duplicate reporting.
+- Improved X8 catch-up hero icons with supplied clean AVIF assets and adjusted card image framing.
+- Added skin-rank combo support so curated skin combos can use must/recommended/optional slot requirements without replacing the base ranking.
+
 ## 11.0.0 - 2026-06-20
 
 - Removed the maintenance splash and startup gate for the live release.

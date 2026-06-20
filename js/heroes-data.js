@@ -67,17 +67,17 @@ export const allHeroesData = [
   { name: 'Spectral Reaper', season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
   { name: 'Valkyrie',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' },
 
-  { name: "Ragnar the Demon's Lord", season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.png?v=20260620_10' },
+  { name: "Ragnar the Demon's Lord", season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
 
-  { name: 'Bjorn',             season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/bjorn.png?v=20260620_10' },
+  { name: 'Bjorn',             season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/bjorn.avif?v=20260620_11' },
   { name: 'Skanda',            season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/skanda.png?v=20260620_10' },
-  { name: 'Liberator',         season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X5', imageUrl: 'images/heroes/catchup/liberator.png?v=20260620_10' },
-  { name: 'Ashen Verdict',     season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X5', imageUrl: 'images/heroes/catchup/ashen-verdict.png?v=20260620_10' },
-  { name: 'Warden',            season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X6', imageUrl: 'images/heroes/catchup/warden.png?v=20260620_10' },
+  { name: 'Liberator',         season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X5', imageUrl: 'images/heroes/catchup/liberator.avif?v=20260620_11' },
+  { name: 'Ashen Verdict',     season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X5', imageUrl: 'images/heroes/catchup/ashen-verdict.avif?v=20260620_11' },
+  { name: 'Warden',            season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X6', imageUrl: 'images/heroes/catchup/warden.avif?v=20260620_11' },
   { name: 'Warhammer',         season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X6', imageUrl: 'images/heroes/catchup/warhammer.png?v=20260620_10' },
-  { name: 'Eidolon',           season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X7', imageUrl: 'images/heroes/catchup/eidolon.png?v=20260620_10' },
-  { name: 'Scarlet Reaver',    season: 'X8', Type:'All', State:'Free', releaseSeason:'X7', imageUrl: 'images/heroes/catchup/scarlet-reaver.png?v=20260620_10' },
-  { name: 'Rainforest Ranger', season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/rainforest-ranger.png?v=20260620_10' },
-  { name: 'Fortuneteller',     season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/fortuneteller.png?v=20260620_10' },
-  { name: 'Cyrus',             season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.png?v=20260620_10' }
+  { name: 'Eidolon',           season: 'X8', Type:'Archers', State:'Free', releaseSeason:'X7', imageUrl: 'images/heroes/catchup/eidolon.avif?v=20260620_11' },
+  { name: 'Scarlet Reaver',    season: 'X8', Type:'All', State:'Free', releaseSeason:'X7', imageUrl: 'images/heroes/catchup/scarlet-reaver.avif?v=20260620_11' },
+  { name: 'Rainforest Ranger', season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/rainforest-ranger.avif?v=20260620_11' },
+  { name: 'Fortuneteller',     season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/fortuneteller.avif?v=20260620_11' },
+  { name: 'Cyrus',             season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' }
 ];
