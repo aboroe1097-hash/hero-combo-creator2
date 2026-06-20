@@ -8944,7 +8944,7 @@ body {
 }
 
 .door-wing-right {
-  top: clamp(12px, 4.8vh, 72px);
+  top: clamp(24px, 6.3vh, 92px);
   left: clamp(-140px, -7.8vw, -54px);
   width: clamp(410px, 42vw, 720px);
   height: clamp(390px, 62vh, 740px);

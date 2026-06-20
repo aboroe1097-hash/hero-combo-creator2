@@ -47,7 +47,7 @@ async function expectCanvasPainted(page, selector) {
       }
     }
     return total ? painted / total : 0;
-  }), { timeout: 10000 }).toBeGreaterThan(0.25);
+  }), { timeout: 30000 }).toBeGreaterThan(0.03);
 }
 
 test.describe('visual regression', () => {

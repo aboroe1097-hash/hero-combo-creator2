@@ -1,17 +1,17 @@
 /* =============================================================
-   mobile.css — VTS Hero Combo Tool
-   Applied on screens ≤768px via <link media="(max-width: 768px)">
+   mobile.css â€” VTS Hero Combo Tool
+   Applied on screens â‰¤768px via <link media="(max-width: 768px)">
 
    UPGRADE PHILOSOPHY:
-   — Finger-first: every interactive target ≥44px
-   — Spatial zones: safe areas, inset-bottom, notch aware
-   — Fluid type: rem-based scale, not px overrides
-   — Momentum scroll everywhere it should scroll
-   — No layout jank: fixed heights only where truly needed
-   — Light theme fully covered, not just dark
+   â€” Finger-first: every interactive target â‰¥44px
+   â€” Spatial zones: safe areas, inset-bottom, notch aware
+   â€” Fluid type: rem-based scale, not px overrides
+   â€” Momentum scroll everywhere it should scroll
+   â€” No layout jank: fixed heights only where truly needed
+   â€” Light theme fully covered, not just dark
    ============================================================= */
 
-/* ── 0. DESIGN TOKENS (mobile overrides) ──────────────────── */
+/* â”€â”€ 0. DESIGN TOKENS (mobile overrides) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :root {
   --mobile-gap:     8px;
   --mobile-radius:  12px;
@@ -24,10 +24,11 @@
   --safe-right:     env(safe-area-inset-right, 0px);
 }
 
-/* ── 1. BASE ──────────────────────────────────────────────── */
+/* â”€â”€ 1. BASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 html {
   -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+       text-size-adjust: 100%;
   /* Use dynamic viewport on supporting browsers */
   height: -webkit-fill-available;
 }
@@ -49,7 +50,7 @@ body.tab-manual-active {
 * { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
-/* ── 2. APP SHELL ─────────────────────────────────────────── */
+/* â”€â”€ 2. APP SHELL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #app {
   padding: 8px !important;
   border-radius: var(--mobile-radius) !important;
@@ -57,7 +58,7 @@ body.tab-manual-active {
   overflow-x: clip;
 }
 
-/* ── 3. BRANDING / SPLASH ─────────────────────────────────── */
+/* â”€â”€ 3. BRANDING / SPLASH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .team-badge,
 #createComboTitle { display: none !important; }
 
@@ -65,7 +66,7 @@ body.tab-manual-active {
 .main-logo { width: 96px !important; height: 96px !important; }
 .logo-container { margin-bottom: 1rem !important; }
 
-/* Boot splash — mobile proportions */
+/* Boot splash â€” mobile proportions */
 .perspective-container {
   width: 100vw !important;
   height: 100vh !important;
@@ -78,7 +79,7 @@ body.tab-manual-active {
 .intro-logo { width: 88px !important; height: 88px !important; }
 .intro-enter-btn { padding: 10px 20px !important; font-size: 0.64rem !important; }
 
-/* ── 4. TAB NAV ───────────────────────────────────────────── */
+/* â”€â”€ 4. TAB NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #tabNavScroll {
   overflow-x: auto !important;
   overflow-y: hidden !important;
@@ -135,12 +136,12 @@ body.tab-manual-active {
   border-color: rgba(0,0,0,0.07) !important;
 }
 
-/* ── 5. GLOBAL CONTROLS ───────────────────────────────────── */
+/* â”€â”€ 5. GLOBAL CONTROLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #globalToggleRow { margin-bottom: 8px !important; }
 #globalToggleRow label { padding: 7px 10px !important; gap: 7px !important; }
 #globalToggleRow span { font-size: 0.56rem !important; }
 
-/* Filter pills — scrollable row, no wrap */
+/* Filter pills â€” scrollable row, no wrap */
 .filter-pill {
   font-size: 0.7rem !important;
   padding: 6px 10px !important;
@@ -163,7 +164,7 @@ body.tab-manual-active {
   font-size: 0.95rem !important;
 }
 
-/* ── 6. HERO GRID ─────────────────────────────────────────── */
+/* â”€â”€ 6. HERO GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #generatorHeroes, #availableHeroes {
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 5px !important;
@@ -240,7 +241,7 @@ body.tab-manual-active {
 .paid-badge--card .paid-gem-svg { width: 8px !important; height: 8px !important; }
 .paid-badge-text { font-size: 0.4rem !important; }
 
-/* ── 7. STICKY COMBO FOOTER (Manual Builder) ──────────────── */
+/* â”€â”€ 7. STICKY COMBO FOOTER (Manual Builder) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #comboFooterBar {
   position: fixed !important;
   bottom: 0 !important;
@@ -276,7 +277,7 @@ body.tab-manual-active {
   touch-action: manipulation;
 }
 
-/* ── 8. GENERATOR BUTTONS ─────────────────────────────────── */
+/* â”€â”€ 8. GENERATOR BUTTONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #generateCombosBtn, #generateRandomBtn, #downloadGeneratorBtn {
   display: block;
   width: 100%;
@@ -302,7 +303,7 @@ body.tab-manual-active {
   box-shadow: 0 3px 14px rgba(139,92,246,0.28);
 }
 
-/* ── 9. SAVED / GENERATED COMBOS ─────────────────────────── */
+/* â”€â”€ 9. SAVED / GENERATED COMBOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .saved-combo-display {
   padding: 10px 10px 10px 50px !important;
   margin: 5px 0 !important;
@@ -357,7 +358,7 @@ body.tab-manual-active {
   height: 72px !important;
 }
 
-/* ── 10. HERO ATLAS TAB ───────────────────────────────────── */
+/* â”€â”€ 10. HERO ATLAS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #heroesSection,
 #heroesTabContent,
 .heroes-tab-inner,
@@ -378,7 +379,7 @@ body.tab-manual-active {
   gap: 5px !important;
 }
 
-/* Season + filter pill rows — horizontal scroll */
+/* Season + filter pill rows â€” horizontal scroll */
 .heroes-season-tabs,
 .heroes-filter-pills {
   display: flex !important;
@@ -418,7 +419,7 @@ body.tab-manual-active {
   border: 1.5px solid rgba(99,102,241,0.3) !important;
 }
 
-/* Ranking list — constrained scroll */
+/* Ranking list â€” constrained scroll */
 .heroes-layout:not(.has-detail) .heroes-ranking-list {
   width: 100% !important;
   max-width: 100% !important;
@@ -508,7 +509,7 @@ body.tab-manual-active {
   padding: 6px !important;
 }
 
-/* ── 11. RESEARCH TAB ─────────────────────────────────────── */
+/* â”€â”€ 11. RESEARCH TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #researchSection,
 .research-control-deck,
 .research-list {
@@ -567,7 +568,7 @@ body.tab-manual-active {
 .research-page-tab { font-size: 0.54rem !important; padding: 5px 8px !important; min-height: 30px; }
 .research-game-title { font-size: 0.85rem !important; }
 
-/* Research card grid — 3 cols on mobile */
+/* Research card grid â€” 3 cols on mobile */
 .research-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 6px !important;
@@ -623,22 +624,23 @@ body.tab-manual-active {
 }
 #totalTechCost span img { width: 13px !important; height: 13px !important; }
 
-/* ── 12. EDEN MAP TAB ─────────────────────────────────────── */
+/* â”€â”€ 12. EDEN MAP TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .eden-map-root { gap: 5px !important; }
 .eden-map-header > div:first-child h2 { font-size: 1.1rem !important; letter-spacing: 0.07em !important; }
 .eden-map-header > div:first-child p { font-size: 0.7rem !important; line-height: 1.3 !important; }
 .eden-map-body { flex-direction: column !important; gap: 0 !important; }
 
-/* Canvas — fill available width, fixed min height */
+/* Canvas â€” fill available width, fixed min height */
 .eden-canvas-wrap {
   min-height: min(50vh, 380px) !important;
   touch-action: none;
   -webkit-user-select: none;
-  user-select: none;
+  -moz-user-select: none;
+       user-select: none;
 }
 #edenMapCanvas { min-height: min(50vh, 380px) !important; }
 
-/* All toolbars — horizontal scroll, no wrap */
+/* All toolbars â€” horizontal scroll, no wrap */
 .eden-control-deck { gap: 5px !important; }
 .eden-deck-row,
 .eden-toolbar-primary,
@@ -705,7 +707,7 @@ body.tab-manual-active {
 .eden-plans-body { padding: 7px 9px 9px !important; flex-wrap: nowrap !important; overflow-x: auto !important; }
 .eden-path-tools.eden-path-tools--visible { flex-wrap: nowrap !important; overflow-x: auto !important; }
 
-/* Sidebar — bottom sheet */
+/* Sidebar â€” bottom sheet */
 .eden-sidebar {
   position: fixed !important;
   left: 0; right: 0; bottom: 0;
@@ -808,7 +810,7 @@ body.tab-manual-active {
 .eden-guide-nav-row { flex-direction: column; gap: 4px; }
 .eden-guide-nav-btn { width: 100%; text-align: center; min-height: var(--tap-min); }
 
-/* ── 13. LOYALTY / EDEN LOYALTY TAB ──────────────────────── */
+/* â”€â”€ 13. LOYALTY / EDEN LOYALTY TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .loyalty-title { font-size: 1.1rem !important; }
 .loyalty-desc { font-size: 0.7rem !important; }
 .loyalty-header { gap: 8px !important; margin-bottom: 0.6rem !important; }
@@ -827,7 +829,7 @@ body.tab-manual-active {
 .loyalty-result-value { font-size: 0.96rem !important; }
 .loyalty-step-card-grid { gap: 5px 7px !important; }
 
-/* ── 14. VTS ADMIN / OCR TAB ──────────────────────────────── */
+/* â”€â”€ 14. VTS ADMIN / OCR TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* Already covered by app.css @640px block.
    Add any gap-fills here: */
 #ocrDashboardRoot .dash-main-grid[style*="1.2fr"] {
@@ -843,7 +845,7 @@ body.tab-manual-active {
   padding: 1.15rem;
 }
 
-/* ── 15. YOUTUBE TAB ──────────────────────────────────────── */
+/* â”€â”€ 15. YOUTUBE TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #youtubeSection h2 { font-size: 0.92rem !important; letter-spacing: 0.05em !important; }
 #youtubeSection .mb-8, #youtubeSection > div {
   padding: 10px !important;
@@ -852,7 +854,7 @@ body.tab-manual-active {
 }
 #youtubeSection a { font-size: 0.6rem !important; padding: 5px 9px !important; }
 
-/* ── 16. COMMENTS SECTION ─────────────────────────────────── */
+/* â”€â”€ 16. COMMENTS SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #commentsSection { margin-top: 14px !important; border-radius: 12px !important; }
 #commentsSection h2 { font-size: 0.8rem !important; }
 #commentForm textarea, #commentForm input { font-size: 0.78rem !important; min-height: 38px; }
@@ -860,7 +862,7 @@ body.tab-manual-active {
 .comment-avatar { width: 28px !important; height: 28px !important; min-width: 28px !important; font-size: 0.82rem !important; }
 .replies-container { margin-left: 0.75rem !important; padding-left: 0.6rem !important; }
 
-/* ── 17. UI UTILITIES ─────────────────────────────────────── */
+/* â”€â”€ 17. UI UTILITIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* Scroll-to-top button */
 #scrollTopBtn {
   bottom: calc(5rem + var(--safe-bottom)) !important;
@@ -891,7 +893,7 @@ body.tab-manual-active {
 .heroes-tab-header h2 { font-size: 1.1rem !important; }
 .heroes-tab-header p { font-size: 0.72rem !important; }
 
-/* ── 18. MICRO-INTERACTIONS ───────────────────────────────── */
+/* â”€â”€ 18. MICRO-INTERACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* Spring feedback on all tappable elements */
 .tab-pill:active,
 .filter-pill:active,
@@ -906,14 +908,14 @@ button:not([disabled]):active,
   transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-/* Generator/combo action buttons — bigger spring */
+/* Generator/combo action buttons â€” bigger spring */
 #generateCombosBtn:active,
 #generateRandomBtn:active,
 #downloadGeneratorBtn:active {
   transform: scale(0.97) !important;
 }
 
-/* ── 19. LIGHT THEME OVERRIDES ────────────────────────────── */
+/* â”€â”€ 19. LIGHT THEME OVERRIDES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="light"] #tabNavScroll {
   background: rgba(248,250,252,0.9) !important;
   border-color: rgba(0,0,0,0.06) !important;
@@ -929,7 +931,7 @@ button:not([disabled]):active,
   box-shadow: 0 4px 18px rgba(0,0,0,0.12) !important;
 }
 
-/* ── 20. NARROW PHONE BREAKPOINTS ────────────────────────── */
+/* â”€â”€ 20. NARROW PHONE BREAKPOINTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 480px) {
   /* 3 columns for very small phones */
   #generatorHeroes, #availableHeroes {
@@ -947,7 +949,7 @@ button:not([disabled]):active,
 }
 
 @media (max-width: 360px) {
-  /* Extreme small — Galaxy S22 Ultra min width */
+  /* Extreme small â€” Galaxy S22 Ultra min width */
   #appTitle { font-size: 1.35rem !important; }
   .tab-pill { font-size: 0.58rem !important; padding: 0.35rem 0.42rem !important; }
   #generatorHeroes, #availableHeroes {
@@ -992,7 +994,8 @@ button:not([disabled]):active,
 
   .command-logo {
     grid-template-columns: 58px minmax(0, 1fr) !important;
-    column-gap: 10px !important;
+    -moz-column-gap: 10px !important;
+         column-gap: 10px !important;
   }
 
   .command-logo .main-logo {
@@ -1180,7 +1183,8 @@ button:not([disabled]):active,
 
 .command-logo {
   grid-template-columns: 54px minmax(0, 1fr) !important;
-  column-gap: 9px !important;
+  -moz-column-gap: 9px !important;
+       column-gap: 9px !important;
 }
 
 .command-logo .main-logo {
