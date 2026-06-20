@@ -28,6 +28,21 @@ test('counter lookup is order-independent and returns defensive copies', () => {
   );
 });
 
+test('duel screenshot counters include Arthur and Octavius skin-meta paths', () => {
+  assert.ok(
+    getCountersForCombo(['King Arthur', 'Rozen Blade', 'Theodora']).some(counter =>
+      comboKey(counter.heroes) === comboKey(['Octavius', 'Rozen Blade', 'Caesar']) &&
+      counter.confidence === 'Duel screenshot'
+    )
+  );
+  assert.ok(
+    getCountersForCombo(['Octavius', 'Rozen Blade', 'Caesar']).some(counter =>
+      comboKey(counter.heroes) === comboKey(['Immortal Guardian', 'Ramses II', 'Beowulf']) &&
+      counter.confidence === 'Duel screenshot'
+    )
+  );
+});
+
 test('counter normalization supports arrays and annotated objects', () => {
   assert.deepEqual(normalizeCounter(['A', 'B', 'C']), {
     heroes: ['A', 'B', 'C'],

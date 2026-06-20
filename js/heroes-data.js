@@ -67,7 +67,7 @@ export const allHeroesData = [
   { name: 'Spectral Reaper', season: 'X2', Type:'Archers', State:'Free', imageUrl: 'https://i.ibb.co/ZzRqFXCH/image-2026-06-09-133028179.png' },
   { name: 'Valkyrie',        season: 'X2', Type:'Footmen', State:'Free', imageUrl: 'https://i.ibb.co/8D8WG7My/image-2026-06-09-133104902.png' },
 
-  { name: 'Ragnar', season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
+  { name: 'Reinforced Ragnar', season: 'X1', Type:'All', State:'Free', releaseSeason:'X1', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
 
   { name: 'Bjorn',             season: 'X8', Type:'Cavalry', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/bjorn.avif?v=20260620_11' },
   { name: 'Skanda',            season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X4', imageUrl: 'images/heroes/catchup/skanda.png?v=20260620_10' },
@@ -79,5 +79,6 @@ export const allHeroesData = [
   { name: 'Scarlet Reaver',    season: 'X8', Type:'All', State:'Free', releaseSeason:'X7', imageUrl: 'images/heroes/catchup/scarlet-reaver.avif?v=20260620_11' },
   { name: 'Rainforest Ranger', season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/rainforest-ranger.avif?v=20260620_11' },
   { name: 'Fortuneteller',     season: 'X8', Type:'Footmen', State:'Free', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/fortuneteller.avif?v=20260620_11' },
+  { name: 'Ragnar',            season: 'X8', Type:'All', State:'Paid', releaseSeason:'X8', imageUrl: 'images/heroes/catchup/ragnar-demon-lord.avif?v=20260620_11' },
   { name: 'Cyrus',             season: 'X8', Type:'Cavalry', State:'Paid', releaseSeason:'SP', imageUrl: 'images/heroes/catchup/cyrus.avif?v=20260620_11' }
 ];

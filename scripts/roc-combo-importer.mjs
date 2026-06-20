@@ -27,6 +27,9 @@ export const DEFAULT_HERO_ALIASES = {
   BEWULF: 'Beowulf',
   BEOWULF: 'Beowulf',
   RAGNAR: 'Ragnar',
+  REINFORCEDRAGNAR: 'Reinforced Ragnar',
+  REINFORCEDRANGER: 'Reinforced Ragnar',
+  RAGNARREINFORCED: 'Reinforced Ragnar',
   RAGNARDEMONLORD: 'Ragnar',
   RAGNARTHEDEMONLORD: 'Ragnar',
   RAGNARTHEDEMONSLORD: 'Ragnar',
@@ -138,7 +141,7 @@ export function convertSkinFlagsToCode(flags) {
   if (!Array.isArray(flags)) return '';
   const code = flags
     .slice(0, 3)
-    .map((flag) => (flag ? '2' : '0'))
+    .map((flag) => (flag ? '2' : '1'))
     .join('');
   return code.includes('2') ? code : '';
 }

@@ -23,6 +23,7 @@ const fixtureHeroes = [
   { name: 'Beowulf' },
   { name: 'Charles the Great' },
   { name: 'Rokuboshuten' },
+  { name: 'Reinforced Ragnar' },
 ];
 
 test('external hero names resolve through normalized names and aliases', () => {
@@ -34,6 +35,7 @@ test('external hero names resolve through normalized names and aliases', () => {
   assert.equal(resolveHero('JADEEAGLE'), 'Jade Eagle');
   assert.equal(resolveHero('CHARLES'), 'Charles the Great');
   assert.equal(resolveHero('ROKU'), 'Rokuboshuten');
+  assert.equal(resolveHero('REINFORCED RAGNAR'), 'Reinforced Ragnar');
   assert.equal(resolveHero('Cleopatra VII'), 'Cleopatra VII');
   assert.equal(resolveHero('MISSING HERO'), null);
 });
@@ -55,7 +57,7 @@ test('season normalization keeps only S0-X8 supported buckets', () => {
 });
 
 test('skin flags become recommended-only slot codes', () => {
-  assert.equal(convertSkinFlagsToCode([true, false, true]), '202');
+  assert.equal(convertSkinFlagsToCode([true, false, true]), '212');
   assert.equal(convertSkinFlagsToCode([true, true, true]), '222');
   assert.equal(convertSkinFlagsToCode([false, false, false]), '');
   assert.equal(convertSkinFlagsToCode(null), '');
@@ -88,7 +90,7 @@ test('external combo normalization accepts fully mapped S0-X8 records', () => {
   assert.equal(result.ok, true);
   assert.deepEqual(result.combo.heroes, ['King Arthur', 'Cleopatra VII', 'Theodora']);
   assert.equal(result.combo.season, 'X8');
-  assert.equal(result.combo.skin, '202');
+  assert.equal(result.combo.skin, '212');
   assert.equal(result.combo.duplicate.exactRank, 1);
 });
 

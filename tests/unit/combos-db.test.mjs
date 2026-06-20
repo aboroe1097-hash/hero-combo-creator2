@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { scoreComboByRank, selectNonOverlappingCombos } from '../../js/combos-db.js';
+import {
+  comboMeetsSkinRequirements,
+  filterCombosForSkinMode,
+  getComboSkinRequirements,
+  scoreComboByRank,
+  selectNonOverlappingCombos,
+} from '../../js/combos-db.js';
 
 test('combo rank scoring maps first to 100 and last to 1', () => {
   assert.equal(scoreComboByRank(0, 3), '100.0');
@@ -31,4 +37,29 @@ test('non-overlap selection respects the result limit', () => {
     selectNonOverlappingCombos(combos, new Set(['A', 'B', 'C', 'D', 'E', 'F']), 1).length,
     1
   );
+});
+
+test('skin codes use 3 as must, 2 as recommended, and 1 as optional', () => {
+  const combo = { heroes: ['A', 'B', 'C'], skin: '321' };
+
+  assert.deepEqual(
+    getComboSkinRequirements(combo).map(({ code, requirement }) => ({ code, requirement })),
+    [
+      { code: '3', requirement: 'must' },
+      { code: '2', requirement: 'recommended' },
+      { code: '1', requirement: 'optional' },
+    ]
+  );
+  assert.equal(comboMeetsSkinRequirements(combo, hero => hero === 'A'), true);
+  assert.equal(comboMeetsSkinRequirements(combo, hero => hero === 'B'), false);
+});
+
+test('missing skin metadata and 111 behave like normal combos', () => {
+  const combos = [
+    { heroes: ['A', 'B', 'C'] },
+    { heroes: ['D', 'E', 'F'], skin: '111' },
+    { heroes: ['G', 'H', 'I'], skin: '333' },
+  ];
+
+  assert.deepEqual(filterCombosForSkinMode(combos, false), combos.slice(0, 2));
 });

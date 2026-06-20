@@ -5,7 +5,7 @@
 /**
  * @typedef {Object} ComboEntry
  * @property {string[]} heroes - The three hero names in the combo ordered by [Front, Middle, Back].
- * @property {string=} skin - Optional skin requirement code per slot. 1=must, 2=recommended, 3=optional.
+ * @property {string=} skin - Optional skin requirement code per slot. 3=must, 2=recommended, 1=optional.
  */
 
 /**
@@ -14,15 +14,58 @@
  */
 export const rankedCombos = [
   // --- SKIN MODE RANK OVERRIDES ---
-  // skin code slots: 1 = must own skin, 2 = recommended skin, 3 = optional skin.
-  { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '111', note: 'S0-S1 top combo when all three skins are owned.' },
-  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"], skin: '331', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
-  { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"], skin: '123', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
-  { heroes: ["Octavius", "Rozen Blade", "Caesar"], skin: '212', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
+  // skin code slots: 3 = must own skin, 2 = recommended skin, 1 = optional skin.
+  // Missing skin metadata behaves like 111, so the combo keeps its normal rank with or without skins.
+  { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '333', note: 'S0-S1 top combo when all three skins are owned.' },
+  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"], skin: '113', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
+  { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"], skin: '321', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
+  { heroes: ["Octavius", "Rozen Blade", "Caesar"], skin: '232', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
+
+  // --- ROC SKIN-DERIVED RANK OVERRIDES ---
+  // Curated from the public ROC skin/no-skin tables. Unknown local skin slots are kept as 1.
+  { heroes: ["Lancelot", "Cyrus", "Theodora"], skin: '113', season: 'X8', rocSkinRank: 55 },
+  { heroes: ["Ramses II", "Bleeding Steed", "Beowulf"], skin: '333', season: 'X2', rocSkinRank: 59 },
+  { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"], skin: '333', season: 'X1', rocSkinRank: 61 },
+  { heroes: ["Boudica", "Jade Eagle", "Ramses II"], skin: '122', season: 'X2', rocSkinRank: 68, rocNoSkinRank: 74 },
+  { heroes: ["The Brave", "Ramses II", "Beowulf"], skin: '133', season: 'X8', rocSkinRank: 72 },
+  { heroes: ["Boudica", "Sakura", "Jade Eagle"], skin: '112', season: 'X8', rocSkinRank: 73, rocNoSkinRank: 79 },
+  { heroes: ["Boudica", "Al Fatih", "Ramses II"], skin: '133', season: 'X2', rocSkinRank: 77, rocNoSkinRank: 98 },
+  { heroes: ["Theodora", "Cleopatra VII", "Caesar"], skin: '333', season: 'X1', rocSkinRank: 78 },
+  { heroes: ["Ramses II", "Immortal Guardian", "Witch Hunter"], skin: '331', season: 'X1', rocSkinRank: 78, rocNoSkinRank: 97 },
+  { heroes: ["Cleopatra VII", "Ramses II", "Jade Eagle"], skin: '322', season: 'X1', rocSkinRank: 80, rocNoSkinRank: 88 },
+  { heroes: ["The Brave", "Jeanne d'Arc", "The Avalanche"], skin: '131', season: 'X8', rocSkinRank: 85, rocNoSkinRank: 94 },
+  { heroes: ["King Arthur", "Theodora", "Alexander"], skin: '331', season: 'X8', rocSkinRank: 86, rocNoSkinRank: 130 },
+  { heroes: ["Sakura", "ELK", "Jade Eagle"], skin: '113', season: 'X8', rocSkinRank: 95, rocNoSkinRank: 117 },
+  { heroes: ["Alexander", "Theodora", "Cleopatra VII"], skin: '132', season: 'X8', rocSkinRank: 102, rocNoSkinRank: 110 },
+  { heroes: ["King Arthur", "Bleeding Steed", "Alexander"], skin: '331', season: 'X8', rocSkinRank: 108, rocNoSkinRank: 128 },
+  { heroes: ["Alexander", "Bleeding Steed", "Theodora"], skin: '132', season: 'X8', rocSkinRank: 109, rocNoSkinRank: 119 },
+  { heroes: ["Ramses II", "Al Fatih", "Sakura"], skin: '221', season: 'X8', rocSkinRank: 110, rocNoSkinRank: 115 },
+  { heroes: ["Hunk", "Boudica", "Ramses II"], skin: '113', season: 'X2', rocSkinRank: 112 },
+  { heroes: ["Boudica", "Cleopatra VII", "Al Fatih"], skin: '122', season: 'X2', rocSkinRank: 114, rocNoSkinRank: 121 },
+  { heroes: ["Hunk", "Cleopatra VII", "Caesar"], skin: '133', season: 'X2', rocSkinRank: 115 },
+  { heroes: ["Defender", "Ramses II", "Al Fatih"], skin: '122', season: 'X8', rocSkinRank: 116, rocNoSkinRank: 122 },
+  { heroes: ["Hunk", "Cleopatra VII", "Alexander"], skin: '131', season: 'X8', rocSkinRank: 118, rocNoSkinRank: 133 },
+  { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"], skin: '322', season: 'X1', rocSkinRank: 122, rocNoSkinRank: 134 },
+  { heroes: ["Theodora", "Ramses II", "Jade Eagle"], skin: '333', season: 'X1', rocSkinRank: 122 },
+  { heroes: ["Sky Breaker", "Ramses II", "Al Fatih"], skin: '222', season: 'S4', rocSkinRank: 122, rocNoSkinRank: 129 },
+  { heroes: ["The Brave", "Ramses II", "Jade Eagle"], skin: '133', season: 'X1', rocSkinRank: 123 },
+  { heroes: ["Hunk", "Bleeding Steed", "Alexander"], skin: '131', season: 'X8', rocSkinRank: 125, rocNoSkinRank: 135 },
+  { heroes: ["Charles the Great", "Ramses II", "Al Fatih"], skin: '222', season: 'S3', rocSkinRank: 126, rocNoSkinRank: 133 },
 
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
   { heroes: ["King Arthur","Theodora", "Alexander"] },
   { heroes: ["King Arthur","Cleopatra VII","Alexander"] },
+
+  // --- X8 Catch-up / Imported Audit Candidates ---
+  { heroes: ["Alexander", "Ragnar", "Theodora"], season: 'X8' },
+  { heroes: ["Warden", "Ramses II", "Beowulf"], season: 'X8' },
+  { heroes: ["Cyrus", "Lancelot", "Caesar"], season: 'X8' },
+  { heroes: ["Lancelot", "Cyrus", "Theodora"], season: 'X8' },
+  { heroes: ["Hunk", "Boudica", "Sakura"], season: 'X8' },
+  { heroes: ["Hunk", "Cleopatra VII", "Alexander"], season: 'X8' },
+  { heroes: ["Lawman", "Lancelot", "Warhammer"], season: 'X8' },
+  { heroes: ["Lawman", "Cleopatra VII", "Warhammer"], season: 'X8' },
+  { heroes: ["Theodora", "Warhammer", "Alexander"], season: 'X8' },
   
   // --- TIER 1: TOP GARRISON META (S4 Focus) ---
   { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"] },
@@ -71,7 +114,7 @@ export const rankedCombos = [
   { heroes: ["Lawman", "Lionheart", "The Avalanche"] },
   { heroes: ["The Brave", "Army Breaker", "The Avalanche"] },
   { heroes: ["Black Prince", "Jeanne d'Arc", "The Avalanche"] },
-  
+
   { heroes: ["Theodora", "Bleeding Steed", "Jade Eagle"] },
   { heroes: ["The Brave", "Ramses II", "Jade Eagle"] },
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] },
@@ -207,24 +250,33 @@ export function scoreComboByRank(index, total) {
 }
 
 export const SKIN_SLOT_REQUIREMENTS = {
-  1: 'must',
+  1: 'optional',
   2: 'recommended',
-  3: 'optional',
+  3: 'must',
 };
 
-export function getComboSkinRequirements(combo) {
+function normalizeComboSkinCode(combo) {
   const code = String(combo?.skin || '').trim();
-  if (!code) return [];
+  if (!code) return '111';
+  return code.padEnd(3, '1').slice(0, 3);
+}
+
+function hasSkinRankOverride(combo) {
+  return /[23]/.test(normalizeComboSkinCode(combo));
+}
+
+export function getComboSkinRequirements(combo) {
+  const code = normalizeComboSkinCode(combo);
   return (combo.heroes || []).map((hero, index) => ({
     hero,
     slot: index,
-    code: code[index] || '',
+    code: code[index] || '1',
     requirement: SKIN_SLOT_REQUIREMENTS[code[index]] || 'none',
   }));
 }
 
 export function comboMeetsSkinRequirements(combo, ownsSkin) {
-  if (!combo?.skin) return true;
+  if (!hasSkinRankOverride(combo)) return true;
   if (typeof ownsSkin !== 'function') return false;
   return getComboSkinRequirements(combo)
     .filter(item => item.requirement === 'must')
@@ -233,7 +285,7 @@ export function comboMeetsSkinRequirements(combo, ownsSkin) {
 
 export function filterCombosForSkinMode(combos, skinMode, ownsSkin) {
   return (combos || []).filter(combo => {
-    if (!combo?.skin) return true;
+    if (!hasSkinRankOverride(combo)) return true;
     if (!skinMode) return false;
     return comboMeetsSkinRequirements(combo, ownsSkin);
   });

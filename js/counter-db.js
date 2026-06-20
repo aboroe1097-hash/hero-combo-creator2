@@ -18,7 +18,7 @@ export const COMBO_COUNTERS = [
   {
     target: ['Immortal Guardian', 'Ramses II', 'Beowulf'],
     counters: [
-      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines' },
+      { heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'], reason: 'Arthur sustain and pressure are favored into Ramses + Beowulf lines', confidence: 'Duel screenshot' },
       ['King Arthur', 'Cleopatra VII', 'Alexander'],
       ['King Arthur', 'Theodora', 'Alexander'],
       ['Defender', 'Tarantula', 'Sakura'],
@@ -29,8 +29,15 @@ export const COMBO_COUNTERS = [
   {
     target: ['King Arthur', 'Cleopatra VII', 'Theodora'],
     counters: [
-      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar is favored into King Arthur sustain lines' },
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Duel report shows this cavalry line winning into the Arthur/Cleo/Theodora sustain core', confidence: 'Duel screenshot' },
       ['Lawman', 'Defender', 'The Avalanche'],
+    ],
+  },
+  {
+    target: ['King Arthur', 'Rozen Blade', 'Theodora'],
+    counters: [
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Duel report shows Octavius/Rozen/Caesar beating the Arthur/Rozen/Theodora variant', confidence: 'Duel screenshot' },
+      ['Immortal Guardian', 'Ramses II', 'Beowulf'],
     ],
   },
   {
@@ -108,7 +115,7 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Rozen Blade', 'Caesar'],
     counters: [
-      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar' },
+      { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar', confidence: 'Duel screenshot' },
       ['Hunk', 'Ramses II', 'Beowulf'],
       ['Bleeding Steed', 'Ramses II', 'Beowulf'],
       ['Rozen Blade', 'Ramses II', 'Beowulf'],
