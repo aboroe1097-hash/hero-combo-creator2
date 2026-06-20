@@ -730,6 +730,18 @@ section.tab-panel:not(.hidden) {
 .generator-card.skin-mode-card {
   cursor:pointer;
 }
+.generated-skin-overlay-note {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  background: rgba(245, 158, 11, 0.09);
+  color: #fde68a;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
 .generator-card.skin-animated-portrait img {
   animation:skin-portrait-breathe 3.25s ease-in-out infinite;
   transform-origin:center 58%;
@@ -9802,7 +9814,7 @@ body.hide-hero-info #heroTooltip {
   }
 }
 
-/* Primary tabs: keep tablet/desktop as one clean row with safe edge scroll. */
+/* Primary tabs: center the desktop tool rail while keeping safe edge scroll. */
 .tool-nav-inner {
   overflow: hidden;
 }
@@ -9810,8 +9822,8 @@ body.hide-hero-info #heroTooltip {
 #tabNavScroll {
   overflow-x: auto !important;
   overflow-y: visible !important;
-  justify-content: flex-start !important;
-  width: 100% !important;
+  justify-content: center !important;
+  width: auto !important;
   max-width: 100% !important;
   padding: 0.18rem 0.7rem !important;
   scroll-padding-inline: 0.7rem;
@@ -9828,7 +9840,8 @@ body.hide-hero-info #heroTooltip {
 
 @media (min-width: 769px) {
   .tool-nav-inner {
-    justify-content: flex-start;
+    display: flex;
+    justify-content: center;
   }
 
   #tabNavScroll {

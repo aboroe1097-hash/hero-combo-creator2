@@ -2,7 +2,7 @@ import { escapeHtml } from './utils.js';
 // Extracted Hero Tooltip Module
 import { allHeroesData } from './heroes-data.js';
 import { heroInfoEnabled, getTroopColorClass, getLocalizedTroop, getHeroImageUrl } from './state.js';
-import { rankedCombos } from './combos-db.js';
+import { baseRankedCombos } from './combos-db.js';
 
 let heroTooltip = null;
 let heroInfoPromise = null;
@@ -43,7 +43,7 @@ function formatSkillText(text = '') {
 }
 
 function getSynergies(heroName) {
-  const containingCombos = rankedCombos.filter(c => c?.heroes?.includes(heroName));
+  const containingCombos = baseRankedCombos.filter(c => c?.heroes?.includes(heroName));
   const top5 = containingCombos.slice(0, 5);
   if (top5.length === 0) return [];
 

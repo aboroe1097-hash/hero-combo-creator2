@@ -1,7 +1,7 @@
 import { escapeHtml } from './utils.js';
 // js/app-generator.js
 import { translations } from './translations.js';
-import { rankedCombos, selectNonOverlappingCombos } from './combos-db.js';
+import { rankedCombos, filterCombosForSkinMode, getComboSkinRequirements, selectNonOverlappingCombos } from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import {
@@ -355,6 +355,17 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     `;
     card.appendChild(slots);
 
+    if (combo.note) {
+      const skinNote = document.createElement('div');
+      skinNote.className = 'generated-skin-overlay-note';
+      const skinRequirements = getComboSkinRequirements(combo)
+        .filter(item => item.requirement && item.requirement !== 'none')
+        .map(item => `${item.hero}: ${item.requirement}`)
+        .join(' | ');
+      skinNote.textContent = skinRequirements ? `${combo.note} (${skinRequirements})` : combo.note;
+      card.appendChild(skinNote);
+    }
+
     const scoreBox = document.createElement('div');
     scoreBox.className = 'gen-score-panel';
     const counterCount = getCounterCount(combo.heroes);
@@ -396,7 +407,8 @@ export function generateBestCombos() {
   const startedAt = performance.now();
 
   try {
-    const finalSelection = selectNonOverlappingCombos(rankedCombos, selected, 5);
+    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, isGeneratorSkinOwned);
+    const finalSelection = selectNonOverlappingCombos(sourceCombos, selected, 5);
 
     const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
     lastGeneratedCombos.length = 0;
@@ -431,9 +443,10 @@ export function generateRandomCombos() {
 
   try {
     const ownedSet = new Set(selected);
-    const total = rankedCombos.length;
+    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, isGeneratorSkinOwned);
+    const total = sourceCombos.length;
 
-    const validCombos = rankedCombos
+    const validCombos = sourceCombos
       .map((combo, index) => {
           let rawScore = 100;
           if (total > 1) {

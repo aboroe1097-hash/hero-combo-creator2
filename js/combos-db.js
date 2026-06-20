@@ -5,6 +5,7 @@
 /**
  * @typedef {Object} ComboEntry
  * @property {string[]} heroes - The three hero names in the combo ordered by [Front, Middle, Back].
+ * @property {string=} skin - Optional skin requirement code per slot. 1=must, 2=recommended, 3=optional.
  */
 
 /**
@@ -12,6 +13,13 @@
  * @type {ComboEntry[]}
  */
 export const rankedCombos = [
+  // --- SKIN MODE RANK OVERRIDES ---
+  // skin code slots: 1 = must own skin, 2 = recommended skin, 3 = optional skin.
+  { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '111', note: 'S0-S1 top combo when all three skins are owned.' },
+  { heroes: ["King Arthur", "Cleopatra VII", "Theodora"], skin: '331', note: 'S0-X1 top combo when Theodora skin is owned. Arthur and Cleopatra skins are optional bonuses.' },
+  { heroes: ["Immortal Guardian", "Ramses II", "Beowulf"], skin: '123', note: 'Immortal Guardian skin is required. Ramses II is recommended; Beowulf is optional.' },
+  { heroes: ["Octavius", "Rozen Blade", "Caesar"], skin: '212', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
+
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
   { heroes: ["King Arthur","Theodora", "Alexander"] },
   { heroes: ["King Arthur","Cleopatra VII","Alexander"] },
@@ -197,6 +205,41 @@ export function scoreComboByRank(index, total) {
   if (total <= 1) return '100.0';
   return (100 - ((index / (total - 1)) * 99)).toFixed(1);
 }
+
+export const SKIN_SLOT_REQUIREMENTS = {
+  1: 'must',
+  2: 'recommended',
+  3: 'optional',
+};
+
+export function getComboSkinRequirements(combo) {
+  const code = String(combo?.skin || '').trim();
+  if (!code) return [];
+  return (combo.heroes || []).map((hero, index) => ({
+    hero,
+    slot: index,
+    code: code[index] || '',
+    requirement: SKIN_SLOT_REQUIREMENTS[code[index]] || 'none',
+  }));
+}
+
+export function comboMeetsSkinRequirements(combo, ownsSkin) {
+  if (!combo?.skin) return true;
+  if (typeof ownsSkin !== 'function') return false;
+  return getComboSkinRequirements(combo)
+    .filter(item => item.requirement === 'must')
+    .every(item => ownsSkin(item.hero));
+}
+
+export function filterCombosForSkinMode(combos, skinMode, ownsSkin) {
+  return (combos || []).filter(combo => {
+    if (!combo?.skin) return true;
+    if (!skinMode) return false;
+    return comboMeetsSkinRequirements(combo, ownsSkin);
+  });
+}
+
+export const baseRankedCombos = filterCombosForSkinMode(rankedCombos, false);
 
 export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
   const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);

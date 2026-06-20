@@ -2,7 +2,7 @@
 import { translations } from './translations.js';
 import { allHeroesData } from './heroes-data.js';
 import { skinHeroesData } from './skin-heroes-data.js';
-import { rankedCombos } from './combos-db.js';
+import { baseRankedCombos } from './combos-db.js';
 
 // --- APP CONFIG ---
 export const APP_VERSION = '11.0.0';
@@ -222,9 +222,9 @@ export function heroMatchesFilters(hero, seasonsArr, statesArr, typesArr) {
 export function getComboRankInfo(heroes) {
   if (!Array.isArray(heroes) || heroes.length !== 3) return null;
   const userSorted = [...heroes].slice().sort();
-  const total = rankedCombos.length;
+  const total = baseRankedCombos.length;
   for (let i = 0; i < total; i++) {
-    const combo = rankedCombos[i];
+    const combo = baseRankedCombos[i];
     if (!combo.heroes || combo.heroes.length !== 3) continue;
     const comboSorted = [...combo.heroes].slice().sort();
     if (

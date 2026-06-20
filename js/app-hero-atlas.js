@@ -1,7 +1,7 @@
 
 import { currentLanguage, selectedSeasons, db, seasonColors, HERO_ATLAS_ALL_SEASONS, paidIconHtml, heroesSection, getTroopColorClass, getLocalizedTroop, getHeroImageUrl, getComboRankInfo, getCounterLabels } from './state.js';
 import { translations } from './translations.js';
-import { rankedCombos } from './combos-db.js';
+import { baseRankedCombos } from './combos-db.js';
 import { heroesExtendedData } from './heroes-info.js';
 import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
@@ -130,7 +130,7 @@ function comboFitsHeroSeasonScope(combo, anchorHeroName, selectedSeasons, scope)
 
 function getHeroAtlasCombos(heroName, state, limit = 5) {
   const scope = state.comboScope || 'season-capped';
-  const eligible = rankedCombos.filter(c =>
+  const eligible = baseRankedCombos.filter(c =>
     comboFitsHeroSeasonScope(c, heroName, state.seasons, scope),
   );
   const total = eligible.length;
@@ -143,7 +143,7 @@ function getHeroAtlasCombos(heroName, state, limit = 5) {
 
 function getSynergies(heroName, state = _heroesTabState) {
   const scope = state.comboScope || 'season-capped';
-  const containingCombos = rankedCombos.filter(c =>
+  const containingCombos = baseRankedCombos.filter(c =>
     comboFitsHeroSeasonScope(c, heroName, state.seasons, scope),
   );
   const top5 = containingCombos.slice(0, 5);
@@ -165,14 +165,14 @@ function getSynergies(heroName, state = _heroesTabState) {
 
 // ─── HEROES TAB: detail view + auto-ranking ───────────────────────────────────
 function computeHeroRankings() {
-  const total = rankedCombos.length;
+  const total = baseRankedCombos.length;
   const stats = {};
 
   allHeroesData.forEach(hero => {
     stats[hero.name] = { appearances: 0, weightedScore: 0, topComboRank: Infinity };
   });
 
-  rankedCombos.forEach((combo, idx) => {
+  baseRankedCombos.forEach((combo, idx) => {
     const score = total > 1 ? 100 - ((idx / (total - 1)) * 99) : 100;
     (combo.heroes || []).forEach(heroName => {
       const s = stats[heroName];
