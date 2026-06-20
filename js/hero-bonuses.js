@@ -13,4 +13,13 @@ export const heroBonusPoints = {
   'Cleopatra VII': 2,
   'Bleeding Steed': 3,
   'BeastQueen': 3,
+
+  // X8 catch-up Atlas ordering until enough curated X8 combos exist.
+  'Cyrus': 90,
+  'Warhammer': 88,
+  'Warden': 87,
+  'Bjorn': 85,
+  'Ragnar': 83,
+  'Scarlet Reaver': 81,
+  'Skanda': 80,
 };
