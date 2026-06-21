@@ -179,6 +179,58 @@ function renderStageControls(stage) {
   }).join('');
 }
 
+function getMonsterSkills(monster) {
+  return Array.isArray(monster?.skills)
+    ? monster.skills.filter(skill => skill && (skill.name || skill.effect || skill.answer))
+    : [];
+}
+
+function renderMonsterSkill(skill, index) {
+  const meta = [skill.timing, skill.target].filter(Boolean);
+  const tags = Array.isArray(skill.tags) ? skill.tags.filter(Boolean) : [];
+  const effect = skill.effect ? `<p>${escapeHtml(skill.effect)}</p>` : '';
+  const answer = skill.answer
+    ? `<p class="strife-skill-answer"><strong>Answer</strong>${escapeHtml(skill.answer)}</p>`
+    : '';
+
+  return `
+    <article class="strife-skill-card">
+      <div class="strife-skill-head">
+        <span>Skill ${index + 1}</span>
+        <h4>${escapeHtml(skill.name || 'Monster Skill')}</h4>
+      </div>
+      ${meta.length ? `<div class="strife-skill-meta">${meta.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+      <div class="strife-skill-body">
+        ${effect}
+        ${answer}
+      </div>
+      ${tags.length ? `<div class="strife-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+    </article>
+  `;
+}
+
+function renderMonsterSkills(monster) {
+  const skills = getMonsterSkills(monster);
+  const content = skills.length
+    ? skills.map((skill, index) => renderMonsterSkill(skill, index)).join('')
+    : `
+      <div class="strife-skill-empty">
+        <strong>Skill data pending</strong>
+        <span>No skill notes recorded for ${escapeHtml(monster.name)} yet.</span>
+      </div>
+    `;
+
+  return `
+    <section class="strife-results-band strife-skills-band">
+      <div class="strife-section-title">
+        <h3>Monster Skills</h3>
+        <span>${skills.length ? `${skills.length} notes` : 'Pending'}</span>
+      </div>
+      <div class="strife-skill-list">${content}</div>
+    </section>
+  `;
+}
+
 function renderHeroSlot(heroName, position) {
   const hero = HERO_BY_NAME.get(heroName);
   const type = hero?.Type || 'All';
@@ -310,6 +362,7 @@ function renderStrifeTool() {
       </div>
     </section>
 
+    ${renderMonsterSkills(model.monster)}
     ${renderComboSection('Perfect Combination', model.sourceMode === 'manual' ? model.stage : 'Manual table pending', model.perfectCombos, model, STRIFE_TIERS.PERFECT)}
     ${renderComboSection(model.sourceMode === 'manual' ? 'Good Damage' : 'Reusable Combo Candidates', model.sourceMode === 'manual' ? model.stage : 'Same combo can be repeated', model.goodCombos, model, STRIFE_TIERS.GOOD)}
   `;

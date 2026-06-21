@@ -36,3 +36,16 @@ test('comments no longer store email or allow public reads', () => {
   assert.doesNotMatch(comments, /email:/);
   assert.doesNotMatch(comments, /commentEmail/);
 });
+
+test('client error reports are bounded and not publicly readable', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const reporting = readFileSync('js/app-error-reporting.js', 'utf8');
+
+  assert.match(rules, /function validClientError\(\)/);
+  assert.match(rules, /match \/errors\/\{errorId\}/);
+  assert.match(rules, /allow create: if signedIn\(\) && validClientError\(\);/);
+  assert.match(rules, /match \/errors\/\{errorId\}\s*\{\s*allow read, delete: if isAdmin\(\);/);
+  assert.match(rules, /request\.resource\.data\.authorId == request\.auth\.uid/);
+  assert.match(reporting, /authorId:\s*user\.uid/);
+  assert.match(reporting, /remoteReportingDisabled = true/);
+});

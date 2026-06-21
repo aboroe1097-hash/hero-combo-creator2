@@ -47,6 +47,33 @@ service cloud.firestore {
       && request.resource.data.timestamp is timestamp;
     }
 
+    function validClientError() {
+      return request.resource.data.keys().hasOnly([
+        'source', 'error', 'extra', 'path', 'userAgent', 'createdAt', 'authorId', 'receivedAt'
+      ])
+      && request.resource.data.source is string
+      && request.resource.data.source.size() > 0
+      && request.resource.data.source.size() <= 120
+      && request.resource.data.error is map
+      && request.resource.data.error.keys().hasOnly(['name', 'message', 'stack'])
+      && request.resource.data.error.name is string
+      && request.resource.data.error.name.size() <= 120
+      && request.resource.data.error.message is string
+      && request.resource.data.error.message.size() <= 2000
+      && request.resource.data.error.stack is string
+      && request.resource.data.error.stack.size() <= 8000
+      && request.resource.data.extra is map
+      && request.resource.data.extra.keys().size() <= 12
+      && request.resource.data.path is string
+      && request.resource.data.path.size() <= 500
+      && request.resource.data.userAgent is string
+      && request.resource.data.userAgent.size() <= 500
+      && request.resource.data.createdAt is string
+      && request.resource.data.createdAt.size() <= 40
+      && request.resource.data.authorId == request.auth.uid
+      && request.resource.data.receivedAt == request.time;
+    }
+
     function validSharedIntel() {
       return request.resource.data.keys().hasOnly(['guilds', 'status', 'updatedAt', 'updatedBy'])
       && (!('guilds' in request.resource.data) || request.resource.data.guilds is map)
@@ -91,6 +118,12 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isOwner(uid);
       }
+    }
+
+    match /errors/{errorId} {
+      allow read, delete: if isAdmin();
+      allow create: if signedIn() && validClientError();
+      allow update: if false;
     }
 
     match /eden_map/shared_intel {

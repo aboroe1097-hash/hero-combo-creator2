@@ -1028,7 +1028,7 @@ function updateTextContent() {
     'tabLoyalty': t.tabLoyalty,
     'tabYouTube': t.tabYouTube || 'YouTube',
     'tabEdenMap': t.tabEdenMap || 'Eden Map',
-    'tabStrife': t.tabStrife || 'Strife',
+    'tabStrife': t.tabStrife || 'Strife over Dragon',
     'tabHeroes': t.tabHeroes || 'Hero Atlas',
     'tabResearch': t.tabResearch || 'Research',
     'tabOcrDashboard': t.tabOcrDashboard || 'VTS Admin',
@@ -1148,7 +1148,7 @@ function initQuickTour() {
     { selector: '#tabHeroes', title: 'Hero Atlas', body: 'Browse hero ratings, skills, skins, counters, and top ranked pairings.' },
     { selector: '#tabResearch', title: 'Research', body: 'Plan tech upgrades, compare costs, and keep your research path organized.' },
     { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
-    { selector: '#tabStrife', title: 'Strife', body: 'Pick a Strife over Dragon monster and stage to see matchup formations.' },
+    { selector: '#tabStrife', title: 'Strife over Dragon', body: 'Pick a monster and stage to see matchup formations.' },
     { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
     { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' },
     { selector: '#tabOcrDashboard', title: 'VTS Admin', body: 'Open roster, attack analytics, banner records, and admin review tools.' }
