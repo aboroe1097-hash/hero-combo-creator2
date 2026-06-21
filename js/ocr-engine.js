@@ -6,6 +6,7 @@ import {
   tryRepairJson,
   validateTotalDemolition,
   findBestMatch,
+  getProtectedPlayerIdentity,
   getSimilarity,
   getSimilarityAlphaNum,
   formatStructureLabel,
@@ -16,6 +17,15 @@ import {
 import { render } from './ocr-render.js';
 import { saveData } from './ocr-dashboard.js';
 import { getDb } from './firebase.js';
+
+function isSamePlayerForOcrDedup(existing, incoming) {
+  const existingProtected = getProtectedPlayerIdentity(existing?.name);
+  const incomingProtected = getProtectedPlayerIdentity(incoming?.name);
+  if (existingProtected || incomingProtected) {
+    return Boolean(existingProtected && incomingProtected && existingProtected === incomingProtected);
+  }
+  return getSimilarity(existing.name, incoming.name) > 0.8 || getSimilarityAlphaNum(existing.name, incoming.name) > 0.8;
+}
 
 async function processFiles(files) {
   if (state._ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
@@ -239,7 +249,7 @@ function parseOcrResults(results) {
     g.players.forEach(p => {
       if (!p.name || !p.value) return;
       p.value = Number(p.value);
-      const fuzzyMatch = [...pMap.values()].find(v => (getSimilarity(v.name, p.name) > 0.8 || getSimilarityAlphaNum(v.name, p.name) > 0.8) && Math.abs(v.value - p.value) <= 100);
+      const fuzzyMatch = [...pMap.values()].find(v => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100);
       if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
       else if (pMap.get(`${fuzzyMatch.name}_${fuzzyMatch.value}`).value < p.value) {
          pMap.set(`${p.name}_${p.value}`, p);
@@ -276,7 +286,7 @@ function parseOcrResults(results) {
         existing.players.forEach(p => { p.value = Number(p.value); pMap.set(`${p.name}_${p.value}`, p); });
         a.players.forEach(p => {
           p.value = Number(p.value);
-          const fuzzyMatch = [...pMap.values()].find(v => (getSimilarity(v.name, p.name) > 0.8 || getSimilarityAlphaNum(v.name, p.name) > 0.8) && Math.abs(v.value - p.value) <= 100);
+          const fuzzyMatch = [...pMap.values()].find(v => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100);
          if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
        });
        existing.players = [...pMap.values()].sort((x,y) => y.value - x.value);

@@ -165,7 +165,7 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['^Anne^', 'Anne'],
     ['✨ Anne ✨', 'Anne'],
     ['Kika', '꧁ Kika ꧂'],
-    ['≪Kika≫', '꧁ Kika ꧂'],
+    ['≪Kika≫', '꧁༺ Kika ༻꧂'],
     ['✨ Kika ✨', '꧁ Kika ꧂'],
     ['꧁ Kika ꧂', '꧁ Kika ꧂'],
     ['MasterVj~', 'MasterVj'],
@@ -196,6 +196,7 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('MalakAbo'), 'MalakAbo');
   assert.equal(findBestMatch('꧁ Kika ꧂'), '꧁ Kika ꧂');
   assert.equal(findBestMatch('꧁Kika꧂'), '꧁ Kika ꧂');
+  assert.equal(findBestMatch('≪Kika≫'), '꧁༺ Kika ༻꧂');
   assert.equal(findBestMatch('꧁༺ Kika ༻꧂'), '꧁༺ Kika ༻꧂');
   assert.equal(findBestMatch('꧁༺Kika༻꧂'), '꧁༺ Kika ༻꧂');
   assert.equal(findBestMatch('༺ Kika ༻'), '꧁༺ Kika ༻꧂');
@@ -220,10 +221,10 @@ test('Kika reward accounts stay separate in OCR summaries', () => {
         structure_name: 'Gates',
         structure_level: '2',
         players: [
-          { name: '꧁Kika-banner2꧂', value: 4000 },
-          { name: '꧁ Kika ꧂', value: 3000 },
-          { name: '꧁༺ Kika ༻꧂', value: 2000 },
-          { name: '꧁ Kika-banner ꧂', value: 1000 },
+          { name: '꧁Kika-banner2꧂', value: 4003 },
+          { name: '꧁ Kika ꧂', value: 4002 },
+          { name: '꧁༺ Kika ༻꧂', value: 4001 },
+          { name: '꧁ Kika-banner ꧂', value: 4000 },
         ],
       },
     },

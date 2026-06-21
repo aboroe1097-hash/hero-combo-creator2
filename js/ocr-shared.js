@@ -355,6 +355,15 @@ export function editDistance(s1, s2) {
   return costs[s2.length];
 }
 
+export function getProtectedPlayerIdentity(name) {
+  const text = String(name || '').trim();
+  if (!/kika/i.test(text)) return '';
+  if (/banner\s*2/i.test(text)) return '꧁Kika-banner2꧂';
+  if (/banner/i.test(text)) return '꧁ Kika-banner ꧂';
+  if (/[༺༻≪≫]/.test(text)) return '꧁༺ Kika ༻꧂';
+  return '꧁ Kika ꧂';
+}
+
 export function findBestMatch(name, minConfidence = 100) {
   if (!name) return name;
   if (typeof name === 'string') {
@@ -362,6 +371,8 @@ export function findBestMatch(name, minConfidence = 100) {
       name = name.replace(/^[○◎ØODQ]{1,2}/i, '').replace(/[○◎ØODQ]{1,2}$/i, '').trim();
     }
     name = name.replace(/^Н/, 'H');
+    const protectedIdentity = getProtectedPlayerIdentity(name);
+    if (protectedIdentity) return protectedIdentity;
     const aliasMap = {
       'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy', '키키 kimmy': '키미 kimmy',
       'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
