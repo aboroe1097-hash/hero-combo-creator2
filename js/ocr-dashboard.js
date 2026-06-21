@@ -10,7 +10,7 @@ import {
 } from './ocr-roster.js';
 
 import { render, showModal, closeModal } from './ocr-render.js';
-import { processFiles, normalizeStructureName, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
+import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
@@ -21,7 +21,8 @@ import {
   LOG_KEY, AUTH_HASH, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
-  validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest
+  validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
+  formatStructureLabel, isNameOnlyStructure
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -570,7 +571,8 @@ function exportAttackCsv() {
   state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
-    (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${start}","${date}","${a.structure_name}","${a.structure_level||''}","${safeName}",${p.rank},${p.value}\n`; });
+    const target = normalizeStructureTarget(a.structure_name, a.structure_level);
+    (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${start}","${date}","${target.structure_name}","${target.structure_level}","${safeName}",${p.rank},${p.value}\n`; });
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
@@ -580,10 +582,11 @@ function exportDebugCsv() {
   state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
+    const target = normalizeStructureTarget(a.structure_name, a.structure_level);
     (a.players||[]).forEach(p => { 
       const rawName = p.name.replace(/"/g, '""'); 
       const groupedName = findBestMatch(p.name).replace(/"/g, '""');
-      csv += `"${a.id}","${start}","${date}","${a.structure_name}","${a.structure_level||''}","${rawName}","${groupedName}",${p.value},${p.rank}\n`; 
+      csv += `"${a.id}","${start}","${date}","${target.structure_name}","${target.structure_level}","${rawName}","${groupedName}",${p.value},${p.rank}\n`; 
     });
   });
   const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' })); link.download = `vts_debug_export_${new Date().getTime()}.csv`; link.click();
@@ -793,7 +796,7 @@ window.deleteAttack = async function(attId) {
     state.dashData.total_attacks = state.dashData.attacks.length;
     await saveData(state.dashData);
     render(); closeModal();
-    log(`Deleted attack: ${removed.structure_name} ${removed.structure_level}`, 'warn');
+    log(`Deleted attack: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`, 'warn');
   }
 };
 
@@ -803,21 +806,25 @@ window.editAttack = async function(attId) {
   if(!att) return;
   const newName = prompt("Edit Structure Name (e.g. Capital, Gates, City):", att.structure_name);
   if(newName === null) return;
-  const newLevel = prompt("Edit Structure Level (e.g. Lv.1, Lv.5):", att.structure_level);
-  if(newLevel === null) return;
+  let normalizedTarget = normalizeStructureTarget(newName.trim(), '');
+  if (!isNameOnlyStructure(normalizedTarget.structure_name) && !normalizedTarget.structure_level) {
+    const newLevel = prompt("Edit Structure Level (e.g. Lv.1, Lv.5):", att.structure_level);
+    if(newLevel === null) return;
+    normalizedTarget = normalizeStructureTarget(normalizedTarget.structure_name, newLevel.trim());
+  }
   const newTime = prompt("Edit End Time (Game Time) (format: YYYY-MM-DD, HH:mm):", att.game_time);
   if(newTime === null) return;
   const newStartTime = prompt("Edit Start Time (Game Time) (Optional, leave blank if unknown):", att.start_time || "");
   if(newStartTime === null) return;
-  att.structure_name = normalizeStructureName(newName.trim());
-  att.structure_level = newLevel.trim();
+  att.structure_name = normalizedTarget.structure_name;
+  att.structure_level = normalizedTarget.structure_level;
   att.game_time = newTime.trim();
   att.start_time = newStartTime.trim();
   const mockReturn = parseOcrResults([]); 
   state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
   await saveData(state.dashData);
   render(); showModal('attack', att);
-  log(`Updated attack to: ${att.structure_name} ${att.structure_level}`, 'info');
+  log(`Updated attack to: ${formatStructureLabel(att.structure_name, att.structure_level)}`, 'info');
 };
 
 window.addPlayer = async function(attId) {
@@ -926,7 +933,7 @@ window.exportPlayerReport = function(pNameEncoded) {
   let csv = "Time,Target,Value,Rank\n";
   const sortedAttacks = [...(p.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
   sortedAttacks.forEach(att => {
-    csv += `"${att.game_time}","${att.name} ${att.structure_level}",${att.val||att.value||0},${att.rank||''}\n`;
+    csv += `"${att.game_time}","${formatStructureLabel(att.name, att.structure_level)}",${att.val||att.value||0},${att.rank||''}\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);

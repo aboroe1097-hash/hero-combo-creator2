@@ -60,6 +60,8 @@ export async function qwenVisionRequest(messages, options = {}) {
 // --- Durability ---
 export const DURABILITY_TABLE = {
   gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
+  bridges:  { 1: 200000 },
+  city:     { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   cities:   { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   capital:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
   capitol:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
@@ -67,6 +69,104 @@ export const DURABILITY_TABLE = {
   stronghold: { 1: 1000000 },
   'large town': { 4: 3750000 },
 };
+
+const NAME_ONLY_STRUCTURES = new Set(['bridges', 'stronghold']);
+
+const STRUCTURE_NAME_CORRECTIONS = {
+  bridge: 'Bridges',
+  bridges: 'Bridges',
+  capita1: 'Capital',
+  capital: 'Capital',
+  capitol: 'Capital',
+  cates: 'Gates',
+  checkpoint: 'Gates',
+  'check point': 'Gates',
+  'check points': 'Gates',
+  city: 'City',
+  cities: 'City',
+  cily: 'City',
+  gate: 'Gates',
+  gate5: 'Gates',
+  gates: 'Gates',
+  'large town': 'Large Town',
+  'small town': 'Small Town',
+  strongho1d: 'Stronghold',
+  stronghold: 'Stronghold',
+  structure: 'Stronghold',
+  temp1e: 'Temple',
+  tempi: 'Temple',
+  temple: 'Temple',
+  town: 'Town',
+  ruln: 'Ruins',
+  ruin5: 'Ruins',
+  ruins: 'Ruins',
+};
+
+function normalizeStructureLevel(level) {
+  const text = String(level || '').trim();
+  const match = text.match(/\b(?:lv\.?|level)?\s*([0-9]+)\b/i);
+  return match ? `Lv${Number(match[1])}` : '';
+}
+
+function extractStructureLevelFromName(name) {
+  const text = String(name || '').trim();
+  const explicit = text.match(/\b(?:lv\.?|level)\s*([0-9]+)\b/i);
+  if (explicit) return `Lv${Number(explicit[1])}`;
+  const trailing = text.match(/\s+([0-9]+)\s*$/);
+  return trailing ? `Lv${Number(trailing[1])}` : '';
+}
+
+function stripStructureLevelFromName(name) {
+  return String(name || '')
+    .replace(/\b(?:lv\.?|level)\s*[0-9]+\b/gi, '')
+    .replace(/\s+[0-9]+\s*$/, '')
+    .replace(/\s+unknown$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function canonicalizeStructureName(name, level) {
+  const cleaned = stripStructureLevelFromName(name);
+  const lower = cleaned.toLowerCase().trim();
+  const compact = lower.replace(/[^a-z0-9]+/g, '');
+  let canonical = STRUCTURE_NAME_CORRECTIONS[lower] || STRUCTURE_NAME_CORRECTIONS[compact] || cleaned;
+
+  if (canonical === 'Town') {
+    if (level === 'Lv4') canonical = 'Large Town';
+    else if (level === 'Lv1') canonical = 'Small Town';
+  }
+
+  if (canonical === 'Gates' && level === 'Lv1') canonical = 'Bridges';
+
+  return canonical;
+}
+
+export function isNameOnlyStructure(name) {
+  return NAME_ONLY_STRUCTURES.has(String(name || '').toLowerCase().trim());
+}
+
+export function normalizeStructureLevelForName(name, level) {
+  if (isNameOnlyStructure(name)) return '';
+  return normalizeStructureLevel(level);
+}
+
+export function normalizeStructureName(name) {
+  if (!name) return name;
+  return normalizeStructureTarget(name, '').structure_name;
+}
+
+export function normalizeStructureTarget(name, level = '') {
+  if (!name && !level) return { structure_name: name, structure_level: '' };
+  const extractedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
+  const structureName = canonicalizeStructureName(name, extractedLevel);
+  const structureLevel = normalizeStructureLevelForName(structureName, extractedLevel);
+  return { structure_name: structureName, structure_level: structureLevel };
+}
+
+export function formatStructureLabel(name, level) {
+  const target = normalizeStructureTarget(name || 'Unknown Structure', level);
+  return `${target.structure_name} ${target.structure_level}`.trim();
+}
 
 // --- Mutable State ---
 export const state = {
@@ -284,9 +384,13 @@ export function findBestMatch(name, minConfidence = 100) {
 
 // --- Durability Validation ---
 export function validateTotalDemolition(sN, sL, total) {
-  const levelNum = parseInt(String(sL || '').replace(/[^0-9]/g, ''));
+  const target = normalizeStructureTarget(sN, sL);
+  const entry = DURABILITY_TABLE[(target.structure_name || '').toLowerCase()];
+  if (!entry) return null;
+  const levelNum = isNameOnlyStructure(target.structure_name)
+    ? Number(Object.keys(entry)[0])
+    : parseInt(String(target.structure_level || '').replace(/[^0-9]/g, ''));
   if (!levelNum) return null;
-  const entry = DURABILITY_TABLE[(sN || '').toLowerCase()];
   const expected = entry && entry[levelNum];
   if (!expected) return null;
   const diff = Math.abs(total - expected);

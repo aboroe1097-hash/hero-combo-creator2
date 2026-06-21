@@ -1,4 +1,18 @@
-import { state, $id, log, qwenVisionRequest, tryRepairJson, validateTotalDemolition, findBestMatch, getSimilarity, getSimilarityAlphaNum } from './ocr-shared.js';
+import {
+  state,
+  $id,
+  log,
+  qwenVisionRequest,
+  tryRepairJson,
+  validateTotalDemolition,
+  findBestMatch,
+  getSimilarity,
+  getSimilarityAlphaNum,
+  formatStructureLabel,
+  normalizeStructureLevelForName,
+  normalizeStructureName,
+  normalizeStructureTarget
+} from './ocr-shared.js';
 import { render } from './ocr-render.js';
 import { saveData } from './ocr-dashboard.js';
 import { getDb } from './firebase.js';
@@ -39,8 +53,8 @@ async function processFiles(files) {
 Extract ALL visible player entries accurately.
 
 RULES FOR EXTRACTION:
-1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town). This is usually located at the very top of the report in the header or title. Look carefully. Even if partially cut off or obscured, provide your best guess. Only return null if it is completely missing from the image.
-2. 'structure_level': the integer level of the structure (e.g. "5" from "Lv.5"). Look closely at the header next to the structure name. Provide your best guess if partially obscured. Only return null if completely missing.
+1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town, Check Point). This is usually located at the very top of the report in the header or title. Look carefully. Even if partially cut off or obscured, provide your best guess. Only return null if it is completely missing from the image.
+2. 'structure_level': the integer level of the structure (e.g. "5" from "Lv.5"). Stronghold is name-only, so return null for Stronghold even if the UI implies a level. Check Point means Gates in our terminology, except level 1 Check Point should be Bridges. Town Lv4 / Town 4 should be treated as Large Town Lv4. For every other structure, look closely at the header next to the structure name and provide your best guess if partially obscured. Only return null if completely missing.
 3. 'timestamp': the date/time shown, formatted strictly as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
 4. 'start_time': the "Start Time" of the attack if clearly visible (e.g., "14:30"). If not visible, null.
 5. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
@@ -92,7 +106,8 @@ EXPECTED JSON SCHEMA:
       if (pCount < 10) {
         log(`Warning: Only ${pCount} players found. Check extraction logic. Snippet: ${text.substring(0, 50)}...`, 'warn', f.name);
       }
-      log(`Successfully read screenshot ${i+1}/${valid.length} — ${data.structure_name || '?'} ${data.structure_level || '?'}, found ${pCount} players in ${elapsed}s.`, 'success', f.name);
+      const structureLabel = formatStructureLabel(data.structure_name || '?', data.structure_level || '');
+      log(`Successfully read screenshot ${i+1}/${valid.length} — ${structureLabel}, found ${pCount} players in ${elapsed}s.`, 'success', f.name);
       allJson.push({ filename: f.name, json: data });
 
       if (data) {
@@ -142,7 +157,7 @@ EXPECTED JSON SCHEMA:
       const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
       if (!val) continue;
       const shortfall = val.expected - att.total_demolition;
-      const msg = `${att.structure_name} ${att.structure_level}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
+      const msg = `${formatStructureLabel(att.structure_name, att.structure_level)}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
       log(`⚠ ${msg} — auto-saved. Check terminal for details.`, 'warn');
     }
     saveData(parsed); render();
@@ -155,14 +170,6 @@ EXPECTED JSON SCHEMA:
   state._ocrAbortController = null;
   if (cancelBtn) cancelBtn.classList.add('hidden');
   setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
-}
-
-function normalizeStructureName(name) {
-  if (!name) return name;
-  let cleaned = name.trim().replace(/\s+unknown$/i, '');
-  const corrections = { 'capita1': 'Capital', 'capitol': 'Capital', 'cates': 'Gates', 'gate5': 'Gates', 'cily': 'City', 'temp1e': 'Temple', 'tempi': 'Temple', 'strongho1d': 'Stronghold', 'ruln': 'Ruins', 'ruin5': 'Ruins', 'structure': 'Stronghold' };
-  const lower = cleaned.toLowerCase().trim();
-  return corrections[lower] || cleaned;
 }
 
 function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
@@ -188,9 +195,9 @@ function parseOcrResults(results) {
        if (m) dt = new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]);
     }
 
-    const sN = normalizeStructureName(j.structure_name) || null;
-    let sL = j.structure_level ? String(j.structure_level).replace(/^(?:Lv|Level)\s*/i, '').trim() : null;
-    if (sL) sL = 'Lv' + sL.replace(/[^0-9]/g, '');
+    const target = normalizeStructureTarget(j.structure_name, j.structure_level);
+    const sN = target.structure_name || null;
+    const sL = target.structure_level || '';
 
     let start_time = j.start_time || null;
 
@@ -283,12 +290,13 @@ function parseOcrResults(results) {
       const n = findBestMatch(p.name);
       if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
       sum[n].total_demolition += p.value;
-      if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + (a.structure_level||'')); }
-      sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: a.structure_level, game_time: a.game_time, val: p.value, rank: p.rank });
+      const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);
+      if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + level); }
+      sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: level, game_time: a.game_time, val: p.value, rank: p.rank });
     });
   });
 
   return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).map(p => { p.unique_structures = p.unique_structures.size; return p; }).sort((a,b) => b.total_demolition - a.total_demolition) };
 }
 
-export { processFiles, normalizeStructureName, parseOcrResults, fmtDate, displayGameTime };
+export { processFiles, normalizeStructureName, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime };

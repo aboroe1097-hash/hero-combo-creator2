@@ -1,4 +1,12 @@
-import { state, $id, esc, findBestMatch, validateTotalDemolition } from './ocr-shared.js';
+import {
+  state,
+  $id,
+  esc,
+  findBestMatch,
+  validateTotalDemolition,
+  formatStructureLabel,
+  normalizeStructureTarget
+} from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
 import { isGuest } from './ocr-dashboard.js';
 
@@ -76,13 +84,17 @@ function normalizeStructureLabel(name) {
 }
 
 function structureKey(attack) {
-  const name = normalizeStructureLabel(attack?.structure_name);
-  const level = String(attack?.structure_level || '').toLowerCase().replace(/\s+/g, '').trim();
+  const target = normalizeStructureTarget(attack?.structure_name, attack?.structure_level);
+  const name = normalizeStructureLabel(target.structure_name);
+  const level = target.structure_level
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .trim();
   return `${name}|${level}`;
 }
 
 function structureLabel(attack) {
-  return `${attack?.structure_name || 'Unknown Structure'} ${attack?.structure_level || ''}`.trim();
+  return formatStructureLabel(attack?.structure_name, attack?.structure_level);
 }
 
 function normalizePlayerName(name) {
@@ -589,7 +601,7 @@ function renderOpsOverview(attacks, psum) {
     <div class="dash-ops-card dash-ops-card-health">
       <span class="dash-ops-label">Data Health</span>
       <strong>${validationIssues ? `${validationIssues} review` : 'Clean'}</strong>
-      <p>${latest ? `Latest: ${esc(latest.structure_name || 'Unknown')} ${esc(latest.structure_level || '')} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
+      <p>${latest ? `Latest: ${esc(structureLabel(latest))} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
     </div>`;
 }
 
@@ -620,7 +632,7 @@ function render() {
     const sortedAtts = [...atts].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
     let opts = '<option value="">All Uploaded Targets</option>';
     sortedAtts.forEach(a => {
-      const label = `${a.structure_name} ${a.structure_level||''} (${displayGameTime(a.game_time)})`;
+      const label = `${structureLabel(a)} (${displayGameTime(a.game_time)})`;
       opts += `<option value="${a.id}" ${a.id===currentVal?'selected':''}>${esc(label)}</option>`;
     });
     filterEl.innerHTML = opts;
@@ -712,7 +724,7 @@ function render() {
            if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
            else timeStr = `${esc(a.start_time)} - ${timeStr}`;
         }
-        d.innerHTML = `<div><div class="dash-attack-name">${esc(a.structure_name)} ${esc(a.structure_level)}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
+        d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
         d.onclick = () => showModal('attack', a); al.appendChild(d);
       });
     });
@@ -878,7 +890,7 @@ function showModal(type, data) {
     }
     window._modalDepth = (window._modalDepth || 0) + 1;
     document.body.style.overflow = 'hidden';
-    $id('dashModalTitle').textContent = type === 'attack' ? data.structure_name + ' ' + (data.structure_level||'') : data.name;
+    $id('dashModalTitle').textContent = type === 'attack' ? structureLabel(data) : data.name;
     $id('dashModalSub').textContent = type === 'attack' ? `${displayGameTime(data.game_time)} · ${data.players_count} participants` : `${(data.total_demolition||0).toLocaleString()} total demolition`;
     if (type === 'attack') {
       const avg = Math.round(data.total_demolition / data.players_count);
@@ -893,7 +905,7 @@ function showModal(type, data) {
       if (!isGuest()) {
         h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.addPlayer('${data.id}')">➕ Add Player</button><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
       }
-      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(data.structure_name)} ${esc(data.structure_level||'')}</div></div></div>`;
+      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(structureLabel(data))}</div></div></div>`;
       h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
       h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th>${!isGuest()?'<th style="width:30px"></th>':''}</tr></thead><tbody>`;
       data.players.forEach(p => {
@@ -954,7 +966,7 @@ function showModal(type, data) {
 
       body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml +
         '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' +
-        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(att.name||att.structure_name||'')} ${esc(att.structure_level||'')}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') +
+        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(formatStructureLabel(att.name || att.structure_name || '', att.structure_level || ''))}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') +
         '</tbody></table>' +
         '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
     }
