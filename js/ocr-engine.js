@@ -14,9 +14,21 @@ import {
   normalizeStructureName,
   normalizeStructureTarget
 } from './ocr-shared.js';
-import { render } from './ocr-render.js';
-import { saveData } from './ocr-dashboard.js';
-import { getDb } from './firebase.js';
+
+async function saveParsedData(data) {
+  const { saveData } = await import('./ocr-dashboard.js');
+  return saveData(data);
+}
+
+async function renderDashboard() {
+  const { render } = await import('./ocr-render.js');
+  render();
+}
+
+async function getCloudDb() {
+  const { getDb } = await import('./firebase.js');
+  return getDb();
+}
 
 function isSamePlayerForOcrDedup(existing, incoming) {
   const existingProtected = getProtectedPlayerIdentity(existing?.name);
@@ -123,8 +135,8 @@ EXPECTED JSON SCHEMA:
       if (data) {
         const progressiveParsed = parseOcrResults([{ filename: f.name, json: data }]);
         if (progressiveParsed) {
-          await saveData(progressiveParsed);
-          render();
+          await saveParsedData(progressiveParsed);
+          await renderDashboard();
         }
       }
     } catch (e) {
@@ -170,10 +182,11 @@ EXPECTED JSON SCHEMA:
       const msg = `${formatStructureLabel(att.structure_name, att.structure_level)}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
       log(`⚠ ${msg} — auto-saved. Check terminal for details.`, 'warn');
     }
-    saveData(parsed); render();
+    await saveParsedData(parsed);
+    await renderDashboard();
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
     log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
-    log(`Cloud sync status: ${getDb() ? 'active' : 'local-only'}`, 'info');
+    log(`Cloud sync status: ${(await getCloudDb()) ? 'active' : 'local-only'}`, 'info');
   } else log(`Failed to parse extracted reports.`, 'err');
 
   state._ocrProcessing = false;

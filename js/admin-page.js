@@ -45,12 +45,30 @@ async function loadAdminTemplate() {
   section.innerHTML = await res.text();
 }
 
+function captureEarlyGuestIntent() {
+  const guestBtn = document.getElementById('dashGuestBtn');
+  if (!guestBtn) return;
+  guestBtn.addEventListener(
+    'click',
+    () => {
+      try {
+        localStorage.removeItem('vts_ocr_auth');
+        sessionStorage.setItem('vts_guest', '1');
+      } catch {
+        // Storage can be unavailable; the dashboard's normal click handler will still run later.
+      }
+    },
+    { capture: true }
+  );
+}
+
 async function bootAdminPage() {
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
   await loadAdminTemplate();
+  captureEarlyGuestIntent();
   updateTextContent(lang);
-  const mod = await import('./ocr-dashboard.js?v=20260621_160543');
+  const mod = await import('./ocr-dashboard.js?v=20260621_184929');
   await mod.bootOcrDashboard();
 }
 
