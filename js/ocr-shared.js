@@ -364,6 +364,64 @@ export function getProtectedPlayerIdentity(name) {
   return '꧁ Kika ꧂';
 }
 
+function readGroupedPlayerValue(player) {
+  const value = Number(player?.value ?? player?.val ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function readGroupedPlayerRank(player, fallbackRank) {
+  const rank = Number(player?.rank ?? fallbackRank);
+  return Number.isFinite(rank) ? rank : fallbackRank;
+}
+
+function compactPlayerIdentity(name) {
+  return String(name || '')
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, '')
+    .toLowerCase();
+}
+
+export function resolvePlayerNameForAttack(player, attackPlayers = []) {
+  const rawName = typeof player === 'string' ? player : player?.name;
+  const baseName = findBestMatch(rawName);
+  if (!Array.isArray(attackPlayers) || attackPlayers.length < 2) return baseName;
+
+  const groupedRows = attackPlayers
+    .map((entry, index) => ({
+      entry,
+      index,
+      rawName: String(entry?.name || '').trim(),
+      baseName: findBestMatch(entry?.name),
+      rawKey: compactPlayerIdentity(entry?.name),
+      value: readGroupedPlayerValue(entry),
+      rank: readGroupedPlayerRank(entry, index + 1),
+    }))
+    .filter(row => row.baseName === baseName);
+
+  if (groupedRows.length < 2) return baseName;
+  const current = groupedRows.find(row => row.entry === player);
+  if (!current) return baseName;
+
+  const hasDifferentValues = new Set(groupedRows.map(row => row.value)).size > 1;
+  const hasDifferentRawNames = new Set(groupedRows.map(row => row.rawKey)).size > 1;
+  if (!hasDifferentValues && !hasDifferentRawNames) return baseName;
+
+  const byImpact = [...groupedRows].sort(
+    (a, b) => b.value - a.value || a.rank - b.rank || a.index - b.index
+  );
+  const impactPosition = byImpact.findIndex(row => row.entry === player);
+
+  if (baseName === '꧁ Kika ꧂') {
+    if (impactPosition <= 0) return '꧁ Kika ꧂';
+    if (impactPosition === 1) return '꧁༺ Kika ༻꧂';
+    return `꧁ Kika ꧂ alt ${impactPosition + 1}`;
+  }
+
+  if (!hasDifferentRawNames || !hasDifferentValues || impactPosition <= 0) return baseName;
+  return current.rawName || `${baseName} alt ${impactPosition + 1}`;
+}
+
 export function findBestMatch(name, minConfidence = 100) {
   if (!name) return name;
   if (typeof name === 'string') {
@@ -376,14 +434,14 @@ export function findBestMatch(name, minConfidence = 100) {
     const aliasMap = {
       'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy', '키키 kimmy': '키미 kimmy',
       'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
-      'AK Чанай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
+      'AK Чанай': 'AK Чапай', 'AKЧанай': 'AK Чапай', 'AKЧапай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
       '!!Uzumaki !!': '!!Uzumaki!!', '!! Uzumaki !!': '!!Uzumaki!!', 'Uzumaki': '!!Uzumaki!!', 'UzuBanner': '!!Uzumaki!!',
       '● AGAM ●': 'AGAM', '●●AGAM ●●': 'AGAM', '●● AGAM ●●': 'AGAM', '●AGAM●': 'AGAM',
       'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj', 'MasterVjso': 'MasterVj',
       '○UNDEADO○': 'UNDEAD', '○UNDEAD○': 'UNDEAD', '◎UNDEADO◎': 'UNDEAD', 'ØUNDEADØ': 'UNDEAD', 'UNDEADO': 'UNDEAD',
-      '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110', '© I N d ō/Made3110': 'Made3110', 'yind?Made3110': 'Made3110',
+      '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110', '© I N d ō/Made3110': 'Made3110', 'yind?Made3110': 'Made3110', '~I n d ø/Made3110': 'Made3110', 'I N d O)Made3110': 'Made3110', 'I nd°/Made3110': 'Made3110', 'gindMade3110': 'Made3110', 'vind?Made3110': 'Made3110', 'x N d o /Made3110': 'Made3110',
       'Kika': '꧁ Kika ꧂', '≽ Kika ≡': '꧁ Kika ꧂', '~Kika~': '꧁ Kika ꧂', '✨Kika✨': '꧁ Kika ꧂', ' Kika ': '꧁ Kika ꧂', '✨Kika-banner✨': '꧁ Kika-banner ꧂', '~Kika ~': '꧁ Kika ꧂',
-      'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп', 'тynгзахyp': 'түнгзахурп', 'тyHГ3ахур': 'түнгзахурп', 'тyнгзахур': 'түнгзахурп',
+      'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп', 'түнгзахур': 'түнгзахурп', 'тунгзахур': 'түнгзахурп', 'тynгзахyp': 'түнгзахурп', 'тyHГ3ахур': 'түнгзахурп', 'тyнгзахур': 'түнгзахурп',
       'REDBULL§': 'REDBULLS', 'RedBull©': 'REDBULLS', 'RedBull@': 'REDBULLS', 'RedBull®': 'REDBULLS', 'Redbull@': 'REDBULLS', 'REDBULL$': 'REDBULLS',
       'Ar Ran★_YG+62': 'Ar Ran ★_YG+62', 'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
       'hunter killer.': 'Hunter killer.', 'htar killer.': 'Hunter killer.', 'htubter killer.': 'Hunter killer.', 'hunster killer.': 'Hunter killer.', 'һunter killer.': 'Hunter killer.',
@@ -405,7 +463,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'Surtiiiiii': 'Surtiiiii',
       'Феюшка))': 'Феечка))', 'Φελώσκα))': 'Феечка))',
       'БрюHerKaЯ': 'БрюНетКаЯ',
-      'A n d ē R $': 'A n d e R $', 'АηdεR$': 'A n d e R $', 'Anders': 'A n d e R $',
+      'A n d ē R $': 'A n d e R $', 'АηdεR$': 'A n d e R $', 'AηdεR$': 'A n d e R $', 'А η d ě R $': 'A n d e R $', 'Anders': 'A n d e R $', 'Àñděř$': 'A n d e R $', 'A n d é R $': 'A n d e R $', 'A nødëR $': 'A n d e R $', 'AnděRS': 'A n d e R $', 'ÀñäëR$': 'A n d e R $', 'AηdēR$': 'A n d e R $',
       'Dizz..': 'Dizz.',
       '★★★ 3BEPb ★★★': '3BEPb', 'ЗВЕРЬ': '3BEPb', '*** 3BEPb ***': '3BEPb', '*** ЗВЕРЬ ***': '3BEPb',
       'REFORMASIJILID2*': 'REFORMASIJILID2·',
@@ -413,7 +471,7 @@ export function findBestMatch(name, minConfidence = 100) {
       '★ Aqua ★': '★Aqua★', '*Aqua*': '★Aqua★', '☆Aqua☆': '★Aqua★', '☆Aqua ☆': '★Aqua★',
       '.Jasper.@': '@.Jasper.@', '.Jasper.': '@.Jasper.@',
       '*r@mze$$$*': '★r@mze$$$★', '☆r@nze$$$☆': '★r@mze$$$★',
-      'I D NÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDN°/Dragon.Gold': 'IDN Dragon.Gold', '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
+      'I D NÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDNÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDNÓ|Dragon.Gold': 'IDN Dragon.Gold', 'IDN°/Dragon.Gold': 'IDN Dragon.Gold', '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
       'МяТная Лапка': 'Мятная Лапка',
       'yousef المحارب': 'المحارب yousef',
       '*DEAN JR*': '*DEAN*',
@@ -456,6 +514,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'AK Чапа́й': 'AK Чапай',
       '~☆RuCCaK☆~': '~RuCCaK~',
       'A n d ě R $': 'A n d e R $',
+      'Серей': 'Сергей',
       'Jjamaica pete': 'Jjamaica pete',
       '★★★ЗВЕРЬ★★★': '★★★ ЗВЕРЬ ★★★',
       '~Sarafina~': '~Sarafina~',

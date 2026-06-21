@@ -2,7 +2,7 @@ import {
   state,
   $id,
   esc,
-  findBestMatch,
+  resolvePlayerNameForAttack,
   validateTotalDemolition,
   formatDatasetStructureLabel,
   normalizeStructureTarget
@@ -133,8 +133,9 @@ function buildPlayerSummary(attacks) {
   const globalSum = {};
   (attacks || []).forEach(a => {
     const seen = new Set();
-    attackPlayers(a).forEach(p => {
-      const n = findBestMatch(p.name);
+    const players = attackPlayers(a);
+    players.forEach(p => {
+      const n = resolvePlayerNameForAttack(p, players);
       const val = valueOf(p.value ?? p.val);
       if (!globalSum[n]) {
         globalSum[n] = {
@@ -227,8 +228,9 @@ function renderStructurePerformance(attacks) {
     group.attacks++;
     group.total += valueOf(a.total_demolition);
     group.attendance += attackPlayers(a).length;
-    attackPlayers(a).forEach(p => {
-      const n = findBestMatch(p.name);
+    const players = attackPlayers(a);
+    players.forEach(p => {
+      const n = resolvePlayerNameForAttack(p, players);
       group.players.set(n, (group.players.get(n) || 0) + valueOf(p.value ?? p.val));
     });
   });
@@ -300,7 +302,7 @@ function renderPlayerTrends(attacks, psum) {
 
   host.innerHTML = top.map((player, index) => {
     const vals = ordered.map(attack => attackPlayers(attack).reduce((sum, p) => {
-      return findBestMatch(p.name) === player.name ? sum + valueOf(p.value ?? p.val) : sum;
+      return resolvePlayerNameForAttack(p, attackPlayers(attack)) === player.name ? sum + valueOf(p.value ?? p.val) : sum;
     }, 0));
     const first = vals.find(v => v > 0) || 0;
     const last = [...vals].reverse().find(v => v > 0) || 0;
@@ -495,7 +497,7 @@ function renderStreaks(attacks, psum) {
     host.innerHTML = '<div class="dash-empty">No attacks yet</div>';
     return;
   }
-  const attackSets = ordered.map(a => new Set(attackPlayers(a).map(p => normalizePlayerName(findBestMatch(p.name)))));
+  const attackSets = ordered.map(a => new Set(attackPlayers(a).map(p => normalizePlayerName(resolvePlayerNameForAttack(p, attackPlayers(a))))));
   const latestRoster = state.rosterSnapshots?.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members : [];
   const rosterNames = latestRoster.map(rosterMemberName).filter(Boolean);
   const names = [...new Set([...psum.map(p => p.name), ...rosterNames])].filter(Boolean);
@@ -861,7 +863,8 @@ function render() {
       };
       current.targets++;
       current.demo += valueOf(a.total_demolition);
-      attackPlayers(a).forEach(p => current.participants.add(findBestMatch(p.name)));
+      const players = attackPlayers(a);
+      players.forEach(p => current.participants.add(resolvePlayerNameForAttack(p, players)));
       dayMap.set(key, current);
     });
     const days = [...dayMap.values()].sort((a, b) => a.order - b.order).slice(-8);
@@ -1030,6 +1033,7 @@ function showModal(type, data) {
         return;
       }
       const sortedAttacks = [...(data.attacks || [])].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
+      window._dashCurrentPlayerReport = data;
       const hrMap = {};
       for(let i=0; i<24; i++) hrMap[i] = 0;
       sortedAttacks.forEach(att => {
@@ -1063,7 +1067,7 @@ function showModal(type, data) {
       }
 
       const encPname = encodeURIComponent(data.name).replace(/'/g, "%27");
-      let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.exportPlayerReport('${encPname}')">📥 Export CSV Report</button></div>`;
+      let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button type="button" class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="event.stopPropagation(); window.exportPlayerReport('${encPname}')">📥 Export CSV Report</button></div>`;
 
       body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml +
         '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' +

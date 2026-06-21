@@ -21,8 +21,9 @@ import {
   LOG_KEY, AUTH_HASH, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
+  resolvePlayerNameForAttack,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
-  formatStructureLabel, getDatasetStructureTarget, isNameOnlyStructure
+  formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -433,10 +434,16 @@ async function clearData() {
 // --- Exports ---
 function exportData() { if (!state.dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state.dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
 function exportToCsv() {
-  if (!state.dashData?.players_summary) return;
+  if (!state.dashData?.players_summary && !state.dashData?.attacks?.length) return;
+  const players = state.dashData?.attacks?.length
+    ? buildDashboardPlayerSummary(state.dashData.attacks)
+    : state.dashData.players_summary;
   let csv = 'Rank,Member Name,Total Demolition,Hits,Avg per Hit\n';
-  state.dashData.players_summary.forEach((p, i) => { const safeName = p.name.replace(/"/g, '""'); csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`; });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_leaderboard.csv'; a.click();
+  players.forEach((p, i) => {
+    const safeName = p.name.replace(/"/g, '""');
+    csv += `${i + 1},"${safeName}",${p.total_demolition},${p.participation_count},${Math.round(p.total_demolition/p.participation_count)}\n`;
+  });
+  downloadCsv(csv, 'vts_leaderboard.csv');
 }
 async function exportToPng() {
   const html2canvas = await window.loadHtml2Canvas();
@@ -576,6 +583,82 @@ function exportAttackCsv() {
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
+
+function playerValue(player) {
+  const value = Number(player?.value ?? player?.val ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function attackPlayers(attack) {
+  return Array.isArray(attack?.players) ? attack.players : [];
+}
+
+function buildDashboardPlayerSummary(attacks) {
+  const summary = {};
+  (attacks || []).forEach(attack => {
+    const players = attackPlayers(attack);
+    const seen = new Set();
+    players.forEach(player => {
+      const name = resolvePlayerNameForAttack(player, players);
+      const value = playerValue(player);
+      if (!summary[name]) {
+        summary[name] = {
+          name,
+          total_demolition: 0,
+          participation_count: 0,
+          attacks: [],
+        };
+      }
+      summary[name].total_demolition += value;
+      if (!seen.has(name)) {
+        summary[name].participation_count++;
+        seen.add(name);
+      }
+      summary[name].attacks.push({
+        id: attack.id || attack.attack_id,
+        attack_id: attack.id || attack.attack_id,
+        name: attack.structure_name || attack.name,
+        structure_name: attack.structure_name || attack.name,
+        structure_level: attack.structure_level || '',
+        raw_structure_name: attack.raw_structure_name,
+        raw_structure_level: attack.raw_structure_level,
+        display_structure_name: attack.display_structure_name,
+        display_structure_level: attack.display_structure_level,
+        game_time: attack.game_time,
+        start_time: attack.start_time || '',
+        val: value,
+        value,
+        rank: player.rank || '',
+      });
+    });
+  });
+  return Object.values(summary).sort((a, b) => b.total_demolition - a.total_demolition);
+}
+
+function downloadCsv(csv, filename) {
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    link.remove();
+  }, 0);
+}
+
+function safeCsvFilename(name) {
+  return (
+    String(name || 'player')
+      .normalize('NFKD')
+      .replace(/[^\p{L}\p{N}]+/gu, '_')
+      .replace(/^_+|_+$/g, '') || 'player'
+  );
+}
+
 function exportDebugCsv() {
   if (!state.dashData?.attacks?.length) return;
   let csv = 'Attack ID,Start Time,End Time,Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
@@ -583,13 +666,14 @@ function exportDebugCsv() {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     const target = getDatasetStructureTarget(a);
-    (a.players||[]).forEach(p => { 
-      const rawName = p.name.replace(/"/g, '""'); 
-      const groupedName = findBestMatch(p.name).replace(/"/g, '""');
+    const players = attackPlayers(a);
+    players.forEach(p => {
+      const rawName = p.name.replace(/"/g, '""');
+      const groupedName = resolvePlayerNameForAttack(p, players).replace(/"/g, '""');
       csv += `"${a.id}","${start}","${date}","${target.structure_name}","${target.structure_level}","${rawName}","${groupedName}",${p.value},${p.rank}\n`; 
     });
   });
-  const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], { type: 'text/csv;charset=utf-8;' })); link.download = `vts_debug_export_${new Date().getTime()}.csv`; link.click();
+  downloadCsv(csv, `vts_debug_export_${new Date().getTime()}.csv`);
 }
 function importData(file) {
   const r = new FileReader(); r.onload = e => {
@@ -597,16 +681,7 @@ function importData(file) {
       const imp = JSON.parse(e.target.result); if (!imp.attacks) throw 'Invalid';
       const m = {}; (state.dashData?.attacks||[]).forEach(a => m[a.id]=a); (imp.attacks||[]).forEach(a => m[a.id]=a);
       const sorted = Object.values(m).sort((a,b) => b.game_time.localeCompare(a.game_time));
-      const sum = {}; sorted.forEach(a => {
-        const seen = new Set();
-        a.players.forEach(p => {
-          const n = findBestMatch(p.name); if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [] };
-          sum[n].total_demolition += p.value; 
-          if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); }
-          sum[n].attacks.push({ attack_id: a.id, structure_name: a.structure_name, game_time: a.game_time, value: p.value, rank: p.rank });
-        });
-      });
-      saveData({ last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).sort((a,b)=>b.total_demolition-a.total_demolition)});
+      saveData({ last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: buildDashboardPlayerSummary(sorted)});
       render(); log('Import successful.', 'success');
     } catch (err) { alert('Import failed'); }
   }; r.readAsText(file);
@@ -899,20 +974,21 @@ window.showPlayer = function(pNameEncoded) {
   if (!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
   const masterName = findBestMatch(pName);
+  const playerSummary = buildDashboardPlayerSummary(state.dashData.attacks || []);
   
   // Exact match first (using master name)
-  let p = state.dashData.players_summary.find(x => x.name === masterName);
+  let p = playerSummary.find(x => x.name === masterName);
   // Fallback to raw name if master fails
-  if (!p) p = state.dashData.players_summary.find(x => x.name === pName);
+  if (!p) p = playerSummary.find(x => x.name === pName);
   // Fuzzy fallback: case-insensitive + trimmed
   if (!p) {
     const q = pName.trim().toLowerCase();
-    p = state.dashData.players_summary.find(x => x.name.trim().toLowerCase() === q);
+    p = playerSummary.find(x => x.name.trim().toLowerCase() === q);
   }
   // Last resort: partial match (handles OCR name variants)
   if (!p) {
     const q = pName.trim().toLowerCase();
-    p = state.dashData.players_summary.find(x =>
+    p = playerSummary.find(x =>
       x.name.toLowerCase().includes(q) || q.includes(x.name.toLowerCase())
     );
   }
@@ -941,16 +1017,25 @@ window.showAttack = function(attId) {
 window.exportPlayerReport = function(pNameEncoded) {
   if(!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
-  const p = state.dashData.players_summary.find(x => x.name === pName);
-  if(!p) return;
+  const modalPlayer = window._dashCurrentPlayerReport;
+  const playerSummary = buildDashboardPlayerSummary(state.dashData.attacks || []);
+  const p =
+    modalPlayer?.name === pName
+      ? modalPlayer
+      : playerSummary.find(x => x.name === pName) ||
+        playerSummary.find(x => x.name === findBestMatch(pName));
+  if(!p) {
+    log(`No rows found for player export: ${pName}`, 'warn');
+    return;
+  }
   let csv = "Time,Target,Value,Rank\n";
-  const sortedAttacks = [...(p.attacks || [])].sort((a,b) => new Date(b.game_time || 0) - new Date(a.game_time || 0));
+  const sortedAttacks = [...(p.attacks || [])].sort((a,b) => (b.game_time || '').localeCompare(a.game_time || ''));
   sortedAttacks.forEach(att => {
-    csv += `"${att.game_time}","${formatStructureLabel(att.name, att.structure_level)}",${att.val||att.value||0},${att.rank||''}\n`;
+    const time = String(displayGameTime(att.game_time)).replace(/"/g, '""');
+    const target = formatDatasetStructureLabel(att).replace(/"/g, '""');
+    csv += `"${time}","${target}",${att.val||att.value||0},${att.rank||''}\n`;
   });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `VTS_Report_${pName.replace(/[^a-z0-9]/gi, '_')}.csv`; a.click();
+  downloadCsv(csv, `VTS_Report_${safeCsvFilename(pName)}.csv`);
 };
 
 window.rosterLogin = rosterLogin;

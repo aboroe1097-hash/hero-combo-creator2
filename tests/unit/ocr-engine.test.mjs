@@ -180,8 +180,29 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['WICKED WOMEN★', 'WICKED WOMEN☆'],
     ['!! LÜ BU !!', '!!LÜ BU!!'],
     ['AK Чапа́й', 'AK Чапай'],
+    ['AKЧанай', 'AK Чапай'],
+    ['AKЧапай', 'AK Чапай'],
     ['~☆RuCCaK☆~', '~RuCCaK~'],
     ['A n d ě R $', 'A n d e R $'],
+    ['Àñděř$', 'A n d e R $'],
+    ['A n d é R $', 'A n d e R $'],
+    ['A nødëR $', 'A n d e R $'],
+    ['AnděRS', 'A n d e R $'],
+    ['ÀñäëR$', 'A n d e R $'],
+    ['AηdēR$', 'A n d e R $'],
+    ['AηdεR$', 'A n d e R $'],
+    ['А η d ě R $', 'A n d e R $'],
+    ['~I n d ø/Made3110', 'Made3110'],
+    ['I N d O)Made3110', 'Made3110'],
+    ['I nd°/Made3110', 'Made3110'],
+    ['gindMade3110', 'Made3110'],
+    ['vind?Made3110', 'Made3110'],
+    ['x N d o /Made3110', 'Made3110'],
+    ['IDNÓ/Dragon.Gold', 'IDN Dragon.Gold'],
+    ['IDNÓ|Dragon.Gold', 'IDN Dragon.Gold'],
+    ['түнгзахур', 'түнгзахурп'],
+    ['тунгзахур', 'түнгзахурп'],
+    ['Серей', 'Сергей'],
     ['Jjamaica pete', 'Jjamaica pete'],
     ['★★★ЗВЕРЬ★★★', '★★★ ЗВЕРЬ ★★★'],
   ];
@@ -211,6 +232,7 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('Sarafina'), '~Sarafina~');
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
+  assert.equal(findBestMatch('Dragon.Gold'), 'Dragon.Gold');
 });
 
 test('Kika reward accounts stay separate in OCR summaries', () => {
@@ -234,4 +256,26 @@ test('Kika reward accounts stay separate in OCR summaries', () => {
     parsed.players_summary.map((p) => p.name).sort(),
     ['꧁ Kika ꧂', '꧁ Kika-banner ꧂', '꧁Kika-banner2꧂', '꧁༺ Kika ༻꧂'].sort()
   );
+});
+
+test('duplicate Kika rows on the same target split into protected accounts', () => {
+  const parsed = parseOcrResults([
+    {
+      json: {
+        timestamp: '2026-06-21 05:32:00',
+        structure_name: 'Gates',
+        structure_level: '5',
+        players: [
+          { name: 'Kika', value: 41850 },
+          { name: 'Kika', value: 7500 },
+        ],
+      },
+    },
+  ]);
+
+  const byName = Object.fromEntries(parsed.players_summary.map((player) => [player.name, player]));
+  assert.equal(byName['꧁ Kika ꧂'].total_demolition, 41850);
+  assert.equal(byName['꧁༺ Kika ༻꧂'].total_demolition, 7500);
+  assert.equal(byName['꧁ Kika ꧂'].participation_count, 1);
+  assert.equal(byName['꧁༺ Kika ༻꧂'].participation_count, 1);
 });

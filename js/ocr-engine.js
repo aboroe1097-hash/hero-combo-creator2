@@ -5,10 +5,10 @@ import {
   qwenVisionRequest,
   tryRepairJson,
   validateTotalDemolition,
-  findBestMatch,
   getProtectedPlayerIdentity,
   getSimilarity,
   getSimilarityAlphaNum,
+  resolvePlayerNameForAttack,
   formatStructureLabel,
   normalizeStructureLevelForName,
   normalizeStructureName,
@@ -312,8 +312,9 @@ function parseOcrResults(results) {
   const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
   const sum = {}; sorted.forEach(a => {
     const seen = new Set();
-    a.players.forEach(p => {
-      const n = findBestMatch(p.name);
+    const players = a.players || [];
+    players.forEach(p => {
+      const n = resolvePlayerNameForAttack(p, players);
       if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
       sum[n].total_demolition += p.value;
       const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);
