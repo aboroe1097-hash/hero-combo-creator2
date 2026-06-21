@@ -16,8 +16,12 @@ globalThis.document = {
 
 const { normalizeStructureName, normalizeStructureTarget, parseOcrResults } =
   await import('../../js/ocr-engine.js');
-const { formatStructureLabel, normalizeStructureLevelForName, validateTotalDemolition } =
-  await import('../../js/ocr-shared.js');
+const {
+  findBestMatch,
+  formatStructureLabel,
+  normalizeStructureLevelForName,
+  validateTotalDemolition,
+} = await import('../../js/ocr-shared.js');
 
 test('OCR structure normalization fixes common visual confusions', () => {
   assert.equal(normalizeStructureName('capita1'), 'Capital');
@@ -114,4 +118,55 @@ test('OCR parsing canonicalizes structure names and levels before grouping', () 
   assert.equal(parsed.attacks[0].structure_name, 'Large Town');
   assert.equal(parsed.attacks[0].structure_level, 'Lv4');
   assert.equal(parsed.attacks[0].players_count, 2);
+});
+
+test('approved player OCR aliases merge only into explicit canonical names', () => {
+  const aliases = [
+    ['キ미 kimmy', '키미 kimmy'],
+    ['UNDEA', 'UNDEAD'],
+    ['BlackDragOn09', 'BlackDrag0n09'],
+    ['_EDDY_', '_EDDDY_'],
+    ['mohmmmedsaif', 'mohmmedsaif'],
+    ['Anne...', 'Anne'],
+    ['^Anne^', 'Anne'],
+    ['✨ Anne ✨', 'Anne'],
+    ['≪Kika≫', 'Kika'],
+    ['✨ Kika ✨', 'Kika'],
+    ['꧁ Kika ꧂', 'Kika'],
+    ['꧁༺ Kika ༻꧂', 'Kika'],
+    ['꧁ Kika-banner ꧂', 'Kika-banner'],
+    ['꧁Kika-banner2꧂', 'Kika-banner2'],
+    ['MasterVj~', 'MasterVj'],
+    ['✨MasterVj✨', 'MasterVj'],
+    ['●■AGAM ■●', 'AGAM'],
+    ['•◄ AGAM ►•', 'AGAM'],
+    ['Aqua', '★Aqua★'],
+    ['Lisavetka', '•Lisavetka•'],
+    ['.Lisavetka.', '•Lisavetka•'],
+    ['r@mze$$$', '★r@mze$$$★'],
+    ['★r@mze$$$☆', '★r@mze$$$★'],
+    ['WICKED WOMEN★', 'WICKED WOMEN☆'],
+    ['!! LÜ BU !!', '!!LÜ BU!!'],
+    ['AK Чапа́й', 'AK Чапай'],
+    ['~☆RuCCaK☆~', '~RuCCaK~'],
+    ['A n d ě R $', 'A n d e R $'],
+    ['Jjamaica pete', 'Jjamaica pete'],
+    ['★★★ЗВЕРЬ★★★', '★★★ ЗВЕРЬ ★★★'],
+  ];
+
+  for (const [raw, canonical] of aliases) {
+    assert.equal(findBestMatch(raw), canonical);
+  }
+});
+
+test('player aliases keep known separate accounts apart', () => {
+  assert.equal(findBestMatch('MalakAdo'), 'MalakAdo');
+  assert.equal(findBestMatch('MalakAbo'), 'MalakAbo');
+  assert.equal(findBestMatch('Kika-banner'), 'Kika-banner');
+  assert.equal(findBestMatch('Kika-banner2'), 'Kika-banner2');
+  assert.equal(findBestMatch('REDBULL-#'), 'REDBULL-#');
+  assert.equal(findBestMatch('REDBULLS'), 'REDBULLS');
+  assert.equal(findBestMatch('Sarafina'), '~Sarafina~');
+  assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
+  assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
 });
