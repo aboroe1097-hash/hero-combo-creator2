@@ -62,11 +62,22 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260621_144701" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260621_144701" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260621_144701" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260621_144701" media="(max-width: 768px)" />
-  <script src="js/admin-auth-config.js?v=20260621_144701"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260621_152545" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260621_152545" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260621_152545" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260621_152545" media="(max-width: 768px)" />
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js",
+        "firebase/app-check": "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js"
+      }
+    }
+  </script>
+  <script src="js/admin-auth-config.js?v=20260621_152545"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -640,7 +651,7 @@
   };
 
   </script>
-  <script type="module" src="js/app.js?v=20260621_144701"></script>
+  <script type="module" src="js/app.js?v=20260621_152545"></script>
 
 <script>
   // Lazy-load YouTube iframes

@@ -2,11 +2,18 @@ import { baseRankedCombos, scoreComboByRank } from './combos-db.js';
 import { allHeroesData } from './heroes-data.js';
 import { seasonColors, getHeroImageUrl, getTroopColorClass, getLocalizedTroop } from './state.js';
 import { escapeHtml } from './utils.js';
+import {
+  STRIFE_MONSTER_COMBOS,
+  STRIFE_MONSTERS,
+  STRIFE_SEASONS,
+  STRIFE_TIERS,
+} from './strife-db.js';
 
 const STRIFE_STAGE_KEY = 'vts_strife_stage';
-const STRIFE_POOL_KEY = 'vts_strife_pool';
-const STRIFE_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
+const STRIFE_MONSTER_KEY = 'vts_strife_monster';
 const HERO_BY_NAME = new Map(allHeroesData.map(hero => [hero.name, hero]));
+const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map(monster => [monster.id, monster]));
+const FALLBACK_LIMIT = 12;
 
 let strifeRoot = null;
 
@@ -15,20 +22,29 @@ function getStoredStage() {
   return STRIFE_SEASONS.includes(stored) ? stored : 'X1';
 }
 
-function getStoredPool() {
-  return localStorage.getItem(STRIFE_POOL_KEY) === 'free' ? 'free' : 'all';
+function getStoredMonsterId() {
+  const stored = localStorage.getItem(STRIFE_MONSTER_KEY);
+  return MONSTER_BY_ID.has(stored) ? stored : STRIFE_MONSTERS[0]?.id;
+}
+
+function getStageIndex(stage) {
+  return Math.max(0, STRIFE_SEASONS.indexOf(stage));
 }
 
 function getStageSeasons(stage) {
-  const end = Math.max(0, STRIFE_SEASONS.indexOf(stage));
-  return STRIFE_SEASONS.slice(0, end + 1);
+  return STRIFE_SEASONS.slice(0, getStageIndex(stage) + 1);
 }
 
-function heroAvailable(heroName, availableSeasons, poolMode) {
+function stageIsAllowed(entry, selectedStage) {
+  const selectedIndex = getStageIndex(selectedStage);
+  const startIndex = getStageIndex(entry.stage || 'S0');
+  const endIndex = entry.maxStage ? getStageIndex(entry.maxStage) : STRIFE_SEASONS.length - 1;
+  return startIndex <= selectedIndex && selectedIndex <= endIndex;
+}
+
+function heroAvailable(heroName, availableSeasons) {
   const hero = HERO_BY_NAME.get(heroName);
-  if (!hero) return false;
-  if (!availableSeasons.includes(hero.season)) return false;
-  return poolMode !== 'free' || String(hero.State || 'Free').toLowerCase() !== 'paid';
+  return Boolean(hero && availableSeasons.includes(hero.season));
 }
 
 function getComboTroopType(combo) {
@@ -40,51 +56,119 @@ function getComboTroopType(combo) {
 }
 
 function getComboTags(combo) {
-  const heroes = new Set(combo.heroes);
   const tags = [];
+  if (combo.source === 'manual') tags.push(combo.tier === STRIFE_TIERS.PERFECT ? 'Perfect' : 'Good Damage');
+  if (combo.source === 'fallback') tags.push('Combo DB');
+
+  const heroes = new Set(combo.heroes);
   if (heroes.has('Theodora')) tags.push('Sustain');
   if (heroes.has('Beowulf') || heroes.has('King Arthur')) tags.push('Skill Spam');
   if (heroes.has('Ramses II') || heroes.has('Jade Eagle')) tags.push('Archer Core');
   if (heroes.has('Bleeding Steed') || heroes.has('Rozen Blade')) tags.push('Pressure');
   if (!tags.length) tags.push('Ranked');
-  return tags.slice(0, 3);
+  return tags.slice(0, 4);
 }
 
-export function getStrifeRecommendations(stage = getStoredStage(), poolMode = getStoredPool()) {
-  const availableSeasons = getStageSeasons(stage);
-  const availableHeroes = allHeroesData.filter(hero => heroAvailable(hero.name, availableSeasons, poolMode));
-  const availableHeroNames = new Set(availableHeroes.map(hero => hero.name));
-  const totalRanked = baseRankedCombos.length;
-  const candidates = baseRankedCombos
-    .map((combo, index) => ({
-      ...combo,
-      globalRank: index + 1,
-      displayScore: scoreComboByRank(index, totalRanked),
-      troopType: getComboTroopType(combo),
-      tags: getComboTags(combo),
-    }))
-    .filter(combo => combo.heroes.every(hero => availableHeroNames.has(hero)));
+function toManualCombo(entry, index, tier) {
+  const combo = {
+    heroes: entry.heroes,
+    tier,
+    note: entry.note || '',
+    source: 'manual',
+    sourceRank: index + 1,
+    displayScore: entry.score || 'Manual',
+    troopType: entry.troopType || getComboTroopType(entry),
+  };
+  combo.tags = getComboTags(combo);
+  return combo;
+}
 
-  const usedHeroes = new Set();
-  const dailyPlan = [];
-  for (const combo of candidates) {
-    if (dailyPlan.length >= 5) break;
-    if (combo.heroes.some(hero => usedHeroes.has(hero))) continue;
-    dailyPlan.push(combo);
-    combo.heroes.forEach(hero => usedHeroes.add(hero));
-  }
+function getManualCombos(monsterId, stage, availableSeasons) {
+  const rows = STRIFE_MONSTER_COMBOS[monsterId] || [];
+  const accepted = rows.filter(entry => {
+    if (!entry?.heroes || entry.heroes.length !== 3) return false;
+    if (!stageIsAllowed(entry, stage)) return false;
+    return entry.heroes.every(heroName => heroAvailable(heroName, availableSeasons));
+  });
 
-  const stageHeroCount = availableHeroes.filter(hero => hero.season === stage).length;
   return {
-    stage,
-    poolMode,
+    perfect: accepted
+      .filter(entry => entry.tier === STRIFE_TIERS.PERFECT)
+      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.PERFECT)),
+    good: accepted
+      .filter(entry => entry.tier !== STRIFE_TIERS.PERFECT)
+      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.GOOD)),
+  };
+}
+
+function getFallbackCombos(stage, availableSeasons) {
+  const availableHeroNames = new Set(
+    allHeroesData.filter(hero => availableSeasons.includes(hero.season)).map(hero => hero.name)
+  );
+  const totalRanked = baseRankedCombos.length;
+
+  return baseRankedCombos
+    .map((combo, index) => {
+      const enriched = {
+        ...combo,
+        source: 'fallback',
+        sourceRank: index + 1,
+        displayScore: scoreComboByRank(index, totalRanked),
+        troopType: getComboTroopType(combo),
+      };
+      enriched.tags = getComboTags(enriched);
+      return enriched;
+    })
+    .filter(combo => combo.heroes.every(hero => availableHeroNames.has(hero)))
+    .slice(0, FALLBACK_LIMIT)
+    .map(combo => ({ ...combo, stage }));
+}
+
+export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage = getStoredStage()) {
+  const selectedMonsterId = MONSTER_BY_ID.has(monsterId) ? monsterId : getStoredMonsterId();
+  const monster = MONSTER_BY_ID.get(selectedMonsterId) || STRIFE_MONSTERS[0];
+  const selectedStage = STRIFE_SEASONS.includes(stage) ? stage : getStoredStage();
+  const availableSeasons = getStageSeasons(selectedStage);
+  const availableHeroes = allHeroesData.filter(hero => availableSeasons.includes(hero.season));
+  const manual = getManualCombos(monster.id, selectedStage, availableSeasons);
+  const hasManualRows = manual.perfect.length > 0 || manual.good.length > 0;
+  const fallback = hasManualRows ? [] : getFallbackCombos(selectedStage, availableSeasons);
+
+  return {
+    monster,
+    stage: selectedStage,
     availableSeasons,
     availableHeroCount: availableHeroes.length,
-    stageHeroCount,
-    candidateCount: candidates.length,
-    dailyPlan,
-    rankedList: candidates.slice(0, 18),
+    perfectCombos: manual.perfect,
+    goodCombos: hasManualRows ? manual.good : fallback,
+    sourceMode: hasManualRows ? 'manual' : 'fallback',
+    recommendationCount: manual.perfect.length + manual.good.length + fallback.length,
   };
+}
+
+function renderMonsterImage(monster, size = 'card') {
+  const initial = monster.name.slice(0, 1).toUpperCase();
+  const image = monster.imageUrl
+    ? `<img src="${escapeHtml(monster.imageUrl)}" alt="${escapeHtml(monster.name)}" crossorigin="anonymous" loading="lazy">`
+    : `<span class="strife-monster-initial">${escapeHtml(initial)}</span>`;
+  return `
+    <span class="strife-monster-art strife-monster-art--${escapeHtml(size)}" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
+      ${image}
+    </span>
+  `;
+}
+
+function renderMonsterGrid(selectedMonsterId) {
+  return STRIFE_MONSTERS.map(monster => {
+    const active = monster.id === selectedMonsterId;
+    return `
+      <button type="button" class="strife-monster-card${active ? ' active' : ''}" data-strife-monster="${escapeHtml(monster.id)}" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
+        ${renderMonsterImage(monster)}
+        <span class="strife-monster-name">${escapeHtml(monster.name)}</span>
+        <span class="strife-monster-formation">Front / Mid / Back</span>
+      </button>
+    `;
+  }).join('');
 }
 
 function renderStageControls(stage) {
@@ -93,13 +177,6 @@ function renderStageControls(stage) {
     const color = seasonColors[season] || '#22d3ee';
     return `<button type="button" class="strife-stage-btn${active ? ' active' : ''}" data-strife-stage="${season}" style="--stage-color:${escapeHtml(color)}">${season}</button>`;
   }).join('');
-}
-
-function renderPoolControls(poolMode) {
-  return `
-    <button type="button" class="strife-pool-btn${poolMode === 'all' ? ' active' : ''}" data-strife-pool="all">All heroes</button>
-    <button type="button" class="strife-pool-btn${poolMode === 'free' ? ' active' : ''}" data-strife-pool="free">Free only</button>
-  `;
 }
 
 function renderHeroSlot(heroName, position) {
@@ -120,115 +197,131 @@ function renderHeroSlot(heroName, position) {
       </span>
       <span class="strife-hero-name">${escapeHtml(heroName)}</span>
       <span class="strife-hero-meta ${escapeHtml(getTroopColorClass(type))}">
-        ${escapeHtml(season)} · ${escapeHtml(getLocalizedTroop(type))}
+        ${escapeHtml(season)} / ${escapeHtml(getLocalizedTroop(type))}
       </span>
     </div>
   `;
 }
 
-function renderComboCard(combo, index, variant = 'plan') {
+function renderComboCard(combo, index, variant = 'good') {
   const troopType = combo.troopType || 'Mixed';
-  const title = variant === 'plan' ? `Attack ${index + 1}` : `Rank #${combo.globalRank}`;
+  const title = combo.source === 'manual'
+    ? `${variant === STRIFE_TIERS.PERFECT ? 'Perfect' : 'Good'} #${index + 1}`
+    : `DB #${combo.sourceRank}`;
   const tags = (combo.tags || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join('');
+  const note = combo.note ? `<p class="strife-combo-note">${escapeHtml(combo.note)}</p>` : '';
+
   return `
-    <article class="strife-combo-card strife-combo-card--${variant}">
+    <article class="strife-combo-card strife-combo-card--${escapeHtml(variant)}">
       <div class="strife-card-rank">
         <strong>${escapeHtml(title)}</strong>
-        <span>${escapeHtml(combo.displayScore)} score</span>
+        <span>${escapeHtml(String(combo.displayScore))}</span>
       </div>
-      <div class="strife-card-heroes">
-        ${combo.heroes.map((hero, slotIndex) => renderHeroSlot(hero, ['Front', 'Middle', 'Back'][slotIndex])).join('')}
-      </div>
-      <div class="strife-card-foot">
-        <span class="strife-troop-chip ${escapeHtml(getTroopColorClass(troopType))}">${escapeHtml(troopType)}</span>
-        <span class="strife-db-rank">DB #${combo.globalRank}</span>
-        <span class="strife-tags">${tags}</span>
+      <div class="strife-card-main">
+        <div class="strife-card-heroes">
+          ${combo.heroes.map((hero, slotIndex) => renderHeroSlot(hero, ['Front', 'Middle', 'Back'][slotIndex])).join('')}
+        </div>
+        ${note}
+        <div class="strife-card-foot">
+          <span class="strife-troop-chip ${escapeHtml(getTroopColorClass(troopType))}">${escapeHtml(troopType)}</span>
+          <span class="strife-tags">${tags}</span>
+        </div>
       </div>
     </article>
   `;
 }
 
-function renderEmptyState(model) {
+function renderEmptyState(model, tierLabel) {
   return `
     <div class="strife-empty">
-      <strong>No ranked Strife teams for ${escapeHtml(model.stage)} yet.</strong>
-      <span>Try All heroes, or move the stage forward while we expand the database.</span>
+      <strong>No ${escapeHtml(tierLabel)} rows for ${escapeHtml(model.monster.name)} at ${escapeHtml(model.stage)} yet.</strong>
+      <span>No manual rows configured.</span>
     </div>
+  `;
+}
+
+function renderComboSection(title, subtitle, combos, model, variant) {
+  const content = combos.length
+    ? combos.map((combo, index) => renderComboCard(combo, index, variant)).join('')
+    : renderEmptyState(model, title);
+  return `
+    <section class="strife-results-band">
+      <div class="strife-section-title">
+        <h3>${escapeHtml(title)}</h3>
+        <span>${escapeHtml(subtitle)}</span>
+      </div>
+      <div class="strife-ranked-list">${content}</div>
+    </section>
   `;
 }
 
 function renderStrifeTool() {
   if (!strifeRoot) return;
   const model = getStrifeRecommendations();
-  const planHtml = model.dailyPlan.length
-    ? model.dailyPlan.map((combo, index) => renderComboCard(combo, index, 'plan')).join('')
-    : renderEmptyState(model);
-  const listHtml = model.rankedList.length
-    ? model.rankedList.map((combo, index) => renderComboCard(combo, index, 'ranked')).join('')
-    : renderEmptyState(model);
+  const sourceLabel = model.sourceMode === 'manual' ? 'Monster table' : 'Combo DB fallback';
 
   strifeRoot.innerHTML = `
     <div class="strife-header">
       <div>
         <p class="strife-eyebrow">Origin of Dragons</p>
-        <h2>Strife Over Dragon</h2>
-        <p>Five daily attacks. Season-stage recommendations from the VTS combo database.</p>
+        <h2>Strife over Dragon</h2>
+        <p>Monster-specific formation tables for each season stage.</p>
       </div>
       <div class="strife-source-card">
-        <strong>${model.dailyPlan.length || 0}/5</strong>
-        <span>daily teams</span>
+        <strong>${model.recommendationCount}</strong>
+        <span>${escapeHtml(sourceLabel)}</span>
       </div>
     </div>
 
-    <div class="strife-control-deck">
+    <section class="strife-control-deck">
+      <div class="strife-section-title">
+        <h3>Monster</h3>
+        <span>10 targets</span>
+      </div>
+      <div class="strife-monster-grid" role="group" aria-label="Strife monster target">
+        ${renderMonsterGrid(model.monster.id)}
+      </div>
+    </section>
+
+    <section class="strife-control-deck">
       <div class="strife-control-row">
         <span class="strife-control-label">Season stage</span>
         <div class="strife-stage-grid" role="group" aria-label="Strife season stage">
           ${renderStageControls(model.stage)}
         </div>
       </div>
-      <div class="strife-control-row strife-control-row--compact">
-        <span class="strife-control-label">Hero pool</span>
-        <div class="strife-pool-grid" role="group" aria-label="Strife hero pool">
-          ${renderPoolControls(model.poolMode)}
-        </div>
-      </div>
       <div class="strife-metrics" aria-label="Strife recommendation metrics">
-        <span><strong>${model.availableHeroCount}</strong> heroes</span>
-        <span><strong>${model.candidateCount}</strong> combos</span>
-        <span><strong>${model.stageHeroCount}</strong> ${model.stage} heroes</span>
+        <span><strong>${escapeHtml(model.monster.name)}</strong> selected</span>
+        <span><strong>${model.availableHeroCount}</strong> heroes available</span>
+        <span><strong>${model.availableSeasons.join(' / ')}</strong></span>
       </div>
-    </div>
-
-    <section class="strife-results-band">
-      <div class="strife-section-title">
-        <h3>Best 5 Attacks</h3>
-        <span>No hero overlap</span>
-      </div>
-      <div class="strife-plan-grid">${planHtml}</div>
     </section>
 
-    <section class="strife-results-band">
-      <div class="strife-section-title">
-        <h3>Ranked Backup List</h3>
-        <span>Top available formations</span>
+    <section class="strife-monster-summary">
+      ${renderMonsterImage(model.monster, 'hero')}
+      <div>
+        <p class="strife-eyebrow">Selected monster</p>
+        <h3>${escapeHtml(model.monster.name)}</h3>
+        <span>Formation order: Front / Middle / Back</span>
       </div>
-      <div class="strife-ranked-list">${listHtml}</div>
     </section>
+
+    ${renderComboSection('Perfect Combination', model.sourceMode === 'manual' ? model.stage : 'Manual table pending', model.perfectCombos, model, STRIFE_TIERS.PERFECT)}
+    ${renderComboSection(model.sourceMode === 'manual' ? 'Good Damage' : 'General Combo Fallback', model.stage, model.goodCombos, model, STRIFE_TIERS.GOOD)}
   `;
 }
 
 function handleStrifeClick(event) {
-  const stageBtn = event.target.closest('[data-strife-stage]');
-  if (stageBtn) {
-    localStorage.setItem(STRIFE_STAGE_KEY, stageBtn.dataset.strifeStage);
+  const monsterBtn = event.target.closest('[data-strife-monster]');
+  if (monsterBtn) {
+    localStorage.setItem(STRIFE_MONSTER_KEY, monsterBtn.dataset.strifeMonster);
     renderStrifeTool();
     return;
   }
 
-  const poolBtn = event.target.closest('[data-strife-pool]');
-  if (poolBtn) {
-    localStorage.setItem(STRIFE_POOL_KEY, poolBtn.dataset.strifePool);
+  const stageBtn = event.target.closest('[data-strife-stage]');
+  if (stageBtn) {
+    localStorage.setItem(STRIFE_STAGE_KEY, stageBtn.dataset.strifeStage);
     renderStrifeTool();
   }
 }
