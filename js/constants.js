@@ -1,0 +1,10 @@
+export const DEBOUNCE_MS = 90;
+export const GENERATOR_MIN_HEROES = 12;
+export const GENERATOR_MAX_COMBOS = 5;
+export const GENERATOR_SELECT_ALL_CONFIRM_THRESHOLD = 36;
+export const GENERATOR_SELECTION_SAVE_MS = 2000;
+export const GENERATOR_SELECTION_STORAGE_KEY = 'vts_generator_selection_v1';
+export const GENERATOR_SELECTION_VERSION = 1;
+export const GENERATOR_SKIN_OWNERSHIP_KEY = 'vts_generator_owned_skins_v2';
+export const GENERATOR_SKIN_OWNERSHIP_LEGACY_KEY = 'vts_generator_owned_skins_v1';
+export const GENERATOR_SKIN_OWNERSHIP_VERSION = 2;

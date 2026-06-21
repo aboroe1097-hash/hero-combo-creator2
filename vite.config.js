@@ -17,7 +17,13 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) return 'firebase';
+          const normalizedId = id.replace(/\\/g, '/');
+          if (normalizedId.includes('node_modules/firebase') || normalizedId.includes('node_modules/@firebase')) return 'firebase';
+          if (normalizedId.includes('/js/eden-map')) return 'eden-map';
+          if (normalizedId.includes('/js/ocr-')) return 'ocr-dashboard';
+          if (normalizedId.includes('/js/app-research')) return 'research';
+          if (normalizedId.includes('/js/app-hero-atlas')) return 'hero-atlas';
+          if (normalizedId.includes('/js/app-export') || normalizedId.includes('html2canvas')) return 'export';
         },
       },
     },

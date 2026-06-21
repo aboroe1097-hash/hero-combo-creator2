@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Hero Combo Creator — Rise of Castles Ice &amp; Fire Tools | VTS 1097</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests" />
   <meta name="description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder &amp; generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters." />
   <meta name="author" content="VTS State 1097" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -62,11 +62,11 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260620_193026" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260620_193026" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260621_000001" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260620_193026" media="(max-width: 768px)" />
-  <script src="js/admin-auth-config.js?v=20260620_193026"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260621_071213" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260621_071213" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260621_071213" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260621_071213" media="(max-width: 768px)" />
+  <script src="js/admin-auth-config.js?v=20260621_071213"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div id="appBootSplash" class="boot-splash" role="status" aria-live="polite" aria-label="Loading application">
@@ -368,6 +368,7 @@
             <div class="generator-selection-actions flex gap-2">
                 <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="selection-action-btn selection-action-btn--select">Select All</button>
                 <button id="genClearAllBtn" data-i18n="generatorClearAll" class="selection-action-btn selection-action-btn--clear">Clear All</button>
+                <button id="genResetFiltersBtn" class="selection-action-btn selection-action-btn--reset">Reset Filters</button>
             </div>
         </div>
         <div class="hero-search-wrap">
@@ -504,14 +505,10 @@
 
       <div class="p-5 bg-slate-900/60">
         <form id="commentForm" class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3">
             <div class="relative">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
               <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Your name (optional)" />
-            </div>
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
-              <input id="commentEmail" data-i18n-ph="commentEmailPh" type="email" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Email (optional)" />
             </div>
           </div>
           <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none leading-relaxed" placeholder="Write a suggestion, report a bug, or share feedback..."></textarea>
@@ -569,7 +566,7 @@
             <li><a href="#" onclick="document.getElementById('tabHeroes').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabHeroes">Hero Atlas</a></li>
             <li><a href="#" onclick="document.getElementById('tabResearch').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabResearch">Research</a></li>
             <li><a href="#" onclick="document.getElementById('tabLoyalty').click(); window.scrollTo({top: 0, behavior: 'smooth'}); return false;" data-i18n="tabLoyalty">Eden Loyalty</a></li>
-            <li><a href="admin.html" data-i18n="tabOcrDashboard">Structure Dashboard</a></li>
+            <li><a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a></li>
           </ul>
         </div>
 
@@ -639,7 +636,7 @@
   };
 
   </script>
-  <script type="module" src="js/app.js?v=20260620_193026"></script>
+  <script type="module" src="js/app.js?v=20260621_071213"></script>
 
 <script>
   // Lazy-load YouTube iframes

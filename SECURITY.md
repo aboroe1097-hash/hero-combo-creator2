@@ -25,6 +25,10 @@ In scope:
 - XSS, HTML injection, or unsafe rendering of user-provided comments/data.
 - Build or dependency vulnerabilities affecting the deployed app.
 
+## Admin Auth Note
+
+The dashboard's static admin hashes are shipped to the browser and should be treated as a convenience gate, not a secret server-side access control. Use long, unique admin passphrases when hashes are configured, keep destructive actions behind separate override hashes, and prefer Firebase Auth or another server-verified role system for stronger future admin access.
+
 Out of scope:
 
 - Game balance, ranking, or data accuracy issues.

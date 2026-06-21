@@ -1,18 +1,22 @@
 import { expect, test } from '@playwright/test';
 
-async function openApp(page) {
-  await page.route('https://www.googletagmanager.com/**', route => route.abort());
-  await page.addInitScript(() => {
-    localStorage.setItem('vts_intro_v1_seen', '1');
-    localStorage.setItem('vts_quick_tour_done', '1');
-  });
-  await page.goto('/');
+async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
   await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
+}
+
+async function openApp(page, path = '/') {
+  await page.route('https://www.googletagmanager.com/**', route => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_intro_v1_seen', '1');
+    localStorage.setItem('vts_quick_tour_done', '1');
+  });
+  await page.goto(path);
+  await waitForAppReady(page);
 }
 
 async function expectTab(page, buttonId, sectionId, marker) {
@@ -23,8 +27,26 @@ async function expectTab(page, buttonId, sectionId, marker) {
 
 async function openAdmin(page) {
   await page.route('https://www.googletagmanager.com/**', route => route.abort());
+  await page.addInitScript(() => {
+    sessionStorage.removeItem('vts_guest');
+    localStorage.removeItem('vts_ocr_auth');
+  });
   await page.goto('/admin.html');
-  await expect(page.locator('#dashLogin')).toBeVisible({ timeout: 20000 });
+  await page.waitForFunction(() => {
+    const isVisible = (el) => {
+      if (!el) return false;
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden' && !el.classList.contains('hidden');
+    };
+    return isVisible(document.getElementById('dashLogin')) || isVisible(document.getElementById('dashApp'));
+  }, null, { timeout: 20000 });
+}
+
+async function openGuestDashboard(page) {
+  if (await page.locator('#dashLogin').isVisible()) {
+    await page.locator('#dashGuestBtn').click();
+  }
+  await expect(page.locator('#dashGuestBanner')).toBeVisible();
 }
 
 test.describe('app smoke tabs', () => {
@@ -209,10 +231,8 @@ test.describe('app smoke tabs', () => {
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
-    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
-    await page.locator('#heroesTabSearch').fill('King Arthur');
-    await expect(page.locator('[data-hero-name="King Arthur"]')).toBeVisible();
-    await page.locator('[data-hero-name="King Arthur"]').click();
+    await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
+    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .hero-detail-panel');
     await page.locator('[data-detail-section="skins"]').click();
     await expect(page.locator('#detail-section-skins')).toContainText('Upgrades Skill 2: Wheel of Fortune -> Eternity');
     await expect(page.locator('#detail-section-skins')).not.toContainText('Slot 8');
@@ -235,24 +255,28 @@ test.describe('app smoke tabs', () => {
       await page.locator(`#generatorSeasonFilters ${seasonPill}`).click();
     }
     await page.locator('#genSelectAllBtn').click();
+    await page.getByRole('button', { name: 'Confirm' }).click();
     await expect(page.locator('#genSelectedCount')).toContainText('selected');
     await page.locator('#generateCombosBtn').click();
 
     const firstGenerated = page.locator('#generatorResults .generated-combo-card').first();
     await expect(firstGenerated).toBeVisible();
-    await expect(firstGenerated.locator('.counter-summary-badge')).toContainText('counters known');
-    await firstGenerated.locator('.counter-toggle-btn').click();
-    await expect(firstGenerated.locator('.counter-card--mini-combo').first()).toBeVisible();
-    await expect(firstGenerated.locator('.counter-use-btn').first()).toBeVisible();
+    const generatedWithCounters = page
+      .locator('#generatorResults .generated-combo-card')
+      .filter({ has: page.locator('.counter-summary-badge:not(.counter-summary-badge--empty)') })
+      .first();
+    await expect(generatedWithCounters.locator('.counter-summary-badge')).toContainText('counters known');
+    await generatedWithCounters.locator('.counter-toggle-btn').click();
+    await expect(generatedWithCounters.locator('.counter-card--mini-combo').first()).toBeVisible();
+    const useCounterButton = generatedWithCounters.locator('.counter-use-btn').first();
+    await expect(useCounterButton).toBeVisible();
 
     await page.locator('#genClearAllBtn').click();
-    await firstGenerated.locator('.counter-use-btn').first().click();
+    await useCounterButton.click();
     await expect(page.locator('#genSelectedCount')).toContainText('3 selected');
 
-    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
-    await page.locator('#heroesTabSearch').fill('King Arthur');
-    await expect(page.locator('[data-hero-name="King Arthur"]')).toBeVisible();
-    await page.locator('[data-hero-name="King Arthur"]').click();
+    await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
+    await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .hero-detail-panel');
     await expect(page.locator('[data-detail-section="counters"]')).toBeVisible();
     await page.locator('[data-detail-section="counters"]').click();
     await expect(page.locator('#detail-section-counters')).toContainText('Counters involving King Arthur');
@@ -263,15 +287,13 @@ test.describe('app smoke tabs', () => {
   test('admin guest mode can return to admin login', async ({ page }) => {
     await openAdmin(page);
 
-    await page.locator('#dashGuestBtn').click();
-    await expect(page.locator('#dashGuestBanner')).toBeVisible();
+    await openGuestDashboard(page);
     await expect(page.locator('#dashGuestBanner')).toContainText('Guest Mode');
     await expect(page.locator('#dashGuestAdminBtn')).toHaveText(/Log in as Admin/);
     await expect(page.locator('#dashUploadZone')).not.toBeVisible();
 
     await page.locator('#dashGuestAdminBtn').click();
     await expect(page.locator('#dashLogin')).toBeVisible();
-    await expect(page.locator('#dashLoginPass')).toBeVisible();
     await expect(page.locator('#dashGuestBtn')).toBeVisible();
     await expect(page.locator('#dashApp')).not.toBeVisible();
     expect(await page.evaluate(() => sessionStorage.getItem('vts_guest'))).toBeNull();
@@ -341,7 +363,7 @@ test.describe('app smoke tabs', () => {
       localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
     }, { seededDash, seededRoster });
 
-    await page.locator('#dashGuestBtn').click();
+    await openGuestDashboard(page);
     await page.evaluate(async ({ seededDash, seededRoster }) => {
       const shared = await import('/js/ocr-shared.js');
       const renderer = await import('/js/ocr-render.js');

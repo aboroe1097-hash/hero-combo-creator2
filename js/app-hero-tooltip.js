@@ -67,7 +67,7 @@ function getHeroTooltip() {
 
   heroTooltip = document.createElement('div');
   heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-none hidden opacity-0 transition-opacity duration-200 flex flex-col';
   document.body.appendChild(heroTooltip);
   return heroTooltip;
 }
@@ -75,6 +75,7 @@ function getHeroTooltip() {
 
 async function showHeroTooltip(e, heroName) {
   if (!heroInfoEnabled) return; 
+  if (e?.type?.startsWith('pointer') && window.innerWidth < 1024) return;
   const tooltip = getHeroTooltip();
 
   const heroesExtendedData = await loadHeroInfoData();
@@ -147,7 +148,7 @@ async function showHeroTooltip(e, heroName) {
         </div>
       </div>
       
-      <button id="closeTooltipBtn" class="lg:hidden bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
+      <button id="closeTooltipBtn" class="lg:hidden pointer-events-auto bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>

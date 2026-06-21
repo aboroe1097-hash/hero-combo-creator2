@@ -2272,3 +2272,62 @@ button:not([disabled]):active,
   -webkit-mask-image: radial-gradient(ellipse at center, #000 0 32%, transparent 74%) !important;
   mask-image: radial-gradient(ellipse at center, #000 0 32%, transparent 74%) !important;
 }
+
+/* Final mobile QA overrides: keep compact control strips inside the viewport. */
+.heroes-season-tabs {
+  justify-content: space-between !important;
+  gap: 3px !important;
+  padding-inline: 4px !important;
+}
+
+.hero-tab-season {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding: 6px 0 !important;
+  font-size: 0.62rem !important;
+  text-align: center;
+}
+
+.loyalty-presets {
+  flex-wrap: wrap !important;
+  overflow-x: visible !important;
+}
+
+.loyalty-preset-btn {
+  flex: 1 1 calc(50% - 6px) !important;
+  min-width: 0 !important;
+  text-align: center;
+}
+
+.eden-deck-nav {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  overflow-x: visible !important;
+}
+
+.eden-deck-nav .eden-deck-label {
+  grid-column: 1;
+}
+
+.eden-deck-nav .eden-deck-cluster {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.eden-deck-nav select,
+.eden-deck-nav .eden-dataset-select,
+.eden-deck-nav .eden-sector-select,
+.eden-deck-nav .eden-tool-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.eden-deck-nav .eden-zoom-cluster {
+  grid-column: 1;
+  display: grid !important;
+  grid-template-columns: 44px minmax(48px, 1fr) 44px;
+  justify-items: center;
+  width: 100% !important;
+}

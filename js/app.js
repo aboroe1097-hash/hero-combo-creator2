@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260620_193026';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260621_071213';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -19,6 +19,10 @@ import { initWhatsNewBanner } from './app-whats-new.js';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
+import {
+  DEBOUNCE_MS,
+  GENERATOR_SELECT_ALL_CONFIRM_THRESHOLD,
+} from './constants.js';
 
 import {
   renderAvailableHeroes,
@@ -33,7 +37,10 @@ import {
 import {
   renderGeneratorHeroes,
   generateBestCombos,
-  generateRandomCombos
+  generateRandomCombos,
+  markGeneratorSelectionChanged,
+  restoreGeneratorSelection,
+  syncGeneratorSelectedCountBadge,
 } from './app-generator.js';
 
 import {
@@ -127,8 +134,8 @@ import {
 } from './state.js';
 
 const HERO_DRAG_MIME = 'application/x-vts-hero-name';
-const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), 160);
-const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), 160);
+const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), DEBOUNCE_MS);
+const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 
 function resolveDroppedHeroName(dataTransfer) {
@@ -203,22 +210,10 @@ function initTheme() {
 
 initTheme();
 
-function updateGeneratorSelectedCountBadge() {
-  const countBadge = document.getElementById('genSelectedCount');
-  if (!countBadge) return;
-  const n = generatorSelectedHeroes.size;
-  if (n > 0) {
-    countBadge.textContent = n + ' selected';
-    countBadge.classList.remove('hidden');
-  } else {
-    countBadge.classList.add('hidden');
-  }
-}
-
 function addCounterHeroesToGenerator(heroNames) {
   heroNames.filter(Boolean).forEach(name => generatorSelectedHeroes.add(name));
   renderGeneratorHeroes(syncGeneratorControlState());
-  updateGeneratorSelectedCountBadge();
+  markGeneratorSelectionChanged({ immediate: true });
   if (typeof window.showToast === 'function') {
     window.showToast('Counter heroes added to Generator selection.', 'success');
   }
@@ -481,6 +476,50 @@ function syncGeneratorControlState(changedTroopInput = null) {
   updateSeasonCatchupHint(seasonContainer);
 
   return { seasons, states, types, skinsOnly };
+}
+
+function getVisibleGeneratorHeroes(options = syncGeneratorControlState()) {
+  const searchQuery = (document.getElementById('generatorHeroSearch')?.value || '').trim().toLowerCase();
+  return getGeneratorHeroPool(options.skinsOnly)
+    .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
+    .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery));
+}
+
+function resetGeneratorFilters() {
+  const seasonContainer = document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl;
+  const stateContainer = document.getElementById('generatorStateFilters') || genStateFiltersEl;
+  const troopContainer = document.getElementById('generatorTroopFilters') || genTroopFiltersEl;
+  const searchInput = document.getElementById('generatorHeroSearch');
+
+  syncCheckboxValues(seasonContainer, DEFAULT_HERO_FILTER_SEASONS);
+  syncCheckboxValues(stateContainer, DEFAULT_STATE_FILTER_VALUES);
+  syncCheckboxValues(troopContainer, DEFAULT_TROOP_FILTER_VALUES);
+  if (searchInput) searchInput.value = '';
+
+  const options = syncGeneratorControlState();
+  renderGeneratorHeroes(options);
+}
+
+function selectVisibleGeneratorHeroes() {
+  const options = syncGeneratorControlState();
+  const visibleHeroes = getVisibleGeneratorHeroes(options);
+  const selectAll = () => {
+    visibleHeroes.forEach(h => generatorSelectedHeroes.add(h.name));
+    renderGeneratorHeroes(options);
+    markGeneratorSelectionChanged({ immediate: true });
+  };
+
+  if (!visibleHeroes.length) {
+    showAboModal('No visible heroes match the current filters.');
+    return;
+  }
+
+  if (visibleHeroes.length >= GENERATOR_SELECT_ALL_CONFIRM_THRESHOLD) {
+    showAboModal(`Select all ${visibleHeroes.length} visible heroes?`, selectAll);
+    return;
+  }
+
+  selectAll();
 }
 
 function applyFilterSelection(container, input) {
@@ -856,24 +895,22 @@ tabs.forEach(tab => {
 
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');
+  const genResetFiltersBtn = document.getElementById('genResetFiltersBtn');
 
   if (genSelectAllBtn) {
-    genSelectAllBtn.onclick = () => {
-      const options = syncGeneratorControlState();
-      getGeneratorHeroPool(options.skinsOnly)
-        .filter(h => heroMatchesFilters(h, options.seasons, options.states, options.types))
-        .forEach(h => generatorSelectedHeroes.add(h.name));
-      renderGeneratorHeroes(options);
-      updateGeneratorSelectedCountBadge();
-    };
+    genSelectAllBtn.onclick = selectVisibleGeneratorHeroes;
   }
 
   if (genClearAllBtn) {
     genClearAllBtn.onclick = () => {
       generatorSelectedHeroes.clear();
       renderGeneratorHeroes(syncGeneratorControlState());
-      updateGeneratorSelectedCountBadge();
+      markGeneratorSelectionChanged({ immediate: true });
     };
+  }
+
+  if (genResetFiltersBtn) {
+    genResetFiltersBtn.onclick = resetGeneratorFilters;
   }
 
   if (saveComboBtn) saveComboBtn.onclick = saveCombo;
@@ -1225,7 +1262,9 @@ async function startApp() {
     safeInit('bugReportWidget', () => initBugReportWidget());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
+    safeInit('restoreGeneratorSelection', () => restoreGeneratorSelection());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
+    safeInit('syncGeneratorSelectedCountBadge', () => syncGeneratorSelectedCountBadge());
     safeInit('wireUIActions', () => wireUIActions());
     safeInit('initTabScroll', () => initTabScroll());
 
@@ -1237,6 +1276,7 @@ async function startApp() {
     const rosterShare = safeInit('parseRosterShareUrl', () => parseRosterShareUrl());
     if (rosterShare) {
       safeInit('applyRosterShare', () => applyRosterToGenerator(rosterShare, generatorSelectedHeroes));
+      markGeneratorSelectionChanged({ immediate: true });
     }
 
     await safeInit('firebase', async () => {
@@ -1251,6 +1291,7 @@ async function startApp() {
         const cloudProfile = await loadPlayerProfileFromCloud();
         if (cloudProfile && cloudProfile.roster) {
           applyRosterToGenerator(cloudProfile.roster, generatorSelectedHeroes);
+          markGeneratorSelectionChanged({ immediate: true });
         }
         if (typeof initComments === 'function') {
             initComments();
@@ -1298,6 +1339,7 @@ window.addEventListener('unhandledrejection', (e) => {
 if (typeof startApp === 'function') {
   initAppLoading();
   setupInstallPrompt();
+  window.showAboModal = showAboModal;
 
   // Register UI functions for builder/generator modules
   registerUiFunctions({

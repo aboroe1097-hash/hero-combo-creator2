@@ -34,7 +34,7 @@ function allowedOrigins(env) {
 
 function isAllowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
-  if (!origin) return true;
+  if (!origin) return false;
   return allowedOrigins(env).includes(origin);
 }
 

@@ -8,6 +8,9 @@ import { baseRankedCombos } from './combos-db.js';
 export const APP_VERSION = '11.0.2';
 export const ENABLE_RESEARCH_FEATURE = true;
 
+const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
+globalThis.__vtsHeroComboRuntimeState = runtimeState;
+
 // --- STATE ---
 export let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
 export let heroInfoEnabled = true;
@@ -26,7 +29,8 @@ export function setCurrentCombo(v) { currentCombo = v; }
 export let generatorSelectedSeasons = [...DEFAULT_HERO_FILTER_SEASONS];
 export let generatorSelectedStates = ['Free', 'Paid'];
 export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
-export const generatorSelectedHeroes = new Set();
+export const generatorSelectedHeroes = runtimeState.generatorSelectedHeroes || new Set();
+runtimeState.generatorSelectedHeroes = generatorSelectedHeroes;
 export let generatorSkinsOnly = false;
 
 export let userId = 'anonymous';
@@ -287,7 +291,8 @@ export function computeTypeSelection(container) {
 // --- UI FUNCTION REGISTRY ---
 // Complex UI functions that live in app.js are registered here
 // to break the circular import cycle.
-export const __ui = {};
+export const __ui = runtimeState.__ui || {};
+runtimeState.__ui = __ui;
 
 export function registerUiFunctions(fns) {
   Object.assign(__ui, fns);

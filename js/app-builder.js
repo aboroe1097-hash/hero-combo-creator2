@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils.js';
+import { cssToken, escapeHtml } from './utils.js';
 // js/app-builder.js
 import { translations } from './translations.js';
 let builderFirestoreUnsub = null;
@@ -36,6 +36,18 @@ let touchDragGhost = null;
 let keyboardSelectedHero = null;
 const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 
+function getUiFunction(name) {
+  if (typeof __ui[name] === 'function') return __ui[name];
+  if (typeof window !== 'undefined' && typeof window[name] === 'function') return window[name];
+  return null;
+}
+
+function callUi(name, ...args) {
+  const fn = getUiFunction(name);
+  if (fn) return fn(...args);
+  return undefined;
+}
+
 function getKnownHero(name) {
   return allHeroesData.find(hero => hero.name === name) || null;
 }
@@ -57,7 +69,7 @@ function placeHeroInSlot(slot, heroName, idx) {
   if (!slot || !heroName || Number.isNaN(idx)) return;
   if (isHeroAlreadyInCombo(heroName, idx)) {
     const t = translations[currentLanguage] || translations.en;
-    __ui.showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
+    callUi('showAboModal', t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
     announceManualCombo(`${heroName} is already in this combo.`);
     return;
   }
@@ -123,7 +135,7 @@ export function setupTouchDragForManualBuilder() {
 
     if (isHeroAlreadyInCombo(touchDragHero, idx)) {
       const t = translations[currentLanguage] || translations.en;
-      __ui.showAboModal(t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
+      callUi('showAboModal', t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
       touchDragHero = null;
       return;
     }
@@ -152,7 +164,7 @@ export function renderAvailableHeroes() {
     .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
     .forEach(hero => {
       const card = document.createElement('div');
-      card.className = `hero-card relative season-${String(hero.season || '').toLowerCase()}`;
+      card.className = `hero-card relative season-${cssToken(hero.season)}`;
       card.draggable = true;
       card.dataset.heroName = hero.name;
       card.tabIndex = 0;
@@ -164,7 +176,7 @@ export function renderAvailableHeroes() {
         ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
         : '';
       card.innerHTML = `
-        <span class="hero-tag" style="background:${tagColor}">${hero.season}</span>
+        <span class="hero-tag" style="background:${escapeHtml(tagColor)}">${escapeHtml(hero.season)}</span>
         ${originTag}
         ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         
@@ -175,16 +187,16 @@ export function renderAvailableHeroes() {
         </div>
 
         <span class="hero-portrait-frame">
-          <img src="${hero.imageUrl}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
+          <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(hero.name))}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
         </span>
         <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
             <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
-            <span class="font-black text-[8px] uppercase tracking-wider ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
+            <span class="font-black text-[8px] uppercase tracking-wider ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
         </div>
       `;
 
       card.addEventListener('dragstart', e => {
-        __ui.forceHideHeroTooltip();
+        callUi('forceHideHeroTooltip');
         e.dataTransfer.clearData();
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData(HERO_DRAG_MIME, hero.name);
@@ -200,7 +212,7 @@ export function renderAvailableHeroes() {
       });
 
       card.addEventListener('touchstart', (e) => {
-        __ui.forceHideHeroTooltip();
+        callUi('forceHideHeroTooltip');
         const touch = e.touches && e.touches[0];
         touchDragHero = hero.name;
         createTouchGhost(card, touch);
@@ -208,15 +220,15 @@ export function renderAvailableHeroes() {
 
       card.addEventListener('pointerenter', (e) => {
         if (e.pointerType === 'touch') return; 
-        __ui.showHeroTooltip(e, hero.name);
+        callUi('showHeroTooltip', e, hero.name);
       });
       card.addEventListener('pointermove', (e) => {
         if (e.pointerType === 'touch') return;
-        __ui.moveHeroTooltip(e);
+        callUi('moveHeroTooltip', e);
       });
       card.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch') return;
-        __ui.hideHeroTooltip();
+        callUi('hideHeroTooltip');
       });
 
       const infoBtn = card.querySelector('.info-btn');
@@ -224,7 +236,7 @@ export function renderAvailableHeroes() {
         infoBtn.addEventListener('click', (e) => {
           e.stopPropagation(); 
           e.preventDefault();
-          __ui.showHeroTooltip(e, hero.name);
+          callUi('showHeroTooltip', e, hero.name);
         });
         infoBtn.addEventListener('touchstart', (e) => {
           e.stopPropagation(); 
@@ -263,7 +275,7 @@ export function updateComboSlotDisplay(slot, name, idx) {
     slot.dataset.heroName = name;
     slot.setAttribute('aria-label', `Combo slot ${idx + 1}: ${name}. Press Delete to clear.`);
     slot.innerHTML = `
-      <img src="${hero.imageUrl || getHeroImageUrl(name)}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
+      <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(name))}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
       <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
         ${escapeHtml(name)}
       </span>`;
@@ -275,7 +287,7 @@ export function updateComboSlotDisplay(slot, name, idx) {
       <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
         <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
         <span data-i18n="dragHeroHere" class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
-          ${t.dragHeroHere}
+          ${escapeHtml(t.dragHeroHere)}
         </span>
       </div>`;
     slot.classList.remove('relative', 'p-0');
@@ -320,7 +332,7 @@ export function updateManualComboScore() {
   const label = t.generatorScoreLabel || 'Score:';
   const scoreHtml = info
     ? `<div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
+        <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(label)}</span>
         <span class="text-lg font-black text-sky-400">${info.score}</span>
         <span class="text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
       </div>`
@@ -358,7 +370,7 @@ export function setupKeyboardComboSlots() {
 export async function saveCombo() {
   const t = translations[currentLanguage] || translations.en;
   if (currentCombo.includes(null)) {
-    __ui.showAboModal(t.messagePleaseDrag3Heroes);
+    callUi('showAboModal', t.messagePleaseDrag3Heroes);
     return;
   }
   loadingSpinner.classList.remove('hidden');
@@ -422,7 +434,7 @@ export async function setupFirestoreListener() {
         const item = document.createElement('div');
         item.className = 'saved-combo-slot-item';
         item.innerHTML = `
-          <img src="${getHeroImageUrl(name)}" loading="lazy">
+          <img src="${escapeHtml(getHeroImageUrl(name))}" alt="${escapeHtml(name)}" loading="lazy">
           <span>${escapeHtml(name)}</span>
         `;
         slots.appendChild(item);
@@ -437,7 +449,7 @@ export async function setupFirestoreListener() {
         scoreBox.className = 'gen-score-panel saved-combo-scorebox';
         const scoreHtml = rankInfo
           ? `<div class="gen-score-main">
-              <span class="text-[10px] uppercase tracking-widest text-slate-400">${label}</span>
+              <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(label)}</span>
               <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
             </div>`
           : '';
@@ -449,7 +461,8 @@ export async function setupFirestoreListener() {
       delBtn.className = 'remove-combo-btn';
       delBtn.textContent = 'X';
       delBtn.onclick = () =>
-        __ui.showAboModal(
+        callUi(
+          'showAboModal',
           translations[currentLanguage].messageConfirmRemoveCombo,
           async () => {
             pushUndoAction({

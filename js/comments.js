@@ -2,7 +2,9 @@
 import { escapeHtml } from './utils.js';
 
 async function getFirestoreDb() {
-  const { getDb } = await import('./firebase.js');
+  const { initFirebase, getDb } = await import('./firebase.js');
+  const firebase = initFirebase();
+  if (!firebase?.configured) return null;
   return getDb();
 }
 
@@ -11,7 +13,6 @@ let commentsListenerUnsub = null;
 // DOM elements
 const commentForm = document.getElementById('commentForm');
 const commentName = document.getElementById('commentName');
-const commentEmail = document.getElementById('commentEmail');
 const commentText = document.getElementById('commentText');
 const postCommentBtn = document.getElementById('postCommentBtn');
 const commentsList = document.getElementById('commentsList');
@@ -23,10 +24,15 @@ let currentUserId = null;
 export async function initComments() {
   try {
     wireCommentsUI();
-    await startCommentsListener();
+    const listening = await startCommentsListener();
+    if (!listening) {
+      renderCommentsUnavailable();
+      return;
+    }
     console.log('[comments] initialized (threaded + names)');
   } catch (err) {
-    console.error('[comments] init error:', err);
+    console.warn('[comments] disabled:', err?.message || err);
+    renderCommentsUnavailable();
   }
 }
 
@@ -159,6 +165,20 @@ function renderCommentsTree(docs) {
   });
 }
 
+function renderCommentsUnavailable() {
+  const countLabel = document.getElementById('commentsCountLabel');
+  if (countLabel) countLabel.textContent = 'Comments unavailable in local mode';
+  if (!commentsList) return;
+  commentsList.innerHTML = `
+    <div class="flex flex-col items-center justify-center py-10 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3">
+        <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008Zm0-12.75a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
+      </div>
+      <p class="text-sm text-slate-500 font-medium">Comments are unavailable</p>
+      <p class="text-xs text-slate-600 mt-1">Firebase comments are disabled for this session.</p>
+    </div>`;
+}
+
 /* -------------------------------------------------- */
 /* Logic: Actions                                      */
 /* -------------------------------------------------- */
@@ -175,7 +195,7 @@ window.submitReply = async (parentId) => {
   const displayName = nameInput.value.trim() || 'Guest';
 
   try {
-    await addCommentToDb(text, displayName, null, parentId);
+    await addCommentToDb(text, displayName, parentId);
     input.value = '';
     // Optional: Clear name or keep it? Keeping it is usually friendlier if they reply twice.
     document.getElementById(`reply-form-${parentId}`).classList.add('hidden');
@@ -197,24 +217,27 @@ function toggleReplyForm(id) {
 async function deleteComment(docId) {
   if (!confirm('Delete this comment?')) return;
   try {
+    const db = await getFirestoreDb();
+    if (!db) throw new Error('Firebase comments are not configured');
     const { deleteDoc, doc } = await import('firebase/firestore');
-    await deleteDoc(doc(await getFirestoreDb(), 'comments', docId));
+    await deleteDoc(doc(db, 'comments', docId));
   } catch (e) {
-    console.error(e);
+    console.warn('[comments] delete skipped:', e?.message || e);
   }
 }
 
-async function addCommentToDb(text, name, email = null, parentId = null) {
+async function addCommentToDb(text, name, parentId = null) {
+  const db = await getFirestoreDb();
+  if (!db) throw new Error('Firebase comments are not configured');
   const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
 
-  await addDoc(collection(await getFirestoreDb(), 'comments'), {
+  await addDoc(collection(db, 'comments'), {
     text,
     name: name || null,
-    email: email || null,
     parentId: parentId,
     authorId: currentUserId,
     createdAt: serverTimestamp(),
-    approved: true,
+    approved: false,
     public: true
   });
 }
@@ -226,6 +249,7 @@ async function addCommentToDb(text, name, email = null, parentId = null) {
 async function startCommentsListener() {
   if (commentsListenerUnsub) commentsListenerUnsub();
   const db = await getFirestoreDb();
+  if (!db) return false;
   const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
   const { getAuth } = await import('firebase/auth');
   const auth = getAuth();
@@ -236,6 +260,7 @@ async function startCommentsListener() {
     currentUserId = auth.currentUser?.uid || null;
     renderCommentsTree(snap);
   });
+  return true;
 }
 
 function wireCommentsUI() {
@@ -247,10 +272,10 @@ function wireCommentsUI() {
     
     postCommentBtn.disabled = true;
     try {
-      await addCommentToDb(text, commentName.value.trim(), commentEmail?.value.trim() || null, null);
+      await addCommentToDb(text, commentName.value.trim(), null);
       commentText.value = '';
     } catch (e) {
-      console.error(e);
+      console.warn('[comments] post skipped:', e?.message || e);
     } finally {
       postCommentBtn.disabled = false;
     }
