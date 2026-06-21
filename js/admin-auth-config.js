@@ -2,6 +2,8 @@ window.VTS_ADMIN_AUTH = window.VTS_ADMIN_AUTH || {
   adminHash:
     '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5',
   clearHash: '',
-  deleteHashes: [],
+  deleteHashes: [
+    '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'
+  ],
   rosterPassHashes: {}
 };
