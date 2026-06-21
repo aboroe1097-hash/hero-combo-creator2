@@ -13,7 +13,7 @@ const STRIFE_STAGE_KEY = 'vts_strife_stage';
 const STRIFE_MONSTER_KEY = 'vts_strife_monster';
 const HERO_BY_NAME = new Map(allHeroesData.map(hero => [hero.name, hero]));
 const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map(monster => [monster.id, monster]));
-const FALLBACK_LIMIT = 12;
+const REUSABLE_CANDIDATE_LIMIT = 10;
 
 let strifeRoot = null;
 
@@ -120,7 +120,7 @@ function getFallbackCombos(stage, availableSeasons) {
       return enriched;
     })
     .filter(combo => combo.heroes.every(hero => availableHeroNames.has(hero)))
-    .slice(0, FALLBACK_LIMIT)
+    .slice(0, REUSABLE_CANDIDATE_LIMIT)
     .map(combo => ({ ...combo, stage }));
 }
 
@@ -142,7 +142,7 @@ export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage
     perfectCombos: manual.perfect,
     goodCombos: hasManualRows ? manual.good : fallback,
     sourceMode: hasManualRows ? 'manual' : 'fallback',
-    recommendationCount: manual.perfect.length + manual.good.length + fallback.length,
+    candidateCount: manual.perfect.length + manual.good.length + fallback.length,
   };
 }
 
@@ -207,7 +207,10 @@ function renderComboCard(combo, index, variant = 'good') {
   const troopType = combo.troopType || 'Mixed';
   const title = combo.source === 'manual'
     ? `${variant === STRIFE_TIERS.PERFECT ? 'Perfect' : 'Good'} #${index + 1}`
-    : `DB #${combo.sourceRank}`;
+    : `Reusable #${index + 1}`;
+  const scoreLabel = combo.source === 'fallback'
+    ? `DB #${combo.sourceRank} · ${combo.displayScore}`
+    : combo.displayScore;
   const tags = (combo.tags || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join('');
   const note = combo.note ? `<p class="strife-combo-note">${escapeHtml(combo.note)}</p>` : '';
 
@@ -215,7 +218,7 @@ function renderComboCard(combo, index, variant = 'good') {
     <article class="strife-combo-card strife-combo-card--${escapeHtml(variant)}">
       <div class="strife-card-rank">
         <strong>${escapeHtml(title)}</strong>
-        <span>${escapeHtml(String(combo.displayScore))}</span>
+        <span>${escapeHtml(String(scoreLabel))}</span>
       </div>
       <div class="strife-card-main">
         <div class="strife-card-heroes">
@@ -258,17 +261,17 @@ function renderComboSection(title, subtitle, combos, model, variant) {
 function renderStrifeTool() {
   if (!strifeRoot) return;
   const model = getStrifeRecommendations();
-  const sourceLabel = model.sourceMode === 'manual' ? 'Monster table' : 'Combo DB fallback';
+  const sourceLabel = model.sourceMode === 'manual' ? 'Manual matchup rows' : 'Reusable DB candidates';
 
   strifeRoot.innerHTML = `
     <div class="strife-header">
       <div>
         <p class="strife-eyebrow">Origin of Dragons</p>
         <h2>Strife over Dragon</h2>
-        <p>Monster-specific formation tables for each season stage.</p>
+        <p>Pick one monster and season stage. Each row is a reusable team, so you can run the same combo again.</p>
       </div>
       <div class="strife-source-card">
-        <strong>${model.recommendationCount}</strong>
+        <strong>${model.candidateCount}</strong>
         <span>${escapeHtml(sourceLabel)}</span>
       </div>
     </div>
@@ -276,7 +279,7 @@ function renderStrifeTool() {
     <section class="strife-control-deck">
       <div class="strife-section-title">
         <h3>Monster</h3>
-        <span>10 targets</span>
+        <span>Choose one target</span>
       </div>
       <div class="strife-monster-grid" role="group" aria-label="Strife monster target">
         ${renderMonsterGrid(model.monster.id)}
@@ -293,6 +296,7 @@ function renderStrifeTool() {
       <div class="strife-metrics" aria-label="Strife recommendation metrics">
         <span><strong>${escapeHtml(model.monster.name)}</strong> selected</span>
         <span><strong>${model.availableHeroCount}</strong> heroes available</span>
+        <span><strong>Reusable</strong> for repeat hits</span>
         <span><strong>${model.availableSeasons.join(' / ')}</strong></span>
       </div>
     </section>
@@ -302,12 +306,12 @@ function renderStrifeTool() {
       <div>
         <p class="strife-eyebrow">Selected monster</p>
         <h3>${escapeHtml(model.monster.name)}</h3>
-        <span>Formation order: Front / Middle / Back</span>
+        <span>Formation order: Front / Middle / Back. Pick the best row you can build and reuse it.</span>
       </div>
     </section>
 
     ${renderComboSection('Perfect Combination', model.sourceMode === 'manual' ? model.stage : 'Manual table pending', model.perfectCombos, model, STRIFE_TIERS.PERFECT)}
-    ${renderComboSection(model.sourceMode === 'manual' ? 'Good Damage' : 'General Combo Fallback', model.stage, model.goodCombos, model, STRIFE_TIERS.GOOD)}
+    ${renderComboSection(model.sourceMode === 'manual' ? 'Good Damage' : 'Reusable Combo Candidates', model.sourceMode === 'manual' ? model.stage : 'Same combo can be repeated', model.goodCombos, model, STRIFE_TIERS.GOOD)}
   `;
 }
 
