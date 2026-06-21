@@ -1,8 +1,10 @@
 // Eden Map scout mode — optional Firebase intel sync
 import { initFirebase, ensureAnonymousAuth } from './firebase.js';
-import {
+import { importFirestore } from './firebase-sdk.js';
+
+const {
   doc, getDoc, setDoc, onSnapshot, serverTimestamp,
-} from 'firebase/firestore';
+} = await importFirestore();
 
 const INTEL_PATH = ['eden_map', 'shared_intel'];
 

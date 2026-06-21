@@ -2,11 +2,27 @@
 // Exposes initFirebase() and helpers. Uses modular SDK.
 // NOTE: This file is an ES module. It's imported by app.js.
 
-import { initializeApp } from "firebase/app";
-import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
+import {
+  importFirebaseAnalytics,
+  importFirebaseApp,
+  importFirebaseAppCheck,
+  importFirebaseAuth,
+  importFirestore,
+} from './firebase-sdk.js';
+
+const [
+  { initializeApp },
+  { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence },
+  { getFirestore },
+  { getAnalytics },
+  { initializeAppCheck, ReCaptchaEnterpriseProvider },
+] = await Promise.all([
+  importFirebaseApp(),
+  importFirebaseAuth(),
+  importFirestore(),
+  importFirebaseAnalytics(),
+  importFirebaseAppCheck(),
+]);
 
 let app = null;
 let db = null;

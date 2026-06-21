@@ -14,7 +14,8 @@ import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displ
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { importFirestore } from './firebase-sdk.js';
+const { doc, getDoc, setDoc, onSnapshot } = await importFirestore();
 import {
   STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
   ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,

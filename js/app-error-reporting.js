@@ -1,3 +1,5 @@
+import { importFirestore } from './firebase-sdk.js';
+
 const ERROR_QUEUE_KEY = 'vts_error_report_queue';
 let flushing = false;
 
@@ -46,7 +48,7 @@ export async function flushClientErrors() {
   if (!db || !queue.length) return;
   flushing = true;
   try {
-    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+    const { collection, addDoc, serverTimestamp } = await importFirestore();
     while (queue.length) {
       const entry = queue.shift();
       await addDoc(collection(db, 'errors'), { ...entry, receivedAt: serverTimestamp() });

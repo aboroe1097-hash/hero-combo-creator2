@@ -1,5 +1,6 @@
 // js/comments.js - Threaded Comments with Name Input
 import { escapeHtml } from './utils.js';
+import { importFirebaseAuth, importFirestore } from './firebase-sdk.js';
 
 async function getFirestoreDb() {
   const { initFirebase, getDb } = await import('./firebase.js');
@@ -219,7 +220,7 @@ async function deleteComment(docId) {
   try {
     const db = await getFirestoreDb();
     if (!db) throw new Error('Firebase comments are not configured');
-    const { deleteDoc, doc } = await import('firebase/firestore');
+    const { deleteDoc, doc } = await importFirestore();
     await deleteDoc(doc(db, 'comments', docId));
   } catch (e) {
     console.warn('[comments] delete skipped:', e?.message || e);
@@ -229,7 +230,7 @@ async function deleteComment(docId) {
 async function addCommentToDb(text, name, parentId = null) {
   const db = await getFirestoreDb();
   if (!db) throw new Error('Firebase comments are not configured');
-  const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+  const { addDoc, collection, serverTimestamp } = await importFirestore();
 
   await addDoc(collection(db, 'comments'), {
     text,
@@ -250,8 +251,8 @@ async function startCommentsListener() {
   if (commentsListenerUnsub) commentsListenerUnsub();
   const db = await getFirestoreDb();
   if (!db) return false;
-  const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
-  const { getAuth } = await import('firebase/auth');
+  const { collection, query, orderBy, onSnapshot } = await importFirestore();
+  const { getAuth } = await importFirebaseAuth();
   const auth = getAuth();
 
   const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));

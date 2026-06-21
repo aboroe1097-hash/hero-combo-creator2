@@ -1,5 +1,6 @@
 // js/player-profile.js - Roster persistence to localStorage + Firebase
 import { getUserId } from './state.js';
+import { importFirestore } from './firebase-sdk.js';
 
 async function getFirestoreDb() {
   const { getDb } = await import('./firebase.js');
@@ -24,7 +25,7 @@ export async function syncPlayerProfileToCloud(profile) {
   const uid = getUserId();
   if (!db || !uid || uid === 'anonymous') return;
   try {
-    const { doc, setDoc } = await import('firebase/firestore');
+    const { doc, setDoc } = await importFirestore();
     await setDoc(doc(db, 'users', uid), { playerProfile: profile }, { merge: true });
   } catch (e) {
     console.warn('Profile cloud sync failed:', e);
@@ -36,7 +37,7 @@ export async function loadPlayerProfileFromCloud() {
   const uid = getUserId();
   if (!db || !uid || uid === 'anonymous') return null;
   try {
-    const { doc, getDoc } = await import('firebase/firestore');
+    const { doc, getDoc } = await importFirestore();
     const snap = await getDoc(doc(db, 'users', uid));
     if (snap.exists() && snap.data().playerProfile) {
       const profile = snap.data().playerProfile;

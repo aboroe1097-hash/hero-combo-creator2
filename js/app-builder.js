@@ -3,6 +3,7 @@ import { cssToken, escapeHtml } from './utils.js';
 import { translations } from './translations.js';
 let builderFirestoreUnsub = null;
 import { allHeroesData } from './heroes-data.js';
+import { importFirestore } from './firebase-sdk.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import {
   currentLanguage,
@@ -375,7 +376,7 @@ export async function saveCombo() {
   }
   loadingSpinner.classList.remove('hidden');
   try {
-    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+    const { collection, addDoc, serverTimestamp } = await importFirestore();
     await addDoc(collection(db, `users/${getUserId()}/bestCombos`), {
       heroes: [...currentCombo],
       timestamp: serverTimestamp()
@@ -403,7 +404,7 @@ export async function setupFirestoreListener() {
   if (!_db || !userId) return;
   db = _db;
 
-  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await import('firebase/firestore');
+  const { collection, query, orderBy, limit, onSnapshot, deleteDoc, doc } = await importFirestore();
 
   const q = query(
     collection(db, `users/${userId}/bestCombos`),
@@ -468,7 +469,7 @@ export async function setupFirestoreListener() {
             pushUndoAction({
               label: 'Saved combo',
               undo: async () => {
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { collection, addDoc, serverTimestamp } = await importFirestore();
                 await addDoc(collection(db, `users/${userId}/bestCombos`), {
                   heroes: [...heroes],
                   timestamp: serverTimestamp(),
