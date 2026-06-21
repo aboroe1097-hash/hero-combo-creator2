@@ -22,10 +22,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm run test:unit
-      - run: npm run i18n:check
-      - run: npm run smoke
+      - run: npm run check

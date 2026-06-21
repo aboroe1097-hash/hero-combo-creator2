@@ -177,7 +177,7 @@ Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click vi
 The old maintenance splash/config gate has been removed. `index.html` and `admin.html` load the standard UI directly, and `js/maintenance-config.js` is no longer part of the app or service-worker precache.
 
 ### Admin Auth
-The committed `js/admin-auth-config.js` contains no usable password hashes, so admin mode is disabled by default in public checkouts. Deployments that need admin access must provide strong SHA-256 hashes through `window.VTS_ADMIN_AUTH`; guest mode remains available for read-only dashboard views.
+The committed `js/admin-auth-config.js` contains no usable password hashes, so admin mode is disabled by default in public checkouts. Deployments that need admin access must provide strong SHA-256 hashes through `window.VTS_ADMIN_AUTH`; guest mode remains available for read-only dashboard views. Keep real hashes in deployment-specific runtime config, not in the public repo.
 
 ### Firebase
 Firebase is imported from the pinned npm package (`firebase@11.6.1`) instead of the gstatic CDN. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
