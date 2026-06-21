@@ -1,6 +1,7 @@
 node_modules/
 dist/
 docs/
+!docs/
 !docs/media/
 !docs/media/**
 .DS_Store

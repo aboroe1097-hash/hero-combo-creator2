@@ -25,13 +25,30 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 
 ## Screenshots And Demos
 
-Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes.
+Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes. These previews are captured in dark mode from the local app with demo data where needed.
 
-| Area | Preview |
-|------|---------|
-| Eden Map Planner | ![Eden Map Planner](docs/media/eden-map-planner.png) |
-| OCR Admin Entry | ![OCR Admin Entry](docs/media/ocr-admin-entry.png) |
-| Combo Generator | ![Combo Generator](docs/media/combo-generator.png) |
+<table>
+  <tr>
+    <td width="50%">
+      <strong>Combo Generator</strong><br>
+      <img src="docs/media/combo-generator.png" alt="Combo Generator filters, skin mode, and hero selection grid">
+    </td>
+    <td width="50%">
+      <strong>Hero Atlas</strong><br>
+      <img src="docs/media/hero-atlas.png" alt="Hero Atlas ranking and detail panel">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>Eden Map Planner</strong><br>
+      <img src="docs/media/eden-map-planner.png" alt="Eden Map Planner controls and map canvas">
+    </td>
+    <td width="50%">
+      <strong>VTS Admin Dashboard</strong><br>
+      <img src="docs/media/ocr-admin-entry.png" alt="VTS Admin dashboard with analytics summary and leaderboard">
+    </td>
+  </tr>
+</table>
 
 Short GIFs are welcome for workflows that static screenshots cannot show well, especially OCR upload parsing and Eden route planning. Keep media optimized before committing so the GitHub Pages branch stays light.
 
@@ -53,7 +70,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.2 release passed with 19/19 unit tests.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.2 release passed with 27/27 unit tests.
 
 ## Tech Stack
 
