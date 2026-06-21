@@ -18,6 +18,7 @@ const { normalizeStructureName, normalizeStructureTarget, parseOcrResults } =
   await import('../../js/ocr-engine.js');
 const {
   findBestMatch,
+  formatDatasetStructureLabel,
   formatStructureLabel,
   normalizeStructureLevelForName,
   validateTotalDemolition,
@@ -62,18 +63,51 @@ test('structure target normalization treats common aliases as the same target', 
     structure_level: 'Lv2',
   });
   assert.deepEqual(normalizeStructureTarget('Checkpoint 1', ''), {
-    structure_name: 'Bridges',
-    structure_level: '',
+    structure_name: 'Bridge',
+    structure_level: 'Lv1',
   });
   assert.deepEqual(normalizeStructureTarget('Gates', 'Lv1'), {
-    structure_name: 'Bridges',
-    structure_level: '',
+    structure_name: 'Bridge',
+    structure_level: 'Lv1',
   });
-  assert.equal(formatStructureLabel('Gates', 'Lv1'), 'Bridges');
-  assert.equal(formatStructureLabel('Check Point', 'Lv1'), 'Bridges');
+  assert.deepEqual(normalizeStructureTarget('Bridges', ''), {
+    structure_name: 'Bridge',
+    structure_level: 'Lv1',
+  });
+  assert.equal(formatStructureLabel('Gates', 'Lv1'), 'Bridge Lv1');
+  assert.equal(formatStructureLabel('Check Point', 'Lv1'), 'Bridge Lv1');
+  assert.equal(formatStructureLabel('Bridges', ''), 'Bridge Lv1');
+  assert.equal(validateTotalDemolition('Bridge', 'Lv1', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Bridges', '', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Check Point', 'Lv1', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Town 4', '', 3750000)?.match, true);
+});
+
+test('dataset structure labels preserve extracted names while canonical fields drive validation', () => {
+  const parsed = parseOcrResults([
+    {
+      json: {
+        timestamp: '2026-07-06 20:33:00',
+        structure_name: 'Check Point',
+        structure_level: '5',
+        players: [{ name: 'Tester', value: 100000 }],
+      },
+    },
+  ]);
+
+  assert.equal(parsed.attacks[0].structure_name, 'Gates');
+  assert.equal(parsed.attacks[0].structure_level, 'Lv5');
+  assert.equal(parsed.attacks[0].raw_structure_name, 'Check Point');
+  assert.equal(parsed.attacks[0].raw_structure_level, '5');
+  assert.equal(formatDatasetStructureLabel(parsed.attacks[0]), 'Check Point Lv5');
+  assert.equal(
+    validateTotalDemolition(
+      parsed.attacks[0].structure_name,
+      parsed.attacks[0].structure_level,
+      2000000
+    )?.match,
+    true
+  );
 });
 
 test('OCR parsing strips Stronghold levels from imported sessions', () => {
@@ -130,12 +164,10 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['Anne...', 'Anne'],
     ['^Anne^', 'Anne'],
     ['✨ Anne ✨', 'Anne'],
-    ['≪Kika≫', 'Kika'],
-    ['✨ Kika ✨', 'Kika'],
-    ['꧁ Kika ꧂', 'Kika'],
-    ['꧁༺ Kika ༻꧂', 'Kika'],
-    ['꧁ Kika-banner ꧂', 'Kika-banner'],
-    ['꧁Kika-banner2꧂', 'Kika-banner2'],
+    ['Kika', '꧁ Kika ꧂'],
+    ['≪Kika≫', '꧁ Kika ꧂'],
+    ['✨ Kika ✨', '꧁ Kika ꧂'],
+    ['꧁ Kika ꧂', '꧁ Kika ꧂'],
     ['MasterVj~', 'MasterVj'],
     ['✨MasterVj✨', 'MasterVj'],
     ['●■AGAM ■●', 'AGAM'],
@@ -162,11 +194,43 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
 test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('MalakAdo'), 'MalakAdo');
   assert.equal(findBestMatch('MalakAbo'), 'MalakAbo');
-  assert.equal(findBestMatch('Kika-banner'), 'Kika-banner');
-  assert.equal(findBestMatch('Kika-banner2'), 'Kika-banner2');
+  assert.equal(findBestMatch('꧁ Kika ꧂'), '꧁ Kika ꧂');
+  assert.equal(findBestMatch('꧁Kika꧂'), '꧁ Kika ꧂');
+  assert.equal(findBestMatch('꧁༺ Kika ༻꧂'), '꧁༺ Kika ༻꧂');
+  assert.equal(findBestMatch('꧁༺Kika༻꧂'), '꧁༺ Kika ༻꧂');
+  assert.equal(findBestMatch('༺ Kika ༻'), '꧁༺ Kika ༻꧂');
+  assert.equal(findBestMatch('Kika-banner'), '꧁ Kika-banner ꧂');
+  assert.equal(findBestMatch('꧁ Kika-banner ꧂'), '꧁ Kika-banner ꧂');
+  assert.equal(findBestMatch('꧁Kika-banner꧂'), '꧁ Kika-banner ꧂');
+  assert.equal(findBestMatch('Kika-banner2'), '꧁Kika-banner2꧂');
+  assert.equal(findBestMatch('꧁ Kika-banner2 ꧂'), '꧁Kika-banner2꧂');
+  assert.equal(findBestMatch('꧁Kika-banner2꧂'), '꧁Kika-banner2꧂');
   assert.equal(findBestMatch('REDBULL-#'), 'REDBULL-#');
   assert.equal(findBestMatch('REDBULLS'), 'REDBULLS');
   assert.equal(findBestMatch('Sarafina'), '~Sarafina~');
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
+});
+
+test('Kika reward accounts stay separate in OCR summaries', () => {
+  const parsed = parseOcrResults([
+    {
+      json: {
+        timestamp: '2026-07-06 20:33:00',
+        structure_name: 'Gates',
+        structure_level: '2',
+        players: [
+          { name: '꧁Kika-banner2꧂', value: 4000 },
+          { name: '꧁ Kika ꧂', value: 3000 },
+          { name: '꧁༺ Kika ༻꧂', value: 2000 },
+          { name: '꧁ Kika-banner ꧂', value: 1000 },
+        ],
+      },
+    },
+  ]);
+
+  assert.deepEqual(
+    parsed.players_summary.map((p) => p.name).sort(),
+    ['꧁ Kika ꧂', '꧁ Kika-banner ꧂', '꧁Kika-banner2꧂', '꧁༺ Kika ༻꧂'].sort()
+  );
 });

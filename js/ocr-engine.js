@@ -54,7 +54,7 @@ Extract ALL visible player entries accurately.
 
 RULES FOR EXTRACTION:
 1. 'structure_name': the name of the attacked building (e.g. Capital, Stronghold, Temple, Gates, City, Town, Check Point). This is usually located at the very top of the report in the header or title. Look carefully. Even if partially cut off or obscured, provide your best guess. Only return null if it is completely missing from the image.
-2. 'structure_level': the integer level of the structure (e.g. "5" from "Lv.5"). Stronghold is name-only, so return null for Stronghold even if the UI implies a level. Check Point means Gates in our terminology, except level 1 Check Point should be Bridges. Town Lv4 / Town 4 should be treated as Large Town Lv4. For every other structure, look closely at the header next to the structure name and provide your best guess if partially obscured. Only return null if completely missing.
+2. 'structure_level': the integer level of the structure (e.g. "5" from "Lv.5"). Stronghold is name-only, so return null for Stronghold even if the UI implies a level. Check Point means Gates in our terminology, except level 1 Check Point should be Bridge Lv1. Town Lv4 / Town 4 should be treated as Large Town Lv4. For every other structure, look closely at the header next to the structure name and provide your best guess if partially obscured. Only return null if completely missing.
 3. 'timestamp': the date/time shown, formatted strictly as 'YYYY-MM-DD HH:MM:SS'. If not visible, null.
 4. 'start_time': the "Start Time" of the attack if clearly visible (e.g., "14:30"). If not visible, null.
 5. 'players': an array of objects, each containing exactly two keys: 'name' and 'value'.
@@ -195,7 +195,9 @@ function parseOcrResults(results) {
        if (m) dt = new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]);
     }
 
-    const target = normalizeStructureTarget(j.structure_name, j.structure_level);
+    const rawStructureName = j.structure_name || null;
+    const rawStructureLevel = j.structure_level || '';
+    const target = normalizeStructureTarget(rawStructureName, rawStructureLevel);
     const sN = target.structure_name || null;
     const sL = target.structure_level || '';
 
@@ -209,11 +211,21 @@ function parseOcrResults(results) {
         if (j.players) g.players.push(...j.players);
         if (!g.sN && sN) g.sN = sN;
         if (!g.sL && sL) g.sL = sL;
+        if ((!g.rawStructureName || /^structure$/i.test(String(g.rawStructureName))) && rawStructureName) g.rawStructureName = rawStructureName;
+        if (!g.rawStructureLevel && rawStructureLevel) g.rawStructureLevel = rawStructureLevel;
         if (!g.start_time && start_time) g.start_time = start_time;
         f = true; break;
       }
     }
-    if (!f) groups.push({ dt, sN, sL, start_time, players: j.players ? [...j.players] : [] });
+    if (!f) groups.push({
+      dt,
+      sN,
+      sL,
+      rawStructureName,
+      rawStructureLevel,
+      start_time,
+      players: j.players ? [...j.players] : []
+    });
   }
 
   log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
@@ -246,6 +258,8 @@ function parseOcrResults(results) {
         start_time: g.start_time || null,
         structure_name: sN,
         structure_level: sL,
+        raw_structure_name: g.rawStructureName || sN,
+        raw_structure_level: g.rawStructureLevel || sL,
         players: deduped,
         players_count: deduped.length,
         total_demolition: deduped.reduce((sum, p) => sum + p.value, 0)
@@ -273,6 +287,8 @@ function parseOcrResults(results) {
        if (existing.structure_name.includes('Structure') && !a.structure_name.includes('Structure')) {
          existing.structure_name = a.structure_name;
          existing.structure_level = a.structure_level;
+         existing.raw_structure_name = a.raw_structure_name || a.structure_name;
+         existing.raw_structure_level = a.raw_structure_level || a.structure_level;
          const oldId = existing.id;
          existing.id = a.id;
          merged[a.id] = existing;
@@ -292,7 +308,17 @@ function parseOcrResults(results) {
       sum[n].total_demolition += p.value;
       const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);
       if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + level); }
-      sum[n].attacks.push({ id: a.id, name: a.structure_name, structure_level: level, game_time: a.game_time, val: p.value, rank: p.rank });
+      sum[n].attacks.push({
+        id: a.id,
+        name: a.structure_name,
+        structure_name: a.structure_name,
+        structure_level: level,
+        raw_structure_name: a.raw_structure_name,
+        raw_structure_level: a.raw_structure_level,
+        game_time: a.game_time,
+        val: p.value,
+        rank: p.rank
+      });
     });
   });
 

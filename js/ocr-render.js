@@ -4,7 +4,7 @@ import {
   esc,
   findBestMatch,
   validateTotalDemolition,
-  formatStructureLabel,
+  formatDatasetStructureLabel,
   normalizeStructureTarget
 } from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
@@ -24,6 +24,16 @@ function compactValue(value) {
   if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
   if (n >= 1000) return `${Math.round(n / 1000)}k`;
   return n.toLocaleString();
+}
+
+function isAttackCompleteOverride(attack) {
+  return attack?.data_complete_override === true;
+}
+
+function getAttackValidation(attack) {
+  const result = validateTotalDemolition?.(attack?.structure_name, attack?.structure_level, attack?.total_demolition);
+  if (!result) return null;
+  return { ...result, overridden: isAttackCompleteOverride(attack) };
 }
 
 function parseGameTimeDate(gameTime) {
@@ -94,7 +104,7 @@ function structureKey(attack) {
 }
 
 function structureLabel(attack) {
-  return formatStructureLabel(attack?.structure_name, attack?.structure_level);
+  return formatDatasetStructureLabel(attack);
 }
 
 function normalizePlayerName(name) {
@@ -147,6 +157,10 @@ function buildPlayerSummary(attacks) {
         name: a.structure_name,
         structure_name: a.structure_name,
         structure_level: a.structure_level,
+        raw_structure_name: a.raw_structure_name,
+        raw_structure_level: a.raw_structure_level,
+        display_structure_name: a.display_structure_name,
+        display_structure_level: a.display_structure_level,
         game_time: a.game_time,
         val,
         value: val,
@@ -577,8 +591,8 @@ function renderOpsOverview(attacks, psum) {
     .slice(0, 3);
   const latest = sortAttacksChrono(attacks).at(-1);
   const validationIssues = attacks.reduce((sum, attack) => {
-    const result = validateTotalDemolition?.(attack.structure_name, attack.structure_level, attack.total_demolition);
-    return sum + (result?.isValid === false ? 1 : 0);
+    const result = getAttackValidation(attack);
+    return sum + (result && !result.match && !result.overridden ? 1 : 0);
   }, 0);
 
   const lowNames = lowParticipation.map(p => esc(p.name)).join(', ');
@@ -710,10 +724,12 @@ function render() {
       dayHeader.textContent = day;
       al.appendChild(dayHeader);
       grouped[day].forEach(a => {
-        const val = validateTotalDemolition(a.structure_name, a.structure_level, a.total_demolition);
+        const val = getAttackValidation(a);
         let badge = '';
         if (val) {
-          badge = val.match
+          badge = val.overridden
+            ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
+            : val.match
             ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
             : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct*100).toFixed(1)}% off)">!</span>`;
         }
@@ -817,60 +833,136 @@ function render() {
   }
   const $trend = $id('dashTrendChart');
   if ($trend) {
-    const dayMap = {};
+    $trend.style.display = 'block';
+    $trend.style.height = 'auto';
+    $trend.style.padding = '0';
+    $trend.style.background = 'transparent';
+    $trend.style.overflow = 'visible';
+    const dayMap = new Map();
+    const padDate = n => String(n).padStart(2, '0');
     atts.forEach(a => {
-      const day = a.game_time && a.game_time.includes(',') ? a.game_time.split(',')[0] : (a.game_time||'').split(' ')[0];
-      if (!dayMap[day]) dayMap[day] = { targets: 0, demo: 0, participants: new Set() };
-      dayMap[day].targets++;
-      dayMap[day].demo += (a.total_demolition || 0);
-      (a.players || []).forEach(p => dayMap[day].participants.add(p.name));
+      const parsedDate = parseGameTimeDate(a.game_time);
+      const key = parsedDate
+        ? `${parsedDate.getFullYear()}-${padDate(parsedDate.getMonth() + 1)}-${padDate(parsedDate.getDate())}`
+        : (a.game_time || 'Unknown').split(',')[0];
+      const label = parsedDate
+        ? `${padDate(parsedDate.getDate())}/${padDate(parsedDate.getMonth() + 1)}`
+        : key;
+      const fullLabel = parsedDate
+        ? `${padDate(parsedDate.getDate())}/${padDate(parsedDate.getMonth() + 1)}/${parsedDate.getFullYear()}`
+        : key;
+      const current = dayMap.get(key) || {
+        order: parsedDate ? new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()).getTime() : 0,
+        label,
+        fullLabel,
+        targets: 0,
+        demo: 0,
+        participants: new Set()
+      };
+      current.targets++;
+      current.demo += valueOf(a.total_demolition);
+      attackPlayers(a).forEach(p => current.participants.add(findBestMatch(p.name)));
+      dayMap.set(key, current);
     });
-    const days = Object.keys(dayMap).sort().slice(-7);
-    const maxCount = Math.max(...days.map(d => dayMap[d].targets), 1);
+    const days = [...dayMap.values()].sort((a, b) => a.order - b.order).slice(-8);
+    const maxTargets = Math.max(...days.map(d => d.targets), 1);
+    const maxMembers = Math.max(...days.map(d => d.participants.size), 1);
 
     if (days.length === 0) {
       $trend.innerHTML = '<div style="color:#64748b;font-size:0.8rem;text-align:center;padding:2rem 0">No activity yet</div>';
-    } else if (days.length === 1) {
-      const d = dayMap[days[0]];
-      const totalDemoStr = d.demo > 1e6 ? (d.demo/1e6).toFixed(1)+'M' : (d.demo/1000).toFixed(0)+'k';
-      $trend.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;height:100%;align-items:center;text-align:center">
-          <div style="display:flex;flex-direction:column;color:#3b82f6"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(59,130,246,0.5)">${d.targets}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Targets</div></div>
-          <div style="display:flex;flex-direction:column;color:#10b981"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(16,185,129,0.5)">${totalDemoStr}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Demo</div></div>
-          <div style="display:flex;flex-direction:column;color:#8b5cf6"><div style="font-size:1.8rem;font-weight:900;text-shadow:0 0 20px rgba(139,92,246,0.5)">${d.participants.size}</div><div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;font-weight:700;text-transform:uppercase">Members</div></div>
-        </div>
-        <div style="text-align:center;font-size:0.7rem;color:#64748b;margin-top:8px;font-weight:600">Activity on ${days[0]}</div>
-      `;
     } else {
-      const w = 350; const h = 140;
-      const padX = 30; const padY = 30;
-      const usableW = w - padX*2; const usableH = h - padY*2;
-
-      let pts = [];
-      days.forEach((d, i) => {
-         const x = padX + (i / (days.length - 1)) * usableW;
-         const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
-         pts.push(`${x},${y}`);
+      const w = 560;
+      const h = 205;
+      const left = 44;
+      const right = 18;
+      const top = 26;
+      const bottom = 42;
+      const chartW = w - left - right;
+      const chartH = h - top - bottom;
+      const slot = chartW / Math.max(days.length, 1);
+      const barW = Math.min(34, Math.max(14, slot * 0.42));
+      const busiest = [...days].sort((a, b) => b.targets - a.targets || b.participants.size - a.participants.size)[0];
+      const avgTargets = days.reduce((sum, d) => sum + d.targets, 0) / days.length;
+      const avgMembers = days.reduce((sum, d) => sum + d.participants.size, 0) / days.length;
+      const memberPoints = days.map((d, i) => {
+        const x = left + i * slot + slot / 2;
+        const y = top + chartH - (d.participants.size / maxMembers) * chartH;
+        return { x, y, d };
       });
+      const linePoints = memberPoints.map(p => `${p.x},${p.y}`).join(' ');
+      const labelIndexes = new Set([
+        0,
+        days.length - 1,
+        Math.floor((days.length - 1) / 2)
+      ]);
+      if (days.length <= 4) days.forEach((_, index) => labelIndexes.add(index));
 
-      const polyPts = `${padX},${h-padY} ${pts.join(' ')} ${padX + usableW},${h-padY}`;
-
-      let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="overflow:visible">`;
-      svg += `<line x1="${padX}" y1="${padY}" x2="${w-padX}" y2="${padY}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
-      svg += `<line x1="${padX}" y1="${padY + usableH/2}" x2="${w-padX}" y2="${padY + usableH/2}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4"/>`;
-      svg += `<line x1="${padX}" y1="${h-padY}" x2="${w-padX}" y2="${h-padY}" stroke="rgba(255,255,255,0.15)"/>`;
-      svg += `<defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(59,130,246,0.5)"/><stop offset="100%" stop-color="rgba(59,130,246,0)"/></linearGradient></defs>`;
-      svg += `<polygon points="${polyPts}" fill="url(#trendGrad)"/>`;
-      svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 4px 6px rgba(59,130,246,0.4))"/>`;
-
+      let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" role="img" aria-label="Activity trend by day">`;
+      svg += `<defs>
+        <linearGradient id="activityBarGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#67e8f9"/>
+          <stop offset="100%" stop-color="#0891b2"/>
+        </linearGradient>
+        <linearGradient id="activityMemberArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(167,139,250,0.28)"/>
+          <stop offset="100%" stop-color="rgba(167,139,250,0)"/>
+        </linearGradient>
+      </defs>`;
+      [0, 0.5, 1].forEach(ratio => {
+        const y = top + chartH * ratio;
+        svg += `<line x1="${left}" y1="${y}" x2="${w - right}" y2="${y}" stroke="rgba(148,163,184,0.16)" stroke-dasharray="${ratio === 1 ? '0' : '4 8'}"/>`;
+      });
+      svg += `<text x="${left - 10}" y="${top + 4}" fill="#94a3b8" font-size="11" font-weight="800" text-anchor="end">${maxTargets}</text>`;
+      svg += `<text x="${left - 10}" y="${top + chartH + 4}" fill="#64748b" font-size="11" font-weight="800" text-anchor="end">0</text>`;
       days.forEach((d, i) => {
-         const x = padX + (i / (days.length - 1)) * usableW;
-         const y = h - padY - (dayMap[d].targets / maxCount) * usableH;
-         svg += `<circle cx="${x}" cy="${y}" r="5" fill="#0b0f19" stroke="#60a5fa" stroke-width="2.5" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>`;
-         svg += `<text x="${x}" y="${h-8}" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle" font-family="sans-serif">${d}</text>`;
+        const x = left + i * slot + slot / 2;
+        const barH = Math.max(4, (d.targets / maxTargets) * chartH);
+        const y = top + chartH - barH;
+        svg += `<g>
+          <title>${d.fullLabel}: ${d.targets} target${d.targets === 1 ? '' : 's'}, ${d.participants.size} members, ${compactValue(d.demo)} demo</title>
+          <rect x="${x - barW / 2}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="url(#activityBarGrad)" opacity="0.95"/>
+        </g>`;
+        if (labelIndexes.has(i)) {
+          svg += `<text x="${x}" y="${h - 13}" fill="#94a3b8" font-size="12" font-weight="800" text-anchor="middle">${d.label}</text>`;
+        } else {
+          svg += `<circle cx="${x}" cy="${h - 18}" r="2" fill="rgba(148,163,184,0.35)"/>`;
+        }
+      });
+      if (days.length > 1) {
+        const areaPoints = `${left + slot / 2},${top + chartH} ${linePoints} ${left + (days.length - 1) * slot + slot / 2},${top + chartH}`;
+        svg += `<polygon points="${areaPoints}" fill="url(#activityMemberArea)"/>`;
+        svg += `<polyline points="${linePoints}" fill="none" stroke="#c4b5fd" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+      memberPoints.forEach(({ x, y, d }) => {
+        svg += `<circle cx="${x}" cy="${y}" r="5" fill="#111827" stroke="#ddd6fe" stroke-width="2.5">
+          <title>${d.fullLabel}: ${d.participants.size} unique members</title>
+        </circle>`;
       });
       svg += '</svg>';
-      $trend.innerHTML = svg;
+      $trend.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-bottom:10px">
+          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
+            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Busiest</div>
+            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${busiest.label}</div>
+            <div style="color:#22d3ee;font-size:0.72rem;font-weight:800">${busiest.targets} target${busiest.targets === 1 ? '' : 's'}</div>
+          </div>
+          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
+            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Pace</div>
+            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${avgTargets.toFixed(1)}</div>
+            <div style="color:#94a3b8;font-size:0.72rem;font-weight:800">targets/day</div>
+          </div>
+          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
+            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Crew</div>
+            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${Math.round(avgMembers)}</div>
+            <div style="color:#94a3b8;font-size:0.72rem;font-weight:800">members/day</div>
+          </div>
+        </div>
+        <div style="height:172px;background:linear-gradient(180deg,rgba(15,23,42,0.82),rgba(15,23,42,0.45));border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:4px 0 0">${svg}</div>
+        <div style="display:flex;justify-content:center;gap:14px;color:#94a3b8;font-size:0.72rem;font-weight:800;margin-top:8px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px"><b style="width:10px;height:10px;border-radius:3px;background:#22d3ee;display:inline-block"></b>Targets</span>
+          <span style="display:inline-flex;align-items:center;gap:6px"><b style="width:18px;height:3px;border-radius:999px;background:#c4b5fd;display:inline-block"></b>Members</span>
+          <span style="color:#64748b">${days.length} active day${days.length === 1 ? '' : 's'}</span>
+        </div>`;
     }
   }
 }
@@ -902,8 +994,17 @@ function showModal(type, data) {
         else tiers['<100K']++;
       });
       let h = '';
+      const validation = getAttackValidation(data);
+      if (validation && !validation.match) {
+        const missing = Math.max(0, validation.expected - (data.total_demolition || 0));
+        if (validation.overridden) {
+          h += `<div class="dash-validation-card dash-validation-card--complete"><div><strong>Marked Complete</strong><span>Admin override accepted this structure as complete.</span></div></div>`;
+        } else {
+          h += `<div class="dash-validation-card dash-validation-card--warn"><div><strong>Missing Data Warning</strong><span>Current ${(data.total_demolition || 0).toLocaleString()} / expected ${validation.expected.toLocaleString()}${missing ? ` - missing ${missing.toLocaleString()}` : ''}.</span></div>${!isGuest() ? `<button type="button" class="dash-btn dash-btn-xs dash-complete-override-btn" onclick="window.markAttackComplete('${data.id}')">Mark Complete</button>` : ''}</div>`;
+        }
+      }
       if (!isGuest()) {
-        h = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.addPlayer('${data.id}')">➕ Add Player</button><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+        h += `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.addPlayer('${data.id}')">➕ Add Player</button><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
       }
       h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(structureLabel(data))}</div></div></div>`;
       h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(tiers).filter(([k,v])=>v>0).map(([k,v]) => `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v/data.players_count)*100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`).join('')}</div>`;
@@ -966,7 +1067,7 @@ function showModal(type, data) {
 
       body.innerHTML = pb + `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition||0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length||0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition||0)/data.attacks.length).toLocaleString() : '0'}</div></div></div>` + chartHtml +
         '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' +
-        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(formatStructureLabel(att.name || att.structure_name || '', att.structure_level || ''))}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') +
+        sortedAttacks.map(att => `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(formatDatasetStructureLabel(att))}</td><td style="text-align:right">${(att.val||att.value||0).toLocaleString()}</td><td style="text-align:center">#${att.rank||'-'}</td></tr>`).join('') +
         '</tbody></table>' +
         '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
     }

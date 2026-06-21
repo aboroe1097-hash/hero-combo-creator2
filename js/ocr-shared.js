@@ -60,7 +60,7 @@ export async function qwenVisionRequest(messages, options = {}) {
 // --- Durability ---
 export const DURABILITY_TABLE = {
   gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
-  bridges:  { 1: 200000 },
+  bridge:   { 1: 200000 },
   city:     { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   cities:   { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   capital:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
@@ -70,11 +70,11 @@ export const DURABILITY_TABLE = {
   'large town': { 4: 3750000 },
 };
 
-const NAME_ONLY_STRUCTURES = new Set(['bridges', 'stronghold']);
+const NAME_ONLY_STRUCTURES = new Set(['stronghold']);
 
 const STRUCTURE_NAME_CORRECTIONS = {
-  bridge: 'Bridges',
-  bridges: 'Bridges',
+  bridge: 'Bridge',
+  bridges: 'Bridge',
   capita1: 'Capital',
   capital: 'Capital',
   capitol: 'Capital',
@@ -136,7 +136,7 @@ function canonicalizeStructureName(name, level) {
     else if (level === 'Lv1') canonical = 'Small Town';
   }
 
-  if (canonical === 'Gates' && level === 'Lv1') canonical = 'Bridges';
+  if (canonical === 'Gates' && level === 'Lv1') canonical = 'Bridge';
 
   return canonical;
 }
@@ -159,13 +159,57 @@ export function normalizeStructureTarget(name, level = '') {
   if (!name && !level) return { structure_name: name, structure_level: '' };
   const extractedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
   const structureName = canonicalizeStructureName(name, extractedLevel);
-  const structureLevel = normalizeStructureLevelForName(structureName, extractedLevel);
+  const structureLevel =
+    structureName === 'Bridge'
+      ? 'Lv1'
+      : normalizeStructureLevelForName(structureName, extractedLevel);
   return { structure_name: structureName, structure_level: structureLevel };
 }
 
 export function formatStructureLabel(name, level) {
   const target = normalizeStructureTarget(name || 'Unknown Structure', level);
   return `${target.structure_name} ${target.structure_level}`.trim();
+}
+
+function formatDisplayStructureLevel(level) {
+  const text = String(level || '').trim();
+  if (!text || /^unknown$/i.test(text)) return '';
+  const match = text.match(/\b(?:lv\.?|level)?\s*([0-9]+)\b/i);
+  return match ? `Lv${Number(match[1])}` : text;
+}
+
+function parseStructureTargetFromId(id) {
+  const text = String(id || '').trim();
+  const match = text.match(/^(.+)_([^_]+)_\d{10,}$/);
+  if (!match) return null;
+  const name = match[1].replace(/_/g, ' ').trim();
+  if (!name || /^structure$/i.test(name)) return null;
+  return { structure_name: name, structure_level: match[2] };
+}
+
+export function getDatasetStructureTarget(attack) {
+  if (!attack) return { structure_name: 'Unknown Structure', structure_level: '' };
+  const rawName = attack.raw_structure_name ?? attack.display_structure_name;
+  const rawLevel = attack.raw_structure_level ?? attack.display_structure_level;
+  if (rawName || rawLevel) {
+    return {
+      structure_name: rawName || attack.structure_name || 'Unknown Structure',
+      structure_level: rawLevel ?? attack.structure_level ?? '',
+    };
+  }
+  const idTarget = parseStructureTargetFromId(attack.id || attack.attack_id);
+  if (idTarget) return idTarget;
+  return {
+    structure_name: attack.structure_name || attack.name || 'Unknown Structure',
+    structure_level: attack.structure_level || '',
+  };
+}
+
+export function formatDatasetStructureLabel(attack) {
+  const target = getDatasetStructureTarget(attack);
+  const name = String(target.structure_name || 'Unknown Structure').replace(/\s+/g, ' ').trim();
+  const level = formatDisplayStructureLevel(target.structure_level);
+  return `${name}${level ? ` ${level}` : ''}`.trim();
 }
 
 // --- Mutable State ---
@@ -327,7 +371,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj', 'MasterVjso': 'MasterVj',
       '○UNDEADO○': 'UNDEAD', '○UNDEAD○': 'UNDEAD', '◎UNDEADO◎': 'UNDEAD', 'ØUNDEADØ': 'UNDEAD', 'UNDEADO': 'UNDEAD',
       '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110', '© I N d ō/Made3110': 'Made3110', 'yind?Made3110': 'Made3110',
-      '≽ Kika ≡': 'Kika', '~Kika~': 'Kika', '✨Kika✨': 'Kika', ' Kika ': 'Kika', '✨Kika-banner✨': 'Kika-banner', '~Kika ~': 'Kika',
+      'Kika': '꧁ Kika ꧂', '≽ Kika ≡': '꧁ Kika ꧂', '~Kika~': '꧁ Kika ꧂', '✨Kika✨': '꧁ Kika ꧂', ' Kika ': '꧁ Kika ꧂', '✨Kika-banner✨': '꧁ Kika-banner ꧂', '~Kika ~': '꧁ Kika ꧂',
       'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп', 'тynгзахyp': 'түнгзахурп', 'тyHГ3ахур': 'түнгзахурп', 'тyнгзахур': 'түнгзахурп',
       'REDBULL§': 'REDBULLS', 'RedBull©': 'REDBULLS', 'RedBull@': 'REDBULLS', 'RedBull®': 'REDBULLS', 'Redbull@': 'REDBULLS', 'REDBULL$': 'REDBULLS',
       'Ar Ran★_YG+62': 'Ar Ran ★_YG+62', 'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
@@ -373,12 +417,20 @@ export function findBestMatch(name, minConfidence = 100) {
       'Anne...': 'Anne',
       '^Anne^': 'Anne',
       '✨ Anne ✨': 'Anne',
-      '≪Kika≫': 'Kika',
-      '✨ Kika ✨': 'Kika',
-      '꧁ Kika ꧂': 'Kika',
-      '꧁༺ Kika ༻꧂': 'Kika',
-      '꧁ Kika-banner ꧂': 'Kika-banner',
-      '꧁Kika-banner2꧂': 'Kika-banner2',
+      '≪Kika≫': '꧁ Kika ꧂',
+      '✨ Kika ✨': '꧁ Kika ꧂',
+      '꧁ Kika ꧂': '꧁ Kika ꧂',
+      '꧁Kika꧂': '꧁ Kika ꧂',
+      '꧁༺ Kika ༻꧂': '꧁༺ Kika ༻꧂',
+      '꧁༺Kika༻꧂': '꧁༺ Kika ༻꧂',
+      '༺ Kika ༻': '꧁༺ Kika ༻꧂',
+      '༺Kika༻': '꧁༺ Kika ༻꧂',
+      'Kika-banner': '꧁ Kika-banner ꧂',
+      '꧁ Kika-banner ꧂': '꧁ Kika-banner ꧂',
+      '꧁Kika-banner꧂': '꧁ Kika-banner ꧂',
+      'Kika-banner2': '꧁Kika-banner2꧂',
+      '꧁ Kika-banner2 ꧂': '꧁Kika-banner2꧂',
+      '꧁Kika-banner2꧂': '꧁Kika-banner2꧂',
       'MasterVj~': 'MasterVj',
       '✨MasterVj✨': 'MasterVj',
       '●■AGAM ■●': 'AGAM',

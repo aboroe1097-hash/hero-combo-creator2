@@ -22,7 +22,7 @@ import {
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
-  formatStructureLabel, isNameOnlyStructure
+  formatStructureLabel, getDatasetStructureTarget, isNameOnlyStructure
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -571,7 +571,7 @@ function exportAttackCsv() {
   state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
-    const target = normalizeStructureTarget(a.structure_name, a.structure_level);
+    const target = getDatasetStructureTarget(a);
     (a.players||[]).forEach(p => { const safeName = p.name.replace(/"/g, '""'); csv += `"${start}","${date}","${target.structure_name}","${target.structure_level}","${safeName}",${p.rank},${p.value}\n`; });
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
@@ -582,7 +582,7 @@ function exportDebugCsv() {
   state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
-    const target = normalizeStructureTarget(a.structure_name, a.structure_level);
+    const target = getDatasetStructureTarget(a);
     (a.players||[]).forEach(p => { 
       const rawName = p.name.replace(/"/g, '""'); 
       const groupedName = findBestMatch(p.name).replace(/"/g, '""');
@@ -798,6 +798,19 @@ window.deleteAttack = async function(attId) {
     render(); closeModal();
     log(`Deleted attack: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`, 'warn');
   }
+};
+
+window.markAttackComplete = async function(attId) {
+  if(!attId || !state._booted || !state.dashData) return;
+  const att = state.dashData.attacks.find(a => a.id === attId);
+  if(!att) return;
+  att.data_complete_override = true;
+  att.data_complete_override_at = new Date().toISOString();
+  await saveData(state.dashData);
+  render();
+  window._modalDepth = Math.max(0, (window._modalDepth || 1) - 1);
+  showModal('attack', att);
+  log(`Marked complete by override: ${formatStructureLabel(att.structure_name, att.structure_level)}`, 'warn');
 };
 
 window.editAttack = async function(attId) {

@@ -365,17 +365,24 @@ test.describe('app smoke tabs', () => {
 
     await openGuestDashboard(page);
     await page.evaluate(async ({ seededDash, seededRoster }) => {
-      const shared = await import('/js/ocr-shared.js');
-      const renderer = await import('/js/ocr-render.js');
-      if (typeof shared.state._fsUnsub === 'function') {
-        shared.state._fsUnsub();
-        shared.state._fsUnsub = null;
+      const resources = [...new Set(performance.getEntriesByType('resource').map(entry => entry.name))];
+      const sharedUrls = resources.filter(url => url.includes('/js/ocr-shared.js'));
+      const renderUrls = resources.filter(url => url.includes('/js/ocr-render.js'));
+      for (const url of sharedUrls) {
+        const shared = await import(url);
+        if (typeof shared.state._fsUnsub === 'function') {
+          shared.state._fsUnsub();
+          shared.state._fsUnsub = null;
+        }
+        shared.state.dashData = seededDash;
+        shared.state.rosterSnapshots = seededRoster;
       }
-      shared.state.dashData = seededDash;
-      shared.state.rosterSnapshots = seededRoster;
       localStorage.setItem('vts_ocr_dashboard', JSON.stringify(seededDash));
       localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
-      renderer.render();
+      for (const url of renderUrls) {
+        const renderer = await import(url);
+        renderer.render();
+      }
     }, { seededDash, seededRoster });
     await page.locator('[data-subtab="analytics"]').click();
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
