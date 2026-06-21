@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260621_124315';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260621_144701';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -101,8 +101,10 @@ import {
   tabResearchBtn,
   tabHeroesBtn,
   tabEdenMapBtn,
+  tabStrifeBtn,
   heroesSection,
   edenMapSection,
+  strifeSection,
   globalToggleRow,
   comboFooterBar,
   generatorHeroesEl,
@@ -257,6 +259,7 @@ const TAB_BTN_IDS = {
   heroes: 'tabHeroes',
   research: 'tabResearch',
   edenMap: 'tabEdenMap',
+  strife: 'tabStrife',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
 };
@@ -633,6 +636,7 @@ const tabs = [
   { btn: tabHeroesBtn,   name: 'heroes' },
   { btn: tabResearchBtn, name: 'research' },
   { btn: tabEdenMapBtn,  name: 'edenMap' },
+  { btn: tabStrifeBtn,   name: 'strife' },
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
 ];
@@ -695,6 +699,7 @@ tabs.forEach(tab => {
       updateTextContent();
       renderAvailableHeroes();
       renderGeneratorHeroes(syncGeneratorControlState());
+      if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
     };
   }
 
@@ -723,10 +728,12 @@ tabs.forEach(tab => {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
+  let _strifeReady = false;
+  let _strifeBooting = false;
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
-    edenMapSection, loyaltySection, youtubeSection,
+    edenMapSection, strifeSection, loyaltySection, youtubeSection,
   ];
 
   function loadYouTubeEmbeds() {
@@ -843,6 +850,23 @@ tabs.forEach(tab => {
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.', 'error', 4000);
+          }
+        });
+    }
+    if (tabName === 'strife' && !_strifeReady) {
+      if (_strifeBooting) return;
+      _strifeBooting = true;
+      import('./app-strife.js')
+        .then((mod) => {
+          mod.initStrifeTool();
+          _strifeReady = true;
+        })
+        .catch((err) => {
+          _strifeBooting = false;
+          console.error('Strife tool failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(t.moduleLoadFailed?.replace('{name}', 'Strife') || 'Strife failed to load.', 'error', 4000);
           }
         });
     }
@@ -1004,6 +1028,7 @@ function updateTextContent() {
     'tabLoyalty': t.tabLoyalty,
     'tabYouTube': t.tabYouTube || 'YouTube',
     'tabEdenMap': t.tabEdenMap || 'Eden Map',
+    'tabStrife': t.tabStrife || 'Strife',
     'tabHeroes': t.tabHeroes || 'Hero Atlas',
     'tabResearch': t.tabResearch || 'Research',
     'tabOcrDashboard': t.tabOcrDashboard || 'VTS Admin',
@@ -1123,6 +1148,7 @@ function initQuickTour() {
     { selector: '#tabHeroes', title: 'Hero Atlas', body: 'Browse hero ratings, skills, skins, counters, and top ranked pairings.' },
     { selector: '#tabResearch', title: 'Research', body: 'Plan tech upgrades, compare costs, and keep your research path organized.' },
     { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
+    { selector: '#tabStrife', title: 'Strife', body: 'Pick your current season stage and get five daily Strife attack formations.' },
     { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
     { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' },
     { selector: '#tabOcrDashboard', title: 'VTS Admin', body: 'Open roster, attack analytics, banner records, and admin review tools.' }
