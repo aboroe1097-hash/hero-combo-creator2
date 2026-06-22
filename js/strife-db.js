@@ -265,7 +265,26 @@ export const STRIFE_REFERENCE = {
  * }
  */
 export const STRIFE_MONSTER_COMBOS = {
-  rabbit: [],
+  rabbit: [
+    {
+      stage: 'S3',
+      tier: STRIFE_TIERS.F2P,
+      heroes: ['Rozen Blade', 'Immortal', 'BeastQueen'],
+      note: 'Early manual Rabbit lane: Rozen brings pressure, Immortal stabilizes the middle, and BeastQueen keeps cavalry damage online.',
+    },
+    {
+      stage: 'X1',
+      tier: STRIFE_TIERS.P2W,
+      heroes: ['Boudica', 'Al Fatih', 'Sakura'],
+      note: 'First high-ceiling Rabbit test row. Boudica anchors the paid burst slot while Al Fatih and Sakura keep archer damage and skill uptime moving.',
+    },
+    {
+      stage: 'X1',
+      tier: STRIFE_TIERS.P2W,
+      heroes: ['Boudica', 'Al Fatih', 'Jade'],
+      note: 'Alternate Rabbit test row if Jade outperforms Sakura in the back slot. Keep this beside the Sakura lane until damage logs decide it.',
+    },
+  ],
   gambosate: [
     {
       stage: 'X8',
