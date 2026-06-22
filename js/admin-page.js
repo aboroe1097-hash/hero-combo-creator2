@@ -68,7 +68,7 @@ async function bootAdminPage() {
   await loadAdminTemplate();
   captureEarlyGuestIntent();
   updateTextContent(lang);
-  const mod = await import('./ocr-dashboard.js?v=20260621_184929');
+  const mod = await import('./ocr-dashboard.js?v=20260622_021222');
   await mod.bootOcrDashboard();
 }
 
