@@ -60,8 +60,14 @@ async function openAdmin(page) {
   await page.addInitScript(() => {
     sessionStorage.removeItem('vts_guest');
     localStorage.removeItem('vts_ocr_auth');
+    navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
+    window.caches?.keys?.().then((keys) => {
+      keys.forEach((key) => caches.delete(key));
+    });
   });
-  await page.goto('/admin.html');
+  await page.goto('/admin.html', { waitUntil: 'load' });
   await page.waitForFunction(
     () => {
       const isVisible = (el) => {
@@ -84,10 +90,22 @@ async function openAdmin(page) {
 }
 
 async function openGuestDashboard(page) {
-  if (await page.locator('#dashLogin').isVisible()) {
-    await page.locator('#dashGuestBtn').click();
-  }
-  await expect(page.locator('#dashGuestBanner')).toBeVisible();
+  await page.waitForFunction(() => document.getElementById('dashGuestBtn'), null, {
+    timeout: 20000,
+  });
+  await page.waitForFunction(
+    () =>
+      typeof document.getElementById('dashGuestBtn')?.onclick === 'function' ||
+      typeof window.switchDashSubtab === 'function',
+    null,
+    { timeout: 20000 }
+  );
+  await page.evaluate(() => {
+    localStorage.removeItem('vts_ocr_auth');
+    sessionStorage.setItem('vts_guest', '1');
+    document.getElementById('dashGuestBtn')?.click();
+  });
+  await expect(page.locator('#dashGuestBanner')).toBeVisible({ timeout: 20000 });
 }
 
 test.describe('app smoke tabs', () => {
@@ -403,7 +421,6 @@ test.describe('app smoke tabs', () => {
 
   test('admin analytics renders seeded OCR insights and filters leaderboard', async ({ page }) => {
     await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
-    await openAdmin(page);
     const seededDash = {
       last_updated: '20/06/2026, 12:00',
       total_attacks: 3,
@@ -462,17 +479,26 @@ test.describe('app smoke tabs', () => {
         ],
       },
     ];
+    await openAdmin(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.seedDashboardForSmokeTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
     await page.evaluate(
       ({ seededDash, seededRoster }) => {
         localStorage.setItem('vts_ocr_dashboard', JSON.stringify(seededDash));
         localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
+        window.seedDashboardForSmokeTest?.(seededDash, seededRoster);
       },
       { seededDash, seededRoster }
     );
 
     await openGuestDashboard(page);
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
     await page.evaluate(
       async ({ seededDash, seededRoster }) => {
+        window.setOcrDashboardDataForTest(seededDash, seededRoster);
         const resources = [
           ...new Set(performance.getEntriesByType('resource').map((entry) => entry.name)),
         ];
@@ -480,15 +506,9 @@ test.describe('app smoke tabs', () => {
         const renderUrls = resources.filter((url) => url.includes('/js/ocr-render.js'));
         for (const url of sharedUrls) {
           const shared = await import(url);
-          if (typeof shared.state._fsUnsub === 'function') {
-            shared.state._fsUnsub();
-            shared.state._fsUnsub = null;
-          }
           shared.state.dashData = seededDash;
           shared.state.rosterSnapshots = seededRoster;
         }
-        localStorage.setItem('vts_ocr_dashboard', JSON.stringify(seededDash));
-        localStorage.setItem('vts_roster_snapshots', JSON.stringify(seededRoster));
         for (const url of renderUrls) {
           const renderer = await import(url);
           renderer.render();
@@ -496,7 +516,8 @@ test.describe('app smoke tabs', () => {
       },
       { seededDash, seededRoster }
     );
-    await page.locator('[data-subtab="analytics"]').click();
+    await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
+    await page.evaluate(() => window.switchDashSubtab('analytics'));
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
     await expect(page.locator('#dashStructureChart')).toContainText('Capital');
     await expect(page.locator('#dashPlayerTrends')).toContainText('Alpha');

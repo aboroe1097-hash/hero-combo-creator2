@@ -633,18 +633,68 @@ function getDutyMatchStatus(rawName, confirmedName) {
 }
 
 function parseDutyNamesFromText(text) {
-  const names = [];
+  return parseDutyEntriesFromText(text).map(entry => entry.name);
+}
+
+function normalizeDutyUsageTime(rawTime) {
+  const text = String(rawTime || '').trim();
+  if (!text) return '';
+  const match = text.match(/^(\d{1,2})(?:[.:](\d{1,2}))?$/);
+  if (!match) return text;
+  const hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return text;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return text;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function parseDutyEntryFromLine(line) {
+  let text = String(line || '')
+    .replace(/^\s*[-*\u2022]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return null;
+  if (/^@all\b/i.test(text)) return null;
+
+  let usageTime = '';
+  const timeMatch = text.match(/^\+?\s*(\d{1,2}(?:[.:]\d{1,2})?)\b/);
+  if (timeMatch) {
+    usageTime = normalizeDutyUsageTime(timeMatch[1]);
+    text = text.slice(timeMatch[0].length).trim();
+  } else {
+    text = text.replace(/^\s*\d+[.)-]\s*/, '').trim();
+  }
+
+  let name = '';
+  const atMatch = text.match(/@(.+)$/);
+  if (atMatch) {
+    name = atMatch[1].trim();
+    text = text.slice(0, atMatch.index).trim();
+  } else {
+    name = text.trim();
+    text = '';
+  }
+
+  const target = text.replace(/\s+/g, ' ').trim();
+  name = name.replace(/^@+/, '').trim();
+  if (!name || name.length <= 1) return null;
+  return {
+    name,
+    original: line,
+    usageTime,
+    target,
+  };
+}
+
+function parseDutyEntriesFromText(text) {
+  const entries = [];
   String(text || '').split(/\r?\n|,/).forEach(line => {
-    const cleaned = line
-      .replace(/^\s*[-*\u2022]+/, '')
-      .replace(/^\s*\d+[.)-]?\s*/, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (cleaned && cleaned.length > 1) names.push(cleaned);
+    const entry = parseDutyEntryFromLine(line);
+    if (entry) entries.push(entry);
   });
   const seen = new Set();
-  return names.filter(name => {
-    const key = name.toLowerCase();
+  return entries.filter(entry => {
+    const key = `${entry.name}|${entry.usageTime}|${entry.target}`.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -656,77 +706,115 @@ function showDutyPasteForm(type) {
   if (!meta) return;
   const text = prompt(`Paste ${meta.label} names, one per line:`, '');
   if (text === null) return;
-  const names = parseDutyNamesFromText(text);
-  if (!names.length) {
+  const entries = parseDutyEntriesFromText(text);
+  if (!entries.length) {
     log(`No names found for ${meta.label}.`, 'warn');
     return;
   }
-  showDutyConfirmModal(type, names, 'Manual paste');
+  showDutyConfirmModal(type, entries, 'Manual paste');
 }
 
-function renderDutyMatchRows(names) {
-  return names.map((rawName, index) => {
+function normalizeDutyEntries(input) {
+  const rows = Array.isArray(input) ? input : [];
+  return rows
+    .map(item => {
+      if (item && typeof item === 'object') {
+        const original = String(item.original || item.name || '').trim();
+        const name = String(item.name || item.original || item.confirmed || '').trim();
+        return {
+          name,
+          original: original || name,
+          confirmed: String(item.confirmed || '').trim(),
+          usageTime: normalizeDutyUsageTime(item.usageTime || item.usage_time || item.time || ''),
+          target: String(item.target || item.structure || item.location || '').trim(),
+          status: item.status || '',
+        };
+      }
+      const name = String(item || '').trim();
+      return { name, original: name, confirmed: '', usageTime: '', target: '', status: '' };
+    })
+    .filter(entry => entry.name);
+}
+
+function renderDutyMatchRows(entries) {
+  return entries.map((entry, index) => {
+    const rawName = entry.name;
     const suggestions = getDutySuggestions(rawName);
-    const best = suggestions[0]?.name || '';
+    const best = entry.confirmed || suggestions[0]?.name || '';
     const status = getDutyMatchStatus(rawName, best);
     const options = ['<option value="">-- Unmatched --</option>']
       .concat(suggestions.map(row => `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`))
       .join('');
-    return `<div class="dash-duty-match-row" data-raw="${esc(rawName)}">
+    return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}">
       <div class="dash-duty-raw"><span>#${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
       <select class="dash-duty-match-select">${options}</select>
-      <input class="dash-duty-manual-input" type="text" placeholder="Manual correction" value="">
+      <input class="dash-duty-manual-input" type="text" placeholder="Manual correction" value="${entry.confirmed && !suggestions.some(row => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}">
+      <input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="Usage time">
+      <input class="dash-duty-target-input" type="text" placeholder="Target" value="${esc(entry.target || '')}" title="Target or structure">
     </div>`;
   }).join('');
 }
 
-function showDutyConfirmModal(type, names, sourceLabel = '') {
+function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = null) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
-  const cleanNames = parseDutyNamesFromText(names.join('\n'));
-  if (!cleanNames.length) return;
+  const cleanEntries = normalizeDutyEntries(names);
+  if (!cleanEntries.length) return;
+  const existingRecord = existingRecordId ? state.dutyRecords.find(record => record.id === existingRecordId) : null;
   const m = $id('dashModal'), body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = `Confirm ${meta.label}`;
-  $id('dashModalSub').textContent = `${cleanNames.length} name${cleanNames.length === 1 ? '' : 's'} found. Confirm roster matches before saving.`;
+  $id('dashModalTitle').textContent = existingRecord ? `Edit ${meta.label}` : `Confirm ${meta.label}`;
+  $id('dashModalSub').textContent = `${cleanEntries.length} row${cleanEntries.length === 1 ? '' : 's'} found. Confirm roster matches, usage time, and target before saving.`;
   body.innerHTML = `<div class="dash-banner-form-row">
     <label>Date</label>
-    <input type="date" id="dashDutyDate" value="${new Date().toISOString().slice(0, 10)}" style="flex:1">
+    <input type="date" id="dashDutyDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
     <label>Note</label>
-    <input type="text" id="dashDutyNote" value="${esc(sourceLabel)}" placeholder="Event, marker, or upload note" style="flex:1">
+    <input type="text" id="dashDutyNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="Event, marker, or upload note" style="flex:1">
   </div>
-  <div class="dash-duty-match-list">${renderDutyMatchRows(cleanNames)}</div>
+  <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
   <div style="display:flex;gap:0.5rem;margin-top:1rem">
-    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save ${meta.singular} Record</button>
+    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${existingRecord ? 'Update' : 'Save'} ${meta.singular} Record</button>
     <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
   </div>`;
   $id('dashDutySaveBtn').onclick = () => {
     const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map(row => {
       const original = row.dataset.raw || '';
+      const rawName = row.dataset.name || original;
       const manual = row.querySelector('.dash-duty-manual-input')?.value.trim() || '';
       const selected = row.querySelector('.dash-duty-match-select')?.value || '';
       const confirmed = manual || selected;
+      const usageTime = normalizeDutyUsageTime(row.querySelector('.dash-duty-time-input')?.value || '');
+      const target = row.querySelector('.dash-duty-target-input')?.value.trim() || '';
       return {
+        name: rawName,
         original,
         confirmed,
-        status: getDutyMatchStatus(original, confirmed),
+        usageTime,
+        target,
+        status: getDutyMatchStatus(rawName, confirmed),
         note: '',
       };
     });
     const record = {
-      id: `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: existingRecord?.id || `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
       date: $id('dashDutyDate')?.value || new Date().toISOString().slice(0, 10),
       note: $id('dashDutyNote')?.value.trim() || '',
       entries,
-      createdAt: new Date().toISOString(),
+      createdAt: existingRecord?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    state.dutyRecords.push(record);
+    if (existingRecord) {
+      const index = state.dutyRecords.findIndex(item => item.id === existingRecord.id);
+      if (index >= 0) state.dutyRecords[index] = record;
+    } else {
+      state.dutyRecords.push(record);
+    }
     saveDutyRecords();
     closeModal();
     renderDutyRecords();
-    log(`${meta.label} saved: ${entries.length} entries.`, 'success');
+    log(`${meta.label} ${existingRecord ? 'updated' : 'saved'}: ${entries.length} entries.`, 'success');
   };
   $id('dashDutyCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
@@ -743,7 +831,7 @@ async function processDutyImages(type, files) {
   const progressText = meta.progressTextId ? $id(meta.progressTextId) : null;
   if (progress) progress.classList.remove('hidden');
   log(`Scanning ${valid.length} ${meta.label} image(s)...`, 'info');
-  let allNames = [];
+  let allEntries = [];
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
     if (progressText) progressText.textContent = `Scanning ${meta.label} image ${i + 1}/${valid.length}...`;
@@ -753,17 +841,20 @@ async function processDutyImages(type, files) {
       reader.readAsDataURL(file);
     });
     try {
-      const promptTxt = `Extract all player names or nicknames from this ${meta.label} screenshot.
+      const promptTxt = `Extract duty usage rows from this ${meta.label} screenshot.
 
 Return ONLY valid JSON in this shape:
-{"names":["Name One","Name Two"]}
+{"entries":[{"name":"Name One","time":"23:25","target":"Gate l5"}]}
 
 Rules:
 - Include every visible player name or nickname.
-- Ignore headers, labels, numbers, roles, scores, alliance names, and decorative text.
+- When a row starts with a time like +23.25, +23:55, +2, +2.35, +3, +4, or +8, convert it to HH:MM as the "time" field.
+- Put the structure or assignment between the time and name in "target", for example "Gate l5", "Gate l2", or "bridge".
+- If the row has no target, use an empty string.
+- Ignore headers, roles, scores, alliance names, and decorative text.
 - Preserve symbols and spacing in names when visible.
 - Remove duplicates.
-- If no player names are visible, return {"names":[]}.`;
+- If no player names are visible, return {"entries":[]}.`;
       const raw = await qwenVisionRequest([{ role: 'user', content: [
         { type: 'text', text: promptTxt },
         { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
@@ -771,22 +862,40 @@ Rules:
       const text = raw?.choices?.[0]?.message?.content || '';
       const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
       let parsed;
-      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = parseDutyNamesFromText(cleaned); }
-      const names = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.names) ? parsed.names : [];
-      allNames.push(...names.map(name => String(name || '').trim()).filter(Boolean));
+      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = parseDutyEntriesFromText(cleaned); }
+      const entries = Array.isArray(parsed)
+        ? parsed.every(item => typeof item === 'string')
+          ? parseDutyEntriesFromText(parsed.join('\n'))
+          : normalizeDutyEntries(parsed)
+        : Array.isArray(parsed?.entries)
+          ? normalizeDutyEntries(parsed.entries)
+          : Array.isArray(parsed?.names)
+            ? parseDutyEntriesFromText(parsed.names.join('\n'))
+            : [];
+      allEntries.push(...entries);
     } catch (e) {
       log(`${meta.label} OCR error (${file.name}): ${e.message}`, 'error');
     }
   }
   if (progress) progress.classList.add('hidden');
   state._dutyProcessing = false;
-  const unique = parseDutyNamesFromText(allNames.join('\n'));
+  const unique = normalizeDutyEntries(allEntries);
   if (!unique.length) {
     log(`No names found in ${meta.label} image(s).`, 'warn');
     alert(`Could not extract names from the ${meta.label} image.`);
     return;
   }
   showDutyConfirmModal(type, unique, valid.map(f => f.name).join(', '));
+}
+
+function editDutyRecord(id) {
+  const record = state.dutyRecords.find(item => item.id === id);
+  if (!record) return;
+  const entries = (record.entries || []).map(entry => ({
+    ...entry,
+    name: entry.name || entry.confirmed || entry.original || '',
+  }));
+  showDutyConfirmModal(record.type, entries, record.note || '', record.id);
 }
 
 function deleteDutyRecord(id) {
@@ -819,13 +928,18 @@ function renderDutyType(type) {
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
           <span class="dash-banner-count">${confirmed}/${entries.length} matched${weak ? `, ${weak} review` : ''}</span>
         </div>
-        <button class="dash-banner-del-btn" onclick="deleteDutyRecord('${esc(record.id)}')" title="Delete">x</button>
+        <div style="display:flex;gap:6px">
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editDutyRecord('${esc(record.id)}')">Edit</button>
+          <button class="dash-banner-del-btn" onclick="deleteDutyRecord('${esc(record.id)}')" title="Delete">x</button>
+        </div>
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table">
-          <thead><tr><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
+          <thead><tr><th>Time</th><th>Target</th><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
           <tbody>${entries.map(entry => `<tr>
-            <td>${esc(entry.original)}</td>
+            <td>${entry.usageTime ? esc(entry.usageTime) : '<span style="color:var(--text-dim)">--</span>'}</td>
+            <td>${entry.target ? esc(entry.target) : '<span style="color:var(--text-dim)">--</span>'}</td>
+            <td>${esc(entry.original || entry.name || '')}</td>
             <td>${entry.confirmed ? esc(entry.confirmed) : '<span style="color:var(--text-dim)">Unmatched</span>'}</td>
             <td>${esc(entry.status || 'unmatched')}</td>
           </tr>`).join('')}</tbody>
@@ -871,5 +985,5 @@ export {
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
   loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
-  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, deleteDutyRecord, renderDutyRecords
+  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords
 };

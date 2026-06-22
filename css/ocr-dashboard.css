@@ -1438,7 +1438,7 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-duty-match-row {
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(180px, 1fr) minmax(160px, 0.8fr);
+  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(78px, 0.38fr) minmax(110px, 0.55fr);
   gap: 8px;
   align-items: center;
   padding: 10px;
@@ -1465,7 +1465,9 @@ body[style*="overflow: hidden"] .tab-panel {
   white-space: nowrap;
 }
 #ocrDashboardRoot .dash-duty-match-select,
-#ocrDashboardRoot .dash-duty-manual-input {
+#ocrDashboardRoot .dash-duty-manual-input,
+#ocrDashboardRoot .dash-duty-time-input,
+#ocrDashboardRoot .dash-duty-target-input {
   width: 100%;
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--border);

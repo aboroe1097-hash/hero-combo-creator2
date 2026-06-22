@@ -215,7 +215,7 @@ export function formatDatasetStructureLabel(attack) {
 }
 
 // --- Mutable State ---
-export const state = {
+const sharedState = globalThis.__vtsOcrDashboardState || {
   dashData: null,
   searchQ: '',
   attackSearchQ: '',
@@ -245,6 +245,8 @@ export const state = {
   _rosterSearchQ: '',
   _rosterSelectedIndices: new Set(),
 };
+globalThis.__vtsOcrDashboardState = sharedState;
+export const state = sharedState;
 
 // --- Auth ---
 export const AUTH_HASH = ADMIN_AUTH_CONFIG.adminHash || '';

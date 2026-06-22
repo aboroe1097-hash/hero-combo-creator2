@@ -7,7 +7,7 @@ import {
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
   loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
-  loadDutyRecords, showDutyPasteForm, processDutyImages, deleteDutyRecord, renderDutyRecords
+  loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords
 } from './ocr-roster.js';
 
 import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js';
@@ -76,6 +76,7 @@ function switchDashSubtab(name) {
   const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
   if (btn) btn.classList.add('dash-subtab-active');
   if (name === 'analytics') {
+    hydrateDashboardStateFromLocalStorage();
     render();
     animateAnalyticsCards();
   } else {
@@ -85,6 +86,48 @@ function switchDashSubtab(name) {
   if (name === 'banners') renderBanners();
   if (name === 'banners' || name === 'pathers' || name === 'shieldWall') renderDutyRecords();
 }
+window.switchDashSubtab = switchDashSubtab;
+window.seedDashboardForSmokeTest = function(dashData, rosterSnapshots = []) {
+  state.dashData = normalizeDashboardDataForCache(dashData);
+  state.rosterSnapshots = Array.isArray(rosterSnapshots) ? rosterSnapshots : [];
+};
+
+function bindSubtabNavigation() {
+  if (state._subtabNavBound) return;
+  state._subtabNavBound = true;
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => {
+    btn.onclick = () => switchDashSubtab(btn.dataset.subtab);
+  });
+}
+
+function hydrateDashboardStateFromLocalStorage() {
+  if (!Array.isArray(state.dashData?.attacks) || !state.dashData.attacks.length) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (cached?.attacks) state.dashData = normalizeDashboardDataForCache(cached);
+    } catch (e) {}
+  }
+  if (!state.rosterSnapshots?.length) {
+    try {
+      const cachedRoster = JSON.parse(localStorage.getItem(ROSTER_SNAPSHOTS_KEY) || '[]');
+      if (Array.isArray(cachedRoster)) state.rosterSnapshots = cachedRoster;
+    } catch (e) {}
+  }
+}
+
+window.refreshOcrDashboardFromStorage = function refreshOcrDashboardFromStorage() {
+  state.dashData = null;
+  hydrateDashboardStateFromLocalStorage();
+  render();
+};
+
+window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(dashData, rosterSnapshots = []) {
+  state.dashData = normalizeDashboardDataForCache(dashData);
+  state.rosterSnapshots = Array.isArray(rosterSnapshots) ? rosterSnapshots : [];
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); } catch (e) {}
+  try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
+  render();
+};
 
 // ── Roster Snapshots (local + Firestore) ──────────────────
 export async function saveRosterSnapshotsToFirestore() {
@@ -252,7 +295,10 @@ function restoreAdminControls() {
 }
 
 function removeGuestBanner() {
-  $id('dashGuestBanner')?.remove();
+  const guestBanner = $id('dashGuestBanner');
+  if (!guestBanner) return;
+  guestBanner.classList.add('hidden');
+  guestBanner.replaceChildren();
 }
 
 function returnToAdminLogin() {
@@ -292,6 +338,7 @@ function showApp() {
   $id('dashLogin')?.classList.add('hidden'); 
   $id('dashApp')?.classList.remove('hidden'); 
   if (isGuest()) {
+    hydrateDashboardStateFromLocalStorage();
     if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = 'none';
     if ($id('dashUploadZone')) $id('dashUploadZone').style.display = 'none';
     if ($id('dashLogArea')) $id('dashLogArea').style.display = 'none';
@@ -304,11 +351,13 @@ function showApp() {
     if (!guestBanner) {
       guestBanner = document.createElement('div');
       guestBanner.id = 'dashGuestBanner';
+      guestBanner.className = 'dash-guest-banner';
       const dashContainer = $id('dashApp').querySelector('.dash-container');
       if (dashContainer) {
         dashContainer.insertBefore(guestBanner, dashContainer.firstChild);
       }
     }
+    guestBanner.classList.remove('hidden');
     renderGuestBanner(guestBanner);
   } else {
     removeGuestBanner();
@@ -431,9 +480,11 @@ export async function saveData(data) {
 }
 
 async function loadData() {
+  let hadLocalData = false;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
+      hadLocalData = true;
       state.dashData = normalizeDashboardDataForCache(JSON.parse(saved));
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
@@ -453,9 +504,11 @@ async function loadData() {
       } catch (e) {}
       render();
     } else {
-      state.dashData = null;
-      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-      render();
+      if (!hadLocalData) {
+        state.dashData = null;
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        render();
+      }
     }
     state._fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
@@ -729,6 +782,16 @@ function importData(file) {
 
 // --- Render ---
 
+async function openGuestDashboard() {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.setItem('vts_guest', '1');
+  $id('dashLoginErr')?.classList.add('hidden');
+  hydrateDashboardStateFromLocalStorage();
+  showApp();
+  render();
+  await loadData();
+}
+
 
 
 
@@ -739,6 +802,10 @@ function importData(file) {
 
 export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
+  $id('dashLoginBtn').onclick = doLogin;
+  $id('dashGuestBtn').onclick = openGuestDashboard;
+  if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
+  if (isAuthed()) showApp(); else showLogin();
   await initDashboardFirebase();
   if (state.cloudSyncConfigured) await ensureAnonymousAuth();
   loadRosterSnapshots();
@@ -751,18 +818,18 @@ export async function bootOcrDashboard() {
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
+  bindSubtabNavigation();
+  $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
   log('VTS Admin Dashboard loaded.', 'info');
-  if (!AUTH_HASH) {
-    sessionStorage.setItem('vts_guest', '1');
+  if (isAuthed()) {
     showApp();
     await loadData();
-  } else if (isAuthed()) { showApp(); await loadData(); } else { showLogin(); }
-  $id('dashLoginBtn').onclick = doLogin;
-  $id('dashGuestBtn').onclick = async () => { localStorage.removeItem(AUTH_KEY); sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); await loadData(); };
-  $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
+  } else {
+    showLogin();
+  }
   $id('dashRosterBtn').onclick = showRosterModal;
   const expBtn = $id('dashRosterExportBtn'); if (expBtn) expBtn.onclick = exportRosterCSV;
-  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => btn.onclick = () => switchDashSubtab(btn.dataset.subtab));
+  bindSubtabNavigation();
 
   // Roster: manual snapshot button with dynamic day name
   const newSnapBtn = $id('dashRosterSnapshotBtn');
@@ -1139,6 +1206,7 @@ window.configureAlliances = configureAlliances;
 window.deleteRosterSnapshot = deleteRosterSnapshot;
 window.showBannerForm = showBannerForm;
 window.deleteBannerRecord = deleteBannerRecord;
+window.editDutyRecord = editDutyRecord;
 window.deleteDutyRecord = deleteDutyRecord;
 window.renderDutyRecords = renderDutyRecords;
 window.closeModal = closeModal;
