@@ -14,7 +14,15 @@ npm run preview  # Preview production build locally
 
 **Tech stack:** Vanilla HTML/JS/CSS, Vite bundler, Firebase Firestore (anonymous auth), Qwen VL API for OCR.
 
-**Current version:** 8.9
+**Current version:** 11.3.0
+
+### Latest Release Notes - 2026-06-23
+
+- 11.3.0 is the new baseline release. Every pushed change after this should bump the public patch version: 11.3.1, 11.3.2, and so on.
+- Admin cloud sync now has repo tooling for the required Firebase custom claim: `npm run firebase:admin-claim` with `FIREBASE_SERVICE_ACCOUNT_PATH` and the deployed anonymous admin UID.
+- Firestore admin writes intentionally remain protected by `request.auth.token.admin === true`; the local admin password only opens the UI.
+- Eden runtime structure markers now use small `*-marker.webp` files. The large source art stays available for regeneration but should not be precached in the service worker.
+- Strife Over Dragon availability uses hero release-season progression for S0-X8 recommendations.
 
 ---
 

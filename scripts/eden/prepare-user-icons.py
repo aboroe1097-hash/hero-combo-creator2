@@ -23,6 +23,14 @@ STRIP_SOURCES = [
 ]
 
 
+def write_marker(im: Image.Image, out_name: str) -> None:
+    """Write the small browser-facing marker used by Eden map rendering."""
+    marker = im.copy().convert("RGBA")
+    marker.thumbnail((220, 220), Image.Resampling.LANCZOS)
+    marker_name = out_name.replace(".png", "-marker.webp")
+    marker.save(OUT_DIR / marker_name, "WEBP", quality=84, method=6)
+
+
 def border_bg_colors(arr: np.ndarray, step: int = 12, top_n: int = 3) -> list[np.ndarray]:
     h, w = arr.shape[:2]
     border: list[tuple[int, int, int]] = []
@@ -111,6 +119,7 @@ def ensure_capital_icon() -> None:
         if fallback.exists():
             im = Image.open(fallback).convert("RGBA")
             im.save(dest, optimize=True)
+            write_marker(im, dest.name)
             print(f"  {fallback.name} -> {dest.name} {im.size} (capital fallback)")
             return
     print("  skip Capital: add assets/Capital.png or run extract-eden-icons.py")
@@ -129,6 +138,7 @@ def main() -> None:
         out = strip_checkerboard_border_only(src, tol)
         dest = OUT_DIR / out_name
         out.save(dest, optimize=True)
+        write_marker(out, out_name)
         alpha = np.array(out)[:, :, 3]
         opaque = 100.0 * (alpha > 128).sum() / alpha.size
         transparent = 100.0 * (alpha == 0).sum() / alpha.size

@@ -20,18 +20,18 @@ ATLAS_TYPES = [
 ]
 
 USER_ICON_SOURCES: dict[str, Path] = {
-    "CP1": ICON_DIR / "user-gate.png",
-    "CP3": ICON_DIR / "user-gate.png",
-    "CP7": ICON_DIR / "user-gate.png",
-    "ST1": ICON_DIR / "user-town.png",
-    "ST2": ICON_DIR / "user-town.png",
-    "ST3": ICON_DIR / "user-town.png",
-    "LT2": ICON_DIR / "user-town.png",
-    "LT4": ICON_DIR / "user-town.png",
-    "STRHD": ICON_DIR / "user-stronghold.png",
-    "CS": ICON_DIR / "user-stronghold.png",
-    "C5": ICON_DIR / "user-capital.png",
-    "C6": ICON_DIR / "user-capital.png",
+    "CP1": ICON_DIR / "user-gate-marker.webp",
+    "CP3": ICON_DIR / "user-gate-marker.webp",
+    "CP7": ICON_DIR / "user-gate-marker.webp",
+    "ST1": ICON_DIR / "user-town-marker.webp",
+    "ST2": ICON_DIR / "user-town-marker.webp",
+    "ST3": ICON_DIR / "user-town-marker.webp",
+    "LT2": ICON_DIR / "user-town-marker.webp",
+    "LT4": ICON_DIR / "user-town-marker.webp",
+    "STRHD": ICON_DIR / "user-stronghold-marker.webp",
+    "CS": ICON_DIR / "user-stronghold-marker.webp",
+    "C5": ICON_DIR / "user-capital-marker.webp",
+    "C6": ICON_DIR / "user-capital-marker.webp",
 }
 MAX_W, MAX_H = 96, 96
 PAD = 2

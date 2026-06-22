@@ -14,6 +14,7 @@ const STRIFE_MONSTER_KEY = 'vts_strife_monster';
 const HERO_BY_NAME = new Map(allHeroesData.map(hero => [hero.name, hero]));
 const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map(monster => [monster.id, monster]));
 const REUSABLE_CANDIDATE_LIMIT = 6;
+const STRIFE_RELEASE_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'X8'];
 
 let strifeRoot = null;
 
@@ -31,6 +32,11 @@ function getStageIndex(stage) {
   return Math.max(0, STRIFE_SEASONS.indexOf(stage));
 }
 
+function getReleaseStageIndex(stage) {
+  const idx = STRIFE_RELEASE_ORDER.indexOf(stage);
+  return idx === -1 ? 0 : idx;
+}
+
 function getStageSeasons(stage) {
   return STRIFE_SEASONS.slice(0, getStageIndex(stage) + 1);
 }
@@ -44,7 +50,9 @@ function stageIsAllowed(entry, selectedStage) {
 
 function heroAvailable(heroName, availableSeasons) {
   const hero = HERO_BY_NAME.get(heroName);
-  return Boolean(hero && availableSeasons.includes(hero.season));
+  if (!hero) return false;
+  const selectedStage = availableSeasons[availableSeasons.length - 1] || 'S0';
+  return getReleaseStageIndex(hero.releaseSeason || hero.season) <= getReleaseStageIndex(selectedStage);
 }
 
 function getComboTroopType(combo) {
@@ -111,7 +119,9 @@ function getManualCombos(monsterId, stage, availableSeasons) {
 
 function getFallbackCombos(stage, availableSeasons, tier) {
   const availableHeroNames = new Set(
-    allHeroesData.filter(hero => availableSeasons.includes(hero.season)).map(hero => hero.name)
+    allHeroesData
+      .filter(hero => heroAvailable(hero.name, availableSeasons))
+      .map(hero => hero.name)
   );
   const totalRanked = baseRankedCombos.length;
 
@@ -138,7 +148,7 @@ export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage
   const monster = MONSTER_BY_ID.get(selectedMonsterId) || STRIFE_MONSTERS[0];
   const selectedStage = STRIFE_SEASONS.includes(stage) ? stage : getStoredStage();
   const availableSeasons = getStageSeasons(selectedStage);
-  const availableHeroes = allHeroesData.filter(hero => availableSeasons.includes(hero.season));
+  const availableHeroes = allHeroesData.filter(hero => heroAvailable(hero.name, availableSeasons));
   const manual = getManualCombos(monster.id, selectedStage, availableSeasons);
   const f2pCombos = manual.f2p.length ? manual.f2p : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.F2P);
   const p2wCombos = manual.p2w.length ? manual.p2w : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.P2W);

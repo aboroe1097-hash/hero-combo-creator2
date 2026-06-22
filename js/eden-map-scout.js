@@ -1,5 +1,5 @@
 // Eden Map scout mode — optional Firebase intel sync
-import { initFirebase, ensureAnonymousAuth } from './firebase.js';
+import { initFirebase, ensureAnonymousAuth, getFirebaseAdminClaim, getAuthInstance } from './firebase.js';
 import { importFirestore } from './firebase-sdk.js';
 
 const {
@@ -46,6 +46,15 @@ export async function pushScoutIntel(plan) {
   try {
     const { db } = initFirebase();
     await ensureAnonymousAuth();
+    let hasAdminClaim = await getFirebaseAdminClaim(false);
+    if (!hasAdminClaim) hasAdminClaim = await getFirebaseAdminClaim(true);
+    if (!hasAdminClaim) {
+      const uid = getAuthInstance()?.currentUser?.uid || 'unknown';
+      return {
+        ok: false,
+        error: `Firebase admin claim missing for UID ${uid}. Run npm run firebase:admin-claim, then reload.`,
+      };
+    }
     const ref = doc(db, ...INTEL_PATH);
     await setDoc(ref, {
       guilds: plan.guilds || {},

@@ -14,7 +14,7 @@ import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCard
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
-import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
+import { initFirebase, ensureAnonymousAuth, getDb, getFirebaseAdminClaim } from './firebase.js';
 import { importFirestore } from './firebase-sdk.js';
 const { doc, getDoc, setDoc, onSnapshot } = await importFirestore();
 import {
@@ -41,6 +41,9 @@ state.sortCol = 'total_demolition';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
 state.cloudSyncConfigured = false;
+state.cloudAdminReady = false;
+
+let adminClaimWarningLogged = false;
 
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
@@ -57,7 +60,20 @@ async function ensureCloudSyncReady() {
   if (!state.cloudSyncConfigured) return null;
   const db = getDb();
   if (!db) return null;
-  await ensureAnonymousAuth();
+  const user = await ensureAnonymousAuth();
+  let hasAdminClaim = await getFirebaseAdminClaim(false);
+  if (!hasAdminClaim) hasAdminClaim = await getFirebaseAdminClaim(true);
+  state.cloudAdminReady = hasAdminClaim;
+  if (!hasAdminClaim) {
+    if (!adminClaimWarningLogged) {
+      adminClaimWarningLogged = true;
+      log(
+        `Cloud sync needs a Firebase admin claim for UID ${user.uid}. Run npm run firebase:admin-claim with FIREBASE_ADMIN_UID=${user.uid}, then reload this page.`,
+        'warn'
+      );
+    }
+    return null;
+  }
   return db;
 }
 

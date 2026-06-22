@@ -1,5 +1,13 @@
 # Changelog
 
+## 11.3.0 - 2026-06-23
+
+- Added Firebase admin-claim tooling and clearer deployed-admin warnings so OCR cloud sync, roster snapshots, and Eden shared intel writes can be configured from the repo instead of failing with generic permission errors.
+- Optimized Eden map runtime structure markers by replacing multi-megabyte PNG icons with small WebP marker assets and keeping heavy source art out of the service-worker app shell.
+- Fixed Strife Over Dragon recommendations to respect hero release-season progression when selecting S0-X8 availability.
+- Reworked boot loading wing timing and service-worker precache behavior from the A-to-Z QA pass.
+- Updated README, changelog, session log, and public version labels for 11.3.0; future pushes should increment patch versions.
+
 ## 11.2.0 - 2026-06-22
 
 - Split VTS Admin structure uploads into a dedicated Upload Structures tab while keeping the existing structure OCR, recording, and analytics logic unchanged.

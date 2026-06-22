@@ -1,4 +1,4 @@
-# Hero Combo Creator — VTS 1097 (v11.2.0)
+# Hero Combo Creator — VTS 1097 (v11.3.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management — all in a single-page web app.
 
@@ -70,7 +70,9 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.2.0 release should pass the full local gate before shipping.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.3.0 release should pass the full local gate before shipping.
+
+Starting with 11.3.0, every pushed release should increment the public version before shipping: `11.3.1`, then `11.3.2`, and so on.
 
 ## Tech Stack
 
@@ -79,7 +81,7 @@ That runs lint, Prettier check, unit tests, i18n validation, production build, b
 | **Language** | Vanilla JavaScript (ES6 modules), no framework |
 | **Bundler** | Vite 6 (dev server + build) |
 | **CSS** | Custom `app.css`, responsive `mobile.css`, compiled Tailwind CSS |
-| **Backend** | Firebase Firestore bundled via the npm Firebase SDK (comments, combos, roster sync) |
+| **Backend** | Firebase Firestore loaded through pinned browser modules (comments, combos, roster sync) |
 | **Auth** | Firebase anonymous auth |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
 | **Maps** | HTML Canvas (Eden Map) |
@@ -194,10 +196,20 @@ Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click vi
 The old maintenance splash/config gate has been removed. `index.html` and `admin.html` load the standard UI directly, and `js/maintenance-config.js` is no longer part of the app or service-worker precache.
 
 ### Admin Auth
-The committed `js/admin-auth-config.js` contains no usable password hashes, so admin mode is disabled by default in public checkouts. Deployments that need admin access must provide strong SHA-256 hashes through `window.VTS_ADMIN_AUTH`; guest mode remains available for read-only dashboard views. Keep real hashes in deployment-specific runtime config, not in the public repo.
+`js/admin-auth-config.js` gates the admin UI with SHA-256 password hashes, but Firestore is protected separately by Firebase custom claims. The local admin password only opens the dashboard screen; cloud writes for OCR data, roster snapshots, and Eden shared intel still require `request.auth.token.admin === true`.
+
+To grant the deployed anonymous admin user the Firestore admin claim, open the deployed admin page, copy the UID printed in the cloud-sync warning, then run:
+
+```bash
+FIREBASE_SERVICE_ACCOUNT_PATH=/path/to/service-account.json \
+FIREBASE_ADMIN_UID=<uid-from-admin-warning> \
+npm run firebase:admin-claim
+```
+
+Reload the deployed admin page after the claim is set so Firebase refreshes the ID token. Guest mode remains available for read-only local dashboard views.
 
 ### Firebase
-Firebase is imported from the pinned npm package (`firebase@11.6.1`) instead of the gstatic CDN. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
+Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
 
 ### Error Boundaries
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.

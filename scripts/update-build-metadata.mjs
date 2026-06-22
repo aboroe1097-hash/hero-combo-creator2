@@ -13,12 +13,15 @@ const lazyRuntimeCachePatterns = [
   /^\/assets\/eden-/,
   /^\/assets\/eden_/,
   /^\/assets\/faction-division/,
+  /^\/js\/eden-/,
+  /^\/tabs\/eden-map\.html$/,
+];
+const precacheSkipPatterns = [
   /^\/assets\/Capital\.(?:png|webp)$/i,
   /^\/assets\/Gate\.(?:png|webp)$/i,
   /^\/assets\/stronghold\.(?:png|webp)$/i,
   /^\/assets\/Town\.(?:png|webp)$/i,
-  /^\/js\/eden-/,
-  /^\/tabs\/eden-map\.html$/,
+  /^\/images\/boot\/.*\.png$/i,
 ];
 
 function makeBuildVersion() {
@@ -90,6 +93,9 @@ function buildPrecacheUrls() {
   urls.delete('/js/eden-datasets.payload.js.map');
   for (const url of [...urls]) {
     if (lazyRuntimeCachePatterns.some((pattern) => pattern.test(url))) {
+      urls.delete(url);
+    }
+    if (precacheSkipPatterns.some((pattern) => pattern.test(url))) {
       urls.delete(url);
     }
   }

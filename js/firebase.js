@@ -12,7 +12,7 @@ import {
 
 const [
   { initializeApp },
-  { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence },
+  { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence, getIdTokenResult },
   { getFirestore },
   { getAnalytics },
   { initializeAppCheck, ReCaptchaEnterpriseProvider },
@@ -130,6 +130,13 @@ export async function ensureAnonymousAuth() {
   });
 
   return authInFlight;
+}
+
+export async function getFirebaseAdminClaim(forceRefresh = false) {
+  if (!auth) throw new Error("Firebase not initialized");
+  const user = auth.currentUser || await ensureAnonymousAuth();
+  const token = await getIdTokenResult(user, forceRefresh);
+  return token?.claims?.admin === true;
 }
 
 export function getDb() { return db; }

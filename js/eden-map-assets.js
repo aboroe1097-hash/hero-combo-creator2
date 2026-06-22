@@ -371,22 +371,22 @@ export function getReferenceMapImage() {
 
 /** Hand-authored sprites (transparent PNGs, shared across levels). */
 export const STRUCTURE_ICON_URLS = {
-  CP1: 'assets/eden-reference/icons/user-gate.png',
-  CP2: 'assets/eden-reference/icons/user-gate.png',
-  CP3: 'assets/eden-reference/icons/user-gate.png',
-  CP4: 'assets/eden-reference/icons/user-gate.png',
-  CP5: 'assets/eden-reference/icons/user-gate.png',
-  CP7: 'assets/eden-reference/icons/user-gate.png',
-  ST1: 'assets/eden-reference/icons/user-town.png',
-  ST2: 'assets/eden-reference/icons/user-town.png',
-  ST3: 'assets/eden-reference/icons/user-town.png',
-  LT2: 'assets/eden-reference/icons/user-town.png',
-  LT3: 'assets/eden-reference/icons/user-town.png',
-  LT4: 'assets/eden-reference/icons/user-town.png',
-  STRHD: 'assets/eden-reference/icons/user-stronghold.png',
-  CS: 'assets/eden-reference/icons/user-stronghold.png',
-  C5: 'assets/eden-reference/icons/user-capital.png',
-  C6: 'assets/eden-reference/icons/user-capital.png',
+  CP1: 'assets/eden-reference/icons/user-gate-marker.webp',
+  CP2: 'assets/eden-reference/icons/user-gate-marker.webp',
+  CP3: 'assets/eden-reference/icons/user-gate-marker.webp',
+  CP4: 'assets/eden-reference/icons/user-gate-marker.webp',
+  CP5: 'assets/eden-reference/icons/user-gate-marker.webp',
+  CP7: 'assets/eden-reference/icons/user-gate-marker.webp',
+  ST1: 'assets/eden-reference/icons/user-town-marker.webp',
+  ST2: 'assets/eden-reference/icons/user-town-marker.webp',
+  ST3: 'assets/eden-reference/icons/user-town-marker.webp',
+  LT2: 'assets/eden-reference/icons/user-town-marker.webp',
+  LT3: 'assets/eden-reference/icons/user-town-marker.webp',
+  LT4: 'assets/eden-reference/icons/user-town-marker.webp',
+  STRHD: 'assets/eden-reference/icons/user-stronghold-marker.webp',
+  CS: 'assets/eden-reference/icons/user-stronghold-marker.webp',
+  C5: 'assets/eden-reference/icons/user-capital-marker.webp',
+  C6: 'assets/eden-reference/icons/user-capital-marker.webp',
 };
 
 // Procedural gate placeholders only — authored Gate.png is already iso-oriented.
