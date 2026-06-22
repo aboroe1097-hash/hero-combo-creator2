@@ -16,6 +16,7 @@ import {
   GENERATOR_SKIN_OWNERSHIP_VERSION,
 } from './constants.js';
 import {
+  HERO_ATLAS_ALL_SEASONS,
   currentLanguage,
   heroMatchesFilters,
   seasonColors,
@@ -47,6 +48,25 @@ const SKIN_TYPE_PRIORITY = {
 
 let generatorSkinOwnership = null;
 let generatorSelectionRestored = false;
+
+function getSeasonIndex(season) {
+  return HERO_ATLAS_ALL_SEASONS.indexOf(String(season || '').toUpperCase());
+}
+
+function getMaxSelectedSeasonIndex(seasons = []) {
+  return (seasons || [])
+    .map(getSeasonIndex)
+    .filter(index => index >= 0)
+    .reduce((max, index) => Math.max(max, index), -1);
+}
+
+function isSkinSeasonAvailable(heroOrName, seasons = generatorSelectedSeasons) {
+  const hero = typeof heroOrName === 'string' ? getSkinHeroByName(heroOrName) : heroOrName;
+  if (!hero) return false;
+  const releaseIndex = getSeasonIndex(hero.releaseSeason || hero.season);
+  if (releaseIndex < 0) return false;
+  return getMaxSelectedSeasonIndex(seasons) >= releaseIndex + 1;
+}
 
 function getUiFunction(name) {
   if (typeof __ui[name] === 'function') return __ui[name];
@@ -137,7 +157,8 @@ function getStoredSkinOwnership() {
   return generatorSkinOwnership;
 }
 
-function isGeneratorSkinOwned(heroName) {
+function isGeneratorSkinOwned(heroName, seasons = generatorSelectedSeasons) {
+  if (!isSkinSeasonAvailable(heroName, seasons)) return false;
   const ownership = getStoredSkinOwnership();
   if (Object.prototype.hasOwnProperty.call(ownership, heroName)) return ownership[heroName] !== false;
   return hasSkin(heroName);
@@ -157,7 +178,7 @@ function setGeneratorSkinOwned(heroName, owned) {
 }
 
 function getGeneratorResultHeroImageUrl(heroName) {
-  if (!generatorSkinsOnly || !isGeneratorSkinOwned(heroName)) return getHeroImageUrl(heroName);
+  if (!generatorSkinsOnly || !isGeneratorSkinOwned(heroName, generatorSelectedSeasons)) return getHeroImageUrl(heroName);
   return getSkinHeroByName(heroName)?.skinImageUrl || getSkinForHero(heroName)?.imageUrl || getHeroImageUrl(heroName);
 }
 
@@ -219,8 +240,8 @@ export function renderGeneratorHeroes(options = {}) {
 
   if (activeSkinsOnly) {
     filtered = filtered.sort((a, b) => {
-      const aHas = Boolean(a.hasSkin);
-      const bHas = Boolean(b.hasSkin);
+      const aHas = Boolean(a.hasSkin && isSkinSeasonAvailable(a, activeSeasons));
+      const bHas = Boolean(b.hasSkin && isSkinSeasonAvailable(b, activeSeasons));
       if (aHas && !bHas) return -1;
       if (!aHas && bHas) return 1;
       if (aHas && bHas) {
@@ -233,8 +254,9 @@ export function renderGeneratorHeroes(options = {}) {
   }
 
   filtered.forEach(hero => {
-      const hasSkinFlag = activeSkinsOnly ? Boolean(hero.hasSkin || hasSkin(hero.name)) : hasSkin(hero.name);
-      const skinOwned = activeSkinsOnly && hasSkinFlag && isGeneratorSkinOwned(hero.name);
+      const skinSeasonAvailable = isSkinSeasonAvailable(hero, activeSeasons);
+      const hasSkinFlag = (activeSkinsOnly ? Boolean(hero.hasSkin || hasSkin(hero.name)) : hasSkin(hero.name)) && skinSeasonAvailable;
+      const skinOwned = activeSkinsOnly && hasSkinFlag && isGeneratorSkinOwned(hero.name, activeSeasons);
       const heroSkinsList = getHeroSkins(hero.name);
       const primarySkin = activeSkinsOnly && hasSkinFlag
         ? {
@@ -276,8 +298,9 @@ export function renderGeneratorHeroes(options = {}) {
         : '';
 
       const skinBadgeTitle = escapeHtml(primarySkin
-        ? `${primarySkin.name} (${skinTypeInfo?.label || primarySkin.type})${skinOwned ? '' : ' available'}`
+        ? `${primarySkin.name} (${skinTypeInfo?.label || primarySkin.type})${skinOwned ? ' on' : ' off'}`
         : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`);
+      const skinIconLabel = skinTypeInfo?.icon || `S${skinCount > 1 ? skinCount : ''}`;
       const skinBadgeLabel = escapeHtml(skinOwned && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`);
       const skinBadgeStyle = skinOwned && skinTypeInfo
         ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);`
@@ -286,7 +309,7 @@ export function renderGeneratorHeroes(options = {}) {
         ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${skinBadgeTitle}" style="${escapeHtml(skinBadgeStyle)}">${skinBadgeLabel}</span>`
         : '';
       const skinToggle = activeSkinsOnly && hasSkinFlag
-        ? `<span class="generator-skin-toggle generator-skin-badge${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${escapeHtml(skinBadgeStyle)}">${skinBadgeLabel}</span>`
+        ? `<span class="generator-skin-toggle generator-skin-badge${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${escapeHtml(skinBadgeStyle)}"><span class="generator-skin-toggle-icon">${escapeHtml(skinIconLabel)}</span><span class="generator-skin-toggle-state">${skinOwned ? 'ON' : 'OFF'}</span></span>`
         : '';
 
       card.innerHTML = `
@@ -502,7 +525,7 @@ export function generateBestCombos() {
   const startedAt = performance.now();
 
   try {
-    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, isGeneratorSkinOwned);
+    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, heroName => isGeneratorSkinOwned(heroName, generatorSelectedSeasons));
     const finalSelection = selectNonOverlappingCombos(sourceCombos, selected, GENERATOR_MAX_COMBOS);
 
     const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
@@ -538,7 +561,7 @@ export function generateRandomCombos() {
 
   try {
     const ownedSet = new Set(selected);
-    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, isGeneratorSkinOwned);
+    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, heroName => isGeneratorSkinOwned(heroName, generatorSelectedSeasons));
     const total = sourceCombos.length;
 
     const validCombos = sourceCombos

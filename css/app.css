@@ -650,10 +650,11 @@ section.tab-panel:not(.hidden) {
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:24px;
+  gap:2px;
+  width:40px;
   height:24px;
-  min-width:0;
-  padding:0;
+  min-width:40px;
+  padding:0 4px;
   border-radius:7px;
   border:1px solid rgba(148,163,184,0.48);
   background:rgba(15,23,42,0.92) !important;
@@ -666,6 +667,19 @@ section.tab-panel:not(.hidden) {
   box-shadow:0 0 0 1px rgba(15,23,42,0.78), 0 6px 16px rgba(0,0,0,0.35);
   cursor:pointer;
 }
+.generator-skin-toggle-icon,
+.generator-skin-toggle-state {
+  position:relative;
+  z-index:1;
+  line-height:1;
+}
+.generator-skin-toggle-icon {
+  font-size:7px;
+  opacity:0.95;
+}
+.generator-skin-toggle-state {
+  font-size:7px;
+}
 .generator-skin-toggle.is-on {
   border-color:rgba(251,191,36,0.72);
   background:linear-gradient(135deg, var(--skin-color, #f59e0b), #fbbf24) !important;
@@ -675,7 +689,7 @@ section.tab-panel:not(.hidden) {
 .generator-skin-toggle:not(.is-on)::after {
   content:'';
   position:absolute;
-  width:22px;
+  width:34px;
   height:2px;
   border-radius:999px;
   background:#fb7185;
@@ -11280,7 +11294,7 @@ body.hide-hero-info #heroTooltip {
 }
 
 .hero-card:has(.generator-skin-badge) .paid-badge {
-  right: 32px;
+  right: 50px;
 }
 
 .hero-card:has(.generator-skin-badge) .paid-badge-text {

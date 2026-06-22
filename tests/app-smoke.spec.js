@@ -332,8 +332,12 @@ test.describe('app smoke tabs', () => {
       .filter({ hasText: 'King Arthur' })
       .first();
     await expect(arthurGeneratorCard).toBeVisible();
+    await expect(arthurGeneratorCard).not.toHaveClass(/skin-priority-card/);
+    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveCount(0);
+
+    await page.locator('#generatorSeasonFilters .x1-pill').click();
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
-    await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toHaveText('E');
+    await expect(arthurGeneratorCard.locator('.generator-skin-badge--priority')).toContainText('E');
     await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveAttribute(
       'aria-checked',
       'true'
@@ -345,7 +349,7 @@ test.describe('app smoke tabs', () => {
       'aria-checked',
       'false'
     );
-    await arthurGeneratorCard.click();
+    await arthurGeneratorCard.locator('.hero-portrait-frame').click();
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
     await arthurGeneratorCard.locator('.generator-skin-toggle').click();
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
