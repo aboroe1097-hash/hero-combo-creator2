@@ -551,6 +551,7 @@ function hashCode(str) {
 const DUTY_TYPES = {
   banner: { label: 'Banners List', singular: 'Banner', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
   pather: { label: 'Pathers List', singular: 'Pather', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
+  speed_tile: { label: 'Speed Tile Plans', singular: 'Speed Tile', bodyId: 'dashSpeedTileBody', progressId: 'dashSpeedTileProgress', progressTextId: 'dashSpeedTileProgressText' },
   shield_wall: { label: 'Shield Wall', singular: 'Shield Wall', bodyId: 'dashShieldWallBody' },
 };
 
@@ -648,22 +649,53 @@ function normalizeDutyUsageTime(rawTime) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
-function parseDutyEntryFromLine(line) {
+function normalizeDutyGameTime(rawTime) {
+  const text = String(rawTime || '').trim();
+  if (!text) return '';
+  const normalized = normalizeDutyUsageTime(text.replace(/\s*GT$/i, ''));
+  return normalized ? `${normalized} GT` : text;
+}
+
+function parseDutyEntryFromLine(line, context = {}) {
   let text = String(line || '')
     .replace(/^\s*[-*\u2022]+/, '')
     .replace(/\s+/g, ' ')
     .trim();
   if (!text) return null;
   if (/^@all\b/i.test(text)) return null;
+  if (/^speed\s+tile\s+order:?$/i.test(text)) return null;
+
+  let order = '';
+  const orderMatch = text.match(/^(\d+)[.)-]\s*/);
+  if (orderMatch) {
+    order = orderMatch[1];
+    text = text.slice(orderMatch[0].length).trim();
+  }
 
   let usageTime = '';
   const timeMatch = text.match(/^\+?\s*(\d{1,2}(?:[.:]\d{1,2})?)\b/);
   if (timeMatch) {
     usageTime = normalizeDutyUsageTime(timeMatch[1]);
     text = text.slice(timeMatch[0].length).trim();
-  } else {
+  } else if (!order) {
     text = text.replace(/^\s*\d+[.)-]\s*/, '').trim();
   }
+
+  const checked = /[✅✓✔]/.test(text);
+  text = text.replace(/[✅✓✔]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  let pad = '';
+  text = text.replace(/\[Pad:\s*([^\]]+)\]/i, (_, value) => {
+    pad = String(value || '').trim();
+    return ' ';
+  }).replace(/\s+/g, ' ').trim();
+
+  const bracketValues = [];
+  text = text.replace(/\[([^\]]+)\]/g, (_, value) => {
+    const clean = String(value || '').trim();
+    if (clean) bracketValues.push(clean);
+    return ' ';
+  }).replace(/\s+/g, ' ').trim();
 
   let name = '';
   const atMatch = text.match(/@(.+)$/);
@@ -683,18 +715,31 @@ function parseDutyEntryFromLine(line) {
     original: line,
     usageTime,
     target,
+    group: context.group || '',
+    groupCount: context.groupCount || '',
+    order,
+    pad,
+    checked,
+    allowedColors: bracketValues.join(', '),
   };
 }
 
 function parseDutyEntriesFromText(text) {
   const entries = [];
+  const context = { group: '', groupCount: '' };
   String(text || '').split(/\r?\n|,/).forEach(line => {
-    const entry = parseDutyEntryFromLine(line);
+    const groupMatch = String(line || '').trim().match(/^([^:\[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
+    if (groupMatch && !/^\d+[.)-]/.test(String(line || '').trim())) {
+      context.group = groupMatch[1].trim();
+      context.groupCount = String(groupMatch[2] || '').trim();
+      return;
+    }
+    const entry = parseDutyEntryFromLine(line, context);
     if (entry) entries.push(entry);
   });
   const seen = new Set();
   return entries.filter(entry => {
-    const key = `${entry.name}|${entry.usageTime}|${entry.target}`.toLowerCase();
+    const key = `${entry.name}|${entry.usageTime}|${entry.target}|${entry.group}|${entry.order}|${entry.pad}`.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -727,11 +772,19 @@ function normalizeDutyEntries(input) {
           confirmed: String(item.confirmed || '').trim(),
           usageTime: normalizeDutyUsageTime(item.usageTime || item.usage_time || item.time || ''),
           target: String(item.target || item.structure || item.location || '').trim(),
+          group: String(item.group || item.color || item.tileColor || item.tile_color || '').trim(),
+          groupCount: String(item.groupCount || item.group_count || item.count || item.capacity || '').trim(),
+          order: String(item.order || item.index || '').trim(),
+          pad: String(item.pad || item.padLocation || item.pad_location || '').trim(),
+          checked: Boolean(item.checked || item.done || item.confirmedUsage),
+          allowedColors: Array.isArray(item.allowedColors || item.allowed_colors)
+            ? (item.allowedColors || item.allowed_colors).join(', ')
+            : String(item.allowedColors || item.allowed_colors || '').trim(),
           status: item.status || '',
         };
       }
       const name = String(item || '').trim();
-      return { name, original: name, confirmed: '', usageTime: '', target: '', status: '' };
+      return { name, original: name, confirmed: '', usageTime: '', target: '', group: '', groupCount: '', order: '', pad: '', checked: false, allowedColors: '', status: '' };
     })
     .filter(entry => entry.name);
 }
@@ -745,12 +798,14 @@ function renderDutyMatchRows(entries) {
     const options = ['<option value="">-- Unmatched --</option>']
       .concat(suggestions.map(row => `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`))
       .join('');
-    return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}">
+    return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
       <div class="dash-duty-raw"><span>#${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
       <select class="dash-duty-match-select">${options}</select>
       <input class="dash-duty-manual-input" type="text" placeholder="Manual correction" value="${entry.confirmed && !suggestions.some(row => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}">
       <input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="Usage time">
       <input class="dash-duty-target-input" type="text" placeholder="Target" value="${esc(entry.target || '')}" title="Target or structure">
+      <input class="dash-duty-group-input" type="text" placeholder="Group" value="${esc(entry.group || '')}" title="Tile color or group">
+      <input class="dash-duty-pad-input" type="text" placeholder="Pad" value="${esc(entry.pad || '')}" title="Pad coordinates">
     </div>`;
   }).join('');
 }
@@ -772,6 +827,10 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <label>Note</label>
     <input type="text" id="dashDutyNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="Event, marker, or upload note" style="flex:1">
   </div>
+  <div class="dash-banner-form-row">
+    <label>Game Time</label>
+    <input type="text" id="dashDutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="e.g. 06:26 GT" style="flex:1">
+  </div>
   <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
   <div style="display:flex;gap:0.5rem;margin-top:1rem">
     <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${existingRecord ? 'Update' : 'Save'} ${meta.singular} Record</button>
@@ -786,12 +845,22 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       const confirmed = manual || selected;
       const usageTime = normalizeDutyUsageTime(row.querySelector('.dash-duty-time-input')?.value || '');
       const target = row.querySelector('.dash-duty-target-input')?.value.trim() || '';
+      const group = row.querySelector('.dash-duty-group-input')?.value.trim() || '';
+      const pad = row.querySelector('.dash-duty-pad-input')?.value.trim() || '';
+      const order = row.dataset.order || '';
+      const checked = row.dataset.checked === '1';
+      const allowedColors = row.dataset.allowedColors || '';
       return {
         name: rawName,
         original,
         confirmed,
         usageTime,
         target,
+        group,
+        order,
+        pad,
+        checked,
+        allowedColors,
         status: getDutyMatchStatus(rawName, confirmed),
         note: '',
       };
@@ -800,6 +869,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       id: existingRecord?.id || `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
       date: $id('dashDutyDate')?.value || new Date().toISOString().slice(0, 10),
+      gameTime: normalizeDutyGameTime($id('dashDutyGameTime')?.value || ''),
       note: $id('dashDutyNote')?.value.trim() || '',
       entries,
       createdAt: existingRecord?.createdAt || new Date().toISOString(),
@@ -844,12 +914,13 @@ async function processDutyImages(type, files) {
       const promptTxt = `Extract duty usage rows from this ${meta.label} screenshot.
 
 Return ONLY valid JSON in this shape:
-{"entries":[{"name":"Name One","time":"23:25","target":"Gate l5"}]}
+{"entries":[{"name":"Name One","time":"23:25","target":"Gate l5","group":"Pink","order":"1","pad":"1253:645","checked":true,"allowedColors":"Red, light blue, brown"}]}
 
 Rules:
 - Include every visible player name or nickname.
 - When a row starts with a time like +23.25, +23:55, +2, +2.35, +3, +4, or +8, convert it to HH:MM as the "time" field.
 - Put the structure or assignment between the time and name in "target", for example "Gate l5", "Gate l2", or "bridge".
+- For speed tile plans, preserve section headings like Pink, Yellow, Light Green, Dark Green, or Other as "group"; preserve list order numbers as "order"; preserve [Pad: 1253:645] as "pad"; preserve color brackets as "allowedColors"; set "checked" true when a green check mark is visible.
 - If the row has no target, use an empty string.
 - Ignore headers, roles, scores, alliance names, and decorative text.
 - Preserve symbols and spacing in names when visible.
@@ -925,6 +996,7 @@ function renderDutyType(type) {
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
+          ${record.gameTime ? `<span class="dash-banner-event">${esc(record.gameTime)}</span>` : ''}
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
           <span class="dash-banner-count">${confirmed}/${entries.length} matched${weak ? `, ${weak} review` : ''}</span>
         </div>
@@ -935,10 +1007,13 @@ function renderDutyType(type) {
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table">
-          <thead><tr><th>Time</th><th>Target</th><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
+          <thead><tr><th>Group</th><th>Order</th><th>Time</th><th>Target</th><th>Pad</th><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
           <tbody>${entries.map(entry => `<tr>
+            <td>${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</td>
+            <td>${entry.order ? esc(entry.order) : entry.checked ? '✓' : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.usageTime ? esc(entry.usageTime) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.target ? esc(entry.target) : '<span style="color:var(--text-dim)">--</span>'}</td>
+            <td>${entry.pad ? esc(entry.pad) : entry.allowedColors ? esc(entry.allowedColors) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${esc(entry.original || entry.name || '')}</td>
             <td>${entry.confirmed ? esc(entry.confirmed) : '<span style="color:var(--text-dim)">Unmatched</span>'}</td>
             <td>${esc(entry.status || 'unmatched')}</td>
@@ -957,7 +1032,7 @@ function renderDutySummary() {
     (record.entries || []).forEach(entry => {
       const name = entry.confirmed || entry.original;
       if (!name) return;
-      if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, shield_wall: 0 });
+      if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
       const row = counts.get(name);
       row.total += 1;
       if (row[record.type] !== undefined) row[record.type] += 1;
@@ -965,13 +1040,14 @@ function renderDutySummary() {
   });
   const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
   host.innerHTML = rows.length
-    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / P ${row.pather} / SW ${row.shield_wall}</small></div>`).join('')
+    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / P ${row.pather} / ST ${row.speed_tile} / SW ${row.shield_wall}</small></div>`).join('')
     : '<div class="dash-empty">Duty appearances will summarize here after records are saved.</div>';
 }
 
 function renderDutyRecords() {
   renderDutyType('banner');
   renderDutyType('pather');
+  renderDutyType('speed_tile');
   renderDutyType('shield_wall');
   renderDutySummary();
 }

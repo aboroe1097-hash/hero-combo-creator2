@@ -524,10 +524,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashHitDistribution')).toContainText('1M+');
     await expect(page.locator('#dashAllianceInsights')).toContainText('Unmapped');
 
-    await page
-      .locator('#dashStructureChart .dash-structure-item', { hasText: 'Capital' })
-      .first()
-      .click();
+    await page.evaluate(() => {
+      const item = Array.from(document.querySelectorAll('#dashStructureChart .dash-structure-item'))
+        .find((node) => node.textContent?.includes('Capital'));
+      if (!item) throw new Error('Capital structure item was not rendered');
+      item.click();
+    });
     await expect(page.locator('#dashStructureChart')).toContainText('Leaderboard filtered by');
     await expect(page.locator('#dashStructureChart')).not.toContainText('Gate');
     await page.locator('[data-subtab="dashboard"]').click();

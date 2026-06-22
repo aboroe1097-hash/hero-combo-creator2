@@ -84,7 +84,7 @@ function switchDashSubtab(name) {
   }
   if (name === 'roster') renderRoster();
   if (name === 'banners') renderBanners();
-  if (name === 'banners' || name === 'pathers' || name === 'shieldWall') renderDutyRecords();
+  if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall') renderDutyRecords();
 }
 window.switchDashSubtab = switchDashSubtab;
 window.seedDashboardForSmokeTest = function(dashData, rosterSnapshots = []) {
@@ -806,8 +806,13 @@ export async function bootOcrDashboard() {
   $id('dashGuestBtn').onclick = openGuestDashboard;
   if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
   if (isAuthed()) showApp(); else showLogin();
-  await initDashboardFirebase();
-  if (state.cloudSyncConfigured) await ensureAnonymousAuth();
+  try {
+    await initDashboardFirebase();
+    if (state.cloudSyncConfigured) await ensureAnonymousAuth();
+  } catch (err) {
+    console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
+    state.cloudSyncConfigured = false;
+  }
   loadRosterSnapshots();
   await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
@@ -931,6 +936,7 @@ export async function bootOcrDashboard() {
   }
   bindDutyUpload('banner', 'dashBannerListPasteBtn', 'dashBannerListUploadBtn', 'dashBannerListDropZone', 'dashBannerListFileInput');
   bindDutyUpload('pather', 'dashPatherListPasteBtn', 'dashPatherListUploadBtn', 'dashPatherListDropZone', 'dashPatherListFileInput');
+  bindDutyUpload('speed_tile', 'dashSpeedTilePasteBtn', 'dashSpeedTileUploadBtn', 'dashSpeedTileDropZone', 'dashSpeedTileFileInput');
   bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
   renderDutyRecords();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };

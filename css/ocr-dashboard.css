@@ -1438,7 +1438,8 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-duty-match-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(78px, 0.38fr) minmax(110px, 0.55fr);
+  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(76px, 0.36fr) minmax(110px, 0.55fr) minmax(95px, 0.45fr) minmax(105px, 0.5fr);
+  min-width: 910px;
   gap: 8px;
   align-items: center;
   padding: 10px;
@@ -1467,7 +1468,9 @@ body[style*="overflow: hidden"] .tab-panel {
 #ocrDashboardRoot .dash-duty-match-select,
 #ocrDashboardRoot .dash-duty-manual-input,
 #ocrDashboardRoot .dash-duty-time-input,
-#ocrDashboardRoot .dash-duty-target-input {
+#ocrDashboardRoot .dash-duty-target-input,
+#ocrDashboardRoot .dash-duty-group-input,
+#ocrDashboardRoot .dash-duty-pad-input {
   width: 100%;
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--border);
@@ -1491,6 +1494,7 @@ body[style*="overflow: hidden"] .tab-panel {
 
 @media (max-width: 760px) {
   #ocrDashboardRoot .dash-duty-match-row {
+    min-width: 0;
     grid-template-columns: 1fr;
   }
 }
