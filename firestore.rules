@@ -96,7 +96,7 @@ service cloud.firestore {
     function validRosterData() {
       return request.resource.data.keys().hasOnly(['snapshots', 'updated'])
       && request.resource.data.snapshots is list
-      && request.resource.data.snapshots.size() <= 250
+      && request.resource.data.snapshots.size() <= 50
       && request.resource.data.updated is string;
     }
 

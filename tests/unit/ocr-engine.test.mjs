@@ -20,7 +20,10 @@ const {
   findBestMatch,
   formatDatasetStructureLabel,
   formatStructureLabel,
+  MAX_ROSTER_SNAPSHOTS,
   normalizeStructureLevelForName,
+  state,
+  trimRosterSnapshots,
   validateTotalDemolition,
 } = await import('../../js/ocr-shared.js');
 
@@ -245,6 +248,32 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
   assert.equal(findBestMatch('Dragon.Gold'), 'Dragon.Gold');
+});
+
+test('short OCR fragments require exact roster matches', () => {
+  const previousRosterNames = state.rosterNames;
+  try {
+    state.rosterNames = ['Jon', 'Job', 'Joseph'];
+
+    assert.equal(findBestMatch('Jo'), 'Jo');
+    assert.equal(findBestMatch('J-o'), 'J-o');
+    assert.equal(findBestMatch('Jon'), 'Jon');
+  } finally {
+    state.rosterNames = previousRosterNames;
+  }
+});
+
+test('roster snapshot history is capped to the latest cloud-safe rows', () => {
+  const snapshots = Array.from({ length: MAX_ROSTER_SNAPSHOTS + 7 }, (_, index) => ({
+    date: `2026-06-${String(index + 1).padStart(2, '0')}`,
+    members: [`Member ${index + 1}`],
+  }));
+
+  const trimmed = trimRosterSnapshots(snapshots);
+
+  assert.equal(trimmed.length, MAX_ROSTER_SNAPSHOTS);
+  assert.equal(trimmed[0].date, '2026-06-08');
+  assert.equal(trimmed.at(-1).date, '2026-06-57');
 });
 
 test('Kika reward accounts stay separate in OCR summaries', () => {

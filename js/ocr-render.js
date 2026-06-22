@@ -2,6 +2,7 @@ import {
   state,
   $id,
   esc,
+  findBestMatch,
   resolvePlayerNameForAttack,
   validateTotalDemolition,
   formatDatasetStructureLabel,
@@ -92,6 +93,15 @@ function normalizePlayerName(name) {
     .toLowerCase()
     .replace(/\[[^\]]+\]/g, '')
     .replace(/[^a-z0-9]+/g, '')
+    .trim();
+}
+
+function canonicalPlayerKey(name) {
+  const raw = String(name || '').trim();
+  return String(findBestMatch(raw) || raw)
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -661,30 +671,44 @@ function renderStreaks(attacks, psum) {
   const attackSets = ordered.map(
     (a) =>
       new Set(
-        attackPlayers(a).map((p) => normalizePlayerName(canonicalPlayerName(p, attackPlayers(a))))
+        attackPlayers(a)
+          .map((p) => canonicalPlayerKey(typeof p === 'string' ? p : p?.name))
+          .filter(Boolean)
       )
   );
+  const recent = attackSets.slice(-Math.min(3, attackSets.length));
   const latestRoster = state.rosterSnapshots?.length
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members
     : [];
-  const rosterNames = latestRoster.map(rosterMemberName).filter(Boolean);
-  const names = [...new Set([...psum.map((p) => p.name), ...rosterNames])].filter(Boolean);
+  const trackedRosterRows = latestRoster
+    .map((member) => {
+      const name = rosterMemberName(member);
+      const status = rosterMemberStatus(member).toLowerCase();
+      return { name, status, key: canonicalPlayerKey(name) };
+    })
+    .filter((row) => row.name && row.key && (row.status === 'trusted' || row.status === 'active'));
+
+  const names = [...new Set(psum.map((p) => p.name).filter(Boolean))];
   const rows = names.map((name) => {
-    const norm = normalizePlayerName(name);
+    const norm = canonicalPlayerKey(name);
     let streak = 0;
     for (let i = attackSets.length - 1; i >= 0; i--) {
       if (!attackSets[i].has(norm)) break;
       streak++;
     }
-    const recent = attackSets.slice(-Math.min(3, attackSets.length));
-    const missedRecent = recent.length ? recent.every((set) => !set.has(norm)) : false;
-    return { name, streak, missedRecent };
+    return { name, streak };
   });
   const top = rows
     .filter((r) => r.streak > 0)
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 6);
-  const atRisk = rows
+  const atRisk = trackedRosterRows
+    .map((row) => {
+      const hasPriorAttendance = attackSets.some((set) => set.has(row.key));
+      const missedRecent =
+        hasPriorAttendance && recent.length ? recent.every((set) => !set.has(row.key)) : false;
+      return { name: row.name, missedRecent };
+    })
     .filter((r) => r.missedRecent)
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 8);

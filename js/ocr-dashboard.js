@@ -24,7 +24,8 @@ import {
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
   resolvePlayerNameForAttack,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
-  formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure
+  formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
+  trimRosterSnapshots
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -87,9 +88,16 @@ export async function saveRosterSnapshotsToFirestore() {
   try {
     const db = await ensureCloudSyncReady();
     if (!db) return;
-    await setDoc(doc(db, FS_ROSTER_PATH), { snapshots: state.rosterSnapshots, updated: new Date().toISOString() });
+    const snapshots = trimRosterSnapshots(state.rosterSnapshots);
+    if (snapshots.length !== state.rosterSnapshots.length) {
+      state.rosterSnapshots = snapshots;
+      localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
+      log(`Roster snapshot history trimmed to ${snapshots.length} cloud-safe snapshots.`, 'warn');
+    }
+    await setDoc(doc(db, FS_ROSTER_PATH), { snapshots, updated: new Date().toISOString() });
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
+    log(`Roster cloud save failed: ${e?.message || e}`, 'error');
   }
 }
 async function loadRosterSnapshotsFromFirestore() {
@@ -104,7 +112,7 @@ async function loadRosterSnapshotsFromFirestore() {
     if (snap.exists()) {
       const data = snap.data();
       if (Array.isArray(data.snapshots)) {
-        state.rosterSnapshots = data.snapshots;
+        state.rosterSnapshots = trimRosterSnapshots(data.snapshots);
         localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
       }
     }
@@ -112,7 +120,7 @@ async function loadRosterSnapshotsFromFirestore() {
       if (s.exists()) {
         const d = s.data();
         if (Array.isArray(d.snapshots)) {
-          state.rosterSnapshots = d.snapshots;
+          state.rosterSnapshots = trimRosterSnapshots(d.snapshots);
           localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
           renderRoster();
         }

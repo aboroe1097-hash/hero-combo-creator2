@@ -1,7 +1,7 @@
 import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
-  state, $id, esc, log, sha256
+  state, $id, esc, log, sha256, trimRosterSnapshots
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -46,10 +46,13 @@ function loadRosterSnapshots() {
     const raw = localStorage.getItem(ROSTER_SNAPSHOTS_KEY);
     state.rosterSnapshots = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(state.rosterSnapshots)) state.rosterSnapshots = [];
+    state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
+    localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
   } catch (e) { state.rosterSnapshots = []; }
 }
 
 function saveRosterSnapshots() {
+  state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
   try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
   saveRosterSnapshotsToFirestore();
 }
