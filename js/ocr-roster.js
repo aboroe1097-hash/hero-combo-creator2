@@ -2,7 +2,7 @@ import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch
+  qwenVisionRequest, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -598,11 +598,7 @@ function getRosterDatabaseNames() {
 }
 
 function normalizeDutyName(name) {
-  return String(name || '')
-    .normalize('NFKD')
-    .replace(/\p{M}/gu, '')
-    .replace(/[^\p{L}\p{N}]+/gu, '')
-    .toLowerCase();
+  return compactPlayerIdentity(name);
 }
 
 function getDutySuggestions(rawName) {

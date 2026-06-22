@@ -1,4 +1,43 @@
 import { translations, loadTranslationsForLanguage } from './translations.js';
+import { mountGameClock, syncGameClockTitles } from './game-time.js';
+
+const APP_VERSION = '11.2.0';
+
+function getPreferredTheme() {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'light') root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0f172a');
+
+  const btn = document.getElementById('themeToggle');
+  const darkIcon = btn?.querySelector('.theme-icon-dark');
+  const lightIcon = btn?.querySelector('.theme-icon-light');
+  if (darkIcon && lightIcon) {
+    darkIcon.classList.toggle('hidden', theme === 'light');
+    lightIcon.classList.toggle('hidden', theme !== 'light');
+  }
+}
+
+function initTheme() {
+  applyTheme(getPreferredTheme());
+  const btn = document.getElementById('themeToggle');
+  if (!btn || btn.dataset.themeWired) return;
+  btn.dataset.themeWired = '1';
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+}
 
 function getLanguage() {
   try {
@@ -12,16 +51,24 @@ function updateTextContent(lang) {
   const t = translations[lang] || translations.en;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = lang;
+  const languageSelect = document.getElementById('languageSelect');
+  if (languageSelect) languageSelect.value = lang;
 
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
-    if (t[key]) el.textContent = t[key];
+    if (t[key]) el.textContent = t[key].replace('{version}', APP_VERSION);
   });
 
   document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
     const key = el.getAttribute('data-i18n-ph');
-    if (t[key]) el.placeholder = t[key];
+    if (t[key]) el.placeholder = t[key].replace('{version}', APP_VERSION);
   });
+
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title');
+    if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
+  });
+  syncGameClockTitles();
 }
 
 window.showToast = function showToast(msg, type = 'info', duration = 3000) {
@@ -65,10 +112,19 @@ function captureEarlyGuestIntent() {
 async function bootAdminPage() {
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
+  initTheme();
+  mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
+  document.getElementById('adminFooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   await loadAdminTemplate();
   captureEarlyGuestIntent();
   updateTextContent(lang);
-  const mod = await import('./ocr-dashboard.js?v=20260622_183256');
+  document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
+    const nextLang = e.target.value || 'en';
+    localStorage.setItem('vts_hero_lang', nextLang);
+    await loadTranslationsForLanguage(nextLang);
+    updateTextContent(nextLang);
+  });
+  const mod = await import('./ocr-dashboard.js?v=20260622_183931');
   await mod.bootOcrDashboard();
 }
 

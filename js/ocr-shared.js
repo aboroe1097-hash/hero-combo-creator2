@@ -350,8 +350,8 @@ export function getSimilarity(s1, s2) {
 
 export function getSimilarityAlphaNum(s1, s2) {
   if (!s1 || !s2) return 0;
-  const c1 = s1.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
-  const c2 = s2.replace(/[^a-zA-Z0-9а-яА-Я]/g, '').toLowerCase();
+  const c1 = compactPlayerIdentity(s1);
+  const c2 = compactPlayerIdentity(s2);
   if (!c1 || !c2) return getSimilarity(s1, s2);
   return getSimilarity(c1, c2);
 }
@@ -393,10 +393,22 @@ function readGroupedPlayerRank(player, fallbackRank) {
   return Number.isFinite(rank) ? rank : fallbackRank;
 }
 
-function compactPlayerIdentity(name) {
+const CYRILLIC_LATIN_HOMOGLYPHS = Object.freeze({
+  А: 'A', а: 'a',
+  В: 'B', Е: 'E', е: 'e',
+  К: 'K', к: 'k',
+  М: 'M', Н: 'H', О: 'O', о: 'o',
+  Р: 'P', р: 'p',
+  С: 'C', с: 'c',
+  Т: 'T', Х: 'X', х: 'x',
+  У: 'Y', у: 'y',
+});
+
+export function compactPlayerIdentity(name) {
   return String(name || '')
     .normalize('NFKD')
     .replace(/\p{M}/gu, '')
+    .replace(/[АаВЕеКкМНОоРрСсТХхУу]/g, ch => CYRILLIC_LATIN_HOMOGLYPHS[ch] || ch)
     .replace(/[^\p{L}\p{N}]+/gu, '')
     .toLowerCase();
 }
@@ -497,7 +509,7 @@ export function findBestMatch(name, minConfidence = 100) {
     const aliasMap = {
       'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy', '키키 kimmy': '키미 kimmy',
       'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
-      'AK Чанай': 'AK Чапай', 'AKЧанай': 'AK Чапай', 'AKЧапай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
+      'АК Чапай': 'AK Чапай', 'АКЧапай': 'AK Чапай', 'AK Чанай': 'AK Чапай', 'AKЧанай': 'AK Чапай', 'AKЧапай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
       '!!Uzumaki !!': '!!Uzumaki!!', '!! Uzumaki !!': '!!Uzumaki!!', 'Uzumaki': '!!Uzumaki!!', 'UzuBanner': '!!Uzumaki!!',
       '● AGAM ●': 'AGAM', '●●AGAM ●●': 'AGAM', '●● AGAM ●●': 'AGAM', '●AGAM●': 'AGAM',
       'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj', 'MasterVjso': 'MasterVj',

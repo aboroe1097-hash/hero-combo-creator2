@@ -8,6 +8,7 @@ import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
   normalizeStructureTarget,
+  compactPlayerIdentity,
 } from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
 import { isGuest } from './ocr-dashboard.js';
@@ -89,20 +90,12 @@ function structureLabel(attack) {
 }
 
 function normalizePlayerName(name) {
-  return String(name || '')
-    .toLowerCase()
-    .replace(/\[[^\]]+\]/g, '')
-    .replace(/[^a-z0-9]+/g, '')
-    .trim();
+  return compactPlayerIdentity(String(name || '').replace(/\[[^\]]+\]/g, ''));
 }
 
 function canonicalPlayerKey(name) {
   const raw = String(name || '').trim();
-  return String(findBestMatch(raw) || raw)
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+  return compactPlayerIdentity(findBestMatch(raw) || raw);
 }
 
 function canonicalPlayerName(player, attackPlayers = []) {

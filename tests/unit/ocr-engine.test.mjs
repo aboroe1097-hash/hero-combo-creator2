@@ -18,6 +18,7 @@ const { normalizeStructureName, normalizeStructureTarget, parseOcrResults } =
   await import('../../js/ocr-engine.js');
 const {
   findBestMatch,
+  compactPlayerIdentity,
   formatDatasetStructureLabel,
   formatStructureLabel,
   MAX_ROSTER_SNAPSHOTS,
@@ -194,6 +195,8 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['★r@mze$$$☆', '★r@mze$$$★'],
     ['WICKED WOMEN★', 'WICKED WOMEN☆'],
     ['!! LÜ BU !!', '!!LÜ BU!!'],
+    ['АК Чапай', 'AK Чапай'],
+    ['АКЧапай', 'AK Чапай'],
     ['AK Чапа́й', 'AK Чапай'],
     ['AKЧанай', 'AK Чапай'],
     ['AKЧапай', 'AK Чапай'],
@@ -224,6 +227,18 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
 
   for (const [raw, canonical] of aliases) {
     assert.equal(findBestMatch(raw), canonical);
+  }
+});
+
+test('mixed Cyrillic and Latin initials share the same player identity', () => {
+  assert.equal(compactPlayerIdentity('АК Чапай'), compactPlayerIdentity('AK Чапай'));
+
+  const previousRosterNames = state.rosterNames;
+  state.rosterNames = ['AK Чапай'];
+  try {
+    assert.equal(findBestMatch('АК Чапай'), 'AK Чапай');
+  } finally {
+    state.rosterNames = previousRosterNames;
   }
 });
 

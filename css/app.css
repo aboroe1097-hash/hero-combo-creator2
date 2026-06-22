@@ -6281,6 +6281,101 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
   text-decoration: none !important;
 }
 
+.admin-standalone-page .app-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 18px clamp(12px, 3vw, 28px);
+}
+
+.admin-command-header {
+  margin-bottom: 18px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.admin-command-brand {
+  min-width: min(100%, 520px);
+}
+
+.admin-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.admin-brand-logo {
+  width: clamp(64px, 8vw, 92px);
+  height: clamp(64px, 8vw, 92px);
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 22px rgba(14, 165, 233, 0.26), 0 14px 32px rgba(0, 0, 0, 0.38);
+}
+
+.admin-shell-title {
+  margin: 0;
+  font-family: Cinzel, serif;
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  line-height: 0.95;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #7dd3fc;
+  text-shadow: 0 2px 0 #075985, 0 0 18px rgba(14, 165, 233, 0.45);
+}
+
+.admin-shell-kicker,
+.admin-shell-team {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-shell-kicker { color: #fde047; }
+.admin-shell-team { color: #5eead4; }
+
+.admin-shell-copy {
+  max-width: 620px;
+  margin-top: 16px;
+}
+
+.admin-command-actions {
+  min-width: min(100%, 330px);
+}
+
+.admin-control-row {
+  align-items: center;
+}
+
+.admin-back-tools {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.admin-back-tools:hover {
+  color: #fff;
+  border-color: rgba(34, 211, 238, 0.75);
+  background: rgba(8, 47, 73, 0.72);
+}
+
+.admin-footer {
+  margin-top: 26px;
+}
+
 #ocrDashboardRoot .hidden { display: none !important; }
 #ocrDashboardRoot * { box-sizing: border-box; }
 

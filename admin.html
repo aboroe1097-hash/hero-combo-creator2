@@ -13,10 +13,10 @@
   <link rel="manifest" href="site.webmanifest" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260622_183256" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260622_183256" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260622_183256" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260622_183256" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/app.css?v=20260622_183931" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260622_183931" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260622_183931" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260622_183931" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -28,28 +28,121 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260622_183256"></script>
+  <script src="js/admin-auth-config.js?v=20260622_183931"></script>
 </head>
-<body>
+<body class="admin-standalone-page">
   <div class="app-shell min-h-screen">
-    <header class="admin-page-header sticky top-0 z-40 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <a href="index.html" class="flex items-center gap-3 text-slate-100 font-black tracking-wide no-underline">
-          <img src="images/logo.png" alt="" class="w-9 h-9 rounded-xl shadow-lg shadow-black/40" />
-          <span>VTS Admin</span>
-        </a>
-        <a href="index.html" class="px-3 py-2 rounded-lg border border-slate-700 text-xs font-bold uppercase tracking-widest text-slate-300 no-underline hover:text-white hover:border-cyan-400 transition">Back to Tools</a>
+    <header class="command-header admin-command-header" aria-label="VTS 1097 admin toolkit">
+      <div class="command-brand admin-command-brand">
+        <div id="adminBetaNote" class="version-ribbon text-center p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow" data-i18n="betaNote"></div>
+        <div class="admin-brand-row">
+          <img src="images/logo.png" alt="" class="admin-brand-logo dual-glow-logo" width="84" height="84" />
+          <div>
+            <h1 class="admin-shell-title" data-i18n="adminLoginTitle">VTS Admin</h1>
+            <p class="admin-shell-kicker">Rise of Castles: Ice &amp; Fire</p>
+            <p class="admin-shell-team">TEAM VTS — STATE 1097</p>
+          </div>
+        </div>
+        <p class="seo-intro command-copy admin-shell-copy" data-i18n="adminShellIntro">Shareable management dashboard for structure attack OCR, roster tracking, demolition reports, and alliance participation.</p>
+      </div>
+
+      <div class="command-actions admin-command-actions">
+        <div class="command-kicker" data-i18n="adminDeckLabel">S1097 Admin Deck</div>
+        <div class="app-control-row admin-control-row flex justify-end items-center gap-3 relative z-50 flex-wrap">
+          <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
+          <div class="relative inline-block group lang-select-wrapper">
+            <div class="flex items-center bg-slate-800/80 border border-slate-700 rounded-full hover:border-blue-500 hover:bg-slate-800 transition-all duration-300 shadow-lg cursor-pointer">
+              <div class="pl-3 pr-1 text-slate-400 group-hover:text-blue-400 pointer-events-none transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
+                </svg>
+              </div>
+              <select id="languageSelect" class="appearance-none bg-transparent text-slate-200 font-semibold py-2 pl-2 pr-9 text-sm outline-none cursor-pointer w-full h-full">
+                <option value="en" class="bg-slate-800 text-white">English</option>
+                <option value="es" class="bg-slate-800 text-white">Español</option>
+                <option value="pt" class="bg-slate-800 text-white">Português</option>
+                <option value="de" class="bg-slate-800 text-white">Deutsch</option>
+                <option value="fr" class="bg-slate-800 text-white">Français</option>
+                <option value="tr" class="bg-slate-800 text-white">Türkçe</option>
+                <option value="ru" class="bg-slate-800 text-white">Русский</option>
+                <option value="id" class="bg-slate-800 text-white">Indonesia</option>
+                <option value="zh" class="bg-slate-800 text-white">中文</option>
+                <option value="ar" class="bg-slate-800 text-white">العربية</option>
+                <option value="kr" class="bg-slate-800 text-white">한국어</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 group-hover:text-blue-400 transition-colors">
+                <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <button id="themeToggle" type="button"
+                  class="flex items-center justify-center w-11 h-11 rounded-full border border-slate-700 bg-slate-800/80 hover:bg-slate-700 hover:border-blue-500 text-slate-300 hover:text-white transition-all duration-200 shadow-sm"
+                  aria-label="Toggle light/dark theme" title="Toggle theme">
+            <span class="theme-icon-dark">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            </span>
+            <span class="theme-icon-light hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            </span>
+          </button>
+
+          <a href="index.html" class="admin-back-tools" data-i18n="adminBackToTools">Back to Tools</a>
+        </div>
       </div>
     </header>
 
     <main id="adminPageRoot" class="admin-page-main mx-auto px-3 sm:px-5 lg:px-7 py-4 lg:py-6">
       <section id="ocrDashboardSection" class="admin-page-panel">
-        <div class="dash-empty py-12 text-center text-slate-400">Loading admin dashboard...</div>
+        <div class="dash-empty py-12 text-center text-slate-400" data-i18n="adminShellLoading">Loading admin dashboard...</div>
       </section>
     </main>
+
+    <footer class="roc-footer admin-footer" aria-label="Site information">
+      <div class="footer-divider"></div>
+      <div class="footer-content max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="footer-section brand-section flex flex-col justify-between">
+          <div class="flex items-center gap-3 mb-3">
+            <img src="images/logo.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
+            <h3 class="footer-logo">VTS 1097</h3>
+          </div>
+          <p class="footer-url mt-4"><a href="https://roc-vts.com/">roc-vts.com</a></p>
+        </div>
+
+        <div class="footer-section links-section">
+          <h4 data-i18n="adminFooterTools">Command Tools</h4>
+          <ul>
+            <li><a href="index.html" data-i18n="tabGenerator">Combo Generator</a></li>
+            <li><a href="index.html" data-i18n="tabEdenMap">Eden Map</a></li>
+            <li><a href="index.html" data-i18n="tabResearch">Research</a></li>
+            <li><a href="index.html" data-i18n="tabLoyalty">Eden Loyalty</a></li>
+            <li><a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section community-section flex flex-col justify-between">
+          <div>
+            <h4 data-i18n="adminFooterCommunity">Community & Info</h4>
+            <ul>
+              <li><a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a></li>
+            </ul>
+          </div>
+          <p class="disclaimer mt-6" data-i18n="adminFooterDisclaimer">Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <span id="adminFooterYear">2026</span> VTS 1097 &middot; v11.2.0</p>
+      </div>
+    </footer>
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/admin-page.js?v=20260622_183256"></script>
+  <script type="module" src="js/admin-page.js?v=20260622_183931"></script>
 </body>
 </html>
