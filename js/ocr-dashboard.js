@@ -636,6 +636,11 @@ function buildDashboardPlayerSummary(attacks) {
   return Object.values(summary).sort((a, b) => b.total_demolition - a.total_demolition);
 }
 
+function refreshDashboardPlayerSummary() {
+  if (!state.dashData) return;
+  state.dashData.players_summary = buildDashboardPlayerSummary(state.dashData.attacks || []);
+}
+
 function downloadCsv(csv, filename) {
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -867,8 +872,7 @@ window.deleteAttack = async function(attId) {
   if (idx !== -1) {
     const removed = state.dashData.attacks[idx];
     state.dashData.attacks.splice(idx, 1);
-    const mockReturn = parseOcrResults([]); 
-    state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+    refreshDashboardPlayerSummary();
     state.dashData.total_attacks = state.dashData.attacks.length;
     await saveData(state.dashData);
     render(); closeModal();
@@ -909,8 +913,7 @@ window.editAttack = async function(attId) {
   att.structure_level = normalizedTarget.structure_level;
   att.game_time = newTime.trim();
   att.start_time = newStartTime.trim();
-  const mockReturn = parseOcrResults([]); 
-  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  refreshDashboardPlayerSummary();
   await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Updated attack to: ${formatStructureLabel(att.structure_name, att.structure_level)}`, 'info');
@@ -931,8 +934,7 @@ window.addPlayer = async function(attId) {
   att.players_count = att.players.length;
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
   
-  const mockReturn = parseOcrResults([]); 
-  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  refreshDashboardPlayerSummary();
   await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Added player ${pName} to ${att.structure_name}`, 'info');
@@ -964,8 +966,7 @@ window.editPlayer = async function(attId, encName) {
   att.players_count = att.players.length;
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
   
-  const mockReturn = parseOcrResults([]); 
-  state.dashData.players_summary = mockReturn ? mockReturn.players_summary : state.dashData.players_summary;
+  refreshDashboardPlayerSummary();
   await saveData(state.dashData);
   render(); showModal('attack', att);
   log(`Edited player ${pName} in ${att.structure_name}`, 'info');
