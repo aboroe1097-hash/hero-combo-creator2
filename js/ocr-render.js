@@ -604,6 +604,8 @@ window.clearStructureLeaderboardFilter = function() {
 
 function render() {
   if (!state.dashData) {
+    state._lastRenderedAttacks = [];
+    state._lastRenderedPlayerSummary = [];
     ['dashKpiAttacks','dashKpiDemo','dashKpiPlayers'].forEach(id => $id(id).textContent = '0');
     $id('dashKpiMvp').textContent = '---'; $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
@@ -615,6 +617,7 @@ function render() {
   let atts = getTimeFilteredAttacks(state.dashData.attacks || []);
   const globalPsum = buildPlayerSummary(atts);
   let psum = globalPsum;
+  let activeExportAttacks = atts;
   let structureFilterLabel = '';
 
   const filterEl = $id('dashLeaderFilter');
@@ -635,14 +638,18 @@ function render() {
     if (currentVal) {
       const filteredAttacks = atts.filter(a => a.id === currentVal);
       psum = buildPlayerSummary(filteredAttacks);
+      activeExportAttacks = filteredAttacks;
     } else if (state.structureFilterKey) {
       const filteredAttacks = atts.filter(a => structureKey(a) === state.structureFilterKey);
       if (filteredAttacks.length) {
         structureFilterLabel = structureLabel(filteredAttacks[0]);
         psum = buildPlayerSummary(filteredAttacks);
+        activeExportAttacks = filteredAttacks;
       }
     }
   }
+  state._lastRenderedAttacks = activeExportAttacks;
+  state._lastRenderedPlayerSummary = psum;
   renderAnalytics(atts, globalPsum);
   renderOpsOverview(atts, globalPsum);
 

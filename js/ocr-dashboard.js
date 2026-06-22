@@ -436,9 +436,11 @@ async function clearData() {
 function exportData() { if (!state.dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state.dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
 function exportToCsv() {
   if (!state.dashData?.players_summary && !state.dashData?.attacks?.length) return;
-  const players = state.dashData?.attacks?.length
-    ? buildDashboardPlayerSummary(state.dashData.attacks)
-    : state.dashData.players_summary;
+  const players = Array.isArray(state._lastRenderedPlayerSummary)
+    ? state._lastRenderedPlayerSummary
+    : state.dashData?.attacks?.length
+      ? buildDashboardPlayerSummary(state.dashData.attacks)
+      : state.dashData.players_summary;
   let csv = 'Rank,Member Name,Total Demolition,Hits,Avg per Hit\n';
   players.forEach((p, i) => {
     const safeName = p.name.replace(/"/g, '""');
@@ -578,8 +580,11 @@ window.shareChartImage = async function() {
 }
 function exportAttackCsv() {
   if (!state.dashData?.attacks?.length) return;
+  const attacks = Array.isArray(state._lastRenderedAttacks)
+    ? state._lastRenderedAttacks
+    : state.dashData.attacks;
   let csv = 'Start Time,End Time,Structure,Level,Player Name,Rank,Demolition Value\n';
-  state.dashData.attacks.forEach(a => {
+  attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
     const target = getDatasetStructureTarget(a);

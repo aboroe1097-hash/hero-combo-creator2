@@ -223,6 +223,8 @@ export const state = {
   sortCol: 'total_demolition',
   sortDir: 'desc',
   leaderLimit: 25,
+  _lastRenderedAttacks: null,
+  _lastRenderedPlayerSummary: null,
   _booted: false,
   _ocrProcessing: false,
   _rosterProcessing: false,
