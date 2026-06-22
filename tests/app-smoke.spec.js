@@ -464,11 +464,13 @@ test.describe('app smoke tabs', () => {
           structure_level: 'Lv.3',
           game_time: '19/06/2026, 12:30',
           start_time: '12:00',
-          total_demolition: 900000,
-          players_count: 2,
+          total_demolition: 920000,
+          players_count: 4,
           players: [
             { name: 'Alpha', value: 500000, rank: 1 },
             { name: 'Delta', value: 400000, rank: 2 },
+            { name: 'Anne', value: 9000, rank: 3 },
+            { name: 'Anne...', value: 1000, rank: 4 },
           ],
         },
         {
@@ -535,6 +537,7 @@ test.describe('app smoke tabs', () => {
       },
       { seededDash, seededRoster }
     );
+    await expect(page.locator('#dashLeaderBody tr', { hasText: 'Anne' })).toHaveCount(1);
     await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
     await page.evaluate(() => window.switchDashSubtab('analytics'));
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();

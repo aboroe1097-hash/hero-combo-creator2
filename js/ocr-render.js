@@ -115,6 +115,11 @@ function canonicalPlayerName(player, attackPlayers = []) {
   );
 }
 
+function canonicalAggregationName(player) {
+  const rawName = typeof player === 'string' ? player : player?.name;
+  return findBestMatch(rawName) || String(rawName || '').trim() || 'Unknown Player';
+}
+
 function rosterMemberName(member) {
   if (!member) return '';
   if (typeof member === 'string') return member;
@@ -135,8 +140,8 @@ function buildPlayerSummary(attacks) {
     const seen = new Set();
     const players = attackPlayers(a);
     players.forEach((p) => {
-      const n = canonicalPlayerName(p, players);
-      const displayName = n;
+      const n = canonicalAggregationName(p);
+      const displayName = canonicalPlayerName(p, players);
       const val = valueOf(p.value ?? p.val);
       if (!globalSum[n]) {
         globalSum[n] = {
@@ -354,7 +359,7 @@ function renderStructurePerformance(attacks) {
     group.attendance += attackPlayers(a).length;
     const players = attackPlayers(a);
     players.forEach((p) => {
-      const n = canonicalPlayerName(p, players);
+      const n = canonicalAggregationName(p);
       group.players.set(n, (group.players.get(n) || 0) + valueOf(p.value ?? p.val));
     });
   });
@@ -432,7 +437,7 @@ function renderPlayerTrends(attacks, psum) {
     .map((player, index) => {
       const vals = ordered.map((attack) =>
         attackPlayers(attack).reduce((sum, p) => {
-          return canonicalPlayerName(p, attackPlayers(attack)) === player.name
+          return canonicalAggregationName(p) === player.name
             ? sum + valueOf(p.value ?? p.val)
             : sum;
         }, 0)
@@ -485,7 +490,7 @@ function renderHeatmap(attacks) {
       const val = valueOf(p.value ?? p.val);
       if (val <= 0) return;
       current.hits++;
-      current.players.add(canonicalPlayerName(p, players));
+      current.players.add(canonicalAggregationName(p));
     });
     cells.set(key, current);
   });
