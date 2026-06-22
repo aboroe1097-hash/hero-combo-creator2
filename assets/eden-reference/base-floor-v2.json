@@ -1,7 +1,7 @@
 {
   "version": 2,
   "label": "Strategy Floor V2 - Full Eden square calibration",
-  "source": "User supplied Eden Map (6).png, 2026-06-22",
+  "source": "Composite preview from Eden Map (6).png plus West, East, South Sector 4, South Sector 3, and South Sector 2 captures, 2026-06-22",
   "worldSize": [
     1600,
     1600
@@ -13,19 +13,27 @@
     "maxY": 1600
   },
   "imageSize": [
-    4000,
-    2500
+    8892,
+    5558
   ],
   "sourceImageSize": [
-    4000,
-    2500
+    8104,
+    4506
   ],
   "sourceCrop": {
     "left": 0,
     "top": 0,
-    "width": 4000,
-    "height": 2500
+    "width": 8104,
+    "height": 4506
   },
+  "centerAnchorPixel": [
+    4446,
+    2779
+  ],
+  "sourceCompositeOffset": [
+    -575,
+    679
+  ],
   "transparentWhitespace": true,
   "centerAnchor": {
     "label": "Throne",
@@ -33,5 +41,5 @@
     "y": 800
   },
   "focusSectors": [],
-  "notes": "Transparent floor extracted from the supplied 4000x2500 image. It is drawn as a screen-aligned 1.6 aspect floor over a 1600x1600 Eden coordinate world, so the center throne aligns with 800:800."
+  "notes": "Expanded transparent floor promoted from the approved West/East/South preview. The image is recentered onto a 1.6 aspect canvas so the original throne anchor remains at the image center and continues to align with world coordinate 800:800. Remaining north/south sectors can expand this same centered canvas later."
 }
