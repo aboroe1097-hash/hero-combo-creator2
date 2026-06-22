@@ -55,6 +55,8 @@ const CATEGORY_ROW_CLASS = { gate: 'eden-row-gate', town: 'eden-row-town', capit
 const MISSION_FALLBACK = { id: 'vts', name: 'VTS', color: '#22d3ee', side: 'ours', teams: ['all'], time: '', label: '' };
 const CANVAS_RENDER_SCALE_MIN = 2;
 const CANVAS_RENDER_SCALE_MAX = 2.5;
+const POINTER_DRAG_THRESHOLD_PX = 6;
+const TARGET_STRUCTURE_SNAP_RADIUS_MUL = 2.35;
 function getCanvasRenderScale() {
   const dpr = Number(window.devicePixelRatio) || 1;
   return Math.min(CANVAS_RENDER_SCALE_MAX, Math.max(CANVAS_RENDER_SCALE_MIN, dpr));
@@ -98,7 +100,9 @@ export function initEdenMapPlanner() {
   let drawRaf = 0;
   let interactEndTimer = 0;
   let sidebarDirty = true;
+  let pointerStart = { x: 0, y: 0 };
   let lastPointer = { x: 0, y: 0 };
+  let pendingTargetPlacement = null;
   let selectedId = null;
   let pathDraft = [];
   let measureA = null;
@@ -412,7 +416,7 @@ export function initEdenMapPlanner() {
   }
 
   function targetDisplayLabel(target, fallback = '') {
-    return target?.label || target?.allianceName || fallback;
+    return target?.label || target?.structureName || target?.allianceName || fallback;
   }
 
   function finishDrawStroke() {
@@ -1480,11 +1484,31 @@ export function initEdenMapPlanner() {
     return best;
   }
 
-  function snapPoint(mx, my) {
-    const hit = hitTest(mx, my, 1.85);
+  function snapPoint(mx, my, radiusMul = 1.85) {
+    const hit = hitTest(mx, my, radiusMul);
     if (hit) return { x: hit.x, y: hit.y, struct: hit };
     const w = screenToWorld(mx, my);
     return { x: w.x, y: w.y, struct: null };
+  }
+
+  function addPlanningTarget(mx, my) {
+    const pt = snapPoint(mx, my, TARGET_STRUCTURE_SNAP_RADIUS_MUL);
+    plan.customTargets = plan.customTargets || [];
+    const label = `T${plan.customTargets.length + 1}`;
+    const target = {
+      x: pt.x,
+      y: pt.y,
+      ...createMissionPayload(label),
+    };
+    if (pt.struct) {
+      target.structureId = pt.struct.id;
+      target.structureType = pt.struct.type;
+      target.structureName = getStructureLabel(pt.struct.type);
+      target.structureSector = pt.struct.sector || sectorKey;
+    }
+    plan.customTargets.push(target);
+    savePlan();
+    draw();
   }
 
   function addPathPoint(mx, my) {
@@ -2410,9 +2434,11 @@ export function initEdenMapPlanner() {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
+    pointerStart = { x: mx, y: my };
     lastPointer = { x: mx, y: my };
     dragMoved = false;
     pointerDownHit = null;
+    pendingTargetPlacement = null;
 
     if (e.button === 1) {
       panning = true;
@@ -2473,16 +2499,12 @@ export function initEdenMapPlanner() {
     }
 
     if (tool === 'target') {
-      const pt = snapPoint(mx, my);
-      plan.customTargets = plan.customTargets || [];
-      const label = `T${plan.customTargets.length + 1}`;
-      plan.customTargets.push({
-        x: pt.x,
-        y: pt.y,
-        ...createMissionPayload(label),
-      });
-      savePlan();
-      draw();
+      const pt = snapPoint(mx, my, TARGET_STRUCTURE_SNAP_RADIUS_MUL);
+      pendingTargetPlacement = { x: mx, y: my };
+      snapPreview = pt.struct ? { x: pt.x, y: pt.y } : null;
+      hoverWorld = pt.struct ? { x: pt.x, y: pt.y } : screenToWorld(mx, my);
+      updateCoordHud();
+      scheduleDraw({ sidebar: false });
       return;
     }
 
@@ -2510,8 +2532,16 @@ export function initEdenMapPlanner() {
     const my = e.clientY - rect.top;
 
     if (isSectorSheetView()) {
+      if (pendingTargetPlacement && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
+        pendingTargetPlacement = null;
+        snapPreview = null;
+        dragMoved = true;
+        panning = true;
+        markInteracting();
+        canvas.style.cursor = 'grabbing';
+      }
       if (panning) {
-        if (Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 2) dragMoved = true;
+        if (Math.hypot(mx - pointerStart.x, my - pointerStart.y) > 2) dragMoved = true;
         offsetX += mx - lastPointer.x;
         offsetY += my - lastPointer.y;
         lastPointer = { x: mx, y: my };
@@ -2524,9 +2554,19 @@ export function initEdenMapPlanner() {
       return;
     }
 
-    if (pointerDownHit && !panning && Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 5) {
+    if (pendingTargetPlacement && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
+      pendingTargetPlacement = null;
+      snapPreview = null;
+      dragMoved = true;
+      panning = true;
+      markInteracting();
+      canvas.style.cursor = 'grabbing';
+    }
+
+    if (pointerDownHit && !panning && Math.hypot(mx - pointerStart.x, my - pointerStart.y) > POINTER_DRAG_THRESHOLD_PX) {
       pointerDownHit = null;
       panning = true;
+      dragMoved = true;
       markInteracting();
       canvas.style.cursor = 'grabbing';
     }
@@ -2555,7 +2595,7 @@ export function initEdenMapPlanner() {
     }
 
     if (panning) {
-      if (Math.hypot(mx - lastPointer.x, my - lastPointer.y) > 2) dragMoved = true;
+      if (Math.hypot(mx - pointerStart.x, my - pointerStart.y) > 2) dragMoved = true;
       offsetX += mx - lastPointer.x;
       offsetY += my - lastPointer.y;
       lastPointer = { x: mx, y: my };
@@ -2576,7 +2616,10 @@ export function initEdenMapPlanner() {
     hoverWorld = hoverStruct ? { x: hoverStruct.x, y: hoverStruct.y } : screenToWorld(mx, my);
 
     const pathMode = tool === 'path' || e.shiftKey;
-    const snap = pathMode ? snapPoint(mx, my) : null;
+    const targetMode = tool === 'target';
+    const snap = pathMode || targetMode
+      ? snapPoint(mx, my, targetMode ? TARGET_STRUCTURE_SNAP_RADIUS_MUL : 1.85)
+      : null;
     const nextSnap = snap?.struct ? { x: snap.x, y: snap.y } : null;
     const snapChanged = (snapPreview?.x !== nextSnap?.x || snapPreview?.y !== nextSnap?.y);
     snapPreview = nextSnap;
@@ -2588,10 +2631,15 @@ export function initEdenMapPlanner() {
   canvas.addEventListener('pointerleave', () => {
     hoverStruct = null;
     hoverWorld = null;
+    if (tool === 'target') {
+      snapPreview = null;
+      scheduleDraw({ sidebar: false });
+    }
     updateCoordHud();
   });
 
-  canvas.addEventListener('pointerup', () => {
+  canvas.addEventListener('pointerup', (e) => {
+    const { mx, my } = canvasPointer(e);
     if (drawing && tool === 'draw') {
       finishDrawStroke();
       endInteraction();
@@ -2604,8 +2652,17 @@ export function initEdenMapPlanner() {
       draggingWaypoint = null;
     }
     const wasPanning = panning;
+    const hadSnapPreview = Boolean(snapPreview);
+    const shouldPlaceTarget = tool === 'target'
+      && pendingTargetPlacement
+      && !wasPanning
+      && !dragMoved
+      && Math.hypot(mx - pointerStart.x, my - pointerStart.y) <= POINTER_DRAG_THRESHOLD_PX;
     panning = false;
-    if (!dragMoved && pointerDownHit) {
+    if (shouldPlaceTarget) {
+      snapPreview = null;
+      addPlanningTarget(mx, my);
+    } else if (!dragMoved && pointerDownHit) {
       selectedId = pointerDownHit.id;
       notifySelection();
       draw();
@@ -2618,6 +2675,11 @@ export function initEdenMapPlanner() {
     }
     syncToolButtons();
     pointerDownHit = null;
+    pendingTargetPlacement = null;
+    if (tool !== 'path') {
+      snapPreview = null;
+      if (hadSnapPreview && !shouldPlaceTarget) scheduleDraw({ sidebar: false });
+    }
   });
 
   canvas.addEventListener('dblclick', (e) => {
