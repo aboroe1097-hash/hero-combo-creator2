@@ -22,7 +22,6 @@ export const rankedCombos = [
   { heroes: ["King Arthur", "Cleopatra VII", "Bleeding Steed"], skin: '233', note: 'Requested 2333 skin lane mapped to the app three-slot skin code: Arthur recommended, Cleopatra and Bleeding Steed required.' },
   { heroes: ["Hunk", "Boudica", "Sakura"], skin: '233', note: 'Skin-mode lane placed above Boudica / Sakura / Jade Eagle: Hunk recommended, Boudica and Sakura required.' },
   { heroes: ["Octavius", "Rozen Blade", "Caesar"], skin: '232', note: 'Rozen Blade skin is required. Octavius and Caesar skins are recommended.' },
-  { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '333', note: 'S0-S1 top combo when all three skins are owned.' },
 
   { heroes: ["Beowulf", "Ramses II", "Theodora"], note: 'Beowulf front-row skill spam triggers Theodora healing, producing a stable high-damage sustain combo.' },
   { heroes: ["Alexander", "Cleopatra VII", "Theodora"] },
@@ -83,6 +82,7 @@ export const rankedCombos = [
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },
   { heroes: ["Hunk", "Boudica", "Sakura"] },
+    { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '333', note: 'S0-S1 top combo when all three skins are owned.' },
   { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },
