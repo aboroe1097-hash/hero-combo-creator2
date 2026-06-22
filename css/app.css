@@ -8316,6 +8316,8 @@ body {
 .strife-source-card {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 0.22rem;
   min-width: 10rem;
   padding: 0.8rem 1rem;
   border: 1px solid rgba(45, 212, 191, 0.35);
@@ -8337,6 +8339,21 @@ body {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.strife-source-card small,
+.strife-source-card a,
+.strife-source-link {
+  color: #67e8f9;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.strife-source-card a:hover,
+.strife-source-link:hover {
+  color: #facc15;
 }
 
 .strife-control-deck,
@@ -8572,6 +8589,26 @@ body {
   gap: 0.75rem;
 }
 
+.strife-guide-notes {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  background:
+    linear-gradient(135deg, rgba(20, 83, 45, 0.16), rgba(2, 6, 23, 0.34)),
+    radial-gradient(circle at 0% 0%, rgba(94, 234, 212, 0.13), transparent 34%);
+  border-radius: 8px;
+}
+
+.strife-guide-notes p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 780;
+  line-height: 1.45;
+}
+
 .strife-skill-card {
   min-width: 0;
   display: grid;
@@ -8678,9 +8715,21 @@ body {
   font-weight: 800;
 }
 
+.strife-skill-empty--compact {
+  min-height: 0;
+  margin-bottom: 0.85rem;
+}
+
+.strife-lane-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
 .strife-ranked-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.8rem;
 }
 
@@ -8699,6 +8748,16 @@ body {
 .strife-combo-card--perfect {
   border-color: rgba(250, 204, 21, 0.45);
   box-shadow: inset 3px 0 0 rgba(250, 204, 21, 0.72);
+}
+
+.strife-combo-card--f2p {
+  border-color: rgba(52, 211, 153, 0.42);
+  box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.65);
+}
+
+.strife-combo-card--p2w {
+  border-color: rgba(168, 85, 247, 0.46);
+  box-shadow: inset 3px 0 0 rgba(168, 85, 247, 0.72);
 }
 
 .strife-card-rank {
@@ -8898,6 +8957,10 @@ body {
 
   .strife-monster-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .strife-lane-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -5,6 +5,7 @@ import { escapeHtml } from './utils.js';
 import {
   STRIFE_MONSTER_COMBOS,
   STRIFE_MONSTERS,
+  STRIFE_REFERENCE,
   STRIFE_SEASONS,
   STRIFE_TIERS,
 } from './strife-db.js';
@@ -13,7 +14,7 @@ const STRIFE_STAGE_KEY = 'vts_strife_stage';
 const STRIFE_MONSTER_KEY = 'vts_strife_monster';
 const HERO_BY_NAME = new Map(allHeroesData.map(hero => [hero.name, hero]));
 const MONSTER_BY_ID = new Map(STRIFE_MONSTERS.map(monster => [monster.id, monster]));
-const REUSABLE_CANDIDATE_LIMIT = 10;
+const REUSABLE_CANDIDATE_LIMIT = 6;
 
 let strifeRoot = null;
 
@@ -57,7 +58,7 @@ function getComboTroopType(combo) {
 
 function getComboTags(combo) {
   const tags = [];
-  if (combo.source === 'manual') tags.push(combo.tier === STRIFE_TIERS.PERFECT ? 'Perfect' : 'Good Damage');
+  if (combo.source === 'manual') tags.push(combo.tier === STRIFE_TIERS.P2W ? 'P2W Row' : 'F2P Row');
   if (combo.source === 'fallback') tags.push('Combo DB');
 
   const heroes = new Set(combo.heroes);
@@ -67,6 +68,14 @@ function getComboTags(combo) {
   if (heroes.has('Bleeding Steed') || heroes.has('Rozen Blade')) tags.push('Pressure');
   if (!tags.length) tags.push('Ranked');
   return tags.slice(0, 4);
+}
+
+function comboHasPaidHero(combo) {
+  return combo.heroes.some(heroName => HERO_BY_NAME.get(heroName)?.State === 'Paid');
+}
+
+function comboIsFreeFriendly(combo) {
+  return combo.heroes.every(heroName => HERO_BY_NAME.get(heroName)?.State !== 'Paid');
 }
 
 function toManualCombo(entry, index, tier) {
@@ -92,16 +101,16 @@ function getManualCombos(monsterId, stage, availableSeasons) {
   });
 
   return {
-    perfect: accepted
-      .filter(entry => entry.tier === STRIFE_TIERS.PERFECT)
-      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.PERFECT)),
-    good: accepted
-      .filter(entry => entry.tier !== STRIFE_TIERS.PERFECT)
-      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.GOOD)),
+    f2p: accepted
+      .filter(entry => entry.tier !== STRIFE_TIERS.P2W)
+      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.F2P)),
+    p2w: accepted
+      .filter(entry => entry.tier === STRIFE_TIERS.P2W)
+      .map((entry, index) => toManualCombo(entry, index, STRIFE_TIERS.P2W)),
   };
 }
 
-function getFallbackCombos(stage, availableSeasons) {
+function getFallbackCombos(stage, availableSeasons, tier) {
   const availableHeroNames = new Set(
     allHeroesData.filter(hero => availableSeasons.includes(hero.season)).map(hero => hero.name)
   );
@@ -120,8 +129,9 @@ function getFallbackCombos(stage, availableSeasons) {
       return enriched;
     })
     .filter(combo => combo.heroes.every(hero => availableHeroNames.has(hero)))
+    .filter(combo => (tier === STRIFE_TIERS.P2W ? comboHasPaidHero(combo) : comboIsFreeFriendly(combo)))
     .slice(0, REUSABLE_CANDIDATE_LIMIT)
-    .map(combo => ({ ...combo, stage }));
+    .map(combo => ({ ...combo, tier, stage }));
 }
 
 export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage = getStoredStage()) {
@@ -131,18 +141,19 @@ export function getStrifeRecommendations(monsterId = getStoredMonsterId(), stage
   const availableSeasons = getStageSeasons(selectedStage);
   const availableHeroes = allHeroesData.filter(hero => availableSeasons.includes(hero.season));
   const manual = getManualCombos(monster.id, selectedStage, availableSeasons);
-  const hasManualRows = manual.perfect.length > 0 || manual.good.length > 0;
-  const fallback = hasManualRows ? [] : getFallbackCombos(selectedStage, availableSeasons);
+  const f2pCombos = manual.f2p.length ? manual.f2p : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.F2P);
+  const p2wCombos = manual.p2w.length ? manual.p2w : getFallbackCombos(selectedStage, availableSeasons, STRIFE_TIERS.P2W);
 
   return {
     monster,
     stage: selectedStage,
     availableSeasons,
     availableHeroCount: availableHeroes.length,
-    perfectCombos: manual.perfect,
-    goodCombos: hasManualRows ? manual.good : fallback,
-    sourceMode: hasManualRows ? 'manual' : 'fallback',
-    candidateCount: manual.perfect.length + manual.good.length + fallback.length,
+    f2pCombos,
+    p2wCombos,
+    f2pSourceMode: manual.f2p.length ? 'manual' : 'fallback',
+    p2wSourceMode: manual.p2w.length ? 'manual' : 'fallback',
+    candidateCount: f2pCombos.length + p2wCombos.length,
   };
 }
 
@@ -165,7 +176,7 @@ function renderMonsterGrid(selectedMonsterId) {
       <button type="button" class="strife-monster-card${active ? ' active' : ''}" data-strife-monster="${escapeHtml(monster.id)}" style="--monster-accent:${escapeHtml(monster.accent || '#67e8f9')}">
         ${renderMonsterImage(monster)}
         <span class="strife-monster-name">${escapeHtml(monster.name)}</span>
-        <span class="strife-monster-formation">Front / Mid / Back</span>
+        <span class="strife-monster-formation">Tap to plan</span>
       </button>
     `;
   }).join('');
@@ -183,6 +194,10 @@ function getMonsterSkills(monster) {
   return Array.isArray(monster?.skills)
     ? monster.skills.filter(skill => skill && (skill.name || skill.effect || skill.answer))
     : [];
+}
+
+function getMonsterGuideNotes(monster) {
+  return Array.isArray(monster?.guideNotes) ? monster.guideNotes.filter(Boolean) : [];
 }
 
 function renderMonsterSkill(skill, index) {
@@ -211,6 +226,22 @@ function renderMonsterSkill(skill, index) {
 
 function renderMonsterSkills(monster) {
   const skills = getMonsterSkills(monster);
+  const guideNotes = getMonsterGuideNotes(monster);
+  const source = monster.sourceUrl
+    ? `<a class="strife-source-link" href="${escapeHtml(monster.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(monster.sourceLabel || 'Source guide')}</a>`
+    : '';
+  const guideContent = guideNotes.length
+    ? `
+      <div class="strife-guide-notes">
+        ${guideNotes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}
+      </div>
+    `
+    : `
+      <div class="strife-skill-empty strife-skill-empty--compact">
+        <strong>Manual notes pending</strong>
+        <span>Add monster-specific counters here as we test them.</span>
+      </div>
+    `;
   const content = skills.length
     ? skills.map((skill, index) => renderMonsterSkill(skill, index)).join('')
     : `
@@ -223,9 +254,10 @@ function renderMonsterSkills(monster) {
   return `
     <section class="strife-results-band strife-skills-band">
       <div class="strife-section-title">
-        <h3>Monster Skills</h3>
-        <span>${skills.length ? `${skills.length} notes` : 'Pending'}</span>
+        <h3>Monster Intel</h3>
+        <span>${source || (skills.length ? `${skills.length} notes` : 'Pending')}</span>
       </div>
+      ${guideContent}
       <div class="strife-skill-list">${content}</div>
     </section>
   `;
@@ -255,13 +287,13 @@ function renderHeroSlot(heroName, position) {
   `;
 }
 
-function renderComboCard(combo, index, variant = 'good') {
+function renderComboCard(combo, index, variant = STRIFE_TIERS.F2P) {
   const troopType = combo.troopType || 'Mixed';
   const title = combo.source === 'manual'
-    ? `${variant === STRIFE_TIERS.PERFECT ? 'Perfect' : 'Good'} #${index + 1}`
+    ? `${variant === STRIFE_TIERS.P2W ? 'P2W' : 'F2P'} #${index + 1}`
     : `Reusable #${index + 1}`;
   const scoreLabel = combo.source === 'fallback'
-    ? `DB #${combo.sourceRank} · ${combo.displayScore}`
+    ? `DB #${combo.sourceRank} - ${combo.displayScore}`
     : combo.displayScore;
   const tags = (combo.tags || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join('');
   const note = combo.note ? `<p class="strife-combo-note">${escapeHtml(combo.note)}</p>` : '';
@@ -290,20 +322,21 @@ function renderEmptyState(model, tierLabel) {
   return `
     <div class="strife-empty">
       <strong>No ${escapeHtml(tierLabel)} rows for ${escapeHtml(model.monster.name)} at ${escapeHtml(model.stage)} yet.</strong>
-      <span>No manual rows configured.</span>
+      <span>Add manual rows in strife-db.js when we have tested this monster.</span>
     </div>
   `;
 }
 
-function renderComboSection(title, subtitle, combos, model, variant) {
+function renderComboSection(title, subtitle, combos, model, variant, sourceMode) {
   const content = combos.length
     ? combos.map((combo, index) => renderComboCard(combo, index, variant)).join('')
     : renderEmptyState(model, title);
+  const source = sourceMode === 'manual' ? 'Manual monster rows' : 'Filtered combo DB fallback';
   return `
-    <section class="strife-results-band">
+    <section class="strife-results-band strife-results-band--${escapeHtml(variant)}">
       <div class="strife-section-title">
         <h3>${escapeHtml(title)}</h3>
-        <span>${escapeHtml(subtitle)}</span>
+        <span>${escapeHtml(subtitle)} - ${escapeHtml(source)}</span>
       </div>
       <div class="strife-ranked-list">${content}</div>
     </section>
@@ -313,18 +346,25 @@ function renderComboSection(title, subtitle, combos, model, variant) {
 function renderStrifeTool() {
   if (!strifeRoot) return;
   const model = getStrifeRecommendations();
-  const sourceLabel = model.sourceMode === 'manual' ? 'Manual matchup rows' : 'Reusable DB candidates';
+  const referenceLink = STRIFE_REFERENCE?.url
+    ? `<a href="${escapeHtml(STRIFE_REFERENCE.url)}" target="_blank" rel="noopener noreferrer">Reference table</a>`
+    : 'Reference table';
+  const referenceImageLink = STRIFE_REFERENCE?.imageUrl
+    ? `<a href="${escapeHtml(STRIFE_REFERENCE.imageUrl)}" target="_blank" rel="noopener noreferrer">Table image</a>`
+    : '';
 
   strifeRoot.innerHTML = `
     <div class="strife-header">
       <div>
         <p class="strife-eyebrow">Origin of Dragons</p>
         <h2>Strife over Dragon</h2>
-        <p>Pick one monster and season stage. Each row is a reusable team, so you can run the same combo again.</p>
+        <p>Pick one monster and your current stage. The same selected team can be reused across your daily attacks, so this planner shows practical F2P and P2W lanes instead of five separate slots.</p>
       </div>
       <div class="strife-source-card">
         <strong>${model.candidateCount}</strong>
-        <span>${escapeHtml(sourceLabel)}</span>
+        <span>Rows shown</span>
+        <small>${referenceLink}</small>
+        ${referenceImageLink ? `<small>${referenceImageLink}</small>` : ''}
       </div>
     </div>
 
@@ -348,7 +388,7 @@ function renderStrifeTool() {
       <div class="strife-metrics" aria-label="Strife recommendation metrics">
         <span><strong>${escapeHtml(model.monster.name)}</strong> selected</span>
         <span><strong>${model.availableHeroCount}</strong> heroes available</span>
-        <span><strong>Reusable</strong> for repeat hits</span>
+        <span><strong>One combo</strong> can repeat</span>
         <span><strong>${model.availableSeasons.join(' / ')}</strong></span>
       </div>
     </section>
@@ -358,13 +398,15 @@ function renderStrifeTool() {
       <div>
         <p class="strife-eyebrow">Selected monster</p>
         <h3>${escapeHtml(model.monster.name)}</h3>
-        <span>Formation order: Front / Middle / Back. Pick the best row you can build and reuse it.</span>
+        <span>Formation order: Front / Middle / Back. Use the strongest lane you can build, then repeat that same team for the monster.</span>
       </div>
     </section>
 
     ${renderMonsterSkills(model.monster)}
-    ${renderComboSection('Perfect Combination', model.sourceMode === 'manual' ? model.stage : 'Manual table pending', model.perfectCombos, model, STRIFE_TIERS.PERFECT)}
-    ${renderComboSection(model.sourceMode === 'manual' ? 'Good Damage' : 'Reusable Combo Candidates', model.sourceMode === 'manual' ? model.stage : 'Same combo can be repeated', model.goodCombos, model, STRIFE_TIERS.GOOD)}
+    <div class="strife-lane-grid">
+      ${renderComboSection('F2P / Free-Friendly', `${model.stage} available heroes`, model.f2pCombos, model, STRIFE_TIERS.F2P, model.f2pSourceMode)}
+      ${renderComboSection('P2W / Paid-Heavy', `${model.stage} available heroes`, model.p2wCombos, model, STRIFE_TIERS.P2W, model.p2wSourceMode)}
+    </div>
   `;
 }
 

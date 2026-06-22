@@ -85,6 +85,17 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
   });
 
+  test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {
+    await openApp(page);
+    await expectTab(page, '#tabStrife', '#strifeSection', '#strifeToolRoot .strife-monster-card:first-child');
+    await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(10);
+    await page.locator('[data-strife-monster="pivana"]').click();
+    await expect(page.locator('.strife-monster-summary')).toContainText('Pilvana');
+    await expect(page.locator('.strife-results-band--f2p')).toContainText('F2P / Free-Friendly');
+    await expect(page.locator('.strife-results-band--p2w')).toContainText('P2W / Paid-Heavy');
+    await expect(page.locator('.strife-skill-card')).toHaveCount(3);
+  });
+
   test('lazy-loaded eden map, loyalty, and admin tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabEdenMap', '#edenMapSection', '#edenMapRoot');
