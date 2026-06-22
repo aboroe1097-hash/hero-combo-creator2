@@ -34,7 +34,7 @@ export async function initComments() {
     console.log('[comments] initialized (threaded + names)');
   } catch (err) {
     console.warn('[comments] disabled:', err?.message || err);
-    renderCommentsUnavailable();
+    renderCommentsUnavailable(err?.message || 'Could not connect to Firebase comments.');
   }
 }
 
@@ -169,7 +169,7 @@ function renderCommentsTree(docs) {
 
 function renderCommentsUnavailable(message = 'Firebase comments are disabled for this session.') {
   const countLabel = document.getElementById('commentsCountLabel');
-  if (countLabel) countLabel.textContent = 'Comments unavailable in local mode';
+  if (countLabel) countLabel.textContent = 'Comments unavailable';
   if (!commentsList) return;
   commentsList.innerHTML = `
     <div class="flex flex-col items-center justify-center py-10 text-center">

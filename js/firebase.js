@@ -35,14 +35,16 @@ const nodeEnv = typeof process !== 'undefined' ? process.env : {};
 const env = { ...nodeEnv, ...viteEnv };
 const envValue = (key) => String(env[key] || '').trim();
 const firebaseProjectId = envValue('VITE_FIREBASE_PROJECT_ID');
+const firebaseAppId = envValue('VITE_FIREBASE_APP_ID');
+const firebaseSenderId = envValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
 
 export const firebaseConfig = {
   apiKey: envValue('VITE_FIREBASE_API_KEY'),
   authDomain: envValue('VITE_FIREBASE_AUTH_DOMAIN') || (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
   projectId: firebaseProjectId,
   storageBucket: envValue('VITE_FIREBASE_STORAGE_BUCKET') || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
-  messagingSenderId: envValue('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: envValue('VITE_FIREBASE_APP_ID'),
+  messagingSenderId: firebaseSenderId,
+  appId: firebaseAppId,
   measurementId: envValue('VITE_FIREBASE_MEASUREMENT_ID')
 };
 
@@ -70,6 +72,10 @@ export function initFirebase() {
   const recaptchaSiteKey = envValue('VITE_RECAPTCHA_SITE_KEY');
   if (recaptchaSiteKey) {
     try {
+      const appCheckDebugToken = envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
+      if (appCheckDebugToken && typeof globalThis !== 'undefined') {
+        globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
+      }
       initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
         isTokenAutoRefreshEnabled: true
