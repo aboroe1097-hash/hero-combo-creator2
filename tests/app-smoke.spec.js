@@ -91,9 +91,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(10);
     await page.locator('[data-strife-monster="pivana"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Pilvana');
+    await expect(page.locator('.strife-source-link')).toContainText('Sourced from Celso Kayran');
     await expect(page.locator('.strife-results-band--f2p')).toContainText('F2P / Free-Friendly');
     await expect(page.locator('.strife-results-band--p2w')).toContainText('P2W / Paid-Heavy');
     await expect(page.locator('.strife-skill-card')).toHaveCount(3);
+    await expect(page.locator('.strife-skill-answer').first()).toContainText('Counter');
   });
 
   test('lazy-loaded eden map, loyalty, and admin tabs render', async ({ page }) => {

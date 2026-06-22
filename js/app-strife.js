@@ -205,7 +205,7 @@ function renderMonsterSkill(skill, index) {
   const tags = Array.isArray(skill.tags) ? skill.tags.filter(Boolean) : [];
   const effect = skill.effect ? `<p>${escapeHtml(skill.effect)}</p>` : '';
   const answer = skill.answer
-    ? `<p class="strife-skill-answer"><strong>Answer</strong>${escapeHtml(skill.answer)}</p>`
+    ? `<p class="strife-skill-answer"><strong>Counter</strong>${escapeHtml(skill.answer)}</p>`
     : '';
 
   return `
