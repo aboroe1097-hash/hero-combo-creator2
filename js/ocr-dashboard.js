@@ -6,7 +6,8 @@ import {
   toggleBulkCheck, toggleBulkSelectAll, applyBulkStatus, applyBulkAlliance,
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
-  loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode
+  loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
+  loadDutyRecords, showDutyPasteForm, processDutyImages, deleteDutyRecord, renderDutyRecords
 } from './ocr-roster.js';
 
 import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js';
@@ -35,6 +36,7 @@ state.attackSearchQ = '';
 state.rosterNames = [];
 state.rosterSnapshots = [];
 state.bannerRecords = [];
+state.dutyRecords = [];
 state.sortCol = 'total_demolition';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -81,6 +83,7 @@ function switchDashSubtab(name) {
   }
   if (name === 'roster') renderRoster();
   if (name === 'banners') renderBanners();
+  if (name === 'banners' || name === 'pathers' || name === 'shieldWall') renderDutyRecords();
 }
 
 // ── Roster Snapshots (local + Firestore) ──────────────────
@@ -313,6 +316,10 @@ function showApp() {
   }
 }
 function showLogin() {
+  if (isGuest()) {
+    showApp();
+    return;
+  }
   removeGuestBanner();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
@@ -352,6 +359,15 @@ function showLogin() {
     }
     if (err) err.classList.add('hidden');
   }
+}
+
+function mountStructureUploadPanel() {
+  const mount = $id('dashUploadStructuresMount');
+  const logArea = $id('dashLogArea');
+  const uploadZone = $id('dashUploadZone');
+  if (!mount) return;
+  if (logArea && logArea.parentElement !== mount) mount.appendChild(logArea);
+  if (uploadZone && uploadZone.parentElement !== mount) mount.appendChild(uploadZone);
 }
 
 async function doLogin() {
@@ -728,8 +744,10 @@ export async function bootOcrDashboard() {
   loadRosterSnapshots();
   await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
+  loadDutyRecords();
   loadAllianceList();
   loadRosterAuth();
+  mountStructureUploadPanel();
   // Keep log panel always visible
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
@@ -820,6 +838,34 @@ export async function bootOcrDashboard() {
   }
 
   const newBannerBtn = $id('dashBannerAddBtn'); if (newBannerBtn) newBannerBtn.onclick = () => showBannerForm();
+  function bindDutyUpload(type, pasteBtnId, uploadBtnId, dropId, inputId) {
+    const pasteBtn = $id(pasteBtnId);
+    const uploadBtn = uploadBtnId ? $id(uploadBtnId) : null;
+    const drop = dropId ? $id(dropId) : null;
+    const input = inputId ? $id(inputId) : null;
+    if (pasteBtn) pasteBtn.onclick = () => showDutyPasteForm(type);
+    if (uploadBtn && input) uploadBtn.onclick = () => { if (!canUseOcr()) return; input.click(); };
+    if (drop && input) {
+      drop.onclick = event => {
+        if (event.target?.tagName === 'INPUT') return;
+        if (!canUseOcr()) return;
+        input.click();
+      };
+      drop.ondragover = event => { event.preventDefault(); drop.classList.add('dragover'); };
+      drop.ondragleave = () => drop.classList.remove('dragover');
+      drop.ondrop = event => {
+        event.preventDefault();
+        drop.classList.remove('dragover');
+        if (!canUseOcr()) return;
+        if (event.dataTransfer.files.length) processDutyImages(type, event.dataTransfer.files);
+      };
+      input.onchange = () => { if (input.files.length) processDutyImages(type, input.files); };
+    }
+  }
+  bindDutyUpload('banner', 'dashBannerListPasteBtn', 'dashBannerListUploadBtn', 'dashBannerListDropZone', 'dashBannerListFileInput');
+  bindDutyUpload('pather', 'dashPatherListPasteBtn', 'dashPatherListUploadBtn', 'dashPatherListDropZone', 'dashPatherListFileInput');
+  bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
+  renderDutyRecords();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
   
   $id('dashExportMenuBtn').onclick = (e) => { e.stopPropagation(); $id('dashExportMenu').classList.toggle('active'); };
@@ -878,7 +924,7 @@ export async function bootOcrDashboard() {
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
-  $id('dashUploadBtn').onclick = () => { if (!canUseOcr()) return; inp.click(); };
+  $id('dashUploadBtn').onclick = () => switchDashSubtab('uploadStructures');
   const cancelBtn = $id('dashCancelOcrBtn');
   if (cancelBtn) {
     cancelBtn.onclick = () => {
@@ -1093,6 +1139,8 @@ window.configureAlliances = configureAlliances;
 window.deleteRosterSnapshot = deleteRosterSnapshot;
 window.showBannerForm = showBannerForm;
 window.deleteBannerRecord = deleteBannerRecord;
+window.deleteDutyRecord = deleteDutyRecord;
+window.renderDutyRecords = renderDutyRecords;
 window.closeModal = closeModal;
 window.renderRoster = renderRoster;
 window.setRosterFilter = function(key, val) {

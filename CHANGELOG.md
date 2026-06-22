@@ -1,5 +1,13 @@
 # Changelog
 
+## 11.2.0 - 2026-06-22
+
+- Split VTS Admin structure uploads into a dedicated Upload Structures tab while keeping the existing structure OCR, recording, and analytics logic unchanged.
+- Reworked the visible Banners workflow into a Banners List duty tracker with image/paste intake and roster-name confirmation.
+- Added Pathers and Shield Wall duty tracking, including nickname/near-name matching against the existing roster database before records are saved.
+- Added shared duty history storage so officers can review repeated Banner, Pather, and Shield Wall appearances by confirmed roster name.
+- Synced public version labels and README release notes for 11.2.0.
+
 ## 11.0 - 2026-06-22
 
 - Synced the public app version, README, footer, and What's New version key for the 11.0 release.

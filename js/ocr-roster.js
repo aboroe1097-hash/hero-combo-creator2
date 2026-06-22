@@ -1,7 +1,8 @@
 import {
-  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
+  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
-  state, $id, esc, log, sha256, trimRosterSnapshots
+  state, $id, esc, log, sha256, trimRosterSnapshots,
+  qwenVisionRequest, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -547,6 +548,320 @@ function hashCode(str) {
   return Math.abs(hash);
 }
 
+const DUTY_TYPES = {
+  banner: { label: 'Banners List', singular: 'Banner', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
+  pather: { label: 'Pathers List', singular: 'Pather', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
+  shield_wall: { label: 'Shield Wall', singular: 'Shield Wall', bodyId: 'dashShieldWallBody' },
+};
+
+function loadDutyRecords() {
+  try {
+    const raw = localStorage.getItem(DUTY_LIST_KEY);
+    state.dutyRecords = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.dutyRecords)) state.dutyRecords = [];
+  } catch (e) { state.dutyRecords = []; }
+}
+
+function saveDutyRecords() {
+  try { localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords)); } catch (e) {}
+}
+
+function getRosterMemberName(member) {
+  if (!member) return '';
+  if (typeof member === 'string') return member.trim();
+  return String(member.name || '').trim();
+}
+
+function getRosterDatabaseNames() {
+  const names = [];
+  const latest = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1] : null;
+  if (latest && Array.isArray(latest.members)) {
+    latest.members.forEach(member => {
+      const name = getRosterMemberName(member);
+      if (name) names.push(name);
+    });
+  }
+  if (Array.isArray(state.rosterNames)) {
+    state.rosterNames.forEach(name => {
+      const text = String(name || '').trim();
+      if (text) names.push(text);
+    });
+  }
+  const seen = new Set();
+  return names.filter(name => {
+    const key = name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function normalizeDutyName(name) {
+  return String(name || '')
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, '')
+    .toLowerCase();
+}
+
+function getDutySuggestions(rawName) {
+  const roster = getRosterDatabaseNames();
+  const raw = String(rawName || '').trim();
+  if (!raw || !roster.length) return [];
+  const canonical = findBestMatch(raw, 55);
+  const rows = roster.map(name => {
+    const compactScore = getSimilarityAlphaNum(raw, name);
+    const textScore = getSimilarity(raw.toLowerCase(), name.toLowerCase());
+    const canonicalBoost = canonical === name ? 0.15 : 0;
+    return { name, score: Math.min(1, Math.max(compactScore, textScore) + canonicalBoost) };
+  });
+  if (canonical && !rows.some(row => row.name === canonical)) rows.push({ name: canonical, score: 0.75 });
+  return rows
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .slice(0, 8);
+}
+
+function getDutyMatchStatus(rawName, confirmedName) {
+  if (!confirmedName) return 'unmatched';
+  const rawKey = normalizeDutyName(rawName);
+  const confirmedKey = normalizeDutyName(confirmedName);
+  if (rawKey && rawKey === confirmedKey) return 'exact';
+  const score = Math.max(getSimilarityAlphaNum(rawName, confirmedName), getSimilarity(String(rawName || '').toLowerCase(), String(confirmedName || '').toLowerCase()));
+  if (score >= 0.72) return 'likely';
+  if (score >= 0.45) return 'weak';
+  return 'manual';
+}
+
+function parseDutyNamesFromText(text) {
+  const names = [];
+  String(text || '').split(/\r?\n|,/).forEach(line => {
+    const cleaned = line
+      .replace(/^\s*[-*\u2022]+/, '')
+      .replace(/^\s*\d+[.)-]?\s*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (cleaned && cleaned.length > 1) names.push(cleaned);
+  });
+  const seen = new Set();
+  return names.filter(name => {
+    const key = name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function showDutyPasteForm(type) {
+  const meta = DUTY_TYPES[type];
+  if (!meta) return;
+  const text = prompt(`Paste ${meta.label} names, one per line:`, '');
+  if (text === null) return;
+  const names = parseDutyNamesFromText(text);
+  if (!names.length) {
+    log(`No names found for ${meta.label}.`, 'warn');
+    return;
+  }
+  showDutyConfirmModal(type, names, 'Manual paste');
+}
+
+function renderDutyMatchRows(names) {
+  return names.map((rawName, index) => {
+    const suggestions = getDutySuggestions(rawName);
+    const best = suggestions[0]?.name || '';
+    const status = getDutyMatchStatus(rawName, best);
+    const options = ['<option value="">-- Unmatched --</option>']
+      .concat(suggestions.map(row => `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`))
+      .join('');
+    return `<div class="dash-duty-match-row" data-raw="${esc(rawName)}">
+      <div class="dash-duty-raw"><span>#${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
+      <select class="dash-duty-match-select">${options}</select>
+      <input class="dash-duty-manual-input" type="text" placeholder="Manual correction" value="">
+    </div>`;
+  }).join('');
+}
+
+function showDutyConfirmModal(type, names, sourceLabel = '') {
+  const meta = DUTY_TYPES[type];
+  if (!meta) return;
+  const cleanNames = parseDutyNamesFromText(names.join('\n'));
+  if (!cleanNames.length) return;
+  const m = $id('dashModal'), body = $id('dashModalBody');
+  $id('dashModalTitle').textContent = `Confirm ${meta.label}`;
+  $id('dashModalSub').textContent = `${cleanNames.length} name${cleanNames.length === 1 ? '' : 's'} found. Confirm roster matches before saving.`;
+  body.innerHTML = `<div class="dash-banner-form-row">
+    <label>Date</label>
+    <input type="date" id="dashDutyDate" value="${new Date().toISOString().slice(0, 10)}" style="flex:1">
+  </div>
+  <div class="dash-banner-form-row">
+    <label>Note</label>
+    <input type="text" id="dashDutyNote" value="${esc(sourceLabel)}" placeholder="Event, marker, or upload note" style="flex:1">
+  </div>
+  <div class="dash-duty-match-list">${renderDutyMatchRows(cleanNames)}</div>
+  <div style="display:flex;gap:0.5rem;margin-top:1rem">
+    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save ${meta.singular} Record</button>
+    <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+  </div>`;
+  $id('dashDutySaveBtn').onclick = () => {
+    const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map(row => {
+      const original = row.dataset.raw || '';
+      const manual = row.querySelector('.dash-duty-manual-input')?.value.trim() || '';
+      const selected = row.querySelector('.dash-duty-match-select')?.value || '';
+      const confirmed = manual || selected;
+      return {
+        original,
+        confirmed,
+        status: getDutyMatchStatus(original, confirmed),
+        note: '',
+      };
+    });
+    const record = {
+      id: `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      date: $id('dashDutyDate')?.value || new Date().toISOString().slice(0, 10),
+      note: $id('dashDutyNote')?.value.trim() || '',
+      entries,
+      createdAt: new Date().toISOString(),
+    };
+    state.dutyRecords.push(record);
+    saveDutyRecords();
+    closeModal();
+    renderDutyRecords();
+    log(`${meta.label} saved: ${entries.length} entries.`, 'success');
+  };
+  $id('dashDutyCancelBtn').onclick = closeModal;
+  m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+
+async function processDutyImages(type, files) {
+  const meta = DUTY_TYPES[type];
+  if (!meta) return;
+  if (state._dutyProcessing) { log('Duty OCR already running...', 'warn'); return; }
+  const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
+  if (!valid.length) return;
+  state._dutyProcessing = true;
+  const progress = meta.progressId ? $id(meta.progressId) : null;
+  const progressText = meta.progressTextId ? $id(meta.progressTextId) : null;
+  if (progress) progress.classList.remove('hidden');
+  log(`Scanning ${valid.length} ${meta.label} image(s)...`, 'info');
+  let allNames = [];
+  for (let i = 0; i < valid.length; i++) {
+    const file = valid[i];
+    if (progressText) progressText.textContent = `Scanning ${meta.label} image ${i + 1}/${valid.length}...`;
+    const base64 = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(String(e.target.result).split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+    try {
+      const promptTxt = `Extract all player names or nicknames from this ${meta.label} screenshot.
+
+Return ONLY valid JSON in this shape:
+{"names":["Name One","Name Two"]}
+
+Rules:
+- Include every visible player name or nickname.
+- Ignore headers, labels, numbers, roles, scores, alliance names, and decorative text.
+- Preserve symbols and spacing in names when visible.
+- Remove duplicates.
+- If no player names are visible, return {"names":[]}.`;
+      const raw = await qwenVisionRequest([{ role: 'user', content: [
+        { type: 'text', text: promptTxt },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+      ]}]);
+      const text = raw?.choices?.[0]?.message?.content || '';
+      const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      let parsed;
+      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = parseDutyNamesFromText(cleaned); }
+      const names = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.names) ? parsed.names : [];
+      allNames.push(...names.map(name => String(name || '').trim()).filter(Boolean));
+    } catch (e) {
+      log(`${meta.label} OCR error (${file.name}): ${e.message}`, 'error');
+    }
+  }
+  if (progress) progress.classList.add('hidden');
+  state._dutyProcessing = false;
+  const unique = parseDutyNamesFromText(allNames.join('\n'));
+  if (!unique.length) {
+    log(`No names found in ${meta.label} image(s).`, 'warn');
+    alert(`Could not extract names from the ${meta.label} image.`);
+    return;
+  }
+  showDutyConfirmModal(type, unique, valid.map(f => f.name).join(', '));
+}
+
+function deleteDutyRecord(id) {
+  const index = state.dutyRecords.findIndex(record => record.id === id);
+  if (index < 0) return;
+  if (!confirm('Delete this duty record?')) return;
+  state.dutyRecords.splice(index, 1);
+  saveDutyRecords();
+  renderDutyRecords();
+  log('Duty record deleted.', 'warn');
+}
+
+function renderDutyType(type) {
+  const meta = DUTY_TYPES[type];
+  const body = meta ? $id(meta.bodyId) : null;
+  if (!meta || !body) return;
+  const records = (state.dutyRecords || []).filter(record => record.type === type).slice().reverse();
+  if (!records.length) {
+    body.innerHTML = `<div class="dash-empty">No ${meta.label} records yet.</div>`;
+    return;
+  }
+  body.innerHTML = records.map(record => {
+    const entries = Array.isArray(record.entries) ? record.entries : [];
+    const confirmed = entries.filter(entry => entry.confirmed).length;
+    const weak = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
+    return `<div class="dash-banner-card">
+      <div class="dash-banner-head">
+        <div class="dash-banner-date">
+          <span>${esc(record.date || '')}</span>
+          ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
+          <span class="dash-banner-count">${confirmed}/${entries.length} matched${weak ? `, ${weak} review` : ''}</span>
+        </div>
+        <button class="dash-banner-del-btn" onclick="deleteDutyRecord('${esc(record.id)}')" title="Delete">x</button>
+      </div>
+      <div class="dash-banner-body">
+        <table class="dash-banner-table">
+          <thead><tr><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
+          <tbody>${entries.map(entry => `<tr>
+            <td>${esc(entry.original)}</td>
+            <td>${entry.confirmed ? esc(entry.confirmed) : '<span style="color:var(--text-dim)">Unmatched</span>'}</td>
+            <td>${esc(entry.status || 'unmatched')}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDutySummary() {
+  const host = $id('dashDutySummary');
+  if (!host) return;
+  const counts = new Map();
+  (state.dutyRecords || []).forEach(record => {
+    (record.entries || []).forEach(entry => {
+      const name = entry.confirmed || entry.original;
+      if (!name) return;
+      if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, shield_wall: 0 });
+      const row = counts.get(name);
+      row.total += 1;
+      if (row[record.type] !== undefined) row[record.type] += 1;
+    });
+  });
+  const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
+  host.innerHTML = rows.length
+    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / P ${row.pather} / SW ${row.shield_wall}</small></div>`).join('')
+    : '<div class="dash-empty">Duty appearances will summarize here after records are saved.</div>';
+}
+
+function renderDutyRecords() {
+  renderDutyType('banner');
+  renderDutyType('pather');
+  renderDutyType('shield_wall');
+  renderDutySummary();
+}
+
 export {
   loadRoster, saveRoster, showRosterModal,
   loadRosterSnapshots, saveRosterSnapshots, computeRosterDiff, takeRosterSnapshot, deleteRosterSnapshot,
@@ -555,5 +870,6 @@ export {
   toggleBulkCheck, toggleBulkSelectAll, applyBulkStatus, applyBulkAlliance,
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
-  loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode
+  loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
+  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, deleteDutyRecord, renderDutyRecords
 };

@@ -6,6 +6,7 @@ export const AUTH_KEY = 'vts_ocr_auth';
 export const ROSTER_KEY = 'vts_ocr_roster';
 export const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
 export const BANNER_KEY = 'vts_ocr_banners';
+export const DUTY_LIST_KEY = 'vts_ocr_duty_lists';
 export const FS_PATH = 'vts_admin/dashboard_data';
 export const FS_ROSTER_PATH = 'vts_admin/roster_data';
 export const LOG_KEY = 'vts_ocr_log';
@@ -222,6 +223,7 @@ export const state = {
   rosterNames: [],
   rosterSnapshots: [],
   bannerRecords: [],
+  dutyRecords: [],
   sortCol: 'total_demolition',
   sortDir: 'desc',
   leaderLimit: 25,
