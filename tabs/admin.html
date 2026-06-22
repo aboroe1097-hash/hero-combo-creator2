@@ -311,36 +311,19 @@
             <div class="dash-subtab-panel hidden" id="dashSubtabPathers">
               <div class="dash-card">
                 <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4-8 12-8 16-16"/><path d="M5 10h8"/><path d="M11 4v8"/></svg><span>Pathers List</span></h2>
+                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4-8 12-8 16-16"/><path d="M5 10h8"/><path d="M11 4v8"/></svg><span>Pathers / Speed Tile Plans</span></h2>
                   <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button id="dashPatherListPasteBtn" class="dash-btn"><span>Paste Names</span></button>
+                    <button id="dashPatherListPasteBtn" class="dash-btn"><span>Paste Plan</span></button>
                     <button id="dashPatherListUploadBtn" class="dash-btn dash-btn-primary"><span>Upload Image</span></button>
                   </div>
                 </div>
                 <div id="dashPatherListDropZone" class="dash-roster-dropzone">
-                  <span>Drop pather list screenshot here, or click Upload Image</span>
+                  <span>Drop pather or speed tile plan screenshot here, or click Upload Image</span>
                   <input id="dashPatherListFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden>
                 </div>
-                <div id="dashPatherListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashPatherListProgressText">Scanning pathers...</span></div>
+                <div id="dashPatherListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashPatherListProgressText">Scanning plan...</span></div>
                 <div id="dashPatherListBody">
-                  <div class="dash-empty">No pather records yet.</div>
-                </div>
-              </div>
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg><span>Speed Tiler Plans</span></h2>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button id="dashSpeedTilePasteBtn" class="dash-btn"><span>Paste Plan</span></button>
-                    <button id="dashSpeedTileUploadBtn" class="dash-btn dash-btn-primary"><span>Upload Image</span></button>
-                  </div>
-                </div>
-                <div id="dashSpeedTileDropZone" class="dash-roster-dropzone">
-                  <span>Drop speed tile plan screenshot here, or click Upload Image</span>
-                  <input id="dashSpeedTileFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden>
-                </div>
-                <div id="dashSpeedTileProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashSpeedTileProgressText">Scanning speed tile plan...</span></div>
-                <div id="dashSpeedTileBody">
-                  <div class="dash-empty">No speed tile plans yet.</div>
+                  <div class="dash-empty">No pather or speed tile plan records yet.</div>
                 </div>
               </div>
             </div>

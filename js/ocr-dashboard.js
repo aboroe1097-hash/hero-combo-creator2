@@ -936,7 +936,6 @@ export async function bootOcrDashboard() {
   }
   bindDutyUpload('banner', 'dashBannerListPasteBtn', 'dashBannerListUploadBtn', 'dashBannerListDropZone', 'dashBannerListFileInput');
   bindDutyUpload('pather', 'dashPatherListPasteBtn', 'dashPatherListUploadBtn', 'dashPatherListDropZone', 'dashPatherListFileInput');
-  bindDutyUpload('speed_tile', 'dashSpeedTilePasteBtn', 'dashSpeedTileUploadBtn', 'dashSpeedTileDropZone', 'dashSpeedTileFileInput');
   bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
   renderDutyRecords();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };

@@ -550,8 +550,8 @@ function hashCode(str) {
 
 const DUTY_TYPES = {
   banner: { label: 'Banners List', singular: 'Banner', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
-  pather: { label: 'Pathers List', singular: 'Pather', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
-  speed_tile: { label: 'Speed Tile Plans', singular: 'Speed Tile', bodyId: 'dashSpeedTileBody', progressId: 'dashSpeedTileProgress', progressTextId: 'dashSpeedTileProgressText' },
+  pather: { label: 'Pathers / Speed Tile Plans', singular: 'Plan', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText', recordTypes: ['pather', 'speed_tile'] },
+  speed_tile: { label: 'Pathers / Speed Tile Plans', singular: 'Plan', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
   shield_wall: { label: 'Shield Wall', singular: 'Shield Wall', bodyId: 'dashShieldWallBody' },
 };
 
@@ -979,12 +979,14 @@ function renderDutyType(type) {
   const meta = DUTY_TYPES[type];
   const body = meta ? $id(meta.bodyId) : null;
   if (!meta || !body) return;
-  const records = (state.dutyRecords || []).filter(record => record.type === type).slice().reverse();
+  const recordTypes = meta.recordTypes || [type];
+  const records = (state.dutyRecords || []).filter(record => recordTypes.includes(record.type)).slice().reverse();
   if (!records.length) {
     body.innerHTML = `<div class="dash-empty">No ${meta.label} records yet.</div>`;
     return;
   }
   body.innerHTML = records.map(record => {
+    const recordMeta = DUTY_TYPES[record.type] || meta;
     const entries = Array.isArray(record.entries) ? record.entries : [];
     const confirmed = entries.filter(entry => entry.confirmed).length;
     const weak = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
@@ -992,6 +994,7 @@ function renderDutyType(type) {
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
+          <span class="dash-banner-event">${esc(recordMeta.singular || meta.singular)}</span>
           ${record.gameTime ? `<span class="dash-banner-event">${esc(record.gameTime)}</span>` : ''}
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
           <span class="dash-banner-count">${confirmed}/${entries.length} matched${weak ? `, ${weak} review` : ''}</span>
@@ -1036,14 +1039,13 @@ function renderDutySummary() {
   });
   const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
   host.innerHTML = rows.length
-    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / P ${row.pather} / ST ${row.speed_tile} / SW ${row.shield_wall}</small></div>`).join('')
+    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / Plan ${row.pather + row.speed_tile} / SW ${row.shield_wall}</small></div>`).join('')
     : '<div class="dash-empty">Duty appearances will summarize here after records are saved.</div>';
 }
 
 function renderDutyRecords() {
   renderDutyType('banner');
   renderDutyType('pather');
-  renderDutyType('speed_tile');
   renderDutyType('shield_wall');
   renderDutySummary();
 }
