@@ -9,6 +9,7 @@ export const BANNER_KEY = 'vts_ocr_banners';
 export const FS_PATH = 'vts_admin/dashboard_data';
 export const FS_ROSTER_PATH = 'vts_admin/roster_data';
 export const LOG_KEY = 'vts_ocr_log';
+export const MAX_ROSTER_SNAPSHOTS = 50;
 
 // --- Roster Auth ---
 export const ROSTER_USERS = ['V3S', 'VTS', 'BIG', 'NM5', 'PP5'];
@@ -396,6 +397,50 @@ function compactPlayerIdentity(name) {
     .toLowerCase();
 }
 
+let rosterMatchNamesRef = null;
+let rosterMatchNamesLength = -1;
+let rosterExactNameIndex = new Map();
+let rosterCompactNameIndex = new Map();
+let rosterMatchCache = new Map();
+
+function getRosterMatchIndex() {
+  const names = Array.isArray(state.rosterNames) ? state.rosterNames : [];
+  if (names === rosterMatchNamesRef && names.length === rosterMatchNamesLength) {
+    return { exact: rosterExactNameIndex, compact: rosterCompactNameIndex };
+  }
+
+  rosterMatchNamesRef = names;
+  rosterMatchNamesLength = names.length;
+  rosterExactNameIndex = new Map();
+  rosterCompactNameIndex = new Map();
+  rosterMatchCache = new Map();
+
+  const compactBuckets = new Map();
+  names.forEach((rosterName) => {
+    const exactName = String(rosterName || '').trim();
+    if (!exactName) return;
+    rosterExactNameIndex.set(exactName, rosterName);
+
+    const compactKey = compactPlayerIdentity(exactName);
+    if (!compactKey) return;
+    if (!compactBuckets.has(compactKey)) compactBuckets.set(compactKey, new Set());
+    compactBuckets.get(compactKey).add(exactName);
+  });
+
+  compactBuckets.forEach((bucket, compactKey) => {
+    if (bucket.size !== 1) return;
+    const [exactName] = bucket;
+    rosterCompactNameIndex.set(compactKey, rosterExactNameIndex.get(exactName) || exactName);
+  });
+
+  return { exact: rosterExactNameIndex, compact: rosterCompactNameIndex };
+}
+
+export function trimRosterSnapshots(snapshots, limit = MAX_ROSTER_SNAPSHOTS) {
+  if (!Array.isArray(snapshots)) return [];
+  return snapshots.slice(-limit);
+}
+
 export function resolvePlayerNameForAttack(player, attackPlayers = []) {
   const rawName = typeof player === 'string' ? player : player?.name;
   const baseName = findBestMatch(rawName);
@@ -539,16 +584,29 @@ export function findBestMatch(name, minConfidence = 100) {
     if (/pixel/i.test(name)) return '༄Pixel';
   }
   if (!state.rosterNames.length) return name;
+  const rosterIndex = getRosterMatchIndex();
+  const exactName = String(name || '').trim();
+  const compactName = compactPlayerIdentity(exactName);
+  const exactMatch = rosterIndex.exact.get(exactName);
+  if (exactMatch) return exactMatch;
+  const compactMatch = rosterIndex.compact.get(compactName);
+  if (compactMatch) return compactMatch;
+  if (compactName.length < 5) return name;
+
+  const cacheKey = `${minConfidence}|${exactName}`;
+  if (rosterMatchCache.has(cacheKey)) return rosterMatchCache.get(cacheKey);
+
   let best = name, maxSim = 0;
   for (const rn of state.rosterNames) {
     const sim = getSimilarity(name, rn);
     if (sim > maxSim) { maxSim = sim; best = rn; }
   }
   let threshold = 0.82;
-  if (name.length < 5) threshold = 0.6;
-  else if (name.length <= 8) threshold = 0.72;
+  if (compactName.length <= 8) threshold = 0.72;
   if (minConfidence < 70) threshold -= 0.08;
-  return maxSim > threshold ? best : name;
+  const result = maxSim > threshold ? best : name;
+  rosterMatchCache.set(cacheKey, result);
+  return result;
 }
 
 // --- Durability Validation ---
