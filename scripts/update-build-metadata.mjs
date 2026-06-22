@@ -9,6 +9,17 @@ const assetExtensions = new Set([
 ]);
 const assetDirs = ['css', 'js', 'images', 'assets', 'tabs', 'workers'];
 const rootFiles = ['/', '/index.html', '/admin.html', '/CNAME', '/robots.txt', '/sitemap.xml', '/site.webmanifest', '/404.html'];
+const lazyRuntimeCachePatterns = [
+  /^\/assets\/eden-/,
+  /^\/assets\/eden_/,
+  /^\/assets\/faction-division/,
+  /^\/assets\/Capital\.(?:png|webp)$/i,
+  /^\/assets\/Gate\.(?:png|webp)$/i,
+  /^\/assets\/stronghold\.(?:png|webp)$/i,
+  /^\/assets\/Town\.(?:png|webp)$/i,
+  /^\/js\/eden-/,
+  /^\/tabs\/eden-map\.html$/,
+];
 
 function makeBuildVersion() {
   const d = new Date();
@@ -77,6 +88,11 @@ function buildPrecacheUrls() {
   if (fs.existsSync(path.join(root, 'public', '404.html'))) urls.add('/404.html');
   for (const dir of assetDirs) walkAssets(dir, urls);
   urls.delete('/js/eden-datasets.payload.js.map');
+  for (const url of [...urls]) {
+    if (lazyRuntimeCachePatterns.some((pattern) => pattern.test(url))) {
+      urls.delete(url);
+    }
+  }
   return [...urls].sort((a, b) => a.localeCompare(b));
 }
 
