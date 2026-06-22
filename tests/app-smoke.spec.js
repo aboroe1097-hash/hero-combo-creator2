@@ -392,7 +392,6 @@ test.describe('app smoke tabs', () => {
       await page.locator(`#generatorSeasonFilters ${seasonPill}`).click();
     }
     await page.locator('#genSelectAllBtn').click();
-    await page.getByRole('button', { name: 'Confirm' }).click();
     await expect(page.locator('#genSelectedCount')).toContainText('selected');
     await page.locator('#generateCombosBtn').click();
 
