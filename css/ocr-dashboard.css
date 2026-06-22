@@ -1045,9 +1045,14 @@ body[style*="overflow: hidden"] .tab-panel {
 #ocrDashboardRoot .dash-insight-list b.down { color: #f87171; background: rgba(239,68,68,0.12); }
 #ocrDashboardRoot .dash-heatmap-grid {
   display: grid;
-  grid-template-columns: 42px repeat(4, minmax(54px, 1fr));
-  gap: 0.35rem;
-  min-width: 0;
+  grid-template-columns: 34px repeat(12, minmax(38px, 1fr));
+  gap: 0.25rem;
+  min-width: 620px;
+}
+#ocrDashboardRoot #dashHeatmap {
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
 }
 #ocrDashboardRoot .dash-heatmap-label,
 #ocrDashboardRoot .dash-heatmap-day {
@@ -1059,7 +1064,7 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-heatmap-day { text-align: right; padding-right: 0.25rem; }
 #ocrDashboardRoot .dash-heatmap-cell {
-  min-height: 48px;
+  min-height: 42px;
   border: 1px solid rgba(96,165,250,0.12);
   border-radius: 9px;
   background: rgba(59,130,246, calc(var(--heat, 0) * 0.42));
@@ -1070,11 +1075,11 @@ body[style*="overflow: hidden"] .tab-panel {
   align-items: center;
   color: var(--text-primary);
 }
-#ocrDashboardRoot .dash-heatmap-cell strong { font-size: 0.82rem; line-height: 1; }
-#ocrDashboardRoot .dash-heatmap-cell small { margin-top: 0.2rem; color: var(--text-muted); font-size: 0.62rem; font-weight: 800; }
+#ocrDashboardRoot .dash-heatmap-cell strong { font-size: 0.76rem; line-height: 1; }
+#ocrDashboardRoot .dash-heatmap-cell small { margin-top: 0.18rem; color: var(--text-muted); font-size: 0.54rem; font-weight: 800; }
 #ocrDashboardRoot .dash-dist-row {
   display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) 64px;
+  grid-template-columns: 92px minmax(0, 1fr) 68px;
   align-items: center;
   gap: 0.6rem;
 }
@@ -1184,10 +1189,11 @@ body[style*="overflow: hidden"] .tab-panel {
     text-align: left;
   }
   #ocrDashboardRoot .dash-heatmap-grid {
-    grid-template-columns: 34px repeat(4, minmax(42px, 1fr));
-    gap: 0.25rem;
+    grid-template-columns: 30px repeat(12, minmax(34px, 1fr));
+    gap: 0.2rem;
+    min-width: 540px;
   }
-  #ocrDashboardRoot .dash-heatmap-cell { min-height: 42px; }
+  #ocrDashboardRoot .dash-heatmap-cell { min-height: 40px; }
   #ocrDashboardRoot .dash-analytics-summary,
   #ocrDashboardRoot .dash-roster-stats {
     grid-template-columns: 1fr;

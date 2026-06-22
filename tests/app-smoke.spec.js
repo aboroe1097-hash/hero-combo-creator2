@@ -543,9 +543,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
     await expect(page.locator('#dashStructureChart')).toContainText('Capital');
     await expect(page.locator('#dashPlayerTrends')).toContainText('Alpha');
-    await expect(page.locator('#dashHitDistribution')).toContainText('Under 10K');
-    await expect(page.locator('#dashHitDistribution')).toContainText('10K-100K');
-    await expect(page.locator('#dashHitDistribution')).toContainText('1M+');
+    await expect(page.locator('#dashHitDistribution')).toContainText('Below 5K');
+    await expect(page.locator('#dashHitDistribution')).toContainText('5K-10K');
+    await expect(page.locator('#dashHitDistribution')).toContainText('100K+');
     await expect(page.locator('#dashAllianceInsights')).toContainText('Unmapped');
 
     await page.evaluate(() => {

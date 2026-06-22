@@ -469,12 +469,17 @@ function renderHeatmap(attacks) {
   const host = $id('dashHeatmap');
   if (!host) return;
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const buckets = [
-    { label: '00-05', from: 0, to: 5 },
-    { label: '06-11', from: 6, to: 11 },
-    { label: '12-17', from: 12, to: 17 },
-    { label: '18-23', from: 18, to: 23 },
-  ];
+  const buckets = Array.from({ length: 12 }, (_, index) => {
+    const from = index * 2;
+    const to = from + 1;
+    const label = String(from).padStart(2, '0');
+    return {
+      label,
+      fullLabel: `${label}-${String(to).padStart(2, '0')}`,
+      from,
+      to,
+    };
+  });
   const cells = new Map();
   attacks.forEach((a) => {
     const date = parseGameTimeDate(a.game_time);
@@ -516,13 +521,13 @@ function renderHeatmap(attacks) {
       };
       const participants = cell.players.size;
       const heat = participants ? (0.15 + (participants / max) * 0.85).toFixed(2) : 0;
-      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.label}: ${participants} unique players, ${cell.hits} player rows, ${cell.attacks} uploaded targets, ${compactValue(cell.demo)} demo">
+      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.fullLabel}: ${participants} unique players, ${cell.hits} player rows, ${cell.attacks} uploaded targets, ${compactValue(cell.demo)} demo">
         ${participants ? `<strong>${participants}</strong><small>${compactValue(cell.demo)}</small>` : ''}
       </span>`;
     });
   });
   html +=
-    '</div><div class="dash-analytics-hint">Cells show unique players and total demolition by game-time window. Hover for uploaded targets and player-row counts.</div>';
+    '</div><div class="dash-analytics-hint">Cells show unique players and total demolition by 2-hour game-time window. Hover for uploaded targets and player-row counts.</div>';
   host.innerHTML = html;
 }
 
@@ -530,12 +535,13 @@ function renderDistribution(attacks) {
   const host = $id('dashHitDistribution');
   if (!host) return;
   const buckets = [
-    { label: 'Under 10K', min: 0, max: 10000 },
-    { label: '10K-100K', min: 10000, max: 100000 },
-    { label: '100K-250K', min: 100000, max: 250000 },
-    { label: '250K-500K', min: 250000, max: 500000 },
-    { label: '500K-1M', min: 500000, max: 1000000 },
-    { label: '1M+', min: 1000000, max: Infinity },
+    { label: 'Below 5K', min: 0, max: 5000 },
+    { label: '5K-10K', min: 5000, max: 10000 },
+    { label: '10K-25K', min: 10000, max: 25000 },
+    { label: '25K-50K', min: 25000, max: 50000 },
+    { label: '50K-75K', min: 50000, max: 75000 },
+    { label: '75K-100K', min: 75000, max: 100000 },
+    { label: '100K+', min: 100000, max: Infinity },
   ].map((b) => ({ ...b, count: 0, total: 0 }));
 
   let ignoredRows = 0;
