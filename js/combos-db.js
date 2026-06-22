@@ -80,6 +80,7 @@ export const rankedCombos = [
   { heroes: ["Ramses II", "Charles the Great", "Jade Eagle"] },
   { heroes: ["Octavius", "Rozen Blade", "Caesar"] },
   { heroes: ["Ramses II", "Rozen Blade", "Jade Eagle"] },
+  { heroes: ["Hunk", "Boudica", "Sakura"] },
   { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },
