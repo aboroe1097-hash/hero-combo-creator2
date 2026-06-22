@@ -515,10 +515,11 @@ async function exportChartPng() {
   
   // Append to the root so CSS applies!
   const root = $id('ocrDashboardRoot') || document.body;
+  root.querySelectorAll('[data-ocr-export-clone="true"]').forEach(node => node.remove());
+  clone.dataset.ocrExportClone = 'true';
   root.appendChild(clone);
 
   html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
-    clone.remove();
     c.toBlob(blob => {
       const file = new File([blob], 'vts_top_performers.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -528,7 +529,7 @@ async function exportChartPng() {
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'vts_top_performers.png'; a.click(); 
       }
     });
-  }).catch(() => {
+  }).catch(() => {}).finally(() => {
     clone.remove();
   });
 }
@@ -560,9 +561,11 @@ window.shareChartImage = async function() {
      const spans = item.querySelectorAll('span'); spans.forEach(s => s.style.transform = 'translateY(1px)');
   });
   clone.style.position = 'absolute'; clone.style.top = '0px'; clone.style.left = '-9999px'; clone.style.width = card.offsetWidth + 'px'; clone.style.background = '#0b0f19'; clone.style.border = '1px solid rgba(255,255,255,0.05)';
-  const root = $id('ocrDashboardRoot') || document.body; root.appendChild(clone);
+  const root = $id('ocrDashboardRoot') || document.body;
+  root.querySelectorAll('[data-ocr-export-clone="true"]').forEach(node => node.remove());
+  clone.dataset.ocrExportClone = 'true';
+  root.appendChild(clone);
   html2canvas(clone, { backgroundColor: '#0b0f19', scale: 2 }).then(c => { 
-    clone.remove();
     c.toBlob(blob => {
       const file = new File([blob], 'vts_top_performers.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -571,7 +574,7 @@ window.shareChartImage = async function() {
         alert('Sharing not supported on this browser. Use the download button instead.');
       }
     });
-  }).catch(() => { clone.remove(); });
+  }).catch(() => {}).finally(() => { clone.remove(); });
 }
 function exportAttackCsv() {
   if (!state.dashData?.attacks?.length) return;

@@ -9,6 +9,7 @@ import {
 } from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
 import { isGuest } from './ocr-dashboard.js';
+import { filterGameTimeAttacks, parseGameTimeDateMs } from './ocr-time-filter.js';
 
 function valueOf(input) {
   const n = Number(input || 0);
@@ -37,20 +38,8 @@ function getAttackValidation(attack) {
 }
 
 function parseGameTimeDate(gameTime) {
-  const text = String(gameTime || '').trim();
-  if (!text) return null;
-  const dmY = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/);
-  if (dmY) {
-    return new Date(
-      Number(dmY[3]),
-      Number(dmY[2]) - 1,
-      Number(dmY[1]),
-      Number(dmY[4] || 0),
-      Number(dmY[5] || 0)
-    );
-  }
-  const iso = new Date(text);
-  return Number.isNaN(iso.getTime()) ? null : iso;
+  const ms = parseGameTimeDateMs(gameTime);
+  return Number.isFinite(ms) ? new Date(ms) : null;
 }
 
 function sortAttacksChrono(attacks) {
@@ -69,21 +58,7 @@ function getTimeFilteredAttacks(attacks) {
   const tf = timeFilter.value;
   if (tf !== 'daily' && tf !== 'weekly') return atts;
 
-  const gtNow = new Date(Date.now() + (new Date().getTimezoneOffset() - 120) * 60000);
-  const pad = n => n.toString().padStart(2, '0');
-
-  if (tf === 'daily') {
-    const todayPrefix = `${pad(gtNow.getDate())}/${pad(gtNow.getMonth() + 1)}/${gtNow.getFullYear()}`;
-    return atts.filter(a => a.game_time && a.game_time.startsWith(todayPrefix));
-  }
-
-  const dayOfWeek = gtNow.getDay();
-  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const startOfMonday = new Date(gtNow.getFullYear(), gtNow.getMonth(), gtNow.getDate() - daysSinceMonday).getTime();
-  return atts.filter(a => {
-    const attackDate = parseGameTimeDate(a.game_time);
-    return attackDate ? attackDate.getTime() >= startOfMonday : false;
-  });
+  return filterGameTimeAttacks(atts, tf);
 }
 
 function normalizeStructureLabel(name) {
@@ -322,7 +297,7 @@ function renderPlayerTrends(attacks, psum) {
 function attackHour(attack) {
   if (attack?.start_time && /^\d{1,2}:\d{2}/.test(attack.start_time)) return Number(attack.start_time.split(':')[0]);
   const date = parseGameTimeDate(attack?.game_time);
-  return date ? date.getHours() : 0;
+  return date ? date.getUTCHours() : 0;
 }
 
 function renderHeatmap(attacks) {
@@ -341,7 +316,7 @@ function renderHeatmap(attacks) {
     if (!date) return;
     const hour = attackHour(a);
     const bucket = buckets.find(b => hour >= b.from && hour <= b.to) || buckets[0];
-    const key = `${date.getDay()}|${bucket.label}`;
+    const key = `${date.getUTCDay()}|${bucket.label}`;
     const current = cells.get(key) || { count: 0, demo: 0 };
     current.count++;
     current.demo += valueOf(a.total_demolition);
@@ -645,7 +620,11 @@ function render() {
   const filterEl = $id('dashLeaderFilter');
   if (filterEl && atts.length > 0) {
     const currentVal = filterEl.value;
-    const sortedAtts = [...atts].sort((a,b) => (b.game_time||'').localeCompare(a.game_time||''));
+    const sortedAtts = [...atts].sort((a, b) => {
+      const aTime = parseGameTimeDate(a.game_time)?.getTime() || 0;
+      const bTime = parseGameTimeDate(b.game_time)?.getTime() || 0;
+      return bTime - aTime;
+    });
     let opts = '<option value="">All Uploaded Targets</option>';
     sortedAtts.forEach(a => {
       const label = `${structureLabel(a)} (${displayGameTime(a.game_time)})`;

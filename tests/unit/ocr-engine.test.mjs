@@ -83,6 +83,18 @@ test('structure target normalization treats common aliases as the same target', 
   assert.equal(validateTotalDemolition('Town 4', '', 3750000)?.match, true);
 });
 
+test('Lv.0 structure labels are preserved for distinct dataset targets', () => {
+  assert.deepEqual(normalizeStructureTarget('Capital', 'Lv.0'), {
+    structure_name: 'Capital',
+    structure_level: 'Lv0',
+  });
+  assert.equal(formatStructureLabel('Capital', 'Lv.0'), 'Capital Lv0');
+  assert.equal(
+    formatDatasetStructureLabel({ structure_name: 'Capital', structure_level: 'Lv.0' }),
+    'Capital Lv0'
+  );
+});
+
 test('dataset structure labels preserve extracted names while canonical fields drive validation', () => {
   const parsed = parseOcrResults([
     {
