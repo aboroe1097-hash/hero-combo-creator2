@@ -13,7 +13,7 @@ SRC = ROOT / "assets" / "faction-division.jpg"
 OUT = ROOT / "assets" / "eden-reference" / "faction-division-map.png"
 META = ROOT / "assets" / "eden-reference" / "faction-division-map.json"
 
-WORLD_W = 1700
+WORLD_W = 1600
 WORLD_H = 1600
 # 2× world (3400×3200) + heavy source upscale ≈ 10× detail vs raw screenshot.
 OUTPUT_SCALE = 2

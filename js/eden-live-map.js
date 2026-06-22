@@ -1,5 +1,5 @@
 /**
- * Eden live map — LOD tile pyramid (L0 / L1 / L2) in 1700×1600 world space.
+ * Eden live map — LOD tile pyramid (L0 / L1 / L2) in 1600×1600 world space.
  * Tiles are georeferenced; structures/paths render on top in eden-map.js.
  */
 import { EDEN_MAP_CONFIG } from './eden-map-config.js';

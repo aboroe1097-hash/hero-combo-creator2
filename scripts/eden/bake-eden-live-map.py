@@ -13,7 +13,7 @@ SRC = ROOT / "assets" / "eden-reference" / "faction-division-map.png"
 OUT_ROOT = ROOT / "assets" / "eden-live"
 MANIFEST_PATH = OUT_ROOT / "manifest.json"
 
-WORLD_W, WORLD_H = 1700, 1600
+WORLD_W, WORLD_H = 1600, 1600
 TILE_SIZE = 512
 
 LEVELS = [

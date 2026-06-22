@@ -19,7 +19,7 @@ export async function initEdenMapConstruction() {
   const title = document.querySelector('#edenMapRoot .eden-map-header h2');
   const desc = document.querySelector('#edenMapRoot .eden-map-header p');
   if (title) title.textContent = edenT('edenMapConstructionTitle', 'Eden Map — Under Construction');
-  if (desc) desc.textContent = edenT('edenMapConstructionDesc', 'We are stitching your in-game screenshots into a full 1700×1600 live map. Back soon.');
+  if (desc) desc.textContent = edenT('edenMapConstructionDesc', 'We are stitching your in-game screenshots into a full 1600×1600 live map. Back soon.');
 
   panel.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');

@@ -6624,6 +6624,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .log-msg { }
 #ocrDashboardRoot .log-info { color: var(--blue-400); }
 #ocrDashboardRoot .log-warn { color: #fbbf24; }
+#ocrDashboardRoot .log-error,
 #ocrDashboardRoot .log-err { color: #ef4444; }
 #ocrDashboardRoot .log-success { color: #10b981; }
 #ocrDashboardRoot .log-file { color: #8b5cf6; font-weight: 700; }

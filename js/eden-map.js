@@ -1071,9 +1071,9 @@ export function initEdenMapPlanner() {
     return sectorIsolate && sectorKey !== 'FULL';
   }
 
-  /** Per-sector reference sheet — show parchment only (no planner overlays). */
+  /** Per-sector reference sheet — only when the dedicated Sector HD layer is active. */
   function isSectorSheetView() {
-    return sectorKey !== 'FULL';
+    return sectorKey !== 'FULL' && layers.sectorTiles;
   }
 
   function syncIsolateUi() {
@@ -1358,7 +1358,7 @@ export function initEdenMapPlanner() {
 
     const fastMode = interacting || panning;
     if (isSectorSheetView()) {
-      if (layers.reference) {
+      if (layers.reference || layers.sectorTiles) {
         drawSectorSheetFlat(ctx, w, h, sectorKey, refOpacity, { scale, offsetX, offsetY });
       }
       onRedrawExtra?.();

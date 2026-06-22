@@ -270,7 +270,7 @@ test('Kika reward accounts stay separate in OCR summaries', () => {
   );
 });
 
-test('duplicate Kika rows on the same target split into protected accounts', () => {
+test('duplicate canonical player rows on the same target aggregate into one summary row', () => {
   const parsed = parseOcrResults([
     {
       json: {
@@ -286,8 +286,12 @@ test('duplicate Kika rows on the same target split into protected accounts', () 
   ]);
 
   const byName = Object.fromEntries(parsed.players_summary.map((player) => [player.name, player]));
-  assert.equal(byName['꧁ Kika ꧂'].total_demolition, 41850);
-  assert.equal(byName['꧁༺ Kika ༻꧂'].total_demolition, 7500);
+  assert.equal(parsed.players_summary.filter((player) => /Kika/.test(player.name)).length, 1);
+  assert.equal(byName['꧁ Kika ꧂'].total_demolition, 49350);
   assert.equal(byName['꧁ Kika ꧂'].participation_count, 1);
-  assert.equal(byName['꧁༺ Kika ༻꧂'].participation_count, 1);
+  assert.equal(byName['꧁ Kika ꧂'].attacks.length, 2);
+  assert.deepEqual(
+    byName['꧁ Kika ꧂'].attacks.map((attack) => attack.display_player_name),
+    ['꧁ Kika ꧂', '꧁༺ Kika ༻꧂']
+  );
 });

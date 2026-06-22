@@ -5,14 +5,14 @@ import {
   getScreenshotRefs, getScreenshotImage,
 } from './eden-map-assets.js';
 
-export const MAP_BOUNDS = { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
+export const MAP_BOUNDS = { minX: 0, maxX: 1600, minY: 0, maxY: 1600 };
 export const CELL_SIZE = 10;
 export const TILE_SIZE = 40;
 
 // Season 5 Eden Wonders — parchment map; no forest biomes (legacy X1 data removed).
 const BIOMES = [
-  { id: 'plains',  rects: [{ x: 0, y: 0, w: 1700, h: 820 }] },
-  { id: 'desert',  rects: [{ x: 0, y: 760, w: 1700, h: 840 }, { x: 0, y: 600, w: 600, h: 1000 }] },
+  { id: 'plains',  rects: [{ x: 0, y: 0, w: 1600, h: 820 }] },
+  { id: 'desert',  rects: [{ x: 0, y: 760, w: 1600, h: 840 }, { x: 0, y: 600, w: 600, h: 1000 }] },
   { id: 'wastes',  rects: [{ x: 560, y: 680, w: 360, h: 260 }] },
 ];
 
@@ -25,9 +25,9 @@ export const RIVERS = [
 
 export const MOUNTAINS = [
   { polygon: [{ x: 0, y: 0 }, { x: 280, y: 0 }, { x: 360, y: 220 }, { x: 160, y: 300 }, { x: 0, y: 240 }], height: 1 },
-  { polygon: [{ x: 1380, y: 0 }, { x: 1700, y: 0 }, { x: 1700, y: 280 }, { x: 1520, y: 220 }, { x: 1320, y: 100 }], height: 1 },
+  { polygon: [{ x: 1380, y: 0 }, { x: 1600, y: 0 }, { x: 1600, y: 280 }, { x: 1520, y: 220 }, { x: 1320, y: 100 }], height: 1 },
   { polygon: [{ x: 0, y: 1380 }, { x: 240, y: 1480 }, { x: 200, y: 1600 }, { x: 0, y: 1600 }], height: 1 },
-  { polygon: [{ x: 1420, y: 1320 }, { x: 1700, y: 1280 }, { x: 1700, y: 1600 }, { x: 1380, y: 1600 }], height: 1 },
+  { polygon: [{ x: 1420, y: 1320 }, { x: 1600, y: 1280 }, { x: 1600, y: 1600 }, { x: 1380, y: 1600 }], height: 1 },
   { polygon: [{ x: 600, y: 420 }, { x: 780, y: 400 }, { x: 840, y: 520 }, { x: 700, y: 580 }, { x: 560, y: 500 }], height: 0.65 },
   { polygon: [{ x: 100, y: 700 }, { x: 260, y: 660 }, { x: 300, y: 800 }, { x: 140, y: 860 }], height: 0.75 },
   { polygon: [{ x: 1200, y: 500 }, { x: 1360, y: 480 }, { x: 1400, y: 600 }, { x: 1240, y: 640 }], height: 0.6 },

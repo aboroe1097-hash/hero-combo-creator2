@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Eden reference map at 1:1 world coords (1700x1600 px) and mask baked capitals."""
+"""Build Eden reference map at 1:1 world coords (1600x1600 px) and mask baked capitals."""
 from __future__ import annotations
 
 import json
@@ -13,7 +13,7 @@ SRC = ROOT / "assets" / "faction-division2.png"
 OUT = ROOT / "assets" / "eden-reference" / "faction-division-map.png"
 META = ROOT / "assets" / "eden-reference" / "faction-division-map.json"
 
-WORLD_W = 1700
+WORLD_W = 1600
 WORLD_H = 1600
 # Classic layout capitals (eden-map-data.js) — world coords = image pixels
 CAPITALS = [
@@ -28,7 +28,7 @@ MASK_RADIUS_WORLD = 26
 
 
 def resize_to_world(bgr: np.ndarray) -> np.ndarray:
-    """Map faction-division2 linearly onto 1700x1600 (1 px = 1 world unit)."""
+    """Map faction-division2 linearly onto 1600x1600 (1 px = 1 world unit)."""
     return cv2.resize(bgr, (WORLD_W, WORLD_H), interpolation=cv2.INTER_LANCZOS4)
 
 

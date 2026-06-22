@@ -217,14 +217,19 @@ export const state = {
   dashData: null,
   searchQ: '',
   attackSearchQ: '',
+  timeFilter: 'all',
   rosterNames: [],
   rosterSnapshots: [],
   bannerRecords: [],
   sortCol: 'total_demolition',
   sortDir: 'desc',
   leaderLimit: 25,
-  _lastRenderedAttacks: null,
-  _lastRenderedPlayerSummary: null,
+  leaderPageSize: 25,
+  _lastRenderedAttacks: [],
+  _lastRenderedPlayerSummary: [],
+  _lastRenderedFilterLabel: '',
+  _lastRenderedTimeLabel: '',
+  _analyticsAnimated: false,
   _booted: false,
   _ocrProcessing: false,
   _rosterProcessing: false,
@@ -255,6 +260,10 @@ export function esc(str) {
 }
 
 // --- Logger ---
+function normalizeLogType(type) {
+  return type === 'err' ? 'error' : type || 'info';
+}
+
 export function log(msg, type = 'info', file = null) {
   const out = $id('dashLogOutput');
   const area = $id('dashLogArea');
@@ -262,7 +271,9 @@ export function log(msg, type = 'info', file = null) {
   area.classList.remove('hidden');
   const entry = {
     time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    msg, type, file
+    msg,
+    type: normalizeLogType(type),
+    file
   };
   appendLogEntry(out, entry);
   persistLog(entry);
@@ -272,9 +283,10 @@ export function log(msg, type = 'info', file = null) {
 export function appendLogEntry(out, entry) {
   const div = document.createElement('div');
   div.className = 'log-entry';
+  const type = normalizeLogType(entry.type);
   let html = `<span class="log-time">[${entry.time}]</span>`;
   if (entry.file) html += `<span class="log-file">[${entry.file}]</span>`;
-  html += `<span class="log-msg log-${entry.type}">${entry.msg}</span>`;
+  html += `<span class="log-msg log-${type}">${entry.msg}</span>`;
   div.innerHTML = html;
   out.appendChild(div);
 }

@@ -3,9 +3,10 @@ import { escapeHtml } from './utils.js';
 import { importFirebaseAuth, importFirestore } from './firebase-sdk.js';
 
 async function getFirestoreDb() {
-  const { initFirebase, getDb } = await import('./firebase.js');
+  const { initFirebase, ensureAnonymousAuth, getDb } = await import('./firebase.js');
   const firebase = initFirebase();
   if (!firebase?.configured) return null;
+  await ensureAnonymousAuth();
   return getDb();
 }
 
@@ -166,7 +167,7 @@ function renderCommentsTree(docs) {
   });
 }
 
-function renderCommentsUnavailable() {
+function renderCommentsUnavailable(message = 'Firebase comments are disabled for this session.') {
   const countLabel = document.getElementById('commentsCountLabel');
   if (countLabel) countLabel.textContent = 'Comments unavailable in local mode';
   if (!commentsList) return;
@@ -176,7 +177,7 @@ function renderCommentsUnavailable() {
         <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008Zm0-12.75a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
       </div>
       <p class="text-sm text-slate-500 font-medium">Comments are unavailable</p>
-      <p class="text-xs text-slate-600 mt-1">Firebase comments are disabled for this session.</p>
+      <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
     </div>`;
 }
 
@@ -224,6 +225,7 @@ async function deleteComment(docId) {
     await deleteDoc(doc(db, 'comments', docId));
   } catch (e) {
     console.warn('[comments] delete skipped:', e?.message || e);
+    alert('Could not delete comment: ' + (e?.message || 'Firebase error'));
   }
 }
 
@@ -257,10 +259,17 @@ async function startCommentsListener() {
 
   const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
 
-  commentsListenerUnsub = onSnapshot(q, (snap) => {
-    currentUserId = auth.currentUser?.uid || null;
-    renderCommentsTree(snap);
-  });
+  commentsListenerUnsub = onSnapshot(
+    q,
+    (snap) => {
+      currentUserId = auth.currentUser?.uid || null;
+      renderCommentsTree(snap);
+    },
+    (err) => {
+      console.warn('[comments] listener failed:', err?.message || err);
+      renderCommentsUnavailable(err?.message || 'Could not load comments from Firebase.');
+    }
+  );
   return true;
 }
 
@@ -277,6 +286,7 @@ function wireCommentsUI() {
       commentText.value = '';
     } catch (e) {
       console.warn('[comments] post skipped:', e?.message || e);
+      alert('Could not post comment: ' + (e?.message || 'Firebase error'));
     } finally {
       postCommentBtn.disabled = false;
     }

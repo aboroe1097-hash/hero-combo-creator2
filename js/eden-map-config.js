@@ -6,6 +6,6 @@ export const EDEN_MAP_CONFIG = {
   liveMapEnabled: true,
   manifestUrl: 'assets/eden-live/manifest.json',
   /** World size — must match MAP_BOUNDS in eden-map-terrain.js */
-  worldWidth: 1700,
+  worldWidth: 1600,
   worldHeight: 1600,
 };

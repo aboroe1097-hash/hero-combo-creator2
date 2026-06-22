@@ -5,7 +5,6 @@ import { escapeHtml } from './utils.js';
 import {
   STRIFE_MONSTER_COMBOS,
   STRIFE_MONSTERS,
-  STRIFE_REFERENCE,
   STRIFE_SEASONS,
   STRIFE_TIERS,
 } from './strife-db.js';
@@ -346,12 +345,6 @@ function renderComboSection(title, subtitle, combos, model, variant, sourceMode)
 function renderStrifeTool() {
   if (!strifeRoot) return;
   const model = getStrifeRecommendations();
-  const referenceLink = STRIFE_REFERENCE?.url
-    ? `<a href="${escapeHtml(STRIFE_REFERENCE.url)}" target="_blank" rel="noopener noreferrer">Reference table</a>`
-    : 'Reference table';
-  const referenceImageLink = STRIFE_REFERENCE?.imageUrl
-    ? `<a href="${escapeHtml(STRIFE_REFERENCE.imageUrl)}" target="_blank" rel="noopener noreferrer">Table image</a>`
-    : '';
 
   strifeRoot.innerHTML = `
     <div class="strife-header">
@@ -359,12 +352,6 @@ function renderStrifeTool() {
         <p class="strife-eyebrow">Origin of Dragons</p>
         <h2>Strife over Dragon</h2>
         <p>Pick one monster and your current stage. The same selected team can be reused across your daily attacks, so this planner shows practical F2P and P2W lanes instead of five separate slots.</p>
-      </div>
-      <div class="strife-source-card">
-        <strong>${model.candidateCount}</strong>
-        <span>Rows shown</span>
-        <small>${referenceLink}</small>
-        ${referenceImageLink ? `<small>${referenceImageLink}</small>` : ''}
       </div>
     </div>
 
@@ -404,8 +391,8 @@ function renderStrifeTool() {
 
     ${renderMonsterSkills(model.monster)}
     <div class="strife-lane-grid">
-      ${renderComboSection('F2P / Free-Friendly', `${model.stage} available heroes`, model.f2pCombos, model, STRIFE_TIERS.F2P, model.f2pSourceMode)}
-      ${renderComboSection('P2W / Paid-Heavy', `${model.stage} available heroes`, model.p2wCombos, model, STRIFE_TIERS.P2W, model.p2wSourceMode)}
+      ${renderComboSection('Free Combos', `${model.stage} available heroes`, model.f2pCombos, model, STRIFE_TIERS.F2P, model.f2pSourceMode)}
+      ${renderComboSection('Paid Combos', `${model.stage} available heroes`, model.p2wCombos, model, STRIFE_TIERS.P2W, model.p2wSourceMode)}
     </div>
   `;
 }

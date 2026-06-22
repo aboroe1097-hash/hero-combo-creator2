@@ -9,7 +9,7 @@ import {
   loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode
 } from './ocr-roster.js';
 
-import { render, showModal, closeModal } from './ocr-render.js';
+import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js';
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
@@ -72,7 +72,12 @@ function switchDashSubtab(name) {
   if (panel) panel.classList.remove('hidden');
   const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
   if (btn) btn.classList.add('dash-subtab-active');
-  if (name === 'analytics') render();
+  if (name === 'analytics') {
+    render();
+    animateAnalyticsCards();
+  } else {
+    state._analyticsAnimated = false;
+  }
   if (name === 'roster') renderRoster();
   if (name === 'banners') renderBanners();
 }
@@ -88,10 +93,13 @@ export async function saveRosterSnapshotsToFirestore() {
   }
 }
 async function loadRosterSnapshotsFromFirestore() {
+  if (state._fsRosterUnsub) {
+    state._fsRosterUnsub();
+    state._fsRosterUnsub = null;
+  }
   try {
     const db = await ensureCloudSyncReady();
     if (!db) return;
-    if (state._fsRosterUnsub) state._fsRosterUnsub();
     const snap = await getDoc(doc(db, FS_ROSTER_PATH));
     if (snap.exists()) {
       const data = snap.data();
@@ -347,22 +355,50 @@ async function doLogin() {
     return;
   }
   const h = await sha256(p);
-  if (h === AUTH_HASH) { sessionStorage.removeItem('vts_guest'); localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); loadData(); }
+  if (h === AUTH_HASH) { sessionStorage.removeItem('vts_guest'); localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); await loadData(); }
   else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
 }
 
 // --- Persistence ---
+function normalizeDashboardDataForCache(data) {
+  if (!data || typeof data !== 'object') return data;
+  const attacks = Array.isArray(data.attacks) ? data.attacks : [];
+  if (!attacks.length) return data;
+  return {
+    ...data,
+    total_attacks: data.total_attacks ?? attacks.length,
+    players_summary: buildSerializablePlayerSummary(attacks),
+  };
+}
+
+function sanitizeDashboardDataForPersistence(data) {
+  if (!data || typeof data !== 'object') return data;
+  const clean = { ...data };
+  delete clean.logs;
+  if (Array.isArray(clean.attacks)) {
+    clean.attacks = clean.attacks.map((attack) => {
+      if (!attack || typeof attack !== 'object') return attack;
+      const copy = { ...attack };
+      delete copy._validation;
+      return copy;
+    });
+  }
+  return clean;
+}
+
 export async function saveData(data) {
-  state.dashData = data;
+  state.dashData = normalizeDashboardDataForCache(data);
+  if (state.dashData && typeof state.dashData === 'object') {
+    delete state.dashData.logs;
+  }
+  const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
   try { 
-    const localLogs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    state.dashData.logs = localLogs;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); 
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedData));
   } catch (e) {}
   try { 
     const db = await ensureCloudSyncReady();
     if (!db) return;
-    await setDoc(doc(db, FS_PATH), data); 
+    await setDoc(doc(db, FS_PATH), persistedData);
     log('Synced to cloud.', 'info'); 
   } catch (e) { 
     console.error("FIREBASE SAVE ERROR:", e);
@@ -373,7 +409,12 @@ export async function saveData(data) {
 async function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { state.dashData = JSON.parse(saved); render(); }
+    if (saved) {
+      state.dashData = normalizeDashboardDataForCache(JSON.parse(saved));
+      if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
+      render();
+    }
   } catch (e) {}
   try {
     const db = await ensureCloudSyncReady();
@@ -381,25 +422,23 @@ async function loadData() {
     if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
-      state.dashData = snap.data();
+      state.dashData = normalizeDashboardDataForCache(snap.data());
+      if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       try { 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
-        if (state.dashData.logs) {
-          localStorage.setItem(LOG_KEY, JSON.stringify(state.dashData.logs));
-          restoreLogs();
-        }
       } catch (e) {}
+      render();
+    } else {
+      state.dashData = null;
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
       render();
     }
     state._fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
-        state.dashData = snap.data();
+        state.dashData = normalizeDashboardDataForCache(snap.data());
+        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         try { 
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
-          if (state.dashData.logs) {
-            localStorage.setItem(LOG_KEY, JSON.stringify(state.dashData.logs));
-            restoreLogs();
-          }
         } catch (e) {}
         render();
         const ind = $id('dashSyncIndicator');
@@ -434,12 +473,24 @@ async function clearData() {
 
 // --- Exports ---
 function exportData() { if (!state.dashData) return; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state.dashData, null, 2)], { type: 'application/json' })); a.download = 'vts_admin_data.json'; a.click(); }
+function currentTopPerformersSubtitle() {
+  const scope = state._lastRenderedFilterLabel || 'Global Top Performers';
+  const timeLabel =
+    state._lastRenderedTimeLabel ||
+    (state.timeFilter === 'daily'
+      ? 'Today'
+      : state.timeFilter === 'weekly'
+        ? 'This Week'
+        : 'All Time');
+  return `${scope} \u00b7 ${timeLabel}`;
+}
+
 function exportToCsv() {
   if (!state.dashData?.players_summary && !state.dashData?.attacks?.length) return;
   const players = Array.isArray(state._lastRenderedPlayerSummary)
     ? state._lastRenderedPlayerSummary
     : state.dashData?.attacks?.length
-      ? buildDashboardPlayerSummary(state.dashData.attacks)
+      ? buildSerializablePlayerSummary(state.dashData.attacks)
       : state.dashData.players_summary;
   let csv = 'Rank,Member Name,Total Demolition,Hits,Avg per Hit\n';
   players.forEach((p, i) => {
@@ -466,17 +517,7 @@ async function exportChartPng() {
   const cloneBtns = clone.querySelectorAll('.dash-btn');
   cloneBtns.forEach(b => b.remove());
   
-  const filterEl = $id('dashLeaderFilter');
-  let subTitle = "Global Top Performers · All Time";
-  if (filterEl && filterEl.value) {
-     const opt = filterEl.options[filterEl.selectedIndex];
-     if (opt) subTitle = opt.textContent;
-  }
-  const tf = $id('dashTimeFilter');
-  if (tf && tf.value !== 'all') {
-     const opt = tf.options[tf.selectedIndex];
-     if (opt) subTitle += ` · ${opt.textContent}`;
-  }
+  const subTitle = currentTopPerformersSubtitle();
   
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
@@ -542,10 +583,7 @@ window.shareChartImage = async function() {
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
   const cloneBtns = clone.querySelectorAll('.dash-btn'); cloneBtns.forEach(b => b.remove());
-  const filterEl = $id('dashLeaderFilter'); let subTitle = "Global Top Performers · All Time";
-  if (filterEl && filterEl.value) { const opt = filterEl.options[filterEl.selectedIndex]; if (opt) subTitle = opt.textContent; }
-  const tf = $id('dashTimeFilter');
-  if (tf && tf.value !== 'all') { const opt = tf.options[tf.selectedIndex]; if (opt) subTitle += ` · ${opt.textContent}`; }
+  const subTitle = currentTopPerformersSubtitle();
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
     titleH2.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="margin-right:10px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span style="font-size:1.4rem;text-shadow:0 0 10px rgba(59,130,246,0.5)">Top Performers</span>`;
@@ -583,7 +621,7 @@ function exportAttackCsv() {
   const attacks = Array.isArray(state._lastRenderedAttacks)
     ? state._lastRenderedAttacks
     : state.dashData.attacks;
-  let csv = 'Start Time,End Time,Structure,Level,Player Name,Rank,Demolition Value\n';
+  let csv = 'Start Time (Game Time),End Time (Game Time),Structure,Level,Player Name,Rank,Demolition Value\n';
   attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
@@ -593,60 +631,24 @@ function exportAttackCsv() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'vts_attack_details.csv'; a.click();
 }
 
-function playerValue(player) {
-  const value = Number(player?.value ?? player?.val ?? 0);
-  return Number.isFinite(value) ? value : 0;
-}
-
 function attackPlayers(attack) {
   return Array.isArray(attack?.players) ? attack.players : [];
 }
 
-function buildDashboardPlayerSummary(attacks) {
-  const summary = {};
-  (attacks || []).forEach(attack => {
-    const players = attackPlayers(attack);
-    const seen = new Set();
-    players.forEach(player => {
-      const name = resolvePlayerNameForAttack(player, players);
-      const value = playerValue(player);
-      if (!summary[name]) {
-        summary[name] = {
-          name,
-          total_demolition: 0,
-          participation_count: 0,
-          attacks: [],
-        };
-      }
-      summary[name].total_demolition += value;
-      if (!seen.has(name)) {
-        summary[name].participation_count++;
-        seen.add(name);
-      }
-      summary[name].attacks.push({
-        id: attack.id || attack.attack_id,
-        attack_id: attack.id || attack.attack_id,
-        name: attack.structure_name || attack.name,
-        structure_name: attack.structure_name || attack.name,
-        structure_level: attack.structure_level || '',
-        raw_structure_name: attack.raw_structure_name,
-        raw_structure_level: attack.raw_structure_level,
-        display_structure_name: attack.display_structure_name,
-        display_structure_level: attack.display_structure_level,
-        game_time: attack.game_time,
-        start_time: attack.start_time || '',
-        val: value,
-        value,
-        rank: player.rank || '',
-      });
-    });
+function buildSerializablePlayerSummary(attacks) {
+  return buildPlayerSummary(attacks).map(player => {
+    const uniqueCount = player.unique_structures_count ?? player.unique_structures?.size ?? 0;
+    const { unique_structures, ...serializable } = player;
+    return {
+      ...serializable,
+      unique_structures_count: uniqueCount,
+    };
   });
-  return Object.values(summary).sort((a, b) => b.total_demolition - a.total_demolition);
 }
 
 function refreshDashboardPlayerSummary() {
   if (!state.dashData) return;
-  state.dashData.players_summary = buildDashboardPlayerSummary(state.dashData.attacks || []);
+  state.dashData.players_summary = buildSerializablePlayerSummary(state.dashData.attacks || []);
 }
 
 function downloadCsv(csv, filename) {
@@ -675,7 +677,7 @@ function safeCsvFilename(name) {
 
 function exportDebugCsv() {
   if (!state.dashData?.attacks?.length) return;
-  let csv = 'Attack ID,Start Time,End Time,Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
+  let csv = 'Attack ID,Start Time (Game Time),End Time (Game Time),Structure,Level,Raw Name,Grouped Name (Master),Demolition Value,Rank\n';
   state.dashData.attacks.forEach(a => {
     const date = displayGameTime(a.game_time);
     const start = a.start_time ? a.start_time.replace(/"/g, '""') : '';
@@ -695,7 +697,7 @@ function importData(file) {
       const imp = JSON.parse(e.target.result); if (!imp.attacks) throw 'Invalid';
       const m = {}; (state.dashData?.attacks||[]).forEach(a => m[a.id]=a); (imp.attacks||[]).forEach(a => m[a.id]=a);
       const sorted = Object.values(m).sort((a,b) => b.game_time.localeCompare(a.game_time));
-      saveData({ last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: buildDashboardPlayerSummary(sorted)});
+      saveData({ last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: buildSerializablePlayerSummary(sorted)});
       render(); log('Import successful.', 'success');
     } catch (err) { alert('Import failed'); }
   }; r.readAsText(file);
@@ -714,8 +716,9 @@ function importData(file) {
 export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
   await initDashboardFirebase();
+  if (state.cloudSyncConfigured) await ensureAnonymousAuth();
   loadRosterSnapshots();
-  loadRosterSnapshotsFromFirestore();
+  await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
   loadAllianceList();
   loadRosterAuth();
@@ -726,11 +729,11 @@ export async function bootOcrDashboard() {
   if (!AUTH_HASH) {
     sessionStorage.setItem('vts_guest', '1');
     showApp();
-    loadData();
-  } else if (isAuthed()) { showApp(); loadData(); } else { showLogin(); }
+    await loadData();
+  } else if (isAuthed()) { showApp(); await loadData(); } else { showLogin(); }
   $id('dashLoginBtn').onclick = doLogin;
-  $id('dashGuestBtn').onclick = () => { localStorage.removeItem(AUTH_KEY); sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); loadData(); };
-  $id('dashRefreshBtn').onclick = () => { loadData(); render(); };
+  $id('dashGuestBtn').onclick = async () => { localStorage.removeItem(AUTH_KEY); sessionStorage.setItem('vts_guest', '1'); $id('dashLoginErr').classList.add('hidden'); showApp(); await loadData(); };
+  $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
   $id('dashRosterBtn').onclick = showRosterModal;
   const expBtn = $id('dashRosterExportBtn'); if (expBtn) expBtn.onclick = exportRosterCSV;
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => btn.onclick = () => switchDashSubtab(btn.dataset.subtab));
@@ -841,13 +844,29 @@ export async function bootOcrDashboard() {
   };
 
   $id('dashModalClose').onclick = closeModal;
-  $id('dashSearch').oninput = e => { state.searchQ = e.target.value; state.leaderLimit = 25; render(); };
+  $id('dashSearch').oninput = e => { state.searchQ = e.target.value; render(); };
   $id('dashLeaderFilter').onchange = () => { state.structureFilterKey = ''; state.leaderLimit = 25; render(); };
   const tFilter = $id('dashTimeFilter');
-  if (tFilter) tFilter.onchange = () => { state.leaderLimit = 25; render(); };
+  if (tFilter) tFilter.onchange = () => {
+    state.timeFilter = tFilter.value || 'all';
+    state.structureFilterKey = '';
+    state.leaderLimit = 25;
+    const leaderFilter = $id('dashLeaderFilter');
+    if (leaderFilter) leaderFilter.value = '';
+    render();
+  };
+  if (tFilter) state.timeFilter = tFilter.value || state.timeFilter || 'all';
   $id('dashAttackSearch').oninput = e => { state.attackSearchQ = e.target.value; render(); };
-  document.querySelectorAll('#ocrDashboardRoot th[data-sort]').forEach(th => th.onclick=()=>{ const c=th.dataset.sort; state.sortDir=state.sortCol===c?(state.sortDir==='desc'?'asc':'desc'):'desc'; state.sortCol=c; state.leaderLimit = 25; render(); });
-  window.loadMoreLeaderboard = () => { state.leaderLimit += 25; render(); };
+  $id('ocrDashboardRoot')?.addEventListener('click', (event) => {
+    const th = event.target.closest('th[data-sort]');
+    if (!th) return;
+    const c = th.dataset.sort;
+    state.sortDir = state.sortCol === c ? (state.sortDir === 'desc' ? 'asc' : 'desc') : 'desc';
+    state.sortCol = c;
+    state.leaderLimit = 25;
+    render();
+  });
+  state.leaderPageSize = window.matchMedia?.('(min-width: 1200px)').matches ? 50 : 25;
   
   const zone = $id('dashUploadZone'), drop = $id('dashDropZone'), inp = $id('dashFileInput');
   zone.classList.remove('hidden'); // Restore old visibility
@@ -894,6 +913,7 @@ window.markAttackComplete = async function(attId) {
   if(!att) return;
   att.data_complete_override = true;
   att.data_complete_override_at = new Date().toISOString();
+  delete att._validation;
   await saveData(state.dashData);
   render();
   window._modalDepth = Math.max(0, (window._modalDepth || 1) - 1);
@@ -921,6 +941,7 @@ window.editAttack = async function(attId) {
   att.structure_level = normalizedTarget.structure_level;
   att.game_time = newTime.trim();
   att.start_time = newStartTime.trim();
+  delete att._validation;
   refreshDashboardPlayerSummary();
   await saveData(state.dashData);
   render(); showModal('attack', att);
@@ -941,6 +962,7 @@ window.addPlayer = async function(attId) {
   att.players.forEach((p, i) => p.rank = i + 1);
   att.players_count = att.players.length;
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
+  delete att._validation;
   
   refreshDashboardPlayerSummary();
   await saveData(state.dashData);
@@ -973,6 +995,7 @@ window.editPlayer = async function(attId, encName) {
   att.players.forEach((p, i) => p.rank = i + 1);
   att.players_count = att.players.length;
   att.total_demolition = att.players.reduce((sum, p) => sum + (p.value || p.val || 0), 0);
+  delete att._validation;
   
   refreshDashboardPlayerSummary();
   await saveData(state.dashData);
@@ -984,7 +1007,7 @@ window.showPlayer = function(pNameEncoded) {
   if (!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
   const masterName = findBestMatch(pName);
-  const playerSummary = buildDashboardPlayerSummary(state.dashData.attacks || []);
+  const playerSummary = buildPlayerSummary(state.dashData.attacks || []);
   
   // Exact match first (using master name)
   let p = playerSummary.find(x => x.name === masterName);
@@ -1028,7 +1051,7 @@ window.exportPlayerReport = function(pNameEncoded) {
   if(!state.dashData) return;
   const pName = decodeURIComponent(pNameEncoded);
   const modalPlayer = window._dashCurrentPlayerReport;
-  const playerSummary = buildDashboardPlayerSummary(state.dashData.attacks || []);
+  const playerSummary = buildPlayerSummary(state.dashData.attacks || []);
   const p =
     modalPlayer?.name === pName
       ? modalPlayer

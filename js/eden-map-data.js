@@ -395,7 +395,7 @@ const EDEN_SECTORS_BASE = {
   E: {
     label: 'East Sector',
     zones: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'],
-    bounds: { minX: 1140, maxX: 1700, minY: 430, maxY: 880 },
+    bounds: { minX: 1140, maxX: 1600, minY: 430, maxY: 880 },
     zoneCenters: {
       E1: { x: 1350, y: 500 },
       E2: { x: 1540, y: 510 },
@@ -420,7 +420,7 @@ const EDEN_SECTORS_BASE = {
       { id: 'e2-st1-3',   zone: 'E2', type: 'ST1', x: 1570, y: 615, guild: '' },
       { id: 'e2-cp1-1',   zone: 'E2', type: 'CP1', x: 1522, y: 767, guild: '' },
       { id: 'e2-cp1-2',   zone: 'E2,3', type: 'CP2', x: 1437, y: 708, guild: '' },
-      { id: 'e2-cp1-3',   zone: 'E2', type: 'CP1', x: 1690, y: 834, guild: '' },
+      { id: 'e2-cp1-3',   zone: 'E2', type: 'CP1', x: 1591, y: 834, guild: '' },
       // E3
       { id: 'e3-c5-1',    zone: 'E3', type: 'C5',  x: 1385, y: 606, guild: '' },
       { id: 'e3-st1-1',   zone: 'E3', type: 'ST1', x: 1390, y: 776, guild: '' },
@@ -1002,8 +1002,8 @@ export function getSectorStructures(sectorKey) {
 
 export function getSectorBounds(sectorKey) {
   const sectors = getEdenSectors();
-  if (sectorKey === 'FULL') return { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
-  return sectors[sectorKey]?.bounds || { minX: 0, maxX: 1700, minY: 0, maxY: 1600 };
+  if (sectorKey === 'FULL') return { minX: 0, maxX: 1600, minY: 0, maxY: 1600 };
+  return sectors[sectorKey]?.bounds || { minX: 0, maxX: 1600, minY: 0, maxY: 1600 };
 }
 
 /** Priority order for toolbar quick-jump buttons — filtered to active dataset sectors. */

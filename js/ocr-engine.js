@@ -8,6 +8,7 @@ import {
   getProtectedPlayerIdentity,
   getSimilarity,
   getSimilarityAlphaNum,
+  findBestMatch,
   resolvePlayerNameForAttack,
   formatStructureLabel,
   normalizeStructureLevelForName,
@@ -144,7 +145,7 @@ EXPECTED JSON SCHEMA:
         log(`OCR cancelled after ${i}/${valid.length} screenshots.`, 'warn');
         break;
       }
-      log(`Network error: ${e.message}`, 'err', f.name);
+      log(`Network error: ${e.message}`, 'error', f.name);
     }
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
     $id('dashProgressText').textContent = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
@@ -160,7 +161,7 @@ EXPECTED JSON SCHEMA:
   }
 
   if (!allJson.length) {
-    log(`No valid data extracted.`, 'err');
+    log(`No valid data extracted.`, 'error');
     state._ocrProcessing = false;
     state._ocrAbortController = null;
     if (cancelBtn) cancelBtn.classList.add('hidden');
@@ -187,7 +188,7 @@ EXPECTED JSON SCHEMA:
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
     log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
     log(`Cloud sync status: ${(await getCloudDb()) ? 'active' : 'local-only'}`, 'info');
-  } else log(`Failed to parse extracted reports.`, 'err');
+  } else log(`Failed to parse extracted reports.`, 'error');
 
   state._ocrProcessing = false;
   state._ocrAbortController = null;
@@ -327,7 +328,8 @@ function parseOcrResults(results) {
     const seen = new Set();
     const players = a.players || [];
     players.forEach(p => {
-      const n = resolvePlayerNameForAttack(p, players);
+      const n = findBestMatch(p.name) || String(p.name || '').trim() || 'Unknown Player';
+      const displayName = resolvePlayerNameForAttack(p, players);
       if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
       sum[n].total_demolition += p.value;
       const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);
@@ -340,13 +342,28 @@ function parseOcrResults(results) {
         raw_structure_name: a.raw_structure_name,
         raw_structure_level: a.raw_structure_level,
         game_time: a.game_time,
+        player_name: n,
+        display_player_name: displayName,
+        raw_player_name: p.name || '',
         val: p.value,
         rank: p.rank
       });
     });
   });
 
-  return { last_updated: fmtDate(new Date()), total_attacks: sorted.length, attacks: sorted, players_summary: Object.values(sum).map(p => { p.unique_structures = p.unique_structures.size; return p; }).sort((a,b) => b.total_demolition - a.total_demolition) };
+  return {
+    last_updated: fmtDate(new Date()),
+    total_attacks: sorted.length,
+    attacks: sorted,
+    players_summary: Object.values(sum).map(p => {
+      const uniqueCount = p.unique_structures.size;
+      return {
+        ...p,
+        unique_structures: uniqueCount,
+        unique_structures_count: uniqueCount,
+      };
+    }).sort((a,b) => b.total_demolition - a.total_demolition)
+  };
 }
 
 export { processFiles, normalizeStructureName, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime };

@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_024213';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_054530';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -1019,6 +1019,7 @@ function updateTextContent() {
   // RTL support for Arabic
   document.documentElement.dir = (currentLanguage === 'ar') ? 'rtl' : 'ltr';
   document.documentElement.lang = currentLanguage;
+  if (languageSelect) languageSelect.value = currentLanguage;
 
   const idMap = {
     'appTitle': t.appTitle,
@@ -1319,11 +1320,9 @@ async function startApp() {
           applyRosterToGenerator(cloudProfile.roster, generatorSelectedHeroes);
           markGeneratorSelectionChanged({ immediate: true });
         }
-        if (typeof initComments === 'function') {
-            initComments();
-        }
         flushClientErrors();
     });
+    safeInit('comments', () => initComments());
     safeInit('quickTour', () => initQuickTour());
     } finally {
         await notifyAppReady();

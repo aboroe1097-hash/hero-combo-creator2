@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.0 - 2026-06-22
+
+- Synced the public app version, README, footer, and What's New version key for the 11.0 release.
+- Consolidated OCR/admin summary building so player rankings, unique-structure counts, exports, and cached dashboard data use the same canonical calculation.
+- Fixed OCR analytics sorting, target-filter behavior, heatmap start-hour bucketing, and persisted log error styling.
+- Included the latest Eden live-map/session planning updates and generated map assets from the parallel project sessions.
+
 ## 11.0.2 - 2026-06-20
 
 - Added an audit-first importer for public Rise of Castles combo datasets, with S0-X8 filtering, local hero alias mapping, duplicate detection, and review-only candidate output.

@@ -1,4 +1,4 @@
-# Hero Combo Creator — VTS 1097 (v11.0.2)
+# Hero Combo Creator — VTS 1097 (v11.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management — all in a single-page web app.
 
@@ -70,7 +70,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0.2 release passed with 27/27 unit tests.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.0 release passed the full local gate with 45/45 unit tests and 10/10 smoke tests.
 
 ## Tech Stack
 

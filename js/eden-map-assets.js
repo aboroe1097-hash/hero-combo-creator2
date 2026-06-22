@@ -1,10 +1,10 @@
 // Eden map visual assets — terrain patterns + structure icons.
 
 const ASSET_ROOT = 'assets/eden-reference/';
-const WORLD_W = 1700;
+const WORLD_W = 1600;
 const WORLD_H = 1600;
 
-/** Faction reference — 1700x1600 px, 1 world unit per pixel (see faction-division-map.json). */
+/** Faction reference — calibrated to the 1600x1600 in-game Eden coordinate range. */
 export const FACTION_DIVISION_MAP = {
   url: `${ASSET_ROOT}faction-division-map.png`,
   metaUrl: `${ASSET_ROOT}faction-division-map.json`,
@@ -14,8 +14,8 @@ export const FACTION_DIVISION_MAP = {
   layout: 'rect',
   opacity: 0.96,
   bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
-  worldOffset: { x: -60, y: -65 },
-  pixelPerfect: true,
+  worldOffset: { x: 0, y: 0 },
+  pixelPerfect: false,
   trimBaked: true,
 };
 
@@ -47,13 +47,14 @@ const ATLAS_TYPE_ALIASES = {
 export const EDEN_SCREENSHOT_MANIFEST_URL = `${ASSET_ROOT}eden-screenshots.manifest.json`;
 
 export const EDEN_STRATEGY_FLOOR = {
-  url: `${ASSET_ROOT}base-floor-v1.webp`,
-  metaUrl: `${ASSET_ROOT}base-floor-v1.json`,
-  label: 'Strategy Floor V1',
+  url: `${ASSET_ROOT}base-floor-v2.webp`,
+  metaUrl: `${ASSET_ROOT}base-floor-v2.json`,
+  label: 'Strategy Floor V2',
   layout: 'screen',
   screenAspect: 1.6,
   opacity: 0.92,
   bounds: { minX: 0, maxX: WORLD_W, minY: 0, maxY: WORLD_H },
+  centerAnchor: { label: 'Throne', x: 800, y: 800 },
   focusSectors: [],
 };
 

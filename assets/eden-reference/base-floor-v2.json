@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "label": "Strategy Floor V2 - Full Eden square calibration",
+  "source": "User supplied Eden Map (6).png, 2026-06-22",
+  "worldSize": [
+    1600,
+    1600
+  ],
+  "bounds": {
+    "minX": 0,
+    "maxX": 1600,
+    "minY": 0,
+    "maxY": 1600
+  },
+  "imageSize": [
+    4000,
+    2500
+  ],
+  "sourceImageSize": [
+    4000,
+    2500
+  ],
+  "sourceCrop": {
+    "left": 0,
+    "top": 0,
+    "width": 4000,
+    "height": 2500
+  },
+  "transparentWhitespace": true,
+  "centerAnchor": {
+    "label": "Throne",
+    "x": 800,
+    "y": 800
+  },
+  "focusSectors": [],
+  "notes": "Transparent floor extracted from the supplied 4000x2500 image. It is drawn as a screen-aligned 1.6 aspect floor over a 1600x1600 Eden coordinate world, so the center throne aligns with 800:800."
+}

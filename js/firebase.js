@@ -34,12 +34,13 @@ const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
 const env = { ...nodeEnv, ...viteEnv };
 const envValue = (key) => String(env[key] || '').trim();
+const firebaseProjectId = envValue('VITE_FIREBASE_PROJECT_ID');
 
 export const firebaseConfig = {
   apiKey: envValue('VITE_FIREBASE_API_KEY'),
-  authDomain: envValue('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: envValue('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: envValue('VITE_FIREBASE_STORAGE_BUCKET'),
+  authDomain: envValue('VITE_FIREBASE_AUTH_DOMAIN') || (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
+  projectId: firebaseProjectId,
+  storageBucket: envValue('VITE_FIREBASE_STORAGE_BUCKET') || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
   messagingSenderId: envValue('VITE_FIREBASE_MESSAGING_SENDER_ID'),
   appId: envValue('VITE_FIREBASE_APP_ID'),
   measurementId: envValue('VITE_FIREBASE_MEASUREMENT_ID')
