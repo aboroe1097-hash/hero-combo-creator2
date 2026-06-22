@@ -19,10 +19,7 @@ import { initWhatsNewBanner } from './app-whats-new.js';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
-import {
-  DEBOUNCE_MS,
-  GENERATOR_SELECT_ALL_CONFIRM_THRESHOLD,
-} from './constants.js';
+import { DEBOUNCE_MS } from './constants.js';
 
 import {
   renderAvailableHeroes,
@@ -518,10 +515,6 @@ function selectVisibleGeneratorHeroes() {
     return;
   }
 
-  if (visibleHeroes.length >= GENERATOR_SELECT_ALL_CONFIRM_THRESHOLD) {
-    showAboModal(`Select all ${visibleHeroes.length} visible heroes?`, selectAll);
-    return;
-  }
 
   selectAll();
 }
