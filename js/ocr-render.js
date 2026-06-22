@@ -30,6 +30,14 @@ function compactValue(value) {
   return n.toLocaleString();
 }
 
+function formatSharePercent(count, total) {
+  if (!total) return '0%';
+  const share = (count / total) * 100;
+  if (share > 0 && share < 1) return `${share.toFixed(1)}%`;
+  if (share > 99 && share < 100) return `${share.toFixed(1)}%`;
+  return `${Math.round(share)}%`;
+}
+
 function isAttackCompleteOverride(attack) {
   return attack?.data_complete_override === true;
 }
@@ -469,9 +477,16 @@ function renderHeatmap(attacks) {
     const hour = attackHour(a);
     const bucket = buckets.find((b) => hour >= b.from && hour <= b.to) || buckets[0];
     const key = `${date.getUTCDay()}|${bucket.label}`;
-    const current = cells.get(key) || { count: 0, demo: 0 };
-    current.count++;
+    const current = cells.get(key) || { attacks: 0, hits: 0, demo: 0, players: new Set() };
+    const players = attackPlayers(a);
+    current.attacks++;
     current.demo += valueOf(a.total_demolition);
+    players.forEach((p) => {
+      const val = valueOf(p.value ?? p.val);
+      if (val <= 0) return;
+      current.hits++;
+      current.players.add(canonicalPlayerName(p, players));
+    });
     cells.set(key, current);
   });
 
@@ -480,7 +495,7 @@ function renderHeatmap(attacks) {
     return;
   }
 
-  const max = Math.max(...[...cells.values()].map((c) => c.count), 1);
+  const max = Math.max(...[...cells.values()].map((c) => c.players.size), 1);
   let html = '<div class="dash-heatmap-grid"><span></span>';
   buckets.forEach((b) => {
     html += `<span class="dash-heatmap-label">${b.label}</span>`;
@@ -488,15 +503,21 @@ function renderHeatmap(attacks) {
   weekdays.forEach((day, dayIndex) => {
     html += `<span class="dash-heatmap-day">${day}</span>`;
     buckets.forEach((bucket) => {
-      const cell = cells.get(`${dayIndex}|${bucket.label}`) || { count: 0, demo: 0 };
-      const heat = cell.count ? (0.15 + (cell.count / max) * 0.85).toFixed(2) : 0;
-      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.label}: ${cell.count} attacks, ${compactValue(cell.demo)} demo">
-        ${cell.count ? `<strong>${cell.count}</strong><small>${compactValue(cell.demo)}</small>` : ''}
+      const cell = cells.get(`${dayIndex}|${bucket.label}`) || {
+        attacks: 0,
+        hits: 0,
+        demo: 0,
+        players: new Set(),
+      };
+      const participants = cell.players.size;
+      const heat = participants ? (0.15 + (participants / max) * 0.85).toFixed(2) : 0;
+      html += `<span class="dash-heatmap-cell" style="--heat:${heat}" title="${day} ${bucket.label}: ${participants} unique players, ${cell.hits} player rows, ${cell.attacks} uploaded targets, ${compactValue(cell.demo)} demo">
+        ${participants ? `<strong>${participants}</strong><small>${compactValue(cell.demo)}</small>` : ''}
       </span>`;
     });
   });
   html +=
-    '</div><div class="dash-analytics-hint">Cells show attack count and total demolition by game-time window.</div>';
+    '</div><div class="dash-analytics-hint">Cells show unique players and total demolition by game-time window. Hover for uploaded targets and player-row counts.</div>';
   host.innerHTML = html;
 }
 
@@ -504,16 +525,21 @@ function renderDistribution(attacks) {
   const host = $id('dashHitDistribution');
   if (!host) return;
   const buckets = [
-    { label: '<100K', min: 0, max: 100000 },
+    { label: 'Under 100K', min: 0, max: 100000 },
     { label: '100K-250K', min: 100000, max: 250000 },
     { label: '250K-500K', min: 250000, max: 500000 },
     { label: '500K-1M', min: 500000, max: 1000000 },
     { label: '1M+', min: 1000000, max: Infinity },
   ].map((b) => ({ ...b, count: 0, total: 0 }));
 
+  let ignoredRows = 0;
   attacks.forEach((a) =>
     attackPlayers(a).forEach((p) => {
       const val = valueOf(p.value ?? p.val);
+      if (val <= 0) {
+        ignoredRows++;
+        return;
+      }
       const bucket = buckets.find((b) => val >= b.min && val < b.max);
       if (bucket) {
         bucket.count++;
@@ -532,15 +558,16 @@ function renderDistribution(attacks) {
     buckets
       .map((bucket) => {
         const pct = Math.round((bucket.count / maxCount) * 100);
-        const share = Math.round((bucket.count / totalHits) * 100);
+        const fill = bucket.count ? Math.max(3, pct) : 0;
+        const share = formatSharePercent(bucket.count, totalHits);
         return `<div class="dash-dist-row">
       <span class="dash-dist-label">${bucket.label}</span>
-      <span class="dash-dist-track"><span class="dash-dist-fill" style="width:${Math.max(3, pct)}%"></span></span>
-      <span class="dash-dist-value">${bucket.count} <small>${share}%</small></span>
+      <span class="dash-dist-track"><span class="dash-dist-fill" style="width:${fill}%"></span></span>
+      <span class="dash-dist-value">${bucket.count.toLocaleString()} <small>${share}</small></span>
     </div>`;
       })
       .join('') +
-    `<div class="dash-analytics-hint">${totalHits.toLocaleString()} recorded player hits · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0))} demolition total.</div>`;
+    `<div class="dash-analytics-hint">${totalHits.toLocaleString()} valid player hit rows · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0))} demolition total · ${compactValue(buckets.reduce((sum, b) => sum + b.total, 0) / totalHits)} avg per row${ignoredRows ? ` · ${ignoredRows.toLocaleString()} zero/blank OCR rows ignored` : ''}.</div>`;
 }
 
 function average(values) {
