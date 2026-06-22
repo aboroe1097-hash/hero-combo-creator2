@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_205902';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_225310';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -137,6 +137,7 @@ const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), DEBOUNCE_MS);
 const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
+const GENERATOR_SKIN_NUDGE_KEY = 'vts_generator_skin_nudge_seen';
 
 function resolveDroppedHeroName(dataTransfer) {
   const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
@@ -431,9 +432,52 @@ function wireGeneratorSkinToggle() {
   genSkinToggle.dataset.skinToggleWired = '1';
 
   const syncGeneratorSkinToggle = () => {
+    hideGeneratorSkinNudge();
     renderGeneratorHeroes(syncGeneratorControlState());
   };
   genSkinToggle.addEventListener('change', syncGeneratorSkinToggle);
+}
+
+function rememberGeneratorSkinNudge() {
+  try {
+    localStorage.setItem(GENERATOR_SKIN_NUDGE_KEY, '1');
+  } catch {}
+}
+
+function hideGeneratorSkinNudge() {
+  const nudge = document.getElementById('genSkinNudge');
+  if (!nudge) return;
+  nudge.classList.add('hidden');
+  rememberGeneratorSkinNudge();
+}
+
+function maybeShowGeneratorSkinNudge() {
+  const nudge = document.getElementById('genSkinNudge');
+  const genSkinToggle = document.getElementById('genSkinToggle');
+  if (!nudge || genSkinToggle?.checked) return;
+
+  try {
+    if (localStorage.getItem(GENERATOR_SKIN_NUDGE_KEY) === '1') return;
+  } catch {}
+
+  nudge.classList.remove('hidden');
+}
+
+function wireGeneratorSkinNudge() {
+  const nudge = document.getElementById('genSkinNudge');
+  if (!nudge || nudge.dataset.skinNudgeWired === '1') return;
+  nudge.dataset.skinNudgeWired = '1';
+
+  document.getElementById('genSkinNudgeTry')?.addEventListener('click', () => {
+    const genSkinToggle = document.getElementById('genSkinToggle');
+    if (genSkinToggle && !genSkinToggle.checked) {
+      genSkinToggle.checked = true;
+      genSkinToggle.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    hideGeneratorSkinNudge();
+  });
+
+  document.getElementById('genSkinNudgeDismiss')?.addEventListener('click', hideGeneratorSkinNudge);
 }
 
 function wireHeroSearchInputs() {
@@ -567,6 +611,7 @@ function wireGlobalControlDelegates() {
       suppressClick = true;
       window.setTimeout(() => { suppressClick = false; }, 350);
       toggle.checked = !toggle.checked;
+      hideGeneratorSkinNudge();
       renderGeneratorHeroes(syncGeneratorControlState());
       return;
     }
@@ -642,6 +687,7 @@ tabs.forEach(tab => {
   wireGlobalControlDelegates();
   wireFilterSets();
   wireGeneratorSkinToggle();
+  wireGeneratorSkinNudge();
   wireHeroSearchInputs();
 
   // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
@@ -804,6 +850,9 @@ tabs.forEach(tab => {
           .finally(() => root?.classList.remove('eden-map-loading'));
       });
     }
+    if (tabName === 'generator') {
+      maybeShowGeneratorSkinNudge();
+    }
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
@@ -901,6 +950,7 @@ tabs.forEach(tab => {
   initKeyboardShortcuts({ switchTab });
   wireFilterSets();
   wireGeneratorSkinToggle();
+  wireGeneratorSkinNudge();
 
   const genSelectAllBtn = document.getElementById('genSelectAllBtn');
   const genClearAllBtn  = document.getElementById('genClearAllBtn');

@@ -9536,6 +9536,78 @@ body {
     rgba(11, 18, 32, 0.86) !important;
 }
 
+.gen-skin-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+  padding: 0.76rem 0.85rem;
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 8px;
+  background:
+    linear-gradient(110deg, rgba(245, 158, 11, 0.16), rgba(34, 211, 238, 0.08)),
+    rgba(2, 6, 14, 0.72);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+.gen-skin-nudge.hidden {
+  display: none;
+}
+
+.gen-skin-nudge strong {
+  display: block;
+  color: #fde68a;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.gen-skin-nudge span {
+  display: block;
+  margin-top: 0.18rem;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.gen-skin-nudge-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.gen-skin-nudge-actions button {
+  min-height: 2rem;
+  padding: 0.43rem 0.7rem;
+  border: 1px solid rgba(103, 232, 249, 0.32);
+  border-radius: 0;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  color: #eaffff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.gen-skin-nudge-actions button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+#genSkinNudgeTry {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.96), rgba(20, 184, 166, 0.88));
+}
+
+#genSkinNudgeDismiss {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.82);
+  color: #cbd5e1;
+}
+
 .generator-selection-actions {
   align-items: center;
   flex-wrap: wrap;

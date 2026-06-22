@@ -5,6 +5,7 @@ import {
   comboMeetsSkinRequirements,
   filterCombosForSkinMode,
   getComboSkinRequirements,
+  rankedCombos,
   scoreComboByRank,
   selectNonOverlappingCombos,
 } from '../../js/combos-db.js';
@@ -68,4 +69,14 @@ test('missing skin metadata and 111 behave like normal combos', () => {
   ];
 
   assert.deepEqual(filterCombosForSkinMode(combos, false), combos.slice(0, 2));
+});
+
+test('skin mode ranks Octavius Rozen Caesar above Alfred Black Prince Jeanne', () => {
+  const skinCombos = filterCombosForSkinMode(rankedCombos, true, () => true);
+  const comboKeys = skinCombos.map((combo) => combo.heroes.join('|'));
+
+  assert.ok(
+    comboKeys.indexOf('Octavius|Rozen Blade|Caesar') <
+      comboKeys.indexOf("Alfred|Black Prince|Jeanne d'Arc")
+  );
 });
