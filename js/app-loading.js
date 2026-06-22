@@ -163,8 +163,31 @@ function setBootStatus(text, options = {}) {
 }
 
 function setBootProgress(pct) {
+    const clamped = Math.min(100, Math.max(0, pct));
     const fill = document.querySelector('.boot-progress-fill');
-    if (fill) fill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    if (fill) fill.style.width = `${clamped}%`;
+    igniteFeathers(clamped);
+}
+
+// 14 feathers total, 7 per wing. Light them in sequence as progress climbs
+// so the wings themselves become a second loading meter instead of decoration.
+function igniteFeathers(pct) {
+    const litCount = Math.floor((pct / 100) * 14);
+    const leftSpans = document.querySelectorAll('#doorLeft .door-wing span');
+    const rightSpans = document.querySelectorAll('#doorRight .door-wing span');
+
+    leftSpans.forEach((el, i) => {
+        el.classList.toggle('is-lit', i < litCount);
+    });
+    rightSpans.forEach((el, i) => {
+        el.classList.toggle('is-lit', i < litCount - 7);
+    });
+
+    const container = document.getElementById('perspectiveContainer');
+    if (container) {
+        const duration = 2.6 - (pct / 100) * 1.3;
+        container.style.setProperty('--wing-flap-duration', `${duration.toFixed(2)}s`);
+    }
 }
 
 function startBootAnimations() {

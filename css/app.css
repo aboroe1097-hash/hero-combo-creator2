@@ -10830,6 +10830,16 @@ body {
   filter: blur(0.35px);
 }
 
+.door-wing span {
+  filter: blur(0.35px) brightness(0.55) saturate(0.7);
+  transition: filter 0.45s ease, opacity 0.45s ease;
+}
+
+.door-wing span.is-lit {
+  opacity: 0.72;
+  filter: blur(0.15px) brightness(1) saturate(1.1);
+}
+
 .center-light {
   background:
     linear-gradient(180deg, transparent, #67e8f9 12%, #f8fafc 36%, #fbbf24 51%, #f8fafc 66%, #67e8f9 88%, transparent) !important;
@@ -10988,6 +10998,32 @@ body {
   }
 }
 
+@keyframes wing-flap-left {
+  0%   { transform: rotate(0deg) translateY(0); }
+  10%  { transform: rotate(-16deg) translateY(5px); }
+  24%  { transform: rotate(-3deg) translateY(-1px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes wing-flap-right {
+  0%   { transform: rotate(0deg) translateY(0); }
+  10%  { transform: rotate(16deg) translateY(5px); }
+  24%  { transform: rotate(-3deg) translateY(-1px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes feather-ripple {
+  0%, 100% {
+    transform: rotate(var(--feather-rot, 0deg)) translateX(var(--feather-x, 0));
+  }
+  18% {
+    transform: rotate(calc(var(--feather-rot, 0deg) + 7deg)) translateX(var(--feather-x, 0));
+  }
+  40% {
+    transform: rotate(var(--feather-rot, 0deg)) translateX(var(--feather-x, 0));
+  }
+}
+
 @keyframes boot-light-bloom {
   0% {
     transform: translateX(-50%) scaleX(1);
@@ -11008,6 +11044,7 @@ body {
 
 .perspective-container {
   display: block;
+  --wing-flap-duration: 2.6s;
 }
 
 .door {
@@ -11041,14 +11078,23 @@ body {
 
 .door-wing-left {
   right: calc(50% - clamp(112px, 9vw, 178px));
+  animation: wing-flap-left var(--wing-flap-duration, 2.6s) ease-in-out infinite;
 }
 
 .door-wing-right {
   left: calc(50% - clamp(112px, 9vw, 178px));
+  animation: wing-flap-right var(--wing-flap-duration, 2.6s) ease-in-out infinite reverse;
 }
 
 .door-wing-art--front {
   animation-name: boot-wing-veil-drift;
+}
+
+.door-wing span {
+  animation:
+    wing-feather-glint 2.35s ease-in-out infinite,
+    feather-ripple var(--wing-flap-duration, 2.6s) ease-in-out infinite;
+  animation-delay: var(--feather-delay, 0s), var(--feather-delay, 0s);
 }
 
 .door-open-left .door-wing,
