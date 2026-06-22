@@ -66,13 +66,33 @@ function announceManualCombo(message) {
   live.textContent = message;
 }
 
-function placeHeroInSlot(slot, heroName, idx) {
+function restoreComboSlot(idx, heroName) {
+  currentCombo[idx] = heroName || null;
+  const slot = document.querySelector(`.combo-slot[data-slot-index="${idx}"]`);
+  if (slot) updateComboSlotDisplay(slot, currentCombo[idx], idx);
+  updateManualComboScore();
+  announceManualCombo(
+    currentCombo[idx]
+      ? `${currentCombo[idx]} restored to combo slot ${idx + 1}.`
+      : `Combo slot ${idx + 1} restored to empty.`
+  );
+}
+
+export function placeHeroInSlot(slot, heroName, idx) {
   if (!slot || !heroName || Number.isNaN(idx)) return;
   if (isHeroAlreadyInCombo(heroName, idx)) {
     const t = translations[currentLanguage] || translations.en;
     callUi('showAboModal', t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
     announceManualCombo(`${heroName} is already in this combo.`);
     return;
+  }
+  const previousHero = currentCombo[idx] || null;
+  if (previousHero && previousHero !== heroName) {
+    pushUndoAction({
+      label: `Combo slot ${idx + 1}`,
+      message: `Combo slot ${idx + 1} changed.`,
+      undo: () => restoreComboSlot(idx, previousHero),
+    });
   }
   currentCombo[idx] = heroName;
   updateComboSlotDisplay(slot, heroName, idx);
@@ -134,15 +154,7 @@ export function setupTouchDragForManualBuilder() {
     const idx = parseInt(slot.dataset.slotIndex, 10);
     if (Number.isNaN(idx)) { touchDragHero = null; return; }
 
-    if (isHeroAlreadyInCombo(touchDragHero, idx)) {
-      const t = translations[currentLanguage] || translations.en;
-      callUi('showAboModal', t.manualNoDuplicateHero || 'This hero is already used in your current combo.');
-      touchDragHero = null;
-      return;
-    }
-    currentCombo[idx] = touchDragHero;
-    updateComboSlotDisplay(slot, touchDragHero, idx);
-    updateManualComboScore();
+    placeHeroInSlot(slot, touchDragHero, idx);
     touchDragHero = null;
   }, { passive: true });
 

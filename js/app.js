@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_191749';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260622_193452';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -30,6 +30,7 @@ import {
   updateManualComboScore,
   setupTouchDragForManualBuilder,
   setupKeyboardComboSlots,
+  placeHeroInSlot,
   saveCombo,
   setupFirestoreListener
 } from './app-builder.js';
@@ -674,15 +675,7 @@ tabs.forEach(tab => {
       const heroName = resolveDroppedHeroName(e.dataTransfer);
       if (!heroName) return;
 
-      if (isHeroAlreadyInCombo(heroName, i)) {
-        const t = translations[currentLanguage] || translations.en;
-        showAboModal(t.messageHeroAlreadyInSlot ? t.messageHeroAlreadyInSlot.replace('{heroName}', heroName) : 'Hero already in combo!');
-        return;
-      }
-      
-      currentCombo[i] = heroName;
-      updateComboSlotDisplay(slot, heroName, i);
-      updateManualComboScore();
+      placeHeroInSlot(slot, heroName, i);
     });
   });
 

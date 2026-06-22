@@ -62,6 +62,7 @@ export function pushUndoAction(action) {
   undoHistoryStack.push({
     id: action.id || `undo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     label: action.label || 'Change',
+    message: action.message || '',
     undo: action.undo,
     createdAt: Date.now(),
   });

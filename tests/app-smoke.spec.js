@@ -132,6 +132,25 @@ test.describe('app smoke tabs', () => {
     );
     await expect(page.locator('.combo-slot').nth(0)).not.toContainText('https://');
 
+    const secondHeroName = await page
+      .locator('#availableHeroes .hero-card')
+      .nth(1)
+      .getAttribute('data-hero-name');
+    await page.evaluate(() => {
+      const card = document.querySelectorAll('#availableHeroes .hero-card')[1];
+      const slot = document.querySelectorAll('.combo-slot')[0];
+      const dt = new DataTransfer();
+      dt.setData('application/x-vts-hero-name', card.dataset.heroName);
+      dt.setData('text/plain', card.dataset.heroName);
+      slot.dispatchEvent(
+        new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })
+      );
+    });
+    await expect(page.locator('.combo-slot').nth(0)).toContainText(secondHeroName);
+    await expect(page.locator('.toast.undo-toast')).toContainText('Combo slot 1 changed');
+    await page.locator('.toast.undo-toast button').click();
+    await expect(page.locator('.combo-slot').nth(0)).toContainText(firstHeroName);
+
     await page.evaluate(() => {
       const slot = document.querySelectorAll('.combo-slot')[1];
       const dt = new DataTransfer();
@@ -521,6 +540,8 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
     await expect(page.locator('#dashStructureChart')).toContainText('Capital');
     await expect(page.locator('#dashPlayerTrends')).toContainText('Alpha');
+    await expect(page.locator('#dashHitDistribution')).toContainText('Under 10K');
+    await expect(page.locator('#dashHitDistribution')).toContainText('10K-100K');
     await expect(page.locator('#dashHitDistribution')).toContainText('1M+');
     await expect(page.locator('#dashAllianceInsights')).toContainText('Unmapped');
 

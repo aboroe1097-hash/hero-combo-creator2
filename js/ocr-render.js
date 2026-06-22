@@ -525,7 +525,8 @@ function renderDistribution(attacks) {
   const host = $id('dashHitDistribution');
   if (!host) return;
   const buckets = [
-    { label: 'Under 100K', min: 0, max: 100000 },
+    { label: 'Under 10K', min: 0, max: 10000 },
+    { label: '10K-100K', min: 10000, max: 100000 },
     { label: '100K-250K', min: 100000, max: 250000 },
     { label: '250K-500K', min: 250000, max: 500000 },
     { label: '500K-1M', min: 500000, max: 1000000 },

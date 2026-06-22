@@ -14,7 +14,7 @@ export function initUndoToasts() {
     container.querySelectorAll('.toast.undo-toast').forEach((el) => el.remove());
     const toast = document.createElement('div');
     toast.className = 'toast info undo-toast';
-    toast.innerHTML = `<span>${detail.label || 'Change'} removed.</span><button type="button">Undo</button>`;
+    toast.innerHTML = `<span>${detail.message || `${detail.label || 'Change'} removed.`}</span><button type="button">Undo</button>`;
     const button = toast.querySelector('button');
     button?.addEventListener('click', async () => {
       button.disabled = true;
