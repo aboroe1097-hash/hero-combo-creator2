@@ -27,7 +27,21 @@ test('non-overlap selection skips unavailable and reused heroes', () => {
 
   assert.deepEqual(selectNonOverlappingCombos(combos, owned, 5), [
     { heroes: ['A', 'B', 'C'], displayScore: '100.0' },
-    { heroes: ['F', 'G', 'H'], displayScore: '34.0' },
+    { heroes: ['F', 'G', 'H'], displayScore: '1.0' },
+  ]);
+});
+
+test('non-overlap scores are normalized to buildable candidates only', () => {
+  const combos = [
+    { heroes: ['X2A', 'X2B', 'X2C'] },
+    { heroes: ['A', 'B', 'C'] },
+    { heroes: ['D', 'E', 'F'] },
+  ];
+  const owned = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  assert.deepEqual(selectNonOverlappingCombos(combos, owned, 5), [
+    { heroes: ['A', 'B', 'C'], displayScore: '100.0' },
+    { heroes: ['D', 'E', 'F'], displayScore: '1.0' },
   ]);
 });
 

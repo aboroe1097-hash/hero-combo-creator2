@@ -7887,13 +7887,15 @@ body {
 
 .generated-combo-card {
   display: grid !important;
-  grid-template-columns: 44px minmax(310px, 1fr) minmax(124px, 150px);
+  grid-template-columns: 40px minmax(260px, 306px) minmax(148px, 168px);
   align-items: center !important;
-  justify-content: stretch !important;
-  gap: 14px !important;
-  max-width: 960px !important;
-  min-height: 118px !important;
-  padding: 14px 22px !important;
+  justify-content: center !important;
+  column-gap: 22px !important;
+  row-gap: 9px !important;
+  max-width: 720px !important;
+  min-height: 102px !important;
+  padding: 12px 18px !important;
+  margin-inline: auto !important;
 }
 
 .generated-combo-card .saved-combo-number {
@@ -7907,24 +7909,27 @@ body {
 .generated-combo-card .saved-combo-slots {
   width: 100%;
   min-width: 0;
-  justify-content: center;
-  gap: 14px;
+  justify-content: flex-start;
+  gap: 12px;
   overflow: visible;
   padding: 0;
 }
 
 .generated-combo-card .saved-combo-slot-item {
-  width: 92px;
-  gap: 5px;
+  width: 86px;
+  gap: 4px;
 }
 
 .generated-combo-card .saved-combo-slot-item img {
-  width: 78px;
-  height: 78px;
+  width: 72px;
+  height: 72px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: center 42%;
 }
 
 .generated-combo-card .saved-combo-slot-item span {
-  max-width: 92px;
+  max-width: 86px;
   font-size: 0.66rem;
   line-height: 1.15;
 }
@@ -7940,11 +7945,56 @@ body {
 
 .generated-combo-card .gen-score-main {
   align-items: flex-start;
+  width: 100%;
+}
+
+.generated-combo-card .gen-score-bar {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 2px 0 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(96, 165, 250, 0.16);
+}
+
+.generated-combo-card .gen-score-bar > span {
+  display: block;
+  width: var(--score-pct, 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #60a5fa 62%, #fbbf24);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.34);
 }
 
 .generated-combo-card .counter-summary-badge {
   white-space: nowrap;
-  margin-top: 6px;
+  margin-top: 2px;
+}
+
+.generated-combo-card .counter-summary-badge--action {
+  cursor: pointer;
+  gap: 5px;
+  user-select: none;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.16s ease, box-shadow 0.18s ease;
+}
+
+.generated-combo-card .counter-summary-badge--action:hover,
+.generated-combo-card .counter-summary-badge--action:focus-visible {
+  color: #fde68a;
+  background: rgba(120, 53, 15, 0.42);
+  border-color: rgba(251, 191, 36, 0.58);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.18);
+  transform: translateY(-1px);
+}
+
+.counter-summary-chevron {
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .generated-combo-card .combo-counters-wrap {

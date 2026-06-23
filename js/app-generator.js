@@ -425,6 +425,12 @@ export function renderGeneratorHeroes(options = {}) {
 export function renderGeneratorResults(bestCombos, meta = {}) {
   const t = translations[currentLanguage] || translations.en;
   generatorResultsEl.innerHTML = '';
+  const topScore = Math.max(
+    1,
+    ...bestCombos
+      .map(combo => Number.parseFloat(combo.displayScore))
+      .filter(score => Number.isFinite(score))
+  );
 
   if (Number.isFinite(meta.durationMs)) {
     const summary = document.createElement('div');
@@ -487,13 +493,19 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     const scoreBox = document.createElement('div');
     scoreBox.className = 'gen-score-panel';
     const counterCount = getCounterCount(combo.heroes);
+    const scoreValue = Number.parseFloat(combo.displayScore);
+    const scorePct = Number.isFinite(scoreValue)
+      ? Math.max(4, Math.min(100, (scoreValue / topScore) * 100))
+      : 0;
+    scoreBox.style.setProperty('--score-pct', `${scorePct.toFixed(1)}%`);
     const counterBadge = counterCount
-      ? `<span class="counter-summary-badge">${counterCount} counters known</span>`
+      ? `<span class="counter-summary-badge counter-summary-badge--action" role="button" tabindex="0" title="Show counter details">${counterCount} counters known <span class="counter-summary-chevron" aria-hidden="true"></span></span>`
       : `<span class="counter-summary-badge counter-summary-badge--empty">No known counters</span>`;
     scoreBox.innerHTML = `
       <div class="gen-score-main">
         <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(t.generatorScoreLabel)}</span>
         <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+        <span class="gen-score-bar" aria-hidden="true"><span></span></span>
         ${counterBadge}
       </div>
     `;
@@ -502,11 +514,20 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     const counterRow = document.createElement('div');
     counterRow.className = 'generated-counter-row';
     counterRow.innerHTML = renderCountersToggle(combo.heroes, getComboRankInfo, getGeneratorResultHeroImageUrl, getCounterLabels(), {
-      showEmpty: true,
+      showEmpty: false,
       showUseAction: true,
       context: 'generator',
     });
-    card.appendChild(counterRow);
+    if (counterRow.innerHTML.trim()) card.appendChild(counterRow);
+
+    const actionBadge = scoreBox.querySelector('.counter-summary-badge--action');
+    const openCounters = () => counterRow.querySelector('.counter-toggle-btn')?.click();
+    actionBadge?.addEventListener('click', openCounters);
+    actionBadge?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openCounters();
+    });
 
     generatorResultsEl.appendChild(card);
   });
@@ -562,21 +583,19 @@ export function generateRandomCombos() {
   try {
     const ownedSet = new Set(selected);
     const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, heroName => isGeneratorSkinOwned(heroName, generatorSelectedSeasons));
-    const total = sourceCombos.length;
-
     const validCombos = sourceCombos
-      .map((combo, index) => {
-          let rawScore = 100;
-          if (total > 1) {
-            rawScore = 100 - ((index / (total - 1)) * 99);
-          }
-          return {
-            ...combo,
-            originalIndex: index,
-            displayScore: rawScore.toFixed(1)
-          };
-      })
-      .filter(combo => combo.heroes.every(h => ownedSet.has(h)));
+      .filter(combo => combo.heroes.every(h => ownedSet.has(h)))
+      .map((combo, index, eligible) => {
+        let rawScore = 100;
+        if (eligible.length > 1) {
+          rawScore = 100 - ((index / (eligible.length - 1)) * 99);
+        }
+        return {
+          ...combo,
+          originalIndex: index,
+          displayScore: rawScore.toFixed(1),
+        };
+      });
 
     if (validCombos.length === 0) {
       showGeneratorMessage(t.generatorNoCombosAvailable || "No ranked combos found.");

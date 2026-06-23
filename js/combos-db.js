@@ -259,14 +259,14 @@ export const baseRankedCombos = filterCombosForSkinMode(rankedCombos, false);
 export function selectNonOverlappingCombos(combos, ownedHeroes, limit = 5) {
   const ownedSet = ownedHeroes instanceof Set ? ownedHeroes : new Set(ownedHeroes);
   const usedHeroes = new Set();
-  const total = combos.length;
+  const eligible = (combos || []).filter(combo => combo?.heroes?.every(hero => ownedSet.has(hero)));
+  const total = eligible.length;
   const selected = [];
 
   for (let i = 0; i < total; i++) {
     if (selected.length >= limit) break;
 
-    const combo = combos[i];
-    if (!combo?.heroes?.every(hero => ownedSet.has(hero))) continue;
+    const combo = eligible[i];
     if (combo.heroes.some(hero => usedHeroes.has(hero))) continue;
 
     selected.push({

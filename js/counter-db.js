@@ -34,6 +34,13 @@ export const COMBO_COUNTERS = [
     ],
   },
   {
+    target: ['King Arthur', 'Cleopatra VII', 'Bleeding Steed'],
+    counters: [
+      { heroes: ['Beowulf', 'Ramses II', 'Theodora'], reason: 'VTS testing favors Beowulf + Ramses + Theodora sustain into this Arthur/Cleo/Bleeding lane', confidence: 'VTS testing' },
+      { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Octavius + Rozen + Caesar pressure is favored into Arthur/Cleo/Bleeding', confidence: 'VTS testing' },
+    ],
+  },
+  {
     target: ['King Arthur', 'Rozen Blade', 'Theodora'],
     counters: [
       { heroes: ['Octavius', 'Rozen Blade', 'Caesar'], reason: 'Duel report shows Octavius/Rozen/Caesar beating the Arthur/Rozen/Theodora variant', confidence: 'Duel screenshot' },
@@ -115,7 +122,9 @@ export const COMBO_COUNTERS = [
   {
     target: ['Octavius', 'Rozen Blade', 'Caesar'],
     counters: [
+      { heroes: ['Beowulf', 'Ramses II', 'Theodora'], reason: 'Current VTS testing favors Beowulf front-row sustain with Theodora healing into Octavius/Rozen/Caesar', confidence: 'VTS testing' },
       { heroes: ['Immortal Guardian', 'Ramses II', 'Beowulf'], reason: 'Ramses + Beowulf lineups are favored into Octavius + Rozen + Caesar', confidence: 'Duel screenshot' },
+      { heroes: ['Hunk', 'Boudica', 'Sakura'], reason: 'Soft counter option: Hunk/Boudica/Sakura can pressure this line but is not as reliable as the top sustain counters', confidence: 'Soft counter' },
       ['Hunk', 'Ramses II', 'Beowulf'],
       ['Bleeding Steed', 'Ramses II', 'Beowulf'],
       ['Rozen Blade', 'Ramses II', 'Beowulf'],

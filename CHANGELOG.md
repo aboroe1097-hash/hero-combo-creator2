@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.3.1 - 2026-06-23
+
+- Tightened generated combo result cards with a denser strip layout, normalized portrait sizing, score-relative progress bars, and clearer clickable counter badges.
+- Changed generated combo scoring to normalize against the user's buildable candidate pool, so unavailable later-season combos no longer lower earlier-season results.
+- Added VTS counter relationships for the current top skin-mode results: Beowulf/Ramses II/Theodora counters the Arthur and Octavius lanes, Octavius/Rozen/Caesar counters Arthur/Cleo/Bleeding Steed, and Hunk/Boudica/Sakura is marked as a soft counter to Octavius/Rozen/Caesar.
+- Documented the release cadence: patch releases run through `.19`, then the next release bumps the minor version.
+
 ## 11.3.0 - 2026-06-23
 
 - Added Firebase admin-claim tooling and clearer deployed-admin warnings so OCR cloud sync, roster snapshots, and Eden shared intel writes can be configured from the repo instead of failing with generic permission errors.

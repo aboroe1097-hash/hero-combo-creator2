@@ -45,6 +45,38 @@ test('duel screenshot counters include Arthur and Octavius skin-meta paths', () 
   );
 });
 
+test('latest VTS skin-mode counter relationships are recorded', () => {
+  const arthurLaneCounters = getCountersForCombo([
+    'King Arthur',
+    'Cleopatra VII',
+    'Bleeding Steed',
+  ]);
+  assert.ok(
+    arthurLaneCounters.some(
+      (counter) => comboKey(counter.heroes) === comboKey(['Beowulf', 'Ramses II', 'Theodora'])
+    )
+  );
+  assert.ok(
+    arthurLaneCounters.some(
+      (counter) => comboKey(counter.heroes) === comboKey(['Octavius', 'Rozen Blade', 'Caesar'])
+    )
+  );
+
+  const octaviusLaneCounters = getCountersForCombo(['Octavius', 'Rozen Blade', 'Caesar']);
+  assert.ok(
+    octaviusLaneCounters.some(
+      (counter) => comboKey(counter.heroes) === comboKey(['Beowulf', 'Ramses II', 'Theodora'])
+    )
+  );
+  assert.ok(
+    octaviusLaneCounters.some(
+      (counter) =>
+        comboKey(counter.heroes) === comboKey(['Hunk', 'Boudica', 'Sakura']) &&
+        counter.confidence === 'Soft counter'
+    )
+  );
+});
+
 test('counter normalization supports arrays and annotated objects', () => {
   assert.deepEqual(normalizeCounter(['A', 'B', 'C']), {
     heroes: ['A', 'B', 'C'],

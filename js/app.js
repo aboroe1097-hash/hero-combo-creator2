@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260623_000038';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260623_002454';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
