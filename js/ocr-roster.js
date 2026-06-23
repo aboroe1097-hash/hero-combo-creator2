@@ -880,6 +880,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     saveDutyRecords();
     closeModal();
     renderDutyRecords();
+    refreshDashboardOverview();
     log(`${meta.label} ${existingRecord ? 'updated' : 'saved'}: ${entries.length} entries.`, 'success');
   };
   $id('dashDutyCancelBtn').onclick = closeModal;
@@ -972,6 +973,7 @@ function deleteDutyRecord(id) {
   state.dutyRecords.splice(index, 1);
   saveDutyRecords();
   renderDutyRecords();
+  refreshDashboardOverview();
   log('Duty record deleted.', 'warn');
 }
 
@@ -1072,6 +1074,25 @@ function parseContributionValue(value) {
 
 function formatContributionValue(value) {
   return parseContributionValue(value).toLocaleString();
+}
+
+function formatSignedContributionValue(value) {
+  const parsed = Number(value || 0);
+  const sign = parsed >= 0 ? '+' : '-';
+  return `${sign}${formatContributionValue(Math.abs(parsed))}`;
+}
+
+function safeContributionFilenamePart(value) {
+  return String(value || 'snapshot')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'snapshot';
+}
+
+function refreshDashboardOverview() {
+  if (typeof window.refreshOcrDashboardFromStorage === 'function') {
+    window.refreshOcrDashboardFromStorage();
+  }
 }
 
 function normalizeRewardTier(value) {
@@ -1248,6 +1269,7 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     saveContributionRecords();
     closeModal();
     renderContributions();
+    refreshDashboardOverview();
     log(`Contribution list ${existingRecord ? 'updated' : 'saved'}: ${normalized.length} entries.`, 'success');
   };
   $id('dashContributionCancelBtn').onclick = closeModal;
@@ -1334,6 +1356,7 @@ function setContributionReward(recordId, entryIndex, rewardTier) {
   record.updatedAt = new Date().toISOString();
   saveContributionRecords();
   renderContributions();
+  refreshDashboardOverview();
 }
 
 function editContributionRecord(id) {
@@ -1349,6 +1372,7 @@ function deleteContributionRecord(id) {
   state.contributionRecords.splice(index, 1);
   saveContributionRecords();
   renderContributions();
+  refreshDashboardOverview();
   log('Contribution list deleted.', 'warn');
 }
 
@@ -1387,8 +1411,180 @@ function exportContributionRecords(recordId = '') {
   log('Contribution sheet exported.', 'success');
 }
 
+function getContributionRecordLabel(record, fallbackIndex = 0) {
+  const date = record?.date || `Snapshot ${fallbackIndex + 1}`;
+  const note = String(record?.note || '').trim();
+  const count = Array.isArray(record?.entries) ? record.entries.length : 0;
+  return `${date}${note ? ` - ${note}` : ''} (${count} rows)`;
+}
+
+function getContributionIdentity(entry) {
+  const name = String(entry?.name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const guild = String(entry?.guild || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return `${name}|${guild}`;
+}
+
+function buildContributionComparison(baseRecord, finalRecord) {
+  const baseMap = new Map();
+  const finalMap = new Map();
+  (baseRecord?.entries || []).forEach(entry => {
+    const key = getContributionIdentity(entry);
+    if (key !== '|') baseMap.set(key, entry);
+  });
+  (finalRecord?.entries || []).forEach(entry => {
+    const key = getContributionIdentity(entry);
+    if (key !== '|') finalMap.set(key, entry);
+  });
+  const keys = new Set([...baseMap.keys(), ...finalMap.keys()]);
+  return Array.from(keys).map(key => {
+    const base = baseMap.get(key);
+    const final = finalMap.get(key);
+    const baseValue = parseContributionValue(base?.contribution);
+    const finalValue = parseContributionValue(final?.contribution);
+    const baseRank = Number(base?.rank || 0);
+    const finalRank = Number(final?.rank || 0);
+    const rewardBefore = base ? getContributionReward(base, baseRecord) : '';
+    const rewardAfter = final ? getContributionReward(final, finalRecord) : '';
+    return {
+      key,
+      name: final?.name || base?.name || '',
+      guild: final?.guild || base?.guild || '',
+      baseRank,
+      finalRank,
+      rankDelta: baseRank && finalRank ? baseRank - finalRank : 0,
+      baseValue,
+      finalValue,
+      delta: finalValue - baseValue,
+      rewardBefore,
+      rewardAfter,
+      status: base && final ? 'tracked' : final ? 'new' : 'missing',
+    };
+  }).sort((a, b) => b.delta - a.delta || (b.finalValue - a.finalValue) || a.name.localeCompare(b.name));
+}
+
+function getSelectedContributionCompareRecords() {
+  const baseId = $id('dashContributionCompareBase')?.value || '';
+  const finalId = $id('dashContributionCompareFinal')?.value || '';
+  const records = state.contributionRecords || [];
+  return {
+    baseRecord: records.find(record => record.id === baseId) || null,
+    finalRecord: records.find(record => record.id === finalId) || null,
+  };
+}
+
+function buildContributionComparisonCsv(baseRecord, finalRecord) {
+  const rows = buildContributionComparison(baseRecord, finalRecord);
+  const lines = [[
+    'Member Name', 'Guild', 'Baseline Rank', 'Final Rank', 'Rank Movement',
+    'Baseline Contribution', 'Final Contribution', 'Delta', 'Baseline Reward', 'Final Reward', 'Status'
+  ]];
+  rows.forEach(row => {
+    lines.push([
+      row.name,
+      row.guild,
+      row.baseRank || '',
+      row.finalRank || '',
+      row.rankDelta || '',
+      row.baseValue || '',
+      row.finalValue || '',
+      row.delta || 0,
+      row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '',
+      row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '',
+      row.status,
+    ]);
+  });
+  return lines.map(line => line.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+}
+
+function exportContributionComparison() {
+  const { baseRecord, finalRecord } = getSelectedContributionCompareRecords();
+  if (!baseRecord || !finalRecord || baseRecord.id === finalRecord.id) return;
+  const csv = buildContributionComparisonCsv(baseRecord, finalRecord);
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vts_contribution_delta_${safeContributionFilenamePart(baseRecord.date || 'baseline')}_to_${safeContributionFilenamePart(finalRecord.date || 'final')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log('Contribution comparison exported.', 'success');
+}
+
+function renderContributionComparison() {
+  const host = $id('dashContributionComparePanel');
+  if (!host) return;
+  const records = Array.isArray(state.contributionRecords) ? state.contributionRecords : [];
+  if (records.length < 2) {
+    host.innerHTML = '<div class="dash-contribution-compare-empty">Save at least two contribution snapshots to compare current vs final-season movement.</div>';
+    return;
+  }
+  const sorted = records.slice().sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  const baseDefault = sorted[0]?.id || '';
+  const finalDefault = sorted[sorted.length - 1]?.id || '';
+  const selectedBase = $id('dashContributionCompareBase')?.value || baseDefault;
+  const selectedFinal = $id('dashContributionCompareFinal')?.value || finalDefault;
+  const options = sorted.map((record, index) => `<option value="${esc(record.id)}">${esc(getContributionRecordLabel(record, index))}</option>`).join('');
+  host.innerHTML = `<div class="dash-contribution-compare-card">
+    <div class="dash-contribution-compare-head">
+      <div>
+        <strong>Snapshot Comparison</strong>
+        <span>Compare today against the final day to see gains, rank moves, and reward changes.</span>
+      </div>
+      <button id="dashContributionCompareExportBtn" class="dash-btn">Export Delta</button>
+    </div>
+    <div class="dash-contribution-compare-controls">
+      <label>Baseline <select id="dashContributionCompareBase">${options}</select></label>
+      <label>Final <select id="dashContributionCompareFinal">${options}</select></label>
+    </div>
+    <div id="dashContributionCompareBody"></div>
+  </div>`;
+  const baseSelect = $id('dashContributionCompareBase');
+  const finalSelect = $id('dashContributionCompareFinal');
+  if (baseSelect) baseSelect.value = sorted.some(record => record.id === selectedBase) ? selectedBase : baseDefault;
+  if (finalSelect) finalSelect.value = sorted.some(record => record.id === selectedFinal) ? selectedFinal : finalDefault;
+  const renderSelected = () => {
+    const { baseRecord, finalRecord } = getSelectedContributionCompareRecords();
+    const body = $id('dashContributionCompareBody');
+    if (!body) return;
+    if (!baseRecord || !finalRecord || baseRecord.id === finalRecord.id) {
+      body.innerHTML = '<div class="dash-empty">Choose two different snapshots.</div>';
+      return;
+    }
+    const rows = buildContributionComparison(baseRecord, finalRecord);
+    const totalDelta = rows.reduce((sum, row) => sum + row.delta, 0);
+    const newCount = rows.filter(row => row.status === 'new').length;
+    const missingCount = rows.filter(row => row.status === 'missing').length;
+    const premiumMoved = rows.filter(row => row.rewardBefore !== row.rewardAfter).length;
+    body.innerHTML = `<div class="dash-contribution-compare-stats">
+      <span>Delta <strong class="${totalDelta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(totalDelta)}</strong></span>
+      <span>New <strong>${newCount}</strong></span>
+      <span>Missing <strong>${missingCount}</strong></span>
+      <span>Reward changes <strong>${premiumMoved}</strong></span>
+    </div>
+    <div class="dash-contribution-compare-table-wrap">
+      <table class="dash-banner-table dash-contribution-compare-table">
+        <thead><tr><th>Member</th><th>Rank</th><th style="text-align:right">Baseline</th><th style="text-align:right">Final</th><th style="text-align:right">Gain</th><th>Reward</th><th>Status</th></tr></thead>
+        <tbody>${rows.slice(0, 30).map(row => `<tr>
+          <td><strong>${esc(row.name)}</strong>${row.guild ? `<small>${esc(row.guild)}</small>` : ''}</td>
+          <td>${row.baseRank || '--'} -> ${row.finalRank || '--'}${row.rankDelta ? `<em class="${row.rankDelta > 0 ? 'up' : 'down'}">${row.rankDelta > 0 ? '+' : ''}${row.rankDelta}</em>` : ''}</td>
+          <td style="text-align:right">${formatContributionValue(row.baseValue)}</td>
+          <td style="text-align:right">${formatContributionValue(row.finalValue)}</td>
+          <td style="text-align:right" class="${row.delta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(row.delta)}</td>
+          <td>${row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '--'} -> ${row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '--'}</td>
+          <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(row.status)}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  };
+  baseSelect?.addEventListener('change', renderSelected);
+  finalSelect?.addEventListener('change', renderSelected);
+  $id('dashContributionCompareExportBtn').onclick = exportContributionComparison;
+  renderSelected();
+}
+
 function renderContributions() {
   const body = $id('dashContributionBody');
+  renderContributionComparison();
   if (!body) return;
   const records = Array.isArray(state.contributionRecords) ? state.contributionRecords.slice().reverse() : [];
   if (!records.length) {

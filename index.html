@@ -29,6 +29,8 @@
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
   <link rel="manifest" href="site.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -62,10 +64,10 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260623_201111" />
+  <link rel="stylesheet" href="css/app.css?v=20260624_004900" />
   <link rel="stylesheet" href="css/tailwind-build.css?v=20260623_201111" />
   <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260623_201111" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260623_201111" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260624_004900" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -237,8 +239,10 @@
 
     <nav class="tool-nav-shell" aria-label="Primary tools">
       <div class="tool-nav-inner">
-        <button id="tabScrollLeft" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs left">&lsaquo;</button>
-        <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1 overflow-x-auto scrollbar-none" style="-webkit-overflow-scrolling:touch;max-width:calc(100vw - 7rem);backdrop-filter:blur(12px);">
+        <button id="tabScrollLeft" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs left">
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        </button>
+        <div id="tabNavScroll" class="flex flex-row bg-slate-900/80 rounded-2xl p-1.5 border border-slate-700/80 shadow-xl gap-1 overflow-x-auto scrollbar-none">
           <div class="relative flex-shrink-0 flex items-center"><button id="tabManual" class="tab-pill tab-pill-inactive"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>Manual Builder</button></div>
           <div class="relative flex-shrink-0 flex items-center"><button id="tabGenerator" class="tab-pill tab-pill-active"><svg class="w-3.5 h-3.5 opacity-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>Combo Generator</button></div>
           <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><button id="tabHeroes" class="tab-pill tab-pill-inactive" data-i18n="tabHeroes"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>Hero Atlas</button><span class="tab-badge tab-badge-new">NEW</span></div>
@@ -249,7 +253,9 @@
           <div class="relative flex-shrink-0 flex items-center"><button id="tabYouTube" class="tab-pill tab-pill-inactive flex items-center justify-center gap-1.5" data-i18n="tabYouTube"><svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21.582,6.186c-0.23-0.86-0.908-1.538-1.768-1.768C18.254,4,12,4,12,4S5.746,4,4.186,4.418c-0.86,0.23-1.538,0.908-1.768,1.768C2,7.746,2,12,2,12s0,4.254,0.418,5.814c0.23,0.86,0.908,1.538,1.768,1.768C5.746,20,12,20,12,20s6.254,0,7.814-0.418c0.86-0.23,1.538-0.908,1.768-1.768C22,16.254,22,12,22,12S22,7.746,21.582,6.186z M9.996,15.005l0-6.01l5.5,3.005L9.996,15.005z"/></svg>YouTube</button></div>
           <div class="relative flex-shrink-0 flex items-center tab-badge-wrap"><a id="tabOcrDashboard" href="admin.html" class="tab-pill tab-pill-inactive" data-i18n="tabOcrDashboard"><svg class="w-3.5 h-3.5 opacity-75" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>VTS Admin</a><span class="tab-badge tab-badge-new">ADMIN</span></div>
         </div>
-        <button id="tabScrollRight" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs right">&rsaquo;</button>
+        <button id="tabScrollRight" class="tab-scroll-btn hidden flex-shrink-0 w-8 h-8 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center transition-all" aria-label="Scroll tabs right">
+          <svg aria-hidden="true" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+        </button>
       </div>
     </nav>
 
@@ -265,32 +271,38 @@
     </div>
 
     <section id="manualSection" class="tab-panel hidden">
-      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
-        <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
-        <div id="seasonFilters" class="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm" style="-webkit-overflow-scrolling:touch; mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); padding-right: 20px;">
-            <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
-            <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
-            <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
-            <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
-            <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
-            <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
-            <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
-            <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
-        </div>
-        <p id="seasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
-
-        <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
-        <div id="stateFilters" class="flex flex-wrap gap-2 text-sm">
-            <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
-            <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+      <div class="mb-6 p-4 sm:p-6 bg-slate-900/50 rounded-2xl border border-slate-800 tool-filter-panel manual-filter-panel">
+        <div class="tool-filter-block tool-filter-block--season">
+          <h2 id="filterBySeasonTitle" data-i18n="filterBySeasonTitle" class="text-xl font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h2>
+          <div id="seasonFilters" class="season-filter-strip flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm">
+              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
+              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
+              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
+              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
+              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
+              <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
+              <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+              <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
+          </div>
+          <p id="seasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
         </div>
 
-        <h2 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h2>
-        <div id="troopFilters" class="flex flex-wrap gap-2 text-sm">
-            <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
-            <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
-            <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
-            <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+        <div class="tool-filter-block">
+          <h2 id="filterByStateTitle" data-i18n="filterByStateTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h2>
+          <div id="stateFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+              <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+          </div>
+        </div>
+
+        <div class="tool-filter-block">
+          <h2 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="text-xl font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h2>
+          <div id="troopFilters" class="flex flex-wrap gap-2 text-sm">
+              <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+              <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+              <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+              <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          </div>
         </div>
       </div>
 
@@ -332,52 +344,60 @@
           <p id="genIntroText" data-i18n="generatorIntro" class="text-sm text-slate-400 leading-relaxed">Select heroes you own and Generate Best Combos.</p>
       </div>
 
-      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800">
-          <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
-          <div id="generatorSeasonFilters" class="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm" style="-webkit-overflow-scrolling:touch; mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); padding-right: 20px;">
-              <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
-              <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
-              <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
-              <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
-              <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
-              <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
-              <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
-              <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
-          </div>
-          <p id="generatorSeasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
-
-          <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
-          <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
-              <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
-              <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+      <div class="mb-6 p-4 sm:p-5 bg-slate-900/50 rounded-2xl border border-slate-800 tool-filter-panel generator-filter-panel">
+          <div class="tool-filter-block tool-filter-block--season">
+            <h3 id="genFilterTitle" data-i18n="filterBySeasonTitle" class="text-lg font-semibold mb-4 text-slate-100 uppercase tracking-wide">Filter by Season</h3>
+            <div id="generatorSeasonFilters" class="season-filter-strip flex flex-nowrap overflow-x-auto scrollbar-none gap-2 text-sm">
+                <label class="filter-pill s0-pill"><input type="checkbox" value="S0" checked /><span data-i18n="season0">S0</span></label>
+                <label class="filter-pill s1-pill"><input type="checkbox" value="S1" checked /><span data-i18n="season1">S1</span></label>
+                <label class="filter-pill s2-pill"><input type="checkbox" value="S2" /><span data-i18n="season2">S2</span></label>
+                <label class="filter-pill s3-pill"><input type="checkbox" value="S3" /><span data-i18n="season3">S3</span></label>
+                <label class="filter-pill s4-pill"><input type="checkbox" value="S4" /><span data-i18n="season4">S4</span></label>
+                <label class="filter-pill x1-pill"><input type="checkbox" value="X1" /><span data-i18n="seasonX1">X1</span></label>
+                <label class="filter-pill x2-pill"><input type="checkbox" value="X2" /><span data-i18n="seasonX2">X2</span></label>
+                <label class="filter-pill x8-pill"><input type="checkbox" value="X8" /><span data-i18n="seasonX8">X8</span></label>
+            </div>
+            <p id="generatorSeasonCatchupHint" class="season-catchup-hint hidden" aria-live="polite"></p>
           </div>
 
-          <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
-          <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
-              <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
-              <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
-              <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
-              <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+          <div class="tool-filter-block">
+            <h3 data-i18n="filterByStateTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Paid or Free</h3>
+            <div id="generatorStateFilters" class="flex flex-wrap gap-2 text-sm">
+                <label class="filter-pill free-pill"><input type="checkbox" value="free" checked /><span data-i18n="stateFree">Free</span></label>
+                <label class="filter-pill paid-pill"><input type="checkbox" value="paid" checked /><span data-i18n="statePaid">Paid</span></label>
+            </div>
           </div>
 
-          <h3 class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Hero Skins</h3>
-          <div class="flex items-center gap-3">
-              <label id="genSkinToggleLabel" class="toggle-switch">
-                  <input type="checkbox" id="genSkinToggle" />
-                  <span class="toggle-slider"></span>
-              </label>
-              <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Apply skin effects & skin icons</span>
-              <span id="genSkinCount" class="text-[10px] text-amber-400 bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-500/30 hidden"></span>
+          <div class="tool-filter-block">
+            <h3 data-i18n="filterByTroopTitle" class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Filter Troops</h3>
+            <div id="generatorTroopFilters" class="flex flex-wrap gap-2 text-sm">
+                <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
+                <label class="filter-pill footmen-pill"><input type="checkbox" value="Footmen" /><span data-i18n="troopFootmen">Footmen</span></label>
+                <label class="filter-pill cavalry-pill"><input type="checkbox" value="Cavalry" /><span data-i18n="troopCavalry">Cavalry</span></label>
+                <label class="filter-pill all-pill"><input type="checkbox" value="All" checked /><span data-i18n="troopAll">All</span></label>
+            </div>
           </div>
-          <div id="genSkinNudge" class="gen-skin-nudge hidden" role="status" aria-live="polite">
-              <div>
-                  <strong>Try skin mode</strong>
-                  <span>Use skin icons and skin-priority rankings when you want the stronger skin-aware combo list.</span>
-              </div>
-              <div class="gen-skin-nudge-actions">
-                  <button type="button" id="genSkinNudgeTry">Try skin mode</button>
-                  <button type="button" id="genSkinNudgeDismiss">Later</button>
-              </div>
+
+          <div class="tool-filter-block tool-filter-block--skin">
+            <h3 class="text-lg font-semibold mb-4 mt-4 text-slate-100 uppercase tracking-wide">Hero Skins</h3>
+            <div class="flex items-center gap-3">
+                <label id="genSkinToggleLabel" class="toggle-switch">
+                    <input type="checkbox" id="genSkinToggle" />
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Apply skin effects & skin icons</span>
+                <span id="genSkinCount" class="text-[10px] text-amber-400 bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-500/30 hidden"></span>
+            </div>
+            <div id="genSkinNudge" class="gen-skin-nudge hidden" role="status" aria-live="polite">
+                <div>
+                    <strong>Try skin mode</strong>
+                    <span>Use skin icons and skin-priority rankings when you want the stronger skin-aware combo list.</span>
+                </div>
+                <div class="gen-skin-nudge-actions">
+                    <button type="button" id="genSkinNudgeTry">Try skin mode</button>
+                    <button type="button" id="genSkinNudgeDismiss">Later</button>
+                </div>
+            </div>
           </div>
       </div>
 
@@ -480,7 +500,7 @@
             Watch on YouTube &rarr;
           </a>
         </div>
-        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+        <div class="video-frame relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80">
           <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEJhBdYjOeVcrT2p5WUatvsE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
@@ -492,7 +512,7 @@
             Watch on YouTube &rarr;
           </a>
         </div>
-        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+        <div class="video-frame relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80">
           <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uELyzma_Y3RJmKTyrOeUUHus" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
@@ -504,7 +524,7 @@
             Watch on YouTube &rarr;
           </a>
         </div>
-        <div class="relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80" style="padding-top: 56.25%;">
+        <div class="video-frame relative w-full overflow-hidden rounded-xl shadow-inner border border-slate-700/80">
           <iframe class="absolute top-0 left-0 w-full h-full" data-src="https://www.youtube.com/embed/videoseries?list=PL9AC6AAl9uEK9jLSfN-cLAS0Jvy6WgM_4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
@@ -575,7 +595,7 @@
         <div class="footer-section brand-section flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-3 mb-3">
-              <img src="images/logo.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" />
+              <img src="images/logo.png" alt="" class="w-10 h-10 shadow-lg shadow-black/40 rounded-xl" loading="lazy" decoding="async" width="40" height="40" />
               <h3 class="footer-logo">VTS 1097</h3>
             </div>
           </div>

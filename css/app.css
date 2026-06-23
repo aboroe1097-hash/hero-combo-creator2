@@ -4081,6 +4081,11 @@ input[type=number] { -moz-appearance: textfield; }
   font-size: 0.6rem; font-weight: 700; color: #64748b; letter-spacing: 0.04em;
 }
 .eden-map-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.eden-legend-plains { background: #8a7848; }
+.eden-legend-desert { background: #b89560; }
+.eden-legend-river { background: #2d7ab8; }
+.eden-legend-mountain { background: #6a5c50; }
+.eden-legend-path { background: #ef4444; }
 .eden-offline-status {
   position: absolute;
   top: 10px;
@@ -7699,6 +7704,14 @@ body {
   box-shadow: none !important;
   border-radius: 0 !important;
   padding: 0.15rem !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.season-filter-strip {
+  padding-right: 20px;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
+  mask-image: linear-gradient(to right, black 90%, transparent 100%);
 }
 
 .tab-scroll-btn {
@@ -7754,6 +7767,10 @@ body {
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-xl) !important;
   box-shadow: var(--shadow-card) !important;
+}
+
+#youtubeSection .video-frame {
+  aspect-ratio: 16 / 9;
 }
 
 #manualSection > .mb-6.p-4,
@@ -11644,5 +11661,122 @@ body.hide-hero-info #heroTooltip {
   .tab-pill {
     padding-inline: clamp(0.58rem, 1.05vw, 0.9rem);
     font-size: clamp(0.68rem, 0.95vw, 0.82rem);
+  }
+}
+
+/* 11.4.0 command-center polish: denser setup controls without changing IDs. */
+.tab-scroll-btn svg {
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+}
+
+#globalToggleRow {
+  justify-content: flex-end !important;
+  margin-top: -0.18rem;
+}
+
+#globalToggleRow label {
+  min-height: 2.35rem;
+  padding: 0.42rem 0.74rem !important;
+}
+
+.tool-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.35fr) minmax(170px, 0.7fr) minmax(230px, 0.95fr) minmax(250px, 1fr);
+  gap: clamp(0.7rem, 1.25vw, 1rem);
+  align-items: stretch;
+}
+
+.manual-filter-panel {
+  grid-template-columns: minmax(300px, 1.35fr) minmax(170px, 0.68fr) minmax(250px, 1fr);
+}
+
+.tool-filter-block {
+  min-width: 0;
+  padding: clamp(0.76rem, 1.35vw, 0.98rem);
+  border: 1px solid rgba(103, 232, 249, 0.16);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  background:
+    linear-gradient(125deg, rgba(34, 211, 238, 0.075), transparent 38%),
+    rgba(2, 8, 18, 0.38);
+}
+
+.tool-filter-block h2,
+.tool-filter-block h3 {
+  margin: 0 0 0.68rem !important;
+  color: #e7f7ff !important;
+  font-size: clamp(0.78rem, 1vw, 0.92rem) !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.035em !important;
+}
+
+.tool-filter-block .season-filter-strip {
+  padding-right: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.tool-filter-block .filter-pill {
+  min-height: 2.1rem;
+}
+
+.tool-filter-block--season {
+  overflow: hidden;
+}
+
+.tool-filter-block--skin .flex.items-center {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tool-filter-block--skin .text-sm {
+  line-height: 1.3;
+}
+
+.tool-filter-block--skin .gen-skin-nudge {
+  margin-top: 0.65rem;
+}
+
+[data-theme="light"] .tool-filter-block {
+  border-color: rgba(8, 145, 178, 0.17);
+  background:
+    linear-gradient(125deg, rgba(8, 145, 178, 0.07), transparent 38%),
+    rgba(255, 255, 255, 0.72);
+}
+
+[data-theme="light"] .tool-filter-block h2,
+[data-theme="light"] .tool-filter-block h3 {
+  color: #0f172a !important;
+}
+
+@media (max-width: 1180px) {
+  .tool-filter-panel,
+  .manual-filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tool-filter-block--season {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  #globalToggleRow {
+    justify-content: stretch !important;
+    margin-top: 0;
+  }
+
+  #globalToggleRow label {
+    width: 100%;
+  }
+
+  .tool-filter-panel,
+  .manual-filter-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-filter-block--season {
+    grid-column: auto;
   }
 }

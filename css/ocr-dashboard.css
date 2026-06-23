@@ -79,6 +79,57 @@
 #ocrDashboardRoot .dash-btn-primary:hover {
   background: var(--brand-light); border-color: var(--brand-light);
 }
+#ocrDashboardRoot .dash-btn-guest {
+  width: 100%;
+  margin-top: 0.5rem;
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+}
+#ocrDashboardRoot .dash-btn-danger {
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.2);
+}
+#ocrDashboardRoot .dash-muted-action {
+  opacity: 0.6;
+}
+#ocrDashboardRoot .dash-file-input {
+  position: absolute;
+  z-index: -1;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+#ocrDashboardRoot .dash-api-key {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+#ocrDashboardRoot .dash-api-key-note {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+#ocrDashboardRoot .dash-api-key-actions {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 420px;
+}
+#ocrDashboardRoot .dash-save-api-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 0.35rem 0.75rem;
+  border-color: rgba(16,185,129,0.3);
+  background: rgba(16,185,129,0.15);
+  color: #10b981;
+  font-size: 0.75rem;
+}
 
 #ocrDashboardRoot .dash-guest-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
@@ -205,6 +256,7 @@
 #ocrDashboardRoot .dash-kpi.purple .dash-kpi-icon { background: rgba(139,92,246,0.15); color: #8b5cf6; }
 #ocrDashboardRoot .dash-kpi.orange .dash-kpi-icon { background: rgba(249,115,22,0.15); color: #f97316; }
 #ocrDashboardRoot .dash-kpi-value { font-size: 1.75rem; font-weight: 800; line-height: 1.2; }
+#ocrDashboardRoot .dash-kpi-value-compact { font-size: 1.25rem; }
 #ocrDashboardRoot .dash-kpi-label { font-size: 0.75rem; color: var(--text-muted); }
 [data-theme="light"] #ocrDashboardRoot .dash-kpi-label { color: #64748b; }
 
@@ -307,6 +359,14 @@
 #ocrDashboardRoot .dash-ops-card-attendance { border-color: rgba(251, 191, 36, 0.26); }
 #ocrDashboardRoot .dash-ops-card-mvp { border-color: rgba(52, 211, 153, 0.26); }
 #ocrDashboardRoot .dash-ops-card-health { border-color: rgba(168, 85, 247, 0.24); }
+#ocrDashboardRoot .dash-ops-card-special {
+  min-height: 116px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(8, 13, 25, 0.56));
+}
+#ocrDashboardRoot .dash-ops-card-banners { border-color: rgba(96, 165, 250, 0.34); }
+#ocrDashboardRoot .dash-ops-card-pathers { border-color: rgba(45, 212, 191, 0.34); }
+#ocrDashboardRoot .dash-ops-card-shield { border-color: rgba(167, 139, 250, 0.34); }
+#ocrDashboardRoot .dash-ops-card-contributions { border-color: rgba(250, 204, 21, 0.34); }
 #ocrDashboardRoot .dash-ops-card-empty {
   grid-column: 1 / -1;
   display: flex;
@@ -388,6 +448,30 @@
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 #ocrDashboardRoot .dash-insight-val { color: var(--blue-400); font-family: 'Outfit', sans-serif; }
+#ocrDashboardRoot .dash-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+#ocrDashboardRoot .dash-metric-tile {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  text-align: center;
+}
+#ocrDashboardRoot .dash-metric-label {
+  margin-bottom: 4px;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .dash-metric-value {
+  color: #e2e8f0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
 #ocrDashboardRoot .dash-stack-bar {
   height: 12px; background: rgba(255,255,255,0.06);
   border-radius: 6px; overflow: hidden; display: flex;
@@ -486,6 +570,28 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 0.75rem; margin-bottom: 0.75rem;
 }
+#ocrDashboardRoot .dash-card-hdr-wrap {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+#ocrDashboardRoot .dash-inline-actions,
+#ocrDashboardRoot .dash-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#ocrDashboardRoot .dash-inline-actions {
+  flex-wrap: nowrap;
+}
+#ocrDashboardRoot .dash-card-align-start {
+  align-self: flex-start;
+}
+#ocrDashboardRoot .dash-card-title-danger {
+  color: #f87171;
+}
+#ocrDashboardRoot .dash-muted-icon {
+  opacity: 0.4;
+}
 #ocrDashboardRoot .dash-card-title {
   font-size: 1rem; font-weight: 700; margin: 0; display: flex;
   align-items: center; gap: 0.5rem;
@@ -556,6 +662,21 @@
   color: var(--text-muted); border-bottom: 1px solid var(--border);
   user-select: none;
 }
+#ocrDashboardRoot .dash-table .dash-th-static {
+  cursor: default;
+}
+#ocrDashboardRoot .dash-table .dash-th-sort {
+  cursor: pointer;
+}
+#ocrDashboardRoot .dash-table .dash-th-rank {
+  width: 60px;
+}
+#ocrDashboardRoot .dash-table .dash-th-right {
+  text-align: right;
+}
+#ocrDashboardRoot .dash-table .dash-th-center {
+  text-align: center;
+}
 #ocrDashboardRoot .dash-table th[data-sort]:hover { color: var(--brand); }
 #ocrDashboardRoot .dash-table td {
   padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(51,65,85,0.3);
@@ -577,6 +698,33 @@
 
 /* Search */
 #ocrDashboardRoot .dash-search-wrap { position: relative; min-width: 180px; }
+#ocrDashboardRoot .dash-search-flex {
+  flex: 1 1 180px;
+}
+#ocrDashboardRoot .dash-leader-controls {
+  display: flex;
+  flex: 1 1 360px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#ocrDashboardRoot .dash-select-sm,
+#ocrDashboardRoot .dash-select-lg {
+  max-width: 100%;
+  padding-left: 8px;
+  cursor: pointer;
+}
+#ocrDashboardRoot .dash-select-sm {
+  width: 140px;
+}
+#ocrDashboardRoot .dash-select-lg {
+  width: 220px;
+}
+#ocrDashboardRoot .dash-search-leader {
+  flex: 1 1 160px;
+  max-width: 300px;
+  min-width: 160px;
+}
 #ocrDashboardRoot .dash-search-icon {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
   color: var(--text-dim); pointer-events: none;
@@ -1576,6 +1724,133 @@ body[style*="overflow: hidden"] .tab-panel {
 #ocrDashboardRoot .dash-contribution-reward-standard { color: var(--brand-light); }
 #ocrDashboardRoot .dash-contribution-reward-review { color: #f59e0b; border-color: rgba(245, 158, 11, 0.36); }
 #ocrDashboardRoot .dash-contribution-reward-none { color: var(--text-muted); }
+#ocrDashboardRoot .dash-contribution-compare-panel {
+  margin: 0.85rem 0 1rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-empty,
+#ocrDashboardRoot .dash-contribution-compare-card {
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(8, 13, 25, 0.76), rgba(15, 23, 42, 0.62));
+}
+#ocrDashboardRoot .dash-contribution-compare-empty {
+  padding: 0.85rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-contribution-compare-card {
+  padding: 1rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-head,
+#ocrDashboardRoot .dash-contribution-compare-controls,
+#ocrDashboardRoot .dash-contribution-compare-stats {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#ocrDashboardRoot .dash-contribution-compare-head {
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-head strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.96rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-head span {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-contribution-compare-controls {
+  margin-bottom: 0.8rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-controls label {
+  display: grid;
+  gap: 0.28rem;
+  flex: 1 1 240px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .dash-contribution-compare-controls select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+#ocrDashboardRoot .dash-contribution-compare-stats {
+  margin-bottom: 0.8rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-stats span {
+  min-width: 132px;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.62);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .dash-contribution-compare-stats strong {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+#ocrDashboardRoot .dash-contribution-compare-table-wrap {
+  overflow-x: auto;
+}
+#ocrDashboardRoot .dash-contribution-compare-table {
+  min-width: 920px;
+}
+#ocrDashboardRoot .dash-contribution-compare-table small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+#ocrDashboardRoot .dash-contribution-compare-table em {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-style: normal;
+  font-weight: 900;
+}
+#ocrDashboardRoot .dash-contribution-compare-table em.up,
+#ocrDashboardRoot .dash-positive { color: #34d399; }
+#ocrDashboardRoot .dash-contribution-compare-table em.down,
+#ocrDashboardRoot .dash-negative { color: #fb7185; }
+#ocrDashboardRoot .dash-contribution-status {
+  display: inline-flex;
+  min-width: 66px;
+  justify-content: center;
+  padding: 0.18rem 0.48rem;
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .dash-contribution-status-new {
+  background: rgba(52, 211, 153, 0.14);
+  color: #34d399;
+}
+#ocrDashboardRoot .dash-contribution-status-missing {
+  background: rgba(251, 113, 133, 0.14);
+  color: #fb7185;
+}
 
 @media (max-width: 760px) {
   #ocrDashboardRoot .dash-duty-match-row {
@@ -1588,6 +1863,15 @@ body[style*="overflow: hidden"] .tab-panel {
   #ocrDashboardRoot .dash-contribution-match-row {
     min-width: 0;
     grid-template-columns: 1fr;
+  }
+  #ocrDashboardRoot .dash-contribution-compare-head {
+    align-items: stretch;
+  }
+  #ocrDashboardRoot .dash-contribution-compare-head .dash-btn {
+    width: 100%;
+  }
+  #ocrDashboardRoot .dash-contribution-compare-stats span {
+    flex: 1 1 calc(50% - 0.5rem);
   }
 }
 

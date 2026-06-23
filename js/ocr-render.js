@@ -786,6 +786,110 @@ function renderAnalytics(attacks, psum) {
   renderStreaks(attacks, psum);
 }
 
+function dutyRecordsFor(type) {
+  const records = Array.isArray(state.dutyRecords) ? state.dutyRecords : [];
+  if (type === 'pather') {
+    return records.filter((record) => record.type === 'pather' || record.type === 'speed_tile');
+  }
+  return records.filter((record) => record.type === type);
+}
+
+function countDutyRows(records) {
+  return records.reduce(
+    (sum, record) => sum + (Array.isArray(record.entries) ? record.entries.length : 0),
+    0
+  );
+}
+
+function countDutyMatched(records) {
+  return records.reduce((sum, record) => {
+    return (
+      sum +
+      (Array.isArray(record.entries)
+        ? record.entries.filter((entry) => entry.confirmed).length
+        : 0)
+    );
+  }, 0);
+}
+
+function latestRecord(records) {
+  return [...records].sort((a, b) => {
+    const dateCmp = String(b.date || '').localeCompare(String(a.date || ''));
+    if (dateCmp) return dateCmp;
+    return String(b.updatedAt || b.createdAt || '').localeCompare(
+      String(a.updatedAt || a.createdAt || '')
+    );
+  })[0];
+}
+
+function contributionReward(entry, record) {
+  const override = String(entry?.rewardOverride || entry?.reward || '').trim().toLowerCase();
+  if (
+    override === 'premium' ||
+    override === 'standard' ||
+    override === 'review' ||
+    override === 'none'
+  ) {
+    return override;
+  }
+  return Number(entry?.rank || 0) > 0 &&
+    Number(entry?.rank || 0) <= Number(record?.premiumCutoff || 20)
+    ? 'premium'
+    : 'standard';
+}
+
+function getContributionSnapshotSummary() {
+  const records = Array.isArray(state.contributionRecords) ? state.contributionRecords : [];
+  const latest = latestRecord(records);
+  if (!latest) return { records, latest: null, rows: 0, premium: 0, total: 0, topName: '---' };
+  const entries = Array.isArray(latest.entries) ? latest.entries : [];
+  return {
+    records,
+    latest,
+    rows: entries.length,
+    premium: entries.filter((entry) => contributionReward(entry, latest) === 'premium').length,
+    total: entries.reduce((sum, entry) => sum + valueOf(entry.contribution), 0),
+    topName: entries[0]?.name || '---',
+  };
+}
+
+function renderSpecialOpsCards() {
+  const bannerRecords = dutyRecordsFor('banner');
+  const patherRecords = dutyRecordsFor('pather');
+  const shieldRecords = dutyRecordsFor('shield_wall');
+  const contribution = getContributionSnapshotSummary();
+  const bannerRows = countDutyRows(bannerRecords);
+  const patherRows = countDutyRows(patherRecords);
+  const shieldRows = countDutyRows(shieldRecords);
+  const hasSpecial =
+    bannerRows || patherRows || shieldRows || contribution.rows || contribution.records.length;
+  if (!hasSpecial) return '';
+  const bannerLatest = latestRecord(bannerRecords);
+  const patherLatest = latestRecord(patherRecords);
+  const shieldLatest = latestRecord(shieldRecords);
+  return `
+    <div class="dash-ops-card dash-ops-card-special dash-ops-card-banners">
+      <span class="dash-ops-label">Banners</span>
+      <strong>${bannerRows ? `${bannerRows} names` : 'No records'}</strong>
+      <p>${bannerRecords.length} upload${bannerRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(bannerRecords)} matched${bannerLatest ? ` Â· latest ${esc(bannerLatest.date || 'saved')}` : ''}</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-special dash-ops-card-pathers">
+      <span class="dash-ops-label">Pathers / Speed Tiles</span>
+      <strong>${patherRows ? `${patherRows} assignments` : 'No records'}</strong>
+      <p>${patherRecords.length} plan${patherRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(patherRecords)} matched${patherLatest ? ` Â· latest ${esc(patherLatest.date || 'saved')}` : ''}</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-special dash-ops-card-shield">
+      <span class="dash-ops-label">Shield Wall</span>
+      <strong>${shieldRows ? `${shieldRows} names` : 'No records'}</strong>
+      <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` Â· latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
+    </div>
+    <div class="dash-ops-card dash-ops-card-special dash-ops-card-contributions">
+      <span class="dash-ops-label">Contributions</span>
+      <strong>${contribution.rows ? `${contribution.premium} premium slots` : 'No snapshots'}</strong>
+      <p>${contribution.records.length} snapshot${contribution.records.length === 1 ? '' : 's'}${contribution.rows ? ` Â· ${compactValue(contribution.total)} total Â· top ${esc(contribution.topName)}` : ''}</p>
+    </div>`;
+}
+
 function renderOpsOverview(attacks, psum) {
   const host = $id('dashOpsCards');
   const jumpBtn = $id('dashOpenAnalyticsBtn');
@@ -799,9 +903,17 @@ function renderOpsOverview(attacks, psum) {
   }
   if (!host) return;
 
+  const specialCards = renderSpecialOpsCards();
+  if (!attacks.length && !specialCards) {
+    host.innerHTML =
+      '<div class="dash-ops-card dash-ops-card-empty">Upload attack screenshots or special lists to unlock officer insights.</div>';
+    return;
+  }
+
   if (!attacks.length) {
     host.innerHTML =
-      '<div class="dash-ops-card dash-ops-card-empty">Upload attack screenshots to unlock officer insights.</div>';
+      '<div class="dash-ops-card dash-ops-card-empty">No structure uploads yet. Special-list breakdown is still available below.</div>' +
+      specialCards;
     return;
   }
 
@@ -862,6 +974,7 @@ function renderOpsOverview(attacks, psum) {
       <strong>${validationIssues ? `${validationIssues} review` : 'Clean'}</strong>
       <p>${latest ? `Latest: ${esc(structureLabel(latest))} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
     </div>`;
+  if (specialCards) host.insertAdjacentHTML('beforeend', specialCards);
 }
 
 window.clearStructureLeaderboardFilter = function () {
