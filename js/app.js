@@ -926,7 +926,10 @@ tabs.forEach(tab => {
 
     document.querySelectorAll('.tab-pill').forEach((btn) => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
     const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-    if (activeBtn) activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+    if (activeBtn) {
+      activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
+      requestAnimationFrame(() => keepActiveTabInView(activeBtn));
+    }
 
     if (targetSection) targetSection.classList.remove('hidden');
 
@@ -1167,9 +1170,30 @@ function initTabScroll() {
       leftBtn.style.display = hasOverflow ? 'flex' : 'none';
       rightBtn.style.display = hasOverflow ? 'flex' : 'none';
     }
+    keepActiveTabInView(scrollContainer.querySelector('.tab-pill-active'), 'auto');
   };
   window.addEventListener('resize', checkOverflow);
   setTimeout(checkOverflow, 100);
+}
+
+function keepActiveTabInView(activeBtn, behavior = 'smooth') {
+  const scrollContainer = document.getElementById('tabNavScroll');
+  if (!scrollContainer || !activeBtn) return;
+
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const activeRect = activeBtn.getBoundingClientRect();
+  const safeInset = 16;
+  let delta = 0;
+
+  if (activeRect.left < containerRect.left + safeInset) {
+    delta = activeRect.left - containerRect.left - safeInset;
+  } else if (activeRect.right > containerRect.right - safeInset) {
+    delta = activeRect.right - containerRect.right + safeInset;
+  }
+
+  if (Math.abs(delta) > 1) {
+    scrollContainer.scrollBy({ left: delta, behavior });
+  }
 }
 
 function initQuickTour() {
