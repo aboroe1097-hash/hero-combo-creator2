@@ -1323,7 +1323,9 @@ async function startApp() {
     safeInit('userDataPortability', () => initUserDataPortability());
     safeInit('bugReportWidget', () => initBugReportWidget());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
+    await new Promise(r => requestAnimationFrame(r));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
+    await new Promise(r => requestAnimationFrame(r));
     safeInit('restoreGeneratorSelection', () => restoreGeneratorSelection());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('syncGeneratorSelectedCountBadge', () => syncGeneratorSelectedCountBadge());

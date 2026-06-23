@@ -126,6 +126,9 @@ let bootProgressTimer = null;
 let statusCycleTimer = null;
 let statusSwapTimer = null;
 let bootParallaxWired = false;
+let featherLeftSpans = null;
+let featherRightSpans = null;
+let bootPerspectiveContainer = null;
 
 function sleep(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -172,21 +175,22 @@ function setBootProgress(pct) {
 // 14 feathers total, 7 per wing. Light them in sequence as progress climbs
 // so the wings themselves become a second loading meter instead of decoration.
 function igniteFeathers(pct) {
-    const litCount = Math.floor((pct / 100) * 14);
-    const leftSpans = document.querySelectorAll('#doorLeft .door-wing span');
-    const rightSpans = document.querySelectorAll('#doorRight .door-wing span');
+    if (!featherLeftSpans) featherLeftSpans = document.querySelectorAll('#doorLeft .door-wing span');
+    if (!featherRightSpans) featherRightSpans = document.querySelectorAll('#doorRight .door-wing span');
+    if (!bootPerspectiveContainer) bootPerspectiveContainer = document.getElementById('perspectiveContainer');
 
-    leftSpans.forEach((el, i) => {
+    const litCount = Math.floor((pct / 100) * 14);
+
+    featherLeftSpans.forEach((el, i) => {
         el.classList.toggle('is-lit', i < litCount);
     });
-    rightSpans.forEach((el, i) => {
+    featherRightSpans.forEach((el, i) => {
         el.classList.toggle('is-lit', i < litCount - 7);
     });
 
-    const container = document.getElementById('perspectiveContainer');
-    if (container) {
+    if (bootPerspectiveContainer) {
         const duration = 2.6 - (pct / 100) * 1.3;
-        container.style.setProperty('--wing-flap-duration', `${duration.toFixed(2)}s`);
+        bootPerspectiveContainer.style.setProperty('--wing-flap-duration', `${duration.toFixed(2)}s`);
     }
 }
 

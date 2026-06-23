@@ -102,6 +102,15 @@ export function initEdenMapPlanner() {
   let sidebarDirty = true;
   let pointerStart = { x: 0, y: 0 };
   let lastPointer = { x: 0, y: 0 };
+
+  let cachedCanvasRect = null;
+  let coordHudEl = null;
+  let hoverPanelEl = null;
+  let lastHudText = '';
+  let lastHoverPanelText = '';
+  let lastRouteKey = '';
+  let lastRouteDistance = 0;
+  let resizeTimer = 0;
   let pendingTargetPlacement = null;
   let selectedId = null;
   let pathDraft = [];
@@ -549,8 +558,13 @@ export function initEdenMapPlanner() {
     zoomAt(rect.width / 2, rect.height / 2, nextPresetScale(direction));
   }
 
+  function getCanvasRect() {
+    if (!cachedCanvasRect) cachedCanvasRect = canvas.getBoundingClientRect();
+    return cachedCanvasRect;
+  }
+
   function canvasPointer(e) {
-    const rect = canvas.getBoundingClientRect();
+    const rect = getCanvasRect();
     return { mx: e.clientX - rect.left, my: e.clientY - rect.top };
   }
 
@@ -753,6 +767,7 @@ export function initEdenMapPlanner() {
   }
 
   function resize() {
+    cachedCanvasRect = null;
     const rect = canvas.parentElement.getBoundingClientRect();
     const dpr = getCanvasRenderScale();
     const cssWidth = Math.max(1, Math.floor(rect.width));
@@ -766,6 +781,11 @@ export function initEdenMapPlanner() {
     ctx.imageSmoothingQuality = 'high';
     if (!offsetX && !offsetY) fitView();
     draw();
+  }
+
+  function debouncedResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
   }
 
   function syncFullscreenState() {
@@ -1298,12 +1318,17 @@ export function initEdenMapPlanner() {
   }
 
   function updateCoordHud() {
-    const hud = document.getElementById('edenCoordHud');
-    const hoverPanel = document.getElementById('edenHoverInfo');
+    if (!coordHudEl) coordHudEl = document.getElementById('edenCoordHud');
+    if (!hoverPanelEl) hoverPanelEl = document.getElementById('edenHoverInfo');
+    const hud = coordHudEl;
+    const hoverPanel = hoverPanelEl;
     if (!hud) return;
     if (!hoverWorld) {
-      hud.classList.add('hidden');
-      hoverPanel?.classList.add('hidden');
+      if (!hud.classList.contains('hidden')) hud.classList.add('hidden');
+      if (hoverPanel && !hoverPanel.classList.contains('hidden')) hoverPanel.classList.add('hidden');
+      lastHudText = '';
+      lastHoverPanelText = '';
+      lastRouteKey = '';
       return;
     }
     const terrain = getTerrainAt(hoverWorld.x, hoverWorld.y);
@@ -1313,21 +1338,34 @@ export function initEdenMapPlanner() {
       const meta = STRUCTURE_TYPES[hoverStruct.type];
       text = `X:${hoverStruct.x} Y:${hoverStruct.y} | ${terrainLabel} | Zone: ${hoverStruct.zone} | ${getStructureLabel(hoverStruct.type)} · ${meta?.points || 0} OV`;
     }
-    hud.textContent = text;
-    hud.classList.remove('hidden');
+    if (text !== lastHudText) {
+      hud.textContent = text;
+      lastHudText = text;
+    }
+    if (hud.classList.contains('hidden')) hud.classList.remove('hidden');
 
     if (hoverPanel) {
       if (hoverStruct) {
         let extra = `${getStructureLabel(hoverStruct.type)} · ${hoverStruct.zone} · ${hoverStruct.x}:${hoverStruct.y}`;
         const sel = structures().find(s => s.id === selectedId);
         if (sel && sel.id !== hoverStruct.id) {
-          const route = findRoute(sel.x, sel.y, hoverStruct.x, hoverStruct.y);
-          extra += ` · ${route.distance} tiles from selected`;
+          const routeKey = `${sel.id}|${hoverStruct.id}`;
+          if (routeKey !== lastRouteKey) {
+            const route = findRoute(sel.x, sel.y, hoverStruct.x, hoverStruct.y);
+            lastRouteDistance = route.distance;
+            lastRouteKey = routeKey;
+          }
+          extra += ` · ${lastRouteDistance} tiles from selected`;
         }
-        hoverPanel.textContent = extra;
-        hoverPanel.classList.remove('hidden');
+        if (extra !== lastHoverPanelText) {
+          hoverPanel.textContent = extra;
+          lastHoverPanelText = extra;
+        }
+        if (hoverPanel.classList.contains('hidden')) hoverPanel.classList.remove('hidden');
       } else {
-        hoverPanel.classList.add('hidden');
+        if (!hoverPanel.classList.contains('hidden')) hoverPanel.classList.add('hidden');
+        lastHoverPanelText = '';
+        lastRouteKey = '';
       }
     }
   }
@@ -2527,7 +2565,7 @@ export function initEdenMapPlanner() {
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    const rect = canvas.getBoundingClientRect();
+    const rect = getCanvasRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
@@ -2718,10 +2756,16 @@ export function initEdenMapPlanner() {
     }
   });
 
+  let sidebarRefreshTimer = 0;
+  const debouncedRefreshSidebar = () => {
+    clearTimeout(sidebarRefreshTimer);
+    sidebarRefreshTimer = setTimeout(refreshSidebar, 120);
+  };
+
   ['edenZoneFilter', 'edenTypeFilter', 'edenStructSearch', 'edenTeamFilter'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('input', refreshSidebar);
+      el.addEventListener('input', debouncedRefreshSidebar);
       el.addEventListener('change', refreshSidebar);
     }
   });
@@ -2830,7 +2874,7 @@ export function initEdenMapPlanner() {
     const b = e.touches[1];
     const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
     const factor = dist / touchPinch.dist;
-    const rect = canvas.getBoundingClientRect();
+    const rect = getCanvasRect();
     const mx = (a.clientX + b.clientX) / 2 - rect.left;
     const my = (a.clientY + b.clientY) / 2 - rect.top;
     zoomAt(mx, my, touchPinch.scale0 * factor);
@@ -2869,7 +2913,8 @@ export function initEdenMapPlanner() {
     renderSidebar();
   });
 
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', debouncedResize);
+  window.addEventListener('scroll', () => { cachedCanvasRect = null; }, { passive: true, capture: true });
   document.addEventListener('fullscreenchange', syncFullscreenState);
   applyTeamPlanLayerState();
   syncIsolateUi();

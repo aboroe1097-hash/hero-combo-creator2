@@ -7,6 +7,18 @@ import { baseRankedCombos } from './combos-db.js';
 let heroTooltip = null;
 let heroInfoPromise = null;
 
+let cachedTooltipW = 0;
+let cachedTooltipH = 0;
+let moveRaf = 0;
+let pendingMoveEvent = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    cachedTooltipW = 0;
+    cachedTooltipH = 0;
+  }, { passive: true });
+}
+
 function loadHeroInfoData() {
   if (!heroInfoPromise) {
     heroInfoPromise = import('./heroes-info.js').then(mod => mod.heroesExtendedData || {});
@@ -165,6 +177,9 @@ async function showHeroTooltip(e, heroName) {
   `;
 
   tooltip.classList.remove('hidden');
+  const rect = tooltip.getBoundingClientRect();
+  cachedTooltipW = rect.width;
+  cachedTooltipH = rect.height;
   requestAnimationFrame(() => {
     tooltip.classList.remove('opacity-0');
     tooltip.classList.add('opacity-100');
@@ -186,35 +201,44 @@ async function showHeroTooltip(e, heroName) {
 }
 
 function moveHeroTooltip(e) {
-  const tooltip = getHeroTooltip();
-  if (tooltip.classList.contains('hidden')) return;
-  const rect = tooltip.getBoundingClientRect();
-  
-  if (window.innerWidth < 1024) {
-    tooltip.style.left = '50%';
-    tooltip.style.top = '50%';
-    tooltip.style.transform = 'translate(-50%, -50%)';
-    tooltip.style.maxHeight = '90vh'; 
-    return;
-  }
+  pendingMoveEvent = e;
+  if (moveRaf) return;
+  moveRaf = requestAnimationFrame(() => {
+    moveRaf = 0;
+    const ev = pendingMoveEvent;
+    if (!ev) return;
+    const tooltip = getHeroTooltip();
+    if (tooltip.classList.contains('hidden')) return;
 
-  tooltip.style.transform = 'none';
-  tooltip.style.maxHeight = '85vh';
+    if (window.innerWidth < 1024) {
+      tooltip.style.left = '50%';
+      tooltip.style.top = '50%';
+      tooltip.style.transform = 'translate(-50%, -50%)';
+      tooltip.style.maxHeight = '90vh';
+      return;
+    }
 
-  let clientX = e.clientX !== undefined ? e.clientX : window.innerWidth / 2;
-  let clientY = e.clientY !== undefined ? e.clientY : window.innerHeight / 2;
+    tooltip.style.transform = 'none';
+    tooltip.style.maxHeight = '85vh';
 
-  let x = clientX + 15;
-  let y = clientY + 15;
-  
-  if (x + rect.width > window.innerWidth) x = clientX - rect.width - 15;
-  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 15;
-  
-  if (y < 10) y = 10;
-  if (x < 10) x = 10;
+    let clientX = ev.clientX !== undefined ? ev.clientX : window.innerWidth / 2;
+    let clientY = ev.clientY !== undefined ? ev.clientY : window.innerHeight / 2;
 
-  tooltip.style.left = `${x}px`;
-  tooltip.style.top = `${y}px`;
+    let x = clientX + 15;
+    let y = clientY + 15;
+
+    const w = cachedTooltipW;
+    const h = cachedTooltipH;
+
+    if (x + w > window.innerWidth) x = clientX - w - 15;
+    if (y + h > window.innerHeight) y = window.innerHeight - h - 15;
+
+    if (y < 10) y = 10;
+    if (x < 10) x = 10;
+
+    tooltip.style.left = `${x}px`;
+    tooltip.style.top = `${y}px`;
+  });
 }
 
 function hideHeroTooltip() {

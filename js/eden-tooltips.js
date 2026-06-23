@@ -5,6 +5,7 @@ import { translations } from './translations.js';
 let tipEl = null;
 let activeEl = null;
 let hideTimer = null;
+let scrollRaf = 0;
 
 function edenLang() {
   return localStorage.getItem('vts_hero_lang') || 'en';
@@ -134,7 +135,12 @@ function onPointerOut(e) {
 }
 
 function onScrollOrResize() {
-  if (activeEl) positionTip(activeEl);
+  if (!activeEl) return;
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = 0;
+    if (activeEl) positionTip(activeEl);
+  });
 }
 
 export function initEdenControlTips() {

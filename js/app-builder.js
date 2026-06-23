@@ -125,6 +125,8 @@ function createTouchGhost(card, touch) {
   
   document.body.appendChild(ghost);
   touchDragGhost = ghost;
+  touchDragGhost._dragW = rect.width;
+  touchDragGhost._dragH = rect.height;
 }
 
 export function setupTouchDragForManualBuilder() {
@@ -133,8 +135,8 @@ export function setupTouchDragForManualBuilder() {
     const touch = e.touches && e.touches[0];
     if (!touch) return;
     e.preventDefault();
-    const w = touchDragGhost.offsetWidth || 80;
-    const h = touchDragGhost.offsetHeight || 80;
+    const w = touchDragGhost._dragW || 80;
+    const h = touchDragGhost._dragH || 80;
     touchDragGhost.style.left = `${touch.clientX - w / 2}px`;
     touchDragGhost.style.top  = `${touch.clientY - h / 2}px`;
   }, { passive: false });
