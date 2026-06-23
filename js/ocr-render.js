@@ -115,8 +115,15 @@ function canonicalPlayerName(player, attackPlayers = []) {
   );
 }
 
-function canonicalAggregationName(player) {
+function canonicalAggregationName(player, attackPlayers = []) {
   const rawName = typeof player === 'string' ? player : player?.name;
+  if (Array.isArray(attackPlayers) && attackPlayers.length) {
+    return (
+      resolvePlayerNameForAttack(player, attackPlayers) ||
+      String(rawName || '').trim() ||
+      'Unknown Player'
+    );
+  }
   return findBestMatch(rawName) || String(rawName || '').trim() || 'Unknown Player';
 }
 
@@ -140,8 +147,8 @@ function buildPlayerSummary(attacks) {
     const seen = new Set();
     const players = attackPlayers(a);
     players.forEach((p) => {
-      const n = canonicalAggregationName(p);
-      const displayName = canonicalPlayerName(p, players);
+      const n = canonicalAggregationName(p, players);
+      const displayName = n;
       const val = valueOf(p.value ?? p.val);
       if (!globalSum[n]) {
         globalSum[n] = {
@@ -359,7 +366,7 @@ function renderStructurePerformance(attacks) {
     group.attendance += attackPlayers(a).length;
     const players = attackPlayers(a);
     players.forEach((p) => {
-      const n = canonicalAggregationName(p);
+      const n = canonicalAggregationName(p, players);
       group.players.set(n, (group.players.get(n) || 0) + valueOf(p.value ?? p.val));
     });
   });
@@ -435,13 +442,14 @@ function renderPlayerTrends(attacks, psum) {
 
   host.innerHTML = top
     .map((player, index) => {
-      const vals = ordered.map((attack) =>
-        attackPlayers(attack).reduce((sum, p) => {
-          return canonicalAggregationName(p) === player.name
+      const vals = ordered.map((attack) => {
+        const players = attackPlayers(attack);
+        return players.reduce((sum, p) => {
+          return canonicalAggregationName(p, players) === player.name
             ? sum + valueOf(p.value ?? p.val)
             : sum;
-        }, 0)
-      );
+        }, 0);
+      });
       const first = vals.find((v) => v > 0) || 0;
       const last = [...vals].reverse().find((v) => v > 0) || 0;
       const delta = last - first;
@@ -495,7 +503,7 @@ function renderHeatmap(attacks) {
       const val = valueOf(p.value ?? p.val);
       if (val <= 0) return;
       current.hits++;
-      current.players.add(canonicalAggregationName(p));
+      current.players.add(canonicalAggregationName(p, players));
     });
     cells.set(key, current);
   });
@@ -700,14 +708,12 @@ function renderStreaks(attacks, psum) {
     host.innerHTML = '<div class="dash-empty">No attacks yet</div>';
     return;
   }
-  const attackSets = ordered.map(
-    (a) =>
-      new Set(
-        attackPlayers(a)
-          .map((p) => canonicalPlayerKey(typeof p === 'string' ? p : p?.name))
-          .filter(Boolean)
-      )
-  );
+  const attackSets = ordered.map((a) => {
+    const players = attackPlayers(a);
+    return new Set(
+      players.map((p) => canonicalPlayerKey(canonicalPlayerName(p, players))).filter(Boolean)
+    );
+  });
   const recent = attackSets.slice(-Math.min(3, attackSets.length));
   const latestRoster = state.rosterSnapshots?.length
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members

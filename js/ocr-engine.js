@@ -328,8 +328,8 @@ function parseOcrResults(results) {
     const seen = new Set();
     const players = a.players || [];
     players.forEach(p => {
-      const n = findBestMatch(p.name) || String(p.name || '').trim() || 'Unknown Player';
       const displayName = resolvePlayerNameForAttack(p, players);
+      const n = displayName || findBestMatch(p.name) || String(p.name || '').trim() || 'Unknown Player';
       if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
       sum[n].total_demolition += p.value;
       const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);

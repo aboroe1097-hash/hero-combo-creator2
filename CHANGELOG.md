@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.3.2 - 2026-06-23
+
+- Fixed OCR player summaries and player CSV exports so same-target Kika-family duplicate rows with different ranks/values split into separate accounts instead of merging into one reward total.
+- Updated dashboard analytics aggregation to use the same context-aware player identity split for player trends, structure MVPs, participation heatmap counts, and at-risk streak checks.
+- Added a regression test proving same-upload Kika rows remain separate summaries.
+
 ## 11.3.1 - 2026-06-23
 
 - Tightened generated combo result cards with a denser strip layout, normalized portrait sizing, score-relative progress bars, and clearer clickable counter badges.
