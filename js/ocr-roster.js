@@ -1,5 +1,5 @@
 import {
-  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
+  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
   qwenVisionRequest, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity
@@ -1050,6 +1050,398 @@ function renderDutyRecords() {
   renderDutySummary();
 }
 
+function loadContributionRecords() {
+  try {
+    const raw = localStorage.getItem(CONTRIBUTION_KEY);
+    state.contributionRecords = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.contributionRecords)) state.contributionRecords = [];
+  } catch (e) {
+    state.contributionRecords = [];
+  }
+}
+
+function saveContributionRecords() {
+  try { localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || [])); } catch (e) {}
+}
+
+function parseContributionValue(value) {
+  const text = String(value || '').replace(/[^\d]/g, '');
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatContributionValue(value) {
+  return parseContributionValue(value).toLocaleString();
+}
+
+function normalizeRewardTier(value) {
+  const tier = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '-');
+  if (tier === 'premium' || tier === 'top' || tier === 'top-premium') return 'premium';
+  if (tier === 'standard' || tier === 'normal') return 'standard';
+  if (tier === 'review' || tier === 'manual') return 'review';
+  if (tier === 'none' || tier === 'no-reward' || tier === 'skip') return 'none';
+  return '';
+}
+
+function getContributionReward(entry, record) {
+  const override = normalizeRewardTier(entry?.rewardOverride || entry?.reward);
+  if (override) return override;
+  const rank = Number(entry?.rank || 0);
+  const cutoff = Number(record?.premiumCutoff || 20);
+  return rank > 0 && rank <= cutoff ? 'premium' : 'standard';
+}
+
+function getContributionRewardLabel(tier) {
+  return {
+    premium: 'Premium',
+    standard: 'Standard',
+    review: 'Review',
+    none: 'No reward',
+  }[tier] || 'Auto';
+}
+
+function normalizeContributionEntries(input) {
+  const rows = Array.isArray(input) ? input : [];
+  const seen = new Set();
+  return rows
+    .map(item => {
+      if (!item || typeof item !== 'object') return null;
+      const rank = Number(String(item.rank || item.order || item.index || '').replace(/[^\d]/g, ''));
+      const name = String(item.name || item.member || item.player || item.members || '').trim();
+      const guild = String(item.guild || item.alliance || item.team || '')
+        .replace(/^guild\s*[:：]\s*/i, '')
+        .trim();
+      const contribution = parseContributionValue(item.contribution || item.value || item.points || item.total || item.score);
+      const position = String(item.position || item.role || item.title || '').trim();
+      const rewardOverride = normalizeRewardTier(item.rewardOverride || item.reward || '');
+      if (!name || !contribution) return null;
+      return {
+        rank: Number.isFinite(rank) && rank > 0 ? rank : '',
+        name,
+        guild,
+        contribution,
+        position,
+        rewardOverride,
+      };
+    })
+    .filter(Boolean)
+    .filter(entry => {
+      const key = `${entry.rank}|${compactPlayerIdentity(entry.name)}|${entry.contribution}|${entry.guild}`.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => (Number(a.rank || 9999) - Number(b.rank || 9999)) || b.contribution - a.contribution);
+}
+
+function parseContributionEntriesFromText(text) {
+  const entries = [];
+  String(text || '').split(/\r?\n/).forEach(line => {
+    let row = String(line || '').replace(/\s+/g, ' ').trim();
+    if (!row || /^(total contribution|members|contribution|position|my ranking)$/i.test(row)) return;
+    let rank = '';
+    const rankMatch = row.match(/^#?\s*(\d{1,4})[\s.)-]+(.+)$/);
+    if (rankMatch) {
+      rank = Number(rankMatch[1]);
+      row = rankMatch[2].trim();
+    }
+    const numericMatches = Array.from(row.matchAll(/\b\d{1,3}(?:,\d{3})+\b|\b\d{4,}\b/g));
+    if (!numericMatches.length) return;
+    const valueMatch = numericMatches[numericMatches.length - 1];
+    const contribution = parseContributionValue(valueMatch[0]);
+    if (!contribution) return;
+    let guild = '';
+    let beforeValue = row.slice(0, valueMatch.index).replace(/[|,;:-]+$/g, '').trim();
+    const guildMatch = beforeValue.match(/\bGuild\s*[:：]\s*(.+)$/i);
+    if (guildMatch) {
+      guild = String(guildMatch[1] || '').trim();
+      beforeValue = beforeValue.slice(0, guildMatch.index).trim();
+    }
+    const afterValue = row.slice(valueMatch.index + valueMatch[0].length).replace(/^[|,;:-]+/g, '').trim();
+    const name = beforeValue.replace(/\bGuild\s*[:：].*$/i, '').trim();
+    if (!name) return;
+    entries.push({ rank, name, guild, contribution, position: afterValue, rewardOverride: '' });
+  });
+  return normalizeContributionEntries(entries);
+}
+
+function renderContributionMatchRows(entries) {
+  return entries.map((entry, index) => `<div class="dash-contribution-match-row">
+    <input class="dash-contribution-rank-input" type="number" min="1" placeholder="#" value="${esc(entry.rank || '')}">
+    <input class="dash-contribution-name-input" type="text" placeholder="Member name" value="${esc(entry.name || '')}">
+    <input class="dash-contribution-guild-input" type="text" placeholder="Guild" value="${esc(entry.guild || '')}">
+    <input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="Contribution" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}">
+    <input class="dash-contribution-position-input" type="text" placeholder="Position / role" value="${esc(entry.position || '')}">
+    <select class="dash-contribution-reward-input" title="Reward override">
+      <option value=""${!entry.rewardOverride ? ' selected' : ''}>Auto</option>
+      <option value="premium"${entry.rewardOverride === 'premium' ? ' selected' : ''}>Premium</option>
+      <option value="standard"${entry.rewardOverride === 'standard' ? ' selected' : ''}>Standard</option>
+      <option value="review"${entry.rewardOverride === 'review' ? ' selected' : ''}>Review</option>
+      <option value="none"${entry.rewardOverride === 'none' ? ' selected' : ''}>No reward</option>
+    </select>
+    <button class="dash-banner-del-btn" type="button" title="Remove row" onclick="this.closest('.dash-contribution-match-row').remove()">x</button>
+  </div>`).join('');
+}
+
+function showContributionConfirmModal(entries, sourceLabel = '', existingRecordId = null) {
+  const cleanEntries = normalizeContributionEntries(entries);
+  if (!cleanEntries.length) return;
+  const existingRecord = existingRecordId ? state.contributionRecords.find(record => record.id === existingRecordId) : null;
+  const m = $id('dashModal'), body = $id('dashModalBody');
+  $id('dashModalTitle').textContent = existingRecord ? 'Edit Total Contribution' : 'Confirm Total Contribution';
+  $id('dashModalSub').textContent = `${cleanEntries.length} contribution row${cleanEntries.length === 1 ? '' : 's'} found. Top 20 are premium by default, but every row can be overridden.`;
+  body.innerHTML = `<div class="dash-banner-form-row">
+    <label>Date</label>
+    <input type="date" id="dashContributionDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
+  </div>
+  <div class="dash-banner-form-row">
+    <label>Note</label>
+    <input type="text" id="dashContributionNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="Event, round, or upload note" style="flex:1">
+  </div>
+  <div class="dash-banner-form-row">
+    <label>Premium</label>
+    <input type="number" id="dashContributionPremiumCutoff" min="1" max="100" value="${esc(existingRecord?.premiumCutoff || 20)}" style="width:110px">
+    <span class="dash-form-hint">Top N rows receive premium rewards unless overridden.</span>
+  </div>
+  <div class="dash-contribution-match-head">
+    <span>Rank</span><span>Member</span><span>Guild</span><span>Contribution</span><span>Position</span><span>Reward</span><span></span>
+  </div>
+  <div class="dash-contribution-match-list">${renderContributionMatchRows(existingRecord?.entries || cleanEntries)}</div>
+  <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
+    <button id="dashContributionAddRowBtn" class="dash-btn" type="button">Add Row</button>
+    <button id="dashContributionSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${existingRecord ? 'Update' : 'Save'} Contribution List</button>
+    <button id="dashContributionCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+  </div>`;
+  $id('dashContributionAddRowBtn').onclick = () => {
+    const list = body.querySelector('.dash-contribution-match-list');
+    list.insertAdjacentHTML('beforeend', renderContributionMatchRows([{ rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' }]));
+  };
+  $id('dashContributionSaveBtn').onclick = () => {
+    const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map(row => ({
+      rank: row.querySelector('.dash-contribution-rank-input')?.value || '',
+      name: row.querySelector('.dash-contribution-name-input')?.value || '',
+      guild: row.querySelector('.dash-contribution-guild-input')?.value || '',
+      contribution: row.querySelector('.dash-contribution-value-input')?.value || '',
+      position: row.querySelector('.dash-contribution-position-input')?.value || '',
+      rewardOverride: row.querySelector('.dash-contribution-reward-input')?.value || '',
+    }));
+    const normalized = normalizeContributionEntries(rows);
+    if (!normalized.length) {
+      alert('No valid contribution rows to save.');
+      return;
+    }
+    const record = {
+      id: existingRecord?.id || `contribution_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      date: $id('dashContributionDate')?.value || new Date().toISOString().slice(0, 10),
+      note: $id('dashContributionNote')?.value.trim() || '',
+      premiumCutoff: Math.max(1, Number($id('dashContributionPremiumCutoff')?.value || 20)),
+      entries: normalized,
+      createdAt: existingRecord?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    if (existingRecord) {
+      const index = state.contributionRecords.findIndex(item => item.id === existingRecord.id);
+      if (index >= 0) state.contributionRecords[index] = record;
+    } else {
+      state.contributionRecords.push(record);
+    }
+    saveContributionRecords();
+    closeModal();
+    renderContributions();
+    log(`Contribution list ${existingRecord ? 'updated' : 'saved'}: ${normalized.length} entries.`, 'success');
+  };
+  $id('dashContributionCancelBtn').onclick = closeModal;
+  m.classList.add('active'); document.body.style.overflow = 'hidden';
+}
+
+function showContributionPasteForm() {
+  const text = prompt('Paste contribution rows. One row per line: rank, name, contribution, guild/position optional.', '');
+  if (text === null) return;
+  const entries = parseContributionEntriesFromText(text);
+  if (!entries.length) {
+    log('No contribution rows found.', 'warn');
+    return;
+  }
+  showContributionConfirmModal(entries, 'Manual paste');
+}
+
+async function processContributionImages(files) {
+  if (state._contributionProcessing) { log('Contribution OCR already running...', 'warn'); return; }
+  const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
+  if (!valid.length) return;
+  state._contributionProcessing = true;
+  const progress = $id('dashContributionProgress');
+  const progressText = $id('dashContributionProgressText');
+  if (progress) progress.classList.remove('hidden');
+  log(`Scanning ${valid.length} contribution image(s)...`, 'info');
+  let allEntries = [];
+  for (let i = 0; i < valid.length; i++) {
+    const file = valid[i];
+    if (progressText) progressText.textContent = `Scanning contribution image ${i + 1}/${valid.length}...`;
+    const base64 = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(String(e.target.result).split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+    try {
+      const promptTxt = `Extract Total Contribution leaderboard rows from this Rise of Castles screenshot.
+
+Return ONLY valid JSON in this shape:
+{"entries":[{"rank":1,"name":"(Vts)Player Name","guild":"VTS X1","contribution":192983,"position":"Guild master"}]}
+
+Rules:
+- Include every visible member row, including a bottom "My Ranking" row if visible.
+- Use the number at the far left as "rank".
+- Use the number in the Contribution column as "contribution".
+- Put only the player/member text in "name"; move any Guild: text into "guild".
+- Put role text from the Position column, such as Guild master, into "position".
+- Preserve symbols, spacing, and non-Latin characters in names.
+- Ignore title bars, phone time, avatars, buttons, headers, and decorative text.
+- If no contribution rows are visible, return {"entries":[]}.`;
+      const raw = await qwenVisionRequest([{ role: 'user', content: [
+        { type: 'text', text: promptTxt },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+      ]}]);
+      const text = raw?.choices?.[0]?.message?.content || '';
+      const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      let parsed;
+      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = { entries: parseContributionEntriesFromText(cleaned) }; }
+      const entries = Array.isArray(parsed)
+        ? normalizeContributionEntries(parsed)
+        : Array.isArray(parsed?.entries)
+          ? normalizeContributionEntries(parsed.entries)
+          : [];
+      allEntries.push(...entries);
+    } catch (e) {
+      log(`Contribution OCR error (${file.name}): ${e.message}`, 'error');
+    }
+  }
+  if (progress) progress.classList.add('hidden');
+  state._contributionProcessing = false;
+  const unique = normalizeContributionEntries(allEntries);
+  if (!unique.length) {
+    log('No contribution rows found in image(s).', 'warn');
+    alert('Could not extract contribution rows from the image.');
+    return;
+  }
+  showContributionConfirmModal(unique, valid.map(f => f.name).join(', '));
+}
+
+function setContributionReward(recordId, entryIndex, rewardTier) {
+  const record = state.contributionRecords.find(item => item.id === recordId);
+  if (!record || !Array.isArray(record.entries) || !record.entries[entryIndex]) return;
+  record.entries[entryIndex].rewardOverride = normalizeRewardTier(rewardTier);
+  record.updatedAt = new Date().toISOString();
+  saveContributionRecords();
+  renderContributions();
+}
+
+function editContributionRecord(id) {
+  const record = state.contributionRecords.find(item => item.id === id);
+  if (!record) return;
+  showContributionConfirmModal(record.entries || [], record.note || '', record.id);
+}
+
+function deleteContributionRecord(id) {
+  const index = state.contributionRecords.findIndex(record => record.id === id);
+  if (index < 0) return;
+  if (!confirm('Delete this contribution list?')) return;
+  state.contributionRecords.splice(index, 1);
+  saveContributionRecords();
+  renderContributions();
+  log('Contribution list deleted.', 'warn');
+}
+
+function buildContributionCsv(recordId = '') {
+  const records = (state.contributionRecords || []).filter(record => !recordId || record.id === recordId);
+  const lines = [['Record Date', 'Note', 'Rank', 'Member Name', 'Guild', 'Contribution', 'Position', 'Reward', 'Override']];
+  records.forEach(record => {
+    (record.entries || []).forEach(entry => {
+      const reward = getContributionReward(entry, record);
+      lines.push([
+        record.date || '',
+        record.note || '',
+        entry.rank || '',
+        entry.name || '',
+        entry.guild || '',
+        entry.contribution || '',
+        entry.position || '',
+        getContributionRewardLabel(reward),
+        normalizeRewardTier(entry.rewardOverride) ? 'Yes' : 'No',
+      ]);
+    });
+  });
+  return lines.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+}
+
+function exportContributionRecords(recordId = '') {
+  if (!state.contributionRecords?.length) return;
+  const csv = buildContributionCsv(recordId);
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vts_total_contribution_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log('Contribution sheet exported.', 'success');
+}
+
+function renderContributions() {
+  const body = $id('dashContributionBody');
+  if (!body) return;
+  const records = Array.isArray(state.contributionRecords) ? state.contributionRecords.slice().reverse() : [];
+  if (!records.length) {
+    body.innerHTML = '<div class="dash-empty">No contribution lists yet. Upload a Total Contribution screenshot to build the reward table.</div>';
+    return;
+  }
+  body.innerHTML = records.map(record => {
+    const entries = Array.isArray(record.entries) ? record.entries.slice() : [];
+    const total = entries.reduce((sum, entry) => sum + parseContributionValue(entry.contribution), 0);
+    const premiumCount = entries.filter(entry => getContributionReward(entry, record) === 'premium').length;
+    return `<div class="dash-banner-card dash-contribution-card">
+      <div class="dash-banner-head">
+        <div class="dash-banner-date">
+          <span>${esc(record.date || '')}</span>
+          ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
+          <span class="dash-banner-count">${entries.length} rows</span>
+          <span class="dash-banner-count">${formatContributionValue(total)} total</span>
+          <span class="dash-contribution-premium-pill">Premium ${premiumCount}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="exportContributionRecords('${esc(record.id)}')">Export</button>
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editContributionRecord('${esc(record.id)}')">Edit</button>
+          <button class="dash-banner-del-btn" onclick="deleteContributionRecord('${esc(record.id)}')" title="Delete">x</button>
+        </div>
+      </div>
+      <div class="dash-banner-body">
+        <table class="dash-banner-table dash-contribution-table">
+          <thead><tr><th>Rank</th><th>Member</th><th>Guild</th><th style="text-align:right">Contribution</th><th>Position</th><th>Reward</th></tr></thead>
+          <tbody>${entries.map((entry, index) => {
+            const reward = getContributionReward(entry, record);
+            return `<tr>
+              <td class="dash-contribution-rank">${entry.rank ? `#${esc(entry.rank)}` : '--'}</td>
+              <td><strong>${esc(entry.name || '')}</strong></td>
+              <td>${entry.guild ? esc(entry.guild) : '<span style="color:var(--text-dim)">--</span>'}</td>
+              <td style="text-align:right;font-weight:800;color:var(--brand-light)">${formatContributionValue(entry.contribution)}</td>
+              <td>${entry.position ? esc(entry.position) : '<span style="color:var(--text-dim)">--</span>'}</td>
+              <td>
+                <select class="dash-contribution-reward-select dash-contribution-reward-${reward}" onchange="setContributionReward('${esc(record.id)}', ${index}, this.value)">
+                  <option value=""${!normalizeRewardTier(entry.rewardOverride) ? ' selected' : ''}>${getContributionRewardLabel(reward)}${normalizeRewardTier(entry.rewardOverride) ? '' : ' (auto)'}</option>
+                  <option value="premium"${normalizeRewardTier(entry.rewardOverride) === 'premium' ? ' selected' : ''}>Premium</option>
+                  <option value="standard"${normalizeRewardTier(entry.rewardOverride) === 'standard' ? ' selected' : ''}>Standard</option>
+                  <option value="review"${normalizeRewardTier(entry.rewardOverride) === 'review' ? ' selected' : ''}>Review</option>
+                  <option value="none"${normalizeRewardTier(entry.rewardOverride) === 'none' ? ' selected' : ''}>No reward</option>
+                </select>
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 export {
   loadRoster, saveRoster, showRosterModal,
   loadRosterSnapshots, saveRosterSnapshots, computeRosterDiff, takeRosterSnapshot, deleteRosterSnapshot,
@@ -1059,5 +1451,8 @@ export {
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
   loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
-  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords
+  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
+  loadContributionRecords, saveContributionRecords, showContributionPasteForm, showContributionConfirmModal,
+  processContributionImages, editContributionRecord, deleteContributionRecord, setContributionReward,
+  exportContributionRecords, renderContributions
 };

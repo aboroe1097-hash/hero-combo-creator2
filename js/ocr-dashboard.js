@@ -7,7 +7,9 @@ import {
   exportRosterCSV, copyRosterNames,
   showRosterSnapshotModal, configureAlliances, renderRoster,
   loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
-  loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords
+  loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
+  loadContributionRecords, showContributionPasteForm, processContributionImages, editContributionRecord,
+  deleteContributionRecord, setContributionReward, exportContributionRecords, renderContributions
 } from './ocr-roster.js';
 
 import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js';
@@ -37,6 +39,7 @@ state.rosterNames = [];
 state.rosterSnapshots = [];
 state.bannerRecords = [];
 state.dutyRecords = [];
+state.contributionRecords = [];
 state.sortCol = 'total_demolition';
 state.sortDir = 'desc';
 state.structureFilterKey = '';
@@ -101,6 +104,7 @@ function switchDashSubtab(name) {
   if (name === 'roster') renderRoster();
   if (name === 'banners') renderBanners();
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall') renderDutyRecords();
+  if (name === 'contributions') renderContributions();
 }
 window.switchDashSubtab = switchDashSubtab;
 window.seedDashboardForSmokeTest = function(dashData, rosterSnapshots = []) {
@@ -109,9 +113,9 @@ window.seedDashboardForSmokeTest = function(dashData, rosterSnapshots = []) {
 };
 
 function bindSubtabNavigation() {
-  if (state._subtabNavBound) return;
-  state._subtabNavBound = true;
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => {
+    if (btn.dataset.subtabBound) return;
+    btn.dataset.subtabBound = '1';
     btn.onclick = () => switchDashSubtab(btn.dataset.subtab);
   });
 }
@@ -820,6 +824,7 @@ export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashGuestBtn').onclick = openGuestDashboard;
+  bindSubtabNavigation();
   if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
   if (isAuthed()) showApp(); else showLogin();
   try {
@@ -833,6 +838,7 @@ export async function bootOcrDashboard() {
   await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
   loadDutyRecords();
+  loadContributionRecords();
   loadAllianceList();
   loadRosterAuth();
   mountStructureUploadPanel();
@@ -954,6 +960,31 @@ export async function bootOcrDashboard() {
   bindDutyUpload('pather', 'dashPatherListPasteBtn', 'dashPatherListUploadBtn', 'dashPatherListDropZone', 'dashPatherListFileInput');
   bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
   renderDutyRecords();
+  const contributionPasteBtn = $id('dashContributionPasteBtn');
+  const contributionUploadBtn = $id('dashContributionUploadBtn');
+  const contributionExportBtn = $id('dashContributionExportBtn');
+  const contributionDrop = $id('dashContributionDropZone');
+  const contributionInput = $id('dashContributionFileInput');
+  if (contributionPasteBtn) contributionPasteBtn.onclick = showContributionPasteForm;
+  if (contributionExportBtn) contributionExportBtn.onclick = () => exportContributionRecords();
+  if (contributionUploadBtn && contributionInput) contributionUploadBtn.onclick = () => { if (!canUseOcr()) return; contributionInput.click(); };
+  if (contributionDrop && contributionInput) {
+    contributionDrop.onclick = event => {
+      if (event.target?.tagName === 'INPUT') return;
+      if (!canUseOcr()) return;
+      contributionInput.click();
+    };
+    contributionDrop.ondragover = event => { event.preventDefault(); contributionDrop.classList.add('dragover'); };
+    contributionDrop.ondragleave = () => contributionDrop.classList.remove('dragover');
+    contributionDrop.ondrop = event => {
+      event.preventDefault();
+      contributionDrop.classList.remove('dragover');
+      if (!canUseOcr()) return;
+      if (event.dataTransfer.files.length) processContributionImages(event.dataTransfer.files);
+    };
+    contributionInput.onchange = () => { if (contributionInput.files.length) processContributionImages(contributionInput.files); };
+  }
+  renderContributions();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
   
   $id('dashExportMenuBtn').onclick = (e) => { e.stopPropagation(); $id('dashExportMenu').classList.toggle('active'); };
@@ -1230,6 +1261,11 @@ window.deleteBannerRecord = deleteBannerRecord;
 window.editDutyRecord = editDutyRecord;
 window.deleteDutyRecord = deleteDutyRecord;
 window.renderDutyRecords = renderDutyRecords;
+window.editContributionRecord = editContributionRecord;
+window.deleteContributionRecord = deleteContributionRecord;
+window.setContributionReward = setContributionReward;
+window.exportContributionRecords = exportContributionRecords;
+window.renderContributions = renderContributions;
 window.closeModal = closeModal;
 window.renderRoster = renderRoster;
 window.setRosterFilter = function(key, val) {

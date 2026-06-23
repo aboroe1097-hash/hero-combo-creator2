@@ -14,11 +14,12 @@ npm run preview  # Preview production build locally
 
 **Tech stack:** Vanilla HTML/JS/CSS, Vite bundler, Firebase Firestore (anonymous auth), Qwen VL API for OCR.
 
-**Current version:** 11.3.2
+**Current version:** 11.3.3
 
 ### Latest Release Notes - 2026-06-23
 
 - Version cadence: 11.3.0 is the baseline. Every pushed release increments the patch slot through 11.3.19; the next release after that becomes 11.4.0. Repeat the same 20-release cycle for future minor versions.
+- 11.3.3 adds the VTS Admin Total Contribution reward-list workflow with OCR upload, manual paste, top-20 premium defaults, override controls, and CSV sheet export.
 - 11.3.2 fixes context-aware OCR player identity aggregation so same-target Kika-family duplicate rows split into separate player reports, totals, and analytics counts.
 - 11.3.1 tightens generated combo cards, adds filtered-score normalization, and records the latest counter relationships.
 - Admin cloud sync now has repo tooling for the required Firebase custom claim: `npm run firebase:admin-claim` with `FIREBASE_SERVICE_ACCOUNT_PATH` and the deployed anonymous admin UID.

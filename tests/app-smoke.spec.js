@@ -433,6 +433,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashGuestBanner')).toContainText('Guest Mode');
     await expect(page.locator('#dashGuestAdminBtn')).toHaveText(/Log in as Admin/);
     await expect(page.locator('#dashUploadZone')).not.toBeVisible();
+    await page.locator('#ocrDashboardRoot [data-subtab="contributions"]').click();
+    await expect(page.locator('#dashSubtabContributions')).toBeVisible();
+    await expect(page.locator('#dashContributionDropZone')).toContainText('Total Contribution');
 
     await page.locator('#dashGuestAdminBtn').click();
     await expect(page.locator('#dashLogin')).toBeVisible();

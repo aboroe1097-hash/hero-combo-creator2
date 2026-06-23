@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.3.3 - 2026-06-23
+
+- Added a VTS Admin Total Contribution subtab for OCR screenshot intake, manual row paste, reviewed contribution tables, top-20 premium reward defaults, per-row reward overrides, and CSV sheet export.
+- Added contribution-list smoke coverage so the new admin subtab, panel, and upload dropzone stay wired in future dashboard changes.
+- Updated public version labels and documentation for the 11.3.3 release.
+
 ## 11.3.2 - 2026-06-23
 
 - Fixed OCR player summaries and player CSV exports so same-target Kika-family duplicate rows with different ranks/values split into separate accounts instead of merging into one reward total.
