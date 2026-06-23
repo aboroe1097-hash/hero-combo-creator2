@@ -15,7 +15,7 @@ const [
   { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence, getIdTokenResult },
   { getFirestore },
   { getAnalytics },
-  { initializeAppCheck, ReCaptchaEnterpriseProvider },
+  { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken },
 ] = await Promise.all([
   importFirebaseApp(),
   importFirebaseAuth(),
@@ -28,6 +28,7 @@ let app = null;
 let db = null;
 let auth = null;
 let analytics = null;
+let appCheck = null;
 let missingConfigLogged = false;
 
 const viteEnv = import.meta.env || {};
@@ -76,7 +77,7 @@ export function initFirebase() {
       if (appCheckDebugToken && typeof globalThis !== 'undefined') {
         globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
       }
-      initializeAppCheck(app, {
+      appCheck = initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
         isTokenAutoRefreshEnabled: true
       });
@@ -137,6 +138,12 @@ export async function getFirebaseAdminClaim(forceRefresh = false) {
   const user = auth.currentUser || await ensureAnonymousAuth();
   const token = await getIdTokenResult(user, forceRefresh);
   return token?.claims?.admin === true;
+}
+
+export async function getFirebaseAppCheckToken(forceRefresh = false) {
+  if (!appCheck) return '';
+  const result = await getToken(appCheck, forceRefresh);
+  return result?.token || '';
 }
 
 export function getDb() { return db; }

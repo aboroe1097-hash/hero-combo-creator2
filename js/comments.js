@@ -11,6 +11,8 @@ async function getFirestoreDb() {
 }
 
 let commentsListenerUnsub = null;
+let approvedCommentDocs = new Map();
+let ownPendingCommentDocs = new Map();
 
 // DOM elements
 const commentForm = document.getElementById('commentForm');
@@ -167,6 +169,26 @@ function renderCommentsTree(docs) {
   });
 }
 
+function createdAtMillis(docSnap) {
+  const data = docSnap.data();
+  return data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0;
+}
+
+function renderMergedComments() {
+  const docsById = new Map([
+    ...approvedCommentDocs.entries(),
+    ...ownPendingCommentDocs.entries()
+  ]);
+  const docs = [...docsById.values()].sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
+  renderCommentsTree(docs);
+}
+
+function replaceSnapshotDocs(target, snap) {
+  target.clear();
+  snap.docs.forEach((docSnap) => target.set(docSnap.id, docSnap));
+  renderMergedComments();
+}
+
 function renderCommentsUnavailable(message = 'Firebase comments are disabled for this session.') {
   const countLabel = document.getElementById('commentsCountLabel');
   if (countLabel) countLabel.textContent = 'Comments unavailable';
@@ -251,25 +273,57 @@ async function addCommentToDb(text, name, parentId = null) {
 
 async function startCommentsListener() {
   if (commentsListenerUnsub) commentsListenerUnsub();
+  approvedCommentDocs = new Map();
+  ownPendingCommentDocs = new Map();
   const db = await getFirestoreDb();
   if (!db) return false;
-  const { collection, query, orderBy, onSnapshot } = await importFirestore();
+  const { collection, query, where, onSnapshot } = await importFirestore();
   const { getAuth } = await importFirebaseAuth();
   const auth = getAuth();
+  currentUserId = auth.currentUser?.uid || null;
+  if (!currentUserId) return false;
 
-  const q = query(collection(db, 'comments'), orderBy('createdAt', 'desc'));
+  const commentsRef = collection(db, 'comments');
+  const approvedQuery = query(
+    commentsRef,
+    where('approved', '==', true),
+    where('public', '==', true)
+  );
+  const ownPendingQuery = query(
+    commentsRef,
+    where('authorId', '==', currentUserId),
+    where('approved', '==', false)
+  );
 
-  commentsListenerUnsub = onSnapshot(
-    q,
+  const unsubscribeApproved = onSnapshot(
+    approvedQuery,
     (snap) => {
       currentUserId = auth.currentUser?.uid || null;
-      renderCommentsTree(snap);
+      replaceSnapshotDocs(approvedCommentDocs, snap);
     },
     (err) => {
       console.warn('[comments] listener failed:', err?.message || err);
       renderCommentsUnavailable(err?.message || 'Could not load comments from Firebase.');
     }
   );
+
+  const unsubscribeOwnPending = onSnapshot(
+    ownPendingQuery,
+    (snap) => {
+      currentUserId = auth.currentUser?.uid || null;
+      replaceSnapshotDocs(ownPendingCommentDocs, snap);
+    },
+    (err) => {
+      console.warn('[comments] pending listener failed:', err?.message || err);
+    }
+  );
+
+  commentsListenerUnsub = () => {
+    unsubscribeApproved();
+    unsubscribeOwnPending();
+    approvedCommentDocs.clear();
+    ownPendingCommentDocs.clear();
+  };
   return true;
 }
 

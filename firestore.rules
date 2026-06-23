@@ -26,6 +26,18 @@ service cloud.firestore {
       && request.resource.data.public == true;
     }
 
+    function isReadableComment() {
+      return resource.data.approved == true
+        && resource.data.public == true;
+    }
+
+    function canReadComment() {
+      return signedIn()
+        && (isReadableComment()
+          || resource.data.authorId == request.auth.uid
+          || isAdmin());
+    }
+
     function validUserProfile() {
       return request.resource.data.keys().hasOnly(['playerProfile'])
       && request.resource.data.playerProfile is map
@@ -101,7 +113,7 @@ service cloud.firestore {
     }
 
     match /comments/{commentId} {
-      allow read: if signedIn();
+      allow read: if canReadComment();
       allow create: if signedIn() && validComment();
       allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
       allow update: if isAdmin();

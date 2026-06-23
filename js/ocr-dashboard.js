@@ -10,9 +10,9 @@ import {
   loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
   loadContributionRecords, showContributionPasteForm, processContributionImages, editContributionRecord,
   deleteContributionRecord, setContributionReward, exportContributionRecords, renderContributions
-} from './ocr-roster.js';
+} from './ocr-roster.js?v=20260624_006000';
 
-import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js';
+import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_006000';
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
@@ -301,7 +301,14 @@ function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KE
 
 function dashT(key) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
-  return translations[lang]?.[key] || translations.en?.[key] || key;
+  const dictionaries = window.VTS_TRANSLATIONS || translations;
+  return (
+    dictionaries[lang]?.[key] ||
+    translations[lang]?.[key] ||
+    dictionaries.en?.[key] ||
+    translations.en?.[key] ||
+    key
+  );
 }
 
 function restoreAdminControls() {
@@ -822,6 +829,15 @@ async function openGuestDashboard() {
 
 export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
+  if (!state._adminLanguageRefreshBound) {
+    state._adminLanguageRefreshBound = true;
+    window.addEventListener('vts:admin-language-change', () => {
+      const guestBanner = $id('dashGuestBanner');
+      if (guestBanner) renderGuestBanner(guestBanner);
+      if ($id('dashChart')) render();
+      renderContributions();
+    });
+  }
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashGuestBtn').onclick = openGuestDashboard;
   bindSubtabNavigation();

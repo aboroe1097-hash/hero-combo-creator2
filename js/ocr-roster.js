@@ -7,6 +7,25 @@ import {
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
 import { pushUndoAction } from './state.js';
+import { translations } from './translations.js';
+
+function adminT(key, vars = {}) {
+  let lang = 'en';
+  try { lang = localStorage.getItem('vts_hero_lang') || 'en'; } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
+  const dictionaries = window.VTS_TRANSLATIONS || translations;
+  let text =
+    dictionaries[lang]?.[key] ||
+    translations[lang]?.[key] ||
+    dictionaries.en?.[key] ||
+    translations.en?.[key] ||
+    key;
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, String(value));
+  });
+  return text;
+}
 
 function loadRoster() {
   const raw = localStorage.getItem(ROSTER_KEY);
@@ -1114,11 +1133,11 @@ function getContributionReward(entry, record) {
 
 function getContributionRewardLabel(tier) {
   return {
-    premium: 'Premium',
-    standard: 'Standard',
-    review: 'Review',
-    none: 'No reward',
-  }[tier] || 'Auto';
+    premium: adminT('adminContributionRewardPremium'),
+    standard: adminT('adminContributionRewardStandard'),
+    review: adminT('adminContributionRewardReview'),
+    none: adminT('adminContributionRewardNone'),
+  }[tier] || adminT('adminContributionRewardAuto');
 }
 
 function normalizeContributionEntries(input) {
@@ -1189,18 +1208,18 @@ function parseContributionEntriesFromText(text) {
 function renderContributionMatchRows(entries) {
   return entries.map((entry, index) => `<div class="dash-contribution-match-row">
     <input class="dash-contribution-rank-input" type="number" min="1" placeholder="#" value="${esc(entry.rank || '')}">
-    <input class="dash-contribution-name-input" type="text" placeholder="Member name" value="${esc(entry.name || '')}">
-    <input class="dash-contribution-guild-input" type="text" placeholder="Guild" value="${esc(entry.guild || '')}">
-    <input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="Contribution" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}">
-    <input class="dash-contribution-position-input" type="text" placeholder="Position / role" value="${esc(entry.position || '')}">
-    <select class="dash-contribution-reward-input" title="Reward override">
-      <option value=""${!entry.rewardOverride ? ' selected' : ''}>Auto</option>
-      <option value="premium"${entry.rewardOverride === 'premium' ? ' selected' : ''}>Premium</option>
-      <option value="standard"${entry.rewardOverride === 'standard' ? ' selected' : ''}>Standard</option>
-      <option value="review"${entry.rewardOverride === 'review' ? ' selected' : ''}>Review</option>
-      <option value="none"${entry.rewardOverride === 'none' ? ' selected' : ''}>No reward</option>
+    <input class="dash-contribution-name-input" type="text" placeholder="${esc(adminT('adminContributionMemberNamePh'))}" value="${esc(entry.name || '')}">
+    <input class="dash-contribution-guild-input" type="text" placeholder="${esc(adminT('adminContributionGuildPh'))}" value="${esc(entry.guild || '')}">
+    <input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="${esc(adminT('adminContributionValuePh'))}" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}">
+    <input class="dash-contribution-position-input" type="text" placeholder="${esc(adminT('adminContributionPositionPh'))}" value="${esc(entry.position || '')}">
+    <select class="dash-contribution-reward-input" title="${esc(adminT('adminContributionRewardOverrideTitle'))}">
+      <option value=""${!entry.rewardOverride ? ' selected' : ''}>${esc(adminT('adminContributionRewardAuto'))}</option>
+      <option value="premium"${entry.rewardOverride === 'premium' ? ' selected' : ''}>${esc(adminT('adminContributionRewardPremium'))}</option>
+      <option value="standard"${entry.rewardOverride === 'standard' ? ' selected' : ''}>${esc(adminT('adminContributionRewardStandard'))}</option>
+      <option value="review"${entry.rewardOverride === 'review' ? ' selected' : ''}>${esc(adminT('adminContributionRewardReview'))}</option>
+      <option value="none"${entry.rewardOverride === 'none' ? ' selected' : ''}>${esc(adminT('adminContributionRewardNone'))}</option>
     </select>
-    <button class="dash-banner-del-btn" type="button" title="Remove row" onclick="this.closest('.dash-contribution-match-row').remove()">x</button>
+    <button class="dash-banner-del-btn" type="button" title="${esc(adminT('adminContributionRemoveRow'))}" onclick="this.closest('.dash-contribution-match-row').remove()">x</button>
   </div>`).join('');
 }
 
@@ -1209,29 +1228,31 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
   if (!cleanEntries.length) return;
   const existingRecord = existingRecordId ? state.contributionRecords.find(record => record.id === existingRecordId) : null;
   const m = $id('dashModal'), body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = existingRecord ? 'Edit Total Contribution' : 'Confirm Total Contribution';
-  $id('dashModalSub').textContent = `${cleanEntries.length} contribution row${cleanEntries.length === 1 ? '' : 's'} found. Top 20 are premium by default, but every row can be overridden.`;
+  $id('dashModalTitle').textContent = existingRecord
+    ? adminT('adminContributionEditTitle')
+    : adminT('adminContributionConfirmTitle');
+  $id('dashModalSub').textContent = adminT('adminContributionModalSub', { count: cleanEntries.length });
   body.innerHTML = `<div class="dash-banner-form-row">
-    <label>Date</label>
+    <label>${esc(adminT('adminContributionDateLabel'))}</label>
     <input type="date" id="dashContributionDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
-    <label>Note</label>
-    <input type="text" id="dashContributionNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="Event, round, or upload note" style="flex:1">
+    <label>${esc(adminT('adminContributionNoteLabel'))}</label>
+    <input type="text" id="dashContributionNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="${esc(adminT('adminContributionNotePh'))}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
-    <label>Premium</label>
+    <label>${esc(adminT('adminContributionPremiumLabel'))}</label>
     <input type="number" id="dashContributionPremiumCutoff" min="1" max="100" value="${esc(existingRecord?.premiumCutoff || 20)}" style="width:110px">
-    <span class="dash-form-hint">Top N rows receive premium rewards unless overridden.</span>
+    <span class="dash-form-hint">${esc(adminT('adminContributionPremiumHint'))}</span>
   </div>
   <div class="dash-contribution-match-head">
-    <span>Rank</span><span>Member</span><span>Guild</span><span>Contribution</span><span>Position</span><span>Reward</span><span></span>
+    <span>${esc(adminT('adminContributionRank'))}</span><span>${esc(adminT('adminContributionMember'))}</span><span>${esc(adminT('adminContributionGuild'))}</span><span>${esc(adminT('adminContributionValue'))}</span><span>${esc(adminT('adminContributionPosition'))}</span><span>${esc(adminT('adminContributionReward'))}</span><span></span>
   </div>
   <div class="dash-contribution-match-list">${renderContributionMatchRows(existingRecord?.entries || cleanEntries)}</div>
   <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
-    <button id="dashContributionAddRowBtn" class="dash-btn" type="button">Add Row</button>
-    <button id="dashContributionSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${existingRecord ? 'Update' : 'Save'} Contribution List</button>
-    <button id="dashContributionCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+    <button id="dashContributionAddRowBtn" class="dash-btn" type="button">${esc(adminT('adminContributionAddRow'))}</button>
+    <button id="dashContributionSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(existingRecord ? adminT('adminContributionUpdateList') : adminT('adminContributionSaveList'))}</button>
+    <button id="dashContributionCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
   $id('dashContributionAddRowBtn').onclick = () => {
     const list = body.querySelector('.dash-contribution-match-list');
@@ -1248,7 +1269,7 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     }));
     const normalized = normalizeContributionEntries(rows);
     if (!normalized.length) {
-      alert('No valid contribution rows to save.');
+      alert(adminT('adminContributionNoValidRowsAlert'));
       return;
     }
     const record = {
@@ -1270,36 +1291,36 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     closeModal();
     renderContributions();
     refreshDashboardOverview();
-    log(`Contribution list ${existingRecord ? 'updated' : 'saved'}: ${normalized.length} entries.`, 'success');
+    log(adminT(existingRecord ? 'adminContributionUpdatedLog' : 'adminContributionSavedLog', { count: normalized.length }), 'success');
   };
   $id('dashContributionCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
 }
 
 function showContributionPasteForm() {
-  const text = prompt('Paste contribution rows. One row per line: rank, name, contribution, guild/position optional.', '');
+  const text = prompt(adminT('adminContributionPastePrompt'), '');
   if (text === null) return;
   const entries = parseContributionEntriesFromText(text);
   if (!entries.length) {
-    log('No contribution rows found.', 'warn');
+    log(adminT('adminContributionNoRowsLog'), 'warn');
     return;
   }
-  showContributionConfirmModal(entries, 'Manual paste');
+  showContributionConfirmModal(entries, adminT('adminContributionManualPaste'));
 }
 
 async function processContributionImages(files) {
-  if (state._contributionProcessing) { log('Contribution OCR already running...', 'warn'); return; }
+  if (state._contributionProcessing) { log(adminT('adminContributionOcrRunningLog'), 'warn'); return; }
   const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
   if (!valid.length) return;
   state._contributionProcessing = true;
   const progress = $id('dashContributionProgress');
   const progressText = $id('dashContributionProgressText');
   if (progress) progress.classList.remove('hidden');
-  log(`Scanning ${valid.length} contribution image(s)...`, 'info');
+  log(adminT('adminContributionScanningImagesLog', { count: valid.length }), 'info');
   let allEntries = [];
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
-    if (progressText) progressText.textContent = `Scanning contribution image ${i + 1}/${valid.length}...`;
+    if (progressText) progressText.textContent = adminT('adminContributionScanningImageProgress', { current: i + 1, total: valid.length });
     const base64 = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => resolve(String(e.target.result).split(',')[1]);
@@ -1335,15 +1356,15 @@ Rules:
           : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(`Contribution OCR error (${file.name}): ${e.message}`, 'error');
+      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: e.message }), 'error');
     }
   }
   if (progress) progress.classList.add('hidden');
   state._contributionProcessing = false;
   const unique = normalizeContributionEntries(allEntries);
   if (!unique.length) {
-    log('No contribution rows found in image(s).', 'warn');
-    alert('Could not extract contribution rows from the image.');
+    log(adminT('adminContributionNoRowsInImagesLog'), 'warn');
+    alert(adminT('adminContributionExtractFailedAlert'));
     return;
   }
   showContributionConfirmModal(unique, valid.map(f => f.name).join(', '));
@@ -1368,17 +1389,27 @@ function editContributionRecord(id) {
 function deleteContributionRecord(id) {
   const index = state.contributionRecords.findIndex(record => record.id === id);
   if (index < 0) return;
-  if (!confirm('Delete this contribution list?')) return;
+  if (!confirm(adminT('adminContributionDeleteConfirm'))) return;
   state.contributionRecords.splice(index, 1);
   saveContributionRecords();
   renderContributions();
   refreshDashboardOverview();
-  log('Contribution list deleted.', 'warn');
+  log(adminT('adminContributionDeletedLog'), 'warn');
 }
 
 function buildContributionCsv(recordId = '') {
   const records = (state.contributionRecords || []).filter(record => !recordId || record.id === recordId);
-  const lines = [['Record Date', 'Note', 'Rank', 'Member Name', 'Guild', 'Contribution', 'Position', 'Reward', 'Override']];
+  const lines = [[
+    adminT('adminContributionCsvRecordDate'),
+    adminT('adminContributionNoteLabel'),
+    adminT('adminContributionRank'),
+    adminT('adminContributionMemberName'),
+    adminT('adminContributionGuild'),
+    adminT('adminContributionValue'),
+    adminT('adminContributionPosition'),
+    adminT('adminContributionReward'),
+    adminT('adminContributionOverride'),
+  ]];
   records.forEach(record => {
     (record.entries || []).forEach(entry => {
       const reward = getContributionReward(entry, record);
@@ -1391,7 +1422,7 @@ function buildContributionCsv(recordId = '') {
         entry.contribution || '',
         entry.position || '',
         getContributionRewardLabel(reward),
-        normalizeRewardTier(entry.rewardOverride) ? 'Yes' : 'No',
+        normalizeRewardTier(entry.rewardOverride) ? adminT('adminYes') : adminT('adminNo'),
       ]);
     });
   });
@@ -1408,7 +1439,7 @@ function exportContributionRecords(recordId = '') {
   a.download = `vts_total_contribution_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  log('Contribution sheet exported.', 'success');
+  log(adminT('adminContributionSheetExportedLog'), 'success');
 }
 
 function getContributionRecordLabel(record, fallbackIndex = 0) {
@@ -1475,8 +1506,17 @@ function getSelectedContributionCompareRecords() {
 function buildContributionComparisonCsv(baseRecord, finalRecord) {
   const rows = buildContributionComparison(baseRecord, finalRecord);
   const lines = [[
-    'Member Name', 'Guild', 'Baseline Rank', 'Final Rank', 'Rank Movement',
-    'Baseline Contribution', 'Final Contribution', 'Delta', 'Baseline Reward', 'Final Reward', 'Status'
+    adminT('adminContributionMemberName'),
+    adminT('adminContributionGuild'),
+    adminT('adminContributionBaselineRank'),
+    adminT('adminContributionFinalRank'),
+    adminT('adminContributionRankMovement'),
+    adminT('adminContributionBaselineContribution'),
+    adminT('adminContributionFinalContribution'),
+    adminT('adminContributionDelta'),
+    adminT('adminContributionBaselineReward'),
+    adminT('adminContributionFinalReward'),
+    adminT('adminContributionStatus'),
   ]];
   rows.forEach(row => {
     lines.push([
@@ -1490,7 +1530,7 @@ function buildContributionComparisonCsv(baseRecord, finalRecord) {
       row.delta || 0,
       row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '',
       row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '',
-      row.status,
+      adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`),
     ]);
   });
   return lines.map(line => line.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -1507,7 +1547,7 @@ function exportContributionComparison() {
   a.download = `vts_contribution_delta_${safeContributionFilenamePart(baseRecord.date || 'baseline')}_to_${safeContributionFilenamePart(finalRecord.date || 'final')}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  log('Contribution comparison exported.', 'success');
+  log(adminT('adminContributionComparisonExportedLog'), 'success');
 }
 
 function renderContributionComparison() {
@@ -1515,7 +1555,7 @@ function renderContributionComparison() {
   if (!host) return;
   const records = Array.isArray(state.contributionRecords) ? state.contributionRecords : [];
   if (records.length < 2) {
-    host.innerHTML = '<div class="dash-contribution-compare-empty">Save at least two contribution snapshots to compare current vs final-season movement.</div>';
+    host.innerHTML = `<div class="dash-contribution-compare-empty">${esc(adminT('adminContributionCompareEmpty'))}</div>`;
     return;
   }
   const sorted = records.slice().sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
@@ -1527,14 +1567,14 @@ function renderContributionComparison() {
   host.innerHTML = `<div class="dash-contribution-compare-card">
     <div class="dash-contribution-compare-head">
       <div>
-        <strong>Snapshot Comparison</strong>
-        <span>Compare today against the final day to see gains, rank moves, and reward changes.</span>
+        <strong>${esc(adminT('adminContributionCompareTitle'))}</strong>
+        <span>${esc(adminT('adminContributionCompareSubtitle'))}</span>
       </div>
-      <button id="dashContributionCompareExportBtn" class="dash-btn">Export Delta</button>
+      <button id="dashContributionCompareExportBtn" class="dash-btn">${esc(adminT('adminContributionExportDelta'))}</button>
     </div>
     <div class="dash-contribution-compare-controls">
-      <label>Baseline <select id="dashContributionCompareBase">${options}</select></label>
-      <label>Final <select id="dashContributionCompareFinal">${options}</select></label>
+      <label>${esc(adminT('adminContributionBaseline'))} <select id="dashContributionCompareBase">${options}</select></label>
+      <label>${esc(adminT('adminContributionFinal'))} <select id="dashContributionCompareFinal">${options}</select></label>
     </div>
     <div id="dashContributionCompareBody"></div>
   </div>`;
@@ -1547,7 +1587,7 @@ function renderContributionComparison() {
     const body = $id('dashContributionCompareBody');
     if (!body) return;
     if (!baseRecord || !finalRecord || baseRecord.id === finalRecord.id) {
-      body.innerHTML = '<div class="dash-empty">Choose two different snapshots.</div>';
+      body.innerHTML = `<div class="dash-empty">${esc(adminT('adminContributionChooseDifferent'))}</div>`;
       return;
     }
     const rows = buildContributionComparison(baseRecord, finalRecord);
@@ -1556,14 +1596,14 @@ function renderContributionComparison() {
     const missingCount = rows.filter(row => row.status === 'missing').length;
     const premiumMoved = rows.filter(row => row.rewardBefore !== row.rewardAfter).length;
     body.innerHTML = `<div class="dash-contribution-compare-stats">
-      <span>Delta <strong class="${totalDelta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(totalDelta)}</strong></span>
-      <span>New <strong>${newCount}</strong></span>
-      <span>Missing <strong>${missingCount}</strong></span>
-      <span>Reward changes <strong>${premiumMoved}</strong></span>
+      <span>${esc(adminT('adminContributionDelta'))} <strong class="${totalDelta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(totalDelta)}</strong></span>
+      <span>${esc(adminT('adminContributionNew'))} <strong>${newCount}</strong></span>
+      <span>${esc(adminT('adminContributionMissing'))} <strong>${missingCount}</strong></span>
+      <span>${esc(adminT('adminContributionRewardChanges'))} <strong>${premiumMoved}</strong></span>
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table">
-        <thead><tr><th>Member</th><th>Rank</th><th style="text-align:right">Baseline</th><th style="text-align:right">Final</th><th style="text-align:right">Gain</th><th>Reward</th><th>Status</th></tr></thead>
+        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionRank'))}</th><th style="text-align:right">${esc(adminT('adminContributionBaseline'))}</th><th style="text-align:right">${esc(adminT('adminContributionFinal'))}</th><th style="text-align:right">${esc(adminT('adminContributionGain'))}</th><th>${esc(adminT('adminContributionReward'))}</th><th>${esc(adminT('adminContributionStatus'))}</th></tr></thead>
         <tbody>${rows.slice(0, 30).map(row => `<tr>
           <td><strong>${esc(row.name)}</strong>${row.guild ? `<small>${esc(row.guild)}</small>` : ''}</td>
           <td>${row.baseRank || '--'} -> ${row.finalRank || '--'}${row.rankDelta ? `<em class="${row.rankDelta > 0 ? 'up' : 'down'}">${row.rankDelta > 0 ? '+' : ''}${row.rankDelta}</em>` : ''}</td>
@@ -1571,7 +1611,7 @@ function renderContributionComparison() {
           <td style="text-align:right">${formatContributionValue(row.finalValue)}</td>
           <td style="text-align:right" class="${row.delta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(row.delta)}</td>
           <td>${row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '--'} -> ${row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '--'}</td>
-          <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(row.status)}</span></td>
+          <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`))}</span></td>
         </tr>`).join('')}</tbody>
       </table>
     </div>`;
@@ -1588,7 +1628,7 @@ function renderContributions() {
   if (!body) return;
   const records = Array.isArray(state.contributionRecords) ? state.contributionRecords.slice().reverse() : [];
   if (!records.length) {
-    body.innerHTML = '<div class="dash-empty">No contribution lists yet. Upload a Total Contribution screenshot to build the reward table.</div>';
+    body.innerHTML = `<div class="dash-empty">${esc(adminT('adminContributionEmptyDetailed'))}</div>`;
     return;
   }
   body.innerHTML = records.map(record => {
@@ -1600,19 +1640,19 @@ function renderContributions() {
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
-          <span class="dash-banner-count">${entries.length} rows</span>
-          <span class="dash-banner-count">${formatContributionValue(total)} total</span>
-          <span class="dash-contribution-premium-pill">Premium ${premiumCount}</span>
+          <span class="dash-banner-count">${esc(adminT('adminContributionRowsCount', { count: entries.length }))}</span>
+          <span class="dash-banner-count">${esc(adminT('adminContributionTotalCount', { total: formatContributionValue(total) }))}</span>
+          <span class="dash-contribution-premium-pill">${esc(adminT('adminContributionPremiumCount', { count: premiumCount }))}</span>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="exportContributionRecords('${esc(record.id)}')">Export</button>
-          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editContributionRecord('${esc(record.id)}')">Edit</button>
-          <button class="dash-banner-del-btn" onclick="deleteContributionRecord('${esc(record.id)}')" title="Delete">x</button>
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="exportContributionRecords('${esc(record.id)}')">${esc(adminT('adminBtnExport'))}</button>
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editContributionRecord('${esc(record.id)}')">${esc(adminT('adminEdit'))}</button>
+          <button class="dash-banner-del-btn" onclick="deleteContributionRecord('${esc(record.id)}')" title="${esc(adminT('adminDelete'))}">x</button>
         </div>
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table dash-contribution-table">
-          <thead><tr><th>Rank</th><th>Member</th><th>Guild</th><th style="text-align:right">Contribution</th><th>Position</th><th>Reward</th></tr></thead>
+          <thead><tr><th>${esc(adminT('adminContributionRank'))}</th><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionGuild'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionPosition'))}</th><th>${esc(adminT('adminContributionReward'))}</th></tr></thead>
           <tbody>${entries.map((entry, index) => {
             const reward = getContributionReward(entry, record);
             return `<tr>
@@ -1623,11 +1663,11 @@ function renderContributions() {
               <td>${entry.position ? esc(entry.position) : '<span style="color:var(--text-dim)">--</span>'}</td>
               <td>
                 <select class="dash-contribution-reward-select dash-contribution-reward-${reward}" onchange="setContributionReward('${esc(record.id)}', ${index}, this.value)">
-                  <option value=""${!normalizeRewardTier(entry.rewardOverride) ? ' selected' : ''}>${getContributionRewardLabel(reward)}${normalizeRewardTier(entry.rewardOverride) ? '' : ' (auto)'}</option>
-                  <option value="premium"${normalizeRewardTier(entry.rewardOverride) === 'premium' ? ' selected' : ''}>Premium</option>
-                  <option value="standard"${normalizeRewardTier(entry.rewardOverride) === 'standard' ? ' selected' : ''}>Standard</option>
-                  <option value="review"${normalizeRewardTier(entry.rewardOverride) === 'review' ? ' selected' : ''}>Review</option>
-                  <option value="none"${normalizeRewardTier(entry.rewardOverride) === 'none' ? ' selected' : ''}>No reward</option>
+                  <option value=""${!normalizeRewardTier(entry.rewardOverride) ? ' selected' : ''}>${esc(getContributionRewardLabel(reward))}${normalizeRewardTier(entry.rewardOverride) ? '' : ` ${esc(adminT('adminContributionAutoSuffix'))}`}</option>
+                  <option value="premium"${normalizeRewardTier(entry.rewardOverride) === 'premium' ? ' selected' : ''}>${esc(adminT('adminContributionRewardPremium'))}</option>
+                  <option value="standard"${normalizeRewardTier(entry.rewardOverride) === 'standard' ? ' selected' : ''}>${esc(adminT('adminContributionRewardStandard'))}</option>
+                  <option value="review"${normalizeRewardTier(entry.rewardOverride) === 'review' ? ' selected' : ''}>${esc(adminT('adminContributionRewardReview'))}</option>
+                  <option value="none"${normalizeRewardTier(entry.rewardOverride) === 'none' ? ' selected' : ''}>${esc(adminT('adminContributionRewardNone'))}</option>
                 </select>
               </td>
             </tr>`;

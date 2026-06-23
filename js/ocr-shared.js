@@ -37,16 +37,26 @@ export async function checkOcrService() {
     const res = await fetch(`${QWEN_WORKER_URL}/status`, { cache: 'no-store' });
     if (!res.ok) return { configured: false, error: `Worker status ${res.status}` };
     const data = await res.json();
-    return { configured: data.configured === true, error: data.error || '' };
+    const configured = data.configured === true && data.appCheckConfigured === true;
+    const error = data.error || (configured ? '' : 'Worker OCR/App Check configuration is incomplete');
+    return { configured, error };
   } catch (err) {
     return { configured: false, error: err?.message || 'OCR worker unavailable' };
   }
 }
 
 export async function qwenVisionRequest(messages, options = {}) {
+  const appCheckHeaders = {};
+  try {
+    const { getFirebaseAppCheckToken } = await import('./firebase.js');
+    const appCheckToken = await getFirebaseAppCheckToken();
+    if (appCheckToken) appCheckHeaders['X-Firebase-AppCheck'] = appCheckToken;
+  } catch {
+    // Let the worker fail closed when Firebase App Check is unavailable.
+  }
   const res = await fetch(QWEN_WORKER_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...appCheckHeaders },
     body: JSON.stringify({ model: 'qwen-vl-plus', messages }),
     signal: options.signal,
   });
@@ -266,8 +276,11 @@ export function esc(str) {
 }
 
 // --- Logger ---
+const LOG_TYPES = new Set(['info', 'warn', 'error', 'success']);
+
 function normalizeLogType(type) {
-  return type === 'err' ? 'error' : type || 'info';
+  const normalized = type === 'err' ? 'error' : String(type || 'info');
+  return LOG_TYPES.has(normalized) ? normalized : 'info';
 }
 
 export function log(msg, type = 'info', file = null) {
@@ -290,10 +303,20 @@ export function appendLogEntry(out, entry) {
   const div = document.createElement('div');
   div.className = 'log-entry';
   const type = normalizeLogType(entry.type);
-  let html = `<span class="log-time">[${entry.time}]</span>`;
-  if (entry.file) html += `<span class="log-file">[${entry.file}]</span>`;
-  html += `<span class="log-msg log-${type}">${entry.msg}</span>`;
-  div.innerHTML = html;
+  const time = document.createElement('span');
+  time.className = 'log-time';
+  time.textContent = `[${entry.time}]`;
+  div.appendChild(time);
+  if (entry.file) {
+    const file = document.createElement('span');
+    file.className = 'log-file';
+    file.textContent = `[${entry.file}]`;
+    div.appendChild(file);
+  }
+  const msg = document.createElement('span');
+  msg.className = `log-msg log-${type}`;
+  msg.textContent = String(entry.msg ?? '');
+  div.appendChild(msg);
   out.appendChild(div);
 }
 

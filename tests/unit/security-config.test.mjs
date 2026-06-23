@@ -31,10 +31,22 @@ test('comments no longer store email or allow public reads', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const comments = readFileSync('js/comments.js', 'utf8');
   assert.doesNotMatch(rules, /'email'/);
-  assert.match(rules, /allow read: if signedIn\(\);/);
+  assert.match(rules, /function canReadComment\(\)/);
+  assert.match(rules, /resource\.data\.approved == true/);
+  assert.match(rules, /resource\.data\.public == true/);
+  assert.match(rules, /resource\.data\.authorId == request\.auth\.uid/);
+  assert.match(rules, /allow read: if canReadComment\(\);/);
   assert.match(rules, /approved == false/);
   assert.doesNotMatch(comments, /email:/);
   assert.doesNotMatch(comments, /commentEmail/);
+  assert.match(comments, /where\('approved', '==', true\)/);
+  assert.match(comments, /where\('public', '==', true\)/);
+  assert.match(comments, /where\('authorId', '==', currentUserId\)/);
+  assert.match(comments, /where\('approved', '==', false\)/);
+  assert.doesNotMatch(
+    comments,
+    /query\(collection\(db, 'comments'\), orderBy\('createdAt', 'desc'\)\)/
+  );
 });
 
 test('client error reports are bounded and not publicly readable', () => {

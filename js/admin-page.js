@@ -49,6 +49,7 @@ function getLanguage() {
 
 function updateTextContent(lang) {
   const t = translations[lang] || translations.en;
+  window.VTS_TRANSLATIONS = translations;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.lang = lang;
   const languageSelect = document.getElementById('languageSelect');
@@ -69,6 +70,7 @@ function updateTextContent(lang) {
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
   syncGameClockTitles();
+  window.dispatchEvent(new CustomEvent('vts:admin-language-change', { detail: { lang } }));
 }
 
 window.showToast = function showToast(msg, type = 'info', duration = 3000) {
@@ -124,7 +126,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260623_201111');
+  const mod = await import('./ocr-dashboard.js?v=20260624_006000');
   await mod.bootOcrDashboard();
 }
 

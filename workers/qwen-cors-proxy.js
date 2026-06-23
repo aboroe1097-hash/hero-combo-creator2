@@ -5,12 +5,15 @@
 //
 // Optional variables:
 //   ALLOWED_ORIGINS=https://roc-vts.com,http://localhost:5173
+//   FIREBASE_APP_CHECK_PROJECT_NUMBER=123456789
+//   FIREBASE_APP_CHECK_APP_ID=1:123456789:web:abcdef123456
 //   RATE_LIMIT_KV=<KV namespace binding>
 //   RATE_LIMIT_WINDOW_SECONDS=60
 //   RATE_LIMIT_MAX_REQUESTS=30
 //   MAX_BODY_BYTES=5242880
 
 const DASHSCOPE_URL = 'https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions';
+const APP_CHECK_JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1beta/jwks';
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://roc-vts.com',
   'http://localhost:5173',
@@ -23,6 +26,7 @@ const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 30;
 const DEFAULT_MAX_BODY_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MODELS = new Set(['qwen-vl-plus', 'qwen-vl-max']);
 const memoryRateLimit = new Map();
+let appCheckJwksCache = null;
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -45,7 +49,7 @@ function corsHeaders(request, env) {
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Firebase-AppCheck',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   };
@@ -185,6 +189,96 @@ function validatePayload(payload) {
   return errors;
 }
 
+function base64UrlDecode(value) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function parseJwt(token) {
+  const parts = String(token || '').split('.');
+  if (parts.length !== 3) throw new Error('App Check token must be a JWT');
+  const decoder = new TextDecoder();
+  return {
+    header: JSON.parse(decoder.decode(base64UrlDecode(parts[0]))),
+    payload: JSON.parse(decoder.decode(base64UrlDecode(parts[1]))),
+    signature: base64UrlDecode(parts[2]),
+    signingInput: new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+  };
+}
+
+async function appCheckJwks() {
+  const now = Date.now();
+  if (appCheckJwksCache && appCheckJwksCache.expiresAt > now) return appCheckJwksCache.keys;
+  const res = await fetch(APP_CHECK_JWKS_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Could not fetch Firebase App Check keys');
+  const body = await res.json();
+  const maxAge = /max-age=(\d+)/i.exec(res.headers.get('Cache-Control') || '')?.[1];
+  const ttlMs = Math.max(60, Number(maxAge) || 3600) * 1000;
+  appCheckJwksCache = { keys: body.keys || [], expiresAt: now + ttlMs };
+  return appCheckJwksCache.keys;
+}
+
+async function verifyAppCheck(request, env) {
+  const projectNumber = String(env.FIREBASE_APP_CHECK_PROJECT_NUMBER || '').trim();
+  if (!projectNumber) {
+    return { ok: false, status: 503, error: 'OCR worker is missing FIREBASE_APP_CHECK_PROJECT_NUMBER' };
+  }
+
+  const token = request.headers.get('X-Firebase-AppCheck') || '';
+  if (!token) return { ok: false, status: 401, error: 'Missing Firebase App Check token' };
+
+  try {
+    const parsed = parseJwt(token);
+    if (parsed.header.alg !== 'RS256' || !parsed.header.kid) {
+      return { ok: false, status: 401, error: 'Invalid Firebase App Check token' };
+    }
+
+    const keys = await appCheckJwks();
+    const jwk = keys.find((key) => key.kid === parsed.header.kid);
+    if (!jwk) return { ok: false, status: 401, error: 'Unknown Firebase App Check key' };
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    const verified = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5',
+      cryptoKey,
+      parsed.signature,
+      parsed.signingInput
+    );
+    if (!verified) return { ok: false, status: 401, error: 'Invalid Firebase App Check signature' };
+
+    const now = Math.floor(Date.now() / 1000);
+    const expectedAudience = `projects/${projectNumber}`;
+    const audience = Array.isArray(parsed.payload.aud) ? parsed.payload.aud : [parsed.payload.aud];
+    const expectedIssuer = `https://firebaseappcheck.googleapis.com/${projectNumber}`;
+    if (parsed.payload.iss !== expectedIssuer || !audience.includes(expectedAudience)) {
+      return { ok: false, status: 401, error: 'Firebase App Check token is for a different project' };
+    }
+    if (typeof parsed.payload.exp !== 'number' || parsed.payload.exp <= now) {
+      return { ok: false, status: 401, error: 'Firebase App Check token expired' };
+    }
+    if (typeof parsed.payload.nbf === 'number' && parsed.payload.nbf > now) {
+      return { ok: false, status: 401, error: 'Firebase App Check token is not active yet' };
+    }
+    const expectedAppId = String(env.FIREBASE_APP_CHECK_APP_ID || '').trim();
+    if (expectedAppId && parsed.payload.sub !== expectedAppId) {
+      return { ok: false, status: 401, error: 'Firebase App Check token is for a different app' };
+    }
+    return { ok: true, appId: parsed.payload.sub || '' };
+  } catch (err) {
+    return { ok: false, status: 401, error: 'Invalid Firebase App Check token' };
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -201,11 +295,19 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/status') {
-      return json({ configured: Boolean(env.DASHSCOPE_API_KEY) }, {}, request, env);
+      return json({
+        configured: Boolean(env.DASHSCOPE_API_KEY),
+        appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
+      }, {}, request, env);
     }
 
     if (request.method !== 'POST') {
       return json({ error: 'Method not allowed' }, { status: 405 }, request, env);
+    }
+
+    const appCheck = await verifyAppCheck(request, env);
+    if (!appCheck.ok) {
+      return json({ error: appCheck.error }, { status: appCheck.status }, request, env);
     }
 
     if (!env.DASHSCOPE_API_KEY) {

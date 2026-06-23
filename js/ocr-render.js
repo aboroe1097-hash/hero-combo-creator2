@@ -13,6 +13,25 @@ import {
 import { displayGameTime } from './ocr-engine.js';
 import { isGuest } from './ocr-dashboard.js';
 import { filterGameTimeAttacks, parseGameTimeDateMs } from './ocr-time-filter.js';
+import { translations } from './translations.js';
+
+function adminT(key, vars = {}) {
+  let lang = 'en';
+  try { lang = localStorage.getItem('vts_hero_lang') || 'en'; } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
+  const dictionaries = window.VTS_TRANSLATIONS || translations;
+  let text =
+    dictionaries[lang]?.[key] ||
+    translations[lang]?.[key] ||
+    dictionaries.en?.[key] ||
+    translations.en?.[key] ||
+    key;
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, String(value));
+  });
+  return text;
+}
 
 function valueOf(input) {
   const n = Number(input || 0);
@@ -884,9 +903,9 @@ function renderSpecialOpsCards() {
       <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` Â· latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-contributions">
-      <span class="dash-ops-label">Contributions</span>
-      <strong>${contribution.rows ? `${contribution.premium} premium slots` : 'No snapshots'}</strong>
-      <p>${contribution.records.length} snapshot${contribution.records.length === 1 ? '' : 's'}${contribution.rows ? ` Â· ${compactValue(contribution.total)} total Â· top ${esc(contribution.topName)}` : ''}</p>
+      <span class="dash-ops-label">${esc(adminT('adminContributionsTab'))}</span>
+      <strong>${contribution.rows ? esc(adminT('adminContributionPremiumSlots', { count: contribution.premium })) : esc(adminT('adminContributionNoSnapshots'))}</strong>
+      <p>${esc(adminT('adminContributionSnapshotSummary', { count: contribution.records.length }))}${contribution.rows ? ` Â· ${esc(adminT('adminContributionTotalCount', { total: compactValue(contribution.total) }))} Â· ${esc(adminT('adminContributionTopPlayer', { name: contribution.topName }))}` : ''}</p>
     </div>`;
 }
 
