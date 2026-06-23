@@ -994,6 +994,26 @@ body[style*="overflow: hidden"] .tab-panel {
   text-transform: uppercase;
 }
 #ocrDashboardRoot .dash-subtab-btn svg { flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  #ocrDashboardRoot .dash-subtab-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    gap: 0.4rem;
+    border-radius: 0.9rem;
+  }
+
+  #ocrDashboardRoot .dash-subtab-btn {
+    justify-content: center;
+    min-width: 0;
+    min-height: 2.45rem;
+    padding: 0.55rem 0.45rem;
+    white-space: normal;
+    line-height: 1.15;
+    text-align: center;
+  }
+}
 #ocrDashboardRoot .dash-subtab-panel { animation: tab-fade-in 0.12s ease both; }
 
 /* Analytics tab */

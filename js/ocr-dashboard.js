@@ -10,9 +10,9 @@ import {
   loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
   loadContributionRecords, showContributionPasteForm, processContributionImages, editContributionRecord,
   deleteContributionRecord, setContributionReward, exportContributionRecords, renderContributions
-} from './ocr-roster.js?v=20260624_006000';
+} from './ocr-roster.js?v=20260624_011500';
 
-import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_006000';
+import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_011500';
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
@@ -89,11 +89,19 @@ async function ensureCloudSyncReady() {
 // ── Sub-tab Switching ────────────────────────────────────
 function switchDashSubtab(name) {
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach(p => p.classList.add('hidden'));
-  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(b => b.classList.remove('dash-subtab-active'));
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(b => {
+    b.classList.remove('dash-subtab-active');
+    b.setAttribute('aria-selected', 'false');
+    b.tabIndex = -1;
+  });
   const panel = $id('dashSubtab' + name.charAt(0).toUpperCase() + name.slice(1));
   if (panel) panel.classList.remove('hidden');
   const btn = document.querySelector(`#ocrDashboardRoot .dash-subtab-btn[data-subtab="${name}"]`);
-  if (btn) btn.classList.add('dash-subtab-active');
+  if (btn) {
+    btn.classList.add('dash-subtab-active');
+    btn.setAttribute('aria-selected', 'true');
+    btn.tabIndex = 0;
+  }
   if (name === 'analytics') {
     hydrateDashboardStateFromLocalStorage();
     render();
@@ -113,10 +121,35 @@ window.seedDashboardForSmokeTest = function(dashData, rosterSnapshots = []) {
 };
 
 function bindSubtabNavigation() {
+  const nav = document.querySelector('#ocrDashboardRoot .dash-subtab-nav');
+  if (nav) nav.setAttribute('role', 'tablist');
+  document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach(panel => {
+    panel.setAttribute('role', 'tabpanel');
+  });
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(btn => {
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', btn.classList.contains('dash-subtab-active') ? 'true' : 'false');
+    btn.tabIndex = btn.classList.contains('dash-subtab-active') ? 0 : -1;
     if (btn.dataset.subtabBound) return;
     btn.dataset.subtabBound = '1';
     btn.onclick = () => switchDashSubtab(btn.dataset.subtab);
+    btn.onkeydown = (event) => {
+      if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+      const tabs = Array.from(document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn'));
+      const current = tabs.indexOf(btn);
+      if (current < 0) return;
+      event.preventDefault();
+      const last = tabs.length - 1;
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? last
+          : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+            ? (current - 1 + tabs.length) % tabs.length
+            : (current + 1) % tabs.length;
+      tabs[nextIndex]?.focus();
+      tabs[nextIndex]?.click();
+    };
   });
 }
 
@@ -299,16 +332,29 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
 
-function dashT(key) {
+function dashT(key, vars = {}) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
   const dictionaries = window.VTS_TRANSLATIONS || translations;
-  return (
+  let text = (
     dictionaries[lang]?.[key] ||
     translations[lang]?.[key] ||
     dictionaries.en?.[key] ||
     translations.en?.[key] ||
     key
   );
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, String(value));
+  });
+  return text;
+}
+
+function refreshRosterSnapshotLabel() {
+  const btn = $id('dashRosterSnapshotBtn');
+  const label = btn?.querySelector('span');
+  if (!label) return;
+  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  const dayName = new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(new Date());
+  label.textContent = dashT('adminRosterNewSnapshotDated', { day: dayName });
 }
 
 function restoreAdminControls() {
@@ -834,6 +880,7 @@ export async function bootOcrDashboard() {
     window.addEventListener('vts:admin-language-change', () => {
       const guestBanner = $id('dashGuestBanner');
       if (guestBanner) renderGuestBanner(guestBanner);
+      refreshRosterSnapshotLabel();
       if ($id('dashChart')) render();
       renderContributions();
     });
@@ -877,11 +924,10 @@ export async function bootOcrDashboard() {
   // Roster: manual snapshot button with dynamic day name
   const newSnapBtn = $id('dashRosterSnapshotBtn');
   if (newSnapBtn) {
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    newSnapBtn.querySelector('span').textContent = `New Snapshot (${days[new Date().getDay()]})`;
+    refreshRosterSnapshotLabel();
     newSnapBtn.onclick = () => {
       const prevText = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members.join('\n') : '';
-      const input = prompt('Paste member names (one per line):', prevText);
+      const input = prompt(dashT('adminRosterPastePrompt'), prevText);
       if (input !== null && input.trim()) takeRosterSnapshot(input);
     };
   }
@@ -903,12 +949,12 @@ export async function bootOcrDashboard() {
       if (!statusEl) return;
       if (ocrReady) {
         statusEl.className = 'dash-roster-api-status dash-api-ok';
-        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> OCR service ready';
+        statusEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> ${esc(dashT('adminOcrServiceReady'))}`;
         if (dropEl) { dropEl.style.opacity = '1'; dropEl.style.pointerEvents = ''; }
         if (inputEl) inputEl.disabled = false;
       } else {
         statusEl.className = 'dash-roster-api-status dash-api-missing';
-        statusEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>OCR unavailable</b> - configure DASHSCOPE_API_KEY in the Worker';
+        statusEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>${esc(dashT('adminOcrUnavailable'))}</b> - ${esc(dashT('adminOcrConfigureWorker'))}`;
         if (dropEl) { dropEl.style.opacity = '0.5'; dropEl.style.pointerEvents = 'none'; }
         if (inputEl) inputEl.disabled = true;
       }

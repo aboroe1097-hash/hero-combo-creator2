@@ -11898,3 +11898,75 @@ body.hide-hero-info #heroTooltip {
     grid-column: auto;
   }
 }
+
+/* 11.4.1 plugin polish: keep primary/admin navigation clean at laptop widths. */
+@media (min-width: 769px) and (max-width: 1180px) {
+  .tool-nav-inner {
+    overflow: visible;
+    align-items: stretch;
+  }
+
+  #tabNavScroll {
+    flex: 1 1 100% !important;
+    flex-wrap: wrap;
+    justify-content: center !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    row-gap: 0.42rem;
+  }
+
+  #tabNavScroll > div {
+    flex: 1 1 min(10.5rem, calc(25% - 0.5rem));
+    min-width: 8.5rem;
+  }
+
+  #tabNavScroll .tab-pill {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.12rem;
+  }
+
+  #tabNavScroll .tab-badge {
+    right: 0.18rem;
+    transform: translateY(-42%);
+  }
+
+  #tabScrollLeft,
+  #tabScrollRight {
+    display: none !important;
+  }
+}
+
+body.admin-standalone-page,
+body.admin-standalone-page * {
+  box-sizing: border-box;
+}
+
+body.admin-standalone-page {
+  overflow-x: clip;
+}
+
+body.admin-standalone-page #app.app-shell,
+body.admin-standalone-page .admin-shell-main,
+body.admin-standalone-page .admin-shell-card,
+body.admin-standalone-page #ocrDashboardSection {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  body.admin-standalone-page {
+    padding-inline: max(0.5rem, env(safe-area-inset-left, 0px)) max(0.5rem, env(safe-area-inset-right, 0px)) !important;
+  }
+
+  body.admin-standalone-page #app.app-shell {
+    width: 100%;
+  }
+
+  body.admin-standalone-page .admin-shell-title {
+    overflow-wrap: anywhere;
+    font-size: clamp(1.85rem, 11vw, 3rem);
+    line-height: 0.95;
+  }
+}

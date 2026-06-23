@@ -319,7 +319,7 @@ function renderRoster() {
   const body = $id('dashRosterBody');
   if (!body) return;
   if (!state.rosterSnapshots.length) {
-    body.innerHTML = '<div class="dash-empty">No roster snapshots yet. Click "New Snapshot" to save this week\'s roster.</div>';
+    body.innerHTML = `<div class="dash-empty">${esc(adminT('adminRosterEmpty'))}</div>`;
     return;
   }
   const snapIndex = state.rosterSnapshots.length - 1;
@@ -568,11 +568,21 @@ function hashCode(str) {
 }
 
 const DUTY_TYPES = {
-  banner: { label: 'Banners List', singular: 'Banner', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
-  pather: { label: 'Pathers / Speed Tile Plans', singular: 'Plan', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText', recordTypes: ['pather', 'speed_tile'] },
-  speed_tile: { label: 'Pathers / Speed Tile Plans', singular: 'Plan', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
-  shield_wall: { label: 'Shield Wall', singular: 'Shield Wall', bodyId: 'dashShieldWallBody' },
+  banner: { labelKey: 'adminBannerListTitle', singularKey: 'adminDutyBannerSingular', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
+  pather: { labelKey: 'adminPatherListTitle', singularKey: 'adminDutyPlanSingular', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText', recordTypes: ['pather', 'speed_tile'] },
+  speed_tile: { labelKey: 'adminPatherListTitle', singularKey: 'adminDutyPlanSingular', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
+  shield_wall: { labelKey: 'adminShieldWallTitle', singularKey: 'adminDutyShieldWallSingular', bodyId: 'dashShieldWallBody' },
 };
+
+function dutyLabel(type) {
+  const meta = DUTY_TYPES[type];
+  return meta ? adminT(meta.labelKey) : '';
+}
+
+function dutySingular(type) {
+  const meta = DUTY_TYPES[type];
+  return meta ? adminT(meta.singularKey) : '';
+}
 
 function loadDutyRecords() {
   try {
@@ -764,14 +774,15 @@ function parseDutyEntriesFromText(text) {
 function showDutyPasteForm(type) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
-  const text = prompt(`Paste ${meta.label} names, one per line:`, '');
+  const label = dutyLabel(type);
+  const text = prompt(adminT('adminDutyPastePrompt', { label }), '');
   if (text === null) return;
   const entries = parseDutyEntriesFromText(text);
   if (!entries.length) {
-    log(`No names found for ${meta.label}.`, 'warn');
+    log(adminT('adminDutyNoNamesLog', { label }), 'warn');
     return;
   }
-  showDutyConfirmModal(type, entries, 'Manual paste');
+  showDutyConfirmModal(type, entries, adminT('adminDutyManualPaste'));
 }
 
 function normalizeDutyEntries(input) {
@@ -810,17 +821,17 @@ function renderDutyMatchRows(entries) {
     const suggestions = getDutySuggestions(rawName);
     const best = entry.confirmed || suggestions[0]?.name || '';
     const status = getDutyMatchStatus(rawName, best);
-    const options = ['<option value="">-- Unmatched --</option>']
+    const options = [`<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`]
       .concat(suggestions.map(row => `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`))
       .join('');
     return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
       <div class="dash-duty-raw"><span>#${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
       <select class="dash-duty-match-select">${options}</select>
-      <input class="dash-duty-manual-input" type="text" placeholder="Manual correction" value="${entry.confirmed && !suggestions.some(row => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}">
-      <input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="Usage time">
-      <input class="dash-duty-target-input" type="text" placeholder="Target" value="${esc(entry.target || '')}" title="Target or structure">
-      <input class="dash-duty-group-input" type="text" placeholder="Group" value="${esc(entry.group || '')}" title="Tile color or group">
-      <input class="dash-duty-pad-input" type="text" placeholder="Pad" value="${esc(entry.pad || '')}" title="Pad coordinates">
+      <input class="dash-duty-manual-input" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some(row => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}">
+      <input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}">
+      <input class="dash-duty-target-input" type="text" placeholder="${esc(adminT('adminDutyTarget'))}" value="${esc(entry.target || '')}" title="${esc(adminT('adminDutyTargetTitle'))}">
+      <input class="dash-duty-group-input" type="text" placeholder="${esc(adminT('adminDutyGroup'))}" value="${esc(entry.group || '')}" title="${esc(adminT('adminDutyGroupTitle'))}">
+      <input class="dash-duty-pad-input" type="text" placeholder="${esc(adminT('adminDutyPad'))}" value="${esc(entry.pad || '')}" title="${esc(adminT('adminDutyPadTitle'))}">
     </div>`;
   }).join('');
 }
@@ -832,24 +843,26 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
   if (!cleanEntries.length) return;
   const existingRecord = existingRecordId ? state.dutyRecords.find(record => record.id === existingRecordId) : null;
   const m = $id('dashModal'), body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = existingRecord ? `Edit ${meta.label}` : `Confirm ${meta.label}`;
-  $id('dashModalSub').textContent = `${cleanEntries.length} row${cleanEntries.length === 1 ? '' : 's'} found. Confirm roster matches, usage time, and target before saving.`;
+  const label = dutyLabel(type);
+  const singular = dutySingular(type);
+  $id('dashModalTitle').textContent = adminT(existingRecord ? 'adminDutyEditTitle' : 'adminDutyConfirmTitle', { label });
+  $id('dashModalSub').textContent = adminT('adminDutyConfirmSub', { count: cleanEntries.length });
   body.innerHTML = `<div class="dash-banner-form-row">
-    <label>Date</label>
+    <label>${esc(adminT('adminDutyDateLabel'))}</label>
     <input type="date" id="dashDutyDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
-    <label>Note</label>
-    <input type="text" id="dashDutyNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="Event, marker, or upload note" style="flex:1">
+    <label>${esc(adminT('adminDutyNoteLabel'))}</label>
+    <input type="text" id="dashDutyNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="${esc(adminT('adminDutyNotePh'))}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
-    <label>Game Time</label>
-    <input type="text" id="dashDutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="e.g. 06:26 GT" style="flex:1">
+    <label>${esc(adminT('adminDutyGameTimeLabel'))}</label>
+    <input type="text" id="dashDutyGameTime" value="${esc(existingRecord?.gameTime || '')}" placeholder="${esc(adminT('adminDutyGameTimePh'))}" style="flex:1">
   </div>
   <div class="dash-duty-match-list">${renderDutyMatchRows(cleanEntries)}</div>
   <div style="display:flex;gap:0.5rem;margin-top:1rem">
-    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${existingRecord ? 'Update' : 'Save'} ${meta.singular} Record</button>
-    <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">Cancel</button>
+    <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
+    <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
   $id('dashDutySaveBtn').onclick = () => {
     const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map(row => {
@@ -900,7 +913,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     closeModal();
     renderDutyRecords();
     refreshDashboardOverview();
-    log(`${meta.label} ${existingRecord ? 'updated' : 'saved'}: ${entries.length} entries.`, 'success');
+    log(adminT(existingRecord ? 'adminDutyUpdatedLog' : 'adminDutySavedLog', { label, count: entries.length }), 'success');
   };
   $id('dashDutyCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
@@ -909,25 +922,26 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
 async function processDutyImages(type, files) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
-  if (state._dutyProcessing) { log('Duty OCR already running...', 'warn'); return; }
+  const label = dutyLabel(type);
+  if (state._dutyProcessing) { log(adminT('adminDutyOcrAlreadyRunning'), 'warn'); return; }
   const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
   if (!valid.length) return;
   state._dutyProcessing = true;
   const progress = meta.progressId ? $id(meta.progressId) : null;
   const progressText = meta.progressTextId ? $id(meta.progressTextId) : null;
   if (progress) progress.classList.remove('hidden');
-  log(`Scanning ${valid.length} ${meta.label} image(s)...`, 'info');
+  log(adminT('adminDutyScanningImagesLog', { count: valid.length, label }), 'info');
   let allEntries = [];
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
-    if (progressText) progressText.textContent = `Scanning ${meta.label} image ${i + 1}/${valid.length}...`;
+    if (progressText) progressText.textContent = adminT('adminDutyScanningImageProgress', { label, current: i + 1, total: valid.length });
     const base64 = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => resolve(String(e.target.result).split(',')[1]);
       reader.readAsDataURL(file);
     });
     try {
-      const promptTxt = `Extract duty usage rows from this ${meta.label} screenshot.
+      const promptTxt = `Extract duty usage rows from this ${label} screenshot.
 
 Return ONLY valid JSON in this shape:
 {"entries":[{"name":"Name One","time":"23:25","target":"Gate l5","group":"Pink","order":"1","pad":"1253:645","checked":true,"allowedColors":"Red, light blue, brown"}]}
@@ -961,15 +975,15 @@ Rules:
             : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(`${meta.label} OCR error (${file.name}): ${e.message}`, 'error');
+      log(adminT('adminDutyOcrErrorLog', { label, file: file.name, error: e.message }), 'error');
     }
   }
   if (progress) progress.classList.add('hidden');
   state._dutyProcessing = false;
   const unique = normalizeDutyEntries(allEntries);
   if (!unique.length) {
-    log(`No names found in ${meta.label} image(s).`, 'warn');
-    alert(`Could not extract names from the ${meta.label} image.`);
+    log(adminT('adminDutyNoNamesInImagesLog', { label }), 'warn');
+    alert(adminT('adminDutyExtractFailedAlert', { label }));
     return;
   }
   showDutyConfirmModal(type, unique, valid.map(f => f.name).join(', '));
@@ -988,12 +1002,12 @@ function editDutyRecord(id) {
 function deleteDutyRecord(id) {
   const index = state.dutyRecords.findIndex(record => record.id === id);
   if (index < 0) return;
-  if (!confirm('Delete this duty record?')) return;
+  if (!confirm(adminT('adminDutyDeleteConfirm'))) return;
   state.dutyRecords.splice(index, 1);
   saveDutyRecords();
   renderDutyRecords();
   refreshDashboardOverview();
-  log('Duty record deleted.', 'warn');
+  log(adminT('adminDutyDeletedLog'), 'warn');
 }
 
 function renderDutyType(type) {
@@ -1003,11 +1017,10 @@ function renderDutyType(type) {
   const recordTypes = meta.recordTypes || [type];
   const records = (state.dutyRecords || []).filter(record => recordTypes.includes(record.type)).slice().reverse();
   if (!records.length) {
-    body.innerHTML = `<div class="dash-empty">No ${meta.label} records yet.</div>`;
+    body.innerHTML = `<div class="dash-empty">${esc(adminT('adminDutyEmptyRecords', { label: dutyLabel(type) }))}</div>`;
     return;
   }
   body.innerHTML = records.map(record => {
-    const recordMeta = DUTY_TYPES[record.type] || meta;
     const entries = Array.isArray(record.entries) ? record.entries : [];
     const confirmed = entries.filter(entry => entry.confirmed).length;
     const weak = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
@@ -1015,19 +1028,19 @@ function renderDutyType(type) {
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
-          <span class="dash-banner-event">${esc(recordMeta.singular || meta.singular)}</span>
+          <span class="dash-banner-event">${esc(dutySingular(record.type) || dutySingular(type))}</span>
           ${record.gameTime ? `<span class="dash-banner-event">${esc(record.gameTime)}</span>` : ''}
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
-          <span class="dash-banner-count">${confirmed}/${entries.length} matched${weak ? `, ${weak} review` : ''}</span>
+          <span class="dash-banner-count">${esc(adminT('adminDutyMatchedCount', { confirmed, total: entries.length }))}${weak ? `, ${esc(adminT('adminDutyReviewCount', { count: weak }))}` : ''}</span>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editDutyRecord('${esc(record.id)}')">Edit</button>
-          <button class="dash-banner-del-btn" onclick="deleteDutyRecord('${esc(record.id)}')" title="Delete">x</button>
+          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editDutyRecord('${esc(record.id)}')">${esc(adminT('adminEdit'))}</button>
+          <button class="dash-banner-del-btn" onclick="deleteDutyRecord('${esc(record.id)}')" title="${esc(adminT('adminDelete'))}">x</button>
         </div>
       </div>
       <div class="dash-banner-body">
         <table class="dash-banner-table">
-          <thead><tr><th>Group</th><th>Order</th><th>Time</th><th>Target</th><th>Pad</th><th>Uploaded</th><th>Roster Match</th><th>Status</th></tr></thead>
+          <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
           <tbody>${entries.map(entry => `<tr>
             <td>${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.order ? esc(entry.order) : entry.checked ? '✓' : '<span style="color:var(--text-dim)">--</span>'}</td>
@@ -1035,7 +1048,7 @@ function renderDutyType(type) {
             <td>${entry.target ? esc(entry.target) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.pad ? esc(entry.pad) : entry.allowedColors ? esc(entry.allowedColors) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${esc(entry.original || entry.name || '')}</td>
-            <td>${entry.confirmed ? esc(entry.confirmed) : '<span style="color:var(--text-dim)">Unmatched</span>'}</td>
+            <td>${entry.confirmed ? esc(entry.confirmed) : `<span style="color:var(--text-dim)">${esc(adminT('adminDutyUnmatched'))}</span>`}</td>
             <td>${esc(entry.status || 'unmatched')}</td>
           </tr>`).join('')}</tbody>
         </table>
@@ -1060,8 +1073,8 @@ function renderDutySummary() {
   });
   const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
   host.innerHTML = rows.length
-    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${row.total} total</span><small>B ${row.banner} / Plan ${row.pather + row.speed_tile} / SW ${row.shield_wall}</small></div>`).join('')
-    : '<div class="dash-empty">Duty appearances will summarize here after records are saved.</div>';
+    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${esc(adminT('adminDutyTotalLabel', { count: row.total }))}</span><small>B ${row.banner} / ${esc(adminT('adminDutyPlanAbbrev'))} ${row.pather + row.speed_tile} / ${esc(adminT('adminDutyShieldWallAbbrev'))} ${row.shield_wall}</small></div>`).join('')
+    : `<div class="dash-empty">${esc(adminT('adminDutySummaryEmpty'))}</div>`;
 }
 
 function renderDutyRecords() {

@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     minify: 'esbuild',
-    sourcemap: process.env.VITE_SOURCEMAP !== 'false',
+    sourcemap: process.env.VITE_SOURCEMAP === 'true',
     target: 'es2022',
     rollupOptions: {
       input: {
