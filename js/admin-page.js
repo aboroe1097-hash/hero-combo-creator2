@@ -126,11 +126,11 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_014739');
+  const mod = await import('./ocr-dashboard.js?v=20260624_015912');
   await mod.bootOcrDashboard();
 }
 
-bootAdminPage().catch((err) => {
+if (!window.VTS_MAINTENANCE_ACTIVE) bootAdminPage().catch((err) => {
   console.error('Admin dashboard failed to load', err);
   const section = document.getElementById('ocrDashboardSection');
   if (section) {

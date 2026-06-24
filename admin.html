@@ -15,9 +15,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=20260624_014739" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_014739" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260624_014739" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260624_015912"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260624_015912" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_015912" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260624_015912" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -29,9 +30,18 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260624_014739"></script>
+  <script src="js/admin-auth-config.js?v=20260624_015912"></script>
 </head>
 <body class="admin-standalone-page">
+  <div class="maintenance-preload" role="status" aria-live="polite">
+    <section class="maintenance-card" aria-label="Maintenance status">
+      <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
+      <p class="maintenance-kicker">VTS 1097 TOOLKIT</p>
+      <h1 class="maintenance-title">Maintenance Mode</h1>
+      <p class="maintenance-message">We are pausing the tools while Firebase sync and OCR stability are checked. The site will reopen after the morning debug pass.</p>
+      <p class="maintenance-status"><span class="maintenance-status-dot" aria-hidden="true"></span>Maintenance in progress</p>
+    </section>
+  </div>
   <div class="app-shell min-h-screen">
     <header class="command-header admin-command-header" aria-label="VTS 1097 admin toolkit">
       <div class="command-brand admin-command-brand">
@@ -144,6 +154,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/admin-page.js?v=20260624_014739"></script>
+  <script type="module" src="js/admin-page.js?v=20260624_015912"></script>
 </body>
 </html>

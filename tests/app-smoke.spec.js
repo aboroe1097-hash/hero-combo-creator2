@@ -12,6 +12,7 @@ async function waitForAppReady(page) {
 async function openApp(page, path = '/') {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_quick_tour_done', '1');
   });
@@ -58,6 +59,7 @@ async function expectEdenTerrainPainted(page) {
 async function openAdmin(page) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
     sessionStorage.removeItem('vts_guest');
     localStorage.removeItem('vts_ocr_auth');
     navigator.serviceWorker?.getRegistrations?.().then((registrations) => {

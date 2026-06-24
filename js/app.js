@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260624_014739';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260624_015912';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -1422,7 +1422,9 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[global] Unhandled promise rejection:', e.reason);
 });
-if (typeof startApp === 'function') {
+if (window.VTS_MAINTENANCE_ACTIVE) {
+  document.body?.classList.remove('app-booting');
+} else if (typeof startApp === 'function') {
   initAppLoading();
   setupInstallPrompt();
   window.showAboModal = showAboModal;
