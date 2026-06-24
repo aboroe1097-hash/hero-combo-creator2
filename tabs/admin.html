@@ -18,32 +18,34 @@
         <!-- Connecting Overlay (shown while loading data after sign-in) -->
         <div id="dashConnecting" class="dash-connecting hidden" role="status" aria-live="polite">
           <div class="dash-connecting-stage">
-            <div class="dash-connecting-radar" aria-hidden="true">
-              <div class="dash-radar-grid"></div>
-              <div class="dash-radar-ring dash-radar-ring--1"></div>
-              <div class="dash-radar-ring dash-radar-ring--2"></div>
-              <div class="dash-radar-ring dash-radar-ring--3"></div>
-              <div class="dash-radar-sweep"></div>
-              <div class="dash-radar-orbit">
-                <span class="dash-orbit-node dash-orbit-node--1"></span>
-                <span class="dash-orbit-node dash-orbit-node--2"></span>
-                <span class="dash-orbit-node dash-orbit-node--3"></span>
-                <span class="dash-orbit-node dash-orbit-node--4"></span>
+            <div class="dash-connecting-sigil" aria-hidden="true">
+              <div class="dash-sigil-aura"></div>
+              <div class="dash-sigil-body">
+                <div class="dash-sigil-ring dash-sigil-ring--ice">
+                  <span class="dash-sigil-crystal dash-sigil-crystal--a"></span>
+                  <span class="dash-sigil-crystal dash-sigil-crystal--b"></span>
+                  <span class="dash-sigil-crystal dash-sigil-crystal--c"></span>
+                </div>
+                <div class="dash-sigil-ring dash-sigil-ring--fire">
+                  <span class="dash-sigil-ember dash-sigil-ember--a"></span>
+                  <span class="dash-sigil-ember dash-sigil-ember--b"></span>
+                  <span class="dash-sigil-ember dash-sigil-ember--c"></span>
+                  <span class="dash-sigil-ember dash-sigil-ember--d"></span>
+                </div>
+                <div class="dash-sigil-emblem">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/>
+                    <path d="M12 7v8"/><path d="M9 11h6"/>
+                  </svg>
+                </div>
               </div>
-              <div class="dash-radar-emblem">
-                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/>
-                  <path d="M12 7v8"/><path d="M9 11h6"/>
-                </svg>
-              </div>
-              <span class="dash-radar-tick dash-radar-tick--n"></span>
-              <span class="dash-radar-tick dash-radar-tick--e"></span>
-              <span class="dash-radar-tick dash-radar-tick--s"></span>
-              <span class="dash-radar-tick dash-radar-tick--w"></span>
             </div>
-            <p class="dash-connecting-kicker">VTS 1097 COMMAND</p>
+            <p class="dash-connecting-kicker">ICE &amp; FIRE TOOLKIT · STATE 1097</p>
             <h2 class="dash-connecting-title" data-i18n="adminConnectingTitle">Connecting to Dashboard</h2>
-            <p class="dash-connecting-sub" data-i18n="adminConnectingSub">Loading alliance data from secure cloud&hellip;</p>
+            <div class="dash-connecting-bar-wrap">
+              <span class="dash-connecting-bar"><span id="dashConnectingBarFill" class="dash-connecting-bar-fill"></span></span>
+              <span id="dashConnectingBarPct" class="dash-connecting-bar-pct">0%</span>
+            </div>
             <p id="dashConnectingStatus" class="dash-connecting-status"></p>
           </div>
         </div>

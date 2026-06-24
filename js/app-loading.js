@@ -308,7 +308,7 @@ async function dismissBootSplash() {
     if (statusContainer) statusContainer.classList.add('title-fade');
 
     // Wait for the wing unfurl and light flash animation to complete.
-    await sleep(prefersReducedMotion() ? 80 : 1400);
+    await sleep(prefersReducedMotion() ? 80 : 1600);
 
     // Fade out the entire boot-splash overlay
     splash.classList.add('boot-splash--out');

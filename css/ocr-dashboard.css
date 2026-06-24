@@ -61,119 +61,145 @@
   font-size: 0.75rem; color: var(--text-dim); margin-top: 0.75rem;
 }
 
-/* Connecting Overlay (post-login loading screen) */
+/* Connecting Overlay — Ice & Fire sigil theme */
 #ocrDashboardRoot .dash-connecting {
   display: flex; align-items: center; justify-content: center;
   min-height: 70vh; padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 50% 42%, rgba(34, 211, 238, 0.07), transparent 60%),
-    radial-gradient(circle at 50% 60%, rgba(251, 191, 36, 0.05), transparent 55%);
+    radial-gradient(ellipse at 35% 30%, rgba(34, 211, 238, 0.1), transparent 55%),
+    radial-gradient(ellipse at 65% 70%, rgba(251, 191, 36, 0.09), transparent 55%),
+    #070b12;
 }
 #ocrDashboardRoot .dash-connecting-stage {
   display: flex; flex-direction: column; align-items: center;
   text-align: center; max-width: 460px; width: 100%;
 }
 
-/* Radar tactical display */
-#ocrDashboardRoot .dash-connecting-radar {
+/* Ice & Fire Sigil */
+#ocrDashboardRoot .dash-connecting-sigil {
   position: relative;
   width: 220px; height: 220px;
   margin: 0 auto 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Outer aura — pulses between ice and fire */
+#ocrDashboardRoot .dash-sigil-aura {
+  position: absolute; inset: -28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%);
+  animation: dash-sigil-aura 3s ease-in-out infinite;
+}
+@keyframes dash-sigil-aura {
+  0%, 100% { opacity: 0.6; background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%); }
+  50% { opacity: 1; background: radial-gradient(circle, rgba(251, 191, 36, 0.22) 0%, transparent 70%); }
+}
+
+/* Sigil main body */
+#ocrDashboardRoot .dash-sigil-body {
+  position: relative;
+  width: 220px; height: 220px;
   border-radius: 50%;
   background:
-    radial-gradient(circle, rgba(34, 211, 238, 0.05) 0%, rgba(2, 6, 17, 0.55) 70%);
+    radial-gradient(circle at 35% 30%, rgba(34, 211, 238, 0.06), transparent 50%),
+    radial-gradient(circle at 65% 65%, rgba(251, 191, 36, 0.05), transparent 48%),
+    rgba(4, 8, 18, 0.82);
   box-shadow:
-    0 0 60px rgba(34, 211, 238, 0.12),
-    inset 0 0 40px rgba(34, 211, 238, 0.06),
-    0 0 0 1px rgba(103, 232, 249, 0.18);
+    0 0 70px rgba(34, 211, 238, 0.14),
+    0 0 0 1px rgba(103, 232, 249, 0.15);
+  overflow: hidden;
 }
-#ocrDashboardRoot .dash-radar-grid {
+
+/* Decorative ring marks on the sigil */
+#ocrDashboardRoot .dash-sigil-body::before {
+  content: "";
   position: absolute; inset: 0; border-radius: 50%;
-  background-image:
-    linear-gradient(rgba(103, 232, 249, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(103, 232, 249, 0.08) 1px, transparent 1px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(circle, #000 60%, transparent 72%);
-  -webkit-mask-image: radial-gradient(circle, #000 60%, transparent 72%);
+  background:
+    repeating-conic-gradient(
+      rgba(103, 232, 249, 0.06) 0% 1%,
+      transparent 1% 3%
+    );
+  opacity: 0.5;
 }
-#ocrDashboardRoot .dash-radar-ring {
-  position: absolute; border-radius: 50%;
-  border: 1px solid rgba(103, 232, 249, 0.16);
-  top: 50%; left: 50%; transform: translate(-50%, -50%);
+
+/* Ice Ring — inner, rotating clockwise */
+#ocrDashboardRoot .dash-sigil-ring {
+  position: absolute; top: 50%; left: 50%;
+  border-radius: 50%;
+  border: 1px solid;
+  transform: translate(-50%, -50%);
 }
-#ocrDashboardRoot .dash-radar-ring--1 { width: 60%; height: 60%; }
-#ocrDashboardRoot .dash-radar-ring--2 { width: 82%; height: 82%; }
-#ocrDashboardRoot .dash-radar-ring--3 {
-  width: 100%; height: 100%;
-  border-color: rgba(103, 232, 249, 0.28);
-  border-style: dashed;
-  animation: dash-radar-spin 14s linear infinite;
+#ocrDashboardRoot .dash-sigil-ring--ice {
+  width: 64%; height: 64%;
+  border-color: rgba(103, 232, 249, 0.25);
+  animation: dash-sigil-ice-spin 8s linear infinite;
 }
-#ocrDashboardRoot .dash-radar-sweep {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    rgba(34, 211, 238, 0) 0deg,
-    rgba(34, 211, 238, 0) 300deg,
-    rgba(34, 211, 238, 0.22) 350deg,
-    rgba(103, 232, 249, 0.5) 360deg
-  );
-  mask-image: radial-gradient(circle, #000 5%, #000 98%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle, #000 5%, #000 98%, transparent 100%);
-  animation: dash-radar-spin 3.4s linear infinite;
+#ocrDashboardRoot .dash-sigil-ring--fire {
+  width: 84%; height: 84%;
+  border-color: rgba(251, 191, 36, 0.22);
+  animation: dash-sigil-fire-spin 6s linear infinite;
 }
-#ocrDashboardRoot .dash-radar-orbit {
-  position: absolute; inset: 0;
-  animation: dash-radar-spin 7s linear infinite reverse;
+
+/* Ice crystals — hexagonal shapes on the ice ring */
+#ocrDashboardRoot .dash-sigil-crystal {
+  position: absolute; top: 50%; left: 50%;
+  width: 10px; height: 14px;
+  margin: -7px 0 0 -5px;
+  background: #67e8f9;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: 0 0 14px rgba(103, 232, 249, 0.8), 0 0 4px rgba(103, 232, 249, 0.6);
 }
-#ocrDashboardRoot .dash-orbit-node {
+#ocrDashboardRoot .dash-sigil-crystal--a { transform: rotate(0deg) translateY(-40px); }
+#ocrDashboardRoot .dash-sigil-crystal--b { transform: rotate(120deg) translateY(-40px); }
+#ocrDashboardRoot .dash-sigil-crystal--c { transform: rotate(240deg) translateY(-40px); }
+
+/* Fire embers — glowing circles on the fire ring */
+#ocrDashboardRoot .dash-sigil-ember {
   position: absolute; top: 50%; left: 50%;
   width: 8px; height: 8px; margin: -4px 0 0 -4px;
   border-radius: 50%;
   background: #fbbf24;
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 3px rgba(251, 191, 36, 0.5);
+  animation: dash-sigil-ember-pulse 1.5s ease-in-out infinite;
 }
-#ocrDashboardRoot .dash-orbit-node--1 { transform: rotate(0deg) translateX(74px); }
-#ocrDashboardRoot .dash-orbit-node--2 {
-  transform: rotate(90deg) translateX(74px);
-  background: #67e8f9; box-shadow: 0 0 10px rgba(103, 232, 249, 0.7);
+#ocrDashboardRoot .dash-sigil-ember--a { transform: rotate(0deg) translateY(-52px); animation-delay: 0s; }
+#ocrDashboardRoot .dash-sigil-ember--b { transform: rotate(90deg) translateY(-52px); animation-delay: 0.4s; }
+#ocrDashboardRoot .dash-sigil-ember--c { transform: rotate(180deg) translateY(-52px); animation-delay: 0.8s; }
+#ocrDashboardRoot .dash-sigil-ember--d { transform: rotate(270deg) translateY(-52px); animation-delay: 1.2s; }
+@keyframes dash-sigil-ember-pulse {
+  0%, 100% { opacity: 0.5; transform: var(--t, rotate(0deg)) translateY(-52px) scale(0.7); }
+  50% { opacity: 1; transform: var(--t, rotate(0deg)) translateY(-52px) scale(1.3); }
 }
-#ocrDashboardRoot .dash-orbit-node--3 { transform: rotate(180deg) translateX(74px); background: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.7); }
-#ocrDashboardRoot .dash-orbit-node--4 {
-  transform: rotate(270deg) translateX(74px);
-  background: #67e8f9; box-shadow: 0 0 10px rgba(103, 232, 249, 0.7);
-}
-#ocrDashboardRoot .dash-radar-emblem {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 64px; height: 64px;
+
+/* Central shield emblem */
+#ocrDashboardRoot .dash-sigil-emblem {
+  position: relative; z-index: 2;
+  width: 74px; height: 74px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
   color: #67e8f9;
-  background: rgba(5, 12, 25, 0.92);
-  border: 1px solid rgba(103, 232, 249, 0.34);
+  background: linear-gradient(135deg, rgba(5, 14, 28, 0.95), rgba(10, 18, 32, 0.92));
+  border: 1.5px solid rgba(103, 232, 249, 0.35);
   box-shadow:
-    0 0 24px rgba(34, 211, 238, 0.32),
-    inset 0 0 14px rgba(34, 211, 238, 0.12);
-  animation: dash-emblem-pulse 2.2s ease-in-out infinite;
+    0 0 28px rgba(34, 211, 238, 0.35),
+    inset 0 0 16px rgba(34, 211, 238, 0.13),
+    0 0 0 3px rgba(251, 191, 36, 0.14);
+  animation: dash-sigil-emblem 2.4s ease-in-out infinite;
 }
-#ocrDashboardRoot .dash-radar-tick {
-  position: absolute; top: 50%; left: 50%;
-  width: 2px; height: 8px; margin: -110px 0 0 -1px;
-  background: rgba(103, 232, 249, 0.42);
-  border-radius: 1px;
-  transform-origin: 50% 110px;
+#ocrDashboardRoot .dash-sigil-emblem svg { position: relative; z-index: 1; }
+@keyframes dash-sigil-emblem {
+  0%, 100% {
+    box-shadow: 0 0 28px rgba(34, 211, 238, 0.35), inset 0 0 16px rgba(34, 211, 238, 0.13), 0 0 0 3px rgba(251, 191, 36, 0.14);
+    color: #67e8f9;
+  }
+  50% {
+    box-shadow: 0 0 42px rgba(251, 191, 36, 0.42), inset 0 0 22px rgba(251, 191, 36, 0.16), 0 0 0 4px rgba(34, 211, 238, 0.18);
+    color: #fde68a;
+  }
 }
-#ocrDashboardRoot .dash-radar-tick--n { transform: rotate(0deg); }
-#ocrDashboardRoot .dash-radar-tick--e { transform: rotate(90deg); }
-#ocrDashboardRoot .dash-radar-tick--s { transform: rotate(180deg); }
-#ocrDashboardRoot .dash-radar-tick--w { transform: rotate(270deg); }
 
-@keyframes dash-radar-spin { to { transform: rotate(360deg); } }
-@keyframes dash-emblem-pulse {
-  0%, 100% { box-shadow: 0 0 24px rgba(34, 211, 238, 0.32), inset 0 0 14px rgba(34, 211, 238, 0.12); }
-  50% { box-shadow: 0 0 38px rgba(34, 211, 238, 0.55), inset 0 0 22px rgba(34, 211, 238, 0.22); }
-}
+@keyframes dash-sigil-ice-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes dash-sigil-fire-spin { to { transform: translate(-50%, -50%) rotate(-360deg); } }
 
 #ocrDashboardRoot .dash-connecting-kicker {
   display: inline-block;
@@ -194,6 +220,26 @@
 #ocrDashboardRoot .dash-connecting-sub {
   color: var(--text-muted); font-size: 0.85rem; margin: 0 0 0.5rem;
 }
+#ocrDashboardRoot .dash-connecting-bar-wrap {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; max-width: 280px; margin: 0 auto 0.5rem;
+}
+#ocrDashboardRoot .dash-connecting-bar {
+  flex: 1; height: 5px; overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+}
+#ocrDashboardRoot .dash-connecting-bar-fill {
+  display: block; height: 100%; width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #67e8f9, #fbbf24);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.45);
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#ocrDashboardRoot .dash-connecting-bar-pct {
+  color: #a8b3c7; font-size: 0.68rem; font-weight: 800;
+  font-variant-numeric: tabular-nums; min-width: 28px; text-align: right;
+}
 #ocrDashboardRoot .dash-connecting-status {
   color: var(--text-dim); font-size: 0.72rem; margin: 0;
   min-height: 1rem; font-weight: 600;
@@ -207,40 +253,46 @@
 @keyframes dash-status-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
 [data-theme="light"] #ocrDashboardRoot .dash-connecting {
-  background: radial-gradient(circle at 50% 42%, rgba(59,130,246,0.06), transparent 60%);
+  background:
+    radial-gradient(ellipse at 35% 30%, rgba(14, 116, 144, 0.06), transparent 55%),
+    radial-gradient(ellipse at 65% 70%, rgba(180, 83, 9, 0.05), transparent 55%),
+    #f1f5f9;
 }
-[data-theme="light"] #ocrDashboardRoot .dash-connecting-radar {
-  background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(241,245,249,0.6) 70%);
-  box-shadow: 0 0 60px rgba(59,130,246,0.1), inset 0 0 40px rgba(59,130,246,0.04), 0 0 0 1px rgba(59,130,246,0.18);
+[data-theme="light"] #ocrDashboardRoot .dash-sigil-body {
+  background:
+    radial-gradient(circle at 35% 30%, rgba(14, 116, 144, 0.04), transparent 50%),
+    radial-gradient(circle at 65% 65%, rgba(180, 83, 9, 0.04), transparent 48%),
+    rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 50px rgba(14, 116, 144, 0.08), 0 0 0 1px rgba(14, 116, 144, 0.12);
 }
-[data-theme="light"] #ocrDashboardRoot .dash-radar-grid {
-  background-image:
-    linear-gradient(rgba(59,130,246,0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.1) 1px, transparent 1px);
-}
-[data-theme="light"] #ocrDashboardRoot .dash-radar-ring { border-color: rgba(59,130,246,0.16); }
-[data-theme="light"] #ocrDashboardRoot .dash-radar-ring--3 { border-color: rgba(59,130,246,0.28); }
-[data-theme="light"] #ocrDashboardRoot .dash-radar-emblem {
-  color: #2563eb;
-  background: #ffffff;
-  border-color: rgba(59,130,246,0.34);
+[data-theme="light"] #ocrDashboardRoot .dash-sigil-ring--ice { border-color: rgba(14, 116, 144, 0.22); }
+[data-theme="light"] #ocrDashboardRoot .dash-sigil-ring--fire { border-color: rgba(180, 83, 9, 0.2); }
+[data-theme="light"] #ocrDashboardRoot .dash-sigil-emblem {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.92));
+  border-color: rgba(14, 116, 144, 0.28);
+  color: #0e7490;
 }
 [data-theme="light"] #ocrDashboardRoot .dash-connecting-title { color: #0f172a; text-shadow: none; }
 
 @media (max-width: 480px) {
-  #ocrDashboardRoot .dash-connecting-radar { width: 180px; height: 180px; }
-  #ocrDashboardRoot .dash-orbit-node--1,
-  #ocrDashboardRoot .dash-orbit-node--3 { transform: rotate(0deg) translateX(60px); }
-  #ocrDashboardRoot .dash-orbit-node--2,
-  #ocrDashboardRoot .dash-orbit-node--4 { transform: rotate(90deg) translateX(60px); }
-  #ocrDashboardRoot .dash-radar-tick { margin-top: -90px; transform-origin: 50% 90px; }
-  #ocrDashboardRoot .dash-radar-emblem { width: 54px; height: 54px; }
+  #ocrDashboardRoot .dash-connecting-sigil { width: 180px; height: 180px; }
+  #ocrDashboardRoot .dash-sigil-body { width: 180px; height: 180px; }
+  #ocrDashboardRoot .dash-sigil-aura { inset: -22px; }
+  #ocrDashboardRoot .dash-sigil-emblem { width: 62px; height: 62px; }
+  #ocrDashboardRoot .dash-sigil-crystal--a { transform: rotate(0deg) translateY(-32px); }
+  #ocrDashboardRoot .dash-sigil-crystal--b { transform: rotate(120deg) translateY(-32px); }
+  #ocrDashboardRoot .dash-sigil-crystal--c { transform: rotate(240deg) translateY(-32px); }
+  #ocrDashboardRoot .dash-sigil-ember--a { transform: rotate(0deg) translateY(-42px); }
+  #ocrDashboardRoot .dash-sigil-ember--b { transform: rotate(90deg) translateY(-42px); }
+  #ocrDashboardRoot .dash-sigil-ember--c { transform: rotate(180deg) translateY(-42px); }
+  #ocrDashboardRoot .dash-sigil-ember--d { transform: rotate(270deg) translateY(-42px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  #ocrDashboardRoot .dash-radar-sweep,
-  #ocrDashboardRoot .dash-radar-orbit,
-  #ocrDashboardRoot .dash-radar-ring--3,
-  #ocrDashboardRoot .dash-radar-emblem,
+  #ocrDashboardRoot .dash-sigil-aura,
+  #ocrDashboardRoot .dash-sigil-ring--ice,
+  #ocrDashboardRoot .dash-sigil-ring--fire,
+  #ocrDashboardRoot .dash-sigil-emblem,
+  #ocrDashboardRoot .dash-sigil-ember,
   #ocrDashboardRoot .dash-connecting-status::before { animation: none !important; }
 }
 

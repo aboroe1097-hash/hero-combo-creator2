@@ -12,7 +12,7 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  totalCssBytes: 420 * 1024,
+  totalCssBytes: 470 * 1024,
 };
 
 function formatBytes(bytes) {

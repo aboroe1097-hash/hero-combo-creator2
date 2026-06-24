@@ -518,7 +518,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     card.appendChild(scoreBox);
 
     const counterRow = document.createElement('div');
-    counterRow.className = 'generated-counter-row';
+    counterRow.className = 'generated-counter-row generated-counter-row--badge-only';
     counterRow.innerHTML = renderCountersToggle(combo.heroes, getComboRankInfo, getGeneratorResultHeroImageUrl, getCounterLabels(), {
       showEmpty: false,
       showUseAction: true,

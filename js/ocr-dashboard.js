@@ -348,6 +348,13 @@ function setConnectingStatus(msg) {
   const status = $id('dashConnectingStatus');
   if (status) status.textContent = msg || '';
 }
+function setConnectingProgress(pct, statusMsg) {
+  const fill = $id('dashConnectingBarFill');
+  const pctEl = $id('dashConnectingBarPct');
+  if (fill) fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+  if (pctEl) pctEl.textContent = `${Math.floor(pct)}%`;
+  if (statusMsg) setConnectingStatus(statusMsg);
+}
 
 function dashT(key, vars = {}) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
@@ -531,11 +538,14 @@ async function doLogin() {
   err.classList.add('hidden');
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '…'; }
   showConnecting(dashT('adminConnectingAuth'));
-  setConnectingStatus(dashT('adminConnectingData'));
+  setConnectingProgress(30, dashT('adminConnectingAuth'));
   try {
+    setConnectingProgress(70, dashT('adminConnectingData'));
     await loadData();
+    setConnectingProgress(100);
   } catch (e) {
     console.error('Dashboard load failed after login', e);
+    setConnectingProgress(100);
   }
   hideConnecting();
   if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = dashT('adminLoginBtn'); }
@@ -948,11 +958,15 @@ async function openGuestDashboard() {
   sessionStorage.setItem('vts_guest', '1');
   $id('dashLoginErr')?.classList.add('hidden');
   showConnecting(dashT('adminConnectingData'));
+  setConnectingProgress(20);
   try {
     hydrateDashboardStateFromLocalStorage();
+    setConnectingProgress(60, dashT('adminConnectingData'));
     await loadData();
+    setConnectingProgress(100);
   } catch (e) {
     console.error('Guest dashboard load failed', e);
+    setConnectingProgress(100);
   }
   hideConnecting();
   showApp();
@@ -984,18 +998,22 @@ export async function bootOcrDashboard() {
   bindSubtabNavigation();
   if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
   const wasAuthed = isAuthed();
-  if (wasAuthed) showConnecting(dashT('adminConnectingInit')); else showLogin();
+  if (wasAuthed) { showConnecting(dashT('adminConnectingInit')); setConnectingProgress(10, dashT('adminConnectingInit')); }
+  else showLogin();
   try {
     await initDashboardFirebase();
+    setConnectingProgress(25, dashT('adminConnectingInit'));
     if (state.cloudSyncConfigured) {
       setConnectingStatus(dashT('adminConnectingAuth'));
       await ensureAnonymousAuth();
+      setConnectingProgress(40, dashT('adminConnectingAuth'));
     }
   } catch (err) {
     console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
     state.cloudSyncConfigured = false;
+    setConnectingProgress(40, dashT('adminConnectingData'));
   }
-  setConnectingStatus(dashT('adminConnectingData'));
+  setConnectingProgress(55, dashT('adminConnectingData'));
   loadRosterSnapshots();
   await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
@@ -1011,11 +1029,13 @@ export async function bootOcrDashboard() {
   $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
   log('VTS Admin Dashboard loaded.', 'info');
   if (wasAuthed) {
+    setConnectingProgress(70, dashT('adminConnectingData'));
     try {
       await loadData();
     } catch (e) {
       console.error('Dashboard load failed during boot', e);
     }
+    setConnectingProgress(100);
     hideConnecting();
     showApp();
     render();
