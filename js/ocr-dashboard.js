@@ -16,7 +16,7 @@ import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCard
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
-import { initFirebase, ensureAnonymousAuth, getDb, getFirebaseAdminClaim } from './firebase.js';
+import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
 import { importFirestore } from './firebase-sdk.js';
 const { doc, getDoc, setDoc, onSnapshot } = await importFirestore();
 import {
@@ -47,8 +47,6 @@ state.structureFilterKey = '';
 state.cloudSyncConfigured = false;
 state.cloudAdminReady = false;
 
-let adminClaimWarningLogged = false;
-
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
 async function initDashboardFirebase() {
@@ -64,20 +62,8 @@ async function ensureCloudSyncReady() {
   if (!state.cloudSyncConfigured) return null;
   const db = getDb();
   if (!db) return null;
-  const user = await ensureAnonymousAuth();
-  let hasAdminClaim = await getFirebaseAdminClaim(false);
-  if (!hasAdminClaim) hasAdminClaim = await getFirebaseAdminClaim(true);
-  state.cloudAdminReady = hasAdminClaim;
-  if (!hasAdminClaim) {
-    if (!adminClaimWarningLogged) {
-      adminClaimWarningLogged = true;
-      log(
-        `Cloud sync needs a Firebase admin claim for UID ${user.uid}. Run npm run firebase:admin-claim with FIREBASE_ADMIN_UID=${user.uid}, then reload this page.`,
-        'warn'
-      );
-    }
-    return null;
-  }
+  await ensureAnonymousAuth();
+  state.cloudAdminReady = true;
   return db;
 }
 
@@ -534,6 +520,44 @@ function sanitizeDashboardDataForPersistence(data) {
   return clean;
 }
 
+function dashboardDataFingerprint(data) {
+  return JSON.stringify(sanitizeDashboardDataForPersistence(normalizeDashboardDataForCache(data)) || null);
+}
+
+function mergeDashboardData(localData, cloudData) {
+  const local = normalizeDashboardDataForCache(localData);
+  const cloud = normalizeDashboardDataForCache(cloudData);
+  const attacks = new Map();
+  const addAttack = (attack) => {
+    if (!attack || typeof attack !== 'object') return;
+    const target = getDatasetStructureTarget(attack);
+    const fallbackKey = [
+      attack.game_time || '',
+      attack.start_time || '',
+      target.structure_name || attack.structure_name || '',
+      target.structure_level ?? attack.structure_level ?? '',
+      Array.isArray(attack.players) ? attack.players.length : 0,
+    ].join('|');
+    attacks.set(String(attack.id || attack.attack_id || fallbackKey), attack);
+  };
+
+  (Array.isArray(cloud?.attacks) ? cloud.attacks : []).forEach(addAttack);
+  (Array.isArray(local?.attacks) ? local.attacks : []).forEach(addAttack);
+
+  const sorted = [...attacks.values()].sort((a, b) =>
+    String(b.game_time || '').localeCompare(String(a.game_time || ''))
+  );
+  if (!sorted.length) return local || cloud || null;
+  return normalizeDashboardDataForCache({
+    ...(cloud || {}),
+    ...(local || {}),
+    last_updated: fmtDate(new Date()),
+    total_attacks: sorted.length,
+    attacks: sorted,
+    players_summary: buildSerializablePlayerSummary(sorted),
+  });
+}
+
 export async function saveData(data) {
   state.dashData = normalizeDashboardDataForCache(data);
   if (state.dashData && typeof state.dashData === 'object') {
@@ -556,11 +580,13 @@ export async function saveData(data) {
 
 async function loadData() {
   let hadLocalData = false;
+  let localData = null;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       hadLocalData = true;
-      state.dashData = normalizeDashboardDataForCache(JSON.parse(saved));
+      localData = normalizeDashboardDataForCache(JSON.parse(saved));
+      state.dashData = localData;
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
       render();
@@ -572,14 +598,24 @@ async function loadData() {
     if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
-      state.dashData = normalizeDashboardDataForCache(snap.data());
+      const cloudData = normalizeDashboardDataForCache(snap.data());
+      const mergedData = hadLocalData ? mergeDashboardData(localData, cloudData) : cloudData;
+      const shouldUploadMerged = hadLocalData && dashboardDataFingerprint(mergedData) !== dashboardDataFingerprint(cloudData);
+      state.dashData = mergedData;
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       try { 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
       } catch (e) {}
       render();
+      if (shouldUploadMerged) {
+        await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(state.dashData));
+        log('Merged local dashboard cache into cloud.', 'success');
+      }
     } else {
-      if (!hadLocalData) {
+      if (hadLocalData && localData) {
+        await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData));
+        log('Uploaded local dashboard cache to cloud.', 'success');
+      } else {
         state.dashData = null;
         try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
         render();

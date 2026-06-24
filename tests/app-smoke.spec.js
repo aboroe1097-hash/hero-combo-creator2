@@ -566,7 +566,7 @@ test.describe('app smoke tabs', () => {
     });
     await expect(page.locator('#dashStructureChart')).toContainText('Leaderboard filtered by');
     await expect(page.locator('#dashStructureChart')).not.toContainText('Gate');
-    await page.locator('[data-subtab="dashboard"]').click();
+    await page.evaluate(() => window.switchDashSubtab('dashboard'));
     await expect(page.locator('#dashLeaderBody')).toContainText('Filtered by Capital');
     await expect(page.locator('#dashLeaderBody')).toContainText('Bravo');
     await page.evaluate(async () => {

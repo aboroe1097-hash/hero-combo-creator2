@@ -196,17 +196,9 @@ Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click vi
 The old maintenance splash/config gate has been removed. `index.html` and `admin.html` load the standard UI directly, and `js/maintenance-config.js` is no longer part of the app or service-worker precache.
 
 ### Admin Auth
-`js/admin-auth-config.js` gates the admin UI with SHA-256 password hashes, but Firestore is protected separately by Firebase custom claims. The local admin password only opens the dashboard screen; cloud writes for OCR data, roster snapshots, and Eden shared intel still require `request.auth.token.admin === true`.
+`js/admin-auth-config.js` gates the admin UI with SHA-256 password hashes. OCR dashboard cloud sync uses Firebase anonymous auth and writes to the shared `vts_admin` Firestore documents. The Firestore rules intentionally allow signed-in users to read/write those two dashboard documents so operators do not need a custom Firebase admin claim before syncing OCR uploads.
 
-To grant the deployed anonymous admin user the Firestore admin claim, open the deployed admin page, copy the UID printed in the cloud-sync warning, then run:
-
-```bash
-FIREBASE_SERVICE_ACCOUNT_PATH=/path/to/service-account.json \
-FIREBASE_ADMIN_UID=<uid-from-admin-warning> \
-npm run firebase:admin-claim
-```
-
-Reload the deployed admin page after the claim is set so Firebase refreshes the ID token. Guest mode remains available for read-only local dashboard views.
+The dashboard saves OCR results to localStorage first, then uploads to Firestore when cloud sync is available. On load, locally cached attacks are merged with cloud attacks by attack id and written back to Firestore, so a day of local-only uploads can be recovered by reopening the same browser profile after rules/config are fixed.
 
 ### Firebase
 Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.

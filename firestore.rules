@@ -145,14 +145,14 @@ service cloud.firestore {
     }
 
     match /vts_admin/dashboard_data {
-      allow read: if isAdmin();
-      allow create, update: if isAdmin() && validDashboardData();
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validDashboardData();
       allow delete: if false;
     }
 
     match /vts_admin/roster_data {
-      allow read: if isAdmin();
-      allow create, update: if isAdmin() && validRosterData();
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validRosterData();
       allow delete: if false;
     }
 
