@@ -6,8 +6,8 @@ window.VTS_MAINTENANCE_MODE = true;
 window.VTS_MAINTENANCE_CONFIG = {
   kicker: 'VTS 1097 TOOLKIT',
   title: 'Maintenance Mode',
-  message: 'We are pausing the tools while Firebase sync and OCR stability are checked. The site will reopen after the morning debug pass.',
-  status: 'Maintenance in progress',
+  message: 'Be back soon.',
+  status: '',
 };
 
 (function applyMaintenanceMode() {
