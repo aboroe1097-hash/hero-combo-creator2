@@ -319,6 +319,36 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
 
+let connectingTimer = null;
+function showConnecting(statusMsg = '') {
+  $id('dashLogin')?.classList.add('hidden');
+  $id('dashApp')?.classList.add('hidden');
+  const overlay = $id('dashConnecting');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-busy', 'true');
+  }
+  const status = $id('dashConnectingStatus');
+  if (status) status.textContent = statusMsg;
+  if (connectingTimer) clearTimeout(connectingTimer);
+  connectingTimer = setTimeout(() => {
+    console.warn('Connecting overlay exceeded 12s - forcing dashboard open.');
+    hideConnecting();
+    if (isAuthed()) { showApp(); render(); } else showLogin();
+  }, 12000);
+}
+function hideConnecting() {
+  const overlay = $id('dashConnecting');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.removeAttribute('aria-busy');
+  if (connectingTimer) { clearTimeout(connectingTimer); connectingTimer = null; }
+}
+function setConnectingStatus(msg) {
+  const status = $id('dashConnectingStatus');
+  if (status) status.textContent = msg || '';
+}
+
 function dashT(key, vars = {}) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
   const dictionaries = window.VTS_TRANSLATIONS || translations;
@@ -395,6 +425,7 @@ function renderGuestBanner(guestBanner) {
 }
 
 function showApp() { 
+  hideConnecting();
   $id('dashLogin')?.classList.add('hidden'); 
   $id('dashApp')?.classList.remove('hidden'); 
   if (isGuest()) {
@@ -429,6 +460,7 @@ function showLogin() {
     showApp();
     return;
   }
+  hideConnecting();
   removeGuestBanner();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
@@ -487,9 +519,28 @@ async function doLogin() {
     err.classList.remove('hidden');
     return;
   }
+  const loginBtn = $id('dashLoginBtn');
   const h = await sha256(p);
-  if (h === AUTH_HASH) { sessionStorage.removeItem('vts_guest'); localStorage.setItem(AUTH_KEY, '1'); err.classList.add('hidden'); showApp(); await loadData(); }
-  else { err.textContent = 'Invalid access code'; err.classList.remove('hidden'); }
+  if (h !== AUTH_HASH) {
+    err.textContent = 'Invalid access code';
+    err.classList.remove('hidden');
+    return;
+  }
+  sessionStorage.removeItem('vts_guest');
+  localStorage.setItem(AUTH_KEY, '1');
+  err.classList.add('hidden');
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '…'; }
+  showConnecting(dashT('adminConnectingAuth'));
+  setConnectingStatus(dashT('adminConnectingData'));
+  try {
+    await loadData();
+  } catch (e) {
+    console.error('Dashboard load failed after login', e);
+  }
+  hideConnecting();
+  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = dashT('adminLoginBtn'); }
+  showApp();
+  render();
 }
 
 // --- Persistence ---
@@ -896,10 +947,16 @@ async function openGuestDashboard() {
   localStorage.removeItem(AUTH_KEY);
   sessionStorage.setItem('vts_guest', '1');
   $id('dashLoginErr')?.classList.add('hidden');
-  hydrateDashboardStateFromLocalStorage();
+  showConnecting(dashT('adminConnectingData'));
+  try {
+    hydrateDashboardStateFromLocalStorage();
+    await loadData();
+  } catch (e) {
+    console.error('Guest dashboard load failed', e);
+  }
+  hideConnecting();
   showApp();
   render();
-  await loadData();
 }
 
 
@@ -926,14 +983,19 @@ export async function bootOcrDashboard() {
   $id('dashGuestBtn').onclick = openGuestDashboard;
   bindSubtabNavigation();
   if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
-  if (isAuthed()) showApp(); else showLogin();
+  const wasAuthed = isAuthed();
+  if (wasAuthed) showConnecting(dashT('adminConnectingInit')); else showLogin();
   try {
     await initDashboardFirebase();
-    if (state.cloudSyncConfigured) await ensureAnonymousAuth();
+    if (state.cloudSyncConfigured) {
+      setConnectingStatus(dashT('adminConnectingAuth'));
+      await ensureAnonymousAuth();
+    }
   } catch (err) {
     console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
     state.cloudSyncConfigured = false;
   }
+  setConnectingStatus(dashT('adminConnectingData'));
   loadRosterSnapshots();
   await loadRosterSnapshotsFromFirestore();
   loadBannerRecords();
@@ -948,10 +1010,17 @@ export async function bootOcrDashboard() {
   bindSubtabNavigation();
   $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
   log('VTS Admin Dashboard loaded.', 'info');
-  if (isAuthed()) {
+  if (wasAuthed) {
+    try {
+      await loadData();
+    } catch (e) {
+      console.error('Dashboard load failed during boot', e);
+    }
+    hideConnecting();
     showApp();
-    await loadData();
+    render();
   } else {
+    hideConnecting();
     showLogin();
   }
   $id('dashRosterBtn').onclick = showRosterModal;
@@ -971,6 +1040,16 @@ export async function bootOcrDashboard() {
 
   // ── API status watcher ──────────────────────────────────
   let ocrReady = false;
+  function summarizeOcrStatusReason(reason) {
+    const text = String(reason || '').trim();
+    if (!text) return dashT('adminOcrConfigureWorker');
+    if (/app ?check|appcheck|debug token|recaptcha/i.test(text)) return 'App Check debug token needed';
+    if (/origin not allowed|allowed_origins|not currently allowed/i.test(text)) return 'Local origin blocked';
+    if (/dashscope_api_key/i.test(text)) return 'Worker API key missing';
+    if (/worker status\s+40[13]|unauthorized|forbidden/i.test(text)) return 'Worker authorization blocked';
+    return text.length > 64 ? `${text.slice(0, 61)}...` : text;
+  }
+
   async function updateApiStatus() {
     const result = await checkOcrService();
     ocrReady = result.configured === true;
@@ -986,13 +1065,19 @@ export async function bootOcrDashboard() {
       if (!statusEl) return;
       if (ocrReady) {
         statusEl.className = 'dash-roster-api-status dash-api-ok';
+        statusEl.removeAttribute('title');
+        statusEl.setAttribute('aria-label', dashT('adminOcrServiceReady'));
+        delete statusEl.dataset.errorDetail;
         statusEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> ${esc(dashT('adminOcrServiceReady'))}`;
         if (dropEl) { dropEl.style.opacity = '1'; dropEl.style.pointerEvents = ''; }
         if (inputEl) inputEl.disabled = false;
       } else {
         statusEl.className = 'dash-roster-api-status dash-api-missing';
         const reason = result.error || dashT('adminOcrConfigureWorker');
-        statusEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>${esc(dashT('adminOcrUnavailable'))}</b> - ${esc(reason)}`;
+        statusEl.removeAttribute('title');
+        statusEl.setAttribute('aria-label', `${dashT('adminOcrUnavailable')}: ${reason}`);
+        statusEl.dataset.errorDetail = reason;
+        statusEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <b>${esc(dashT('adminOcrUnavailable'))}</b><span class="dash-api-reason">${esc(summarizeOcrStatusReason(reason))}</span>`;
         if (dropEl) { dropEl.style.opacity = '0.5'; dropEl.style.pointerEvents = 'none'; }
         if (inputEl) inputEl.disabled = true;
       }

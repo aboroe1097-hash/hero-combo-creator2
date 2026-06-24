@@ -15,6 +15,39 @@
           </div>
         </div>
 
+        <!-- Connecting Overlay (shown while loading data after sign-in) -->
+        <div id="dashConnecting" class="dash-connecting hidden" role="status" aria-live="polite">
+          <div class="dash-connecting-stage">
+            <div class="dash-connecting-radar" aria-hidden="true">
+              <div class="dash-radar-grid"></div>
+              <div class="dash-radar-ring dash-radar-ring--1"></div>
+              <div class="dash-radar-ring dash-radar-ring--2"></div>
+              <div class="dash-radar-ring dash-radar-ring--3"></div>
+              <div class="dash-radar-sweep"></div>
+              <div class="dash-radar-orbit">
+                <span class="dash-orbit-node dash-orbit-node--1"></span>
+                <span class="dash-orbit-node dash-orbit-node--2"></span>
+                <span class="dash-orbit-node dash-orbit-node--3"></span>
+                <span class="dash-orbit-node dash-orbit-node--4"></span>
+              </div>
+              <div class="dash-radar-emblem">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/>
+                  <path d="M12 7v8"/><path d="M9 11h6"/>
+                </svg>
+              </div>
+              <span class="dash-radar-tick dash-radar-tick--n"></span>
+              <span class="dash-radar-tick dash-radar-tick--e"></span>
+              <span class="dash-radar-tick dash-radar-tick--s"></span>
+              <span class="dash-radar-tick dash-radar-tick--w"></span>
+            </div>
+            <p class="dash-connecting-kicker">VTS 1097 COMMAND</p>
+            <h2 class="dash-connecting-title" data-i18n="adminConnectingTitle">Connecting to Dashboard</h2>
+            <p class="dash-connecting-sub" data-i18n="adminConnectingSub">Loading alliance data from secure cloud&hellip;</p>
+            <p id="dashConnectingStatus" class="dash-connecting-status"></p>
+          </div>
+        </div>
+
         <!-- Dashboard Main -->
         <div id="dashApp" class="hidden">
           <div class="dash-container">

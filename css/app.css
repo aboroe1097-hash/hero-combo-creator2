@@ -4,20 +4,24 @@
    ============================================================= */
 
 /* ── Variables ───────────────────────────────────────────── */
-/* Dark (default) */
+/* Dark (default) — unified teal/cyan/amber palette */
 :root {
-  --brand:        #3b82f6;
-  --brand-light:  #60a5fa;
-  --brand-glow:   rgba(59,130,246,0.35);
-  --accent:       #f97316;
-  --surface:      #1e293b;
-  --surface-2:    #0b0f19;
-  --surface-3:    #111827;
-  --border:       rgba(51,65,85,0.7);
-  --border-hover: rgba(59,130,246,0.5);
+  --brand:        #0891b2;
+  --brand-light:  #22d3ee;
+  --brand-glow:   rgba(34, 211, 238, 0.28);
+  --accent:       #f59e0b;
+  --accent-2:     #10b981;
+  --danger:       #ef4444;
+  --panel:        rgba(17, 24, 39, 0.78);
+  --panel-strong: rgba(15, 23, 42, 0.94);
+  --surface:      #111827;
+  --surface-2:    #0b111c;
+  --surface-3:    #172033;
+  --border:       rgba(148, 163, 184, 0.18);
+  --border-hover: rgba(34, 211, 238, 0.42);
   --text-primary: #f8fafc;
-  --text-muted:   #94a3b8;
-  --text-dim:     #64748b;
+  --text-muted:   #a8b3c7;
+  --text-dim:     #708097;
   --green:        #10b981;
   --red:          #ef4444;
   --radius-sm:    0.625rem;
@@ -27,9 +31,9 @@
   --t-fast:  0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --t-med:   0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --t-slow:  0.45s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.45);
-  --shadow-glow: 0 0 32px var(--brand-glow);
-  --shadow-lift: 0 16px 40px rgba(0,0,0,0.5);
+  --shadow-card: 0 14px 32px rgba(0,0,0,0.24);
+  --shadow-glow: 0 0 36px var(--brand-glow);
+  --shadow-lift: 0 20px 46px rgba(0,0,0,0.34);
 
   /* Z-index scale — replaces the 41 ad-hoc values scattered below.
      Use these tokens for new code; existing literals are migrated
@@ -53,38 +57,43 @@
   --bp-xl:  1024px; /* desktop */
   --bp-2xl: 1500px; /* wide desktop */
 
-  /* Premium Space Dark Aurora Backdrops */
-  --body-bg: radial-gradient(circle at 80% 20%, rgba(59,130,246,0.08) 0%, transparent 50%),
-              radial-gradient(circle at 10% 80%, rgba(139,92,246,0.06) 0%, transparent 50%),
-              #030712;
+  /* Premium Space Dark Aurora Backdrops — teal/amber */
+  --body-bg: radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+             radial-gradient(circle at 10% 80%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+             #070b12;
   --app-bg: rgba(11,15,25,0.85);
-  --dot-grid: rgba(59,130,246,0.05);
+  --dot-grid: rgba(34,211,238,0.05);
   --glass-blur: blur(20px);
 }
 
 /* Light theme */
 [data-theme="light"] {
-  --brand:        #2563eb;
-  --brand-light:  #3b82f6;
-  --brand-glow:   rgba(37,99,235,0.18);
+  --brand:        #0e7490;
+  --brand-light:  #0891b2;
+  --brand-glow:   rgba(8, 145, 178, 0.16);
+  --accent:       #b45309;
+  --accent-2:     #047857;
+  --danger:       #dc2626;
+  --panel:        rgba(255, 255, 255, 0.85);
+  --panel-strong: rgba(255, 255, 255, 0.95);
   --surface:      #ffffff;
   --surface-2:    #f8fafc;
   --surface-3:    #f1f5f9;
-  --border:       rgba(226,232,240,0.8);
-  --border-hover: rgba(59,130,246,0.35);
+  --border:       rgba(226, 232, 240, 0.8);
+  --border-hover: rgba(8, 145, 178, 0.35);
   --text-primary: #0f172a;
   --text-muted:   #475569;
   --text-dim:     #64748b;
-  --shadow-card:  0 8px 30px rgba(37,99,235,0.04);
-  --shadow-glow:  0 0 24px rgba(37,99,235,0.12);
-  --shadow-lift:  0 16px 36px rgba(15,23,42,0.08);
+  --shadow-card: 0 8px 30px rgba(15,23,42,0.06);
+  --shadow-glow: 0 0 24px rgba(8,145,178,0.14);
+  --shadow-lift: 0 16px 36px rgba(15,23,42,0.08);
 
   /* Premium Light Soft Aurora Backdrops */
-  --body-bg: radial-gradient(circle at 80% 20%, rgba(199,210,254,0.4) 0%, transparent 60%),
-              radial-gradient(circle at 10% 80%, rgba(219,234,254,0.4) 0%, transparent 60%),
-              #f1f5f9;
+  --body-bg: radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.09) 0%, transparent 60%),
+             radial-gradient(circle at 10% 80%, rgba(245, 158, 11, 0.07) 0%, transparent 60%),
+             #f1f5f9;
   --app-bg: rgba(255,255,255,0.9);
-  --dot-grid: rgba(37,99,235,0.04);
+  --dot-grid: rgba(8,145,178,0.04);
   --glass-blur: blur(20px);
 }
 
@@ -2537,13 +2546,13 @@ input[type=number] { -moz-appearance: textfield; }
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to right, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
-  padding-right: 20px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
   margin-bottom: 8px;
   padding: 8px 10px;
+  padding-right: 20px;
   background: rgba(15,23,42,0.55);
   border: 1px solid rgba(51,65,85,0.55);
   border-radius: 14px;
@@ -2566,13 +2575,12 @@ input[type=number] { -moz-appearance: textfield; }
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to right, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
-  padding-right: 20px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
   background: rgba(15,23,42,0.6); border: 1px solid rgba(51,65,85,0.7);
-  border-radius: 14px; padding: 8px; margin-bottom: 16px;
+  border-radius: 14px; padding: 8px; padding-right: 20px; margin-bottom: 16px;
 }
 .hero-tab-season {
   padding: 5px 13px; border-radius: 99px; border: none; cursor: pointer;
@@ -5618,7 +5626,7 @@ body.hide-hero-info .info-btn { display: none !important; }
   color: #64748b !important;
 }
 [data-theme="light"] .footer-url a {
-  color: #2563eb !important;
+  color: #0891b2 !important;
 }
 [data-theme="light"] .links-section h4, 
 [data-theme="light"] .community-section h4 {
@@ -5631,7 +5639,7 @@ body.hide-hero-info .info-btn { display: none !important; }
 }
 [data-theme="light"] .links-section a:hover, 
 [data-theme="light"] .community-section a:hover {
-  color: #2563eb !important;
+  color: #0891b2 !important;
 }
 [data-theme="light"] .disclaimer {
   color: #64748b !important;
@@ -6459,7 +6467,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 }
 
 [data-theme="light"] .footer-divider {
-  box-shadow: 0 0 10px rgba(217, 119, 6, 0.25), 0 0 4px rgba(3, 105, 161, 0.15) !important;
+  box-shadow: 0 0 10px rgba(180, 83, 9, 0.25), 0 0 4px rgba(14, 116, 144, 0.15) !important;
 }
 
 @keyframes elementalPulseLight {
@@ -6547,17 +6555,39 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 }
 
 .admin-command-actions {
-  min-width: min(100%, 330px);
+  min-width: min(100%, 360px);
 }
 
 .admin-control-row {
   align-items: center;
 }
 
+.admin-command-actions .admin-control-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(190px, 1.25fr) 44px minmax(118px, 0.8fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-command-actions .global-game-clock {
+  flex: 1 1 132px;
+}
+
+.admin-command-actions .lang-select-wrapper {
+  flex: 1 1 180px;
+  min-width: min(100%, 180px);
+}
+
+.admin-command-actions #themeToggle {
+  flex: 0 0 44px;
+}
+
 .admin-back-tools {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 1 0 118px;
+  white-space: nowrap;
   min-height: 42px;
   padding: 0 14px;
   border: 1px solid rgba(148, 163, 184, 0.36);
@@ -6598,9 +6628,9 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 }
 #ocrDashboardRoot .dash-login-icon {
   width: 64px; height: 64px; margin: 0 auto 1rem;
-  border-radius: 16px; background: rgba(59,130,246,0.15);
+  border-radius: 16px; background: rgba(34, 211, 238, 0.15);
   display: flex; align-items: center; justify-content: center;
-  color: var(--brand);
+  color: var(--brand-light);
 }
 #ocrDashboardRoot .dash-login-title {
   font-size: 1.5rem; font-weight: 800; margin: 0 0 0.25rem;
@@ -6617,7 +6647,7 @@ button:active, .tab-pill:active, .filter-pill:active, .hero-card:active {
 #ocrDashboardRoot .dash-input {
   width: 100%; padding: 0.7rem 1rem; margin-bottom: 0.75rem;
   border: 1px solid var(--border); border-radius: 10px;
-  background: var(--surface); color: #f8fafc;
+  background: var(--surface); color: var(--text-primary);
   font-size: 0.95rem; outline: none; transition: var(--t-fast);
 }
 #ocrDashboardRoot .dash-input:focus {
@@ -7584,51 +7614,6 @@ body[style*="overflow: hidden"] .tab-panel {
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
-}
-
-:root {
-  --brand: #0891b2;
-  --brand-light: #22d3ee;
-  --brand-glow: rgba(34, 211, 238, 0.22);
-  --accent: #f59e0b;
-  --accent-2: #10b981;
-  --danger: #ef4444;
-  --surface: #111827;
-  --surface-2: #0b111c;
-  --surface-3: #172033;
-  --panel: rgba(17, 24, 39, 0.78);
-  --panel-strong: rgba(15, 23, 42, 0.94);
-  --border: rgba(148, 163, 184, 0.18);
-  --border-hover: rgba(34, 211, 238, 0.42);
-  --text-primary: #f8fafc;
-  --text-muted: #a8b3c7;
-  --text-dim: #708097;
-  --app-bg: rgba(4, 10, 18, 0.78);
-  --body-bg: #070b12;
-  --shadow-card: 0 14px 32px rgba(0, 0, 0, 0.24);
-  --shadow-lift: 0 20px 46px rgba(0, 0, 0, 0.34);
-  --radius-card: 0.875rem;
-  --radius-xl: 1.25rem;
-}
-
-[data-theme="light"] {
-  --brand: #0e7490;
-  --brand-light: #0891b2;
-  --brand-glow: rgba(8, 145, 178, 0.16);
-  --accent: #b45309;
-  --accent-2: #047857;
-  --surface: #ffffff;
-  --surface-2: #f4f7fb;
-  --surface-3: #eaf0f7;
-  --panel: rgba(255, 255, 255, 0.9);
-  --panel-strong: rgba(255, 255, 255, 0.98);
-  --border: rgba(100, 116, 139, 0.2);
-  --border-hover: rgba(8, 145, 178, 0.32);
-  --text-primary: #111827;
-  --text-muted: #4b5563;
-  --text-dim: #64748b;
-  --app-bg: rgba(255, 255, 255, 0.72);
-  --body-bg: #edf2f7;
 }
 
 body {
@@ -12135,6 +12120,72 @@ body.admin-standalone-page #ocrDashboardSection {
   min-width: 0;
 }
 
+[data-theme="light"] body.admin-standalone-page .admin-command-header {
+  border-color: rgba(14, 165, 233, 0.24);
+  background:
+    linear-gradient(115deg, rgba(34, 211, 238, 0.18), transparent 34%),
+    linear-gradient(285deg, rgba(245, 158, 11, 0.1), transparent 30%),
+    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.045) 0 1px, transparent 1px 46px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(232, 242, 252, 0.94)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 -1px 0 rgba(14, 165, 233, 0.16),
+    0 22px 64px rgba(15, 23, 42, 0.14);
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-command-header::before {
+  border-color: rgba(14, 165, 233, 0.18);
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-command-header::after {
+  background: linear-gradient(90deg, transparent, #0891b2, #d97706, transparent);
+  opacity: 0.55;
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-shell-title {
+  color: #0369a1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 14px rgba(14, 165, 233, 0.2);
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-shell-kicker { color: #a16207; }
+[data-theme="light"] body.admin-standalone-page .admin-shell-team { color: #0f766e; }
+
+[data-theme="light"] body.admin-standalone-page .admin-brand-logo {
+  border-color: rgba(14, 165, 233, 0.28);
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.16), 0 14px 32px rgba(15, 23, 42, 0.16);
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-command-actions {
+  border-color: rgba(14, 165, 233, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(226, 242, 248, 0.72)),
+    rgba(255, 255, 255, 0.78) !important;
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-command-actions .global-game-clock,
+[data-theme="light"] body.admin-standalone-page .admin-command-actions .lang-select-wrapper > div,
+[data-theme="light"] body.admin-standalone-page .admin-command-actions #themeToggle {
+  border-color: rgba(100, 116, 139, 0.28);
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: #334155;
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-command-actions #languageSelect {
+  color: #1e293b;
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-back-tools {
+  border-color: rgba(14, 165, 233, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.86));
+  color: #1e293b;
+}
+
+[data-theme="light"] body.admin-standalone-page .admin-back-tools:hover {
+  border-color: rgba(8, 145, 178, 0.58);
+  background: linear-gradient(180deg, #ffffff, #dff7fb);
+  color: #075985;
+}
+
 .command-actions .app-control-row {
   min-width: 0;
   flex-wrap: wrap;
@@ -12202,6 +12253,14 @@ body.admin-standalone-page #ocrDashboardSection {
     width: 100%;
   }
 
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    grid-template-columns: minmax(120px, 0.9fr) minmax(190px, 1.25fr) 44px minmax(118px, 0.8fr);
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-back-tools {
+    width: 100%;
+  }
+
   .command-actions .global-game-clock,
   .command-actions .lang-select-wrapper,
   .command-actions .lang-select-wrapper > div {
@@ -12259,6 +12318,15 @@ body.admin-standalone-page #ocrDashboardSection {
     grid-template-columns: minmax(112px, 0.7fr) minmax(150px, 1fr) 44px 44px;
     gap: 0.5rem !important;
     justify-content: stretch !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    grid-template-columns: minmax(112px, 0.8fr) minmax(150px, 1.2fr) 44px;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-back-tools {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .command-actions .global-game-clock,

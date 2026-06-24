@@ -25,8 +25,12 @@ export const ALLIANCE_COUNT = 5;
 export async function sha256(str) {
   try {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (e) { return null; }
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  } catch (e) {
+    return null;
+  }
 }
 
 export function sanitizeForFirestore(value) {
@@ -64,7 +68,10 @@ export async function checkOcrService() {
         const { getFirebaseAppCheckToken, getFirebaseSetupStatus } = await import('./firebase.js');
         const appCheckToken = await getFirebaseAppCheckToken();
         if (appCheckToken) return { configured: true, error: '' };
-        return { configured: false, error: describeFirebaseAppCheckStatus(getFirebaseSetupStatus?.()) };
+        return {
+          configured: false,
+          error: describeFirebaseAppCheckStatus(getFirebaseSetupStatus?.()),
+        };
       } catch (err) {
         return {
           configured: false,
@@ -72,13 +79,21 @@ export async function checkOcrService() {
         };
       }
     }
-    const error = data.error
-      || (!hasOcrSecret
+    const error =
+      data.error ||
+      (!hasOcrSecret
         ? 'Worker is missing DASHSCOPE_API_KEY'
         : 'Firebase App Check is missing FIREBASE_APP_CHECK_PROJECT_NUMBER');
     return { configured: false, error };
   } catch (err) {
-    return { configured: false, error: err?.message || 'OCR worker unavailable' };
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const localPortHint = /:(5175|5176|5177)$/.test(origin)
+      ? ` ${origin} is not currently allowed by the OCR Worker. Use http://127.0.0.1:5174 locally or add this origin to ALLOWED_ORIGINS.`
+      : '';
+    return {
+      configured: false,
+      error: `${err?.message || 'OCR worker unavailable'}${localPortHint}`,
+    };
   }
 }
 
@@ -139,14 +154,19 @@ export async function qwenVisionRequest(messages, options = {}) {
   });
   const rawText = await res.text();
   let body = null;
-  try { body = rawText ? JSON.parse(rawText) : null; } catch {}
+  try {
+    body = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    body = null;
+  }
   if (!res.ok) {
     const errorPayload = body?.error;
-    const msg = errorPayload?.message
-      || (typeof errorPayload === 'string' ? errorPayload : '')
-      || (errorPayload ? JSON.stringify(errorPayload) : '')
-      || rawText
-      || `Qwen API Error (HTTP ${res.status})`;
+    const msg =
+      errorPayload?.message ||
+      (typeof errorPayload === 'string' ? errorPayload : '') ||
+      (errorPayload ? JSON.stringify(errorPayload) : '') ||
+      rawText ||
+      `Qwen API Error (HTTP ${res.status})`;
     throw createQwenVisionRequestError(msg, {
       status: res.status,
       retryAfter: parseRetryAfterSeconds(res.headers.get('Retry-After')),
@@ -181,7 +201,13 @@ export function describeOcrRequestError(err) {
 export function isRetryableOcrRequestError(err) {
   if (err?.retryable === false || err?.localConfiguration) return false;
   if (!Number.isFinite(err?.status)) return true;
-  return err.status === 408 || err.status === 409 || err.status === 425 || err.status === 429 || err.status >= 500;
+  return (
+    err.status === 408 ||
+    err.status === 409 ||
+    err.status === 425 ||
+    err.status === 429 ||
+    err.status >= 500
+  );
 }
 
 export function getOcrRetryDelayMs(err, attempt) {
@@ -194,13 +220,13 @@ export function getOcrRetryDelayMs(err, attempt) {
 
 // --- Durability ---
 export const DURABILITY_TABLE = {
-  gates:    { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
-  bridge:   { 1: 200000 },
-  city:     { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
-  cities:   { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
-  capital:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
-  capitol:  { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
-  temple:   { 1: 1000000 },
+  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
+  bridge: { 1: 200000 },
+  city: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
+  cities: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
+  capital: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
+  capitol: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000, 6: 4200000, 7: 5000000 },
+  temple: { 1: 1000000 },
   stronghold: { 1: 1000000 },
   'large town': { 4: 3750000 },
 };
@@ -264,7 +290,8 @@ function canonicalizeStructureName(name, level) {
   const cleaned = stripStructureLevelFromName(name);
   const lower = cleaned.toLowerCase().trim();
   const compact = lower.replace(/[^a-z0-9]+/g, '');
-  let canonical = STRUCTURE_NAME_CORRECTIONS[lower] || STRUCTURE_NAME_CORRECTIONS[compact] || cleaned;
+  let canonical =
+    STRUCTURE_NAME_CORRECTIONS[lower] || STRUCTURE_NAME_CORRECTIONS[compact] || cleaned;
 
   if (canonical === 'Town') {
     if (level === 'Lv4') canonical = 'Large Town';
@@ -277,7 +304,11 @@ function canonicalizeStructureName(name, level) {
 }
 
 export function isNameOnlyStructure(name) {
-  return NAME_ONLY_STRUCTURES.has(String(name || '').toLowerCase().trim());
+  return NAME_ONLY_STRUCTURES.has(
+    String(name || '')
+      .toLowerCase()
+      .trim()
+  );
 }
 
 export function normalizeStructureLevelForName(name, level) {
@@ -342,7 +373,9 @@ export function getDatasetStructureTarget(attack) {
 
 export function formatDatasetStructureLabel(attack) {
   const target = getDatasetStructureTarget(attack);
-  const name = String(target.structure_name || 'Unknown Structure').replace(/\s+/g, ' ').trim();
+  const name = String(target.structure_name || 'Unknown Structure')
+    .replace(/\s+/g, ' ')
+    .trim();
   const level = formatDisplayStructureLevel(target.structure_level);
   return `${name}${level ? ` ${level}` : ''}`.trim();
 }
@@ -387,14 +420,24 @@ export const CLEAR_HASH = ADMIN_AUTH_CONFIG.clearHash || '';
 export const DELETE_HASHES = new Set(ADMIN_AUTH_CONFIG.deleteHashes || []);
 
 // --- DOM Helper ---
-export function $id(id) { return document.getElementById(id); }
+export function $id(id) {
+  return document.getElementById(id);
+}
 
 // --- Escape ---
 export function esc(str) {
   if (!str) return '';
-  return String(str).replace(/[&<>'"]/g, match => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  })[match]);
+  return String(str).replace(
+    /[&<>'"]/g,
+    (match) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;',
+      })[match]
+  );
 }
 
 // --- Logger ---
@@ -411,10 +454,15 @@ export function log(msg, type = 'info', file = null) {
   if (!out || !area) return;
   area.classList.remove('hidden');
   const entry = {
-    time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    time: new Date().toLocaleTimeString([], {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }),
     msg,
     type: normalizeLogType(type),
-    file
+    file,
   };
   appendLogEntry(out, entry);
   persistLog(entry);
@@ -448,7 +496,9 @@ export function persistLog(entry) {
     logs.push(entry);
     if (logs.length > 500) logs.splice(0, logs.length - 500);
     localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-  } catch (e) {}
+  } catch {
+    // localStorage can be unavailable in restricted browser contexts.
+  }
 }
 
 export function restoreLogs() {
@@ -460,20 +510,31 @@ export function restoreLogs() {
     if (!out || !area) return;
     out.innerHTML = '';
     area.classList.remove('hidden');
-    logs.forEach(e => appendLogEntry(out, e));
+    logs.forEach((e) => appendLogEntry(out, e));
     out.scrollTop = out.scrollHeight;
-  } catch (e) {}
+  } catch {
+    // Ignore corrupt or unavailable saved logs; the live dashboard can continue.
+  }
 }
 
 // --- JSON Repair ---
 export function tryRepairJson(text) {
-  try { return JSON.parse(text); } catch (e) {
-    if (!e.message.includes('Bad escaped character') && !e.message.includes('Invalid escape') && !e.message.includes('Unexpected token') && !e.message.includes('Expected')) throw e;
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    if (
+      !e.message.includes('Bad escaped character') &&
+      !e.message.includes('Invalid escape') &&
+      !e.message.includes('Unexpected token') &&
+      !e.message.includes('Expected')
+    )
+      throw e;
   }
   let repaired = text;
   repaired = repaired.replace(/,\s*([}\]])/g, '$1');
   repaired = repaired.replace(/\\([^"\\/bfnrtu])/g, '\\\\$1');
-  repaired = repaired.replace(/[\x00-\x1f]/g, match => {
+  // eslint-disable-next-line no-control-regex
+  repaired = repaired.replace(/[\x00-\x1f]/g, (match) => {
     const code = match.charCodeAt(0);
     if (code === 0x08) return '\\b';
     if (code === 0x09) return '\\t';
@@ -482,14 +543,24 @@ export function tryRepairJson(text) {
     if (code === 0x0d) return '\\r';
     return '\\u' + code.toString(16).padStart(4, '0');
   });
-  try { return JSON.parse(repaired); } catch (e2) { throw new Error(`Failed to parse JSON even after repair: ${e2.message}. Snippet: ${text.substring(0, 100)}...`); }
+  try {
+    return JSON.parse(repaired);
+  } catch (e2) {
+    throw new Error(
+      `Failed to parse JSON even after repair: ${e2.message}. Snippet: ${text.substring(0, 100)}...`
+    );
+  }
 }
 
 // --- Fuzzy Matching ---
 export function getSimilarity(s1, s2) {
   if (!s1 || !s2) return 0;
-  let longer = s1, shorter = s2;
-  if (s1.length < s2.length) { longer = s2; shorter = s1; }
+  let longer = s1,
+    shorter = s2;
+  if (s1.length < s2.length) {
+    longer = s2;
+    shorter = s1;
+  }
   if (longer.length === 0) return 1.0;
   return (longer.length - editDistance(longer, shorter)) / longer.length;
 }
@@ -503,7 +574,8 @@ export function getSimilarityAlphaNum(s1, s2) {
 }
 
 export function editDistance(s1, s2) {
-  s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+  s1 = s1.toLowerCase();
+  s2 = s2.toLowerCase();
   const costs = [];
   for (let i = 0; i <= s1.length; i++) {
     let lv = i;
@@ -512,7 +584,8 @@ export function editDistance(s1, s2) {
       else if (j > 0) {
         let nv = costs[j - 1];
         if (s1.charAt(i - 1) !== s2.charAt(j - 1)) nv = Math.min(Math.min(nv, lv), costs[j]) + 1;
-        costs[j - 1] = lv; lv = nv;
+        costs[j - 1] = lv;
+        lv = nv;
       }
     }
     if (i > 0) costs[s2.length] = lv;
@@ -540,21 +613,33 @@ function readGroupedPlayerRank(player, fallbackRank) {
 }
 
 const CYRILLIC_LATIN_HOMOGLYPHS = Object.freeze({
-  А: 'A', а: 'a',
-  В: 'B', Е: 'E', е: 'e',
-  К: 'K', к: 'k',
-  М: 'M', Н: 'H', О: 'O', о: 'o',
-  Р: 'P', р: 'p',
-  С: 'C', с: 'c',
-  Т: 'T', Х: 'X', х: 'x',
-  У: 'Y', у: 'y',
+  А: 'A',
+  а: 'a',
+  В: 'B',
+  Е: 'E',
+  е: 'e',
+  К: 'K',
+  к: 'k',
+  М: 'M',
+  Н: 'H',
+  О: 'O',
+  о: 'o',
+  Р: 'P',
+  р: 'p',
+  С: 'C',
+  с: 'c',
+  Т: 'T',
+  Х: 'X',
+  х: 'x',
+  У: 'Y',
+  у: 'y',
 });
 
 export function compactPlayerIdentity(name) {
   return String(name || '')
     .normalize('NFKD')
     .replace(/\p{M}/gu, '')
-    .replace(/[АаВЕеКкМНОоРрСсТХхУу]/g, ch => CYRILLIC_LATIN_HOMOGLYPHS[ch] || ch)
+    .replace(/[АаВЕеКкМНОоРрСсТХхУу]/g, (ch) => CYRILLIC_LATIN_HOMOGLYPHS[ch] || ch)
     .replace(/[^\p{L}\p{N}]+/gu, '')
     .toLowerCase();
 }
@@ -618,20 +703,20 @@ export function resolvePlayerNameForAttack(player, attackPlayers = []) {
       value: readGroupedPlayerValue(entry),
       rank: readGroupedPlayerRank(entry, index + 1),
     }))
-    .filter(row => row.baseName === baseName);
+    .filter((row) => row.baseName === baseName);
 
   if (groupedRows.length < 2) return baseName;
-  const current = groupedRows.find(row => row.entry === player);
+  const current = groupedRows.find((row) => row.entry === player);
   if (!current) return baseName;
 
-  const hasDifferentValues = new Set(groupedRows.map(row => row.value)).size > 1;
-  const hasDifferentRawNames = new Set(groupedRows.map(row => row.rawKey)).size > 1;
+  const hasDifferentValues = new Set(groupedRows.map((row) => row.value)).size > 1;
+  const hasDifferentRawNames = new Set(groupedRows.map((row) => row.rawKey)).size > 1;
   if (!hasDifferentValues && !hasDifferentRawNames) return baseName;
 
   const byImpact = [...groupedRows].sort(
     (a, b) => b.value - a.value || a.rank - b.rank || a.index - b.index
   );
-  const impactPosition = byImpact.findIndex(row => row.entry === player);
+  const impactPosition = byImpact.findIndex((row) => row.entry === player);
 
   if (baseName === '꧁ Kika ꧂') {
     if (impactPosition <= 0) return '꧁ Kika ꧂';
@@ -647,63 +732,195 @@ export function findBestMatch(name, minConfidence = 100) {
   if (!name) return name;
   if (typeof name === 'string') {
     if (name.includes('UNDEAD')) {
-      name = name.replace(/^[○◎ØODQ]{1,2}/i, '').replace(/[○◎ØODQ]{1,2}$/i, '').trim();
+      name = name
+        .replace(/^[○◎ØODQ]{1,2}/i, '')
+        .replace(/[○◎ØODQ]{1,2}$/i, '')
+        .trim();
     }
     name = name.replace(/^Н/, 'H');
     const protectedIdentity = getProtectedPlayerIdentity(name);
     if (protectedIdentity) return protectedIdentity;
     const aliasMap = {
-      'كي미 kimmy': '키미 kimmy', 'キミ kimmy': '키미 kimmy', 'كيمي kimmy': '키미 kimmy', 'кими kimmy': '키미 kimmy', '키키 kimmy': '키미 kimmy',
-      'EightBall _W/_': 'EightBall _V/_', 'EightBall _N/_': 'EightBall _V/_', 'EightBall_/V/_': 'EightBall _V/_', 'EightBall _\\/_': 'EightBall _V/_', 'EightBall_\\/_': 'EightBall _V/_', 'EightBall _/_': 'EightBall _V/_',
-      'АК Чапай': 'AK Чапай', 'АКЧапай': 'AK Чапай', 'AK Чанай': 'AK Чапай', 'AKЧанай': 'AK Чапай', 'AKЧапай': 'AK Чапай', 'AK Чапаń': 'AK Чапай', 'AK Чапаи': 'AK Чапай', 'AK Чанаý': 'AK Чапай',
-      '!!Uzumaki !!': '!!Uzumaki!!', '!! Uzumaki !!': '!!Uzumaki!!', 'Uzumaki': '!!Uzumaki!!', 'UzuBanner': '!!Uzumaki!!',
-      '● AGAM ●': 'AGAM', '●●AGAM ●●': 'AGAM', '●● AGAM ●●': 'AGAM', '●AGAM●': 'AGAM',
-      'MasterVjoo': 'MasterVj', '~MasterVj~': 'MasterVj', '≽ MasterVj ≡': 'MasterVj', '~MasterVjoe~': 'MasterVj', 'MasterVjper': 'MasterVj', '~MasterVjoo~': 'MasterVj', 'MasterVjso': 'MasterVj',
-      '○UNDEADO○': 'UNDEAD', '○UNDEAD○': 'UNDEAD', '◎UNDEADO◎': 'UNDEAD', 'ØUNDEADØ': 'UNDEAD', 'UNDEADO': 'UNDEAD',
-      '© I N d O / Made3110': 'Made3110', '\\xind\\Made3110': 'Made3110', 'Sind?Made3110': 'Made3110', '© I N d ō/Made3110': 'Made3110', 'yind?Made3110': 'Made3110', '~I n d ø/Made3110': 'Made3110', 'I N d O)Made3110': 'Made3110', 'I nd°/Made3110': 'Made3110', 'gindMade3110': 'Made3110', 'vind?Made3110': 'Made3110', 'x N d o /Made3110': 'Made3110',
-      'Kika': '꧁ Kika ꧂', '≽ Kika ≡': '꧁ Kika ꧂', '~Kika~': '꧁ Kika ꧂', '✨Kika✨': '꧁ Kika ꧂', ' Kika ': '꧁ Kika ꧂', '✨Kika-banner✨': '꧁ Kika-banner ꧂', '~Kika ~': '꧁ Kika ꧂',
-      'тynгзахур': 'түнгзахурп', 'тyнг3ахур': 'түнгзахурп', 'тунгзахурп': 'түнгзахурп', 'түнгэахур': 'түнгзахурп', 'түнгзахур': 'түнгзахурп', 'тунгзахур': 'түнгзахурп', 'тynгзахyp': 'түнгзахурп', 'тyHГ3ахур': 'түнгзахурп', 'тyнгзахур': 'түнгзахурп',
-      'REDBULL§': 'REDBULLS', 'RedBull©': 'REDBULLS', 'RedBull@': 'REDBULLS', 'RedBull®': 'REDBULLS', 'Redbull@': 'REDBULLS', 'REDBULL$': 'REDBULLS',
-      'Ar Ran★_YG+62': 'Ar Ran ★_YG+62', 'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
-      'hunter killer.': 'Hunter killer.', 'htar killer.': 'Hunter killer.', 'htubter killer.': 'Hunter killer.', 'hunster killer.': 'Hunter killer.', 'һunter killer.': 'Hunter killer.',
-      '+DarkPrinceSSt': 'tDarkPrinceSS$t', 'DarkPrinceSt': 'tDarkPrinceSS$t',
-      'Doedoom': 'Doedoem', 'Dneanmon': 'Dheahmon', '↑ Anne ↑': 'Anne', 'ŸAnneŸ': 'Anne', '^ Anne ^': 'Anne', '^Anne ^': 'Anne', '^^ Anne ^^': 'Anne',
-      'q. Immortalis': 'q. Immortal', 'D off y.': 'D offy.', 'Doffy.': 'D offy.', 'D off.y.': 'D offy.', 'D o f f y.': 'D offy.',
-      'terribile ivan': 'terrible ivan', '★KoThawwKa★': 'KoThawwKa', '★ KoThawwKa ★': 'KoThawwKa',
-      'БратХрабрепц': 'БратХрабрец', '洋人在弄啥嘢': '洋人在弄啥嘞', '洋人在弄哈嘞': '洋人在弄啥嘞',
-      '_._5G': '_5G', '-----5G': '_5G', '___5G': '_5G', '__5G': '_5G', 'ΛNGƎL': 'ANGEL', 'ΛNGEL': 'ANGEL', 'ANGƎL': 'ANGEL', '-L7-': '- L7 -', '~Pink~': '~ Pink ~',
-      'DvD18 x2': 'DvD18', '..WAE.L..': '..WAEL..', '..WAEI..': '..WAEL..', 'Neutriino10': 'Neutrino10',
-      '耶比耶耶耶': '耶比耶比耶', '真庭道主-': '-真庭道主-', '真庭道主': '-真庭道主-',
-      '乃厶口毛': '乃ㄥ口毛', '乃ㄥ山毛': '乃ㄥ口毛', '乃∠口毛': '乃ㄥ口毛',
-      'ylii90': 'ylli90', '~★RuCCaK★~': '~RuCCaK~', 'Lord Chandu!': 'Lord Chandu !',
-      '★Mariska★': 'Mariska', '☆Mariska☆': 'Mariska', '*Mariska*': 'Mariska', 'Opua 2025': 'Opwa 2025', 'Орша 2025': 'Opwa 2025',
-      'Sarafino~': '~Sarafino~', 'Sarafino': '~Sarafino~',
+      'كي미 kimmy': '키미 kimmy',
+      'キミ kimmy': '키미 kimmy',
+      'كيمي kimmy': '키미 kimmy',
+      'кими kimmy': '키미 kimmy',
+      '키키 kimmy': '키미 kimmy',
+      'EightBall _W/_': 'EightBall _V/_',
+      'EightBall _N/_': 'EightBall _V/_',
+      'EightBall_/V/_': 'EightBall _V/_',
+      'EightBall _\\/_': 'EightBall _V/_',
+      'EightBall_\\/_': 'EightBall _V/_',
+      'EightBall _/_': 'EightBall _V/_',
+      'АК Чапай': 'AK Чапай',
+      АКЧапай: 'AK Чапай',
+      'AK Чанай': 'AK Чапай',
+      AKЧанай: 'AK Чапай',
+      AKЧапай: 'AK Чапай',
+      'AK Чапаń': 'AK Чапай',
+      'AK Чапаи': 'AK Чапай',
+      'AK Чанаý': 'AK Чапай',
+      '!!Uzumaki !!': '!!Uzumaki!!',
+      '!! Uzumaki !!': '!!Uzumaki!!',
+      Uzumaki: '!!Uzumaki!!',
+      UzuBanner: '!!Uzumaki!!',
+      '● AGAM ●': 'AGAM',
+      '●●AGAM ●●': 'AGAM',
+      '●● AGAM ●●': 'AGAM',
+      '●AGAM●': 'AGAM',
+      MasterVjoo: 'MasterVj',
+      '~MasterVj~': 'MasterVj',
+      '≽ MasterVj ≡': 'MasterVj',
+      '~MasterVjoe~': 'MasterVj',
+      MasterVjper: 'MasterVj',
+      '~MasterVjoo~': 'MasterVj',
+      MasterVjso: 'MasterVj',
+      '○UNDEADO○': 'UNDEAD',
+      '○UNDEAD○': 'UNDEAD',
+      '◎UNDEADO◎': 'UNDEAD',
+      ØUNDEADØ: 'UNDEAD',
+      UNDEADO: 'UNDEAD',
+      '© I N d O / Made3110': 'Made3110',
+      '\\xind\\Made3110': 'Made3110',
+      'Sind?Made3110': 'Made3110',
+      '© I N d ō/Made3110': 'Made3110',
+      'yind?Made3110': 'Made3110',
+      '~I n d ø/Made3110': 'Made3110',
+      'I N d O)Made3110': 'Made3110',
+      'I nd°/Made3110': 'Made3110',
+      gindMade3110: 'Made3110',
+      'vind?Made3110': 'Made3110',
+      'x N d o /Made3110': 'Made3110',
+      Kika: '꧁ Kika ꧂',
+      '≽ Kika ≡': '꧁ Kika ꧂',
+      '~Kika~': '꧁ Kika ꧂',
+      '✨Kika✨': '꧁ Kika ꧂',
+      ' Kika ': '꧁ Kika ꧂',
+      '✨Kika-banner✨': '꧁ Kika-banner ꧂',
+      '~Kika ~': '꧁ Kika ꧂',
+      тynгзахур: 'түнгзахурп',
+      тyнг3ахур: 'түнгзахурп',
+      тунгзахурп: 'түнгзахурп',
+      түнгэахур: 'түнгзахурп',
+      түнгзахур: 'түнгзахурп',
+      тунгзахур: 'түнгзахурп',
+      тynгзахyp: 'түнгзахурп',
+      тyHГ3ахур: 'түнгзахурп',
+      тyнгзахур: 'түнгзахурп',
+      'REDBULL§': 'REDBULLS',
+      'RedBull©': 'REDBULLS',
+      'RedBull@': 'REDBULLS',
+      'RedBull®': 'REDBULLS',
+      'Redbull@': 'REDBULLS',
+      REDBULL$: 'REDBULLS',
+      'Ar Ran★_YG+62': 'Ar Ran ★_YG+62',
+      'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
+      'hunter killer.': 'Hunter killer.',
+      'htar killer.': 'Hunter killer.',
+      'htubter killer.': 'Hunter killer.',
+      'hunster killer.': 'Hunter killer.',
+      'һunter killer.': 'Hunter killer.',
+      '+DarkPrinceSSt': 'tDarkPrinceSS$t',
+      DarkPrinceSt: 'tDarkPrinceSS$t',
+      Doedoom: 'Doedoem',
+      Dneanmon: 'Dheahmon',
+      '↑ Anne ↑': 'Anne',
+      ŸAnneŸ: 'Anne',
+      '^ Anne ^': 'Anne',
+      '^Anne ^': 'Anne',
+      '^^ Anne ^^': 'Anne',
+      'q. Immortalis': 'q. Immortal',
+      'D off y.': 'D offy.',
+      'Doffy.': 'D offy.',
+      'D off.y.': 'D offy.',
+      'D o f f y.': 'D offy.',
+      'terribile ivan': 'terrible ivan',
+      '★KoThawwKa★': 'KoThawwKa',
+      '★ KoThawwKa ★': 'KoThawwKa',
+      БратХрабрепц: 'БратХрабрец',
+      洋人在弄啥嘢: '洋人在弄啥嘞',
+      洋人在弄哈嘞: '洋人在弄啥嘞',
+      '_._5G': '_5G',
+      '-----5G': '_5G',
+      ___5G: '_5G',
+      __5G: '_5G',
+      ΛNGƎL: 'ANGEL',
+      ΛNGEL: 'ANGEL',
+      ANGƎL: 'ANGEL',
+      '-L7-': '- L7 -',
+      '~Pink~': '~ Pink ~',
+      'DvD18 x2': 'DvD18',
+      '..WAE.L..': '..WAEL..',
+      '..WAEI..': '..WAEL..',
+      Neutriino10: 'Neutrino10',
+      耶比耶耶耶: '耶比耶比耶',
+      '真庭道主-': '-真庭道主-',
+      真庭道主: '-真庭道主-',
+      乃厶口毛: '乃ㄥ口毛',
+      乃ㄥ山毛: '乃ㄥ口毛',
+      '乃∠口毛': '乃ㄥ口毛',
+      ylii90: 'ylli90',
+      '~★RuCCaK★~': '~RuCCaK~',
+      'Lord Chandu!': 'Lord Chandu !',
+      '★Mariska★': 'Mariska',
+      '☆Mariska☆': 'Mariska',
+      '*Mariska*': 'Mariska',
+      'Opua 2025': 'Opwa 2025',
+      'Орша 2025': 'Opwa 2025',
+      'Sarafino~': '~Sarafino~',
+      Sarafino: '~Sarafino~',
       '*Molly*': 'Molly',
       'jJamaica pete': 'Jjamaica pete',
       '*Lisavetka*': '•Lisavetka•',
-      'Surtiiiiii': 'Surtiiiii',
-      'Феюшка))': 'Феечка))', 'Φελώσκα))': 'Феечка))',
-      'БрюHerKaЯ': 'БрюНетКаЯ',
-      'A n d ē R $': 'A n d e R $', 'АηdεR$': 'A n d e R $', 'AηdεR$': 'A n d e R $', 'А η d ě R $': 'A n d e R $', 'Anders': 'A n d e R $', 'Àñděř$': 'A n d e R $', 'A n d é R $': 'A n d e R $', 'A nødëR $': 'A n d e R $', 'AnděRS': 'A n d e R $', 'ÀñäëR$': 'A n d e R $', 'AηdēR$': 'A n d e R $',
+      Surtiiiiii: 'Surtiiiii',
+      'Феюшка))': 'Феечка))',
+      'Φελώσκα))': 'Феечка))',
+      БрюHerKaЯ: 'БрюНетКаЯ',
+      'A n d ē R $': 'A n d e R $',
+      АηdεR$: 'A n d e R $',
+      AηdεR$: 'A n d e R $',
+      'А η d ě R $': 'A n d e R $',
+      Anders: 'A n d e R $',
+      Àñděř$: 'A n d e R $',
+      'A n d é R $': 'A n d e R $',
+      'A nødëR $': 'A n d e R $',
+      AnděRS: 'A n d e R $',
+      ÀñäëR$: 'A n d e R $',
+      AηdēR$: 'A n d e R $',
       'Dizz..': 'Dizz.',
-      '★★★ 3BEPb ★★★': '3BEPb', 'ЗВЕРЬ': '3BEPb', '*** 3BEPb ***': '3BEPb', '*** ЗВЕРЬ ***': '3BEPb',
+      '★★★ 3BEPb ★★★': '3BEPb',
+      ЗВЕРЬ: '3BEPb',
+      '*** 3BEPb ***': '3BEPb',
+      '*** ЗВЕРЬ ***': '3BEPb',
       'REFORMASIJILID2*': 'REFORMASIJILID2·',
-      'СоBob': 'CoBoP', 'СоБоР': 'CoBoP',
-      '★ Aqua ★': '★Aqua★', '*Aqua*': '★Aqua★', '☆Aqua☆': '★Aqua★', '☆Aqua ☆': '★Aqua★',
-      '.Jasper.@': '@.Jasper.@', '.Jasper.': '@.Jasper.@',
-      '*r@mze$$$*': '★r@mze$$$★', '☆r@nze$$$☆': '★r@mze$$$★',
-      'I D NÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDNÓ/Dragon.Gold': 'IDN Dragon.Gold', 'IDNÓ|Dragon.Gold': 'IDN Dragon.Gold', 'IDN°/Dragon.Gold': 'IDN Dragon.Gold', '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
+      СоBob: 'CoBoP',
+      СоБоР: 'CoBoP',
+      '★ Aqua ★': '★Aqua★',
+      '*Aqua*': '★Aqua★',
+      '☆Aqua☆': '★Aqua★',
+      '☆Aqua ☆': '★Aqua★',
+      '.Jasper.@': '@.Jasper.@',
+      '.Jasper.': '@.Jasper.@',
+      '*r@mze$$$*': '★r@mze$$$★',
+      '☆r@nze$$$☆': '★r@mze$$$★',
+      'I D NÓ/Dragon.Gold': 'IDN Dragon.Gold',
+      'IDNÓ/Dragon.Gold': 'IDN Dragon.Gold',
+      'IDNÓ|Dragon.Gold': 'IDN Dragon.Gold',
+      'IDN°/Dragon.Gold': 'IDN Dragon.Gold',
+      '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
       'МяТная Лапка': 'Мятная Лапка',
       'yousef المحارب': 'المحارب yousef',
       '*DEAN JR*': '*DEAN*',
-      'Moldo1313': 'Moldo1313', 'MalakAdo': 'MalakAdo', 'MalakAbo': 'MalakAbo',
+      Moldo1313: 'Moldo1313',
+      MalakAdo: 'MalakAdo',
+      MalakAbo: 'MalakAbo',
       'WICKED RUSSIANO': 'WICKED RUSSIAN',
       'Indomie.telor': 'Indomie.telor....',
       'キ미 kimmy': '키미 kimmy',
-      'UNDEA': 'UNDEAD',
-      'BlackDragOn09': 'BlackDrag0n09',
-      '_EDDY_': '_EDDDY_',
-      'mohmmmedsaif': 'mohmmedsaif',
+      UNDEA: 'UNDEAD',
+      BlackDragOn09: 'BlackDrag0n09',
+      _EDDY_: '_EDDDY_',
+      mohmmmedsaif: 'mohmmedsaif',
       'Anne...': 'Anne',
       '^Anne^': 'Anne',
       '✨ Anne ✨': 'Anne',
@@ -725,8 +942,8 @@ export function findBestMatch(name, minConfidence = 100) {
       '✨MasterVj✨': 'MasterVj',
       '●■AGAM ■●': 'AGAM',
       '•◄ AGAM ►•': 'AGAM',
-      'Aqua': '★Aqua★',
-      'Lisavetka': '•Lisavetka•',
+      Aqua: '★Aqua★',
+      Lisavetka: '•Lisavetka•',
       '.Lisavetka.': '•Lisavetka•',
       'r@mze$$$': '★r@mze$$$★',
       '★r@mze$$$☆': '★r@mze$$$★',
@@ -735,12 +952,12 @@ export function findBestMatch(name, minConfidence = 100) {
       'AK Чапа́й': 'AK Чапай',
       '~☆RuCCaK☆~': '~RuCCaK~',
       'A n d ě R $': 'A n d e R $',
-      'Серей': 'Сергей',
+      Серей: 'Сергей',
       'Jjamaica pete': 'Jjamaica pete',
       '★★★ЗВЕРЬ★★★': '★★★ ЗВЕРЬ ★★★',
       '~Sarafina~': '~Sarafina~',
-      'Sarafina': '~Sarafina~',
-      'Sarafina~': '~Sarafina~'
+      Sarafina: '~Sarafina~',
+      'Sarafina~': '~Sarafina~',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
@@ -758,10 +975,14 @@ export function findBestMatch(name, minConfidence = 100) {
   const cacheKey = `${minConfidence}|${exactName}`;
   if (rosterMatchCache.has(cacheKey)) return rosterMatchCache.get(cacheKey);
 
-  let best = name, maxSim = 0;
+  let best = name,
+    maxSim = 0;
   for (const rn of state.rosterNames) {
     const sim = getSimilarity(name, rn);
-    if (sim > maxSim) { maxSim = sim; best = rn; }
+    if (sim > maxSim) {
+      maxSim = sim;
+      best = rn;
+    }
   }
   let threshold = 0.82;
   if (compactName.length <= 8) threshold = 0.72;

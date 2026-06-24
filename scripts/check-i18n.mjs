@@ -60,6 +60,8 @@ for (const [lang, dict] of Object.entries(translations)) {
   for (const [key, value] of Object.entries(dict)) {
     if (typeof value !== 'string') {
       errors.push(`${lang}.${key} must be a string translation value`);
+    } else if (value.includes('??') || value.includes('\uFFFD') || /[\p{L}]\?[\p{L}]/u.test(value)) {
+      errors.push(`${lang}.${key} contains a broken placeholder translation: ${JSON.stringify(value)}`);
     }
   }
 }
