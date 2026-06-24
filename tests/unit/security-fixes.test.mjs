@@ -33,7 +33,7 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { appendLogEntry, checkOcrService } = await import('../../js/ocr-shared.js');
+const { appendLogEntry, checkOcrService, qwenVisionRequest } = await import('../../js/ocr-shared.js');
 const worker = (await import('../../workers/qwen-cors-proxy.js')).default;
 
 function request(path, init = {}) {
@@ -144,6 +144,29 @@ test('OCR status helper requires both OCR secret and App Check worker config', a
 
     assert.equal(result.configured, false);
     assert.match(result.error, /App Check/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Qwen request errors preserve HTTP status and Retry-After', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ error: 'Rate limit exceeded. Please retry shortly.' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '17' },
+    });
+  try {
+    await assert.rejects(
+      () => qwenVisionRequest([{ role: 'user', content: 'hi' }]),
+      (err) => {
+        assert.equal(err.name, 'QwenVisionRequestError');
+        assert.equal(err.status, 429);
+        assert.equal(err.retryAfter, 17);
+        assert.match(err.message, /Rate limit exceeded/);
+        return true;
+      }
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }

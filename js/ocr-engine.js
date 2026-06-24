@@ -3,6 +3,9 @@ import {
   $id,
   log,
   qwenVisionRequest,
+  describeOcrRequestError,
+  getOcrRetryDelayMs,
+  isRetryableOcrRequestError,
   tryRepairJson,
   validateTotalDemolition,
   getProtectedPlayerIdentity,
@@ -114,9 +117,11 @@ EXPECTED JSON SCHEMA:
           break;
         } catch (err) {
           if (err?.name === 'AbortError' || state._ocrCancelRequested) throw err;
-          if (attempt === maxRetries) throw err;
-          log(`Rate limit or network error, retrying (${attempt}/${maxRetries})...`, 'warn', f.name);
-          await new Promise(r => setTimeout(r, 2000 * attempt));
+          if (attempt === maxRetries || !isRetryableOcrRequestError(err)) throw err;
+          const delayMs = getOcrRetryDelayMs(err, attempt);
+          const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
+          log(`Qwen request failed: ${describeOcrRequestError(err)}. Retrying in ${delaySeconds}s (${attempt}/${maxRetries})...`, 'warn', f.name);
+          await new Promise(r => setTimeout(r, delayMs));
         }
       }
 

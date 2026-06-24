@@ -69,10 +69,55 @@ export async function qwenVisionRequest(messages, options = {}) {
   let body = null;
   try { body = rawText ? JSON.parse(rawText) : null; } catch {}
   if (!res.ok) {
-    const msg = body?.error?.message || body?.error || rawText || `Qwen API Error (HTTP ${res.status})`;
-    throw new Error(msg);
+    const errorPayload = body?.error;
+    const msg = errorPayload?.message
+      || (typeof errorPayload === 'string' ? errorPayload : '')
+      || (errorPayload ? JSON.stringify(errorPayload) : '')
+      || rawText
+      || `Qwen API Error (HTTP ${res.status})`;
+    const err = new Error(msg);
+    err.name = 'QwenVisionRequestError';
+    err.status = res.status;
+    err.retryAfter = parseRetryAfterSeconds(res.headers.get('Retry-After'));
+    if (body?.details) err.details = body.details;
+    err.responseBody = body || rawText || null;
+    throw err;
   }
   return body;
+}
+
+function parseRetryAfterSeconds(value) {
+  if (!value) return null;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 0) return numeric;
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) return Math.max(0, Math.ceil((dateMs - Date.now()) / 1000));
+  return null;
+}
+
+export function describeOcrRequestError(err) {
+  const parts = [];
+  if (Number.isFinite(err?.status)) parts.push(`HTTP ${err.status}`);
+  parts.push(err?.message || 'unknown OCR request error');
+  const details = Array.isArray(err?.details)
+    ? err.details.join('; ')
+    : err?.details && typeof err.details === 'object'
+      ? JSON.stringify(err.details)
+      : '';
+  return details ? `${parts.join(': ')} (${details})` : parts.join(': ');
+}
+
+export function isRetryableOcrRequestError(err) {
+  if (!Number.isFinite(err?.status)) return true;
+  return err.status === 408 || err.status === 409 || err.status === 425 || err.status === 429 || err.status >= 500;
+}
+
+export function getOcrRetryDelayMs(err, attempt) {
+  const retryAfter = Number(err?.retryAfter);
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(60000, Math.max(1000, Math.ceil(retryAfter * 1000)));
+  }
+  return Math.min(30000, Math.max(1000, 2000 * attempt));
 }
 
 // --- Durability ---

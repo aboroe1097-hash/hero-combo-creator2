@@ -10,10 +10,10 @@ import {
   loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
   loadContributionRecords, showContributionPasteForm, processContributionImages, editContributionRecord,
   deleteContributionRecord, setContributionReward, exportContributionRecords, renderContributions
-} from './ocr-roster.js?v=20260624_011500';
+} from './ocr-roster.js?v=20260624_034000';
 
-import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_011500';
-import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
+import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_034000';
+import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js?v=20260624_034000';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb, getFirebaseAdminClaim } from './firebase.js';
