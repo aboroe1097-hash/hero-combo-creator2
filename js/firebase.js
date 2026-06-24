@@ -32,22 +32,34 @@ let appCheck = null;
 let missingConfigLogged = false;
 let appCheckInitError = null;
 
+const FALLBACK_CONFIG = {
+  VITE_FIREBASE_API_KEY: 'AIzaSyBye12G_ITL9mb2bkjykmRl4lprhJHs3D0',
+  VITE_FIREBASE_AUTH_DOMAIN: 'abocombo.firebaseapp.com',
+  VITE_FIREBASE_PROJECT_ID: 'abocombo',
+  VITE_FIREBASE_STORAGE_BUCKET: 'abocombo.firebasestorage.app',
+  VITE_FIREBASE_MESSAGING_SENDER_ID: '103195597389',
+  VITE_FIREBASE_APP_ID: '1:103195597389:web:97788d99356b4e59839a04',
+  VITE_FIREBASE_MEASUREMENT_ID: 'G-ZV9X180WLS',
+  VITE_RECAPTCHA_SITE_KEY: '6LeNUiktAAAAAOXtT5ohKBb7kMdjE49iDYf6AwYt',
+};
+
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
 const env = { ...nodeEnv, ...viteEnv };
 const envValue = (key) => String(env[key] || '').trim();
-const firebaseProjectId = envValue('VITE_FIREBASE_PROJECT_ID');
-const firebaseAppId = envValue('VITE_FIREBASE_APP_ID');
-const firebaseSenderId = envValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
+const configValue = (key) => envValue(key) || String(FALLBACK_CONFIG[key] || '').trim();
+const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');
+const firebaseAppId = configValue('VITE_FIREBASE_APP_ID');
+const firebaseSenderId = configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
 
 export const firebaseConfig = {
-  apiKey: envValue('VITE_FIREBASE_API_KEY'),
-  authDomain: envValue('VITE_FIREBASE_AUTH_DOMAIN') || (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
+  apiKey: configValue('VITE_FIREBASE_API_KEY'),
+  authDomain: configValue('VITE_FIREBASE_AUTH_DOMAIN') || (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
   projectId: firebaseProjectId,
-  storageBucket: envValue('VITE_FIREBASE_STORAGE_BUCKET') || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
+  storageBucket: configValue('VITE_FIREBASE_STORAGE_BUCKET') || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
   messagingSenderId: firebaseSenderId,
   appId: firebaseAppId,
-  measurementId: envValue('VITE_FIREBASE_MEASUREMENT_ID')
+  measurementId: configValue('VITE_FIREBASE_MEASUREMENT_ID')
 };
 
 export function isFirebaseConfigured() {
@@ -55,7 +67,7 @@ export function isFirebaseConfigured() {
 }
 
 export function getFirebaseSetupStatus() {
-  const recaptchaSiteKey = envValue('VITE_RECAPTCHA_SITE_KEY');
+  const recaptchaSiteKey = configValue('VITE_RECAPTCHA_SITE_KEY');
   return {
     configured: isFirebaseConfigured(),
     appCheckReady: Boolean(appCheck),
@@ -81,7 +93,7 @@ export function initFirebase() {
 
   // Initialize App Check with reCAPTCHA Enterprise when a site key is configured.
   // Enforcement is controlled in the Firebase Console; the app still works if unset.
-  const recaptchaSiteKey = envValue('VITE_RECAPTCHA_SITE_KEY');
+  const recaptchaSiteKey = configValue('VITE_RECAPTCHA_SITE_KEY');
   if (recaptchaSiteKey) {
     try {
       const appCheckDebugToken = envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
