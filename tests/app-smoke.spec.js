@@ -461,6 +461,59 @@ test.describe('app smoke tabs', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('vts_guest'))).toBeNull();
   });
 
+  test('admin authenticated boot falls back to local cache when cloud sync stalls', async ({
+    page,
+  }) => {
+    const stalledRoutes = [];
+    const seededDash = {
+      last_updated: '24/06/2026, 18:00',
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'cached-attack-1',
+          structure_name: 'Capital',
+          structure_level: 'Lv.5',
+          game_time: '24/06/2026, 18:00',
+          start_time: '18:00',
+          total_demolition: 1234567,
+          players_count: 1,
+          players: [{ name: 'Cache Tester', value: 1234567, rank: 1 }],
+        },
+      ],
+      players_summary: [],
+    };
+
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.route('https://www.gstatic.com/firebasejs/**', (route) => {
+      stalledRoutes.push(route);
+    });
+    await page.route('https://firestore.googleapis.com/**', (route) => {
+      stalledRoutes.push(route);
+    });
+    await page.addInitScript((data) => {
+      window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
+      localStorage.setItem('vts_maintenance_bypass', '1');
+      localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
+      localStorage.setItem('vts_ocr_auth', '1');
+      localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
+      sessionStorage.removeItem('vts_guest');
+      navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+      window.caches?.keys?.().then((keys) => {
+        keys.forEach((key) => caches.delete(key));
+      });
+    }, seededDash);
+
+    await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#dashApp')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#dashConnecting')).toBeHidden();
+    await expect(page.locator('#dashLeaderBody')).toContainText('Cache Tester');
+    await expect(page.locator('#dashCloudStatusText')).toContainText('Showing local cache');
+
+    await Promise.all(stalledRoutes.map((route) => route.abort().catch(() => {})));
+  });
+
   test('admin analytics renders seeded OCR insights and filters leaderboard', async ({ page }) => {
     await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
     const seededDash = {

@@ -62,6 +62,18 @@ state.cloudSyncStatus = null;
 state.cloudSyncStatusDetail = '';
 
 const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
+const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
+  let override =
+    typeof globalThis !== 'undefined'
+      ? Number(globalThis.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS)
+      : NaN;
+  if (!Number.isFinite(override) && typeof localStorage !== 'undefined') {
+    try {
+      override = Number(localStorage.getItem('vts_dashboard_cloud_boot_timeout_ms'));
+    } catch (e) {}
+  }
+  return Number.isFinite(override) && override > 0 ? override : 6500;
+})();
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
@@ -69,6 +81,26 @@ let dashboardCloudSavePendingVersion = 0;
 let dashboardCloudSaveWaiters = [];
 let dashboardRenderFrame = 0;
 let dashboardLocalCacheJson = '';
+
+function withDashboardCloudTimeout(promise, timeoutMs, label) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const err = new Error(`${label} timed out`);
+      err.name = 'DashboardCloudTimeoutError';
+      err.code = 'dashboard-cloud-timeout';
+      reject(err);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+function isDashboardCloudTimeout(err) {
+  return err?.code === 'dashboard-cloud-timeout' || err?.name === 'DashboardCloudTimeoutError';
+}
 
 function writeDashboardLocalCache(data) {
   try {
@@ -419,6 +451,7 @@ async function completeConnectingProgress(statusMsg = '') {
   connectingProgressCap = 100;
   setConnectingProgress(98, statusMsg || dashT('adminConnectingData'), { cap: 100 });
   await new Promise(resolve => setTimeout(resolve, 180));
+  setConnectingProgress(100, '', { cap: 100, force: true });
 }
 
 function showConnecting(statusMsg = '') {
@@ -443,12 +476,12 @@ function showConnecting(statusMsg = '') {
   }, 12000);
 }
 function hideConnecting() {
+  stopConnectingProgressLoop();
+  if (connectingTimer) { clearTimeout(connectingTimer); connectingTimer = null; }
   const overlay = $id('dashConnecting');
   if (!overlay) return;
   overlay.classList.add('hidden');
   overlay.removeAttribute('aria-busy');
-  stopConnectingProgressLoop();
-  if (connectingTimer) { clearTimeout(connectingTimer); connectingTimer = null; }
 }
 function setConnectingStatus(msg) {
   const status = $id('dashConnectingStatus');
@@ -826,6 +859,12 @@ export async function saveData(data, options = {}) {
 
 async function loadData(options = {}) {
   const preferCloudFirst = options.preferCloudFirst === true && !isGuest();
+  const cloudTimeoutMs = Number.isFinite(options.cloudTimeoutMs)
+    ? options.cloudTimeoutMs
+    : preferCloudFirst
+      ? DASHBOARD_CLOUD_BOOT_TIMEOUT_MS
+      : 0;
+  const awaitCloud = (promise, label) => withDashboardCloudTimeout(promise, cloudTimeoutMs, label);
   if (!isGuest()) setCloudSyncStatus('syncing');
   let hadLocalData = false;
   let localData = null;
@@ -844,7 +883,7 @@ async function loadData(options = {}) {
     }
   } catch (e) {}
   try {
-    const db = await ensureCloudSyncReady();
+    const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
     if (!db) {
       if (preferCloudFirst && localData) {
         state.dashData = localData;
@@ -855,9 +894,9 @@ async function loadData(options = {}) {
       log('Firestore not available â€” using local storage only.', 'warn');
       return;
     }
-    const { doc, getDoc, setDoc, onSnapshot } = await loadFirestoreApi();
+    const { doc, getDoc, setDoc, onSnapshot } = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
     if (state._fsUnsub) state._fsUnsub();
-    const snap = await getDoc(doc(db, FS_PATH));
+    const snap = await awaitCloud(getDoc(doc(db, FS_PATH)), 'Dashboard cloud read');
     if (snap.exists()) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
       state.dashData = cloudData;
@@ -870,7 +909,7 @@ async function loadData(options = {}) {
         state.dashData = localData;
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         render();
-        await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData));
+        await awaitCloud(setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData)), 'Dashboard cloud seed');
         setCloudSyncStatus('live');
         log('Uploaded local dashboard cache to cloud.', 'success');
       } else {
@@ -910,7 +949,14 @@ async function loadData(options = {}) {
       state.dashData = localData;
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       render();
-      log('Cloud load failed; showing local dashboard cache.', 'warn');
+      setCloudSyncStatus('local', e.message || e.code || '');
+      if (isDashboardCloudTimeout(e)) {
+        state._cloudInitPromise = null;
+        log('Cloud load timed out; showing local dashboard cache.', 'warn');
+      } else {
+        log('Cloud load failed; showing local dashboard cache.', 'warn');
+      }
+      return;
     }
     setCloudSyncStatus('error', e.message || e.code || '');
     log('Load auth error: ' + (e.message || e.code), 'error'); 

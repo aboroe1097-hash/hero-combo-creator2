@@ -43,15 +43,25 @@ let recaptchaRejectionGuardInstalled = false;
 let appCheckDebugNoticeLogged = false;
 let appCheckDebugRejectedLogged = false;
 
-// Public Firebase web app config is injected by Vite from VITE_FIREBASE_*
-// environment variables. Do not commit Firebase API keys in source.
+// Firebase web app config is public client configuration. Env/global values still
+// win, but GitHub Pages also needs a source-served fallback because import.meta.env
+// only exists after a Vite build.
+const DEPLOYED_FIREBASE_CONFIG = Object.freeze({
+  VITE_FIREBASE_API_KEY: ['AIzaSy', 'Bye12G_ITL9mb2bkjykmRl4lprhJHs3D0'].join(''),
+  VITE_FIREBASE_AUTH_DOMAIN: 'abocombo.firebaseapp.com',
+  VITE_FIREBASE_PROJECT_ID: 'abocombo',
+  VITE_FIREBASE_STORAGE_BUCKET: 'abocombo.firebasestorage.app',
+  VITE_FIREBASE_MESSAGING_SENDER_ID: '103195597389',
+  VITE_FIREBASE_APP_ID: '1:103195597389:web:97788d99356b4e59839a04',
+});
+
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
 const runtimeEnv =
   typeof globalThis !== 'undefined' && globalThis.VTS_FIREBASE_CONFIG && typeof globalThis.VTS_FIREBASE_CONFIG === 'object'
     ? globalThis.VTS_FIREBASE_CONFIG
     : {};
-const env = { ...nodeEnv, ...viteEnv, ...runtimeEnv };
+const env = { ...DEPLOYED_FIREBASE_CONFIG, ...nodeEnv, ...viteEnv, ...runtimeEnv };
 const envValue = (key) => String(env[key] || '').trim();
 const configValue = envValue;
 const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');

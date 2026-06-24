@@ -1,3 +1,8 @@
+## 11.7.2 - 2026-06-24
+
+- Restored deployed Firebase cloud sync on GitHub Pages by adding the public Firebase web config as a source-served fallback while keeping env/global overrides for local and CI builds.
+- Added an authenticated admin boot fallback so the dashboard opens from local cache if cloud initialization stalls instead of hanging on the connecting overlay.
+- Updated public version labels to 11.7.2.
 ## 11.7.1 - 2026-06-24
 
 - Bumped public release labels for the follow-up push after the 11.7.0 admin dashboard polish batch.

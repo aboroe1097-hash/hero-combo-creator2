@@ -2,7 +2,7 @@ import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 
-const APP_VERSION = '11.7.1';
+const APP_VERSION = '11.7.2';
 const THEME_STORAGE_KEY = 'vts_theme';
 
 function getPreferredTheme() {
@@ -121,7 +121,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_164222');
+  const mod = await import('./ocr-dashboard.js?v=20260624_181410');
   await mod.bootOcrDashboard();
 }
 
