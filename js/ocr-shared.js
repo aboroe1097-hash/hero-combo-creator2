@@ -67,6 +67,10 @@ export function isSupportedOcrImageFile(file) {
   return SUPPORTED_OCR_IMAGE_MIME.has(type) || hasSupportedOcrImageExtension(file);
 }
 
+export function isGuest() {
+  return typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vts_guest') === '1';
+}
+
 export function getSupportedOcrImageFiles(files) {
   return Array.from(files || []).filter(isSupportedOcrImageFile);
 }

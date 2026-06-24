@@ -46,12 +46,6 @@
   --z-modal:    10000;  /* modals, dialogs */
   --z-boot:     20000;  /* boot splash (highest) */
 
-  /* Shared breakpoint scale ...
-
-/* --- Utility: hide scrollbars --- */
-.scrollbar-none { scrollbar-width: none; }
-.scrollbar-none::-webkit-scrollbar { display: none; }
-
   /* Shared breakpoint scale â€” replaces the 11 inconsistent widths
      (520/640/760/767/768/860/900/960/980/1023/1500). Use in
      @media (max-width: var(--bp-md)) etc. Note: CSS custom properties
@@ -72,6 +66,10 @@
   --dot-grid: rgba(34,211,238,0.05);
   --glass-blur: blur(20px);
 }
+
+/* --- Utility: hide scrollbars --- */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
 /* Light theme */
 [data-theme="light"] {

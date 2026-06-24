@@ -9,9 +9,9 @@ import {
   getDatasetStructureTarget,
   normalizeStructureTarget,
   compactPlayerIdentity,
+  isGuest,
 } from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
-import { isGuest } from './ocr-dashboard.js';
 import { filterGameTimeAttacks, parseGameTimeDateMs } from './ocr-time-filter.js';
 import { translations } from './translations.js';
 

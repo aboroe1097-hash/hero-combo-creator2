@@ -170,25 +170,29 @@ export function initEdenMapPlanner() {
   window.addEventListener('offline', syncOfflineStatus);
 
   let savePlanTimer = null;
-  function flushSavePlan() {
-    if (!savePlanTimer) return;
-    clearTimeout(savePlanTimer);
-    savePlanTimer = null;
-    plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
-    plansStore.plans[activePlanId].plan = plan;
-    plansStore.activeId = activePlanId;
+  let savePlanPending = null;
+  function persistPlan(planId, nextPlan) {
+    plansStore.plans[planId] = plansStore.plans[planId] || { name: 'Plan', plan: createEmptyPlan() };
+    plansStore.plans[planId].plan = nextPlan;
+    if (planId === activePlanId) {
+      plansStore.activeId = planId;
+      localStorage.setItem(PLAN_KEY, JSON.stringify(nextPlan));
+    }
     savePlansStore(plansStore);
-    localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+  }
+  function flushSavePlan() {
+    if (savePlanTimer) clearTimeout(savePlanTimer);
+    savePlanTimer = null;
+    if (!savePlanPending) return;
+    const pending = savePlanPending;
+    savePlanPending = null;
+    persistPlan(pending.id, pending.plan);
   }
   function savePlan() {
     if (savePlanTimer) clearTimeout(savePlanTimer);
+    savePlanPending = { id: activePlanId, plan };
     savePlanTimer = setTimeout(() => {
-      savePlanTimer = null;
-      plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
-      plansStore.plans[activePlanId].plan = plan;
-      plansStore.activeId = activePlanId;
-      savePlansStore(plansStore);
-      localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+      flushSavePlan();
     }, 150);
   }
   window.addEventListener('beforeunload', flushSavePlan);
@@ -211,6 +215,7 @@ export function initEdenMapPlanner() {
 
   function switchPlan(id) {
     if (!plansStore.plans[id]) return;
+    flushSavePlan();
     activePlanId = id;
     plan = normalizePlan(plansStore.plans[id].plan);
     selectedId = null;
@@ -2200,6 +2205,7 @@ export function initEdenMapPlanner() {
       const id = `plan_${Date.now()}`;
       const name = prompt(edenT('edenPlanPrompt'), `Plan ${Object.keys(plansStore.plans).length + 1}`);
       if (!name) return;
+      flushSavePlan();
       plansStore.plans[id] = { name, plan: createEmptyPlan() };
       activePlanId = id;
       plan = createEmptyPlan();
@@ -2221,6 +2227,7 @@ export function initEdenMapPlanner() {
         if (typeof window.showToast === 'function') window.showToast(edenT('edenKeepOnePlanToast'), 'error');
         return;
       }
+      flushSavePlan();
       delete plansStore.plans[activePlanId];
       activePlanId = Object.keys(plansStore.plans)[0];
       plan = normalizePlan(plansStore.plans[activePlanId].plan);

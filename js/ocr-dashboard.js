@@ -41,7 +41,7 @@ import {
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
   trimRosterSnapshots, sanitizeForFirestore,
-  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
+  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl, isGuest
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -420,7 +420,6 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 // â”€â”€ Banner Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
 
 let connectingTimer = null;
