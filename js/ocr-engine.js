@@ -22,9 +22,9 @@ import {
   readOcrImageDataUrl
 } from './ocr-shared.js';
 
-async function saveParsedData(data) {
+async function saveParsedData(data, options = {}) {
   const { saveData } = await import('./ocr-dashboard.js');
-  return saveData(data);
+  return saveData(data, options);
 }
 
 async function renderDashboard() {
@@ -149,7 +149,7 @@ EXPECTED JSON SCHEMA:
       if (data) {
         const progressiveParsed = parseOcrResults([{ filename: f.name, json: data }]);
         if (progressiveParsed) {
-          await saveParsedData(progressiveParsed);
+          await saveParsedData(progressiveParsed, { cloud: false });
           await renderDashboard();
         }
       }
@@ -196,7 +196,7 @@ EXPECTED JSON SCHEMA:
       const msg = `${formatStructureLabel(att.structure_name, att.structure_level)}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
       log(`⚠ ${msg} — auto-saved. Check terminal for details.`, 'warn');
     }
-    await saveParsedData(parsed);
+    await saveParsedData(parsed, { immediate: true, awaitCloud: true });
     await renderDashboard();
     log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
     log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');

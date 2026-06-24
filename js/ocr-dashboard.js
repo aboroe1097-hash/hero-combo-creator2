@@ -58,6 +58,15 @@ state.sortDir = 'desc';
 state.structureFilterKey = '';
 state.cloudSyncConfigured = false;
 state.cloudAdminReady = false;
+state.cloudSyncStatus = null;
+state.cloudSyncStatusDetail = '';
+
+const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
+let dashboardCloudSaveTimer = null;
+let dashboardCloudSaveInFlight = false;
+let dashboardCloudSavePendingData = null;
+let dashboardCloudSavePendingVersion = 0;
+let dashboardCloudSaveWaiters = [];
 
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
@@ -401,6 +410,45 @@ function updateLastSynced() {
   const time = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
   el.textContent = ' · ' + dashT('adminLastSynced', { time });
 }
+function setRefreshNeedsCloud(needsCloud) {
+  const btn = $id('dashRefreshBtn');
+  if (!btn) return;
+  btn.classList.toggle('dash-refresh-needed', Boolean(needsCloud));
+  if (needsCloud) btn.title = dashT('adminCloudRefreshHint');
+  else btn.removeAttribute('title');
+}
+function renderCloudSyncStatus() {
+  const status = state.cloudSyncStatus;
+  const statusEl = $id('dashCloudStatus');
+  const textEl = $id('dashCloudStatusText');
+  if (!statusEl || !textEl) return;
+  if (!status || isGuest()) {
+    statusEl.classList.add('hidden');
+    setRefreshNeedsCloud(false);
+    return;
+  }
+  const textKeys = {
+    syncing: 'adminCloudSyncing',
+    live: 'adminCloudSynced',
+    local: 'adminCloudLocalCache',
+    error: 'adminCloudSyncError',
+  };
+  const key = textKeys[status] || textKeys.syncing;
+  statusEl.dataset.state = status;
+  textEl.textContent = dashT(key);
+  if (state.cloudSyncStatusDetail) {
+    statusEl.title = state.cloudSyncStatusDetail;
+  } else {
+    statusEl.removeAttribute('title');
+  }
+  statusEl.classList.remove('hidden');
+  setRefreshNeedsCloud(status === 'local' || status === 'error');
+}
+function setCloudSyncStatus(status, detail = '') {
+  state.cloudSyncStatus = status;
+  state.cloudSyncStatusDetail = detail || '';
+  renderCloudSyncStatus();
+}
 function setRefreshBusy(busy) {
   const btn = $id('dashRefreshBtn');
   if (!btn) return;
@@ -589,28 +637,22 @@ async function doLogin() {
   sessionStorage.removeItem('vts_guest');
   localStorage.setItem(AUTH_KEY, '1');
   err.classList.add('hidden');
-  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '…'; }
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '...'; }
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
-  hydrateDashboardStateFromLocalStorage();
   setConnectingProgress(70, dashT('adminConnectingData'));
+  try {
+    await Promise.allSettled([
+      loadRosterSnapshotsFromFirestore(),
+      loadData({ preferCloudFirst: true }),
+    ]);
+  } catch (e) {
+    console.error('Dashboard load failed after login', e);
+  }
   hideConnecting();
   if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = dashT('adminLoginBtn'); }
   showApp();
   render();
-  window.setTimeout(() => {
-    loadRosterSnapshotsFromFirestore().catch((e) => console.error('Roster snapshot sync failed after login', e));
-    loadData()
-      .then(() => {
-        if (isAuthed() && !isGuest()) {
-          showApp();
-          render();
-        }
-      })
-      .catch((e) => {
-        console.error('Dashboard load failed after login', e);
-      });
-  }, 0);
 }
 
 // --- Persistence ---
@@ -640,45 +682,75 @@ function sanitizeDashboardDataForPersistence(data) {
   return sanitizeForFirestore(clean);
 }
 
-function dashboardDataFingerprint(data) {
-  return JSON.stringify(sanitizeDashboardDataForPersistence(normalizeDashboardDataForCache(data)) || null);
-}
-
-function mergeDashboardData(localData, cloudData) {
-  const local = normalizeDashboardDataForCache(localData);
-  const cloud = normalizeDashboardDataForCache(cloudData);
-  const attacks = new Map();
-  const addAttack = (attack) => {
-    if (!attack || typeof attack !== 'object') return;
-    const target = getDatasetStructureTarget(attack);
-    const fallbackKey = [
-      attack.game_time || '',
-      attack.start_time || '',
-      target.structure_name || attack.structure_name || '',
-      target.structure_level ?? attack.structure_level ?? '',
-      Array.isArray(attack.players) ? attack.players.length : 0,
-    ].join('|');
-    attacks.set(String(attack.id || attack.attack_id || fallbackKey), attack);
-  };
-
-  (Array.isArray(cloud?.attacks) ? cloud.attacks : []).forEach(addAttack);
-  (Array.isArray(local?.attacks) ? local.attacks : []).forEach(addAttack);
-
-  const sorted = [...attacks.values()].sort((a, b) =>
-    String(b.game_time || '').localeCompare(String(a.game_time || ''))
-  );
-  if (!sorted.length) return local || cloud || null;
-  return normalizeDashboardDataForCache({
-    ...(cloud || {}),
-    ...(local || {}),
-    last_updated: fmtDate(new Date()),
-    total_attacks: sorted.length,
-    attacks: sorted,
-    players_summary: buildSerializablePlayerSummary(sorted),
+function resolveDashboardCloudSaveWaiters(maxVersion, result) {
+  const ready = [];
+  const waiting = [];
+  dashboardCloudSaveWaiters.forEach((waiter) => {
+    if (waiter.version <= maxVersion) ready.push(waiter);
+    else waiting.push(waiter);
   });
+  dashboardCloudSaveWaiters = waiting;
+  ready.forEach((waiter) => waiter.resolve(result));
 }
 
-export async function saveData(data) {
+function queueDashboardCloudSaveFlush(delayMs = DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS) {
+  if (dashboardCloudSaveTimer) clearTimeout(dashboardCloudSaveTimer);
+  dashboardCloudSaveTimer = window.setTimeout(() => {
+    dashboardCloudSaveTimer = null;
+    flushDashboardCloudSave();
+  }, delayMs);
+}
+
+async function flushDashboardCloudSave() {
+  if (dashboardCloudSaveInFlight || !dashboardCloudSavePendingData) return false;
+  if (dashboardCloudSaveTimer) {
+    clearTimeout(dashboardCloudSaveTimer);
+    dashboardCloudSaveTimer = null;
+  }
+  const persistedData = dashboardCloudSavePendingData;
+  const version = dashboardCloudSavePendingVersion;
+  dashboardCloudSavePendingData = null;
+  dashboardCloudSaveInFlight = true;
+  let result = false;
+  try {
+    setCloudSyncStatus('syncing');
+    const db = await ensureCloudSyncReady();
+    if (!db) {
+      setCloudSyncStatus('local');
+      return false;
+    }
+    const { doc, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, FS_PATH), persistedData);
+    setCloudSyncStatus('live');
+    log('Synced to cloud.', 'info');
+    result = true;
+    return true;
+  } catch (e) {
+    console.error("FIREBASE SAVE ERROR:", e);
+    setCloudSyncStatus('error', e.message || e.code || '');
+    log('Save error: ' + (e.message || e.code), 'error');
+    return false;
+  } finally {
+    dashboardCloudSaveInFlight = false;
+    resolveDashboardCloudSaveWaiters(version, result);
+    if (dashboardCloudSavePendingData) queueDashboardCloudSaveFlush();
+  }
+}
+
+function scheduleDashboardCloudSave(persistedData, options = {}) {
+  dashboardCloudSavePendingData = persistedData;
+  const version = ++dashboardCloudSavePendingVersion;
+  setCloudSyncStatus('syncing');
+  const promise = new Promise((resolve) => {
+    dashboardCloudSaveWaiters.push({ version, resolve });
+  });
+  if (!dashboardCloudSaveInFlight) {
+    queueDashboardCloudSaveFlush(options.immediate ? 0 : DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS);
+  }
+  return promise;
+}
+
+export async function saveData(data, options = {}) {
   state.dashData = normalizeDashboardDataForCache(data);
   if (state.dashData && typeof state.dashData === 'object') {
     delete state.dashData.logs;
@@ -687,19 +759,15 @@ export async function saveData(data) {
   try { 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedData));
   } catch (e) {}
-  try { 
-    const db = await ensureCloudSyncReady();
-    if (!db) return;
-    const { doc, setDoc } = await loadFirestoreApi();
-    await setDoc(doc(db, FS_PATH), persistedData);
-    log('Synced to cloud.', 'info'); 
-  } catch (e) { 
-    console.error("FIREBASE SAVE ERROR:", e);
-    log('Save error: ' + (e.message || e.code), 'error'); 
-  }
+  if (options.cloud === false) return false;
+  const cloudSave = scheduleDashboardCloudSave(persistedData, { immediate: options.immediate === true });
+  if (options.awaitCloud === true) return cloudSave;
+  return false;
 }
 
-async function loadData() {
+async function loadData(options = {}) {
+  const preferCloudFirst = options.preferCloudFirst === true && !isGuest();
+  if (!isGuest()) setCloudSyncStatus('syncing');
   let hadLocalData = false;
   let localData = null;
   try {
@@ -707,40 +775,51 @@ async function loadData() {
     if (saved) {
       hadLocalData = true;
       localData = normalizeDashboardDataForCache(JSON.parse(saved));
-      state.dashData = localData;
-      if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
-      render();
+      if (!preferCloudFirst) {
+        state.dashData = localData;
+        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
+        render();
+      }
     }
   } catch (e) {}
   try {
     const db = await ensureCloudSyncReady();
-    if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
+    if (!db) {
+      if (preferCloudFirst && localData) {
+        state.dashData = localData;
+        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+        render();
+      }
+      setCloudSyncStatus('local');
+      log('Firestore not available — using local storage only.', 'warn');
+      return;
+    }
     const { doc, getDoc, setDoc, onSnapshot } = await loadFirestoreApi();
     if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
-      const mergedData = hadLocalData ? mergeDashboardData(localData, cloudData) : cloudData;
-      const shouldUploadMerged = hadLocalData && dashboardDataFingerprint(mergedData) !== dashboardDataFingerprint(cloudData);
-      state.dashData = mergedData;
+      state.dashData = cloudData;
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       try { 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
       } catch (e) {}
       render();
-      if (shouldUploadMerged) {
-        await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(state.dashData));
-        log('Merged local dashboard cache into cloud.', 'success');
-      }
+      setCloudSyncStatus('live');
     } else {
       if (hadLocalData && localData) {
+        state.dashData = localData;
+        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+        render();
         await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData));
+        setCloudSyncStatus('live');
         log('Uploaded local dashboard cache to cloud.', 'success');
       } else {
         state.dashData = null;
         try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
         render();
+        setCloudSyncStatus('live');
       }
     }
     state._fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
@@ -752,6 +831,7 @@ async function loadData() {
         } catch (e) {}
         render();
         updateLastSynced();
+        setCloudSyncStatus('live');
         const ind = $id('dashSyncIndicator');
         if (ind) {
           ind.classList.remove('hidden');
@@ -760,12 +840,20 @@ async function loadData() {
       }
     }, (err) => {
       console.error("FIREBASE SYNC ERROR:", err);
+      setCloudSyncStatus('error', err.message || err.code || '');
       log('Sync listener error: ' + (err.message || err.code), 'error');
     });
     log('Cloud sync active.', 'info');
     updateLastSynced();
   } catch (e) { 
     console.error("FIREBASE AUTH ERROR:", e);
+    if (preferCloudFirst && localData) {
+      state.dashData = localData;
+      if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+      render();
+      log('Cloud load failed; showing local dashboard cache.', 'warn');
+    }
+    setCloudSyncStatus('error', e.message || e.code || '');
     log('Load auth error: ' + (e.message || e.code), 'error'); 
   }
 }
@@ -775,12 +863,18 @@ async function clearData() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
   try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
+    setCloudSyncStatus('syncing');
     const db = await ensureCloudSyncReady();
     if (db) {
       const { doc, setDoc } = await loadFirestoreApi();
       await setDoc(doc(db, FS_PATH), {});
+      setCloudSyncStatus('live');
+    } else {
+      setCloudSyncStatus('local');
     }
-  } catch (e) {}
+  } catch (e) {
+    setCloudSyncStatus('error', e.message || e.code || '');
+  }
   const out = $id('dashLogOutput'); if (out) out.innerHTML = '';
   render();
   log('Database wiped.', 'warn');
@@ -1063,6 +1157,7 @@ export async function bootOcrDashboard() {
       const guestBanner = $id('dashGuestBanner');
       if (guestBanner) renderGuestBanner(guestBanner);
       refreshRosterSnapshotLabel();
+      renderCloudSyncStatus();
       if ($id('dashChart')) render();
       renderContributions();
     });
@@ -1094,29 +1189,21 @@ export async function bootOcrDashboard() {
   bindSubtabNavigation();
   $id('dashRefreshBtn').onclick = async () => {
     setRefreshBusy(true);
-    try { await loadData(); render(); }
+    try { await loadData({ preferCloudFirst: !isGuest() }); render(); }
     catch (e) { console.error('Refresh failed:', e); }
     finally { setRefreshBusy(false); }
   };
   log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) {
-    hydrateDashboardStateFromLocalStorage();
+    try {
+      setConnectingProgress(70, dashT('adminConnectingData'));
+      await loadData({ preferCloudFirst: true });
+    } catch (e) {
+      console.error('Dashboard load failed during boot', e);
+    }
     hideConnecting();
     showApp();
     render();
-
-    window.setTimeout(() => {
-      loadData()
-        .then(() => {
-          if (isAuthed()) {
-            showApp();
-            render();
-          }
-        })
-        .catch((e) => {
-          console.error('Dashboard load failed during boot', e);
-        });
-    }, 0);
   } else {
     hideConnecting();
     showLogin();
@@ -1148,8 +1235,8 @@ export async function bootOcrDashboard() {
     return text.length > 64 ? `${text.slice(0, 61)}...` : text;
   }
 
-  async function updateApiStatus() {
-    const result = await checkOcrService();
+  async function updateApiStatus(options = {}) {
+    const result = await checkOcrService(options);
     ocrReady = result.configured === true;
     const els = [
       { id: 'dashRosterApiStatus', zone: 'dashRosterUploadZone', drop: 'dashRosterDropZone', input: 'dashRosterFileInput' },
@@ -1191,7 +1278,7 @@ export async function bootOcrDashboard() {
   // Run on boot and whenever key input changes
   updateApiStatus();
   const apiSaveBtn = $id('dashSaveApiBtn');
-  if (apiSaveBtn) apiSaveBtn.addEventListener('click', updateApiStatus);
+  if (apiSaveBtn) apiSaveBtn.addEventListener('click', () => updateApiStatus({ verifyAppCheckToken: true }));
 
   // Roster: image upload
   const rosterZone = $id('dashRosterUploadZone');

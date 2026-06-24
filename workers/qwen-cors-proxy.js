@@ -50,16 +50,29 @@ function allowedOrigins(env) {
   return configured.length ? configured : DEFAULT_ALLOWED_ORIGINS;
 }
 
+function isPrivateViteDevOrigin(origin) {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'http:') return false;
+    if (!/^(4173|4174|5173|5174|5175|5176|5177)$/.test(url.port)) return false;
+    return /^(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})$/.test(
+      url.hostname
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
   if (!origin) return false;
-  return allowedOrigins(env).includes(origin);
+  return allowedOrigins(env).includes(origin) || isPrivateViteDevOrigin(origin);
 }
 
 function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
   const allowlist = allowedOrigins(env);
-  const allowOrigin = allowlist.includes(origin) ? origin : allowlist[0];
+  const allowOrigin = allowlist.includes(origin) || isPrivateViteDevOrigin(origin) ? origin : allowlist[0];
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',

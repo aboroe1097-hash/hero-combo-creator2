@@ -36,6 +36,9 @@ let analytics = null;
 let appCheck = null;
 let missingConfigLogged = false;
 let appCheckInitError = null;
+let appCheckTokenError = null;
+let appCheckTokenInFlight = null;
+let recaptchaRejectionGuardInstalled = false;
 
 // Public Firebase web app config is injected by Vite from VITE_FIREBASE_*
 // environment variables. Do not commit Firebase API keys in source.
@@ -73,7 +76,33 @@ export function getFirebaseSetupStatus() {
     appCheckReady: Boolean(appCheck),
     hasRecaptchaSiteKey: Boolean(recaptchaSiteKey),
     appCheckInitError: appCheckInitError?.message || '',
+    appCheckTokenError: appCheckTokenError?.message || '',
   };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRecaptchaTimeoutError(err) {
+  const text = `${err?.name || ''} ${err?.code || ''} ${err?.message || err || ''}`;
+  return /recaptcha/i.test(text) && /timeout/i.test(text);
+}
+
+function shouldRetryAppCheckTokenError(err) {
+  const text = `${err?.name || ''} ${err?.code || ''} ${err?.message || err || ''}`;
+  if (/403|permission|unauthorized|debug token|invalid site key/i.test(text)) return false;
+  return /timeout|network|fetch|unavailable|recaptcha/i.test(text);
+}
+
+function installRecaptchaRejectionGuard() {
+  if (recaptchaRejectionGuardInstalled || typeof globalThis?.addEventListener !== 'function') return;
+  recaptchaRejectionGuardInstalled = true;
+  globalThis.addEventListener('unhandledrejection', (event) => {
+    if (!isRecaptchaTimeoutError(event?.reason)) return;
+    event.preventDefault();
+    console.warn('Firebase App Check reCAPTCHA timed out; OCR will retry when a token is requested again.');
+  });
 }
 
 export function initFirebase() {
@@ -155,6 +184,7 @@ async function ensureFirebaseAppCheck() {
       globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
     }
 
+    installRecaptchaRejectionGuard();
     const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await loadAppCheckApi();
     appCheckInitError = null;
     appCheck = initializeAppCheck(app, {
@@ -179,9 +209,31 @@ export async function getFirebaseAdminClaim(forceRefresh = false) {
 export async function getFirebaseAppCheckToken(forceRefresh = false) {
   const currentAppCheck = await ensureFirebaseAppCheck();
   if (!currentAppCheck) return '';
-  const { getToken } = await loadAppCheckApi();
-  const result = await getToken(currentAppCheck, forceRefresh);
-  return result?.token || '';
+  if (appCheckTokenInFlight && !forceRefresh) return appCheckTokenInFlight;
+
+  appCheckTokenInFlight = (async () => {
+    const { getToken } = await loadAppCheckApi();
+    const maxAttempts = 2;
+    let lastError = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const result = await getToken(currentAppCheck, forceRefresh || attempt > 0);
+        appCheckTokenError = null;
+        return result?.token || '';
+      } catch (err) {
+        lastError = err;
+        appCheckTokenError = err;
+        if (attempt >= maxAttempts - 1 || !shouldRetryAppCheckTokenError(err)) break;
+        console.warn('Firebase App Check token request failed; retrying once.', err?.message || err);
+        await sleep(700);
+      }
+    }
+    throw lastError;
+  })().finally(() => {
+    appCheckTokenInFlight = null;
+  });
+
+  return appCheckTokenInFlight;
 }
 
 export function getDb() { return db; }

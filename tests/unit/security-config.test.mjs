@@ -31,6 +31,27 @@ test('firebase app check is lazy so comments do not trigger recaptcha throttling
   assert.match(source, /export async function getFirebaseAppCheckToken/);
 });
 
+test('firebase app check token requests retry transient recaptcha failures', () => {
+  const source = readFileSync('js/firebase.js', 'utf8');
+  assert.match(source, /function shouldRetryAppCheckTokenError/);
+  assert.match(source, /attempt < maxAttempts/);
+  assert.match(source, /getToken\(currentAppCheck, forceRefresh \|\| attempt > 0\)/);
+  assert.match(source, /unhandledrejection/);
+  assert.match(source, /reCAPTCHA timed out/);
+});
+
+test('admin dashboard cloud saves are coalesced before Firestore writes', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const engine = readFileSync('js/ocr-engine.js', 'utf8');
+  assert.match(dashboard, /DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS/);
+  assert.match(dashboard, /function scheduleDashboardCloudSave/);
+  assert.match(dashboard, /dashboardCloudSaveInFlight/);
+  assert.match(dashboard, /dashboardCloudSavePendingData/);
+  assert.match(dashboard, /if \(options\.cloud === false\) return false;/);
+  assert.match(engine, /saveParsedData\(progressiveParsed, \{ cloud: false \}\)/);
+  assert.match(engine, /saveParsedData\(parsed, \{ immediate: true, awaitCloud: true \}\)/);
+});
+
 test('qwen worker rejects requests without an Origin header', () => {
   const source = readFileSync('workers/qwen-cors-proxy.js', 'utf8');
   assert.match(source, /if\s*\(!origin\)\s*return false;/);

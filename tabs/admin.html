@@ -58,6 +58,10 @@
               <div>
                 <h1 class="dash-h1" data-i18n="adminHeaderTitle">Structure Attack Analytics</h1>
                 <div class="dash-subtitle"><span data-i18n="adminHeaderSub">Alliance Demolition Tracker</span><span id="dashUpdated" class="dash-updated"></span><span id="dashSyncIndicator" class="text-[10px] text-emerald-400 ml-2 hidden font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span data-i18n="adminHeaderLive">Live</span></span></div>
+                <div id="dashCloudStatus" class="dash-cloud-status hidden" data-state="syncing" role="status" aria-live="polite">
+                  <span class="dash-cloud-status-dot" aria-hidden="true"></span>
+                  <span id="dashCloudStatusText"></span>
+                </div>
                 <div id="dashApiKeyContainer" class="dash-api-key">
                   <span class="dash-api-key-note">OCR uploads use the secured Worker key.</span>
                   <div class="dash-api-key-actions">

@@ -91,7 +91,7 @@ export async function readOcrImageDataUrl(file) {
   return `data:${mime};base64,${base64}`;
 }
 
-export async function checkOcrService() {
+export async function checkOcrService(options = {}) {
   try {
     const res = await fetch(`${QWEN_WORKER_URL}/status`, { cache: 'no-store' });
     if (!res.ok) return { configured: false, error: `Worker status ${res.status}` };
@@ -99,6 +99,7 @@ export async function checkOcrService() {
     const hasOcrSecret = data.configured === true;
     const hasAppCheck = data.appCheckConfigured === true;
     if (hasOcrSecret && hasAppCheck) {
+      if (options.verifyAppCheckToken !== true) return { configured: true, error: '' };
       try {
         const { getFirebaseAppCheckToken, getFirebaseSetupStatus } = await import('./firebase.js');
         const appCheckToken = await getFirebaseAppCheckToken();
@@ -110,7 +111,7 @@ export async function checkOcrService() {
       } catch (err) {
         return {
           configured: false,
-          error: `Firebase App Check token unavailable: ${err?.message || 'Firebase App Check could not load.'} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`,
+          error: `Firebase App Check token unavailable: ${describeFirebaseAppCheckTokenError(err)}`,
         };
       }
     }
@@ -122,8 +123,8 @@ export async function checkOcrService() {
     return { configured: false, error };
   } catch (err) {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const localPortHint = /:(5175|5176|5177)$/.test(origin)
-      ? ` ${origin} is not currently allowed by the OCR Worker. Use http://127.0.0.1:5174 locally or add this origin to ALLOWED_ORIGINS.`
+    const localPortHint = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):(4173|4174|5173|5174|5175|5176|5177)$/.test(origin)
+      ? ` ${origin} is not currently allowed by the OCR Worker. Add this origin to ALLOWED_ORIGINS or redeploy the Worker with LAN dev origins enabled.`
       : '';
     return {
       configured: false,
@@ -154,7 +155,21 @@ function describeFirebaseAppCheckStatus(status) {
   if (status.appCheckInitError) {
     return `Firebase App Check failed to initialize: ${status.appCheckInitError}`;
   }
+  if (status.appCheckTokenError) {
+    if (/recaptcha/i.test(status.appCheckTokenError) && /timeout/i.test(status.appCheckTokenError)) {
+      return 'Firebase App Check reCAPTCHA timed out. Check network/ad blockers, then click Check OCR or retry the upload.';
+    }
+    return `Firebase App Check token failed: ${status.appCheckTokenError}`;
+  }
   return 'Firebase App Check is not initialized yet.';
+}
+
+function describeFirebaseAppCheckTokenError(err) {
+  const message = err?.message || 'Firebase App Check could not load.';
+  if (/recaptcha/i.test(message) && /timeout/i.test(message)) {
+    return 'Firebase App Check reCAPTCHA timed out. Check network/ad blockers, then click Check OCR or retry the upload.';
+  }
+  return `${message} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`;
 }
 
 async function getOcrAppCheckToken(options = {}) {
@@ -173,7 +188,7 @@ async function getOcrAppCheckToken(options = {}) {
   } catch (err) {
     if (err?.name === 'QwenVisionRequestError') throw err;
     throw createQwenVisionRequestError(
-      `Firebase App Check token unavailable. ${err?.message || 'Firebase App Check could not load.'} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`,
+      `Firebase App Check token unavailable. ${describeFirebaseAppCheckTokenError(err)}`,
       { status: 401, retryable: false, localConfiguration: true }
     );
   }

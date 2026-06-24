@@ -177,6 +177,22 @@ test('Qwen worker allows Vite fallback dev origin on port 5174', async () => {
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://127.0.0.1:5174');
 });
 
+test('Qwen worker allows LAN Vite dev origins for phone testing', async () => {
+  const response = await worker.fetch(
+    new Request('https://worker.example/status', {
+      headers: { Origin: 'http://192.168.1.199:5174' },
+    }),
+    {
+      ALLOWED_ORIGINS: 'https://roc-vts.com',
+      DASHSCOPE_API_KEY: 'secret',
+      FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://192.168.1.199:5174');
+});
+
 test('Qwen worker defaults to Alibaba Cloud international compatible endpoint', () => {
   assert.equal(
     resolveDashscopeChatCompletionsUrl({}),

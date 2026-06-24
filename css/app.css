@@ -11235,11 +11235,11 @@ body.admin-standalone-page #ocrDashboardSection {
 }
 
 [data-theme="light"] body.admin-standalone-page .admin-shell-title {
-  background: linear-gradient(180deg, #075985 0%, #0891b2 58%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: #0369a1;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: #075985;
+  color: #075985;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 14px rgba(14, 165, 233, 0.2);
 }
 
