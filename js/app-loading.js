@@ -223,7 +223,10 @@ function stopBootAnimations(finalPct = 100) {
     statusCycleTimer = null;
     statusSwapTimer = null;
     setBootProgress(finalPct);
-    setBootStatus('Ready', { instant: true });
+    statusSwapTimer = window.setTimeout(() => {
+        setBootStatus('Ready', { instant: true });
+        statusSwapTimer = null;
+    }, prefersReducedMotion() ? 0 : 180);
 }
 
 function prefersReducedMotion() {
@@ -305,7 +308,7 @@ async function dismissBootSplash() {
     if (statusContainer) statusContainer.classList.add('title-fade');
 
     // Wait for the wing unfurl and light flash animation to complete.
-    await sleep(1400);
+    await sleep(prefersReducedMotion() ? 80 : 1400);
 
     // Fade out the entire boot-splash overlay
     splash.classList.add('boot-splash--out');

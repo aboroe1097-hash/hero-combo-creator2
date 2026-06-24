@@ -1951,3 +1951,95 @@ body[style*="overflow: hidden"] .tab-panel {
 [data-theme="light"] #ocrDashboardRoot .dash-roster-row.trusted .dash-roster-row-name { color: #059669; }
 [data-theme="light"] #ocrDashboardRoot .dash-roster-row.trusted .dash-roster-row-vb { color: #10b981; }
 [data-theme="light"] #ocrDashboardRoot .dash-roster-row.spy .dash-roster-row-name { color: #dc2626; }
+
+/* 11.4.2 admin polish: tables and dense contribution controls stay readable. */
+#ocrDashboardRoot .dash-table-wrap,
+#ocrDashboardRoot .dash-banner-body,
+#ocrDashboardRoot .dash-contribution-compare-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(103, 232, 249, 0.42) transparent;
+}
+
+#ocrDashboardRoot .dash-table-wrap::-webkit-scrollbar,
+#ocrDashboardRoot .dash-banner-body::-webkit-scrollbar,
+#ocrDashboardRoot .dash-contribution-compare-table-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+#ocrDashboardRoot .dash-table-wrap::-webkit-scrollbar-thumb,
+#ocrDashboardRoot .dash-banner-body::-webkit-scrollbar-thumb,
+#ocrDashboardRoot .dash-contribution-compare-table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(103, 232, 249, 0.36);
+  border-radius: 999px;
+}
+
+#ocrDashboardRoot .dash-contribution-table {
+  min-width: 780px;
+}
+
+#ocrDashboardRoot .dash-contribution-card .dash-banner-head > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+#ocrDashboardRoot .dash-contribution-card .dash-banner-date {
+  min-width: 0;
+  flex: 1 1 360px;
+  flex-wrap: wrap;
+}
+
+#ocrDashboardRoot .dash-contribution-card .dash-banner-event,
+#ocrDashboardRoot .dash-contribution-card .dash-banner-count,
+#ocrDashboardRoot .dash-contribution-premium-pill {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .dash-subtab-btn {
+  min-height: 40px;
+}
+
+@media (max-width: 760px) {
+  #ocrDashboardRoot .dash-subtab-btn {
+    min-height: 44px;
+  }
+
+  #ocrDashboardRoot .dash-table {
+    min-width: 540px;
+  }
+
+  #ocrDashboardRoot .dash-table-wrap {
+    padding-bottom: 4px;
+  }
+
+  #ocrDashboardRoot .dash-contribution-card .dash-banner-head {
+    align-items: stretch;
+  }
+
+  #ocrDashboardRoot .dash-contribution-card .dash-banner-head > div:last-child {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot .dash-contribution-card .dash-banner-head > div:last-child .dash-btn {
+    flex: 1 1 120px;
+    justify-content: center;
+    min-height: 40px !important;
+  }
+
+  #ocrDashboardRoot .dash-contribution-card .dash-banner-date {
+    flex-basis: 100%;
+  }
+
+  #ocrDashboardRoot .dash-contribution-table {
+    min-width: 720px;
+  }
+
+  #ocrDashboardRoot .dash-contribution-compare-table {
+    min-width: 840px;
+  }
+}

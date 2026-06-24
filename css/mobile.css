@@ -2441,3 +2441,336 @@ button:not([disabled]):active,
     radial-gradient(circle at 50% 30%, currentColor 0 1.5px, transparent 1.7px),
     linear-gradient(currentColor, currentColor) center 62% / 2px 7px no-repeat;
 }
+
+/* 11.4.2 final mobile stabilization: clean rails, tap targets, and boot wings. */
+#app.app-shell,
+body.admin-standalone-page > .app-shell,
+main#mainContent,
+.tab-panel,
+#ocrDashboardRoot,
+#ocrDashboardRoot .dash-container,
+#ocrDashboardRoot .dash-card,
+#ocrDashboardRoot .dash-banner-card {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+#tabNavScroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(103, 232, 249, 0.5) transparent !important;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important;
+  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important;
+}
+
+#tabNavScroll::-webkit-scrollbar {
+  display: block !important;
+  height: 4px !important;
+}
+
+#tabNavScroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(103, 232, 249, 0.44);
+}
+
+.tab-pill {
+  min-height: var(--tap-min) !important;
+  align-items: center !important;
+}
+
+@media (max-width: 430px) {
+  #tabNavScroll {
+    grid-auto-rows: minmax(var(--tap-min), auto) !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .tab-pill {
+    min-height: var(--tap-min) !important;
+  }
+}
+
+.heroes-season-tabs,
+.heroes-filter-pills,
+.research-deck-row,
+.research-season-bar,
+.research-page-tabs,
+.eden-deck-row,
+.eden-toolbar-primary,
+.eden-toolbar-tools,
+.eden-toolbar-modes,
+.eden-layer-bar,
+.eden-quick-jump,
+.eden-layer-scroll,
+.eden-quick-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(103, 232, 249, 0.45) transparent !important;
+  scroll-padding-inline: 12px !important;
+}
+
+.heroes-season-tabs::-webkit-scrollbar,
+.heroes-filter-pills::-webkit-scrollbar,
+.research-deck-row::-webkit-scrollbar,
+.research-season-bar::-webkit-scrollbar,
+.research-page-tabs::-webkit-scrollbar,
+.eden-deck-row::-webkit-scrollbar,
+.eden-toolbar-primary::-webkit-scrollbar,
+.eden-toolbar-tools::-webkit-scrollbar,
+.eden-toolbar-modes::-webkit-scrollbar,
+.eden-layer-bar::-webkit-scrollbar,
+.eden-quick-jump::-webkit-scrollbar,
+.eden-layer-scroll::-webkit-scrollbar,
+.eden-quick-scroll::-webkit-scrollbar {
+  display: block !important;
+  height: 4px !important;
+}
+
+.hero-tab-season,
+.heroes-filter-pill,
+.tech-season-btn,
+.research-page-tab,
+.research-branch-btn,
+.filter-pill,
+.loyalty-preset-btn,
+.floating-tool-btn,
+.bug-report-fab,
+#ocrDashboardRoot .dash-subtab-btn,
+#ocrDashboardRoot .dash-btn,
+#ocrDashboardRoot .dash-banner-del-btn,
+#ocrDashboardRoot .dash-contribution-reward-select {
+  min-height: var(--tap-min) !important;
+}
+
+.floating-tool-btn,
+.bug-report-fab,
+#ocrDashboardRoot .dash-banner-del-btn {
+  min-width: var(--tap-min) !important;
+}
+
+.tool-filter-block .filter-pill {
+  min-height: var(--tap-min) !important;
+}
+
+.boot-splash .perspective-container {
+  --wing-flap-duration: 3.9s !important;
+}
+
+.boot-splash .door-wing {
+  --boot-wing-w: min(112vw, 520px) !important;
+  --boot-wing-h: min(46vh, 390px) !important;
+  top: 48% !important;
+  width: var(--boot-wing-w) !important;
+  height: var(--boot-wing-h) !important;
+  margin-top: calc(var(--boot-wing-h) / -2) !important;
+  opacity: 0.9 !important;
+}
+
+.boot-splash .door-wing-left {
+  right: calc(50% - 74px) !important;
+}
+
+.boot-splash .door-wing-right {
+  left: calc(50% - 74px) !important;
+}
+
+.boot-splash .door-wing-art--aura {
+  opacity: 0.24 !important;
+}
+
+.boot-splash .gate-lock {
+  width: 68px !important;
+  height: 68px !important;
+}
+
+.boot-splash .loading-status-container {
+  width: min(92vw, 390px) !important;
+  padding: 13px 14px !important;
+  background: rgba(2, 6, 14, 0.86) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash .door-wing,
+  .boot-splash .door-wing span,
+  .boot-splash .door-wing-art,
+  .boot-splash .boot-particle,
+  .boot-splash .center-light,
+  .boot-splash .gate-lock,
+  .boot-splash .boot-progress-fill {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 11.4.3 mobile hero-card polish. */
+@media (max-width: 768px) {
+  #availableHeroes,
+  #generatorHeroes {
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .hero-card,
+  .generator-card {
+    width: 100% !important;
+    min-height: 134px !important;
+    padding: 34px 6px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .hero-card-badges {
+    top: 5px !important;
+    left: 5px !important;
+    right: 5px !important;
+    gap: 3px !important;
+    min-height: 23px !important;
+  }
+
+  .hero-card-badges .hero-tag {
+    min-width: 28px !important;
+    height: 22px !important;
+    padding: 0 5px !important;
+    border-radius: 7px !important;
+    font-size: 0.54rem !important;
+  }
+
+  .hero-card .hero-origin-tag {
+    top: 29px !important;
+    left: 6px !important;
+  }
+
+  .hero-card-badges .paid-badge {
+    height: 22px !important;
+    padding: 0 5px 0 3px !important;
+    border-radius: 7px !important;
+  }
+
+  .hero-card-badges .paid-badge-text {
+    font-size: 0.45rem !important;
+  }
+
+  .hero-card-badges .paid-badge--card .paid-gem-svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .hero-card-badges:has(.generator-skin-toggle) .paid-badge--card,
+  .hero-card-badges:has(.generator-skin-badge) .paid-badge--card {
+    width: 22px !important;
+    height: 22px !important;
+    padding: 0 !important;
+  }
+
+  .hero-card-badges .generator-skin-badge:not(.generator-skin-toggle) {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 7px !important;
+    font-size: 0.56rem !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle {
+    min-width: 52px !important;
+    width: auto !important;
+    height: 23px !important;
+    padding: 0 5px 0 3px !important;
+    gap: 3px !important;
+    border-radius: 7px !important;
+    font-size: 0.5rem !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle:not(.is-on)::after {
+    content: none !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle-icon {
+    width: 15px !important;
+    height: 15px !important;
+    border-radius: 5px !important;
+    font-size: 0.46rem !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle-state {
+    min-width: 24px !important;
+    font-size: 0.46rem !important;
+  }
+
+  .hero-card:has(.paid-badge) .info-btn,
+  .hero-card:has(.generator-skin-badge) .info-btn,
+  .hero-card:has(.generator-skin-toggle) .info-btn {
+    top: 32px !important;
+    right: 5px !important;
+  }
+
+  .hero-card:not(:has(.paid-badge)):not(:has(.generator-skin-badge)):not(:has(.generator-skin-toggle)) .info-btn {
+    top: 5px !important;
+    right: 5px !important;
+  }
+
+  .hero-card .info-btn {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .hero-card .info-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .hero-portrait-frame {
+    width: 58px !important;
+    height: 58px !important;
+    margin: 0 auto 7px !important;
+  }
+
+  .hero-card-copy {
+    min-height: 34px !important;
+    gap: 2px !important;
+    padding-inline: 1px !important;
+  }
+
+  .hero-card-name {
+    min-height: 2.12em !important;
+    font-size: 0.62rem !important;
+    line-height: 1.06 !important;
+  }
+
+  .hero-card-type {
+    font-size: 0.5rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-card,
+  .generator-card {
+    min-height: 126px !important;
+    padding-top: 32px !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle {
+    min-width: 48px !important;
+  }
+
+  .hero-card-badges .generator-skin-toggle-state {
+    min-width: 22px !important;
+    font-size: 0.44rem !important;
+  }
+
+  .hero-portrait-frame {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .hero-card-name {
+    font-size: 0.58rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #availableHeroes,
+  #generatorHeroes {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .hero-card,
+  .generator-card {
+    min-height: 142px !important;
+  }
+}

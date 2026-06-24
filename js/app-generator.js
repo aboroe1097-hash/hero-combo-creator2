@@ -309,15 +309,18 @@ export function renderGeneratorHeroes(options = {}) {
         ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${skinBadgeTitle}" style="${escapeHtml(skinBadgeStyle)}">${skinBadgeLabel}</span>`
         : '';
       const skinToggle = activeSkinsOnly && hasSkinFlag
-        ? `<span class="generator-skin-toggle generator-skin-badge${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${escapeHtml(skinBadgeStyle)}"><span class="generator-skin-toggle-icon">${escapeHtml(skinIconLabel)}</span><span class="generator-skin-toggle-state">${skinOwned ? 'ON' : 'OFF'}</span></span>`
+        ? `<span class="generator-skin-toggle${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${escapeHtml(skinBadgeStyle)}"><span class="generator-skin-toggle-icon">${escapeHtml(skinIconLabel)}</span> <span class="generator-skin-toggle-state">${skinOwned ? 'Skin' : 'Base'}</span></span>`
         : '';
 
       card.innerHTML = `
-        <span class="hero-tag" style="background:${escapeHtml(seasonColors[hero.season] || '#f97316')}">${escapeHtml(hero.season)}</span>
+        <div class="hero-card-badges">
+          <span class="hero-tag" style="background:${escapeHtml(seasonColors[hero.season] || '#f97316')}">${escapeHtml(hero.season)}</span>
+          <span class="hero-card-badge-spacer"></span>
+          ${skinBadge}
+          ${skinToggle}
+          ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
+        </div>
         ${originTag}
-        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
-        ${skinBadge}
-        ${skinToggle}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -328,9 +331,9 @@ export function renderGeneratorHeroes(options = {}) {
         <span class="hero-portrait-frame">
           <img src="${escapeHtml(portraitUrl)}" alt="${escapeHtml(hero.name)}" crossorigin="anonymous" loading="lazy">
         </span>
-        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
-            <span class="font-black text-[8px] uppercase tracking-wider ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
+        <div class="hero-card-copy">
+            <span class="hero-card-name">${escapeHtml(hero.name)}</span>
+            <span class="hero-card-type ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
         </div>
       `;
       

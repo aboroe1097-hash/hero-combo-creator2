@@ -37,9 +37,14 @@ export async function checkOcrService() {
     const res = await fetch(`${QWEN_WORKER_URL}/status`, { cache: 'no-store' });
     if (!res.ok) return { configured: false, error: `Worker status ${res.status}` };
     const data = await res.json();
-    const configured = data.configured === true && data.appCheckConfigured === true;
-    const error = data.error || (configured ? '' : 'Worker OCR/App Check configuration is incomplete');
-    return { configured, error };
+    const hasOcrSecret = data.configured === true;
+    const hasAppCheck = data.appCheckConfigured === true;
+    if (hasOcrSecret && hasAppCheck) return { configured: true, error: '' };
+    const error = data.error
+      || (!hasOcrSecret
+        ? 'Worker is missing DASHSCOPE_API_KEY'
+        : 'Firebase App Check is missing FIREBASE_APP_CHECK_PROJECT_NUMBER');
+    return { configured: false, error };
   } catch (err) {
     return { configured: false, error: err?.message || 'OCR worker unavailable' };
   }

@@ -191,9 +191,12 @@ export function renderAvailableHeroes() {
         ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
         : '';
       card.innerHTML = `
-        <span class="hero-tag" style="background:${escapeHtml(tagColor)}">${escapeHtml(hero.season)}</span>
+        <div class="hero-card-badges">
+          <span class="hero-tag" style="background:${escapeHtml(tagColor)}">${escapeHtml(hero.season)}</span>
+          <span class="hero-card-badge-spacer"></span>
+          ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
+        </div>
         ${originTag}
-        ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         
         <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
@@ -204,9 +207,9 @@ export function renderAvailableHeroes() {
         <span class="hero-portrait-frame">
           <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(hero.name))}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
         </span>
-        <div class="mt-1 flex flex-col items-center leading-tight w-full px-1">
-            <span class="font-bold text-[10px] text-white truncate w-full text-center">${escapeHtml(hero.name)}</span>
-            <span class="font-black text-[8px] uppercase tracking-wider ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
+        <div class="hero-card-copy">
+            <span class="hero-card-name">${escapeHtml(hero.name)}</span>
+            <span class="hero-card-type ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
         </div>
       `;
 
