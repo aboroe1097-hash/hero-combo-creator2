@@ -30,6 +30,7 @@ let auth = null;
 let analytics = null;
 let appCheck = null;
 let missingConfigLogged = false;
+let appCheckInitError = null;
 
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
@@ -51,6 +52,16 @@ export const firebaseConfig = {
 
 export function isFirebaseConfigured() {
   return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+}
+
+export function getFirebaseSetupStatus() {
+  const recaptchaSiteKey = envValue('VITE_RECAPTCHA_SITE_KEY');
+  return {
+    configured: isFirebaseConfigured(),
+    appCheckReady: Boolean(appCheck),
+    hasRecaptchaSiteKey: Boolean(recaptchaSiteKey),
+    appCheckInitError: appCheckInitError?.message || '',
+  };
 }
 
 export function initFirebase() {
@@ -77,11 +88,13 @@ export function initFirebase() {
       if (appCheckDebugToken && typeof globalThis !== 'undefined') {
         globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
       }
+      appCheckInitError = null;
       appCheck = initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
         isTokenAutoRefreshEnabled: true
       });
     } catch (e) {
+      appCheckInitError = e;
       console.warn("App Check initialization failed; continuing without it.", e);
     }
   }
@@ -103,7 +116,11 @@ export async function ensureAnonymousAuth() {
   if (auth.currentUser) return auth.currentUser;
   if (authInFlight) return authInFlight;
 
-  try { await setPersistence(auth, browserLocalPersistence); } catch(e) {}
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Some restricted browser contexts block persistence; anonymous auth can continue.
+  }
 
   authInFlight = new Promise((resolve, reject) => {
     let unsubs = () => {};
@@ -141,6 +158,7 @@ export async function getFirebaseAdminClaim(forceRefresh = false) {
 }
 
 export async function getFirebaseAppCheckToken(forceRefresh = false) {
+  if (!app) initFirebase();
   if (!appCheck) return '';
   const result = await getToken(appCheck, forceRefresh);
   return result?.token || '';

@@ -2,7 +2,7 @@ import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity
+  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -975,7 +975,7 @@ Rules:
             : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(adminT('adminDutyOcrErrorLog', { label, file: file.name, error: e.message }), 'error');
+      log(adminT('adminDutyOcrErrorLog', { label, file: file.name, error: describeOcrRequestError(e) }), 'error');
     }
   }
   if (progress) progress.classList.add('hidden');
@@ -1369,7 +1369,7 @@ Rules:
           : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: e.message }), 'error');
+      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: describeOcrRequestError(e) }), 'error');
     }
   }
   if (progress) progress.classList.add('hidden');

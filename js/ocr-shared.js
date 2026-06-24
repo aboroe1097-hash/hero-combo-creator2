@@ -39,7 +39,19 @@ export async function checkOcrService() {
     const data = await res.json();
     const hasOcrSecret = data.configured === true;
     const hasAppCheck = data.appCheckConfigured === true;
-    if (hasOcrSecret && hasAppCheck) return { configured: true, error: '' };
+    if (hasOcrSecret && hasAppCheck) {
+      try {
+        const { getFirebaseAppCheckToken, getFirebaseSetupStatus } = await import('./firebase.js');
+        const appCheckToken = await getFirebaseAppCheckToken();
+        if (appCheckToken) return { configured: true, error: '' };
+        return { configured: false, error: describeFirebaseAppCheckStatus(getFirebaseSetupStatus?.()) };
+      } catch (err) {
+        return {
+          configured: false,
+          error: `Firebase App Check token unavailable: ${err?.message || 'Firebase App Check could not load.'} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`,
+        };
+      }
+    }
     const error = data.error
       || (!hasOcrSecret
         ? 'Worker is missing DASHSCOPE_API_KEY'
@@ -50,18 +62,58 @@ export async function checkOcrService() {
   }
 }
 
-export async function qwenVisionRequest(messages, options = {}) {
-  const appCheckHeaders = {};
-  try {
-    const { getFirebaseAppCheckToken } = await import('./firebase.js');
-    const appCheckToken = await getFirebaseAppCheckToken();
-    if (appCheckToken) appCheckHeaders['X-Firebase-AppCheck'] = appCheckToken;
-  } catch {
-    // Let the worker fail closed when Firebase App Check is unavailable.
+function createQwenVisionRequestError(message, options = {}) {
+  const err = new Error(message);
+  err.name = 'QwenVisionRequestError';
+  if (Number.isFinite(options.status)) err.status = options.status;
+  if (Number.isFinite(options.retryAfter)) err.retryAfter = options.retryAfter;
+  if (options.details) err.details = options.details;
+  if (options.responseBody !== undefined) err.responseBody = options.responseBody;
+  if (options.retryable === false) err.retryable = false;
+  if (options.localConfiguration) err.localConfiguration = true;
+  return err;
+}
+
+function describeFirebaseAppCheckStatus(status) {
+  if (!status?.configured) {
+    return 'Firebase web config is missing. Serve the app through Vite or deploy with VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID.';
   }
+  if (!status.hasRecaptchaSiteKey) {
+    return 'VITE_RECAPTCHA_SITE_KEY is missing. This must be the public reCAPTCHA Enterprise site key from Firebase App Check.';
+  }
+  if (status.appCheckInitError) {
+    return `Firebase App Check failed to initialize: ${status.appCheckInitError}`;
+  }
+  return 'Firebase App Check is not initialized yet.';
+}
+
+async function getOcrAppCheckToken(options = {}) {
+  const suppliedToken = String(options.appCheckToken || '').trim();
+  if (suppliedToken) return suppliedToken;
+
+  try {
+    const { getFirebaseAppCheckToken, getFirebaseSetupStatus } = await import('./firebase.js');
+    const appCheckToken = await getFirebaseAppCheckToken();
+    if (appCheckToken) return appCheckToken;
+    const reason = describeFirebaseAppCheckStatus(getFirebaseSetupStatus?.());
+    throw createQwenVisionRequestError(
+      `Firebase App Check token unavailable. ${reason} The reCAPTCHA Enterprise site key creates the token; it is not the token sent to the OCR Worker.`,
+      { status: 401, retryable: false, localConfiguration: true }
+    );
+  } catch (err) {
+    if (err?.name === 'QwenVisionRequestError') throw err;
+    throw createQwenVisionRequestError(
+      `Firebase App Check token unavailable. ${err?.message || 'Firebase App Check could not load.'} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`,
+      { status: 401, retryable: false, localConfiguration: true }
+    );
+  }
+}
+
+export async function qwenVisionRequest(messages, options = {}) {
+  const appCheckToken = await getOcrAppCheckToken(options);
   const res = await fetch(QWEN_WORKER_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...appCheckHeaders },
+    headers: { 'Content-Type': 'application/json', 'X-Firebase-AppCheck': appCheckToken },
     body: JSON.stringify({ model: 'qwen-vl-plus', messages }),
     signal: options.signal,
   });
@@ -75,13 +127,12 @@ export async function qwenVisionRequest(messages, options = {}) {
       || (errorPayload ? JSON.stringify(errorPayload) : '')
       || rawText
       || `Qwen API Error (HTTP ${res.status})`;
-    const err = new Error(msg);
-    err.name = 'QwenVisionRequestError';
-    err.status = res.status;
-    err.retryAfter = parseRetryAfterSeconds(res.headers.get('Retry-After'));
-    if (body?.details) err.details = body.details;
-    err.responseBody = body || rawText || null;
-    throw err;
+    throw createQwenVisionRequestError(msg, {
+      status: res.status,
+      retryAfter: parseRetryAfterSeconds(res.headers.get('Retry-After')),
+      details: body?.details,
+      responseBody: body || rawText || null,
+    });
   }
   return body;
 }
@@ -108,6 +159,7 @@ export function describeOcrRequestError(err) {
 }
 
 export function isRetryableOcrRequestError(err) {
+  if (err?.retryable === false || err?.localConfiguration) return false;
   if (!Number.isFinite(err?.status)) return true;
   return err.status === 408 || err.status === 409 || err.status === 425 || err.status === 429 || err.status >= 500;
 }

@@ -10,10 +10,10 @@ import {
   loadDutyRecords, showDutyPasteForm, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
   loadContributionRecords, showContributionPasteForm, processContributionImages, editContributionRecord,
   deleteContributionRecord, setContributionReward, exportContributionRecords, renderContributions
-} from './ocr-roster.js?v=20260624_034000';
+} from './ocr-roster.js?v=20260624_043500';
 
-import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_034000';
-import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js?v=20260624_034000';
+import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCards } from './ocr-render.js?v=20260624_043500';
+import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js?v=20260624_043500';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
 import { initFirebase, ensureAnonymousAuth, getDb, getFirebaseAdminClaim } from './firebase.js';
@@ -27,6 +27,7 @@ import {
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
   resolvePlayerNameForAttack,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
+  describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
   trimRosterSnapshots
 } from './ocr-shared.js';
@@ -268,7 +269,6 @@ RULES:
 JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
       let raw = null;
-      let lastErr = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           raw = await qwenVisionRequest([{ role: 'user', content: [
@@ -277,9 +277,11 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
           ]}]);
           if (raw?.choices?.[0]?.message?.content) break;
         } catch (e) {
-          lastErr = e;
-          if (attempt === 3) throw e;
-          await new Promise(r => setTimeout(r, 2000 * attempt));
+          if (attempt === 3 || !isRetryableOcrRequestError(e)) throw e;
+          const delayMs = getOcrRetryDelayMs(e, attempt);
+          const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
+          log(`Roster OCR request failed: ${describeOcrRequestError(e)}. Retrying in ${delaySeconds}s (${attempt}/3)...`, 'warn', f.name);
+          await new Promise(r => setTimeout(r, delayMs));
         }
       }
 
@@ -295,7 +297,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
       names = names.filter(n => typeof n === 'string' && n.trim().length > 0).map(n => n.trim());
       allNames.push(...names);
     } catch (e) {
-      log(`Roster OCR error (${f.name}): ${e.message}`, 'error');
+      log(`Roster OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
     }
   }
 

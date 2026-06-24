@@ -5,21 +5,29 @@
 //
 // Optional variables:
 //   ALLOWED_ORIGINS=https://roc-vts.com,http://localhost:5173
+//   DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 //   FIREBASE_APP_CHECK_PROJECT_NUMBER=123456789
 //   FIREBASE_APP_CHECK_APP_ID=1:123456789:web:abcdef123456
+//     This is the Firebase Web App ID, not the reCAPTCHA Enterprise site key.
 //   RATE_LIMIT_KV=<KV namespace binding>
 //   RATE_LIMIT_WINDOW_SECONDS=60
 //   RATE_LIMIT_MAX_REQUESTS=30
 //   MAX_BODY_BYTES=5242880
 
-const DASHSCOPE_URL = 'https://ws-ui65ry41vh934ty5.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions';
+const DEFAULT_DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
 const APP_CHECK_JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1beta/jwks';
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://roc-vts.com',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'http://localhost:5175',
+  'http://127.0.0.1:5175',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
+  'http://localhost:4174',
+  'http://127.0.0.1:4174',
 ];
 const DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 30;
@@ -27,6 +35,12 @@ const DEFAULT_MAX_BODY_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MODELS = new Set(['qwen-vl-plus', 'qwen-vl-max']);
 const memoryRateLimit = new Map();
 let appCheckJwksCache = null;
+
+export function resolveDashscopeChatCompletionsUrl(env = {}) {
+  const configured = String(env.DASHSCOPE_BASE_URL || DEFAULT_DASHSCOPE_BASE_URL).trim();
+  const baseUrl = (configured || DEFAULT_DASHSCOPE_BASE_URL).replace(/\/+$/, '');
+  return baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
+}
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -348,7 +362,7 @@ export default {
     }
 
     try {
-      const dashscopeResponse = await fetch(DASHSCOPE_URL, {
+      const dashscopeResponse = await fetch(resolveDashscopeChatCompletionsUrl(env), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

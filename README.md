@@ -211,6 +211,11 @@ Reload the deployed admin page after the claim is set so Firebase refreshes the 
 ### Firebase
 Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
 
+### OCR Worker and App Check
+The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.
+
+Worker configuration uses `DASHSCOPE_API_KEY` as a Cloudflare secret. Non-secret Worker variables include `DASHSCOPE_BASE_URL` (default: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), `ALLOWED_ORIGINS`, `FIREBASE_APP_CHECK_PROJECT_NUMBER`, and optional `FIREBASE_APP_CHECK_APP_ID`. `FIREBASE_APP_CHECK_APP_ID` is the Firebase Web App ID (`1:...:web:...`), not the reCAPTCHA site key.
+
 ### Error Boundaries
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.
 
@@ -250,7 +255,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 | `vts_roster_alliances` | Alliance name list |
 | `vts_roster_user` | Logged-in roster user |
 | `vts_ocr_banners` | Banner records array |
-| `qwen_api_key` | Qwen API key (user-set) |
+| `qwen_api_key` | Legacy browser-stored Qwen key; cleared because OCR now uses the Worker secret |
 | `vts_generator_owned_skins_v1` | Per-hero skin/base ownership toggles in the combo generator |
 
 ## Firebase

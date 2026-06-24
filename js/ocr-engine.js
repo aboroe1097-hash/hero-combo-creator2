@@ -150,7 +150,7 @@ EXPECTED JSON SCHEMA:
         log(`OCR cancelled after ${i}/${valid.length} screenshots.`, 'warn');
         break;
       }
-      log(`Network error: ${e.message}`, 'error', f.name);
+      log(`OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
     }
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
     $id('dashProgressText').textContent = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;

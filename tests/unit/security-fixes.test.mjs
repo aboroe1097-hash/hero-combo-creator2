@@ -34,7 +34,9 @@ globalThis.document = {
 };
 
 const { appendLogEntry, checkOcrService, qwenVisionRequest } = await import('../../js/ocr-shared.js');
-const worker = (await import('../../workers/qwen-cors-proxy.js')).default;
+const workerModule = await import('../../workers/qwen-cors-proxy.js');
+const worker = workerModule.default;
+const { resolveDashscopeChatCompletionsUrl } = workerModule;
 
 function request(path, init = {}) {
   return new Request(`https://worker.example${path}`, {
@@ -132,6 +134,38 @@ test('Qwen worker status reports whether App Check is configured', async () => {
   assert.equal(body.appCheckConfigured, true);
 });
 
+test('Qwen worker allows Vite fallback dev origin on port 5174', async () => {
+  const response = await worker.fetch(
+    new Request('https://worker.example/status', {
+      headers: { Origin: 'http://127.0.0.1:5174' },
+    }),
+    {
+      DASHSCOPE_API_KEY: 'secret',
+      FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://127.0.0.1:5174');
+});
+
+test('Qwen worker defaults to Alibaba Cloud international compatible endpoint', () => {
+  assert.equal(
+    resolveDashscopeChatCompletionsUrl({}),
+    'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+  );
+  assert.equal(
+    resolveDashscopeChatCompletionsUrl({ DASHSCOPE_BASE_URL: 'https://example.test/compatible-mode/v1' }),
+    'https://example.test/compatible-mode/v1/chat/completions'
+  );
+  assert.equal(
+    resolveDashscopeChatCompletionsUrl({
+      DASHSCOPE_BASE_URL: 'https://example.test/compatible-mode/v1/chat/completions',
+    }),
+    'https://example.test/compatible-mode/v1/chat/completions'
+  );
+});
+
 test('OCR status helper requires both OCR secret and App Check worker config', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () =>
@@ -158,7 +192,7 @@ test('Qwen request errors preserve HTTP status and Retry-After', async () => {
     });
   try {
     await assert.rejects(
-      () => qwenVisionRequest([{ role: 'user', content: 'hi' }]),
+      () => qwenVisionRequest([{ role: 'user', content: 'hi' }], { appCheckToken: 'test-app-check-token' }),
       (err) => {
         assert.equal(err.name, 'QwenVisionRequestError');
         assert.equal(err.status, 429);
@@ -167,6 +201,31 @@ test('Qwen request errors preserve HTTP status and Retry-After', async () => {
         return true;
       }
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Qwen request does not call OCR worker without a Firebase App Check token', async () => {
+  const originalFetch = globalThis.fetch;
+  let fetchCalled = false;
+  globalThis.fetch = async () => {
+    fetchCalled = true;
+    throw new Error('worker should not be called without App Check');
+  };
+  try {
+    await assert.rejects(
+      () => qwenVisionRequest([{ role: 'user', content: 'hi' }]),
+      (err) => {
+        assert.equal(err.name, 'QwenVisionRequestError');
+        assert.equal(err.status, 401);
+        assert.equal(err.retryable, false);
+        assert.equal(err.localConfiguration, true);
+        assert.match(err.message, /Firebase App Check token unavailable/);
+        return true;
+      }
+    );
+    assert.equal(fetchCalled, false);
   } finally {
     globalThis.fetch = originalFetch;
   }
