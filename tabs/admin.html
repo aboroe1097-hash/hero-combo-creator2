@@ -127,7 +127,7 @@
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 <p data-i18n="adminUploadDrop">Drop screenshots here or click to browse</p>
                 <span class="dash-hint" data-i18n="adminUploadHint">PNG, JPG — Multiple structures supported</span>
-                <input type="file" id="dashFileInput" class="dash-file-input" accept="image/png,image/jpeg,image/jpg" multiple>
+                <input type="file" id="dashFileInput" class="dash-file-input" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple>
               </div>
               <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span><button id="dashCancelOcrBtn" type="button" class="dash-btn dash-btn-sm dash-cancel-ocr hidden" data-i18n="adminCancel">Cancel</button></div>
               <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
@@ -309,7 +309,7 @@
                 </div>
                 <div id="dashContributionDropZone" class="dash-roster-dropzone">
                   <span data-i18n="adminContributionDropZone">Drop Total Contribution screenshots here, or click Upload Image</span>
-                  <input id="dashContributionFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden>
+                  <input id="dashContributionFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
                 </div>
                 <div id="dashContributionProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashContributionProgressText" data-i18n="adminContributionScanning">Scanning contribution list...</span></div>
                 <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
@@ -336,7 +336,7 @@
                     <svg class="dash-muted-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <span data-i18n="adminRosterDropZone">Drop member-list screenshot here, or click to upload</span>
                   </div>
-                  <input id="dashRosterFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden />
+                  <input id="dashRosterFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden />
                   <div id="dashRosterProgress" class="dash-roster-progress hidden">
                     <span class="spinner"></span>
                     <span id="dashRosterProgressText" data-i18n="adminRosterScanning">Scanning roster image...</span>
@@ -360,7 +360,7 @@
                 </div>
                 <div id="dashBannerListDropZone" class="dash-roster-dropzone">
                   <span data-i18n="adminBannerDropZone">Drop banner list screenshot here, or click Upload Image</span>
-                  <input id="dashBannerListFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden>
+                  <input id="dashBannerListFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
                 </div>
                 <div id="dashBannerListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashBannerListProgressText" data-i18n="adminBannerScanning">Scanning banner list...</span></div>
                 <div id="dashBannerListBody">
@@ -381,7 +381,7 @@
                 </div>
                 <div id="dashPatherListDropZone" class="dash-roster-dropzone">
                   <span data-i18n="adminPatherDropZone">Drop pather or speed tile plan screenshot here, or click Upload Image</span>
-                  <input id="dashPatherListFileInput" type="file" accept=".png,.jpg,.jpeg" multiple hidden>
+                  <input id="dashPatherListFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
                 </div>
                 <div id="dashPatherListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashPatherListProgressText" data-i18n="adminPatherScanning">Scanning plan...</span></div>
                 <div id="dashPatherListBody">

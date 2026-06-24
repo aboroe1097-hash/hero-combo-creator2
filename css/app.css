@@ -11058,6 +11058,103 @@ body.admin-standalone-page #ocrDashboardSection {
   min-width: 0;
 }
 
+body.admin-standalone-page .admin-brand-row {
+  display: grid;
+  grid-template-columns: clamp(82px, 7vw, 106px) minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(0.82rem, 1.55vw, 1.08rem);
+  row-gap: 0.35rem;
+}
+
+body.admin-standalone-page .admin-brand-logo {
+  width: clamp(82px, 7vw, 106px);
+  height: clamp(82px, 7vw, 106px);
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  background: #050914;
+  object-fit: cover;
+  box-shadow:
+    0 0 0 3px rgba(34, 211, 238, 0.08),
+    0 0 28px rgba(34, 211, 238, 0.2),
+    0 12px 30px rgba(0, 0, 0, 0.34);
+}
+
+body.admin-standalone-page .admin-shell-title {
+  margin: 0;
+  font-family: "Cinzel", serif;
+  font-size: clamp(2.4rem, 4.25vw, 4.2rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 0%, #67e8f9 55%, #2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow:
+    0 0 18px rgba(34, 211, 238, 0.35),
+    0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+body.admin-standalone-page .admin-shell-kicker,
+body.admin-standalone-page .admin-shell-team {
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+body.admin-standalone-page .admin-shell-kicker {
+  margin-top: 0.2rem;
+  color: #fcd34d;
+  font-size: clamp(0.78rem, 1.35vw, 1rem);
+}
+
+body.admin-standalone-page .admin-shell-team {
+  margin-top: 0.36rem;
+  color: #5eead4;
+  font-size: clamp(0.82rem, 1.42vw, 1.08rem);
+  text-shadow: 0 0 12px rgba(45, 212, 191, 0.35);
+}
+
+body.admin-standalone-page .admin-shell-copy {
+  margin-left: calc(clamp(82px, 7vw, 106px) + clamp(0.82rem, 1.55vw, 1.08rem));
+}
+
+body.admin-standalone-page .admin-back-tools {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(103, 232, 249, 0.26);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.84));
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+body.admin-standalone-page .admin-back-tools:hover,
+body.admin-standalone-page .admin-back-tools:focus-visible {
+  border-color: rgba(34, 211, 238, 0.62);
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.34), rgba(15, 23, 42, 0.9));
+  color: #ffffff;
+  outline: none;
+}
+
+body.admin-standalone-page .admin-back-tools:active {
+  transform: translateY(1px);
+}
+
 @media (max-width: 768px) {
   body.admin-standalone-page {
     padding-inline: max(0.5rem, env(safe-area-inset-left, 0px)) max(0.5rem, env(safe-area-inset-right, 0px)) !important;
@@ -11071,6 +11168,20 @@ body.admin-standalone-page #ocrDashboardSection {
     overflow-wrap: anywhere;
     font-size: clamp(1.85rem, 11vw, 3rem);
     line-height: 0.95;
+  }
+
+  body.admin-standalone-page .admin-brand-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    column-gap: 0.75rem;
+  }
+
+  body.admin-standalone-page .admin-brand-logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  body.admin-standalone-page .admin-shell-copy {
+    margin-left: 0;
   }
 }
 
@@ -11124,6 +11235,10 @@ body.admin-standalone-page #ocrDashboardSection {
 }
 
 [data-theme="light"] body.admin-standalone-page .admin-shell-title {
+  background: linear-gradient(180deg, #075985 0%, #0891b2 58%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: #0369a1;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 14px rgba(14, 165, 233, 0.2);
 }

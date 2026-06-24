@@ -16,7 +16,10 @@ import {
   formatStructureLabel,
   normalizeStructureLevelForName,
   normalizeStructureName,
-  normalizeStructureTarget
+  normalizeStructureTarget,
+  getSupportedOcrImageFiles,
+  describeRejectedOcrImageFiles,
+  readOcrImageDataUrl
 } from './ocr-shared.js';
 
 async function saveParsedData(data) {
@@ -48,8 +51,15 @@ async function processFiles(files) {
   state._ocrProcessing = true;
   state._ocrCancelRequested = false;
   state._ocrAbortController = new AbortController();
-  const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
+  const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    log(
+      rejected.length
+        ? `No supported screenshots selected. Use PNG, JPG, or WebP images. Rejected: ${rejected.slice(0, 3).join(', ')}`
+        : 'No screenshots selected.',
+      'warn'
+    );
     state._ocrProcessing = false;
     state._ocrAbortController = null;
     return;
@@ -67,9 +77,7 @@ async function processFiles(files) {
     const f = valid[i];
     const startedAt = performance.now();
     $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - preparing...`;
-    const base64 = await new Promise(res => {
-      const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f);
-    });
+    const imageUrl = await readOcrImageDataUrl(f);
 
     try {
       const before = performance.now();
@@ -112,7 +120,7 @@ EXPECTED JSON SCHEMA:
           $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - Qwen OCR attempt ${attempt}/${maxRetries}...`;
           raw = await qwenVisionRequest([{ role: 'user', content: [
             { type: 'text', text: promptTxt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+            { type: 'image_url', image_url: { url: imageUrl } }
           ]}], { signal: state._ocrAbortController?.signal });
           break;
         } catch (err) {

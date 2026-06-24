@@ -40,7 +40,8 @@ import {
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
-  trimRosterSnapshots, sanitizeForFirestore
+  trimRosterSnapshots, sanitizeForFirestore,
+  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -255,8 +256,13 @@ async function loadRosterSnapshotsFromFirestore() {
 async function processRosterImages(files) {
   if (state._rosterProcessing) { log('Roster OCR already running...', 'warn'); return; }
   state._rosterProcessing = true;
-  const valid = Array.from(files).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) { state._rosterProcessing = false; return; }
+  const valid = getSupportedOcrImageFiles(files);
+  if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    log(rejected.length ? `No supported roster image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : 'No roster image selected.', 'warn');
+    state._rosterProcessing = false;
+    return;
+  }
 
   const prog = $id('dashRosterProgress');
   const progText = $id('dashRosterProgressText');
@@ -269,9 +275,7 @@ async function processRosterImages(files) {
   for (let i = 0; i < valid.length; i++) {
     const f = valid[i];
     if (progText) progText.textContent = `Scanning roster image ${i + 1}/${valid.length}...`;
-    const base64 = await new Promise(res => {
-      const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.readAsDataURL(f);
-    });
+    const imageUrl = await readOcrImageDataUrl(f);
 
     try {
       const promptTxt = `You are analyzing a game alliance roster or member list screenshot.
@@ -293,7 +297,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
         try {
           raw = await qwenVisionRequest([{ role: 'user', content: [
             { type: 'text', text: promptTxt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+            { type: 'image_url', image_url: { url: imageUrl } }
           ]}]);
           if (raw?.choices?.[0]?.message?.content) break;
         } catch (e) {
@@ -1196,6 +1200,7 @@ export async function bootOcrDashboard() {
   if (rosterDrop && rosterInput) {
     rosterDrop.onclick = () => {
       if (!canUseOcr()) return;
+      rosterInput.value = '';
       rosterInput.click();
     };
     rosterDrop.ondragover = e => { e.preventDefault(); rosterDrop.classList.add('dragover'); };
@@ -1206,8 +1211,11 @@ export async function bootOcrDashboard() {
       if (e.dataTransfer.files.length) processRosterImages(e.dataTransfer.files);
     };
     rosterInput.onchange = () => {
-      if (rosterInput.files.length) processRosterImages(rosterInput.files);
+      const files = Array.from(rosterInput.files || []);
+      rosterInput.value = '';
+      if (files.length) processRosterImages(files);
     };
+    rosterInput.oninput = rosterInput.onchange;
   }
 
   const newBannerBtn = $id('dashBannerAddBtn'); if (newBannerBtn) newBannerBtn.onclick = () => showBannerForm();
@@ -1217,11 +1225,12 @@ export async function bootOcrDashboard() {
     const drop = dropId ? $id(dropId) : null;
     const input = inputId ? $id(inputId) : null;
     if (pasteBtn) pasteBtn.onclick = () => showDutyPasteForm(type);
-    if (uploadBtn && input) uploadBtn.onclick = () => { if (!canUseOcr()) return; input.click(); };
+    if (uploadBtn && input) uploadBtn.onclick = () => { if (!canUseOcr()) return; input.value = ''; input.click(); };
     if (drop && input) {
       drop.onclick = event => {
         if (event.target?.tagName === 'INPUT') return;
         if (!canUseOcr()) return;
+        input.value = '';
         input.click();
       };
       drop.ondragover = event => { event.preventDefault(); drop.classList.add('dragover'); };
@@ -1232,7 +1241,12 @@ export async function bootOcrDashboard() {
         if (!canUseOcr()) return;
         if (event.dataTransfer.files.length) processDutyImages(type, event.dataTransfer.files);
       };
-      input.onchange = () => { if (input.files.length) processDutyImages(type, input.files); };
+      input.onchange = () => {
+        const files = Array.from(input.files || []);
+        input.value = '';
+        if (files.length) processDutyImages(type, files);
+      };
+      input.oninput = input.onchange;
     }
   }
   bindDutyUpload('banner', 'dashBannerListPasteBtn', 'dashBannerListUploadBtn', 'dashBannerListDropZone', 'dashBannerListFileInput');
@@ -1246,11 +1260,12 @@ export async function bootOcrDashboard() {
   const contributionInput = $id('dashContributionFileInput');
   if (contributionPasteBtn) contributionPasteBtn.onclick = showContributionPasteForm;
   if (contributionExportBtn) contributionExportBtn.onclick = () => exportContributionRecords();
-  if (contributionUploadBtn && contributionInput) contributionUploadBtn.onclick = () => { if (!canUseOcr()) return; contributionInput.click(); };
+  if (contributionUploadBtn && contributionInput) contributionUploadBtn.onclick = () => { if (!canUseOcr()) return; contributionInput.value = ''; contributionInput.click(); };
   if (contributionDrop && contributionInput) {
     contributionDrop.onclick = event => {
       if (event.target?.tagName === 'INPUT') return;
       if (!canUseOcr()) return;
+      contributionInput.value = '';
       contributionInput.click();
     };
     contributionDrop.ondragover = event => { event.preventDefault(); contributionDrop.classList.add('dragover'); };
@@ -1261,7 +1276,12 @@ export async function bootOcrDashboard() {
       if (!canUseOcr()) return;
       if (event.dataTransfer.files.length) processContributionImages(event.dataTransfer.files);
     };
-    contributionInput.onchange = () => { if (contributionInput.files.length) processContributionImages(contributionInput.files); };
+    contributionInput.onchange = () => {
+      const files = Array.from(contributionInput.files || []);
+      contributionInput.value = '';
+      if (files.length) processContributionImages(files);
+    };
+    contributionInput.oninput = contributionInput.onchange;
   }
   renderContributions();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };
@@ -1331,11 +1351,16 @@ export async function bootOcrDashboard() {
       log('Cancelling OCR scan...', 'warn');
     };
   }
-  drop.onclick = () => { if (!canUseOcr()) return; inp.click(); };
+  drop.onclick = () => { if (!canUseOcr()) return; inp.value = ''; inp.click(); };
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
   drop.ondragleave = () => drop.classList.remove('dragover');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (!canUseOcr()) return; if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
-  inp.onchange = () => { if (inp.files.length) processFiles(inp.files); };
+  inp.onchange = () => {
+    const files = Array.from(inp.files || []);
+    inp.value = '';
+    if (files.length) processFiles(files);
+  };
+  inp.oninput = inp.onchange;
 }
 
 window.deleteAttack = async function(attId) {

@@ -2,7 +2,8 @@ import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity
+  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity,
+  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
@@ -927,8 +928,12 @@ async function processDutyImages(type, files) {
   if (!meta) return;
   const label = dutyLabel(type);
   if (state._dutyProcessing) { log(adminT('adminDutyOcrAlreadyRunning'), 'warn'); return; }
-  const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) return;
+  const valid = getSupportedOcrImageFiles(files);
+  if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    log(rejected.length ? `No supported ${label} image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : `No ${label} image selected.`, 'warn');
+    return;
+  }
   state._dutyProcessing = true;
   const progress = meta.progressId ? $id(meta.progressId) : null;
   const progressText = meta.progressTextId ? $id(meta.progressTextId) : null;
@@ -938,11 +943,7 @@ async function processDutyImages(type, files) {
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
     if (progressText) progressText.textContent = adminT('adminDutyScanningImageProgress', { label, current: i + 1, total: valid.length });
-    const base64 = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(String(e.target.result).split(',')[1]);
-      reader.readAsDataURL(file);
-    });
+    const imageUrl = await readOcrImageDataUrl(file);
     try {
       const promptTxt = `Extract duty usage rows from this ${label} screenshot.
 
@@ -961,7 +962,7 @@ Rules:
 - If no player names are visible, return {"entries":[]}.`;
       const raw = await qwenVisionRequest([{ role: 'user', content: [
         { type: 'text', text: promptTxt },
-        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+        { type: 'image_url', image_url: { url: imageUrl } }
       ]}]);
       const text = raw?.choices?.[0]?.message?.content || '';
       const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
@@ -1326,8 +1327,12 @@ function showContributionPasteForm() {
 
 async function processContributionImages(files) {
   if (state._contributionProcessing) { log(adminT('adminContributionOcrRunningLog'), 'warn'); return; }
-  const valid = Array.from(files || []).filter(f => /\.(png|jpe?g)$/i.test(f.name));
-  if (!valid.length) return;
+  const valid = getSupportedOcrImageFiles(files);
+  if (!valid.length) {
+    const rejected = describeRejectedOcrImageFiles(files);
+    log(rejected.length ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : 'No contribution image selected.', 'warn');
+    return;
+  }
   state._contributionProcessing = true;
   const progress = $id('dashContributionProgress');
   const progressText = $id('dashContributionProgressText');
@@ -1337,11 +1342,7 @@ async function processContributionImages(files) {
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
     if (progressText) progressText.textContent = adminT('adminContributionScanningImageProgress', { current: i + 1, total: valid.length });
-    const base64 = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(String(e.target.result).split(',')[1]);
-      reader.readAsDataURL(file);
-    });
+    const imageUrl = await readOcrImageDataUrl(file);
     try {
       const promptTxt = `Extract Total Contribution leaderboard rows from this Rise of Castles screenshot.
 
@@ -1359,7 +1360,7 @@ Rules:
 - If no contribution rows are visible, return {"entries":[]}.`;
       const raw = await qwenVisionRequest([{ role: 'user', content: [
         { type: 'text', text: promptTxt },
-        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } }
+        { type: 'image_url', image_url: { url: imageUrl } }
       ]}]);
       const text = raw?.choices?.[0]?.message?.content || '';
       const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();

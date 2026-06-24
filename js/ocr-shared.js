@@ -55,6 +55,41 @@ export function sanitizeForFirestore(value) {
 
 // --- OCR ---
 export const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
+const SUPPORTED_OCR_IMAGE_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+
+function hasSupportedOcrImageExtension(file) {
+  return /\.(png|jpe?g|webp)$/i.test(String(file?.name || ''));
+}
+
+export function isSupportedOcrImageFile(file) {
+  const type = String(file?.type || '').toLowerCase();
+  return SUPPORTED_OCR_IMAGE_MIME.has(type) || hasSupportedOcrImageExtension(file);
+}
+
+export function getSupportedOcrImageFiles(files) {
+  return Array.from(files || []).filter(isSupportedOcrImageFile);
+}
+
+export function describeRejectedOcrImageFiles(files) {
+  return Array.from(files || [])
+    .filter(file => !isSupportedOcrImageFile(file))
+    .map(file => file?.name || file?.type || 'unnamed image')
+    .filter(Boolean);
+}
+
+export async function readOcrImageDataUrl(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(String(e.target?.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Could not read selected image.'));
+    reader.readAsDataURL(file);
+  });
+  if (/^data:image\//i.test(dataUrl)) return dataUrl;
+  const base64 = dataUrl.split(',')[1] || '';
+  const type = String(file?.type || '').toLowerCase();
+  const mime = SUPPORTED_OCR_IMAGE_MIME.has(type) ? type : 'image/jpeg';
+  return `data:${mime};base64,${base64}`;
+}
 
 export async function checkOcrService() {
   try {

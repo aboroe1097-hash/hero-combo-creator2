@@ -2064,6 +2064,10 @@ button:not([disabled]):active,
     width: 100% !important;
   }
 
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    grid-template-columns: minmax(86px, 0.8fr) minmax(130px, 1fr) 38px !important;
+  }
+
   .global-game-clock,
   .lang-select-wrapper,
   .lang-select-wrapper > div,
@@ -2096,6 +2100,17 @@ button:not([disabled]):active,
   #themeToggle,
   #installAppBtn {
     padding: 0 !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-back-tools {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    border-radius: 999px !important;
+    font-size: 0.72rem !important;
+    white-space: normal !important;
+    text-decoration: none !important;
   }
 
   .tool-nav-shell {
@@ -2167,6 +2182,10 @@ button:not([disabled]):active,
   .app-control-row {
     grid-template-columns: minmax(70px, 0.68fr) minmax(104px, 1fr) 36px !important;
     gap: 5px !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    grid-template-columns: minmax(80px, 0.78fr) minmax(116px, 1fr) 36px !important;
   }
 
   .command-logo #appTitle {
