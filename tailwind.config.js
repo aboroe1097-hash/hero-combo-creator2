@@ -2,9 +2,9 @@
 export default {
   content: [
     './index.html',
+    './admin.html',
     './tabs/**/*.html',
     './js/**/*.js',
-    './css/**/*.css',
   ],
   theme: {
     extend: {},

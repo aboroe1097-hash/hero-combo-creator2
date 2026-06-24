@@ -11511,57 +11511,6 @@ body.admin-standalone-page #ocrDashboardSection {
   }
 }
 
-@keyframes wing-flap-left {
-  0%, 100% { transform: rotate(0deg) translateY(0); }
-  18% { transform: rotate(-7deg) translateY(3px); }
-  38% { transform: rotate(-1.5deg) translateY(-1px); }
-}
-
-@keyframes wing-flap-right {
-  0%, 100% { transform: rotate(0deg) translateY(0); }
-  18% { transform: rotate(7deg) translateY(3px); }
-  38% { transform: rotate(1.5deg) translateY(-1px); }
-}
-
-@keyframes feather-ripple {
-  0%, 100% {
-    transform: rotate(var(--feather-rot, 0deg)) translateX(var(--feather-x, 0));
-  }
-  22% {
-    transform: rotate(calc(var(--feather-rot, 0deg) + 3deg)) translateX(var(--feather-x, 0));
-  }
-}
-
-@keyframes boot-wing-unfurl-left {
-  0% {
-    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.28), calc(var(--boot-tilt-y, 0px) * 0.28), 0) scale(0.98) rotate(-4deg);
-    opacity: 1;
-  }
-  48% {
-    transform: translate3d(-7vw, -3vh, 0) scale(1.08) rotate(-12deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(-28vw, -6vh, 0) scale(1.16) rotate(-23deg);
-    opacity: 0.26;
-  }
-}
-
-@keyframes boot-wing-unfurl-right {
-  0% {
-    transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.28), calc(var(--boot-tilt-y, 0px) * 0.28), 0) scale(0.98) rotate(4deg);
-    opacity: 1;
-  }
-  48% {
-    transform: translate3d(7vw, -3vh, 0) scale(1.08) rotate(12deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(28vw, -6vh, 0) scale(1.15) rotate(23deg);
-    opacity: 0.26;
-  }
-}
-
 .boot-splash .perspective-container {
   --wing-flap-duration: 3.6s;
 }

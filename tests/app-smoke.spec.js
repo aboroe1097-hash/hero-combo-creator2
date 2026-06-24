@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+const ADMIN_HASH =
+  readFileSync(new URL('../js/admin-auth-config.js', import.meta.url), 'utf8').match(
+    /adminHash:\s*'([^']*)'/
+  )?.[1] || '';
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
@@ -92,20 +98,18 @@ async function openAdmin(page) {
 }
 
 async function openGuestDashboard(page) {
-  await page.waitForFunction(() => document.getElementById('dashGuestBtn'), null, {
-    timeout: 20000,
-  });
-  await page.waitForFunction(
-    () => typeof document.getElementById('dashGuestBtn')?.onclick === 'function',
-    null,
-    { timeout: 20000 }
-  );
+  const guestBanner = page.locator('#dashGuestBanner');
+  if (await guestBanner.isVisible().catch(() => false)) return;
+
   await page.evaluate(() => {
     localStorage.removeItem('vts_ocr_auth');
     sessionStorage.setItem('vts_guest', '1');
-    document.getElementById('dashGuestBtn')?.click();
   });
-  await expect(page.locator('#dashGuestBanner')).toBeVisible({ timeout: 20000 });
+  if (await guestBanner.isVisible().catch(() => false)) return;
+
+  await expect(page.locator('#dashGuestBtn')).toBeVisible({ timeout: 20000 });
+  await page.locator('#dashGuestBtn').click();
+  await expect(guestBanner).toBeVisible({ timeout: 20000 });
 }
 
 test.describe('app smoke tabs', () => {
@@ -490,11 +494,11 @@ test.describe('app smoke tabs', () => {
     await page.route('https://firestore.googleapis.com/**', (route) => {
       stalledRoutes.push(route);
     });
-    await page.addInitScript((data) => {
+    await page.addInitScript(({ data, adminHash }) => {
       window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
       localStorage.setItem('vts_maintenance_bypass', '1');
       localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
-      localStorage.setItem('vts_ocr_auth', '1');
+      localStorage.setItem('vts_ocr_auth', adminHash);
       localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
       sessionStorage.removeItem('vts_guest');
       navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
@@ -503,7 +507,7 @@ test.describe('app smoke tabs', () => {
       window.caches?.keys?.().then((keys) => {
         keys.forEach((key) => caches.delete(key));
       });
-    }, seededDash);
+    }, { data: seededDash, adminHash: ADMIN_HASH });
 
     await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#dashApp')).toBeVisible({ timeout: 5000 });
@@ -652,5 +656,60 @@ test.describe('app smoke tabs', () => {
       }
     });
     await expect(page.locator('#dashLeaderBody tr').nth(1)).toContainText('Echo');
+  });
+
+  test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    await page.route('https://html2canvas.hertzen.com/dist/html2canvas.min.js', (route) =>
+      route.fulfill({
+        contentType: 'application/javascript',
+        body: `
+          window.html2canvas = async function() {
+            return {
+              toBlob(callback) {
+                callback(new Blob(['fake-png'], { type: 'image/png' }));
+              },
+              toDataURL() {
+                return 'data:image/png;base64,ZmFrZS1wbmc=';
+              }
+            };
+          };
+        `,
+      })
+    );
+    const seededDash = {
+      last_updated: '20/06/2026, 12:00',
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'att-export-1',
+          structure_name: 'Capital',
+          structure_level: 'Lv.5',
+          game_time: '20/06/2026, 20:30',
+          start_time: '20:00',
+          total_demolition: 1200000,
+          players_count: 2,
+          players: [
+            { name: 'Alpha', value: 800000, rank: 1 },
+            { name: 'Bravo', value: 400000, rank: 2 },
+          ],
+        },
+      ],
+      players_summary: [],
+    };
+
+    await openAdmin(page);
+    await openGuestDashboard(page);
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
+    await page.evaluate((seededDash) => {
+      window.setOcrDashboardDataForTest(seededDash, []);
+    }, seededDash);
+    await expect(page.locator('#dashChart')).toContainText('Alpha');
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExportChartBtn').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('vts_top_performers.png');
+    await expect(page.locator('[data-ocr-export-clone="true"]')).toHaveCount(0);
   });
 });

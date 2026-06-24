@@ -10,6 +10,13 @@ test('public admin auth config stores hashes instead of plaintext passphrases', 
   assert.doesNotMatch(source, /12345/);
 });
 
+test('admin auth local storage marker is tied to the active password hash', () => {
+  const source = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.match(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
+  assert.match(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
+  assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*'1'\)/);
+});
+
 test('firebase config reads public web config without committed Google API keys', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /VITE_FIREBASE_API_KEY/);

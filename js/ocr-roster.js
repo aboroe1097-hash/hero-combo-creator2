@@ -6,7 +6,6 @@ import {
   getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
-import { saveRosterSnapshotsToFirestore } from './ocr-dashboard.js';
 import { pushUndoAction } from './state.js';
 import { translations } from './translations.js';
 
@@ -72,10 +71,19 @@ function loadRosterSnapshots() {
   } catch (e) { state.rosterSnapshots = []; }
 }
 
+function syncRosterSnapshotsToFirestore() {
+  import('./ocr-dashboard.js')
+    .then(({ saveRosterSnapshotsToFirestore }) => saveRosterSnapshotsToFirestore())
+    .catch((err) => {
+      console.error('Roster snapshot cloud sync failed:', err);
+      log(`Roster cloud save failed: ${err?.message || err}`, 'error');
+    });
+}
+
 function saveRosterSnapshots() {
   state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
   try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
-  saveRosterSnapshotsToFirestore();
+  syncRosterSnapshotsToFirestore();
 }
 
 function computeRosterDiff(oldMembers, newMembers) {

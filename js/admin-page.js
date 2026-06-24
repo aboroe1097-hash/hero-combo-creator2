@@ -83,7 +83,7 @@ function updateTextContent(lang) {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html', { cache: 'no-store' });
+  const res = await fetch('tabs/admin.html');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -121,7 +121,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_210452');
+  const mod = await import('./ocr-dashboard.js?v=20260624_215731');
   await mod.bootOcrDashboard();
 }
 

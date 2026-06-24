@@ -420,7 +420,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 // â”€â”€ Banner Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
+function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === AUTH_HASH) || isGuest(); }
 
 let connectingTimer = null;
 let connectingProgressTimer = null;
@@ -728,7 +728,7 @@ async function doLogin() {
     return;
   }
   sessionStorage.removeItem('vts_guest');
-  localStorage.setItem(AUTH_KEY, '1');
+  localStorage.setItem(AUTH_KEY, AUTH_HASH);
   err.classList.add('hidden');
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '...'; }
   showConnecting(dashT('adminConnectingAuth'));
@@ -1015,8 +1015,34 @@ function exportToCsv() {
   });
   downloadCsv(csv, 'vts_leaderboard.csv');
 }
+
+function loadHtml2Canvas() {
+  const pageLoader = window.loadHtml2Canvas;
+  if (typeof pageLoader === 'function' && pageLoader !== loadHtml2Canvas) return pageLoader();
+  if (window._h2cPromise) return window._h2cPromise;
+  window._h2cPromise = new Promise((resolve, reject) => {
+    if (typeof window.html2canvas === 'function') {
+      resolve(window.html2canvas);
+      return;
+    }
+    const existing = document.querySelector('script[data-html2canvas-loader="true"]');
+    const script = existing || document.createElement('script');
+    script.dataset.html2canvasLoader = 'true';
+    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (typeof window.html2canvas === 'function') resolve(window.html2canvas);
+      else reject(new Error('html2canvas loaded without exposing window.html2canvas'));
+    };
+    script.onerror = () => reject(new Error('Could not load html2canvas.'));
+    if (!existing) document.head.appendChild(script);
+  });
+  return window._h2cPromise;
+}
+if (typeof window.loadHtml2Canvas !== 'function') window.loadHtml2Canvas = loadHtml2Canvas;
+
 async function exportToPng() {
-  const html2canvas = await window.loadHtml2Canvas();
+  const html2canvas = await loadHtml2Canvas();
   const target = $id('dashApp')?.querySelector('.dash-container') || $id('dashApp');
   if (!target) return;
   html2canvas(target, { backgroundColor: '#0b0f19', scale: 2, allowTaint: false, useCORS: true }).then(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'vts_dashboard.png'; a.click(); }).catch(() => {});
@@ -1024,7 +1050,7 @@ async function exportToPng() {
 async function exportChartPng() {
   const chart = $id('dashChart');
   if (!chart) return;
-  const html2canvas = await window.loadHtml2Canvas();
+  const html2canvas = await loadHtml2Canvas();
   
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
@@ -1095,7 +1121,7 @@ async function exportChartPng() {
 window.shareChartImage = async function() {
   const chart = $id('dashChart');
   if (!chart) return;
-  const html2canvas = await window.loadHtml2Canvas();
+  const html2canvas = await loadHtml2Canvas();
   const card = chart.closest('.dash-card');
   const clone = card.cloneNode(true);
   const cloneBtns = clone.querySelectorAll('.dash-btn'); cloneBtns.forEach(b => b.remove());
