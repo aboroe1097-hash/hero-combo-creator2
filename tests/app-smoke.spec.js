@@ -410,7 +410,10 @@ test.describe('app smoke tabs', () => {
     await expect(generatedWithCounters.locator('.counter-summary-badge')).toContainText(
       'counters known'
     );
-    await generatedWithCounters.locator('.counter-toggle-btn').click();
+    await expect(
+      generatedWithCounters.locator('.generated-counter-row--badge-only .counter-toggle-btn')
+    ).toBeHidden();
+    await generatedWithCounters.locator('.counter-summary-badge--action').click();
     await expect(generatedWithCounters.locator('.counter-card--mini-combo').first()).toBeVisible();
     const useCounterButton = generatedWithCounters.locator('.counter-use-btn').first();
     await expect(useCounterButton).toBeVisible();
