@@ -1,10 +1,19 @@
 // Eden Map scout mode — optional Firebase intel sync
-import { initFirebase, ensureAnonymousAuth, getFirebaseAdminClaim, getAuthInstance } from './firebase.js';
-import { importFirestore } from './firebase-sdk.js';
+let _firebaseMod = null;
+let _firestoreMod = null;
 
-const {
-  doc, getDoc, setDoc, onSnapshot, serverTimestamp,
-} = await importFirestore();
+async function loadFirebase() {
+  if (!_firebaseMod) _firebaseMod = await import('./firebase.js');
+  return _firebaseMod;
+}
+
+async function loadFirestore() {
+  if (!_firestoreMod) {
+    const { importFirestore } = await import('./firebase-sdk.js');
+    _firestoreMod = await importFirestore();
+  }
+  return _firestoreMod;
+}
 
 const INTEL_PATH = ['eden_map', 'shared_intel'];
 
@@ -13,8 +22,10 @@ let _unsub = null;
 export async function startScoutSync(onIntel) {
   stopScoutSync();
   try {
-    const { db } = initFirebase();
-    await ensureAnonymousAuth();
+    const fb = await loadFirebase();
+    const { db } = fb.initFirebase();
+    await fb.ensureAnonymousAuth();
+    const { doc, onSnapshot } = await loadFirestore();
     const ref = doc(db, ...INTEL_PATH);
     _unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) onIntel?.(snap.data());

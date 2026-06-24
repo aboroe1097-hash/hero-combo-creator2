@@ -835,13 +835,25 @@
 #ocrDashboardRoot .dash-dropdown-content hr { border: 0; border-top: 1px solid var(--border); margin: 0.4rem 0; }
 
 /* Log panel */
+#ocrDashboardRoot .dash-log-area {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 35;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(135deg, rgba(8, 13, 25, 0.94), rgba(15, 23, 42, 0.88)),
+    var(--surface-2);
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.28);
+}
 #ocrDashboardRoot .dash-log-hdr {
   display: flex; justify-content: space-between; align-items: center;
   padding: 0.5rem 0.75rem; background: #0f172a; border-bottom: 1px solid var(--border);
   font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;
 }
 #ocrDashboardRoot .dash-log-output {
-  padding: 0.75rem; height: 160px; overflow-y: auto; font-size: 0.75rem;
+  padding: 0.75rem; height: 128px; overflow-y: auto; font-size: 0.75rem;
   line-height: 1.5; color: #94a3b8; scrollbar-width: thin;
 }
 #ocrDashboardRoot .log-entry { margin-bottom: 0.25rem; font-family: monospace; white-space: pre-wrap; line-height: 1.4; word-break: break-all; }
@@ -1146,14 +1158,155 @@
 [data-theme="light"] #ocrDashboardRoot .dash-modal-content {
   background: #fff; border-color: #e2e8f0;
 }
+[data-theme="light"] #ocrDashboardRoot .dash-ops-overview {
+  border-color: rgba(14, 116, 144, 0.22);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(14, 165, 233, 0.1), transparent 34%),
+    radial-gradient(circle at 92% 0%, rgba(245, 158, 11, 0.1), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.92));
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-overview::before {
+  background-image:
+    linear-gradient(rgba(14, 116, 144, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 116, 144, 0.06) 1px, transparent 1px);
+  opacity: 0.75;
+  mask-image: linear-gradient(90deg, rgba(0,0,0,0.35), transparent);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-lead {
+  border-color: rgba(14, 116, 144, 0.18);
+  background: rgba(255,255,255,0.74);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card {
+  border-color: rgba(100, 116, 139, 0.22);
+  background: rgba(255,255,255,0.82);
+  box-shadow: 0 12px 24px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-kicker,
+[data-theme="light"] #ocrDashboardRoot .dash-ops-label {
+  color: #0e7490;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-lead strong,
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card strong {
+  color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card p {
+  color: #475569;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card-target { border-color: rgba(37, 99, 235, 0.32); }
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card-attendance { border-color: rgba(217, 119, 6, 0.32); }
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card-mvp { border-color: rgba(5, 150, 105, 0.3); }
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card-health { border-color: rgba(124, 58, 237, 0.3); }
+[data-theme="light"] #ocrDashboardRoot .dash-ops-card-special {
+  background: linear-gradient(135deg, rgba(255,255,255,0.88), rgba(248,250,252,0.82));
+}
 [data-theme="light"] #ocrDashboardRoot .dash-mini-trend { background: #f8fafc; }
 [data-theme="light"] #ocrDashboardRoot .dash-dropdown-content { background: #ffffff; border-color: #e2e8f0; }
 [data-theme="light"] #ocrDashboardRoot .dash-dropdown-content button { color: #475569; }
 [data-theme="light"] #ocrDashboardRoot .dash-dropdown-content button:hover { background: #f1f5f9; color: #0f172a; }
 [data-theme="light"] #ocrDashboardRoot .dash-log-hdr { background: #f1f5f9; border-bottom-color: #e2e8f0; color: #64748b; }
+[data-theme="light"] #ocrDashboardRoot .dash-log-area {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: #dbeafe;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
+}
 [data-theme="light"] #ocrDashboardRoot .dash-stack-bar { background: rgba(0,0,0,0.06); }
 [data-theme="light"] #ocrDashboardRoot .dash-mini-pie { background: rgba(0,0,0,0.04); }
-[data-theme="light"] #ocrDashboardRoot .dash-trend-bar { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+[data-theme="light"] #ocrDashboardRoot .dash-insight-hdr {
+  color: #475569;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-insight-val {
+  color: #2563eb;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-metric-tile {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-metric-label {
+  color: #64748b;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-metric-value {
+  color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-stack-labels,
+[data-theme="light"] #ocrDashboardRoot .dash-trend-label {
+  color: #475569;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-trend-bar {
+  background: linear-gradient(180deg, #06b6d4, #0891b2);
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:first-child > div {
+  background: #f8fafc !important;
+  border-color: #dbeafe !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:first-child > div > div:first-child {
+  color: #64748b !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:first-child > div > div:nth-child(2) {
+  color: #0f172a !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:first-child > div > div:nth-child(3) {
+  color: #0369a1 !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:nth-child(2) {
+  background: linear-gradient(180deg, rgba(248,250,252,0.98), rgba(226,232,240,0.92)) !important;
+  border-color: #dbeafe !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend > div:nth-child(3) {
+  color: #475569 !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend svg text {
+  fill: #64748b !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend svg line {
+  stroke: rgba(100,116,139,0.22) !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashActivityTrend svg circle {
+  fill: #ffffff !important;
+  stroke: #7c3aed !important;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-attack-name {
+  color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-attack-time,
+[data-theme="light"] #ocrDashboardRoot .dash-attack-count {
+  color: #475569;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-attack-val {
+  color: #059669;
+  text-shadow: none;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-card-title-danger {
+  color: #dc2626;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-top-name {
+  color: #0f172a;
+}
+[data-theme="light"] #ocrDashboardRoot .dash-top-val {
+  text-shadow: none;
+}
+[data-theme="light"] #ocrDashboardRoot #dashLowestChart .dash-top-item:hover {
+  background: #fff1f2;
+}
+[data-theme="light"] #ocrDashboardRoot #dashLowestChart .dash-top-rank {
+  color: #dc2626 !important;
+}
+[data-theme="light"] #ocrDashboardRoot #dashLowestChart .dash-top-bar {
+  background: linear-gradient(90deg, rgba(255,241,242,0.98), rgba(248,113,113,0.34)) !important;
+  border-right-color: rgba(220,38,38,0.5) !important;
+  box-shadow: inset 0 0 0 1px rgba(220,38,38,0.08);
+}
+[data-theme="light"] #ocrDashboardRoot #dashLowestChart .dash-top-item > div > span:nth-of-type(2) {
+  color: #dc2626 !important;
+  background: #fff1f2 !important;
+  border: 1px solid #fecdd3;
+}
+[data-theme="light"] #ocrDashboardRoot #dashLowestChart .dash-top-val {
+  color: #dc2626 !important;
+  text-shadow: none !important;
+}
 [data-theme="light"] #ocrDashboardRoot .dash-input { background: #f1f5f9; border-color: #cbd5e1; color: #1e293b; }
 [data-theme="light"] #ocrDashboardRoot input[type="password"].dash-input { color: #1e293b; }
 [data-theme="light"] #ocrDashboardRoot .dash-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }

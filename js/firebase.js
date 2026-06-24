@@ -9,6 +9,7 @@ import {
   importFirebaseAuth,
   importFirestore,
 } from './firebase-sdk.js';
+import { isLocalDevHost } from './utils.js';
 
 const [
   { initializeApp },
@@ -39,6 +40,8 @@ let appCheckInitError = null;
 let appCheckTokenError = null;
 let appCheckTokenInFlight = null;
 let recaptchaRejectionGuardInstalled = false;
+let appCheckDebugNoticeLogged = false;
+let appCheckDebugRejectedLogged = false;
 
 // Public Firebase web app config is injected by Vite from VITE_FIREBASE_*
 // environment variables. Do not commit Firebase API keys in source.
@@ -54,6 +57,48 @@ const configValue = envValue;
 const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');
 const firebaseAppId = configValue('VITE_FIREBASE_APP_ID');
 const firebaseSenderId = configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
+
+function getAppCheckDebugToken() {
+  return envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
+}
+
+function configureLocalAppCheckDebugToken() {
+  const appCheckDebugToken = getAppCheckDebugToken();
+  if (!appCheckDebugToken || typeof globalThis === 'undefined') return false;
+  if (!isLocalDevHost()) {
+    if (!appCheckDebugNoticeLogged) {
+      appCheckDebugNoticeLogged = true;
+      console.warn('[firebase] Ignoring VITE_FIREBASE_APPCHECK_DEBUG_TOKEN outside local development.');
+    }
+    return false;
+  }
+
+  globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
+  if (!appCheckDebugNoticeLogged) {
+    appCheckDebugNoticeLogged = true;
+    const message =
+      appCheckDebugToken === 'true'
+        ? '[firebase] App Check debug mode is generating a browser token. Register the "App Check debug token" printed by Firebase, then set VITE_FIREBASE_APPCHECK_DEBUG_TOKEN to that UUID for stable local testing.'
+        : '[firebase] App Check debug token is enabled for this local dev host. If Firebase returns 403, register this UUID in Firebase Console > App Check > web app > Manage debug tokens.';
+    console.info(message);
+  }
+  return true;
+}
+
+function isAppCheckDebugRegistrationError(err) {
+  const text = `${err?.name || ''} ${err?.code || ''} ${err?.message || err || ''}`;
+  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(text);
+}
+
+function warnAppCheckDebugRegistrationNeeded(err) {
+  if (!isLocalDevHost() || !getAppCheckDebugToken() || appCheckDebugRejectedLogged) return;
+  if (!isAppCheckDebugRegistrationError(err)) return;
+  appCheckDebugRejectedLogged = true;
+  console.warn(
+    '[firebase] Firebase rejected the local App Check debug token. Add the UUID printed as "App Check debug token" in DevTools to Firebase Console > App Check > your web app > Manage debug tokens. If .env uses VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true, replace it with that registered UUID and restart Vite.',
+    err?.message || err
+  );
+}
 
 export const firebaseConfig = {
   apiKey: configValue('VITE_FIREBASE_API_KEY'),
@@ -71,10 +116,13 @@ export function isFirebaseConfigured() {
 
 export function getFirebaseSetupStatus() {
   const recaptchaSiteKey = configValue('VITE_RECAPTCHA_SITE_KEY');
+  const appCheckDebugToken = getAppCheckDebugToken();
   return {
     configured: isFirebaseConfigured(),
     appCheckReady: Boolean(appCheck),
     hasRecaptchaSiteKey: Boolean(recaptchaSiteKey),
+    appCheckDebugTokenMode: appCheckDebugToken === 'true' ? 'generated' : appCheckDebugToken ? 'fixed' : '',
+    isLocalDevHost: isLocalDevHost(),
     appCheckInitError: appCheckInitError?.message || '',
     appCheckTokenError: appCheckTokenError?.message || '',
   };
@@ -179,10 +227,7 @@ async function ensureFirebaseAppCheck() {
   if (!recaptchaSiteKey) return null;
 
   try {
-    const appCheckDebugToken = envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
-    if (appCheckDebugToken && typeof globalThis !== 'undefined') {
-      globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
-    }
+    configureLocalAppCheckDebugToken();
 
     installRecaptchaRejectionGuard();
     const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await loadAppCheckApi();
@@ -223,6 +268,7 @@ export async function getFirebaseAppCheckToken(forceRefresh = false) {
       } catch (err) {
         lastError = err;
         appCheckTokenError = err;
+        warnAppCheckDebugRegistrationNeeded(err);
         if (attempt >= maxAttempts - 1 || !shouldRetryAppCheckTokenError(err)) break;
         console.warn('Firebase App Check token request failed; retrying once.', err?.message || err);
         await sleep(700);

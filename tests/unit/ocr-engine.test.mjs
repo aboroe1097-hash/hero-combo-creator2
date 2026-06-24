@@ -50,6 +50,17 @@ test('Stronghold is accepted as a name-only structure', () => {
 
 test('structure target normalization treats common aliases as the same target', () => {
   for (const [name, level] of [
+    ['Capitals Lv5', ''],
+    ['Capital Lv5', ''],
+    ['Capitals', '5'],
+  ]) {
+    assert.deepEqual(normalizeStructureTarget(name, level), {
+      structure_name: 'Capital',
+      structure_level: 'Lv5',
+    });
+  }
+
+  for (const [name, level] of [
     ['Large Town Lv4', ''],
     ['Large Town 4', ''],
     ['Town Lv4', ''],
@@ -85,6 +96,30 @@ test('structure target normalization treats common aliases as the same target', 
   assert.equal(validateTotalDemolition('Bridges', '', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Check Point', 'Lv1', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Town 4', '', 3750000)?.match, true);
+});
+
+test('manual structure display overrides stale OCR raw labels', () => {
+  assert.equal(
+    formatDatasetStructureLabel({
+      structure_name: 'Capital',
+      structure_level: 'Lv5',
+      raw_structure_name: 'Ruins',
+      raw_structure_level: '',
+      display_structure_name: 'Capital',
+      display_structure_level: 'Lv5',
+    }),
+    'Capital Lv5'
+  );
+
+  assert.equal(
+    formatDatasetStructureLabel({
+      structure_name: 'Capital',
+      structure_level: 'Lv5',
+      raw_structure_name: 'Ruins',
+      raw_structure_level: '',
+    }),
+    'Capital Lv5'
+  );
 });
 
 test('Lv.0 structure labels are preserved for distinct dataset targets', () => {

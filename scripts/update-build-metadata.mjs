@@ -22,6 +22,7 @@ const precacheSkipPatterns = [
   /^\/assets\/stronghold\.(?:png|webp)$/i,
   /^\/assets\/Town\.(?:png|webp)$/i,
   /^\/images\/boot\/.*\.png$/i,
+  /^\/images\/heroes\/catchup\/.*\.png$/i,
 ];
 
 function makeBuildVersion() {
@@ -53,13 +54,6 @@ function updateCacheBusters() {
       .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`)
       .replace(/(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g, `$1?v=${buildVersion}"`);
     writeText(file, html);
-  }
-
-  const appPath = path.join(root, 'js', 'app.js');
-  if (fs.existsSync(appPath)) {
-    const app = fs.readFileSync(appPath, 'utf8')
-      .replace(/app-loading\.js\?v=[0-9A-Za-z_-]+/g, `app-loading.js?v=${buildVersion}`);
-    fs.writeFileSync(appPath, app);
   }
 
   const adminPagePath = path.join(root, 'js', 'admin-page.js');

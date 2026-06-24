@@ -28,8 +28,8 @@ async function saveParsedData(data, options = {}) {
 }
 
 async function renderDashboard() {
-  const { render } = await import('./ocr-render.js');
-  render();
+  const { scheduleDashboardRender } = await import('./ocr-dashboard.js');
+  scheduleDashboardRender();
 }
 
 async function getCloudDb() {
@@ -76,7 +76,9 @@ async function processFiles(files) {
     if (state._ocrCancelRequested) break;
     const f = valid[i];
     const startedAt = performance.now();
-    $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - preparing...`;
+    const preparingMsg = `Scanning image ${i+1}/${valid.length} - preparing...`;
+    $id('dashProgressText').textContent = preparingMsg;
+    log(preparingMsg, 'info', f.name);
     const imageUrl = await readOcrImageDataUrl(f);
 
     try {
@@ -161,7 +163,9 @@ EXPECTED JSON SCHEMA:
       log(`OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
     }
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
-    $id('dashProgressText').textContent = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
+    const finishedMsg = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
+    $id('dashProgressText').textContent = finishedMsg;
+    log(finishedMsg, 'info', f.name);
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
 

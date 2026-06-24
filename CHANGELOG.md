@@ -1,5 +1,17 @@
 # Changelog
 
+## 11.7.0 - 2026-06-24
+
+- Added VTS Admin dashboard breakdown cards for special-list activity: Banners, Pathers / Speed Tiles, Shield Wall, and Total Contribution snapshots.
+- Added Total Contribution snapshot comparison with gain/rank/reward deltas and CSV export for start-of-season vs final-day reward review.
+- Improved VTS Admin mobile/header layout, light-theme contrast, and dashboard card readability across the admin shell.
+- Kept the Analysis Terminal global across admin subtabs and added OCR service/progress events to the terminal log.
+- Hardened Firebase/App Check diagnostics for local debug tokens and Worker OCR failures.
+- Reduced dashboard sync/render stalls by debouncing heavy renders, cloud cache writes, and admin loading transitions.
+- Improved admin connecting progress so cloud/local loads advance through realistic checkpoints instead of appearing frozen.
+- Tightened the desktop quick-tour sizing and placement so tab introductions stay anchored near highlighted tabs.
+- Updated public version labels to 11.7.0.
+
 ## 11.5.0 - 2026-06-24
 
 - Removed duplicated OCR dashboard CSS from `app.css` and `mobile.css`; dashboard styles now live only in `ocr-dashboard.css`.

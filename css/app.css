@@ -1,4 +1,4 @@
-﻿/* =============================================================
+/* =============================================================
    app.css â€” VTS Hero Combo Tool  10.0.0
    Desktop-first. Mobile overrides in mobile.css.
    ============================================================= */
@@ -8452,6 +8452,27 @@ body {
 
 .quick-tour-next:hover {
   filter: brightness(1.06);
+}
+
+@media (min-width: 1024px) {
+  .quick-tour-card {
+    padding: 14px 15px 13px;
+    border-radius: 14px;
+  }
+
+  .quick-tour-title {
+    font-size: 0.98rem;
+  }
+
+  .quick-tour-body {
+    font-size: 0.8rem;
+    line-height: 1.38;
+  }
+
+  .quick-tour-dots,
+  .quick-tour-actions {
+    margin-top: 11px;
+  }
 }
 
 [data-theme="light"] .heroes-sort-control {

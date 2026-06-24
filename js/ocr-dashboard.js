@@ -1,4 +1,4 @@
-import { 
+import {
   loadRoster, saveRoster, showRosterModal,
   loadRosterSnapshots, saveRosterSnapshots, computeRosterDiff, takeRosterSnapshot, deleteRosterSnapshot,
   loadAllianceList, saveAllianceList, loadRosterAuth, saveRosterAuth, rosterLogin, rosterLogout,
@@ -67,6 +67,30 @@ let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
 let dashboardCloudSavePendingVersion = 0;
 let dashboardCloudSaveWaiters = [];
+let dashboardRenderFrame = 0;
+let dashboardLocalCacheJson = '';
+
+function writeDashboardLocalCache(data) {
+  try {
+    const json = JSON.stringify(data);
+    if (json === dashboardLocalCacheJson) return;
+    localStorage.setItem(STORAGE_KEY, json);
+    dashboardLocalCacheJson = json;
+  } catch (e) {}
+}
+
+export function scheduleDashboardRender() {
+  if (dashboardRenderFrame) return;
+  const run = () => {
+    dashboardRenderFrame = 0;
+    render();
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    dashboardRenderFrame = window.requestAnimationFrame(run);
+  } else {
+    dashboardRenderFrame = setTimeout(run, 0);
+  }
+}
 
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
@@ -116,7 +140,7 @@ async function ensureCloudSyncReady() {
 
 
 
-// ── Sub-tab Switching ────────────────────────────────────
+// â”€â”€ Sub-tab Switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchDashSubtab(name) {
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-panel').forEach(p => p.classList.add('hidden'));
   document.querySelectorAll('#ocrDashboardRoot .dash-subtab-btn').forEach(b => {
@@ -133,7 +157,7 @@ function switchDashSubtab(name) {
     btn.tabIndex = 0;
   }
   if (name === 'analytics') {
-    // Analytics is rendered during dashboard load/save; tab switching should stay instant.
+    render();
     animateAnalyticsCards();
   } else {
     state._analyticsAnimated = false;
@@ -200,18 +224,18 @@ function hydrateDashboardStateFromLocalStorage() {
 window.refreshOcrDashboardFromStorage = function refreshOcrDashboardFromStorage() {
   state.dashData = null;
   hydrateDashboardStateFromLocalStorage();
-  render();
+  scheduleDashboardRender();
 };
 
 window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(dashData, rosterSnapshots = []) {
   state.dashData = normalizeDashboardDataForCache(dashData);
   state.rosterSnapshots = Array.isArray(rosterSnapshots) ? rosterSnapshots : [];
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); } catch (e) {}
+  writeDashboardLocalCache(state.dashData);
   try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
   render();
 };
 
-// ── Roster Snapshots (local + Firestore) ──────────────────
+// â”€â”€ Roster Snapshots (local + Firestore) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function saveRosterSnapshotsToFirestore() {
   try {
     const db = await ensureCloudSyncReady();
@@ -261,7 +285,7 @@ async function loadRosterSnapshotsFromFirestore() {
   }
 }
 
-// ── Roster Image OCR ─────────────────────────────────────
+// â”€â”€ Roster Image OCR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function processRosterImages(files) {
   if (state._rosterProcessing) { log('Roster OCR already running...', 'warn'); return; }
   state._rosterProcessing = true;
@@ -362,12 +386,41 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 
 
-// ── Banner Records ────────────────────────────────────────
+// â”€â”€ Banner Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function isGuest() { return sessionStorage.getItem('vts_guest') === '1'; }
 function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === '1') || isGuest(); }
 
 let connectingTimer = null;
+let connectingProgressTimer = null;
+let connectingProgressValue = 0;
+let connectingProgressCap = 92;
+
+function stopConnectingProgressLoop() {
+  if (connectingProgressTimer) {
+    clearInterval(connectingProgressTimer);
+    connectingProgressTimer = null;
+  }
+}
+
+function startConnectingProgressLoop() {
+  stopConnectingProgressLoop();
+  connectingProgressTimer = setInterval(() => {
+    const overlay = $id('dashConnecting');
+    if (!overlay || overlay.classList.contains('hidden')) return;
+    if (connectingProgressValue >= connectingProgressCap) return;
+    const remaining = connectingProgressCap - connectingProgressValue;
+    const step = Math.max(0.25, Math.min(1.6, remaining * 0.08));
+    setConnectingProgress(connectingProgressValue + step);
+  }, 260);
+}
+
+async function completeConnectingProgress(statusMsg = '') {
+  connectingProgressCap = 100;
+  setConnectingProgress(98, statusMsg || dashT('adminConnectingData'), { cap: 100 });
+  await new Promise(resolve => setTimeout(resolve, 180));
+}
+
 function showConnecting(statusMsg = '') {
   $id('dashLogin')?.classList.add('hidden');
   $id('dashApp')?.classList.add('hidden');
@@ -378,6 +431,10 @@ function showConnecting(statusMsg = '') {
   }
   const status = $id('dashConnectingStatus');
   if (status) status.textContent = statusMsg;
+  connectingProgressValue = 4;
+  connectingProgressCap = 88;
+  setConnectingProgress(connectingProgressValue);
+  startConnectingProgressLoop();
   if (connectingTimer) clearTimeout(connectingTimer);
   connectingTimer = setTimeout(() => {
     console.warn('Connecting overlay exceeded 12s - forcing dashboard open.');
@@ -390,17 +447,23 @@ function hideConnecting() {
   if (!overlay) return;
   overlay.classList.add('hidden');
   overlay.removeAttribute('aria-busy');
+  stopConnectingProgressLoop();
   if (connectingTimer) { clearTimeout(connectingTimer); connectingTimer = null; }
 }
 function setConnectingStatus(msg) {
   const status = $id('dashConnectingStatus');
   if (status) status.textContent = msg || '';
 }
-function setConnectingProgress(pct, statusMsg) {
+function setConnectingProgress(pct, statusMsg, options = {}) {
   const fill = $id('dashConnectingBarFill');
   const pctEl = $id('dashConnectingBarPct');
-  if (fill) fill.style.width = `${Math.max(0, Math.min(100, pct))}%`;
-  if (pctEl) pctEl.textContent = `${Math.floor(pct)}%`;
+  if (Number.isFinite(options.cap)) connectingProgressCap = options.cap;
+  const clamped = Math.max(0, Math.min(100, pct));
+  connectingProgressValue = options.force
+    ? clamped
+    : Math.max(connectingProgressValue, clamped);
+  if (fill) fill.style.width = `${connectingProgressValue}%`;
+  if (pctEl) pctEl.textContent = `${Math.floor(connectingProgressValue)}%`;
   if (statusMsg) setConnectingStatus(statusMsg);
 }
 function updateLastSynced() {
@@ -408,7 +471,7 @@ function updateLastSynced() {
   if (!el) return;
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
   const time = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
-  el.textContent = ' · ' + dashT('adminLastSynced', { time });
+  el.textContent = ' - ' + dashT('adminLastSynced', { time });
 }
 function setRefreshNeedsCloud(needsCloud) {
   const btn = $id('dashRefreshBtn');
@@ -612,10 +675,8 @@ function showLogin() {
 
 function mountStructureUploadPanel() {
   const mount = $id('dashUploadStructuresMount');
-  const logArea = $id('dashLogArea');
   const uploadZone = $id('dashUploadZone');
   if (!mount) return;
-  if (logArea && logArea.parentElement !== mount) mount.appendChild(logArea);
   if (uploadZone && uploadZone.parentElement !== mount) mount.appendChild(uploadZone);
 }
 
@@ -756,9 +817,7 @@ export async function saveData(data, options = {}) {
     delete state.dashData.logs;
   }
   const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
-  try { 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedData));
-  } catch (e) {}
+  writeDashboardLocalCache(persistedData);
   if (options.cloud === false) return false;
   const cloudSave = scheduleDashboardCloudSave(persistedData, { immediate: options.immediate === true });
   if (options.awaitCloud === true) return cloudSave;
@@ -774,11 +833,12 @@ async function loadData(options = {}) {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       hadLocalData = true;
+      dashboardLocalCacheJson = saved;
       localData = normalizeDashboardDataForCache(JSON.parse(saved));
       if (!preferCloudFirst) {
         state.dashData = localData;
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData));
+        writeDashboardLocalCache(state.dashData);
         render();
       }
     }
@@ -792,7 +852,7 @@ async function loadData(options = {}) {
         render();
       }
       setCloudSyncStatus('local');
-      log('Firestore not available — using local storage only.', 'warn');
+      log('Firestore not available â€” using local storage only.', 'warn');
       return;
     }
     const { doc, getDoc, setDoc, onSnapshot } = await loadFirestoreApi();
@@ -802,9 +862,7 @@ async function loadData(options = {}) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
       state.dashData = cloudData;
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-      try { 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
-      } catch (e) {}
+      writeDashboardLocalCache(state.dashData);
       render();
       setCloudSyncStatus('live');
     } else {
@@ -817,7 +875,10 @@ async function loadData(options = {}) {
         log('Uploaded local dashboard cache to cloud.', 'success');
       } else {
         state.dashData = null;
-        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          dashboardLocalCacheJson = '';
+        } catch (e) {}
         render();
         setCloudSyncStatus('live');
       }
@@ -826,10 +887,8 @@ async function loadData(options = {}) {
       if (snap.exists()) {
         state.dashData = normalizeDashboardDataForCache(snap.data());
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        try { 
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
-        } catch (e) {}
-        render();
+        writeDashboardLocalCache(state.dashData);
+        scheduleDashboardRender();
         updateLastSynced();
         setCloudSyncStatus('live');
         const ind = $id('dashSyncIndicator');
@@ -860,7 +919,10 @@ async function loadData(options = {}) {
 
 async function clearData() {
   state.dashData = null;
-  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    dashboardLocalCacheJson = '';
+  } catch (e) {}
   try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
     setCloudSyncStatus('syncing');
@@ -1167,14 +1229,14 @@ export async function bootOcrDashboard() {
   bindSubtabNavigation();
   if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
   const wasAuthed = isAuthed();
-  if (wasAuthed) { showConnecting(dashT('adminConnectingInit')); setConnectingProgress(10, dashT('adminConnectingInit')); }
+  if (wasAuthed) { showConnecting(dashT('adminConnectingInit')); setConnectingProgress(12, dashT('adminConnectingInit'), { cap: 62 }); }
   else showLogin();
 
   if (wasAuthed) {
-    setConnectingProgress(25, dashT('adminConnectingInit'));
+    setConnectingProgress(32, dashT('adminConnectingInit'), { cap: 74 });
     ensureDashboardCloudInitialized().catch(() => {});
   }
-  if (wasAuthed) setConnectingProgress(55, dashT('adminConnectingData'));
+  if (wasAuthed) setConnectingProgress(58, dashT('adminConnectingData'), { cap: 86 });
   loadRosterSnapshots();
   if (wasAuthed) loadRosterSnapshotsFromFirestore().catch((e) => console.error('Roster snapshot sync failed during boot', e));
   loadBannerRecords();
@@ -1196,8 +1258,9 @@ export async function bootOcrDashboard() {
   log('VTS Admin Dashboard loaded.', 'info');
   if (isAuthed()) {
     try {
-      setConnectingProgress(70, dashT('adminConnectingData'));
+      setConnectingProgress(70, dashT('adminConnectingData'), { cap: 96 });
       await loadData({ preferCloudFirst: true });
+      await completeConnectingProgress(dashT('adminConnectingData'));
     } catch (e) {
       console.error('Dashboard load failed during boot', e);
     }
@@ -1208,7 +1271,8 @@ export async function bootOcrDashboard() {
     hideConnecting();
     showLogin();
   }
-  $id('dashRosterBtn').onclick = showRosterModal;
+  const rosterBtn = $id('dashRosterBtn');
+  if (rosterBtn) rosterBtn.onclick = showRosterModal;
   const expBtn = $id('dashRosterExportBtn'); if (expBtn) expBtn.onclick = exportRosterCSV;
   bindSubtabNavigation();
 
@@ -1223,8 +1287,9 @@ export async function bootOcrDashboard() {
     };
   }
 
-  // ── API status watcher ──────────────────────────────────
+  // â”€â”€ API status watcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   let ocrReady = false;
+  let lastLoggedOcrStatusKey = '';
   function summarizeOcrStatusReason(reason) {
     const text = String(reason || '').trim();
     if (!text) return dashT('adminOcrConfigureWorker');
@@ -1267,6 +1332,18 @@ export async function bootOcrDashboard() {
         if (inputEl) inputEl.disabled = true;
       }
     });
+    const reason = result.error || dashT('adminOcrConfigureWorker');
+    const summary = summarizeOcrStatusReason(reason);
+    const statusKey = ocrReady ? 'ready' : `unavailable:${reason}`;
+    if (options.forceLog === true || statusKey !== lastLoggedOcrStatusKey) {
+      lastLoggedOcrStatusKey = statusKey;
+      if (ocrReady) {
+        log(dashT('adminOcrServiceReady'), 'success');
+      } else {
+        const detail = summary && summary !== reason ? `${summary} - ${reason}` : summary;
+        log(`${dashT('adminOcrUnavailable')} - ${detail}`, 'warn');
+      }
+    }
     return ocrReady;
   }
   function canUseOcr() {
@@ -1278,7 +1355,7 @@ export async function bootOcrDashboard() {
   // Run on boot and whenever key input changes
   updateApiStatus();
   const apiSaveBtn = $id('dashSaveApiBtn');
-  if (apiSaveBtn) apiSaveBtn.addEventListener('click', () => updateApiStatus({ verifyAppCheckToken: true }));
+  if (apiSaveBtn) apiSaveBtn.addEventListener('click', () => updateApiStatus({ verifyAppCheckToken: true, forceLog: true }));
 
   // Roster: image upload
   const rosterZone = $id('dashRosterUploadZone');
@@ -1403,7 +1480,7 @@ export async function bootOcrDashboard() {
   };
 
   $id('dashModalClose').onclick = closeModal;
-  $id('dashSearch').oninput = e => { state.searchQ = e.target.value; render(); };
+  $id('dashSearch').oninput = e => { state.searchQ = e.target.value; scheduleDashboardRender(); };
   $id('dashLeaderFilter').onchange = () => { state.structureFilterKey = ''; state.leaderLimit = 25; render(); };
   const tFilter = $id('dashTimeFilter');
   if (tFilter) tFilter.onchange = () => {
@@ -1415,7 +1492,7 @@ export async function bootOcrDashboard() {
     render();
   };
   if (tFilter) state.timeFilter = tFilter.value || state.timeFilter || 'all';
-  $id('dashAttackSearch').oninput = e => { state.attackSearchQ = e.target.value; render(); };
+  $id('dashAttackSearch').oninput = e => { state.attackSearchQ = e.target.value; scheduleDashboardRender(); };
   $id('ocrDashboardRoot')?.addEventListener('click', (event) => {
     const th = event.target.closest('th[data-sort]');
     if (!th) return;
@@ -1503,6 +1580,14 @@ window.editAttack = async function(attId) {
   if(newStartTime === null) return;
   att.structure_name = normalizedTarget.structure_name;
   att.structure_level = normalizedTarget.structure_level;
+  att.raw_structure_name = normalizedTarget.structure_name;
+  att.raw_structure_level = normalizedTarget.structure_level;
+  att.display_structure_name = normalizedTarget.structure_name;
+  att.display_structure_level = normalizedTarget.structure_level;
+  const timestamp = String(att.id || '').match(/_(\d{10,})$/)?.[1];
+  if (timestamp) {
+    att.id = `${normalizedTarget.structure_name.replace(/\s+/g, '_')}_${normalizedTarget.structure_level}_${timestamp}`;
+  }
   att.game_time = newTime.trim();
   att.start_time = newStartTime.trim();
   delete att._validation;
@@ -1592,7 +1677,7 @@ window.showPlayer = function(pNameEncoded) {
   if (p) {
     showModal('player', p);
   } else {
-    // Player exists in attack but not aggregated yet — build a minimal view
+    // Player exists in attack but not aggregated yet â€” build a minimal view
     const minimalPlayer = {
       name: pName,
       total_demolition: 0,

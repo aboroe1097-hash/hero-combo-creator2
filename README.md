@@ -1,25 +1,25 @@
-# Hero Combo Creator — VTS 1097 (v11.4.0)
+# Hero Combo Creator - VTS 1097 (v11.7.0)
 
-A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management — all in a single-page web app.
+A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management â€” all in a single-page web app.
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
 | **Manual Builder** | Drag-and-drop 3-hero combos, save to Firebase, export as image/text |
-| **Combo Generator** | Select ≥12 owned heroes → generates top-5 ranked combos without overlap; "Surprise Me" random mode |
+| **Combo Generator** | Select â‰¥12 owned heroes â†’ generates top-5 ranked combos without overlap; "Surprise Me" random mode |
 | **Combo Counters** | Expandable counter matchups with hero portraits, ranks/scores, and optional notes |
-| **Hero Atlas** | Searchable database of 68+ heroes — skills, synergies, top combos, seasonal filters, adjustable bonuses |
+| **Hero Atlas** | Searchable database of 68+ heroes â€” skills, synergies, top combos, seasonal filters, adjustable bonuses |
 | **Skin System** | Toggle "Heroes with skins" to sort/badge owned skins; skin records include pending-detail placeholders, portrait icons, type colors, and combo references |
-| **Eden Map Planner** | Canvas-based 1700×1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
-| **Tech Research Calculator** | Full Academy tracker across S0–X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
+| **Eden Map Planner** | Canvas-based 1700Ã—1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
+| **Tech Research Calculator** | Full Academy tracker across S0â€“X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
 | **Eden Loyalty Calculator** | Poison mitigation, camp presets, deficit/surplus calculations |
 | **VTS Admin Dashboard** | OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, CSV/PNG/JSON exports |
 | **VTS Admin Roster** | Screenshot-based roster extraction, alliance assignment, trusted/spy/unknown status, snapshot history with auto-diff |
 | **Duty List Tracking** | Banner, Pather, and Shield Wall lists with roster-name suggestions, nickname confirmation, and local history |
 | **YouTube** | Lazy-loaded VTS 1097 playlists |
 | **Comments** | Threaded community feedback via Firebase Firestore |
-| **i18n** | 11 languages (English, Español, Português, Deutsch, Français, Türkçe, Русский, Indonesia, 中文, العربية, 한국어) |
+| **i18n** | 11 languages (English, EspaÃ±ol, PortuguÃªs, Deutsch, FranÃ§ais, TÃ¼rkÃ§e, Ð ÑƒÑÑÐºÐ¸Ð¹, Indonesia, ä¸­æ–‡, Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©, í•œêµ­ì–´) |
 | **Sharing** | Share combos and rosters via URL; export combos as image (html2canvas) |
 | **PWA** | Service worker registration, standalone display mode, hashed cache-busted assets, dev-mode SW unregister guard |
 
@@ -57,7 +57,7 @@ Short GIFs are welcome for workflows that static screenshots cannot show well, e
 ```bash
 npm install
 npm run dev      # Vite dev server (hot-reload)
-npm run build    # Production build → dist/ + docs/
+npm run build    # Production build â†’ dist/ + docs/
 npm run preview  # Preview production build
 npx serve .      # Static serve from root (no build)
 ```
@@ -70,7 +70,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.4.0 release should pass the full local gate before shipping.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.7.0 release should pass the full local gate before shipping.
 
 Version cadence: after the 11.3.0 baseline, every pushed release increments the patch slot through `11.3.19`; the next release after that becomes `11.4.0`. The same 20-release cycle repeats for future minor versions.
 
@@ -221,19 +221,19 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 
 ```
 1. Combo Builder
-   Select 3 heroes → updateManualComboScore() → getComboRankInfo() → show rank + score + counters
+   Select 3 heroes â†’ updateManualComboScore() â†’ getComboRankInfo() â†’ show rank + score + counters
 
 2. Combo Generator
-   Select ≥12 heroes → generateBestCombos() → iterate rankedCombos → top 5 (no overlap)
+   Select â‰¥12 heroes â†’ generateBestCombos() â†’ iterate rankedCombos â†’ top 5 (no overlap)
 
 3. OCR Roster
-   Upload screenshot → Qwen API → takeRosterSnapshot() → localStorage + Firestore → renderRoster()
+   Upload screenshot â†’ Qwen API â†’ takeRosterSnapshot() â†’ localStorage + Firestore â†’ renderRoster()
 
 4. OCR Attack Data
-   Upload structure screenshots → Qwen API → save to dashData → leaderboard + chart + insights
+   Upload structure screenshots â†’ Qwen API â†’ save to dashData â†’ leaderboard + chart + insights
 
 5. Eden Map
-   Select season → render map → place/remove structures → plan routes → share plan
+   Select season â†’ render map â†’ place/remove structures â†’ plan routes â†’ share plan
 ```
 
 ## localStorage Keys
@@ -254,9 +254,9 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 
 - **Auth:** Anonymous via `ensureAnonymousAuth()`
 - **Firestore paths:**
-  - `vts_admin/dashboard_data` — OCR attack data
-  - `vts_admin/roster_data` — roster snapshots
-  - `vts_saved_combos` — community shared combos
+  - `vts_admin/dashboard_data` â€” OCR attack data
+  - `vts_admin/roster_data` â€” roster snapshots
+  - `vts_saved_combos` â€” community shared combos
 - **Real-time listeners** via `onSnapshot()` for roster and comments
 - **Offline-first:** All saves go to localStorage first, then Firestore
 
@@ -266,7 +266,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 git push origin gh-pages
 ```
 
-The site auto-deploys at **https://roc-vts.com/** (custom domain configured in repo Settings → Pages).
+The site auto-deploys at **https://roc-vts.com/** (custom domain configured in repo Settings â†’ Pages).
 
 ## Contributing
 
@@ -293,4 +293,4 @@ Both run `build-eden-datasets.py` to regenerate the payload. Then `npm run build
 
 - Node.js 18+ (for Vite build)
 - Python 3.10+ (for Eden dataset scripts)
-- A Qwen API key (for OCR features — set in VTS Admin → API Settings)
+- A Qwen API key (for OCR features â€” set in VTS Admin â†’ API Settings)

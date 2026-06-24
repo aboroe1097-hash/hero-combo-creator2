@@ -13,6 +13,9 @@ async function getFirestoreDb() {
 let commentsListenerUnsub = null;
 let approvedCommentDocs = new Map();
 let ownPendingCommentDocs = new Map();
+let commentsRenderFrame = 0;
+let lastCommentsRenderSignature = '';
+const MAX_RENDERED_ROOT_COMMENTS = 120;
 
 // DOM elements
 const commentForm = document.getElementById('commentForm');
@@ -25,6 +28,33 @@ const commentsList = document.getElementById('commentsList');
 let allCommentsMap = new Map();
 let currentUserId = null;
 
+function scheduleCommentsRender() {
+  if (commentsRenderFrame) return;
+  const run = () => {
+    commentsRenderFrame = 0;
+    renderMergedComments();
+  };
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    commentsRenderFrame = window.requestAnimationFrame(run);
+  } else {
+    commentsRenderFrame = setTimeout(run, 0);
+  }
+}
+
+function commentDocSignature(docSnap) {
+  const data = docSnap.data();
+  return [
+    docSnap.id,
+    data.createdAt?.seconds || 0,
+    data.parentId || '',
+    data.authorId || '',
+    data.approved === false ? '0' : '1',
+    data.public === false ? '0' : '1',
+    String(data.name || ''),
+    String(data.text || '').length,
+  ].join(':');
+}
+
 export async function initComments() {
   try {
     wireCommentsUI();
@@ -33,7 +63,6 @@ export async function initComments() {
       renderCommentsUnavailable();
       return;
     }
-    console.log('[comments] initialized (threaded + names)');
   } catch (err) {
     console.warn('[comments] disabled:', err?.message || err);
     renderCommentsUnavailable(err?.message || 'Could not connect to Firebase comments.');
@@ -121,6 +150,7 @@ function createCommentCard(id, data, isReply = false) {
 /* -------------------------------------------------- */
 
 function renderCommentsTree(docs) {
+  if (!commentsList) return;
   commentsList.innerHTML = '';
   allCommentsMap.clear();
 
@@ -134,6 +164,9 @@ function renderCommentsTree(docs) {
     allCommentsMap.set(item.id, item);
     if (item.parentId) { replies.push(item); } else { roots.push(item); }
   });
+  const visibleRoots = roots.slice(0, MAX_RENDERED_ROOT_COMMENTS);
+  const visibleRootIds = new Set(visibleRoots.map((root) => root.id));
+  const visibleReplies = replies.filter((reply) => visibleRootIds.has(reply.parentId));
 
   // Update count label
   const countLabel = document.getElementById('commentsCountLabel');
@@ -141,6 +174,10 @@ function renderCommentsTree(docs) {
     countLabel.textContent = roots.length === 0
       ? 'No comments yet — be the first!'
       : `${roots.length} comment${roots.length !== 1 ? 's' : ''}`;
+  }
+
+  if (countLabel && roots.length > MAX_RENDERED_ROOT_COMMENTS) {
+    countLabel.textContent = `Showing latest ${MAX_RENDERED_ROOT_COMMENTS} of ${roots.length} comments`;
   }
 
   if (roots.length === 0) {
@@ -155,12 +192,14 @@ function renderCommentsTree(docs) {
     return;
   }
 
-  roots.forEach(root => {
+  const fragment = document.createDocumentFragment();
+  visibleRoots.forEach(root => {
     const card = createCommentCard(root.id, root, false);
-    commentsList.appendChild(card);
+    fragment.appendChild(card);
   });
+  commentsList.appendChild(fragment);
 
-  replies.reverse().forEach(reply => {
+  visibleReplies.reverse().forEach(reply => {
     const parentContainer = document.getElementById(`replies-${reply.parentId}`);
     if (parentContainer) {
       const card = createCommentCard(reply.id, reply, true);
@@ -180,13 +219,16 @@ function renderMergedComments() {
     ...ownPendingCommentDocs.entries()
   ]);
   const docs = [...docsById.values()].sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
+  const signature = docs.map(commentDocSignature).join('|');
+  if (signature === lastCommentsRenderSignature) return;
+  lastCommentsRenderSignature = signature;
   renderCommentsTree(docs);
 }
 
 function replaceSnapshotDocs(target, snap) {
   target.clear();
   snap.docs.forEach((docSnap) => target.set(docSnap.id, docSnap));
-  renderMergedComments();
+  scheduleCommentsRender();
 }
 
 function renderCommentsUnavailable(message = 'Firebase comments are disabled for this session.') {

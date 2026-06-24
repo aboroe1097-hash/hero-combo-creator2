@@ -4,9 +4,9 @@ import { initComments } from './comments.js';
 import { allHeroesData } from './heroes-data.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { escapeHtml, debounce } from './utils.js';
+import { escapeHtml, debounce, installShowToast } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260624_141931';
+import { initAppLoading, notifyAppReady } from './app-loading.js';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -46,10 +46,6 @@ import {
   setCurrentLanguage,
   heroInfoEnabled,
   setHeroInfoEnabled,
-  activeTechSeasons,
-  setActiveTechSeasons,
-  techSearchQuery,
-  setTechSearchQuery,
   setSelectedSeasons,
   setSelectedStates,
   setSelectedTypes,
@@ -138,6 +134,18 @@ const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), D
 const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 const GENERATOR_SKIN_NUDGE_KEY = 'vts_generator_skin_nudge_seen';
+const THEME_STORAGE_KEY = 'vts_theme';
+let researchModulePromise = null;
+
+function loadResearchModule() {
+  if (!researchModulePromise) {
+    researchModulePromise = import('./app-research.js').catch((err) => {
+      researchModulePromise = null;
+      throw err;
+    });
+  }
+  return researchModulePromise;
+}
 
 function resolveDroppedHeroName(dataTransfer) {
   const rawName = dataTransfer?.getData(HERO_DRAG_MIME) || dataTransfer?.getData('text/plain') || '';
@@ -147,7 +155,7 @@ function resolveDroppedHeroName(dataTransfer) {
 
 /* ===== THEME (Dark default + Light) ===== */
 function getPreferredTheme() {
-  const stored = localStorage.getItem('theme');
+  const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
   if (stored === 'light' || stored === 'dark') return stored;
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
@@ -182,9 +190,13 @@ function applyTheme(theme) {
 function initTheme() {
   const theme = getPreferredTheme();
   applyTheme(theme);
-  if (!localStorage.getItem('theme') && window.matchMedia) {
+  if (!localStorage.getItem(THEME_STORAGE_KEY) && localStorage.getItem('theme')) {
+    localStorage.setItem(THEME_STORAGE_KEY, localStorage.getItem('theme'));
+    localStorage.removeItem('theme');
+  }
+  if (!localStorage.getItem(THEME_STORAGE_KEY) && window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) {
+      if (!localStorage.getItem(THEME_STORAGE_KEY)) {
         applyTheme(e.matches ? 'light' : 'dark');
       }
     });
@@ -196,7 +208,8 @@ function initTheme() {
     btn.addEventListener('click', () => {
       const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
       const next = current === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', next);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
+      localStorage.removeItem('theme');
       applyTheme(next);
     });
     const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
@@ -209,6 +222,7 @@ function initTheme() {
   }
 }
 
+installShowToast();
 initTheme();
 
 function addCounterHeroesToGenerator(heroNames) {
@@ -873,7 +887,7 @@ tabs.forEach(tab => {
     if (tabName === 'research' && !_researchReady) {
       if (_researchBooting) return;
       _researchBooting = true;
-      import('./app-research.js')
+      loadResearchModule()
         .then((mod) => {
           mod.initResearchCalculator();
           _researchReady = true;
@@ -1001,7 +1015,7 @@ tabs.forEach(tab => {
       // Build combo data format compatible with canvas renderer
       const comboData = savedCombosCache.map((heroes, idx) => {
         const info = getComboRankInfo(heroes);
-        return { heroes, displayScore: info ? info.score : '—' };
+        return { heroes, displayScore: info ? info.score : 'â€”' };
       });
       downloadComboImage(comboData, t.lastBestCombosTitle || 'Last Best Combos', 'vts-last-best-combos.png');
     };
@@ -1138,7 +1152,7 @@ function updateTextContent() {
 
   updateManualComboScore();
   if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer') && !researchSection?.classList.contains('hidden')) {
-    import('./app-research.js')
+    loadResearchModule()
       .then((mod) => mod.renderTechList())
       .catch((err) => console.warn('[research] refresh failed:', err));
   }
@@ -1248,14 +1262,17 @@ function initQuickTour() {
   function placeTourCard(target) {
     const rect = target.getBoundingClientRect();
     const pad = 8;
-    const gap = 14;
+    const gap = window.innerWidth >= 1024 ? 10 : 14;
     const margin = 16;
-    const cardWidth = Math.min(390, window.innerWidth - margin * 2);
+    const isWide = window.innerWidth >= 1024;
+    const cardWidth = Math.min(isWide ? 340 : 390, window.innerWidth - margin * 2);
+    const spotlightWidth = Math.max(42, Math.min(rect.width + pad * 2, window.innerWidth - margin * 2));
+    const spotlightHeight = Math.max(34, Math.min(rect.height + pad * 2, window.innerHeight - margin * 2));
 
-    spotlight.style.left = `${clamp(rect.left - pad, margin, window.innerWidth - margin)}px`;
-    spotlight.style.top = `${clamp(rect.top - pad, margin, window.innerHeight - margin)}px`;
-    spotlight.style.width = `${Math.max(42, Math.min(rect.width + pad * 2, window.innerWidth - margin * 2))}px`;
-    spotlight.style.height = `${Math.max(34, Math.min(rect.height + pad * 2, window.innerHeight - margin * 2))}px`;
+    spotlight.style.left = `${clamp(rect.left - pad, margin, window.innerWidth - spotlightWidth - margin)}px`;
+    spotlight.style.top = `${clamp(rect.top - pad, margin, window.innerHeight - spotlightHeight - margin)}px`;
+    spotlight.style.width = `${spotlightWidth}px`;
+    spotlight.style.height = `${spotlightHeight}px`;
     spotlight.style.borderRadius = `${Math.min(18, Math.max(12, rect.height / 2))}px`;
 
     card.style.width = `${cardWidth}px`;
@@ -1309,7 +1326,8 @@ function initQuickTour() {
     kicker.textContent = `Step ${index + 1} of ${steps.length}`;
     dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
     nextBtn.textContent = index === steps.length - 1 ? 'Done' : 'Next';
-    target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
+    const isTabTarget = target.closest('#tabNavScroll') || target.classList.contains('tab-pill');
+    target.scrollIntoView({ behavior: 'auto', block: isTabTarget ? 'nearest' : 'center', inline: 'center' });
     requestAnimationFrame(() => placeTourCard(target));
     window.setTimeout(() => placeTourCard(target), 80);
   }
@@ -1357,10 +1375,7 @@ async function startApp() {
     safeInit('initTabScroll', () => initTabScroll());
 
     safeInit('registerServiceWorker', () => registerServiceWorker());
-    const comboShare = safeInit('parseComboShareUrl', () => parseComboShareUrl());
-    if (comboShare) {
-      console.log('Loaded shared combos from URL', comboShare);
-    }
+    safeInit('parseComboShareUrl', () => parseComboShareUrl());
     const rosterShare = safeInit('parseRosterShareUrl', () => parseRosterShareUrl());
     if (rosterShare) {
       safeInit('applyRosterShare', () => applyRosterToGenerator(rosterShare, generatorSelectedHeroes));
@@ -1453,5 +1468,5 @@ if (window.VTS_MAINTENANCE_ACTIVE) {
 
   startApp().catch(err => console.error('[global] startApp failed:', err));
 } else {
-  console.error('[global] startApp not defined — module import may have failed');
+  console.error('[global] startApp not defined â€” module import may have failed');
 }

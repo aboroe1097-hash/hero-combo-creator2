@@ -569,7 +569,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashHitDistribution')).toContainText('Below 5K');
     await expect(page.locator('#dashHitDistribution')).toContainText('5K-10K');
     await expect(page.locator('#dashHitDistribution')).toContainText('100K+');
-    await expect(page.locator('#dashAllianceInsights')).toContainText('Unmapped');
+    await expect(page.locator('#dashStreaks')).toContainText('Current streaks');
 
     await page.evaluate(() => {
       const item = Array.from(document.querySelectorAll('#dashStructureChart .dash-structure-item'))

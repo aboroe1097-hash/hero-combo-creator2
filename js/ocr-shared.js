@@ -1,4 +1,5 @@
 // Shared constants, state, and helpers for OCR dashboard modules
+import { isLocalDevHost } from './utils.js';
 
 // --- Storage Keys ---
 export const STORAGE_KEY = 'vts_ocr_dashboard';
@@ -159,15 +160,36 @@ function describeFirebaseAppCheckStatus(status) {
     if (/recaptcha/i.test(status.appCheckTokenError) && /timeout/i.test(status.appCheckTokenError)) {
       return 'Firebase App Check reCAPTCHA timed out. Check network/ad blockers, then click Check OCR or retry the upload.';
     }
+    if (isAppCheckForbiddenMessage(status.appCheckTokenError)) {
+      return describeAppCheckForbiddenStatus(status);
+    }
     return `Firebase App Check token failed: ${status.appCheckTokenError}`;
   }
   return 'Firebase App Check is not initialized yet.';
+}
+
+function isAppCheckForbiddenMessage(message) {
+  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(String(message || ''));
+}
+
+function describeAppCheckForbiddenStatus(status = {}) {
+  if (status.isLocalDevHost || isLocalDevHost()) {
+    const tokenModeHint =
+      status.appCheckDebugTokenMode === 'generated'
+        ? ' Because .env uses VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true, replace it with that registered UUID and restart Vite.'
+        : '';
+    return `Firebase App Check rejected the local debug token (HTTP 403). Add the UUID printed in DevTools as "App Check debug token" to Firebase Console > App Check > your web app > Manage debug tokens.${tokenModeHint}`;
+  }
+  return 'Firebase App Check rejected the token (HTTP 403). Confirm the reCAPTCHA Enterprise site key belongs to this Firebase web app and the domain is allowed in App Check.';
 }
 
 function describeFirebaseAppCheckTokenError(err) {
   const message = err?.message || 'Firebase App Check could not load.';
   if (/recaptcha/i.test(message) && /timeout/i.test(message)) {
     return 'Firebase App Check reCAPTCHA timed out. Check network/ad blockers, then click Check OCR or retry the upload.';
+  }
+  if (isAppCheckForbiddenMessage(message)) {
+    return describeAppCheckForbiddenStatus();
   }
   return `${message} Confirm the reCAPTCHA Enterprise site key belongs to this Firebase project and register a debug token for local testing if needed.`;
 }
@@ -288,6 +310,7 @@ const STRUCTURE_NAME_CORRECTIONS = {
   bridges: 'Bridge',
   capita1: 'Capital',
   capital: 'Capital',
+  capitals: 'Capital',
   capitol: 'Capital',
   cates: 'Gates',
   checkpoint: 'Gates',
@@ -405,8 +428,23 @@ function parseStructureTargetFromId(id) {
 
 export function getDatasetStructureTarget(attack) {
   if (!attack) return { structure_name: 'Unknown Structure', structure_level: '' };
-  const rawName = attack.raw_structure_name ?? attack.display_structure_name;
-  const rawLevel = attack.raw_structure_level ?? attack.display_structure_level;
+  const displayName = attack.display_structure_name;
+  const displayLevel = attack.display_structure_level;
+  if (displayName || displayLevel) {
+    return {
+      structure_name: displayName || attack.structure_name || 'Unknown Structure',
+      structure_level: displayLevel ?? attack.structure_level ?? '',
+    };
+  }
+  const rawName = attack.raw_structure_name;
+  const rawLevel = attack.raw_structure_level;
+  const canonicalName = attack.structure_name || attack.name;
+  if (/^ruins?$/i.test(String(rawName || '').trim()) && canonicalName && !/^ruins?$/i.test(canonicalName)) {
+    return {
+      structure_name: canonicalName,
+      structure_level: attack.structure_level || '',
+    };
+  }
   if (rawName || rawLevel) {
     return {
       structure_name: rawName || attack.structure_name || 'Unknown Structure',

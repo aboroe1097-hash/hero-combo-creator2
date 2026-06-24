@@ -1,10 +1,12 @@
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
+import { installShowToast } from './utils.js';
 
-const APP_VERSION = '11.6.0';
+const APP_VERSION = '11.7.0';
+const THEME_STORAGE_KEY = 'vts_theme';
 
 function getPreferredTheme() {
-  const stored = localStorage.getItem('theme');
+  const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
   if (stored === 'light' || stored === 'dark') return stored;
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
@@ -28,13 +30,18 @@ function applyTheme(theme) {
 
 function initTheme() {
   applyTheme(getPreferredTheme());
+  if (!localStorage.getItem(THEME_STORAGE_KEY) && localStorage.getItem('theme')) {
+    localStorage.setItem(THEME_STORAGE_KEY, localStorage.getItem('theme'));
+    localStorage.removeItem('theme');
+  }
   const btn = document.getElementById('themeToggle');
   if (!btn || btn.dataset.themeWired) return;
   btn.dataset.themeWired = '1';
   btn.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     const next = current === 'light' ? 'dark' : 'light';
-    localStorage.setItem('theme', next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+    localStorage.removeItem('theme');
     applyTheme(next);
   });
 }
@@ -73,19 +80,6 @@ function updateTextContent(lang) {
   window.dispatchEvent(new CustomEvent('vts:admin-language-change', { detail: { lang } }));
 }
 
-window.showToast = function showToast(msg, type = 'info', duration = 3000) {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = msg;
-  container.appendChild(toast);
-  window.setTimeout(() => {
-    toast.style.animation = 'toast-in 0.3s ease reverse both';
-    window.setTimeout(() => toast.remove(), 300);
-  }, duration);
-};
-
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
@@ -114,6 +108,7 @@ function captureEarlyGuestIntent() {
 async function bootAdminPage() {
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
+  installShowToast();
   initTheme();
   mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
   document.getElementById('adminFooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
@@ -126,7 +121,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_141931');
+  const mod = await import('./ocr-dashboard.js?v=20260624_164222');
   await mod.bootOcrDashboard();
 }
 

@@ -5,6 +5,50 @@ import { techDatabase } from './tech-db.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
 import { appT } from './utils.js';
 
+const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
+let researchProgressCache = null;
+
+function getResearchProgress() {
+    if (researchProgressCache) return researchProgressCache;
+    try {
+        const parsed = JSON.parse(localStorage.getItem(RESEARCH_PROGRESS_KEY) || '{}');
+        researchProgressCache = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed
+            : {};
+    } catch {
+        researchProgressCache = {};
+    }
+    return researchProgressCache;
+}
+
+function researchProgressId(techId, nodeId) {
+    return `${techId}:${nodeId}`;
+}
+
+function getStoredNodeLevel(techId, nodeId) {
+    const progress = getResearchProgress();
+    const stored = Number(progress[researchProgressId(techId, nodeId)]);
+    if (Number.isFinite(stored) && stored > 0) return stored;
+
+    const legacyKey = `tech_${techId}_${nodeId}`;
+    const legacy = parseInt(localStorage.getItem(legacyKey), 10) || 0;
+    if (legacy > 0) setStoredNodeLevel(techId, nodeId, legacy);
+    try { localStorage.removeItem(legacyKey); } catch {}
+    return legacy;
+}
+
+function setStoredNodeLevel(techId, nodeId, level) {
+    const progress = getResearchProgress();
+    const key = researchProgressId(techId, nodeId);
+    const safeLevel = Math.max(0, Number(level) || 0);
+    if (safeLevel > 0) progress[key] = safeLevel;
+    else delete progress[key];
+    try {
+        localStorage.setItem(RESEARCH_PROGRESS_KEY, JSON.stringify(progress));
+        localStorage.removeItem(`tech_${techId}_${nodeId}`);
+    } catch {}
+}
+
 function getNodeLevelMedals(node, levelIndex) {
     const genericCost = (node.costs && node.costs[levelIndex]) || 0;
     const wbCost = (node.warBadgeCosts && node.warBadgeCosts[levelIndex])
@@ -35,7 +79,7 @@ function getTechMedalTotals(tech) {
     let levelsCurrent = 0;
 
     tech.nodes.forEach((node) => {
-        const savedLevel = parseInt(localStorage.getItem(`tech_${tech.id}_${node.id}`), 10) || 0;
+        const savedLevel = getStoredNodeLevel(tech.id, node.id);
         levelsMax += node.maxLevel;
         levelsCurrent += savedLevel;
         for (let i = 0; i < node.maxLevel; i++) {
@@ -180,7 +224,7 @@ window.quickMaxTech = function(e, techId) {
     if (!tech) return;
 
     tech.nodes.forEach(n => {
-        localStorage.setItem(`tech_${tech.id}_${n.id}`, n.maxLevel);
+        setStoredNodeLevel(tech.id, n.id, n.maxLevel);
     });
 
     updateGlobalSummary();
@@ -447,10 +491,6 @@ function getGameTroopClass(troop) {
     return 'footmen';
 }
 
-function getStoredNodeLevel(techId, nodeId) {
-    return parseInt(localStorage.getItem(`tech_${techId}_${nodeId}`), 10) || 0;
-}
-
 function formatGameNodeLevel(node, level) {
     if (level >= node.maxLevel) return 'MAX';
     return `${level}/${node.maxLevel}`;
@@ -620,7 +660,7 @@ function wireGameTechNodeContainers(rootEl, tech) {
             const changed = v !== current;
             current = v;
             input.value = v;
-            localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
+            setStoredNodeLevel(tech.id, nodeId, v);
             syncGameNodeVisual(node, v, wrap);
             if (changed && pulse) pulseGameNodeWrap(wrap);
             calculateTechTotals(tech);
@@ -765,7 +805,7 @@ function renderCalculator(tech) {
     });
 
     const buildNodeHtml = (node) => {
-        const savedLevel = parseInt(localStorage.getItem(`tech_${tech.id}_${node.id}`)) || 0;
+        const savedLevel = getStoredNodeLevel(tech.id, node.id);
         const isMaxed = savedLevel === node.maxLevel;
         
         // Dynamic classes based on max status
@@ -962,7 +1002,7 @@ function renderCalculator(tech) {
             
             slider.value = v;
             input.value = v;
-            localStorage.setItem(`tech_${tech.id}_${nodeId}`, v);
+            setStoredNodeLevel(tech.id, nodeId, v);
 
             // Dynamic Gray-out & Button Swap
             if (v === max) {

@@ -786,6 +786,7 @@ function renderStreaks(attacks, psum) {
 
 function renderAnalytics(attacks, psum) {
   if (!$id('dashSubtabAnalytics')) return;
+  state._analyticsDirty = false;
   if (!attacks.length) {
     setAnalyticsEmpty();
     return;
@@ -805,6 +806,20 @@ function renderAnalytics(attacks, psum) {
   renderConsistency(psum);
   renderAllianceInsights(psum);
   renderStreaks(attacks, psum);
+}
+
+function isDashboardSubtabVisible(name) {
+  const id = `dashSubtab${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+  const panel = $id(id);
+  return Boolean(panel && !panel.classList.contains('hidden'));
+}
+
+function renderAnalyticsWhenVisible(attacks, psum) {
+  if (isDashboardSubtabVisible('analytics')) {
+    renderAnalytics(attacks, psum);
+    return;
+  }
+  state._analyticsDirty = true;
 }
 
 function dutyRecordsFor(type) {
@@ -1018,7 +1033,7 @@ function render() {
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
     renderOpsOverview([], []);
-    setAnalyticsEmpty();
+    renderAnalyticsWhenVisible([], []);
     return;
   }
   const timeAttacks = getTimeFilteredAttacks(state.dashData.attacks || []);
@@ -1037,7 +1052,7 @@ function render() {
   const leaderPsum = applyLeaderboardSort(rankedPsum);
   updateLeaderboardSortHeaders();
 
-  renderAnalytics(activeAttacks, rankedPsum);
+  renderAnalyticsWhenVisible(activeAttacks, rankedPsum);
   renderOpsOverview(activeAttacks, rankedPsum);
 
   const total = activeAttacks.reduce((s, a) => s + (a.total_demolition || 0), 0);

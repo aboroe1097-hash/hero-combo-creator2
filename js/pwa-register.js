@@ -32,7 +32,6 @@ export function registerServiceWorker() {
       });
       navigator.serviceWorker.addEventListener('controllerchange', maybeNotifyUpdate);
       await reg.update();
-      console.log('SW registered:', reg.scope);
     } catch (err) {
       console.warn('SW registration failed:', err);
     }
