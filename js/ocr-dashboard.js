@@ -90,8 +90,7 @@ function switchDashSubtab(name) {
     btn.tabIndex = 0;
   }
   if (name === 'analytics') {
-    hydrateDashboardStateFromLocalStorage();
-    render();
+    // Analytics is rendered during dashboard load/save; tab switching should stay instant.
     animateAnalyticsCards();
   } else {
     state._analyticsAnimated = false;
