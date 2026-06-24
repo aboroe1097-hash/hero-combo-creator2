@@ -289,6 +289,9 @@ export function renderGeneratorHeroes(options = {}) {
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       if (skinOwned) card.style.cssText += getStableSkinMotionStyle(hero.name);
+      card.dataset.heroName = hero.name;
+      card.dataset.heroSeason = hero.season;
+      card.dataset.heroTroop = hero.Type;
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
       card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');

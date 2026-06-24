@@ -33,7 +33,8 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { appendLogEntry, checkOcrService, qwenVisionRequest } = await import('../../js/ocr-shared.js');
+const { appendLogEntry, checkOcrService, qwenVisionRequest } =
+  await import('../../js/ocr-shared.js');
 const workerModule = await import('../../workers/qwen-cors-proxy.js');
 const worker = workerModule.default;
 const { resolveDashscopeChatCompletionsUrl } = workerModule;
@@ -155,7 +156,9 @@ test('Qwen worker defaults to Alibaba Cloud international compatible endpoint', 
     'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
   );
   assert.equal(
-    resolveDashscopeChatCompletionsUrl({ DASHSCOPE_BASE_URL: 'https://example.test/compatible-mode/v1' }),
+    resolveDashscopeChatCompletionsUrl({
+      DASHSCOPE_BASE_URL: 'https://example.test/compatible-mode/v1',
+    }),
     'https://example.test/compatible-mode/v1/chat/completions'
   );
   assert.equal(
@@ -192,7 +195,10 @@ test('Qwen request errors preserve HTTP status and Retry-After', async () => {
     });
   try {
     await assert.rejects(
-      () => qwenVisionRequest([{ role: 'user', content: 'hi' }], { appCheckToken: 'test-app-check-token' }),
+      () =>
+        qwenVisionRequest([{ role: 'user', content: 'hi' }], {
+          appCheckToken: 'test-app-check-token',
+        }),
       (err) => {
         assert.equal(err.name, 'QwenVisionRequestError');
         assert.equal(err.status, 429);

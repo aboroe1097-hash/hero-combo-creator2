@@ -17,7 +17,9 @@ import { translations } from './translations.js';
 
 function adminT(key, vars = {}) {
   let lang = 'en';
-  try { lang = localStorage.getItem('vts_hero_lang') || 'en'; } catch {
+  try {
+    lang = localStorage.getItem('vts_hero_lang') || 'en';
+  } catch {
     // Storage can be unavailable in restricted browser contexts.
   }
   const dictionaries = window.VTS_TRANSLATIONS || translations;
@@ -824,9 +826,7 @@ function countDutyMatched(records) {
   return records.reduce((sum, record) => {
     return (
       sum +
-      (Array.isArray(record.entries)
-        ? record.entries.filter((entry) => entry.confirmed).length
-        : 0)
+      (Array.isArray(record.entries) ? record.entries.filter((entry) => entry.confirmed).length : 0)
     );
   }, 0);
 }
@@ -842,7 +842,9 @@ function latestRecord(records) {
 }
 
 function contributionReward(entry, record) {
-  const override = String(entry?.rewardOverride || entry?.reward || '').trim().toLowerCase();
+  const override = String(entry?.rewardOverride || entry?.reward || '')
+    .trim()
+    .toLowerCase();
   if (
     override === 'premium' ||
     override === 'standard' ||

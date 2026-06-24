@@ -6,7 +6,7 @@ import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce } from './utils.js';
 import { applySeo } from './seo.js';
-import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260624_021500';
+import { initAppLoading, notifyAppReady } from './app-loading.js?v=20260624_005914';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
@@ -30,7 +30,7 @@ import {
   placeHeroInSlot,
   saveCombo,
   setupFirestoreListener
-} from './app-builder.js?v=20260624_033000';
+} from './app-builder.js';
 
 import {
   renderGeneratorHeroes,
@@ -39,7 +39,7 @@ import {
   markGeneratorSelectionChanged,
   restoreGeneratorSelection,
   syncGeneratorSelectedCountBadge,
-} from './app-generator.js?v=20260624_033000';
+} from './app-generator.js';
 
 import {
   currentLanguage,

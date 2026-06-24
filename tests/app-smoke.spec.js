@@ -250,7 +250,11 @@ test.describe('app smoke tabs', () => {
       [
         ...new Set(
           nodes
-            .map((node) => node.querySelector('.mt-1 span:last-child')?.textContent.trim())
+            .map(
+              (node) =>
+                node.dataset.heroTroop ||
+                node.querySelector('.hero-card-type')?.textContent.trim()
+            )
             .filter(Boolean)
         ),
       ].sort()
