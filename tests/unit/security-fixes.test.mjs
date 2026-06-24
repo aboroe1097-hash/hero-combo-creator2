@@ -33,7 +33,7 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { appendLogEntry, checkOcrService, qwenVisionRequest } =
+const { appendLogEntry, checkOcrService, qwenVisionRequest, sanitizeForFirestore } =
   await import('../../js/ocr-shared.js');
 const workerModule = await import('../../workers/qwen-cors-proxy.js');
 const worker = workerModule.default;
@@ -79,6 +79,33 @@ test('OCR log entry type is restricted before becoming a class name', () => {
   });
 
   assert.equal(out.children[0].children[1].className, 'log-msg log-info');
+});
+
+test('Firestore sanitizer removes undefined values from OCR dashboard data', () => {
+  const input = {
+    last_updated: 'now',
+    attacks: [
+      {
+        id: 'attack-1',
+        structure_level: undefined,
+        players: [{ name: 'Alpha', value: 1, rank: undefined }, undefined],
+      },
+    ],
+    optional: undefined,
+  };
+
+  const clean = sanitizeForFirestore(input);
+
+  assert.deepEqual(clean, {
+    last_updated: 'now',
+    attacks: [
+      {
+        id: 'attack-1',
+        players: [{ name: 'Alpha', value: 1 }, null],
+      },
+    ],
+  });
+  assert.equal(JSON.stringify(clean).includes('undefined'), false);
 });
 
 test('Qwen worker requires Firebase App Check configuration before proxying', async () => {

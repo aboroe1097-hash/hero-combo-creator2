@@ -29,6 +29,26 @@ export async function sha256(str) {
   } catch (e) { return null; }
 }
 
+export function sanitizeForFirestore(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (Array.isArray(value)) {
+    return value.map((item) => {
+      const clean = sanitizeForFirestore(item);
+      return clean === undefined ? null : clean;
+    });
+  }
+  if (typeof value === 'object') {
+    const clean = {};
+    Object.entries(value).forEach(([key, item]) => {
+      const cleanedValue = sanitizeForFirestore(item);
+      if (cleanedValue !== undefined) clean[key] = cleanedValue;
+    });
+    return clean;
+  }
+  return value;
+}
+
 // --- OCR ---
 export const QWEN_WORKER_URL = 'https://delicate-term-725f.aboroe1097.workers.dev';
 

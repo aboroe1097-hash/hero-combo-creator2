@@ -29,7 +29,7 @@ import {
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
-  trimRosterSnapshots
+  trimRosterSnapshots, sanitizeForFirestore
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -180,7 +180,7 @@ export async function saveRosterSnapshotsToFirestore() {
       localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
       log(`Roster snapshot history trimmed to ${snapshots.length} cloud-safe snapshots.`, 'warn');
     }
-    await setDoc(doc(db, FS_ROSTER_PATH), { snapshots, updated: new Date().toISOString() });
+    await setDoc(doc(db, FS_ROSTER_PATH), sanitizeForFirestore({ snapshots, updated: new Date().toISOString() }));
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
     log(`Roster cloud save failed: ${e?.message || e}`, 'error');
@@ -517,7 +517,7 @@ function sanitizeDashboardDataForPersistence(data) {
       return copy;
     });
   }
-  return clean;
+  return sanitizeForFirestore(clean);
 }
 
 function dashboardDataFingerprint(data) {
