@@ -1,3 +1,6 @@
+## 11.7.1 - 2026-06-24
+
+- Bumped public release labels for the follow-up push after the 11.7.0 admin dashboard polish batch.
 # Changelog
 
 ## 11.7.0 - 2026-06-24
