@@ -27,27 +27,15 @@ import {
   getUserId,
   isHeroAlreadyInCombo,
   pushUndoAction,
-  __ui,
+  savedCombosCache,
 } from './state.js';
+import { callUi } from './ui-bridge.js';
+import { HERO_DRAG_MIME } from './constants.js';
 
 let db = null;
-const savedCombosCache = [];
 let touchDragHero = null;
 let touchDragGhost = null;
 let keyboardSelectedHero = null;
-const HERO_DRAG_MIME = 'application/x-vts-hero-name';
-
-function getUiFunction(name) {
-  if (typeof __ui[name] === 'function') return __ui[name];
-  if (typeof window !== 'undefined' && typeof window[name] === 'function') return window[name];
-  return null;
-}
-
-function callUi(name, ...args) {
-  const fn = getUiFunction(name);
-  if (fn) return fn(...args);
-  return undefined;
-}
 
 function getKnownHero(name) {
   return allHeroesData.find(hero => hero.name === name) || null;

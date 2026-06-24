@@ -3,6 +3,7 @@ import { translations } from './translations.js';
 import { allHeroesData } from './heroes-data.js';
 import { skinHeroesData } from './skin-heroes-data.js';
 import { baseRankedCombos } from './combos-db.js';
+import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
 export const APP_VERSION = '11.7.2';
@@ -85,17 +86,9 @@ export function getSourceCreditText() {
   return t.sourceCreditText || translations.en.sourceCreditText || "Data meticulously sourced from the VTS 1097 Community, Ptr, Old.Faithful, Raven G, and other contributors.";
 }
 
-// --- COLORS ---
-export const TechseasonColors = {
-  S0: '#94a3b8', S1: '#60a5fa', S2: '#c084fc', S3: '#fb923c',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
-};
+// --- COLORS (defined in constants.js, re-exported for convenience) ---
+export { seasonColors, TechseasonColors };
 export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
-
-export const seasonColors = {
-  S0: '#9ca3af', S1: '#3b82f6', S2: '#a855f7', S3: '#f97316',
-  S4: '#facc15', X1: '#f87171', X2: '#34d399', X8: '#22d3ee'
-};
 
 export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
 

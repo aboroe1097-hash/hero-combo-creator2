@@ -1339,11 +1339,44 @@ export async function bootOcrDashboard() {
   function summarizeOcrStatusReason(reason) {
     const text = String(reason || '').trim();
     if (!text) return dashT('adminOcrConfigureWorker');
-    if (/app ?check|appcheck|debug token|recaptcha/i.test(text)) return 'App Check debug token needed';
+    if (/VITE_RECAPTCHA_SITE_KEY|site key is missing|recaptcha enterprise site key is missing/i.test(text)) return 'App Check site key missing';
+    if (/debug token/i.test(text)) return 'App Check debug token needed';
+    if (/app ?check|appcheck|recaptcha/i.test(text)) return 'App Check token blocked';
     if (/origin not allowed|allowed_origins|not currently allowed/i.test(text)) return 'Local origin blocked';
     if (/dashscope_api_key/i.test(text)) return 'Worker API key missing';
     if (/worker status\s+40[13]|unauthorized|forbidden/i.test(text)) return 'Worker authorization blocked';
     return text.length > 64 ? `${text.slice(0, 61)}...` : text;
+  }
+
+  function currentOcrStatusReason() {
+    const statusEl = $id('dashOcrServiceStatus') || $id('dashApiUploadStatus') || $id('dashRosterApiStatus');
+    return statusEl?.dataset?.errorDetail || statusEl?.getAttribute?.('aria-label') || dashT('adminOcrConfigureWorker');
+  }
+
+  function setInlineStatus(id, message, type = 'error') {
+    const el = $id(id);
+    if (!el) return;
+    el.className = `dash-upload-status ${type}`;
+    el.textContent = message;
+    el.classList.remove('hidden');
+  }
+
+  function clearInlineStatus(id) {
+    const el = $id(id);
+    if (!el) return;
+    el.classList.add('hidden');
+    el.textContent = '';
+  }
+
+  function showOcrBlockedFeedback(options = {}) {
+    const reason = currentOcrStatusReason();
+    const summary = summarizeOcrStatusReason(reason);
+    const detail = summary && summary !== reason ? `${summary}: ${reason}` : summary;
+    const message = `${dashT('adminOcrUnavailable')} - ${detail}`;
+    if (options.statusId) setInlineStatus(options.statusId, message, 'error');
+    if (typeof window.showToast === 'function') {
+      window.showToast(`${dashT('adminOcrUnavailable')}: ${summary}`, 'error', 5000);
+    }
   }
 
   async function updateApiStatus(options = {}) {
@@ -1392,9 +1425,12 @@ export async function bootOcrDashboard() {
     }
     return ocrReady;
   }
-  function canUseOcr() {
+  function canUseOcr(options = {}) {
     if (ocrReady) return true;
-    updateApiStatus();
+    showOcrBlockedFeedback(options);
+    updateApiStatus({ forceLog: true, verifyAppCheckToken: true }).then((ready) => {
+      if (!ready) showOcrBlockedFeedback(options);
+    });
     return false;
   }
 
@@ -1468,30 +1504,71 @@ export async function bootOcrDashboard() {
   const contributionExportBtn = $id('dashContributionExportBtn');
   const contributionDrop = $id('dashContributionDropZone');
   const contributionInput = $id('dashContributionFileInput');
+  let contributionPickerPending = false;
+  let contributionSelectionHandledAt = 0;
+  function startContributionImagePicker(event, options = {}) {
+    if (!canUseOcr({ statusId: 'dashContributionStatus' })) {
+      event?.preventDefault?.();
+      contributionPickerPending = false;
+      return false;
+    }
+    contributionPickerPending = true;
+    contributionInput.value = '';
+    setInlineStatus('dashContributionStatus', dashT('adminContributionOpeningPickerStatus'), 'info');
+    log(dashT('adminContributionOpeningPickerStatus'), 'info');
+    if (options.programmatic === true) contributionInput.click();
+    return true;
+  }
   if (contributionPasteBtn) contributionPasteBtn.onclick = showContributionPasteForm;
   if (contributionExportBtn) contributionExportBtn.onclick = () => exportContributionRecords();
-  if (contributionUploadBtn && contributionInput) contributionUploadBtn.onclick = () => { if (!canUseOcr()) return; contributionInput.value = ''; contributionInput.click(); };
+  if (contributionUploadBtn && contributionInput) {
+    contributionUploadBtn.onclick = event => {
+      const isNativeLabelTrigger = contributionUploadBtn.tagName === 'LABEL';
+      startContributionImagePicker(event, { programmatic: !isNativeLabelTrigger });
+    };
+    contributionUploadBtn.onkeydown = event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      startContributionImagePicker(event, { programmatic: true });
+    };
+  }
   if (contributionDrop && contributionInput) {
     contributionDrop.onclick = event => {
       if (event.target?.tagName === 'INPUT') return;
-      if (!canUseOcr()) return;
-      contributionInput.value = '';
-      contributionInput.click();
+      startContributionImagePicker(event, { programmatic: true });
     };
     contributionDrop.ondragover = event => { event.preventDefault(); contributionDrop.classList.add('dragover'); };
     contributionDrop.ondragleave = () => contributionDrop.classList.remove('dragover');
     contributionDrop.ondrop = event => {
       event.preventDefault();
       contributionDrop.classList.remove('dragover');
-      if (!canUseOcr()) return;
+      if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
+      clearInlineStatus('dashContributionStatus');
       if (event.dataTransfer.files.length) processContributionImages(event.dataTransfer.files);
     };
-    contributionInput.onchange = () => {
+    function handleContributionFileSelection() {
       const files = Array.from(contributionInput.files || []);
+      const now = Date.now();
+      if (!files.length && now - contributionSelectionHandledAt < 500) return;
+      contributionSelectionHandledAt = now;
       contributionInput.value = '';
-      if (files.length) processContributionImages(files);
+      contributionPickerPending = false;
+      if (files.length) {
+        clearInlineStatus('dashContributionStatus');
+        processContributionImages(files);
+      } else {
+        setInlineStatus('dashContributionStatus', dashT('adminContributionNoImageSelectedStatus'), 'warn');
+        log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
+      }
+    }
+    contributionInput.onchange = handleContributionFileSelection;
+    contributionInput.oninput = handleContributionFileSelection;
+    contributionInput.oncancel = () => {
+      if (!contributionPickerPending) return;
+      contributionPickerPending = false;
+      setInlineStatus('dashContributionStatus', dashT('adminContributionNoImageSelectedStatus'), 'warn');
+      log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
     };
-    contributionInput.oninput = contributionInput.onchange;
   }
   renderContributions();
   const clearLogBtn = $id('dashClearLogBtn'); if (clearLogBtn) clearLogBtn.onclick = () => { $id('dashLogOutput').innerHTML = ''; try { localStorage.removeItem(LOG_KEY); } catch (e) {} };

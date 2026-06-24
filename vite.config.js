@@ -19,7 +19,12 @@ export default defineConfig({
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, '/');
           if (normalizedId.includes('node_modules/firebase') || normalizedId.includes('node_modules/@firebase')) return 'firebase';
+          // Large data files: split into dedicated chunks so feature chunks stay lean
+          if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';
+          if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
           if (normalizedId.includes('/js/eden-map')) return 'eden-map';
+          // OCR modules: keep engine/render separate from the dashboard shell
+          if (normalizedId.includes('/js/ocr-engine.js') || normalizedId.includes('/js/ocr-render.js')) return 'ocr-core';
           if (normalizedId.includes('/js/ocr-')) return 'ocr-dashboard';
           if (normalizedId.includes('/js/app-research')) return 'research';
           if (normalizedId.includes('/js/app-hero-atlas')) return 'hero-atlas';

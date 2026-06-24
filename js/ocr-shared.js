@@ -100,9 +100,23 @@ export async function checkOcrService(options = {}) {
     const hasOcrSecret = data.configured === true;
     const hasAppCheck = data.appCheckConfigured === true;
     if (hasOcrSecret && hasAppCheck) {
+      const firebaseApi = await import('./firebase.js');
+      const { getFirebaseSetupStatus } = firebaseApi;
+      const firebaseStatus = getFirebaseSetupStatus?.();
+      if (
+        firebaseStatus &&
+        (firebaseStatus.configured === false ||
+          firebaseStatus.hasRecaptchaSiteKey === false ||
+          Boolean(firebaseStatus.appCheckInitError))
+      ) {
+        return {
+          configured: false,
+          error: describeFirebaseAppCheckStatus(firebaseStatus),
+        };
+      }
       if (options.verifyAppCheckToken !== true) return { configured: true, error: '' };
       try {
-        const { getFirebaseAppCheckToken, getFirebaseSetupStatus } = await import('./firebase.js');
+        const { getFirebaseAppCheckToken } = firebaseApi;
         const appCheckToken = await getFirebaseAppCheckToken();
         if (appCheckToken) return { configured: true, error: '' };
         return {

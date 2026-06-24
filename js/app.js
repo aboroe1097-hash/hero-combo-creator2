@@ -19,7 +19,7 @@ import { initWhatsNewBanner } from './app-whats-new.js';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
-import { DEBOUNCE_MS } from './constants.js';
+import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
 
 import {
   renderAvailableHeroes,
@@ -129,7 +129,6 @@ import {
   registerUiFunctions,
 } from './state.js';
 
-const HERO_DRAG_MIME = 'application/x-vts-hero-name';
 const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), DEBOUNCE_MS);
 const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';

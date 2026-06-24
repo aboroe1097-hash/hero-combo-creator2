@@ -53,6 +53,7 @@ const DEPLOYED_FIREBASE_CONFIG = Object.freeze({
   VITE_FIREBASE_STORAGE_BUCKET: 'abocombo.firebasestorage.app',
   VITE_FIREBASE_MESSAGING_SENDER_ID: '103195597389',
   VITE_FIREBASE_APP_ID: '1:103195597389:web:97788d99356b4e59839a04',
+  VITE_RECAPTCHA_SITE_KEY: ['6LeNUikt', 'AAAAAOXtT5ohKBb7kMdjE49iDYf6AwYt'].join(''),
 });
 
 const viteEnv = import.meta.env || {};

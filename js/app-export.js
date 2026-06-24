@@ -7,7 +7,7 @@ async function loadImageCrossOrigin(url) {
     img.crossOrigin = 'anonymous';
     img.onload  = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+    img.src = url;
   });
 }
 

@@ -299,14 +299,15 @@
                   <div class="dash-card-actions">
                     <button id="dashContributionPasteBtn" class="dash-btn"><span data-i18n="adminContributionPasteRows">Paste Rows</span></button>
                     <button id="dashContributionExportBtn" class="dash-btn"><span data-i18n="adminContributionExportSheet">Export Sheet</span></button>
-                    <button id="dashContributionUploadBtn" class="dash-btn dash-btn-primary"><span data-i18n="adminContributionUploadImage">Upload Image</span></button>
+                    <label id="dashContributionUploadBtn" class="dash-btn dash-btn-primary dash-file-trigger" for="dashContributionFileInput" role="button" tabindex="0"><span data-i18n="adminContributionUploadImage">Upload Image</span></label>
                   </div>
                 </div>
                 <div id="dashContributionDropZone" class="dash-roster-dropzone">
                   <span data-i18n="adminContributionDropZone">Drop Total Contribution screenshots here, or click Upload Image</span>
-                  <input id="dashContributionFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
+                  <input id="dashContributionFileInput" class="dash-native-file-input" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple aria-hidden="true" tabindex="-1">
                 </div>
                 <div id="dashContributionProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashContributionProgressText" data-i18n="adminContributionScanning">Scanning contribution list...</span></div>
+                <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
                 <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
                 <div id="dashContributionBody">
                   <div class="dash-empty" data-i18n="adminContributionEmpty">No contribution lists yet.</div>

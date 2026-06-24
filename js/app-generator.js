@@ -37,8 +37,8 @@ import {
   generatorHeroesEl,
   generatorResultsEl,
   downloadGeneratorBtn,
-  __ui,
 } from './state.js';
+import { callUi, getUiFunction } from './ui-bridge.js';
 
 const SKIN_TYPE_PRIORITY = {
   Everlasting: 0,
@@ -66,18 +66,6 @@ function isSkinSeasonAvailable(heroOrName, seasons = generatorSelectedSeasons) {
   const releaseIndex = getSeasonIndex(hero.releaseSeason || hero.season);
   if (releaseIndex < 0) return false;
   return getMaxSelectedSeasonIndex(seasons) >= releaseIndex + 1;
-}
-
-function getUiFunction(name) {
-  if (typeof __ui[name] === 'function') return __ui[name];
-  if (typeof window !== 'undefined' && typeof window[name] === 'function') return window[name];
-  return null;
-}
-
-function callUi(name, ...args) {
-  const fn = getUiFunction(name);
-  if (fn) return fn(...args);
-  return undefined;
 }
 
 function normalizeStoredHeroList(value) {

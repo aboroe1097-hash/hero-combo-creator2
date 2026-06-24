@@ -2,19 +2,21 @@
 export const GAME_DAY_START_UAE_HOUR = 6;
 export const UAE_TIMEZONE = 'Asia/Dubai';
 
+// Cache the formatter at module level — created once, reused on every tick
+const uaeDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: UAE_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
+
 export function getUaeDateParts(date = new Date()) {
-  const fmt = new Intl.DateTimeFormat('en-GB', {
-    timeZone: UAE_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
   const parts = Object.fromEntries(
-    fmt.formatToParts(date)
+    uaeDateFormatter.formatToParts(date)
       .filter((p) => p.type !== 'literal')
       .map((p) => [p.type, p.value]),
   );
@@ -123,6 +125,9 @@ export function mountGameClock(el, options = {}) {
   }
 }
 
+// Build the clock icon SVG once at module level — reused on every tick
+const CLOCK_ICON_SVG = `<svg class="clock-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
 function tickGameClocks() {
   const state = getGameTimeState();
   clockEls.forEach((el) => {
@@ -134,9 +139,8 @@ function tickGameClocks() {
     const showDay = el.dataset.showDay === '1';
     const compact = el.dataset.compact === '1';
     const baseTitle = el.dataset.gameClockBase || 'Game time';
-    const clockIcon = `<svg class="clock-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
     if (compact) {
-      el.innerHTML = `${clockIcon} ${state.formatted}`;
+      el.innerHTML = `${CLOCK_ICON_SVG} ${state.formatted}`;
       el.title = showUae
         ? `${baseTitle} · ${state.formattedFull} · UAE ${state.uaeFull}`
         : `${baseTitle} · ${state.formattedFull}`;
@@ -145,7 +149,7 @@ function tickGameClocks() {
     const parts = [`${state.formattedFull}`];
     if (showDay) parts.push(`Day ${state.gameDayKey}`);
     if (showUae) parts.push(`UAE ${state.uaeFull}`);
-    el.innerHTML = `${clockIcon} ${parts.join(' · ')}`;
+    el.innerHTML = `${CLOCK_ICON_SVG} ${parts.join(' · ')}`;
     el.title = baseTitle;
   });
   if (clockEls.size === 0 && clockTimer) {

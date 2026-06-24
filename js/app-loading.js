@@ -19,6 +19,7 @@ let bootProgressTimer = null;
 let statusCycleTimer = null;
 let statusSwapTimer = null;
 let bootParallaxWired = false;
+let bootParallaxHandler = null;
 let featherLeftSpans = null;
 let featherRightSpans = null;
 let bootPerspectiveContainer = null;
@@ -169,7 +170,7 @@ function initBootParallax() {
     let nextX = 0;
     let nextY = 0;
 
-    window.addEventListener('pointermove', (event) => {
+    bootParallaxHandler = (event) => {
         if (splash.classList.contains('hidden') || splash.classList.contains('boot-splash--out')) return;
         nextX = ((event.clientX / Math.max(1, window.innerWidth)) - 0.5) * 12;
         nextY = ((event.clientY / Math.max(1, window.innerHeight)) - 0.5) * 10;
@@ -179,7 +180,15 @@ function initBootParallax() {
             container.style.setProperty('--boot-tilt-y', `${nextY.toFixed(2)}px`);
             raf = 0;
         });
-    }, { passive: true });
+    };
+    window.addEventListener('pointermove', bootParallaxHandler, { passive: true });
+}
+
+function stopBootParallax() {
+    if (bootParallaxHandler) {
+        window.removeEventListener('pointermove', bootParallaxHandler);
+        bootParallaxHandler = null;
+    }
 }
 
 async function dismissBootSplash() {
@@ -208,6 +217,9 @@ async function dismissBootSplash() {
 
     splash.classList.add('hidden');
     splash.setAttribute('aria-hidden', 'true');
+
+    // Clean up the parallax listener now that the splash is gone
+    stopBootParallax();
 }
 
 async function playFirstVisitIntro() {
@@ -261,6 +273,7 @@ export function initAppLoading() {
         const splash = getSplash();
         if (splash && !splash.classList.contains('hidden')) {
             console.warn('[Boot] Force-dismissing loading screen after timeout');
+            stopBootAnimations(100);
             dismissBootSplash().then(() => revealAppShell()).catch(() => {});
         }
     }, 5000);

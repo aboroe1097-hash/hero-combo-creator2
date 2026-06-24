@@ -1325,25 +1325,44 @@ function showContributionPasteForm() {
   showContributionConfirmModal(entries, adminT('adminContributionManualPaste'));
 }
 
+function setContributionUploadStatus(message, type = 'error') {
+  const el = $id('dashContributionStatus');
+  if (!el) return;
+  el.className = `dash-upload-status ${type}`;
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+function clearContributionUploadStatus() {
+  const el = $id('dashContributionStatus');
+  if (!el) return;
+  el.classList.add('hidden');
+  el.textContent = '';
+}
+
 async function processContributionImages(files) {
   if (state._contributionProcessing) { log(adminT('adminContributionOcrRunningLog'), 'warn'); return; }
   const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
-    log(rejected.length ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : 'No contribution image selected.', 'warn');
+    const message = rejected.length ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : 'No contribution image selected.';
+    log(message, 'warn');
+    setContributionUploadStatus(message, 'warn');
     return;
   }
   state._contributionProcessing = true;
+  clearContributionUploadStatus();
   const progress = $id('dashContributionProgress');
   const progressText = $id('dashContributionProgressText');
   if (progress) progress.classList.remove('hidden');
   log(adminT('adminContributionScanningImagesLog', { count: valid.length }), 'info');
   let allEntries = [];
+  let blockingError = '';
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
     if (progressText) progressText.textContent = adminT('adminContributionScanningImageProgress', { current: i + 1, total: valid.length });
-    const imageUrl = await readOcrImageDataUrl(file);
     try {
+      const imageUrl = await readOcrImageDataUrl(file);
       const promptTxt = `Extract Total Contribution leaderboard rows from this Rise of Castles screenshot.
 
 Return ONLY valid JSON in this shape:
@@ -1373,7 +1392,10 @@ Rules:
           : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: describeOcrRequestError(e) }), 'error');
+      const errorMessage = describeOcrRequestError(e);
+      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: errorMessage }), 'error');
+      if (!blockingError) blockingError = errorMessage;
+      if (e?.localConfiguration) break;
     }
   }
   if (progress) progress.classList.add('hidden');
@@ -1381,9 +1403,17 @@ Rules:
   const unique = normalizeContributionEntries(allEntries);
   if (!unique.length) {
     log(adminT('adminContributionNoRowsInImagesLog'), 'warn');
-    alert(adminT('adminContributionExtractFailedAlert'));
+    if (blockingError) {
+      const message = adminT('adminContributionOcrBlockedStatus', { error: blockingError });
+      setContributionUploadStatus(message, 'error');
+      if (typeof window.showToast === 'function') window.showToast(adminT('adminContributionOcrBlockedToast'), 'error', 5000);
+    } else {
+      setContributionUploadStatus(adminT('adminContributionNoRowsInImagesLog'), 'warn');
+      alert(adminT('adminContributionExtractFailedAlert'));
+    }
     return;
   }
+  clearContributionUploadStatus();
   showContributionConfirmModal(unique, valid.map(f => f.name).join(', '));
 }
 

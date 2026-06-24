@@ -524,7 +524,19 @@
 #ocrDashboardRoot .dash-progress-text { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
 #ocrDashboardRoot .dash-upload-status { font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 8px; margin-top: 0.75rem; }
 #ocrDashboardRoot .dash-upload-status.success { background: rgba(16,185,129,0.12); color: var(--green); }
+#ocrDashboardRoot .dash-upload-status.info { background: rgba(59,130,246,0.12); color: var(--brand-light); }
+#ocrDashboardRoot .dash-upload-status.warn { background: rgba(245,158,11,0.12); color: var(--yellow); }
 #ocrDashboardRoot .dash-upload-status.error { background: rgba(239,68,68,0.12); color: var(--red); }
+#ocrDashboardRoot .dash-native-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+#ocrDashboardRoot .dash-file-trigger { user-select: none; }
 
 /* KPI grid */
 #ocrDashboardRoot .dash-kpi-grid {
