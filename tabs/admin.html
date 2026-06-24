@@ -107,6 +107,12 @@
               <button class="dash-subtab-btn" data-subtab="roster"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-i18n="adminBtnRoster">Roster</span></button>
             </div>
 
+            <!-- Analysis Terminal — shared across all admin subtabs -->
+            <div id="dashLogArea" class="dash-log-area dash-terminal-shared">
+              <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs dash-muted-action" data-i18n="adminTerminalClear">Clear</button></div>
+              <div id="dashLogOutput" class="dash-log-output"></div>
+            </div>
+
             <!-- Sub-tab: Upload Structures -->
             <div class="dash-subtab-panel hidden" id="dashSubtabUploadStructures">
               <div id="dashUploadStructuresMount"></div>
@@ -114,12 +120,6 @@
 
             <!-- Sub-tab: Dashboard -->
             <div class="dash-subtab-panel" id="dashSubtabDashboard">
-
-            <!-- Process Log Area (always visible, at top) -->
-            <div id="dashLogArea" class="dash-log-area">
-              <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs dash-muted-action" data-i18n="adminTerminalClear">Clear</button></div>
-              <div id="dashLogOutput" class="dash-log-output"></div>
-            </div>
 
             <div id="dashUploadZone" class="dash-upload-zone hidden">
               <div id="dashApiUploadStatus" class="dash-roster-api-status"></div>

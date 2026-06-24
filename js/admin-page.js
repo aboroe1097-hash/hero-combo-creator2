@@ -1,7 +1,7 @@
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 
-const APP_VERSION = '11.4.0';
+const APP_VERSION = '11.5.0';
 
 function getPreferredTheme() {
   const stored = localStorage.getItem('theme');
@@ -126,7 +126,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_094413');
+  const mod = await import('./ocr-dashboard.js?v=20260624_105228');
   await mod.bootOcrDashboard();
 }
 

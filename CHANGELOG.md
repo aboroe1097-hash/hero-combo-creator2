@@ -1,5 +1,16 @@
 # Changelog
 
+## 11.5.0 - 2026-06-24
+
+- Removed duplicated OCR dashboard CSS from `app.css` and `mobile.css`; dashboard styles now live only in `ocr-dashboard.css`.
+- Unified the Analysis Terminal log across all VTS Admin subtabs (Dashboard, Analytics, Contributions, Upload Structures, Pathers, Banners, Shield Wall, Roster).
+- Hardened mobile UX: added `viewport-fit=cover`, eliminated iOS input zoom, increased touch targets for info buttons, combo delete, comment actions, and dashboard delete buttons.
+- Added keyboard-aware layout via `visualViewport` so fixed bars reposition correctly when the on-screen keyboard opens.
+- Replaced emoji/ASCII icons in Eden Map and Loyalty toolbars with consistent inline SVGs; added colored ownership/status dots to replace colored emoji circles.
+- Improved dashboard loading feedback: persistent "Last synced" timestamp, refresh button busy state, and cleaner busy overlay styling.
+- Restored `FALLBACK_CONFIG` in `firebase.js` for gh-pages raw-source deploys while keeping env-var override support for Vite builds; updated security test to match.
+- Bumped public version labels to 11.5.0.
+
 ## 11.3.3 - 2026-06-23
 
 - Added a VTS Admin Total Contribution subtab for OCR screenshot intake, manual row paste, reviewed contribution tables, top-20 premium reward defaults, per-row reward overrides, and CSV sheet export.

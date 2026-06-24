@@ -37,18 +37,34 @@
                     <option value="SC">South Central (SC)</option>
                   </optgroup>
                 </select>
-                <button type="button" id="edenIsolateSector" class="eden-tool-btn eden-has-tip" data-i18n="edenIsolateSector" data-i18n-title="edenIsolateSectorTitle" aria-pressed="false">⊞ Isolate</button>
+                <button type="button" id="edenIsolateSector" class="eden-tool-btn eden-has-tip" data-i18n-title="edenIsolateSectorTitle" aria-pressed="false">
+                  <svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                  <span data-i18n="edenIsolateSector">Isolate</span>
+                </button>
               </div>
               <div class="eden-deck-cluster eden-zoom-cluster" role="group" aria-label="Zoom">
-                <button type="button" id="edenZoomOut" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomOutTitle" title="Zoom out (−)">−</button>
+                <button type="button" id="edenZoomOut" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomOutTitle" title="Zoom out">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
                 <span id="edenZoomLevel" class="eden-zoom-level">42%</span>
-                <button type="button" id="edenZoomIn" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomInTitle" title="Zoom in (+)">+</button>
+                <button type="button" id="edenZoomIn" class="eden-tool-btn eden-tool-icon" data-i18n-title="edenZoomInTitle" title="Zoom in">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
               </div>
               <div class="eden-deck-cluster eden-deck-cluster-end">
-                <button type="button" id="edenResetView" class="eden-tool-btn" data-i18n="edenResetView" data-i18n-title="edenResetViewTitle">⟳ Reset</button>
-                <button type="button" id="edenFitView" class="eden-tool-btn" data-i18n="edenFitView" data-i18n-title="edenFitViewTitle">⊡ Fit</button>
+                <button type="button" id="edenResetView" class="eden-tool-btn" data-i18n-title="edenResetViewTitle">
+                  <svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  <span data-i18n="edenResetView">Reset</span>
+                </button>
+                <button type="button" id="edenFitView" class="eden-tool-btn" data-i18n-title="edenFitViewTitle">
+                  <svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  <span data-i18n="edenFitView">Fit</span>
+                </button>
                 <button type="button" id="edenFullscreen" class="eden-tool-btn" title="Fullscreen map" aria-pressed="false">Fullscreen</button>
-                <button type="button" id="edenOpenGuide" class="eden-tool-btn eden-tool-accent" data-i18n="edenGuideBtn" data-i18n-title="edenGuideBtnTitle">📖 Guide</button>
+                <button type="button" id="edenOpenGuide" class="eden-tool-btn eden-tool-accent" data-i18n-title="edenGuideBtnTitle">
+                  <svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  <span data-i18n="edenGuideBtn">Guide</span>
+                </button>
               </div>
             </div>
 
@@ -263,12 +279,13 @@
               <div id="edenTeamFilterWrap" class="eden-team-filter-wrap hidden">
                 <select id="edenTeamFilter" class="eden-filter-select" data-i18n-title="edenTeamFilterTitle" title="Filter structure list by team assignment"></select>
               </div>
-              <select id="edenOwnershipFilter" class="eden-filter-select">
+              <span class="eden-ownership-dot" id="edenOwnershipDot" aria-hidden="true"></span>
+              <select id="edenOwnershipFilter" class="eden-filter-select eden-filter-select--with-dot">
                 <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
-                <option value="owned" data-i18n="edenOwnershipOwned">🟢 Owned</option>
-                <option value="contested" data-i18n="edenOwnershipContested">🟡 Contested</option>
-                <option value="enemy" data-i18n="edenOwnershipEnemy">🔴 Enemy</option>
-                <option value="neutral" data-i18n="edenOwnershipNeutral">⚪ Neutral</option>
+                <option value="owned" data-i18n="edenOwnershipOwned">Owned</option>
+                <option value="contested" data-i18n="edenOwnershipContested">Contested</option>
+                <option value="enemy" data-i18n="edenOwnershipEnemy">Enemy</option>
+                <option value="neutral" data-i18n="edenOwnershipNeutral">Neutral</option>
               </select>
               <select id="edenZoneFilter" class="eden-filter-select"></select>
               <select id="edenTypeFilter" class="eden-filter-select"></select>

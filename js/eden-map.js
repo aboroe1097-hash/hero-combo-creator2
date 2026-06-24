@@ -1783,10 +1783,11 @@ export function initEdenMapPlanner() {
               <div>
                 <div class="eden-selected-title">${meta?.label || selected.type} <span class="eden-zone-tag">(${getStructureShort(selected.type)})</span></div>
                 <div class="eden-selected-meta">${edenT('edenZoneFieldLabel')} ${selected.zone} · X:${selected.x} Y:${selected.y}</div>
-                <div class="eden-selected-ov">⭐ ${edenT('edenOvLabel')} <strong>${meta?.points || 0}</strong></div>
+                <div class="eden-selected-ov"><svg class="eden-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${edenT('edenOvLabel')} <strong>${meta?.points || 0}</strong></div>
               </div>
             </div>
-            <label class="eden-guild-label">${edenT('edenStatusLabel')}
+            <label class="eden-guild-label eden-status-label">${edenT('edenStatusLabel')}
+              <span class="eden-ownership-dot eden-status-dot ${status || 'neutral'}" id="edenStatusDot" aria-hidden="true"></span>
               <select id="edenStatusSelect" class="eden-filter-select eden-status-select">
                 <option value="neutral" ${status==='neutral'?'selected':''}>${edenT('edenStatusNeutral')}</option>
                 <option value="owned" ${status==='owned'?'selected':''}>${edenT('edenStatusOwned')}</option>
@@ -2429,6 +2430,8 @@ export function initEdenMapPlanner() {
     if (e.target.id === 'edenStatusSelect') {
       plan.status = plan.status || {};
       plan.status[selectedId] = e.target.value;
+      const dot = document.getElementById('edenStatusDot');
+      if (dot) dot.className = 'eden-ownership-dot eden-status-dot ' + e.target.value;
       savePlan();
       draw();
     }
@@ -2770,9 +2773,16 @@ export function initEdenMapPlanner() {
     }
   });
   const ownFilterEl = document.getElementById('edenOwnershipFilter');
+  const ownDotEl = document.getElementById('edenOwnershipDot');
+  function syncOwnershipDot() {
+    if (ownDotEl) {
+      ownDotEl.className = 'eden-ownership-dot ' + (ownFilterEl?.value || 'all');
+    }
+  }
   if (ownFilterEl) {
-    ownFilterEl.addEventListener('change', () => draw());
-    ownFilterEl.addEventListener('input', () => draw());
+    ownFilterEl.addEventListener('change', () => { syncOwnershipDot(); draw(); });
+    ownFilterEl.addEventListener('input', () => { syncOwnershipDot(); draw(); });
+    syncOwnershipDot();
   }
 
   mountGameClock(document.getElementById('edenGameClock'), { showUae: false });

@@ -355,6 +355,20 @@ function setConnectingProgress(pct, statusMsg) {
   if (pctEl) pctEl.textContent = `${Math.floor(pct)}%`;
   if (statusMsg) setConnectingStatus(statusMsg);
 }
+function updateLastSynced() {
+  const el = $id('dashUpdated');
+  if (!el) return;
+  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  const time = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
+  el.textContent = ' · ' + dashT('adminLastSynced', { time });
+}
+function setRefreshBusy(busy) {
+  const btn = $id('dashRefreshBtn');
+  if (!btn) return;
+  btn.disabled = busy;
+  btn.classList.toggle('dash-btn-busy', busy);
+  btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+}
 
 function dashT(key, vars = {}) {
   const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
@@ -689,6 +703,7 @@ async function loadData() {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state.dashData)); 
         } catch (e) {}
         render();
+        updateLastSynced();
         const ind = $id('dashSyncIndicator');
         if (ind) {
           ind.classList.remove('hidden');
@@ -700,6 +715,7 @@ async function loadData() {
       log('Sync listener error: ' + (err.message || err.code), 'error');
     });
     log('Cloud sync active.', 'info');
+    updateLastSynced();
   } catch (e) { 
     console.error("FIREBASE AUTH ERROR:", e);
     log('Load auth error: ' + (e.message || e.code), 'error'); 
@@ -1026,7 +1042,12 @@ export async function bootOcrDashboard() {
   const logArea = $id('dashLogArea'); if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
   bindSubtabNavigation();
-  $id('dashRefreshBtn').onclick = async () => { await loadData(); render(); };
+  $id('dashRefreshBtn').onclick = async () => {
+    setRefreshBusy(true);
+    try { await loadData(); render(); }
+    catch (e) { console.error('Refresh failed:', e); }
+    finally { setRefreshBusy(false); }
+  };
   log('VTS Admin Dashboard loaded.', 'info');
   if (wasAuthed) {
     setConnectingProgress(70, dashT('adminConnectingData'));

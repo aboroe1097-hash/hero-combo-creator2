@@ -357,9 +357,11 @@ function renderRoster() {
     filtered.push({ mi: mi, name: name, status: s, alliance: a });
   });
   var isLoggedIn = !!state._rosterLoggedUser;
+  var lockOpenIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+  var lockClosedIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
   var loginHtml = isLoggedIn
-    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">🔓 ' + esc(state._rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
-    : '<div class="dash-roster-login-bar"><span>🔒 Roster Login:</span><select id="dashRosterLoginUser">' + ROSTER_USERS.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('') + '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input" style="width:90px;padding:3px 6px;font-size:0.78rem"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
+    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">' + lockOpenIcon + ' ' + esc(state._rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
+    : '<div class="dash-roster-login-bar"><span>' + lockClosedIcon + ' Roster Login:</span><select id="dashRosterLoginUser">' + ROSTER_USERS.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('') + '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input" style="width:90px;padding:3px 6px;font-size:0.78rem"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
   var bulkHtml = '';
   if (state._rosterSelectedIndices.size > 0 && isLoggedIn) {
     var allyOpts = state.allianceList.map(function(a, i) { return '<option value="' + i + '">' + esc(a) + '</option>'; }).join('');
@@ -379,10 +381,11 @@ function renderRoster() {
     if (diff && diff.joined.some(function(j) { return j.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' joined';
     if (diff && diff.left.some(function(l) { return l.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' left';
     var disabledAttr = isLoggedIn ? '' : 'disabled';
+    var swordIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/></svg>';
     var pStats = ocrMap[name.toLowerCase()];
     var ocrHtml = pStats
-      ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' + pStats.total_demolition + ' Demolition / ' + pStats.participation_count + ' Attacks">⚔️ ' + pStats.total_demolition + '</span>'
-      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">⚔️ —</span>';
+      ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' + pStats.total_demolition + ' Demolition / ' + pStats.participation_count + ' Attacks">' + swordIcon + ' ' + pStats.total_demolition + '</span>'
+      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">' + swordIcon + ' —</span>';
     var auditHtml = '';
     if (vb) auditHtml += '<span class="dash-roster-row-vb" title="Verified by ' + esc(vb) + (lm ? ' on ' + lm.slice(0,10) : '') + '">@' + esc(vb) + '</span>';
     var allySelectHtml = '<select class="dash-roster-row-alliance" ' + disabledAttr + ' onchange="setRosterAlliance(' + snapIndex + ',' + mi + ',parseInt(this.value))"><option value="-1">—</option>' + state.allianceList.map(function(a, ai) { return '<option value="' + ai + '"' + (alliance === ai ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>';

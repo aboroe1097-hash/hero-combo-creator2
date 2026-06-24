@@ -32,6 +32,9 @@ let appCheck = null;
 let missingConfigLogged = false;
 let appCheckInitError = null;
 
+// Public Firebase web app config. In Vite builds (local dev / CI), VITE_FIREBASE_*
+// env vars override these. On gh-pages raw-source deploys, import.meta.env is
+// undefined, so these fallbacks keep Firestore / anonymous auth working.
 const FALLBACK_CONFIG = {
   VITE_FIREBASE_API_KEY: 'AIzaSyBye12G_ITL9mb2bkjykmRl4lprhJHs3D0',
   VITE_FIREBASE_AUTH_DOMAIN: 'abocombo.firebaseapp.com',

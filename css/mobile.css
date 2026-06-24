@@ -45,9 +45,23 @@ body.tab-manual-active {
   padding-bottom: calc(var(--footer-h) + var(--safe-bottom) + 16px) !important;
 }
 
+/* Keyboard-aware layout: keep fixed bars inside the visual viewport */
+body.keyboard-open #comboFooterBar {
+  position: absolute;
+  bottom: 0;
+}
+body.keyboard-open #scrollTopBtn {
+  transform: translateY(calc(100% + 20px));
+}
+
 /* Kill tap highlight globally but keep focus ring for a11y */
 * { -webkit-tap-highlight-color: transparent; }
-:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--brand-light); outline-offset: 2px; }
+
+/* Prevent iOS Safari zoom on focus for all text inputs */
+input, textarea, select {
+  font-size: max(1rem, 16px);
+}
 
 /* ── 2. APP SHELL ─────────────────────────────────────────── */
 #app {
@@ -1017,20 +1031,7 @@ body.tab-manual-active {
 .loyalty-step-card-grid { gap: 5px 7px !important; }
 
 /* ── 14. VTS ADMIN / OCR TAB ──────────────────────────────── */
-/* Already covered by app.css @640px block.
-   Add any gap-fills here: */
-#ocrDashboardRoot .dash-main-grid[style*="1.2fr"] {
-  grid-template-columns: 1fr !important;
-}
-#ocrDashboardRoot .dash-upload-zone.hidden { display: block !important; }
-#ocrDashboardRoot .dash-log-output { height: 110px; font-size: 0.68rem; }
-#ocrDashboardRoot .dash-modal { align-items: flex-end; padding: 0; }
-#ocrDashboardRoot .dash-modal-content {
-  max-height: 90vh;
-  border-radius: 1rem 1rem 0 0;
-  border-bottom: 0;
-  padding: 1.15rem;
-}
+/* Mobile overrides now live in css/ocr-dashboard.css. */
 
 /* ── 15. YOUTUBE TAB ──────────────────────────────────────── */
 #youtubeSection h2 { font-size: 0.92rem !important; letter-spacing: 0.05em !important; }
@@ -2445,11 +2446,7 @@ button:not([disabled]):active,
 #app.app-shell,
 body.admin-standalone-page > .app-shell,
 main#mainContent,
-.tab-panel,
-#ocrDashboardRoot,
-#ocrDashboardRoot .dash-container,
-#ocrDashboardRoot .dash-card,
-#ocrDashboardRoot .dash-banner-card {
+.tab-panel {
   min-width: 0 !important;
   max-width: 100% !important;
 }
@@ -2531,17 +2528,12 @@ main#mainContent,
 .filter-pill,
 .loyalty-preset-btn,
 .floating-tool-btn,
-.bug-report-fab,
-#ocrDashboardRoot .dash-subtab-btn,
-#ocrDashboardRoot .dash-btn,
-#ocrDashboardRoot .dash-banner-del-btn,
-#ocrDashboardRoot .dash-contribution-reward-select {
+.bug-report-fab {
   min-height: var(--tap-min) !important;
 }
 
 .floating-tool-btn,
-.bug-report-fab,
-#ocrDashboardRoot .dash-banner-del-btn {
+.bug-report-fab {
   min-width: var(--tap-min) !important;
 }
 
@@ -2665,11 +2657,12 @@ main#mainContent,
     font-size: 0.56rem !important;
   }
 
-  .hero-card-badges .generator-skin-toggle {
+.hero-card-badges .generator-skin-toggle {
     min-width: 52px !important;
     width: auto !important;
-    height: 23px !important;
-    padding: 0 5px 0 3px !important;
+    min-height: 28px !important;
+    height: auto !important;
+    padding: 3px 5px 3px 3px !important;
     gap: 3px !important;
     border-radius: 7px !important;
     font-size: 0.5rem !important;
@@ -2694,23 +2687,23 @@ main#mainContent,
   .hero-card:has(.paid-badge) .info-btn,
   .hero-card:has(.generator-skin-badge) .info-btn,
   .hero-card:has(.generator-skin-toggle) .info-btn {
-    top: 32px !important;
-    right: 5px !important;
+    top: 28px !important;
+    right: 2px !important;
   }
 
   .hero-card:not(:has(.paid-badge)):not(:has(.generator-skin-badge)):not(:has(.generator-skin-toggle)) .info-btn {
-    top: 5px !important;
-    right: 5px !important;
+    top: 2px !important;
+    right: 2px !important;
   }
 
   .hero-card .info-btn {
-    width: 20px !important;
-    height: 20px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
 
   .hero-card .info-btn svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .hero-portrait-frame {

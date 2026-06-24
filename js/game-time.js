@@ -134,17 +134,18 @@ function tickGameClocks() {
     const showDay = el.dataset.showDay === '1';
     const compact = el.dataset.compact === '1';
     const baseTitle = el.dataset.gameClockBase || 'Game time';
+    const clockIcon = `<svg class="clock-inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
     if (compact) {
-      el.textContent = state.formatted;
+      el.innerHTML = `${clockIcon} ${state.formatted}`;
       el.title = showUae
         ? `${baseTitle} · ${state.formattedFull} · UAE ${state.uaeFull}`
         : `${baseTitle} · ${state.formattedFull}`;
       return;
     }
-    const parts = [`🕐 ${state.formattedFull}`];
+    const parts = [`${state.formattedFull}`];
     if (showDay) parts.push(`Day ${state.gameDayKey}`);
     if (showUae) parts.push(`UAE ${state.uaeFull}`);
-    el.textContent = parts.join(' · ');
+    el.innerHTML = `${clockIcon} ${parts.join(' · ')}`;
     el.title = baseTitle;
   });
   if (clockEls.size === 0 && clockTimer) {
