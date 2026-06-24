@@ -10,10 +10,13 @@ test('public admin auth config stores hashes instead of plaintext passphrases', 
   assert.doesNotMatch(source, /12345/);
 });
 
-test('firebase config reads public web config from environment variables', () => {
+test('firebase config reads public web config from environment variables with gh-pages fallback', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /VITE_FIREBASE_API_KEY/);
-  assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
+  assert.match(source, /import\.meta\.env/);
+  assert.match(source, /FALLBACK_CONFIG/);
+  // Env vars are consulted before FALLBACK_CONFIG so Vite builds can override.
+  assert.match(source, /envValue\(key\)\s*\|\|\s*String\(FALLBACK_CONFIG\[key\]/);
 });
 
 test('qwen worker rejects requests without an Origin header', () => {
