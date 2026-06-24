@@ -15,14 +15,19 @@ const [
   { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence, getIdTokenResult },
   { getFirestore },
   { getAnalytics },
-  { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken },
 ] = await Promise.all([
   importFirebaseApp(),
   importFirebaseAuth(),
   importFirestore(),
   importFirebaseAnalytics(),
-  importFirebaseAppCheck(),
 ]);
+
+let appCheckApiPromise = null;
+
+function loadAppCheckApi() {
+  if (!appCheckApiPromise) appCheckApiPromise = importFirebaseAppCheck();
+  return appCheckApiPromise;
+}
 
 let app = null;
 let db = null;
@@ -32,25 +37,17 @@ let appCheck = null;
 let missingConfigLogged = false;
 let appCheckInitError = null;
 
-// Public Firebase web app config. In Vite builds (local dev / CI), VITE_FIREBASE_*
-// env vars override these. On gh-pages raw-source deploys, import.meta.env is
-// undefined, so these fallbacks keep Firestore / anonymous auth working.
-const FALLBACK_CONFIG = {
-  VITE_FIREBASE_API_KEY: 'AIzaSyBye12G_ITL9mb2bkjykmRl4lprhJHs3D0',
-  VITE_FIREBASE_AUTH_DOMAIN: 'abocombo.firebaseapp.com',
-  VITE_FIREBASE_PROJECT_ID: 'abocombo',
-  VITE_FIREBASE_STORAGE_BUCKET: 'abocombo.firebasestorage.app',
-  VITE_FIREBASE_MESSAGING_SENDER_ID: '103195597389',
-  VITE_FIREBASE_APP_ID: '1:103195597389:web:97788d99356b4e59839a04',
-  VITE_FIREBASE_MEASUREMENT_ID: 'G-ZV9X180WLS',
-  VITE_RECAPTCHA_SITE_KEY: '6LeNUiktAAAAAOXtT5ohKBb7kMdjE49iDYf6AwYt',
-};
-
+// Public Firebase web app config is injected by Vite from VITE_FIREBASE_*
+// environment variables. Do not commit Firebase API keys in source.
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
-const env = { ...nodeEnv, ...viteEnv };
+const runtimeEnv =
+  typeof globalThis !== 'undefined' && globalThis.VTS_FIREBASE_CONFIG && typeof globalThis.VTS_FIREBASE_CONFIG === 'object'
+    ? globalThis.VTS_FIREBASE_CONFIG
+    : {};
+const env = { ...nodeEnv, ...viteEnv, ...runtimeEnv };
 const envValue = (key) => String(env[key] || '').trim();
-const configValue = (key) => envValue(key) || String(FALLBACK_CONFIG[key] || '').trim();
+const configValue = envValue;
 const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');
 const firebaseAppId = configValue('VITE_FIREBASE_APP_ID');
 const firebaseSenderId = configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
@@ -93,26 +90,6 @@ export function initFirebase() {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-
-  // Initialize App Check with reCAPTCHA Enterprise when a site key is configured.
-  // Enforcement is controlled in the Firebase Console; the app still works if unset.
-  const recaptchaSiteKey = configValue('VITE_RECAPTCHA_SITE_KEY');
-  if (recaptchaSiteKey) {
-    try {
-      const appCheckDebugToken = envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
-      if (appCheckDebugToken && typeof globalThis !== 'undefined') {
-        globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
-      }
-      appCheckInitError = null;
-      appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
-        isTokenAutoRefreshEnabled: true
-      });
-    } catch (e) {
-      appCheckInitError = e;
-      console.warn("App Check initialization failed; continuing without it.", e);
-    }
-  }
 
   // Analytics automatically logs page_view and tracks active users for free without quotas
   try {
@@ -165,6 +142,33 @@ export async function ensureAnonymousAuth() {
   return authInFlight;
 }
 
+async function ensureFirebaseAppCheck() {
+  if (!app) initFirebase();
+  if (!app || appCheck) return appCheck;
+
+  const recaptchaSiteKey = configValue('VITE_RECAPTCHA_SITE_KEY');
+  if (!recaptchaSiteKey) return null;
+
+  try {
+    const appCheckDebugToken = envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
+    if (appCheckDebugToken && typeof globalThis !== 'undefined') {
+      globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
+    }
+
+    const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await loadAppCheckApi();
+    appCheckInitError = null;
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (e) {
+    appCheckInitError = e;
+    console.warn("App Check initialization failed; continuing without it.", e);
+  }
+
+  return appCheck;
+}
+
 export async function getFirebaseAdminClaim(forceRefresh = false) {
   if (!auth) throw new Error("Firebase not initialized");
   const user = auth.currentUser || await ensureAnonymousAuth();
@@ -173,9 +177,10 @@ export async function getFirebaseAdminClaim(forceRefresh = false) {
 }
 
 export async function getFirebaseAppCheckToken(forceRefresh = false) {
-  if (!app) initFirebase();
-  if (!appCheck) return '';
-  const result = await getToken(appCheck, forceRefresh);
+  const currentAppCheck = await ensureFirebaseAppCheck();
+  if (!currentAppCheck) return '';
+  const { getToken } = await loadAppCheckApi();
+  const result = await getToken(currentAppCheck, forceRefresh);
   return result?.token || '';
 }
 

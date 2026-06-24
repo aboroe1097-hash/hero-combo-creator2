@@ -10,13 +10,25 @@ test('public admin auth config stores hashes instead of plaintext passphrases', 
   assert.doesNotMatch(source, /12345/);
 });
 
-test('firebase config reads public web config from environment variables with gh-pages fallback', () => {
+test('firebase config reads public web config without committed Google API keys', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /VITE_FIREBASE_API_KEY/);
   assert.match(source, /import\.meta\.env/);
-  assert.match(source, /FALLBACK_CONFIG/);
-  // Env vars are consulted before FALLBACK_CONFIG so Vite builds can override.
-  assert.match(source, /envValue\(key\)\s*\|\|\s*String\(FALLBACK_CONFIG\[key\]/);
+  assert.match(source, /VTS_FIREBASE_CONFIG/);
+  assert.doesNotMatch(source, /FALLBACK_CONFIG/);
+  assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
+});
+
+test('firebase app check is lazy so comments do not trigger recaptcha throttling', () => {
+  const source = readFileSync('js/firebase.js', 'utf8');
+  const initStart = source.indexOf('export function initFirebase()');
+  const authStart = source.indexOf('let authInFlight', initStart);
+  assert.notEqual(initStart, -1);
+  assert.notEqual(authStart, -1);
+  const initBody = source.slice(initStart, authStart);
+  assert.doesNotMatch(initBody, /initializeAppCheck|ReCaptchaEnterpriseProvider|getToken/);
+  assert.match(source, /async function ensureFirebaseAppCheck\(\)/);
+  assert.match(source, /export async function getFirebaseAppCheckToken/);
 });
 
 test('qwen worker rejects requests without an Origin header', () => {

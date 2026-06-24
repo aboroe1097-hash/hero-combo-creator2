@@ -16,9 +16,20 @@ import { render, showModal, closeModal, buildPlayerSummary, animateAnalyticsCard
 import { processFiles, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime } from './ocr-engine.js';
 import { translations } from './translations.js';
 // --- Serverless OCR Dashboard ---
-import { initFirebase, ensureAnonymousAuth, getDb } from './firebase.js';
-import { importFirestore } from './firebase-sdk.js';
-const { doc, getDoc, setDoc, onSnapshot } = await importFirestore();
+let firebaseApiPromise = null;
+let firestoreApiPromise = null;
+
+function loadFirebaseApi() {
+  if (!firebaseApiPromise) firebaseApiPromise = import('./firebase.js');
+  return firebaseApiPromise;
+}
+
+function loadFirestoreApi() {
+  if (!firestoreApiPromise) {
+    firestoreApiPromise = import('./firebase-sdk.js').then(({ importFirestore }) => importFirestore());
+  }
+  return firestoreApiPromise;
+}
 import {
   STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
   ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
@@ -50,6 +61,7 @@ state.cloudAdminReady = false;
 // --- Roster Admin Functions (remain in dashboard scope) ---
 
 async function initDashboardFirebase() {
+  const { initFirebase } = await loadFirebaseApi();
   const firebase = initFirebase();
   state.cloudSyncConfigured = Boolean(firebase?.configured && firebase.db && firebase.auth);
   if (!state.cloudSyncConfigured) {
@@ -58,11 +70,32 @@ async function initDashboardFirebase() {
   return state.cloudSyncConfigured;
 }
 
+async function ensureDashboardCloudInitialized() {
+  if (!state._cloudInitPromise) {
+    state._cloudInitPromise = (async () => {
+      try {
+        const configured = await initDashboardFirebase();
+        if (configured) {
+          const { ensureAnonymousAuth } = await loadFirebaseApi();
+          await ensureAnonymousAuth();
+        }
+        return configured;
+      } catch (err) {
+        console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
+        state.cloudSyncConfigured = false;
+        return false;
+      }
+    })();
+  }
+  return state._cloudInitPromise;
+}
+
 async function ensureCloudSyncReady() {
+  await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
+  const { getDb } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
-  await ensureAnonymousAuth();
   state.cloudAdminReady = true;
   return db;
 }
@@ -173,6 +206,7 @@ export async function saveRosterSnapshotsToFirestore() {
   try {
     const db = await ensureCloudSyncReady();
     if (!db) return;
+    const { doc, setDoc } = await loadFirestoreApi();
     const snapshots = trimRosterSnapshots(state.rosterSnapshots);
     if (snapshots.length !== state.rosterSnapshots.length) {
       state.rosterSnapshots = snapshots;
@@ -193,6 +227,7 @@ async function loadRosterSnapshotsFromFirestore() {
   try {
     const db = await ensureCloudSyncReady();
     if (!db) return;
+    const { doc, getDoc, onSnapshot } = await loadFirestoreApi();
     const snap = await getDoc(doc(db, FS_ROSTER_PATH));
     if (snap.exists()) {
       const data = snap.data();
@@ -553,18 +588,25 @@ async function doLogin() {
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '…'; }
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
-  try {
-    setConnectingProgress(70, dashT('adminConnectingData'));
-    await loadData();
-    setConnectingProgress(100);
-  } catch (e) {
-    console.error('Dashboard load failed after login', e);
-    setConnectingProgress(100);
-  }
+  hydrateDashboardStateFromLocalStorage();
+  setConnectingProgress(70, dashT('adminConnectingData'));
   hideConnecting();
   if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = dashT('adminLoginBtn'); }
   showApp();
   render();
+  window.setTimeout(() => {
+    loadRosterSnapshotsFromFirestore().catch((e) => console.error('Roster snapshot sync failed after login', e));
+    loadData()
+      .then(() => {
+        if (isAuthed() && !isGuest()) {
+          showApp();
+          render();
+        }
+      })
+      .catch((e) => {
+        console.error('Dashboard load failed after login', e);
+      });
+  }, 0);
 }
 
 // --- Persistence ---
@@ -644,6 +686,7 @@ export async function saveData(data) {
   try { 
     const db = await ensureCloudSyncReady();
     if (!db) return;
+    const { doc, setDoc } = await loadFirestoreApi();
     await setDoc(doc(db, FS_PATH), persistedData);
     log('Synced to cloud.', 'info'); 
   } catch (e) { 
@@ -669,6 +712,7 @@ async function loadData() {
   try {
     const db = await ensureCloudSyncReady();
     if (!db) { log('Firestore not available — using local storage only.', 'warn'); return; }
+    const { doc, getDoc, setDoc, onSnapshot } = await loadFirestoreApi();
     if (state._fsUnsub) state._fsUnsub();
     const snap = await getDoc(doc(db, FS_PATH));
     if (snap.exists()) {
@@ -728,7 +772,10 @@ async function clearData() {
   try { localStorage.removeItem(LOG_KEY); } catch (e) {}
   try { 
     const db = await ensureCloudSyncReady();
-    if (db) await setDoc(doc(db, FS_PATH), {}); 
+    if (db) {
+      const { doc, setDoc } = await loadFirestoreApi();
+      await setDoc(doc(db, FS_PATH), {});
+    }
   } catch (e) {}
   const out = $id('dashLogOutput'); if (out) out.innerHTML = '';
   render();
@@ -975,18 +1022,25 @@ async function openGuestDashboard() {
   $id('dashLoginErr')?.classList.add('hidden');
   showConnecting(dashT('adminConnectingData'));
   setConnectingProgress(20);
-  try {
-    hydrateDashboardStateFromLocalStorage();
-    setConnectingProgress(60, dashT('adminConnectingData'));
-    await loadData();
-    setConnectingProgress(100);
-  } catch (e) {
-    console.error('Guest dashboard load failed', e);
-    setConnectingProgress(100);
-  }
+
+  hydrateDashboardStateFromLocalStorage();
+  setConnectingProgress(60, dashT('adminConnectingData'));
   hideConnecting();
   showApp();
   render();
+
+  window.setTimeout(() => {
+    loadData()
+      .then(() => {
+        if (isGuest()) {
+          showApp();
+          render();
+        }
+      })
+      .catch((e) => {
+        console.error('Guest dashboard load failed', e);
+      });
+  }, 0);
 }
 
 
@@ -1016,22 +1070,14 @@ export async function bootOcrDashboard() {
   const wasAuthed = isAuthed();
   if (wasAuthed) { showConnecting(dashT('adminConnectingInit')); setConnectingProgress(10, dashT('adminConnectingInit')); }
   else showLogin();
-  try {
-    await initDashboardFirebase();
+
+  if (wasAuthed) {
     setConnectingProgress(25, dashT('adminConnectingInit'));
-    if (state.cloudSyncConfigured) {
-      setConnectingStatus(dashT('adminConnectingAuth'));
-      await ensureAnonymousAuth();
-      setConnectingProgress(40, dashT('adminConnectingAuth'));
-    }
-  } catch (err) {
-    console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
-    state.cloudSyncConfigured = false;
-    setConnectingProgress(40, dashT('adminConnectingData'));
+    ensureDashboardCloudInitialized().catch(() => {});
   }
-  setConnectingProgress(55, dashT('adminConnectingData'));
+  if (wasAuthed) setConnectingProgress(55, dashT('adminConnectingData'));
   loadRosterSnapshots();
-  await loadRosterSnapshotsFromFirestore();
+  if (wasAuthed) loadRosterSnapshotsFromFirestore().catch((e) => console.error('Roster snapshot sync failed during boot', e));
   loadBannerRecords();
   loadDutyRecords();
   loadContributionRecords();
@@ -1049,17 +1095,24 @@ export async function bootOcrDashboard() {
     finally { setRefreshBusy(false); }
   };
   log('VTS Admin Dashboard loaded.', 'info');
-  if (wasAuthed) {
-    setConnectingProgress(70, dashT('adminConnectingData'));
-    try {
-      await loadData();
-    } catch (e) {
-      console.error('Dashboard load failed during boot', e);
-    }
-    setConnectingProgress(100);
+  if (isAuthed()) {
+    hydrateDashboardStateFromLocalStorage();
     hideConnecting();
     showApp();
     render();
+
+    window.setTimeout(() => {
+      loadData()
+        .then(() => {
+          if (isAuthed()) {
+            showApp();
+            render();
+          }
+        })
+        .catch((e) => {
+          console.error('Dashboard load failed during boot', e);
+        });
+    }, 0);
   } else {
     hideConnecting();
     showLogin();

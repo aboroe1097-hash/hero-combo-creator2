@@ -892,22 +892,22 @@ function renderSpecialOpsCards() {
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-banners">
       <span class="dash-ops-label">Banners</span>
       <strong>${bannerRows ? `${bannerRows} names` : 'No records'}</strong>
-      <p>${bannerRecords.length} upload${bannerRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(bannerRecords)} matched${bannerLatest ? ` Â· latest ${esc(bannerLatest.date || 'saved')}` : ''}</p>
+      <p>${bannerRecords.length} upload${bannerRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(bannerRecords)} matched${bannerLatest ? ` &middot; latest ${esc(bannerLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-pathers">
       <span class="dash-ops-label">Pathers / Speed Tiles</span>
       <strong>${patherRows ? `${patherRows} assignments` : 'No records'}</strong>
-      <p>${patherRecords.length} plan${patherRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(patherRecords)} matched${patherLatest ? ` Â· latest ${esc(patherLatest.date || 'saved')}` : ''}</p>
+      <p>${patherRecords.length} plan${patherRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(patherRecords)} matched${patherLatest ? ` &middot; latest ${esc(patherLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-shield">
       <span class="dash-ops-label">Shield Wall</span>
       <strong>${shieldRows ? `${shieldRows} names` : 'No records'}</strong>
-      <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} Â· ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` Â· latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
+      <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` &middot; latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-contributions">
       <span class="dash-ops-label">${esc(adminT('adminContributionsTab'))}</span>
       <strong>${contribution.rows ? esc(adminT('adminContributionPremiumSlots', { count: contribution.premium })) : esc(adminT('adminContributionNoSnapshots'))}</strong>
-      <p>${esc(adminT('adminContributionSnapshotSummary', { count: contribution.records.length }))}${contribution.rows ? ` Â· ${esc(adminT('adminContributionTotalCount', { total: compactValue(contribution.total) }))} Â· ${esc(adminT('adminContributionTopPlayer', { name: contribution.topName }))}` : ''}</p>
+      <p>${esc(adminT('adminContributionSnapshotSummary', { count: contribution.records.length }))}${contribution.rows ? ` &middot; ${esc(adminT('adminContributionTotalCount', { total: compactValue(contribution.total) }))} &middot; ${esc(adminT('adminContributionTopPlayer', { name: contribution.topName }))}` : ''}</p>
     </div>`;
 }
 

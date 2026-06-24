@@ -8,7 +8,8 @@
 - Added keyboard-aware layout via `visualViewport` so fixed bars reposition correctly when the on-screen keyboard opens.
 - Replaced emoji/ASCII icons in Eden Map and Loyalty toolbars with consistent inline SVGs; added colored ownership/status dots to replace colored emoji circles.
 - Improved dashboard loading feedback: persistent "Last synced" timestamp, refresh button busy state, and cleaner busy overlay styling.
-- Restored `FALLBACK_CONFIG` in `firebase.js` for gh-pages raw-source deploys while keeping env-var override support for Vite builds; updated security test to match.
+- Removed committed Firebase fallback keys; Firebase browser config now comes from `VITE_FIREBASE_*` environment values during Vite builds.
+- Lazy-load Firebase App Check so comments and anonymous auth do not trigger reCAPTCHA/App Check token requests unless OCR explicitly needs them.
 - Bumped public version labels to 11.5.0.
 
 ## 11.3.3 - 2026-06-23

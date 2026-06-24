@@ -16,7 +16,7 @@ async function openApp(page, path = '/') {
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_quick_tour_done', '1');
   });
-  await page.goto(path);
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
   await waitForAppReady(page);
 }
 
@@ -96,9 +96,7 @@ async function openGuestDashboard(page) {
     timeout: 20000,
   });
   await page.waitForFunction(
-    () =>
-      typeof document.getElementById('dashGuestBtn')?.onclick === 'function' ||
-      typeof window.switchDashSubtab === 'function',
+    () => typeof document.getElementById('dashGuestBtn')?.onclick === 'function',
     null,
     { timeout: 20000 }
   );
@@ -348,16 +346,21 @@ test.describe('app smoke tabs', () => {
       'aria-checked',
       'true'
     );
-    await arthurGeneratorCard.locator('.generator-skin-toggle').click();
+    const arthurSkinSwitch = arthurGeneratorCard.getByRole('switch', {
+      name: 'Turn off skin icon for King Arthur',
+    });
+    await arthurSkinSwitch.scrollIntoViewIfNeeded();
+    await arthurSkinSwitch.click({ force: true });
+    const arthurSkinSwitchOff = arthurGeneratorCard.getByRole('switch', {
+      name: 'Turn on skin icon for King Arthur',
+    });
+    await expect(arthurSkinSwitchOff).toHaveAttribute('aria-checked', 'false');
     await expect(arthurGeneratorCard).not.toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard).not.toHaveClass(/skin-animated-portrait/);
-    await expect(arthurGeneratorCard.locator('.generator-skin-toggle')).toHaveAttribute(
-      'aria-checked',
-      'false'
-    );
     await arthurGeneratorCard.locator('.hero-portrait-frame').click();
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
-    await arthurGeneratorCard.locator('.generator-skin-toggle').click();
+    await arthurSkinSwitchOff.scrollIntoViewIfNeeded();
+    await arthurSkinSwitchOff.click({ force: true });
     await expect(arthurGeneratorCard).toHaveClass(/skin-priority-card/);
     await expect(arthurGeneratorCard).toHaveClass(/generator-card-selected/);
 
@@ -417,9 +420,14 @@ test.describe('app smoke tabs', () => {
     await expect(generatedWithCounters.locator('.counter-card--mini-combo').first()).toBeVisible();
     const useCounterButton = generatedWithCounters.locator('.counter-use-btn').first();
     await expect(useCounterButton).toBeVisible();
+    const counterUseValue = await useCounterButton.getAttribute('data-counter-use');
+    expect(counterUseValue).toBeTruthy();
 
     await page.locator('#genClearAllBtn').click();
-    await useCounterButton.click();
+    const freshUseCounterButton = page.locator(`.counter-use-btn[data-counter-use="${counterUseValue}"]`);
+    await expect(freshUseCounterButton).toBeVisible();
+    await freshUseCounterButton.scrollIntoViewIfNeeded();
+    await freshUseCounterButton.click();
     await expect(page.locator('#genSelectedCount')).toContainText('3 selected');
 
     await openApp(page, '/?search=King%20Arthur&hero=King%20Arthur');
