@@ -31,6 +31,17 @@
   <link rel="manifest" href="site.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script>
+    /* Apply theme class before any paint to avoid a flash when async theme CSS loads. */
+    (function () {
+      try {
+        const stored = localStorage.getItem('vts_theme') || localStorage.getItem('theme');
+        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        const theme = stored === 'light' || stored === 'dark' ? stored : (prefersLight ? 'light' : 'dark');
+        if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      } catch (e) { /* ignore sandboxed localStorage */ }
+    })();
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -62,15 +73,25 @@
     ]
   }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  </noscript>
   <link rel="preload" as="image" href="images/boot/dreamy-wing-left.webp" type="image/webp" />
   <link rel="preload" as="image" href="images/boot/blazing-wing-right.webp" type="image/webp" />
-  <script src="js/maintenance-config.js?v=20260624_193102"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260624_193102" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260624_193102" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_193102" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260624_193102" media="(max-width: 768px)" />
-  <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_193102" />
+  <script src="js/maintenance-config.js?v=20260624_200507"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260624_200507" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_200507" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260624_200507" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260624_200507" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260624_200507" />
+  </noscript>
+  <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_200507" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_200507" />
+  </noscript>
   <script type="importmap">
     {
       "imports": {
@@ -82,7 +103,7 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260624_193102"></script>
+  <script src="js/admin-auth-config.js?v=20260624_200507"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div class="maintenance-preload" role="status" aria-live="polite">
@@ -648,7 +669,7 @@
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
 
-    <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] p-4">
+    <div id="messageBox" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4" style="z-index: 9991">
       <div class="bg-slate-900 rounded-2xl p-6 max-w-sm w-full text-center border border-slate-700 shadow-2xl">
         <p id="messageText" class="mb-6 text-slate-100 leading-relaxed"></p>
         <div class="flex justify-center gap-3">
@@ -680,7 +701,7 @@
   })();
 
   </script>
-  <script type="module" src="js/app.js?v=20260624_193102"></script>
+  <script type="module" src="js/app.js?v=20260624_200507"></script>
 
 <script>
   // Lazy-load YouTube iframes

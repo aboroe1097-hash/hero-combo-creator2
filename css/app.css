@@ -46,6 +46,12 @@
   --z-modal:    10000;  /* modals, dialogs */
   --z-boot:     20000;  /* boot splash (highest) */
 
+  /* Shared breakpoint scale ...
+
+/* --- Utility: hide scrollbars --- */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
   /* Shared breakpoint scale â€” replaces the 11 inconsistent widths
      (520/640/760/767/768/860/900/960/980/1023/1500). Use in
      @media (max-width: var(--bp-md)) etc. Note: CSS custom properties
@@ -1401,6 +1407,17 @@ section.tab-panel:not(.hidden) {
 .loading-spinner::after {
   content: ''; width: 44px; height: 44px;
   border: 3px solid var(--border); border-top-color: var(--brand);
+  border-radius: 50%; animation: spin 0.72s linear infinite;
+}
+
+/* --- Lazy tab loading placeholder --- */
+.tab-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.75rem; padding: 3rem 1rem; color: #94a3b8; font-size: 0.875rem;
+}
+.tab-loading .spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(148,163,184,0.24); border-top-color: #60a5fa;
   border-radius: 50%; animation: spin 0.72s linear infinite;
 }
 

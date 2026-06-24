@@ -2206,7 +2206,9 @@ button:not([disabled]):active,
 
   .tab-pill {
     width: 100% !important;
-    white-space: normal !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     padding-inline: 5px !important;
   }
 
@@ -2468,23 +2470,6 @@ main#mainContent,
 .tab-panel {
   min-width: 0 !important;
   max-width: 100% !important;
-}
-
-#tabNavScroll {
-  scrollbar-width: thin !important;
-  scrollbar-color: rgba(103, 232, 249, 0.5) transparent !important;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important;
-  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%) !important;
-}
-
-#tabNavScroll::-webkit-scrollbar {
-  display: block !important;
-  height: 4px !important;
-}
-
-#tabNavScroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(103, 232, 249, 0.44);
 }
 
 .tab-pill {

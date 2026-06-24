@@ -1506,12 +1506,38 @@ export async function bootOcrDashboard() {
   const contributionInput = $id('dashContributionFileInput');
   let contributionPickerPending = false;
   let contributionSelectionHandledAt = 0;
+  let contributionNoSelectionTimer = 0;
+  function clearContributionNoSelectionTimer() {
+    if (!contributionNoSelectionTimer) return;
+    window.clearTimeout(contributionNoSelectionTimer);
+    contributionNoSelectionTimer = 0;
+  }
+  function showContributionNoSelectionStatus() {
+    contributionNoSelectionTimer = 0;
+    if (!contributionPickerPending) return;
+    const files = Array.from(contributionInput?.files || []);
+    if (files.length) {
+      contributionPickerPending = false;
+      contributionInput.value = '';
+      clearInlineStatus('dashContributionStatus');
+      processContributionImages(files);
+      return;
+    }
+    contributionPickerPending = false;
+    setInlineStatus('dashContributionStatus', dashT('adminContributionNoImageSelectedStatus'), 'warn');
+    log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
+  }
+  function scheduleContributionNoSelectionStatus() {
+    clearContributionNoSelectionTimer();
+    contributionNoSelectionTimer = window.setTimeout(showContributionNoSelectionStatus, 1500);
+  }
   function startContributionImagePicker(event, options = {}) {
     if (!canUseOcr({ statusId: 'dashContributionStatus' })) {
       event?.preventDefault?.();
       contributionPickerPending = false;
       return false;
     }
+    clearContributionNoSelectionTimer();
     contributionPickerPending = true;
     contributionInput.value = '';
     setInlineStatus('dashContributionStatus', dashT('adminContributionOpeningPickerStatus'), 'info');
@@ -1546,28 +1572,27 @@ export async function bootOcrDashboard() {
       clearInlineStatus('dashContributionStatus');
       if (event.dataTransfer.files.length) processContributionImages(event.dataTransfer.files);
     };
-    function handleContributionFileSelection() {
+    function handleContributionFileSelection(event) {
       const files = Array.from(contributionInput.files || []);
+      if (!files.length && event?.type === 'input') return;
       const now = Date.now();
-      if (!files.length && now - contributionSelectionHandledAt < 500) return;
+      if (!files.length && now - contributionSelectionHandledAt < 1000) return;
       contributionSelectionHandledAt = now;
-      contributionInput.value = '';
-      contributionPickerPending = false;
       if (files.length) {
+        clearContributionNoSelectionTimer();
+        contributionPickerPending = false;
+        contributionInput.value = '';
         clearInlineStatus('dashContributionStatus');
         processContributionImages(files);
       } else {
-        setInlineStatus('dashContributionStatus', dashT('adminContributionNoImageSelectedStatus'), 'warn');
-        log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
+        scheduleContributionNoSelectionStatus();
       }
     }
     contributionInput.onchange = handleContributionFileSelection;
     contributionInput.oninput = handleContributionFileSelection;
     contributionInput.oncancel = () => {
       if (!contributionPickerPending) return;
-      contributionPickerPending = false;
-      setInlineStatus('dashContributionStatus', dashT('adminContributionNoImageSelectedStatus'), 'warn');
-      log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
+      scheduleContributionNoSelectionStatus();
     };
   }
   renderContributions();
@@ -1680,7 +1705,7 @@ window.markAttackComplete = async function(attId) {
   delete att._validation;
   await saveData(state.dashData);
   render();
-  window._modalDepth = Math.max(0, (window._modalDepth || 1) - 1);
+  window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
   showModal('attack', att);
   log(`Marked complete by override: ${formatStructureLabel(att.structure_name, att.structure_level)}`, 'warn');
 };

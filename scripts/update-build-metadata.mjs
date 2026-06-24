@@ -96,6 +96,9 @@ function buildPrecacheUrls() {
   return [...urls].sort((a, b) => a.localeCompare(b));
 }
 
+const MAX_CACHE_ENTRIES = 350;
+const PRECACHE_BATCH_SIZE = 6;
+
 function writeServiceWorker() {
   const urls = buildPrecacheUrls();
   const manifest = urls.map((url) => `  '${url}'`).join(',\n');
@@ -104,18 +107,32 @@ const CACHE_VERSION = '${cacheVersion}';
 const APP_SHELL = [
 ${manifest}
 ];
+const MAX_CACHE_ENTRIES = ${MAX_CACHE_ENTRIES};
 
 function normalizedRequestKey(request) {
   const url = new URL(request.url);
   return url.origin === self.location.origin ? url.pathname : request;
 }
 
+async function batchAddUrls(cache, urls, batchSize) {
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const batch = urls.slice(i, i + batchSize);
+    await Promise.allSettled(batch.map((url) => cache.add(url)));
+  }
+}
+
+async function trimCache(cache, maxEntries) {
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  // Evict oldest entries first (CacheStorage keys are insertion-ordered).
+  const toDelete = keys.slice(0, keys.length - maxEntries);
+  await Promise.all(toDelete.map((request) => cache.delete(request)));
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) =>
-      Promise.allSettled(APP_SHELL.map((url) => cache.add(url)))
-    )
+    caches.open(CACHE_VERSION).then((cache) => batchAddUrls(cache, APP_SHELL, ${PRECACHE_BATCH_SIZE}))
   );
 });
 
@@ -144,9 +161,11 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
-        .then((response) => {
+        .then(async (response) => {
           const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', copy));
+          const cache = await caches.open(CACHE_VERSION);
+          await cache.put('/index.html', copy);
+          await trimCache(cache, MAX_CACHE_ENTRIES);
           return response;
         })
         .catch(() => caches.match('/index.html'))
@@ -157,10 +176,12 @@ self.addEventListener('fetch', (event) => {
   if (shouldNetworkFirst) {
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
-        .then((response) => {
+        .then(async (response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(cacheKey, copy));
+            const cache = await caches.open(CACHE_VERSION);
+            await cache.put(cacheKey, copy);
+            await trimCache(cache, MAX_CACHE_ENTRIES);
           }
           return response;
         })
@@ -170,11 +191,13 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request).then((response) => {
+    caches.match(request).then(async (cached) => {
+      const network = fetch(request).then(async (response) => {
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+          const cache = await caches.open(CACHE_VERSION);
+          await cache.put(request, copy);
+          await trimCache(cache, MAX_CACHE_ENTRIES);
         }
         return response;
       });

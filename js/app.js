@@ -279,7 +279,8 @@ const TAB_BTN_IDS = {
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'heroTooltip';
-heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.className = 'fixed bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.style.zIndex = '5000';
 document.body.appendChild(heroTooltip);
 
 document.addEventListener('touchstart', (e) => {
@@ -292,22 +293,40 @@ document.addEventListener('touchstart', (e) => {
 
 
 
+// --- OVERLAY STACKING ---
+window._overlayStack = 0;
+
+function pushOverlay() {
+  window._overlayStack = (window._overlayStack || 0) + 1;
+  return 9990 + window._overlayStack;
+}
+
+function popOverlay() {
+  window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
+}
+
+window.pushOverlay = pushOverlay;
+window.popOverlay = popOverlay;
+
 function showAboModal(message, onConfirm = null) {
   const t = translations[currentLanguage] || translations.en;
   messageText.textContent = message;
+  const z = pushOverlay();
+  messageBox.style.zIndex = z;
   messageBox.classList.remove('hidden');
+  const cleanup = () => {
+    messageBox.classList.add('hidden');
+    popOverlay();
+  };
   if (onConfirm) {
     messageBoxOkBtn.textContent = t.messageBoxConfirm || 'Confirm';
     messageBoxCancelBtn.classList.remove('hidden');
-    messageBoxOkBtn.onclick = () => {
-      messageBox.classList.add('hidden');
-      onConfirm();
-    };
-    messageBoxCancelBtn.onclick = () => messageBox.classList.add('hidden');
+    messageBoxOkBtn.onclick = () => { cleanup(); onConfirm(); };
+    messageBoxCancelBtn.onclick = cleanup;
   } else {
     messageBoxOkBtn.textContent = t.messageBoxOk || 'OK';
     messageBoxCancelBtn.classList.add('hidden');
-    messageBoxOkBtn.onclick = () => messageBox.classList.add('hidden');
+    messageBoxOkBtn.onclick = cleanup;
   }
 }
 
@@ -961,6 +980,11 @@ tabs.forEach(tab => {
 
     onTabActivated(tabName);
     _lastTab = tabName;
+    try {
+      if (window.location.hash !== '#' + tabName) {
+        history.replaceState({ tab: tabName }, '', '#' + tabName);
+      }
+    } catch {}
   }
   window.vtsSwitchTab = switchTab;
   initKeyboardShortcuts({ switchTab });
@@ -1060,7 +1084,10 @@ tabs.forEach(tab => {
       downloadComboImage(lastGeneratedCombos, t.generatorTitle || 'Best Combos', 'vts-generator-results.png');
     };
   }
-  switchTab('generator', true);
+  const validHashTabs = ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'];
+  const hashTab = window.location.hash?.replace('#', '').split('?')[0];
+  const startTab = validHashTabs.includes(hashTab) ? hashTab : 'generator';
+  switchTab(startTab, true);
 }
 
 // --- TRANSLATIONS / TEXT ---
@@ -1215,6 +1242,15 @@ function initQuickTour() {
     if (localStorage.getItem(storageKey) === '1') return;
   } catch {}
 
+  const intro = document.getElementById('firstVisitIntro');
+  if (intro && !intro.classList.contains('hidden')) {
+    const enterBtn = intro.querySelector('.intro-enter-btn');
+    if (enterBtn) {
+      enterBtn.addEventListener('click', () => { setTimeout(initQuickTour, 600); }, { once: true });
+    }
+    return;
+  }
+
   const steps = [
     { selector: '#tabManual', title: 'Manual Builder', body: 'Pick three heroes and check their ranked score, counters, and save options.' },
     { selector: '#tabGenerator', title: 'Combo Generator', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
@@ -1307,6 +1343,7 @@ function initQuickTour() {
 
   function finishTour() {
     overlay.classList.add('hidden');
+    popOverlay();
     document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
     try { localStorage.setItem(storageKey, '1'); } catch {}
   }
@@ -1348,6 +1385,8 @@ function initQuickTour() {
   });
 
   setTimeout(() => {
+    const z = pushOverlay();
+    overlay.style.zIndex = z;
     overlay.classList.remove('hidden');
     renderStep();
   }, 900);
@@ -1400,6 +1439,12 @@ async function startApp() {
     safeInit('comments', () => initComments());
     safeInit('quickTour', () => initQuickTour());
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
+    window.addEventListener('hashchange', () => {
+      const tab = window.location.hash?.replace('#', '').split('?')[0];
+      if (tab && tab !== _lastTab && ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'].includes(tab)) {
+        switchTab(tab, true);
+      }
+    });
     } finally {
         await notifyAppReady();
     }

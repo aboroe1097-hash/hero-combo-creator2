@@ -169,13 +169,29 @@ export function initEdenMapPlanner() {
   });
   window.addEventListener('offline', syncOfflineStatus);
 
-  function savePlan() {
+  let savePlanTimer = null;
+  function flushSavePlan() {
+    if (!savePlanTimer) return;
+    clearTimeout(savePlanTimer);
+    savePlanTimer = null;
     plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
     plansStore.plans[activePlanId].plan = plan;
     plansStore.activeId = activePlanId;
     savePlansStore(plansStore);
     localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
   }
+  function savePlan() {
+    if (savePlanTimer) clearTimeout(savePlanTimer);
+    savePlanTimer = setTimeout(() => {
+      savePlanTimer = null;
+      plansStore.plans[activePlanId] = plansStore.plans[activePlanId] || { name: 'Plan', plan: createEmptyPlan() };
+      plansStore.plans[activePlanId].plan = plan;
+      plansStore.activeId = activePlanId;
+      savePlansStore(plansStore);
+      localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+    }, 150);
+  }
+  window.addEventListener('beforeunload', flushSavePlan);
 
   function applyTeamPlanLayerState() {
     const teamsLayerBtn = document.querySelector('[data-eden-layer="teams"]');

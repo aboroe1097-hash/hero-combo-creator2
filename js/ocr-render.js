@@ -1400,7 +1400,7 @@ function showModal(type, data) {
       portal.appendChild(fakeRoot);
       document.body.appendChild(portal);
     }
-    window._modalDepth = (window._modalDepth || 0) + 1;
+    window._overlayStack = (window._overlayStack || 0) + 1;
     document.body.style.overflow = 'hidden';
     $id('dashModalTitle').textContent = type === 'attack' ? structureLabel(data) : data.name;
     $id('dashModalSub').textContent =
@@ -1546,8 +1546,8 @@ function showModal(type, data) {
 
 function closeModal() {
   $id('dashModal')?.classList.remove('active');
-  window._modalDepth = Math.max(0, (window._modalDepth || 1) - 1);
-  if (window._modalDepth === 0) {
+  window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
+  if (window._overlayStack === 0) {
     document.body.style.overflow = '';
     document.body.style.overflowY = '';
   }

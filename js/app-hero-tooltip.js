@@ -79,7 +79,8 @@ function getHeroTooltip() {
 
   heroTooltip = document.createElement('div');
   heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'fixed z-[9999] bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-none hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.className = 'fixed bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-none hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.style.zIndex = '5000';
   document.body.appendChild(heroTooltip);
   return heroTooltip;
 }

@@ -43,6 +43,11 @@ export async function initWhatsNewBanner(version) {
   try { lastSeen = localStorage.getItem(LAST_SEEN_KEY) || ''; } catch {}
   if (lastSeen === version) return;
 
+  const tourOverlay = document.querySelector('.quick-tour-overlay');
+  if (tourOverlay && !tourOverlay.classList.contains('hidden')) return;
+  const intro = document.getElementById('firstVisitIntro');
+  if (intro && !intro.classList.contains('hidden')) return;
+
   let changes = [];
   try {
     const res = await fetch(`CHANGELOG.md?v=${encodeURIComponent(version)}`, { cache: 'no-store' });
