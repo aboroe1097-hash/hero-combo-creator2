@@ -588,7 +588,17 @@ export const heroesExtendedData = {
         placement: "Any",
         minCopies: 14,
         maxCopies: 34,
-        releaseSeason: "X1",
+        releaseSeason: "X2",
+        effects: [],
+        buffs: [],
+        debuffs: [],
+        skills: []
+    },
+    "Ragnar": {
+        placement: "Any",
+        minCopies: 14,
+        maxCopies: 34,
+        releaseSeason: "X8",
         effects: [],
         buffs: ["Grants Fatal Blow", "Grants Destructive Strike"],
         debuffs: [],

@@ -1,0 +1,124 @@
+/* Loaded after the main styles so light mode can override late dark polish rules. */
+[data-theme="light"] #manualSection > .mb-6.p-4,
+[data-theme="light"] #generatorSection > .mb-6.p-4 {
+  background:
+    linear-gradient(180deg, rgba(14, 165, 233, 0.045), rgba(255, 255, 255, 0.98) 48%),
+    #ffffff !important;
+  border-color: rgba(148, 163, 184, 0.38) !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] .tool-filter-block {
+  border-color: rgba(14, 116, 144, 0.22) !important;
+  background:
+    linear-gradient(125deg, rgba(14, 165, 233, 0.08), transparent 42%),
+    rgba(248, 250, 252, 0.96) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="light"] .tool-filter-block h2,
+[data-theme="light"] .tool-filter-block h3 {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .tool-filter-block--skin .text-sm {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .gen-skin-nudge {
+  border-color: rgba(217, 119, 6, 0.28);
+  background:
+    linear-gradient(110deg, rgba(245, 158, 11, 0.13), rgba(14, 165, 233, 0.08)),
+    #fffaf0 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .gen-skin-nudge strong {
+  color: #92400e;
+}
+
+[data-theme="light"] .gen-skin-nudge span {
+  color: #475569;
+}
+
+[data-theme="light"] #genSkinNudgeDismiss {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .hero-card,
+[data-theme="light"] .generator-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.88)) !important;
+  border-color: rgba(148, 163, 184, 0.64) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 12px 26px rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .hero-card::before,
+[data-theme="light"] .generator-card::before {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(14, 165, 233, 0.13), transparent 42%),
+    linear-gradient(180deg, transparent 62%, rgba(226, 232, 240, 0.7));
+  opacity: 0.72;
+}
+
+[data-theme="light"] .hero-card:hover,
+[data-theme="light"] .generator-card:hover {
+  border-color: rgba(14, 116, 144, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 16px 30px rgba(15, 23, 42, 0.14),
+    0 0 0 1px rgba(14, 165, 233, 0.16) !important;
+}
+
+[data-theme="light"] .generator-card-selected {
+  background:
+    linear-gradient(180deg, rgba(209, 250, 229, 0.98), rgba(224, 242, 254, 0.9)) !important;
+  border-color: #10b981 !important;
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.22),
+    0 12px 28px rgba(15, 23, 42, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+[data-theme="light"] .hero-portrait-frame {
+  border-color: rgba(14, 116, 144, 0.3);
+  background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.78));
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.86),
+    0 8px 16px rgba(15, 23, 42, 0.14);
+}
+
+[data-theme="light"] .hero-card-name {
+  color: #0f172a;
+  text-shadow: none;
+}
+
+[data-theme="light"] .hero-card-type {
+  text-shadow: none;
+}
+
+[data-theme="light"] .hero-card .info-btn {
+  border-color: rgba(14, 116, 144, 0.28) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: #0e7490 !important;
+  box-shadow: 0 7px 14px rgba(15, 23, 42, 0.13) !important;
+}
+
+[data-theme="light"] .hero-card-badges .generator-skin-toggle {
+  border-color: rgba(148, 163, 184, 0.62);
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #334155;
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.22),
+    0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .hero-card-badges .generator-skin-toggle-icon {
+  background: rgba(14, 116, 144, 0.1);
+  color: #0e7490;
+}

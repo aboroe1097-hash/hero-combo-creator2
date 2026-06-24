@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Reinforced Ragnar placeholder portrait</title>
+  <desc id="desc">Temporary X2 cavalry placeholder used until the official portrait is added.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="72%">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="0.46" stop-color="#bae6fd"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="18" y1="20" x2="142" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67e8f9"/>
+      <stop offset="0.58" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#facc15"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#020617" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="160" height="160" rx="80" fill="#0f172a"/>
+  <circle cx="80" cy="80" r="72" fill="url(#bg)" filter="url(#shadow)"/>
+  <circle cx="80" cy="80" r="70" fill="none" stroke="url(#rim)" stroke-width="5"/>
+  <path d="M41 103c12-22 26-34 39-34s27 12 39 34" fill="none" stroke="#0f172a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M54 65c12-18 40-18 52 0" fill="none" stroke="#0f172a" stroke-width="9" stroke-linecap="round"/>
+  <path d="M65 78h30l-7 25H72z" fill="#0f172a"/>
+  <rect x="38" y="113" width="84" height="26" rx="13" fill="#0f172a" opacity="0.9"/>
+  <text x="80" y="131" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="900" fill="#67e8f9">X2 CAV</text>
+</svg>
