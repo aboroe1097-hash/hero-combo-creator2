@@ -1,24 +1,4 @@
-## 11.7.2 - 2026-06-24
-
-- Restored deployed Firebase cloud sync on GitHub Pages by adding the public Firebase web config as a source-served fallback while keeping env/global overrides for local and CI builds.
-- Added an authenticated admin boot fallback so the dashboard opens from local cache if cloud initialization stalls instead of hanging on the connecting overlay.
-- Updated public version labels to 11.7.2.
-## 11.7.1 - 2026-06-24
-
-- Bumped public release labels for the follow-up push after the 11.7.0 admin dashboard polish batch.
 # Changelog
-
-## 11.7.0 - 2026-06-24
-
-- Added VTS Admin dashboard breakdown cards for special-list activity: Banners, Pathers / Speed Tiles, Shield Wall, and Total Contribution snapshots.
-- Added Total Contribution snapshot comparison with gain/rank/reward deltas and CSV export for start-of-season vs final-day reward review.
-- Improved VTS Admin mobile/header layout, light-theme contrast, and dashboard card readability across the admin shell.
-- Kept the Analysis Terminal global across admin subtabs and added OCR service/progress events to the terminal log.
-- Hardened Firebase/App Check diagnostics for local debug tokens and Worker OCR failures.
-- Reduced dashboard sync/render stalls by debouncing heavy renders, cloud cache writes, and admin loading transitions.
-- Improved admin connecting progress so cloud/local loads advance through realistic checkpoints instead of appearing frozen.
-- Tightened the desktop quick-tour sizing and placement so tab introductions stay anchored near highlighted tabs.
-- Updated public version labels to 11.7.0.
 
 ## 11.5.0 - 2026-06-24
 

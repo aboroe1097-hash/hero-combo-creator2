@@ -31,7 +31,7 @@ function loadFirestoreApi() {
   return firestoreApiPromise;
 }
 import {
-  STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, FS_PATH, FS_ROSTER_PATH,
+  STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, FS_PATH, FS_ROSTER_PATH,
   ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
   LOG_KEY, AUTH_HASH, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
@@ -111,11 +111,56 @@ function writeDashboardLocalCache(data) {
   } catch (e) {}
 }
 
+const AUXILIARY_RECORD_CACHES = [
+  ['bannerRecords', BANNER_KEY],
+  ['dutyRecords', DUTY_LIST_KEY],
+  ['contributionRecords', CONTRIBUTION_KEY],
+];
+
+function writeAuxiliaryLocalCaches() {
+  try {
+    AUXILIARY_RECORD_CACHES.forEach(([field, key]) => {
+      localStorage.setItem(key, JSON.stringify(Array.isArray(state[field]) ? state[field] : []));
+    });
+  } catch (e) {}
+}
+
+function hydrateAuxiliaryRecordsFromDashboardData(data) {
+  if (!data || typeof data !== 'object') return false;
+  let changed = false;
+  AUXILIARY_RECORD_CACHES.forEach(([field]) => {
+    if (Array.isArray(data[field])) {
+      state[field] = data[field];
+      changed = true;
+    }
+  });
+  if (changed) writeAuxiliaryLocalCaches();
+  return changed;
+}
+
+function attachAuxiliaryRecords(data) {
+  const base = data && typeof data === 'object'
+    ? { ...data }
+    : { last_updated: fmtDate(new Date()), total_attacks: 0, attacks: [], players_summary: [] };
+  AUXILIARY_RECORD_CACHES.forEach(([field]) => {
+    const records = Array.isArray(state[field]) ? state[field] : [];
+    if (records.length || Array.isArray(base[field])) base[field] = records;
+  });
+  return base;
+}
+
+function renderAuxiliaryRecords() {
+  renderBanners();
+  renderDutyRecords();
+  renderContributions();
+}
+
 export function scheduleDashboardRender() {
   if (dashboardRenderFrame) return;
   const run = () => {
     dashboardRenderFrame = 0;
     render();
+    renderAuxiliaryRecords();
   };
   if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
     dashboardRenderFrame = window.requestAnimationFrame(run);
@@ -242,7 +287,10 @@ function hydrateDashboardStateFromLocalStorage() {
   if (!Array.isArray(state.dashData?.attacks) || !state.dashData.attacks.length) {
     try {
       const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-      if (cached?.attacks) state.dashData = normalizeDashboardDataForCache(cached);
+      if (cached?.attacks || cached?.bannerRecords || cached?.dutyRecords || cached?.contributionRecords) {
+        state.dashData = normalizeDashboardDataForCache(cached);
+        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
+      }
     } catch (e) {}
   }
   if (!state.rosterSnapshots?.length) {
@@ -254,15 +302,15 @@ function hydrateDashboardStateFromLocalStorage() {
 }
 
 window.refreshOcrDashboardFromStorage = function refreshOcrDashboardFromStorage() {
-  state.dashData = null;
   hydrateDashboardStateFromLocalStorage();
   scheduleDashboardRender();
 };
 
 window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(dashData, rosterSnapshots = []) {
   state.dashData = normalizeDashboardDataForCache(dashData);
+  hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
   state.rosterSnapshots = Array.isArray(rosterSnapshots) ? rosterSnapshots : [];
-  writeDashboardLocalCache(state.dashData);
+  writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
   try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
   render();
 };
@@ -762,7 +810,7 @@ function normalizeDashboardDataForCache(data) {
 
 function sanitizeDashboardDataForPersistence(data) {
   if (!data || typeof data !== 'object') return data;
-  const clean = { ...data };
+  const clean = attachAuxiliaryRecords(data);
   delete clean.logs;
   if (Array.isArray(clean.attacks)) {
     clean.attacks = clean.attacks.map((attack) => {
@@ -849,12 +897,23 @@ export async function saveData(data, options = {}) {
     delete state.dashData.logs;
   }
   const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
+  state.dashData = normalizeDashboardDataForCache(persistedData);
   writeDashboardLocalCache(persistedData);
+  writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
   const cloudSave = scheduleDashboardCloudSave(persistedData, { immediate: options.immediate === true });
   if (options.awaitCloud === true) return cloudSave;
   return false;
 }
+
+export function saveDashboardAuxiliaryRecords(options = {}) {
+  const baseData = state.dashData && typeof state.dashData === 'object'
+    ? state.dashData
+    : attachAuxiliaryRecords(null);
+  return saveData(baseData, options);
+}
+
+window.syncDashboardAuxiliaryRecordsToCloud = saveDashboardAuxiliaryRecords;
 
 async function loadData(options = {}) {
   const preferCloudFirst = options.preferCloudFirst === true && !isGuest();
@@ -873,10 +932,11 @@ async function loadData(options = {}) {
       hadLocalData = true;
       dashboardLocalCacheJson = saved;
       localData = normalizeDashboardDataForCache(JSON.parse(saved));
+      hydrateAuxiliaryRecordsFromDashboardData(localData);
       if (!preferCloudFirst) {
         state.dashData = localData;
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        writeDashboardLocalCache(state.dashData);
+        writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
         render();
       }
     }
@@ -886,6 +946,7 @@ async function loadData(options = {}) {
     if (!db) {
       if (preferCloudFirst && localData) {
         state.dashData = localData;
+        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         render();
       }
@@ -899,13 +960,15 @@ async function loadData(options = {}) {
     if (snap.exists()) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
       state.dashData = cloudData;
+      hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-      writeDashboardLocalCache(state.dashData);
+      writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
       render();
       setCloudSyncStatus('live');
     } else {
       if (hadLocalData && localData) {
         state.dashData = localData;
+        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         render();
         await awaitCloud(setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData)), 'Dashboard cloud seed');
@@ -924,8 +987,9 @@ async function loadData(options = {}) {
     state._fsUnsub = onSnapshot(doc(db, FS_PATH), (snap) => {
       if (snap.exists()) {
         state.dashData = normalizeDashboardDataForCache(snap.data());
+        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        writeDashboardLocalCache(state.dashData);
+        writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
         scheduleDashboardRender();
         updateLastSynced();
         setCloudSyncStatus('live');
@@ -946,6 +1010,7 @@ async function loadData(options = {}) {
     console.error("FIREBASE AUTH ERROR:", e);
     if (preferCloudFirst && localData) {
       state.dashData = localData;
+      hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
       if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
       render();
       setCloudSyncStatus('local', e.message || e.code || '');

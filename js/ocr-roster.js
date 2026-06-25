@@ -425,6 +425,7 @@ function loadBannerRecords() {
 
 function saveBannerRecords() {
   try { localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords)); } catch (e) {}
+  syncDashboardAuxiliaryRecords();
 }
 
 function showBannerForm(existingIndex = null) {
@@ -606,6 +607,7 @@ function loadDutyRecords() {
 
 function saveDutyRecords() {
   try { localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords)); } catch (e) {}
+  syncDashboardAuxiliaryRecords();
 }
 
 function getRosterMemberName(member) {
@@ -1108,6 +1110,7 @@ function loadContributionRecords() {
 
 function saveContributionRecords() {
   try { localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || [])); } catch (e) {}
+  syncDashboardAuxiliaryRecords();
 }
 
 function parseContributionValue(value) {
@@ -1136,6 +1139,12 @@ function safeContributionFilenamePart(value) {
 function refreshDashboardOverview() {
   if (typeof window.refreshOcrDashboardFromStorage === 'function') {
     window.refreshOcrDashboardFromStorage();
+  }
+}
+
+function syncDashboardAuxiliaryRecords() {
+  if (typeof window.syncDashboardAuxiliaryRecordsToCloud === 'function') {
+    window.syncDashboardAuxiliaryRecordsToCloud();
   }
 }
 

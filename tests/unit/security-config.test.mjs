@@ -59,6 +59,18 @@ test('admin dashboard cloud saves are coalesced before Firestore writes', () => 
   assert.match(engine, /saveParsedData\(parsed, \{ immediate: true, awaitCloud: true \}\)/);
 });
 
+test('admin auxiliary records are included in dashboard cloud sync', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const roster = readFileSync('js/ocr-roster.js', 'utf8');
+  const rules = readFileSync('firestore.rules', 'utf8');
+  assert.match(dashboard, /function attachAuxiliaryRecords/);
+  assert.match(dashboard, /bannerRecords/);
+  assert.match(dashboard, /dutyRecords/);
+  assert.match(dashboard, /contributionRecords/);
+  assert.match(roster, /syncDashboardAuxiliaryRecordsToCloud/);
+  assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
+});
+
 test('qwen worker rejects requests without an Origin header', () => {
   const source = readFileSync('workers/qwen-cors-proxy.js', 'utf8');
   assert.match(source, /if\s*\(!origin\)\s*return false;/);

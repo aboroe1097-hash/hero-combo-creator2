@@ -96,13 +96,17 @@ service cloud.firestore {
 
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
-        'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs'
+        'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
+        'bannerRecords', 'dutyRecords', 'contributionRecords'
       ])
       && (!('last_updated' in request.resource.data) || request.resource.data.last_updated is string)
       && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
       && (!('attacks' in request.resource.data) || request.resource.data.attacks is list)
       && (!('players_summary' in request.resource.data) || request.resource.data.players_summary is list)
-      && (!('logs' in request.resource.data) || request.resource.data.logs is list);
+      && (!('logs' in request.resource.data) || request.resource.data.logs is list)
+      && (!('bannerRecords' in request.resource.data) || request.resource.data.bannerRecords is list)
+      && (!('dutyRecords' in request.resource.data) || request.resource.data.dutyRecords is list)
+      && (!('contributionRecords' in request.resource.data) || request.resource.data.contributionRecords is list);
     }
 
     function validRosterData() {
