@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v11.5.0)
+# Hero Combo Creator - VTS 1097 (v12.0.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management â€” all in a single-page web app.
 
@@ -14,14 +14,15 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Eden Map Planner** | Canvas-based 1700Ã—1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
 | **Tech Research Calculator** | Full Academy tracker across S0â€“X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
 | **Eden Loyalty Calculator** | Poison mitigation, camp presets, deficit/surplus calculations |
-| **VTS Admin Dashboard** | OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, CSV/PNG/JSON exports |
-| **VTS Admin Roster** | Screenshot-based roster extraction, alliance assignment, trusted/spy/unknown status, snapshot history with auto-diff |
+| **Seasonal VTS Admin** | Eden-season OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, CSV/PNG/JSON exports |
+| **Seasonal Roster Ops** | Screenshot-based roster extraction, alliance assignment, trusted/spy/unknown status, snapshot history with auto-diff |
 | **Duty List Tracking** | Banner, Pather, and Shield Wall lists with roster-name suggestions, nickname confirmation, and local history |
 | **YouTube** | Lazy-loaded VTS 1097 playlists |
 | **Comments** | Threaded community feedback via Firebase Firestore |
 | **i18n** | 11 languages (English, EspaÃ±ol, PortuguÃªs, Deutsch, FranÃ§ais, TÃ¼rkÃ§e, Ð ÑƒÑÑÐºÐ¸Ð¹, Indonesia, ä¸­æ–‡, Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©, í•œêµ­ì–´) |
 | **Sharing** | Share combos and rosters via URL; export combos as image (html2canvas) |
 | **PWA** | Service worker registration, standalone display mode, hashed cache-busted assets, dev-mode SW unregister guard |
+| **v12 Command UI** | Unified dark-first tactical interface across all tools, admin panels, filters, cards, tables, and light-theme states |
 
 ## Screenshots And Demos
 
@@ -70,7 +71,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 11.5.0 release should pass the full local gate before shipping.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 12.0.0 release should pass the full local gate before shipping.
 
 Version cadence: after the 11.3.0 baseline, every pushed release increments the patch slot through `11.3.19`; the next release after that becomes `11.4.0`. The same 20-release cycle repeats for future minor versions.
 
@@ -207,6 +208,26 @@ Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned
 The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.
 
 Worker configuration uses `DASHSCOPE_API_KEY` as a Cloudflare secret. Non-secret Worker variables include `DASHSCOPE_BASE_URL` (default: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), `ALLOWED_ORIGINS`, `FIREBASE_APP_CHECK_PROJECT_NUMBER`, and optional `FIREBASE_APP_CHECK_APP_ID`. `FIREBASE_APP_CHECK_APP_ID` is the Firebase Web App ID (`1:...:web:...`), not the reCAPTCHA site key.
+
+Cloudflare Worker deploy checklist:
+
+```bash
+npx wrangler login
+npm run worker:check
+npm run worker:deploy
+```
+
+Before deploy, set the Qwen key as a Cloudflare secret:
+
+```bash
+npx wrangler secret put DASHSCOPE_API_KEY
+```
+
+The checked-in `wrangler.jsonc` is the source of truth for non-secret Worker permissions. It must include `https://roc-vts.com`, `http://localhost:5173`, `http://127.0.0.1:5173`, and any LAN/Vite ports used for phone testing in `ALLOWED_ORIGINS`. Do not deploy with `--keep-vars` when fixing origin drift, because that preserves stale dashboard variables.
+
+For local OCR testing, `.env` may use `VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`. The first browser run prints an `App Check debug token`; add that UUID in Firebase Console > App Check > your web app > Manage debug tokens, then replace `true` with the registered UUID and restart Vite. Otherwise Firebase returns HTTP 403 before the OCR Worker receives the request.
+
+If `/status` is ready but uploads fail with `Workers endpoint access denied`, check Cloudflare Worker variables first: `DASHSCOPE_BASE_URL` must be `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, and `DASHSCOPE_API_KEY` must belong to an Alibaba Cloud account with DashScope/Qwen VL access.
 
 ### Error Boundaries
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.

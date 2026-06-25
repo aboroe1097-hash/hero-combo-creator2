@@ -1103,7 +1103,6 @@ function updateTextContent() {
     'tabStrife': t.tabStrife || 'Strife over Dragon',
     'tabHeroes': t.tabHeroes || 'Hero Atlas',
     'tabResearch': t.tabResearch || 'Research',
-    'tabOcrDashboard': t.tabOcrDashboard || 'VTS Admin',
     'researchTitle': t.researchTitle,
     'researchDesc': t.researchDesc,
     'filterBySeasonTitle': t.filterBySeasonTitle,
@@ -1252,8 +1251,7 @@ function initQuickTour() {
     { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
     { selector: '#tabStrife', title: 'Strife over Dragon', body: 'Pick a monster and stage to see matchup formations.' },
     { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
-    { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' },
-    { selector: '#tabOcrDashboard', title: 'VTS Admin', body: 'Open roster, attack analytics, banner records, and admin review tools.' }
+    { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' }
   ].filter(step => document.querySelector(step.selector));
   if (!steps.length) return;
 

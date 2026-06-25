@@ -20,3 +20,5 @@ work/roc-combo-import/
 /scripts/eden-scan
 ~/.config/opencode
 /.omo
+/.agents
+skills-lock.json

@@ -277,9 +277,17 @@ function parseRetryAfterSeconds(value) {
 }
 
 export function describeOcrRequestError(err) {
+  const message = String(err?.message || '');
+  if (err?.status === 403 && /workers endpoint access denied/i.test(message)) {
+    return 'HTTP 403: DashScope/Worker permission denied. Check the Cloudflare Worker DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY account permissions, and redeploy workers/qwen-cors-proxy.js.';
+  }
+  if (err?.status === 403 && /origin not allowed/i.test(message)) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'this origin';
+    return `HTTP 403: OCR Worker blocked ${origin}. Add it to ALLOWED_ORIGINS or deploy the current Worker code with private Vite dev origins enabled.`;
+  }
   const parts = [];
   if (Number.isFinite(err?.status)) parts.push(`HTTP ${err.status}`);
-  parts.push(err?.message || 'unknown OCR request error');
+  parts.push(message || 'unknown OCR request error');
   const details = Array.isArray(err?.details)
     ? err.details.join('; ')
     : err?.details && typeof err.details === 'object'

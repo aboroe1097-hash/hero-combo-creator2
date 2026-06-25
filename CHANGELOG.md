@@ -1,5 +1,11 @@
 # Changelog
 
+## 12.0.0 - 2026-06-25
+
+- Added a unified v12 command-center design layer across the main toolkit, hero cards, filters, saved/generated combo panels, research, Eden, loyalty, comments, admin cards, tables, and OCR terminal surfaces.
+- Normalized the visual system around compact 8px surfaces, dark-first tactical colors, cyan/amber/green action states, stronger focus rings, and matching light-theme overrides.
+- Loaded the v12 redesign stylesheet on both `index.html` and `admin.html`, and updated public version labels and documentation to 12.0.0.
+
 ## 11.5.0 - 2026-06-24
 
 - Removed duplicated OCR dashboard CSS from `app.css` and `mobile.css`; dashboard styles now live only in `ocr-dashboard.css`.

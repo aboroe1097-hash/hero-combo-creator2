@@ -84,11 +84,11 @@ export const rankedCombos = [
   { heroes: ["Hunk", "Boudica", "Sakura"] },
     { heroes: ["Alfred", "Black Prince", "Jeanne d'Arc"], skin: '333', note: 'S0-S1 top combo when all three skins are owned.' },
   { heroes: ["Boudica", "Sakura", "Jade Eagle"] },
+  { heroes: ["Hunk", "Sakura", "Jade Eagle"] },
   { heroes: ["Sakura", "ELK", "Jade Eagle"] },
   { heroes: ["Alfred", "Cleopatra VII", "Lionheart"] },
   
   // --- TIER 2: STRONG COMPETITIVE META ---
-  { heroes: ["Hunk", "Sakura", "Jade Eagle"] },
   { heroes: ["Sky Breaker", "Boudica", "Sakura"] },
   { heroes: ["King Arthur", "Cicero", "Bleeding Steed"] },
   { heroes: ["King Arthur", "Bleeding Steed", "Cao Cao"] },     

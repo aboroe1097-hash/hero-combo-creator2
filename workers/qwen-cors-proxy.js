@@ -14,6 +14,7 @@
 //   RATE_LIMIT_MAX_REQUESTS=30
 //   MAX_BODY_BYTES=5242880
 
+const WORKER_BUILD_ID = '2026-06-25.1';
 const DEFAULT_DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
 const APP_CHECK_JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1beta/jwks';
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -40,6 +41,27 @@ export function resolveDashscopeChatCompletionsUrl(env = {}) {
   const configured = String(env.DASHSCOPE_BASE_URL || DEFAULT_DASHSCOPE_BASE_URL).trim();
   const baseUrl = (configured || DEFAULT_DASHSCOPE_BASE_URL).replace(/\/+$/, '');
   return baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
+}
+
+export function isAllowedDashscopeEndpoint(urlString) {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== 'https:') return false;
+    if (url.hostname.endsWith('.workers.dev')) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function dashscopeEndpointDetails(env) {
+  const url = resolveDashscopeChatCompletionsUrl(env);
+  try {
+    const parsed = new URL(url);
+    return { url, host: parsed.host, path: parsed.pathname };
+  } catch {
+    return { url, host: '', path: '' };
+  }
 }
 
 function allowedOrigins(env) {
@@ -91,6 +113,21 @@ function json(data, init = {}, request, env) {
       ...(init.headers || {}),
     },
   });
+}
+
+function statusPayload(request, env) {
+  const origin = request.headers.get('Origin') || '';
+  const upstream = dashscopeEndpointDetails(env);
+  return {
+    configured: Boolean(env.DASHSCOPE_API_KEY),
+    appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
+    workerBuild: WORKER_BUILD_ID,
+    origin,
+    originAllowed: isAllowedOrigin(request, env),
+    allowedOriginsSource: String(env.ALLOWED_ORIGINS || '').trim() ? 'env' : 'default',
+    upstreamHost: upstream.host,
+    upstreamPath: upstream.path,
+  };
 }
 
 function numericEnv(env, key, fallback) {
@@ -322,10 +359,7 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/status') {
-      return json({
-        configured: Boolean(env.DASHSCOPE_API_KEY),
-        appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
-      }, {}, request, env);
+      return json(statusPayload(request, env), {}, request, env);
     }
 
     if (request.method !== 'POST') {
@@ -374,8 +408,21 @@ export default {
       return json({ error: `Payload too large. Maximum size is ${maxBodyBytes} bytes.` }, { status: 413 }, request, env);
     }
 
+    const upstream = dashscopeEndpointDetails(env);
+    if (!isAllowedDashscopeEndpoint(upstream.url)) {
+      return json(
+        {
+          error: 'DASHSCOPE_BASE_URL is not a valid DashScope HTTPS endpoint. Set it to https://dashscope-intl.aliyuncs.com/compatible-mode/v1.',
+          upstreamHost: upstream.host,
+        },
+        { status: 503 },
+        request,
+        env
+      );
+    }
+
     try {
-      const dashscopeResponse = await fetch(resolveDashscopeChatCompletionsUrl(env), {
+      const dashscopeResponse = await fetch(upstream.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -385,6 +432,17 @@ export default {
       });
 
       const responseBody = await dashscopeResponse.text();
+      if (dashscopeResponse.status === 403 && /workers endpoint access denied/i.test(responseBody)) {
+        return json(
+          {
+            error: 'DashScope upstream returned 403: Workers endpoint access denied. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the current Worker code.',
+            upstreamHost: upstream.host,
+          },
+          { status: 403 },
+          request,
+          env
+        );
+      }
       return new Response(responseBody, {
         status: dashscopeResponse.status,
         headers: {

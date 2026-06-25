@@ -33,11 +33,16 @@ globalThis.document = {
   getElementById: () => null,
 };
 
-const { appendLogEntry, checkOcrService, qwenVisionRequest, sanitizeForFirestore } =
-  await import('../../js/ocr-shared.js');
+const {
+  appendLogEntry,
+  checkOcrService,
+  describeOcrRequestError,
+  qwenVisionRequest,
+  sanitizeForFirestore,
+} = await import('../../js/ocr-shared.js');
 const workerModule = await import('../../workers/qwen-cors-proxy.js');
 const worker = workerModule.default;
-const { resolveDashscopeChatCompletionsUrl } = workerModule;
+const { isAllowedDashscopeEndpoint, resolveDashscopeChatCompletionsUrl } = workerModule;
 
 function request(path, init = {}) {
   return new Request(`https://worker.example${path}`, {
@@ -177,6 +182,43 @@ test('Qwen worker allows Vite fallback dev origin on port 5174', async () => {
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://127.0.0.1:5174');
 });
 
+test('Qwen worker status includes safe diagnostics and allows current Vite dev origin', async () => {
+  const response = await worker.fetch(
+    new Request('https://worker.example/status', {
+      headers: { Origin: 'http://127.0.0.1:5173' },
+    }),
+    {
+      DASHSCOPE_API_KEY: 'secret',
+      FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+    }
+  );
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://127.0.0.1:5173');
+  assert.equal(body.configured, true);
+  assert.equal(body.appCheckConfigured, true);
+  assert.equal(body.origin, 'http://127.0.0.1:5173');
+  assert.equal(body.originAllowed, true);
+  assert.match(body.workerBuild, /^\d{4}-\d{2}-\d{2}\./);
+  assert.equal(body.upstreamHost, 'dashscope-intl.aliyuncs.com');
+});
+
+test('Qwen worker allows additional local Vite ports used for phone testing', async () => {
+  const response = await worker.fetch(
+    new Request('https://worker.example/status', {
+      headers: { Origin: 'http://127.0.0.1:5176' },
+    }),
+    {
+      DASHSCOPE_API_KEY: 'secret',
+      FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+    }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'http://127.0.0.1:5176');
+});
+
 test('Qwen worker allows LAN Vite dev origins for phone testing', async () => {
   const response = await worker.fetch(
     new Request('https://worker.example/status', {
@@ -209,6 +251,25 @@ test('Qwen worker defaults to Alibaba Cloud international compatible endpoint', 
       DASHSCOPE_BASE_URL: 'https://example.test/compatible-mode/v1/chat/completions',
     }),
     'https://example.test/compatible-mode/v1/chat/completions'
+  );
+});
+
+test('Qwen worker rejects workers.dev as a DashScope upstream endpoint', () => {
+  assert.equal(
+    isAllowedDashscopeEndpoint(
+      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+    ),
+    true
+  );
+  assert.equal(
+    isAllowedDashscopeEndpoint(
+      'https://delicate-term-725f.aboroe1097.workers.dev/chat/completions'
+    ),
+    false
+  );
+  assert.equal(
+    isAllowedDashscopeEndpoint('http://dashscope-intl.aliyuncs.com/compatible-mode/v1'),
+    false
   );
 });
 
@@ -247,6 +308,32 @@ test('Qwen request errors preserve HTTP status and Retry-After', async () => {
         assert.equal(err.status, 429);
         assert.equal(err.retryAfter, 17);
         assert.match(err.message, /Rate limit exceeded/);
+        return true;
+      }
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Qwen request explains Cloudflare Worker upstream permission denials', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response('Workers endpoint access denied.', {
+      status: 403,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+  try {
+    await assert.rejects(
+      () =>
+        qwenVisionRequest([{ role: 'user', content: 'hi' }], {
+          appCheckToken: 'test-app-check-token',
+        }),
+      (err) => {
+        assert.equal(err.name, 'QwenVisionRequestError');
+        assert.equal(err.status, 403);
+        assert.match(describeOcrRequestError(err), /DASHSCOPE_BASE_URL/);
+        assert.match(describeOcrRequestError(err), /DASHSCOPE_API_KEY/);
         return true;
       }
     );
