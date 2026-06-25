@@ -512,11 +512,11 @@ function setLoginBusy(busy) {
 function describeAdminAuthError(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
   if (/auth\/invalid-credential|auth\/wrong-password|auth\/user-not-found|auth\/invalid-login-credentials/i.test(text)) {
-    return 'Invalid admin username or password.';
+    return dashT('adminLoginInvalid');
   }
-  if (/auth\/too-many-requests/i.test(text)) return 'Too many attempts. Wait a bit and try again.';
-  if (/auth\/operation-not-allowed/i.test(text)) return 'Firebase Email/Password sign-in is not enabled yet.';
-  return err?.message || String(err || 'Admin sign-in failed.');
+  if (/auth\/too-many-requests/i.test(text)) return dashT('adminLoginTooMany');
+  if (/auth\/operation-not-allowed/i.test(text)) return dashT('adminLoginEmailDisabled');
+  return err?.message || String(err || dashT('adminLoginFailed'));
 }
 
 let connectingTimer = null;

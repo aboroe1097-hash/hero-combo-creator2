@@ -367,7 +367,7 @@ body.admin-standalone-page > .app-shell {
 
 .tool-filter-panel,
 .manual-filter-panel {
-  gap: 10px !important;
+  gap: clamp(8px, 0.75vw, 12px) !important;
 }
 
 .tool-filter-block h2,
@@ -478,7 +478,7 @@ body.admin-standalone-page > .app-shell {
 
 #ocrDashboardRoot .dash-container {
   max-width: min(1760px, calc(100vw - 24px)) !important;
-  gap: 16px !important;
+  gap: clamp(12px, 0.9vw, 16px) !important;
 }
 
 #ocrDashboardRoot .dash-header {
@@ -505,7 +505,7 @@ body.admin-standalone-page > .app-shell {
 
 #ocrDashboardRoot .dash-kpi-grid,
 #ocrDashboardRoot .dash-ops-grid {
-  gap: 10px !important;
+  gap: clamp(8px, 0.75vw, 12px) !important;
 }
 
 #ocrDashboardRoot .dash-terminal-shared {
@@ -722,7 +722,7 @@ body.admin-standalone-page > .app-shell {
 
 @media (max-width: 640px) {
   .command-brand {
-    gap: 10px !important;
+    gap: clamp(8px, 0.75vw, 12px) !important;
     padding: 12px !important;
   }
 

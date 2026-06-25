@@ -539,8 +539,12 @@
 }
 
 #ocrDashboardRoot .dash-container {
-  max-width: min(1760px, calc(100vw - 24px)); margin: 0 auto; padding: clamp(1rem, 1.4vw, 1.75rem);
-  display: flex; flex-direction: column; gap: 1.25rem;
+  max-width: min(1760px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: clamp(0.85rem, 1.2vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.7rem, 1vw, 1rem);
 }
 #ocrDashboardRoot .dash-header {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -650,7 +654,7 @@
 }
 #ocrDashboardRoot .dash-card {
   background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-card); padding: 1.25rem;
+  border-radius: var(--radius-card); padding: clamp(0.9rem, 1vw, 1.15rem);
   min-width: 0;
 }
 #ocrDashboardRoot .dash-kpi {
@@ -1025,14 +1029,19 @@
 
 /* Main grid */
 #ocrDashboardRoot .dash-main-grid {
-  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr); gap: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(340px, 0.78fr);
+  gap: clamp(0.75rem, 1vw, 1rem);
   align-items: start;
 }
+#ocrDashboardRoot .dash-main-grid > .dash-card-align-start {
+  grid-column: 1 / -1;
+}
 #ocrDashboardRoot .dash-visuals-grid {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.85rem;
 }
 @media (min-width: 1500px) {
-  #ocrDashboardRoot .dash-main-grid { grid-template-columns: minmax(0, 1.25fr) minmax(420px, 0.75fr); }
+  #ocrDashboardRoot .dash-main-grid { grid-template-columns: minmax(0, 1.28fr) minmax(400px, 0.72fr); }
 }
 @media (max-width: 980px) {
   #ocrDashboardRoot .dash-main-grid { grid-template-columns: 1fr; }
@@ -1528,7 +1537,7 @@ body[style*="overflow: hidden"] .tab-panel {
 
 /* Sub-tab Navigation */
 #ocrDashboardRoot .dash-subtab-nav {
-  display: flex; gap: 4px; margin-bottom: 1rem; padding: 4px;
+  display: flex; gap: 4px; margin-bottom: 0.85rem; padding: 4px;
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius-xl); overflow-x: auto;
   scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -1568,6 +1577,40 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-subtab-btn svg { flex-shrink: 0; }
 
+@media (min-width: 1201px) {
+  #ocrDashboardRoot .dash-subtab-nav {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  #ocrDashboardRoot .dash-subtab-btn {
+    justify-content: center;
+    min-width: 0;
+    padding: 0.62rem 0.72rem;
+  }
+
+  #ocrDashboardRoot .dash-subtab-btn span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1200px) {
+  #ocrDashboardRoot .dash-subtab-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  #ocrDashboardRoot .dash-subtab-btn {
+    justify-content: center;
+    min-width: 0;
+  }
+}
 @media (max-width: 760px) {
   #ocrDashboardRoot .dash-subtab-nav {
     display: grid;
@@ -1587,7 +1630,7 @@ body[style*="overflow: hidden"] .tab-panel {
     text-align: center;
   }
 }
-#ocrDashboardRoot .dash-subtab-panel { animation: tab-fade-in 0.12s ease both; }
+#ocrDashboardRoot .dash-subtab-panel { min-width: 0; animation: tab-fade-in 0.12s ease both; }
 
 /* Analytics tab */
 #ocrDashboardRoot .dash-analytics-lead {
@@ -2206,7 +2249,7 @@ body[style*="overflow: hidden"] .tab-panel {
 }
 #ocrDashboardRoot .dash-duty-summary-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 960px;
   border-collapse: collapse;
   font-size: 0.78rem;
 }
@@ -2227,6 +2270,17 @@ body[style*="overflow: hidden"] .tab-panel {
   vertical-align: top;
 }
 #ocrDashboardRoot .dash-duty-summary-table tbody tr:last-child td { border-bottom: 0; }
+#ocrDashboardRoot .dash-duty-summary-table th:first-child,
+#ocrDashboardRoot .dash-duty-summary-table td:first-child { min-width: 150px; }
+#ocrDashboardRoot .dash-duty-summary-table th:nth-child(2),
+#ocrDashboardRoot .dash-duty-summary-table th:nth-child(3),
+#ocrDashboardRoot .dash-duty-summary-table th:nth-child(4),
+#ocrDashboardRoot .dash-duty-summary-table td:nth-child(2),
+#ocrDashboardRoot .dash-duty-summary-table td:nth-child(3),
+#ocrDashboardRoot .dash-duty-summary-table td:nth-child(4) {
+  text-align: center;
+  white-space: nowrap;
+}
 #ocrDashboardRoot .dash-duty-summary-table strong {
   display: block;
   color: var(--text-primary);

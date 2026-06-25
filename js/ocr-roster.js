@@ -1053,24 +1053,37 @@ function summarizeDutyValues(values, limit = 3) {
   return clean.length > limit ? `${visible} +${clean.length - limit}` : visible;
 }
 
-function summarizeDutyRecord(record) {
-  const entries = Array.isArray(record.entries) ? record.entries : [];
-  const confirmed = entries.filter(entry => entry.confirmed).length;
-  const review = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
-  return {
-    date: record.date || '',
-    type: dutySingular(record.type) || dutySingular('pather'),
-    note: record.note || '',
-    rows: entries.length,
-    confirmed,
-    review,
-    targets: summarizeDutyValues(entries.map(entry => entry.target), 4),
-    groups: summarizeDutyValues(entries.map(entry => entry.group), 4),
-    times: summarizeDutyValues(entries.map(entry => entry.usageTime || record.gameTime), 4),
-  };
+function collectDutyPlayerSummary(records) {
+  const rows = new Map();
+  records.forEach(record => {
+    const entries = Array.isArray(record.entries) ? record.entries : [];
+    entries.forEach(entry => {
+      const name = String(entry.confirmed || entry.name || entry.original || '').trim();
+      if (!name) return;
+      if (!rows.has(name)) {
+        rows.set(name, {
+          name,
+          assignments: 0,
+          uploads: new Set(),
+          review: 0,
+          targets: [],
+          groups: [],
+          times: [],
+        });
+      }
+      const row = rows.get(name);
+      row.assignments += 1;
+      row.uploads.add(record.id || `${record.date || ''}|${record.type || ''}|${record.createdAt || ''}`);
+      if (entry.status === 'weak' || entry.status === 'unmatched' || !entry.confirmed) row.review += 1;
+      row.targets.push(entry.target);
+      row.groups.push(entry.group);
+      row.times.push(entry.usageTime || record.gameTime);
+    });
+  });
+  return Array.from(rows.values()).sort((a, b) => b.assignments - a.assignments || a.name.localeCompare(b.name));
 }
 
-function renderDutyUploadSummary(type, hostId) {
+function renderDutyPlayerSummary(type, hostId) {
   const host = $id(hostId);
   if (!host) return;
   const records = dutyRecordsForType(type).slice().reverse();
@@ -1078,30 +1091,29 @@ function renderDutyUploadSummary(type, hostId) {
     host.innerHTML = '';
     return;
   }
-  const summaries = records.map(summarizeDutyRecord);
-  const totalRows = summaries.reduce((sum, row) => sum + row.rows, 0);
-  const totalConfirmed = summaries.reduce((sum, row) => sum + row.confirmed, 0);
-  const totalReview = summaries.reduce((sum, row) => sum + row.review, 0);
-  const latest = summaries[0]?.date || '--';
+  const rows = collectDutyPlayerSummary(records);
+  const totalRows = rows.reduce((sum, row) => sum + row.assignments, 0);
+  const totalReview = rows.reduce((sum, row) => sum + row.review, 0);
+  const latest = records[0]?.date || '--';
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
       <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>uploads</span></div>
       <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>rows</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${totalConfirmed}</strong><span>matched</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>players</span></div>
       <div class="dash-duty-summary-kpi"><strong>${totalReview}</strong><span>review</span></div>
       <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>latest</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
-        <thead><tr><th>Date</th><th>Plan</th><th>Rows</th><th>Matched</th><th>Targets</th><th>Groups</th><th>Times</th></tr></thead>
-        <tbody>${summaries.map(row => `<tr>
-          <td>${row.date ? esc(row.date) : '<span style="color:var(--text-dim)">--</span>'}</td>
-          <td><strong>${esc(row.type)}</strong>${row.note ? `<small>${esc(row.note)}</small>` : ''}</td>
-          <td>${row.rows}</td>
-          <td>${row.confirmed}${row.review ? ` <small>${row.review} review</small>` : ''}</td>
-          <td>${row.targets}</td>
-          <td>${row.groups}</td>
-          <td>${row.times}</td>
+        <thead><tr><th>Player</th><th>Assignments</th><th>Uploads</th><th>Review</th><th>Targets</th><th>Groups</th><th>Times</th></tr></thead>
+        <tbody>${rows.map(row => `<tr>
+          <td><strong>${esc(row.name)}</strong></td>
+          <td>${row.assignments}</td>
+          <td>${row.uploads.size}</td>
+          <td>${row.review ? `<small>${row.review} review</small>` : '<span style="color:var(--text-dim)">--</span>'}</td>
+          <td>${summarizeDutyValues(row.targets, 4)}</td>
+          <td>${summarizeDutyValues(row.groups, 4)}</td>
+          <td>${summarizeDutyValues(row.times, 4)}</td>
         </tr>`).join('')}</tbody>
       </table>
     </div>
@@ -1175,8 +1187,8 @@ function renderDutySummary() {
 }
 
 function renderDutyRecords() {
-  renderDutyUploadSummary('banner', 'dashBannerListSummary');
-  renderDutyUploadSummary('pather', 'dashPatherListSummary');
+  renderDutyPlayerSummary('banner', 'dashBannerListSummary');
+  renderDutyPlayerSummary('pather', 'dashPatherListSummary');
   renderDutyType('banner');
   renderDutyType('pather');
   renderDutyType('shield_wall');
