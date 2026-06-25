@@ -423,9 +423,9 @@ function loadBannerRecords() {
   } catch (e) { state.bannerRecords = []; }
 }
 
-function saveBannerRecords() {
+function saveBannerRecords(options = {}) {
   try { localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords)); } catch (e) {}
-  syncDashboardAuxiliaryRecords();
+  return syncDashboardAuxiliaryRecords(options);
 }
 
 function showBannerForm(existingIndex = null) {
@@ -488,7 +488,7 @@ function showBannerForm(existingIndex = null) {
   };
   document.querySelectorAll('.dash-banner-remove-team').forEach(btn => btn.onclick = () => btn.closest('.dash-banner-form-row').remove());
 
-  $id('dashBannerSaveBtn').onclick = () => {
+  $id('dashBannerSaveBtn').onclick = async () => {
     const date = $id('dashBannerFormDate').value;
     const event = $id('dashBannerFormEvent').value.trim();
     const teamRows = document.querySelectorAll('#dashBannerTeamsList .dash-banner-form-row');
@@ -506,10 +506,16 @@ function showBannerForm(existingIndex = null) {
     const record = { date, event, teams };
     if (edit) { state.bannerRecords[existingIndex] = record; }
     else { state.bannerRecords.push(record); }
-    saveBannerRecords();
+    const saveBtn = $id('dashBannerSaveBtn');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    }
+    const synced = await saveBannerRecords({ immediate: true, awaitCloud: true });
     closeModal();
     renderBanners();
     log(`Banner day ${edit ? 'updated' : 'saved'}: ${date}${event ? ' - ' + event : ''}`, 'success');
+    notifySpecialListCloudResult(synced, 'Banner day');
   };
   $id('dashBannerFormCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
@@ -605,9 +611,9 @@ function loadDutyRecords() {
   } catch (e) { state.dutyRecords = []; }
 }
 
-function saveDutyRecords() {
+function saveDutyRecords(options = {}) {
   try { localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords)); } catch (e) {}
-  syncDashboardAuxiliaryRecords();
+  return syncDashboardAuxiliaryRecords(options);
 }
 
 function getRosterMemberName(member) {
@@ -878,7 +884,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
     <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
-  $id('dashDutySaveBtn').onclick = () => {
+  $id('dashDutySaveBtn').onclick = async () => {
     const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map(row => {
       const original = row.dataset.raw || '';
       const rawName = row.dataset.name || original;
@@ -923,11 +929,17 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     } else {
       state.dutyRecords.push(record);
     }
-    saveDutyRecords();
+    const saveBtn = $id('dashDutySaveBtn');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    }
+    const synced = await saveDutyRecords({ immediate: true, awaitCloud: true });
     closeModal();
     renderDutyRecords();
     refreshDashboardOverview();
     log(adminT(existingRecord ? 'adminDutyUpdatedLog' : 'adminDutySavedLog', { label, count: entries.length }), 'success');
+    notifySpecialListCloudResult(synced, label);
   };
   $id('dashDutyCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';
@@ -1108,9 +1120,9 @@ function loadContributionRecords() {
   }
 }
 
-function saveContributionRecords() {
+function saveContributionRecords(options = {}) {
   try { localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || [])); } catch (e) {}
-  syncDashboardAuxiliaryRecords();
+  return syncDashboardAuxiliaryRecords(options);
 }
 
 function parseContributionValue(value) {
@@ -1142,10 +1154,18 @@ function refreshDashboardOverview() {
   }
 }
 
-function syncDashboardAuxiliaryRecords() {
+async function syncDashboardAuxiliaryRecords(options = {}) {
   if (typeof window.syncDashboardAuxiliaryRecordsToCloud === 'function') {
-    window.syncDashboardAuxiliaryRecordsToCloud();
+    return window.syncDashboardAuxiliaryRecordsToCloud(options);
   }
+  return false;
+}
+
+function notifySpecialListCloudResult(ok, label) {
+  if (ok) return;
+  const message = `${label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.`;
+  log(message, 'warn');
+  alert(message);
 }
 
 function normalizeRewardTier(value) {
@@ -1292,7 +1312,7 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     const list = body.querySelector('.dash-contribution-match-list');
     list.insertAdjacentHTML('beforeend', renderContributionMatchRows([{ rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' }]));
   };
-  $id('dashContributionSaveBtn').onclick = () => {
+  $id('dashContributionSaveBtn').onclick = async () => {
     const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map(row => ({
       rank: row.querySelector('.dash-contribution-rank-input')?.value || '',
       name: row.querySelector('.dash-contribution-name-input')?.value || '',
@@ -1321,11 +1341,17 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     } else {
       state.contributionRecords.push(record);
     }
-    saveContributionRecords();
+    const saveBtn = $id('dashContributionSaveBtn');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    }
+    const synced = await saveContributionRecords({ immediate: true, awaitCloud: true });
     closeModal();
     renderContributions();
     refreshDashboardOverview();
     log(adminT(existingRecord ? 'adminContributionUpdatedLog' : 'adminContributionSavedLog', { count: normalized.length }), 'success');
+    notifySpecialListCloudResult(synced, adminT('adminContributionsTab'));
   };
   $id('dashContributionCancelBtn').onclick = closeModal;
   m.classList.add('active'); document.body.style.overflow = 'hidden';

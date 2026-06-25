@@ -31,9 +31,9 @@ function loadFirestoreApi() {
   return firestoreApiPromise;
 }
 import {
-  STORAGE_KEY, AUTH_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, FS_PATH, FS_ROSTER_PATH,
+  STORAGE_KEY, ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, FS_PATH, FS_ROSTER_PATH,
   ROSTER_USERS, ROSTER_AUTH_KEY, ALLIANCE_KEY, ALLIANCE_COUNT,
-  LOG_KEY, AUTH_HASH, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
+  LOG_KEY, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
   resolvePlayerNameForAttack,
@@ -41,7 +41,7 @@ import {
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
   trimRosterSnapshots, sanitizeForFirestore,
-  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl, isGuest
+  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 
 // --- Mutable State (initialized locally, synced to `state` for cross-module sharing) ---
@@ -60,8 +60,11 @@ state.cloudSyncConfigured = false;
 state.cloudAdminReady = false;
 state.cloudSyncStatus = null;
 state.cloudSyncStatusDetail = '';
+state.adminUser = null;
+state.adminIsAdmin = false;
 
 const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
+const ADMIN_LOCAL_TEST_KEY = 'vts_admin_local_test_auth';
 const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
   let override =
     typeof globalThis !== 'undefined'
@@ -185,14 +188,9 @@ async function ensureDashboardCloudInitialized() {
   if (!state._cloudInitPromise) {
     state._cloudInitPromise = (async () => {
       try {
-        const configured = await initDashboardFirebase();
-        if (configured) {
-          const { ensureAnonymousAuth } = await loadFirebaseApi();
-          await ensureAnonymousAuth();
-        }
-        return configured;
+        return await initDashboardFirebase();
       } catch (err) {
-        console.warn('Cloud sync auth unavailable; continuing with local dashboard data.', err);
+        console.warn('Cloud sync unavailable; continuing with local dashboard data.', err);
         state.cloudSyncConfigured = false;
         return false;
       }
@@ -207,6 +205,10 @@ async function ensureCloudSyncReady() {
   const { getDb } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
+  if (!state.adminIsAdmin) {
+    setCloudSyncStatus('error', dashT('adminCloudAdminRequired'));
+    return null;
+  }
   state.cloudAdminReady = true;
   return db;
 }
@@ -330,7 +332,7 @@ export async function saveRosterSnapshotsToFirestore() {
     await setDoc(doc(db, FS_ROSTER_PATH), sanitizeForFirestore({ snapshots, updated: new Date().toISOString() }));
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
-    log(`Roster cloud save failed: ${e?.message || e}`, 'error');
+    showCloudSyncFailure(e, 'Roster cloud save failed');
   }
 }
 async function loadRosterSnapshotsFromFirestore() {
@@ -359,9 +361,13 @@ async function loadRosterSnapshotsFromFirestore() {
           renderRoster();
         }
       }
-    }, (err) => console.error('ROSTER SYNC ERROR:', err));
+    }, (err) => {
+      console.error('ROSTER SYNC ERROR:', err);
+      showCloudSyncFailure(err, 'Roster sync listener error');
+    });
   } catch (e) {
     console.error('ROSTER FIRESTORE LOAD ERROR:', e);
+    showCloudSyncFailure(e, 'Roster cloud load failed');
   }
 }
 
@@ -468,7 +474,50 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
 
 // â”€â”€ Banner Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function isAuthed() { return (Boolean(AUTH_HASH) && localStorage.getItem(AUTH_KEY) === AUTH_HASH) || isGuest(); }
+function isLocalAdminTestBypass() {
+  if (typeof location === 'undefined') return false;
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+  return localHosts.has(location.hostname) && (
+    globalThis.VTS_ADMIN_LOCAL_TEST_AUTH === true ||
+    localStorage.getItem(ADMIN_LOCAL_TEST_KEY) === '1'
+  );
+}
+
+function isAuthed() {
+  return state.adminIsAdmin === true || isLocalAdminTestBypass();
+}
+
+function getAdminLoginUsername() {
+  return String($id('dashLoginUser')?.value || '').trim();
+}
+
+function getAdminLoginPassword() {
+  return String($id('dashLoginPass')?.value || '');
+}
+
+function setLoginError(message = '') {
+  const err = $id('dashLoginErr');
+  if (!err) return;
+  err.textContent = message;
+  err.classList.toggle('hidden', !message);
+}
+
+function setLoginBusy(busy) {
+  const loginBtn = $id('dashLoginBtn');
+  if (!loginBtn) return;
+  loginBtn.disabled = busy;
+  loginBtn.textContent = busy ? '...' : dashT('adminLoginBtn');
+}
+
+function describeAdminAuthError(err) {
+  const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  if (/auth\/invalid-credential|auth\/wrong-password|auth\/user-not-found|auth\/invalid-login-credentials/i.test(text)) {
+    return 'Invalid admin username or password.';
+  }
+  if (/auth\/too-many-requests/i.test(text)) return 'Too many attempts. Wait a bit and try again.';
+  if (/auth\/operation-not-allowed/i.test(text)) return 'Firebase Email/Password sign-in is not enabled yet.';
+  return err?.message || String(err || 'Admin sign-in failed.');
+}
 
 let connectingTimer = null;
 let connectingProgressTimer = null;
@@ -565,7 +614,7 @@ function renderCloudSyncStatus() {
   const statusEl = $id('dashCloudStatus');
   const textEl = $id('dashCloudStatusText');
   if (!statusEl || !textEl) return;
-  if (!status || isGuest()) {
+  if (!status) {
     statusEl.classList.add('hidden');
     setRefreshNeedsCloud(false);
     return;
@@ -591,6 +640,23 @@ function setCloudSyncStatus(status, detail = '') {
   state.cloudSyncStatus = status;
   state.cloudSyncStatusDetail = detail || '';
   renderCloudSyncStatus();
+}
+function describeCloudSyncError(err) {
+  const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  if (/permission-denied|permission|insufficient|admin/i.test(text)) {
+    return dashT('adminCloudAdminRequired');
+  }
+  if (/Firebase not initialized|missing|config/i.test(text)) {
+    return 'Firebase is not configured for this deployment.';
+  }
+  return err?.message || err?.code || String(err || dashT('adminCloudSyncError'));
+}
+function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
+  const message = describeCloudSyncError(err);
+  setCloudSyncStatus('error', message);
+  log(`${prefix}: ${message}`, 'error');
+  if (typeof window.showToast === 'function') window.showToast(message, 'error', 7000);
+  return message;
 }
 function setRefreshBusy(busy) {
   const btn = $id('dashRefreshBtn');
@@ -635,121 +701,34 @@ function restoreAdminControls() {
   if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = '';
 }
 
-function removeGuestBanner() {
-  const guestBanner = $id('dashGuestBanner');
-  if (!guestBanner) return;
-  guestBanner.classList.add('hidden');
-  guestBanner.replaceChildren();
-}
-
-function returnToAdminLogin() {
-  sessionStorage.removeItem('vts_guest');
-  localStorage.removeItem(AUTH_KEY);
-  removeGuestBanner();
-  restoreAdminControls();
-  const err = $id('dashLoginErr');
-  if (err) err.classList.add('hidden');
-  const input = $id('dashLoginPass');
-  if (input) input.value = '';
-  showLogin();
-  window.setTimeout(() => input?.focus(), 0);
-}
-
-function renderGuestBanner(guestBanner) {
-  guestBanner.className = 'dash-guest-banner';
-  guestBanner.innerHTML = `
-    <div class="dash-guest-copy">
-      <strong>${esc(dashT('adminGuestModeTitle'))}</strong>
-      <span>${esc(dashT('adminGuestModeBody'))}</span>
-    </div>
-    <div class="dash-guest-actions">
-      <button id="dashGuestAdminBtn" class="dash-btn dash-guest-admin-btn" type="button">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-          <polyline points="10 17 15 12 10 7"/>
-          <line x1="15" y1="12" x2="3" y2="12"/>
-        </svg>
-        <span>${esc(dashT('adminGuestLoginAdminBtn'))}</span>
-      </button>
-    </div>`;
-  guestBanner.querySelector('#dashGuestAdminBtn')?.addEventListener('click', returnToAdminLogin);
-}
-
 function showApp() { 
   hideConnecting();
   $id('dashLogin')?.classList.add('hidden'); 
   $id('dashApp')?.classList.remove('hidden'); 
-  if (isGuest()) {
-    hydrateDashboardStateFromLocalStorage();
-    if (document.querySelector('.dash-actions')) document.querySelector('.dash-actions').style.display = 'none';
-    if ($id('dashUploadZone')) $id('dashUploadZone').style.display = 'none';
-    if ($id('dashLogArea')) $id('dashLogArea').style.display = 'none';
-    if ($id('dashApiKeyContainer')) $id('dashApiKeyContainer').style.display = 'none';
-    if ($id('dashInsightsCard')) $id('dashInsightsCard').style.display = 'none';
-    if ($id('dashAttackHistoryCard')) $id('dashAttackHistoryCard').style.display = 'none';
-    if (document.querySelector('.dash-kpi-grid')) document.querySelector('.dash-kpi-grid').style.display = 'none';
-    
-    let guestBanner = $id('dashGuestBanner');
-    if (!guestBanner) {
-      guestBanner = document.createElement('div');
-      guestBanner.id = 'dashGuestBanner';
-      guestBanner.className = 'dash-guest-banner';
-      const dashContainer = $id('dashApp').querySelector('.dash-container');
-      if (dashContainer) {
-        dashContainer.insertBefore(guestBanner, dashContainer.firstChild);
-      }
-    }
-    guestBanner.classList.remove('hidden');
-    renderGuestBanner(guestBanner);
-  } else {
-    removeGuestBanner();
-    restoreAdminControls();
-  }
+  restoreAdminControls();
 }
 function showLogin() {
-  if (isGuest()) {
-    showApp();
-    return;
-  }
   hideConnecting();
-  removeGuestBanner();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
   $id('dashApp')?.classList.add('hidden');
   const loginBtn = $id('dashLoginBtn');
-  const guestBtn = $id('dashGuestBtn');
+  const userInput = $id('dashLoginUser');
   const passInput = $id('dashLoginPass');
-  const err = $id('dashLoginErr');
-  if (!AUTH_HASH) {
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (passInput) {
-      passInput.disabled = true;
-      passInput.style.display = 'none';
-      passInput.placeholder = 'Admin password not configured';
-    }
-    if (guestBtn) {
-      guestBtn.classList.add('dash-btn-primary');
-      guestBtn.textContent = 'Open Guest Dashboard';
-    }
-    if (err) {
-      err.textContent = 'Admin sign-in is not configured for this deployment. Guest mode is read-only.';
-      err.classList.remove('hidden');
-    }
-  } else {
-    if (loginBtn) {
-      loginBtn.disabled = false;
-      loginBtn.style.display = '';
-    }
-    if (passInput) {
-      passInput.disabled = false;
-      passInput.style.display = '';
-      passInput.placeholder = dashT('adminLoginPass');
-    }
-    if (guestBtn) {
-      guestBtn.classList.remove('dash-btn-primary');
-      guestBtn.textContent = dashT('adminGuestBtn');
-    }
-    if (err) err.classList.add('hidden');
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    loginBtn.style.display = '';
+    loginBtn.textContent = dashT('adminLoginBtn');
+  }
+  if (userInput) {
+    userInput.disabled = false;
+    userInput.style.display = '';
+    if (!userInput.value) userInput.value = '1097';
+  }
+  if (passInput) {
+    passInput.disabled = false;
+    passInput.style.display = '';
+    passInput.placeholder = dashT('adminLoginPass');
   }
 }
 
@@ -761,39 +740,78 @@ function mountStructureUploadPanel() {
 }
 
 async function doLogin() {
-  const p = $id('dashLoginPass').value, err = $id('dashLoginErr');
-  if (!AUTH_HASH) {
-    localStorage.removeItem(AUTH_KEY);
-    err.textContent = 'Admin auth is not configured for this deployment.';
-    err.classList.remove('hidden');
+  const username = getAdminLoginUsername();
+  const password = getAdminLoginPassword();
+  if (!username) {
+    setLoginError('Enter the admin username.');
     return;
   }
-  const loginBtn = $id('dashLoginBtn');
-  const h = await sha256(p);
-  if (h !== AUTH_HASH) {
-    err.textContent = 'Invalid access code';
-    err.classList.remove('hidden');
+  if (!password) {
+    setLoginError('Enter the admin password.');
     return;
   }
-  sessionStorage.removeItem('vts_guest');
-  localStorage.setItem(AUTH_KEY, AUTH_HASH);
-  err.classList.add('hidden');
-  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = '...'; }
+  setLoginError('');
+  setLoginBusy(true);
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
-  setConnectingProgress(70, dashT('adminConnectingData'));
   try {
-    await Promise.allSettled([
-      loadRosterSnapshotsFromFirestore(),
-      loadData({ preferCloudFirst: true }),
-    ]);
+    const { signInWithUsername, getFirebaseAdminClaim } = await loadFirebaseApi();
+    const credential = await signInWithUsername(username, password);
+    state.adminUser = credential.user;
+    state.adminIsAdmin = await getFirebaseAdminClaim(true);
+    if (!state.adminIsAdmin) {
+      const { signOutUser } = await loadFirebaseApi();
+      await signOutUser();
+      throw new Error(dashT('adminCloudAdminRequired'));
+    }
+    await openAdminDashboardAfterAuth({ preferCloudFirst: true });
   } catch (e) {
-    console.error('Dashboard load failed after login', e);
+    console.error('Dashboard sign-in failed', e);
+    state.adminUser = null;
+    state.adminIsAdmin = false;
+    setLoginError(describeAdminAuthError(e));
+    showLogin();
+  } finally {
+    setLoginBusy(false);
   }
-  hideConnecting();
-  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = dashT('adminLoginBtn'); }
-  showApp();
-  render();
+}
+
+async function doSignOut() {
+  try {
+    const { signOutUser } = await loadFirebaseApi();
+    await signOutUser();
+  } catch (e) {
+    console.warn('Admin sign-out failed', e);
+  }
+  state.adminUser = null;
+  state.adminIsAdmin = false;
+  state.cloudAdminReady = false;
+  setCloudSyncStatus(null);
+  showLogin();
+}
+
+async function openAdminDashboardAfterAuth(options = {}) {
+  if (state._adminDashboardOpening) return;
+  state._adminDashboardOpening = true;
+  const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
+  try {
+    showConnecting(dashT('adminConnectingData'));
+    setConnectingProgress(45, dashT('adminConnectingData'), { cap: 92 });
+    if (preferCloudFirst) {
+      await Promise.allSettled([
+        loadRosterSnapshotsFromFirestore(),
+        loadData({ preferCloudFirst: true }),
+      ]);
+    } else {
+      hydrateDashboardStateFromLocalStorage();
+      await loadData({ preferCloudFirst: false });
+    }
+    await completeConnectingProgress(dashT('adminConnectingData'));
+    showApp();
+    render();
+  } finally {
+    state._adminDashboardOpening = false;
+  }
 }
 
 // --- Persistence ---
@@ -821,6 +839,15 @@ function sanitizeDashboardDataForPersistence(data) {
     });
   }
   return sanitizeForFirestore(clean);
+}
+
+function getAuxiliaryRecordPayload() {
+  return sanitizeForFirestore({
+    last_updated: fmtDate(new Date()),
+    bannerRecords: Array.isArray(state.bannerRecords) ? state.bannerRecords : [],
+    dutyRecords: Array.isArray(state.dutyRecords) ? state.dutyRecords : [],
+    contributionRecords: Array.isArray(state.contributionRecords) ? state.contributionRecords : [],
+  });
 }
 
 function resolveDashboardCloudSaveWaiters(maxVersion, result) {
@@ -858,6 +885,7 @@ async function flushDashboardCloudSave() {
     const db = await ensureCloudSyncReady();
     if (!db) {
       setCloudSyncStatus('local');
+      showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
       return false;
     }
     const { doc, setDoc } = await loadFirestoreApi();
@@ -868,8 +896,7 @@ async function flushDashboardCloudSave() {
     return true;
   } catch (e) {
     console.error("FIREBASE SAVE ERROR:", e);
-    setCloudSyncStatus('error', e.message || e.code || '');
-    log('Save error: ' + (e.message || e.code), 'error');
+    showCloudSyncFailure(e, 'Save error');
     return false;
   } finally {
     dashboardCloudSaveInFlight = false;
@@ -901,29 +928,55 @@ export async function saveData(data, options = {}) {
   writeDashboardLocalCache(persistedData);
   writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
+  if (!state.adminIsAdmin) {
+    showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
+    return false;
+  }
   const cloudSave = scheduleDashboardCloudSave(persistedData, { immediate: options.immediate === true });
   if (options.awaitCloud === true) return cloudSave;
   return false;
 }
 
-export function saveDashboardAuxiliaryRecords(options = {}) {
-  const baseData = state.dashData && typeof state.dashData === 'object'
-    ? state.dashData
-    : attachAuxiliaryRecords(null);
-  return saveData(baseData, options);
+export async function saveDashboardAuxiliaryRecords(options = {}) {
+  const localData = attachAuxiliaryRecords(
+    state.dashData && typeof state.dashData === 'object' ? state.dashData : null
+  );
+  state.dashData = normalizeDashboardDataForCache(localData);
+  writeDashboardLocalCache(localData);
+  writeAuxiliaryLocalCaches();
+  if (options.cloud === false) return false;
+  try {
+    setCloudSyncStatus('syncing');
+    const db = await ensureCloudSyncReady();
+    if (!db) {
+      setCloudSyncStatus('local');
+      showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Special list save blocked');
+      return false;
+    }
+    const { doc, setDoc } = await loadFirestoreApi();
+    const auxiliaryPayload = getAuxiliaryRecordPayload();
+    await setDoc(doc(db, FS_PATH), auxiliaryPayload, { merge: true });
+    setCloudSyncStatus('live');
+    updateLastSynced();
+    return true;
+  } catch (e) {
+    console.error('FIREBASE AUXILIARY SAVE ERROR:', e);
+    showCloudSyncFailure(e, 'Special list cloud save failed');
+    return false;
+  }
 }
 
 window.syncDashboardAuxiliaryRecordsToCloud = saveDashboardAuxiliaryRecords;
 
 async function loadData(options = {}) {
-  const preferCloudFirst = options.preferCloudFirst === true && !isGuest();
+  const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
   const cloudTimeoutMs = Number.isFinite(options.cloudTimeoutMs)
     ? options.cloudTimeoutMs
     : preferCloudFirst
       ? DASHBOARD_CLOUD_BOOT_TIMEOUT_MS
       : 0;
   const awaitCloud = (promise, label) => withDashboardCloudTimeout(promise, cloudTimeoutMs, label);
-  if (!isGuest()) setCloudSyncStatus('syncing');
+  if (isAuthed()) setCloudSyncStatus('syncing');
   let hadLocalData = false;
   let localData = null;
   try {
@@ -941,6 +994,11 @@ async function loadData(options = {}) {
       }
     }
   } catch (e) {}
+  if (!preferCloudFirst && state.adminIsAdmin !== true) {
+    setCloudSyncStatus('local');
+    log('Cloud sync requires admin sign-in; showing local dashboard cache.', 'warn');
+    return;
+  }
   try {
     const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
     if (!db) {
@@ -1001,8 +1059,7 @@ async function loadData(options = {}) {
       }
     }, (err) => {
       console.error("FIREBASE SYNC ERROR:", err);
-      setCloudSyncStatus('error', err.message || err.code || '');
-      log('Sync listener error: ' + (err.message || err.code), 'error');
+      showCloudSyncFailure(err, 'Sync listener error');
     });
     log('Cloud sync active.', 'info');
     updateLastSynced();
@@ -1022,8 +1079,7 @@ async function loadData(options = {}) {
       }
       return;
     }
-    setCloudSyncStatus('error', e.message || e.code || '');
-    log('Load auth error: ' + (e.message || e.code), 'error'); 
+    showCloudSyncFailure(e, 'Load auth error');
   }
 }
 
@@ -1045,7 +1101,7 @@ async function clearData() {
       setCloudSyncStatus('local');
     }
   } catch (e) {
-    setCloudSyncStatus('error', e.message || e.code || '');
+    showCloudSyncFailure(e, 'Clear cloud data failed');
   }
   const out = $id('dashLogOutput'); if (out) out.innerHTML = '';
   render();
@@ -1312,48 +1368,11 @@ function importData(file) {
 
 // --- Render ---
 
-async function openGuestDashboard() {
-  localStorage.removeItem(AUTH_KEY);
-  sessionStorage.setItem('vts_guest', '1');
-  $id('dashLoginErr')?.classList.add('hidden');
-  showConnecting(dashT('adminConnectingData'));
-  setConnectingProgress(20);
-
-  hydrateDashboardStateFromLocalStorage();
-  setConnectingProgress(60, dashT('adminConnectingData'));
-  hideConnecting();
-  showApp();
-  render();
-
-  window.setTimeout(() => {
-    loadData()
-      .then(() => {
-        if (isGuest()) {
-          showApp();
-          render();
-        }
-      })
-      .catch((e) => {
-        console.error('Guest dashboard load failed', e);
-      });
-  }, 0);
-}
-
-
-
-
-
-
-
-
-
 export async function bootOcrDashboard() {
   if (state._booted) return; state._booted = true; loadRoster();
   if (!state._adminLanguageRefreshBound) {
     state._adminLanguageRefreshBound = true;
     window.addEventListener('vts:admin-language-change', () => {
-      const guestBanner = $id('dashGuestBanner');
-      if (guestBanner) renderGuestBanner(guestBanner);
       refreshRosterSnapshotLabel();
       renderCloudSyncStatus();
       if ($id('dashChart')) render();
@@ -1361,20 +1380,11 @@ export async function bootOcrDashboard() {
     });
   }
   $id('dashLoginBtn').onclick = doLogin;
-  $id('dashGuestBtn').onclick = openGuestDashboard;
+  $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
+  const loginUser = $id('dashLoginUser');
+  if (loginUser && !loginUser.value) loginUser.value = '1097';
   bindSubtabNavigation();
-  if (!AUTH_HASH) sessionStorage.setItem('vts_guest', '1');
-  const wasAuthed = isAuthed();
-  if (wasAuthed) { showConnecting(dashT('adminConnectingInit')); setConnectingProgress(12, dashT('adminConnectingInit'), { cap: 62 }); }
-  else showLogin();
-
-  if (wasAuthed) {
-    setConnectingProgress(32, dashT('adminConnectingInit'), { cap: 74 });
-    ensureDashboardCloudInitialized().catch(() => {});
-  }
-  if (wasAuthed) setConnectingProgress(58, dashT('adminConnectingData'), { cap: 86 });
   loadRosterSnapshots();
-  if (wasAuthed) loadRosterSnapshotsFromFirestore().catch((e) => console.error('Roster snapshot sync failed during boot', e));
   loadBannerRecords();
   loadDutyRecords();
   loadContributionRecords();
@@ -1387,25 +1397,66 @@ export async function bootOcrDashboard() {
   bindSubtabNavigation();
   $id('dashRefreshBtn').onclick = async () => {
     setRefreshBusy(true);
-    try { await loadData({ preferCloudFirst: !isGuest() }); render(); }
+    try { await loadData({ preferCloudFirst: state.adminIsAdmin === true }); render(); }
     catch (e) { console.error('Refresh failed:', e); }
     finally { setRefreshBusy(false); }
   };
   log('VTS Admin Dashboard loaded.', 'info');
-  if (isAuthed()) {
+  if (isLocalAdminTestBypass()) {
+    state.adminUser = { uid: 'local-test-admin' };
+    state.adminIsAdmin = false;
     try {
-      setConnectingProgress(70, dashT('adminConnectingData'), { cap: 96 });
-      await loadData({ preferCloudFirst: true });
-      await completeConnectingProgress(dashT('adminConnectingData'));
+      await openAdminDashboardAfterAuth({ preferCloudFirst: false });
     } catch (e) {
-      console.error('Dashboard load failed during boot', e);
+      console.error('Local admin test dashboard load failed during boot', e);
     }
-    hideConnecting();
-    showApp();
-    render();
   } else {
-    hideConnecting();
     showLogin();
+    try {
+      const configured = await ensureDashboardCloudInitialized();
+      if (configured) {
+        const { onUserChanged, getCurrentUser, getFirebaseAdminClaim, signOutUser } = await loadFirebaseApi();
+        if (!state._adminAuthUnsub) {
+          state._adminAuthUnsub = onUserChanged(async (user) => {
+            if (!user) {
+              state.adminUser = null;
+              state.adminIsAdmin = false;
+              showLogin();
+              return;
+            }
+            try {
+              state.adminUser = user;
+              state.adminIsAdmin = await getFirebaseAdminClaim(false);
+              if (!state.adminIsAdmin) {
+                await signOutUser();
+                setLoginError(dashT('adminCloudAdminRequired'));
+                showLogin();
+                return;
+              }
+              await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+            } catch (e) {
+              console.error('Admin auth listener failed', e);
+              state.adminUser = null;
+              state.adminIsAdmin = false;
+              setLoginError(describeAdminAuthError(e));
+              showLogin();
+            }
+          });
+        }
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          state.adminUser = currentUser;
+          state.adminIsAdmin = await getFirebaseAdminClaim(false);
+          if (state.adminIsAdmin) await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+        }
+      } else {
+        setLoginError('Firebase is not configured for admin sign-in.');
+      }
+    } catch (e) {
+      console.error('Admin auth boot failed', e);
+      setLoginError(describeAdminAuthError(e));
+      showLogin();
+    }
   }
   const rosterBtn = $id('dashRosterBtn');
   if (rosterBtn) rosterBtn.onclick = showRosterModal;

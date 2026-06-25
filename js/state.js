@@ -6,7 +6,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '12.0.0';
+export const APP_VERSION = '12.1.0';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};

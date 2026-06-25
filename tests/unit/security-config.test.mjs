@@ -2,19 +2,25 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-test('public admin auth config stores hashes instead of plaintext passphrases', () => {
+test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
-  assert.match(source, /adminHash:\s*'(?:|[a-f0-9]{64})'/);
   assert.match(source, /clearHash:\s*'(?:|[a-f0-9]{64})'/);
   assert.match(source, /deleteHashes:\s*(?:\[\s*\]|\[\s*'[a-f0-9]{64}'\s*\])/);
+  assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
 });
 
-test('admin auth local storage marker is tied to the active password hash', () => {
+test('admin dashboard uses Firebase auth instead of local password markers', () => {
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
-  assert.match(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
-  assert.match(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
-  assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*'1'\)/);
+  const firebase = readFileSync('js/firebase.js', 'utf8');
+  assert.match(source, /signInWithUsername/);
+  assert.match(source, /getFirebaseAdminClaim/);
+  assert.match(source, /adminIsAdmin/);
+  assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
+  assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
+  assert.doesNotMatch(source, /sessionStorage\.setItem\('vts_guest'/);
+  assert.match(firebase, /signInWithEmailAndPassword/);
+  assert.match(firebase, /usernameToEmail/);
 });
 
 test('firebase config reads public web config without committed Google API keys', () => {
@@ -64,10 +70,14 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   const roster = readFileSync('js/ocr-roster.js', 'utf8');
   const rules = readFileSync('firestore.rules', 'utf8');
   assert.match(dashboard, /function attachAuxiliaryRecords/);
+  assert.match(dashboard, /function getAuxiliaryRecordPayload/);
+  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), auxiliaryPayload, \{ merge: true \}\)/);
   assert.match(dashboard, /bannerRecords/);
   assert.match(dashboard, /dutyRecords/);
   assert.match(dashboard, /contributionRecords/);
   assert.match(roster, /syncDashboardAuxiliaryRecordsToCloud/);
+  assert.match(roster, /await saveDutyRecords\(\{ immediate: true, awaitCloud: true \}\)/);
+  assert.match(roster, /notifySpecialListCloudResult/);
   assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
 });
 

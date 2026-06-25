@@ -1,8 +1,13 @@
 const en = {
-  "adminLoginTitle": "VTS Admin",
-  "adminLoginSub": "Alliance Structure Attack Analytics",
+
   "adminLoginPass": "Password",
+  "adminLoginUser": "Username",
   "adminLoginBtn": "Sign In as Admin",
+  "adminSignOutBtn": "Sign Out",
+  "adminCloudSyncError": "Cloud sync problem - click Refresh",
+  "adminCloudAdminRequired": "Not signed in as admin; this upload was not synced.",
+"adminLoginTitle": "VTS Admin",
+  "adminLoginSub": "Alliance Structure Attack Analytics",
   "adminGuestBtn": "Enter as Guest",
   "adminConnectingTitle": "Connecting to Dashboard",
   "adminConnectingSub": "Loading alliance data from secure cloud…",
@@ -16,7 +21,6 @@ const en = {
   "adminCloudSyncing": "Syncing cloud data...",
   "adminCloudSynced": "Cloud synced",
   "adminCloudLocalCache": "Showing local cache - click Refresh to sync cloud",
-  "adminCloudSyncError": "Cloud sync problem - click Refresh",
   "adminCloudRefreshHint": "Click Refresh to retry cloud sync",
   "adminApiPrompt": "Optional: If you want to upload images, insert Qwen API Key here:",
   "adminApiPh": "Paste your API here",

@@ -1,10 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-
-const ADMIN_HASH =
-  readFileSync(new URL('../js/admin-auth-config.js', import.meta.url), 'utf8').match(
-    /adminHash:\s*'([^']*)'/
-  )?.[1] || '';
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
@@ -66,8 +60,7 @@ async function openAdmin(page) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
-    sessionStorage.removeItem('vts_guest');
-    localStorage.removeItem('vts_ocr_auth');
+    localStorage.removeItem('vts_admin_local_test_auth');
     navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
       registrations.forEach((registration) => registration.unregister());
     });
@@ -97,19 +90,17 @@ async function openAdmin(page) {
   );
 }
 
-async function openGuestDashboard(page) {
-  const guestBanner = page.locator('#dashGuestBanner');
-  if (await guestBanner.isVisible().catch(() => false)) return;
-
-  await page.evaluate(() => {
-    localStorage.removeItem('vts_ocr_auth');
-    sessionStorage.setItem('vts_guest', '1');
+async function openLocalAdminDashboard(page) {
+  await page.addInitScript(() => {
+    window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
+    localStorage.setItem('vts_admin_local_test_auth', '1');
   });
-  if (await guestBanner.isVisible().catch(() => false)) return;
-
-  await expect(page.locator('#dashGuestBtn')).toBeVisible({ timeout: 20000 });
-  await page.locator('#dashGuestBtn').click();
-  await expect(guestBanner).toBeVisible({ timeout: 20000 });
+  await page.evaluate(() => {
+    window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
+    localStorage.setItem('vts_admin_local_test_auth', '1');
+  });
+  await page.reload({ waitUntil: 'load' });
+  await expect(page.locator('#dashApp')).toBeVisible({ timeout: 20000 });
 }
 
 test.describe('app smoke tabs', () => {
@@ -486,22 +477,16 @@ test.describe('app smoke tabs', () => {
     );
   });
 
-  test('admin guest mode can return to admin login', async ({ page }) => {
+  test('admin dashboard requires shared admin sign-in', async ({ page }) => {
     await openAdmin(page);
 
-    await openGuestDashboard(page);
-    await expect(page.locator('#dashGuestBanner')).toContainText('Guest Mode');
-    await expect(page.locator('#dashGuestAdminBtn')).toHaveText(/Log in as Admin/);
-    await expect(page.locator('#dashUploadZone')).not.toBeVisible();
-    await page.locator('#ocrDashboardRoot [data-subtab="contributions"]').click();
-    await expect(page.locator('#dashSubtabContributions')).toBeVisible();
-    await expect(page.locator('#dashContributionDropZone')).toContainText('Total Contribution');
-
-    await page.locator('#dashGuestAdminBtn').click();
     await expect(page.locator('#dashLogin')).toBeVisible();
-    await expect(page.locator('#dashGuestBtn')).toBeVisible();
+    await expect(page.locator('#dashLoginUser')).toBeVisible();
+    await expect(page.locator('#dashLoginPass')).toBeVisible();
+    await expect(page.locator('#dashLoginBtn')).toBeVisible();
+    await expect(page.locator('#dashGuestBtn')).toHaveCount(0);
+    await expect(page.locator('#dashGuestBanner')).toHaveCount(0);
     await expect(page.locator('#dashApp')).not.toBeVisible();
-    expect(await page.evaluate(() => sessionStorage.getItem('vts_guest'))).toBeNull();
   });
 
   test('admin authenticated boot falls back to local cache when cloud sync stalls', async ({
@@ -533,20 +518,20 @@ test.describe('app smoke tabs', () => {
     await page.route('https://firestore.googleapis.com/**', (route) => {
       stalledRoutes.push(route);
     });
-    await page.addInitScript(({ data, adminHash }) => {
+    await page.addInitScript(({ data }) => {
+      window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
       window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
       localStorage.setItem('vts_maintenance_bypass', '1');
       localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
-      localStorage.setItem('vts_ocr_auth', adminHash);
+      localStorage.setItem('vts_admin_local_test_auth', '1');
       localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
-      sessionStorage.removeItem('vts_guest');
       navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
         registrations.forEach((registration) => registration.unregister());
       });
       window.caches?.keys?.().then((keys) => {
         keys.forEach((key) => caches.delete(key));
       });
-    }, { data: seededDash, adminHash: ADMIN_HASH });
+    }, { data: seededDash });
 
     await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#dashApp')).toBeVisible({ timeout: 5000 });
@@ -634,7 +619,7 @@ test.describe('app smoke tabs', () => {
       { seededDash, seededRoster }
     );
 
-    await openGuestDashboard(page);
+    await openLocalAdminDashboard(page);
     await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
     await page.evaluate(
       async ({ seededDash, seededRoster }) => {
@@ -738,7 +723,7 @@ test.describe('app smoke tabs', () => {
     };
 
     await openAdmin(page);
-    await openGuestDashboard(page);
+    await openLocalAdminDashboard(page);
     await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
     await page.evaluate((seededDash) => {
       window.setOcrDashboardDataForTest(seededDash, []);

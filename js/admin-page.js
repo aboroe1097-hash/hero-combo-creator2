@@ -2,7 +2,7 @@ import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 
-const APP_VERSION = '12.0.0';
+const APP_VERSION = '12.1.0';
 const THEME_STORAGE_KEY = 'vts_theme';
 
 function getPreferredTheme() {
@@ -88,23 +88,6 @@ async function loadAdminTemplate() {
   section.innerHTML = await res.text();
 }
 
-function captureEarlyGuestIntent() {
-  const guestBtn = document.getElementById('dashGuestBtn');
-  if (!guestBtn) return;
-  guestBtn.addEventListener(
-    'click',
-    () => {
-      try {
-        localStorage.removeItem('vts_ocr_auth');
-        sessionStorage.setItem('vts_guest', '1');
-      } catch {
-        // Storage can be unavailable; the dashboard's normal click handler will still run later.
-      }
-    },
-    { capture: true }
-  );
-}
-
 async function bootAdminPage() {
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
@@ -113,7 +96,6 @@ async function bootAdminPage() {
   mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
   document.getElementById('adminFooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   await loadAdminTemplate();
-  captureEarlyGuestIntent();
   updateTextContent(lang);
   document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
     const nextLang = e.target.value || 'en';
@@ -121,7 +103,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260625_160616');
+  const mod = await import('./ocr-dashboard.js?v=20260625_193906');
   await mod.bootOcrDashboard();
 }
 

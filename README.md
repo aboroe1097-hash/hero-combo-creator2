@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v12.0.0)
+# Hero Combo Creator - VTS 1097 (v12.1.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management â€” all in a single-page web app.
 
@@ -71,7 +71,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 12.0.0 release should pass the full local gate before shipping.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 12.1.0 release should pass the full local gate before shipping.
 
 Version cadence: after the 11.3.0 baseline, every pushed release increments the patch slot through `11.3.19`; the next release after that becomes `11.4.0`. The same 20-release cycle repeats for future minor versions.
 
@@ -83,7 +83,7 @@ Version cadence: after the 11.3.0 baseline, every pushed release increments the 
 | **Bundler** | Vite 6 (dev server + build) |
 | **CSS** | Custom `app.css`, responsive `mobile.css`, compiled Tailwind CSS |
 | **Backend** | Firebase Firestore loaded through pinned browser modules (comments, combos, roster sync) |
-| **Auth** | Firebase anonymous auth |
+| **Auth** | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
 | **Maps** | HTML Canvas (Eden Map) |
 | **Export** | html2canvas (image), CSV, JSON |

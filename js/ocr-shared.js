@@ -3,7 +3,6 @@ import { isLocalDevHost } from './utils.js';
 
 // --- Storage Keys ---
 export const STORAGE_KEY = 'vts_ocr_dashboard';
-export const AUTH_KEY = 'vts_ocr_auth';
 export const ROSTER_KEY = 'vts_ocr_roster';
 export const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
 export const BANNER_KEY = 'vts_ocr_banners';
@@ -68,7 +67,7 @@ export function isSupportedOcrImageFile(file) {
 }
 
 export function isGuest() {
-  return typeof sessionStorage !== 'undefined' && sessionStorage.getItem('vts_guest') === '1';
+  return false;
 }
 
 export function getSupportedOcrImageFiles(files) {
@@ -528,8 +527,7 @@ const sharedState = globalThis.__vtsOcrDashboardState || {
 globalThis.__vtsOcrDashboardState = sharedState;
 export const state = sharedState;
 
-// --- Auth ---
-export const AUTH_HASH = ADMIN_AUTH_CONFIG.adminHash || '';
+// --- Destructive Action Overrides ---
 export const CLEAR_HASH = ADMIN_AUTH_CONFIG.clearHash || '';
 export const DELETE_HASHES = new Set(ADMIN_AUTH_CONFIG.deleteHashes || []);
 

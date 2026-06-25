@@ -13,7 +13,16 @@ import { isLocalDevHost } from './utils.js';
 
 const [
   { initializeApp },
-  { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence, getIdTokenResult },
+  {
+    getAuth,
+    signInAnonymously,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence,
+    getIdTokenResult,
+  },
   { getFirestore },
   { getAnalytics },
 ] = await Promise.all([
@@ -68,6 +77,12 @@ const configValue = envValue;
 const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');
 const firebaseAppId = configValue('VITE_FIREBASE_APP_ID');
 const firebaseSenderId = configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
+const authEmailDomain = (
+  configValue('VITE_AUTH_EMAIL_DOMAIN') ||
+  'abocombo.web.app'
+)
+  .replace(/^@+/, '')
+  .toLowerCase();
 
 function getAppCheckDebugToken() {
   return envValue('VITE_FIREBASE_APPCHECK_DEBUG_TOKEN');
@@ -191,16 +206,58 @@ export function initFirebase() {
 
 let authInFlight = null;
 
+async function ensureAuthPersistence() {
+  if (!auth) throw new Error("Firebase not initialized");
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Some restricted browser contexts block persistence; auth can continue in-memory.
+  }
+}
+
+function normalizeAuthUsername(username) {
+  return String(username || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '');
+}
+
+export function usernameToEmail(username) {
+  const normalized = normalizeAuthUsername(username);
+  if (!normalized) throw new Error('Username is required');
+  if (normalized.length > 40) throw new Error('Username is too long');
+  return `${normalized}@${authEmailDomain}`;
+}
+
+export async function signInWithUsername(username, password) {
+  if (!auth) initFirebase();
+  if (!auth) throw new Error("Firebase not initialized");
+  await ensureAuthPersistence();
+  return signInWithEmailAndPassword(auth, usernameToEmail(username), String(password || ''));
+}
+
+export async function signOutUser() {
+  if (!auth) initFirebase();
+  if (!auth) return;
+  await signOut(auth);
+}
+
+export function onUserChanged(callback) {
+  if (!auth) initFirebase();
+  if (!auth) return () => {};
+  return onAuthStateChanged(auth, callback);
+}
+
+export function getCurrentUser() {
+  return auth?.currentUser || null;
+}
+
 export async function ensureAnonymousAuth() {
   if (!auth) throw new Error("Firebase not initialized");
   if (auth.currentUser) return auth.currentUser;
   if (authInFlight) return authInFlight;
 
-  try {
-    await setPersistence(auth, browserLocalPersistence);
-  } catch {
-    // Some restricted browser contexts block persistence; anonymous auth can continue.
-  }
+  await ensureAuthPersistence();
 
   authInFlight = new Promise((resolve, reject) => {
     let unsubs = () => {};

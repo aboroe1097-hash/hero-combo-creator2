@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import process from 'node:process';
 
-import admin from 'firebase-admin';
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 function envValue(key) {
   return String(process.env[key] || '').trim();
@@ -30,11 +31,11 @@ async function main() {
   }
 
   const serviceAccount = readServiceAccount();
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  initializeApp({
+    credential: cert(serviceAccount),
   });
 
-  const auth = admin.auth();
+  const auth = getAuth();
   const user = uid ? await auth.getUser(uid) : await auth.getUserByEmail(email);
   const currentClaims = user.customClaims || {};
   await auth.setCustomUserClaims(user.uid, { ...currentClaims, admin: true });

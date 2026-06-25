@@ -1,5 +1,13 @@
 # Changelog
 
+## 12.1.0 - 2026-06-25
+
+- Replaced VTS Admin guest/local-password access with a shared Firebase Email/Password login that maps username `1097` to `1097@abocombo.web.app`.
+- Gated OCR dashboard and roster cloud writes behind the Firebase `admin` custom claim, while keeping public toolkit features on anonymous auth.
+- Removed the signup/approval request flow and added loud cloud-sync failure states for missing admin auth or permission-denied writes.
+- Fixed the Firebase admin-claim helper for the current `firebase-admin` modular import shape.
+- Updated smoke/unit coverage for the shared admin login, cloud-stall local fallback, Firestore admin rules, and auxiliary admin list cloud sync.
+
 ## 12.0.0 - 2026-06-25
 
 - Added a unified v12 command-center design layer across the main toolkit, hero cards, filters, saved/generated combo panels, research, Eden, loyalty, comments, admin cards, tables, and OCR terminal surfaces.
