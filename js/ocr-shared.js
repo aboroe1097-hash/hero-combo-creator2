@@ -1131,35 +1131,31 @@ export function findBestMatch(name, minConfidence = 100) {
 // --- Duty (Banner / Pather) name resolution ---
 // Banner & Pather rows are OCR'd from Viber screenshots and carry noise the
 // structures/attacks pipeline never sees: Viber @tags, target words merged into the
-// cell (e.g. "bridge @Roha"), "(operator)" cover notes, banner-label suffixes, and OCR
+// cell (e.g. "bridge @Roha"), "(note)" parentheticals, banner-label suffixes, and OCR
 // junk. We strip that noise, then fall back to the SAME findBestMatch authority — no
-// separate merge list. Per product decision, banner work rolls up to the OPERATING
-// player: a parenthetical operator note wins; otherwise the banner's owner (suffix
-// stripped) is credited.
+// separate merge list.
+//
+// Credit goes to the BANNER ACCOUNT / @-tagged owner — the main token before any
+// parenthetical. The parenthetical is metadata only and is preserved separately via
+// getDutyOperatorNote(): it records either who physically operated the account at that
+// time ("Angel Banner (zubbs)" -> credit ANGEL, zubbs operated it) or which of an
+// owner's banners was used ("@redbull (osito)" -> credit redbull, osito is the banner).
 const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.\-]*/i;
 const DUTY_BANNER_SUFFIX = /[\s_\-]*banner\s*\d*$/i;
 
-function looksLikeDutyOperator(value) {
-  const v = String(value || '').trim();
-  if (!v) return false;
-  if (/banner|reserve|^team\b/i.test(v)) return false;
-  if (DUTY_TARGET_PREFIX.test(v)) return false;
-  return /[A-Za-zÀ-￿Ѐ-ӿ]/.test(v);
+// The parenthetical note (operator / banner label). Metadata — never the credited name.
+export function getDutyOperatorNote(raw) {
+  const m = String(raw || '').match(/\(([^)]*)\)/);
+  return m ? m[1].trim() : '';
 }
 
 export function cleanDutyRawName(raw) {
   let s = String(raw || '').trim();
   if (!s) return '';
   s = s.replace(/[",'`]+$/g, '').trim(); // trailing OCR quote/comma junk
-  let operator = '';
-  s = s
-    .replace(/\(([^)]*)\)/g, (_, inner) => {
-      if (looksLikeDutyOperator(inner)) operator = String(inner).trim();
-      return ' ';
-    })
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (operator) return operator.replace(/^@+/, '').trim(); // roll-up to covering operator
+  // Strip the parenthetical note — the credited identity is the @-owner / banner account
+  // before it, not the operator/banner inside it.
+  s = s.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
   if (s.includes('@')) {
     // keep the first @-segment that isn't a pure target word (handles multi-tag cells)
     const segs = s.split('@').map((x) => x.trim()).filter(Boolean);

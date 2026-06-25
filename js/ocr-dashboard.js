@@ -36,7 +36,7 @@ import {
   LOG_KEY, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
-  resolvePlayerNameForAttack, cleanDutyRawName, resolveDutyPlayerName,
+  resolvePlayerNameForAttack, cleanDutyRawName, resolveDutyPlayerName, getDutyOperatorNote,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
@@ -1362,14 +1362,14 @@ function exportDutyDebugCsv() {
   const records = Array.isArray(state.dutyRecords) ? state.dutyRecords : [];
   if (!records.length) return;
   const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  let csv = 'Date,Type,Upload ID,Raw Name,Cleaned Name,Grouped Name (Master),Confirmed Name,Match Status,Target,Group,Time\n';
+  let csv = 'Date,Type,Upload ID,Raw Name,Cleaned Name,Grouped Name (Master),Operator/Banner Note,Confirmed Name,Match Status,Target,Group,Time\n';
   records.forEach(rec => {
     const entries = Array.isArray(rec.entries) ? rec.entries : [];
     entries.forEach(e => {
       const raw = e.name || e.original || '';
       csv += [
         q(rec.date), q(rec.type), q(rec.id || rec.createdAt || ''),
-        q(raw), q(cleanDutyRawName(raw)), q(resolveDutyPlayerName(raw)),
+        q(raw), q(cleanDutyRawName(raw)), q(resolveDutyPlayerName(raw)), q(getDutyOperatorNote(raw)),
         q(e.confirmed || ''), q(e.status || ''),
         q(e.target), q(e.group), q(e.usageTime || rec.gameTime || ''),
       ].join(',') + '\n';

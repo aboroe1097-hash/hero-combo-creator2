@@ -86,17 +86,23 @@ which differ from in-game tags and carry extra noise. The directive: **do not bu
 merger** — pre-clean the Viber noise and route through the *same* `findBestMatch` + roster, so
 Banner/Pather names inherit the Structures/Attacks authority automatically.
 
-**Decision (locked):** banner work **rolls up to the operating player**. A parenthetical operator
-note wins (e.g. `Angel Banner (zubbs)` → `zubbs`); otherwise the banner's owner with the `banner`
-suffix stripped is credited (`BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`). Note this is a
-*duty-context* roll-up only — in the Structures/Attacks dataset, `꧁ Kika-banner ꧂` remains a
-separate account (§4). The two contexts intentionally differ.
+**Decision (locked):** credit the **banner account / @-tagged owner** — the main token *before*
+any parenthetical. The parenthetical is **metadata only**, preserved separately via
+`getDutyOperatorNote()`:
+- `Angel Banner (zubbs)` → credit **ANGEL** (banner account); `zubbs` = who operated it then.
+- `@redbull (osito)` → credit **redbull** (the `@`-tagged owner); `osito` = which of redbull's
+  banners was used.
+- Banner suffix strips to the owner: `BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`.
+
+This is a *duty-context* roll-up only — in the Structures/Attacks dataset, `꧁ Kika-banner ꧂`
+remains a separate account (§4). The two contexts intentionally differ.
 
 ### Implementation
 
-- **`cleanDutyRawName(raw)`** + **`resolveDutyPlayerName(raw)`** in
-  [`js/ocr-shared.js`](../js/ocr-shared.js) — strip the Viber noise (below), extract the operating
-  player, then call the shared `findBestMatch`. No separate alias list.
+- **`cleanDutyRawName(raw)`** + **`resolveDutyPlayerName(raw)`** + **`getDutyOperatorNote(raw)`** in
+  [`js/ocr-shared.js`](../js/ocr-shared.js) — strip the Viber noise (below) to the credited
+  account/owner, then call the shared `findBestMatch`; the parenthetical note is captured separately.
+  No separate alias list.
 - Wired into **`getDutySuggestions`** and **`getDutyMatchStatus`**
   ([`js/ocr-roster.js`](../js/ocr-roster.js)) so the default confirmed name auto-resolves to the
   rolled-up canonical and clean roll-ups are not falsely flagged for review.
@@ -122,8 +128,9 @@ the duty debug CSV as `Cleaned ≠ Grouped` and should be added to the **same sh
    `bridge`, `gate`, `gates`, `gate l2/l5`, `town l1/l4/lvl1`, `capital`, `Team N`, `Reserve`.
    e.g. `bridge @Roha` → `Roha`, `town lvl1 @UNDEA` → `UNDEA`, `capital @UNDEAD +` → `UNDEAD`.
 2. **Viber `@` prefix**: `@Maximus` → `Maximus`, `@Juli` → `Juli`.
-3. **Parenthetical operator/covering notes**: `(zubbs)`, `(osito)`, `(Teresita)`, `(bubbles)`,
-   `(RedBull banner)` — strip trailing `\s*\([^)]*\)`.
+3. **Parenthetical notes** (who operated, or which banner): `(zubbs)`, `(osito)`, `(Teresita)` —
+   stripped from the credited name, but **preserved** via `getDutyOperatorNote()` (exported in the
+   duty debug CSV's `Operator/Banner Note` column).
 4. **Trailing OCR junk**: stray `","`, `"`, `,` (e.g. `A.S.KHAN","`, `Ezeta.TV","`).
 5. **`+`/reinforcement markers**: `@UNDEAD +`, `@+`.
 6. **Multi-tag cells** (ambiguous — send to review, don't auto-pick):

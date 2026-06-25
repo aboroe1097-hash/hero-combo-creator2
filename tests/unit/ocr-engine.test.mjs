@@ -20,6 +20,7 @@ const {
   findBestMatch,
   cleanDutyRawName,
   resolveDutyPlayerName,
+  getDutyOperatorNote,
   compactPlayerIdentity,
   formatDatasetStructureLabel,
   formatStructureLabel,
@@ -338,18 +339,18 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('MasterVjs'), 'MasterVj');
 });
 
-test('cleanDutyRawName strips Viber noise and rolls up to the operating player', () => {
+test('cleanDutyRawName strips Viber noise and credits the banner account / @-owner', () => {
   // Target words merged into the cell.
   assert.equal(cleanDutyRawName('bridge @Roha'), 'Roha');
   assert.equal(cleanDutyRawName('town lvl1 @ANGEL VtS R4'), 'ANGEL VtS R4');
   assert.equal(cleanDutyRawName('capital @UNDEAD +'), 'UNDEAD');
   // Plain Viber @tag.
   assert.equal(cleanDutyRawName('@Maximus'), 'Maximus');
-  // Parenthetical operator note wins (roll-up to the covering player).
-  assert.equal(cleanDutyRawName('Angel Banner (zubbs)'), 'zubbs');
-  assert.equal(cleanDutyRawName('@redbull (osito)'), 'osito');
-  // Parenthetical that is a label, not an operator, is ignored.
+  // Credit the banner account / @-owner before the parenthetical; the note is metadata.
+  assert.equal(cleanDutyRawName('Angel Banner (zubbs)'), 'Angel'); // ANGEL account, zubbs operated
+  assert.equal(cleanDutyRawName('@redbull (osito)'), 'redbull'); // redbull tagged = owner
   assert.equal(cleanDutyRawName('redbull (RedBull banner)'), 'redbull');
+  assert.equal(cleanDutyRawName('Moldo (zubbs)'), 'Moldo');
   // Banner-label suffix strips to the owner player.
   assert.equal(cleanDutyRawName('BOiiE BANNER'), 'BOiiE');
   assert.equal(cleanDutyRawName('Undead_Banner'), 'Undead');
@@ -361,6 +362,13 @@ test('cleanDutyRawName strips Viber noise and rolls up to the operating player',
   // Clean names pass through untouched.
   assert.equal(cleanDutyRawName('Neutrino10'), 'Neutrino10');
   assert.equal(cleanDutyRawName('~Sarafina~'), '~Sarafina~');
+});
+
+test('getDutyOperatorNote preserves the parenthetical metadata', () => {
+  assert.equal(getDutyOperatorNote('Angel Banner (zubbs)'), 'zubbs');
+  assert.equal(getDutyOperatorNote('@redbull (osito)'), 'osito');
+  assert.equal(getDutyOperatorNote('Moldo (zubbs)'), 'zubbs');
+  assert.equal(getDutyOperatorNote('@Maximus'), '');
 });
 
 test('resolveDutyPlayerName routes cleaned duty names through the shared authority', () => {
