@@ -1,3 +1,7 @@
+## 12.1.1 - 2026-06-26
+
+- Added compact summary tables above Banners and Pathers / Speed Tile Plans so all uploaded duty records can be reviewed before the detailed OCR rows.
+- Polished the admin dashboard connecting animation with layered scan, route, particle, and progress motion.
 # Changelog
 
 ## 12.1.0 - 2026-06-25

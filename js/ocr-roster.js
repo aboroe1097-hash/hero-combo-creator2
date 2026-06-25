@@ -1036,6 +1036,77 @@ function deleteDutyRecord(id) {
   log(adminT('adminDutyDeletedLog'), 'warn');
 }
 
+function dutyRecordTypesFor(type) {
+  const meta = DUTY_TYPES[type];
+  return meta?.recordTypes || [type];
+}
+
+function dutyRecordsForType(type) {
+  const recordTypes = dutyRecordTypesFor(type);
+  return (state.dutyRecords || []).filter(record => recordTypes.includes(record.type));
+}
+
+function summarizeDutyValues(values, limit = 3) {
+  const clean = Array.from(new Set(values.map(value => String(value || '').trim()).filter(Boolean)));
+  if (!clean.length) return '<span style="color:var(--text-dim)">--</span>';
+  const visible = clean.slice(0, limit).map(esc).join(', ');
+  return clean.length > limit ? `${visible} +${clean.length - limit}` : visible;
+}
+
+function summarizeDutyRecord(record) {
+  const entries = Array.isArray(record.entries) ? record.entries : [];
+  const confirmed = entries.filter(entry => entry.confirmed).length;
+  const review = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
+  return {
+    date: record.date || '',
+    type: dutySingular(record.type) || dutySingular('pather'),
+    note: record.note || '',
+    rows: entries.length,
+    confirmed,
+    review,
+    targets: summarizeDutyValues(entries.map(entry => entry.target), 4),
+    groups: summarizeDutyValues(entries.map(entry => entry.group), 4),
+    times: summarizeDutyValues(entries.map(entry => entry.usageTime || record.gameTime), 4),
+  };
+}
+
+function renderDutyUploadSummary(type, hostId) {
+  const host = $id(hostId);
+  if (!host) return;
+  const records = dutyRecordsForType(type).slice().reverse();
+  if (!records.length) {
+    host.innerHTML = '';
+    return;
+  }
+  const summaries = records.map(summarizeDutyRecord);
+  const totalRows = summaries.reduce((sum, row) => sum + row.rows, 0);
+  const totalConfirmed = summaries.reduce((sum, row) => sum + row.confirmed, 0);
+  const totalReview = summaries.reduce((sum, row) => sum + row.review, 0);
+  const latest = summaries[0]?.date || '--';
+  host.innerHTML = `<div class="dash-duty-upload-summary">
+    <div class="dash-duty-summary-kpis">
+      <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>uploads</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>rows</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalConfirmed}</strong><span>matched</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalReview}</strong><span>review</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>latest</span></div>
+    </div>
+    <div class="dash-duty-summary-table-wrap">
+      <table class="dash-duty-summary-table">
+        <thead><tr><th>Date</th><th>Plan</th><th>Rows</th><th>Matched</th><th>Targets</th><th>Groups</th><th>Times</th></tr></thead>
+        <tbody>${summaries.map(row => `<tr>
+          <td>${row.date ? esc(row.date) : '<span style="color:var(--text-dim)">--</span>'}</td>
+          <td><strong>${esc(row.type)}</strong>${row.note ? `<small>${esc(row.note)}</small>` : ''}</td>
+          <td>${row.rows}</td>
+          <td>${row.confirmed}${row.review ? ` <small>${row.review} review</small>` : ''}</td>
+          <td>${row.targets}</td>
+          <td>${row.groups}</td>
+          <td>${row.times}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
 function renderDutyType(type) {
   const meta = DUTY_TYPES[type];
   const body = meta ? $id(meta.bodyId) : null;
@@ -1104,6 +1175,8 @@ function renderDutySummary() {
 }
 
 function renderDutyRecords() {
+  renderDutyUploadSummary('banner', 'dashBannerListSummary');
+  renderDutyUploadSummary('pather', 'dashPatherListSummary');
   renderDutyType('banner');
   renderDutyType('pather');
   renderDutyType('shield_wall');
