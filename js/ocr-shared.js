@@ -1070,6 +1070,30 @@ export function findBestMatch(name, minConfidence = 100) {
       '~Sarafina~': '~Sarafina~',
       Sarafina: '~Sarafina~',
       'Sarafina~': '~Sarafina~',
+      // --- 2026-06 debug-export dedup audit: decoration/diacritic + OCR-typo variants ---
+      // (Kika / Sarafino-Sarafina / MalakAbo-MalakAdo are intentionally kept separate.)
+      '~Anne~': 'Anne',
+      '⌂ Anne ₿': 'Anne',
+      '✨Anne ✨': 'Anne',
+      'Neutrin010': 'Neutrino10',
+      'Åñdëř$': 'A n d e R $',
+      'AndërS': 'A n d e R $',
+      'AndëRS': 'A n d e R $',
+      '— L7 —': '- L7 -',
+      'Hunter Killer.': 'Hunter killer.',
+      'WICKED WOMEN': 'WICKED WOMEN☆',
+      '☆r@mze$$$☆': '★r@mze$$$★',
+      '·Lisavetka·': '•Lisavetka•',
+      '✨Nosferatu✨': 'Nosferatu',
+      'Batou-Zar': 'Batou~Zar',
+      '★ DEAN ★': '*DEAN*',
+      'ОUNDEA': 'UNDEAD',
+      'Spoilagege': 'Spoilage',
+      'Mr. AHPD': 'Mr. AHDP',
+      'mohmedsaif': 'mohmmedsaif',
+      'BiG BOiE': 'BiG BOiiE',
+      'Oblitereted': 'Obliterated',
+      'MasterVjs': 'MasterVj',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';

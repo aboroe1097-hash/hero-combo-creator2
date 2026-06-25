@@ -310,6 +310,32 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('Dragon.Gold'), 'Dragon.Gold');
 });
 
+test('player aliases fold decoration and OCR-typo variants into one master', () => {
+  // From the 2026-06 debug-export dedup audit.
+  assert.equal(findBestMatch('~Anne~'), 'Anne');
+  assert.equal(findBestMatch('⌂ Anne ₿'), 'Anne');
+  assert.equal(findBestMatch('✨Anne ✨'), 'Anne');
+  assert.equal(findBestMatch('Neutrin010'), 'Neutrino10');
+  assert.equal(findBestMatch('Åñdëř$'), 'A n d e R $');
+  assert.equal(findBestMatch('AndërS'), 'A n d e R $');
+  assert.equal(findBestMatch('AndëRS'), 'A n d e R $');
+  assert.equal(findBestMatch('— L7 —'), '- L7 -');
+  assert.equal(findBestMatch('Hunter Killer.'), 'Hunter killer.');
+  assert.equal(findBestMatch('WICKED WOMEN'), 'WICKED WOMEN☆');
+  assert.equal(findBestMatch('☆r@mze$$$☆'), '★r@mze$$$★');
+  assert.equal(findBestMatch('·Lisavetka·'), '•Lisavetka•');
+  assert.equal(findBestMatch('✨Nosferatu✨'), 'Nosferatu');
+  assert.equal(findBestMatch('Batou-Zar'), 'Batou~Zar');
+  assert.equal(findBestMatch('★ DEAN ★'), '*DEAN*');
+  assert.equal(findBestMatch('ОUNDEA'), 'UNDEAD');
+  assert.equal(findBestMatch('Spoilagege'), 'Spoilage');
+  assert.equal(findBestMatch('Mr. AHPD'), 'Mr. AHDP');
+  assert.equal(findBestMatch('mohmedsaif'), 'mohmmedsaif');
+  assert.equal(findBestMatch('BiG BOiE'), 'BiG BOiiE');
+  assert.equal(findBestMatch('Oblitereted'), 'Obliterated');
+  assert.equal(findBestMatch('MasterVjs'), 'MasterVj');
+});
+
 test('short OCR fragments require exact roster matches', () => {
   const previousRosterNames = state.rosterNames;
   try {
