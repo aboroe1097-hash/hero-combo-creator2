@@ -134,6 +134,16 @@ test('Lv.0 structure labels are preserved for distinct dataset targets', () => {
   );
 });
 
+test('Capital Lv7 expected demolition is 4.5M', () => {
+  const capital = validateTotalDemolition('Capital', 'Lv7', 4500000);
+  const capitolAlias = validateTotalDemolition('Capitol', '7', 4500000);
+
+  assert.equal(capital.expected, 4500000);
+  assert.equal(capital.match, true);
+  assert.equal(capitolAlias.expected, 4500000);
+  assert.equal(capitolAlias.match, true);
+});
+
 test('dataset structure labels preserve extracted names while canonical fields drive validation', () => {
   const parsed = parseOcrResults([
     {
