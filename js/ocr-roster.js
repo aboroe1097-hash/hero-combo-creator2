@@ -2,7 +2,7 @@ import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, compactPlayerIdentity,
+  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, cleanDutyRawName, resolveDutyPlayerName, compactPlayerIdentity,
   getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
@@ -654,14 +654,17 @@ function getDutySuggestions(rawName) {
   const roster = getRosterDatabaseNames();
   const raw = String(rawName || '').trim();
   if (!raw || !roster.length) return [];
-  const canonical = findBestMatch(raw, 55);
+  // Pre-clean Viber noise (target words, @tags, operator notes, banner suffix) then
+  // resolve against the same authority the structures dataset uses.
+  const cleaned = cleanDutyRawName(raw) || raw;
+  const canonical = findBestMatch(cleaned, 55);
   const rows = roster.map(name => {
-    const compactScore = getSimilarityAlphaNum(raw, name);
-    const textScore = getSimilarity(raw.toLowerCase(), name.toLowerCase());
+    const compactScore = getSimilarityAlphaNum(cleaned, name);
+    const textScore = getSimilarity(cleaned.toLowerCase(), name.toLowerCase());
     const canonicalBoost = canonical === name ? 0.15 : 0;
     return { name, score: Math.min(1, Math.max(compactScore, textScore) + canonicalBoost) };
   });
-  if (canonical && !rows.some(row => row.name === canonical)) rows.push({ name: canonical, score: 0.75 });
+  if (canonical && !rows.some(row => row.name === canonical)) rows.push({ name: canonical, score: 0.8 });
   return rows
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
     .slice(0, 8);
@@ -669,10 +672,11 @@ function getDutySuggestions(rawName) {
 
 function getDutyMatchStatus(rawName, confirmedName) {
   if (!confirmedName) return 'unmatched';
-  const rawKey = normalizeDutyName(rawName);
+  const cleaned = cleanDutyRawName(rawName) || rawName;
+  const rawKey = normalizeDutyName(cleaned);
   const confirmedKey = normalizeDutyName(confirmedName);
   if (rawKey && rawKey === confirmedKey) return 'exact';
-  const score = Math.max(getSimilarityAlphaNum(rawName, confirmedName), getSimilarity(String(rawName || '').toLowerCase(), String(confirmedName || '').toLowerCase()));
+  const score = Math.max(getSimilarityAlphaNum(cleaned, confirmedName), getSimilarity(String(cleaned || '').toLowerCase(), String(confirmedName || '').toLowerCase()));
   if (score >= 0.72) return 'likely';
   if (score >= 0.45) return 'weak';
   return 'manual';

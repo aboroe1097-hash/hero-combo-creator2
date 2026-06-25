@@ -1128,6 +1128,56 @@ export function findBestMatch(name, minConfidence = 100) {
   return result;
 }
 
+// --- Duty (Banner / Pather) name resolution ---
+// Banner & Pather rows are OCR'd from Viber screenshots and carry noise the
+// structures/attacks pipeline never sees: Viber @tags, target words merged into the
+// cell (e.g. "bridge @Roha"), "(operator)" cover notes, banner-label suffixes, and OCR
+// junk. We strip that noise, then fall back to the SAME findBestMatch authority — no
+// separate merge list. Per product decision, banner work rolls up to the OPERATING
+// player: a parenthetical operator note wins; otherwise the banner's owner (suffix
+// stripped) is credited.
+const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.\-]*/i;
+const DUTY_BANNER_SUFFIX = /[\s_\-]*banner\s*\d*$/i;
+
+function looksLikeDutyOperator(value) {
+  const v = String(value || '').trim();
+  if (!v) return false;
+  if (/banner|reserve|^team\b/i.test(v)) return false;
+  if (DUTY_TARGET_PREFIX.test(v)) return false;
+  return /[A-Za-zÀ-￿Ѐ-ӿ]/.test(v);
+}
+
+export function cleanDutyRawName(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return '';
+  s = s.replace(/[",'`]+$/g, '').trim(); // trailing OCR quote/comma junk
+  let operator = '';
+  s = s
+    .replace(/\(([^)]*)\)/g, (_, inner) => {
+      if (looksLikeDutyOperator(inner)) operator = String(inner).trim();
+      return ' ';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (operator) return operator.replace(/^@+/, '').trim(); // roll-up to covering operator
+  if (s.includes('@')) {
+    // keep the first @-segment that isn't a pure target word (handles multi-tag cells)
+    const segs = s.split('@').map((x) => x.trim()).filter(Boolean);
+    s = segs.find((p) => !DUTY_TARGET_PREFIX.test(p)) || segs[segs.length - 1] || '';
+  }
+  s = s.replace(DUTY_TARGET_PREFIX, '').trim(); // leading target word without an @
+  s = s.replace(/[\s+]+$/g, '').replace(/^[\s+]+/g, '').trim(); // '+' reinforcement markers
+  s = s.replace(DUTY_BANNER_SUFFIX, '').trim(); // banner-label suffix -> owner player
+  s = s.replace(/^[\s_·.\-]+|[\s_·.\-]+$/g, '').trim();
+  return s;
+}
+
+export function resolveDutyPlayerName(raw) {
+  const cleaned = cleanDutyRawName(raw);
+  if (!cleaned) return String(raw || '').trim();
+  return findBestMatch(cleaned);
+}
+
 // --- Durability Validation ---
 export function validateTotalDemolition(sN, sL, total) {
   const target = normalizeStructureTarget(sN, sL);

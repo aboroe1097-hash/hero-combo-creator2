@@ -79,27 +79,44 @@ two real players.
 
 ---
 
-## 3. Banners & Pathers — fall back to the same authority (DESIGN / TODO)
+## 3. Banners & Pathers — fall back to the same authority (IMPLEMENTED 2026-06)
 
 Banners and Pathers are uploaded mostly from **Viber screenshots**. Player cells are **Viber tags**,
 which differ from in-game tags and carry extra noise. The directive: **do not build a separate
 merger** — pre-clean the Viber noise and route through the *same* `findBestMatch` + roster, so
 Banner/Pather names inherit the Structures/Attacks authority automatically.
 
-### Current state
+**Decision (locked):** banner work **rolls up to the operating player**. A parenthetical operator
+note wins (e.g. `Angel Banner (zubbs)` → `zubbs`); otherwise the banner's owner with the `banner`
+suffix stripped is credited (`BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`). Note this is a
+*duty-context* roll-up only — in the Structures/Attacks dataset, `꧁ Kika-banner ꧂` remains a
+separate account (§4). The two contexts intentionally differ.
 
-- Banner/Pather rows are **duty records** (`DUTY_TYPES` in [`js/ocr-roster.js`](../js/ocr-roster.js):
-  `banner`, `pather`, `speed_tile`, `shield_wall`), stored under `DUTY_LIST_KEY`.
-- They **already touch** `findBestMatch` via `getDutySuggestions()`
-  ([`js/ocr-roster.js`](../js/ocr-roster.js) ~L657) — but only as *review suggestions*. The noisy
-  Viber forms are **not pre-cleaned** before matching, so match quality is poor and many rows land
-  in the manual review queue.
-- There is **no debug/CSV export** for duty records (only Structures/Attacks has `exportDebugCsv`).
-  This is why duty tables currently have to be copy-pasted by hand.
+### Implementation
 
-### Viber noise patterns to pre-clean (observed 2026-06-25)
+- **`cleanDutyRawName(raw)`** + **`resolveDutyPlayerName(raw)`** in
+  [`js/ocr-shared.js`](../js/ocr-shared.js) — strip the Viber noise (below), extract the operating
+  player, then call the shared `findBestMatch`. No separate alias list.
+- Wired into **`getDutySuggestions`** and **`getDutyMatchStatus`**
+  ([`js/ocr-roster.js`](../js/ocr-roster.js)) so the default confirmed name auto-resolves to the
+  rolled-up canonical and clean roll-ups are not falsely flagged for review.
+- **`exportDutyDebugCsv()`** ([`js/ocr-dashboard.js`](../js/ocr-dashboard.js), button
+  **"CSV Duty Debug (Banner/Pather)"** in the export menu) emits per duty entry:
+  `Date, Type, Upload ID, Raw Name, Cleaned Name, Grouped Name (Master), Confirmed Name,
+  Match Status, Target, Group, Time`. This gives Banners/Pathers the same weekly dedup loop as §2.
+- Tests pin behavior to the real Viber data
+  ([`tests/unit/ocr-engine.test.mjs`](../tests/unit/ocr-engine.test.mjs)).
 
-Before calling `findBestMatch`, strip/normalize these (in roughly this order):
+### Residual that still needs the shared aliasMap
+
+Pre-clean gets to a clean token, but final canonicalization leans on roster + `aliasMap`. Names the
+fuzzy match can't bridge (e.g. `Dvd`→`DvD18`, `Uz`→`!!Uzumaki!!`, `BOiiE`→`BiG BOiiE`) surface in
+the duty debug CSV as `Cleaned ≠ Grouped` and should be added to the **same shared `aliasMap`**
+(§1) — never a duty-only list.
+
+### Viber noise patterns the pre-clean handles (observed 2026-06-25)
+
+`cleanDutyRawName` strips/normalizes these (in roughly this order):
 
 1. **Leading target tokens** accidentally merged into the name:
    `bridge`, `gate`, `gates`, `gate l2/l5`, `town l1/l4/lvl1`, `capital`, `Team N`, `Reserve`.
@@ -112,33 +129,12 @@ Before calling `findBestMatch`, strip/normalize these (in roughly this order):
 6. **Multi-tag cells** (ambiguous — send to review, don't auto-pick):
    `@UNDEAD + @BiG BOiiE`, `gate @redull @+ Ezeta TV`.
 
-After pre-clean, the residual still benefits from the shared `aliasMap` + roster fuzzy match,
-which already handles OCR letter errors (`@UNDEA`→UNDEAD, `@redull`→redbull, `Dvd`→DvD18,
-`@ANGƎL`→ANGEL).
+7. **Banner suffix** → owner player: `BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`,
+   `Undead_Banner` → `Undead` (then matched via the shared authority).
 
-### Open decision (BLOCKS the banner-suffix rule)
-
-Some names carry a **"Banner" suffix**: `Kika-banner`, `Angel Banner`, `RedBull_Banner`,
-`Uz banner`, `BOiiE BANNER`, `Undead_Banner`. Policy question:
-
-- Are banner identities **separate accounts** for Top-20 purposes (like Kika's 4 accounts, where
-  `꧁ Kika-banner ꧂` is already a distinct master), **or**
-- Should a banner's performance **roll up** to the operating player?
-
-This is unresolved and must be decided before writing the banner-suffix rule. Until then, treat
-`*-banner` as **distinct identities** (matches the existing Kika treatment) and do not auto-merge
-them to the player.
-
-### Proposed work (not yet implemented)
-
-1. **`cleanDutyRawName(raw)`** helper in [`js/ocr-shared.js`](../js/ocr-shared.js) implementing the
-   pre-clean above, then `findBestMatch(cleaned)`. Wire it into the duty parse/confirm path so
-   Banner/Pather names resolve against the shared authority by default.
-2. **`exportDutyDebugCsv()`** mirroring `exportDebugCsv` but over `state.dutyRecords`
-   (columns: `Date, Type, Raw Name, Cleaned Name, Grouped Name (Master), Match Status, Target,
-   Time, Uploads`). Gives the same weekly dedup loop for Banners/Pathers and removes the
-   copy-paste workaround.
-3. Odd readings discovered this way feed the **same** `aliasMap` (one authority), per the directive.
+After pre-clean, the residual leans on the shared `aliasMap` + roster fuzzy match, which handles
+OCR letter errors (`@UNDEA`→UNDEAD via alias; `Dvd`→DvD18 needs an alias if the roster fuzzy match
+can't bridge it — surfaced by the duty debug CSV).
 
 ---
 

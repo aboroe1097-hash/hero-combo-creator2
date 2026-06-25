@@ -18,6 +18,8 @@ const { normalizeStructureName, normalizeStructureTarget, parseOcrResults } =
   await import('../../js/ocr-engine.js');
 const {
   findBestMatch,
+  cleanDutyRawName,
+  resolveDutyPlayerName,
   compactPlayerIdentity,
   formatDatasetStructureLabel,
   formatStructureLabel,
@@ -334,6 +336,40 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('BiG BOiE'), 'BiG BOiiE');
   assert.equal(findBestMatch('Oblitereted'), 'Obliterated');
   assert.equal(findBestMatch('MasterVjs'), 'MasterVj');
+});
+
+test('cleanDutyRawName strips Viber noise and rolls up to the operating player', () => {
+  // Target words merged into the cell.
+  assert.equal(cleanDutyRawName('bridge @Roha'), 'Roha');
+  assert.equal(cleanDutyRawName('town lvl1 @ANGEL VtS R4'), 'ANGEL VtS R4');
+  assert.equal(cleanDutyRawName('capital @UNDEAD +'), 'UNDEAD');
+  // Plain Viber @tag.
+  assert.equal(cleanDutyRawName('@Maximus'), 'Maximus');
+  // Parenthetical operator note wins (roll-up to the covering player).
+  assert.equal(cleanDutyRawName('Angel Banner (zubbs)'), 'zubbs');
+  assert.equal(cleanDutyRawName('@redbull (osito)'), 'osito');
+  // Parenthetical that is a label, not an operator, is ignored.
+  assert.equal(cleanDutyRawName('redbull (RedBull banner)'), 'redbull');
+  // Banner-label suffix strips to the owner player.
+  assert.equal(cleanDutyRawName('BOiiE BANNER'), 'BOiiE');
+  assert.equal(cleanDutyRawName('Undead_Banner'), 'Undead');
+  assert.equal(cleanDutyRawName('Kika-banner'), 'Kika');
+  // Trailing OCR junk.
+  assert.equal(cleanDutyRawName('A.S.KHAN","'), 'A.S.KHAN');
+  // Multi-tag cell keeps the first real player tag.
+  assert.equal(cleanDutyRawName('@UNDEAD + @BiG BOiiE'), 'UNDEAD');
+  // Clean names pass through untouched.
+  assert.equal(cleanDutyRawName('Neutrino10'), 'Neutrino10');
+  assert.equal(cleanDutyRawName('~Sarafina~'), '~Sarafina~');
+});
+
+test('resolveDutyPlayerName routes cleaned duty names through the shared authority', () => {
+  // Falls back to the same aliasMap / protected identities as structures.
+  assert.equal(resolveDutyPlayerName('Kika-banner'), '꧁ Kika ꧂'); // rolls up to operating player
+  assert.equal(resolveDutyPlayerName('@Maximus'), 'Maximus');
+  assert.equal(resolveDutyPlayerName('capital @UNDEAD +'), 'UNDEAD');
+  // Empty / junk-only input degrades to the trimmed raw, never throws.
+  assert.equal(resolveDutyPlayerName('   '), '');
 });
 
 test('short OCR fragments require exact roster matches', () => {

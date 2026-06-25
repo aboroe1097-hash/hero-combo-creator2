@@ -36,7 +36,7 @@ import {
   LOG_KEY, CLEAR_HASH, DELETE_HASHES, DURABILITY_TABLE,
   state, $id, esc, log, appendLogEntry, persistLog, restoreLogs,
   tryRepairJson, getSimilarity, getSimilarityAlphaNum, editDistance, findBestMatch,
-  resolvePlayerNameForAttack,
+  resolvePlayerNameForAttack, cleanDutyRawName, resolveDutyPlayerName,
   validateTotalDemolition, sha256, checkOcrService, qwenVisionRequest,
   describeOcrRequestError, getOcrRetryDelayMs, isRetryableOcrRequestError,
   formatStructureLabel, formatDatasetStructureLabel, getDatasetStructureTarget, isNameOnlyStructure,
@@ -1354,6 +1354,29 @@ function exportDebugCsv() {
   });
   downloadCsv(csv, `vts_debug_export_${new Date().getTime()}.csv`);
 }
+
+// Banner/Pather duty-record debug export. Mirrors exportDebugCsv so the same weekly
+// name-dedup loop applies to Viber-sourced duty data. Shows Raw -> Cleaned -> Grouped
+// so odd readings can be spotted and fed back into the shared aliasMap.
+function exportDutyDebugCsv() {
+  const records = Array.isArray(state.dutyRecords) ? state.dutyRecords : [];
+  if (!records.length) return;
+  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  let csv = 'Date,Type,Upload ID,Raw Name,Cleaned Name,Grouped Name (Master),Confirmed Name,Match Status,Target,Group,Time\n';
+  records.forEach(rec => {
+    const entries = Array.isArray(rec.entries) ? rec.entries : [];
+    entries.forEach(e => {
+      const raw = e.name || e.original || '';
+      csv += [
+        q(rec.date), q(rec.type), q(rec.id || rec.createdAt || ''),
+        q(raw), q(cleanDutyRawName(raw)), q(resolveDutyPlayerName(raw)),
+        q(e.confirmed || ''), q(e.status || ''),
+        q(e.target), q(e.group), q(e.usageTime || rec.gameTime || ''),
+      ].join(',') + '\n';
+    });
+  });
+  downloadCsv(csv, `vts_duty_debug_export_${new Date().getTime()}.csv`);
+}
 function importData(file) {
   const r = new FileReader(); r.onload = e => {
     try {
@@ -1745,6 +1768,7 @@ export async function bootOcrDashboard() {
   $id('dashExpCsv').onclick = exportToCsv;
   $id('dashExpAttackCsv').onclick = exportAttackCsv;
   const dashExpDebug = $id('dashExpDebugCsv'); if (dashExpDebug) dashExpDebug.onclick = exportDebugCsv;
+  const dashExpDutyDebug = $id('dashExpDutyDebugCsv'); if (dashExpDutyDebug) dashExpDutyDebug.onclick = exportDutyDebugCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
   $id('dashExpJson').onclick = exportData;
