@@ -36,8 +36,7 @@
     (function () {
       try {
         const stored = localStorage.getItem('vts_theme') || localStorage.getItem('theme');
-        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-        const theme = stored === 'light' || stored === 'dark' ? stored : (prefersLight ? 'light' : 'dark');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
         if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
       } catch (e) { /* ignore sandboxed localStorage */ }
     })();
@@ -80,17 +79,13 @@
   </noscript>
   <link rel="preload" as="image" href="images/boot/dreamy-wing-left.webp" type="image/webp" />
   <link rel="preload" as="image" href="images/boot/blazing-wing-right.webp" type="image/webp" />
-  <script src="js/maintenance-config.js?v=20260624_215731"></script>
-  <link rel="stylesheet" href="css/app.css?v=20260624_215731" />
-  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_215731" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260624_215731" media="(max-width: 768px)" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260624_215731" media="print" onload="this.media='all'" />
+  <script src="js/maintenance-config.js?v=20260624_223549"></script>
+  <link rel="stylesheet" href="css/app.css?v=20260624_223549" />
+  <link rel="stylesheet" href="css/tailwind-build.css?v=20260624_223549" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260624_223549" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_223549" media="print" onload="this.media='all'" />
   <noscript>
-    <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260624_215731" />
-  </noscript>
-  <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_215731" media="print" onload="this.media='all'" />
-  <noscript>
-    <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_215731" />
+    <link rel="stylesheet" href="css/light-theme-overrides.css?v=20260624_223549" />
   </noscript>
   <script type="importmap">
     {
@@ -103,7 +98,7 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260624_215731"></script>
+  <script src="js/admin-auth-config.js?v=20260624_223549"></script>
 </head>
 <body class="p-3 sm:p-4 app-booting">
   <div class="maintenance-preload" role="status" aria-live="polite">
@@ -701,7 +696,7 @@
   })();
 
   </script>
-  <script type="module" src="js/app.js?v=20260624_215731"></script>
+  <script type="module" src="js/app.js?v=20260624_223549"></script>
 
 <script>
   // Lazy-load YouTube iframes

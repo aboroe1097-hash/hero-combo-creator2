@@ -6,7 +6,7 @@
     "build:eden": "python scripts/eden/build-eden-datasets.py",
     "build:tailwind": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind-build.css --minify",
     "dev": "vite",
-    "build": "npm run data:check && npm run build:eden && npm run build:tailwind && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs",
+    "build": "npm run data:check && npm run build:eden && npm run build:tailwind && node scripts/update-build-metadata.mjs && vite build && node scripts/post-build.mjs && node scripts/minify-built-css.mjs",
     "data:check": "node scripts/check-tech-db.mjs",
     "firebase:admin-claim": "node scripts/firebase-set-admin-claim.mjs",
     "combos:audit": "node scripts/roc-combo-importer.mjs",

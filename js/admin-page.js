@@ -8,7 +8,7 @@ const THEME_STORAGE_KEY = 'vts_theme';
 function getPreferredTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
   if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'dark';
 }
 
 function applyTheme(theme) {
@@ -121,7 +121,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260624_215731');
+  const mod = await import('./ocr-dashboard.js?v=20260624_223549');
   await mod.bootOcrDashboard();
 }
 

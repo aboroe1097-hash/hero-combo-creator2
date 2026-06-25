@@ -156,7 +156,7 @@ function resolveDroppedHeroName(dataTransfer) {
 function getPreferredTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
   if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'dark';
 }
 
 function applyTheme(theme) {
@@ -192,13 +192,6 @@ function initTheme() {
   if (!localStorage.getItem(THEME_STORAGE_KEY) && localStorage.getItem('theme')) {
     localStorage.setItem(THEME_STORAGE_KEY, localStorage.getItem('theme'));
     localStorage.removeItem('theme');
-  }
-  if (!localStorage.getItem(THEME_STORAGE_KEY) && window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
-      if (!localStorage.getItem(THEME_STORAGE_KEY)) {
-        applyTheme(e.matches ? 'light' : 'dark');
-      }
-    });
   }
   const setupToggle = () => {
     const btn = document.getElementById('themeToggle');
