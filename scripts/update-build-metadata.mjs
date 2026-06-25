@@ -4,25 +4,26 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
-const assetExtensions = new Set([
-  '.css', '.html', '.js', '.json', '.manifest', '.png', '.jpg', '.jpeg', '.svg', '.webp'
-]);
-const assetDirs = ['css', 'js', 'images', 'assets', 'tabs', 'workers'];
-const rootFiles = ['/', '/index.html', '/admin.html', '/CNAME', '/robots.txt', '/sitemap.xml', '/site.webmanifest', '/404.html'];
-const lazyRuntimeCachePatterns = [
-  /^\/assets\/eden-/,
-  /^\/assets\/eden_/,
-  /^\/assets\/faction-division/,
-  /^\/js\/eden-/,
-  /^\/tabs\/eden-map\.html$/,
-];
-const precacheSkipPatterns = [
-  /^\/assets\/Capital\.(?:png|webp)$/i,
-  /^\/assets\/Gate\.(?:png|webp)$/i,
-  /^\/assets\/stronghold\.(?:png|webp)$/i,
-  /^\/assets\/Town\.(?:png|webp)$/i,
-  /^\/images\/boot\/.*\.png$/i,
-  /^\/images\/heroes\/catchup\/.*\.png$/i,
+const appShellFiles = [
+  '/',
+  '/index.html',
+  '/404.html',
+  '/site.webmanifest',
+  '/css/app.css',
+  '/css/tailwind-build.css',
+  '/css/mobile.css',
+  '/css/light-theme-overrides.css',
+  '/css/v12-redesign.css',
+  '/js/admin-auth-config.js',
+  '/js/app-loading.js',
+  '/js/app.js',
+  '/js/firebase.js',
+  '/js/firebase-sdk.js',
+  '/js/maintenance-config.js',
+  '/js/pwa-register.js',
+  '/images/logo.png',
+  '/images/boot/blazing-wing-right.webp',
+  '/images/boot/dreamy-wing-left.webp',
 ];
 
 function makeBuildVersion() {
@@ -64,39 +65,18 @@ function updateCacheBusters() {
   }
 }
 
-function walkAssets(dir, urls) {
-  const absDir = path.join(root, dir);
-  if (!fs.existsSync(absDir)) return;
-  for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
-    const abs = path.join(absDir, entry.name);
-    const rel = path.relative(root, abs).replace(/\\/g, '/');
-    if (entry.isDirectory()) {
-      walkAssets(rel, urls);
-      continue;
-    }
-    const ext = path.extname(entry.name).toLowerCase();
-    if (!assetExtensions.has(ext)) continue;
-    urls.add(`/${rel}`);
-  }
+function publicUrlExists(url) {
+  if (url === '/') return true;
+  const rel = url.replace(/^\/+/, '');
+  return fs.existsSync(path.join(root, rel)) || fs.existsSync(path.join(root, 'public', rel));
 }
 
 function buildPrecacheUrls() {
-  const urls = new Set(rootFiles);
-  if (fs.existsSync(path.join(root, 'public', '404.html'))) urls.add('/404.html');
-  for (const dir of assetDirs) walkAssets(dir, urls);
-  urls.delete('/js/eden-datasets.payload.js.map');
-  for (const url of [...urls]) {
-    if (lazyRuntimeCachePatterns.some((pattern) => pattern.test(url))) {
-      urls.delete(url);
-    }
-    if (precacheSkipPatterns.some((pattern) => pattern.test(url))) {
-      urls.delete(url);
-    }
-  }
+  const urls = new Set(appShellFiles.filter(publicUrlExists));
   return [...urls].sort((a, b) => a.localeCompare(b));
 }
 
-const MAX_CACHE_ENTRIES = 350;
+const MAX_CACHE_ENTRIES = 220;
 const PRECACHE_BATCH_SIZE = 6;
 
 function writeServiceWorker() {

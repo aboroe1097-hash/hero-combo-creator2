@@ -8,6 +8,8 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  // For durable cross-isolate rate limits, create a KV namespace and add it here:
+  // "kv_namespaces": [{ "binding": "RATE_LIMIT_KV", "id": "<KV_NAMESPACE_ID>" }],
   "vars": {
     "ALLOWED_ORIGINS": "https://roc-vts.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:5176,http://127.0.0.1:5176,http://localhost:5177,http://127.0.0.1:5177,http://localhost:4173,http://127.0.0.1:4173,http://localhost:4174,http://127.0.0.1:4174",
     "DASHSCOPE_BASE_URL": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",

@@ -316,6 +316,45 @@ test.describe('app smoke tabs', () => {
     expect(layout.selectValue).toBe('ar');
   });
 
+  test('v12 mobile nav and light theme avoid document overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, '/?v12qa=mobile');
+    await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
+
+    const darkLayout = await page.evaluate(() => {
+      const nav = document.getElementById('tabNavScroll');
+      const adminTab = document.getElementById('tabOcrDashboard');
+      return {
+        rootTheme: document.documentElement.getAttribute('data-theme') || 'dark',
+        noDocumentOverflow: document.documentElement.scrollWidth <= window.innerWidth + 2,
+        navScrollsInside: nav.scrollWidth >= nav.clientWidth,
+        adminMobileLabel: window.getComputedStyle(adminTab, '::after').content,
+      };
+    });
+    expect(darkLayout.rootTheme).toBe('dark');
+    expect(darkLayout.noDocumentOverflow).toBe(true);
+    expect(darkLayout.navScrollsInside).toBe(true);
+    expect(darkLayout.adminMobileLabel).toContain('Admin');
+
+    await page.evaluate(() => {
+      localStorage.setItem('vts_theme', 'light');
+      document.documentElement.setAttribute('data-theme', 'light');
+    });
+    await expect(page.locator('#generatorSection')).toBeVisible();
+    const lightLayout = await page.evaluate(() => ({
+      rootTheme: document.documentElement.getAttribute('data-theme'),
+      noDocumentOverflow: document.documentElement.scrollWidth <= window.innerWidth + 2,
+      filterPanelReadable:
+        Number.parseFloat(
+          window.getComputedStyle(document.querySelector('#generatorSection .tool-filter-panel'))
+            .opacity
+        ) > 0.98,
+    }));
+    expect(lightLayout.rootTheme).toBe('light');
+    expect(lightLayout.noDocumentOverflow).toBe(true);
+    expect(lightLayout.filterPanelReadable).toBe(true);
+  });
+
   test('skin data uses Arthur skill 2 and generator skin priority mode', async ({ page }) => {
     await openApp(page);
     await expect(page.locator('#skinMetaCombosTable')).toHaveCount(0);

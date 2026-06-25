@@ -197,9 +197,19 @@ Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click vi
 The old maintenance splash/config gate has been removed. `index.html` and `admin.html` load the standard UI directly, and `js/maintenance-config.js` is no longer part of the app or service-worker precache.
 
 ### Admin Auth
-`js/admin-auth-config.js` gates the admin UI with SHA-256 password hashes. OCR dashboard cloud sync uses Firebase anonymous auth and writes to the shared `vts_admin` Firestore documents. The Firestore rules intentionally allow signed-in users to read/write those two dashboard documents so operators do not need a custom Firebase admin claim before syncing OCR uploads.
+`js/admin-auth-config.js` gates the admin UI with SHA-256 password hashes. OCR dashboard cloud sync uses Firebase anonymous auth, but writes to the shared `vts_admin` Firestore documents require the Firebase custom claim `admin: true`. Signed-in anonymous users can read the shared dashboard data for guest mode, but they cannot overwrite OCR, roster, banner, pather, or contribution records.
 
 The dashboard saves OCR results to localStorage first, then uploads to Firestore when cloud sync is available. On load, locally cached attacks are merged with cloud attacks by attack id and written back to Firestore, so a day of local-only uploads can be recovered by reopening the same browser profile after rules/config are fixed.
+
+To enable admin cloud writes for a browser profile, copy that user's Firebase Auth UID and run:
+
+```bash
+$env:FIREBASE_ADMIN_UID="the-auth-uid"
+$env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\path\to\service-account.json"
+npm run firebase:admin-claim
+```
+
+After setting the claim, reload the site so Firebase refreshes the auth token. If cloud writes still fail, the dashboard should continue using localStorage and show the Firestore error in the admin status/log.
 
 ### Firebase
 Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
@@ -208,6 +218,8 @@ Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned
 The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.
 
 Worker configuration uses `DASHSCOPE_API_KEY` as a Cloudflare secret. Non-secret Worker variables include `DASHSCOPE_BASE_URL` (default: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), `ALLOWED_ORIGINS`, `FIREBASE_APP_CHECK_PROJECT_NUMBER`, and optional `FIREBASE_APP_CHECK_APP_ID`. `FIREBASE_APP_CHECK_APP_ID` is the Firebase Web App ID (`1:...:web:...`), not the reCAPTCHA site key.
+
+For durable Worker-side rate limiting, create a Cloudflare KV namespace and bind it as `RATE_LIMIT_KV` in `wrangler.jsonc`. Without that binding `/status` reports `rateLimitBackend: "memory"`, which is useful locally but not durable across Worker isolates.
 
 Cloudflare Worker deploy checklist:
 
@@ -314,4 +326,4 @@ Both run `build-eden-datasets.py` to regenerate the payload. Then `npm run build
 
 - Node.js 18+ (for Vite build)
 - Python 3.10+ (for Eden dataset scripts)
-- A Qwen API key (for OCR features â€” set in VTS Admin â†’ API Settings)
+- A Qwen/DashScope API key stored as the Cloudflare Worker secret `DASHSCOPE_API_KEY`

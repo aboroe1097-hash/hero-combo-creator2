@@ -150,13 +150,13 @@ service cloud.firestore {
 
     match /vts_admin/dashboard_data {
       allow read: if signedIn();
-      allow create, update: if signedIn() && validDashboardData();
+      allow create, update: if isAdmin() && validDashboardData();
       allow delete: if false;
     }
 
     match /vts_admin/roster_data {
       allow read: if signedIn();
-      allow create, update: if signedIn() && validRosterData();
+      allow create, update: if isAdmin() && validRosterData();
       allow delete: if false;
     }
 

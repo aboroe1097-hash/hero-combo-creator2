@@ -118,9 +118,12 @@ function json(data, init = {}, request, env) {
 function statusPayload(request, env) {
   const origin = request.headers.get('Origin') || '';
   const upstream = dashscopeEndpointDetails(env);
+  const rateLimitDurable = Boolean(env.RATE_LIMIT_KV);
   return {
     configured: Boolean(env.DASHSCOPE_API_KEY),
     appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
+    rateLimitDurable,
+    rateLimitBackend: rateLimitDurable ? 'kv' : 'memory',
     workerBuild: WORKER_BUILD_ID,
     origin,
     originAllowed: isAllowedOrigin(request, env),
@@ -175,11 +178,54 @@ async function checkRateLimit(request, env) {
   return { allowed: true };
 }
 
-function requestBodySize(request) {
+export function requestBodySize(request) {
   const rawLength = request.headers.get('Content-Length');
   if (!rawLength) return null;
   const length = Number(rawLength);
   return Number.isFinite(length) && length >= 0 ? length : null;
+}
+
+class PayloadTooLargeError extends Error {
+  constructor(maxBodyBytes) {
+    super(`Payload too large. Maximum size is ${maxBodyBytes} bytes.`);
+    this.status = 413;
+  }
+}
+
+export async function readJsonBodyWithLimit(request, maxBodyBytes) {
+  const advertisedSize = requestBodySize(request);
+  if (advertisedSize !== null && advertisedSize > maxBodyBytes) {
+    throw new PayloadTooLargeError(maxBodyBytes);
+  }
+
+  const reader = request.body?.getReader?.();
+  if (!reader) {
+    const bodyText = await request.text();
+    if (new TextEncoder().encode(bodyText).byteLength > maxBodyBytes) {
+      throw new PayloadTooLargeError(maxBodyBytes);
+    }
+    return JSON.parse(bodyText);
+  }
+
+  const chunks = [];
+  let received = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > maxBodyBytes) {
+      throw new PayloadTooLargeError(maxBodyBytes);
+    }
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(body));
 }
 
 function validateText(value, path, errors) {
@@ -376,10 +422,6 @@ export default {
     }
 
     const maxBodyBytes = numericEnv(env, 'MAX_BODY_BYTES', DEFAULT_MAX_BODY_BYTES);
-    const bodySize = requestBodySize(request);
-    if (bodySize !== null && bodySize > maxBodyBytes) {
-      return json({ error: `Payload too large. Maximum size is ${maxBodyBytes} bytes.` }, { status: 413 }, request, env);
-    }
 
     const rateLimit = await checkRateLimit(request, env);
     if (!rateLimit.allowed) {
@@ -393,8 +435,11 @@ export default {
 
     let payload;
     try {
-      payload = await request.json();
-    } catch {
+      payload = await readJsonBodyWithLimit(request, maxBodyBytes);
+    } catch (err) {
+      if (err?.status === 413) {
+        return json({ error: err.message }, { status: 413 }, request, env);
+      }
       return json({ error: 'Invalid JSON body' }, { status: 400 }, request, env);
     }
 
@@ -431,24 +476,31 @@ export default {
         body: serializedPayload,
       });
 
-      const responseBody = await dashscopeResponse.text();
-      if (dashscopeResponse.status === 403 && /workers endpoint access denied/i.test(responseBody)) {
-        return json(
-          {
-            error: 'DashScope upstream returned 403: Workers endpoint access denied. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the current Worker code.',
-            upstreamHost: upstream.host,
-          },
-          { status: 403 },
-          request,
-          env
-        );
+      const responseHeaders = {
+        'Content-Type': dashscopeResponse.headers.get('Content-Type') || 'application/json',
+        ...corsHeaders(request, env),
+      };
+      if (dashscopeResponse.status === 403) {
+        const responseBody = await dashscopeResponse.text();
+        if (/workers endpoint access denied/i.test(responseBody)) {
+          return json(
+            {
+              error: 'DashScope upstream returned 403: Workers endpoint access denied. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the current Worker code.',
+              upstreamHost: upstream.host,
+            },
+            { status: 403 },
+            request,
+            env
+          );
+        }
+        return new Response(responseBody, {
+          status: dashscopeResponse.status,
+          headers: responseHeaders,
+        });
       }
-      return new Response(responseBody, {
+      return new Response(dashscopeResponse.body, {
         status: dashscopeResponse.status,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders(request, env),
-        },
+        headers: responseHeaders,
       });
     } catch (err) {
       return json({ error: err?.message || 'OCR proxy failed' }, { status: 500 }, request, env);

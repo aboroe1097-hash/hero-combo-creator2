@@ -42,7 +42,12 @@ const {
 } = await import('../../js/ocr-shared.js');
 const workerModule = await import('../../workers/qwen-cors-proxy.js');
 const worker = workerModule.default;
-const { isAllowedDashscopeEndpoint, resolveDashscopeChatCompletionsUrl } = workerModule;
+const {
+  isAllowedDashscopeEndpoint,
+  readJsonBodyWithLimit,
+  requestBodySize,
+  resolveDashscopeChatCompletionsUrl,
+} = workerModule;
 
 function request(path, init = {}) {
   return new Request(`https://worker.example${path}`, {
@@ -165,6 +170,62 @@ test('Qwen worker status reports whether App Check is configured', async () => {
   assert.equal(response.status, 200);
   assert.equal(body.configured, true);
   assert.equal(body.appCheckConfigured, true);
+  assert.equal(body.rateLimitDurable, false);
+  assert.equal(body.rateLimitBackend, 'memory');
+});
+
+test('Qwen worker status reports durable rate limiting when KV is bound', async () => {
+  const response = await worker.fetch(request('/status'), {
+    DASHSCOPE_API_KEY: 'secret',
+    FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+    RATE_LIMIT_KV: {},
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.rateLimitDurable, true);
+  assert.equal(body.rateLimitBackend, 'kv');
+});
+
+test('Qwen worker parses bounded request body size from Content-Length only', () => {
+  assert.equal(
+    requestBodySize(
+      new Request('https://worker.example/', { headers: { 'Content-Length': '512' } })
+    ),
+    512
+  );
+  assert.equal(
+    requestBodySize(
+      new Request('https://worker.example/', { headers: { 'Content-Length': '-1' } })
+    ),
+    null
+  );
+  assert.equal(requestBodySize(new Request('https://worker.example/')), null);
+});
+
+test('Qwen worker reads JSON bodies without Content-Length using a hard byte cap', async () => {
+  assert.deepEqual(
+    await readJsonBodyWithLimit(
+      new Request('https://worker.example/', {
+        method: 'POST',
+        body: JSON.stringify({ ok: true }),
+      }),
+      1024
+    ),
+    { ok: true }
+  );
+
+  await assert.rejects(
+    () =>
+      readJsonBodyWithLimit(
+        new Request('https://worker.example/', {
+          method: 'POST',
+          body: JSON.stringify({ text: 'x'.repeat(64) }),
+        }),
+        16
+      ),
+    /Payload too large/
+  );
 });
 
 test('Qwen worker allows Vite fallback dev origin on port 5174', async () => {

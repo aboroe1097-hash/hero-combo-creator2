@@ -71,6 +71,35 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
 });
 
+test('shared admin dashboard reads stay available while writes require admin claim', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+
+  assert.match(
+    rules,
+    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validDashboardData\(\);/
+  );
+  assert.match(
+    rules,
+    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validRosterData\(\);/
+  );
+  assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
+  assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
+});
+
+test('service worker precaches only the lightweight app shell', () => {
+  const source = readFileSync('public/sw.js', 'utf8');
+  const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
+
+  assert.ok(urls.length <= 25, `expected lean app shell, found ${urls.length} URLs`);
+  assert.ok(urls.includes('/index.html'));
+  assert.ok(urls.includes('/js/app.js'));
+  assert.ok(urls.includes('/images/logo.png'));
+  assert.ok(!urls.includes('/admin.html'));
+  assert.ok(!urls.includes('/js/ocr-dashboard.js'));
+  assert.ok(!urls.includes('/js/tech-db.js'));
+  assert.ok(!urls.includes('/images/strife/roc-strife-reference.png'));
+});
+
 test('qwen worker rejects requests without an Origin header', () => {
   const source = readFileSync('workers/qwen-cors-proxy.js', 'utf8');
   assert.match(source, /if\s*\(!origin\)\s*return false;/);
