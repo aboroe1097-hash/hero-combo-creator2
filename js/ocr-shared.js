@@ -1094,6 +1094,10 @@ export function findBestMatch(name, minConfidence = 100) {
       'BiG BOiE': 'BiG BOiiE',
       'Oblitereted': 'Obliterated',
       'MasterVjs': 'MasterVj',
+      // Duty (Banner/Pather) cleaned-name stragglers the roster fuzzy match can't bridge:
+      'Dvd': 'DvD18',
+      'BOiiE': 'BiG BOiiE',
+      'Uz': '!!Uzumaki!!',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
