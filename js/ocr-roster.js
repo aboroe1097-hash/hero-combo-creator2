@@ -2,7 +2,7 @@ import {
   ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
   ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
   state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, cleanDutyRawName, resolveDutyPlayerName, compactPlayerIdentity,
+  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, cleanDutyRawName, resolveDutyPlayerName, getDutyCreditedNames, compactPlayerIdentity,
   getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
@@ -1059,29 +1059,37 @@ function summarizeDutyValues(values, limit = 3) {
 
 function collectDutyPlayerSummary(records) {
   const rows = new Map();
+  const ensureRow = (name) => {
+    if (!rows.has(name)) {
+      rows.set(name, {
+        name,
+        assignments: 0,
+        uploads: new Set(),
+        review: 0,
+        targets: [],
+        groups: [],
+        times: [],
+      });
+    }
+    return rows.get(name);
+  };
   records.forEach(record => {
     const entries = Array.isArray(record.entries) ? record.entries : [];
     entries.forEach(entry => {
-      const name = String(entry.confirmed || entry.name || entry.original || '').trim();
-      if (!name) return;
-      if (!rows.has(name)) {
-        rows.set(name, {
-          name,
-          assignments: 0,
-          uploads: new Set(),
-          review: 0,
-          targets: [],
-          groups: [],
-          times: [],
-        });
-      }
-      const row = rows.get(name);
-      row.assignments += 1;
-      row.uploads.add(record.id || `${record.date || ''}|${record.type || ''}|${record.createdAt || ''}`);
-      if (entry.status === 'weak' || entry.status === 'unmatched' || !entry.confirmed) row.review += 1;
-      row.targets.push(entry.target);
-      row.groups.push(entry.group);
-      row.times.push(entry.usageTime || record.gameTime);
+      const primary = String(entry.confirmed || entry.name || entry.original || '').trim();
+      if (!primary) return;
+      // Credit BOTH the banner account / @-tagged owner AND the parenthetical operator
+      // (when the note is a real operator, not a label). De-duped; owner first.
+      const creditedNames = getDutyCreditedNames(entry.original || entry.name || '', primary);
+      creditedNames.forEach(name => {
+        const row = ensureRow(name);
+        row.assignments += 1;
+        row.uploads.add(record.id || `${record.date || ''}|${record.type || ''}|${record.createdAt || ''}`);
+        if (entry.status === 'weak' || entry.status === 'unmatched' || !entry.confirmed) row.review += 1;
+        row.targets.push(entry.target);
+        row.groups.push(entry.group);
+        row.times.push(entry.usageTime || record.gameTime);
+      });
     });
   });
   return Array.from(rows.values()).sort((a, b) => b.assignments - a.assignments || a.name.localeCompare(b.name));
@@ -1174,14 +1182,21 @@ function renderDutySummary() {
   const host = $id('dashDutySummary');
   if (!host) return;
   const counts = new Map();
+  const ensureCount = (name) => {
+    if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
+    return counts.get(name);
+  };
   (state.dutyRecords || []).forEach(record => {
     (record.entries || []).forEach(entry => {
-      const name = entry.confirmed || entry.original;
-      if (!name) return;
-      if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
-      const row = counts.get(name);
-      row.total += 1;
-      if (row[record.type] !== undefined) row[record.type] += 1;
+      const primary = entry.confirmed || entry.original;
+      if (!primary) return;
+      // Credit both owner and operator (see collectDutyPlayerSummary).
+      const creditedNames = getDutyCreditedNames(entry.original || '', primary);
+      creditedNames.forEach(name => {
+        const row = ensureCount(name);
+        row.total += 1;
+        if (row[record.type] !== undefined) row[record.type] += 1;
+      });
     });
   });
   const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);

@@ -1147,10 +1147,23 @@ export function findBestMatch(name, minConfidence = 100) {
 const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.\-]*/i;
 const DUTY_BANNER_SUFFIX = /[\s_\-]*banner\s*\d*$/i;
 
-// The parenthetical note (operator / banner label). Metadata — never the credited name.
+// The parenthetical note (operator / banner label). Metadata — preserved, but not the
+// primary credited name. It may *also* earn credit (see getDutyCreditedNames).
 export function getDutyOperatorNote(raw) {
   const m = String(raw || '').match(/\(([^)]*)\)/);
   return m ? m[1].trim() : '';
+}
+
+// A parenthetical in a duty cell is either an OPERATOR (the person who physically ran
+// the banner account at that target, e.g. "(zubbs)") or a label ("(RedBull banner)" =
+// which of an owner's banners was used). Only operators earn a second credit; labels
+// stay metadata. We reject banner/reserve/team words and leading target tokens.
+export function looksLikeDutyOperator(value) {
+  const v = String(value || '').trim();
+  if (!v) return false;
+  if (/banner|reserve|^team\b/i.test(v)) return false;
+  if (DUTY_TARGET_PREFIX.test(v)) return false;
+  return /[A-Za-zÀ-￿Ѐ-ӿ]/.test(v);
 }
 
 export function cleanDutyRawName(raw) {
@@ -1176,6 +1189,29 @@ export function resolveDutyPlayerName(raw) {
   const cleaned = cleanDutyRawName(raw);
   if (!cleaned) return String(raw || '').trim();
   return findBestMatch(cleaned);
+}
+
+// The credited canonical names for one duty cell. Per product decision, BOTH the banner
+// account / @-tagged owner AND the operator earn credit for the duty work:
+//   "Angel Banner (zubbs)" -> credit ANGEL (account) AND zubbs (who operated it)
+//   "@redbull (osito)"     -> credit redbull (owner)  AND osito (banner account/operator)
+//   "Moldo (zubbs)"        -> credit Moldo AND zubbs
+//   "redbull (RedBull banner)" -> credit redbull only (label, not an operator)
+//   "Moldo (Moldo)"        -> credit Moldo once (operator == owner, de-duped)
+// ownerCredited is the name the aggregation already credits (admin Confirmed Name or a
+// raw fallback). The operator (if any) is resolved through the same authority and de-duped
+// against the owner's canonical form. The owner always comes first in the returned list.
+export function getDutyCreditedNames(raw, ownerCredited) {
+  const owner = String(ownerCredited || '').trim();
+  const names = owner ? [owner] : [];
+  const note = getDutyOperatorNote(raw);
+  if (!looksLikeDutyOperator(note)) return names;
+  const op = resolveDutyPlayerName(note);
+  if (!op) return names;
+  const ownerCanon = owner ? resolveDutyPlayerName(owner) : '';
+  if (op === ownerCanon) return names; // operator is the same player as the owner
+  if (!names.includes(op)) names.push(op);
+  return names;
 }
 
 // --- Durability Validation ---

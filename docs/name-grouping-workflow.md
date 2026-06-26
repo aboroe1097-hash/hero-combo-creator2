@@ -86,23 +86,35 @@ which differ from in-game tags and carry extra noise. The directive: **do not bu
 merger** — pre-clean the Viber noise and route through the *same* `findBestMatch` + roster, so
 Banner/Pather names inherit the Structures/Attacks authority automatically.
 
-**Decision (locked):** credit the **banner account / @-tagged owner** — the main token *before*
-any parenthetical. The parenthetical is **metadata only**, preserved separately via
-`getDutyOperatorNote()`:
-- `Angel Banner (zubbs)` → credit **ANGEL** (banner account); `zubbs` = who operated it then.
-- `@redbull (osito)` → credit **redbull** (the `@`-tagged owner); `osito` = which of redbull's
-  banners was used.
+**Decision (locked):** a duty cell credits **BOTH the banner account / @-tagged owner AND the
+parenthetical operator** (when the parenthetical is a real operator, not a label). Both players did
+the duty work and both earn participation credit in the duty summaries:
+- `Angel Banner (zubbs)` → credit **ANGEL** (the banner account) **and** **zubbs** (who operated
+  the Angel account at that target).
+- `@redbull (osito)` → credit **redbull** (the `@`-tagged owner) **and** **osito** (the banner
+  account/operator redbull ran for).
+- `Moldo (zubbs)` → credit **Moldo** **and** **zubbs**.
+- Parentheticals that are **labels, not operators**, earn no second credit:
+  `redbull (RedBull banner)` → credit **redbull** only.
+- Operator == owner (same player): de-duped to a single credit, e.g. `Moldo (Moldo)` → **Moldo**.
 - Banner suffix strips to the owner: `BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`.
 
-This is a *duty-context* roll-up only — in the Structures/Attacks dataset, `꧁ Kika-banner ꧂`
-remains a separate account (§4). The two contexts intentionally differ.
+This is a *duty-context* credit model only — in the Structures/Attacks dataset, `꧁ Kika-banner ꧂`
+remains a separate account with single-player credit (§4). The two contexts intentionally differ.
 
 ### Implementation
 
-- **`cleanDutyRawName(raw)`** + **`resolveDutyPlayerName(raw)`** + **`getDutyOperatorNote(raw)`** in
+- **`cleanDutyRawName(raw)`** + **`resolveDutyPlayerName(raw)`** + **`getDutyOperatorNote(raw)`**
+  + **`looksLikeDutyOperator(value)`** + **`getDutyCreditedNames(raw, ownerCredited)`** in
   [`js/ocr-shared.js`](../js/ocr-shared.js) — strip the Viber noise (below) to the credited
-  account/owner, then call the shared `findBestMatch`; the parenthetical note is captured separately.
-  No separate alias list.
+  account/owner, then call the shared `findBestMatch`; the parenthetical note is captured
+  separately. `looksLikeDutyOperator` distinguishes a real operator (`zubbs`) from a label
+  (`RedBull banner`); `getDutyCreditedNames` returns the list of canonical names to credit
+  (owner first, operator second, de-duped). No separate alias list.
+- The duty participation aggregators **`collectDutyPlayerSummary`** and **`renderDutySummary`**
+  ([`js/ocr-roster.js`](../js/ocr-roster.js)) iterate that list, so one duty cell credits both
+  players (each gets +1 assignment / +1 in its type bucket). This mirrors how the
+  Structures/Attacks `buildPlayerSummary` already iterates a `players[]` array per attack.
 - Wired into **`getDutySuggestions`** and **`getDutyMatchStatus`**
   ([`js/ocr-roster.js`](../js/ocr-roster.js)) so the default confirmed name auto-resolves to the
   rolled-up canonical and clean roll-ups are not falsely flagged for review.

@@ -21,6 +21,8 @@ const {
   cleanDutyRawName,
   resolveDutyPlayerName,
   getDutyOperatorNote,
+  looksLikeDutyOperator,
+  getDutyCreditedNames,
   compactPlayerIdentity,
   formatDatasetStructureLabel,
   formatStructureLabel,
@@ -369,6 +371,53 @@ test('getDutyOperatorNote preserves the parenthetical metadata', () => {
   assert.equal(getDutyOperatorNote('@redbull (osito)'), 'osito');
   assert.equal(getDutyOperatorNote('Moldo (zubbs)'), 'zubbs');
   assert.equal(getDutyOperatorNote('@Maximus'), '');
+});
+
+test('looksLikeDutyOperator distinguishes operators from labels', () => {
+  // Real operators -> true
+  assert.equal(looksLikeDutyOperator('zubbs'), true);
+  assert.equal(looksLikeDutyOperator('osito'), true);
+  assert.equal(looksLikeDutyOperator('Teresita'), true);
+  // Banner/account labels -> false (metadata, not a second credit)
+  assert.equal(looksLikeDutyOperator('RedBull banner'), false);
+  assert.equal(looksLikeDutyOperator('RedBull Banner 2'), false);
+  assert.equal(looksLikeDutyOperator(''), false);
+  assert.equal(looksLikeDutyOperator('Reserve'), false);
+  assert.equal(looksLikeDutyOperator('Team 3'), false);
+});
+
+test('getDutyCreditedNames credits both banner account and operator', () => {
+  // Angel Banner (zubbs) -> credit ANGEL (account) AND zubbs (who operated it).
+  const angel = getDutyCreditedNames('Angel Banner (zubbs)', 'Angel');
+  assert.equal(angel[0], 'Angel');
+  assert.equal(angel.length, 2);
+  assert.equal(angel[1], resolveDutyPlayerName('zubbs'));
+  assert.notEqual(angel[1], angel[0]);
+
+  // @redbull (osito) -> credit redbull (owner) AND osito (banner/operator).
+  const rb = getDutyCreditedNames('@redbull (osito)', 'redbull');
+  assert.equal(rb[0], 'redbull');
+  assert.equal(rb.length, 2);
+  assert.ok(rb.includes('osito'));
+
+  // Moldo (zubbs) -> credit Moldo AND zubbs.
+  const moldo = getDutyCreditedNames('Moldo (zubbs)', 'Moldo');
+  assert.equal(moldo[0], 'Moldo');
+  assert.ok(moldo.includes('zubbs'));
+  assert.equal(moldo.length, 2);
+
+  // A parenthetical that is a LABEL, not an operator -> owner only (no false credit).
+  const label = getDutyCreditedNames('redbull (RedBull banner)', 'redbull');
+  assert.deepEqual(label, ['redbull']);
+
+  // Operator == owner (same player) -> dedup to a single credit.
+  const dup = getDutyCreditedNames('Moldo (Moldo)', 'Moldo');
+  assert.equal(dup.length, 1);
+  assert.equal(dup[0], 'Moldo');
+
+  // No parenthetical at all -> owner only.
+  assert.deepEqual(getDutyCreditedNames('@Maximus', 'Maximus'), ['Maximus']);
+  assert.deepEqual(getDutyCreditedNames('BOiiE BANNER', 'BOiiE'), ['BOiiE']);
 });
 
 test('resolveDutyPlayerName routes cleaned duty names through the shared authority', () => {
