@@ -1,17 +1,44 @@
 import {
-  ROSTER_KEY, ROSTER_SNAPSHOTS_KEY, BANNER_KEY, DUTY_LIST_KEY, CONTRIBUTION_KEY, ALLIANCE_KEY, ROSTER_AUTH_KEY,
-  ROSTER_USERS, ROSTER_PASS_HASH, ALLIANCE_COUNT,
-  state, $id, esc, log, sha256, trimRosterSnapshots,
-  qwenVisionRequest, describeOcrRequestError, tryRepairJson, getSimilarity, getSimilarityAlphaNum, findBestMatch, cleanDutyRawName, resolveDutyPlayerName, getDutyCreditedNames, compactPlayerIdentity,
-  getSupportedOcrImageFiles, describeRejectedOcrImageFiles, readOcrImageDataUrl
+  ROSTER_KEY,
+  ROSTER_SNAPSHOTS_KEY,
+  BANNER_KEY,
+  DUTY_LIST_KEY,
+  CONTRIBUTION_KEY,
+  ALLIANCE_KEY,
+  ROSTER_AUTH_KEY,
+  ROSTER_USERS,
+  ROSTER_PASS_HASH,
+  ALLIANCE_COUNT,
+  state,
+  $id,
+  esc,
+  log,
+  sha256,
+  trimRosterSnapshots,
+  qwenVisionRequest,
+  describeOcrRequestError,
+  tryRepairJson,
+  getSimilarity,
+  getSimilarityAlphaNum,
+  findBestMatch,
+  compactPlayerIdentity,
+  getSupportedOcrImageFiles,
+  describeRejectedOcrImageFiles,
+  readOcrImageDataUrl,
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 import { translations } from './translations.js';
+import {
+  stripGuildTagsFromPlayerName,
+  summarizeCanonicalPlayerRecords,
+} from './ocr-name-normalizer.js';
 
 function adminT(key, vars = {}) {
   let lang = 'en';
-  try { lang = localStorage.getItem('vts_hero_lang') || 'en'; } catch {
+  try {
+    lang = localStorage.getItem('vts_hero_lang') || 'en';
+  } catch {
     // Storage can be unavailable in restricted browser contexts.
   }
   const dictionaries = window.VTS_TRANSLATIONS || translations;
@@ -27,9 +54,29 @@ function adminT(key, vars = {}) {
   return text;
 }
 
+function hydrateDashboardTableLabels(root) {
+  if (!root) return;
+  root.querySelectorAll('table').forEach((table) => {
+    const labels = Array.from(table.querySelectorAll('thead th')).map((th) =>
+      (th.textContent || '').replace(/\s+/g, ' ').trim()
+    );
+    if (!labels.length) return;
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (cell.tagName === 'TD' && labels[index]) cell.dataset.label = labels[index];
+      });
+    });
+  });
+}
+
 function loadRoster() {
   const raw = localStorage.getItem(ROSTER_KEY);
-  state.rosterNames = raw ? raw.split('\n').map(n => n.trim()).filter(n => n.length > 0) : [];
+  state.rosterNames = raw
+    ? raw
+        .split('\n')
+        .map((n) => n.trim())
+        .filter((n) => n.length > 0)
+    : [];
 }
 
 function saveRoster(text) {
@@ -50,15 +97,20 @@ function saveRoster(text) {
 }
 
 function showRosterModal() {
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   $id('dashModalTitle').textContent = 'Alliance Roster';
   $id('dashModalSub').textContent = 'Paste names (one per line) to improve OCR.';
   const rosterText = esc(localStorage.getItem(ROSTER_KEY) || '');
   body.innerHTML = `<textarea id="dashRosterInput" class="dash-input" style="height:300px;font-family:monospace;font-size:0.85rem">${rosterText}</textarea>
     <div style="margin-top:1rem;display:flex;gap:0.5rem"><button id="dashRosterSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save Roster</button><button id="dashRosterCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div>`;
-  $id('dashRosterSaveBtn').onclick = () => { saveRoster($id('dashRosterInput').value); closeModal(); };
+  $id('dashRosterSaveBtn').onclick = () => {
+    saveRoster($id('dashRosterInput').value);
+    closeModal();
+  };
   $id('dashRosterCancelBtn').onclick = closeModal;
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function loadRosterSnapshots() {
@@ -68,7 +120,9 @@ function loadRosterSnapshots() {
     if (!Array.isArray(state.rosterSnapshots)) state.rosterSnapshots = [];
     state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
     localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
-  } catch (e) { state.rosterSnapshots = []; }
+  } catch (e) {
+    state.rosterSnapshots = [];
+  }
 }
 
 function syncRosterSnapshotsToFirestore() {
@@ -82,20 +136,24 @@ function syncRosterSnapshotsToFirestore() {
 
 function saveRosterSnapshots() {
   state.rosterSnapshots = trimRosterSnapshots(state.rosterSnapshots);
-  try { localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots)); } catch (e) {}
+  try {
+    localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
+  } catch (e) {}
   syncRosterSnapshotsToFirestore();
 }
 
 function computeRosterDiff(oldMembers, newMembers) {
-  const oldSet = new Set(oldMembers.map(n => n.trim().toLowerCase()));
-  const newSet = new Set(newMembers.map(n => n.trim().toLowerCase()));
-  const stayed = [], joined = [], left = [];
-  newMembers.forEach(n => {
+  const oldSet = new Set(oldMembers.map((n) => n.trim().toLowerCase()));
+  const newSet = new Set(newMembers.map((n) => n.trim().toLowerCase()));
+  const stayed = [],
+    joined = [],
+    left = [];
+  newMembers.forEach((n) => {
     const key = n.trim().toLowerCase();
     if (oldSet.has(key)) stayed.push(n.trim());
     else joined.push(n.trim());
   });
-  oldMembers.forEach(n => {
+  oldMembers.forEach((n) => {
     const key = n.trim().toLowerCase();
     if (!newSet.has(key)) left.push(n.trim());
   });
@@ -103,11 +161,19 @@ function computeRosterDiff(oldMembers, newMembers) {
 }
 
 function takeRosterSnapshot(namesText) {
-  const members = namesText.split('\n').map(l => l.trim()).filter(Boolean);
-  if (!members.length) { log('No members to save.', 'warn'); return; }
+  const members = namesText
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!members.length) {
+    log('No members to save.', 'warn');
+    return;
+  }
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
-  const prev = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1] : null;
+  const prev = state.rosterSnapshots.length
+    ? state.rosterSnapshots[state.rosterSnapshots.length - 1]
+    : null;
   const diff = prev ? computeRosterDiff(prev.members, members) : null;
   const snapshot = { date: dateStr, members, diff };
   state.rosterSnapshots.push(snapshot);
@@ -138,29 +204,49 @@ function deleteRosterSnapshot(index) {
 function loadAllianceList() {
   try {
     const raw = localStorage.getItem(ALLIANCE_KEY);
-    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length === ALLIANCE_COUNT) state.allianceList = a; }
+    if (raw) {
+      const a = JSON.parse(raw);
+      if (Array.isArray(a) && a.length === ALLIANCE_COUNT) state.allianceList = a;
+    }
   } catch (e) {}
 }
 
 function saveAllianceList() {
-  try { localStorage.setItem(ALLIANCE_KEY, JSON.stringify(state.allianceList)); } catch (e) {}
+  try {
+    localStorage.setItem(ALLIANCE_KEY, JSON.stringify(state.allianceList));
+  } catch (e) {}
 }
 
 function loadRosterAuth() {
-  try { state._rosterLoggedUser = localStorage.getItem(ROSTER_AUTH_KEY) || ''; } catch (e) { state._rosterLoggedUser = ''; }
+  try {
+    state._rosterLoggedUser = localStorage.getItem(ROSTER_AUTH_KEY) || '';
+  } catch (e) {
+    state._rosterLoggedUser = '';
+  }
 }
 
 function saveRosterAuth() {
-  try { localStorage.setItem(ROSTER_AUTH_KEY, state._rosterLoggedUser); } catch (e) {}
+  try {
+    localStorage.setItem(ROSTER_AUTH_KEY, state._rosterLoggedUser);
+  } catch (e) {}
 }
 
 async function rosterLogin() {
   const user = $id('dashRosterLoginUser')?.value;
   const pass = $id('dashRosterLoginPass')?.value;
-  if (!Object.keys(ROSTER_PASS_HASH).length) { log('Roster auth is not configured for this deployment.', 'error'); return; }
-  if (!user || !ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }
+  if (!Object.keys(ROSTER_PASS_HASH).length) {
+    log('Roster auth is not configured for this deployment.', 'error');
+    return;
+  }
+  if (!user || !ROSTER_PASS_HASH[user]) {
+    log('Invalid roster login credentials.', 'error');
+    return;
+  }
   const hashed = await sha256(pass);
-  if (hashed !== ROSTER_PASS_HASH[user]) { log('Invalid roster login credentials.', 'error'); return; }
+  if (hashed !== ROSTER_PASS_HASH[user]) {
+    log('Invalid roster login credentials.', 'error');
+    return;
+  }
   state._rosterLoggedUser = user;
   saveRosterAuth();
   log('Roster logged in as ' + user, 'success');
@@ -176,7 +262,8 @@ function rosterLogout() {
 }
 
 function _ensureMember(m) {
-  if (typeof m === 'string') return { name: m, status: 'unknown', alliance: -1, verifiedBy: '', lastModified: '' };
+  if (typeof m === 'string')
+    return { name: m, status: 'unknown', alliance: -1, verifiedBy: '', lastModified: '' };
   if (m.alliance === undefined) m.alliance = -1;
   if (m.verifiedBy === undefined) m.verifiedBy = '';
   if (m.lastModified === undefined) m.lastModified = '';
@@ -191,7 +278,10 @@ function setRosterStatus(snapIndex, memberIndex, status) {
   m = snap.members[memberIndex] = _ensureMember(m);
   if (status === 'spy' && m.status === 'spy') status = 'unknown';
   m.status = status;
-  if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  if (state._rosterLoggedUser) {
+    m.verifiedBy = state._rosterLoggedUser;
+    m.lastModified = new Date().toISOString();
+  }
   saveRosterSnapshots();
   renderRoster();
 }
@@ -203,7 +293,10 @@ function setRosterAlliance(snapIndex, memberIndex, allianceIdx) {
   if (!m) return;
   m = snap.members[memberIndex] = _ensureMember(m);
   m.alliance = m.alliance === allianceIdx ? -1 : allianceIdx;
-  if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+  if (state._rosterLoggedUser) {
+    m.verifiedBy = state._rosterLoggedUser;
+    m.lastModified = new Date().toISOString();
+  }
   saveRosterSnapshots();
   renderRoster();
 }
@@ -217,18 +310,24 @@ function toggleBulkCheck(mi) {
 function toggleBulkSelectAll(jsonStr) {
   const indices = JSON.parse(jsonStr);
   if (state._rosterSelectedIndices.size === indices.length) state._rosterSelectedIndices.clear();
-  else indices.forEach(function(i) { state._rosterSelectedIndices.add(i); });
+  else
+    indices.forEach(function (i) {
+      state._rosterSelectedIndices.add(i);
+    });
   renderRoster();
 }
 
 function applyBulkStatus(status) {
   if (!state._rosterSelectedIndices.size) return;
   const snap = state.rosterSnapshots[state.rosterSnapshots.length - 1];
-  state._rosterSelectedIndices.forEach(function(mi) {
+  state._rosterSelectedIndices.forEach(function (mi) {
     let m = snap.members[mi];
     m = snap.members[mi] = _ensureMember(m);
     m.status = status;
-    if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+    if (state._rosterLoggedUser) {
+      m.verifiedBy = state._rosterLoggedUser;
+      m.lastModified = new Date().toISOString();
+    }
   });
   state._rosterSelectedIndices.clear();
   saveRosterSnapshots();
@@ -238,11 +337,14 @@ function applyBulkStatus(status) {
 function applyBulkAlliance(allianceIdx) {
   if (!state._rosterSelectedIndices.size) return;
   const snap = state.rosterSnapshots[state.rosterSnapshots.length - 1];
-  state._rosterSelectedIndices.forEach(function(mi) {
+  state._rosterSelectedIndices.forEach(function (mi) {
     let m = snap.members[mi];
     m = snap.members[mi] = _ensureMember(m);
     m.alliance = allianceIdx;
-    if (state._rosterLoggedUser) { m.verifiedBy = state._rosterLoggedUser; m.lastModified = new Date().toISOString(); }
+    if (state._rosterLoggedUser) {
+      m.verifiedBy = state._rosterLoggedUser;
+      m.lastModified = new Date().toISOString();
+    }
   });
   state._rosterSelectedIndices.clear();
   saveRosterSnapshots();
@@ -253,10 +355,21 @@ function exportRosterCSV() {
   if (!state.rosterSnapshots.length) return;
   const latest = state.rosterSnapshots[state.rosterSnapshots.length - 1];
   let csv = 'Name,Status,Alliance,VerifiedBy,LastModified\n';
-  latest.members.forEach(function(m) {
+  latest.members.forEach(function (m) {
     const mem = _ensureMember(m);
     const a = mem.alliance >= 0 ? state.allianceList[mem.alliance] : '';
-    csv += '"' + mem.name + '","' + mem.status + '","' + a + '","' + (mem.verifiedBy || '') + '","' + (mem.lastModified || '') + '"\n';
+    csv +=
+      '"' +
+      mem.name +
+      '","' +
+      mem.status +
+      '","' +
+      a +
+      '","' +
+      (mem.verifiedBy || '') +
+      '","' +
+      (mem.lastModified || '') +
+      '"\n';
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -272,9 +385,15 @@ function copyRosterNames(type) {
   if (!state.rosterSnapshots.length) return;
   const latest = state.rosterSnapshots[state.rosterSnapshots.length - 1];
   const names = latest.members
-    .map(function(m) { return _ensureMember(m); })
-    .filter(function(m) { return type === 'unassigned' ? m.alliance === -1 : m.status === type; })
-    .map(function(m) { return m.name; })
+    .map(function (m) {
+      return _ensureMember(m);
+    })
+    .filter(function (m) {
+      return type === 'unassigned' ? m.alliance === -1 : m.status === type;
+    })
+    .map(function (m) {
+      return m.name;
+    })
     .join('\n');
   navigator.clipboard.writeText(names);
   log('Copied ' + names.split('\n').length + ' names.', 'success');
@@ -283,35 +402,63 @@ function copyRosterNames(type) {
 function showRosterSnapshotModal(index) {
   const snap = state.rosterSnapshots[index];
   const diff = snap.diff;
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   $id('dashModalTitle').textContent = 'Snapshot: ' + snap.date;
   $id('dashModalSub').textContent = snap.members.length + ' members';
   let gridHtml = '';
-  snap.members.forEach(function(mem) {
+  snap.members.forEach(function (mem) {
     const mObj = _ensureMember(mem);
     const name = mObj.name;
     const status = mObj.status;
     let cls = 'dash-roster-name';
     if (status === 'trusted') cls += ' trusted';
     if (status === 'spy') cls += ' spy';
-    if (diff && diff.joined.some(function(j) { return j.toLowerCase() === name.trim().toLowerCase(); })) cls += ' joined';
-    if (diff && diff.left.some(function(l) { return l.toLowerCase() === name.trim().toLowerCase(); })) cls += ' left';
+    if (
+      diff &&
+      diff.joined.some(function (j) {
+        return j.toLowerCase() === name.trim().toLowerCase();
+      })
+    )
+      cls += ' joined';
+    if (
+      diff &&
+      diff.left.some(function (l) {
+        return l.toLowerCase() === name.trim().toLowerCase();
+      })
+    )
+      cls += ' left';
     gridHtml += '<div class="' + cls + '"><span>' + esc(name) + '</span></div>';
   });
-  body.innerHTML = '<div class="dash-roster-grid">' + gridHtml + '</div><div style="margin-top:12px;text-align:right"><button class="dash-btn" onclick="closeModal()">Close</button></div>';
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  body.innerHTML =
+    '<div class="dash-roster-grid">' +
+    gridHtml +
+    '</div><div style="margin-top:12px;text-align:right"><button class="dash-btn" onclick="closeModal()">Close</button></div>';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function configureAlliances() {
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   $id('dashModalTitle').textContent = 'Configure Alliances';
   $id('dashModalSub').textContent = 'Name your 5 alliances for member assignment.';
   let inputsHtml = '';
-  state.allianceList.forEach(function(a, i) {
-    inputsHtml += '<label style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><span style="width:24px;font-weight:700;color:var(--text-muted)">' + (i + 1) + '</span><input id="dashAllianceInput' + i + '" class="dash-input" value="' + esc(a) + '" style="flex:1;padding:6px 10px"></label>';
+  state.allianceList.forEach(function (a, i) {
+    inputsHtml +=
+      '<label style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><span style="width:24px;font-weight:700;color:var(--text-muted)">' +
+      (i + 1) +
+      '</span><input id="dashAllianceInput' +
+      i +
+      '" class="dash-input" value="' +
+      esc(a) +
+      '" style="flex:1;padding:6px 10px"></label>';
   });
-  body.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + inputsHtml + '<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div></div>';
-  $id('dashAllianceSaveBtn').onclick = function() {
+  body.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+    inputsHtml +
+    '<div style="display:flex;gap:8px;margin-top:8px"><button id="dashAllianceSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">Save</button><button id="dashAllianceCancelBtn" class="dash-btn" style="flex:1">Cancel</button></div></div>';
+  $id('dashAllianceSaveBtn').onclick = function () {
     for (var i = 0; i < ALLIANCE_COUNT; i++) {
       var v = $id('dashAllianceInput' + i);
       if (v && v.value.trim()) state.allianceList[i] = v.value.trim();
@@ -321,7 +468,8 @@ function configureAlliances() {
     renderRoster();
   };
   $id('dashAllianceCancelBtn').onclick = closeModal;
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function renderRoster() {
@@ -335,11 +483,20 @@ function renderRoster() {
   const latest = state.rosterSnapshots[snapIndex];
   const diff = latest.diff;
   const members = latest.members;
-  function mn(m) { return typeof m === 'string' ? m : m.name; }
-  function mstatus(m) { return typeof m === 'string' ? 'unknown' : (m.status || 'unknown'); }
-  function malliance(m) { return typeof m === 'string' ? -1 : (m.alliance !== undefined ? m.alliance : -1); }
-  var trusted = 0, spy = 0, unknown = 0, assigned = 0;
-  members.forEach(function(m) {
+  function mn(m) {
+    return typeof m === 'string' ? m : m.name;
+  }
+  function mstatus(m) {
+    return typeof m === 'string' ? 'unknown' : m.status || 'unknown';
+  }
+  function malliance(m) {
+    return typeof m === 'string' ? -1 : m.alliance !== undefined ? m.alliance : -1;
+  }
+  var trusted = 0,
+    spy = 0,
+    unknown = 0,
+    assigned = 0;
+  members.forEach(function (m) {
     var s = mstatus(m);
     if (s === 'trusted') trusted++;
     else if (s === 'spy') spy++;
@@ -350,69 +507,258 @@ function renderRoster() {
   var unassigned = total - assigned;
   var ocrMap = {};
   if (state.dashData && state.dashData.players_summary) {
-    state.dashData.players_summary.forEach(function(p) { ocrMap[p.name.toLowerCase()] = p; });
+    state.dashData.players_summary.forEach(function (p) {
+      ocrMap[p.name.toLowerCase()] = p;
+    });
   }
   var filtered = [];
-  members.forEach(function(m, mi) {
+  members.forEach(function (m, mi) {
     var s = mstatus(m);
     var a = malliance(m);
     var name = mn(m);
     if (state._rosterFilterStatus !== 'all' && s !== state._rosterFilterStatus) return;
     if (state._rosterFilterAlliance !== 'all') {
       if (state._rosterFilterAlliance === 'unassigned' && a >= 0) return;
-      if (state._rosterFilterAlliance !== 'unassigned' && a !== parseInt(state._rosterFilterAlliance)) return;
+      if (
+        state._rosterFilterAlliance !== 'unassigned' &&
+        a !== parseInt(state._rosterFilterAlliance)
+      )
+        return;
     }
-    if (state._rosterSearchQ && name.toLowerCase().indexOf(state._rosterSearchQ.toLowerCase()) === -1) return;
+    if (
+      state._rosterSearchQ &&
+      name.toLowerCase().indexOf(state._rosterSearchQ.toLowerCase()) === -1
+    )
+      return;
     filtered.push({ mi: mi, name: name, status: s, alliance: a });
   });
   var isLoggedIn = !!state._rosterLoggedUser;
-  var lockOpenIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
-  var lockClosedIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  var lockOpenIcon =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+  var lockClosedIcon =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
   var loginHtml = isLoggedIn
-    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">' + lockOpenIcon + ' ' + esc(state._rosterLoggedUser) + '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
-    : '<div class="dash-roster-login-bar"><span>' + lockClosedIcon + ' Roster Login:</span><select id="dashRosterLoginUser">' + ROSTER_USERS.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('') + '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input" style="width:90px;padding:3px 6px;font-size:0.78rem"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
+    ? '<div class="dash-roster-login-bar logged"><span class="dash-roster-login-user">' +
+      lockOpenIcon +
+      ' ' +
+      esc(state._rosterLoggedUser) +
+      '</span><button class="dash-btn dash-btn-sm" onclick="rosterLogout()">Logout</button></div>'
+    : '<div class="dash-roster-login-bar"><span>' +
+      lockClosedIcon +
+      ' Roster Login:</span><select id="dashRosterLoginUser">' +
+      ROSTER_USERS.map(function (u) {
+        return '<option value="' + u + '">' + u + '</option>';
+      }).join('') +
+      '</select><input type="password" id="dashRosterLoginPass" placeholder="Password" value="" class="dash-input dash-roster-login-pass" style="width:90px"><button class="dash-btn dash-btn-sm" onclick="rosterLogin()">Login</button></div>';
   var bulkHtml = '';
   if (state._rosterSelectedIndices.size > 0 && isLoggedIn) {
-    var allyOpts = state.allianceList.map(function(a, i) { return '<option value="' + i + '">' + esc(a) + '</option>'; }).join('');
-    bulkHtml = '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' + state._rosterSelectedIndices.size + ' selected:</span><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'trusted\')">Mark Trusted</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'spy\')">Mark Spy</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'unknown\')">Clear Status</button><select class="dash-input" style="font-size:0.75rem;padding:2px;width:100px" onchange="if(this.value){applyBulkAlliance(parseInt(this.value));this.value=\'\'}"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' + allyOpts + '</select></div>';
+    var allyOpts = state.allianceList
+      .map(function (a, i) {
+        return '<option value="' + i + '">' + esc(a) + '</option>';
+      })
+      .join('');
+    bulkHtml =
+      '<div class="dash-roster-bulk-actions"><span style="font-size:0.8rem;font-weight:bold;color:var(--brand)">' +
+      state._rosterSelectedIndices.size +
+      ' selected:</span><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'trusted\')">Mark Trusted</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'spy\')">Mark Spy</button><button class="dash-btn dash-btn-sm" onclick="applyBulkStatus(\'unknown\')">Clear Status</button><select class="dash-input dash-roster-bulk-select" style="width:100px" onchange="if(this.value){applyBulkAlliance(parseInt(this.value));this.value=\'\'}"><option value="">Assign to...</option><option value="-1">— Unassign —</option>' +
+      allyOpts +
+      '</select></div>';
   }
-  var filterAllyOpts = state.allianceList.map(function(a, i) { return '<option value="' + i + '"' + (state._rosterFilterAlliance === String(i) ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+  var filterAllyOpts = state.allianceList
+    .map(function (a, i) {
+      return (
+        '<option value="' +
+        i +
+        '"' +
+        (state._rosterFilterAlliance === String(i) ? ' selected' : '') +
+        '>' +
+        esc(a) +
+        '</option>'
+      );
+    })
+    .join('');
   var rowsHtml = '';
-  var indicesJson = JSON.stringify(filtered.map(function(f) { return f.mi; })).replace(/"/g, '&quot;');
-  filtered.forEach(function(item) {
-    var mi = item.mi, name = item.name, status = item.status, alliance = item.alliance;
+  var indicesJson = JSON.stringify(
+    filtered.map(function (f) {
+      return f.mi;
+    })
+  ).replace(/"/g, '&quot;');
+  filtered.forEach(function (item) {
+    var mi = item.mi,
+      name = item.name,
+      status = item.status,
+      alliance = item.alliance;
     var m = members[mi];
-    var vb = typeof m === 'string' ? '' : (m.verifiedBy || '');
-    var lm = typeof m === 'string' ? '' : (m.lastModified || '');
+    var vb = typeof m === 'string' ? '' : m.verifiedBy || '';
+    var lm = typeof m === 'string' ? '' : m.lastModified || '';
     var rowCls = 'dash-roster-row';
     if (status === 'trusted') rowCls += ' trusted';
     if (status === 'spy') rowCls += ' spy';
-    if (diff && diff.joined.some(function(j) { return j.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' joined';
-    if (diff && diff.left.some(function(l) { return l.toLowerCase() === name.trim().toLowerCase(); })) rowCls += ' left';
+    if (
+      diff &&
+      diff.joined.some(function (j) {
+        return j.toLowerCase() === name.trim().toLowerCase();
+      })
+    )
+      rowCls += ' joined';
+    if (
+      diff &&
+      diff.left.some(function (l) {
+        return l.toLowerCase() === name.trim().toLowerCase();
+      })
+    )
+      rowCls += ' left';
     var disabledAttr = isLoggedIn ? '' : 'disabled';
-    var swordIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/></svg>';
+    var swordIcon =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/></svg>';
     var pStats = ocrMap[name.toLowerCase()];
     var ocrHtml = pStats
-      ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' + pStats.total_demolition + ' Demolition / ' + pStats.participation_count + ' Attacks">' + swordIcon + ' ' + pStats.total_demolition + '</span>'
-      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">' + swordIcon + ' —</span>';
+      ? '<span style="margin-left:6px;font-size:0.7rem;color:var(--brand-light)" title="' +
+        pStats.total_demolition +
+        ' Demolition / ' +
+        pStats.participation_count +
+        ' Attacks">' +
+        swordIcon +
+        ' ' +
+        pStats.total_demolition +
+        '</span>'
+      : '<span style="margin-left:6px;font-size:0.7rem;opacity:0.25" title="No OCR data">' +
+        swordIcon +
+        ' —</span>';
     var auditHtml = '';
-    if (vb) auditHtml += '<span class="dash-roster-row-vb" title="Verified by ' + esc(vb) + (lm ? ' on ' + lm.slice(0,10) : '') + '">@' + esc(vb) + '</span>';
-    var allySelectHtml = '<select class="dash-roster-row-alliance" ' + disabledAttr + ' onchange="setRosterAlliance(' + snapIndex + ',' + mi + ',parseInt(this.value))"><option value="-1">—</option>' + state.allianceList.map(function(a, ai) { return '<option value="' + ai + '"' + (alliance === ai ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select>';
-    rowsHtml += '<div class="' + rowCls + '"><label style="margin-right:8px;display:flex;align-items:center;cursor:pointer"><input type="checkbox" class="bulk-cb" onchange="toggleBulkCheck(' + mi + ')"' + (state._rosterSelectedIndices.has(mi) ? ' checked' : '') + ' ' + disabledAttr + '></label><span class="dash-roster-row-name" style="flex:1">' + esc(name) + ocrHtml + '</span>' + allySelectHtml + auditHtml + '<span class="dash-roster-row-spy' + (status === 'spy' ? ' active' : '') + '" onclick="setRosterStatus(' + snapIndex + ',' + mi + ',\'spy\')" title="Toggle spy">🚫</span></div>';
+    if (vb)
+      auditHtml +=
+        '<span class="dash-roster-row-vb" title="Verified by ' +
+        esc(vb) +
+        (lm ? ' on ' + lm.slice(0, 10) : '') +
+        '">@' +
+        esc(vb) +
+        '</span>';
+    var allySelectHtml =
+      '<select class="dash-roster-row-alliance" ' +
+      disabledAttr +
+      ' onchange="setRosterAlliance(' +
+      snapIndex +
+      ',' +
+      mi +
+      ',parseInt(this.value))"><option value="-1">—</option>' +
+      state.allianceList
+        .map(function (a, ai) {
+          return (
+            '<option value="' +
+            ai +
+            '"' +
+            (alliance === ai ? ' selected' : '') +
+            '>' +
+            esc(a) +
+            '</option>'
+          );
+        })
+        .join('') +
+      '</select>';
+    rowsHtml +=
+      '<div class="' +
+      rowCls +
+      '"><label style="margin-right:8px;display:flex;align-items:center;cursor:pointer"><input type="checkbox" class="bulk-cb" onchange="toggleBulkCheck(' +
+      mi +
+      ')"' +
+      (state._rosterSelectedIndices.has(mi) ? ' checked' : '') +
+      ' ' +
+      disabledAttr +
+      '></label><span class="dash-roster-row-name" style="flex:1">' +
+      esc(name) +
+      ocrHtml +
+      '</span>' +
+      allySelectHtml +
+      auditHtml +
+      '<span class="dash-roster-row-spy' +
+      (status === 'spy' ? ' active' : '') +
+      '" onclick="setRosterStatus(' +
+      snapIndex +
+      ',' +
+      mi +
+      ',\'spy\')" title="Toggle spy">🚫</span></div>';
   });
   var historyHtml = '';
   for (var i = state.rosterSnapshots.length - 2; i >= 0; i--) {
     var s = state.rosterSnapshots[i];
     var d = s.diff;
-    historyHtml += '<div class="dash-roster-history-item"><span class="dash-roster-history-date">' + esc(s.date) + '</span><span class="dash-roster-history-count">' + s.members.length + '</span>' + (d ? '<span class="dash-roster-history-diff">+' + d.joined.length + '/-' + d.left.length + '</span>' : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>') + '<button class="dash-btn" style="padding:2px 8px;font-size:0.7rem" onclick="showRosterSnapshotModal(' + i + ')">View</button><button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(' + i + ')" title="Delete">✕</button></div>';
+    historyHtml +=
+      '<div class="dash-roster-history-item"><span class="dash-roster-history-date">' +
+      esc(s.date) +
+      '</span><span class="dash-roster-history-count">' +
+      s.members.length +
+      '</span>' +
+      (d
+        ? '<span class="dash-roster-history-diff">+' +
+          d.joined.length +
+          '/-' +
+          d.left.length +
+          '</span>'
+        : '<span class="dash-roster-history-diff" style="opacity:0.4">—</span>') +
+      '<button class="dash-btn" style="padding:2px 8px;font-size:0.7rem" onclick="showRosterSnapshotModal(' +
+      i +
+      ')">View</button><button class="dash-banner-del-btn" onclick="event.stopPropagation();deleteRosterSnapshot(' +
+      i +
+      ')" title="Delete">✕</button></div>';
   }
-  if (!historyHtml) historyHtml = '<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">No older snapshots.</div>';
-  body.innerHTML = loginHtml
-    + '<div class="dash-roster-summary"><span class="dash-roster-summary-total">Total: ' + total + '</span><span class="dash-roster-summary-trusted">✅ ' + trusted + ' Trusted</span><span class="dash-roster-summary-unknown">⬜ ' + unknown + ' Unknown</span><span class="dash-roster-summary-spy">🚫 ' + spy + ' Spy</span><span class="dash-roster-summary-assigned">📋 ' + assigned + ' Assigned</span><span class="dash-roster-summary-unassigned">❓ ' + unassigned + ' Unassigned</span><button class="dash-banner-del-btn" onclick="if(confirm(\'Delete this snapshot?\'))deleteRosterSnapshot(' + snapIndex + ')" title="Delete current snapshot" style="margin-left:auto">✕</button></div>'
-    + '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select onchange="setRosterFilter(\'alliance\',this.value)"><option value="all">All</option>' + filterAllyOpts + '<option value="unassigned"' + (state._rosterFilterAlliance === 'unassigned' ? ' selected' : '') + '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select onchange="setRosterFilter(\'status\',this.value)"><option value="all">All</option><option value="trusted"' + (state._rosterFilterStatus === 'trusted' ? ' selected' : '') + '>Trusted</option><option value="unknown"' + (state._rosterFilterStatus === 'unknown' ? ' selected' : '') + '>Unknown</option><option value="spy"' + (state._rosterFilterStatus === 'spy' ? ' selected' : '') + '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' + esc(state._rosterSearchQ) + '" oninput="setRosterFilter(\'search\',this.value)" class="dash-input" style="width:140px;padding:4px 8px;font-size:0.78rem"></div><div class="dash-roster-toolbar-actions">' + bulkHtml + '<button class="dash-btn dash-btn-sm" onclick="configureAlliances()" title="Edit alliance names">⚙️</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'unassigned\')" title="Copy unassigned names">📋 Unassigned</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'spy\')" title="Copy spy names">📋 Spies</button></div></div>'
-    + '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" onchange="toggleBulkSelectAll(\'' + indicesJson + '\')"' + (state._rosterSelectedIndices.size > 0 && state._rosterSelectedIndices.size === filtered.length ? ' checked' : '') + ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' + rowsHtml + (filtered.length === 0 ? '<div class="dash-roster-empty">No members match filters.</div>' : '') + '</div>'
-    + '<div class="dash-roster-total-rows">Showing ' + filtered.length + ' of ' + total + ' members</div>'
-    + '<div class="dash-roster-history"><div class="dash-roster-history-head" onclick="var b=this.nextElementSibling;b.classList.toggle(\'open\');this.querySelector(\'.dash-roster-history-arrow\').textContent=b.classList.contains(\'open\')?\'▼\':\'▶\'"><span>📁 Snapshot History (' + (state.rosterSnapshots.length - 1) + ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' + historyHtml + '</div></div>';
+  if (!historyHtml)
+    historyHtml =
+      '<div style="padding:8px;font-size:0.8rem;color:var(--text-muted)">No older snapshots.</div>';
+  body.innerHTML =
+    loginHtml +
+    '<div class="dash-roster-summary"><span class="dash-roster-summary-total">Total: ' +
+    total +
+    '</span><span class="dash-roster-summary-trusted">✅ ' +
+    trusted +
+    ' Trusted</span><span class="dash-roster-summary-unknown">⬜ ' +
+    unknown +
+    ' Unknown</span><span class="dash-roster-summary-spy">🚫 ' +
+    spy +
+    ' Spy</span><span class="dash-roster-summary-assigned">📋 ' +
+    assigned +
+    ' Assigned</span><span class="dash-roster-summary-unassigned">❓ ' +
+    unassigned +
+    ' Unassigned</span><button class="dash-banner-del-btn" onclick="if(confirm(\'Delete this snapshot?\'))deleteRosterSnapshot(' +
+    snapIndex +
+    ')" title="Delete current snapshot" style="margin-left:auto">✕</button></div>' +
+    '<div class="dash-roster-toolbar"><div class="dash-roster-toolbar-filters"><label class="dash-roster-toolbar-label">Alliance <select onchange="setRosterFilter(\'alliance\',this.value)"><option value="all">All</option>' +
+    filterAllyOpts +
+    '<option value="unassigned"' +
+    (state._rosterFilterAlliance === 'unassigned' ? ' selected' : '') +
+    '>Unassigned</option></select></label><label class="dash-roster-toolbar-label">Status <select onchange="setRosterFilter(\'status\',this.value)"><option value="all">All</option><option value="trusted"' +
+    (state._rosterFilterStatus === 'trusted' ? ' selected' : '') +
+    '>Trusted</option><option value="unknown"' +
+    (state._rosterFilterStatus === 'unknown' ? ' selected' : '') +
+    '>Unknown</option><option value="spy"' +
+    (state._rosterFilterStatus === 'spy' ? ' selected' : '') +
+    '>Spy</option></select></label><input type="text" placeholder="Search name..." value="' +
+    esc(state._rosterSearchQ) +
+    '" oninput="setRosterFilter(\'search\',this.value)" class="dash-input dash-roster-search-input" style="width:140px"></div><div class="dash-roster-toolbar-actions">' +
+    bulkHtml +
+    '<button class="dash-btn dash-btn-sm" onclick="configureAlliances()" title="Edit alliance names">⚙️</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'unassigned\')" title="Copy unassigned names">📋 Unassigned</button><button class="dash-btn dash-btn-sm" onclick="copyRosterNames(\'spy\')" title="Copy spy names">📋 Spies</button></div></div>' +
+    '<div class="dash-roster-checklist"><div style="padding:4px 12px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center"><input type="checkbox" title="Select all visible" onchange="toggleBulkSelectAll(\'' +
+    indicesJson +
+    '\')"' +
+    (state._rosterSelectedIndices.size > 0 && state._rosterSelectedIndices.size === filtered.length
+      ? ' checked'
+      : '') +
+    ' style="margin-right:12px"><span style="font-size:0.75rem;color:var(--text-muted);font-weight:bold">SELECT ALL VISIBLE</span></div>' +
+    rowsHtml +
+    (filtered.length === 0
+      ? '<div class="dash-roster-empty">No members match filters.</div>'
+      : '') +
+    '</div>' +
+    '<div class="dash-roster-total-rows">Showing ' +
+    filtered.length +
+    ' of ' +
+    total +
+    ' members</div>' +
+    "<div class=\"dash-roster-history\"><div class=\"dash-roster-history-head\" onclick=\"var b=this.nextElementSibling;b.classList.toggle('open');this.querySelector('.dash-roster-history-arrow').textContent=b.classList.contains('open')?'▼':'▶'\"><span>📁 Snapshot History (" +
+    (state.rosterSnapshots.length - 1) +
+    ' older)</span><span class="dash-roster-history-arrow">▶</span></div><div class="dash-roster-history-body">' +
+    historyHtml +
+    '</div></div>';
 }
 
 function loadBannerRecords() {
@@ -420,16 +766,21 @@ function loadBannerRecords() {
     const raw = localStorage.getItem(BANNER_KEY);
     state.bannerRecords = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(state.bannerRecords)) state.bannerRecords = [];
-  } catch (e) { state.bannerRecords = []; }
+  } catch (e) {
+    state.bannerRecords = [];
+  }
 }
 
 function saveBannerRecords(options = {}) {
-  try { localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords)); } catch (e) {}
+  try {
+    localStorage.setItem(BANNER_KEY, JSON.stringify(state.bannerRecords));
+  } catch (e) {}
   return syncDashboardAuxiliaryRecords(options);
 }
 
 function showBannerForm(existingIndex = null) {
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   if (m && m.parentElement && !document.getElementById('ocrDashModalPortal')) {
     const portal = document.createElement('div');
     portal.id = 'ocrDashModalPortal';
@@ -442,10 +793,16 @@ function showBannerForm(existingIndex = null) {
   }
   const edit = existingIndex !== null && state.bannerRecords[existingIndex];
   $id('dashModalTitle').textContent = edit ? 'Edit Banner Day' : 'New Banner Day';
-  $id('dashModalSub').textContent = edit ? '' : 'Record banner assignments for a structure attack day.';
-  const roster = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members : [];
-  const memberOptions = roster.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-  const rec = edit ? state.bannerRecords[existingIndex] : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
+  $id('dashModalSub').textContent = edit
+    ? ''
+    : 'Record banner assignments for a structure attack day.';
+  const roster = state.rosterSnapshots.length
+    ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members
+    : [];
+  const memberOptions = roster.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  const rec = edit
+    ? state.bannerRecords[existingIndex]
+    : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
   const teamNames = Object.keys(rec.teams);
   body.innerHTML = `<div class="dash-banner-form-row">
     <label>Date</label>
@@ -458,13 +815,21 @@ function showBannerForm(existingIndex = null) {
   <div style="margin:1rem 0;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px">
     <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Team / Banner Assignments</div>
     <div id="dashBannerTeamsList">
-      ${teamNames.length ? teamNames.map((team, ti) => `<div class="dash-banner-form-row" data-team-idx="${ti}">
+      ${
+        teamNames.length
+          ? teamNames
+              .map(
+                (team, ti) => `<div class="dash-banner-form-row" data-team-idx="${ti}">
         <label>Team</label>
         <input type="text" class="dash-banner-team-name" value="${esc(team)}" placeholder="Dawn/Dusk/Etc" style="flex:1">
         <label style="min-width:40px">Members</label>
         <select class="dash-banner-team-members" multiple style="flex:2;min-height:60px">${memberOptions}</select>
         <button class="dash-banner-del-btn dash-banner-remove-team" style="font-size:1rem">✕</button>
-      </div>`).join('') : '<div style="color:var(--text-dim);font-size:0.85rem;text-align:center;padding:1rem">No teams added yet. Add a team below.</div>'}
+      </div>`
+              )
+              .join('')
+          : '<div style="color:var(--text-dim);font-size:0.85rem;text-align:center;padding:1rem">No teams added yet. Add a team below.</div>'
+      }
     </div>
     <button id="dashBannerAddTeamBtn" class="dash-btn" style="margin-top:0.5rem;width:100%">+ Add Team</button>
   </div>
@@ -477,7 +842,8 @@ function showBannerForm(existingIndex = null) {
     const list = $id('dashBannerTeamsList');
     const firstEmpty = list.querySelector('.dash-empty');
     if (firstEmpty) firstEmpty.remove();
-    const div = document.createElement('div'); div.className = 'dash-banner-form-row';
+    const div = document.createElement('div');
+    div.className = 'dash-banner-form-row';
     div.innerHTML = `<label>Team</label>
       <input type="text" class="dash-banner-team-name" value="" placeholder="Dawn/Dusk/Etc" style="flex:1">
       <label style="min-width:40px">Members</label>
@@ -486,7 +852,9 @@ function showBannerForm(existingIndex = null) {
     div.querySelector('.dash-banner-remove-team').onclick = () => div.remove();
     list.appendChild(div);
   };
-  document.querySelectorAll('.dash-banner-remove-team').forEach(btn => btn.onclick = () => btn.closest('.dash-banner-form-row').remove());
+  document
+    .querySelectorAll('.dash-banner-remove-team')
+    .forEach((btn) => (btn.onclick = () => btn.closest('.dash-banner-form-row').remove()));
 
   $id('dashBannerSaveBtn').onclick = async () => {
     const date = $id('dashBannerFormDate').value;
@@ -494,18 +862,24 @@ function showBannerForm(existingIndex = null) {
     const teamRows = document.querySelectorAll('#dashBannerTeamsList .dash-banner-form-row');
     const teams = {};
     let hasError = false;
-    teamRows.forEach(row => {
+    teamRows.forEach((row) => {
       const name = row.querySelector('.dash-banner-team-name').value.trim();
       if (!name) return;
       const sel = row.querySelector('.dash-banner-team-members');
-      const members = Array.from(sel.selectedOptions).map(o => o.value);
+      const members = Array.from(sel.selectedOptions).map((o) => o.value);
       if (!members.length) return;
       teams[name] = members;
     });
-    if (!Object.keys(teams).length) { alert('Add at least one team with members.'); return; }
+    if (!Object.keys(teams).length) {
+      alert('Add at least one team with members.');
+      return;
+    }
     const record = { date, event, teams };
-    if (edit) { state.bannerRecords[existingIndex] = record; }
-    else { state.bannerRecords.push(record); }
+    if (edit) {
+      state.bannerRecords[existingIndex] = record;
+    } else {
+      state.bannerRecords.push(record);
+    }
     const saveBtn = $id('dashBannerSaveBtn');
     if (saveBtn) {
       saveBtn.disabled = true;
@@ -514,11 +888,15 @@ function showBannerForm(existingIndex = null) {
     const synced = await saveBannerRecords({ immediate: true, awaitCloud: true });
     closeModal();
     renderBanners();
-    log(`Banner day ${edit ? 'updated' : 'saved'}: ${date}${event ? ' - ' + event : ''}`, 'success');
+    log(
+      `Banner day ${edit ? 'updated' : 'saved'}: ${date}${event ? ' - ' + event : ''}`,
+      'success'
+    );
     notifySpecialListCloudResult(synced, 'Banner day');
   };
   $id('dashBannerFormCancelBtn').onclick = closeModal;
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function deleteBannerRecord(index) {
@@ -533,7 +911,8 @@ function renderBanners() {
   const body = $id('dashBannerBody');
   if (!body) return;
   if (!state.bannerRecords.length) {
-    body.innerHTML = '<div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>';
+    body.innerHTML =
+      '<div class="dash-empty">No banner records yet. Click "New Banner Day" to start tracking.</div>';
     return;
   }
   let html = '';
@@ -554,27 +933,41 @@ function renderBanners() {
         </div>
       </div>
       <div class="dash-banner-body">
-        <table class="dash-banner-table">
+        <table class="dash-banner-table dash-banner-team-table">
           <thead><tr><th>Team</th><th>Members</th><th>Count</th></tr></thead>
           <tbody>
-            ${teamEntries.map(([team, members]) => `<tr>
+            ${teamEntries
+              .map(
+                ([team, members]) => `<tr>
               <td><span class="dash-banner-team-tag" style="background:${getTeamColor(team)};color:#fff">${esc(team)}</span></td>
-              <td>${members.map(m => esc(m)).join(', ')}</td>
+              <td>${members.map((m) => esc(m)).join(', ')}</td>
               <td style="text-align:right;font-weight:700;color:var(--text-muted)">${members.length}</td>
-            </tr>`).join('')}
+            </tr>`
+              )
+              .join('')}
           </tbody>
         </table>
       </div>
     </div>`;
   }
   body.innerHTML = html;
+  hydrateDashboardTableLabels(body);
 }
 
 function getTeamColor(teamName) {
   const colors = {
-    'dawn': '#f59e0b', 'dusk': '#6366f1', 'ice': '#06b6d4', 'fire': '#ef4444',
-    'frost': '#0ea5e9', 'ember': '#f97316', 'storm': '#8b5cf6', 'shadow': '#6b7280',
-    'light': '#eab308', 'void': '#8b5cf6', 'crystal': '#14b8a6', 'iron': '#64748b',
+    dawn: '#f59e0b',
+    dusk: '#6366f1',
+    ice: '#06b6d4',
+    fire: '#ef4444',
+    frost: '#0ea5e9',
+    ember: '#f97316',
+    storm: '#8b5cf6',
+    shadow: '#6b7280',
+    light: '#eab308',
+    void: '#8b5cf6',
+    crystal: '#14b8a6',
+    iron: '#64748b',
   };
   const key = teamName.toLowerCase().trim();
   return colors[key] || `hsl(${Math.abs(hashCode(teamName)) % 360}, 55%, 50%)`;
@@ -582,15 +975,42 @@ function getTeamColor(teamName) {
 
 function hashCode(str) {
   let hash = 0;
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); hash = ((hash << 5) - hash) + c; hash |= 0; }
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    hash = (hash << 5) - hash + c;
+    hash |= 0;
+  }
   return Math.abs(hash);
 }
 
 const DUTY_TYPES = {
-  banner: { labelKey: 'adminBannerListTitle', singularKey: 'adminDutyBannerSingular', bodyId: 'dashBannerListBody', progressId: 'dashBannerListProgress', progressTextId: 'dashBannerListProgressText' },
-  pather: { labelKey: 'adminPatherListTitle', singularKey: 'adminDutyPlanSingular', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText', recordTypes: ['pather', 'speed_tile'] },
-  speed_tile: { labelKey: 'adminPatherListTitle', singularKey: 'adminDutyPlanSingular', bodyId: 'dashPatherListBody', progressId: 'dashPatherListProgress', progressTextId: 'dashPatherListProgressText' },
-  shield_wall: { labelKey: 'adminShieldWallTitle', singularKey: 'adminDutyShieldWallSingular', bodyId: 'dashShieldWallBody' },
+  banner: {
+    labelKey: 'adminBannerListTitle',
+    singularKey: 'adminDutyBannerSingular',
+    bodyId: 'dashBannerListBody',
+    progressId: 'dashBannerListProgress',
+    progressTextId: 'dashBannerListProgressText',
+  },
+  pather: {
+    labelKey: 'adminPatherListTitle',
+    singularKey: 'adminDutyPlanSingular',
+    bodyId: 'dashPatherListBody',
+    progressId: 'dashPatherListProgress',
+    progressTextId: 'dashPatherListProgressText',
+    recordTypes: ['pather', 'speed_tile'],
+  },
+  speed_tile: {
+    labelKey: 'adminPatherListTitle',
+    singularKey: 'adminDutyPlanSingular',
+    bodyId: 'dashPatherListBody',
+    progressId: 'dashPatherListProgress',
+    progressTextId: 'dashPatherListProgressText',
+  },
+  shield_wall: {
+    labelKey: 'adminShieldWallTitle',
+    singularKey: 'adminDutyShieldWallSingular',
+    bodyId: 'dashShieldWallBody',
+  },
 };
 
 function dutyLabel(type) {
@@ -608,11 +1028,15 @@ function loadDutyRecords() {
     const raw = localStorage.getItem(DUTY_LIST_KEY);
     state.dutyRecords = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(state.dutyRecords)) state.dutyRecords = [];
-  } catch (e) { state.dutyRecords = []; }
+  } catch (e) {
+    state.dutyRecords = [];
+  }
 }
 
 function saveDutyRecords(options = {}) {
-  try { localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords)); } catch (e) {}
+  try {
+    localStorage.setItem(DUTY_LIST_KEY, JSON.stringify(state.dutyRecords));
+  } catch (e) {}
   return syncDashboardAuxiliaryRecords(options);
 }
 
@@ -624,21 +1048,23 @@ function getRosterMemberName(member) {
 
 function getRosterDatabaseNames() {
   const names = [];
-  const latest = state.rosterSnapshots.length ? state.rosterSnapshots[state.rosterSnapshots.length - 1] : null;
+  const latest = state.rosterSnapshots.length
+    ? state.rosterSnapshots[state.rosterSnapshots.length - 1]
+    : null;
   if (latest && Array.isArray(latest.members)) {
-    latest.members.forEach(member => {
+    latest.members.forEach((member) => {
       const name = getRosterMemberName(member);
       if (name) names.push(name);
     });
   }
   if (Array.isArray(state.rosterNames)) {
-    state.rosterNames.forEach(name => {
+    state.rosterNames.forEach((name) => {
       const text = String(name || '').trim();
       if (text) names.push(text);
     });
   }
   const seen = new Set();
-  return names.filter(name => {
+  return names.filter((name) => {
     const key = name.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
@@ -654,36 +1080,34 @@ function getDutySuggestions(rawName) {
   const roster = getRosterDatabaseNames();
   const raw = String(rawName || '').trim();
   if (!raw || !roster.length) return [];
-  // Pre-clean Viber noise (target words, @tags, operator notes, banner suffix) then
-  // resolve against the same authority the structures dataset uses.
-  const cleaned = cleanDutyRawName(raw) || raw;
-  const canonical = findBestMatch(cleaned, 55);
-  const rows = roster.map(name => {
-    const compactScore = getSimilarityAlphaNum(cleaned, name);
-    const textScore = getSimilarity(cleaned.toLowerCase(), name.toLowerCase());
+  const canonical = findBestMatch(raw, 55);
+  const rows = roster.map((name) => {
+    const compactScore = getSimilarityAlphaNum(raw, name);
+    const textScore = getSimilarity(raw.toLowerCase(), name.toLowerCase());
     const canonicalBoost = canonical === name ? 0.15 : 0;
     return { name, score: Math.min(1, Math.max(compactScore, textScore) + canonicalBoost) };
   });
-  if (canonical && !rows.some(row => row.name === canonical)) rows.push({ name: canonical, score: 0.8 });
-  return rows
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
-    .slice(0, 8);
+  if (canonical && !rows.some((row) => row.name === canonical))
+    rows.push({ name: canonical, score: 0.75 });
+  return rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, 8);
 }
 
 function getDutyMatchStatus(rawName, confirmedName) {
   if (!confirmedName) return 'unmatched';
-  const cleaned = cleanDutyRawName(rawName) || rawName;
-  const rawKey = normalizeDutyName(cleaned);
+  const rawKey = normalizeDutyName(rawName);
   const confirmedKey = normalizeDutyName(confirmedName);
   if (rawKey && rawKey === confirmedKey) return 'exact';
-  const score = Math.max(getSimilarityAlphaNum(cleaned, confirmedName), getSimilarity(String(cleaned || '').toLowerCase(), String(confirmedName || '').toLowerCase()));
+  const score = Math.max(
+    getSimilarityAlphaNum(rawName, confirmedName),
+    getSimilarity(String(rawName || '').toLowerCase(), String(confirmedName || '').toLowerCase())
+  );
   if (score >= 0.72) return 'likely';
   if (score >= 0.45) return 'weak';
   return 'manual';
 }
 
 function parseDutyNamesFromText(text) {
-  return parseDutyEntriesFromText(text).map(entry => entry.name);
+  return parseDutyEntriesFromText(text).map((entry) => entry.name);
 }
 
 function normalizeDutyUsageTime(rawTime) {
@@ -731,20 +1155,29 @@ function parseDutyEntryFromLine(line, context = {}) {
   }
 
   const checked = /[✅✓✔]/.test(text);
-  text = text.replace(/[✅✓✔]/g, ' ').replace(/\s+/g, ' ').trim();
+  text = text
+    .replace(/[✅✓✔]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   let pad = '';
-  text = text.replace(/\[Pad:\s*([^\]]+)\]/i, (_, value) => {
-    pad = String(value || '').trim();
-    return ' ';
-  }).replace(/\s+/g, ' ').trim();
+  text = text
+    .replace(/\[Pad:\s*([^\]]+)\]/i, (_, value) => {
+      pad = String(value || '').trim();
+      return ' ';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const bracketValues = [];
-  text = text.replace(/\[([^\]]+)\]/g, (_, value) => {
-    const clean = String(value || '').trim();
-    if (clean) bracketValues.push(clean);
-    return ' ';
-  }).replace(/\s+/g, ' ').trim();
+  text = text
+    .replace(/\[([^\]]+)\]/g, (_, value) => {
+      const clean = String(value || '').trim();
+      if (clean) bracketValues.push(clean);
+      return ' ';
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
 
   let name = '';
   const atMatch = text.match(/@(.+)$/);
@@ -776,19 +1209,24 @@ function parseDutyEntryFromLine(line, context = {}) {
 function parseDutyEntriesFromText(text) {
   const entries = [];
   const context = { group: '', groupCount: '' };
-  String(text || '').split(/\r?\n|,/).forEach(line => {
-    const groupMatch = String(line || '').trim().match(/^([^:\[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
-    if (groupMatch && !/^\d+[.)-]/.test(String(line || '').trim())) {
-      context.group = groupMatch[1].trim();
-      context.groupCount = String(groupMatch[2] || '').trim();
-      return;
-    }
-    const entry = parseDutyEntryFromLine(line, context);
-    if (entry) entries.push(entry);
-  });
+  String(text || '')
+    .split(/\r?\n|,/)
+    .forEach((line) => {
+      const groupMatch = String(line || '')
+        .trim()
+        .match(/^([^:\[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
+      if (groupMatch && !/^\d+[.)-]/.test(String(line || '').trim())) {
+        context.group = groupMatch[1].trim();
+        context.groupCount = String(groupMatch[2] || '').trim();
+        return;
+      }
+      const entry = parseDutyEntryFromLine(line, context);
+      if (entry) entries.push(entry);
+    });
   const seen = new Set();
-  return entries.filter(entry => {
-    const key = `${entry.name}|${entry.usageTime}|${entry.target}|${entry.group}|${entry.order}|${entry.pad}`.toLowerCase();
+  return entries.filter((entry) => {
+    const key =
+      `${entry.name}|${entry.usageTime}|${entry.target}|${entry.group}|${entry.order}|${entry.pad}`.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -812,7 +1250,7 @@ function showDutyPasteForm(type) {
 function normalizeDutyEntries(input) {
   const rows = Array.isArray(input) ? input : [];
   return rows
-    .map(item => {
+    .map((item) => {
       if (item && typeof item === 'object') {
         const original = String(item.original || item.name || '').trim();
         const name = String(item.name || item.original || item.confirmed || '').trim();
@@ -823,7 +1261,9 @@ function normalizeDutyEntries(input) {
           usageTime: normalizeDutyUsageTime(item.usageTime || item.usage_time || item.time || ''),
           target: String(item.target || item.structure || item.location || '').trim(),
           group: String(item.group || item.color || item.tileColor || item.tile_color || '').trim(),
-          groupCount: String(item.groupCount || item.group_count || item.count || item.capacity || '').trim(),
+          groupCount: String(
+            item.groupCount || item.group_count || item.count || item.capacity || ''
+          ).trim(),
           order: String(item.order || item.index || '').trim(),
           pad: String(item.pad || item.padLocation || item.pad_location || '').trim(),
           checked: Boolean(item.checked || item.done || item.confirmedUsage),
@@ -834,30 +1274,50 @@ function normalizeDutyEntries(input) {
         };
       }
       const name = String(item || '').trim();
-      return { name, original: name, confirmed: '', usageTime: '', target: '', group: '', groupCount: '', order: '', pad: '', checked: false, allowedColors: '', status: '' };
+      return {
+        name,
+        original: name,
+        confirmed: '',
+        usageTime: '',
+        target: '',
+        group: '',
+        groupCount: '',
+        order: '',
+        pad: '',
+        checked: false,
+        allowedColors: '',
+        status: '',
+      };
     })
-    .filter(entry => entry.name);
+    .filter((entry) => entry.name);
 }
 
 function renderDutyMatchRows(entries) {
-  return entries.map((entry, index) => {
-    const rawName = entry.name;
-    const suggestions = getDutySuggestions(rawName);
-    const best = entry.confirmed || suggestions[0]?.name || '';
-    const status = getDutyMatchStatus(rawName, best);
-    const options = [`<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`]
-      .concat(suggestions.map(row => `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`))
-      .join('');
-    return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
-      <div class="dash-duty-raw"><span>#${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
-      <select class="dash-duty-match-select">${options}</select>
-      <input class="dash-duty-manual-input" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some(row => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}">
-      <input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}">
-      <input class="dash-duty-target-input" type="text" placeholder="${esc(adminT('adminDutyTarget'))}" value="${esc(entry.target || '')}" title="${esc(adminT('adminDutyTargetTitle'))}">
-      <input class="dash-duty-group-input" type="text" placeholder="${esc(adminT('adminDutyGroup'))}" value="${esc(entry.group || '')}" title="${esc(adminT('adminDutyGroupTitle'))}">
-      <input class="dash-duty-pad-input" type="text" placeholder="${esc(adminT('adminDutyPad'))}" value="${esc(entry.pad || '')}" title="${esc(adminT('adminDutyPadTitle'))}">
+  return entries
+    .map((entry, index) => {
+      const rawName = entry.name;
+      const suggestions = getDutySuggestions(rawName);
+      const best = entry.confirmed || suggestions[0]?.name || '';
+      const status = getDutyMatchStatus(rawName, best);
+      const options = [`<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`]
+        .concat(
+          suggestions.map(
+            (row) =>
+              `<option value="${esc(row.name)}"${row.name === best ? ' selected' : ''}>${esc(row.name)} (${Math.round(row.score * 100)}%)</option>`
+          )
+        )
+        .join('');
+      return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
+      <div class="dash-duty-raw"><span>${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyRosterMatch'))}</span><select class="dash-duty-match-select">${options}</select></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyManualCorrectionPh'))}</span><input class="dash-duty-manual-input" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTime'))}</span><input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTarget'))}</span><input class="dash-duty-target-input" type="text" placeholder="${esc(adminT('adminDutyTarget'))}" value="${esc(entry.target || '')}" title="${esc(adminT('adminDutyTargetTitle'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyGroup'))}</span><input class="dash-duty-group-input" type="text" placeholder="${esc(adminT('adminDutyGroup'))}" value="${esc(entry.group || '')}" title="${esc(adminT('adminDutyGroupTitle'))}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyPad'))}</span><input class="dash-duty-pad-input" type="text" placeholder="${esc(adminT('adminDutyPad'))}" value="${esc(entry.pad || '')}" title="${esc(adminT('adminDutyPadTitle'))}"></label>
     </div>`;
-  }).join('');
+    })
+    .join('');
 }
 
 function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = null) {
@@ -865,11 +1325,17 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
   if (!meta) return;
   const cleanEntries = normalizeDutyEntries(names);
   if (!cleanEntries.length) return;
-  const existingRecord = existingRecordId ? state.dutyRecords.find(record => record.id === existingRecordId) : null;
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const existingRecord = existingRecordId
+    ? state.dutyRecords.find((record) => record.id === existingRecordId)
+    : null;
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   const label = dutyLabel(type);
   const singular = dutySingular(type);
-  $id('dashModalTitle').textContent = adminT(existingRecord ? 'adminDutyEditTitle' : 'adminDutyConfirmTitle', { label });
+  $id('dashModalTitle').textContent = adminT(
+    existingRecord ? 'adminDutyEditTitle' : 'adminDutyConfirmTitle',
+    { label }
+  );
   $id('dashModalSub').textContent = adminT('adminDutyConfirmSub', { count: cleanEntries.length });
   body.innerHTML = `<div class="dash-banner-form-row">
     <label>${esc(adminT('adminDutyDateLabel'))}</label>
@@ -889,13 +1355,15 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
   $id('dashDutySaveBtn').onclick = async () => {
-    const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map(row => {
+    const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map((row) => {
       const original = row.dataset.raw || '';
       const rawName = row.dataset.name || original;
       const manual = row.querySelector('.dash-duty-manual-input')?.value.trim() || '';
       const selected = row.querySelector('.dash-duty-match-select')?.value || '';
       const confirmed = manual || selected;
-      const usageTime = normalizeDutyUsageTime(row.querySelector('.dash-duty-time-input')?.value || '');
+      const usageTime = normalizeDutyUsageTime(
+        row.querySelector('.dash-duty-time-input')?.value || ''
+      );
       const target = row.querySelector('.dash-duty-target-input')?.value.trim() || '';
       const group = row.querySelector('.dash-duty-group-input')?.value.trim() || '';
       const pad = row.querySelector('.dash-duty-pad-input')?.value.trim() || '';
@@ -928,7 +1396,7 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
       updatedAt: new Date().toISOString(),
     };
     if (existingRecord) {
-      const index = state.dutyRecords.findIndex(item => item.id === existingRecord.id);
+      const index = state.dutyRecords.findIndex((item) => item.id === existingRecord.id);
       if (index >= 0) state.dutyRecords[index] = record;
     } else {
       state.dutyRecords.push(record);
@@ -942,22 +1410,37 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     closeModal();
     renderDutyRecords();
     refreshDashboardOverview();
-    log(adminT(existingRecord ? 'adminDutyUpdatedLog' : 'adminDutySavedLog', { label, count: entries.length }), 'success');
+    log(
+      adminT(existingRecord ? 'adminDutyUpdatedLog' : 'adminDutySavedLog', {
+        label,
+        count: entries.length,
+      }),
+      'success'
+    );
     notifySpecialListCloudResult(synced, label);
   };
   $id('dashDutyCancelBtn').onclick = closeModal;
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 async function processDutyImages(type, files) {
   const meta = DUTY_TYPES[type];
   if (!meta) return;
   const label = dutyLabel(type);
-  if (state._dutyProcessing) { log(adminT('adminDutyOcrAlreadyRunning'), 'warn'); return; }
+  if (state._dutyProcessing) {
+    log(adminT('adminDutyOcrAlreadyRunning'), 'warn');
+    return;
+  }
   const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
-    log(rejected.length ? `No supported ${label} image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : `No ${label} image selected.`, 'warn');
+    log(
+      rejected.length
+        ? `No supported ${label} image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}`
+        : `No ${label} image selected.`,
+      'warn'
+    );
     return;
   }
   state._dutyProcessing = true;
@@ -968,7 +1451,12 @@ async function processDutyImages(type, files) {
   let allEntries = [];
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
-    if (progressText) progressText.textContent = adminT('adminDutyScanningImageProgress', { label, current: i + 1, total: valid.length });
+    if (progressText)
+      progressText.textContent = adminT('adminDutyScanningImageProgress', {
+        label,
+        current: i + 1,
+        total: valid.length,
+      });
     const imageUrl = await readOcrImageDataUrl(file);
     try {
       const promptTxt = `Extract duty usage rows from this ${label} screenshot.
@@ -986,16 +1474,28 @@ Rules:
 - Preserve symbols and spacing in names when visible.
 - Remove duplicates.
 - If no player names are visible, return {"entries":[]}.`;
-      const raw = await qwenVisionRequest([{ role: 'user', content: [
-        { type: 'text', text: promptTxt },
-        { type: 'image_url', image_url: { url: imageUrl } }
-      ]}]);
+      const raw = await qwenVisionRequest([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ]);
       const text = raw?.choices?.[0]?.message?.content || '';
-      const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      const cleaned = text
+        .replace(/```(?:json)?\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
       let parsed;
-      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = parseDutyEntriesFromText(cleaned); }
+      try {
+        parsed = tryRepairJson(cleaned);
+      } catch (e) {
+        parsed = parseDutyEntriesFromText(cleaned);
+      }
       const entries = Array.isArray(parsed)
-        ? parsed.every(item => typeof item === 'string')
+        ? parsed.every((item) => typeof item === 'string')
           ? parseDutyEntriesFromText(parsed.join('\n'))
           : normalizeDutyEntries(parsed)
         : Array.isArray(parsed?.entries)
@@ -1005,7 +1505,14 @@ Rules:
             : [];
       allEntries.push(...entries);
     } catch (e) {
-      log(adminT('adminDutyOcrErrorLog', { label, file: file.name, error: describeOcrRequestError(e) }), 'error');
+      log(
+        adminT('adminDutyOcrErrorLog', {
+          label,
+          file: file.name,
+          error: describeOcrRequestError(e),
+        }),
+        'error'
+      );
     }
   }
   if (progress) progress.classList.add('hidden');
@@ -1016,13 +1523,13 @@ Rules:
     alert(adminT('adminDutyExtractFailedAlert', { label }));
     return;
   }
-  showDutyConfirmModal(type, unique, valid.map(f => f.name).join(', '));
+  showDutyConfirmModal(type, unique, valid.map((f) => f.name).join(', '));
 }
 
 function editDutyRecord(id) {
-  const record = state.dutyRecords.find(item => item.id === id);
+  const record = state.dutyRecords.find((item) => item.id === id);
   if (!record) return;
-  const entries = (record.entries || []).map(entry => ({
+  const entries = (record.entries || []).map((entry) => ({
     ...entry,
     name: entry.name || entry.confirmed || entry.original || '',
   }));
@@ -1030,7 +1537,7 @@ function editDutyRecord(id) {
 }
 
 function deleteDutyRecord(id) {
-  const index = state.dutyRecords.findIndex(record => record.id === id);
+  const index = state.dutyRecords.findIndex((record) => record.id === id);
   if (index < 0) return;
   if (!confirm(adminT('adminDutyDeleteConfirm'))) return;
   state.dutyRecords.splice(index, 1);
@@ -1047,52 +1554,33 @@ function dutyRecordTypesFor(type) {
 
 function dutyRecordsForType(type) {
   const recordTypes = dutyRecordTypesFor(type);
-  return (state.dutyRecords || []).filter(record => recordTypes.includes(record.type));
+  return (state.dutyRecords || []).filter((record) => recordTypes.includes(record.type));
 }
 
 function summarizeDutyValues(values, limit = 3) {
-  const clean = Array.from(new Set(values.map(value => String(value || '').trim()).filter(Boolean)));
+  const clean = Array.from(
+    new Set(values.map((value) => String(value || '').trim()).filter(Boolean))
+  );
   if (!clean.length) return '<span style="color:var(--text-dim)">--</span>';
   const visible = clean.slice(0, limit).map(esc).join(', ');
   return clean.length > limit ? `${visible} +${clean.length - limit}` : visible;
 }
 
 function collectDutyPlayerSummary(records) {
-  const rows = new Map();
-  const ensureRow = (name) => {
-    if (!rows.has(name)) {
-      rows.set(name, {
-        name,
-        assignments: 0,
-        uploads: new Set(),
-        review: 0,
-        targets: [],
-        groups: [],
-        times: [],
-      });
-    }
-    return rows.get(name);
-  };
-  records.forEach(record => {
+  const rows = [];
+  records.forEach((record) => {
     const entries = Array.isArray(record.entries) ? record.entries : [];
-    entries.forEach(entry => {
-      const primary = String(entry.confirmed || entry.name || entry.original || '').trim();
-      if (!primary) return;
-      // Credit BOTH the banner account / @-tagged owner AND the parenthetical operator
-      // (when the note is a real operator, not a label). De-duped; owner first.
-      const creditedNames = getDutyCreditedNames(entry.original || entry.name || '', primary);
-      creditedNames.forEach(name => {
-        const row = ensureRow(name);
-        row.assignments += 1;
-        row.uploads.add(record.id || `${record.date || ''}|${record.type || ''}|${record.createdAt || ''}`);
-        if (entry.status === 'weak' || entry.status === 'unmatched' || !entry.confirmed) row.review += 1;
-        row.targets.push(entry.target);
-        row.groups.push(entry.group);
-        row.times.push(entry.usageTime || record.gameTime);
+    entries.forEach((entry) => {
+      const name = String(entry.confirmed || entry.name || entry.original || '').trim();
+      if (!name) return;
+      rows.push({
+        ...entry,
+        name,
+        time: entry.usageTime || record.gameTime,
       });
     });
   });
-  return Array.from(rows.values()).sort((a, b) => b.assignments - a.assignments || a.name.localeCompare(b.name));
+  return summarizeCanonicalPlayerRecords(rows, { timeField: 'time' });
 }
 
 function renderDutyPlayerSummary(type, hostId) {
@@ -1104,48 +1592,53 @@ function renderDutyPlayerSummary(type, hostId) {
     return;
   }
   const rows = collectDutyPlayerSummary(records);
-  const totalRows = rows.reduce((sum, row) => sum + row.assignments, 0);
-  const totalReview = rows.reduce((sum, row) => sum + row.review, 0);
+  const totalRows = rows.reduce((sum, row) => sum + row.entries, 0);
   const latest = records[0]?.date || '--';
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
       <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>uploads</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>rows</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>entries</span></div>
       <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>players</span></div>
-      <div class="dash-duty-summary-kpi"><strong>${totalReview}</strong><span>review</span></div>
       <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>latest</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
-        <thead><tr><th>Player</th><th>Assignments</th><th>Uploads</th><th>Review</th><th>Targets</th><th>Groups</th><th>Times</th></tr></thead>
-        <tbody>${rows.map(row => `<tr>
-          <td><strong>${esc(row.name)}</strong></td>
-          <td>${row.assignments}</td>
-          <td>${row.uploads.size}</td>
-          <td>${row.review ? `<small>${row.review} review</small>` : '<span style="color:var(--text-dim)">--</span>'}</td>
-          <td>${summarizeDutyValues(row.targets, 4)}</td>
-          <td>${summarizeDutyValues(row.groups, 4)}</td>
-          <td>${summarizeDutyValues(row.times, 4)}</td>
-        </tr>`).join('')}</tbody>
+        <thead><tr><th>${esc(adminT('adminDutySummaryPlayer'))}</th><th>${esc(adminT('adminDutySummaryEntries'))}</th><th>${esc(adminT('adminDutySummaryTimes'))}</th></tr></thead>
+        <tbody>${rows
+          .map(
+            (row) => `<tr>
+          <td><strong>${esc(row.playerName)}</strong></td>
+          <td>${row.entries}</td>
+          <td>${summarizeDutyValues(row.times, 8)}</td>
+        </tr>`
+          )
+          .join('')}</tbody>
       </table>
     </div>
   </div>`;
+  hydrateDashboardTableLabels(host);
 }
 function renderDutyType(type) {
   const meta = DUTY_TYPES[type];
   const body = meta ? $id(meta.bodyId) : null;
   if (!meta || !body) return;
   const recordTypes = meta.recordTypes || [type];
-  const records = (state.dutyRecords || []).filter(record => recordTypes.includes(record.type)).slice().reverse();
+  const records = (state.dutyRecords || [])
+    .filter((record) => recordTypes.includes(record.type))
+    .slice()
+    .reverse();
   if (!records.length) {
     body.innerHTML = `<div class="dash-empty">${esc(adminT('adminDutyEmptyRecords', { label: dutyLabel(type) }))}</div>`;
     return;
   }
-  body.innerHTML = records.map(record => {
-    const entries = Array.isArray(record.entries) ? record.entries : [];
-    const confirmed = entries.filter(entry => entry.confirmed).length;
-    const weak = entries.filter(entry => entry.status === 'weak' || entry.status === 'unmatched').length;
-    return `<div class="dash-banner-card">
+  body.innerHTML = records
+    .map((record) => {
+      const entries = Array.isArray(record.entries) ? record.entries : [];
+      const confirmed = entries.filter((entry) => entry.confirmed).length;
+      const weak = entries.filter(
+        (entry) => entry.status === 'weak' || entry.status === 'unmatched'
+      ).length;
+      return `<div class="dash-banner-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
@@ -1160,9 +1653,11 @@ function renderDutyType(type) {
         </div>
       </div>
       <div class="dash-banner-body">
-        <table class="dash-banner-table">
+        <table class="dash-banner-table dash-duty-detail-table">
           <thead><tr><th>${esc(adminT('adminDutyGroup'))}</th><th>${esc(adminT('adminDutyOrder'))}</th><th>${esc(adminT('adminDutyTime'))}</th><th>${esc(adminT('adminDutyTarget'))}</th><th>${esc(adminT('adminDutyPad'))}</th><th>${esc(adminT('adminDutyUploaded'))}</th><th>${esc(adminT('adminDutyRosterMatch'))}</th><th>${esc(adminT('adminDutyStatus'))}</th></tr></thead>
-          <tbody>${entries.map(entry => `<tr>
+          <tbody>${entries
+            .map(
+              (entry) => `<tr>
             <td>${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.order ? esc(entry.order) : entry.checked ? '✓' : '<span style="color:var(--text-dim)">--</span>'}</td>
             <td>${entry.usageTime ? esc(entry.usageTime) : '<span style="color:var(--text-dim)">--</span>'}</td>
@@ -1171,37 +1666,42 @@ function renderDutyType(type) {
             <td>${esc(entry.original || entry.name || '')}</td>
             <td>${entry.confirmed ? esc(entry.confirmed) : `<span style="color:var(--text-dim)">${esc(adminT('adminDutyUnmatched'))}</span>`}</td>
             <td>${esc(entry.status || 'unmatched')}</td>
-          </tr>`).join('')}</tbody>
+          </tr>`
+            )
+            .join('')}</tbody>
         </table>
       </div>
     </div>`;
-  }).join('');
+    })
+    .join('');
+  hydrateDashboardTableLabels(body);
 }
 
 function renderDutySummary() {
   const host = $id('dashDutySummary');
   if (!host) return;
   const counts = new Map();
-  const ensureCount = (name) => {
-    if (!counts.has(name)) counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
-    return counts.get(name);
-  };
-  (state.dutyRecords || []).forEach(record => {
-    (record.entries || []).forEach(entry => {
-      const primary = entry.confirmed || entry.original;
-      if (!primary) return;
-      // Credit both owner and operator (see collectDutyPlayerSummary).
-      const creditedNames = getDutyCreditedNames(entry.original || '', primary);
-      creditedNames.forEach(name => {
-        const row = ensureCount(name);
-        row.total += 1;
-        if (row[record.type] !== undefined) row[record.type] += 1;
-      });
+  (state.dutyRecords || []).forEach((record) => {
+    (record.entries || []).forEach((entry) => {
+      const name = entry.confirmed || entry.original;
+      if (!name) return;
+      if (!counts.has(name))
+        counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
+      const row = counts.get(name);
+      row.total += 1;
+      if (row[record.type] !== undefined) row[record.type] += 1;
     });
   });
-  const rows = Array.from(counts.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
+  const rows = Array.from(counts.values())
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .slice(0, 12);
   host.innerHTML = rows.length
-    ? rows.map(row => `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${esc(adminT('adminDutyTotalLabel', { count: row.total }))}</span><small>B ${row.banner} / ${esc(adminT('adminDutyPlanAbbrev'))} ${row.pather + row.speed_tile} / ${esc(adminT('adminDutyShieldWallAbbrev'))} ${row.shield_wall}</small></div>`).join('')
+    ? rows
+        .map(
+          (row) =>
+            `<div class="dash-duty-summary-row"><strong>${esc(row.name)}</strong><span>${esc(adminT('adminDutyTotalLabel', { count: row.total }))}</span><small>B ${row.banner} / ${esc(adminT('adminDutyPlanAbbrev'))} ${row.pather + row.speed_tile} / ${esc(adminT('adminDutyShieldWallAbbrev'))} ${row.shield_wall}</small></div>`
+        )
+        .join('')
     : `<div class="dash-empty">${esc(adminT('adminDutySummaryEmpty'))}</div>`;
 }
 
@@ -1225,7 +1725,9 @@ function loadContributionRecords() {
 }
 
 function saveContributionRecords(options = {}) {
-  try { localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || [])); } catch (e) {}
+  try {
+    localStorage.setItem(CONTRIBUTION_KEY, JSON.stringify(state.contributionRecords || []));
+  } catch (e) {}
   return syncDashboardAuxiliaryRecords(options);
 }
 
@@ -1246,10 +1748,12 @@ function formatSignedContributionValue(value) {
 }
 
 function safeContributionFilenamePart(value) {
-  return String(value || 'snapshot')
-    .replace(/[^a-z0-9_-]+/gi, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48) || 'snapshot';
+  return (
+    String(value || 'snapshot')
+      .replace(/[^a-z0-9_-]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'snapshot'
+  );
 }
 
 function refreshDashboardOverview() {
@@ -1273,7 +1777,10 @@ function notifySpecialListCloudResult(ok, label) {
 }
 
 function normalizeRewardTier(value) {
-  const tier = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '-');
+  const tier = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '-');
   if (tier === 'premium' || tier === 'top' || tier === 'top-premium') return 'premium';
   if (tier === 'standard' || tier === 'normal') return 'standard';
   if (tier === 'review' || tier === 'manual') return 'review';
@@ -1290,26 +1797,32 @@ function getContributionReward(entry, record) {
 }
 
 function getContributionRewardLabel(tier) {
-  return {
-    premium: adminT('adminContributionRewardPremium'),
-    standard: adminT('adminContributionRewardStandard'),
-    review: adminT('adminContributionRewardReview'),
-    none: adminT('adminContributionRewardNone'),
-  }[tier] || adminT('adminContributionRewardAuto');
+  return (
+    {
+      premium: adminT('adminContributionRewardPremium'),
+      standard: adminT('adminContributionRewardStandard'),
+      review: adminT('adminContributionRewardReview'),
+      none: adminT('adminContributionRewardNone'),
+    }[tier] || adminT('adminContributionRewardAuto')
+  );
 }
 
 function normalizeContributionEntries(input) {
   const rows = Array.isArray(input) ? input : [];
   const seen = new Set();
   return rows
-    .map(item => {
+    .map((item) => {
       if (!item || typeof item !== 'object') return null;
-      const rank = Number(String(item.rank || item.order || item.index || '').replace(/[^\d]/g, ''));
+      const rank = Number(
+        String(item.rank || item.order || item.index || '').replace(/[^\d]/g, '')
+      );
       const name = String(item.name || item.member || item.player || item.members || '').trim();
       const guild = String(item.guild || item.alliance || item.team || '')
         .replace(/^guild\s*[:：]\s*/i, '')
         .trim();
-      const contribution = parseContributionValue(item.contribution || item.value || item.points || item.total || item.score);
+      const contribution = parseContributionValue(
+        item.contribution || item.value || item.points || item.total || item.score
+      );
       const position = String(item.position || item.role || item.title || '').trim();
       const rewardOverride = normalizeRewardTier(item.rewardOverride || item.reward || '');
       if (!name || !contribution) return null;
@@ -1323,73 +1836,96 @@ function normalizeContributionEntries(input) {
       };
     })
     .filter(Boolean)
-    .filter(entry => {
-      const key = `${entry.rank}|${compactPlayerIdentity(entry.name)}|${entry.contribution}|${entry.guild}`.toLowerCase();
+    .filter((entry) => {
+      const key =
+        `${entry.rank}|${compactPlayerIdentity(entry.name)}|${entry.contribution}|${entry.guild}`.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .sort((a, b) => (Number(a.rank || 9999) - Number(b.rank || 9999)) || b.contribution - a.contribution);
+    .sort(
+      (a, b) => Number(a.rank || 9999) - Number(b.rank || 9999) || b.contribution - a.contribution
+    );
 }
 
 function parseContributionEntriesFromText(text) {
   const entries = [];
-  String(text || '').split(/\r?\n/).forEach(line => {
-    let row = String(line || '').replace(/\s+/g, ' ').trim();
-    if (!row || /^(total contribution|members|contribution|position|my ranking)$/i.test(row)) return;
-    let rank = '';
-    const rankMatch = row.match(/^#?\s*(\d{1,4})[\s.)-]+(.+)$/);
-    if (rankMatch) {
-      rank = Number(rankMatch[1]);
-      row = rankMatch[2].trim();
-    }
-    const numericMatches = Array.from(row.matchAll(/\b\d{1,3}(?:,\d{3})+\b|\b\d{4,}\b/g));
-    if (!numericMatches.length) return;
-    const valueMatch = numericMatches[numericMatches.length - 1];
-    const contribution = parseContributionValue(valueMatch[0]);
-    if (!contribution) return;
-    let guild = '';
-    let beforeValue = row.slice(0, valueMatch.index).replace(/[|,;:-]+$/g, '').trim();
-    const guildMatch = beforeValue.match(/\bGuild\s*[:：]\s*(.+)$/i);
-    if (guildMatch) {
-      guild = String(guildMatch[1] || '').trim();
-      beforeValue = beforeValue.slice(0, guildMatch.index).trim();
-    }
-    const afterValue = row.slice(valueMatch.index + valueMatch[0].length).replace(/^[|,;:-]+/g, '').trim();
-    const name = beforeValue.replace(/\bGuild\s*[:：].*$/i, '').trim();
-    if (!name) return;
-    entries.push({ rank, name, guild, contribution, position: afterValue, rewardOverride: '' });
-  });
+  String(text || '')
+    .split(/\r?\n/)
+    .forEach((line) => {
+      let row = String(line || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!row || /^(total contribution|members|contribution|position|my ranking)$/i.test(row))
+        return;
+      let rank = '';
+      const rankMatch = row.match(/^#?\s*(\d{1,4})[\s.)-]+(.+)$/);
+      if (rankMatch) {
+        rank = Number(rankMatch[1]);
+        row = rankMatch[2].trim();
+      }
+      const numericMatches = Array.from(row.matchAll(/\b\d{1,3}(?:,\d{3})+\b|\b\d{4,}\b/g));
+      if (!numericMatches.length) return;
+      const valueMatch = numericMatches[numericMatches.length - 1];
+      const contribution = parseContributionValue(valueMatch[0]);
+      if (!contribution) return;
+      let guild = '';
+      let beforeValue = row
+        .slice(0, valueMatch.index)
+        .replace(/[|,;:-]+$/g, '')
+        .trim();
+      const guildMatch = beforeValue.match(/\bGuild\s*[:：]\s*(.+)$/i);
+      if (guildMatch) {
+        guild = String(guildMatch[1] || '').trim();
+        beforeValue = beforeValue.slice(0, guildMatch.index).trim();
+      }
+      const afterValue = row
+        .slice(valueMatch.index + valueMatch[0].length)
+        .replace(/^[|,;:-]+/g, '')
+        .trim();
+      const name = beforeValue.replace(/\bGuild\s*[:：].*$/i, '').trim();
+      if (!name) return;
+      entries.push({ rank, name, guild, contribution, position: afterValue, rewardOverride: '' });
+    });
   return normalizeContributionEntries(entries);
 }
 
 function renderContributionMatchRows(entries) {
-  return entries.map((entry, index) => `<div class="dash-contribution-match-row">
-    <input class="dash-contribution-rank-input" type="number" min="1" placeholder="#" value="${esc(entry.rank || '')}">
-    <input class="dash-contribution-name-input" type="text" placeholder="${esc(adminT('adminContributionMemberNamePh'))}" value="${esc(entry.name || '')}">
-    <input class="dash-contribution-guild-input" type="text" placeholder="${esc(adminT('adminContributionGuildPh'))}" value="${esc(entry.guild || '')}">
-    <input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="${esc(adminT('adminContributionValuePh'))}" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}">
-    <input class="dash-contribution-position-input" type="text" placeholder="${esc(adminT('adminContributionPositionPh'))}" value="${esc(entry.position || '')}">
-    <select class="dash-contribution-reward-input" title="${esc(adminT('adminContributionRewardOverrideTitle'))}">
+  return entries
+    .map(
+      (entry, index) => `<div class="dash-contribution-match-row">
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionRank'))}</span><input class="dash-contribution-rank-input" type="number" min="1" placeholder="#" value="${esc(entry.rank || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionMember'))}</span><input class="dash-contribution-name-input" type="text" placeholder="${esc(adminT('adminContributionMemberNamePh'))}" value="${esc(entry.name || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionGuild'))}</span><input class="dash-contribution-guild-input" type="text" placeholder="${esc(adminT('adminContributionGuildPh'))}" value="${esc(entry.guild || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionValue'))}</span><input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="${esc(adminT('adminContributionValuePh'))}" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionPosition'))}</span><input class="dash-contribution-position-input" type="text" placeholder="${esc(adminT('adminContributionPositionPh'))}" value="${esc(entry.position || '')}"></label>
+    <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionReward'))}</span><select class="dash-contribution-reward-input" title="${esc(adminT('adminContributionRewardOverrideTitle'))}">
       <option value=""${!entry.rewardOverride ? ' selected' : ''}>${esc(adminT('adminContributionRewardAuto'))}</option>
       <option value="premium"${entry.rewardOverride === 'premium' ? ' selected' : ''}>${esc(adminT('adminContributionRewardPremium'))}</option>
       <option value="standard"${entry.rewardOverride === 'standard' ? ' selected' : ''}>${esc(adminT('adminContributionRewardStandard'))}</option>
       <option value="review"${entry.rewardOverride === 'review' ? ' selected' : ''}>${esc(adminT('adminContributionRewardReview'))}</option>
       <option value="none"${entry.rewardOverride === 'none' ? ' selected' : ''}>${esc(adminT('adminContributionRewardNone'))}</option>
-    </select>
+    </select></label>
     <button class="dash-banner-del-btn" type="button" title="${esc(adminT('adminContributionRemoveRow'))}" onclick="this.closest('.dash-contribution-match-row').remove()">x</button>
-  </div>`).join('');
+  </div>`
+    )
+    .join('');
 }
 
 function showContributionConfirmModal(entries, sourceLabel = '', existingRecordId = null) {
   const cleanEntries = normalizeContributionEntries(entries);
   if (!cleanEntries.length) return;
-  const existingRecord = existingRecordId ? state.contributionRecords.find(record => record.id === existingRecordId) : null;
-  const m = $id('dashModal'), body = $id('dashModalBody');
+  const existingRecord = existingRecordId
+    ? state.contributionRecords.find((record) => record.id === existingRecordId)
+    : null;
+  const m = $id('dashModal'),
+    body = $id('dashModalBody');
   $id('dashModalTitle').textContent = existingRecord
     ? adminT('adminContributionEditTitle')
     : adminT('adminContributionConfirmTitle');
-  $id('dashModalSub').textContent = adminT('adminContributionModalSub', { count: cleanEntries.length });
+  $id('dashModalSub').textContent = adminT('adminContributionModalSub', {
+    count: cleanEntries.length,
+  });
   body.innerHTML = `<div class="dash-banner-form-row">
     <label>${esc(adminT('adminContributionDateLabel'))}</label>
     <input type="date" id="dashContributionDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
@@ -1414,10 +1950,15 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
   </div>`;
   $id('dashContributionAddRowBtn').onclick = () => {
     const list = body.querySelector('.dash-contribution-match-list');
-    list.insertAdjacentHTML('beforeend', renderContributionMatchRows([{ rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' }]));
+    list.insertAdjacentHTML(
+      'beforeend',
+      renderContributionMatchRows([
+        { rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' },
+      ])
+    );
   };
   $id('dashContributionSaveBtn').onclick = async () => {
-    const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map(row => ({
+    const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map((row) => ({
       rank: row.querySelector('.dash-contribution-rank-input')?.value || '',
       name: row.querySelector('.dash-contribution-name-input')?.value || '',
       guild: row.querySelector('.dash-contribution-guild-input')?.value || '',
@@ -1431,7 +1972,9 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
       return;
     }
     const record = {
-      id: existingRecord?.id || `contribution_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id:
+        existingRecord?.id ||
+        `contribution_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       date: $id('dashContributionDate')?.value || new Date().toISOString().slice(0, 10),
       note: $id('dashContributionNote')?.value.trim() || '',
       premiumCutoff: Math.max(1, Number($id('dashContributionPremiumCutoff')?.value || 20)),
@@ -1440,7 +1983,7 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
       updatedAt: new Date().toISOString(),
     };
     if (existingRecord) {
-      const index = state.contributionRecords.findIndex(item => item.id === existingRecord.id);
+      const index = state.contributionRecords.findIndex((item) => item.id === existingRecord.id);
       if (index >= 0) state.contributionRecords[index] = record;
     } else {
       state.contributionRecords.push(record);
@@ -1454,11 +1997,17 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     closeModal();
     renderContributions();
     refreshDashboardOverview();
-    log(adminT(existingRecord ? 'adminContributionUpdatedLog' : 'adminContributionSavedLog', { count: normalized.length }), 'success');
+    log(
+      adminT(existingRecord ? 'adminContributionUpdatedLog' : 'adminContributionSavedLog', {
+        count: normalized.length,
+      }),
+      'success'
+    );
     notifySpecialListCloudResult(synced, adminT('adminContributionsTab'));
   };
   $id('dashContributionCancelBtn').onclick = closeModal;
-  m.classList.add('active'); document.body.style.overflow = 'hidden';
+  m.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function showContributionPasteForm() {
@@ -1488,11 +2037,16 @@ function clearContributionUploadStatus() {
 }
 
 async function processContributionImages(files) {
-  if (state._contributionProcessing) { log(adminT('adminContributionOcrRunningLog'), 'warn'); return; }
+  if (state._contributionProcessing) {
+    log(adminT('adminContributionOcrRunningLog'), 'warn');
+    return;
+  }
   const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
-    const message = rejected.length ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}` : 'No contribution image selected.';
+    const message = rejected.length
+      ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}`
+      : 'No contribution image selected.';
     log(message, 'warn');
     setContributionUploadStatus(message, 'warn');
     return;
@@ -1507,7 +2061,11 @@ async function processContributionImages(files) {
   let blockingError = '';
   for (let i = 0; i < valid.length; i++) {
     const file = valid[i];
-    if (progressText) progressText.textContent = adminT('adminContributionScanningImageProgress', { current: i + 1, total: valid.length });
+    if (progressText)
+      progressText.textContent = adminT('adminContributionScanningImageProgress', {
+        current: i + 1,
+        total: valid.length,
+      });
     try {
       const imageUrl = await readOcrImageDataUrl(file);
       const promptTxt = `Extract Total Contribution leaderboard rows from this Rise of Castles screenshot.
@@ -1524,14 +2082,26 @@ Rules:
 - Preserve symbols, spacing, and non-Latin characters in names.
 - Ignore title bars, phone time, avatars, buttons, headers, and decorative text.
 - If no contribution rows are visible, return {"entries":[]}.`;
-      const raw = await qwenVisionRequest([{ role: 'user', content: [
-        { type: 'text', text: promptTxt },
-        { type: 'image_url', image_url: { url: imageUrl } }
-      ]}]);
+      const raw = await qwenVisionRequest([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptTxt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ]);
       const text = raw?.choices?.[0]?.message?.content || '';
-      const cleaned = text.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+      const cleaned = text
+        .replace(/```(?:json)?\s*/gi, '')
+        .replace(/```/g, '')
+        .trim();
       let parsed;
-      try { parsed = tryRepairJson(cleaned); } catch (e) { parsed = { entries: parseContributionEntriesFromText(cleaned) }; }
+      try {
+        parsed = tryRepairJson(cleaned);
+      } catch (e) {
+        parsed = { entries: parseContributionEntriesFromText(cleaned) };
+      }
       const entries = Array.isArray(parsed)
         ? normalizeContributionEntries(parsed)
         : Array.isArray(parsed?.entries)
@@ -1540,7 +2110,10 @@ Rules:
       allEntries.push(...entries);
     } catch (e) {
       const errorMessage = describeOcrRequestError(e);
-      log(adminT('adminContributionOcrErrorLog', { file: file.name, error: errorMessage }), 'error');
+      log(
+        adminT('adminContributionOcrErrorLog', { file: file.name, error: errorMessage }),
+        'error'
+      );
       if (!blockingError) blockingError = errorMessage;
       if (e?.localConfiguration) break;
     }
@@ -1553,7 +2126,8 @@ Rules:
     if (blockingError) {
       const message = adminT('adminContributionOcrBlockedStatus', { error: blockingError });
       setContributionUploadStatus(message, 'error');
-      if (typeof window.showToast === 'function') window.showToast(adminT('adminContributionOcrBlockedToast'), 'error', 5000);
+      if (typeof window.showToast === 'function')
+        window.showToast(adminT('adminContributionOcrBlockedToast'), 'error', 5000);
     } else {
       setContributionUploadStatus(adminT('adminContributionNoRowsInImagesLog'), 'warn');
       alert(adminT('adminContributionExtractFailedAlert'));
@@ -1561,11 +2135,11 @@ Rules:
     return;
   }
   clearContributionUploadStatus();
-  showContributionConfirmModal(unique, valid.map(f => f.name).join(', '));
+  showContributionConfirmModal(unique, valid.map((f) => f.name).join(', '));
 }
 
 function setContributionReward(recordId, entryIndex, rewardTier) {
-  const record = state.contributionRecords.find(item => item.id === recordId);
+  const record = state.contributionRecords.find((item) => item.id === recordId);
   if (!record || !Array.isArray(record.entries) || !record.entries[entryIndex]) return;
   record.entries[entryIndex].rewardOverride = normalizeRewardTier(rewardTier);
   record.updatedAt = new Date().toISOString();
@@ -1575,13 +2149,13 @@ function setContributionReward(recordId, entryIndex, rewardTier) {
 }
 
 function editContributionRecord(id) {
-  const record = state.contributionRecords.find(item => item.id === id);
+  const record = state.contributionRecords.find((item) => item.id === id);
   if (!record) return;
   showContributionConfirmModal(record.entries || [], record.note || '', record.id);
 }
 
 function deleteContributionRecord(id) {
-  const index = state.contributionRecords.findIndex(record => record.id === id);
+  const index = state.contributionRecords.findIndex((record) => record.id === id);
   if (index < 0) return;
   if (!confirm(adminT('adminContributionDeleteConfirm'))) return;
   state.contributionRecords.splice(index, 1);
@@ -1592,20 +2166,24 @@ function deleteContributionRecord(id) {
 }
 
 function buildContributionCsv(recordId = '') {
-  const records = (state.contributionRecords || []).filter(record => !recordId || record.id === recordId);
-  const lines = [[
-    adminT('adminContributionCsvRecordDate'),
-    adminT('adminContributionNoteLabel'),
-    adminT('adminContributionRank'),
-    adminT('adminContributionMemberName'),
-    adminT('adminContributionGuild'),
-    adminT('adminContributionValue'),
-    adminT('adminContributionPosition'),
-    adminT('adminContributionReward'),
-    adminT('adminContributionOverride'),
-  ]];
-  records.forEach(record => {
-    (record.entries || []).forEach(entry => {
+  const records = (state.contributionRecords || []).filter(
+    (record) => !recordId || record.id === recordId
+  );
+  const lines = [
+    [
+      adminT('adminContributionCsvRecordDate'),
+      adminT('adminContributionNoteLabel'),
+      adminT('adminContributionRank'),
+      adminT('adminContributionMemberName'),
+      adminT('adminContributionGuild'),
+      adminT('adminContributionValue'),
+      adminT('adminContributionPosition'),
+      adminT('adminContributionReward'),
+      adminT('adminContributionOverride'),
+    ],
+  ];
+  records.forEach((record) => {
+    (record.entries || []).forEach((entry) => {
       const reward = getContributionReward(entry, record);
       lines.push([
         record.date || '',
@@ -1620,7 +2198,9 @@ function buildContributionCsv(recordId = '') {
       ]);
     });
   });
-  return lines.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  return lines
+    .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
 }
 
 function exportContributionRecords(recordId = '') {
@@ -1644,47 +2224,57 @@ function getContributionRecordLabel(record, fallbackIndex = 0) {
 }
 
 function getContributionIdentity(entry) {
-  const name = String(entry?.name || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const guild = String(entry?.guild || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const name = String(entry?.name || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  const guild = String(entry?.guild || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
   return `${name}|${guild}`;
 }
 
 function buildContributionComparison(baseRecord, finalRecord) {
   const baseMap = new Map();
   const finalMap = new Map();
-  (baseRecord?.entries || []).forEach(entry => {
+  (baseRecord?.entries || []).forEach((entry) => {
     const key = getContributionIdentity(entry);
     if (key !== '|') baseMap.set(key, entry);
   });
-  (finalRecord?.entries || []).forEach(entry => {
+  (finalRecord?.entries || []).forEach((entry) => {
     const key = getContributionIdentity(entry);
     if (key !== '|') finalMap.set(key, entry);
   });
   const keys = new Set([...baseMap.keys(), ...finalMap.keys()]);
-  return Array.from(keys).map(key => {
-    const base = baseMap.get(key);
-    const final = finalMap.get(key);
-    const baseValue = parseContributionValue(base?.contribution);
-    const finalValue = parseContributionValue(final?.contribution);
-    const baseRank = Number(base?.rank || 0);
-    const finalRank = Number(final?.rank || 0);
-    const rewardBefore = base ? getContributionReward(base, baseRecord) : '';
-    const rewardAfter = final ? getContributionReward(final, finalRecord) : '';
-    return {
-      key,
-      name: final?.name || base?.name || '',
-      guild: final?.guild || base?.guild || '',
-      baseRank,
-      finalRank,
-      rankDelta: baseRank && finalRank ? baseRank - finalRank : 0,
-      baseValue,
-      finalValue,
-      delta: finalValue - baseValue,
-      rewardBefore,
-      rewardAfter,
-      status: base && final ? 'tracked' : final ? 'new' : 'missing',
-    };
-  }).sort((a, b) => b.delta - a.delta || (b.finalValue - a.finalValue) || a.name.localeCompare(b.name));
+  return Array.from(keys)
+    .map((key) => {
+      const base = baseMap.get(key);
+      const final = finalMap.get(key);
+      const baseValue = parseContributionValue(base?.contribution);
+      const finalValue = parseContributionValue(final?.contribution);
+      const baseRank = Number(base?.rank || 0);
+      const finalRank = Number(final?.rank || 0);
+      const rewardBefore = base ? getContributionReward(base, baseRecord) : '';
+      const rewardAfter = final ? getContributionReward(final, finalRecord) : '';
+      return {
+        key,
+        name: final?.name || base?.name || '',
+        guild: final?.guild || base?.guild || '',
+        baseRank,
+        finalRank,
+        rankDelta: baseRank && finalRank ? baseRank - finalRank : 0,
+        baseValue,
+        finalValue,
+        delta: finalValue - baseValue,
+        rewardBefore,
+        rewardAfter,
+        status: base && final ? 'tracked' : final ? 'new' : 'missing',
+      };
+    })
+    .sort(
+      (a, b) => b.delta - a.delta || b.finalValue - a.finalValue || a.name.localeCompare(b.name)
+    );
 }
 
 function getSelectedContributionCompareRecords() {
@@ -1692,27 +2282,29 @@ function getSelectedContributionCompareRecords() {
   const finalId = $id('dashContributionCompareFinal')?.value || '';
   const records = state.contributionRecords || [];
   return {
-    baseRecord: records.find(record => record.id === baseId) || null,
-    finalRecord: records.find(record => record.id === finalId) || null,
+    baseRecord: records.find((record) => record.id === baseId) || null,
+    finalRecord: records.find((record) => record.id === finalId) || null,
   };
 }
 
 function buildContributionComparisonCsv(baseRecord, finalRecord) {
   const rows = buildContributionComparison(baseRecord, finalRecord);
-  const lines = [[
-    adminT('adminContributionMemberName'),
-    adminT('adminContributionGuild'),
-    adminT('adminContributionBaselineRank'),
-    adminT('adminContributionFinalRank'),
-    adminT('adminContributionRankMovement'),
-    adminT('adminContributionBaselineContribution'),
-    adminT('adminContributionFinalContribution'),
-    adminT('adminContributionDelta'),
-    adminT('adminContributionBaselineReward'),
-    adminT('adminContributionFinalReward'),
-    adminT('adminContributionStatus'),
-  ]];
-  rows.forEach(row => {
+  const lines = [
+    [
+      adminT('adminContributionMemberName'),
+      adminT('adminContributionGuild'),
+      adminT('adminContributionBaselineRank'),
+      adminT('adminContributionFinalRank'),
+      adminT('adminContributionRankMovement'),
+      adminT('adminContributionBaselineContribution'),
+      adminT('adminContributionFinalContribution'),
+      adminT('adminContributionDelta'),
+      adminT('adminContributionBaselineReward'),
+      adminT('adminContributionFinalReward'),
+      adminT('adminContributionStatus'),
+    ],
+  ];
+  rows.forEach((row) => {
     lines.push([
       row.name,
       row.guild,
@@ -1727,7 +2319,9 @@ function buildContributionComparisonCsv(baseRecord, finalRecord) {
       adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`),
     ]);
   });
-  return lines.map(line => line.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  return lines
+    .map((line) => line.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
 }
 
 function exportContributionComparison() {
@@ -1752,12 +2346,23 @@ function renderContributionComparison() {
     host.innerHTML = `<div class="dash-contribution-compare-empty">${esc(adminT('adminContributionCompareEmpty'))}</div>`;
     return;
   }
-  const sorted = records.slice().sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  const sorted = records
+    .slice()
+    .sort(
+      (a, b) =>
+        String(a.date || '').localeCompare(String(b.date || '')) ||
+        String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+    );
   const baseDefault = sorted[0]?.id || '';
   const finalDefault = sorted[sorted.length - 1]?.id || '';
   const selectedBase = $id('dashContributionCompareBase')?.value || baseDefault;
   const selectedFinal = $id('dashContributionCompareFinal')?.value || finalDefault;
-  const options = sorted.map((record, index) => `<option value="${esc(record.id)}">${esc(getContributionRecordLabel(record, index))}</option>`).join('');
+  const options = sorted
+    .map(
+      (record, index) =>
+        `<option value="${esc(record.id)}">${esc(getContributionRecordLabel(record, index))}</option>`
+    )
+    .join('');
   host.innerHTML = `<div class="dash-contribution-compare-card">
     <div class="dash-contribution-compare-head">
       <div>
@@ -1774,8 +2379,14 @@ function renderContributionComparison() {
   </div>`;
   const baseSelect = $id('dashContributionCompareBase');
   const finalSelect = $id('dashContributionCompareFinal');
-  if (baseSelect) baseSelect.value = sorted.some(record => record.id === selectedBase) ? selectedBase : baseDefault;
-  if (finalSelect) finalSelect.value = sorted.some(record => record.id === selectedFinal) ? selectedFinal : finalDefault;
+  if (baseSelect)
+    baseSelect.value = sorted.some((record) => record.id === selectedBase)
+      ? selectedBase
+      : baseDefault;
+  if (finalSelect)
+    finalSelect.value = sorted.some((record) => record.id === selectedFinal)
+      ? selectedFinal
+      : finalDefault;
   const renderSelected = () => {
     const { baseRecord, finalRecord } = getSelectedContributionCompareRecords();
     const body = $id('dashContributionCompareBody');
@@ -1786,9 +2397,9 @@ function renderContributionComparison() {
     }
     const rows = buildContributionComparison(baseRecord, finalRecord);
     const totalDelta = rows.reduce((sum, row) => sum + row.delta, 0);
-    const newCount = rows.filter(row => row.status === 'new').length;
-    const missingCount = rows.filter(row => row.status === 'missing').length;
-    const premiumMoved = rows.filter(row => row.rewardBefore !== row.rewardAfter).length;
+    const newCount = rows.filter((row) => row.status === 'new').length;
+    const missingCount = rows.filter((row) => row.status === 'missing').length;
+    const premiumMoved = rows.filter((row) => row.rewardBefore !== row.rewardAfter).length;
     body.innerHTML = `<div class="dash-contribution-compare-stats">
       <span>${esc(adminT('adminContributionDelta'))} <strong class="${totalDelta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(totalDelta)}</strong></span>
       <span>${esc(adminT('adminContributionNew'))} <strong>${newCount}</strong></span>
@@ -1798,7 +2409,10 @@ function renderContributionComparison() {
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table">
         <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionRank'))}</th><th style="text-align:right">${esc(adminT('adminContributionBaseline'))}</th><th style="text-align:right">${esc(adminT('adminContributionFinal'))}</th><th style="text-align:right">${esc(adminT('adminContributionGain'))}</th><th>${esc(adminT('adminContributionReward'))}</th><th>${esc(adminT('adminContributionStatus'))}</th></tr></thead>
-        <tbody>${rows.slice(0, 30).map(row => `<tr>
+        <tbody>${rows
+          .slice(0, 30)
+          .map(
+            (row) => `<tr>
           <td><strong>${esc(row.name)}</strong>${row.guild ? `<small>${esc(row.guild)}</small>` : ''}</td>
           <td>${row.baseRank || '--'} -> ${row.finalRank || '--'}${row.rankDelta ? `<em class="${row.rankDelta > 0 ? 'up' : 'down'}">${row.rankDelta > 0 ? '+' : ''}${row.rankDelta}</em>` : ''}</td>
           <td style="text-align:right">${formatContributionValue(row.baseValue)}</td>
@@ -1806,9 +2420,12 @@ function renderContributionComparison() {
           <td style="text-align:right" class="${row.delta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(row.delta)}</td>
           <td>${row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '--'} -> ${row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '--'}</td>
           <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`))}</span></td>
-        </tr>`).join('')}</tbody>
+        </tr>`
+          )
+          .join('')}</tbody>
       </table>
     </div>`;
+    hydrateDashboardTableLabels(body);
   };
   baseSelect?.addEventListener('change', renderSelected);
   finalSelect?.addEventListener('change', renderSelected);
@@ -1820,16 +2437,24 @@ function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
   if (!body) return;
-  const records = Array.isArray(state.contributionRecords) ? state.contributionRecords.slice().reverse() : [];
+  const records = Array.isArray(state.contributionRecords)
+    ? state.contributionRecords.slice().reverse()
+    : [];
   if (!records.length) {
     body.innerHTML = `<div class="dash-empty">${esc(adminT('adminContributionEmptyDetailed'))}</div>`;
     return;
   }
-  body.innerHTML = records.map(record => {
-    const entries = Array.isArray(record.entries) ? record.entries.slice() : [];
-    const total = entries.reduce((sum, entry) => sum + parseContributionValue(entry.contribution), 0);
-    const premiumCount = entries.filter(entry => getContributionReward(entry, record) === 'premium').length;
-    return `<div class="dash-banner-card dash-contribution-card">
+  body.innerHTML = records
+    .map((record) => {
+      const entries = Array.isArray(record.entries) ? record.entries.slice() : [];
+      const total = entries.reduce(
+        (sum, entry) => sum + parseContributionValue(entry.contribution),
+        0
+      );
+      const premiumCount = entries.filter(
+        (entry) => getContributionReward(entry, record) === 'premium'
+      ).length;
+      return `<div class="dash-banner-card dash-contribution-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
@@ -1847,11 +2472,12 @@ function renderContributions() {
       <div class="dash-banner-body">
         <table class="dash-banner-table dash-contribution-table">
           <thead><tr><th>${esc(adminT('adminContributionRank'))}</th><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionGuild'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionPosition'))}</th><th>${esc(adminT('adminContributionReward'))}</th></tr></thead>
-          <tbody>${entries.map((entry, index) => {
-            const reward = getContributionReward(entry, record);
-            return `<tr>
+          <tbody>${entries
+            .map((entry, index) => {
+              const reward = getContributionReward(entry, record);
+              return `<tr>
               <td class="dash-contribution-rank">${entry.rank ? `#${esc(entry.rank)}` : '--'}</td>
-              <td><strong>${esc(entry.name || '')}</strong></td>
+              <td><strong>${esc(stripGuildTagsFromPlayerName(entry.name || ''))}</strong></td>
               <td>${entry.guild ? esc(entry.guild) : '<span style="color:var(--text-dim)">--</span>'}</td>
               <td style="text-align:right;font-weight:800;color:var(--brand-light)">${formatContributionValue(entry.contribution)}</td>
               <td>${entry.position ? esc(entry.position) : '<span style="color:var(--text-dim)">--</span>'}</td>
@@ -1865,24 +2491,66 @@ function renderContributions() {
                 </select>
               </td>
             </tr>`;
-          }).join('')}</tbody>
+            })
+            .join('')}</tbody>
         </table>
       </div>
     </div>`;
-  }).join('');
+    })
+    .join('');
+  hydrateDashboardTableLabels(body);
 }
 
 export {
-  loadRoster, saveRoster, showRosterModal,
-  loadRosterSnapshots, saveRosterSnapshots, computeRosterDiff, takeRosterSnapshot, deleteRosterSnapshot,
-  loadAllianceList, saveAllianceList, loadRosterAuth, saveRosterAuth, rosterLogin, rosterLogout,
-  _ensureMember, setRosterStatus, setRosterAlliance,
-  toggleBulkCheck, toggleBulkSelectAll, applyBulkStatus, applyBulkAlliance,
-  exportRosterCSV, copyRosterNames,
-  showRosterSnapshotModal, configureAlliances, renderRoster,
-  loadBannerRecords, saveBannerRecords, showBannerForm, deleteBannerRecord, renderBanners, getTeamColor, hashCode,
-  loadDutyRecords, saveDutyRecords, showDutyPasteForm, showDutyConfirmModal, processDutyImages, editDutyRecord, deleteDutyRecord, renderDutyRecords,
-  loadContributionRecords, saveContributionRecords, showContributionPasteForm, showContributionConfirmModal,
-  processContributionImages, editContributionRecord, deleteContributionRecord, setContributionReward,
-  exportContributionRecords, renderContributions
+  loadRoster,
+  saveRoster,
+  showRosterModal,
+  loadRosterSnapshots,
+  saveRosterSnapshots,
+  computeRosterDiff,
+  takeRosterSnapshot,
+  deleteRosterSnapshot,
+  loadAllianceList,
+  saveAllianceList,
+  loadRosterAuth,
+  saveRosterAuth,
+  rosterLogin,
+  rosterLogout,
+  _ensureMember,
+  setRosterStatus,
+  setRosterAlliance,
+  toggleBulkCheck,
+  toggleBulkSelectAll,
+  applyBulkStatus,
+  applyBulkAlliance,
+  exportRosterCSV,
+  copyRosterNames,
+  showRosterSnapshotModal,
+  configureAlliances,
+  renderRoster,
+  loadBannerRecords,
+  saveBannerRecords,
+  showBannerForm,
+  deleteBannerRecord,
+  renderBanners,
+  getTeamColor,
+  hashCode,
+  loadDutyRecords,
+  saveDutyRecords,
+  showDutyPasteForm,
+  showDutyConfirmModal,
+  processDutyImages,
+  editDutyRecord,
+  deleteDutyRecord,
+  renderDutyRecords,
+  loadContributionRecords,
+  saveContributionRecords,
+  showContributionPasteForm,
+  showContributionConfirmModal,
+  processContributionImages,
+  editContributionRecord,
+  deleteContributionRecord,
+  setContributionReward,
+  exportContributionRecords,
+  renderContributions,
 };

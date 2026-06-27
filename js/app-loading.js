@@ -18,10 +18,6 @@ let bootStartedAt = performance.now();
 let bootProgressTimer = null;
 let statusCycleTimer = null;
 let statusSwapTimer = null;
-let bootParallaxWired = false;
-let bootParallaxHandler = null;
-let featherLeftSpans = null;
-let featherRightSpans = null;
 let bootPerspectiveContainer = null;
 
 function sleep(ms) {
@@ -63,36 +59,12 @@ function setBootProgress(pct) {
     const clamped = Math.min(100, Math.max(0, pct));
     const fill = document.querySelector('.boot-progress-fill');
     if (fill) fill.style.width = `${clamped}%`;
-    igniteFeathers(clamped);
-}
-
-// 14 feathers total, 7 per wing. Light them in sequence as progress climbs
-// so the wings themselves become a second loading meter instead of decoration.
-function igniteFeathers(pct) {
-    if (!featherLeftSpans) featherLeftSpans = document.querySelectorAll('#doorLeft .door-wing span');
-    if (!featherRightSpans) featherRightSpans = document.querySelectorAll('#doorRight .door-wing span');
-    if (!bootPerspectiveContainer) bootPerspectiveContainer = document.getElementById('perspectiveContainer');
-
-    const litCount = Math.floor((pct / 100) * 14);
-
-    featherLeftSpans.forEach((el, i) => {
-        el.classList.toggle('is-lit', i < litCount);
-    });
-    featherRightSpans.forEach((el, i) => {
-        el.classList.toggle('is-lit', i < litCount - 7);
-    });
-
-    if (bootPerspectiveContainer) {
-        const duration = 2.6 - (pct / 100) * 1.3;
-        bootPerspectiveContainer.style.setProperty('--wing-flap-duration', `${duration.toFixed(2)}s`);
-    }
 }
 
 function startBootAnimations() {
     let progress = 8;
     let statusIdx = 0;
     seedBootParticles();
-    initBootParallax();
     setBootProgress(progress);
     setBootStatus(BOOT_STATUS_LINES[0], { instant: true });
 
@@ -159,37 +131,7 @@ function seedBootParticles() {
     layer.appendChild(frag);
 }
 
-function initBootParallax() {
-    if (bootParallaxWired || prefersReducedMotion()) return;
-    const container = document.getElementById('perspectiveContainer');
-    const splash = getSplash();
-    if (!container || !splash) return;
 
-    bootParallaxWired = true;
-    let raf = 0;
-    let nextX = 0;
-    let nextY = 0;
-
-    bootParallaxHandler = (event) => {
-        if (splash.classList.contains('hidden') || splash.classList.contains('boot-splash--out')) return;
-        nextX = ((event.clientX / Math.max(1, window.innerWidth)) - 0.5) * 12;
-        nextY = ((event.clientY / Math.max(1, window.innerHeight)) - 0.5) * 10;
-        if (raf) return;
-        raf = window.requestAnimationFrame(() => {
-            container.style.setProperty('--boot-tilt-x', `${nextX.toFixed(2)}px`);
-            container.style.setProperty('--boot-tilt-y', `${nextY.toFixed(2)}px`);
-            raf = 0;
-        });
-    };
-    window.addEventListener('pointermove', bootParallaxHandler, { passive: true });
-}
-
-function stopBootParallax() {
-    if (bootParallaxHandler) {
-        window.removeEventListener('pointermove', bootParallaxHandler);
-        bootParallaxHandler = null;
-    }
-}
 
 async function dismissBootSplash() {
     const splash = getSplash();
@@ -218,8 +160,6 @@ async function dismissBootSplash() {
     splash.classList.add('hidden');
     splash.setAttribute('aria-hidden', 'true');
 
-    // Clean up the parallax listener now that the splash is gone
-    stopBootParallax();
 }
 
 async function playFirstVisitIntro() {

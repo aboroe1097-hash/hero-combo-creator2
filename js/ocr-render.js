@@ -2,17 +2,21 @@ import {
   state,
   $id,
   esc,
-  findBestMatch,
-  resolvePlayerNameForAttack,
   validateTotalDemolition,
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
   normalizeStructureTarget,
-  compactPlayerIdentity,
   isGuest,
 } from './ocr-shared.js';
 import { displayGameTime } from './ocr-engine.js';
 import { filterGameTimeAttacks, parseGameTimeDateMs } from './ocr-time-filter.js';
+import { applyR5AdjustmentsToPlayerTotals, buildAdjustedGiftRanking } from './ocr-adjustments.js';
+import {
+  compactPlayerIdentity,
+  resolveCanonicalPlayerIdentity,
+  resolveCanonicalPlayerName,
+  stripGuildTagsFromPlayerName,
+} from './ocr-name-normalizer.js';
 import { translations } from './translations.js';
 
 function adminT(key, vars = {}) {
@@ -49,6 +53,12 @@ function compactValue(value) {
   if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
   if (n >= 1000) return `${Math.round(n / 1000)}k`;
   return n.toLocaleString();
+}
+
+function formatSignedNumber(value) {
+  const n = valueOf(value);
+  if (!n) return '0';
+  return `${n > 0 ? '+' : '-'}${Math.abs(n).toLocaleString()}`;
 }
 
 function formatSharePercent(count, total) {
@@ -119,18 +129,26 @@ function structureLabel(attack) {
 }
 
 function normalizePlayerName(name) {
-  return compactPlayerIdentity(String(name || '').replace(/\[[^\]]+\]/g, ''));
+  return canonicalPlayerKey(name);
 }
 
-function canonicalPlayerKey(name) {
+function canonicalPlayerKey(name, attackPlayers = []) {
   const raw = String(name || '').trim();
-  return compactPlayerIdentity(findBestMatch(raw) || raw);
+  if (!raw) return '';
+  try {
+    return resolveCanonicalPlayerIdentity(
+      { name: raw.replace(/\[[^\]]+\]/g, '') },
+      { attackPlayers }
+    ).playerKey;
+  } catch {
+    return compactPlayerIdentity(stripGuildTagsFromPlayerName(raw).replace(/\[[^\]]+\]/g, ''));
+  }
 }
 
 function canonicalPlayerName(player, attackPlayers = []) {
   const rawName = typeof player === 'string' ? player : player?.name;
   return (
-    resolvePlayerNameForAttack(player, attackPlayers) ||
+    resolveCanonicalPlayerName(player, { attackPlayers }) ||
     String(rawName || '').trim() ||
     'Unknown Player'
   );
@@ -138,14 +156,29 @@ function canonicalPlayerName(player, attackPlayers = []) {
 
 function canonicalAggregationName(player, attackPlayers = []) {
   const rawName = typeof player === 'string' ? player : player?.name;
-  if (Array.isArray(attackPlayers) && attackPlayers.length) {
-    return (
-      resolvePlayerNameForAttack(player, attackPlayers) ||
-      String(rawName || '').trim() ||
-      'Unknown Player'
-    );
-  }
-  return findBestMatch(rawName) || String(rawName || '').trim() || 'Unknown Player';
+  return (
+    resolveCanonicalPlayerName(player, { attackPlayers }) ||
+    String(rawName || '').trim() ||
+    'Unknown Player'
+  );
+}
+
+function currentR5SeasonKey() {
+  return String(state.r5Season || new Date().getUTCFullYear() || 'current-season');
+}
+
+function buildAdjustedLeaderboardRows(players) {
+  const season = currentR5SeasonKey();
+  const adjustments = Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [];
+  const adjustedRows = applyR5AdjustmentsToPlayerTotals(players, adjustments, season);
+  const rankedRows = buildAdjustedGiftRanking(players, adjustments, season, {
+    limit: players.length,
+  });
+  const adjustedByKey = new Map(adjustedRows.map((row) => [row.playerKey, row]));
+  return rankedRows.map((row) => ({
+    ...adjustedByKey.get(row.playerKey),
+    ...row,
+  }));
 }
 
 function rosterMemberName(member) {
@@ -226,10 +259,12 @@ function uniqueStructureCount(player) {
 
 function applyLeaderboardSort(players) {
   const dir = state.sortDir === 'asc' ? 1 : -1;
-  const col = state.sortCol || 'total_demolition';
+  const col = state.sortCol || 'adjustedTotal';
   const value = (player) => {
     if (col === 'name') return String(player.name || '').toLowerCase();
     if (col === 'participation') return valueOf(player.participation_count);
+    if (col === 'bonusR5') return valueOf(player.bonusR5);
+    if (col === 'adjustedTotal') return valueOf(player.adjustedTotal ?? player.total_demolition);
     if (col === 'avg_demolition') {
       return valueOf(player.total_demolition) / Math.max(valueOf(player.participation_count), 1);
     }
@@ -317,7 +352,7 @@ function updateLeaderboardSortHeaders() {
   });
 }
 
-function renderSparkline(values, color = '#60a5fa') {
+function renderSparkline(values, color = 'var(--blue-400)') {
   const w = 150;
   const h = 48;
   const safe = values.length ? values : [0];
@@ -439,7 +474,7 @@ function renderStructurePerformance(attacks) {
   host.querySelectorAll('[data-structure-key]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.structureFilterKey = btn.dataset.structureKey || '';
-      state.leaderLimit = 25;
+      state.leaderLimit = 20;
       const filter = $id('dashLeaderFilter');
       if (filter) filter.value = '';
       render();
@@ -474,7 +509,8 @@ function renderPlayerTrends(attacks, psum) {
       const first = vals.find((v) => v > 0) || 0;
       const last = [...vals].reverse().find((v) => v > 0) || 0;
       const delta = last - first;
-      const color = index % 3 === 0 ? '#60a5fa' : index % 3 === 1 ? '#34d399' : '#fbbf24';
+      const color =
+        index % 3 === 0 ? 'var(--blue-400)' : index % 3 === 1 ? 'var(--green)' : 'var(--yellow)';
       return `<div class="dash-trend-row">
       <div class="dash-trend-person">
         <strong>${esc(player.name)}</strong>
@@ -1015,9 +1051,15 @@ function renderOpsOverview(attacks, psum) {
 
 window.clearStructureLeaderboardFilter = function () {
   state.structureFilterKey = '';
-  state.leaderLimit = 25;
+  state.leaderLimit = 20;
   render();
 };
+
+function renderPerformerRow(row, player, pct, danger = false) {
+  row.className = `dash-top-item dash-top-item--wide${danger ? ' dash-top-item--danger' : ''}`;
+  row.style.setProperty('--dash-top-pct', `${pct}%`);
+  row.innerHTML = `<span class="dash-top-rank">#${player.original_rank}</span><div class="dash-top-main"><div class="dash-top-bar"></div><span class="dash-top-name" title="${esc(player.name)}">${esc(player.name)}</span><span class="dash-top-meta">${player.participation_count} hits (${uniqueStructureCount(player)} structs)</span></div><span class="dash-top-val">${(player.total_demolition / 1000).toFixed(0)}k</span>`;
+}
 
 function render() {
   if (!state.dashData) {
@@ -1031,7 +1073,7 @@ function render() {
     $id('dashKpiMvp').textContent = '---';
     $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
-    $id('dashLeaderBody').innerHTML = '<tr><td colspan="5" class="dash-empty">No data</td></tr>';
+    $id('dashLeaderBody').innerHTML = '<tr><td colspan="7" class="dash-empty">No data</td></tr>';
     renderOpsOverview([], []);
     renderAnalyticsWhenVisible([], []);
     return;
@@ -1040,8 +1082,10 @@ function render() {
   const { activeAttacks, structureFilterLabel, selectedAttackLabel } =
     buildActiveAttackView(timeAttacks);
   const rankedPsum = buildPlayerSummary(activeAttacks);
+  const adjustedRankedPsum = buildAdjustedLeaderboardRows(rankedPsum);
   state._lastRenderedAttacks = activeAttacks;
   state._lastRenderedPlayerSummary = rankedPsum;
+  state._lastRenderedAdjustedPlayerSummary = adjustedRankedPsum;
   state._lastRenderedFilterLabel = selectedAttackLabel || structureFilterLabel || '';
   state._lastRenderedTimeLabel =
     state.timeFilter === 'daily'
@@ -1049,7 +1093,7 @@ function render() {
       : state.timeFilter === 'weekly'
         ? 'This Week'
         : 'All Time';
-  const leaderPsum = applyLeaderboardSort(rankedPsum);
+  const leaderPsum = applyLeaderboardSort(adjustedRankedPsum);
   updateLeaderboardSortHeaders();
 
   renderAnalyticsWhenVisible(activeAttacks, rankedPsum);
@@ -1063,7 +1107,10 @@ function render() {
   $id('dashKpiMvp').textContent = rankedPsum[0]?.name || '---';
 
   const rankedPsumWithRank = rankedPsum.map((p, i) => ({ ...p, original_rank: i + 1 }));
-  const leaderPsumWithRank = leaderPsum.map((p, i) => ({ ...p, original_rank: i + 1 }));
+  const leaderPsumWithRank = leaderPsum.map((p, i) => ({
+    ...p,
+    original_rank: p.adjustedRank || i + 1,
+  }));
 
   const c = $id('dashChart');
   c.innerHTML = '';
@@ -1071,13 +1118,8 @@ function render() {
     max = top[0]?.total_demolition || 1;
   top.forEach((p) => {
     const w = document.createElement('div');
-    w.className = 'dash-top-item';
-    w.style.cursor = 'pointer';
-    w.style.display = 'flex';
-    w.style.alignItems = 'stretch';
-    w.style.gap = '12px';
     const pct = Math.round((p.total_demolition / max) * 100);
-    w.innerHTML = `<span class="dash-top-rank" style="flex: 0 0 36px; display:flex; align-items:center;">#${p.original_rank}</span><div style="flex: 1; position:relative; display:flex; align-items:center; min-width:0; padding:4px 0;"><div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px;"></div><span class="dash-top-name" style="position:relative; z-index:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(p.name)}</span><span style="position:relative; z-index:1; margin-left:auto; margin-right:8px; font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; flex-shrink:0;">${p.participation_count} hits (${uniqueStructureCount(p)} structs)</span></div><span class="dash-top-val" style="flex: 0 0 auto; display:flex; align-items:center;">${(p.total_demolition / 1000).toFixed(0)}k</span>`;
+    renderPerformerRow(w, p, pct);
     w.onclick = () => showModal('player', p);
     c.appendChild(w);
   });
@@ -1092,13 +1134,8 @@ function render() {
       const lowestMax = Math.max(...lowest.map((p) => p.total_demolition), 1);
       lowest.forEach((p) => {
         const w = document.createElement('div');
-        w.className = 'dash-top-item';
-        w.style.cursor = 'pointer';
-        w.style.display = 'flex';
-        w.style.alignItems = 'stretch';
-        w.style.gap = '12px';
         const pct = Math.round((p.total_demolition / lowestMax) * 100);
-        w.innerHTML = `<span class="dash-top-rank" style="color:#f87171; flex: 0 0 36px; display:flex; align-items:center;">#${p.original_rank}</span><div style="flex: 1; position:relative; display:flex; align-items:center; min-width:0; padding:4px 0;"><div class="dash-top-bar" style="width:${pct}%; top:2px; bottom:2px; background: linear-gradient(90deg, rgba(248,113,113,0.1), rgba(248,113,113,0.25)); border-right-color: rgba(248,113,113,0.4)"></div><span class="dash-top-name" style="position:relative; z-index:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:8px;">${esc(p.name)}</span><span style="position:relative; z-index:1; margin-left:auto; margin-right:8px; font-size:0.7rem; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.06); padding:2px 6px; border-radius:10px; white-space:nowrap; line-height:1; display:inline-flex; align-items:center; flex-shrink:0;">${p.participation_count} hits (${uniqueStructureCount(p)} structs)</span></div><span class="dash-top-val" style="color:#f87171; text-shadow: 0 0 10px rgba(248,113,113,0.3); flex: 0 0 auto; display:flex; align-items:center;">${(p.total_demolition / 1000).toFixed(0)}k</span>`;
+        renderPerformerRow(w, p, pct, true);
         w.onclick = () => showModal('player', p);
         lc.appendChild(w);
       });
@@ -1129,8 +1166,7 @@ function render() {
     const sortedDays = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
     sortedDays.forEach((day) => {
       const dayHeader = document.createElement('div');
-      dayHeader.style.cssText =
-        'padding: 6px 10px; background: rgba(255,255,255,0.06); font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; border-radius: 4px;';
+      dayHeader.className = 'dash-attack-day-header';
       dayHeader.textContent = day;
       al.appendChild(dayHeader);
       grouped[day].forEach((a) => {
@@ -1145,14 +1181,13 @@ function render() {
         }
         const d = document.createElement('div');
         d.className = 'dash-attack-item';
-        d.style.cursor = 'pointer';
         let timeStr = displayGameTime(a.game_time);
         if (a.start_time) {
           const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
           if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
           else timeStr = `${esc(a.start_time)} - ${timeStr}`;
         }
-        d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div style="display:flex;align-items:center;gap:12px"><div class="dash-attack-val" style="text-align:right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
+        d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
         d.onclick = () => showModal('attack', a);
         al.appendChild(d);
       });
@@ -1169,29 +1204,30 @@ function render() {
 
   if (structureFilterLabel) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="5" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
+    tr.innerHTML = `<td colspan="7" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
     tb.appendChild(tr);
   }
 
   toShow.forEach((p) => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition || 0).toLocaleString()}</td><td style="text-align:center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
+    const bonus = valueOf(p.bonusR5);
+    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val ${bonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedNumber(bonus)}</td><td class="dash-val dash-adjusted-total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p);
     tb.appendChild(tr);
   });
 
   if (!filteredLeader.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="5" class="dash-empty">No matching members</td>';
+    tr.innerHTML = '<td colspan="7" class="dash-empty">No matching members</td>';
     tb.appendChild(tr);
   }
 
   if (filteredLeader.length > state.leaderLimit) {
     const tr = document.createElement('tr');
     const remaining = filteredLeader.length - state.leaderLimit;
-    const pageSize = Math.min(state.leaderPageSize || 25, remaining);
-    tr.innerHTML = `<td colspan="5" style="text-align:center; padding: 1rem;"><button type="button" class="dash-btn dash-load-more-btn" style="width:100%; justify-content:center">Show More (${pageSize})</button></td>`;
+    const pageSize = Math.min(state.leaderPageSize || 20, remaining);
+    tr.innerHTML = `<td colspan="7" class="dash-load-more-cell"><button type="button" class="dash-btn dash-load-more-btn">Show More (${pageSize})</button></td>`;
     tr.querySelector('.dash-load-more-btn')?.addEventListener('click', () => {
       state.leaderLimit += pageSize;
       render();
@@ -1250,11 +1286,7 @@ function render() {
   }
   const $trend = $id('dashTrendChart');
   if ($trend) {
-    $trend.style.display = 'block';
-    $trend.style.height = 'auto';
-    $trend.style.padding = '0';
-    $trend.style.background = 'transparent';
-    $trend.style.overflow = 'visible';
+    $trend.classList.add('dash-activity-rendered');
     const dayMap = new Map();
     const padDate = (n) => String(n).padStart(2, '0');
     activeAttacks.forEach((a) => {
@@ -1316,7 +1348,7 @@ function render() {
       const labelIndexes = new Set([0, days.length - 1, Math.floor((days.length - 1) / 2)]);
       if (days.length <= 4) days.forEach((_, index) => labelIndexes.add(index));
 
-      let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" role="img" aria-label="Activity trend by day">`;
+      let svg = `<svg class="dash-activity-svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" role="img" aria-label="Activity trend by day">`;
       svg += `<defs>
         <linearGradient id="activityBarGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#67e8f9"/>
@@ -1329,10 +1361,10 @@ function render() {
       </defs>`;
       [0, 0.5, 1].forEach((ratio) => {
         const y = top + chartH * ratio;
-        svg += `<line x1="${left}" y1="${y}" x2="${w - right}" y2="${y}" stroke="rgba(148,163,184,0.16)" stroke-dasharray="${ratio === 1 ? '0' : '4 8'}"/>`;
+        svg += `<line class="dash-activity-grid-line" x1="${left}" y1="${y}" x2="${w - right}" y2="${y}" stroke-dasharray="${ratio === 1 ? '0' : '4 8'}"/>`;
       });
-      svg += `<text x="${left - 10}" y="${top + 4}" fill="#94a3b8" font-size="11" font-weight="800" text-anchor="end">${maxTargets}</text>`;
-      svg += `<text x="${left - 10}" y="${top + chartH + 4}" fill="#64748b" font-size="11" font-weight="800" text-anchor="end">0</text>`;
+      svg += `<text class="dash-activity-axis-label" x="${left - 10}" y="${top + 4}" font-size="11" font-weight="800" text-anchor="end">${maxTargets}</text>`;
+      svg += `<text class="dash-activity-axis-label" x="${left - 10}" y="${top + chartH + 4}" font-size="11" font-weight="800" text-anchor="end">0</text>`;
       days.forEach((d, i) => {
         const x = left + i * slot + slot / 2;
         const barH = Math.max(4, (d.targets / maxTargets) * chartH);
@@ -1342,45 +1374,45 @@ function render() {
           <rect x="${x - barW / 2}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="url(#activityBarGrad)" opacity="0.95"/>
         </g>`;
         if (labelIndexes.has(i)) {
-          svg += `<text x="${x}" y="${h - 13}" fill="#94a3b8" font-size="12" font-weight="800" text-anchor="middle">${d.label}</text>`;
+          svg += `<text class="dash-activity-axis-label" x="${x}" y="${h - 13}" font-size="12" font-weight="800" text-anchor="middle">${d.label}</text>`;
         } else {
-          svg += `<circle cx="${x}" cy="${h - 18}" r="2" fill="rgba(148,163,184,0.35)"/>`;
+          svg += `<circle class="dash-activity-axis-dot" cx="${x}" cy="${h - 18}" r="2"/>`;
         }
       });
       if (days.length > 1) {
         const areaPoints = `${left + slot / 2},${top + chartH} ${linePoints} ${left + (days.length - 1) * slot + slot / 2},${top + chartH}`;
         svg += `<polygon points="${areaPoints}" fill="url(#activityMemberArea)"/>`;
-        svg += `<polyline points="${linePoints}" fill="none" stroke="#c4b5fd" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+        svg += `<polyline points="${linePoints}" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
       }
       memberPoints.forEach(({ x, y, d }) => {
-        svg += `<circle cx="${x}" cy="${y}" r="5" fill="#111827" stroke="#ddd6fe" stroke-width="2.5">
+        svg += `<circle class="dash-activity-point" cx="${x}" cy="${y}" r="5" stroke-width="2.5">
           <title>${d.fullLabel}: ${d.participants.size} unique members</title>
         </circle>`;
       });
       svg += '</svg>';
       $trend.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-bottom:10px">
-          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
-            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Busiest</div>
-            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${busiest.label}</div>
-            <div style="color:#22d3ee;font-size:0.72rem;font-weight:800">${busiest.targets} target${busiest.targets === 1 ? '' : 's'}</div>
+        <div class="dash-activity-kpis">
+          <div class="dash-activity-kpi">
+            <div class="dash-activity-kpi-label">Busiest</div>
+            <div class="dash-activity-kpi-value">${busiest.label}</div>
+            <div class="dash-activity-kpi-note dash-activity-kpi-note--accent">${busiest.targets} target${busiest.targets === 1 ? '' : 's'}</div>
           </div>
-          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
-            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Pace</div>
-            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${avgTargets.toFixed(1)}</div>
-            <div style="color:#94a3b8;font-size:0.72rem;font-weight:800">targets/day</div>
+          <div class="dash-activity-kpi">
+            <div class="dash-activity-kpi-label">Pace</div>
+            <div class="dash-activity-kpi-value">${avgTargets.toFixed(1)}</div>
+            <div class="dash-activity-kpi-note">targets/day</div>
           </div>
-          <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.12);border-radius:10px;padding:8px 10px">
-            <div style="color:#64748b;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Crew</div>
-            <div style="color:#e2e8f0;font-size:0.86rem;font-weight:900">${Math.round(avgMembers)}</div>
-            <div style="color:#94a3b8;font-size:0.72rem;font-weight:800">members/day</div>
+          <div class="dash-activity-kpi">
+            <div class="dash-activity-kpi-label">Crew</div>
+            <div class="dash-activity-kpi-value">${Math.round(avgMembers)}</div>
+            <div class="dash-activity-kpi-note">members/day</div>
           </div>
         </div>
-        <div style="height:172px;background:linear-gradient(180deg,rgba(15,23,42,0.82),rgba(15,23,42,0.45));border:1px solid rgba(148,163,184,0.1);border-radius:12px;padding:4px 0 0">${svg}</div>
-        <div style="display:flex;justify-content:center;gap:14px;color:#94a3b8;font-size:0.72rem;font-weight:800;margin-top:8px;flex-wrap:wrap">
-          <span style="display:inline-flex;align-items:center;gap:6px"><b style="width:10px;height:10px;border-radius:3px;background:#22d3ee;display:inline-block"></b>Targets</span>
-          <span style="display:inline-flex;align-items:center;gap:6px"><b style="width:18px;height:3px;border-radius:999px;background:#c4b5fd;display:inline-block"></b>Members</span>
-          <span style="color:#64748b">${days.length} active day${days.length === 1 ? '' : 's'}</span>
+        <div class="dash-activity-chart-panel">${svg}</div>
+        <div class="dash-activity-legend">
+          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--targets"></b>Targets</span>
+          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--members"></b>Members</span>
+          <span class="dash-activity-legend-muted">${days.length} active day${days.length === 1 ? '' : 's'}</span>
         </div>`;
     }
   }
@@ -1427,10 +1459,10 @@ function showModal(type, data) {
         }
       }
       if (!isGuest()) {
-        h += `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.addPlayer('${data.id}')">➕ Add Player</button><button class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="window.editAttack('${data.id}')">✏️ Edit Details</button><button class="dash-btn dash-btn-xs" style="background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)" onclick="window.deleteAttack('${data.id}')">🗑️ Delete</button></div>`;
+        h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="window.addPlayer('${data.id}')">Add Player</button><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="window.editAttack('${data.id}')">Edit Details</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" onclick="window.deleteAttack('${data.id}')">Delete</button></div>`;
       }
-      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#14b8a6;font-weight:700">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div style="color:#3b82f6;font-weight:700">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div style="color:#8b5cf6;font-weight:700;font-size:0.85rem">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div style="color:#14b8a6;font-weight:700;font-size:0.85rem">${esc(structureLabel(data))}</div></div></div>`;
-      h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Value Distribution</div><div class="dash-distrib">${Object.entries(
+      h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${esc(structureLabel(data))}</div></div></div>`;
+      h += `<div class="dash-modal-section-label">Value Distribution</div><div class="dash-distrib">${Object.entries(
         tiers
       )
         .filter(([, v]) => v > 0)
@@ -1439,23 +1471,23 @@ function showModal(type, data) {
             `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v / data.players_count) * 100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`
         )
         .join('')}</div>`;
-      h += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Player Breakdown</div><table class="dash-table"><thead><tr><th>#</th><th>Name</th><th style="text-align:right">Demolition</th>${!isGuest() ? '<th style="width:30px"></th>' : ''}</tr></thead><tbody>`;
+      h += `<div class="dash-modal-section-label">Player Breakdown</div><table class="dash-table dash-table--stack"><thead><tr><th>#</th><th>Name</th><th class="dash-table-right">Demolition</th>${!isGuest() ? '<th></th>' : ''}</tr></thead><tbody>`;
       data.players.forEach((p) => {
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
-        h += `<tr style="cursor:pointer" onclick="window.showPlayer('${encName}')"><td class="dash-rank ${p.rank <= 3 ? 'rank-' + p.rank : ''}">#${p.rank}</td><td class="dash-pname" style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(p.name)}</td><td class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
+        h += `<tr onclick="window.showPlayer('${encName}')"><td data-label="Rank" class="dash-rank ${p.rank <= 3 ? 'rank-' + p.rank : ''}">#${p.rank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
         if (!isGuest()) {
-          h += `<td style="text-align:right"><button class="dash-btn dash-btn-xs" style="padding:2px 6px; font-size:0.7rem; background:transparent" onclick="event.stopPropagation(); window.editPlayer('${data.id}', '${encName}')">✏️</button></td>`;
+          h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="event.stopPropagation(); window.editPlayer('${data.id}', '${encName}')">Edit</button></td>`;
         }
         h += `</tr>`;
       });
       body.innerHTML = h + '</tbody></table>';
     } else {
       if (data._not_in_summary) {
-        body.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">
-          <div style="font-size:2rem;margin-bottom:0.75rem;">👤</div>
-          <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:0.5rem;">${esc(data.name)}</div>
-          <div style="font-size:0.82rem;">This player appeared in one attack but hasn't been fully aggregated yet.</div>
-          <div style="font-size:0.75rem;margin-top:0.5rem;opacity:0.6;">Upload more screenshots or refresh the dashboard to see their full profile.</div>
+        body.innerHTML = `<div class="dash-player-empty-state">
+          <div class="dash-player-empty-icon">?</div>
+          <div class="dash-player-empty-name">${esc(data.name)}</div>
+          <div>This player appeared in one attack but hasn't been fully aggregated yet.</div>
+          <div class="dash-player-empty-hint">Upload more screenshots or refresh the dashboard to see their full profile.</div>
         </div>`;
         m.classList.add('active');
         return;
@@ -1484,39 +1516,45 @@ function showModal(type, data) {
       let chartHtml = '';
       if (hrs.some((h) => hrMap[h] > 0)) {
         const maxHr = Math.max(...Object.values(hrMap), 1);
-        chartHtml = `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Active Hours (Game Time)</div>
-          <div style="display:flex;gap:2px;height:50px;align-items:flex-end;margin-bottom:0.5rem;background:rgba(0,0,0,0.1);padding:4px 4px 0 4px;border-radius:4px;border:1px solid var(--border)">
+        chartHtml = `<div class="dash-active-hours"><div class="dash-modal-section-label">Active Hours (Game Time)</div>
+          <div class="dash-active-hours-track">
           ${hrs
             .map((hr) => {
               const val = hrMap[hr];
               const pct = (val / maxHr) * 100;
               const bg =
-                val > 0 ? (pct > 70 ? '#3b82f6' : pct > 30 ? '#60a5fa' : '#93c5fd') : 'transparent';
-              return `<div style="flex:1;background:${bg};height:${pct}%;min-height:${val > 0 ? '4px' : '0'};border-radius:2px 2px 0 0" title="${hr}:00 - ${hr}:59 GT (${val} hits)"></div>`;
+                val > 0
+                  ? pct > 70
+                    ? 'var(--blue-400)'
+                    : pct > 30
+                      ? 'var(--brand-light)'
+                      : 'var(--text-dim)'
+                  : 'transparent';
+              return `<div class="dash-active-hour-bar" style="--active-hour-bg:${bg};--active-hour-height:${pct}%;--active-hour-min:${val > 0 ? '4px' : '0'}" title="${hr}:00 - ${hr}:59 GT (${val} hits)"></div>`;
             })
             .join('')}
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-dim);margin-top:-4px;margin-bottom:12px;padding:0 2px">
+          <div class="dash-active-hours-axis">
             <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
-          </div>`;
+          </div></div>`;
       }
 
       const encPname = encodeURIComponent(data.name).replace(/'/g, '%27');
-      let pb = `<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end"><button type="button" class="dash-btn dash-btn-xs" style="background:var(--bg-card);border-color:var(--border)" onclick="event.stopPropagation(); window.exportPlayerReport('${encPname}')">📥 Export CSV Report</button></div>`;
+      let pb = `<div class="dash-modal-actions"><button type="button" class="dash-btn dash-btn-xs dash-btn-soft" onclick="event.stopPropagation(); window.exportPlayerReport('${encPname}')">Export CSV Report</button></div>`;
 
       body.innerHTML =
         pb +
-        `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div style="color:#3b82f6;font-weight:700">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div style="color:#14b8a6;font-weight:700">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div style="color:#f59e0b;font-weight:700">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
+        `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
         chartHtml +
-        '<table class="dash-table" style="margin-top:1rem"><thead><tr><th>Time</th><th>Target</th><th style="text-align:right">Value</th><th style="text-align:center">Rank</th></tr></thead><tbody>' +
+        '<table class="dash-table dash-table--stack"><thead><tr><th>Time</th><th>Target</th><th class="dash-table-right">Value</th><th class="dash-table-center">Rank</th></tr></thead><tbody>' +
         sortedAttacks
           .map(
             (att) =>
-              `<tr style="cursor:pointer" onclick="window.showAttack('${att.id || att.attack_id}')"><td style="font-size:0.8rem">${displayGameTime(att.game_time)}</td><td style="color:var(--text-primary);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.2)">${esc(formatDatasetStructureLabel(att))}</td><td style="text-align:right">${(att.val || att.value || 0).toLocaleString()}</td><td style="text-align:center">#${att.rank || '-'}</td></tr>`
+              `<tr onclick="window.showAttack('${att.id || att.attack_id}')"><td data-label="Time">${displayGameTime(att.game_time)}</td><td data-label="Target" class="dash-table-link">${esc(formatDatasetStructureLabel(att))}</td><td data-label="Value" class="dash-table-right">${(att.val || att.value || 0).toLocaleString()}</td><td data-label="Rank" class="dash-table-center">#${att.rank || '-'}</td></tr>`
           )
           .join('') +
         '</tbody></table>' +
-        '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:1rem;text-align:center;font-style:italic">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
+        '<div class="dash-modal-note">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
     }
     m.classList.add('active');
 

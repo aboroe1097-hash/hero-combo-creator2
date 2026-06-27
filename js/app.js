@@ -527,6 +527,10 @@ function applyHeroInfoPanelState(enabled) {
   if (toggle) toggle.checked = enabled;
   if (label) label.setAttribute('aria-checked', enabled ? 'true' : 'false');
   document.body.classList.toggle('hide-hero-info', !enabled);
+  const track = document.querySelector('#heroInfoToggleLabel .toggle-track');
+  const thumb = document.querySelector('#heroInfoToggleLabel .toggle-thumb');
+  if (track) track.classList.toggle('checked', enabled);
+  if (thumb) thumb.classList.toggle('checked', enabled);
   if (!enabled) forceHideHeroTooltip();
 }
 
@@ -1285,21 +1289,31 @@ function initQuickTour() {
     return Math.min(Math.max(n, min), max);
   }
 
+  function resolveTourVisualTarget(target) {
+    if (!target) return null;
+    if (target.matches?.('.tab-pill')) return target;
+    return target.querySelector?.('.tab-pill, button, a') || target;
+  }
+
   function placeTourCard(target) {
-    const rect = target.getBoundingClientRect();
-    const pad = 8;
+    const visualTarget = resolveTourVisualTarget(target) || target;
+    const rect = visualTarget.getBoundingClientRect();
+    const isTabTarget = visualTarget.classList.contains('tab-pill');
+    const padX = isTabTarget ? 6 : 8;
+    const padY = isTabTarget ? 5 : 8;
     const gap = window.innerWidth >= 1024 ? 10 : 14;
     const margin = 16;
     const isWide = window.innerWidth >= 1024;
     const cardWidth = Math.min(isWide ? 340 : 390, window.innerWidth - margin * 2);
-    const spotlightWidth = Math.max(42, Math.min(rect.width + pad * 2, window.innerWidth - margin * 2));
-    const spotlightHeight = Math.max(34, Math.min(rect.height + pad * 2, window.innerHeight - margin * 2));
+    const spotlightWidth = Math.max(42, Math.min(rect.width + padX * 2, window.innerWidth - margin * 2));
+    const spotlightHeight = Math.max(34, Math.min(rect.height + padY * 2, window.innerHeight - margin * 2));
 
-    spotlight.style.left = `${clamp(rect.left - pad, margin, window.innerWidth - spotlightWidth - margin)}px`;
-    spotlight.style.top = `${clamp(rect.top - pad, margin, window.innerHeight - spotlightHeight - margin)}px`;
+    spotlight.classList.toggle('is-tab-target', isTabTarget);
+    spotlight.style.left = `${clamp(rect.left - padX, margin, window.innerWidth - spotlightWidth - margin)}px`;
+    spotlight.style.top = `${clamp(rect.top - padY, margin, window.innerHeight - spotlightHeight - margin)}px`;
     spotlight.style.width = `${spotlightWidth}px`;
     spotlight.style.height = `${spotlightHeight}px`;
-    spotlight.style.borderRadius = `${Math.min(18, Math.max(12, rect.height / 2))}px`;
+    spotlight.style.borderRadius = isTabTarget ? '0px' : `${Math.min(18, Math.max(12, rect.height / 2))}px`;
 
     card.style.width = `${cardWidth}px`;
     card.style.left = '0px';
@@ -1347,14 +1361,15 @@ function initQuickTour() {
       return;
     }
     document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
-    target.classList.add('quick-tour-target');
+    const visualTarget = resolveTourVisualTarget(target) || target;
+    visualTarget.classList.add('quick-tour-target');
     title.textContent = step.title;
     body.textContent = step.body;
     kicker.textContent = `Step ${index + 1} of ${steps.length}`;
     dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
     nextBtn.textContent = index === steps.length - 1 ? 'Done' : 'Next';
     const isTabTarget = target.closest('#tabNavScroll') || target.classList.contains('tab-pill');
-    target.scrollIntoView({ behavior: 'auto', block: isTabTarget ? 'nearest' : 'center', inline: 'center' });
+    visualTarget.scrollIntoView({ behavior: 'auto', block: isTabTarget ? 'nearest' : 'center', inline: 'center' });
     requestAnimationFrame(() => placeTourCard(target));
     window.setTimeout(() => placeTourCard(target), 80);
   }
@@ -1411,7 +1426,7 @@ async function startApp() {
       markGeneratorSelectionChanged({ immediate: true });
     }
 
-    await safeInit('firebase', async () => {
+    safeInit('firebase', async () => {
         const { initFirebase, ensureAnonymousAuth } = await import('./firebase.js');
         const firebase = await initFirebase();
         if (!firebase.configured) return;
@@ -1428,7 +1443,6 @@ async function startApp() {
         flushClientErrors();
     });
     safeInit('comments', () => initComments());
-    safeInit('quickTour', () => initQuickTour());
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
     window.addEventListener('hashchange', () => {
       const tab = window.location.hash?.replace('#', '').split('?')[0];
@@ -1438,6 +1452,7 @@ async function startApp() {
     });
     } finally {
         await notifyAppReady();
+        safeInit('quickTour', () => initQuickTour());
     }
 }
 

@@ -116,6 +116,37 @@ service cloud.firestore {
       && request.resource.data.updated is string;
     }
 
+    function validConductAdjustment() {
+      return request.resource.data.keys().hasOnly([
+        'id', 'season', 'playerKey', 'playerName', 'points', 'category', 'note', 'createdAt', 'createdBy'
+      ])
+      && request.resource.data.id is string
+      && request.resource.data.id.size() > 0
+      && request.resource.data.id.size() <= 80
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.playerKey is string
+      && request.resource.data.playerKey.size() > 0
+      && request.resource.data.playerKey.size() <= 120
+      && request.resource.data.playerName is string
+      && request.resource.data.playerName.size() > 0
+      && request.resource.data.playerName.size() <= 120
+      && request.resource.data.points is int
+      && request.resource.data.points >= -10000000
+      && request.resource.data.points <= 10000000
+      && request.resource.data.category in [
+        'banner_help', 'connected_road', 'extra_effort', 'merit_other',
+        'path_block', 'toxicity', 'ignored_coordination', 'penalty_other'
+      ]
+      && request.resource.data.note is string
+      && request.resource.data.note.size() <= 500
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.createdBy is string
+      && request.resource.data.createdBy.size() > 0
+      && request.resource.data.createdBy.size() <= 128;
+    }
+
     match /comments/{commentId} {
       allow read: if canReadComment();
       allow create: if signedIn() && validComment();
@@ -158,6 +189,20 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validRosterData();
       allow delete: if false;
+    }
+
+    match /vts_admin/conduct_adjustments/records/{adjustmentId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        && validConductAdjustment()
+        && request.resource.data.id == adjustmentId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
     }
 
     match /vts_admin/{document=**} {

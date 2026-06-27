@@ -1,0 +1,142 @@
+/* =============================================================
+   VTS shared design tokens.
+   Loaded before app/admin styles so component CSS can share one
+   root/light theme and motion token source.
+   ============================================================= */
+
+:root {
+  color-scheme: dark;
+  --brand: #2dd4bf;
+  --brand-light: #67e8f9;
+  --brand-glow: rgba(45, 212, 191, 0.24);
+  --accent: #f7b955;
+  --accent-2: #36d399;
+  --danger: #fb5d61;
+  --panel: rgba(11, 18, 30, 0.84);
+  --panel-strong: rgba(8, 13, 23, 0.96);
+  --surface: #101827;
+  --surface-2: #0d1422;
+  --surface-3: #162236;
+  --border: rgba(143, 164, 187, 0.22);
+  --border-hover: rgba(103, 232, 249, 0.5);
+  --text-primary: #f7fbff;
+  --text-muted: #aebbd0;
+  --text-secondary: #cbd5e1;
+  --text-dim: #78869c;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue-400: #60a5fa;
+  --yellow: #facc15;
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --tap-min: 44px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 4.5rem;
+  --footer-h: 4rem;
+
+  --radius-sm: 6px;
+  --radius-md: 0.875rem;
+  --radius-card: 8px;
+  --radius-xl: 8px;
+  --radius-pill: 9999px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --t-med: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --shadow-card: 0 18px 42px rgba(0, 0, 0, 0.28);
+  --shadow-glow: 0 0 0 1px rgba(103, 232, 249, 0.1), 0 0 28px rgba(45, 212, 191, 0.12);
+  --shadow-lift: 0 22px 48px rgba(0, 0, 0, 0.34);
+
+  /* Atmosphere (Phase 2.1) — glow/surface/noise tokens for the .u-* layer */
+  --glow-brand: 0 0 24px rgba(45, 212, 191, 0.35);
+  --glow-accent: 0 0 20px rgba(247, 185, 85, 0.3);
+  --glow-danger: 0 0 16px rgba(239, 68, 68, 0.3);
+  --surface-deep: #04070d;
+  --text-on-deep: #e8eef6;
+  --noise-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+  --z-toast: 9000;
+  --z-modal: 10000;
+  --z-boot: 20000;
+
+  /* Canonical breakpoint documentation. CSS custom properties cannot be
+     used directly in @media queries, so queries keep literal values.
+     Literal map: 360/430/480 -> sm, 640 -> md, 768 -> lg/mobile cutover,
+     980/1024/1080 -> xl/tablet-desktop, 1500 -> 2xl/wide. */
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 768px;
+  --bp-xl: 1024px;
+  --bp-2xl: 1500px;
+
+  --body-bg:
+    linear-gradient(90deg, rgba(103, 232, 249, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(247, 185, 85, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, #060b13 0%, #0a101a 46%, #08120f 100%);
+  --bg-solid: #060b13;
+  --app-bg: rgba(8, 13, 23, 0.88);
+  --dot-grid: transparent;
+  --glass-blur: blur(20px);
+  --v12-line: linear-gradient(90deg, rgba(103, 232, 249, 0.85), rgba(247, 185, 85, 0.76), rgba(54, 211, 153, 0.74));
+  --v12-control: rgba(16, 24, 39, 0.88);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --brand: #0e9488;
+  --brand-light: #0b86a0;
+  --brand-glow: rgba(14, 148, 136, 0.16);
+  --accent: #b66b12;
+  --accent-2: #0f8f61;
+  --danger: #c93136;
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-strong: rgba(255, 255, 255, 0.98);
+  --surface: #ffffff;
+  --surface-2: #f7fafc;
+  --surface-3: #eef4f7;
+  --border: rgba(32, 52, 71, 0.14);
+  --border-hover: rgba(14, 148, 136, 0.34);
+  --text-primary: #101827;
+  --text-muted: #4b5c73;
+  --text-secondary: #334155;
+  --text-dim: #65768c;
+  --shadow-card: 0 14px 36px rgba(16, 24, 39, 0.08);
+  --shadow-glow: 0 0 24px rgba(8, 145, 178, 0.14);
+  --shadow-lift: 0 18px 42px rgba(16, 24, 39, 0.11);
+
+  --body-bg:
+    linear-gradient(90deg, rgba(14, 148, 136, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(182, 107, 18, 0.045) 1px, transparent 1px),
+    linear-gradient(135deg, #f7fafc 0%, #eef6f8 46%, #f5f8f0 100%);
+  --bg-solid: #f7fafc;
+  --app-bg: rgba(255, 255, 255, 0.88);
+  --dot-grid: rgba(8, 145, 178, 0.04);
+  --glass-blur: blur(20px);
+  --v12-control: rgba(255, 255, 255, 0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

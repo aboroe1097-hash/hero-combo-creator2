@@ -339,6 +339,13 @@ export const STRIFE_MONSTER_COMBOS = {
   'noisy-noel': [
     {
       stage: 'X1',
+      tier: STRIFE_TIERS.P2W,
+      heroes: ['Ramses II', 'Witch Hunter', 'Isabella I'],
+      score: '41.46M observed',
+      note: 'In-game X1 best-lineup screenshot: Ramses II + Witch Hunter + Isabella I reached 41,455,133 damage into Noisy Noel.',
+    },
+    {
+      stage: 'X1',
       tier: STRIFE_TIERS.F2P,
       heroes: ['Sky Breaker', 'Sakura', 'Isabella I'],
       note: 'Source-listed X1 custom row mapped to the local hero spelling: Sky Breaker + Sakura + Isabella I.',

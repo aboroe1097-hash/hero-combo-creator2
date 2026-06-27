@@ -96,6 +96,17 @@ test('shared admin dashboard reads stay available while writes require admin cla
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
 });
 
+test('R5 conduct adjustments are stored separately and require admin writes', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+
+  assert.match(rules, /function validConductAdjustment\(\)/);
+  assert.match(rules, /match \/vts_admin\/conduct_adjustments\/records\/\{adjustmentId\}/);
+  assert.match(rules, /allow read: if isAdmin\(\);/);
+  assert.match(rules, /allow create: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /allow update: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
+});
+
 test('service worker precaches only the lightweight app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);

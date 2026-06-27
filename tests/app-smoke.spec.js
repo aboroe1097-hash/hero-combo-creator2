@@ -26,6 +26,167 @@ async function expectTab(page, buttonId, sectionId, marker) {
   await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
 }
 
+const visualViewports = [
+  { name: 'mobile', width: 375, height: 812 },
+  { name: 'desktop', width: 1280, height: 800 },
+];
+
+const visualSurfaces = [
+  {
+    name: 'combo-manual',
+    buttonId: '#tabManual',
+    sectionId: '#manualSection',
+    marker: '#availableHeroes',
+    target: '#availableHeroes',
+  },
+  {
+    name: 'combo-generator',
+    buttonId: '#tabGenerator',
+    sectionId: '#generatorSection',
+    marker: '#generatorHeroes',
+    target: '#generatorResults',
+    setup: async (page) => {
+      await page.locator('#genSelectAllBtn').click();
+      await page.locator('#generateCombosBtn').click();
+      await expect(page.locator('#generatorResults .generated-combo-card').first()).toBeVisible({
+        timeout: 15000,
+      });
+    },
+  },
+  {
+    name: 'hero-atlas',
+    buttonId: '#tabHeroes',
+    sectionId: '#heroesSection',
+    marker: '#heroesSection .heroes-layout',
+    target: '#heroesSection',
+  },
+  {
+    name: 'research',
+    buttonId: '#tabResearch',
+    sectionId: '#researchSection',
+    marker: '#techListContainer',
+    target: '#techListContainer',
+  },
+  {
+    name: 'loyalty',
+    buttonId: '#tabLoyalty',
+    sectionId: '#loyaltySection',
+    marker: '#loyaltyPresets',
+    target: '#loyaltySection',
+  },
+];
+
+async function stabilizeVisuals(page) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        caret-color: transparent !important;
+        transition-duration: 0s !important;
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+      }
+      .toast,
+      .whats-new-banner,
+      .generate-summary,
+      .generated-summary,
+      #generatorResults > .text-center,
+      #globalGameClock {
+        visibility: hidden !important;
+      }
+      .visual-surface-crop #availableHeroes,
+      .visual-surface-crop #heroesSection,
+      .visual-surface-crop #techListContainer,
+      .visual-surface-crop #loyaltySection {
+        max-height: min(560px, calc(100vh - 140px)) !important;
+        overflow: hidden !important;
+      }
+    `,
+  });
+  await page.evaluate(() => {
+    document.body.classList.add('visual-surface-crop');
+    window.stop();
+  });
+}
+
+async function openVisualApp(page, viewport) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await openApp(page, `/?visual=${viewport.name}`);
+  await stabilizeVisuals(page);
+}
+
+async function openBootSplashForVisual(page, viewport) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
+    localStorage.removeItem('vts_intro_v1_seen');
+    localStorage.removeItem('vts_quick_tour_done');
+  });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#appBootSplash')).toBeAttached({ timeout: 10000 });
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        caret-color: transparent !important;
+        transition-duration: 0s !important;
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+      }
+      #appBootSplash {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+      }
+      #bootParticles {
+        display: none !important;
+      }
+    `,
+  });
+  await page.locator('#appBootSplash').evaluate((splash) => {
+    splash.classList.remove('hidden', 'boot-splash--out', 'boot-splash--opening');
+    splash.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('app-booting');
+    document.body.classList.remove('app-ready');
+    const fill = document.querySelector('.boot-progress-fill');
+    if (fill) fill.style.width = '42%';
+    const status = document.querySelector('.boot-status-text');
+    if (status) status.textContent = 'Priming Eden map layers...';
+  });
+}
+
+async function expectVisualSnapshot(page, selector, name) {
+  const target = page.locator(selector);
+  await target.scrollIntoViewIfNeeded();
+  await target.evaluate((root) =>
+    Promise.all(
+      Array.from(root.querySelectorAll('img')).map(
+        (img) =>
+          img.complete ||
+          new Promise((resolve) => {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+          })
+      )
+    )
+  );
+  // Wait for web fonts before snapshotting; otherwise the first cold-cache
+  // capture renders text in a fallback face and produces a whole-page diff
+  // against a fonts-loaded baseline.
+  await page.evaluate(() => (document.fonts ? document.fonts.ready : Promise.resolve()));
+  await page.waitForTimeout(100);
+  await expect(target).toHaveScreenshot(name, {
+    animations: 'disabled',
+    caret: 'hide',
+    maxDiffPixelRatio: 0.01,
+    timeout: 15000,
+  });
+}
+
 async function expectEdenTerrainPainted(page) {
   await expect
     .poll(
@@ -102,6 +263,394 @@ async function openLocalAdminDashboard(page) {
   await page.reload({ waitUntil: 'load' });
   await expect(page.locator('#dashApp')).toBeVisible({ timeout: 20000 });
 }
+
+test.describe('visual regression', () => {
+  test.beforeEach(({}, testInfo) => {
+    testInfo.snapshotSuffix = '';
+  });
+
+  for (const viewport of visualViewports) {
+    test(`header and boot shell render at ${viewport.name}`, async ({ page }) => {
+      await openBootSplashForVisual(page, viewport);
+      await expectVisualSnapshot(page, '#appBootSplash', `boot-splash-${viewport.name}.png`);
+
+      await openVisualApp(page, viewport);
+      await expectVisualSnapshot(page, '.command-header', `header-nav-${viewport.name}.png`);
+    });
+
+    for (const surface of visualSurfaces) {
+      test(`${surface.name} renders at ${viewport.name}`, async ({ page }) => {
+        await openVisualApp(page, viewport);
+        await expectTab(page, surface.buttonId, surface.sectionId, surface.marker);
+        if (surface.setup) await surface.setup(page);
+        await expectVisualSnapshot(page, surface.target, `${surface.name}-${viewport.name}.png`);
+      });
+    }
+  }
+});
+
+test.describe('admin dashboard visual regression', () => {
+  test.beforeEach(({}, testInfo) => {
+    testInfo.snapshotSuffix = '';
+  });
+
+  // Representative seeded dataset with mixed Latin + Cyrillic names so the
+  // Russian-user mobile experience (the original "horrible sizing" report) is
+  // checked at every viewport. Long transliterated names exercise line wrap.
+  const VISUAL_DASH = {
+    last_updated: '27/06/2026, 09:15',
+    total_attacks: 2,
+    attacks: [
+      {
+        id: 'vis-cap-1',
+        structure_name: 'Capital',
+        structure_level: 'Lv.7',
+        game_time: '26/06/2026, 19:30',
+        start_time: '19:00',
+        total_demolition: 4500000,
+        players_count: 4,
+        players: [
+          { name: 'Александр', value: 1900000, rank: 1 },
+          { name: 'Bravo', value: 1100000, rank: 2 },
+          { name: 'Снайпер', value: 900000, rank: 3 },
+          { name: 'Echo', value: 600000, rank: 4 },
+        ],
+      },
+      {
+        id: 'vis-gate-1',
+        structure_name: 'Gate',
+        structure_level: 'Lv.5',
+        game_time: '27/06/2026, 12:15',
+        start_time: '12:00',
+        total_demolition: 1820000,
+        players_count: 3,
+        players: [
+          { name: 'Снайпер', value: 920000, rank: 1 },
+          { name: 'Александр', value: 540000, rank: 2 },
+          { name: 'Foxtrot', value: 360000, rank: 3 },
+        ],
+      },
+    ],
+    players_summary: [],
+    dutyRecords: [
+      {
+        id: 'vis-pather-1',
+        type: 'pather',
+        date: '2026-06-27',
+        gameTime: '12:15',
+        note: 'Visual baseline',
+        createdAt: '2026-06-27T09:15:00.000Z',
+        entries: [
+          {
+            name: 'Александр',
+            original: 'Александр',
+            confirmed: 'Александр',
+            usageTime: '12:15',
+            target: 'Gate Lv5',
+            group: 'Dark Green',
+            order: '1',
+            pad: '1240:650',
+            status: 'exact',
+          },
+          {
+            name: 'Снайпер',
+            original: 'Снайпер',
+            confirmed: 'Снайпер',
+            usageTime: '00:23',
+            target: 'Bridge Lv1',
+            group: 'Pink',
+            order: '2',
+            pad: '1255:648',
+            status: 'exact',
+          },
+        ],
+      },
+    ],
+  };
+  const VISUAL_ROSTER = [
+    {
+      date: '27/06/2026',
+      members: [
+        { name: 'Александр', status: 'trusted', alliance: 0 },
+        { name: 'Снайпер', status: 'trusted', alliance: 1 },
+        { name: 'Bravo', status: 'unknown', alliance: 1 },
+        { name: 'Spy測試', status: 'spy', alliance: 0 },
+      ],
+    },
+  ];
+
+  const ADMIN_VIEWPORTS = [
+    { name: 'mobile', width: 375, height: 812 },
+    { name: 'desktop', width: 1280, height: 800 },
+  ];
+
+  async function seedAndOpenDashboard(page, opts = {}) {
+    await page.setViewportSize({ width: opts.width, height: opts.height });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    if (opts.lang) {
+      await page.addInitScript((lang) => {
+        localStorage.setItem('vts_hero_lang', lang);
+        if (lang === 'ru') localStorage.setItem('vts_force_admin_lang', 'ru');
+      }, opts.lang);
+    }
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.setOcrDashboardDataForTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
+    await page.evaluate(
+      ({ dash, roster }) => {
+        window.setOcrDashboardDataForTest(dash, roster);
+        window.switchDashSubtab('dashboard');
+      },
+      { dash: VISUAL_DASH, roster: VISUAL_ROSTER }
+    );
+    // Re-seed after the local-auth reload so the dataset survives the re-mount.
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
+    await page.evaluate(
+      ({ dash, roster, subtab }) => {
+        window.setOcrDashboardDataForTest(dash, roster);
+        window.switchDashSubtab(subtab);
+      },
+      { dash: VISUAL_DASH, roster: VISUAL_ROSTER, subtab: opts.subtab || 'dashboard' }
+    );
+    await expect(
+      page.locator(
+        `#dashSubtab${(opts.subtab || 'dashboard').replace(/^./, (c) => c.toUpperCase())}`
+      )
+    ).toBeVisible({ timeout: 10000 });
+  }
+
+  async function stabilizeAdminVisuals(page) {
+    // Snapshot determinism: the dashboard has run-to-run variable content â€”
+    // restored log lines (#dashLogOutput), the cloud-sync status text (timing
+    // of "Showing local cache"), and the live game clock. Hiding/clearing them
+    // keeps the captured #ocrDashboardRoot height byte-stable across runs
+    // (without this the snapshot diff was a ~37px height drift and flaky).
+    await page.addStyleTag({
+      content: `
+        #ocrDashboardRoot, #ocrDashboardRoot * {
+          caret-color: transparent !important;
+          transition-duration: 0s !important;
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          animation-iteration-count: 1 !important;
+        }
+        #globalGameClock,
+        #dashCloudStatusText,
+        #dashCloudStatus,
+        #dashLogArea,
+        #dashLogOutput,
+        .dash-cloud-status,
+        .dash-log-area { visibility: hidden !important; }
+        #dashOcrServiceStatus {
+          visibility: hidden !important;
+          width: 118px !important;
+          min-width: 118px !important;
+          max-width: 118px !important;
+          height: 34px !important;
+          overflow: hidden !important;
+          white-space: nowrap !important;
+        }
+      `,
+    });
+    await page.evaluate(() => {
+      const log = document.querySelector('#dashLogOutput');
+      if (log) log.innerHTML = '';
+      try {
+        window.stop();
+      } catch {
+        /* already stopped */
+      }
+    });
+    // Let any analytics chart canvas/SVG settle one frame after window.stop().
+    await page.waitForTimeout(150);
+  }
+
+  for (const viewport of ADMIN_VIEWPORTS) {
+    for (const lang of ['en', 'ru']) {
+      test(`dashboard leaderboard renders at ${viewport.name} (${lang})`, async ({ page }) => {
+        await seedAndOpenDashboard(page, { width: viewport.width, height: viewport.height, lang });
+        await stabilizeAdminVisuals(page);
+        await expect(page.locator('#dashLeaderBody tr').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('#ocrDashboardRoot')).toHaveScreenshot(
+          `admin-leaderboard-${viewport.name}-${lang}.png`,
+          { animations: 'disabled', maxDiffPixelRatio: 0.01, timeout: 15000 }
+        );
+      });
+
+      test(`dashboard analytics renders at ${viewport.name} (${lang})`, async ({ page }) => {
+        await seedAndOpenDashboard(page, {
+          width: viewport.width,
+          height: viewport.height,
+          lang,
+          subtab: 'analytics',
+        });
+        await stabilizeAdminVisuals(page);
+        await expect(page.locator('#dashStructuresChart, #dashStructureChart').first()).toBeVisible(
+          {
+            timeout: 15000,
+          }
+        );
+        await expect(page.locator('#ocrDashboardRoot')).toHaveScreenshot(
+          `admin-analytics-${viewport.name}-${lang}.png`,
+          { animations: 'disabled', maxDiffPixelRatio: 0.01, timeout: 15000 }
+        );
+      });
+
+      test(`dashboard pathers duty summary renders at ${viewport.name} (${lang})`, async ({
+        page,
+      }) => {
+        // Pathers duty list is the surface the Russian member-rotation user hit
+        // ("horrible sizing" report). The roster subtab is admin-gated and needs
+        // a separate roster login, so pathers is the right mid-season surface to
+        // regress: it stacks the duty table into card rows under 768px with
+        // translated Cyrillic data-labels.
+        await seedAndOpenDashboard(page, {
+          width: viewport.width,
+          height: viewport.height,
+          lang,
+          subtab: 'pathers',
+        });
+        await stabilizeAdminVisuals(page);
+        await expect(page.locator('#dashPatherListSummary .dash-duty-summary-table')).toBeVisible({
+          timeout: 15000,
+        });
+        await expect(page.locator('#ocrDashboardRoot')).toHaveScreenshot(
+          `admin-pathers-${viewport.name}-${lang}.png`,
+          { animations: 'disabled', maxDiffPixelRatio: 0.01, timeout: 15000 }
+        );
+      });
+    }
+  }
+
+  test('dashboard mobile surfaces avoid horizontal overflow with Cyrillic + longest locale', async ({
+    page,
+  }) => {
+    // 360px is narrower than the 375 baseline; exercises the worst phone width
+    // reported by the Russian user. Asserts zero document/root H-scroll and
+    // that player names are not clipped (no truncating nowrap on name cells).
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_hero_lang', 'ru');
+    });
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
+    await page.evaluate(
+      ({ dash, roster }) => {
+        window.setOcrDashboardDataForTest(dash, roster);
+        for (const subtab of ['dashboard', 'analytics', 'roster']) {
+          window.switchDashSubtab(subtab);
+        }
+        window.switchDashSubtab('dashboard');
+      },
+      { dash: VISUAL_DASH, roster: VISUAL_ROSTER }
+    );
+
+    const checks = await page.evaluate(async () => {
+      const results = [];
+      const surveys = [
+        { name: 'dashboard', sel: '#dashSubtabDashboard' },
+        { name: 'analytics', sel: '#dashSubtabAnalytics' },
+        { name: 'pathers', sel: '#dashSubtabPathers' },
+      ];
+      const root = document.querySelector('#ocrDashboardRoot');
+      for (const survey of surveys) {
+        const panel = document.querySelector(survey.sel);
+        if (!panel) {
+          results.push({ name: survey.name, missing: true });
+          continue;
+        }
+        // Switch to it so it is laid out before measuring.
+        window.switchDashSubtab(survey.name);
+        await new Promise((r) => setTimeout(r, 50));
+        const nameCells = Array.from(
+          panel.querySelectorAll('.dash-roster-row-name, .dash-trend-person strong, td, th')
+        );
+        const clippedName = nameCells.find((cell) => {
+          const style = window.getComputedStyle(cell);
+          return (
+            style.whiteSpace === 'nowrap' &&
+            cell.scrollWidth > cell.clientWidth + 2 &&
+            /[\u0400-\u04FF]/.test(cell.textContent || '')
+          );
+        });
+        results.push({
+          name: survey.name,
+          missing: false,
+          rootOverflow: root.scrollWidth > root.clientWidth + 2,
+          documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+          clippedCyrillicName: Boolean(clippedName),
+        });
+      }
+      return results;
+    });
+    for (const check of checks) {
+      expect(check.missing, `${check.name} panel rendered`).toBe(false);
+      expect(check.rootOverflow, `${check.name} root horizontal overflow`).toBe(false);
+      expect(check.documentOverflow, `${check.name} document horizontal overflow`).toBe(false);
+      expect(check.clippedCyrillicName, `${check.name} nowrap-clip a Cyrillic cell`).toBe(false);
+    }
+  });
+});
+
+test.describe('admin dashboard upload safety', () => {
+  test('structure upload panel rejects non-image files without crashing when OCR gated', async ({
+    page,
+  }) => {
+    // No network for the OCR health check â†’ canUseOcr() returns false â†’ the
+    // drop / change handlers must short-circuit cleanly. Asserts the upload
+    // flow stays usable (no uncaught throw, panel reachable) under the no-cloud
+    // condition mid-season members hit on flaky connections.
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    await page.route('https://www.gstatic.com/firebasejs/**', (route) => route.abort());
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_maintenance_bypass', '1');
+      localStorage.setItem('vts_admin_local_test_auth', '1');
+      // Definitively keep OCR gated for this contract regardless of timing.
+      localStorage.setItem('vts_force_ocr_gated', '1');
+    });
+    await page.goto('/admin.html', { waitUntil: 'load' });
+    await expect(page.locator('#dashApp')).toBeVisible({ timeout: 20000 });
+    await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
+    await page.evaluate(() => window.switchDashSubtab('uploadStructures'));
+    await expect(page.locator('#dashSubtabUploadStructures')).toBeVisible({ timeout: 10000 });
+
+    // Dispatch a non-image File against the structure drop handler path.
+    const errors = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+    await page.evaluate(() => {
+      const dt = new DataTransfer();
+      const file = new File(['not an image'], 'roster.txt', { type: 'text/plain' });
+      dt.items.add(file);
+      const drop = document.querySelector('#dashDropZone');
+      const input = document.querySelector('#dashFileInput');
+      if (drop) {
+        drop.dispatchEvent(
+          new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })
+        );
+      }
+      if (input) {
+        // setFileList via DataTransfer so the change handler fires.
+        if (input.files) {
+          Object.defineProperty(input, 'files', { value: dt.files });
+        }
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+    await page.waitForTimeout(300);
+
+    // The dashboard stays mounted and the upload panel is still interactive.
+    await expect(page.locator('#dashApp')).toBeVisible();
+    await expect(page.locator('#dashSubtabUploadStructures')).toBeVisible();
+    expect(errors.filter((m) => !/network|fetch|firebase|gstatic/i.test(m))).toEqual([]);
+  });
+});
 
 test.describe('app smoke tabs', () => {
   test('manual and generator tabs render', async ({ page }) => {
@@ -189,6 +738,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.strife-monster-summary')).toContainText('Noisy Noel');
     await expect(page.locator('.strife-skill-card')).toHaveCount(4);
     await expect(page.locator('.strife-results-band--f2p')).toContainText('Witch Hunter');
+    await expect(page.locator('.strife-results-band--p2w')).toContainText('Ramses II');
 
     await page.locator('[data-strife-stage="X8"]').click();
     await page.locator('[data-strife-monster="gambosate"]').click();
@@ -247,8 +797,7 @@ test.describe('app smoke tabs', () => {
           nodes
             .map(
               (node) =>
-                node.dataset.heroTroop ||
-                node.querySelector('.hero-card-type')?.textContent.trim()
+                node.dataset.heroTroop || node.querySelector('.hero-card-type')?.textContent.trim()
             )
             .filter(Boolean)
         ),
@@ -458,7 +1007,9 @@ test.describe('app smoke tabs', () => {
     expect(counterUseValue).toBeTruthy();
 
     await page.locator('#genClearAllBtn').click();
-    const freshUseCounterButton = page.locator(`.counter-use-btn[data-counter-use="${counterUseValue}"]`);
+    const freshUseCounterButton = page.locator(
+      `.counter-use-btn[data-counter-use="${counterUseValue}"]`
+    );
     await expect(freshUseCounterButton).toBeVisible();
     await freshUseCounterButton.scrollIntoViewIfNeeded();
     await freshUseCounterButton.click();
@@ -518,20 +1069,23 @@ test.describe('app smoke tabs', () => {
     await page.route('https://firestore.googleapis.com/**', (route) => {
       stalledRoutes.push(route);
     });
-    await page.addInitScript(({ data }) => {
-      window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
-      window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
-      localStorage.setItem('vts_maintenance_bypass', '1');
-      localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
-      localStorage.setItem('vts_admin_local_test_auth', '1');
-      localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
-      navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
-        registrations.forEach((registration) => registration.unregister());
-      });
-      window.caches?.keys?.().then((keys) => {
-        keys.forEach((key) => caches.delete(key));
-      });
-    }, { data: seededDash });
+    await page.addInitScript(
+      ({ data }) => {
+        window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
+        window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
+        localStorage.setItem('vts_maintenance_bypass', '1');
+        localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
+        localStorage.setItem('vts_admin_local_test_auth', '1');
+        localStorage.setItem('vts_ocr_dashboard', JSON.stringify(data));
+        navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        });
+        window.caches?.keys?.().then((keys) => {
+          keys.forEach((key) => caches.delete(key));
+        });
+      },
+      { data: seededDash }
+    );
 
     await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#dashApp')).toBeVisible({ timeout: 5000 });
@@ -594,6 +1148,24 @@ test.describe('app smoke tabs', () => {
       ],
       players_summary: [],
     };
+    const boundaryPlayers = [];
+    for (let i = 1; i <= 24; i++) {
+      boundaryPlayers.push({
+        name: `Gift Boundary ${i}`,
+        value: 500 + i,
+        rank: i,
+      });
+    }
+    seededDash.attacks.push({
+      id: 'att-boundary-page',
+      structure_name: 'Small Town',
+      structure_level: 'Lv.1',
+      game_time: '20/06/2026, 10:30',
+      start_time: '10:00',
+      total_demolition: boundaryPlayers.reduce((sum, player) => sum + player.value, 0),
+      players_count: boundaryPlayers.length,
+      players: boundaryPlayers,
+    });
     const seededRoster = [
       {
         date: '20/06/2026',
@@ -602,6 +1174,19 @@ test.describe('app smoke tabs', () => {
           { name: 'Bravo', status: 'trusted', alliance: 0 },
           { name: 'Foxtrot', status: 'trusted', alliance: 1 },
         ],
+      },
+    ];
+    const seededAdjustments = [
+      {
+        id: 'r5-bravo-road',
+        season: 'season-2026',
+        playerKey: 'bravo',
+        playerName: 'Bravo',
+        points: 1500000,
+        category: 'connected_road',
+        note: 'Connected the road to the next target',
+        createdAt: '2026-06-20T12:30:00.000Z',
+        createdBy: 'local-test-admin',
       },
     ];
     await openAdmin(page);
@@ -622,8 +1207,8 @@ test.describe('app smoke tabs', () => {
     await openLocalAdminDashboard(page);
     await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
     await page.evaluate(
-      async ({ seededDash, seededRoster }) => {
-        window.setOcrDashboardDataForTest(seededDash, seededRoster);
+      async ({ seededDash, seededRoster, seededAdjustments }) => {
+        window.setOcrDashboardDataForTest(seededDash, seededRoster, seededAdjustments);
         const resources = [
           ...new Set(performance.getEntriesByType('resource').map((entry) => entry.name)),
         ];
@@ -639,9 +1224,22 @@ test.describe('app smoke tabs', () => {
           renderer.render();
         }
       },
-      { seededDash, seededRoster }
+      { seededDash, seededRoster, seededAdjustments }
     );
     await expect(page.locator('#dashLeaderBody tr', { hasText: 'Anne' })).toHaveCount(1);
+    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
+    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('+1,500,000');
+    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('3,100,000');
+    const visibleLeaderRows = await page.locator('#dashLeaderBody tr').evaluateAll((rows) =>
+      rows.filter((row) => !row.querySelector('.dash-load-more-btn')).length
+    );
+    expect(visibleLeaderRows).toBe(20);
+    await expect(page.locator('#dashLeaderBody .dash-load-more-btn')).toContainText('Show More');
+    await page.evaluate(() => window.switchDashSubtab('conduct'));
+    await expect(page.locator('#dashSubtabConduct')).toBeVisible();
+    await expect(page.locator('#dashConductList')).toContainText('Bravo');
+    await expect(page.locator('#dashConductList')).toContainText('Connected the road');
+    await page.evaluate(() => window.switchDashSubtab('dashboard'));
     await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
     await page.evaluate(() => window.switchDashSubtab('analytics'));
     await expect(page.locator('#dashSubtabAnalytics')).toBeVisible();
@@ -653,8 +1251,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashStreaks')).toContainText('Current streaks');
 
     await page.evaluate(() => {
-      const item = Array.from(document.querySelectorAll('#dashStructureChart .dash-structure-item'))
-        .find((node) => node.textContent?.includes('Capital'));
+      const item = Array.from(
+        document.querySelectorAll('#dashStructureChart .dash-structure-item')
+      ).find((node) => node.textContent?.includes('Capital'));
       if (!item) throw new Error('Capital structure item was not rendered');
       item.click();
     });
@@ -680,6 +1279,128 @@ test.describe('app smoke tabs', () => {
       }
     });
     await expect(page.locator('#dashLeaderBody tr').nth(1)).toContainText('Echo');
+  });
+
+  test('admin mobile special-list tables avoid overflow and label card rows', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_hero_lang', 'ru');
+      localStorage.setItem('vts_theme', 'light');
+    });
+    const seededDash = {
+      last_updated: '25/06/2026, 23:55',
+      total_attacks: 0,
+      attacks: [],
+      players_summary: [],
+      dutyRecords: [
+        {
+          id: 'pather-plan-1',
+          type: 'pather',
+          date: '2026-06-25',
+          gameTime: '23:55',
+          note: 'Plan',
+          createdAt: '2026-06-25T19:55:00.000Z',
+          entries: [
+            {
+              name: 'ê§ Kika ê§‚',
+              original: 'ê§ Kika ê§‚',
+              confirmed: 'ê§ Kika ê§‚',
+              usageTime: '23:55',
+              target: 'Gate Lv5',
+              group: 'Pink',
+              order: '1',
+              pad: '1253:645',
+              status: 'exact',
+            },
+            {
+              name: '~Sarafino~',
+              original: '~Sarafino~',
+              confirmed: '~Sarafino~',
+              usageTime: '00:23',
+              target: 'Bridge Lv1',
+              group: 'Dark Green',
+              order: '2',
+              pad: '1261:646',
+              status: 'exact',
+            },
+          ],
+        },
+      ],
+      contributionRecords: [
+        {
+          id: 'contribution-prefix-1',
+          date: '2026-06-25',
+          note: 'Prefix cleanup',
+          createdAt: '2026-06-25T20:00:00.000Z',
+          premiumSlots: 20,
+          entries: [
+            {
+              rank: '1',
+              name: '(Vts)Kika',
+              guild: 'VTS X1',
+              contribution: '192983',
+              position: '',
+            },
+          ],
+        },
+      ],
+    };
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.setOcrDashboardDataForTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
+    await page.evaluate((seededDash) => {
+      window.setOcrDashboardDataForTest(seededDash, []);
+      window.switchDashSubtab('pathers');
+    }, seededDash);
+
+    await expect(page.locator('#dashPatherListSummary .dash-duty-summary-table')).toBeVisible();
+    await expect(page.locator('#dashPatherListSummary')).toContainText('Kika');
+    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Entries');
+    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Times');
+    await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Targets');
+    await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Groups');
+    await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const root = document.querySelector('#ocrDashboardRoot');
+      const summaryCell = document.querySelector(
+        '#dashPatherListSummary .dash-duty-summary-table td:first-child'
+      );
+      const detailCell = document.querySelector(
+        '#dashPatherListBody .dash-duty-detail-table td:first-child'
+      );
+      const subnav = document.querySelector('.dash-subtab-nav');
+      const rowDisplay = (cell) => window.getComputedStyle(cell.closest('tr')).display;
+      return {
+        theme: document.documentElement.dataset.theme,
+        noDocumentOverflow: document.documentElement.scrollWidth <= window.innerWidth + 2,
+        noRootOverflow: root.scrollWidth <= root.clientWidth + 2,
+        subnavScrollsInside: subnav.scrollWidth >= subnav.clientWidth,
+        summaryLabel: window.getComputedStyle(summaryCell, '::before').content,
+        detailLabel: window.getComputedStyle(detailCell, '::before').content,
+        summaryRowDisplay: rowDisplay(summaryCell),
+        detailRowDisplay: rowDisplay(detailCell),
+      };
+    });
+
+    expect(layout.theme).toBe('light');
+    expect(layout.noDocumentOverflow).toBe(true);
+    expect(layout.noRootOverflow).toBe(true);
+    expect(layout.subnavScrollsInside).toBe(true);
+    expect(layout.summaryLabel).toContain('Player');
+    expect(layout.detailLabel).toContain('Group');
+    expect(layout.summaryRowDisplay).toBe('block');
+    expect(layout.detailRowDisplay).toBe('block');
+
+    await page.evaluate(() => window.switchDashSubtab('contributions'));
+    await expect(page.locator('#dashContributionBody')).toContainText('Kika');
+    await expect(page.locator('#dashContributionBody')).not.toContainText('(Vts)Kika');
   });
 
   test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {

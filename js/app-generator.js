@@ -170,17 +170,32 @@ function getGeneratorResultHeroImageUrl(heroName) {
   return getSkinHeroByName(heroName)?.skinImageUrl || getSkinForHero(heroName)?.imageUrl || getHeroImageUrl(heroName);
 }
 
-function getStableSkinMotionStyle(heroName, offset = 0) {
+function getStableSkinMotionValues(heroName, offset = 0) {
   const text = String(heroName || '');
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     hash = (hash * 31 + text.charCodeAt(i) + offset) % 9973;
   }
-  const delay = -((hash % 320) / 100);
-  const duration = 2.85 + ((hash % 95) / 100);
-  const shift = ((hash % 7) - 3) * 0.45;
-  const scale = 1.015 + ((hash % 5) * 0.006);
-  return `--skin-anim-delay:${delay.toFixed(2)}s;--skin-anim-duration:${duration.toFixed(2)}s;--skin-anim-shift:${shift.toFixed(2)}px;--skin-anim-scale:${scale.toFixed(3)};`;
+  return {
+    delay: -((hash % 320) / 100),
+    duration: 2.85 + ((hash % 95) / 100),
+    shift: ((hash % 7) - 3) * 0.45,
+    scale: 1.015 + ((hash % 5) * 0.006),
+  };
+}
+
+function applySkinMotion(el, heroName, offset = 0) {
+  const motion = getStableSkinMotionValues(heroName, offset);
+  el.style.setProperty('--skin-anim-delay', `${motion.delay.toFixed(2)}s`);
+  el.style.setProperty('--skin-anim-duration', `${motion.duration.toFixed(2)}s`);
+  el.style.setProperty('--skin-anim-shift', `${motion.shift.toFixed(2)}px`);
+  el.style.setProperty('--skin-anim-scale', motion.scale.toFixed(3));
+}
+
+function applyGeneratorBadgeVars(el, { skinColor, skinGradient } = {}) {
+  if (!el) return;
+  if (skinColor) el.style.setProperty('--skin-color', skinColor);
+  if (skinGradient) el.style.setProperty('--skin-badge-bg', `linear-gradient(135deg, ${skinGradient})`);
 }
 
 function showGeneratorMessage(message) {
@@ -276,7 +291,7 @@ export function renderGeneratorHeroes(options = {}) {
       card.className = `hero-card generator-card relative season-${cssToken(hero.season)}${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
-      if (skinOwned) card.style.cssText += getStableSkinMotionStyle(hero.name);
+      if (skinOwned) applySkinMotion(card, hero.name);
       card.dataset.heroName = hero.name;
       card.dataset.heroSeason = hero.season;
       card.dataset.heroTroop = hero.Type;
@@ -293,19 +308,23 @@ export function renderGeneratorHeroes(options = {}) {
         : `${skinCount} skin${skinCount > 1 ? 's' : ''} available`);
       const skinIconLabel = skinTypeInfo?.icon || `S${skinCount > 1 ? skinCount : ''}`;
       const skinBadgeLabel = escapeHtml(skinOwned && skinTypeInfo ? skinTypeInfo.icon : `S${skinCount > 1 ? skinCount : ''}`);
-      const skinBadgeStyle = skinOwned && skinTypeInfo
-        ? `--skin-color:${skinTypeInfo.color};background:linear-gradient(135deg,${skinTypeInfo.color},#fbbf24);`
-        : `background:linear-gradient(135deg,${normalSkinBadgeColors})`;
+      const skinBadgeVars = {
+        skinColor: skinOwned && skinTypeInfo ? skinTypeInfo.color : (skinColors[0] || '#f59e0b'),
+        skinGradient: skinOwned && skinTypeInfo
+          ? `${skinTypeInfo.color}, #fbbf24`
+          : normalSkinBadgeColors,
+      };
       const skinBadge = hasSkinFlag && !activeSkinsOnly
-        ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${skinBadgeTitle}" style="${escapeHtml(skinBadgeStyle)}">${skinBadgeLabel}</span>`
+        ? `<span class="generator-skin-badge${skinOwned ? ' generator-skin-badge--priority' : ''}" title="${skinBadgeTitle}">${skinBadgeLabel}</span>`
         : '';
       const skinToggle = activeSkinsOnly && hasSkinFlag
-        ? `<span class="generator-skin-toggle${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}" style="${escapeHtml(skinBadgeStyle)}"><span class="generator-skin-toggle-icon">${escapeHtml(skinIconLabel)}</span> <span class="generator-skin-toggle-state">${skinOwned ? 'Skin' : 'Base'}</span></span>`
+        ? `<span class="generator-skin-toggle${skinOwned ? ' generator-skin-badge--priority is-on' : ''}" role="switch" tabindex="0" aria-checked="${skinOwned ? 'true' : 'false'}" aria-label="${skinOwned ? `Turn off skin icon for ${escapeHtml(hero.name)}` : `Turn on skin icon for ${escapeHtml(hero.name)}`}" title="${skinOwned ? 'Using skin icon for this hero' : 'Using base icon for this hero'}" data-skin-owned="${skinOwned ? 'true' : 'false'}"><span class="generator-skin-toggle-icon">${escapeHtml(skinIconLabel)}</span> <span class="generator-skin-toggle-state">${skinOwned ? 'Skin' : 'Base'}</span></span>`
         : '';
+      card.style.setProperty('--hero-season-color', seasonColors[hero.season] || '#f97316');
 
       card.innerHTML = `
         <div class="hero-card-badges">
-          <span class="hero-tag" style="background:${escapeHtml(seasonColors[hero.season] || '#f97316')}">${escapeHtml(hero.season)}</span>
+          <span class="hero-tag">${escapeHtml(hero.season)}</span>
           <span class="hero-card-badge-spacer"></span>
           ${skinBadge}
           ${skinToggle}
@@ -313,8 +332,8 @@ export function renderGeneratorHeroes(options = {}) {
         </div>
         ${originTag}
         
-        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md hover:bg-slate-800 cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+        <div class="info-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="info-btn-svg">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
             </svg>
         </div>
@@ -327,6 +346,10 @@ export function renderGeneratorHeroes(options = {}) {
             <span class="hero-card-type ${escapeHtml(getTroopColorClass(hero.Type))}">${escapeHtml(getLocalizedTroop(hero.Type))}</span>
         </div>
       `;
+
+      card.querySelectorAll('.generator-skin-badge, .generator-skin-toggle').forEach((el) => {
+        applyGeneratorBadgeVars(el, skinBadgeVars);
+      });
       
       card.onclick = (e) => {
         if (e.target.closest('.generator-skin-toggle')) return;
@@ -410,7 +433,7 @@ export function renderGeneratorHeroes(options = {}) {
     if (!sourceNote) {
         sourceNote = document.createElement('div');
         sourceNote.id = 'heroesSourceNote2';
-        sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
+        sourceNote.className = "generator-source-note";
         generatorHeroesEl.parentNode.appendChild(sourceNote);
     }
     sourceNote.textContent = getSourceCreditText();
@@ -445,13 +468,13 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       const isSkinResult = generatorSkinsOnly && isGeneratorSkinOwned(name) && hasSkin(name);
       const item = document.createElement('div');
       item.className = `saved-combo-slot-item${isSkinResult ? ' saved-combo-slot-item--skin' : ''}`;
-      if (isSkinResult) item.style.cssText += getStableSkinMotionStyle(name, i + 17);
+      if (isSkinResult) applySkinMotion(item, name, i + 17);
       item.style.cursor = 'pointer';
       const img = document.createElement('img');
       img.src = getGeneratorResultHeroImageUrl(name);
       img.crossOrigin = 'anonymous';
       const label = document.createElement('span');
-      label.className = 'text-[10px] text-sky-300 font-bold truncate px-1';
+      label.className = 'gen-combo-slot-label';
       label.textContent = name;
       item.appendChild(img);
       item.appendChild(label);
@@ -480,7 +503,7 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
     });
 
     card.innerHTML = `
-      <span class="saved-combo-number bg-amber-400 text-slate-900">${i + 1}</span>
+      <span class="saved-combo-number">${i + 1}</span>
     `;
     card.appendChild(slots);
 
@@ -497,8 +520,8 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       : `<span class="counter-summary-badge counter-summary-badge--empty">No known counters</span>`;
     scoreBox.innerHTML = `
       <div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(t.generatorScoreLabel)}</span>
-        <span class="text-lg font-black text-sky-400">${combo.displayScore}</span>
+        <span class="gen-score-meta">${escapeHtml(t.generatorScoreLabel)}</span>
+        <span class="gen-score-value">${combo.displayScore}</span>
         <span class="gen-score-bar" aria-hidden="true"><span></span></span>
         ${counterBadge}
       </div>

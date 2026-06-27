@@ -173,8 +173,8 @@ function initResearchCalculator() {
 
     if (!ENABLE_RESEARCH_FEATURE) {
         researchSection.innerHTML = `
-            <div class="mb-6 text-center py-16 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">
-                <h2 class="text-2xl sm:text-3xl font-black text-amber-400 uppercase tracking-widest mb-2 drop-shadow-md">Under Construction</h2>
+            <div class="research-construction-card">
+                <h2 class="research-construction-title">Under Construction</h2>
             </div>
         `;
         return;
@@ -232,16 +232,12 @@ window.quickMaxTech = function(e, techId) {
 
     const btn = e.target;
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="w-3 h-3 inline pb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
-    btn.classList.replace('text-blue-300', 'text-emerald-300');
-    btn.classList.replace('border-blue-500/50', 'border-emerald-500/50');
-    btn.classList.replace('bg-blue-900/80', 'bg-emerald-900/80');
+    btn.innerHTML = `<svg class="research-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
+    btn.classList.add('research-card-max--done');
 
     setTimeout(() => {
         btn.innerHTML = originalText;
-        btn.classList.replace('text-emerald-300', 'text-blue-300');
-        btn.classList.replace('border-emerald-500/50', 'border-blue-500/50');
-        btn.classList.replace('bg-emerald-900/80', 'bg-blue-900/80');
+        btn.classList.remove('research-card-max--done');
     }, 1000);
 
     const calcContainer = document.getElementById('techCalculatorContainer');
@@ -310,14 +306,12 @@ function renderTechList() {
         card.className = 'tech-card-pos tech-card-hover research-tech-card';
         card.setAttribute('role', 'button');
         card.tabIndex = 0;
-        card.style.cssText = `
-            --desk-row: ${r};
-            --desk-col: ${c};
-            --season-color: ${sColor};
-            --hover-color: ${sColor}40;
-            --border-color: ${sColor};
-            --card-delay: ${Math.min(cardIndex * 35, 280)}ms;
-        `;
+        card.style.setProperty('--desk-row', r);
+        card.style.setProperty('--desk-col', c);
+        card.style.setProperty('--season-color', sColor);
+        card.style.setProperty('--hover-color', `${sColor}40`);
+        card.style.setProperty('--border-color', sColor);
+        card.style.setProperty('--card-delay', `${Math.min(cardIndex * 35, 280)}ms`);
         cardIndex += 1;
 
         const resourceLabel = tech.primaryResource || '—';
@@ -332,11 +326,14 @@ function renderTechList() {
             <p class="research-card-unlock">${appT('researchUnlock')}: ${tech.unlockCondition}</p>
             <p class="research-card-resource">${resourceLabel}</p>
             <div class="research-card-progress">
-                <div class="research-card-progress-bar" style="width:${progressPct.toFixed(1)}%"></div>
+                <div class="research-card-progress-bar"></div>
             </div>
             <span class="research-card-pct">${appT('researchProgress', { pct: progressPct.toFixed(0) })}</span>
             <span class="research-card-cta">${appT('researchOpenCalc')}</span>
         `;
+        card
+            .querySelector('.research-card-progress-bar')
+            ?.style.setProperty('--progress-pct', `${progressPct.toFixed(1)}%`);
 
         const openCalc = () => renderCalculator(tech);
         card.addEventListener('click', openCalc);
@@ -399,7 +396,7 @@ function updateGlobalSummary(filteredTechs = null) {
                     <span class="research-summary-pct">${progressPercent.toFixed(1)}%</span>
                 </div>
                 <div class="research-summary-progress-track">
-                    <div class="research-summary-progress-fill" style="width:${progressPercent}%"></div>
+                    <div class="research-summary-progress-fill"></div>
                 </div>
             </div>
             <div class="research-summary-stats">
@@ -418,6 +415,9 @@ function updateGlobalSummary(filteredTechs = null) {
             </div>
         </div>
     `;
+    summaryEl
+        .querySelector('.research-summary-progress-fill')
+        ?.style.setProperty('--progress-pct', `${progressPercent}%`);
 }
 
 function applyAutoGridToGroup(groupNodes) {
@@ -549,7 +549,6 @@ function buildGameTreeTierHtml(nodesInRow) {
             const level = getStoredNodeLevel(node._techId || node.techId, node.id);
             const troopClass = getGameTroopClass(node.troop);
             const shortName = node.name.replace(/\s+(I|II|III|IV)$/i, '').trim();
-            const pct = node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0;
             const tapState = level >= node.maxLevel
                 ? ' game-tech-tap--maxed'
                 : level > 0 ? ' game-tech-tap--progress' : '';
@@ -559,7 +558,6 @@ function buildGameTreeTierHtml(nodesInRow) {
             const iconMeta = resolveTechNodeIcon(node);
             html += `
               <div class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
-                style="--node-col:${node.col || idx + 1}; --node-pct:${pct}%; --node-deg:${(pct / 100) * 360}; --node-icon-tint:${iconMeta.tint}"
                 data-node-id="${node.id}" data-icon-id="${iconMeta.id}">
                 <button type="button" class="game-tech-tap game-tech-tap--${troopClass}${tapState}"
                   aria-label="${escapeHtml(node.name)}: level ${level} of ${node.maxLevel}">
@@ -652,6 +650,10 @@ function wireGameTechNodeContainers(rootEl, tech) {
 
         const max = parseInt(input.max, 10);
         let current = parseInt(input.value, 10) || 0;
+        const iconMeta = resolveTechNodeIcon(node);
+        wrap.style.setProperty('--node-col', node.col || 2);
+        wrap.style.setProperty('--node-icon-tint', iconMeta.tint);
+        syncGameNodeVisual(node, current, wrap);
 
         const updateLevel = (val, { pulse = true } = {}) => {
             let v = typeof val === 'string' && val === 'max' ? max : parseInt(val, 10);
@@ -730,7 +732,7 @@ function renderGameCalculator(tech, container) {
         <div class="research-calc-header">
           <div>
             <h3 class="research-calc-title">${escapeHtml(tech.name)} <span class="research-calc-season">(${tech.season})</span></h3>
-            <p class="research-calc-sub">Primary Cost: <span class="text-white">${escapeHtml(tech.primaryResource)}</span></p>
+            <p class="research-calc-sub">Primary Cost: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
           </div>
           <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -748,11 +750,11 @@ function renderGameCalculator(tech, container) {
         <p class="research-game-footer">${appT('researchGameHint')}</p>
       </div>
       <div class="research-calc-total">
-        <div class="flex flex-col">
-          <span class="text-[11px] sm:text-sm text-amber-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">Tree Total</span>
-          <span class="text-[10px] sm:text-sm text-slate-400">Total remaining for this specific tree</span>
+        <div class="research-tree-total-copy">
+          <span class="research-tree-total-label">Tree Total</span>
+          <span class="research-tree-total-hint">Total remaining for this specific tree</span>
         </div>
-        <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums"></div>
+        <div id="totalTechCost" class="research-total-costs"></div>
       </div>`;
 
     requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -808,52 +810,52 @@ function renderCalculator(tech) {
         const savedLevel = getStoredNodeLevel(tech.id, node.id);
         const isMaxed = savedLevel === node.maxLevel;
         
-        // Dynamic classes based on max status
-        const maxedContainerStyle = isMaxed ? 'opacity-50 saturate-0 border-slate-800 shadow-none' : 'border-slate-700 hover:border-slate-500 shadow-xl';
+        const maxedContainerClass = isMaxed ? ' research-node-card--maxed' : '';
         
-        let quickButtonsHtml = `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="0">0</button>`;
-        if (node.maxLevel >= 5) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="5">5</button>`;
-        if (node.maxLevel >= 10) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="10">10</button>`;
-        if (node.maxLevel >= 15) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="15">15</button>`;
-        if (node.maxLevel >= 20) quickButtonsHtml += `<button class="quick-set-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-[9px] sm:text-[10px] font-bold transition-colors" data-val="20">20</button>`;
+        let quickButtonsHtml = `<button class="quick-set-btn research-quick-btn" data-val="0">0</button>`;
+        if (node.maxLevel >= 5) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="5">5</button>`;
+        if (node.maxLevel >= 10) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="10">10</button>`;
+        if (node.maxLevel >= 15) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="15">15</button>`;
+        if (node.maxLevel >= 20) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="20">20</button>`;
         
         // Smart Toggle Button
         let toggleText = isMaxed ? 'UNDO' : 'MAX';
         let toggleVal = isMaxed ? 0 : node.maxLevel;
-        let toggleColor = isMaxed ? 'bg-slate-700 border-slate-500 hover:bg-slate-600 text-white' : 'bg-blue-900/50 border-blue-500/50 hover:bg-blue-800/70 text-blue-300';
+        const toggleStateClass = isMaxed ? ' research-max-toggle--undo' : '';
         
-        quickButtonsHtml += `<button class="quick-set-btn max-toggle-btn px-1.5 sm:px-2 py-0.5 sm:py-1 ${toggleColor} border rounded text-[9px] sm:text-[10px] font-black transition-colors" data-val="${toggleVal}">${toggleText}</button>`;
+        quickButtonsHtml += `<button class="quick-set-btn max-toggle-btn research-quick-btn research-max-toggle${toggleStateClass}" data-val="${toggleVal}">${toggleText}</button>`;
 
-        let colClass = node.col ? `sm:col-start-${node.col}` : '';
+        const colAttr = node.col ? ` data-node-col="${node.col}"` : '';
+        const safeName = escapeHtml(node.name);
+        const safeBuff = escapeHtml(node.buff);
 
         return `
-            <div class="${colClass} flex justify-center w-full relative z-10">
-                <div class="tech-node-container flex flex-col bg-slate-800/95 w-full sm:w-[310px] max-w-[340px] shrink-0 p-3 sm:p-5 rounded-xl sm:rounded-2xl border relative transition-all ${maxedContainerStyle}" data-node-id="${node.id}">
-                    <div class="flex justify-between items-start mb-2 sm:mb-3">
-                        <div class="pr-2 flex-1 min-w-0">
-                            <span class="text-[13px] sm:text-base font-black text-white block leading-tight drop-shadow-sm break-words whitespace-normal">${node.name}</span>
-                            <span class="text-[9px] sm:text-[11px] text-sky-400 font-semibold uppercase tracking-wider mt-0.5 sm:mt-1 block break-words whitespace-normal">${node.buff}</span>
+            <div class="research-tree-node-cell"${colAttr}>
+                <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}">
+                    <div class="research-node-head">
+                        <div class="research-node-copy">
+                            <span class="research-node-title">${safeName}</span>
+                            <span class="research-node-buff">${safeBuff}</span>
                         </div>
-                        <div class="flex flex-col items-end text-right shrink-0 min-w-[70px] sm:min-w-[90px]">
-                            <span class="text-[8px] sm:text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Remaining</span>
-                            <div class="node-cost-display flex flex-col w-full gap-1 sm:gap-1.5 tabular-nums text-right text-[10px] sm:text-xs">
-                            </div>
+                        <div class="research-node-remaining">
+                            <span class="research-node-remaining-label">Remaining</span>
+                            <div class="node-cost-display research-node-costs"></div>
                         </div>
                     </div>
                     
-                    <div class="flex flex-col gap-1.5 sm:gap-2 mt-auto">
-                        <div class="flex items-center gap-2 sm:gap-4 bg-slate-900/80 p-1.5 sm:p-3 rounded-lg sm:rounded-xl border border-slate-700/50 shadow-inner">
-                            <div class="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px]">
-                                <span class="text-[7px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Lvl</span>
-                                <input type="number" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-input w-10 sm:w-14 bg-slate-800 border border-slate-600 rounded text-center text-white font-black py-0.5 sm:py-1 text-[10px] sm:text-sm outline-none focus:border-blue-500 focus:bg-slate-700 transition-colors">
+                    <div class="research-node-controls">
+                        <div class="research-node-slider-row">
+                            <div class="research-node-level">
+                                <span class="research-node-mini-label">Lvl</span>
+                                <input type="number" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-input research-node-input">
                             </div>
-                            <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider flex-1 h-1.5 sm:h-2 bg-slate-700 rounded-full appearance-none cursor-pointer outline-none" style="accent-color: #3b82f6;">
-                            <div class="flex flex-col items-center justify-center min-w-[25px] sm:min-w-[35px] px-1">
-                                <span class="text-[7px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Max</span>
-                                <span class="text-[10px] sm:text-sm font-black text-slate-400">${node.maxLevel}</span>
+                            <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider research-node-slider">
+                            <div class="research-node-max">
+                                <span class="research-node-mini-label">Max</span>
+                                <span class="research-node-max-value">${node.maxLevel}</span>
                             </div>
                         </div>
-                        <div class="flex justify-between gap-1 w-full mt-0.5 sm:mt-1">
+                        <div class="research-node-quick-row">
                             ${quickButtonsHtml}
                         </div>
                     </div>
@@ -870,19 +872,19 @@ function renderCalculator(tech) {
         });
         const rKeys = Object.keys(rowGroups).map(Number).sort((a,b)=>a-b);
         
-        let gHtml = '<div class="flex flex-col items-center w-full px-2">';
+        let gHtml = '<div class="research-tree-group">';
         rKeys.forEach((rk, i) => {
             const rNodes = rowGroups[rk];
             rNodes.sort((a,b) => a.col - b.col);
             
-            gHtml += `<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 relative z-10 w-full max-w-[1000px] mb-3 sm:mb-4">`;
+            gHtml += `<div class="research-tree-row">`;
             rNodes.forEach(n => gHtml += buildNodeHtml(n));
             gHtml += `</div>`;
             
             if (i < rKeys.length - 1) {
                 gHtml += `
-                    <div class="flex flex-col items-center w-full relative z-0 -my-4 sm:-my-6 pointer-events-none opacity-70">
-                        <div class="w-[2px] sm:w-[3px] h-6 sm:h-10 bg-gradient-to-b from-sky-500/60 via-sky-500/30 to-transparent shadow-[0_0_8px_rgba(14,165,233,0.5)] rounded-full"></div>
+                    <div class="research-tree-connector">
+                        <div class="research-tree-connector-line"></div>
                     </div>`;
             }
         });
@@ -895,7 +897,7 @@ function renderCalculator(tech) {
             <div class="research-calc-header">
                 <div>
                     <h3 class="research-calc-title">${tech.name} <span class="research-calc-season">(${tech.season})</span></h3>
-                    <p class="research-calc-sub">Primary Cost: <span class="text-white">${tech.primaryResource}</span></p>
+                    <p class="research-calc-sub">Primary Cost: <span class="research-calc-primary">${tech.primaryResource}</span></p>
                 </div>
                 <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -907,10 +909,10 @@ function renderCalculator(tech) {
             </div>
         </div>
         
-        <div class="overflow-x-hidden overflow-y-auto max-h-[60vh] custom-scrollbar bg-slate-950/40 rounded-xl sm:rounded-2xl border border-slate-800 shadow-inner relative mb-3 sm:mb-4">
+        <div class="research-tree-scroll custom-scrollbar">
     `;
 
-    let treeHtml = `<div class="flex flex-col items-center py-4 sm:py-6 w-full relative">`;
+    let treeHtml = `<div class="research-tree-root">`;
     
     if (trunkNodes.length) {
         treeHtml += renderNodeGroup(trunkNodes);
@@ -920,14 +922,14 @@ function renderCalculator(tech) {
     if (hasBranches) {
         if (trunkNodes.length) {
             treeHtml += `
-                <div class="flex flex-col items-center w-full relative z-0 -my-2 sm:-my-4 pointer-events-none opacity-70">
-                    <div class="w-[2px] sm:w-[3px] h-6 sm:h-10 bg-gradient-to-b from-sky-500/60 via-sky-500/30 to-transparent shadow-[0_0_8px_rgba(14,165,233,0.5)] rounded-full"></div>
+                <div class="research-tree-connector research-tree-connector--short">
+                    <div class="research-tree-connector-line"></div>
                 </div>
             `;
         }
 
         treeHtml += `
-            <div class="research-branch-segment relative z-10 px-2">
+            <div class="research-branch-segment">
                 <button type="button" class="research-branch-btn branch-tab-btn active" data-target="branch_1">
                     <span>+</span><span>Footmen</span>
                 </button>
@@ -941,14 +943,14 @@ function renderCalculator(tech) {
         `;
 
         treeHtml += `
-            <div id="branch_1" class="branch-content w-full flex flex-col items-center animate-fade-in">
-                ${b1Nodes.length ? renderNodeGroup(b1Nodes) : '<p class="text-slate-500 italic">No nodes in this branch</p>'}
+            <div id="branch_1" class="branch-content research-branch-content">
+                ${b1Nodes.length ? renderNodeGroup(b1Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
             </div>
-            <div id="branch_2" class="branch-content w-full flex flex-col items-center hidden">
-                ${b2Nodes.length ? renderNodeGroup(b2Nodes) : '<p class="text-slate-500 italic">No nodes in this branch</p>'}
+            <div id="branch_2" class="branch-content research-branch-content hidden">
+                ${b2Nodes.length ? renderNodeGroup(b2Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
             </div>
-            <div id="branch_3" class="branch-content w-full flex flex-col items-center hidden">
-                ${b3Nodes.length ? renderNodeGroup(b3Nodes) : '<p class="text-slate-500 italic">No nodes in this branch</p>'}
+            <div id="branch_3" class="branch-content research-branch-content hidden">
+                ${b3Nodes.length ? renderNodeGroup(b3Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
             </div>
         `;
     }
@@ -959,11 +961,11 @@ function renderCalculator(tech) {
 
     html += `
         <div class="research-calc-total">
-            <div class="flex flex-col">
-                <span class="text-[11px] sm:text-sm text-amber-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">Tree Total</span>
-                <span class="text-[10px] sm:text-sm text-slate-400">Total remaining for this specific tree</span>
+            <div class="research-tree-total-copy">
+                <span class="research-tree-total-label">Tree Total</span>
+                <span class="research-tree-total-hint">Total remaining for this specific tree</span>
             </div>
-            <div id="totalTechCost" class="flex flex-col items-start sm:items-end gap-1.5 sm:gap-2 tabular-nums"></div>
+            <div id="totalTechCost" class="research-total-costs"></div>
         </div>
     `;
 
@@ -1006,20 +1008,18 @@ function renderCalculator(tech) {
 
             // Dynamic Gray-out & Button Swap
             if (v === max) {
-                cont.classList.remove('border-slate-700', 'hover:border-slate-500', 'shadow-xl');
-                cont.classList.add('opacity-50', 'saturate-0', 'border-slate-800', 'shadow-none');
+                cont.classList.add('research-node-card--maxed');
                 if (maxBtn) {
                     maxBtn.dataset.val = 0;
                     maxBtn.innerHTML = 'UNDO';
-                    maxBtn.className = 'quick-set-btn max-toggle-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-700 border border-slate-500 hover:bg-slate-600 text-white rounded text-[9px] sm:text-[10px] font-black transition-colors';
+                    maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle research-max-toggle--undo';
                 }
             } else {
-                cont.classList.add('border-slate-700', 'hover:border-slate-500', 'shadow-xl');
-                cont.classList.remove('opacity-50', 'saturate-0', 'border-slate-800', 'shadow-none');
+                cont.classList.remove('research-node-card--maxed');
                 if (maxBtn) {
                     maxBtn.dataset.val = max;
                     maxBtn.innerHTML = 'MAX';
-                    maxBtn.className = 'quick-set-btn max-toggle-btn px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-900/50 border border-blue-500/50 hover:bg-blue-800/70 text-blue-300 rounded text-[9px] sm:text-[10px] font-black transition-colors';
+                    maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle';
                 }
             }
 
@@ -1054,9 +1054,9 @@ function calculateTechTotals(tech) {
     let grandTotalWisdom = 0;
     let grandTotalOther = 0;
     
-    const iconCM = `<img src="images/CM.png" class="w-3 h-3 sm:w-5 sm:h-5 inline-block object-contain shrink-0" alt="CM">`;
-    const iconWB = `<img src="images/WB.png" class="w-3 h-3 sm:w-5 sm:h-5 inline-block object-contain shrink-0" alt="WB">`;
-    const iconRes = `<svg class="w-3 h-3 sm:w-5 sm:h-5 text-amber-400 inline-block shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>`;
+    const iconCM = `<img src="images/CM.png" class="research-cost-icon" alt="CM">`;
+    const iconWB = `<img src="images/WB.png" class="research-cost-icon" alt="WB">`;
+    const iconRes = `<svg class="research-cost-icon research-cost-icon--res" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>`;
 
     tech.nodes.forEach(node => {
         const container = document.querySelector(`.tech-node-container[data-node-id="${node.id}"]`);
@@ -1095,19 +1095,19 @@ function calculateTechTotals(tech) {
             } else if (node.costType === "Dual") {
                 display.innerHTML = isGamePill
                     ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-                    : `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span><span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30 mt-1">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
+                    : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
             } else if (node.costType === "Courage") {
                 display.innerHTML = isGamePill
                     ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-                    : `<span class="flex items-center justify-between w-full text-blue-300 font-bold bg-blue-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-blue-500/30">${iconCM} <span>${nodeCourage.toLocaleString()}</span></span>`;
+                    : `<span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
             } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
                 display.innerHTML = isGamePill
                     ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`
-                    : `<span class="flex items-center justify-between w-full text-purple-300 font-bold bg-purple-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-purple-500/30">${iconWB} <span>${nodeWisdom.toLocaleString()}</span></span>`;
+                    : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`;
             } else {
                 display.innerHTML = isGamePill
                     ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
-                    : `<span class="flex items-center justify-between w-full text-amber-400 font-bold bg-amber-900/30 px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-amber-500/30">${iconRes} <span>${nodeOther.toLocaleString()}</span></span>`;
+                    : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`;
             }
         }
 
@@ -1124,33 +1124,33 @@ function calculateTechTotals(tech) {
 
     if (isDualString || hasBoth) {
         totalContainer.innerHTML = `
-            <span class="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4 text-base sm:text-2xl font-black text-purple-300 bg-purple-900/40 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-purple-500/50 shadow-inner">
-                <span class="flex items-center">${iconWB} <span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-purple-400 uppercase tracking-widest hidden sm:inline">War Badges</span><span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-purple-400 uppercase tracking-widest sm:hidden">WB</span></span> 
+            <span class="research-cost-summary research-cost-summary--wb">
+                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">War Badges</span><span class="research-cost-summary-label-short">WB</span></span>
                 <span>${grandTotalWisdom.toLocaleString()}</span>
             </span>
-            <span class="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4 text-base sm:text-2xl font-black text-blue-300 bg-blue-900/40 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-blue-500/50 shadow-inner mt-2 sm:mt-0">
-                <span class="flex items-center">${iconCM} <span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-blue-400 uppercase tracking-widest hidden sm:inline">Courage Medals</span><span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-blue-400 uppercase tracking-widest sm:hidden">CM</span></span> 
+            <span class="research-cost-summary research-cost-summary--cm">
+                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">Courage Medals</span><span class="research-cost-summary-label-short">CM</span></span>
                 <span>${grandTotalCourage.toLocaleString()}</span>
             </span>
         `;
     } else if (grandTotalWisdom > 0 || tech.primaryResource.includes("Wisdom") || tech.primaryResource.includes("War Badge")) {
         totalContainer.innerHTML = `
-            <span class="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4 text-base sm:text-2xl font-black text-purple-300 bg-purple-900/40 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-purple-500/50 shadow-inner">
-                <span class="flex items-center">${iconWB} <span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-purple-400 uppercase tracking-widest hidden sm:inline">War Badges</span><span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-purple-400 uppercase tracking-widest sm:hidden">WB</span></span> 
+            <span class="research-cost-summary research-cost-summary--wb">
+                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">War Badges</span><span class="research-cost-summary-label-short">WB</span></span>
                 <span>${grandTotalWisdom.toLocaleString()}</span>
             </span>
         `;
     } else if (grandTotalCourage > 0 || tech.primaryResource.includes("Courage")) {
         totalContainer.innerHTML = `
-            <span class="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4 text-base sm:text-2xl font-black text-blue-300 bg-blue-900/40 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-blue-500/50 shadow-inner">
-                <span class="flex items-center">${iconCM} <span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-blue-400 uppercase tracking-widest hidden sm:inline">Courage Medals</span><span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-blue-400 uppercase tracking-widest sm:hidden">CM</span></span> 
+            <span class="research-cost-summary research-cost-summary--cm">
+                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">Courage Medals</span><span class="research-cost-summary-label-short">CM</span></span>
                 <span>${grandTotalCourage.toLocaleString()}</span>
             </span>
         `;
     } else {
         totalContainer.innerHTML = `
-            <span class="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4 text-base sm:text-2xl font-black text-amber-400 bg-amber-900/40 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-amber-500/50 shadow-inner">
-                <span class="flex items-center">${iconRes} <span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-amber-500 uppercase tracking-widest hidden sm:inline">Resources</span><span class="ml-1 sm:ml-2 text-[10px] sm:text-sm font-bold text-amber-500 uppercase tracking-widest sm:hidden">Res</span></span> 
+            <span class="research-cost-summary research-cost-summary--res">
+                <span class="research-cost-summary-label">${iconRes}<span class="research-cost-summary-label-full">Resources</span><span class="research-cost-summary-label-short">Res</span></span>
                 <span>${grandTotalOther.toLocaleString()}</span>
             </span>
         `;

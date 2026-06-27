@@ -4,16 +4,11 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
-const appShellFiles = [
+const baseAppShellFiles = [
   '/',
   '/index.html',
   '/404.html',
   '/site.webmanifest',
-  '/css/app.css',
-  '/css/tailwind-build.css',
-  '/css/mobile.css',
-  '/css/light-theme-overrides.css',
-  '/css/v12-redesign.css',
   '/js/admin-auth-config.js',
   '/js/app-loading.js',
   '/js/app.js',
@@ -53,13 +48,17 @@ function updateCacheBusters() {
     if (!fs.existsSync(path.join(root, file))) continue;
     const html = readText(file)
       .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`)
-      .replace(/(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g, `$1?v=${buildVersion}"`);
+      .replace(
+        /(src="js\/(?:app|admin-page)\.js)(?:\?v=[0-9A-Za-z_-]+)?"/g,
+        `$1?v=${buildVersion}"`
+      );
     writeText(file, html);
   }
 
   const adminPagePath = path.join(root, 'js', 'admin-page.js');
   if (fs.existsSync(adminPagePath)) {
-    const adminPage = fs.readFileSync(adminPagePath, 'utf8')
+    const adminPage = fs
+      .readFileSync(adminPagePath, 'utf8')
       .replace(/ocr-dashboard\.js(?:\?v=[0-9A-Za-z_-]+)?/g, `ocr-dashboard.js?v=${buildVersion}`);
     fs.writeFileSync(adminPagePath, adminPage);
   }
@@ -71,8 +70,33 @@ function publicUrlExists(url) {
   return fs.existsSync(path.join(root, rel)) || fs.existsSync(path.join(root, 'public', rel));
 }
 
+function normalizePublicAssetUrl(url) {
+  if (!url || url.startsWith('#') || url.startsWith('data:')) return '';
+  if (/^https?:\/\//i.test(url)) return '';
+  const clean = url.split('#')[0].split('?')[0];
+  return clean ? `/${clean.replace(/^\/+/, '')}` : '';
+}
+
+function collectLinkedAssets() {
+  const htmlFiles = ['index.html', 'admin.html'];
+  const assetPattern =
+    /\b(?:href|src|content)=["']([^"']+\.(?:css|js|webp|png|webmanifest))(?:\?[^"']*)?["']/gi;
+  const assets = new Set();
+
+  for (const file of htmlFiles) {
+    if (!fs.existsSync(path.join(root, file))) continue;
+    const html = readText(file);
+    for (const match of html.matchAll(assetPattern)) {
+      const asset = normalizePublicAssetUrl(match[1]);
+      if (asset) assets.add(asset);
+    }
+  }
+
+  return assets;
+}
+
 function buildPrecacheUrls() {
-  const urls = new Set(appShellFiles.filter(publicUrlExists));
+  const urls = new Set([...baseAppShellFiles, ...collectLinkedAssets()].filter(publicUrlExists));
   return [...urls].sort((a, b) => a.localeCompare(b));
 }
 
@@ -187,7 +211,9 @@ self.addEventListener('fetch', (event) => {
 });
 `;
   writeText('public/sw.js', sw);
-  console.log(`Updated build metadata ${buildVersion}; service worker precaches ${urls.length} URLs.`);
+  console.log(
+    `Updated build metadata ${buildVersion}; service worker precaches ${urls.length} URLs.`
+  );
 }
 
 updateCacheBusters();

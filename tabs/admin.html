@@ -1,400 +1,1418 @@
-      <div id="ocrDashboardRoot">
-        <!-- Login Screen -->
-        <div id="dashLogin" class="dash-login-wrap">
-          <div class="dash-login-card">
-            <div class="dash-login-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+<div id="ocrDashboardRoot">
+  <!-- Login Screen -->
+  <div id="dashLogin" class="dash-login-wrap">
+    <div class="dash-login-card">
+      <div class="dash-login-icon">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      </div>
+      <h2 class="dash-login-title" data-i18n="adminLoginTitle">VTS Admin</h2>
+      <p class="dash-login-sub" data-i18n="adminLoginSub">Alliance Structure Attack Analytics</p>
+      <div id="dashLoginErr" class="dash-login-err hidden"></div>
+      <input
+        type="text"
+        id="dashLoginUser"
+        class="dash-input"
+        placeholder="Username"
+        data-i18n-ph="adminLoginUser"
+        autocomplete="username"
+      />
+      <input
+        type="password"
+        id="dashLoginPass"
+        class="dash-input"
+        placeholder="Password"
+        data-i18n-ph="adminLoginPass"
+        autocomplete="current-password"
+      />
+      <button id="dashLoginBtn" class="dash-btn dash-btn-primary" data-i18n="adminLoginBtn">
+        Sign In as Admin
+      </button>
+      <p id="dashServerStatus" class="dash-server-status"></p>
+    </div>
+  </div>
+
+  <!-- Connecting Overlay (shown while loading data after sign-in) -->
+  <div id="dashConnecting" class="dash-connecting hidden" role="status" aria-live="polite">
+    <div class="dash-connecting-stage">
+      <div class="dash-connecting-sigil" aria-hidden="true">
+        <div class="dash-sigil-aura"></div>
+        <div class="dash-sigil-body">
+          <div class="dash-sigil-grid"></div>
+          <div class="dash-sigil-sweep"></div>
+          <div class="dash-sigil-routes">
+            <span class="dash-sigil-route dash-sigil-route--a"></span>
+            <span class="dash-sigil-route dash-sigil-route--b"></span>
+            <span class="dash-sigil-route dash-sigil-route--c"></span>
+          </div>
+          <div class="dash-sigil-ring dash-sigil-ring--ice">
+            <span class="dash-sigil-crystal dash-sigil-crystal--a"></span>
+            <span class="dash-sigil-crystal dash-sigil-crystal--b"></span>
+            <span class="dash-sigil-crystal dash-sigil-crystal--c"></span>
+          </div>
+          <div class="dash-sigil-ring dash-sigil-ring--fire">
+            <span class="dash-sigil-ember dash-sigil-ember--a"></span>
+            <span class="dash-sigil-ember dash-sigil-ember--b"></span>
+            <span class="dash-sigil-ember dash-sigil-ember--c"></span>
+            <span class="dash-sigil-ember dash-sigil-ember--d"></span>
+          </div>
+          <div class="dash-sigil-emblem">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
+              <path d="M12 7v8" />
+              <path d="M9 11h6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="dash-connecting-kicker">ICE &amp; FIRE TOOLKIT · STATE 1097</p>
+      <h2 class="dash-connecting-title" data-i18n="adminConnectingTitle">
+        Connecting to Dashboard
+      </h2>
+      <div class="dash-connecting-bar-wrap">
+        <span class="dash-connecting-bar"
+          ><span id="dashConnectingBarFill" class="dash-connecting-bar-fill"></span
+        ></span>
+        <span id="dashConnectingBarPct" class="dash-connecting-bar-pct">0%</span>
+      </div>
+      <p id="dashConnectingStatus" class="dash-connecting-status"></p>
+    </div>
+  </div>
+
+  <!-- Dashboard Main -->
+  <div id="dashApp" class="hidden">
+    <div class="dash-container">
+      <div class="dash-header">
+        <div>
+          <h1 class="dash-h1" data-i18n="adminHeaderTitle">Structure Attack Analytics</h1>
+          <div class="dash-subtitle">
+            <span data-i18n="adminHeaderSub">Alliance Demolition Tracker</span
+            ><span id="dashUpdated" class="dash-updated"></span
+            ><span id="dashSyncIndicator" class="live-sync-indicator hidden"
+              ><span class="live-sync-dot"></span
+              ><span data-i18n="adminHeaderLive">Live</span></span
+            >
+          </div>
+          <div
+            id="dashCloudStatus"
+            class="dash-cloud-status hidden"
+            data-state="syncing"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="dash-cloud-status-dot" aria-hidden="true"></span>
+            <span id="dashCloudStatusText"></span>
+          </div>
+          <div id="dashApiKeyContainer" class="dash-api-key">
+            <span class="dash-api-key-note">OCR uploads use the secured Worker key.</span>
+            <div class="dash-api-key-actions">
+              <span id="dashOcrServiceStatus" class="dash-roster-api-status"></span>
+              <button id="dashSaveApiBtn" class="dash-btn dash-save-api-btn">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Check OCR</span>
+              </button>
             </div>
-            <h2 class="dash-login-title" data-i18n="adminLoginTitle">VTS Admin</h2>
-            <p class="dash-login-sub" data-i18n="adminLoginSub">Alliance Structure Attack Analytics</p>
-            <div id="dashLoginErr" class="dash-login-err hidden"></div>
-            <input type="text" id="dashLoginUser" class="dash-input" placeholder="Username" data-i18n-ph="adminLoginUser" autocomplete="username">
-            <input type="password" id="dashLoginPass" class="dash-input" placeholder="Password" data-i18n-ph="adminLoginPass" autocomplete="current-password">
-            <button id="dashLoginBtn" class="dash-btn dash-btn-primary" data-i18n="adminLoginBtn">Sign In as Admin</button>
-            <p id="dashServerStatus" class="dash-server-status"></p>
+          </div>
+        </div>
+        <div class="dash-actions">
+          <button id="dashUploadBtn" class="dash-btn dash-btn-primary">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" /></svg
+            ><span data-i18n="adminBtnUpload">Upload</span>
+          </button>
+
+          <!-- Unified Export Dropdown -->
+          <div class="dash-dropdown">
+            <button id="dashExportMenuBtn" class="dash-btn">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" /></svg
+              ><span data-i18n="adminBtnExport">Export</span>
+            </button>
+            <div class="dash-dropdown-content" id="dashExportMenu">
+              <button id="dashExpCsv">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span data-i18n="adminExpCsvLead">CSV Leaderboard</span>
+              </button>
+              <button id="dashExpAttackCsv">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="12" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span data-i18n="adminExpCsvAtt">CSV Attack Details</span>
+              </button>
+              <button id="dashExpDebugCsv">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="12" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span>CSV Debug Data</span>
+              </button>
+              <button id="dashExpDutyDebugCsv">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Duty Debug (Banner/Pather)</span>
+              </button>
+              <button id="dashExpPdf">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M6 9V2h12v7" />
+                  <path
+                    d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+                  />
+                  <rect x="6" y="14" width="12" height="8" /></svg
+                ><span data-i18n="adminExpPdf">PDF Report</span>
+              </button>
+              <button id="dashExpPng">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  />
+                  <circle cx="12" cy="13" r="4" /></svg
+                ><span data-i18n="adminExpPng">PNG Dashboard</span>
+              </button>
+              <button id="dashExpJson">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" /></svg
+                ><span data-i18n="adminExpJson">JSON Backup</span>
+              </button>
+              <hr />
+              <button id="dashImportBtn">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" /></svg
+                ><span data-i18n="adminExpImport">Import Data</span>
+              </button>
+            </div>
+          </div>
+
+          <button id="dashRefreshBtn" class="dash-btn">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg
+            ><span data-i18n="adminBtnRefresh">Refresh</span>
+          </button>
+
+          <button id="dashClearDataBtn" class="dash-btn dash-btn-danger">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" /></svg
+            ><span data-i18n="adminBtnClear">Clear All</span>
+          </button>
+          <button id="dashSignOutBtn" class="dash-btn">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" /></svg
+            ><span data-i18n="adminSignOutBtn">Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sub-tab Navigation -->
+      <div class="dash-subtab-nav">
+        <button class="dash-subtab-btn dash-subtab-active" data-subtab="dashboard">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" /></svg
+          ><span data-i18n="adminDashboardTab">Dashboard</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="analytics">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M3 3v18h18" />
+            <path d="M7 15l3-3 3 2 5-7" />
+            <circle cx="7" cy="15" r="1" />
+            <circle cx="10" cy="12" r="1" />
+            <circle cx="13" cy="14" r="1" />
+            <circle cx="18" cy="7" r="1" /></svg
+          ><span data-i18n="adminAnalyticsTab">Analytics</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="contributions">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M8 21h8" />
+            <path d="M12 17v4" />
+            <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+            <path d="M5 4H3v3a3 3 0 0 0 4 2.83" />
+            <path d="M19 4h2v3a3 3 0 0 1-4 2.83" /></svg
+          ><span data-i18n="adminContributionsTab">Contributions</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="conduct">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M9 12l2 2 4-5" />
+            <path d="M12 3 5 6v5c0 4 3 8 7 10 4-2 7-6 7-10V6l-7-3z" /></svg
+          ><span data-i18n="adminConductTab">Conduct</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="uploadStructures">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" /></svg
+          ><span data-i18n="adminUploadStructuresTab">Upload Structures</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="pathers">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M4 19c4-8 12-8 16-16" />
+            <path d="M5 10h8" />
+            <path d="M11 4v8" /></svg
+          ><span data-i18n="adminPathersTab">Pathers</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="banners">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M4 21V3h12l2 4-2 4H4" />
+            <path d="M20 21V3" /></svg
+          ><span data-i18n="adminBannersTab">Banners List</span>
+        </button>
+        <button class="dash-subtab-btn" data-subtab="shieldWall">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3z" /></svg
+          ><span data-i18n="adminShieldWallTab">Shield Wall</span>
+        </button>
+      </div>
+
+      <!-- Analysis Terminal — global log across all admin subtabs -->
+      <div id="dashLogArea" class="dash-log-area dash-terminal-shared">
+        <div class="dash-log-hdr">
+          <span data-i18n="adminTerminal">Analysis Terminal</span
+          ><button
+            id="dashClearLogBtn"
+            class="dash-btn-xs dash-muted-action"
+            data-i18n="adminTerminalClear"
+          >
+            Clear
+          </button>
+        </div>
+        <div id="dashLogOutput" class="dash-log-output"></div>
+      </div>
+
+      <!-- Sub-tab: Upload Structures -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabUploadStructures">
+        <div id="dashUploadStructuresMount"></div>
+      </div>
+
+      <!-- Sub-tab: Dashboard -->
+      <div class="dash-subtab-panel" id="dashSubtabDashboard">
+        <div id="dashUploadZone" class="dash-upload-zone hidden">
+          <div id="dashApiUploadStatus" class="dash-roster-api-status"></div>
+          <div id="dashDropZone" class="dash-dropzone">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p data-i18n="adminUploadDrop">Drop screenshots here or click to browse</p>
+            <span class="dash-hint" data-i18n="adminUploadHint"
+              >PNG, JPG — Multiple structures supported</span
+            >
+            <input
+              type="file"
+              id="dashFileInput"
+              class="dash-file-input"
+              accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+              multiple
+            />
+          </div>
+          <div id="dashProgress" class="dash-progress hidden">
+            <div class="dash-progress-bar">
+              <span id="dashProgressFill" class="dash-progress-fill"></span>
+            </div>
+            <span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading"
+              >Uploading...</span
+            ><button
+              id="dashCancelOcrBtn"
+              type="button"
+              class="dash-btn dash-btn-sm dash-cancel-ocr hidden"
+              data-i18n="adminCancel"
+            >
+              Cancel
+            </button>
+          </div>
+          <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="dash-kpi-grid">
+          <div class="dash-card dash-kpi blue">
+            <div class="dash-kpi-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div>
+              <div class="dash-kpi-value" id="dashKpiAttacks">0</div>
+              <div class="dash-kpi-label" data-i18n="adminKpiHits">Structure Hits</div>
+            </div>
+          </div>
+          <div class="dash-card dash-kpi teal">
+            <div class="dash-kpi-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="12 2 2 22 22 22" />
+              </svg>
+            </div>
+            <div>
+              <div class="dash-kpi-value" id="dashKpiDemo">0</div>
+              <div class="dash-kpi-label" data-i18n="adminKpiDemo">Total Demolition</div>
+            </div>
+          </div>
+          <div class="dash-card dash-kpi purple">
+            <div class="dash-kpi-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div>
+              <div class="dash-kpi-value" id="dashKpiPlayers">0</div>
+              <div class="dash-kpi-label" data-i18n="adminKpiPlayers">Active Players</div>
+            </div>
+          </div>
+          <div class="dash-card dash-kpi orange">
+            <div class="dash-kpi-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                />
+              </svg>
+            </div>
+            <div>
+              <div class="dash-kpi-value dash-kpi-value-compact" id="dashKpiMvp">---</div>
+              <div class="dash-kpi-label" id="dashKpiMvpLabel" data-i18n="adminKpiMvp">
+                MVP Contributor
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Connecting Overlay (shown while loading data after sign-in) -->
-        <div id="dashConnecting" class="dash-connecting hidden" role="status" aria-live="polite">
-          <div class="dash-connecting-stage">
-            <div class="dash-connecting-sigil" aria-hidden="true">
-              <div class="dash-sigil-aura"></div>
-              <div class="dash-sigil-body">
-                <div class="dash-sigil-grid"></div>
-                <div class="dash-sigil-sweep"></div>
-                <div class="dash-sigil-routes">
-                  <span class="dash-sigil-route dash-sigil-route--a"></span>
-                  <span class="dash-sigil-route dash-sigil-route--b"></span>
-                  <span class="dash-sigil-route dash-sigil-route--c"></span>
-                </div>
-                <div class="dash-sigil-ring dash-sigil-ring--ice">
-                  <span class="dash-sigil-crystal dash-sigil-crystal--a"></span>
-                  <span class="dash-sigil-crystal dash-sigil-crystal--b"></span>
-                  <span class="dash-sigil-crystal dash-sigil-crystal--c"></span>
-                </div>
-                <div class="dash-sigil-ring dash-sigil-ring--fire">
-                  <span class="dash-sigil-ember dash-sigil-ember--a"></span>
-                  <span class="dash-sigil-ember dash-sigil-ember--b"></span>
-                  <span class="dash-sigil-ember dash-sigil-ember--c"></span>
-                  <span class="dash-sigil-ember dash-sigil-ember--d"></span>
-                </div>
-                <div class="dash-sigil-emblem">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/>
-                    <path d="M12 7v8"/><path d="M9 11h6"/>
+        <div id="dashOpsOverview" class="dash-ops-overview">
+          <div class="dash-ops-lead">
+            <span class="dash-ops-kicker" data-i18n="adminOfficerSnapshot">Officer Snapshot</span>
+            <strong data-i18n="adminOfficerSignals"
+              >Command signals from uploaded structure hits</strong
+            >
+            <button
+              id="dashOpenAnalyticsBtn"
+              class="dash-btn dash-btn-primary dash-ops-analytics-btn"
+              type="button"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 3v18h18" />
+                <path d="M7 15l3-3 3 2 5-7" />
+              </svg>
+              <span data-i18n="adminOpenAnalytics">Open Analytics</span>
+            </button>
+          </div>
+          <div id="dashOpsCards" class="dash-ops-grid">
+            <div class="dash-ops-card dash-ops-card-empty" data-i18n="adminOfficerEmpty">
+              Upload attack screenshots to unlock officer insights.
+            </div>
+          </div>
+        </div>
+
+        <!-- Visuals Row -->
+        <div class="dash-main-grid dash-visuals-grid">
+          <div class="dash-card dash-chart-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" /></svg
+                ><span data-i18n="adminChartTop">Top Performers</span>
+              </h2>
+              <div class="dash-inline-actions">
+                <button
+                  id="dashShareChartBtn"
+                  class="dash-btn dash-btn-xs"
+                  title="Share via Device"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                   </svg>
-                </div>
-              </div>
-            </div>
-            <p class="dash-connecting-kicker">ICE &amp; FIRE TOOLKIT · STATE 1097</p>
-            <h2 class="dash-connecting-title" data-i18n="adminConnectingTitle">Connecting to Dashboard</h2>
-            <div class="dash-connecting-bar-wrap">
-              <span class="dash-connecting-bar"><span id="dashConnectingBarFill" class="dash-connecting-bar-fill"></span></span>
-              <span id="dashConnectingBarPct" class="dash-connecting-bar-pct">0%</span>
-            </div>
-            <p id="dashConnectingStatus" class="dash-connecting-status"></p>
-          </div>
-        </div>
-
-        <!-- Dashboard Main -->
-        <div id="dashApp" class="hidden">
-          <div class="dash-container">
-            <div class="dash-header">
-              <div>
-                <h1 class="dash-h1" data-i18n="adminHeaderTitle">Structure Attack Analytics</h1>
-                <div class="dash-subtitle"><span data-i18n="adminHeaderSub">Alliance Demolition Tracker</span><span id="dashUpdated" class="dash-updated"></span><span id="dashSyncIndicator" class="text-[10px] text-emerald-400 ml-2 hidden font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span data-i18n="adminHeaderLive">Live</span></span></div>
-                <div id="dashCloudStatus" class="dash-cloud-status hidden" data-state="syncing" role="status" aria-live="polite">
-                  <span class="dash-cloud-status-dot" aria-hidden="true"></span>
-                  <span id="dashCloudStatusText"></span>
-                </div>
-                <div id="dashApiKeyContainer" class="dash-api-key">
-                  <span class="dash-api-key-note">OCR uploads use the secured Worker key.</span>
-                  <div class="dash-api-key-actions">
-                    <span id="dashOcrServiceStatus" class="dash-roster-api-status"></span>
-                    <button id="dashSaveApiBtn" class="dash-btn dash-save-api-btn">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span>Check OCR</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="dash-actions">
-                <button id="dashUploadBtn" class="dash-btn dash-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminBtnUpload">Upload</span></button>
-                
-                <!-- Unified Export Dropdown -->
-                <div class="dash-dropdown">
-                  <button id="dashExportMenuBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="adminBtnExport">Export</span></button>
-                  <div class="dash-dropdown-content" id="dashExportMenu">
-                    <button id="dashExpCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span data-i18n="adminExpCsvLead">CSV Leaderboard</span></button>
-                    <button id="dashExpAttackCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span data-i18n="adminExpCsvAtt">CSV Attack Details</span></button>
-                    <button id="dashExpDebugCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Debug Data</span></button>
-                    <button id="dashExpDutyDebugCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Duty Debug (Banner/Pather)</span></button>
-                    <button id="dashExpPdf"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span data-i18n="adminExpPdf">PDF Report</span></button>
-                    <button id="dashExpPng"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="adminExpPng">PNG Dashboard</span></button>
-                    <button id="dashExpJson"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminExpJson">JSON Backup</span></button>
-                    <hr>
-                    <button id="dashImportBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminExpImport">Import Data</span></button>
-                  </div>
-                </div>
-
-                <button id="dashRefreshBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="adminBtnRefresh">Refresh</span></button>
-
-                <button id="dashClearDataBtn" class="dash-btn dash-btn-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span data-i18n="adminBtnClear">Clear All</span></button>
-                <button id="dashSignOutBtn" class="dash-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span data-i18n="adminSignOutBtn">Sign Out</span></button>
-              </div>
-
-            </div>
-
-            <!-- Sub-tab Navigation -->
-            <div class="dash-subtab-nav">
-              <button class="dash-subtab-btn dash-subtab-active" data-subtab="dashboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span data-i18n="adminDashboardTab">Dashboard</span></button>
-              <button class="dash-subtab-btn" data-subtab="analytics"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/><circle cx="7" cy="15" r="1"/><circle cx="10" cy="12" r="1"/><circle cx="13" cy="14" r="1"/><circle cx="18" cy="7" r="1"/></svg><span data-i18n="adminAnalyticsTab">Analytics</span></button>
-              <button class="dash-subtab-btn" data-subtab="contributions"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v3a3 3 0 0 0 4 2.83"/><path d="M19 4h2v3a3 3 0 0 1-4 2.83"/></svg><span data-i18n="adminContributionsTab">Contributions</span></button>
-              <button class="dash-subtab-btn" data-subtab="uploadStructures"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="adminUploadStructuresTab">Upload Structures</span></button>
-              <button class="dash-subtab-btn" data-subtab="pathers"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4-8 12-8 16-16"/><path d="M5 10h8"/><path d="M11 4v8"/></svg><span data-i18n="adminPathersTab">Pathers</span></button>
-              <button class="dash-subtab-btn" data-subtab="banners"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h12l2 4-2 4H4"/><path d="M20 21V3"/></svg><span data-i18n="adminBannersTab">Banners List</span></button>
-              <button class="dash-subtab-btn" data-subtab="shieldWall"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3z"/></svg><span data-i18n="adminShieldWallTab">Shield Wall</span></button>
-            </div>
-
-            <!-- Analysis Terminal — global log across all admin subtabs -->
-            <div id="dashLogArea" class="dash-log-area dash-terminal-shared">
-              <div class="dash-log-hdr"><span data-i18n="adminTerminal">Analysis Terminal</span><button id="dashClearLogBtn" class="dash-btn-xs dash-muted-action" data-i18n="adminTerminalClear">Clear</button></div>
-              <div id="dashLogOutput" class="dash-log-output"></div>
-            </div>
-
-            <!-- Sub-tab: Upload Structures -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabUploadStructures">
-              <div id="dashUploadStructuresMount"></div>
-            </div>
-
-            <!-- Sub-tab: Dashboard -->
-            <div class="dash-subtab-panel" id="dashSubtabDashboard">
-
-            <div id="dashUploadZone" class="dash-upload-zone hidden">
-              <div id="dashApiUploadStatus" class="dash-roster-api-status"></div>
-              <div id="dashDropZone" class="dash-dropzone">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <p data-i18n="adminUploadDrop">Drop screenshots here or click to browse</p>
-                <span class="dash-hint" data-i18n="adminUploadHint">PNG, JPG — Multiple structures supported</span>
-                <input type="file" id="dashFileInput" class="dash-file-input" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple>
-              </div>
-              <div id="dashProgress" class="dash-progress hidden"><div class="dash-progress-bar"><span id="dashProgressFill" class="dash-progress-fill"></span></div><span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading">Uploading...</span><button id="dashCancelOcrBtn" type="button" class="dash-btn dash-btn-sm dash-cancel-ocr hidden" data-i18n="adminCancel">Cancel</button></div>
-              <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
-            </div>
-
-            <!-- KPIs -->
-            <div class="dash-kpi-grid">
-              <div class="dash-card dash-kpi blue"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div><div class="dash-kpi-value" id="dashKpiAttacks">0</div><div class="dash-kpi-label" data-i18n="adminKpiHits">Structure Hits</div></div></div>
-              <div class="dash-card dash-kpi teal"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 22 22 22"/></svg></div><div><div class="dash-kpi-value" id="dashKpiDemo">0</div><div class="dash-kpi-label" data-i18n="adminKpiDemo">Total Demolition</div></div></div>
-              <div class="dash-card dash-kpi purple"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="dash-kpi-value" id="dashKpiPlayers">0</div><div class="dash-kpi-label" data-i18n="adminKpiPlayers">Active Players</div></div></div>
-              <div class="dash-card dash-kpi orange"><div class="dash-kpi-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="dash-kpi-value dash-kpi-value-compact" id="dashKpiMvp">---</div><div class="dash-kpi-label" id="dashKpiMvpLabel" data-i18n="adminKpiMvp">MVP Contributor</div></div></div>
-            </div>
-
-            <div id="dashOpsOverview" class="dash-ops-overview">
-              <div class="dash-ops-lead">
-                <span class="dash-ops-kicker" data-i18n="adminOfficerSnapshot">Officer Snapshot</span>
-                <strong data-i18n="adminOfficerSignals">Command signals from uploaded structure hits</strong>
-                <button id="dashOpenAnalyticsBtn" class="dash-btn dash-btn-primary dash-ops-analytics-btn" type="button">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/></svg>
-                  <span data-i18n="adminOpenAnalytics">Open Analytics</span>
+                </button>
+                <button id="dashExportChartBtn" class="dash-btn dash-btn-xs" title="Download Image">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
                 </button>
               </div>
-              <div id="dashOpsCards" class="dash-ops-grid">
-                <div class="dash-ops-card dash-ops-card-empty" data-i18n="adminOfficerEmpty">Upload attack screenshots to unlock officer insights.</div>
-              </div>
             </div>
-
-            <!-- Visuals Row -->
-            <div class="dash-main-grid dash-visuals-grid">
-              <div class="dash-card dash-chart-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span data-i18n="adminChartTop">Top Performers</span></h2>
-                  <div class="dash-inline-actions">
-                    <button id="dashShareChartBtn" class="dash-btn dash-btn-xs" title="Share via Device"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
-                    <button id="dashExportChartBtn" class="dash-btn dash-btn-xs" title="Download Image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-                  </div>
+            <div id="dashChart" class="dash-chart">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+          <div id="dashInsightsCard" class="dash-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                  <path d="M22 12A10 10 0 0 0 12 2v10z" /></svg
+                ><span data-i18n="adminChartInsights">Insights</span>
+              </h2>
+            </div>
+            <div class="dash-insights-body">
+              <div class="dash-insight-item">
+                <div class="dash-insight-hdr">
+                  <span data-i18n="adminInsightAvg">Performance Averages</span>
                 </div>
-                <div id="dashChart" class="dash-chart"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-              </div>
-              <div id="dashInsightsCard" class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span data-i18n="adminChartInsights">Insights</span></h2>
-                </div>
-                <div class="dash-insights-body">
-                  <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span data-i18n="adminInsightAvg">Performance Averages</span></div>
-                    <div class="dash-metric-grid">
-                       <div class="dash-metric-tile"><div class="dash-metric-label"><span data-i18n="adminInsightAvgAtt">Avg Attendance</span></div><div id="dashAvgAttend" class="dash-metric-value">--</div></div>
-                       <div class="dash-metric-tile"><div class="dash-metric-label"><span data-i18n="adminInsightAvgDemo">Demo / Player</span></div><div id="dashAvgDemo" class="dash-metric-value">--</div></div>
+                <div class="dash-metric-grid">
+                  <div class="dash-metric-tile">
+                    <div class="dash-metric-label">
+                      <span data-i18n="adminInsightAvgAtt">Avg Attendance</span>
                     </div>
+                    <div id="dashAvgAttend" class="dash-metric-value">--</div>
                   </div>
-                  <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span data-i18n="adminInsightPart">Participation Spread</span><span id="dashInsightPartPct" class="dash-insight-val">0%</span></div>
-                    <div id="dashPartChart" class="dash-mini-pie"></div>
-                  </div>
-                  <div class="dash-insight-item">
-                    <div class="dash-insight-hdr"><span data-i18n="adminInsightTrend">Activity Trend</span></div>
-                    <div id="dashTrendChart" class="dash-mini-trend"></div>
+                  <div class="dash-metric-tile">
+                    <div class="dash-metric-label">
+                      <span data-i18n="adminInsightAvgDemo">Demo / Player</span>
+                    </div>
+                    <div id="dashAvgDemo" class="dash-metric-value">--</div>
                   </div>
                 </div>
+              </div>
+              <div class="dash-insight-item">
+                <div class="dash-insight-hdr">
+                  <span data-i18n="adminInsightPart">Participation Spread</span
+                  ><span id="dashInsightPartPct" class="dash-insight-val">0%</span>
+                </div>
+                <div id="dashPartChart" class="dash-mini-pie"></div>
+              </div>
+              <div class="dash-insight-item">
+                <div class="dash-insight-hdr">
+                  <span data-i18n="adminInsightTrend">Activity Trend</span>
+                </div>
+                <div id="dashTrendChart" class="dash-mini-trend"></div>
               </div>
             </div>
-
-            <!-- Main Grid -->
-            <div class="dash-main-grid">
-              <div id="dashAttackHistoryCard" class="dash-card">
-                <div class="dash-card-hdr dash-card-hdr-wrap">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="adminHistoryTitle">Attack History</span></h2>
-                  <div class="dash-search-wrap dash-search-flex">
-                    <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="dashAttackSearch" class="dash-search-input" placeholder="Filter by structure, level, day..." data-i18n-ph="adminHistoryPh">
-                  </div>
-                </div>
-                <div id="dashAttackList" class="dash-attack-list"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-              </div>
-              <div id="dashLeaderboardCard" class="dash-card">
-                <div class="dash-card-hdr dash-card-hdr-wrap"><h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span data-i18n="adminLeaderboard">Leaderboard</span></h2>
-                  <div class="dash-leader-controls">
-                    <select id="dashTimeFilter" class="dash-search-input dash-select-sm">
-                      <option value="all" data-i18n="adminTimeAll">All Time</option>
-                      <option value="weekly" data-i18n="adminTimeWeek">This Week (Mon-Sun)</option>
-                      <option value="daily" data-i18n="adminTimeToday">Today (0:00-23:59 GT)</option>
-                    </select>
-                    <select id="dashLeaderFilter" class="dash-search-input dash-select-lg"><option value="" data-i18n="adminFilterAll">All Uploaded Targets</option></select>
-                    <div class="dash-search-wrap dash-search-leader"><svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="dashSearch" class="dash-search-input" placeholder="Search member name..." data-i18n-ph="adminSearchPh"></div>
-                  </div>
-                </div>
-                <div class="dash-table-wrap">
-                  <table class="dash-table">
-                    <thead><tr><th class="dash-th-static dash-th-rank" data-i18n="adminThRank">Rank</th><th class="dash-th-sort" data-sort="name" data-i18n="adminThName">Member Name</th><th class="dash-th-sort dash-th-right" data-sort="total_demolition" data-i18n="adminThDemo">Total Demo</th><th class="dash-th-sort dash-th-center" data-sort="participation" data-i18n="adminThHits">Hits</th><th class="dash-th-sort dash-th-right" data-sort="avg_demolition" data-i18n="adminThAvg">Avg/Hit</th></tr></thead>
-                    <tbody id="dashLeaderBody"><tr><td colspan="5" class="dash-empty">Loading...</td></tr></tbody>
-                  </table>
-                </div>
-              </div>
-              <div class="dash-card dash-chart-card dash-card-align-start">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title dash-card-title-danger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-i18n="adminChartLow">Lowest Performers</span></h2>
-                </div>
-                <div id="dashLowestChart" class="dash-chart"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-              </div>
-            </div>
-            </div><!-- /dashSubtabDashboard -->
-
-            <!-- Sub-tab: Analytics -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabAnalytics">
-              <div class="dash-card dash-analytics-lead">
-                <div>
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 2 5-7"/></svg><span data-i18n="adminAnalyticsTitle">Advanced Insights</span></h2>
-                  <p data-i18n="adminAnalyticsSub">Structure performance, player consistency, participation heat, and roster gaps from uploaded attack data.</p>
-                </div>
-                <div id="dashAnalyticsSummary" class="dash-analytics-summary"></div>
-              </div>
-
-              <div class="dash-analytics-grid">
-                <div class="dash-card dash-analytics-card dash-analytics-card-wide">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span data-i18n="adminAnalyticsStructure">Structure Performance</span></h2>
-                  </div>
-                  <div id="dashStructureChart" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-
-                <div class="dash-card dash-analytics-card">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg><span data-i18n="adminAnalyticsTrends">Player Trends</span></h2>
-                  </div>
-                  <div id="dashPlayerTrends" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-
-                <div class="dash-card dash-analytics-card">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg><span data-i18n="adminAnalyticsHeatmap">Participation Heatmap</span></h2>
-                  </div>
-                  <div id="dashHeatmap" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-
-                <div class="dash-card dash-analytics-card">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5"/><path d="M8 19v-6"/><path d="M12 19V8"/><path d="M16 19v-9"/><path d="M20 19v-3"/></svg><span data-i18n="adminAnalyticsDistribution">Hit Value Distribution</span></h2>
-                  </div>
-                  <div id="dashHitDistribution" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-
-                <div class="dash-card dash-analytics-card">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg><span data-i18n="adminAnalyticsConsistency">Consistency & Movement</span></h2>
-                  </div>
-                  <div id="dashConsistencyInsights" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-
-                <div class="dash-card dash-analytics-card">
-                  <div class="dash-card-hdr">
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l4-4 4 4 8-8"/><path d="M20 9v6h-6"/></svg><span data-i18n="adminAnalyticsStreaks">Attendance Streaks</span></h2>
-                  </div>
-                  <div id="dashStreaks" class="dash-analytics-body"><div class="dash-empty" data-i18n="adminLoading">Loading...</div></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab: Contributions -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabContributions">
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <div>
-                    <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M5 4H3v3a3 3 0 0 0 4 2.83"/><path d="M19 4h2v3a3 3 0 0 1-4 2.83"/></svg><span data-i18n="adminContributionTitle">Total Contribution</span></h2>
-                    <p class="dash-card-subtitle" data-i18n="adminContributionSubtitle">Upload Total Contribution screenshots, review OCR rows, and override the top-20 reward list when needed.</p>
-                  </div>
-                  <div class="dash-card-actions">
-                    <button id="dashContributionPasteBtn" class="dash-btn"><span data-i18n="adminContributionPasteRows">Paste Rows</span></button>
-                    <button id="dashContributionExportBtn" class="dash-btn"><span data-i18n="adminContributionExportSheet">Export Sheet</span></button>
-                    <label id="dashContributionUploadBtn" class="dash-btn dash-btn-primary dash-file-trigger" for="dashContributionFileInput" role="button" tabindex="0"><span data-i18n="adminContributionUploadImage">Upload Image</span></label>
-                  </div>
-                </div>
-                <div id="dashContributionDropZone" class="dash-roster-dropzone">
-                  <span data-i18n="adminContributionDropZone">Drop Total Contribution screenshots here, or click Upload Image</span>
-                  <input id="dashContributionFileInput" class="dash-native-file-input" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple aria-hidden="true" tabindex="-1">
-                </div>
-                <div id="dashContributionProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashContributionProgressText" data-i18n="adminContributionScanning">Scanning contribution list...</span></div>
-                <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
-                <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
-                <div id="dashContributionBody">
-                  <div class="dash-empty" data-i18n="adminContributionEmpty">No contribution lists yet.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab: Banners List -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabBanners">
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V3h12l2 4-2 4H4"/><path d="M20 21V3"/></svg><span data-i18n="adminBannerListTitle">Banners List</span></h2>
-                  <div class="dash-card-actions">
-                    <button id="dashBannerListPasteBtn" class="dash-btn"><span data-i18n="adminBannerPasteNames">Paste Names</span></button>
-                    <button id="dashBannerListUploadBtn" class="dash-btn dash-btn-primary"><span data-i18n="adminContributionUploadImage">Upload Image</span></button>
-                  </div>
-                </div>
-                <div id="dashBannerListDropZone" class="dash-roster-dropzone">
-                  <span data-i18n="adminBannerDropZone">Drop banner list screenshot here, or click Upload Image</span>
-                  <input id="dashBannerListFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
-                </div>
-                <div id="dashBannerListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashBannerListProgressText" data-i18n="adminBannerScanning">Scanning banner list...</span></div>
-                <div id="dashBannerListSummary"></div>
-                <div id="dashBannerListBody">
-                  <div class="dash-empty" data-i18n="adminBannerEmpty">No banner list records yet.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab: Pathers -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabPathers">
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4-8 12-8 16-16"/><path d="M5 10h8"/><path d="M11 4v8"/></svg><span data-i18n="adminPatherListTitle">Pathers / Speed Tile Plans</span></h2>
-                  <div class="dash-card-actions">
-                    <button id="dashPatherListPasteBtn" class="dash-btn"><span data-i18n="adminPatherPastePlan">Paste Plan</span></button>
-                    <button id="dashPatherListUploadBtn" class="dash-btn dash-btn-primary"><span data-i18n="adminContributionUploadImage">Upload Image</span></button>
-                  </div>
-                </div>
-                <div id="dashPatherListDropZone" class="dash-roster-dropzone">
-                  <span data-i18n="adminPatherDropZone">Drop pather or speed tile plan screenshot here, or click Upload Image</span>
-                  <input id="dashPatherListFileInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp" multiple hidden>
-                </div>
-                <div id="dashPatherListProgress" class="dash-roster-progress hidden"><span class="spinner"></span><span id="dashPatherListProgressText" data-i18n="adminPatherScanning">Scanning plan...</span></div>
-                <div id="dashPatherListSummary"></div>
-                <div id="dashPatherListBody">
-                  <div class="dash-empty" data-i18n="adminPatherEmpty">No pather or speed tile plan records yet.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sub-tab: Shield Wall -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabShieldWall">
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3z"/></svg><span data-i18n="adminShieldWallTitle">Shield Wall</span></h2>
-                  <button id="dashShieldWallPasteBtn" class="dash-btn dash-btn-primary"><span data-i18n="adminShieldWallAddNames">Add Names</span></button>
-                </div>
-                <div id="dashShieldWallBody">
-                  <div class="dash-empty" data-i18n="adminShieldWallEmpty">No shield wall records yet.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Duty Summary -->
-            <div class="dash-subtab-panel hidden" id="dashSubtabDutySummary">
-              <div class="dash-card">
-                <div class="dash-card-hdr">
-                  <h2 class="dash-card-title"><span data-i18n="adminDutySummaryTitle">Duty Summary</span></h2>
-                </div>
-                <div id="dashDutySummary">
-                  <div class="dash-empty" data-i18n="adminDutySummaryEmpty">Duty appearances will summarize here after records are saved.</div>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
 
-        <!-- Details Modal -->
-        <div id="dashModal" class="dash-modal"><div class="dash-modal-content"><button id="dashModalClose" class="dash-modal-close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div class="dash-modal-title-area"><h3 class="dash-modal-title" id="dashModalTitle">Details</h3><div class="dash-modal-sub" id="dashModalSub"></div></div><div class="dash-modal-body" id="dashModalBody"></div></div></div>
+        <!-- Main Grid -->
+        <div class="dash-main-grid">
+          <div id="dashAttackHistoryCard" class="dash-card">
+            <div class="dash-card-hdr dash-card-hdr-wrap">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" /></svg
+                ><span data-i18n="adminHistoryTitle">Attack History</span>
+              </h2>
+              <div class="dash-search-wrap dash-search-flex">
+                <svg
+                  class="dash-search-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  id="dashAttackSearch"
+                  class="dash-search-input"
+                  placeholder="Filter by structure, level, day..."
+                  data-i18n-ph="adminHistoryPh"
+                />
+              </div>
+            </div>
+            <div id="dashAttackList" class="dash-attack-list">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+          <div id="dashLeaderboardCard" class="dash-card">
+            <div class="dash-card-hdr dash-card-hdr-wrap">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                  /></svg
+                ><span data-i18n="adminLeaderboard">Leaderboard</span>
+              </h2>
+              <div class="dash-leader-controls">
+                <select id="dashTimeFilter" class="dash-search-input dash-select-sm">
+                  <option value="all" data-i18n="adminTimeAll">All Time</option>
+                  <option value="weekly" data-i18n="adminTimeWeek">This Week (Mon-Sun)</option>
+                  <option value="daily" data-i18n="adminTimeToday">Today (0:00-23:59 GT)</option>
+                </select>
+                <select id="dashLeaderFilter" class="dash-search-input dash-select-lg">
+                  <option value="" data-i18n="adminFilterAll">All Uploaded Targets</option>
+                </select>
+                <div class="dash-search-wrap dash-search-leader">
+                  <svg
+                    class="dash-search-icon"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" /></svg
+                  ><input
+                    type="text"
+                    id="dashSearch"
+                    class="dash-search-input"
+                    placeholder="Search member name..."
+                    data-i18n-ph="adminSearchPh"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="dash-table-wrap">
+              <table class="dash-table">
+                <thead>
+                  <tr>
+                    <th class="dash-th-static dash-th-rank" data-i18n="adminThRank">Rank</th>
+                    <th class="dash-th-sort" data-sort="name" data-i18n="adminThName">
+                      Member Name
+                    </th>
+                    <th
+                      class="dash-th-sort dash-th-right"
+                      data-sort="total_demolition"
+                      data-i18n="adminThDemo"
+                    >
+                      Total Demo
+                    </th>
+                    <th
+                      class="dash-th-sort dash-th-right"
+                      data-sort="bonusR5"
+                      data-i18n="adminThBonusR5"
+                    >
+                      Bonus (R5)
+                    </th>
+                    <th
+                      class="dash-th-sort dash-th-right"
+                      data-sort="adjustedTotal"
+                      data-i18n="adminThAdjustedTotal"
+                    >
+                      Adjusted total
+                    </th>
+                    <th
+                      class="dash-th-sort dash-th-center"
+                      data-sort="participation"
+                      data-i18n="adminThHits"
+                    >
+                      Hits
+                    </th>
+                    <th
+                      class="dash-th-sort dash-th-right"
+                      data-sort="avg_demolition"
+                      data-i18n="adminThAvg"
+                    >
+                      Avg/Hit
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="dashLeaderBody">
+                  <tr>
+                    <td colspan="7" class="dash-empty">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="dash-card dash-chart-card dash-card-align-start">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title dash-card-title-danger">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg
+                ><span data-i18n="adminChartLow">Lowest Performers</span>
+              </h2>
+            </div>
+            <div id="dashLowestChart" class="dash-chart">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+        </div>
       </div>
+      <!-- /dashSubtabDashboard -->
+
+      <!-- Sub-tab: Analytics -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabAnalytics">
+        <div class="dash-card dash-analytics-lead">
+          <div>
+            <h2 class="dash-card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 3v18h18" />
+                <path d="M7 15l3-3 3 2 5-7" /></svg
+              ><span data-i18n="adminAnalyticsTitle">Advanced Insights</span>
+            </h2>
+            <p data-i18n="adminAnalyticsSub">
+              Structure performance, player consistency, participation heat, and roster gaps from
+              uploaded attack data.
+            </p>
+          </div>
+          <div id="dashAnalyticsSummary" class="dash-analytics-summary"></div>
+        </div>
+
+        <div class="dash-analytics-grid">
+          <div class="dash-card dash-analytics-card dash-analytics-card-wide">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 2 2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" /></svg
+                ><span data-i18n="adminAnalyticsStructure">Structure Performance</span>
+              </h2>
+            </div>
+            <div id="dashStructureChart" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+
+          <div class="dash-card dash-analytics-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M3 17l6-6 4 4 8-8" />
+                  <path d="M14 7h7v7" /></svg
+                ><span data-i18n="adminAnalyticsTrends">Player Trends</span>
+              </h2>
+            </div>
+            <div id="dashPlayerTrends" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+
+          <div class="dash-card dash-analytics-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4" />
+                  <path d="M8 2v4" />
+                  <path d="M3 10h18" /></svg
+                ><span data-i18n="adminAnalyticsHeatmap">Participation Heatmap</span>
+              </h2>
+            </div>
+            <div id="dashHeatmap" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+
+          <div class="dash-card dash-analytics-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M4 19V5" />
+                  <path d="M8 19v-6" />
+                  <path d="M12 19V8" />
+                  <path d="M16 19v-9" />
+                  <path d="M20 19v-3" /></svg
+                ><span data-i18n="adminAnalyticsDistribution">Hit Value Distribution</span>
+              </h2>
+            </div>
+            <div id="dashHitDistribution" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+
+          <div class="dash-card dash-analytics-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 20V10" />
+                  <path d="M18 20V4" />
+                  <path d="M6 20v-4" /></svg
+                ><span data-i18n="adminAnalyticsConsistency">Consistency & Movement</span>
+              </h2>
+            </div>
+            <div id="dashConsistencyInsights" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+
+          <div class="dash-card dash-analytics-card">
+            <div class="dash-card-hdr">
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M4 17l4-4 4 4 8-8" />
+                  <path d="M20 9v6h-6" /></svg
+                ><span data-i18n="adminAnalyticsStreaks">Attendance Streaks</span>
+              </h2>
+            </div>
+            <div id="dashStreaks" class="dash-analytics-body">
+              <div class="dash-empty" data-i18n="adminLoading">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Contributions -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabContributions">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M8 21h8" />
+                  <path d="M12 17v4" />
+                  <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+                  <path d="M5 4H3v3a3 3 0 0 0 4 2.83" />
+                  <path d="M19 4h2v3a3 3 0 0 1-4 2.83" /></svg
+                ><span data-i18n="adminContributionTitle">Total Contribution</span>
+              </h2>
+              <p class="dash-card-subtitle" data-i18n="adminContributionSubtitle">
+                Upload Total Contribution screenshots, review OCR rows, and override the top-20
+                reward list when needed.
+              </p>
+            </div>
+            <div class="dash-card-actions">
+              <button id="dashContributionPasteBtn" class="dash-btn">
+                <span data-i18n="adminContributionPasteRows">Paste Rows</span>
+              </button>
+              <button id="dashContributionExportBtn" class="dash-btn">
+                <span data-i18n="adminContributionExportSheet">Export Sheet</span>
+              </button>
+              <label
+                id="dashContributionUploadBtn"
+                class="dash-btn dash-btn-primary dash-file-trigger"
+                for="dashContributionFileInput"
+                role="button"
+                tabindex="0"
+                ><span data-i18n="adminContributionUploadImage">Upload Image</span></label
+              >
+            </div>
+          </div>
+          <div id="dashContributionDropZone" class="dash-roster-dropzone">
+            <span data-i18n="adminContributionDropZone"
+              >Drop Total Contribution screenshots here, or click Upload Image</span
+            >
+            <input
+              id="dashContributionFileInput"
+              class="dash-native-file-input"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+              multiple
+              aria-hidden="true"
+              tabindex="-1"
+            />
+          </div>
+          <div id="dashContributionProgress" class="dash-roster-progress hidden">
+            <span class="spinner"></span
+            ><span id="dashContributionProgressText" data-i18n="adminContributionScanning"
+              >Scanning contribution list...</span
+            >
+          </div>
+          <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
+          <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
+          <div id="dashContributionBody">
+            <div class="dash-empty" data-i18n="adminContributionEmpty">
+              No contribution lists yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Conduct -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabConduct">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M9 12l2 2 4-5" />
+                  <path d="M12 3 5 6v5c0 4 3 8 7 10 4-2 7-6 7-10V6l-7-3z" /></svg
+                ><span data-i18n="adminConductTitle">R5 Conduct Adjustments</span>
+              </h2>
+              <p class="dash-card-subtitle" data-i18n="adminConductSubtitle">
+                Add manual merit or penalty points for teamwork, banners, roads, and conduct. Gift
+                ranking uses adjusted total.
+              </p>
+            </div>
+            <div class="dash-conduct-season" id="dashConductSeason"></div>
+          </div>
+          <form id="dashConductForm" class="dash-conduct-form">
+            <label>
+              <span data-i18n="adminConductPlayer">Player</span>
+              <select id="dashConductPlayer" class="dash-input"></select>
+            </label>
+            <label>
+              <span data-i18n="adminConductCategory">Category</span>
+              <select id="dashConductCategory" class="dash-input"></select>
+            </label>
+            <label>
+              <span data-i18n="adminConductPoints">Points</span>
+              <input
+                id="dashConductPoints"
+                class="dash-input"
+                type="number"
+                step="1"
+                inputmode="numeric"
+              />
+            </label>
+            <label class="dash-conduct-note">
+              <span data-i18n="adminConductNote">Note</span>
+              <input
+                id="dashConductNote"
+                class="dash-input"
+                type="text"
+                maxlength="500"
+                data-i18n-ph="adminConductNotePh"
+                placeholder="Optional reason"
+              />
+            </label>
+            <div class="dash-conduct-actions">
+              <button id="dashConductSaveBtn" class="dash-btn dash-btn-primary" type="submit">
+                <span data-i18n="adminConductSave">Save Adjustment</span>
+              </button>
+              <button id="dashConductCancelEditBtn" class="dash-btn hidden" type="button">
+                <span data-i18n="adminConductCancelEdit">Cancel Edit</span>
+              </button>
+            </div>
+          </form>
+          <div id="dashConductStatus" class="dash-upload-status hidden"></div>
+          <div class="dash-conduct-list-head">
+            <h3 data-i18n="adminConductRecent">Recent adjustments</h3>
+          </div>
+          <div id="dashConductList" class="dash-conduct-list">
+            <div class="dash-empty" data-i18n="adminConductEmpty">
+              No conduct adjustments for this season yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Banners List -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabBanners">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <h2 class="dash-card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M4 21V3h12l2 4-2 4H4" />
+                <path d="M20 21V3" /></svg
+              ><span data-i18n="adminBannerListTitle">Banners List</span>
+            </h2>
+            <div class="dash-card-actions">
+              <button id="dashBannerListPasteBtn" class="dash-btn">
+                <span data-i18n="adminBannerPasteNames">Paste Names</span>
+              </button>
+              <button id="dashBannerListUploadBtn" class="dash-btn dash-btn-primary">
+                <span data-i18n="adminContributionUploadImage">Upload Image</span>
+              </button>
+            </div>
+          </div>
+          <div id="dashBannerListDropZone" class="dash-roster-dropzone">
+            <span data-i18n="adminBannerDropZone"
+              >Drop banner list screenshot here, or click Upload Image</span
+            >
+            <input
+              id="dashBannerListFileInput"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+              multiple
+              hidden
+            />
+          </div>
+          <div id="dashBannerListProgress" class="dash-roster-progress hidden">
+            <span class="spinner"></span
+            ><span id="dashBannerListProgressText" data-i18n="adminBannerScanning"
+              >Scanning banner list...</span
+            >
+          </div>
+          <div id="dashBannerListSummary"></div>
+          <div id="dashBannerListBody">
+            <div class="dash-empty" data-i18n="adminBannerEmpty">No banner list records yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Pathers -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabPathers">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <h2 class="dash-card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M4 19c4-8 12-8 16-16" />
+                <path d="M5 10h8" />
+                <path d="M11 4v8" /></svg
+              ><span data-i18n="adminPatherListTitle">Pathers / Speed Tile Plans</span>
+            </h2>
+            <div class="dash-card-actions">
+              <button id="dashPatherListPasteBtn" class="dash-btn">
+                <span data-i18n="adminPatherPastePlan">Paste Plan</span>
+              </button>
+              <button id="dashPatherListUploadBtn" class="dash-btn dash-btn-primary">
+                <span data-i18n="adminContributionUploadImage">Upload Image</span>
+              </button>
+            </div>
+          </div>
+          <div id="dashPatherListDropZone" class="dash-roster-dropzone">
+            <span data-i18n="adminPatherDropZone"
+              >Drop pather or speed tile plan screenshot here, or click Upload Image</span
+            >
+            <input
+              id="dashPatherListFileInput"
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
+              multiple
+              hidden
+            />
+          </div>
+          <div id="dashPatherListProgress" class="dash-roster-progress hidden">
+            <span class="spinner"></span
+            ><span id="dashPatherListProgressText" data-i18n="adminPatherScanning"
+              >Scanning plan...</span
+            >
+          </div>
+          <div id="dashPatherListSummary"></div>
+          <div id="dashPatherListBody">
+            <div class="dash-empty" data-i18n="adminPatherEmpty">
+              No pather or speed tile plan records yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Shield Wall -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabShieldWall">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <h2 class="dash-card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3z" /></svg
+              ><span data-i18n="adminShieldWallTitle">Shield Wall</span>
+            </h2>
+            <button id="dashShieldWallPasteBtn" class="dash-btn dash-btn-primary">
+              <span data-i18n="adminShieldWallAddNames">Add Names</span>
+            </button>
+          </div>
+          <div id="dashShieldWallBody">
+            <div class="dash-empty" data-i18n="adminShieldWallEmpty">
+              No shield wall records yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Duty Summary -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabDutySummary">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <h2 class="dash-card-title">
+              <span data-i18n="adminDutySummaryTitle">Duty Summary</span>
+            </h2>
+          </div>
+          <div id="dashDutySummary">
+            <div class="dash-empty" data-i18n="adminDutySummaryEmpty">
+              Duty appearances will summarize here after records are saved.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="dashModal" class="dash-modal">
+    <div class="dash-modal-content">
+      <button id="dashModalClose" class="dash-modal-close">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div class="dash-modal-title-area">
+        <h3 class="dash-modal-title" id="dashModalTitle">Details</h3>
+        <div class="dash-modal-sub" id="dashModalSub"></div>
+      </div>
+      <div class="dash-modal-body" id="dashModalBody"></div>
+    </div>
+  </div>
+</div>

@@ -4,11 +4,9 @@ import { fileURLToPath } from 'node:url';
 import postcss from 'postcss';
 import cssnano from 'cssnano';
 
+// PurgeCSS was evaluated and rejected here because runtime JS injects many CSS classes.
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const targetDirs = [
-  path.join(rootDir, 'dist', 'assets'),
-  path.join(rootDir, 'dist', 'css'),
-];
+const targetDirs = [path.join(rootDir, 'dist', 'assets'), path.join(rootDir, 'dist', 'css')];
 
 function collectCssFiles(dir) {
   if (!fs.existsSync(dir)) return [];

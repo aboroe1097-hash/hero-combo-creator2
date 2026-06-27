@@ -1,0 +1,256 @@
+/* =============================================================
+   VTS atmosphere & micro-interaction layer  (OPT-IN, additive)
+
+   Every rule is namespaced `.u-*` and applies ONLY to elements that
+   opt in, so loading this file changes NOTHING until a class is added.
+   Built entirely on existing css/_tokens.css variables, and the global
+   @media (prefers-reduced-motion: reduce) block in _tokens.css already
+   neutralizes every transition/animation here.
+
+   NOT linked yet. Wire it after components.css in index.html / admin.html
+   once the foundation rewrite lands, to avoid concurrent-edit collisions:
+     <link rel="stylesheet" href="css/atmosphere.css?v=..." />
+   ============================================================= */
+
+/* Phase 2.1 glow/surface/noise tokens now live in _tokens.css. */
+
+/* ---------- 1. Press feedback (buttons, pills, tappables) ---------- */
+.u-press {
+  transition: transform var(--t-fast);
+}
+.u-press:active {
+  transform: scale(0.96);
+}
+
+/* ---------- 2. Card lift + brand glow on hover (hover-capable only) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .u-lift {
+    transition:
+      transform var(--t-med),
+      box-shadow var(--t-med);
+    transition-timing-function: var(--ease-out);
+    will-change: transform;
+  }
+  .u-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift), var(--glow-brand);
+  }
+}
+
+/* ---------- 3. Layered focus halo (accessibility) ---------- */
+.u-focus:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--brand-glow);
+}
+
+/* ---------- 4. 3D tilt on hover (hero atlas / combo cards, desktop) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .u-tilt {
+    transition: transform var(--t-med) var(--ease-out);
+    transform-style: preserve-3d;
+  }
+  .u-tilt:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
+  }
+}
+
+/* ---------- 5. Skeleton shimmer loader (lazy tabs / async lists) ---------- */
+.u-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: var(--radius-card);
+}
+.u-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
+  animation: u-shimmer 1.4s infinite;
+}
+@keyframes u-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ---------- 6. Tab / content morph reveal (replaces plain fade-up) ---------- */
+.u-morph-in {
+  animation: u-morph 0.4s var(--ease-out) both;
+}
+@keyframes u-morph {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/* ---------- 7. Active-tab / selected brand ring ---------- */
+.u-active-ring {
+  box-shadow:
+    inset 0 0 0 1px var(--brand),
+    var(--glow-brand);
+}
+
+/* ---------- 8. Spring entry (staggerable; set --u-delay inline) ---------- */
+.u-enter {
+  animation: u-enter 0.42s var(--ease-spring) both;
+  animation-delay: var(--u-delay, 0ms);
+}
+@keyframes u-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- 9. Subtle static aura behind a panel (no animation) ---------- */
+.u-aura {
+  position: relative;
+  isolation: isolate;
+}
+.u-aura::before {
+  content: "";
+  position: absolute;
+  inset: -18% -8% auto -8%;
+  height: 55%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 100% at 50% 0%,
+    var(--brand-glow),
+    transparent 70%
+  );
+}
+
+/* ---------- 10. Drag-over dropzone pulse ring (combo builder slots) ---------- */
+.u-dropzone-active {
+  position: relative;
+}
+.u-dropzone-active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px var(--brand),
+    var(--glow-brand);
+  animation: u-pulse 1.4s ease-in-out infinite;
+}
+@keyframes u-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---------- 11. Top-3 gold trim (hero atlas / leaderboard) ---------- */
+.u-top3 {
+  border: 1px solid var(--accent);
+  box-shadow: var(--glow-accent);
+}
+
+/* ---------- 12. Save / success burst (one-shot on combo save) ---------- */
+.u-burst {
+  animation: u-burst 0.5s var(--ease-out);
+}
+@keyframes u-burst {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent), transparent 35%);
+  }
+  100% {
+    box-shadow: 0 0 0 18px color-mix(in srgb, var(--accent), transparent 100%);
+  }
+}
+
+/* ---------- 13. Noise texture divider (YouTube / section separators) ---------- */
+.u-noise-divider {
+  height: 2px;
+  background-image: var(--noise-texture);
+  background-repeat: repeat-x;
+  background-size: 200px 2px;
+  border: 0;
+  margin: var(--space-4) 0;
+}
+
+/* ---------- 14. Research connector animated dash (SVG hover) ---------- */
+.u-connector-dash {
+  stroke-dasharray: 8 4;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--t-med) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .u-connector-dash:hover,
+  .u-connector-dash:focus-visible,
+  .u-connector-dash-parent:hover .u-connector-dash {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* ---------- 15. Counter-up scaffold (cost cards, stats) ---------- */
+@property --u-count {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.u-counter {
+  --u-count: 0;
+  transition: --u-count 0.6s var(--ease-out);
+  counter-reset: u-counter var(--u-count);
+}
+
+.u-counter::after {
+  content: counter(u-counter);
+}
+
+/* Opacity fade-swap fallback for browsers without @property */
+.u-counter-fade {
+  transition: opacity var(--t-med) var(--ease-out);
+}
+
+.u-counter-fade.u-counter-hide {
+  opacity: 0;
+}
+
+/* =============================================================
+   Per-surface application — applies the layer to existing selectors
+   with NO markup changes. Card hover/lift atmosphere already lives in
+   app.css, so we only add what's genuinely new and non-conflicting:
+   an accessibility focus halo, and a brand-colored active-tab glow.
+   ============================================================= */
+
+/* Global focus-visible halo. :where() keeps specificity at 0 so any element
+   that already defines its own focus-visible style still wins; this only
+   fills the gaps (a11y). */
+:where(a, button, [role="button"], input, select, textarea, .tab-pill, summary):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--brand-glow);
+}
+
+/* Active nav tab glows in the brand color (the tab fill is already brand-teal;
+   the previous glow was an off-palette blue). Loads after app.css so it wins. */
+.tab-pill-active {
+  box-shadow: var(--glow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}

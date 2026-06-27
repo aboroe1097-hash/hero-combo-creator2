@@ -186,8 +186,8 @@ export function renderAvailableHeroes() {
         </div>
         ${originTag}
         
-        <div class="info-btn lg:hidden absolute top-1 right-1 w-6 h-6 bg-slate-900/90 border border-slate-600 rounded-full flex items-center justify-center z-20 text-sky-400 shadow-md cursor-pointer hover:bg-slate-800">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+        <div class="info-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="info-btn-svg">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
             </svg>
         </div>
@@ -257,7 +257,7 @@ export function renderAvailableHeroes() {
   if (!sourceNote) {
       sourceNote = document.createElement('div');
       sourceNote.id = 'heroesSourceNote1';
-      sourceNote.className = "col-span-full mt-8 text-center text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest border-t border-slate-800/50 pt-4 w-full";
+      sourceNote.className = "generator-source-note";
       availableHeroesEl.parentNode.appendChild(sourceNote);
   }
   sourceNote.textContent = getSourceCreditText();
@@ -282,21 +282,21 @@ export function updateComboSlotDisplay(slot, name, idx) {
     slot.setAttribute('aria-label', `Combo slot ${idx + 1}: ${name}. Press Delete to clear.`);
     slot.innerHTML = `
       <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(name))}" alt="${escapeHtml(name)}" crossorigin="anonymous" loading="lazy" draggable="false">
-      <span class="absolute bottom-0 left-0 right-0 text-white bg-black/70 px-1 py-1 text-[10px] w-full truncate text-center font-bold">
+      <span class="slot-name-overlay">
         ${escapeHtml(name)}
       </span>`;
-    slot.classList.add('relative', 'p-0');
+    slot.classList.add('combo-slot--filled');
   } else {
     delete slot.dataset.heroName;
     slot.setAttribute('aria-label', `Combo slot ${idx + 1}: empty. Select a hero, then press Enter here to place.`);
     slot.innerHTML = `
-      <div class="combo-slot-placeholder h-full flex flex-col items-center justify-center gap-1">
-        <span class="font-bold text-blue-400/60 text-3xl leading-none">+</span>
-        <span data-i18n="dragHeroHere" class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+      <div class="combo-slot-placeholder">
+        <span class="combo-plus-icon">+</span>
+        <span data-i18n="dragHeroHere" class="drag-hint-text">
           ${escapeHtml(t.dragHeroHere)}
         </span>
       </div>`;
-    slot.classList.remove('relative', 'p-0');
+    slot.classList.remove('combo-slot--filled');
   }
 }
 
@@ -309,7 +309,7 @@ export function updateManualComboScore() {
   if (!scoreBox) {
     scoreBox = document.createElement('div');
     scoreBox.id = 'manualComboScoreBox';
-    scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox hidden';
+    scoreBox.className = 'gen-score-panel manual-combo-scorebox hidden';
     scoreBox.setAttribute('role', 'status');
     scoreBox.setAttribute('aria-live', 'polite');
     const buttonsRow = document.getElementById('comboButtonsRow');
@@ -328,19 +328,19 @@ export function updateManualComboScore() {
   scoreBox.classList.remove('hidden');
 
   if (!info && !counterCount) {
-    scoreBox.className = 'mt-3 text-xs sm:text-sm text-sky-300 text-center';
+    scoreBox.className = 'combo-not-ranked-text';
     scoreBox.textContent = t.manualComboNotRanked || 'This combo is not in the ranked database.';
     announceManualCombo(scoreBox.textContent);
     return;
   }
 
-  scoreBox.className = 'mt-3 gen-score-panel manual-combo-scorebox';
+  scoreBox.className = 'gen-score-panel manual-combo-scorebox';
   const label = t.generatorScoreLabel || 'Score:';
   const scoreHtml = info
     ? `<div class="gen-score-main">
-        <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(label)}</span>
-        <span class="text-lg font-black text-sky-400">${info.score}</span>
-        <span class="text-slate-400 text-[11px] sm:text-xs">(#${info.rank})</span>
+        <span class="gen-score-meta">${escapeHtml(label)}</span>
+        <span class="gen-score-value">${info.score}</span>
+        <span class="combo-rank-text">(#${info.rank})</span>
       </div>`
     : '';
   scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(currentCombo, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
@@ -455,8 +455,8 @@ export async function setupFirestoreListener() {
         scoreBox.className = 'gen-score-panel saved-combo-scorebox';
         const scoreHtml = rankInfo
           ? `<div class="gen-score-main">
-              <span class="text-[10px] uppercase tracking-widest text-slate-400">${escapeHtml(label)}</span>
-              <span class="text-lg font-black text-sky-400">${rankInfo.score}</span>
+              <span class="gen-score-meta">${escapeHtml(label)}</span>
+              <span class="gen-score-value">${rankInfo.score}</span>
             </div>`
           : '';
         scoreBox.innerHTML = `${scoreHtml}${renderCountersToggle(heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}`;
@@ -489,5 +489,16 @@ export async function setupFirestoreListener() {
       savedCombosEl.appendChild(row);
       counter++;
     });
+  }, err => {
+    const code = String(err?.code || '');
+    const message = err?.message || err;
+    if (code === 'permission-denied') {
+      console.info('[builder] saved combos unavailable for this session.');
+    } else {
+      console.warn('[builder] saved combos listener failed:', message);
+    }
+    savedCombosCache.length = 0;
+    if (savedCombosEl) savedCombosEl.innerHTML = '';
+    noCombosMessage?.classList.remove('hidden');
   });
 }
