@@ -436,8 +436,11 @@ function renderConductAdjustments() {
   const points = $id('dashConductPoints');
   if (points && !points.value) points.value = defaultR5PointsForCategory(category);
 
+  const searchEl = $id('dashConductSearch');
+  const searchQuery = (searchEl?.value || '').trim().toLowerCase();
+
   const rows = (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [])
-    .filter((record) => record?.season === state.r5Season)
+    .filter((record) => record?.season === state.r5Season && (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery)))
     .slice()
     .sort((a, b) => {
       const aMs =
@@ -514,6 +517,7 @@ function bindConductControls() {
     if (points) points.value = defaultR5PointsForCategory(category.value);
   });
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
+  $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const player = $id('dashConductPlayer');
