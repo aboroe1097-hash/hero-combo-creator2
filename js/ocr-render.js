@@ -17,7 +17,10 @@ import {
   resolveCanonicalPlayerName,
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
-import { buildWeightedContributionRows } from './contribution-weighting.js';
+import {
+  buildWeightedContributionRows,
+  getWeightedContributionRecordLabel,
+} from './contribution-weighting.js';
 import { translations } from './translations.js';
 
 function adminT(key, vars = {}) {
@@ -955,7 +958,7 @@ function renderWeightedContributionDashboard() {
     return;
   }
 
-  const recordLabel = [model.record?.date, model.record?.note].filter(Boolean).join(' - ');
+  const recordLabel = getWeightedContributionRecordLabel(model.record);
   host.classList.remove('hidden');
   host.innerHTML = `<div class="dash-card dash-weighted-contribution-card">
     <div class="dash-card-hdr">

@@ -27,6 +27,7 @@ const {
   defaultR5PointsForCategory,
   loadLocalR5Adjustments,
   normalizeR5Adjustment,
+  normalizeR5AdjustmentRecords,
   resolveR5PlayerIdentity,
   updateLocalR5Adjustment,
 } = await import('../../js/ocr-adjustments.js');
@@ -82,6 +83,26 @@ test('R5 aggregation is scoped per season and sums merit plus penalty rows', () 
   assert.equal(
     [...bonusMap.values()].reduce((sum, points) => sum + points, 0),
     600
+  );
+});
+
+test('R5 adjustment record batches skip malformed historical cloud rows', () => {
+  const season = 'season-cloud';
+  const rows = normalizeR5AdjustmentRecords(
+    [
+      { season, player: '~Sarafino~', points: 1, category: 'banner_help' },
+      { season, player: 'UNDEAD', points: 20000, category: 'extra_effort' },
+      { season, player: 'Kika', points: -1, category: 'path_block' },
+    ],
+    { season }
+  );
+
+  assert.deepEqual(
+    rows.map((row) => [row.playerKey, row.points]),
+    [
+      [resolveR5PlayerIdentity('~Sarafino~').playerKey, 1],
+      [resolveR5PlayerIdentity('Kika').playerKey, -1],
+    ]
   );
 });
 

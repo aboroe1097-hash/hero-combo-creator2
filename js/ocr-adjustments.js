@@ -144,17 +144,29 @@ export function normalizeR5Adjustment(input, options = {}) {
   };
 }
 
+export function normalizeR5AdjustmentRecords(records = [], options = {}) {
+  const normalized = [];
+  (Array.isArray(records) ? records : []).forEach((entry) => {
+    try {
+      normalized.push(
+        normalizeR5Adjustment(entry, {
+          ...options,
+          season: entry?.season || options.season,
+        })
+      );
+    } catch {
+      // Ignore malformed historical cloud rows so one bad document cannot
+      // hide every valid conduct adjustment for the season.
+    }
+  });
+  return normalized;
+}
+
 export function aggregateR5Bonuses(adjustments = [], season) {
   const seasonKey = normalizeR5Season(season);
   const totals = new Map();
 
-  (Array.isArray(adjustments) ? adjustments : []).forEach((entry) => {
-    let adjustment;
-    try {
-      adjustment = normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
-    } catch {
-      return;
-    }
+  normalizeR5AdjustmentRecords(adjustments, { season: seasonKey }).forEach((adjustment) => {
     if (adjustment.season !== seasonKey) return;
     totals.set(adjustment.playerKey, (totals.get(adjustment.playerKey) || 0) + adjustment.points);
   });
@@ -256,15 +268,9 @@ function isR5PersistenceUnavailable(err) {
 export function loadLocalR5Adjustments(season) {
   const seasonKey = normalizeR5Season(season);
   return sortR5Adjustments(
-    readLocalR5AdjustmentRecords()
-      .map((entry) => {
-        try {
-          return normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
-        } catch {
-          return null;
-        }
-      })
-      .filter((entry) => entry?.season === seasonKey)
+    normalizeR5AdjustmentRecords(readLocalR5AdjustmentRecords(), { season: seasonKey }).filter(
+      (entry) => entry?.season === seasonKey
+    )
   );
 }
 
@@ -359,7 +365,10 @@ export async function loadR5Adjustments(season) {
     );
 
     return sortR5Adjustments(
-      snapshot.docs.map((docSnap) => normalizeR5Adjustment({ id: docSnap.id, ...docSnap.data() }))
+      normalizeR5AdjustmentRecords(
+        snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })),
+        { season: seasonKey }
+      )
     );
   } catch (err) {
     if (isR5PersistenceUnavailable(err)) return loadLocalR5Adjustments(season);

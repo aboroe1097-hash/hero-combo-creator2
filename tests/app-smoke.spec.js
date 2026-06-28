@@ -1515,6 +1515,78 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashContributionBody')).not.toContainText('(Vts)Kika');
   });
 
+  test('admin weighted contribution hides image notes and keeps Kika accounts split', async ({
+    page,
+  }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    const kikaMain = '\ua9c1 Kika \ua9c2';
+    const kikaAlt = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
+    const seededDash = {
+      last_updated: '25/06/2026, 23:55',
+      total_attacks: 0,
+      attacks: [],
+      players_summary: [],
+      dutyRecords: [
+        {
+          id: 'kika-main-pather-1',
+          type: 'pather',
+          date: '2026-06-25',
+          entries: [{ name: kikaMain, original: kikaMain, confirmed: kikaMain }],
+        },
+        {
+          id: 'kika-main-banner-1',
+          type: 'banner',
+          date: '2026-06-25',
+          entries: [{ name: kikaMain, original: kikaMain, confirmed: kikaMain }],
+        },
+      ],
+      contributionRecords: [
+        {
+          id: 'kika-weighted-1',
+          date: '2026-06-24',
+          note: 'WhatsApp Image 2026-06-25 at 01.18.36.jpeg, WhatsApp Image 2026-06-25 at 01.18.49.jpeg',
+          createdAt: '2026-06-25T20:00:00.000Z',
+          premiumSlots: 20,
+          entries: [
+            { rank: '9', name: kikaMain, guild: 'VTS X1', contribution: '144,650' },
+            { rank: '48', name: kikaAlt, guild: 'VTS X1', contribution: '78,617' },
+          ],
+        },
+      ],
+    };
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.setOcrDashboardDataForTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
+    await page.evaluate((dash) => {
+      window.setOcrDashboardDataForTest(dash, []);
+      window.switchDashSubtab('dashboard');
+    }, seededDash);
+
+    const panel = page.locator('#dashWeightedContributionPanel');
+    await expect(panel).toContainText('Weighted Total Contribution');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('2026-06-24');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).not.toContainText(
+      'WhatsApp Image'
+    );
+    await expect(panel.locator('.dash-weighted-contribution-meta')).not.toContainText('.jpeg');
+
+    const weightedRows = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
+    );
+    const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
+    const altRow = weightedRows.find((cells) => cells[3] === '78,617');
+
+    expect(mainRow?.[5]).toBe('1');
+    expect(mainRow?.[6]).toBe('1');
+    expect(altRow?.[5]).toBe('0');
+    expect(altRow?.[6]).toBe('0');
+  });
+
   test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {
     await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
     await page.route('https://html2canvas.hertzen.com/dist/html2canvas.min.js', (route) =>

@@ -1,4 +1,4 @@
-import { aggregateR5Bonuses } from './ocr-adjustments.js';
+import { normalizeR5Adjustment } from './ocr-adjustments.js';
 import { compactPlayerIdentity, expandDutyRawNames, getDutyCreditedNames } from './ocr-shared.js';
 import { resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
 
@@ -13,6 +13,10 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
 export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
 
 const CONTRIBUTION_FIELDS = ['contribution', 'value', 'points', 'total', 'score'];
+const IMAGE_SOURCE_NOTE_RE =
+  /(?:whatsapp\s+image|screenshot|screen\s*shot|\.jpe?g\b|\.png\b|\.webp\b|\.heic\b|\.gif\b|[a-z]:[\\/])/i;
+const KIKA_ALT_MARKER_RE = /[\u0f3a\u0f3b\u226a\u226b]/u;
+const KIKA_ALT_WEIGHTED_KEY = 'kikaalt';
 
 function numberValue(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -78,6 +82,20 @@ export function getPrimaryContributionRecord(records = []) {
   return primary || getLatestContributionRecord(arr);
 }
 
+export function isImageSourceContributionNote(note) {
+  return IMAGE_SOURCE_NOTE_RE.test(String(note || ''));
+}
+
+export function getWeightedContributionRecordLabel(
+  record,
+  fallback = 'Latest contribution snapshot'
+) {
+  const date = String(record?.date || '').trim();
+  const note = String(record?.note || '').trim();
+  const visibleNote = note && !isImageSourceContributionNote(note) ? note : '';
+  return [date, visibleNote].filter(Boolean).join(' - ') || fallback;
+}
+
 function resolvePlayerIdentity(player) {
   try {
     return resolveCanonicalPlayerIdentity(player);
@@ -86,6 +104,27 @@ function resolvePlayerIdentity(player) {
     const playerKey = compactPlayerIdentity(name);
     return playerKey ? { playerKey, playerName: name } : null;
   }
+}
+
+function weightedPlayerKeyForName(name) {
+  const displayName = String(name || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const compactKey = compactPlayerIdentity(displayName);
+  if (compactKey === 'kika' && KIKA_ALT_MARKER_RE.test(displayName)) {
+    return KIKA_ALT_WEIGHTED_KEY;
+  }
+  return compactKey;
+}
+
+function resolveWeightedPlayerIdentity(player) {
+  const identity = resolvePlayerIdentity(player);
+  if (!identity) return null;
+  const playerKey = weightedPlayerKeyForName(
+    identity.playerName || identity.displayName || identity.rawName
+  );
+  return playerKey ? { ...identity, playerKey } : null;
 }
 
 function dutyBucket(type) {
@@ -114,7 +153,7 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
       const seen = new Set();
 
       creditedNames.forEach((name) => {
-        const identity = resolvePlayerIdentity(name);
+        const identity = resolveWeightedPlayerIdentity(name);
         if (!identity || seen.has(identity.playerKey)) return;
         seen.add(identity.playerKey);
         const row = counts.get(identity.playerKey) || {
@@ -132,12 +171,25 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
 }
 
 function buildConductMap(adjustments = [], season = '') {
-  if (!season) return new Map();
-  try {
-    return aggregateR5Bonuses(adjustments, season);
-  } catch {
-    return new Map();
-  }
+  const seasonKey = String(season || '').trim();
+  if (!seasonKey) return new Map();
+  const totals = new Map();
+
+  (Array.isArray(adjustments) ? adjustments : []).forEach((entry) => {
+    let adjustment;
+    try {
+      adjustment = normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
+    } catch {
+      return;
+    }
+    if (String(adjustment.season || '').trim() !== seasonKey) return;
+
+    const playerKey = weightedPlayerKeyForName(adjustment.playerName || adjustment.playerKey);
+    if (!playerKey) return;
+    totals.set(playerKey, (totals.get(playerKey) || 0) + adjustment.points);
+  });
+
+  return totals;
 }
 
 function buildForfeitPlayerSet(adjustments = [], season = '') {
@@ -155,7 +207,7 @@ function buildForfeitPlayerSet(adjustments = [], season = '') {
     )
       return;
     try {
-      const identity = resolvePlayerIdentity(entry?.player || entry);
+      const identity = resolveWeightedPlayerIdentity(entry?.player || entry);
       if (identity) forfeit.add(identity.playerKey);
     } catch {
       /* skip unparseable player */
@@ -179,7 +231,7 @@ function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
     )
       return;
     try {
-      const identity = resolvePlayerIdentity(entry?.player || entry);
+      const identity = resolveWeightedPlayerIdentity(entry?.player || entry);
       if (identity) grants.add(identity.playerKey);
     } catch {
       /* skip unparseable player */
@@ -191,7 +243,7 @@ function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
 function buildExGuildMap(exGuildContributions = []) {
   const map = new Map();
   (Array.isArray(exGuildContributions) ? exGuildContributions : []).forEach((entry) => {
-    const identity = resolvePlayerIdentity(entry?.playerName || entry);
+    const identity = resolveWeightedPlayerIdentity(entry?.playerName || entry);
     if (!identity) return;
     const value = contributionValue(entry);
     if (!value) return;
@@ -228,7 +280,7 @@ export function buildWeightedContributionRows(options = {}) {
 
   const rows = entries
     .map((entry) => {
-      const identity = resolvePlayerIdentity(entry);
+      const identity = resolveWeightedPlayerIdentity(entry);
       if (!identity) return null;
       const duties = dutyCounts.get(identity.playerKey) || emptyDutyCounts();
       const exGuildScore = exGuildMap.get(identity.playerKey) || 0;

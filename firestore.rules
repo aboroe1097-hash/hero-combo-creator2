@@ -133,11 +133,12 @@ service cloud.firestore {
       && request.resource.data.playerName.size() > 0
       && request.resource.data.playerName.size() <= 120
       && request.resource.data.points is int
-      && request.resource.data.points >= -10000000
-      && request.resource.data.points <= 10000000
+      && request.resource.data.points >= -1000
+      && request.resource.data.points <= 1000
       && request.resource.data.category in [
         'banner_help', 'connected_road', 'extra_effort', 'merit_other',
-        'path_block', 'toxicity', 'ignored_coordination', 'penalty_other'
+        'path_block', 'toxicity', 'ignored_coordination', 'penalty_other',
+        'forfeit_premium', 'grant_premium'
       ]
       && request.resource.data.note is string
       && request.resource.data.note.size() <= 500

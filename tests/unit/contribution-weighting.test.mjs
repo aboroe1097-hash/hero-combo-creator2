@@ -15,10 +15,16 @@ globalThis.document = {
 };
 
 const { compactPlayerIdentity, state } = await import('../../js/ocr-shared.js');
-const { buildWeightedContributionRows, buildWeightedDutyCounts, getLatestContributionRecord } =
-  await import('../../js/contribution-weighting.js');
+const {
+  buildWeightedContributionRows,
+  buildWeightedDutyCounts,
+  getLatestContributionRecord,
+  getWeightedContributionRecordLabel,
+} = await import('../../js/contribution-weighting.js');
 
 const TEST_ROSTER_NAMES = ['~Sarafino~', 'UNDEAD', 'ANGEL', 'Zubbs', 'Kika'];
+const KIKA_MAIN = '\ua9c1 Kika \ua9c2';
+const KIKA_ALT = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
 
 function withRosterNames(callback) {
   const previousRosterNames = state.rosterNames;
@@ -119,6 +125,63 @@ test('latest contribution record selection uses newest date and premiumSlots fal
         [compactPlayerIdentity('UNDEAD'), 'core', 'core'],
       ]
     );
+  });
+});
+
+test('weighted contribution labels hide image upload source notes', () => {
+  assert.equal(
+    getWeightedContributionRecordLabel({
+      date: '2026-06-24',
+      note: 'WhatsApp Image 2026-06-25 at 01.18.36.jpeg, D:\\Uploads\\panel.png',
+    }),
+    '2026-06-24'
+  );
+  assert.equal(
+    getWeightedContributionRecordLabel({
+      date: '2026-06-24',
+      note: 'Manual contribution reading',
+    }),
+    '2026-06-24 - Manual contribution reading'
+  );
+});
+
+test('weighted contribution keeps decorated Kika account duty counts separate', () => {
+  withRosterNames(() => {
+    const season = 'eden-x1-2026';
+    const model = buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'kika-split',
+          date: '2026-06-25',
+          entries: [
+            { rank: 9, name: KIKA_MAIN, contribution: 144650 },
+            { rank: 48, name: KIKA_ALT, contribution: 78617 },
+          ],
+        },
+      ],
+      dutyRecords: [
+        { type: 'pather', entries: [{ name: KIKA_MAIN, confirmed: KIKA_MAIN }] },
+        { type: 'banner', entries: [{ name: KIKA_MAIN, confirmed: KIKA_MAIN }] },
+      ],
+      r5Adjustments: [
+        { season, player: KIKA_MAIN, points: 1, category: 'banner_help' },
+        { season, player: KIKA_ALT, points: -1, category: 'ignored_coordination' },
+      ],
+    });
+
+    const main = model.rows.find((row) => row.playerName === KIKA_MAIN);
+    const alt = model.rows.find((row) => row.playerName === KIKA_ALT);
+
+    assert.ok(main);
+    assert.ok(alt);
+    assert.notEqual(main.playerKey, alt.playerKey);
+    assert.equal(main.pathers, 1);
+    assert.equal(main.banners, 1);
+    assert.equal(main.conductBonus, 1);
+    assert.equal(alt.pathers, 0);
+    assert.equal(alt.banners, 0);
+    assert.equal(alt.conductBonus, -1);
   });
 });
 
