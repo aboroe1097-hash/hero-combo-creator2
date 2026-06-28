@@ -1714,9 +1714,6 @@
 
 /* Log panel */
 #ocrDashboardRoot .dash-log-area {
-  position: sticky;
-  top: 0.75rem;
-  z-index: 35;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
