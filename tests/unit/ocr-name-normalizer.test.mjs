@@ -115,3 +115,23 @@ test('canonical player summary groups by resolved identity and keeps simple colu
     ]
   );
 });
+
+test('canonical player summary can preserve special account identities', () => {
+  const kikaMain = '\ua9c1 Kika \ua9c2';
+  const kikaAlt = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
+  const summary = summarizeCanonicalPlayerRecords(
+    [
+      { name: kikaMain, time: '00:10' },
+      { name: kikaAlt, time: '00:20' },
+    ],
+    { preserveSpecialAccounts: true }
+  );
+
+  assert.deepEqual(
+    summary.map((row) => [row.playerName, row.entries, row.times]),
+    [
+      [kikaMain, 1, ['00:10']],
+      [kikaAlt, 1, ['00:20']],
+    ]
+  );
+});

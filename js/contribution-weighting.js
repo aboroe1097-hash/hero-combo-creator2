@@ -1,6 +1,9 @@
 import { normalizeR5Adjustment } from './ocr-adjustments.js';
 import { compactPlayerIdentity, expandDutyRawNames, getDutyCreditedNames } from './ocr-shared.js';
-import { resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
+import {
+  getSpecialAccountIdentityKey,
+  resolveCanonicalPlayerIdentity,
+} from './ocr-name-normalizer.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -15,8 +18,6 @@ export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
 const CONTRIBUTION_FIELDS = ['contribution', 'value', 'points', 'total', 'score'];
 const IMAGE_SOURCE_NOTE_RE =
   /(?:whatsapp\s+image|screenshot|screen\s*shot|\.jpe?g\b|\.png\b|\.webp\b|\.heic\b|\.gif\b|[a-z]:[\\/])/i;
-const KIKA_ALT_MARKER_RE = /[\u0f3a\u0f3b\u226a\u226b]/u;
-const KIKA_ALT_WEIGHTED_KEY = 'kikaalt';
 
 function numberValue(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -111,11 +112,7 @@ function weightedPlayerKeyForName(name) {
     .normalize('NFKC')
     .replace(/\s+/g, ' ')
     .trim();
-  const compactKey = compactPlayerIdentity(displayName);
-  if (compactKey === 'kika' && KIKA_ALT_MARKER_RE.test(displayName)) {
-    return KIKA_ALT_WEIGHTED_KEY;
-  }
-  return compactKey;
+  return getSpecialAccountIdentityKey(displayName, compactPlayerIdentity(displayName));
 }
 
 function resolveWeightedPlayerIdentity(player) {

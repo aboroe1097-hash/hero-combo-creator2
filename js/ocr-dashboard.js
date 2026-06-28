@@ -80,6 +80,10 @@ import {
   updateR5Adjustment,
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
+import {
+  buildWeightedContributionRows,
+  getWeightedContributionRecordLabel,
+} from './contribution-weighting.js';
 import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
@@ -766,10 +770,21 @@ async function ensureDashboardCloudInitialized() {
 async function ensureCloudSyncReady() {
   await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
-  const { getDb } = await loadFirebaseApi();
+  const { getCurrentUser, getDb, getFirebaseAdminClaim } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
+  const currentUser = getCurrentUser();
+  if (!currentUser || currentUser.isAnonymous) {
+    state.adminUser = null;
+    state.adminIsAdmin = false;
+    state.cloudAdminReady = false;
+    setCloudSyncStatus('error', dashT('adminCloudAdminRequired'));
+    return null;
+  }
+  state.adminUser = currentUser;
+  state.adminIsAdmin = await getFirebaseAdminClaim(state.adminIsAdmin !== true, currentUser);
   if (!state.adminIsAdmin) {
+    state.cloudAdminReady = false;
     setCloudSyncStatus('error', dashT('adminCloudAdminRequired'));
     return null;
   }
@@ -1408,7 +1423,7 @@ async function doLogin() {
     const { signInWithUsername, getFirebaseAdminClaim } = await loadFirebaseApi();
     const credential = await signInWithUsername(username, password);
     state.adminUser = credential.user;
-    state.adminIsAdmin = await getFirebaseAdminClaim(true);
+    state.adminIsAdmin = await getFirebaseAdminClaim(true, credential.user);
     if (!state.adminIsAdmin) {
       const { signOutUser } = await loadFirebaseApi();
       await signOutUser();
@@ -1778,15 +1793,520 @@ async function clearData() {
 }
 
 // --- Exports ---
-function exportData() {
-  if (!state.dashData) return;
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(
-    new Blob([JSON.stringify(state.dashData, null, 2)], { type: 'application/json' })
-  );
-  a.download = 'vts_admin_data.json';
-  a.click();
+const ADMIN_EXPORT_STORAGE_KEYS = [
+  STORAGE_KEY,
+  ROSTER_KEY,
+  ROSTER_SNAPSHOTS_KEY,
+  BANNER_KEY,
+  DUTY_LIST_KEY,
+  CONTRIBUTION_KEY,
+  EX_GUILD_CONTRIBUTION_KEY,
+  ALLIANCE_KEY,
+  LOG_KEY,
+  R5_ADJUSTMENTS_LOCAL_KEY,
+  'vts_r5_adjustment_season',
+];
+
+const ADMIN_EXPORT_COLUMNS = [
+  ['Dataset', 'dataset'],
+  ['Record ID', 'recordId'],
+  ['Date', 'date'],
+  ['Type', 'type'],
+  ['Player', 'player'],
+  ['Guild', 'guild'],
+  ['Rank', 'rank'],
+  ['Reward', 'reward'],
+  ['Metric', 'metric'],
+  ['Value', 'value'],
+  ['Structure', 'structure'],
+  ['Level', 'level'],
+  ['Target', 'target'],
+  ['Group', 'group'],
+  ['Time', 'time'],
+  ['Status', 'status'],
+  ['Note', 'note'],
+  ['Raw JSON', 'rawJson'],
+];
+
+function exportTimestampForFilename() {
+  return new Date().toISOString().replace(/[:.]/g, '-');
 }
+
+function stringifyForExport(value) {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value);
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function csvCell(value) {
+  return `"${stringifyForExport(value).replace(/"/g, '""')}"`;
+}
+
+function rowsToCsv(columnDefs, rows) {
+  return [
+    columnDefs.map(([label]) => csvCell(label)).join(','),
+    ...rows.map((row) => columnDefs.map(([, key]) => csvCell(row[key])).join(',')),
+  ].join('\n');
+}
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: 'application/json;charset=utf-8;',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function parseStorageJson(raw) {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function readStorageSnapshot() {
+  const snapshot = {};
+  ADMIN_EXPORT_STORAGE_KEYS.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null) return;
+      snapshot[key] = {
+        bytes: raw.length,
+        parsed: parseStorageJson(raw),
+        raw,
+      };
+    } catch (e) {
+      snapshot[key] = { error: e?.message || String(e) };
+    }
+  });
+  return snapshot;
+}
+
+function countEntries(records) {
+  return (Array.isArray(records) ? records : []).reduce(
+    (sum, record) => sum + (Array.isArray(record?.entries) ? record.entries.length : 0),
+    0
+  );
+}
+
+function buildAdminDatasetCounts() {
+  const attacks = Array.isArray(state.dashData?.attacks) ? state.dashData.attacks : [];
+  return {
+    attacks: attacks.length,
+    attackPlayers: attacks.reduce(
+      (sum, attack) => sum + (Array.isArray(attack?.players) ? attack.players.length : 0),
+      0
+    ),
+    playerSummaryRows: Array.isArray(state.dashData?.players_summary)
+      ? state.dashData.players_summary.length
+      : 0,
+    rosterNames: Array.isArray(state.rosterNames) ? state.rosterNames.length : 0,
+    rosterSnapshots: Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots.length : 0,
+    bannerRecords: Array.isArray(state.bannerRecords) ? state.bannerRecords.length : 0,
+    dutyRecords: Array.isArray(state.dutyRecords) ? state.dutyRecords.length : 0,
+    dutyEntries: countEntries(state.dutyRecords),
+    contributionRecords: Array.isArray(state.contributionRecords)
+      ? state.contributionRecords.length
+      : 0,
+    contributionEntries: countEntries(state.contributionRecords),
+    exGuildContributions: Array.isArray(state.exGuildContributions)
+      ? state.exGuildContributions.length
+      : 0,
+    conductAdjustments: Array.isArray(state.r5Adjustments) ? state.r5Adjustments.length : 0,
+    alliances: Array.isArray(state.allianceList) ? state.allianceList.length : 0,
+  };
+}
+
+function buildWeightedContributionExportModel() {
+  return buildWeightedContributionRows({
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    r5Adjustments: state.r5Adjustments,
+    season: state.r5Season,
+    exGuildContributions: state.exGuildContributions,
+  });
+}
+
+function contributionRewardExportLabel(tier) {
+  return (
+    {
+      guild_master: dashT('adminContributionRewardGuildMaster'),
+      core: dashT('adminContributionRewardCore'),
+      power_house: dashT('adminContributionRewardPowerHouse'),
+      members: dashT('adminContributionRewardMembers'),
+      premium: dashT('adminContributionRewardPremium'),
+      standard: dashT('adminContributionRewardStandard'),
+      review: dashT('adminContributionRewardReview'),
+      none: dashT('adminContributionRewardNone'),
+    }[tier] || dashT('adminContributionRewardAuto')
+  );
+}
+
+function buildAdminFullBackup() {
+  const dashboard = attachAuxiliaryRecords(state.dashData);
+  return {
+    ...dashboard,
+    schema: 'vts-admin-full-export-v1',
+    exportedAt: new Date().toISOString(),
+    counts: buildAdminDatasetCounts(),
+    dashboard,
+    roster: {
+      names: Array.isArray(state.rosterNames) ? state.rosterNames : [],
+      snapshots: Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots : [],
+    },
+    banners: Array.isArray(state.bannerRecords) ? state.bannerRecords : [],
+    dutyRecords: Array.isArray(state.dutyRecords) ? state.dutyRecords : [],
+    contributionRecords: Array.isArray(state.contributionRecords) ? state.contributionRecords : [],
+    exGuildContributions: Array.isArray(state.exGuildContributions)
+      ? state.exGuildContributions
+      : [],
+    conductAdjustments: Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [],
+    r5Season: state.r5Season || getDashboardR5SeasonKey(),
+    alliances: Array.isArray(state.allianceList) ? state.allianceList : [],
+    logs: parseStorageJson(localStorage.getItem(LOG_KEY)) || [],
+  };
+}
+
+function buildAdminDebugBundle() {
+  const weightedModel = buildWeightedContributionExportModel();
+  return {
+    ...buildAdminFullBackup(),
+    schema: 'vts-admin-debug-export-v1',
+    debug: {
+      app: {
+        userAgent: navigator.userAgent,
+        language: localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en',
+        location: location.href,
+      },
+      cloud: {
+        configured: state.cloudSyncConfigured === true,
+        adminReady: state.cloudAdminReady === true,
+        status: state.cloudSyncStatus || '',
+        detail: state.cloudSyncStatusDetail || '',
+      },
+      filters: {
+        searchQ: state.searchQ || '',
+        attackSearchQ: state.attackSearchQ || '',
+        timeFilter: state.timeFilter || '',
+        structureFilterKey: state.structureFilterKey || '',
+        sortCol: state.sortCol || '',
+        sortDir: state.sortDir || '',
+        leaderLimit: state.leaderLimit || '',
+      },
+      rendered: {
+        attacks: Array.isArray(state._lastRenderedAttacks) ? state._lastRenderedAttacks : [],
+        playerSummary: Array.isArray(state._lastRenderedPlayerSummary)
+          ? state._lastRenderedPlayerSummary
+          : [],
+        adjustedPlayerSummary: Array.isArray(state._lastRenderedAdjustedPlayerSummary)
+          ? state._lastRenderedAdjustedPlayerSummary
+          : [],
+        filterLabel: state._lastRenderedFilterLabel || '',
+        timeLabel: state._lastRenderedTimeLabel || '',
+      },
+      derived: {
+        weightedContribution: {
+          recordLabel: getWeightedContributionRecordLabel(weightedModel.record),
+          premiumCutoff: weightedModel.premiumCutoff,
+          weights: weightedModel.weights,
+          max: weightedModel.max,
+          rows: weightedModel.rows,
+        },
+      },
+      localStorage: readStorageSnapshot(),
+    },
+  };
+}
+
+function pushAdminExportRow(rows, dataset, values = {}) {
+  rows.push({
+    dataset,
+    recordId: values.recordId || '',
+    date: values.date || '',
+    type: values.type || '',
+    player: values.player || '',
+    guild: values.guild || '',
+    rank: values.rank ?? '',
+    reward: values.reward || '',
+    metric: values.metric || '',
+    value: values.value ?? '',
+    structure: values.structure || '',
+    level: values.level || '',
+    target: values.target || '',
+    group: values.group || '',
+    time: values.time || '',
+    status: values.status || '',
+    note: values.note || '',
+    rawJson: values.rawJson === undefined ? '' : stringifyForExport(values.rawJson),
+  });
+}
+
+function buildWeightedContributionCsvRows() {
+  const model = buildWeightedContributionExportModel();
+  return (model.rows || []).map((row) => ({
+    player: row.playerName,
+    currentRank: row.currentRank ? `#${row.currentRank}` : '',
+    currentReward: contributionRewardExportLabel(row.currentReward),
+    contributionScore: row.contributionScore,
+    exGuildContribution: row.contributionExGuild || 0,
+    shieldWalls: row.shieldWalls,
+    pathers: row.pathers,
+    banners: row.banners,
+    conductBonus: row.conductBonus,
+    dutyPoints: row.dutyPoints,
+    conductPoints: row.conductPoints,
+    weightedScore: row.weightedScore,
+    finalRank: `#${row.finalRank}`,
+    finalReward: contributionRewardExportLabel(row.finalReward),
+    sourceName: row.sourceName,
+    playerKey: row.playerKey,
+  }));
+}
+
+function buildAdminAllDataRows() {
+  const rows = [];
+  const attacks = Array.isArray(state.dashData?.attacks) ? state.dashData.attacks : [];
+  attacks.forEach((attack) => {
+    const target = getDatasetStructureTarget(attack);
+    const attackDate = displayGameTime(attack.game_time);
+    pushAdminExportRow(rows, 'attack', {
+      recordId: attack.id || '',
+      date: attackDate,
+      type: 'structure_attack',
+      metric: 'total_demolition',
+      value: attack.total_demolition || '',
+      structure: target.structure_name,
+      level: target.structure_level,
+      time: attack.start_time || '',
+      rawJson: attack,
+    });
+    attackPlayers(attack).forEach((player) => {
+      pushAdminExportRow(rows, 'attack_player', {
+        recordId: attack.id || '',
+        date: attackDate,
+        type: 'structure_attack',
+        player: player.name || '',
+        rank: player.rank || '',
+        metric: 'demolition',
+        value: player.value || '',
+        structure: target.structure_name,
+        level: target.structure_level,
+        time: attack.start_time || '',
+        rawJson: player,
+      });
+    });
+  });
+
+  const playerSummary = Array.isArray(state._lastRenderedPlayerSummary)
+    ? state._lastRenderedPlayerSummary
+    : Array.isArray(state.dashData?.players_summary)
+      ? state.dashData.players_summary
+      : [];
+  playerSummary.forEach((player, index) => {
+    pushAdminExportRow(rows, 'leaderboard_player', {
+      recordId: `leaderboard-${index + 1}`,
+      type: 'leaderboard',
+      player: player.name || '',
+      rank: index + 1,
+      metric: 'total_demolition',
+      value: player.total_demolition || 0,
+      rawJson: player,
+    });
+  });
+
+  (Array.isArray(state.rosterNames) ? state.rosterNames : []).forEach((name, index) => {
+    pushAdminExportRow(rows, 'roster_name', {
+      recordId: `roster-name-${index + 1}`,
+      type: 'roster',
+      player: name,
+      metric: 'roster_index',
+      value: index + 1,
+      rawJson: name,
+    });
+  });
+
+  (Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots : []).forEach((snapshot, sIndex) => {
+    const members = Array.isArray(snapshot?.members) ? snapshot.members : [];
+    members.forEach((member, memberIndex) => {
+      pushAdminExportRow(rows, 'roster_snapshot_member', {
+        recordId: snapshot?.id || snapshot?.createdAt || `roster-snapshot-${sIndex + 1}`,
+        date: snapshot?.date || snapshot?.createdAt || '',
+        type: 'roster_snapshot',
+        player: readRosterDisplayName(member),
+        guild: member?.alliance || '',
+        rank: member?.rank || '',
+        metric: 'snapshot_member_index',
+        value: memberIndex + 1,
+        status: member?.status || '',
+        rawJson: member,
+      });
+    });
+  });
+
+  (Array.isArray(state.bannerRecords) ? state.bannerRecords : []).forEach((record, index) => {
+    Object.entries(record?.teams || {}).forEach(([team, members]) => {
+      (Array.isArray(members) ? members : []).forEach((member) => {
+        pushAdminExportRow(rows, 'banner_assignment', {
+          recordId: record?.id || `banner-${index + 1}`,
+          date: record?.date || '',
+          type: 'banner',
+          player: member,
+          group: team,
+          metric: 'assignment_count',
+          value: 1,
+          note: record?.event || '',
+          rawJson: { record, team, member },
+        });
+      });
+    });
+  });
+
+  (Array.isArray(state.dutyRecords) ? state.dutyRecords : []).forEach((record) => {
+    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
+      pushAdminExportRow(rows, 'duty_entry', {
+        recordId: record?.id || '',
+        date: record?.date || '',
+        type: record?.type || '',
+        player: entry?.confirmed || entry?.name || entry?.original || '',
+        metric: 'duty_count',
+        value: 1,
+        target: entry?.target || '',
+        group: entry?.group || '',
+        time: entry?.usageTime || record?.gameTime || '',
+        status: entry?.status || '',
+        note: entry?.note || record?.note || '',
+        rawJson: entry,
+      });
+    });
+  });
+
+  (Array.isArray(state.contributionRecords) ? state.contributionRecords : []).forEach((record) => {
+    (Array.isArray(record?.entries) ? record.entries : []).forEach((entry) => {
+      pushAdminExportRow(rows, 'contribution_entry', {
+        recordId: record?.id || '',
+        date: record?.date || '',
+        type: record?.isPrimary ? 'primary_contribution' : 'contribution',
+        player: entry?.name || '',
+        guild: entry?.guild || '',
+        rank: entry?.rank || '',
+        reward: entry?.rewardOverride || entry?.reward || '',
+        metric: 'contribution',
+        value: entry?.contribution || entry?.value || '',
+        status: entry?.position || '',
+        note: record?.note || '',
+        rawJson: entry,
+      });
+    });
+  });
+
+  (Array.isArray(state.exGuildContributions) ? state.exGuildContributions : []).forEach(
+    (entry, index) => {
+      pushAdminExportRow(rows, 'ex_guild_contribution', {
+        recordId: entry?.id || `ex-guild-${index + 1}`,
+        date: entry?.createdAt || '',
+        type: 'ex_guild',
+        player: entry?.playerName || entry?.name || '',
+        metric: 'contribution',
+        value: entry?.contribution || entry?.value || '',
+        status: entry?.status || '',
+        rawJson: entry,
+      });
+    }
+  );
+
+  (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : []).forEach((adjustment) => {
+    pushAdminExportRow(rows, 'conduct_adjustment', {
+      recordId: adjustment?.id || '',
+      date: adjustment?.createdAt || '',
+      type: adjustment?.category || '',
+      player: adjustment?.playerName || '',
+      metric: 'conduct_bonus',
+      value: adjustment?.points || 0,
+      status: adjustment?.season || '',
+      note: adjustment?.note || '',
+      rawJson: adjustment,
+    });
+  });
+
+  (Array.isArray(state.allianceList) ? state.allianceList : []).forEach((alliance, index) => {
+    pushAdminExportRow(rows, 'alliance', {
+      recordId: `alliance-${index + 1}`,
+      type: 'alliance',
+      guild: alliance,
+      metric: 'alliance_index',
+      value: index + 1,
+      rawJson: alliance,
+    });
+  });
+
+  buildWeightedContributionCsvRows().forEach((row) => {
+    pushAdminExportRow(rows, 'weighted_contribution', {
+      recordId: row.playerKey,
+      type: 'weighted_contribution',
+      player: row.player,
+      rank: row.finalRank,
+      reward: row.finalReward,
+      metric: 'weighted_score',
+      value: row.weightedScore,
+      status: row.currentRank,
+      rawJson: row,
+    });
+  });
+
+  return rows;
+}
+
+function exportData() {
+  downloadJson(buildAdminFullBackup(), `vts_admin_full_backup_${exportTimestampForFilename()}.json`);
+}
+
+function exportAdminDebugJson() {
+  downloadJson(buildAdminDebugBundle(), `vts_admin_debug_bundle_${exportTimestampForFilename()}.json`);
+}
+
+function exportWeightedContributionCsv() {
+  const rows = buildWeightedContributionCsvRows();
+  if (!rows.length) return;
+  const columns = [
+    ['Player', 'player'],
+    ['Current rank', 'currentRank'],
+    ['Current reward', 'currentReward'],
+    ['Contribution score', 'contributionScore'],
+    ['Ex-guild contribution', 'exGuildContribution'],
+    ['#Shield Walls', 'shieldWalls'],
+    ['#Pathers', 'pathers'],
+    ['#Banners', 'banners'],
+    ['Conduct (R5) bonus', 'conductBonus'],
+    ['Duty points', 'dutyPoints'],
+    ['Conduct points', 'conductPoints'],
+    ['Weighted score', 'weightedScore'],
+    ['Final rank', 'finalRank'],
+    ['Final reward', 'finalReward'],
+    ['Source name', 'sourceName'],
+    ['Player key', 'playerKey'],
+  ];
+  downloadCsv(
+    rowsToCsv(columns, rows),
+    `vts_weighted_contribution_${exportTimestampForFilename()}.csv`
+  );
+}
+
+function exportAdminAllDataCsv() {
+  const rows = buildAdminAllDataRows();
+  if (!rows.length) return;
+  downloadCsv(rowsToCsv(ADMIN_EXPORT_COLUMNS, rows), `vts_admin_all_data_${exportTimestampForFilename()}.csv`);
+}
+
 function currentTopPerformersSubtitle() {
   const scope = state._lastRenderedFilterLabel || 'Global Top Performers';
   const timeLabel =
@@ -2234,7 +2754,7 @@ export async function bootOcrDashboard() {
             }
             try {
               state.adminUser = user;
-              state.adminIsAdmin = await getFirebaseAdminClaim(false);
+              state.adminIsAdmin = await getFirebaseAdminClaim(false, user);
               if (!state.adminIsAdmin) {
                 await signOutUser();
                 setLoginError(dashT('adminCloudAdminRequired'));
@@ -2254,7 +2774,7 @@ export async function bootOcrDashboard() {
         const currentUser = getCurrentUser();
         if (currentUser) {
           state.adminUser = currentUser;
-          state.adminIsAdmin = await getFirebaseAdminClaim(false);
+          state.adminIsAdmin = await getFirebaseAdminClaim(false, currentUser);
           if (state.adminIsAdmin) await openAdminDashboardAfterAuth({ preferCloudFirst: true });
         }
       } else {
@@ -2637,9 +3157,15 @@ export async function bootOcrDashboard() {
   if (dashExpDebug) dashExpDebug.onclick = exportDebugCsv;
   const dashExpDutyDebug = $id('dashExpDutyDebugCsv');
   if (dashExpDutyDebug) dashExpDutyDebug.onclick = exportDutyDebugCsv;
+  const dashExpWeighted = $id('dashExpWeightedCsv');
+  if (dashExpWeighted) dashExpWeighted.onclick = exportWeightedContributionCsv;
+  const dashExpAllData = $id('dashExpAllDataCsv');
+  if (dashExpAllData) dashExpAllData.onclick = exportAdminAllDataCsv;
   $id('dashExpPdf').onclick = () => window.print();
   $id('dashExpPng').onclick = exportToPng;
   $id('dashExpJson').onclick = exportData;
+  const dashExpDebugJson = $id('dashExpDebugJson');
+  if (dashExpDebugJson) dashExpDebugJson.onclick = exportAdminDebugJson;
   const chartBtn = $id('dashExportChartBtn');
   if (chartBtn) chartBtn.onclick = exportChartPng;
   const shareBtn = $id('dashShareChartBtn');

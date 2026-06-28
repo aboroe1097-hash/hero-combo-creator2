@@ -2,6 +2,8 @@ import { compactPlayerIdentity, findBestMatch, resolvePlayerNameForAttack } from
 
 const LEADING_GUILD_TAG_RE = /^\s*(?:\((?:vts|s)\)|(?:vts|s)\))\s*/i;
 const DUAL_CREDIT_OWNER_RE = /^(.*?)\s*[{(]\s*([^{}()]+?)\s*[})]\s*$/;
+const KIKA_ALT_MARKER_RE = /[\u0f3a\u0f3b\u226a\u226b]/u;
+const KIKA_ALT_IDENTITY_KEY = 'kikaalt';
 
 function readName(input) {
   if (typeof input === 'string') return input;
@@ -116,6 +118,18 @@ export function resolveCanonicalPlayerIdentity(player, options = {}) {
   };
 }
 
+export function getSpecialAccountIdentityKey(name, fallbackKey = '') {
+  const displayName = String(name || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const compactKey = compactPlayerIdentity(displayName);
+  if (compactKey === 'kika' && KIKA_ALT_MARKER_RE.test(displayName)) {
+    return KIKA_ALT_IDENTITY_KEY;
+  }
+  return fallbackKey || compactKey;
+}
+
 export function summarizeCanonicalPlayerRecords(records = [], options = {}) {
   const timeField = options.timeField || 'time';
   const groups = new Map();
@@ -134,19 +148,22 @@ export function summarizeCanonicalPlayerRecords(records = [], options = {}) {
       } catch {
         continue;
       }
-      if (seenPlayerKeys.has(identity.playerKey)) continue;
-      seenPlayerKeys.add(identity.playerKey);
+      const playerKey = options.preserveSpecialAccounts
+        ? getSpecialAccountIdentityKey(identity.playerName, identity.playerKey)
+        : identity.playerKey;
+      if (seenPlayerKeys.has(playerKey)) continue;
+      seenPlayerKeys.add(playerKey);
 
-      if (!groups.has(identity.playerKey)) {
-        groups.set(identity.playerKey, {
-          playerKey: identity.playerKey,
+      if (!groups.has(playerKey)) {
+        groups.set(playerKey, {
+          playerKey,
           playerName: identity.playerName,
           entries: 0,
           times: new Set(),
           records: [],
         });
       }
-      const group = groups.get(identity.playerKey);
+      const group = groups.get(playerKey);
       group.entries += 1;
       const time = String(
         record?.[timeField] || record?.usageTime || record?.orderTime || ''

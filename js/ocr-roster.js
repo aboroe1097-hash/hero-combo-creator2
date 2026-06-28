@@ -27,12 +27,15 @@ import {
   describeRejectedOcrImageFiles,
   readOcrImageDataUrl,
   expandDutyRawNames,
+  getDutyCreditedNames,
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 import { translations } from './translations.js';
 import {
   canonicalizePlayerOptionNames,
+  getSpecialAccountIdentityKey,
+  resolveCanonicalPlayerIdentity,
   stripGuildTagsFromPlayerName,
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
@@ -1569,18 +1572,34 @@ function summarizeDutyValues(values, limit = 3) {
   return clean.length > limit ? `${visible} +${clean.length - limit}` : visible;
 }
 
+function getDutyEntryCreditedNames(entry) {
+  const raw = entry?.name || entry?.original || '';
+  const confirmed = String(entry?.confirmed || '').trim();
+  return confirmed ? getDutyCreditedNames(raw, confirmed) : expandDutyRawNames(raw);
+}
+
+function resolveDutySummaryIdentity(name) {
+  try {
+    const identity = resolveCanonicalPlayerIdentity(name);
+    return {
+      ...identity,
+      playerKey: getSpecialAccountIdentityKey(identity.playerName, identity.playerKey),
+    };
+  } catch {
+    const playerName = String(name || '').trim();
+    const playerKey = getSpecialAccountIdentityKey(playerName, compactPlayerIdentity(playerName));
+    return playerKey ? { playerKey, playerName } : null;
+  }
+}
+
 function collectDutyPlayerSummary(records) {
   const rows = [];
   records.forEach((record) => {
     const entries = Array.isArray(record.entries) ? record.entries : [];
     entries.forEach((entry) => {
-      // Trust an admin-confirmed name; otherwise clean + split the raw Viber cell
-      // into its real credited player(s) — strips @tags/structure words/banner
-      // suffixes and splits multi-player banners. Pure-structure cells expand to
-      // [] and are dropped.
-      const credited = entry.confirmed
-        ? [String(entry.confirmed).trim()].filter(Boolean)
-        : expandDutyRawNames(entry.name || entry.original || '');
+      // Confirmed rows still go through the duty resolver so owner/operator
+      // dual credit and special account identity stay consistent.
+      const credited = getDutyEntryCreditedNames(entry);
       credited.forEach((name) => {
         rows.push({
           ...entry,
@@ -1590,7 +1609,10 @@ function collectDutyPlayerSummary(records) {
       });
     });
   });
-  return summarizeCanonicalPlayerRecords(rows, { timeField: 'time' });
+  return summarizeCanonicalPlayerRecords(rows, {
+    timeField: 'time',
+    preserveSpecialAccounts: true,
+  });
 }
 
 function renderDutyPlayerSummary(type, hostId) {
@@ -1693,13 +1715,20 @@ function renderDutySummary() {
   const counts = new Map();
   (state.dutyRecords || []).forEach((record) => {
     (record.entries || []).forEach((entry) => {
-      const credited = entry.confirmed
-        ? [String(entry.confirmed).trim()].filter(Boolean)
-        : expandDutyRawNames(entry.name || entry.original || '');
+      const credited = getDutyEntryCreditedNames(entry);
       credited.forEach((name) => {
-        if (!counts.has(name))
-          counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
-        const row = counts.get(name);
+        const identity = resolveDutySummaryIdentity(name);
+        if (!identity) return;
+        if (!counts.has(identity.playerKey))
+          counts.set(identity.playerKey, {
+            name: identity.playerName,
+            total: 0,
+            banner: 0,
+            pather: 0,
+            speed_tile: 0,
+            shield_wall: 0,
+          });
+        const row = counts.get(identity.playerKey);
         row.total += 1;
         if (row[record.type] !== undefined) row[record.type] += 1;
       });
@@ -2559,6 +2588,66 @@ function formatConductContributionBonus(value) {
   return Number(value || 0) ? formatSignedContributionValue(value) : '0';
 }
 
+const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
+
+function isWeightedContributionCompactView() {
+  try {
+    return localStorage.getItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY) === '1';
+  } catch {
+    // Some restricted browser contexts block localStorage; default to the full table.
+    return false;
+  }
+}
+
+function setWeightedContributionCompactView(enabled) {
+  try {
+    localStorage.setItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY, enabled ? '1' : '0');
+  } catch {
+    // Keep the in-page toggle usable even when localStorage is unavailable.
+  }
+  document.querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card').forEach((card) => {
+    card.classList.toggle('dash-weighted-compact', enabled);
+    card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+      button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      button.textContent = enabled ? 'Full View' : 'Compact View';
+    });
+  });
+}
+
+function renderWeightedContributionViewToggle(compact) {
+  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${compact ? 'Full View' : 'Compact View'}</button>`;
+}
+
+function bindWeightedContributionViewToggle(host) {
+  const compact = isWeightedContributionCompactView();
+  host
+    .querySelectorAll('.dash-contribution-weighted-card')
+    .forEach((card) => card.classList.toggle('dash-weighted-compact', compact));
+  host.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setWeightedContributionCompactView(!isWeightedContributionCompactView());
+    });
+  });
+}
+
+function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeightedScoreTip') {
+  const tooltipId = `${prefix}-${index}`;
+  const dutyCount = row.banners + row.pathers + row.shieldWalls;
+  const dutyNote = `${row.banners} banners + ${row.pathers} pathers + ${row.shieldWalls} shield walls`;
+  const conductNote = `${formatConductContributionBonus(row.conductBonus)} conduct x 10,000`;
+  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Weighted score breakdown for ${esc(row.playerName)}">
+    <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>Weighted score breakdown</strong>
+      <span><span>Contribution</span><b>${formatContributionValue(row.contributionScore)}</b></span>
+      <span><span>Ex-guild contribution</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
+      <span><span>Duty points <small>${esc(dutyNote)} = ${dutyCount} x 10,000</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
+      <span><span>Conduct points <small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>Total</span><b>${row.weightedScore.toFixed(1)}</b></span>
+    </span>
+  </button>`;
+}
+
 function renderWeightedContributionTable() {
   const host = $id('dashContributionWeightedPanel');
   if (!host) return;
@@ -2568,6 +2657,7 @@ function renderWeightedContributionTable() {
     dutyRecords: state.dutyRecords,
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
+    exGuildContributions: state.exGuildContributions,
   });
   const rows = model.rows || [];
 
@@ -2577,28 +2667,30 @@ function renderWeightedContributionTable() {
   }
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
-  host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card">
+  const compactView = isWeightedContributionCompactView();
+  host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-contribution-compare-head">
       <div>
         <strong>Weighted Total Contribution</strong>
         <span>${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} uses Premium reward tier</span>
       </div>
+      ${renderWeightedContributionViewToggle(compactView)}
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>Player</th><th>Current rank</th><th>Reward</th><th style="text-align:right">Contribution score</th><th style="text-align:right">#Shield Walls</th><th style="text-align:right">#Pathers</th><th style="text-align:right">#Banners</th><th style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
+        <thead><tr><th>Player</th><th class="dash-weighted-detail-col">Current rank</th><th class="dash-weighted-detail-col">Reward</th><th class="dash-weighted-detail-col" style="text-align:right">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
         <tbody>${rows
           .map(
-            (row) => `<tr>
+            (row, index) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
-          <td>${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-          <td>${esc(getContributionRewardLabel(row.currentReward))}</td>
-          <td style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
-          <td style="text-align:right">${row.shieldWalls}</td>
-          <td style="text-align:right">${row.pathers}</td>
-          <td style="text-align:right">${row.banners}</td>
-          <td style="text-align:right" class="${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatConductContributionBonus(row.conductBonus)}</td>
-          <td style="text-align:right;font-weight:900;color:var(--brand-light)">${row.weightedScore.toFixed(1)}</td>
+          <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatConductContributionBonus(row.conductBonus)}</td>
+          <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td>#${row.finalRank}</td>
           <td>${esc(getContributionRewardLabel(row.finalReward))}</td>
         </tr>`
@@ -2607,6 +2699,7 @@ function renderWeightedContributionTable() {
       </table>
     </div>
   </div>`;
+  bindWeightedContributionViewToggle(host);
   hydrateDashboardTableLabels(host);
 }
 

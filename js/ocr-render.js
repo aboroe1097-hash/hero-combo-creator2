@@ -278,11 +278,10 @@ function uniqueStructureCount(player) {
 
 function applyLeaderboardSort(players) {
   const dir = state.sortDir === 'asc' ? 1 : -1;
-  const col = state.sortCol || 'adjustedTotal';
+  const col = state.sortCol === 'bonusR5' ? 'adjustedTotal' : state.sortCol || 'adjustedTotal';
   const value = (player) => {
     if (col === 'name') return String(player.name || '').toLowerCase();
     if (col === 'participation') return valueOf(player.participation_count);
-    if (col === 'bonusR5') return valueOf(player.bonusR5);
     if (col === 'adjustedTotal') return valueOf(player.adjustedTotal ?? player.total_demolition);
     if (col === 'avg_demolition') {
       return valueOf(player.total_demolition) / Math.max(valueOf(player.participation_count), 1);
@@ -932,12 +931,86 @@ function contributionReward(entry, record) {
 function contributionRewardLabel(tier) {
   return (
     {
+      guild_master: adminT('adminContributionRewardGuildMaster'),
+      core: adminT('adminContributionRewardCore'),
+      power_house: adminT('adminContributionRewardPowerHouse'),
+      members: adminT('adminContributionRewardMembers'),
       premium: adminT('adminContributionRewardPremium'),
       standard: adminT('adminContributionRewardStandard'),
       review: adminT('adminContributionRewardReview'),
       none: adminT('adminContributionRewardNone'),
     }[tier] || adminT('adminContributionRewardAuto')
   );
+}
+
+function weightedContributionNumber(value) {
+  return valueOf(value).toLocaleString();
+}
+
+function weightedContributionSignedNumber(value) {
+  const n = valueOf(value);
+  if (!n) return '0';
+  return `${n > 0 ? '+' : '-'}${Math.abs(n).toLocaleString()}`;
+}
+
+const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
+
+function isWeightedContributionCompactView() {
+  try {
+    return localStorage.getItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY) === '1';
+  } catch {
+    // Some restricted browser contexts block localStorage; default to the full table.
+    return false;
+  }
+}
+
+function setWeightedContributionCompactView(enabled) {
+  try {
+    localStorage.setItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY, enabled ? '1' : '0');
+  } catch {
+    // Keep the in-page toggle usable even when localStorage is unavailable.
+  }
+  document.querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card').forEach((card) => {
+    card.classList.toggle('dash-weighted-compact', enabled);
+    card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+      button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      button.textContent = enabled ? 'Full View' : 'Compact View';
+    });
+  });
+}
+
+function renderWeightedContributionViewToggle(compact) {
+  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${compact ? 'Full View' : 'Compact View'}</button>`;
+}
+
+function bindWeightedContributionViewToggle(host) {
+  const compact = isWeightedContributionCompactView();
+  host
+    .querySelectorAll('.dash-contribution-weighted-card')
+    .forEach((card) => card.classList.toggle('dash-weighted-compact', compact));
+  host.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setWeightedContributionCompactView(!isWeightedContributionCompactView());
+    });
+  });
+}
+
+function renderWeightedScorePopover(row, index) {
+  const tooltipId = `dashWeightedScoreTip-${index}`;
+  const dutyCount = row.banners + row.pathers + row.shieldWalls;
+  const dutyNote = `${row.banners} banners + ${row.pathers} pathers + ${row.shieldWalls} shield walls`;
+  const conductNote = `${weightedContributionSignedNumber(row.conductBonus)} conduct x 10,000`;
+  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Weighted score breakdown for ${esc(row.playerName)}">
+    <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>Weighted score breakdown</strong>
+      <span><span>Contribution</span><b>${weightedContributionNumber(row.contributionScore)}</b></span>
+      <span><span>Ex-guild contribution</span><b>${weightedContributionNumber(row.contributionExGuild || 0)}</b></span>
+      <span><span>Duty points <small>${esc(dutyNote)} = ${dutyCount} x 10,000</small></span><b>${weightedContributionNumber(row.dutyPoints || 0)}</b></span>
+      <span><span>Conduct points <small>${esc(conductNote)}</small></span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>Total</span><b>${row.weightedScore.toFixed(1)}</b></span>
+    </span>
+  </button>`;
 }
 
 function renderWeightedContributionDashboard() {
@@ -949,6 +1022,7 @@ function renderWeightedContributionDashboard() {
     dutyRecords: state.dutyRecords,
     r5Adjustments: state.r5Adjustments,
     season: state.r5Season,
+    exGuildContributions: state.exGuildContributions,
   });
   const rows = model.rows || [];
 
@@ -959,9 +1033,10 @@ function renderWeightedContributionDashboard() {
   }
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
+  const compactView = isWeightedContributionCompactView();
   host.classList.remove('hidden');
-  host.innerHTML = `<div class="dash-card dash-weighted-contribution-card">
-    <div class="dash-card-hdr">
+  host.innerHTML = `<div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
+    <div class="dash-card-hdr dash-card-hdr-wrap">
       <h2 class="dash-card-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 20V10" />
@@ -970,23 +1045,26 @@ function renderWeightedContributionDashboard() {
         </svg>
         <span>Weighted Total Contribution</span>
       </h2>
-      <span class="dash-weighted-contribution-meta">${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} Premium</span>
+      <div class="dash-weighted-table-controls">
+        <span class="dash-weighted-contribution-meta">${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} Premium</span>
+        ${renderWeightedContributionViewToggle(compactView)}
+      </div>
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>Player</th><th>Current rank</th><th>Reward</th><th style="text-align:right">Contribution score</th><th style="text-align:right">#Shield Walls</th><th style="text-align:right">#Pathers</th><th style="text-align:right">#Banners</th><th style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
+        <thead><tr><th>Player</th><th class="dash-weighted-detail-col">Current rank</th><th class="dash-weighted-detail-col">Reward</th><th class="dash-weighted-detail-col" style="text-align:right">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
         <tbody>${rows
           .map(
-            (row) => `<tr>
+            (row, index) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
-          <td>${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-          <td>${esc(contributionRewardLabel(row.currentReward))}</td>
-          <td style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
-          <td style="text-align:right">${row.shieldWalls}</td>
-          <td style="text-align:right">${row.pathers}</td>
-          <td style="text-align:right">${row.banners}</td>
-          <td style="text-align:right" class="${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedNumber(row.conductBonus)}</td>
-          <td style="text-align:right;font-weight:900;color:var(--brand-light)">${row.weightedScore.toFixed(1)}</td>
+          <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td class="dash-weighted-detail-col">${esc(contributionRewardLabel(row.currentReward))}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
+          <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td>#${row.finalRank}</td>
           <td>${esc(contributionRewardLabel(row.finalReward))}</td>
         </tr>`
@@ -995,6 +1073,7 @@ function renderWeightedContributionDashboard() {
       </table>
     </div>
   </div>`;
+  bindWeightedContributionViewToggle(host);
   hydrateDashboardTableLabels(host);
 }
 
@@ -1161,7 +1240,7 @@ function render() {
     $id('dashKpiMvp').textContent = '---';
     $id('dashChart').innerHTML = '<div class="dash-empty">Ready for upload</div>';
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
-    $id('dashLeaderBody').innerHTML = '<tr><td colspan="7" class="dash-empty">No data</td></tr>';
+    $id('dashLeaderBody').innerHTML = '<tr><td colspan="6" class="dash-empty">No data</td></tr>';
     renderOpsOverview([], []);
     renderWeightedContributionDashboard();
     renderAnalyticsWhenVisible([], []);
@@ -1294,22 +1373,21 @@ function render() {
 
   if (structureFilterLabel) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="7" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
+    tr.innerHTML = `<td colspan="6" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
     tb.appendChild(tr);
   }
 
   toShow.forEach((p) => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    const bonus = valueOf(p.bonusR5);
-    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val ${bonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedNumber(bonus)}</td><td class="dash-val dash-adjusted-total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p);
     tb.appendChild(tr);
   });
 
   if (!filteredLeader.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="7" class="dash-empty">No matching members</td>';
+    tr.innerHTML = '<td colspan="6" class="dash-empty">No matching members</td>';
     tb.appendChild(tr);
   }
 
@@ -1317,7 +1395,7 @@ function render() {
     const tr = document.createElement('tr');
     const remaining = filteredLeader.length - state.leaderLimit;
     const pageSize = Math.min(state.leaderPageSize || 20, remaining);
-    tr.innerHTML = `<td colspan="7" class="dash-load-more-cell"><button type="button" class="dash-btn dash-load-more-btn">Show More (${pageSize})</button></td>`;
+    tr.innerHTML = `<td colspan="6" class="dash-load-more-cell"><button type="button" class="dash-btn dash-load-more-btn">Show More (${pageSize})</button></td>`;
     tr.querySelector('.dash-load-more-btn')?.addEventListener('click', () => {
       state.leaderLimit += pageSize;
       render();

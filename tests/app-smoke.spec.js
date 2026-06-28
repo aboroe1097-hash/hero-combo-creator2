@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs/promises';
 
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
@@ -1233,8 +1234,8 @@ test.describe('app smoke tabs', () => {
       { seededDash, seededRoster, seededAdjustments }
     );
     await expect(page.locator('#dashLeaderBody tr', { hasText: 'Anne' })).toHaveCount(1);
+    await expect(page.locator('#dashLeaderboardCard thead')).not.toContainText('Bonus');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
-    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('+1,000');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('2,101,000');
     const visibleLeaderRows = await page
       .locator('#dashLeaderBody tr')
@@ -1391,6 +1392,7 @@ test.describe('app smoke tabs', () => {
       localStorage.setItem('vts_hero_lang', 'ru');
       localStorage.setItem('vts_theme', 'light');
     });
+    const kikaAlt = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
     const seededDash = {
       last_updated: '25/06/2026, 23:55',
       total_attacks: 0,
@@ -1414,6 +1416,28 @@ test.describe('app smoke tabs', () => {
               group: 'Pink',
               order: '1',
               pad: '1253:645',
+              status: 'exact',
+            },
+            {
+              name: kikaAlt,
+              original: kikaAlt,
+              confirmed: kikaAlt,
+              usageTime: '10:00',
+              target: 'Gate Lv5',
+              group: 'Pink',
+              order: '1b',
+              pad: '1253:646',
+              status: 'exact',
+            },
+            {
+              name: 'Angel Banner (zubbs)',
+              original: 'Angel Banner (zubbs)',
+              confirmed: 'ANGEL',
+              usageTime: '10:30',
+              target: 'Gate Lv5',
+              group: 'Pink',
+              order: '1c',
+              pad: '1253:647',
               status: 'exact',
             },
             {
@@ -1473,6 +1497,14 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashPatherListSummary thead')).toContainText('Times');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Targets');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Groups');
+    const patherSummaryRows = await page
+      .locator('#dashPatherListSummary .dash-duty-summary-table tbody tr')
+      .evaluateAll((rows) =>
+        rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
+      );
+    expect(patherSummaryRows.filter((cells) => cells[0].includes('Kika'))).toHaveLength(2);
+    expect(patherSummaryRows.find((cells) => cells[0] === 'ANGEL')?.[2]).toContain('10:30');
+    expect(patherSummaryRows.find((cells) => cells[0] === 'Zubbs')?.[2]).toContain('10:30');
     await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
 
     const layout = await page.evaluate(() => {
@@ -1574,6 +1606,10 @@ test.describe('app smoke tabs', () => {
       'WhatsApp Image'
     );
     await expect(panel.locator('.dash-weighted-contribution-meta')).not.toContainText('.jpeg');
+    await panel.getByRole('button', { name: 'Compact View' }).click();
+    await expect(panel.getByRole('button', { name: 'Full View' })).toBeVisible();
+    await expect(panel.locator('th', { hasText: 'Contribution score' })).toBeHidden();
+    await expect(panel.locator('th', { hasText: 'Weighted score' })).toBeVisible();
 
     const weightedRows = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
@@ -1583,8 +1619,160 @@ test.describe('app smoke tabs', () => {
 
     expect(mainRow?.[5]).toBe('1');
     expect(mainRow?.[6]).toBe('1');
+    expect(mainRow?.[10]).toBe('Guild Master Reward');
     expect(altRow?.[5]).toBe('0');
     expect(altRow?.[6]).toBe('0');
+    expect(altRow?.[10]).toBe('Core Rewards');
+
+    const mainScoreTrigger = panel
+      .locator('tbody tr', { hasText: '144,650' })
+      .locator('.dash-weighted-score-trigger');
+    const scorePopover = mainScoreTrigger.locator('.dash-weighted-score-popover');
+    await expect(scorePopover).toBeHidden();
+    await mainScoreTrigger.hover();
+    await expect(scorePopover).toBeVisible();
+    await expect(scorePopover).toContainText('Contribution');
+    await expect(scorePopover).toContainText('Duty points');
+    await expect(scorePopover).toContainText('20,000');
+    await expect(scorePopover).toContainText('Total');
+
+    await page.evaluate(() => window.switchDashSubtab('contributions'));
+    await expect(
+      page.locator('#dashContributionWeightedPanel').getByRole('button', { name: 'Full View' })
+    ).toBeVisible();
+    const contributionScoreTrigger = page
+      .locator('#dashContributionWeightedPanel tbody tr', { hasText: '144,650' })
+      .locator('.dash-weighted-score-trigger');
+    const contributionScorePopover = contributionScoreTrigger.locator(
+      '.dash-weighted-score-popover'
+    );
+    await contributionScoreTrigger.focus();
+    await expect(contributionScorePopover).toBeVisible();
+    await expect(contributionScorePopover).toContainText('Weighted score breakdown');
+  });
+
+  test('admin export menu downloads all-data CSV and debug bundles', async ({ page }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    const seededDash = {
+      last_updated: '25/06/2026, 23:55',
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'admin-export-attack-1',
+          structure_name: 'Capital',
+          structure_level: 'Lv.5',
+          game_time: '25/06/2026, 23:55',
+          start_time: '23:30',
+          total_demolition: 250000,
+          players_count: 1,
+          players: [{ name: 'Alpha', value: 250000, rank: 1 }],
+        },
+      ],
+      players_summary: [],
+      dutyRecords: [
+        {
+          id: 'admin-export-duty-1',
+          type: 'pather',
+          date: '2026-06-25',
+          gameTime: '23:30',
+          entries: [
+            {
+              name: 'Alpha',
+              original: 'Alpha',
+              confirmed: 'Alpha',
+              usageTime: '23:30',
+              target: 'Gate L5',
+              group: 'Pink',
+              status: 'matched',
+            },
+          ],
+        },
+      ],
+      contributionRecords: [
+        {
+          id: 'admin-export-contribution-1',
+          date: '2026-06-25',
+          note: 'Top 20 Premium',
+          isPrimary: true,
+          premiumSlots: 20,
+          entries: [
+            { rank: '1', name: 'Alpha', guild: 'VTS', contribution: '100,000' },
+            { rank: '2', name: 'Bravo', guild: 'VTS', contribution: '80,000' },
+          ],
+        },
+      ],
+      exGuildContributions: [
+        {
+          id: 'admin-export-exguild-1',
+          playerName: 'Alpha',
+          contribution: 5000,
+          status: 'matched',
+        },
+      ],
+    };
+    const seededRoster = [
+      {
+        id: 'admin-export-roster-1',
+        date: '2026-06-25',
+        createdAt: '2026-06-25T20:00:00.000Z',
+        members: [{ name: 'Alpha', alliance: 'VTS', status: 'active' }],
+      },
+    ];
+    const conduct = [
+      {
+        id: 'admin-export-conduct-1',
+        playerName: 'Alpha',
+        playerKey: 'alpha',
+        category: 'banner_help',
+        points: 2,
+        season: 'season-2026',
+        note: 'Helped other R5',
+        createdAt: '2026-06-25T21:00:00.000Z',
+      },
+    ];
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
+    await page.evaluate(
+      ({ dash, roster, conductAdjustments }) => {
+        window.setOcrDashboardDataForTest(dash, roster, conductAdjustments);
+      },
+      { dash: seededDash, roster: seededRoster, conductAdjustments: conduct }
+    );
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
+      'Weighted Total Contribution'
+    );
+
+    await page.locator('#dashExportMenuBtn').click();
+    const weightedDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExpWeightedCsv').click();
+    const weightedDownload = await weightedDownloadPromise;
+    expect(weightedDownload.suggestedFilename()).toMatch(/^vts_weighted_contribution_.*\.csv$/);
+    const weightedCsv = await fs.readFile(await weightedDownload.path(), 'utf8');
+    expect(weightedCsv).toContain('Ex-guild contribution');
+    expect(weightedCsv).toContain('Guild Master Reward');
+
+    await page.locator('#dashExportMenuBtn').click();
+    const allDataDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExpAllDataCsv').click();
+    const allDataDownload = await allDataDownloadPromise;
+    expect(allDataDownload.suggestedFilename()).toMatch(/^vts_admin_all_data_.*\.csv$/);
+    const allDataCsv = await fs.readFile(await allDataDownload.path(), 'utf8');
+    expect(allDataCsv).toContain('duty_entry');
+    expect(allDataCsv).toContain('weighted_contribution');
+    expect(allDataCsv).toContain('ex_guild_contribution');
+
+    await page.locator('#dashExportMenuBtn').click();
+    const debugDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExpDebugJson').click();
+    const debugDownload = await debugDownloadPromise;
+    expect(debugDownload.suggestedFilename()).toMatch(/^vts_admin_debug_bundle_.*\.json$/);
+    const debugJson = JSON.parse(await fs.readFile(await debugDownload.path(), 'utf8'));
+    expect(debugJson.schema).toBe('vts-admin-debug-export-v1');
+    expect(debugJson.counts.dutyEntries).toBe(1);
+    expect(debugJson.debug.derived.weightedContribution.rows[0].playerName).toBe('Alpha');
+    expect(debugJson.debug.localStorage.vts_ocr_dashboard.bytes).toBeGreaterThan(0);
   });
 
   test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {

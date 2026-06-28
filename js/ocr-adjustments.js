@@ -347,7 +347,7 @@ async function ensureR5AdjustmentAdminContext() {
   if (!user || user.isAnonymous) {
     throw new Error('Sign in as admin before changing R5 conduct adjustments');
   }
-  const isAdmin = await firebaseApi.getFirebaseAdminClaim(true);
+  const isAdmin = await firebaseApi.getFirebaseAdminClaim(true, user);
   if (!isAdmin) throw new Error('Admin claim is required for R5 conduct adjustments');
 
   const db = firebaseApi.getDb();

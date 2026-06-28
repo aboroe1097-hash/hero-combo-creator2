@@ -327,9 +327,10 @@ async function ensureFirebaseAppCheck() {
   return appCheck;
 }
 
-export async function getFirebaseAdminClaim(forceRefresh = false) {
+export async function getFirebaseAdminClaim(forceRefresh = false, userOverride = null) {
   if (!auth) throw new Error('Firebase not initialized');
-  const user = auth.currentUser || (await ensureAnonymousAuth());
+  const user = userOverride || auth.currentUser;
+  if (!user || user.isAnonymous) return false;
   const token = await getIdTokenResult(user, forceRefresh);
   return token?.claims?.admin === true;
 }
