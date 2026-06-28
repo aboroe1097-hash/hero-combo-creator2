@@ -1143,10 +1143,10 @@ test.describe('app smoke tabs', () => {
           structure_level: 'Lv.5',
           game_time: '20/06/2026, 20:30',
           start_time: '20:00',
-          total_demolition: 2100000,
+          total_demolition: 2600000,
           players_count: 3,
           players: [
-            { name: 'Bravo', value: 1000000, rank: 1 },
+            { name: 'Bravo', value: 1500000, rank: 1 },
             { name: 'Alpha', value: 700000, rank: 2 },
             { name: 'Echo', value: 400000, rank: 3 },
           ],
@@ -1188,7 +1188,7 @@ test.describe('app smoke tabs', () => {
         season: 'season-2026',
         playerKey: 'bravo',
         playerName: 'Bravo',
-        points: 1500000,
+        points: 1000,
         category: 'connected_road',
         note: 'Connected the road to the next target',
         createdAt: '2026-06-20T12:30:00.000Z',
@@ -1234,8 +1234,8 @@ test.describe('app smoke tabs', () => {
     );
     await expect(page.locator('#dashLeaderBody tr', { hasText: 'Anne' })).toHaveCount(1);
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
-    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('+1,500,000');
-    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('3,100,000');
+    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('+1,000');
+    await expect(page.locator('#dashLeaderBody tr').first()).toContainText('2,101,000');
     const visibleLeaderRows = await page
       .locator('#dashLeaderBody tr')
       .evaluateAll(
@@ -1338,9 +1338,12 @@ test.describe('app smoke tabs', () => {
       { seededDash, seededRoster }
     );
 
-    await page.locator('#dashConductPlayer').selectOption({ label: '~Sarafino~' });
+    await page.locator('#dashConductPlayerSearchBtn').click();
+    await expect(page.locator('#dashConductPlayerSearchInput')).toBeVisible();
+    await page.locator('#dashConductPlayerSearchInput').fill('sara');
+    await expect(page.locator('#dashConductPlayer option:checked')).toHaveText('~Sarafino~');
     await page.locator('#dashConductCategory').selectOption('connected_road');
-    await page.locator('#dashConductPoints').fill('20000');
+    await page.locator('#dashConductPoints').fill('1000');
     await page.locator('#dashConductNote').fill('Helped connecting roads for L4 town');
     await page.locator('#dashConductSaveBtn').click();
 
@@ -1349,15 +1352,36 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashConductList')).toContainText(
       'Helped connecting roads for L4 town'
     );
+
+    await page.locator('#dashConductPlayer').selectOption({ label: 'Other / external R5' });
+    await expect(page.locator('#dashConductManualPlayerInput')).toBeVisible();
+    await page.locator('#dashConductManualPlayerInput').fill('External R5');
+    await page.locator('#dashConductCategory').selectOption('grant_premium');
+    await expect(page.locator('#dashConductPoints')).toHaveValue('0');
+    await page.locator('#dashConductNote').fill('Grant premium regardless of weighted rank');
+    await page.locator('#dashConductSaveBtn').click();
+
+    await expect(page.locator('#dashConductStatus')).toContainText('Conduct adjustment saved.');
+    await expect(page.locator('#dashConductList')).toContainText('External R5');
+    await expect(page.locator('#dashConductList')).toContainText('Grant premium reward');
     const saved = await page.evaluate(() =>
       JSON.parse(localStorage.getItem('vts_r5_conduct_adjustments') || '[]')
     );
-    expect(saved).toHaveLength(1);
-    expect(saved[0]).toMatchObject({
+    expect(saved).toHaveLength(2);
+    expect(saved).toContainEqual(
+      expect.objectContaining({
       playerName: '~Sarafino~',
       category: 'connected_road',
-      points: 20000,
-    });
+      points: 1000,
+      })
+    );
+    expect(saved).toContainEqual(
+      expect.objectContaining({
+        playerName: 'External R5',
+        category: 'grant_premium',
+        points: 0,
+      })
+    );
   });
 
   test('admin mobile special-list tables avoid overflow and label card rows', async ({ page }) => {

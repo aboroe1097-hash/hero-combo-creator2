@@ -39,6 +39,7 @@ import {
   deleteDutyRecord,
   renderDutyRecords,
   loadContributionRecords,
+  loadExGuildContributions,
   showContributionPasteForm,
   processContributionImages,
   editContributionRecord,
@@ -79,7 +80,7 @@ import {
   updateR5Adjustment,
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
-import { stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
+import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -104,6 +105,7 @@ import {
   BANNER_KEY,
   DUTY_LIST_KEY,
   CONTRIBUTION_KEY,
+  EX_GUILD_CONTRIBUTION_KEY,
   FS_PATH,
   FS_ROSTER_PATH,
   ROSTER_USERS,
@@ -157,6 +159,7 @@ state.rosterSnapshots = [];
 state.bannerRecords = [];
 state.dutyRecords = [];
 state.contributionRecords = [];
+state.exGuildContributions = [];
 state.r5Adjustments = [];
 state.r5Season = '';
 state.r5EditingId = '';
@@ -225,6 +228,7 @@ const AUXILIARY_RECORD_CACHES = [
   ['bannerRecords', BANNER_KEY],
   ['dutyRecords', DUTY_LIST_KEY],
   ['contributionRecords', CONTRIBUTION_KEY],
+  ['exGuildContributions', EX_GUILD_CONTRIBUTION_KEY],
 ];
 
 function writeAuxiliaryLocalCaches() {
@@ -277,7 +281,10 @@ const CONDUCT_CATEGORY_I18N_KEYS = {
   ignored_coordination: 'adminConductCategoryIgnoredCoordination',
   penalty_other: 'adminConductCategoryPenaltyOther',
   forfeit_premium: 'adminConductCategoryForfeitPremium',
+  grant_premium: 'adminConductCategoryGrantPremium',
 };
+
+const CONDUCT_MANUAL_PLAYER_VALUE = '__manual_conduct_player__';
 
 function getDashboardR5SeasonKey() {
   try {
@@ -351,11 +358,98 @@ function collectConductPlayerOptions() {
   (state._lastRenderedAdjustedPlayerSummary || state._lastRenderedPlayerSummary || []).forEach(
     (row) => addPlayer(row.name)
   );
+  (state.exGuildContributions || []).forEach((row) => addPlayer(row.playerName));
   (state.r5Adjustments || []).forEach((row) => addPlayer(row.playerName));
 
   return [...players.entries()]
     .map(([playerKey, playerName]) => ({ playerKey, playerName }))
     .sort((a, b) => a.playerName.localeCompare(b.playerName));
+}
+
+function getConductPlayerSearchParts() {
+  const rawQuery = ($id('dashConductPlayerSearchInput')?.value || '').trim();
+  return {
+    rawQuery,
+    textQuery: rawQuery.toLowerCase(),
+    compactQuery: compactPlayerIdentity(rawQuery),
+  };
+}
+
+function conductPlayerOptionMatches(row, textQuery, compactQuery) {
+  if (!textQuery && !compactQuery) return true;
+  const playerName = String(row?.playerName || '');
+  const playerKey = String(row?.playerKey || '');
+  return (
+    playerName.toLowerCase().includes(textQuery) ||
+    compactPlayerIdentity(playerName).includes(compactQuery) ||
+    playerKey.includes(compactQuery)
+  );
+}
+
+function setConductPlayerSearchExpanded(expanded, options = {}) {
+  const input = $id('dashConductPlayerSearchInput');
+  const button = $id('dashConductPlayerSearchBtn');
+  if (!input) return;
+  input.classList.toggle('hidden', !expanded);
+  button?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  if (!expanded) {
+    input.value = '';
+    renderConductPlayerOptions($id('dashConductPlayer')?.value || '');
+  } else if (options.focus) {
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }
+}
+
+function syncConductManualPlayerInput(options = {}) {
+  const select = $id('dashConductPlayer');
+  const input = $id('dashConductManualPlayerInput');
+  if (!select || !input) return;
+  const manual = select.value === CONDUCT_MANUAL_PLAYER_VALUE;
+  input.classList.toggle('hidden', !manual);
+  if (!manual) {
+    input.value = '';
+    return;
+  }
+  if (options.prefill && !input.value.trim()) input.value = options.prefill;
+  if (options.focus) {
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }
+}
+
+function conductManualPlayerOptionHtml() {
+  return `<option value="${CONDUCT_MANUAL_PLAYER_VALUE}">${esc(dashT('adminConductManualPlayerOption'))}</option>`;
+}
+
+function renderConductPlayerOptions(preferredPlayerKey = '') {
+  const select = $id('dashConductPlayer');
+  if (!select) return;
+  const options = state._conductPlayerOptions || [];
+  const { rawQuery, textQuery, compactQuery } = getConductPlayerSearchParts();
+  const filtered = options.filter((row) =>
+    conductPlayerOptionMatches(row, textQuery, compactQuery)
+  );
+  select.innerHTML = [
+    ...filtered.map(
+      (row) =>
+        `<option value="${esc(row.playerKey)}" data-player-name="${esc(row.playerName)}">${esc(row.playerName)}</option>`
+    ),
+    conductManualPlayerOptionHtml(),
+  ].join('');
+  const nextValue = filtered.some((row) => row.playerKey === preferredPlayerKey)
+    ? preferredPlayerKey
+    : preferredPlayerKey === CONDUCT_MANUAL_PLAYER_VALUE || !filtered.length
+      ? CONDUCT_MANUAL_PLAYER_VALUE
+      : filtered[0]?.playerKey || CONDUCT_MANUAL_PLAYER_VALUE;
+  select.value = nextValue;
+  syncConductManualPlayerInput({
+    prefill: nextValue === CONDUCT_MANUAL_PLAYER_VALUE ? rawQuery : '',
+  });
 }
 
 function renderConductPlayerPicker() {
@@ -364,22 +458,9 @@ function renderConductPlayerPicker() {
   const previous = select.value;
   const options = collectConductPlayerOptions();
   const signature = options.map((row) => `${row.playerKey}:${row.playerName}`).join('|');
-  if (select.dataset.signature === signature) {
-    if (previous) select.value = previous;
-    return;
-  }
   select.dataset.signature = signature;
-  select.innerHTML = options.length
-    ? options
-        .map(
-          (row) =>
-            `<option value="${esc(row.playerKey)}" data-player-name="${esc(row.playerName)}">${esc(row.playerName)}</option>`
-        )
-        .join('')
-    : `<option value="">${esc(dashT('adminConductNoPlayers'))}</option>`;
-  select.value = options.some((row) => row.playerKey === previous)
-    ? previous
-    : options[0]?.playerKey || '';
+  state._conductPlayerOptions = options;
+  renderConductPlayerOptions(previous);
 }
 
 function renderConductCategoryPicker() {
@@ -402,6 +483,7 @@ function resetConductForm() {
   state.r5EditingId = '';
   const form = $id('dashConductForm');
   if (form) form.reset();
+  setConductPlayerSearchExpanded(false);
   renderConductCategoryPicker();
   renderConductPlayerPicker();
   const category = $id('dashConductCategory')?.value || 'banner_help';
@@ -416,10 +498,12 @@ function startConductEdit(id) {
   const record = (state.r5Adjustments || []).find((item) => item.id === id);
   if (!record) return;
   state.r5EditingId = id;
+  setConductPlayerSearchExpanded(false);
   renderConductPlayerPicker();
   renderConductCategoryPicker();
   const player = $id('dashConductPlayer');
   if (player) player.value = record.playerKey;
+  syncConductManualPlayerInput();
   const category = $id('dashConductCategory');
   if (category) category.value = record.category;
   const points = $id('dashConductPoints');
@@ -546,15 +630,53 @@ function bindConductControls() {
   });
   $id('dashConductCancelEditBtn')?.addEventListener('click', resetConductForm);
   $id('dashConductSearch')?.addEventListener('input', () => renderConductAdjustments());
+  const playerSearchButton = $id('dashConductPlayerSearchBtn');
+  const playerSearchInput = $id('dashConductPlayerSearchInput');
+  playerSearchButton?.addEventListener('click', () => {
+    const expanded = playerSearchInput && !playerSearchInput.classList.contains('hidden');
+    setConductPlayerSearchExpanded(!expanded, { focus: !expanded });
+  });
+  playerSearchInput?.addEventListener('input', () => {
+    renderConductPlayerOptions($id('dashConductPlayer')?.value || '');
+  });
+  playerSearchInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setConductPlayerSearchExpanded(false);
+      $id('dashConductPlayer')?.focus();
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      $id('dashConductPlayer')?.focus();
+    }
+  });
+  $id('dashConductPlayer')?.addEventListener('change', () =>
+    syncConductManualPlayerInput({ focus: true })
+  );
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const player = $id('dashConductPlayer');
     const selected = player?.selectedOptions?.[0];
-    const playerKey = player?.value || '';
-    const playerName = selected?.dataset.playerName || selected?.textContent || '';
     const categoryKey = $id('dashConductCategory')?.value || 'merit_other';
     const points = $id('dashConductPoints')?.value;
     const note = $id('dashConductNote')?.value || '';
+    let playerKey = player?.value || '';
+    let playerName = selected?.dataset.playerName || selected?.textContent || '';
+    if (playerKey === CONDUCT_MANUAL_PLAYER_VALUE) {
+      const manualName = ($id('dashConductManualPlayerInput')?.value || '').trim();
+      if (!manualName) {
+        setConductStatus(dashT('adminConductNoPlayers'), 'warn');
+        return;
+      }
+      try {
+        const identity = resolveR5PlayerIdentity({ name: manualName });
+        playerKey = identity.playerKey;
+        playerName = identity.playerName;
+      } catch (err) {
+        setConductStatus(err?.message || dashT('adminConductNoPlayers'), 'warn');
+        return;
+      }
+    }
     if (!playerKey || !playerName) {
       setConductStatus(dashT('adminConductNoPlayers'), 'warn');
       return;
@@ -2025,6 +2147,29 @@ export async function bootOcrDashboard() {
       refreshRosterSnapshotLabel();
       renderCloudSyncStatus();
       if ($id('dashChart')) render();
+      const exGuildPasteBtn = $id('dashExGuildPasteBtn');
+      const exGuildUploadBtn = $id('dashExGuildUploadBtn');
+      const exGuildInput = $id('dashExGuildFileInput');
+      if (exGuildPasteBtn) exGuildPasteBtn.onclick = showExGuildPasteForm;
+      if (exGuildUploadBtn && exGuildInput) {
+        exGuildUploadBtn.onclick = () => {
+          if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
+          exGuildInput.value = '';
+          exGuildInput.click();
+        };
+        exGuildUploadBtn.onkeydown = (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
+          exGuildInput.value = '';
+          exGuildInput.click();
+        };
+        exGuildInput.onchange = () => {
+          const files = Array.from(exGuildInput.files || []);
+          exGuildInput.value = '';
+          if (files.length) processContributionImages(files, 'exguild');
+        };
+      }
       renderContributions();
       renderConductAdjustments();
     });
@@ -2039,6 +2184,7 @@ export async function bootOcrDashboard() {
   loadBannerRecords();
   loadDutyRecords();
   loadContributionRecords();
+  loadExGuildContributions();
   loadAllianceList();
   loadRosterAuth();
   mountStructureUploadPanel();

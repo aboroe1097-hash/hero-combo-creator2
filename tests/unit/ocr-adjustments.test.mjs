@@ -34,6 +34,8 @@ const {
 test('R5 adjustment categories expose editable merit and penalty defaults', () => {
   assert.equal(R5_ADJUSTMENT_CATEGORIES.banner_help.type, 'merit');
   assert.equal(R5_ADJUSTMENT_CATEGORIES.path_block.type, 'penalty');
+  assert.equal(R5_ADJUSTMENT_CATEGORIES.grant_premium.type, 'flag');
+  assert.equal(defaultR5PointsForCategory('grant_premium'), 0);
   assert.ok(defaultR5PointsForCategory('connected_road') > 0);
   assert.ok(defaultR5PointsForCategory('toxicity') < 0);
 });

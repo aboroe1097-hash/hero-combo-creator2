@@ -4,6 +4,7 @@ import {
   BANNER_KEY,
   DUTY_LIST_KEY,
   CONTRIBUTION_KEY,
+  EX_GUILD_CONTRIBUTION_KEY,
   ALLIANCE_KEY,
   ROSTER_AUTH_KEY,
   ROSTER_USERS,
@@ -1740,6 +1741,38 @@ function saveContributionRecords(options = {}) {
   return syncDashboardAuxiliaryRecords(options);
 }
 
+export function loadExGuildContributions() {
+  try {
+    const raw = localStorage.getItem(EX_GUILD_CONTRIBUTION_KEY);
+    state.exGuildContributions = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.exGuildContributions)) state.exGuildContributions = [];
+  } catch (e) {
+    state.exGuildContributions = [];
+  }
+}
+
+function saveExGuildContributions(options = {}) {
+  try {
+    localStorage.setItem(
+      EX_GUILD_CONTRIBUTION_KEY,
+      JSON.stringify(state.exGuildContributions || [])
+    );
+  } catch (e) {}
+  return syncDashboardAuxiliaryRecords(options);
+}
+
+function deleteExGuildEntry(id) {
+  state.exGuildContributions = (state.exGuildContributions || []).filter((e) => e.id !== id);
+  saveExGuildContributions();
+  renderExGuildTable();
+}
+
+function clearExGuildData() {
+  state.exGuildContributions = [];
+  saveExGuildContributions();
+  renderExGuildTable();
+}
+
 function parseContributionValue(value) {
   const text = String(value || '').replace(/[^\d]/g, '');
   const parsed = Number(text);
@@ -1903,7 +1936,18 @@ function parseContributionEntriesFromText(text) {
   return normalizeContributionEntries(entries);
 }
 
-function renderContributionMatchRows(entries) {
+function renderContributionMatchRows(entries, mode = 'normal') {
+  if (mode === 'exguild') {
+    return entries
+      .map(
+        (entry, index) => `<div class="dash-contribution-match-row">
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionMember'))}</span><input class="dash-contribution-name-input" type="text" placeholder="${esc(adminT('adminContributionMemberNamePh'))}" value="${esc(entry.name || '')}"></label>
+      <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminContributionValue'))}</span><input class="dash-contribution-value-input" type="text" inputmode="numeric" placeholder="${esc(adminT('adminContributionValuePh'))}" value="${entry.contribution ? esc(formatContributionValue(entry.contribution)) : ''}"></label>
+      <button class="dash-banner-del-btn" type="button" title="${esc(adminT('adminContributionRemoveRow'))}" onclick="this.closest('.dash-contribution-match-row').remove()">x</button>
+    </div>`
+      )
+      .join('');
+  }
   return entries
     .map(
       (entry, index) => `<div class="dash-contribution-match-row">
@@ -1925,21 +1969,32 @@ function renderContributionMatchRows(entries) {
     .join('');
 }
 
-function showContributionConfirmModal(entries, sourceLabel = '', existingRecordId = null) {
+function showContributionConfirmModal(
+  entries,
+  sourceLabel = '',
+  existingRecordId = null,
+  mode = 'normal'
+) {
   const cleanEntries = normalizeContributionEntries(entries);
   if (!cleanEntries.length) return;
+  const isExGuild = mode === 'exguild';
   const existingRecord = existingRecordId
     ? state.contributionRecords.find((record) => record.id === existingRecordId)
     : null;
   const m = $id('dashModal'),
     body = $id('dashModalBody');
-  $id('dashModalTitle').textContent = existingRecord
-    ? adminT('adminContributionEditTitle')
-    : adminT('adminContributionConfirmTitle');
+  $id('dashModalTitle').textContent = isExGuild
+    ? adminT('adminExGuildConfirmTitle')
+    : existingRecord
+      ? adminT('adminContributionEditTitle')
+      : adminT('adminContributionConfirmTitle');
   $id('dashModalSub').textContent = adminT('adminContributionModalSub', {
     count: cleanEntries.length,
   });
-  body.innerHTML = `<div class="dash-banner-form-row">
+  body.innerHTML =
+    (isExGuild
+      ? ''
+      : `<div class="dash-banner-form-row">
     <label>${esc(adminT('adminContributionDateLabel'))}</label>
     <input type="date" id="dashContributionDate" value="${existingRecord?.date || new Date().toISOString().slice(0, 10)}" style="flex:1">
   </div>
@@ -1951,37 +2006,67 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
     <label>${esc(adminT('adminContributionPremiumLabel'))}</label>
     <input type="number" id="dashContributionPremiumCutoff" min="1" max="100" value="${esc(existingRecord?.premiumCutoff || 20)}" style="width:110px">
     <span class="dash-form-hint">${esc(adminT('adminContributionPremiumHint'))}</span>
+  </div>`) +
+    `<div class="dash-contribution-match-head">${
+      isExGuild
+        ? `<span>${esc(adminT('adminContributionMember'))}</span><span>${esc(adminT('adminContributionValue'))}</span><span></span>`
+        : `<span>${esc(adminT('adminContributionRank'))}</span><span>${esc(adminT('adminContributionMember'))}</span><span>${esc(adminT('adminContributionGuild'))}</span><span>${esc(adminT('adminContributionValue'))}</span><span>${esc(adminT('adminContributionPosition'))}</span><span>${esc(adminT('adminContributionReward'))}</span><span></span>`
+    }
   </div>
-  <div class="dash-contribution-match-head">
-    <span>${esc(adminT('adminContributionRank'))}</span><span>${esc(adminT('adminContributionMember'))}</span><span>${esc(adminT('adminContributionGuild'))}</span><span>${esc(adminT('adminContributionValue'))}</span><span>${esc(adminT('adminContributionPosition'))}</span><span>${esc(adminT('adminContributionReward'))}</span><span></span>
-  </div>
-  <div class="dash-contribution-match-list">${renderContributionMatchRows(existingRecord?.entries || cleanEntries)}</div>
+  <div class="dash-contribution-match-list">${renderContributionMatchRows(existingRecord?.entries || cleanEntries, mode)}</div>
   <div style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
-    <button id="dashContributionAddRowBtn" class="dash-btn" type="button">${esc(adminT('adminContributionAddRow'))}</button>
-    <button id="dashContributionSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(existingRecord ? adminT('adminContributionUpdateList') : adminT('adminContributionSaveList'))}</button>
+    <button id="dashContributionAddRowBtn" class="dash-btn" type="button">${esc(adminT(isExGuild ? 'adminExGuildAddRow' : 'adminContributionAddRow'))}</button>
+    <button id="dashContributionSaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(isExGuild ? adminT('adminExGuildSaveList') : existingRecord ? adminT('adminContributionUpdateList') : adminT('adminContributionSaveList'))}</button>
     <button id="dashContributionCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
   $id('dashContributionAddRowBtn').onclick = () => {
     const list = body.querySelector('.dash-contribution-match-list');
-    list.insertAdjacentHTML(
-      'beforeend',
-      renderContributionMatchRows([
-        { rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' },
-      ])
-    );
+    const emptyRow = isExGuild
+      ? [{ name: '', contribution: '' }]
+      : [{ rank: '', name: '', guild: '', contribution: '', position: '', rewardOverride: '' }];
+    list.insertAdjacentHTML('beforeend', renderContributionMatchRows(emptyRow, mode));
   };
   $id('dashContributionSaveBtn').onclick = async () => {
-    const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map((row) => ({
-      rank: row.querySelector('.dash-contribution-rank-input')?.value || '',
-      name: row.querySelector('.dash-contribution-name-input')?.value || '',
-      guild: row.querySelector('.dash-contribution-guild-input')?.value || '',
-      contribution: row.querySelector('.dash-contribution-value-input')?.value || '',
-      position: row.querySelector('.dash-contribution-position-input')?.value || '',
-      rewardOverride: row.querySelector('.dash-contribution-reward-input')?.value || '',
-    }));
+    const rows = Array.from(body.querySelectorAll('.dash-contribution-match-row')).map((row) => {
+      const base = {
+        name: row.querySelector('.dash-contribution-name-input')?.value || '',
+        contribution: row.querySelector('.dash-contribution-value-input')?.value || '',
+      };
+      if (isExGuild) return base;
+      return {
+        ...base,
+        rank: row.querySelector('.dash-contribution-rank-input')?.value || '',
+        guild: row.querySelector('.dash-contribution-guild-input')?.value || '',
+        position: row.querySelector('.dash-contribution-position-input')?.value || '',
+        rewardOverride: row.querySelector('.dash-contribution-reward-input')?.value || '',
+      };
+    });
     const normalized = normalizeContributionEntries(rows);
     if (!normalized.length) {
       alert(adminT('adminContributionNoValidRowsAlert'));
+      return;
+    }
+    if (isExGuild) {
+      const sourceNote = $id('dashContributionNote')?.value.trim() || sourceLabel;
+      normalized.forEach((entry) => {
+        state.exGuildContributions.push({
+          id: `exg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          playerName: entry.name || '',
+          contribution: entry.contribution || entry.value || 0,
+          sourceNote,
+        });
+      });
+      const saveBtn = $id('dashContributionSaveBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+      const synced = await saveExGuildContributions({ immediate: true, awaitCloud: true });
+      closeModal();
+      renderContributions();
+      refreshDashboardOverview();
+      log(adminT('adminExGuildSavedLog', { count: normalized.length }), 'success');
+      notifySpecialListCloudResult(synced, adminT('adminExGuildTab'));
       return;
     }
     const record = {
@@ -1999,6 +2084,7 @@ function showContributionConfirmModal(entries, sourceLabel = '', existingRecordI
       const index = state.contributionRecords.findIndex((item) => item.id === existingRecord.id);
       if (index >= 0) state.contributionRecords[index] = record;
     } else {
+      if (!state.contributionRecords.length) record.isPrimary = true;
       state.contributionRecords.push(record);
     }
     const saveBtn = $id('dashContributionSaveBtn');
@@ -2034,6 +2120,17 @@ function showContributionPasteForm() {
   showContributionConfirmModal(entries, adminT('adminContributionManualPaste'));
 }
 
+function showExGuildPasteForm() {
+  const text = prompt(adminT('adminExGuildPastePrompt'), '');
+  if (text === null) return;
+  const entries = parseContributionEntriesFromText(text);
+  if (!entries.length) {
+    log(adminT('adminContributionNoRowsLog'), 'warn');
+    return;
+  }
+  showContributionConfirmModal(entries, adminT('adminExGuildManualPaste'), null, 'exguild');
+}
+
 function setContributionUploadStatus(message, type = 'error') {
   const el = $id('dashContributionStatus');
   if (!el) return;
@@ -2049,7 +2146,7 @@ function clearContributionUploadStatus() {
   el.textContent = '';
 }
 
-async function processContributionImages(files) {
+async function processContributionImages(files, mode = 'normal') {
   if (state._contributionProcessing) {
     log(adminT('adminContributionOcrRunningLog'), 'warn');
     return;
@@ -2148,7 +2245,7 @@ Rules:
     return;
   }
   clearContributionUploadStatus();
-  showContributionConfirmModal(unique, valid.map((f) => f.name).join(', '));
+  showContributionConfirmModal(unique, valid.map((f) => f.name).join(', '), null, mode);
 }
 
 function setContributionReward(recordId, entryIndex, rewardTier) {
@@ -2176,6 +2273,15 @@ function deleteContributionRecord(id) {
   renderContributions();
   refreshDashboardOverview();
   log(adminT('adminContributionDeletedLog'), 'warn');
+}
+
+function setContributionPrimary(id) {
+  (state.contributionRecords || []).forEach((record) => {
+    record.isPrimary = record.id === id;
+  });
+  saveContributionRecords();
+  renderContributions();
+  refreshDashboardOverview();
 }
 
 function buildContributionCsv(recordId = '') {
@@ -2504,6 +2610,7 @@ function renderWeightedContributionTable() {
 function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
+  renderWeightedContributionTable();
   if (!body) return;
   const records = Array.isArray(state.contributionRecords)
     ? state.contributionRecords.slice().reverse()
@@ -2522,9 +2629,11 @@ function renderContributions() {
       const premiumCount = entries.filter(
         (entry) => getContributionReward(entry, record) === 'premium'
       ).length;
-      return `<div class="dash-banner-card dash-contribution-card">
+      const isPrimary = record.isPrimary === true;
+      return `<div class="dash-banner-card dash-contribution-card ${isPrimary ? 'dash-contribution-primary' : ''}">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
+          <span style="cursor:pointer" onclick="setContributionPrimary('${esc(record.id)}')" title="${esc(adminT(isPrimary ? 'adminContributionPrimaryTitle' : 'adminContributionSetPrimaryTitle'))}">${isPrimary ? '★' : '☆'}</span>
           <span>${esc(record.date || '')}</span>
           ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
           <span class="dash-banner-count">${esc(adminT('adminContributionRowsCount', { count: entries.length }))}</span>
@@ -2567,6 +2676,46 @@ function renderContributions() {
     })
     .join('');
   hydrateDashboardTableLabels(body);
+  renderExGuildTable();
+}
+
+function renderExGuildTable() {
+  const host = $id('dashExGuildBody');
+  if (!host) return;
+  const entries = state.exGuildContributions || [];
+  const primaryRecord = (state.contributionRecords || []).find((r) => r.isPrimary) ||
+    (state.contributionRecords || [])[state.contributionRecords.length - 1];
+  const primaryKeys = new Set();
+  (primaryRecord?.entries || []).forEach((entry) => {
+    try { primaryKeys.add(compactPlayerIdentity(entry.name || '')); } catch {}
+  });
+  if (!entries.length) {
+    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminExGuildEmpty'))}</div>`;
+    return;
+  }
+  const rowsHtml = entries
+    .map((entry) => {
+      const matched = primaryKeys.has(compactPlayerIdentity(entry.playerName || ''));
+      const statusBadge = matched
+        ? `<span class="dash-badge dash-badge-ok">${esc(adminT('adminExGuildMatched'))}</span>`
+        : `<span class="dash-badge">${esc(adminT('adminExGuildUnmatched'))}</span>`;
+      return `<tr>
+        <td>${esc(entry.playerName || '')}</td>
+        <td style="text-align:right;font-weight:800">${formatContributionValue(entry.contribution)}</td>
+        <td style="font-size:0.72rem;color:var(--text-dim)">${esc(entry.sourceNote || '')}</td>
+        <td>${statusBadge}</td>
+        <td><button class="dash-banner-del-btn" onclick="deleteExGuildEntry('${esc(entry.id)}')" title="${esc(adminT('adminDelete'))}">x</button></td>
+      </tr>`;
+    })
+    .join('');
+  host.innerHTML = `<table class="dash-banner-table">
+    <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th></th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <div style="margin-top:0.5rem">
+    <button class="dash-btn" onclick="clearExGuildData()" style="font-size:0.75rem">${esc(adminT('adminExGuildClearAll'))}</button>
+  </div>`;
+  hydrateDashboardTableLabels(host);
 }
 
 export {

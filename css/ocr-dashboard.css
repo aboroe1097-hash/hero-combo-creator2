@@ -4564,6 +4564,47 @@ body[style*='overflow: hidden'] .tab-panel {
   grid-column: span 2;
 }
 
+#ocrDashboardRoot .dash-conduct-player-field {
+  min-width: 0;
+}
+
+#ocrDashboardRoot .dash-conduct-player-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 0.45rem;
+  align-items: start;
+}
+
+#ocrDashboardRoot .dash-conduct-player-picker .dash-input,
+#ocrDashboardRoot .dash-conduct-player-search-input,
+#ocrDashboardRoot .dash-conduct-manual-player-input {
+  margin-bottom: 0;
+}
+
+#ocrDashboardRoot .dash-conduct-player-search-btn {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 10px;
+}
+
+#ocrDashboardRoot .dash-conduct-player-search-btn[aria-expanded='true'] {
+  border-color: var(--brand);
+  color: #67e8f9;
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+#ocrDashboardRoot .dash-conduct-player-search-input,
+#ocrDashboardRoot .dash-conduct-manual-player-input {
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 #ocrDashboardRoot .dash-conduct-actions {
   display: flex;
   gap: 0.5rem;

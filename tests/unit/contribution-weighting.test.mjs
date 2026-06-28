@@ -121,3 +121,49 @@ test('latest contribution record selection uses newest date and premiumSlots fal
     );
   });
 });
+
+test('R5 premium grant and forfeit flags override weighted final reward tier', () => {
+  const season = 'eden-x1-2026';
+  const entries = Array.from({ length: 25 }, (_, index) => ({
+    rank: index + 1,
+    name: `Player ${index + 1}`,
+    contribution: 25000 - index,
+  }));
+
+  const model = buildWeightedContributionRows({
+    season,
+    contributionRecords: [
+      {
+        id: 'contrib-flags',
+        date: '2026-06-25',
+        entries,
+      },
+    ],
+    r5Adjustments: [
+      {
+        season,
+        playerKey: compactPlayerIdentity('Player 1'),
+        playerName: 'Player 1',
+        category: 'forfeit_premium',
+        points: 0,
+      },
+      {
+        season,
+        playerKey: compactPlayerIdentity('Player 25'),
+        playerName: 'Player 25',
+        category: 'grant_premium',
+        points: 0,
+      },
+    ],
+  });
+
+  const forfeitedTop = model.rows.find(
+    (row) => row.playerKey === compactPlayerIdentity('Player 1')
+  );
+  const grantedLow = model.rows.find((row) => row.playerKey === compactPlayerIdentity('Player 25'));
+
+  assert.equal(forfeitedTop.finalRank, 1);
+  assert.equal(forfeitedTop.finalReward, 'power_house');
+  assert.equal(grantedLow.finalRank, 25);
+  assert.equal(grantedLow.finalReward, 'core');
+});

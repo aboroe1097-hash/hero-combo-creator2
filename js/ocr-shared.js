@@ -8,6 +8,7 @@ export const ROSTER_SNAPSHOTS_KEY = 'vts_roster_snapshots';
 export const BANNER_KEY = 'vts_ocr_banners';
 export const DUTY_LIST_KEY = 'vts_ocr_duty_lists';
 export const CONTRIBUTION_KEY = 'vts_ocr_contribution_lists';
+export const EX_GUILD_CONTRIBUTION_KEY = 'vts_ocr_ex_guild_contributions';
 export const FS_PATH = 'vts_admin/dashboard_data';
 export const FS_ROSTER_PATH = 'vts_admin/roster_data';
 export const LOG_KEY = 'vts_ocr_log';

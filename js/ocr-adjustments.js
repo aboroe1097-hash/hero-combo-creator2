@@ -58,6 +58,12 @@ export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
     defaultPoints: 0,
     label: 'Forfeit premium reward',
   }),
+  grant_premium: Object.freeze({
+    key: 'grant_premium',
+    type: 'flag',
+    defaultPoints: 0,
+    label: 'Grant premium reward',
+  }),
 });
 
 export const R5_ADJUSTMENT_CATEGORY_KEYS = Object.freeze(Object.keys(R5_ADJUSTMENT_CATEGORIES));

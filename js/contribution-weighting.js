@@ -72,6 +72,12 @@ export function getLatestContributionRecord(records = []) {
   })[0];
 }
 
+export function getPrimaryContributionRecord(records = []) {
+  const arr = Array.isArray(records) ? records : [];
+  const primary = arr.find((r) => r.isPrimary === true);
+  return primary || getLatestContributionRecord(arr);
+}
+
 function resolvePlayerIdentity(player) {
   try {
     return resolveCanonicalPlayerIdentity(player);
@@ -136,19 +142,63 @@ function buildConductMap(adjustments = [], season = '') {
 
 function buildForfeitPlayerSet(adjustments = [], season = '') {
   if (!season || !Array.isArray(adjustments)) return new Set();
-  const seasonKey = String(season || '').toLowerCase().trim();
+  const seasonKey = String(season || '')
+    .toLowerCase()
+    .trim();
   const forfeit = new Set();
   adjustments.forEach((entry) => {
     if (entry?.category !== 'forfeit_premium') return;
-    if (String(entry?.season || '').toLowerCase().trim() !== seasonKey) return;
+    if (
+      String(entry?.season || '')
+        .toLowerCase()
+        .trim() !== seasonKey
+    )
+      return;
     try {
       const identity = resolvePlayerIdentity(entry?.player || entry);
       if (identity) forfeit.add(identity.playerKey);
-    } catch { /* skip unparseable player */ }
+    } catch {
+      /* skip unparseable player */
+    }
   });
   return forfeit;
 }
 
+function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
+  if (!season || !Array.isArray(adjustments)) return new Set();
+  const seasonKey = String(season || '')
+    .toLowerCase()
+    .trim();
+  const grants = new Set();
+  adjustments.forEach((entry) => {
+    if (entry?.category !== 'grant_premium') return;
+    if (
+      String(entry?.season || '')
+        .toLowerCase()
+        .trim() !== seasonKey
+    )
+      return;
+    try {
+      const identity = resolvePlayerIdentity(entry?.player || entry);
+      if (identity) grants.add(identity.playerKey);
+    } catch {
+      /* skip unparseable player */
+    }
+  });
+  return grants;
+}
+
+function buildExGuildMap(exGuildContributions = []) {
+  const map = new Map();
+  (Array.isArray(exGuildContributions) ? exGuildContributions : []).forEach((entry) => {
+    const identity = resolvePlayerIdentity(entry?.playerName || entry);
+    if (!identity) return;
+    const value = contributionValue(entry);
+    if (!value) return;
+    map.set(identity.playerKey, (map.get(identity.playerKey) || 0) + value);
+  });
+  return map;
+}
 
 function normalizeWeights(weights) {
   return {
@@ -161,18 +211,27 @@ export function buildWeightedContributionRows(options = {}) {
   const contributionRecords = Array.isArray(options.contributionRecords)
     ? options.contributionRecords
     : [];
-  const record = options.contributionRecord || getLatestContributionRecord(contributionRecords);
+  const record = options.contributionRecord || getPrimaryContributionRecord(contributionRecords);
   const entries = Array.isArray(record?.entries) ? record.entries : [];
   const dutyCounts = buildWeightedDutyCounts(options.dutyRecords);
   const conductMap = buildConductMap(options.r5Adjustments, options.season || options.r5Season);
   const weights = normalizeWeights(options.weights);
-  const forfeitPlayers = buildForfeitPlayerSet(options.r5Adjustments, options.season || options.r5Season);
+  const forfeitPlayers = buildForfeitPlayerSet(
+    options.r5Adjustments,
+    options.season || options.r5Season
+  );
+  const grantPremiumPlayers = buildGrantPremiumPlayerSet(
+    options.r5Adjustments,
+    options.season || options.r5Season
+  );
+  const exGuildMap = buildExGuildMap(options.exGuildContributions);
 
   const rows = entries
     .map((entry) => {
       const identity = resolvePlayerIdentity(entry);
       if (!identity) return null;
       const duties = dutyCounts.get(identity.playerKey) || emptyDutyCounts();
+      const exGuildScore = exGuildMap.get(identity.playerKey) || 0;
       return {
         playerKey: identity.playerKey,
         playerName: identity.playerName,
@@ -180,6 +239,7 @@ export function buildWeightedContributionRows(options = {}) {
         currentRank: numberValue(entry.rank),
         currentReward: getContributionRewardTier(entry, record),
         contributionScore: contributionValue(entry),
+        contributionExGuild: exGuildScore,
         shieldWalls: duties.shieldWalls,
         pathers: duties.pathers,
         banners: duties.banners,
@@ -193,9 +253,13 @@ export function buildWeightedContributionRows(options = {}) {
 
   const rankedRows = rows
     .map((row) => {
-      const dutyPoints = row.banners * BASE_POINT_VALUE + row.pathers * BASE_POINT_VALUE + row.shieldWalls * BASE_POINT_VALUE;
+      const exGuildPoints = row.contributionExGuild || 0;
+      const dutyPoints =
+        row.banners * BASE_POINT_VALUE +
+        row.pathers * BASE_POINT_VALUE +
+        row.shieldWalls * BASE_POINT_VALUE;
       const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-      const weightedScore = row.contributionScore + dutyPoints + conductPoints;
+      const weightedScore = row.contributionScore + exGuildPoints + dutyPoints + conductPoints;
 
       return {
         ...row,
@@ -218,7 +282,13 @@ export function buildWeightedContributionRows(options = {}) {
       else if (rank <= 110) finalReward = 'power_house';
       else if (rank <= 200) finalReward = 'members';
       else finalReward = 'standard';
-      if (forfeitPlayers.has(row.playerKey) && (finalReward === 'guild_master' || finalReward === 'core')) {
+      if (grantPremiumPlayers.has(row.playerKey) && finalReward !== 'guild_master') {
+        finalReward = 'core';
+      }
+      if (
+        forfeitPlayers.has(row.playerKey) &&
+        (finalReward === 'guild_master' || finalReward === 'core')
+      ) {
         finalReward = 'power_house';
       }
       return { ...row, finalRank: rank, finalReward };
