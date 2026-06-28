@@ -1808,6 +1808,10 @@ function getContributionReward(entry, record) {
 function getContributionRewardLabel(tier) {
   return (
     {
+      guild_master: adminT('adminContributionRewardGuildMaster'),
+      core: adminT('adminContributionRewardCore'),
+      power_house: adminT('adminContributionRewardPowerHouse'),
+      members: adminT('adminContributionRewardMembers'),
       premium: adminT('adminContributionRewardPremium'),
       standard: adminT('adminContributionRewardStandard'),
       review: adminT('adminContributionRewardReview'),
@@ -2500,7 +2504,6 @@ function renderWeightedContributionTable() {
 function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
-  renderWeightedContributionTable();
   if (!body) return;
   const records = Array.isArray(state.contributionRecords)
     ? state.contributionRecords.slice().reverse()

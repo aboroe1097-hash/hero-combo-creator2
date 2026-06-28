@@ -105,6 +105,7 @@ const pt = {
   adminContributionExportSheet: 'Exportar planilha',
   adminContributionUploadImage: 'Enviar imagem',
   adminConductTitle: 'Ajustes de Conduta R5',
+  adminConductSearchPh: 'Pesquisar por nome do jogador…',
   adminConductSubtitle:
     'Adicione pontos de mérito ou penalidade por trabalho em equipe, banners, estradas e conduta. O ranking de presentes usa o total ajustado.',
   adminConductSeasonLabel: 'Temporada: {season}',
@@ -218,6 +219,10 @@ const pt = {
   adminContributionSnapshotSummary: '{count} snapshots',
   adminContributionTotalCount: '{total} total',
   adminContributionTopPlayer: 'topo {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Padrão',
   adminContributionRewardReview: 'Revisar',

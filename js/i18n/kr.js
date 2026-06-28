@@ -22,6 +22,7 @@ const kr = {
   adminContributionExportSheet: '시트 내보내기',
   adminContributionUploadImage: '이미지 업로드',
   adminConductTitle: 'R5 행동 조정',
+  adminConductSearchPh: '플레이어 이름으로 검색…',
   adminConductSubtitle:
     '팀워크, 배너, 도로 및 행동에 대한 수동 공로 또는 패널티 포인트를 추가합니다. 선물 순위는 조정된 총계를 사용합니다.',
   adminConductSeasonLabel: '시즌: {season}',
@@ -134,6 +135,10 @@ const kr = {
   adminContributionSnapshotSummary: '스냅샷 {count}개',
   adminContributionTotalCount: '총 {total}',
   adminContributionTopPlayer: '1위 {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: '프리미엄',
   adminContributionRewardStandard: '일반',
   adminContributionRewardReview: '검토',

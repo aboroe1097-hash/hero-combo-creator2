@@ -66,13 +66,13 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(sarafino.shieldWalls, 1);
     assert.equal(sarafino.conductBonus, 20000);
     assert.equal(sarafino.finalRank, 1);
-    assert.equal(sarafino.finalReward, 'premium');
+    assert.equal(sarafino.finalReward, 'guild_master');
     assert.equal(Number(sarafino.weightedScore.toFixed(1)), 85);
 
     assert.equal(undead.banners, 1);
     assert.equal(undead.conductBonus, -10000);
-    assert.equal(undead.currentReward, 'standard');
-    assert.equal(undead.finalReward, 'standard');
+    assert.equal(undead.currentReward, 'core');
+    assert.equal(undead.finalReward, 'core');
     assert.equal(Number(undead.weightedScore.toFixed(1)), 35);
   });
 });
@@ -115,8 +115,8 @@ test('latest contribution record selection uses newest date and premiumSlots fal
     assert.deepEqual(
       model.rows.map((row) => [row.playerKey, row.currentReward, row.finalReward]),
       [
-        [compactPlayerIdentity('Kika'), 'premium', 'premium'],
-        [compactPlayerIdentity('UNDEAD'), 'standard', 'standard'],
+        [compactPlayerIdentity('Kika'), 'guild_master', 'guild_master'],
+        [compactPlayerIdentity('UNDEAD'), 'core', 'core'],
       ]
     );
   });

@@ -1,6 +1,7 @@
 import { compactPlayerIdentity, resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
 
 export const R5_ADJUSTMENTS_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
+export const R5_ADJUSTMENTS_LOCAL_KEY = 'vts_r5_conduct_adjustments';
 
 export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
   banner_help: Object.freeze({
@@ -189,6 +190,128 @@ export function buildAdjustedGiftRanking(playerRows = [], adjustments = [], seas
     .map((row, index) => ({ ...row, adjustedRank: index + 1 }));
 }
 
+function canUseLocalStorage() {
+  return typeof localStorage !== 'undefined' && localStorage;
+}
+
+function readLocalR5AdjustmentRecords() {
+  if (!canUseLocalStorage()) return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(R5_ADJUSTMENTS_LOCAL_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalR5AdjustmentRecords(records) {
+  if (!canUseLocalStorage()) return;
+  localStorage.setItem(
+    R5_ADJUSTMENTS_LOCAL_KEY,
+    JSON.stringify(Array.isArray(records) ? records : [])
+  );
+}
+
+function sortR5Adjustments(records) {
+  return (Array.isArray(records) ? records : []).sort((a, b) => {
+    const aMs =
+      typeof a.createdAt?.toMillis === 'function'
+        ? a.createdAt.toMillis()
+        : Date.parse(a.createdAt || '') || 0;
+    const bMs =
+      typeof b.createdAt?.toMillis === 'function'
+        ? b.createdAt.toMillis()
+        : Date.parse(b.createdAt || '') || 0;
+    return bMs - aMs;
+  });
+}
+
+function localR5AdjustmentId() {
+  const random =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `local_r5_${random}`;
+}
+
+function isR5PersistenceUnavailable(err) {
+  const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  return /firebase is not configured|firebase not initialized|firestore is not available/i.test(
+    text
+  );
+}
+
+export function loadLocalR5Adjustments(season) {
+  const seasonKey = normalizeR5Season(season);
+  return sortR5Adjustments(
+    readLocalR5AdjustmentRecords()
+      .map((entry) => {
+        try {
+          return normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
+        } catch {
+          return null;
+        }
+      })
+      .filter((entry) => entry?.season === seasonKey)
+  );
+}
+
+export function createLocalR5Adjustment(input) {
+  const record = normalizeR5Adjustment({
+    ...input,
+    id: input?.id || localR5AdjustmentId(),
+    createdAt: input?.createdAt || new Date().toISOString(),
+    createdBy: input?.createdBy || 'local-admin',
+  });
+  const records = readLocalR5AdjustmentRecords().filter((entry) => entry?.id !== record.id);
+  records.push(record);
+  writeLocalR5AdjustmentRecords(records);
+  return record;
+}
+
+export function updateLocalR5Adjustment(adjustmentId, patch = {}) {
+  const id = requireString(adjustmentId, 'R5 adjustment id', 80);
+  const records = readLocalR5AdjustmentRecords();
+  const index = records.findIndex((entry) => entry?.id === id);
+  if (index < 0) throw new Error('R5 adjustment not found');
+  const current = records[index];
+  const next = { ...current };
+
+  if ('category' in patch) next.category = getR5AdjustmentCategory(patch.category).key;
+  if ('points' in patch) {
+    next.points = normalizeR5Points(patch.points);
+  } else if ('category' in patch && patch.useCategoryDefault === true) {
+    next.points = defaultR5PointsForCategory(next.category);
+  }
+  if ('note' in patch) {
+    next.note = String(patch.note || '')
+      .trim()
+      .slice(0, 500);
+  }
+  if ('player' in patch || ('playerName' in patch && 'playerKey' in patch)) {
+    const identity =
+      patch.playerName && patch.playerKey
+        ? {
+            playerKey: compactPlayerIdentity(patch.playerKey),
+            playerName: requireString(patch.playerName, 'R5 adjustment player name', 120),
+          }
+        : resolveR5PlayerIdentity(patch.player);
+    next.playerKey = identity.playerKey;
+    next.playerName = identity.playerName;
+  }
+
+  records[index] = normalizeR5Adjustment(next, { season: next.season });
+  writeLocalR5AdjustmentRecords(records);
+  return records[index];
+}
+
+export function deleteLocalR5Adjustment(adjustmentId) {
+  const id = requireString(adjustmentId, 'R5 adjustment id', 80);
+  const records = readLocalR5AdjustmentRecords();
+  writeLocalR5AdjustmentRecords(records.filter((entry) => entry?.id !== id));
+  return true;
+}
+
 async function loadFirestoreApi() {
   const [{ importFirestore }, firebaseApi] = await Promise.all([
     import('./firebase-sdk.js'),
@@ -215,80 +338,96 @@ async function ensureR5AdjustmentAdminContext() {
 }
 
 export async function loadR5Adjustments(season) {
-  const { db, firestore } = await ensureR5AdjustmentAdminContext();
-  const { collection, getDocs, query, where } = firestore;
-  const seasonKey = normalizeR5Season(season);
-  const snapshot = await getDocs(
-    query(collection(db, R5_ADJUSTMENTS_COLLECTION_PATH), where('season', '==', seasonKey))
-  );
+  try {
+    const { db, firestore } = await ensureR5AdjustmentAdminContext();
+    const { collection, getDocs, query, where } = firestore;
+    const seasonKey = normalizeR5Season(season);
+    const snapshot = await getDocs(
+      query(collection(db, R5_ADJUSTMENTS_COLLECTION_PATH), where('season', '==', seasonKey))
+    );
 
-  return snapshot.docs
-    .map((docSnap) => normalizeR5Adjustment({ id: docSnap.id, ...docSnap.data() }))
-    .sort((a, b) => {
-      const aMs = typeof a.createdAt?.toMillis === 'function' ? a.createdAt.toMillis() : 0;
-      const bMs = typeof b.createdAt?.toMillis === 'function' ? b.createdAt.toMillis() : 0;
-      return bMs - aMs;
-    });
+    return sortR5Adjustments(
+      snapshot.docs.map((docSnap) => normalizeR5Adjustment({ id: docSnap.id, ...docSnap.data() }))
+    );
+  } catch (err) {
+    if (isR5PersistenceUnavailable(err)) return loadLocalR5Adjustments(season);
+    throw err;
+  }
 }
 
 export async function createR5Adjustment(input) {
-  const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
-  const { collection, doc, serverTimestamp, setDoc } = firestore;
-  const ref = doc(collection(db, R5_ADJUSTMENTS_COLLECTION_PATH));
-  const record = normalizeR5Adjustment({
-    ...input,
-    id: ref.id,
-    createdAt: serverTimestamp(),
-    createdBy: user.uid,
-  });
+  try {
+    const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
+    const { collection, doc, serverTimestamp, setDoc } = firestore;
+    const ref = doc(collection(db, R5_ADJUSTMENTS_COLLECTION_PATH));
+    const record = normalizeR5Adjustment({
+      ...input,
+      id: ref.id,
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+    });
 
-  await setDoc(ref, record);
-  return record;
+    await setDoc(ref, record);
+    return record;
+  } catch (err) {
+    if (isR5PersistenceUnavailable(err)) return createLocalR5Adjustment(input);
+    throw err;
+  }
 }
 
 export async function updateR5Adjustment(adjustmentId, patch) {
-  const { db, firestore } = await ensureR5AdjustmentAdminContext();
-  const { doc, updateDoc } = firestore;
-  const updates = {};
+  try {
+    const { db, firestore } = await ensureR5AdjustmentAdminContext();
+    const { doc, updateDoc } = firestore;
+    const updates = {};
 
-  if ('category' in patch) {
-    updates.category = getR5AdjustmentCategory(patch.category).key;
-  }
-  if ('points' in patch) {
-    updates.points = normalizeR5Points(patch.points);
-  } else if ('category' in updates && patch.useCategoryDefault === true) {
-    updates.points = defaultR5PointsForCategory(updates.category);
-  }
-  if ('note' in patch) {
-    updates.note = String(patch.note || '')
-      .trim()
-      .slice(0, 500);
-  }
-  if ('player' in patch || ('playerName' in patch && 'playerKey' in patch)) {
-    const identity =
-      patch.playerName && patch.playerKey
-        ? {
-            playerKey: compactPlayerIdentity(patch.playerKey),
-            playerName: requireString(patch.playerName, 'R5 adjustment player name', 120),
-          }
-        : resolveR5PlayerIdentity(patch.player);
-    updates.playerKey = identity.playerKey;
-    updates.playerName = identity.playerName;
-  }
+    if ('category' in patch) {
+      updates.category = getR5AdjustmentCategory(patch.category).key;
+    }
+    if ('points' in patch) {
+      updates.points = normalizeR5Points(patch.points);
+    } else if ('category' in updates && patch.useCategoryDefault === true) {
+      updates.points = defaultR5PointsForCategory(updates.category);
+    }
+    if ('note' in patch) {
+      updates.note = String(patch.note || '')
+        .trim()
+        .slice(0, 500);
+    }
+    if ('player' in patch || ('playerName' in patch && 'playerKey' in patch)) {
+      const identity =
+        patch.playerName && patch.playerKey
+          ? {
+              playerKey: compactPlayerIdentity(patch.playerKey),
+              playerName: requireString(patch.playerName, 'R5 adjustment player name', 120),
+            }
+          : resolveR5PlayerIdentity(patch.player);
+      updates.playerKey = identity.playerKey;
+      updates.playerName = identity.playerName;
+    }
 
-  if (!Object.keys(updates).length) return {};
-  await updateDoc(
-    doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80)),
-    updates
-  );
-  return updates;
+    if (!Object.keys(updates).length) return {};
+    await updateDoc(
+      doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80)),
+      updates
+    );
+    return updates;
+  } catch (err) {
+    if (isR5PersistenceUnavailable(err)) return updateLocalR5Adjustment(adjustmentId, patch);
+    throw err;
+  }
 }
 
 export async function deleteR5Adjustment(adjustmentId) {
-  const { db, firestore } = await ensureR5AdjustmentAdminContext();
-  const { deleteDoc, doc } = firestore;
-  await deleteDoc(
-    doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80))
-  );
-  return true;
+  try {
+    const { db, firestore } = await ensureR5AdjustmentAdminContext();
+    const { deleteDoc, doc } = firestore;
+    await deleteDoc(
+      doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80))
+    );
+    return true;
+  } catch (err) {
+    if (isR5PersistenceUnavailable(err)) return deleteLocalR5Adjustment(adjustmentId);
+    throw err;
+  }
 }

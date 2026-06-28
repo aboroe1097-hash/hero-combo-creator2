@@ -30,3 +30,7 @@ _atmo-preview.html
 work/
 media-player/
 .firebaserc
+/tests
+tests/app-smoke.spec.js-snapshots/admin-analytics-mobile-ru.png
+/tests/app-smoke.spec.js-snapshots
+/tests

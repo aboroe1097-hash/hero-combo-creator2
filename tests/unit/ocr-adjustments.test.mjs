@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 globalThis.window = {
   VTS_ADMIN_AUTH: {},
 };
+const localStorageData = new Map();
 globalThis.localStorage = {
-  getItem: () => null,
-  setItem: () => {},
+  getItem: (key) => localStorageData.get(key) ?? null,
+  setItem: (key, value) => localStorageData.set(key, String(value)),
+  removeItem: (key) => localStorageData.delete(key),
 };
 globalThis.document = {
   getElementById: () => null,
@@ -16,12 +18,17 @@ globalThis.document = {
 
 const {
   R5_ADJUSTMENT_CATEGORIES,
+  R5_ADJUSTMENTS_LOCAL_KEY,
   aggregateR5Bonuses,
   applyR5AdjustmentsToPlayerTotals,
   buildAdjustedGiftRanking,
+  createLocalR5Adjustment,
+  deleteLocalR5Adjustment,
   defaultR5PointsForCategory,
+  loadLocalR5Adjustments,
   normalizeR5Adjustment,
   resolveR5PlayerIdentity,
+  updateLocalR5Adjustment,
 } = await import('../../js/ocr-adjustments.js');
 
 test('R5 adjustment categories expose editable merit and penalty defaults', () => {
@@ -105,4 +112,35 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
       ['UNDEAD', 3, 40000],
     ]
   );
+});
+
+test('R5 local adjustments persist when Firebase is unavailable', () => {
+  localStorageData.delete(R5_ADJUSTMENTS_LOCAL_KEY);
+
+  const created = createLocalR5Adjustment({
+    season: 'season-local',
+    player: '~Sarafino~',
+    category: 'connected_road',
+    note: '  local road help  ',
+  });
+
+  assert.match(created.id, /^local_r5_/);
+  assert.equal(created.createdBy, 'local-admin');
+  assert.equal(created.points, defaultR5PointsForCategory('connected_road'));
+  assert.equal(loadLocalR5Adjustments('season-local').length, 1);
+
+  const updated = updateLocalR5Adjustment(created.id, {
+    player: 'UNDEAD',
+    category: 'path_block',
+    points: -30000,
+    note: 'blocked path',
+  });
+
+  assert.equal(updated.playerName, 'UNDEAD');
+  assert.equal(updated.points, -30000);
+  assert.equal(updated.note, 'blocked path');
+  assert.equal(loadLocalR5Adjustments('season-local')[0].playerName, 'UNDEAD');
+
+  assert.equal(deleteLocalR5Adjustment(created.id), true);
+  assert.equal(loadLocalR5Adjustments('season-local').length, 0);
 });

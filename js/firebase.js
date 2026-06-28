@@ -68,7 +68,9 @@ const DEPLOYED_FIREBASE_CONFIG = Object.freeze({
 const viteEnv = import.meta.env || {};
 const nodeEnv = typeof process !== 'undefined' ? process.env : {};
 const runtimeEnv =
-  typeof globalThis !== 'undefined' && globalThis.VTS_FIREBASE_CONFIG && typeof globalThis.VTS_FIREBASE_CONFIG === 'object'
+  typeof globalThis !== 'undefined' &&
+  globalThis.VTS_FIREBASE_CONFIG &&
+  typeof globalThis.VTS_FIREBASE_CONFIG === 'object'
     ? globalThis.VTS_FIREBASE_CONFIG
     : {};
 const env = { ...DEPLOYED_FIREBASE_CONFIG, ...nodeEnv, ...viteEnv, ...runtimeEnv };
@@ -76,11 +78,11 @@ const envValue = (key) => String(env[key] || '').trim();
 const configValue = envValue;
 const firebaseProjectId = configValue('VITE_FIREBASE_PROJECT_ID');
 const firebaseAppId = configValue('VITE_FIREBASE_APP_ID');
-const firebaseSenderId = configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') || firebaseAppId.match(/^1:(\d+):web:/)?.[1] || '';
-const authEmailDomain = (
-  configValue('VITE_AUTH_EMAIL_DOMAIN') ||
-  'abocombo.web.app'
-)
+const firebaseSenderId =
+  configValue('VITE_FIREBASE_MESSAGING_SENDER_ID') ||
+  firebaseAppId.match(/^1:(\d+):web:/)?.[1] ||
+  '';
+const authEmailDomain = (configValue('VITE_AUTH_EMAIL_DOMAIN') || 'abocombo.web.app')
   .replace(/^@+/, '')
   .toLowerCase();
 
@@ -94,12 +96,15 @@ function configureLocalAppCheckDebugToken() {
   if (!isLocalDevHost()) {
     if (!appCheckDebugNoticeLogged) {
       appCheckDebugNoticeLogged = true;
-      console.warn('[firebase] Ignoring VITE_FIREBASE_APPCHECK_DEBUG_TOKEN outside local development.');
+      console.warn(
+        '[firebase] Ignoring VITE_FIREBASE_APPCHECK_DEBUG_TOKEN outside local development.'
+      );
     }
     return false;
   }
 
-  globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken === 'true' ? true : appCheckDebugToken;
+  globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN =
+    appCheckDebugToken === 'true' ? true : appCheckDebugToken;
   if (!appCheckDebugNoticeLogged) {
     appCheckDebugNoticeLogged = true;
     const message =
@@ -113,7 +118,9 @@ function configureLocalAppCheckDebugToken() {
 
 function isAppCheckDebugRegistrationError(err) {
   const text = `${err?.name || ''} ${err?.code || ''} ${err?.message || err || ''}`;
-  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(text);
+  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(
+    text
+  );
 }
 
 function warnAppCheckDebugRegistrationNeeded(err) {
@@ -128,12 +135,16 @@ function warnAppCheckDebugRegistrationNeeded(err) {
 
 export const firebaseConfig = {
   apiKey: configValue('VITE_FIREBASE_API_KEY'),
-  authDomain: configValue('VITE_FIREBASE_AUTH_DOMAIN') || (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
+  authDomain:
+    configValue('VITE_FIREBASE_AUTH_DOMAIN') ||
+    (firebaseProjectId ? `${firebaseProjectId}.firebaseapp.com` : ''),
   projectId: firebaseProjectId,
-  storageBucket: configValue('VITE_FIREBASE_STORAGE_BUCKET') || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
+  storageBucket:
+    configValue('VITE_FIREBASE_STORAGE_BUCKET') ||
+    (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : ''),
   messagingSenderId: firebaseSenderId,
   appId: firebaseAppId,
-  measurementId: configValue('VITE_FIREBASE_MEASUREMENT_ID')
+  measurementId: configValue('VITE_FIREBASE_MEASUREMENT_ID'),
 };
 
 export function isFirebaseConfigured() {
@@ -147,7 +158,8 @@ export function getFirebaseSetupStatus() {
     configured: isFirebaseConfigured(),
     appCheckReady: Boolean(appCheck),
     hasRecaptchaSiteKey: Boolean(recaptchaSiteKey),
-    appCheckDebugTokenMode: appCheckDebugToken === 'true' ? 'generated' : appCheckDebugToken ? 'fixed' : '',
+    appCheckDebugTokenMode:
+      appCheckDebugToken === 'true' ? 'generated' : appCheckDebugToken ? 'fixed' : '',
     isLocalDevHost: isLocalDevHost(),
     appCheckInitError: appCheckInitError?.message || '',
     appCheckTokenError: appCheckTokenError?.message || '',
@@ -170,17 +182,20 @@ function shouldRetryAppCheckTokenError(err) {
 }
 
 function installRecaptchaRejectionGuard() {
-  if (recaptchaRejectionGuardInstalled || typeof globalThis?.addEventListener !== 'function') return;
+  if (recaptchaRejectionGuardInstalled || typeof globalThis?.addEventListener !== 'function')
+    return;
   recaptchaRejectionGuardInstalled = true;
   globalThis.addEventListener('unhandledrejection', (event) => {
     if (!isRecaptchaTimeoutError(event?.reason)) return;
     event.preventDefault();
-    console.warn('Firebase App Check reCAPTCHA timed out; OCR will retry when a token is requested again.');
+    console.warn(
+      'Firebase App Check reCAPTCHA timed out; OCR will retry when a token is requested again.'
+    );
   });
 }
 
 export function initFirebase() {
-  if (app) return { app, db, auth, analytics };
+  if (app) return { app, db, auth, analytics, configured: true };
   if (!isFirebaseConfigured()) {
     if (!missingConfigLogged) {
       missingConfigLogged = true;
@@ -197,8 +212,8 @@ export function initFirebase() {
   // Analytics automatically logs page_view and tracks active users for free without quotas
   try {
     analytics = getAnalytics(app);
-  } catch(e) {
-    console.warn("Analytics blocked or failed to initialize", e);
+  } catch (e) {
+    console.warn('Analytics blocked or failed to initialize', e);
   }
 
   return { app, db, auth, analytics, configured: true };
@@ -207,7 +222,7 @@ export function initFirebase() {
 let authInFlight = null;
 
 async function ensureAuthPersistence() {
-  if (!auth) throw new Error("Firebase not initialized");
+  if (!auth) throw new Error('Firebase not initialized');
   try {
     await setPersistence(auth, browserLocalPersistence);
   } catch {
@@ -231,7 +246,7 @@ export function usernameToEmail(username) {
 
 export async function signInWithUsername(username, password) {
   if (!auth) initFirebase();
-  if (!auth) throw new Error("Firebase not initialized");
+  if (!auth) throw new Error('Firebase not initialized');
   await ensureAuthPersistence();
   return signInWithEmailAndPassword(auth, usernameToEmail(username), String(password || ''));
 }
@@ -253,7 +268,7 @@ export function getCurrentUser() {
 }
 
 export async function ensureAnonymousAuth() {
-  if (!auth) throw new Error("Firebase not initialized");
+  if (!auth) throw new Error('Firebase not initialized');
   if (auth.currentUser) return auth.currentUser;
   if (authInFlight) return authInFlight;
 
@@ -264,7 +279,7 @@ export async function ensureAnonymousAuth() {
     const timeout = setTimeout(() => {
       unsubs();
       authInFlight = null;
-      reject(new Error("Auth timed out"));
+      reject(new Error('Auth timed out'));
     }, 10000);
 
     unsubs = onAuthStateChanged(auth, (user) => {
@@ -302,19 +317,19 @@ async function ensureFirebaseAppCheck() {
     appCheckInitError = null;
     appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
-      isTokenAutoRefreshEnabled: true
+      isTokenAutoRefreshEnabled: true,
     });
   } catch (e) {
     appCheckInitError = e;
-    console.warn("App Check initialization failed; continuing without it.", e);
+    console.warn('App Check initialization failed; continuing without it.', e);
   }
 
   return appCheck;
 }
 
 export async function getFirebaseAdminClaim(forceRefresh = false) {
-  if (!auth) throw new Error("Firebase not initialized");
-  const user = auth.currentUser || await ensureAnonymousAuth();
+  if (!auth) throw new Error('Firebase not initialized');
+  const user = auth.currentUser || (await ensureAnonymousAuth());
   const token = await getIdTokenResult(user, forceRefresh);
   return token?.claims?.admin === true;
 }
@@ -338,7 +353,10 @@ export async function getFirebaseAppCheckToken(forceRefresh = false) {
         appCheckTokenError = err;
         warnAppCheckDebugRegistrationNeeded(err);
         if (attempt >= maxAttempts - 1 || !shouldRetryAppCheckTokenError(err)) break;
-        console.warn('Firebase App Check token request failed; retrying once.', err?.message || err);
+        console.warn(
+          'Firebase App Check token request failed; retrying once.',
+          err?.message || err
+        );
         await sleep(700);
       }
     }
@@ -350,5 +368,9 @@ export async function getFirebaseAppCheckToken(forceRefresh = false) {
   return appCheckTokenInFlight;
 }
 
-export function getDb() { return db; }
-export function getAuthInstance() { return auth; }
+export function getDb() {
+  return db;
+}
+export function getAuthInstance() {
+  return auth;
+}

@@ -105,6 +105,7 @@ const id = {
   adminContributionExportSheet: 'Ekspor Sheet',
   adminContributionUploadImage: 'Unggah Gambar',
   adminConductTitle: 'Penyesuaian Perilaku R5',
+  adminConductSearchPh: 'Cari berdasarkan nama pemain…',
   adminConductSubtitle:
     'Tambahkan poin merit atau penalti untuk kerja sama tim, banner, jalan, dan perilaku. Peringkat hadiah menggunakan total yang disesuaikan.',
   adminConductSeasonLabel: 'Musim: {season}',
@@ -219,6 +220,10 @@ const id = {
   adminContributionSnapshotSummary: '{count} snapshot',
   adminContributionTotalCount: '{total} total',
   adminContributionTopPlayer: 'teratas {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Standar',
   adminContributionRewardReview: 'Tinjau',

@@ -105,6 +105,7 @@ const ar = {
   adminContributionExportSheet: 'تصدير الجدول',
   adminContributionUploadImage: 'رفع صورة',
   adminConductTitle: 'تعديلات السلوك R5',
+  adminConductSearchPh: 'ابحث باسم اللاعب…',
   adminConductSubtitle:
     'أضف نقاط استحقاق أو جزاء للعمل الجماعي والرايات والطرق والسلوك. يستخدم ترتيب الهدايا المجموع المعدل.',
   adminConductSeasonLabel: 'الموسم: {season}',
@@ -218,6 +219,10 @@ const ar = {
   adminContributionSnapshotSummary: '{count} لقطات',
   adminContributionTotalCount: 'الإجمالي {total}',
   adminContributionTopPlayer: 'الأول {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'مميز',
   adminContributionRewardStandard: 'عادي',
   adminContributionRewardReview: 'مراجعة',

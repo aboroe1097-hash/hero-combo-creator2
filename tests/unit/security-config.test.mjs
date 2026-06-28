@@ -44,6 +44,12 @@ test('firebase app check is lazy so comments do not trigger recaptcha throttling
   assert.match(source, /export async function getFirebaseAppCheckToken/);
 });
 
+test('firebase init preserves configured status after first initialization', () => {
+  const source = readFileSync('js/firebase.js', 'utf8');
+
+  assert.match(source, /if \(app\) return \{ app, db, auth, analytics, configured: true \};/);
+});
+
 test('firebase app check token requests retry transient recaptcha failures', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /function shouldRetryAppCheckTokenError/);

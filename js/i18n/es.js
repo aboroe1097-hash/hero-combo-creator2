@@ -105,6 +105,7 @@ const es = {
   adminContributionExportSheet: 'Exportar hoja',
   adminContributionUploadImage: 'Subir imagen',
   adminConductTitle: 'Ajustes de Conducta R5',
+  adminConductSearchPh: 'Buscar por nombre de jugador…',
   adminConductSubtitle:
     'Añade puntos de mérito o penalización por trabajo en equipo, banners, caminos y conducta. El ranking de regalos usa el total ajustado.',
   adminConductSeasonLabel: 'Temporada: {season}',
@@ -221,6 +222,10 @@ const es = {
   adminContributionSnapshotSummary: '{count} capturas',
   adminContributionTotalCount: '{total} total',
   adminContributionTopPlayer: 'líder {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Estándar',
   adminContributionRewardReview: 'Revisar',

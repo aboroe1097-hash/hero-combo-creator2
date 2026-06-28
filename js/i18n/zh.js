@@ -103,6 +103,7 @@ const zh = {
   adminContributionExportSheet: '导出表格',
   adminContributionUploadImage: '上传图片',
   adminConductTitle: 'R5 行为调整',
+  adminConductSearchPh: '按玩家名称搜索…',
   adminConductSubtitle:
     '为团队合作、旗帜、道路和行为手动添加加分或扣分。礼物排名使用调整后的总计。',
   adminConductSeasonLabel: '赛季：{season}',
@@ -215,6 +216,10 @@ const zh = {
   adminContributionSnapshotSummary: '{count} 个快照',
   adminContributionTotalCount: '总计 {total}',
   adminContributionTopPlayer: '第一 {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: '高级',
   adminContributionRewardStandard: '标准',
   adminContributionRewardReview: '复核',

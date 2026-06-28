@@ -34,6 +34,10 @@ function normalizeRewardTier(value) {
     .trim()
     .toLowerCase()
     .replace(/[\s_-]+/g, '-');
+  if (tier === 'guild-master' || tier === 'guildmaster' || tier === 'gm') return 'guild_master';
+  if (tier === 'core' || tier === 'core-rewards') return 'core';
+  if (tier === 'power-house' || tier === 'powerhouse' || tier === 'ph') return 'power_house';
+  if (tier === 'members' || tier === 'member' || tier === 'members-rewards') return 'members';
   if (tier === 'premium' || tier === 'top' || tier === 'top-premium') return 'premium';
   if (tier === 'standard' || tier === 'normal') return 'standard';
   if (tier === 'review' || tier === 'manual') return 'review';
@@ -50,7 +54,12 @@ export function getContributionRewardTier(entry, record, rankOverride = null) {
   const override = normalizeRewardTier(entry?.rewardOverride || entry?.reward);
   if (override) return override;
   const rank = numberValue(rankOverride ?? entry?.rank);
-  return rank > 0 && rank <= getContributionPremiumCutoff(record) ? 'premium' : 'standard';
+  if (rank < 1) return 'standard';
+  if (rank === 1) return 'guild_master';
+  if (rank <= 20) return 'core';
+  if (rank <= 110) return 'power_house';
+  if (rank <= 200) return 'members';
+  return 'standard';
 }
 
 export function getLatestContributionRecord(records = []) {
@@ -203,11 +212,16 @@ export function buildWeightedContributionRows(options = {}) {
         b.contributionScore - a.contributionScore ||
         String(a.playerName).localeCompare(String(b.playerName))
     )
-    .map((row, index) => ({
-      ...row,
-      finalRank: index + 1,
-      finalReward: index + 1 <= premiumCutoff ? 'premium' : 'standard',
-    }));
+    .map((row, index) => {
+      const rank = index + 1;
+      let finalReward;
+      if (rank === 1) finalReward = 'guild_master';
+      else if (rank <= 20) finalReward = 'core';
+      else if (rank <= 110) finalReward = 'power_house';
+      else if (rank <= 200) finalReward = 'members';
+      else finalReward = 'standard';
+      return { ...row, finalRank: rank, finalReward };
+    });
 
   return {
     record,

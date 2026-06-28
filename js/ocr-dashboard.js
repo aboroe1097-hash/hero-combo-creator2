@@ -66,13 +66,18 @@ import { translations } from './translations.js';
 import {
   R5_ADJUSTMENT_CATEGORIES,
   R5_ADJUSTMENT_CATEGORY_KEYS,
+  R5_ADJUSTMENTS_LOCAL_KEY,
   createR5Adjustment,
+  createLocalR5Adjustment,
   defaultR5PointsForCategory,
   deleteR5Adjustment,
+  deleteLocalR5Adjustment,
   loadR5Adjustments,
+  loadLocalR5Adjustments,
   normalizeR5Adjustment,
   resolveR5PlayerIdentity,
   updateR5Adjustment,
+  updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
 import { stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
 // --- Serverless OCR Dashboard ---
@@ -440,7 +445,11 @@ function renderConductAdjustments() {
   const searchQuery = (searchEl?.value || '').trim().toLowerCase();
 
   const rows = (Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [])
-    .filter((record) => record?.season === state.r5Season && (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery)))
+    .filter(
+      (record) =>
+        record?.season === state.r5Season &&
+        (!searchQuery || (record.playerName || '').toLowerCase().includes(searchQuery))
+    )
     .slice()
     .sort((a, b) => {
       const aMs =
@@ -484,7 +493,11 @@ function renderConductAdjustments() {
       const id = btn.dataset.conductDelete;
       if (!id || !confirm(dashT('adminConductDeleteConfirm'))) return;
       try {
-        await deleteR5Adjustment(id);
+        if (state.cloudSyncConfigured === false) {
+          deleteLocalR5Adjustment(id);
+        } else {
+          await deleteR5Adjustment(id);
+        }
         state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
         renderConductAdjustments();
         render();
@@ -496,10 +509,24 @@ function renderConductAdjustments() {
   });
 }
 
-async function loadConductAdjustmentsForSeason() {
-  if (!state.adminIsAdmin) return;
+function hasLocalConductAdjustments() {
   try {
-    state.r5Season = state.r5Season || getDashboardR5SeasonKey();
+    const rows = JSON.parse(localStorage.getItem(R5_ADJUSTMENTS_LOCAL_KEY) || '[]');
+    return Array.isArray(rows) && rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function loadConductAdjustmentsForSeason() {
+  state.r5Season = state.r5Season || getDashboardR5SeasonKey();
+  if (state.cloudSyncConfigured === false) {
+    state.r5Adjustments = loadLocalR5Adjustments(state.r5Season);
+    renderConductAdjustments();
+    return;
+  }
+  if (!state.adminIsAdmin && !hasLocalConductAdjustments()) return;
+  try {
     state.r5Adjustments = await loadR5Adjustments(state.r5Season);
     renderConductAdjustments();
   } catch (err) {
@@ -534,23 +561,33 @@ function bindConductControls() {
     try {
       setConductStatus(dashT('adminConductSaving'), 'info');
       if (state.r5EditingId) {
-        await updateR5Adjustment(state.r5EditingId, {
+        const patch = {
           playerKey,
           playerName,
           category: categoryKey,
           points,
           note,
-        });
+        };
+        if (state.cloudSyncConfigured === false) {
+          updateLocalR5Adjustment(state.r5EditingId, patch);
+        } else {
+          await updateR5Adjustment(state.r5EditingId, patch);
+        }
         setConductStatus(dashT('adminConductUpdated'), 'success');
       } else {
-        await createR5Adjustment({
+        const record = {
           season: state.r5Season,
           playerKey,
           playerName,
           category: categoryKey,
           points,
           note,
-        });
+        };
+        if (state.cloudSyncConfigured === false) {
+          createLocalR5Adjustment(record);
+        } else {
+          await createR5Adjustment(record);
+        }
         setConductStatus(dashT('adminConductSaved'), 'success');
       }
       resetConductForm();
@@ -1129,7 +1166,9 @@ function describeCloudSyncError(err) {
   if (/permission-denied|permission|insufficient|admin/i.test(text)) {
     return dashT('adminCloudAdminRequired');
   }
-  if (/app ?check.*(?:missing|unavailable)|missing.*app ?check|unavailable.*app ?check/i.test(text)) {
+  if (
+    /app ?check.*(?:missing|unavailable)|missing.*app ?check|unavailable.*app ?check/i.test(text)
+  ) {
     return 'App Check token missing; sync will retry automatically.';
   }
   if (/Firebase not initialized|missing|config/i.test(text)) {
@@ -1141,7 +1180,8 @@ function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
   const message = describeCloudSyncError(err);
   setCloudSyncStatus('error', message);
   log(`${prefix}: ${message}`, 'error');
-  if (!_isConnecting && typeof window.showToast === 'function') window.showToast(message, 'error', 7000);
+  if (!_isConnecting && typeof window.showToast === 'function')
+    window.showToast(message, 'error', 7000);
   return message;
 }
 function setRefreshBusy(busy) {
@@ -1930,10 +1970,18 @@ function exportDutyDebugCsv() {
       const raw = e.name || e.original || '';
       csv +=
         [
-          q(rec.date), q(rec.type), q(rec.id || rec.createdAt || ''),
-          q(raw), q(cleanDutyRawName(raw)), q(resolveDutyPlayerName(raw)), q(getDutyOperatorNote(raw)),
-          q(e.confirmed || ''), q(e.status || ''),
-          q(e.target), q(e.group), q(e.usageTime || rec.gameTime || ''),
+          q(rec.date),
+          q(rec.type),
+          q(rec.id || rec.createdAt || ''),
+          q(raw),
+          q(cleanDutyRawName(raw)),
+          q(resolveDutyPlayerName(raw)),
+          q(getDutyOperatorNote(raw)),
+          q(e.confirmed || ''),
+          q(e.status || ''),
+          q(e.target),
+          q(e.group),
+          q(e.usageTime || rec.gameTime || ''),
         ].join(',') + '\n';
     });
   });

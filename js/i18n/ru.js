@@ -105,6 +105,7 @@ const ru = {
   adminContributionExportSheet: 'Экспорт таблицы',
   adminContributionUploadImage: 'Загрузить изображение',
   adminConductTitle: 'Корректировка поведения R5',
+  adminConductSearchPh: 'Поиск по имени игрока…',
   adminConductSubtitle:
     'Добавьте баллы поощрения или штрафа за командную работу, баннеры, дороги и поведение. Рейтинг подарков использует скорректированную сумму.',
   adminConductSeasonLabel: 'Сезон: {season}',
@@ -219,6 +220,10 @@ const ru = {
   adminContributionSnapshotSummary: 'Снимков: {count}',
   adminContributionTotalCount: 'Всего {total}',
   adminContributionTopPlayer: 'лидер {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Премиум',
   adminContributionRewardStandard: 'Стандарт',
   adminContributionRewardReview: 'Проверить',

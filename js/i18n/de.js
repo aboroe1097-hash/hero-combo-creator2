@@ -106,6 +106,7 @@ const de = {
   adminContributionExportSheet: 'Tabelle exportieren',
   adminContributionUploadImage: 'Bild hochladen',
   adminConductTitle: 'R5 Verhaltensanpassungen',
+  adminConductSearchPh: 'Nach Spielername suchen…',
   adminConductSubtitle:
     'Manuelle Verdienst- oder Strafpunkte für Teamwork, Banner, Straßen und Verhalten hinzufügen. Das Geschenk-Ranking verwendet die angepasste Gesamtsumme.',
   adminConductSeasonLabel: 'Saison: {season}',
@@ -219,6 +220,10 @@ const de = {
   adminContributionSnapshotSummary: '{count} Snapshots',
   adminContributionTotalCount: '{total} gesamt',
   adminContributionTopPlayer: 'Top {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Standard',
   adminContributionRewardReview: 'Prüfen',

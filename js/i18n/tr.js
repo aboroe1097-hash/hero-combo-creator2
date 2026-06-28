@@ -105,6 +105,7 @@ const tr = {
   adminContributionExportSheet: 'Sayfayı Dışa Aktar',
   adminContributionUploadImage: 'Görsel Yükle',
   adminConductTitle: 'R5 Davranış Ayarlamaları',
+  adminConductSearchPh: 'Oyuncu adına göre ara…',
   adminConductSubtitle:
     'Takım çalışması, banner, yol ve davranış için manuel olarak artı veya eksi puan ekleyin. Hediye sıralaması ayarlanmış toplamı kullanır.',
   adminConductSeasonLabel: 'Sezon: {season}',
@@ -219,6 +220,10 @@ const tr = {
   adminContributionSnapshotSummary: '{count} snapshot',
   adminContributionTotalCount: 'toplam {total}',
   adminContributionTopPlayer: 'lider {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Standart',
   adminContributionRewardReview: 'İncele',

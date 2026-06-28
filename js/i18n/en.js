@@ -116,6 +116,7 @@ const en = {
   adminContributionExportSheet: 'Export Sheet',
   adminContributionUploadImage: 'Upload Image',
   adminConductTitle: 'R5 Conduct Adjustments',
+  adminConductSearchPh: 'Search by player name…',
   adminConductSubtitle:
     'Add manual merit or penalty points for teamwork, banners, roads, and conduct. Gift ranking uses adjusted total.',
   adminConductSeasonLabel: 'Season: {season}',
@@ -229,6 +230,10 @@ const en = {
   adminContributionSnapshotSummary: '{count} snapshots',
   adminContributionTotalCount: '{total} total',
   adminContributionTopPlayer: 'top {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Standard',
   adminContributionRewardReview: 'Review',

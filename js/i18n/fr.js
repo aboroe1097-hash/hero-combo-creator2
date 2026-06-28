@@ -105,6 +105,7 @@ const fr = {
   adminContributionExportSheet: 'Exporter feuille',
   adminContributionUploadImage: 'Importer image',
   adminConductTitle: 'Ajustements de Conduite R5',
+  adminConductSearchPh: 'Rechercher par nom de joueur…',
   adminConductSubtitle:
     'Ajoutez des points de mérite ou de pénalité pour le travail d\'équipe, les bannières, les routes et la conduite. Le classement des cadeaux utilise le total ajusté.',
   adminConductSeasonLabel: 'Saison : {season}',
@@ -219,6 +220,10 @@ const fr = {
   adminContributionSnapshotSummary: '{count} instantanés',
   adminContributionTotalCount: '{total} total',
   adminContributionTopPlayer: 'top {name}',
+  adminContributionRewardGuildMaster: 'Guild Master Reward',
+  adminContributionRewardCore: 'Core Rewards',
+  adminContributionRewardPowerHouse: 'Power House Rewards',
+  adminContributionRewardMembers: 'Members Rewards',
   adminContributionRewardPremium: 'Premium',
   adminContributionRewardStandard: 'Standard',
   adminContributionRewardReview: 'À vérifier',

@@ -1236,9 +1236,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('+1,500,000');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('3,100,000');
-    const visibleLeaderRows = await page.locator('#dashLeaderBody tr').evaluateAll((rows) =>
-      rows.filter((row) => !row.querySelector('.dash-load-more-btn')).length
-    );
+    const visibleLeaderRows = await page
+      .locator('#dashLeaderBody tr')
+      .evaluateAll(
+        (rows) => rows.filter((row) => !row.querySelector('.dash-load-more-btn')).length
+      );
     expect(visibleLeaderRows).toBe(20);
     await expect(page.locator('#dashLeaderBody .dash-load-more-btn')).toContainText('Show More');
     await page.evaluate(() => window.switchDashSubtab('conduct'));
@@ -1285,6 +1287,77 @@ test.describe('app smoke tabs', () => {
       }
     });
     await expect(page.locator('#dashLeaderBody tr').nth(1)).toContainText('Echo');
+  });
+
+  test('conduct adjustment saves locally when Firebase is not configured', async ({ page }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    await page.addInitScript(() => {
+      window.VTS_FIREBASE_CONFIG = {
+        VITE_FIREBASE_API_KEY: '',
+        VITE_FIREBASE_PROJECT_ID: '',
+        VITE_FIREBASE_APP_ID: '',
+        VITE_FIREBASE_MESSAGING_SENDER_ID: '',
+      };
+    });
+    const seededDash = {
+      last_updated: '25/06/2026, 23:55',
+      total_attacks: 1,
+      attacks: [
+        {
+          id: 'conduct-local-1',
+          structure_name: 'Town',
+          structure_level: 'Lv.4',
+          game_time: '25/06/2026, 23:55',
+          start_time: '23:45',
+          total_demolition: 100000,
+          players_count: 1,
+          players: [{ name: '~Sarafino~', value: 100000, rank: 1 }],
+        },
+      ],
+      players_summary: [],
+    };
+    const seededRoster = [
+      {
+        date: '2026-06-25',
+        members: [{ name: '~Sarafino~', status: 'trusted', alliance: 1 }],
+      },
+    ];
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.setOcrDashboardDataForTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
+    await page.evaluate(
+      ({ seededDash, seededRoster }) => {
+        window.setOcrDashboardDataForTest(seededDash, seededRoster);
+        window.switchDashSubtab('conduct');
+      },
+      { seededDash, seededRoster }
+    );
+
+    await page.locator('#dashConductPlayer').selectOption({ label: '~Sarafino~' });
+    await page.locator('#dashConductCategory').selectOption('connected_road');
+    await page.locator('#dashConductPoints').fill('20000');
+    await page.locator('#dashConductNote').fill('Helped connecting roads for L4 town');
+    await page.locator('#dashConductSaveBtn').click();
+
+    await expect(page.locator('#dashConductStatus')).toContainText('Conduct adjustment saved.');
+    await expect(page.locator('#dashConductList')).toContainText('~Sarafino~');
+    await expect(page.locator('#dashConductList')).toContainText(
+      'Helped connecting roads for L4 town'
+    );
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vts_r5_conduct_adjustments') || '[]')
+    );
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      playerName: '~Sarafino~',
+      category: 'connected_road',
+      points: 20000,
+    });
   });
 
   test('admin mobile special-list tables avoid overflow and label card rows', async ({ page }) => {
