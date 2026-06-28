@@ -272,7 +272,7 @@ const TAB_BTN_IDS = {
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
 heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'fixed bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-auto hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.className = 'hero-tooltip-shell hero-tooltip-shell--interactive hero-tooltip-shell--hidden hidden';
   heroTooltip.style.zIndex = '5000';
 document.body.appendChild(heroTooltip);
 
@@ -821,7 +821,7 @@ tabs.forEach(tab => {
       updateTextContent();
     } catch (err) {
       console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
-      section.innerHTML = `<div class="p-8 text-center text-sm text-red-400">Failed to load this tab. <button onclick="location.reload()" class="underline">Reload</button></div>`;
+      section.innerHTML = `<div class="tab-load-error">Failed to load this tab. <button onclick="location.reload()" class="tab-load-error-link">Reload</button></div>`;
     }
   }
 
@@ -1426,7 +1426,8 @@ async function startApp() {
       markGeneratorSelectionChanged({ immediate: true });
     }
 
-    safeInit('firebase', async () => {
+    safeInit('firebase', () => {
+      const fn = async () => {
         const { initFirebase, ensureAnonymousAuth } = await import('./firebase.js');
         const firebase = await initFirebase();
         if (!firebase.configured) return;
@@ -1441,8 +1442,20 @@ async function startApp() {
           markGeneratorSelectionChanged({ immediate: true });
         }
         flushClientErrors();
+      };
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => fn(), { timeout: 3000 });
+      } else {
+        setTimeout(() => fn(), 0);
+      }
     });
-    safeInit('comments', () => initComments());
+    safeInit('comments', () => {
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => initComments(), { timeout: 3000 });
+      } else {
+        setTimeout(() => initComments(), 0);
+      }
+    });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
     window.addEventListener('hashchange', () => {
       const tab = window.location.hash?.replace('#', '').split('?')[0];

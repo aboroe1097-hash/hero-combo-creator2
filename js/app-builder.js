@@ -167,7 +167,7 @@ export function renderAvailableHeroes() {
     .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
     .forEach(hero => {
       const card = document.createElement('div');
-      card.className = `hero-card relative season-${cssToken(hero.season)}`;
+      card.className = `hero-card season-${cssToken(hero.season)}`;
       card.draggable = true;
       card.dataset.heroName = hero.name;
       card.tabIndex = 0;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Hero Combo Creator - VTS 1097</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'" />
   <meta name="description" content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combo builder &amp; generator, Hero Atlas, Eden map planner, loyalty calculator, tech research tracker, and combo counters." />
   <meta name="author" content="VTS State 1097" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -79,13 +79,12 @@
   </noscript>
   <link rel="preload" as="image" href="images/boot/dreamy-wing-left.webp" type="image/webp" />
   <link rel="preload" as="image" href="images/boot/blazing-wing-right.webp" type="image/webp" />
-  <script src="js/maintenance-config.js?v=20260627_205703"></script>
-  <link rel="stylesheet" href="css/_tokens.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/app.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/app-utilities.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/components.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260627_205703" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260628_132317"></script>
+  <link rel="stylesheet" href="css/_tokens.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/app.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/components.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260628_132317" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -97,7 +96,7 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260627_205703"></script>
+  <script src="js/admin-auth-config.js?v=20260628_132317"></script>
 </head>
 <body class="app-booting">
   <div class="maintenance-preload" role="status" aria-live="polite">
@@ -136,7 +135,7 @@
       <div id="centerLight" class="center-light"></div>
       <div id="bootParticles" class="boot-particles-layer" aria-hidden="true"></div>
       <div class="gate-lock" aria-hidden="true">
-        <img src="images/logo.png" alt="" width="88" height="88" />
+        <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="" width="88" height="88"></picture>
       </div>
     </div>
     
@@ -154,7 +153,7 @@
     <div class="intro-aurora" aria-hidden="true"></div>
     <div class="intro-sparks" aria-hidden="true"></div>
     <div class="intro-content">
-      <img src="images/logo.png"  alt="" class="intro-logo" width="120" height="120" />
+      <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="" class="intro-logo" width="120" height="120"></picture>
       <h2 class="intro-title">Hero Combo Creator</h2>
       <p class="intro-tagline">Combos · Eden · Research · Loyalty</p>
       <p class="intro-team">TEAM VTS — STATE 1097</p>
@@ -165,14 +164,14 @@
 <div id="app" class="app-shell app-shell--hidden">
     <header class="command-header" aria-label="VTS 1097 toolkit">
       <div class="command-brand">
-        <div id="betaNote" class="version-ribbon text-center p-3 rounded-xl text-sky-400 font-bold text-xs sm:text-sm tracking-widest border border-blue-500/30 bg-blue-900/20 backdrop-blur-md uppercase drop-shadow"></div>
+        <div id="betaNote" class="version-ribbon"></div>
 
         <div class="logo-container command-logo">
-          <img src="images/logo.png"  alt="Hero Combo Creator - VTS 1097" class="main-logo dual-glow-logo shadow-2xl" width="120" height="120" />
-          <h1 id="appTitle" class="mt-4 text-3xl sm:text-5xl font-black text-white text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-blue-400 uppercase tracking-tighter">Hero Combo Creator</h1>
+          <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="Hero Combo Creator - VTS 1097" class="main-logo dual-glow-logo" width="120" height="120"></picture>
+          <h1 id="appTitle">Hero Combo Creator</h1>
           <div class="command-logo-copy">
-            <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-bold tracking-widest">Rise of Castles: Ice &amp; Fire</p>
-            <p class="text-xs sm:text-sm font-bold text-blue-400">TEAM VTS — STATE 1097</p>
+            <p class="command-game-title">Rise of Castles: Ice &amp; Fire</p>
+            <p class="command-team-line">TEAM VTS — STATE 1097</p>
           </div>
         </div>
 
@@ -190,18 +189,18 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
             </svg>
           </div>
-          <select id="languageSelect">
-            <option value="en" class="bg-slate-800 text-white">English</option>
-            <option value="es" class="bg-slate-800 text-white">Español</option>
-            <option value="pt" class="bg-slate-800 text-white">Português</option>
-            <option value="de" class="bg-slate-800 text-white">Deutsch</option>
-            <option value="fr" class="bg-slate-800 text-white">Français</option>
-            <option value="tr" class="bg-slate-800 text-white">Türkçe</option>
-            <option value="ru" class="bg-slate-800 text-white">Русский</option>
-            <option value="id" class="bg-slate-800 text-white">Indonesia</option>
-            <option value="zh" class="bg-slate-800 text-white">中文</option>
-            <option value="ar" class="bg-slate-800 text-white">العربية</option>
-            <option value="kr" class="bg-slate-800 text-white">한국어</option>
+          <select id="languageSelect" aria-label="Language">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="pt">Português</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="tr">Türkçe</option>
+            <option value="ru">Русский</option>
+            <option value="id">Indonesia</option>
+            <option value="zh">中文</option>
+            <option value="ar">العربية</option>
+            <option value="kr">한국어</option>
           </select>
           <div class="lang-select-caret">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -269,8 +268,8 @@
     <div id="globalToggleRow" class="toggle-row">
       <label id="heroInfoToggleLabel" class="toggle-label" role="switch" aria-checked="true" tabindex="0">
         <span class="toggle-text" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
-        <div class="relative inline-flex items-center">
-          <input type="checkbox" id="heroInfoToggle" class="sr-only peer" checked>
+        <div class="toggle-control-wrap">
+          <input type="checkbox" id="heroInfoToggle" class="sr-only" checked>
           <div class="toggle-track"></div>
           <div class="toggle-thumb"></div>
         </div>
@@ -388,11 +387,11 @@
           <div class="tool-filter-block tool-filter-block--skin">
             <h3 class="sub-section-heading">Hero Skins</h3>
             <div class="skin-filter-row">
-                <label id="genSkinToggleLabel" class="toggle-switch">
+                <label id="genSkinToggleLabel" class="toggle-switch" for="genSkinToggle">
                     <input type="checkbox" id="genSkinToggle" />
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="text-sm text-slate-300" data-i18n="genSkinsOnly">Apply skin effects & skin icons</span>
+                <span class="generator-skin-label" data-i18n="genSkinsOnly">Apply skin effects & skin icons</span>
                 <span id="genSkinCount" class="skin-count-badge hidden"></span>
             </div>
             <div id="genSkinNudge" class="gen-skin-nudge hidden" role="status" aria-live="polite">
@@ -411,10 +410,10 @@
       <div class="gen-content-section">
         <div class="section-row">
             <div class="gen-select-row">
-              <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="text-lg font-semibold text-slate-100">Select Your Heroes</h3>
+              <h3 id="genSelectTitle" data-i18n="genSelectTitle" class="gen-select-title">Select Your Heroes</h3>
               <span id="genSelectedCount" class="selected-count-badge hidden"></span>
             </div>
-            <div class="generator-selection-actions flex gap-2">
+            <div class="generator-selection-actions">
                 <button id="genSelectAllBtn" data-i18n="generatorSelectAll" class="selection-action-btn selection-action-btn--select">Select All</button>
                 <button id="genClearAllBtn" data-i18n="generatorClearAll" class="selection-action-btn selection-action-btn--clear">Clear All</button>
                 <button id="genResetFiltersBtn" class="selection-action-btn selection-action-btn--reset">Reset Filters</button>
@@ -444,7 +443,7 @@
       <div id="heroesTabContent"></div>
     </section>
 
-    <section id="researchSection" class="tab-panel hidden animate-fade-in pb-8">
+    <section id="researchSection" class="tab-panel hidden animate-fade-in tab-panel-pad-lg">
       <div class="research-header">
         <div>
           <h2 id="researchTitle" class="research-title" data-i18n="researchTitle">Tech Research Calculator</h2>
@@ -460,11 +459,11 @@
           <span class="research-deck-label" data-i18n="researchSeasonLabel">Seasons</span>
           <div class="research-season-segment" role="group" aria-label="Filter by season">
             <div class="research-season-bar">
-              <button type="button" class="tech-season-btn" data-season="S0">S0</button>
-              <button type="button" class="tech-season-btn" data-season="S1">S1</button>
-              <button type="button" class="tech-season-btn" data-season="S2">S2</button>
-              <button type="button" class="tech-season-btn" data-season="S3">S3</button>
-              <button type="button" class="tech-season-btn" data-season="S4">S4</button>
+              <button type="button" class="tech-season-btn active" data-season="S0">S0</button>
+              <button type="button" class="tech-season-btn active" data-season="S1">S1</button>
+              <button type="button" class="tech-season-btn active" data-season="S2">S2</button>
+              <button type="button" class="tech-season-btn active" data-season="S3">S3</button>
+              <button type="button" class="tech-season-btn active" data-season="S4">S4</button>
               <button type="button" class="tech-season-btn active" data-season="X1">X1</button>
               <button type="button" class="tech-season-btn" data-season="X2">X2</button>
             </div>
@@ -487,11 +486,11 @@
       <div id="techCalculatorContainer" class="research-calculator hidden" aria-live="polite"></div>
     </section>
 
-    <section id="edenMapSection" class="tab-panel hidden animate-fade-in pb-4" data-tab-src="tabs/eden-map.html">
+    <section id="edenMapSection" class="tab-panel hidden animate-fade-in tab-panel-pad-sm" data-tab-src="tabs/eden-map.html">
       <div class="tab-loading"><div class="spinner"></div> Loading...</div>
     </section>
 
-    <section id="strifeSection" class="tab-panel hidden animate-fade-in pb-8">
+    <section id="strifeSection" class="tab-panel hidden animate-fade-in tab-panel-pad-lg">
       <div id="strifeToolRoot" class="strife-tool-root"></div>
     </section>
 
@@ -602,7 +601,7 @@
         <div class="footer-section brand-section">
           <div>
             <div class="footer-brand-row">
-              <img src="images/logo.png" alt="" class="footer-brand-logo" loading="lazy" decoding="async" width="40" height="40" />
+              <picture><source srcset="images/logo-40.webp" type="image/webp"><img src="images/logo.png" alt="" class="footer-brand-logo" loading="lazy" decoding="async" width="40" height="40"></picture>
               <h3 class="footer-logo">VTS 1097</h3>
             </div>
           </div>
@@ -644,7 +643,7 @@
       <script>document.getElementById('footerYear').textContent = new Date().getFullYear();</script>
     </footer>
 
-    <div id="messageBox" class="modal-backdrop hidden">
+    <div id="messageBox" class="modal-backdrop hidden" role="dialog" aria-label="Notification">
       <div class="modal-card">
         <p id="messageText" class="modal-text"></p>
         <div class="modal-actions">
@@ -676,7 +675,7 @@
   })();
 
   </script>
-  <script type="module" src="js/app.js?v=20260627_205703"></script>
+  <script type="module" src="js/app.js?v=20260628_132317"></script>
 
 <script>
   // Lazy-load YouTube iframes

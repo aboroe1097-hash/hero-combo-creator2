@@ -8,9 +8,9 @@ export function initCounterLookup(containerEl) {
   if (!containerEl) return;
   containerEl.innerHTML = `
     <div class="counter-lookup">
-      <h3 class="text-sm font-bold text-sky-400 mb-2">Counter Lookup</h3>
-      <input id="counterLookupSearch" type="text" class="dash-input w-full mb-3" placeholder="Search hero name..." autocomplete="off">
-      <div id="counterLookupResults" class="space-y-2"></div>
+      <h3 class="counter-lookup-title">Counter Lookup</h3>
+      <input id="counterLookupSearch" type="text" class="dash-input counter-lookup-input" placeholder="Search hero name..." autocomplete="off">
+      <div id="counterLookupResults" class="counter-lookup-results"></div>
     </div>
   `;
 
@@ -23,7 +23,7 @@ export function initCounterLookup(containerEl) {
 
     const matching = allHeroesData.filter(h => h.name.toLowerCase().includes(q));
     if (!matching.length) {
-      results.innerHTML = '<p class="text-xs text-slate-500">No heroes found</p>';
+      results.innerHTML = '<p class="counter-lookup-empty">No heroes found</p>';
       return;
     }
 
@@ -33,10 +33,10 @@ export function initCounterLookup(containerEl) {
       const losses = getCountersAgainstHero(hero.name);
 
       html += `
-        <div class="counter-lookup-hero bg-slate-800 rounded-lg p-3 border border-slate-700">
-          <div class="flex items-center gap-2 mb-2">
-            <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" class="w-8 h-8 rounded-full border border-slate-600 object-cover">
-            <span class="font-bold text-sm text-white">${escapeHtml(hero.name)}</span>
+        <div class="counter-lookup-hero">
+          <div class="counter-lookup-hero-row">
+            <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" class="counter-lookup-avatar">
+            <span class="counter-lookup-name">${escapeHtml(hero.name)}</span>
           </div>
           <div class="counter-lookup-sections">
             <div>

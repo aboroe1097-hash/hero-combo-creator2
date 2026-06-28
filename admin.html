@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>VTS Admin - Structure Attack Analytics | Hero Combo Creator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'" />
   <meta name="description" content="VTS 1097 admin dashboard for alliance structure attack OCR, analytics, roster snapshots, and demolition reporting." />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#060b13" />
@@ -18,14 +18,13 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
   </noscript>
-  <script src="js/maintenance-config.js?v=20260627_205703"></script>
-  <link rel="stylesheet" href="css/_tokens.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/app.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/app-utilities.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/components.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=20260627_205703" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260627_205703" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260628_132317"></script>
+  <link rel="stylesheet" href="css/_tokens.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/app.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/components.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=20260628_132317" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260628_132317" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -37,7 +36,7 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260627_205703"></script>
+  <script src="js/admin-auth-config.js?v=20260628_132317"></script>
 </head>
 <body class="admin-standalone-page">
   <div class="maintenance-preload" role="status" aria-live="polite">
@@ -53,7 +52,7 @@
       <div class="command-brand admin-command-brand">
         <div id="adminBetaNote" class="version-ribbon" data-i18n="betaNote"></div>
         <div class="admin-brand-row">
-          <img src="images/logo.png" alt="" class="admin-brand-logo dual-glow-logo" width="84" height="84" />
+          <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="" class="admin-brand-logo dual-glow-logo" width="84" height="84"></picture>
           <div>
             <h1 class="admin-shell-title" data-i18n="adminLoginTitle">VTS Admin</h1>
             <p class="admin-shell-kicker">Rise of Castles: Ice &amp; Fire</p>
@@ -74,7 +73,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
                 </svg>
               </div>
-              <select id="languageSelect" class="admin-language-select">
+              <select id="languageSelect" class="admin-language-select" aria-label="Language">
                 <option value="en">English</option>
                 <option value="es">Español</option>
                 <option value="pt">Português</option>
@@ -124,7 +123,7 @@
       <div class="footer-content">
         <div class="footer-section brand-section">
           <div class="footer-brand-row">
-            <img src="images/logo.png" alt="" class="footer-brand-logo" loading="lazy" decoding="async" width="40" height="40" />
+            <picture><source srcset="images/logo-40.webp" type="image/webp"><img src="images/logo.png" alt="" class="footer-brand-logo" loading="lazy" decoding="async" width="40" height="40"></picture>
             <h3 class="footer-logo">VTS 1097</h3>
           </div>
           <p class="footer-url"><a href="https://roc-vts.com/">roc-vts.com</a></p>
@@ -158,6 +157,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/admin-page.js?v=20260627_205703"></script>
+  <script type="module" src="js/admin-page.js?v=20260628_132317"></script>
 </body>
 </html>

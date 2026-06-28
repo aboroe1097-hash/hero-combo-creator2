@@ -103,7 +103,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260627_205703');
+  const mod = await import('./ocr-dashboard.js?v=20260628_132317');
   await mod.bootOcrDashboard();
 }
 
@@ -111,6 +111,6 @@ if (!window.VTS_MAINTENANCE_ACTIVE) bootAdminPage().catch((err) => {
   console.error('Admin dashboard failed to load', err);
   const section = document.getElementById('ocrDashboardSection');
   if (section) {
-    section.innerHTML = '<div class="p-8 text-center text-sm text-red-400">Failed to load admin dashboard. Refresh and try again.</div>';
+    section.innerHTML = '<div class="admin-load-error">Failed to load admin dashboard. Refresh and try again.</div>';
   }
 });

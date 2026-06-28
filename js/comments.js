@@ -86,46 +86,46 @@ function createCommentCard(id, data, isReply = false) {
 
   // Pick a gradient for avatar based on name char code
   const gradients = [
-    'from-blue-500 to-indigo-600','from-violet-500 to-purple-600',
-    'from-emerald-500 to-teal-600','from-orange-500 to-red-600',
-    'from-sky-500 to-blue-600','from-pink-500 to-rose-600',
+    'comment-avatar--blue', 'comment-avatar--violet',
+    'comment-avatar--emerald', 'comment-avatar--orange',
+    'comment-avatar--sky', 'comment-avatar--pink',
   ];
   const grad = gradients[(displayName.charCodeAt(0) || 65) % gradients.length];
 
   if (isReply) {
-    wrapper.className = 'flex gap-3 p-3 sm:p-4 bg-slate-800/40 hover:bg-slate-800/60 transition-colors';
+    wrapper.className = 'comment-card comment-card--reply';
   } else {
-    wrapper.className = 'flex gap-3 p-4 sm:p-5 hover:bg-slate-800/20 transition-colors';
+    wrapper.className = 'comment-card';
   }
 
   wrapper.innerHTML = `
-    <div class="flex-shrink-0">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center font-black text-white text-sm shadow-md select-none">
+    <div class="comment-avatar-wrap">
+      <div class="comment-avatar ${grad}">
         ${initial}
       </div>
     </div>
-    <div class="flex-1 min-w-0">
-      <div class="flex items-baseline gap-2 flex-wrap mb-1">
-        <span class="font-bold text-sm text-sky-400">${safeName}</span>
-        <span class="text-[10px] text-slate-500">${escapeHtml(timeStr)}</span>
-        ${isOwn ? `<button class="del-btn ml-auto text-xs font-bold text-slate-600 hover:text-red-400 transition-colors px-3 py-1.5 rounded bg-red-900/0 hover:bg-red-900/20 border border-transparent hover:border-red-800/40 min-h-[36px]">Delete</button>` : ''}
+    <div class="comment-body">
+      <div class="comment-meta-row">
+        <span class="comment-author">${safeName}</span>
+        <span class="comment-time">${escapeHtml(timeStr)}</span>
+        ${isOwn ? `<button class="del-btn comment-delete-btn">Delete</button>` : ''}
       </div>
-      <p class="text-sm text-slate-300 leading-relaxed break-words">${safeText}</p>
-      <div class="flex items-center gap-3 mt-2">
-        <button class="reply-btn flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-blue-400 transition-colors px-2 py-1.5 min-h-[36px]">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15-6 6m0 0-6-6m6 6V9a6 6 0 0 1 12 0v3"/></svg>
+      <p class="comment-text">${safeText}</p>
+      <div class="comment-action-row">
+        <button class="reply-btn comment-reply-btn">
+          <svg class="comment-reply-icon" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15-6 6m0 0-6-6m6 6V9a6 6 0 0 1 12 0v3"/></svg>
           Reply
         </button>
       </div>
-      <div id="reply-form-${id}" class="hidden mt-3 space-y-2 p-3 bg-slate-900/60 rounded-xl border border-slate-700/60">
-        <input type="text" id="reply-name-${id}" class="w-full bg-slate-800 text-base px-3 py-2 rounded-lg text-white border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none placeholder-slate-500 transition-all" placeholder="Your name (optional)">
-        <textarea id="reply-input-${id}" class="w-full bg-slate-800 text-base px-3 py-2 rounded-lg text-white border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none resize-none placeholder-slate-500 transition-all" rows="2" placeholder="Write a reply..."></textarea>
-        <div class="flex gap-2">
-          <button class="submit-reply-btn px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-md min-h-[40px]">Post Reply</button>
-          <button class="cancel-reply-btn px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg transition-colors min-h-[40px]">Cancel</button>
+      <div id="reply-form-${id}" class="comment-reply-form hidden">
+        <input type="text" id="reply-name-${id}" class="comment-reply-field" placeholder="Your name (optional)">
+        <textarea id="reply-input-${id}" class="comment-reply-field" rows="2" placeholder="Write a reply..."></textarea>
+        <div class="comment-reply-actions">
+          <button class="submit-reply-btn comment-reply-submit">Post Reply</button>
+          <button class="cancel-reply-btn comment-reply-cancel">Cancel</button>
         </div>
       </div>
-      <div id="replies-${id}" class="mt-3 space-y-0 rounded-xl overflow-hidden border border-slate-700/40 divide-y divide-slate-700/40 ${isReply ? 'hidden' : ''}"></div>
+      <div id="replies-${id}" class="comment-replies ${isReply ? 'hidden' : ''}"></div>
     </div>
   `;
 
@@ -182,12 +182,12 @@ function renderCommentsTree(docs) {
 
   if (roots.length === 0) {
     commentsList.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-12 text-center">
-        <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3">
-          <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+      <div class="comment-empty-state comment-empty-state--large">
+        <div class="comment-empty-icon">
+          <svg class="comment-empty-svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
         </div>
-        <p class="text-sm text-slate-500 font-medium">No comments yet</p>
-        <p class="text-xs text-slate-600 mt-1">Be the first to share a suggestion!</p>
+        <p class="comment-empty-title">No comments yet</p>
+        <p class="comment-empty-copy">Be the first to share a suggestion!</p>
       </div>`;
     return;
   }
@@ -236,12 +236,12 @@ function renderCommentsUnavailable(message = 'Firebase comments are disabled for
   if (countLabel) countLabel.textContent = 'Comments unavailable';
   if (!commentsList) return;
   commentsList.innerHTML = `
-    <div class="flex flex-col items-center justify-center py-10 text-center">
-      <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3">
-        <svg class="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008Zm0-12.75a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
+    <div class="comment-empty-state">
+      <div class="comment-empty-icon">
+        <svg class="comment-empty-svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008Zm0-12.75a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>
       </div>
-      <p class="text-sm text-slate-500 font-medium">Comments are unavailable</p>
-      <p class="text-xs text-slate-600 mt-1">${escapeHtml(message)}</p>
+      <p class="comment-empty-title">Comments are unavailable</p>
+      <p class="comment-empty-copy">${escapeHtml(message)}</p>
     </div>`;
 }
 

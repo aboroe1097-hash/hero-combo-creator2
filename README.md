@@ -14,11 +14,12 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Eden Map Planner** | Canvas-based 1700x1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
 | **Tech Research Calculator** | Full Academy tracker across S0-X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
 | **Eden Loyalty Calculator** | Poison mitigation, camp presets, deficit/surplus calculations |
-| **Seasonal VTS Admin** | Eden-season OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, CSV/PNG/JSON exports |
+| **Seasonal VTS Admin** | Eden-season OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, R5 Conduct Adjustments, CSV/PNG/JSON exports |
 | **Seasonal Roster Ops** | Screenshot-based roster extraction, alliance assignment, trusted/spy/unknown status, snapshot history with auto-diff |
 | **Duty List Tracking** | Banner, Pather, and Shield Wall lists with roster-name suggestions, nickname confirmation, and local history |
 | **YouTube** | Lazy-loaded VTS 1097 playlists |
 | **Comments** | Threaded community feedback via Firebase Firestore |
+| **Atmosphere Layer** | CSS utility-first design system — press, lift, tilt, skeleton, morph, burst, aura, counter, and connector animations for a polished dark-first UI |
 | **i18n** | 11 languages (English, Espanol, Portugues, Deutsch, Francais, Turkce, Russian, Indonesia, Chinese, Arabic, Korean) |
 | **Sharing** | Share combos and rosters via URL; export combos as image (html2canvas) |
 | **PWA** | Service worker registration, standalone display mode, hashed cache-busted assets, dev-mode SW unregister guard |
@@ -81,7 +82,7 @@ Version cadence: after the 11.3.0 baseline, every pushed release increments the 
 |-------|--------|
 | **Language** | Vanilla JavaScript (ES6 modules), no framework |
 | **Bundler** | Vite 6 (dev server + build) |
-| **CSS** | Custom `app.css`, responsive `mobile.css`, frozen local utility compatibility CSS |
+| **CSS** | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), `components.css`, frozen local utility compatibility CSS |
 | **Backend** | Firebase Firestore loaded through pinned browser modules (comments, combos, roster sync) |
 | **Auth** | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
@@ -118,6 +119,8 @@ css/
   _tokens.css           Shared design tokens, spacing scale, reduced-motion base
   app-utilities.css     Frozen local utility compatibility layer
   app.css               All styles (~6100 lines)
+  atmosphere.css        Utility-first design system (press, lift, tilt, skeleton, morph, burst, aura)
+  components.css        Reusable component styles (cards, tabs, pills, modals)
   mobile.css            Mobile responsive overrides
 
 js/
@@ -163,6 +166,7 @@ js/
   ocr-render.js         Dashboard UI rendering
   ocr-engine.js         OCR parsing logic (structure names, durability)
   ocr-shared.js         Shared constants, state, helpers for OCR module
+  ocr-adjustments.js    R5 Conduct Adjustments panel: merit/penalty points, Firestore sync
 
   eden-map.js           Eden Map: render, plans, routing
   eden-map-data.js      Static data, sector definitions
@@ -289,6 +293,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 - **Firestore paths:**
   - `vts_admin/dashboard_data` -- OCR attack data
   - `vts_admin/roster_data` -- roster snapshots
+  - `vts_admin/conduct_adjustments/records` -- R5 Conduct Adjustments (admin write only)
   - `vts_saved_combos` -- community shared combos
 - **Real-time listeners** via `onSnapshot()` for roster and comments
 - **Offline-first:** All saves go to localStorage first, then Firestore

@@ -12,10 +12,10 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  // Temporarily 500kB: ships with the legacy app-utilities.css shim (~32kB) still
-  // present + the new atmosphere.css. Drop back to ~450kB once the deferred
-  // Tailwind-utility removal (Chunk 3) deletes app-utilities.css.
-  totalCssBytes: 500 * 1024,
+  // Post-shim-removal merged CSS is ~474kB (atmosphere per-surface layer + a11y
+  // fixes + utility->semantic migration). Drops further once Chunk 4 (mobile.css
+  // inversion / app.css de-dup) lands. Tripwire just above the real total.
+  totalCssBytes: 485 * 1024,
 };
 
 function formatBytes(bytes) {

@@ -39,13 +39,13 @@ function formatSkillText(text = '') {
 
   let formatted = text.replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
   formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) =>
-    tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--percent">${match}</span>`)
   );
   formatted = formatted.replace(/(\d+\s*(?:turns|turn|rounds|round|times|time|layers|layer|roun|min|hr))/gi, (match) =>
-    tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--duration">${match}</span>`)
   );
   formatted = formatted.replace(/\b(\d+)\b/g, (match) =>
-    tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--number">${match}</span>`)
   );
 
   for (const [token, html] of Object.entries(tokens)) {
@@ -79,7 +79,7 @@ function getHeroTooltip() {
 
   heroTooltip = document.createElement('div');
   heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'fixed bg-slate-900/98 backdrop-blur-md border border-slate-600 rounded-xl p-3 sm:p-4 shadow-2xl text-slate-200 w-[90vw] sm:w-[340px] md:w-[480px] lg:w-[520px] pointer-events-none hidden opacity-0 transition-opacity duration-200 flex flex-col';
+  heroTooltip.className = 'hero-tooltip-shell hero-tooltip-shell--passive hero-tooltip-shell--hidden hidden';
   heroTooltip.style.zIndex = '5000';
   document.body.appendChild(heroTooltip);
   return heroTooltip;
@@ -104,22 +104,22 @@ async function showHeroTooltip(e, heroName) {
   let skillsHtml = data.skills.map(s => {
     const formattedDesc = formatSkillText(s.desc);
     const isEnemy = s.target.toLowerCase().includes('enemy');
-    const targetColor = isEnemy ? 'text-red-400' : 'text-emerald-400';
+    const targetClass = isEnemy ? 'hero-tooltip-target--enemy' : 'hero-tooltip-target--ally';
 
     return `
-      <div class="mb-2 bg-slate-800 p-2 sm:p-2.5 rounded-lg border border-slate-700 shadow-inner hover:border-slate-500 transition-colors">
-        <div class="flex justify-between items-center mb-1.5 border-b border-slate-700/50 pb-1">
-          <span class="text-[10px] sm:text-xs font-black text-slate-200 bg-slate-700 px-2 py-0.5 rounded shadow-sm tracking-wider">SKILL ${s.id}</span>
-          <div class="flex gap-2">
-            <span class="text-[8px] sm:text-[9.5px] text-sky-300 font-bold uppercase tracking-wider">${s.type}</span>
-            ${s.range !== '-' ? `<span class="text-[8px] sm:text-[9.5px] text-slate-500 font-bold uppercase">Range: <span class="text-white bg-slate-700 px-1 rounded">${s.range}</span></span>` : ''}
+      <div class="hero-tooltip-skill">
+        <div class="hero-tooltip-skill-head">
+          <span class="hero-tooltip-skill-id">SKILL ${s.id}</span>
+          <div class="hero-tooltip-skill-meta">
+            <span class="hero-tooltip-skill-type">${s.type}</span>
+            ${s.range !== '-' ? `<span class="hero-tooltip-skill-range">Range: <span class="hero-tooltip-range-value">${s.range}</span></span>` : ''}
           </div>
         </div>
-        <p class="text-[8.5px] sm:text-[10px] ${targetColor} font-bold mb-1.5 uppercase tracking-widest flex items-center gap-1">
-          <svg class="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-5.029-5.912c.328-.521.529-1.134.529-1.788a4.991 4.991 0 00-1.854-3.791A3.99 3.99 0 0114 12H6a3.99 3.99 0 012.354-8.491A4.991 4.991 0 006.5 7.3c0 .654.2 1.267.529 1.788A5.972 5.972 0 002 15v3h14z"></path></svg>
+        <p class="hero-tooltip-target ${targetClass}">
+          <svg class="hero-tooltip-target-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-5.029-5.912c.328-.521.529-1.134.529-1.788a4.991 4.991 0 00-1.854-3.791A3.99 3.99 0 0114 12H6a3.99 3.99 0 012.354-8.491A4.991 4.991 0 006.5 7.3c0 .654.2 1.267.529 1.788A5.972 5.972 0 002 15v3h14z"></path></svg>
           ${s.target}
         </p>
-        <p class="text-[9.5px] sm:text-[11px] leading-relaxed text-slate-300">${formattedDesc}</p>
+        <p class="hero-tooltip-desc">${formattedDesc}</p>
       </div>
     `;
   }).join('');
@@ -128,16 +128,16 @@ async function showHeroTooltip(e, heroName) {
   const synergies = getSynergies(heroName);
   if (synergies.length > 0) {
     const synTags = synergies.map(syn => `
-      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded border border-slate-700 shadow-sm">
-         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border border-slate-600 object-cover">
-         <span class="text-[9px] sm:text-[10px] font-bold text-sky-300 truncate max-w-[70px] sm:max-w-[90px]">${escapeHtml(syn)}</span>
+      <div class="hero-tooltip-synergy-card">
+         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="hero-tooltip-synergy-img">
+         <span class="hero-tooltip-synergy-name">${escapeHtml(syn)}</span>
       </div>
     `).join('');
     
     synergyHtml = `
-      <div class="mt-2 pt-2 border-t border-slate-700/50">
-        <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1.5 block">Best Synergies</span>
-        <div class="flex flex-wrap gap-2">
+      <div class="hero-tooltip-synergy-block">
+        <span class="hero-tooltip-label">Best Synergies</span>
+        <div class="hero-tooltip-synergy-list">
           ${synTags}
         </div>
       </div>
@@ -145,34 +145,34 @@ async function showHeroTooltip(e, heroName) {
   }
 
   tooltip.innerHTML = `
-    <div class="flex justify-between items-start border-b border-slate-700 pb-3 mb-2 shrink-0">
-      <div class="flex flex-col">
-        <h4 class="text-base sm:text-lg font-black text-white uppercase tracking-wider drop-shadow-md pr-2">${escapeHtml(heroName)}</h4>
-        <div class="flex gap-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 w-fit">
-          <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Placement</span>
-            <span class="text-[10px] sm:text-[11px] text-emerald-400 font-bold tracking-wide">${data.placement || 'Any'}</span>
+    <div class="hero-tooltip-head">
+      <div class="hero-tooltip-title-wrap">
+        <h4 class="hero-tooltip-title">${escapeHtml(heroName)}</h4>
+        <div class="hero-tooltip-meta-panel">
+          <div class="hero-tooltip-meta-col">
+            <span class="hero-tooltip-meta-label">Placement</span>
+            <span class="hero-tooltip-meta-value">${data.placement || 'Any'}</span>
           </div>
-          <div class="w-px bg-slate-700/50"></div>
-          <div class="flex flex-col">
-            <span class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-widest">Troop</span>
-            <span class="text-[10px] sm:text-[11px] font-bold tracking-wide ${troopColorClass}">${localizedTroop}</span>
+          <div class="hero-tooltip-meta-separator"></div>
+          <div class="hero-tooltip-meta-col">
+            <span class="hero-tooltip-meta-label">Troop</span>
+            <span class="hero-tooltip-meta-value ${troopColorClass}">${localizedTroop}</span>
           </div>
         </div>
       </div>
       
-      <button id="closeTooltipBtn" class="lg:hidden pointer-events-auto bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 shadow-md transition-colors shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+      <button id="closeTooltipBtn" class="hero-tooltip-close">
+        <svg class="hero-tooltip-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
 
-    <div class="flex justify-between items-center mb-2 px-1 shrink-0">
-      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Min: <span class="text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">${data.minCopies || 34} copies</span></p>
-      <p class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Max: <span class="text-sky-400 bg-sky-900/30 px-1.5 py-0.5 rounded">${data.maxCopies || 34} copies</span></p>
+    <div class="hero-tooltip-copy-row">
+      <p class="hero-tooltip-copy">Min: <span class="hero-tooltip-copy-badge">${data.minCopies || 34} copies</span></p>
+      <p class="hero-tooltip-copy">Max: <span class="hero-tooltip-copy-badge hero-tooltip-copy-badge--max">${data.maxCopies || 34} copies</span></p>
     </div>
 
-    <div class="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-2">
-      ${skillsHtml || '<p class="text-xs text-slate-500 italic">No skill data available yet.</p>'}
+    <div class="hero-tooltip-body custom-scrollbar">
+      ${skillsHtml || '<p class="hero-tooltip-empty">No skill data available yet.</p>'}
       ${synergyHtml}
     </div>
   `;
@@ -182,8 +182,7 @@ async function showHeroTooltip(e, heroName) {
   cachedTooltipW = rect.width;
   cachedTooltipH = rect.height;
   requestAnimationFrame(() => {
-    tooltip.classList.remove('opacity-0');
-    tooltip.classList.add('opacity-100');
+    tooltip.classList.remove('hero-tooltip-shell--hidden');
   });
   moveHeroTooltip(e);
 
@@ -244,17 +243,15 @@ function moveHeroTooltip(e) {
 
 function hideHeroTooltip() {
   const tooltip = getHeroTooltip();
-  tooltip.classList.remove('opacity-100');
-  tooltip.classList.add('opacity-0');
+  tooltip.classList.add('hero-tooltip-shell--hidden');
   setTimeout(() => {
-    if(tooltip.classList.contains('opacity-0')) tooltip.classList.add('hidden');
+    if(tooltip.classList.contains('hero-tooltip-shell--hidden')) tooltip.classList.add('hidden');
   }, 200);
 }
 
 function forceHideHeroTooltip() {
   const tooltip = getHeroTooltip();
-  tooltip.classList.add('hidden', 'opacity-0');
-  tooltip.classList.remove('opacity-100');
+  tooltip.classList.add('hidden', 'hero-tooltip-shell--hidden');
 }
 
 window.showHeroTooltip = showHeroTooltip;

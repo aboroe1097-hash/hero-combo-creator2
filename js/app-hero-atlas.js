@@ -116,11 +116,11 @@ function formatSkillText(text) {
   let formatted = escapeHtml(String(text || '')).replace(/<\/?b>/gi, '').replace(/<\/?u>/gi, '');
 
   formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) => 
-    tokenize(`<span class="font-black text-sky-400 bg-sky-900/30 px-1 rounded">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--percent">${match}</span>`)
   );
   
   formatted = formatted.replace(/(\d+\s*(?:turns|turn|rounds|round|times|time|layers|layer|roun|min|hr))/gi, (match) => 
-    tokenize(`<span class="font-bold text-amber-400">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--duration">${match}</span>`)
   );
   
   const termPattern = Object.keys(SKILL_TERM_HELP_BY_KEY)
@@ -139,7 +139,7 @@ function formatSkillText(text) {
   }
 
   formatted = formatted.replace(/\b(\d+)\b/g, (match) => 
-    tokenize(`<span class="font-bold text-white bg-slate-700/50 px-1 rounded mx-0.5">${match}</span>`)
+    tokenize(`<span class="skill-value skill-value--number">${match}</span>`)
   );
 
   for (const [token, html] of Object.entries(tokens)) {
@@ -663,11 +663,11 @@ function renderHeroesTab() {
           </div>
           <div class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</div>
         </div>`;
-    }).join('') : '<p class="text-sm text-slate-500 italic p-4 text-center">No heroes match your filters.</p>';
+    }).join('') : '<p class="hero-atlas-empty">No heroes match your filters.</p>';
 
     const showMoreHtml = ranked.length > _heroesTabState.limit ? `
-      <div class="flex justify-center p-4">
-        <button type="button" class="hero-tab-show-more bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2 rounded-full text-sm font-bold transition">
+      <div class="hero-tab-show-more-wrap">
+        <button type="button" class="hero-tab-show-more">
           Show More (${ranked.length - _heroesTabState.limit} remaining)
         </button>
       </div>` : '';
@@ -739,7 +739,7 @@ function renderHeroesTab() {
           </div>
           <p class="detail-skill-target ${sk.target.toLowerCase().includes('enemy') ? 'enemy' : 'ally'}">${sk.target}</p>
           <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
-        </div>`).join('') : '<p class="text-xs text-slate-500 italic">Skill data not yet available.</p>';
+        </div>`).join('') : '<p class="hero-detail-empty">Skill data not yet available.</p>';
 
       const heroSkinsList = getHeroSkins(selected);
       const hiddenPower = getHeroHiddenPower(selected);
@@ -867,7 +867,7 @@ function renderHeroesTab() {
               </div>
             </div>
             <p class="heroes-combo-scope-hint">${comboScopeHint}</p>
-            <div class="detail-combos">${combosHtml || `<p class="text-xs text-slate-500 italic">${t.heroesNoCombos || 'No ranked combos yet.'}</p>`}</div>
+            <div class="detail-combos">${combosHtml || `<p class="hero-detail-empty">${t.heroesNoCombos || 'No ranked combos yet.'}</p>`}</div>
           </div>
 
           ${hasHeroCounters ? `

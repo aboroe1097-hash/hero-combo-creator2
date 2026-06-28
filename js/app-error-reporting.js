@@ -148,5 +148,9 @@ export function initErrorReporting() {
   window.addEventListener('unhandledrejection', (event) => {
     logClientError('window.unhandledrejection', event.reason || new Error('Unhandled promise rejection'));
   });
-  flushClientErrors();
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => flushClientErrors(), { timeout: 3000 });
+  } else {
+    setTimeout(() => flushClientErrors(), 0);
+  }
 }

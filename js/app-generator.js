@@ -288,7 +288,7 @@ export function renderGeneratorHeroes(options = {}) {
         ? (skinOwned ? ' skin-priority-card skin-animated-portrait has-skin skin-owned' : ' skin-mode-card')
         : '';
       const card = document.createElement('div');
-      card.className = `hero-card generator-card relative season-${cssToken(hero.season)}${skinPriorityClass} ${
+      card.className = `hero-card generator-card season-${cssToken(hero.season)}${skinPriorityClass} ${
         generatorSelectedHeroes.has(hero.name) ? 'generator-card-selected' : ''
       }`;
       if (skinOwned) applySkinMotion(card, hero.name);
@@ -298,7 +298,7 @@ export function renderGeneratorHeroes(options = {}) {
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
       card.setAttribute('aria-pressed', generatorSelectedHeroes.has(hero.name) ? 'true' : 'false');
-      card.setAttribute('aria-label', `${generatorSelectedHeroes.has(hero.name) ? 'Deselect' : 'Select'} ${hero.name}`);
+      card.setAttribute('aria-label', `${generatorSelectedHeroes.has(hero.name) ? 'Deselect' : 'Select'} ${hero.name} for generator combo`);
       const originTag = hero.releaseSeason && hero.releaseSeason !== hero.season
         ? `<span class="hero-origin-tag" title="Original release ${escapeHtml(hero.releaseSeason)}">${escapeHtml(hero.releaseSeason)}</span>`
         : '';
@@ -359,12 +359,12 @@ export function renderGeneratorHeroes(options = {}) {
           generatorSelectedHeroes.delete(hero.name);
           card.classList.remove('generator-card-selected');
           card.setAttribute('aria-pressed', 'false');
-          card.setAttribute('aria-label', `Select ${hero.name}`);
+          card.setAttribute('aria-label', `Select ${hero.name} for generator combo`);
         } else {
           generatorSelectedHeroes.add(hero.name);
           card.classList.add('generator-card-selected');
           card.setAttribute('aria-pressed', 'true');
-          card.setAttribute('aria-label', `Deselect ${hero.name}`);
+          card.setAttribute('aria-label', `Deselect ${hero.name} from generator combo`);
         }
         
         markGeneratorSelectionChanged();

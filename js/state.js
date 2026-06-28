@@ -15,7 +15,7 @@ globalThis.__vtsHeroComboRuntimeState = runtimeState;
 // --- STATE ---
 export let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
 export let heroInfoEnabled = true;
-export let activeTechSeasons = new Set(['X1']);
+export let activeTechSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4', 'X1']);
 export let techSearchQuery = '';
 
 export const DEFAULT_HERO_FILTER_SEASONS = ['S0', 'S1'];
@@ -185,11 +185,11 @@ export const genTroopFiltersEl = document.getElementById('generatorTroopFilters'
 
 export function getTroopColorClass(type) {
   switch (type) {
-    case 'Archers': return 'text-emerald-400';
-    case 'Footmen': return 'text-amber-400';
-    case 'Cavalry': return 'text-sky-400';
-    case 'All': return 'text-purple-400';
-    default: return 'text-slate-400';
+    case 'Archers': return 'troop-color--archers';
+    case 'Footmen': return 'troop-color--footmen';
+    case 'Cavalry': return 'troop-color--cavalry';
+    case 'All': return 'troop-color--all';
+    default: return 'troop-color--unknown';
   }
 }
 
