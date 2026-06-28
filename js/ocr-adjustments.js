@@ -7,56 +7,62 @@ export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
   banner_help: Object.freeze({
     key: 'banner_help',
     type: 'merit',
-    defaultPoints: 15000,
+    defaultPoints: 1,
     label: 'Banner help',
   }),
   connected_road: Object.freeze({
     key: 'connected_road',
     type: 'merit',
-    defaultPoints: 20000,
+    defaultPoints: 1,
     label: 'Connected road',
   }),
   extra_effort: Object.freeze({
     key: 'extra_effort',
     type: 'merit',
-    defaultPoints: 10000,
+    defaultPoints: 1,
     label: 'Extra effort',
   }),
   merit_other: Object.freeze({
     key: 'merit_other',
     type: 'merit',
-    defaultPoints: 5000,
+    defaultPoints: 1,
     label: 'Merit - other',
   }),
   path_block: Object.freeze({
     key: 'path_block',
     type: 'penalty',
-    defaultPoints: -20000,
+    defaultPoints: -1,
     label: 'Blocked path',
   }),
   toxicity: Object.freeze({
     key: 'toxicity',
     type: 'penalty',
-    defaultPoints: -25000,
+    defaultPoints: -1,
     label: 'Toxicity',
   }),
   ignored_coordination: Object.freeze({
     key: 'ignored_coordination',
     type: 'penalty',
-    defaultPoints: -10000,
+    defaultPoints: -1,
     label: 'Ignored coordination',
   }),
   penalty_other: Object.freeze({
     key: 'penalty_other',
     type: 'penalty',
-    defaultPoints: -5000,
+    defaultPoints: -1,
     label: 'Penalty - other',
+  }),
+  forfeit_premium: Object.freeze({
+    key: 'forfeit_premium',
+    type: 'flag',
+    defaultPoints: 0,
+    label: 'Forfeit premium reward',
   }),
 });
 
 export const R5_ADJUSTMENT_CATEGORY_KEYS = Object.freeze(Object.keys(R5_ADJUSTMENT_CATEGORIES));
 
-const MAX_R5_POINTS = 10000000;
+const MAX_R5_POINTS = 1000;
 const DEFAULT_CATEGORY = 'merit_other';
 const TOTAL_FIELDS = ['total_demolition', 'totalDemolition', 'ocrTotal', 'total', 'value'];
 

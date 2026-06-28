@@ -145,6 +145,7 @@ const en = {
   adminConductCategoryToxicity: 'Toxicity',
   adminConductCategoryIgnoredCoordination: 'Ignored coordination',
   adminConductCategoryPenaltyOther: 'Penalty - other',
+  adminConductCategoryForfeitPremium: 'Forfeit premium reward',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'OCR service ready',
   adminOcrUnavailable: 'OCR unavailable',

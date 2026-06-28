@@ -135,6 +135,7 @@ const de = {
   adminConductCategoryToxicity: 'Toxizität',
   adminConductCategoryIgnoredCoordination: 'Koordination ignoriert',
   adminConductCategoryPenaltyOther: 'Strafe - sonstiges',
+  adminConductCategoryForfeitPremium: 'Prämie verwirken',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'OCR-Dienst bereit',
   adminOcrUnavailable: 'OCR nicht verfügbar',

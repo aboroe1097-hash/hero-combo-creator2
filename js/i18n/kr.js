@@ -51,6 +51,7 @@ const kr = {
   adminConductCategoryToxicity: '유해성',
   adminConductCategoryIgnoredCoordination: '조정 무시',
   adminConductCategoryPenaltyOther: '패널티 - 기타',
+  adminConductCategoryForfeitPremium: '프리미엄 보상 포기',
   adminRosterSnapshotsTitle: '명단 스냅샷',
   adminOcrServiceReady: 'OCR 서비스 준비됨',
   adminOcrUnavailable: 'OCR 사용 불가',

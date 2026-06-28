@@ -53,8 +53,8 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
         { type: 'banner', entries: [{ name: 'UNDEAD Banner', confirmed: 'UNDEAD' }] },
       ],
       r5Adjustments: [
-        { season, player: '~Sarafino~', points: 20000, category: 'extra_effort' },
-        { season, player: 'UNDEAD', points: -10000, category: 'ignored_coordination' },
+        { season, player: '~Sarafino~', points: 2, category: 'extra_effort' },
+        { season, player: 'UNDEAD', points: -1, category: 'ignored_coordination' },
       ],
     });
 
@@ -64,16 +64,16 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(model.premiumCutoff, 1);
     assert.equal(sarafino.pathers, 2);
     assert.equal(sarafino.shieldWalls, 1);
-    assert.equal(sarafino.conductBonus, 20000);
+    assert.equal(sarafino.conductBonus, 2);
     assert.equal(sarafino.finalRank, 1);
     assert.equal(sarafino.finalReward, 'guild_master');
-    assert.equal(Number(sarafino.weightedScore.toFixed(1)), 85);
+    assert.equal(Number(sarafino.weightedScore.toFixed(1)), 250000);
 
     assert.equal(undead.banners, 1);
-    assert.equal(undead.conductBonus, -10000);
+    assert.equal(undead.conductBonus, -1);
     assert.equal(undead.currentReward, 'core');
     assert.equal(undead.finalReward, 'core');
-    assert.equal(Number(undead.weightedScore.toFixed(1)), 35);
+    assert.equal(Number(undead.weightedScore.toFixed(1)), 100000);
   });
 });
 

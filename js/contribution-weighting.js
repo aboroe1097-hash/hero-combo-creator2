@@ -6,8 +6,8 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
   pathers: 0.15,
   banners: 0.15,
-  shieldWalls: 0.1,
-  conduct: 0.1,
+  shieldWalls: 0.15,
+  conduct: 0.05,
 });
 
 export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
@@ -134,9 +134,21 @@ function buildConductMap(adjustments = [], season = '') {
   }
 }
 
-function normalizeMetric(value, maxValue) {
-  return maxValue > 0 ? (value / maxValue) * 100 : 0;
+function buildForfeitPlayerSet(adjustments = [], season = '') {
+  if (!season || !Array.isArray(adjustments)) return new Set();
+  const seasonKey = String(season || '').toLowerCase().trim();
+  const forfeit = new Set();
+  adjustments.forEach((entry) => {
+    if (entry?.category !== 'forfeit_premium') return;
+    if (String(entry?.season || '').toLowerCase().trim() !== seasonKey) return;
+    try {
+      const identity = resolvePlayerIdentity(entry?.player || entry);
+      if (identity) forfeit.add(identity.playerKey);
+    } catch { /* skip unparseable player */ }
+  });
+  return forfeit;
 }
+
 
 function normalizeWeights(weights) {
   return {
@@ -154,6 +166,7 @@ export function buildWeightedContributionRows(options = {}) {
   const dutyCounts = buildWeightedDutyCounts(options.dutyRecords);
   const conductMap = buildConductMap(options.r5Adjustments, options.season || options.r5Season);
   const weights = normalizeWeights(options.weights);
+  const forfeitPlayers = buildForfeitPlayerSet(options.r5Adjustments, options.season || options.r5Season);
 
   const rows = entries
     .map((entry) => {
@@ -175,34 +188,19 @@ export function buildWeightedContributionRows(options = {}) {
     })
     .filter(Boolean);
 
-  const maxContribution = Math.max(0, ...rows.map((row) => row.contributionScore));
-  const maxPathers = Math.max(0, ...rows.map((row) => row.pathers));
-  const maxBanners = Math.max(0, ...rows.map((row) => row.banners));
-  const maxShieldWalls = Math.max(0, ...rows.map((row) => row.shieldWalls));
-  const maxConductAbs = Math.max(0, ...rows.map((row) => Math.abs(row.conductBonus)));
   const premiumCutoff = getContributionPremiumCutoff(record);
+  const BASE_POINT_VALUE = 10000;
 
   const rankedRows = rows
     .map((row) => {
-      const contributionNorm = normalizeMetric(row.contributionScore, maxContribution);
-      const pathersNorm = normalizeMetric(row.pathers, maxPathers);
-      const bannersNorm = normalizeMetric(row.banners, maxBanners);
-      const shieldWallsNorm = normalizeMetric(row.shieldWalls, maxShieldWalls);
-      const conductNorm = maxConductAbs ? (row.conductBonus / maxConductAbs) * 100 : 0;
-      const weightedScore =
-        weights.contribution * contributionNorm +
-        weights.pathers * pathersNorm +
-        weights.banners * bannersNorm +
-        weights.shieldWalls * shieldWallsNorm +
-        weights.conduct * conductNorm;
+      const dutyPoints = row.banners * BASE_POINT_VALUE + row.pathers * BASE_POINT_VALUE + row.shieldWalls * BASE_POINT_VALUE;
+      const conductPoints = row.conductBonus * BASE_POINT_VALUE;
+      const weightedScore = row.contributionScore + dutyPoints + conductPoints;
 
       return {
         ...row,
-        contributionNorm,
-        pathersNorm,
-        bannersNorm,
-        shieldWallsNorm,
-        conductNorm,
+        dutyPoints,
+        conductPoints,
         weightedScore,
       };
     })
@@ -220,6 +218,9 @@ export function buildWeightedContributionRows(options = {}) {
       else if (rank <= 110) finalReward = 'power_house';
       else if (rank <= 200) finalReward = 'members';
       else finalReward = 'standard';
+      if (forfeitPlayers.has(row.playerKey) && (finalReward === 'guild_master' || finalReward === 'core')) {
+        finalReward = 'power_house';
+      }
       return { ...row, finalRank: rank, finalReward };
     });
 
@@ -227,13 +228,15 @@ export function buildWeightedContributionRows(options = {}) {
     record,
     premiumCutoff,
     weights,
-    max: {
-      contribution: maxContribution,
-      pathers: maxPathers,
-      banners: maxBanners,
-      shieldWalls: maxShieldWalls,
-      conductAbs: maxConductAbs,
-    },
+    max: rankedRows.length
+      ? {
+          contribution: Math.max(...rankedRows.map((r) => r.contributionScore)),
+          pathers: Math.max(...rankedRows.map((r) => r.pathers)),
+          banners: Math.max(...rankedRows.map((r) => r.banners)),
+          shieldWalls: Math.max(...rankedRows.map((r) => r.shieldWalls)),
+          conductAbs: Math.max(...rankedRows.map((r) => Math.abs(r.conductBonus))),
+        }
+      : { contribution: 0, pathers: 0, banners: 0, shieldWalls: 0, conductAbs: 0 },
     rows: rankedRows,
   };
 }

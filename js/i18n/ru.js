@@ -134,6 +134,7 @@ const ru = {
   adminConductCategoryToxicity: 'Токсичность',
   adminConductCategoryIgnoredCoordination: 'Игнорирование координации',
   adminConductCategoryPenaltyOther: 'Штраф - другое',
+  adminConductCategoryForfeitPremium: 'Отказ от премиальной награды',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'Сервис OCR готов',
   adminOcrUnavailable: 'OCR недоступен',

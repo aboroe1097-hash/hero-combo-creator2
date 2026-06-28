@@ -276,6 +276,7 @@ const CONDUCT_CATEGORY_I18N_KEYS = {
   toxicity: 'adminConductCategoryToxicity',
   ignored_coordination: 'adminConductCategoryIgnoredCoordination',
   penalty_other: 'adminConductCategoryPenaltyOther',
+  forfeit_premium: 'adminConductCategoryForfeitPremium',
 };
 
 function getDashboardR5SeasonKey() {

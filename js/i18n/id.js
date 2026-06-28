@@ -134,6 +134,7 @@ const id = {
   adminConductCategoryToxicity: 'Toksisitas',
   adminConductCategoryIgnoredCoordination: 'Mengabaikan koordinasi',
   adminConductCategoryPenaltyOther: 'Penalti - lainnya',
+  adminConductCategoryForfeitPremium: 'Lepaskan hadiah premium',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'Layanan OCR siap',
   adminOcrUnavailable: 'OCR tidak tersedia',

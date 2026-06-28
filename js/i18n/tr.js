@@ -134,6 +134,7 @@ const tr = {
   adminConductCategoryToxicity: 'Toksisite',
   adminConductCategoryIgnoredCoordination: 'Koordinasyonu görmezden gelme',
   adminConductCategoryPenaltyOther: 'Ceza - diğer',
+  adminConductCategoryForfeitPremium: 'Primyum ödülden feragat et',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'OCR hizmeti hazır',
   adminOcrUnavailable: 'OCR kullanılamıyor',

@@ -134,6 +134,7 @@ const pt = {
   adminConductCategoryToxicity: 'Toxicidade',
   adminConductCategoryIgnoredCoordination: 'Ignorou coordenação',
   adminConductCategoryPenaltyOther: 'Penalidade - outra',
+  adminConductCategoryForfeitPremium: 'Renunciar à recompensa premium',
   adminRosterSnapshotsTitle: 'Roster Snapshots',
   adminOcrServiceReady: 'Serviço OCR pronto',
   adminOcrUnavailable: 'OCR indisponível',

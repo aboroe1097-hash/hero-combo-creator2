@@ -1102,6 +1102,7 @@ export function findBestMatch(name, minConfidence = 100) {
       // Duty (Banner/Pather) cleaned-name stragglers the roster fuzzy match can't bridge:
       'Dvd': 'DvD18',
       'BOiiE': 'BiG BOiiE',
+      BigBOIE: 'BiG BOiiE',
       'Uz': '!!Uzumaki!!',
       Moldo1313: 'Moldo',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
@@ -1111,7 +1112,9 @@ export function findBestMatch(name, minConfidence = 100) {
       redbull: 'RedBull',
       redull: 'RedBull',
       ostio: 'osito',
-      tersait: 'Teresita',
+      Jambo: 'JamboJango',
+      tersait: 'RedBull',
+      Teresita: 'RedBull',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';

@@ -132,6 +132,7 @@ const zh = {
   adminConductCategoryToxicity: '不良行为',
   adminConductCategoryIgnoredCoordination: '忽视协调',
   adminConductCategoryPenaltyOther: '处罚 - 其他',
+  adminConductCategoryForfeitPremium: '放弃高级奖励',
   adminRosterSnapshotsTitle: '名单快照',
   adminOcrServiceReady: 'OCR 服务已就绪',
   adminOcrUnavailable: 'OCR 不可用',

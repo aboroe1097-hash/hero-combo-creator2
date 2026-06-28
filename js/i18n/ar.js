@@ -134,6 +134,7 @@ const ar = {
   adminConductCategoryToxicity: 'سمية',
   adminConductCategoryIgnoredCoordination: 'تجاهل التنسيق',
   adminConductCategoryPenaltyOther: 'جزاء - أخرى',
+  adminConductCategoryForfeitPremium: 'التخلي عن المكافأة الممتازة',
   adminRosterSnapshotsTitle: 'لقطات القائمة',
   adminOcrServiceReady: 'خدمة OCR جاهزة',
   adminOcrUnavailable: 'OCR غير متاح',

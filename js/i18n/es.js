@@ -134,6 +134,7 @@ const es = {
   adminConductCategoryToxicity: 'Toxicidad',
   adminConductCategoryIgnoredCoordination: 'Ignoró coordinación',
   adminConductCategoryPenaltyOther: 'Penalización - otra',
+  adminConductCategoryForfeitPremium: 'Renunciar a recompensa premium',
   adminRosterSnapshotsTitle: 'Capturas de nomina',
   adminOcrServiceReady: 'Servicio OCR listo',
   adminOcrUnavailable: 'OCR no disponible',

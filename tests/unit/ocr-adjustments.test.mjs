@@ -67,19 +67,19 @@ test('R5 aggregation is scoped per season and sums merit plus penalty rows', () 
   const sarafinoKey = resolveR5PlayerIdentity('~Sarafino~').playerKey;
   const bonusMap = aggregateR5Bonuses(
     [
-      { season, player: 'Sarafina~', points: 25000, category: 'connected_road' },
-      { season, player: '~Sarafino~', points: -5000, category: 'ignored_coordination' },
-      { season: '2026-x2', player: '~Sarafino~', points: 999999, category: 'extra_effort' },
-      { season, player: 'UNDEAD', points: 8000, category: 'extra_effort' },
+      { season, player: 'Sarafina~', points: 500, category: 'connected_road' },
+      { season, player: '~Sarafino~', points: -200, category: 'ignored_coordination' },
+      { season: '2026-x2', player: '~Sarafino~', points: 999, category: 'extra_effort' },
+      { season, player: 'UNDEAD', points: 300, category: 'extra_effort' },
     ],
     season
   );
 
-  assert.equal(bonusMap.get(sarafinoKey), 20000);
-  assert.equal(bonusMap.get(resolveR5PlayerIdentity('UNDEAD').playerKey), 8000);
+  assert.equal(bonusMap.get(sarafinoKey), 300);
+  assert.equal(bonusMap.get(resolveR5PlayerIdentity('UNDEAD').playerKey), 300);
   assert.equal(
     [...bonusMap.values()].reduce((sum, points) => sum + points, 0),
-    28000
+    600
   );
 });
 
@@ -90,8 +90,8 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
     { name: 'UNDEAD', total_demolition: 50000, participation_count: 1 },
   ];
   const adjustments = [
-    { season: 'season-a', player: 'Sarafina~', points: 40000, category: 'connected_road' },
-    { season: 'season-a', player: 'UNDEAD', points: -10000, category: 'path_block' },
+    { season: 'season-a', player: 'Sarafina~', points: 400, category: 'connected_road' },
+    { season: 'season-a', player: 'UNDEAD', points: -100, category: 'path_block' },
   ];
 
   const adjusted = applyR5AdjustmentsToPlayerTotals(rows, adjustments, 'season-a');
@@ -99,17 +99,17 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
   const undead = adjusted.find((row) => row.name === 'UNDEAD');
 
   assert.equal(sarafino.total_demolition, 100000);
-  assert.equal(sarafino.bonusR5, 40000);
-  assert.equal(sarafino.adjustedTotal, 140000);
-  assert.equal(undead.adjustedTotal, 40000);
+  assert.equal(sarafino.bonusR5, 400);
+  assert.equal(sarafino.adjustedTotal, 100400);
+  assert.equal(undead.adjustedTotal, 49900);
 
   const ranking = buildAdjustedGiftRanking(rows, adjustments, 'season-a');
   assert.deepEqual(
     ranking.map((row) => [row.name, row.adjustedRank, row.adjustedTotal]),
     [
-      ['~Sarafino~', 1, 140000],
-      ['Kika', 2, 120000],
-      ['UNDEAD', 3, 40000],
+      ['Kika', 1, 120000],
+      ['~Sarafino~', 2, 100400],
+      ['UNDEAD', 3, 49900],
     ]
   );
 });
@@ -132,12 +132,12 @@ test('R5 local adjustments persist when Firebase is unavailable', () => {
   const updated = updateLocalR5Adjustment(created.id, {
     player: 'UNDEAD',
     category: 'path_block',
-    points: -30000,
+    points: -500,
     note: 'blocked path',
   });
 
   assert.equal(updated.playerName, 'UNDEAD');
-  assert.equal(updated.points, -30000);
+  assert.equal(updated.points, -500);
   assert.equal(updated.note, 'blocked path');
   assert.equal(loadLocalR5Adjustments('season-local')[0].playerName, 'UNDEAD');
 
