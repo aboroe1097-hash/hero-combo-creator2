@@ -4681,6 +4681,75 @@ input[type=number] { -moz-appearance: textfield; }
   color: #042f2e;
   border-color: rgba(8, 145, 178, 0.5);
 }
+
+@media (max-width: 768px) {
+  .eden-mission-panel {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .eden-mission-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .eden-mission-preview {
+    min-height: 28px;
+    padding: 5px 10px;
+    font-size: 0.66rem;
+  }
+
+  .eden-mission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .eden-mission-field > span {
+    font-size: 0.5rem;
+  }
+
+  .eden-mission-select,
+  .eden-mission-input {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 0.65rem;
+  }
+
+  .eden-mission-teams,
+  .eden-mission-actions {
+    grid-column: 1 / -1;
+  }
+
+  .eden-mission-team-row,
+  .eden-mission-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .eden-mission-team-row::-webkit-scrollbar,
+  .eden-mission-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .eden-mission-team-btn {
+    flex: 0 0 auto;
+    min-width: 38px;
+    min-height: 36px;
+    padding: 6px 9px;
+    font-size: 0.66rem;
+  }
+
+  .eden-mission-actions .eden-tool-btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 7px 9px;
+  }
+}
+
 .eden-plans-panel {
   border-radius: 12px;
   background: rgba(15,23,42,0.4);
@@ -9455,6 +9524,61 @@ body {
   }
 }
 
+@media (max-width: 768px) {
+  .quick-tour-backdrop {
+    background: rgba(2, 6, 23, 0.58);
+  }
+
+  .quick-tour-card {
+    left: 14px;
+    right: 14px;
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(42vh, 330px);
+    overflow-y: auto;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.98);
+    color: #0f172a;
+    box-shadow: 0 -12px 38px rgba(2, 6, 23, 0.28);
+  }
+
+  .quick-tour-kicker {
+    font-size: 0.68rem;
+    margin-bottom: 4px;
+  }
+
+  .quick-tour-title {
+    font-size: 1.05rem;
+    margin-bottom: 5px;
+    color: #0f172a;
+  }
+
+  .quick-tour-body {
+    font-size: 0.88rem;
+    line-height: 1.38;
+    color: #475569;
+  }
+
+  .quick-tour-dots,
+  .quick-tour-actions {
+    margin-top: 10px;
+  }
+
+  .quick-tour-actions {
+    gap: 8px;
+  }
+
+  .quick-tour-actions button {
+    min-width: 74px;
+    min-height: 38px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+  }
+}
+
 [data-theme="light"] .heroes-sort-control {
   background: #ffffff;
   border-color: #cbd5e1;
@@ -12887,6 +13011,69 @@ body.admin-standalone-page > .app-shell {
   color: var(--text-primary) !important;
   border-color: rgba(247, 185, 85, 0.48) !important;
   background: rgba(247, 185, 85, 0.12) !important;
+}
+
+@media (max-width: 768px) {
+  #tabOcrDashboard.seasonal-admin-tab {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+    padding-inline: 0 !important;
+    gap: 3px !important;
+    font-size: 0 !important;
+    overflow: hidden;
+  }
+
+  #tabOcrDashboard.seasonal-admin-tab::after {
+    content: "Admin";
+    color: var(--text-dim);
+    font-size: 0.66rem;
+    font-weight: 900;
+  }
+
+  #tabOcrDashboard.seasonal-admin-tab svg {
+    width: 15px !important;
+    height: 15px !important;
+    color: var(--text-muted);
+    opacity: 0.95 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #tabOcrDashboard.seasonal-admin-tab {
+    min-width: 72px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .boot-kicker {
+    font-size: 0.5rem;
+    margin-bottom: 6px;
+  }
+
+  .loading-title {
+    font-size: 1rem;
+  }
+
+  .boot-sub {
+    font-size: 0.52rem;
+    margin-bottom: 8px;
+  }
+
+  .boot-status-text {
+    font-size: 0.62rem;
+    margin-bottom: 8px;
+  }
+
+  .intro-logo {
+    width: 88px;
+    height: 88px;
+  }
+
+  .intro-enter-btn {
+    padding: 10px 20px;
+    font-size: 0.64rem;
+  }
 }
 
 .seasonal-admin-wrap .tab-badge {

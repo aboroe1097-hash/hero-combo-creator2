@@ -17,6 +17,7 @@ import {
   resolveCanonicalPlayerName,
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
+import { buildWeightedContributionRows } from './contribution-weighting.js';
 import { translations } from './translations.js';
 
 function adminT(key, vars = {}) {
@@ -37,6 +38,21 @@ function adminT(key, vars = {}) {
     text = text.replaceAll(`{${name}}`, String(value));
   });
   return text;
+}
+
+function hydrateDashboardTableLabels(root) {
+  if (!root) return;
+  root.querySelectorAll('table').forEach((table) => {
+    const labels = Array.from(table.querySelectorAll('thead th')).map((th) =>
+      (th.textContent || '').replace(/\s+/g, ' ').trim()
+    );
+    if (!labels.length) return;
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (cell.tagName === 'TD' && labels[index]) cell.dataset.label = labels[index];
+      });
+    });
+  });
 }
 
 function valueOf(input) {
@@ -905,9 +921,78 @@ function contributionReward(entry, record) {
     return override;
   }
   return Number(entry?.rank || 0) > 0 &&
-    Number(entry?.rank || 0) <= Number(record?.premiumCutoff || 20)
+    Number(entry?.rank || 0) <= Number(record?.premiumCutoff || record?.premiumSlots || 20)
     ? 'premium'
     : 'standard';
+}
+
+function contributionRewardLabel(tier) {
+  return (
+    {
+      premium: adminT('adminContributionRewardPremium'),
+      standard: adminT('adminContributionRewardStandard'),
+      review: adminT('adminContributionRewardReview'),
+      none: adminT('adminContributionRewardNone'),
+    }[tier] || adminT('adminContributionRewardAuto')
+  );
+}
+
+function renderWeightedContributionDashboard() {
+  const host = $id('dashWeightedContributionPanel');
+  if (!host) return;
+
+  const model = buildWeightedContributionRows({
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    r5Adjustments: state.r5Adjustments,
+    season: state.r5Season,
+  });
+  const rows = model.rows || [];
+
+  if (!rows.length) {
+    host.innerHTML = '';
+    host.classList.add('hidden');
+    return;
+  }
+
+  const recordLabel = [model.record?.date, model.record?.note].filter(Boolean).join(' - ');
+  host.classList.remove('hidden');
+  host.innerHTML = `<div class="dash-card dash-weighted-contribution-card">
+    <div class="dash-card-hdr">
+      <h2 class="dash-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20V10" />
+          <path d="M18 20V4" />
+          <path d="M6 20v-6" />
+        </svg>
+        <span>Weighted Total Contribution</span>
+      </h2>
+      <span class="dash-weighted-contribution-meta">${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} Premium</span>
+    </div>
+    <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+        <thead><tr><th>Player</th><th>Current rank</th><th>Reward</th><th style="text-align:right">Contribution score</th><th style="text-align:right">#Shield Walls</th><th style="text-align:right">#Pathers</th><th style="text-align:right">#Banners</th><th style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
+        <tbody>${rows
+          .map(
+            (row) => `<tr>
+          <td><strong>${esc(row.playerName)}</strong></td>
+          <td>${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td>${esc(contributionRewardLabel(row.currentReward))}</td>
+          <td style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td style="text-align:right">${row.shieldWalls}</td>
+          <td style="text-align:right">${row.pathers}</td>
+          <td style="text-align:right">${row.banners}</td>
+          <td style="text-align:right" class="${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedNumber(row.conductBonus)}</td>
+          <td style="text-align:right;font-weight:900;color:var(--brand-light)">${row.weightedScore.toFixed(1)}</td>
+          <td>#${row.finalRank}</td>
+          <td>${esc(contributionRewardLabel(row.finalReward))}</td>
+        </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  hydrateDashboardTableLabels(host);
 }
 
 function getContributionSnapshotSummary() {
@@ -1075,6 +1160,7 @@ function render() {
     $id('dashAttackList').innerHTML = '<div class="dash-empty">Empty</div>';
     $id('dashLeaderBody').innerHTML = '<tr><td colspan="7" class="dash-empty">No data</td></tr>';
     renderOpsOverview([], []);
+    renderWeightedContributionDashboard();
     renderAnalyticsWhenVisible([], []);
     return;
   }
@@ -1098,6 +1184,7 @@ function render() {
 
   renderAnalyticsWhenVisible(activeAttacks, rankedPsum);
   renderOpsOverview(activeAttacks, rankedPsum);
+  renderWeightedContributionDashboard();
 
   const total = activeAttacks.reduce((s, a) => s + (a.total_demolition || 0), 0);
   $id('dashKpiAttacks').textContent = activeAttacks.length;

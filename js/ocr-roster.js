@@ -25,14 +25,17 @@ import {
   getSupportedOcrImageFiles,
   describeRejectedOcrImageFiles,
   readOcrImageDataUrl,
+  expandDutyRawNames,
 } from './ocr-shared.js';
 import { closeModal } from './ocr-render.js';
 import { pushUndoAction } from './state.js';
 import { translations } from './translations.js';
 import {
+  canonicalizePlayerOptionNames,
   stripGuildTagsFromPlayerName,
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
+import { buildWeightedContributionRows } from './contribution-weighting.js';
 
 function adminT(key, vars = {}) {
   let lang = 'en';
@@ -799,7 +802,9 @@ function showBannerForm(existingIndex = null) {
   const roster = state.rosterSnapshots.length
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members
     : [];
-  const memberOptions = roster.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  const memberOptions = canonicalizePlayerOptionNames(roster)
+    .map((name) => `<option value="${esc(name)}">${esc(name)}</option>`)
+    .join('');
   const rec = edit
     ? state.bannerRecords[existingIndex]
     : { date: new Date().toISOString().slice(0, 10), event: '', teams: {} };
@@ -1063,13 +1068,7 @@ function getRosterDatabaseNames() {
       if (text) names.push(text);
     });
   }
-  const seen = new Set();
-  return names.filter((name) => {
-    const key = name.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return canonicalizePlayerOptionNames(names);
 }
 
 function normalizeDutyName(name) {
@@ -1571,12 +1570,19 @@ function collectDutyPlayerSummary(records) {
   records.forEach((record) => {
     const entries = Array.isArray(record.entries) ? record.entries : [];
     entries.forEach((entry) => {
-      const name = String(entry.confirmed || entry.name || entry.original || '').trim();
-      if (!name) return;
-      rows.push({
-        ...entry,
-        name,
-        time: entry.usageTime || record.gameTime,
+      // Trust an admin-confirmed name; otherwise clean + split the raw Viber cell
+      // into its real credited player(s) — strips @tags/structure words/banner
+      // suffixes and splits multi-player banners. Pure-structure cells expand to
+      // [] and are dropped.
+      const credited = entry.confirmed
+        ? [String(entry.confirmed).trim()].filter(Boolean)
+        : expandDutyRawNames(entry.name || entry.original || '');
+      credited.forEach((name) => {
+        rows.push({
+          ...entry,
+          name,
+          time: entry.usageTime || record.gameTime,
+        });
       });
     });
   });
@@ -1683,13 +1689,16 @@ function renderDutySummary() {
   const counts = new Map();
   (state.dutyRecords || []).forEach((record) => {
     (record.entries || []).forEach((entry) => {
-      const name = entry.confirmed || entry.original;
-      if (!name) return;
-      if (!counts.has(name))
-        counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
-      const row = counts.get(name);
-      row.total += 1;
-      if (row[record.type] !== undefined) row[record.type] += 1;
+      const credited = entry.confirmed
+        ? [String(entry.confirmed).trim()].filter(Boolean)
+        : expandDutyRawNames(entry.name || entry.original || '');
+      credited.forEach((name) => {
+        if (!counts.has(name))
+          counts.set(name, { name, total: 0, banner: 0, pather: 0, speed_tile: 0, shield_wall: 0 });
+        const row = counts.get(name);
+        row.total += 1;
+        if (row[record.type] !== undefined) row[record.type] += 1;
+      });
     });
   });
   const rows = Array.from(counts.values())
@@ -1792,7 +1801,7 @@ function getContributionReward(entry, record) {
   const override = normalizeRewardTier(entry?.rewardOverride || entry?.reward);
   if (override) return override;
   const rank = Number(entry?.rank || 0);
-  const cutoff = Number(record?.premiumCutoff || 20);
+  const cutoff = Number(record?.premiumCutoff || record?.premiumSlots || 20);
   return rank > 0 && rank <= cutoff ? 'premium' : 'standard';
 }
 
@@ -2433,9 +2442,65 @@ function renderContributionComparison() {
   renderSelected();
 }
 
+function formatConductContributionBonus(value) {
+  return Number(value || 0) ? formatSignedContributionValue(value) : '0';
+}
+
+function renderWeightedContributionTable() {
+  const host = $id('dashContributionWeightedPanel');
+  if (!host) return;
+
+  const model = buildWeightedContributionRows({
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    r5Adjustments: state.r5Adjustments,
+    season: state.r5Season,
+  });
+  const rows = model.rows || [];
+
+  if (!rows.length) {
+    host.innerHTML = '';
+    return;
+  }
+
+  const recordLabel = [model.record?.date, model.record?.note].filter(Boolean).join(' - ');
+  host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card">
+    <div class="dash-contribution-compare-head">
+      <div>
+        <strong>Weighted Total Contribution</strong>
+        <span>${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} uses Premium reward tier</span>
+      </div>
+    </div>
+    <div class="dash-contribution-compare-table-wrap">
+      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+        <thead><tr><th>Player</th><th>Current rank</th><th>Reward</th><th style="text-align:right">Contribution score</th><th style="text-align:right">#Shield Walls</th><th style="text-align:right">#Pathers</th><th style="text-align:right">#Banners</th><th style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
+        <tbody>${rows
+          .map(
+            (row) => `<tr>
+          <td><strong>${esc(row.playerName)}</strong></td>
+          <td>${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td>${esc(getContributionRewardLabel(row.currentReward))}</td>
+          <td style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
+          <td style="text-align:right">${row.shieldWalls}</td>
+          <td style="text-align:right">${row.pathers}</td>
+          <td style="text-align:right">${row.banners}</td>
+          <td style="text-align:right" class="${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}">${formatConductContributionBonus(row.conductBonus)}</td>
+          <td style="text-align:right;font-weight:900;color:var(--brand-light)">${row.weightedScore.toFixed(1)}</td>
+          <td>#${row.finalRank}</td>
+          <td>${esc(getContributionRewardLabel(row.finalReward))}</td>
+        </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  hydrateDashboardTableLabels(host);
+}
+
 function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
+  renderWeightedContributionTable();
   if (!body) return;
   const records = Array.isArray(state.contributionRecords)
     ? state.contributionRecords.slice().reverse()

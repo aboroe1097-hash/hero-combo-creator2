@@ -12,10 +12,9 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  // Post-shim-removal merged CSS is ~474kB (atmosphere per-surface layer + a11y
-  // fixes + utility->semantic migration). Drops further once Chunk 4 (mobile.css
-  // inversion / app.css de-dup) lands. Tripwire just above the real total.
-  totalCssBytes: 485 * 1024,
+  // Post-shim-removal CSS is ~455kB. Keep modest headroom while Chunk 4
+  // continues moving mobile overrides into semantic component rules.
+  totalCssBytes: 466 * 1024,
 };
 
 function formatBytes(bytes) {

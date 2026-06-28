@@ -584,16 +584,6 @@ export const heroesExtendedData = {
             { id: 8, type: "Pre-Battle Skills", range: 3, target: "3 Random Ally", desc: "At the beginning of the battle, applies an effect to all friendly squads: when they cast a prep skill, 80% chance to skip 1 round(s) (effective for up to 3 time(s)). Upon gaining the effect and using up the attempts of the effect, applies 1 seal(s) to the carrier." }
         ]
     },
-    "Reinforced Ragnar": {
-        placement: "Any",
-        minCopies: 14,
-        maxCopies: 34,
-        releaseSeason: "X2",
-        effects: [],
-        buffs: [],
-        debuffs: [],
-        skills: []
-    },
     "Ragnar": {
         placement: "Any",
         minCopies: 14,

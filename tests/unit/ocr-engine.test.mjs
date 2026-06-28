@@ -23,6 +23,7 @@ const {
   getDutyOperatorNote,
   looksLikeDutyOperator,
   getDutyCreditedNames,
+  expandDutyRawNames,
   compactPlayerIdentity,
   formatDatasetStructureLabel,
   formatStructureLabel,
@@ -326,6 +327,7 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('AndëRS'), 'A n d e R $');
   assert.equal(findBestMatch('— L7 —'), '- L7 -');
   assert.equal(findBestMatch('Hunter Killer.'), 'Hunter killer.');
+  assert.equal(findBestMatch('гутер killer.'), 'Hunter killer.');
   assert.equal(findBestMatch('WICKED WOMEN'), 'WICKED WOMEN☆');
   assert.equal(findBestMatch('☆r@mze$$$☆'), '★r@mze$$$★');
   assert.equal(findBestMatch('·Lisavetka·'), '•Lisavetka•');
@@ -339,6 +341,10 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('BiG BOiE'), 'BiG BOiiE');
   assert.equal(findBestMatch('Oblitereted'), 'Obliterated');
   assert.equal(findBestMatch('MasterVjs'), 'MasterVj');
+  assert.equal(findBestMatch('БратХрапець'), 'БратХрабрец');
+  assert.equal(findBestMatch('БрюНерКаЯ'), 'БрюНетКаЯ');
+  assert.equal(findBestMatch('БрЮНеТКаЯ'), 'БрюНетКаЯ');
+  assert.equal(findBestMatch('Бешеный-Енот~'), 'Бешенный-Енот~');
 });
 
 test('cleanDutyRawName strips Viber noise and credits the banner account / @-owner', () => {
@@ -505,4 +511,45 @@ test('duplicate Kika-family rows on the same target split into separate account 
     parsed.players_summary.map((player) => player.attacks[0].display_player_name).sort(),
     ['꧁ Kika ꧂', '꧁༺ Kika ༻꧂'].sort()
   );
+});
+
+test('expandDutyRawNames splits multi-player cells and strips structure words', () => {
+  // Single @-tagged player: Viber tag stripped.
+  assert.deepEqual(expandDutyRawNames('@ANGEL'), ['ANGEL']);
+
+  // Multi-player: "gate @redull @+ Ezeta TV" -> RedBull + Ezeta TV.
+  const multi = expandDutyRawNames('gate @redull @+ Ezeta TV');
+  assert.ok(multi.includes('RedBull'));
+  assert.ok(multi.includes('Ezeta TV'));
+  assert.equal(multi.length, 2);
+
+  // Leading target word dropped: "town lvl1" before @tag.
+  assert.deepEqual(expandDutyRawNames('town lvl1 @Uzumaki'), ['!!Uzumaki!!']);
+
+  // Parenthetical operator included (dual credit) — no roster loaded,
+  // so findBestMatch returns the cleaned raw name as-is.
+  const op = expandDutyRawNames('Angel Banner (zubbs)');
+  assert.equal(op[0], 'Angel');
+  assert.equal(op[1], 'zubbs');
+  assert.equal(op.length, 2);
+
+  // Structure-only cell -> empty (no real player).
+  assert.deepEqual(expandDutyRawNames('town lvl1'), []);
+
+  // Banner-label suffix (BOiiE resolves through aliasMap).
+  assert.deepEqual(expandDutyRawNames('BOiiE BANNER'), ['BiG BOiiE']);
+
+  // Empty input.
+  assert.deepEqual(expandDutyRawNames(''), []);
+  assert.deepEqual(expandDutyRawNames('   '), []);
+
+  // "+" reinforcement markers stripped.
+  assert.deepEqual(expandDutyRawNames('capital @UNDEAD +'), ['UNDEAD']);
+
+  // @-tagged player with banner suffix (redbull resolves through aliasMap).
+  assert.deepEqual(expandDutyRawNames('@redbull banner'), ['RedBull']);
+
+  // Operator is same as owner -> dedup within function.
+  const dedup = expandDutyRawNames('Moldo (Moldo)');
+  assert.deepEqual(dedup, ['Moldo']);
 });

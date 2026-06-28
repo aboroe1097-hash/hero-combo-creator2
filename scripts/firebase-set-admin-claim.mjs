@@ -21,12 +21,14 @@ function readServiceAccount() {
 }
 
 async function main() {
-  const uid = envValue('FIREBASE_ADMIN_UID');
-  const email = envValue('FIREBASE_ADMIN_EMAIL');
+  const arg = process.argv[2] || '';
+  const uid = envValue('FIREBASE_ADMIN_UID') || (arg && !arg.includes('@') ? arg : '');
+  const email = envValue('FIREBASE_ADMIN_EMAIL') || (arg && arg.includes('@') ? arg : '');
 
   if (!uid && !email) {
     throw new Error(
-      'Set FIREBASE_ADMIN_UID for the deployed anonymous admin user, or FIREBASE_ADMIN_EMAIL for an email-auth user.'
+      'Usage: node scripts/firebase-set-admin-claim.mjs <uid-or-email>\n' +
+        'Or set FIREBASE_ADMIN_UID or FIREBASE_ADMIN_EMAIL environment variables.'
     );
   }
 

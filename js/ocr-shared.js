@@ -950,6 +950,7 @@ export function findBestMatch(name, minConfidence = 100) {
       '★KoThawwKa★': 'KoThawwKa',
       '★ KoThawwKa ★': 'KoThawwKa',
       БратХрабрепц: 'БратХрабрец',
+      БратХрапець: 'БратХрабрец',
       洋人在弄啥嘢: '洋人在弄啥嘞',
       洋人在弄哈嘞: '洋人在弄啥嘞',
       '_._5G': '_5G',
@@ -988,6 +989,9 @@ export function findBestMatch(name, minConfidence = 100) {
       'Феюшка))': 'Феечка))',
       'Φελώσκα))': 'Феечка))',
       БрюHerKaЯ: 'БрюНетКаЯ',
+      БрюНерКаЯ: 'БрюНетКаЯ',
+      БрЮНеТКаЯ: 'БрюНетКаЯ',
+      'Бешеный-Енот~': 'Бешенный-Енот~',
       'A n d ē R $': 'A n d e R $',
       АηdεR$: 'A n d e R $',
       AηdεR$: 'A n d e R $',
@@ -1081,6 +1085,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'AndëRS': 'A n d e R $',
       '— L7 —': '- L7 -',
       'Hunter Killer.': 'Hunter killer.',
+      'гутер killer.': 'Hunter killer.',
       'WICKED WOMEN': 'WICKED WOMEN☆',
       '☆r@mze$$$☆': '★r@mze$$$★',
       '·Lisavetka·': '•Lisavetka•',
@@ -1098,6 +1103,15 @@ export function findBestMatch(name, minConfidence = 100) {
       'Dvd': 'DvD18',
       'BOiiE': 'BiG BOiiE',
       'Uz': '!!Uzumaki!!',
+      Moldo1313: 'Moldo',
+      'Uzumaki 1097 R4': '!!Uzumaki!!',
+      Uzumaki: '!!Uzumaki!!',
+      // OCR typo for the RedBull owner tag; do not collapse separate
+      // RedBull-family banner/operator accounts.
+      redbull: 'RedBull',
+      redull: 'RedBull',
+      ostio: 'osito',
+      tersait: 'Teresita',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
@@ -1212,6 +1226,44 @@ export function getDutyCreditedNames(raw, ownerCredited) {
   if (op === ownerCanon) return names; // operator is the same player as the owner
   if (!names.includes(op)) names.push(op);
   return names;
+}
+
+// Expand ONE raw duty/banner cell into all credited canonical player names.
+// Handles: leading structure/target words ("town lvl1", "gate"), banner-label
+// suffixes, "+" reinforcement markers, the parenthetical operator (dual credit),
+// and MULTI-PLAYER cells where several @-tagged players share one target
+// ("gate @redull @+ Ezeta TV" -> RedBull + Ezeta TV). Viber "@" tags are stripped;
+// each token is resolved to its canonical roster identity. Returns [] for cells
+// that are only a structure name (no real player).
+export function expandDutyRawNames(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return [];
+  const note = getDutyOperatorNote(s); // parenthetical operator (dual credit)
+  const body = s
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  let tokens;
+  if (body.includes('@')) {
+    // Each @-segment is a separate player; drop pure target words (the structure).
+    tokens = body
+      .split('@')
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .filter((p) => !DUTY_TARGET_PREFIX.test(p));
+  } else {
+    tokens = [body];
+  }
+  const out = [];
+  const push = (rawToken) => {
+    const cleaned = cleanDutyRawName(rawToken);
+    if (!cleaned) return;
+    const canon = findBestMatch(cleaned);
+    if (canon && !out.includes(canon)) out.push(canon);
+  };
+  tokens.forEach(push);
+  if (looksLikeDutyOperator(note)) push(note);
+  return out;
 }
 
 // --- Durability Validation ---

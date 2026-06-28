@@ -164,4 +164,21 @@ export function summarizeCanonicalPlayerRecords(records = [], options = {}) {
     .sort((a, b) => b.entries - a.entries || a.playerName.localeCompare(b.playerName));
 }
 
+export function canonicalizePlayerOptionNames(players = []) {
+  const seen = new Set();
+  const options = [];
+
+  (Array.isArray(players) ? players : []).forEach((player) => {
+    const displayName = stripGuildTagsFromPlayerName(readName(player));
+    if (!displayName) return;
+    const playerName = resolveCanonicalPlayerName(displayName) || displayName;
+    const playerKey = compactPlayerIdentity(playerName);
+    if (!playerKey || seen.has(playerKey)) return;
+    seen.add(playerKey);
+    options.push(playerName);
+  });
+
+  return options;
+}
+
 export { compactPlayerIdentity };

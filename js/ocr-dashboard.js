@@ -991,6 +991,7 @@ let connectingTimer = null;
 let connectingProgressTimer = null;
 let connectingProgressValue = 0;
 let connectingProgressCap = 92;
+let _isConnecting = false;
 
 function stopConnectingProgressLoop() {
   if (connectingProgressTimer) {
@@ -1019,6 +1020,7 @@ async function completeConnectingProgress(statusMsg = '') {
 }
 
 function showConnecting(statusMsg = '') {
+  _isConnecting = true;
   $id('dashLogin')?.classList.add('hidden');
   $id('dashApp')?.classList.add('hidden');
   const overlay = $id('dashConnecting');
@@ -1043,6 +1045,7 @@ function showConnecting(statusMsg = '') {
   }, 12000);
 }
 function hideConnecting() {
+  _isConnecting = false;
   stopConnectingProgressLoop();
   if (connectingTimer) {
     clearTimeout(connectingTimer);
@@ -1122,6 +1125,9 @@ function describeCloudSyncError(err) {
   if (/permission-denied|permission|insufficient|admin/i.test(text)) {
     return dashT('adminCloudAdminRequired');
   }
+  if (/app ?check.*(?:missing|unavailable)|missing.*app ?check|unavailable.*app ?check/i.test(text)) {
+    return 'App Check token missing; sync will retry automatically.';
+  }
   if (/Firebase not initialized|missing|config/i.test(text)) {
     return 'Firebase is not configured for this deployment.';
   }
@@ -1131,7 +1137,7 @@ function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
   const message = describeCloudSyncError(err);
   setCloudSyncStatus('error', message);
   log(`${prefix}: ${message}`, 'error');
-  if (typeof window.showToast === 'function') window.showToast(message, 'error', 7000);
+  if (!_isConnecting && typeof window.showToast === 'function') window.showToast(message, 'error', 7000);
   return message;
 }
 function setRefreshBusy(busy) {

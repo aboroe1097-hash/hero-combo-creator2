@@ -15,6 +15,7 @@ globalThis.document = {
 };
 
 const {
+  canonicalizePlayerOptionNames,
   compactPlayerIdentity,
   expandDualCreditPlayerNames,
   resolveCanonicalPlayerIdentity,
@@ -59,6 +60,34 @@ test('canonical resolver merges special-list alias clusters', () => {
 
   assert.equal(key('Sarafina~'), key('~Sarafino~'));
   assert.equal(key('UNDEAD'), key('Undead_Banner'));
+});
+
+test('canonical roster option names collapse known OCR duplicate spellings', () => {
+  const options = canonicalizePlayerOptionNames([
+    'Феечка))',
+    'Феюшка))',
+    'БратХрабрец',
+    'БратХрапець',
+    'БрюНерКаЯ',
+    'БрюНетКаЯ',
+    'БрЮНеТКаЯ',
+    'Бешеный-Енот~',
+    'Бешенный-Енот~',
+    'гутер killer.',
+    'Hunter killer.',
+    'WICKED RUSSIAN',
+    'WICKED banner',
+  ]);
+
+  assert.deepEqual(options, [
+    'Феечка))',
+    'БратХрабрец',
+    'БрюНетКаЯ',
+    'Бешенный-Енот~',
+    'Hunter killer.',
+    'WICKED RUSSIAN',
+    'WICKED banner',
+  ]);
 });
 
 test('dual-credit owner notation expands without collapsing operator into owner', () => {

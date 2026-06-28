@@ -290,7 +290,7 @@ export const STRIFE_MONSTER_COMBOS = {
       stage: 'X8',
       tier: STRIFE_TIERS.P2W,
       heroes: ['Warden', 'Defender', 'Rainforest Ranger'],
-      note: 'Renderable version of the guide\'s Warden + Defender + Rainforest sustain lane. Rainforest Ranger is marked paid in this roster, so it lives in P2W here.',
+      note: 'Renderable version of the guide\'s Warden + Defender + Rainforest sustain lane. Rainforest Ranger is free in this roster, so it lives in F2P here.',
     },
     {
       stage: 'X8',

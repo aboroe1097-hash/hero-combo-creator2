@@ -1430,6 +1430,31 @@
   min-width: 35px;
   text-align: right;
 }
+/* Mobile: stack the player name on its own line so it never gets crushed to a
+   single character by the fixed-width "X hits (Y structs)" meta pill. */
+@media (max-width: 768px) {
+  #ocrDashboardRoot .dash-top-main {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  #ocrDashboardRoot .dash-top-name {
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    margin-left: 8px;
+  }
+  #ocrDashboardRoot .dash-top-meta {
+    margin-left: 8px;
+    margin-right: auto;
+  }
+  /* Reward <select> must never spill past its contribution card on mobile. */
+  #ocrDashboardRoot .dash-contribution-reward-select {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
 
 /* Insights & Charts */
 #ocrDashboardRoot .dash-insights-body {
@@ -4459,6 +4484,25 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-contribution-compare-table {
   min-width: 920px;
+}
+#ocrDashboardRoot .dash-weighted-contribution-panel {
+  margin: 0 0 1rem;
+}
+#ocrDashboardRoot .dash-contribution-weighted-panel {
+  margin: 0 0 1rem;
+}
+#ocrDashboardRoot .dash-contribution-weighted-table {
+  min-width: 1180px;
+}
+#ocrDashboardRoot .dash-weighted-contribution-table-wrap {
+  max-height: min(56vh, 520px);
+  overflow: auto;
+}
+#ocrDashboardRoot .dash-weighted-contribution-meta {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
 }
 #ocrDashboardRoot .dash-contribution-compare-table small {
   display: block;

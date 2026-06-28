@@ -82,7 +82,7 @@ Version cadence: after the 11.3.0 baseline, every pushed release increments the 
 |-------|--------|
 | **Language** | Vanilla JavaScript (ES6 modules), no framework |
 | **Bundler** | Vite 6 (dev server + build) |
-| **CSS** | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), `components.css`, frozen local utility compatibility CSS |
+| **CSS** | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), and semantic `components.css` |
 | **Backend** | Firebase Firestore loaded through pinned browser modules (comments, combos, roster sync) |
 | **Auth** | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
@@ -117,7 +117,6 @@ scripts/eden/
 
 css/
   _tokens.css           Shared design tokens, spacing scale, reduced-motion base
-  app-utilities.css     Frozen local utility compatibility layer
   app.css               All styles (~6100 lines)
   atmosphere.css        Utility-first design system (press, lift, tilt, skeleton, morph, burst, aura)
   components.css        Reusable component styles (cards, tabs, pills, modals)
@@ -191,8 +190,8 @@ js/
 ### Deployment Model
 GitHub Pages serves from the **root** of the `gh-pages` branch. Source files (`index.html`, `js/`, `css/`) are served directly. The `dist/` and `docs/` folders are build artifacts for alternative hosting.
 
-### CSS Compatibility Layer
-The app no longer runs Tailwind during builds. Legacy utility class usage is served by `css/app-utilities.css`, a frozen local compatibility layer copied from the last known-good generated utility output. `cssnano` still minifies production CSS after the Vite build.
+### CSS Architecture
+The app no longer ships the frozen Tailwind compatibility shim. Remaining UI styling lives in semantic stylesheets (`app.css`, `components.css`, `mobile.css`, and `atmosphere.css`), and `cssnano` minifies production CSS after the Vite build.
 
 ### Tab Lazy-Loading
 Heavy tab templates (Admin, Eden Map, Loyalty) are fetched on first tab click via `loadTabTemplate()`. Research, Hero Atlas, OCR dashboard, Eden Map code, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules.

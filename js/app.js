@@ -1315,6 +1315,13 @@ function initQuickTour() {
     spotlight.style.height = `${spotlightHeight}px`;
     spotlight.style.borderRadius = isTabTarget ? '0px' : `${Math.min(18, Math.max(12, rect.height / 2))}px`;
 
+    if (window.innerWidth <= 768) {
+      card.style.width = '';
+      card.style.left = '';
+      card.style.top = '';
+      return;
+    }
+
     card.style.width = `${cardWidth}px`;
     card.style.left = '0px';
     card.style.top = '0px';
@@ -1459,8 +1466,9 @@ async function startApp() {
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
     window.addEventListener('hashchange', () => {
       const tab = window.location.hash?.replace('#', '').split('?')[0];
-      if (tab && tab !== _lastTab && ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'].includes(tab)) {
-        switchTab(tab, true);
+      const targetSection = tab ? document.getElementById(`${tab}Section`) : null;
+      if (tab && targetSection?.classList.contains('hidden') && ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'].includes(tab)) {
+        window.vtsSwitchTab?.(tab, true);
       }
     });
     } finally {

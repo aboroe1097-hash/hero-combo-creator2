@@ -9,7 +9,7 @@
     "data:check": "node scripts/check-tech-db.mjs",
     "firebase:admin-claim": "node scripts/firebase-set-admin-claim.mjs",
     "combos:audit": "node scripts/roc-combo-importer.mjs",
-    "lint": "eslint js/loyalty-calculator.js js/combos-db.js js/app-generator.js js/app-strife.js js/strife-db.js js/ocr-engine.js js/ocr-render.js js/ocr-time-filter.js js/counter-db.js scripts/roc-combo-importer.mjs scripts/firebase-set-admin-claim.mjs tests/unit/*.mjs",
+    "lint": "eslint js/loyalty-calculator.js js/combos-db.js js/app-generator.js js/app-strife.js js/strife-db.js js/contribution-weighting.js js/ocr-engine.js js/ocr-render.js js/ocr-time-filter.js js/counter-db.js scripts/roc-combo-importer.mjs scripts/firebase-set-admin-claim.mjs tests/unit/*.mjs",
     "format": "prettier --write .github/**/*.yml .eslintrc.json .prettierrc.json package.json js/ocr-render.js js/ocr-time-filter.js scripts/roc-combo-importer.mjs scripts/firebase-set-admin-claim.mjs tests/unit/**/*.mjs",
     "format:check": "prettier --check .github/**/*.yml .eslintrc.json .prettierrc.json package.json js/ocr-render.js js/ocr-time-filter.js scripts/roc-combo-importer.mjs scripts/firebase-set-admin-claim.mjs tests/unit/**/*.mjs",
     "i18n:check": "node scripts/check-i18n.mjs",

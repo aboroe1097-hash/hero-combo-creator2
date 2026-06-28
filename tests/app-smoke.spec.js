@@ -1362,8 +1362,13 @@ test.describe('app smoke tabs', () => {
     );
     await page.evaluate((seededDash) => {
       window.setOcrDashboardDataForTest(seededDash, []);
-      window.switchDashSubtab('pathers');
     }, seededDash);
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
+      'Weighted Total Contribution'
+    );
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText('Weighted score');
+
+    await page.evaluate(() => window.switchDashSubtab('pathers'));
 
     await expect(page.locator('#dashPatherListSummary .dash-duty-summary-table')).toBeVisible();
     await expect(page.locator('#dashPatherListSummary')).toContainText('Kika');
@@ -1405,6 +1410,10 @@ test.describe('app smoke tabs', () => {
     expect(layout.detailRowDisplay).toBe('block');
 
     await page.evaluate(() => window.switchDashSubtab('contributions'));
+    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
+      'Weighted Total Contribution'
+    );
+    await expect(page.locator('#dashContributionWeightedPanel')).toContainText('Weighted score');
     await expect(page.locator('#dashContributionBody')).toContainText('Kika');
     await expect(page.locator('#dashContributionBody')).not.toContainText('(Vts)Kika');
   });
