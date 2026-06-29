@@ -41,7 +41,10 @@ function resolveSupplementalSpecialListCluster(cleanedName, existingResolvedName
   if (/kika[\s_-]*banner\s*2/i.test(cleanText) || compactClean === 'kikabanner2') {
     return findBestMatch('Kika-banner2');
   }
-  if (/kika[\s_-]*banner/i.test(cleanText) || lowerText === 'kika') {
+  if (/kika[\s_-]*banner/i.test(cleanText)) {
+    return findBestMatch('Kika-banner');
+  }
+  if (lowerText === 'kika') {
     return findBestMatch('Kika');
   }
   if (

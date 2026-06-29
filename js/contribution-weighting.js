@@ -135,6 +135,16 @@ function emptyDutyCounts() {
   return { shieldWalls: 0, pathers: 0, banners: 0 };
 }
 
+// Group a player's multiple accounts (main / secondary / banner) into one family
+// so their duty + conduct can be consolidated onto a single main account.
+// Single-account players are their own family.
+function playerFamilyKey(accountKey) {
+  const key = String(accountKey || '');
+  if (/^kika(?:alt|banner2?)?$/.test(key)) return 'kika';
+  if (/^sarafin[ao]$/.test(key)) return 'sarafino';
+  return key;
+}
+
 // Lower positive rank wins; a missing/zero rank is always worst.
 function isBetterContributionRank(rank, currentBest) {
   const a = Number(rank);
@@ -301,37 +311,52 @@ export function buildWeightedContributionRows(options = {}) {
     })
     .filter(Boolean);
 
-  // A player can hold several accounts that resolve to the same identity (e.g. a
-  // main + alt/banner accounts all named "Kika"). Their duty (banners / pathers /
-  // shield walls) and conduct are credited ONCE, to the main account — the row
-  // with the highest contribution, then the best current rank — instead of being
-  // duplicated onto every account row.
-  const primaryIndexByKey = new Map();
+  // A player can hold several distinct accounts (e.g. Kika's main + secondary +
+  // banner accounts). They stay as separate rows, but their duty (banners /
+  // pathers / shield walls) and conduct belong to the PERSON, so we credit them
+  // once — to the family's main account, the row with the highest contribution
+  // (then best current rank) — by summing across every account key in the family.
+  const familyDuty = new Map();
+  dutyCounts.forEach((counts, accountKey) => {
+    const fam = playerFamilyKey(accountKey);
+    const agg = familyDuty.get(fam) || emptyDutyCounts();
+    agg.shieldWalls += counts.shieldWalls;
+    agg.pathers += counts.pathers;
+    agg.banners += counts.banners;
+    familyDuty.set(fam, agg);
+  });
+  const familyConduct = new Map();
+  conductMap.forEach((points, accountKey) => {
+    const fam = playerFamilyKey(accountKey);
+    familyConduct.set(fam, (familyConduct.get(fam) || 0) + points);
+  });
+
+  const primaryIndexByFamily = new Map();
   baseRows.forEach((row, index) => {
-    const currentBest = primaryIndexByKey.get(row.playerKey);
+    const fam = playerFamilyKey(row.playerKey);
+    const currentBest = primaryIndexByFamily.get(fam);
     if (currentBest === undefined) {
-      primaryIndexByKey.set(row.playerKey, index);
+      primaryIndexByFamily.set(fam, index);
       return;
     }
     const best = baseRows[currentBest];
     const betterContribution = row.contributionScore > best.contributionScore;
     const tiedContribution = row.contributionScore === best.contributionScore;
     if (betterContribution || (tiedContribution && isBetterContributionRank(row.currentRank, best.currentRank))) {
-      primaryIndexByKey.set(row.playerKey, index);
+      primaryIndexByFamily.set(fam, index);
     }
   });
 
   const rows = baseRows.map((row, index) => {
-    const isPrimaryAccount = primaryIndexByKey.get(row.playerKey) === index;
-    const duties = isPrimaryAccount
-      ? dutyCounts.get(row.playerKey) || emptyDutyCounts()
-      : emptyDutyCounts();
+    const fam = playerFamilyKey(row.playerKey);
+    const isPrimaryAccount = primaryIndexByFamily.get(fam) === index;
+    const duties = isPrimaryAccount ? familyDuty.get(fam) || emptyDutyCounts() : emptyDutyCounts();
     return {
       ...row,
       shieldWalls: duties.shieldWalls,
       pathers: duties.pathers,
       banners: duties.banners,
-      conductBonus: isPrimaryAccount ? conductMap.get(row.playerKey) || 0 : 0,
+      conductBonus: isPrimaryAccount ? familyConduct.get(fam) || 0 : 0,
       isPrimaryAccount,
     };
   });
