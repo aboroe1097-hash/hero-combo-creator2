@@ -2134,6 +2134,7 @@ function showContributionConfirmModal(
     }
     if (isExGuild) {
       const sourceNote = $id('dashContributionNote')?.value.trim() || sourceLabel;
+      state.exGuildContributions ??= [];
       normalized.forEach((entry) => {
         state.exGuildContributions.push({
           id: `exg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
