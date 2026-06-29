@@ -14,6 +14,10 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    function isAdminLogin() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
     function validComment() {
       return request.resource.data.keys().hasOnly([
         'text', 'name', 'parentId', 'authorId', 'createdAt', 'approved', 'public'
@@ -182,28 +186,28 @@ service cloud.firestore {
 
     match /vts_admin/dashboard_data {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validDashboardData();
+      allow create, update: if isAdminLogin() && validDashboardData();
       allow delete: if false;
     }
 
     match /vts_admin/roster_data {
       allow read: if signedIn();
-      allow create, update: if isAdmin() && validRosterData();
+      allow create, update: if isAdminLogin() && validRosterData();
       allow delete: if false;
     }
 
     match /vts_admin/conduct_adjustments/records/{adjustmentId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin()
+      allow read: if signedIn();
+      allow create: if isAdminLogin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdmin()
+      allow update: if isAdminLogin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAdmin();
+      allow delete: if isAdminLogin();
     }
 
     match /vts_admin/{document=**} {

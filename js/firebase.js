@@ -267,6 +267,14 @@ export function getCurrentUser() {
   return auth?.currentUser || null;
 }
 
+export function isPasswordAuthUser(userOverride = null) {
+  const user = userOverride || auth?.currentUser || null;
+  if (!user || user.isAnonymous) return false;
+  const providers = Array.isArray(user.providerData) ? user.providerData : [];
+  if (!providers.length) return true;
+  return providers.some((provider) => provider?.providerId === 'password');
+}
+
 export async function ensureAnonymousAuth() {
   if (!auth) throw new Error('Firebase not initialized');
   if (auth.currentUser) return auth.currentUser;

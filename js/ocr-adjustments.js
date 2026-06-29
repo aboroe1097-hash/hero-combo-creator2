@@ -344,11 +344,9 @@ async function ensureR5AdjustmentAdminContext() {
   if (!firebase?.configured) throw new Error('Firebase is not configured for R5 adjustments');
 
   const user = firebaseApi.getCurrentUser?.();
-  if (!user || user.isAnonymous) {
+  if (!firebaseApi.isPasswordAuthUser?.(user)) {
     throw new Error('Sign in as admin before changing R5 conduct adjustments');
   }
-  const isAdmin = await firebaseApi.getFirebaseAdminClaim(true, user);
-  if (!isAdmin) throw new Error('Admin claim is required for R5 conduct adjustments');
 
   const db = firebaseApi.getDb();
   if (!db) throw new Error('Firestore is not available for R5 adjustments');

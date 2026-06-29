@@ -770,11 +770,11 @@ async function ensureDashboardCloudInitialized() {
 async function ensureCloudSyncReady() {
   await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
-  const { getCurrentUser, getDb, getFirebaseAdminClaim } = await loadFirebaseApi();
+  const { getCurrentUser, getDb, isPasswordAuthUser } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
   const currentUser = getCurrentUser();
-  if (!currentUser || currentUser.isAnonymous) {
+  if (!isPasswordAuthUser(currentUser)) {
     state.adminUser = null;
     state.adminIsAdmin = false;
     state.cloudAdminReady = false;
@@ -782,12 +782,7 @@ async function ensureCloudSyncReady() {
     return null;
   }
   state.adminUser = currentUser;
-  state.adminIsAdmin = await getFirebaseAdminClaim(state.adminIsAdmin !== true, currentUser);
-  if (!state.adminIsAdmin) {
-    state.cloudAdminReady = false;
-    setCloudSyncStatus('error', dashT('adminCloudAdminRequired'));
-    return null;
-  }
+  state.adminIsAdmin = true;
   state.cloudAdminReady = true;
   return db;
 }
@@ -1420,10 +1415,10 @@ async function doLogin() {
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
   try {
-    const { signInWithUsername, getFirebaseAdminClaim } = await loadFirebaseApi();
+    const { signInWithUsername, isPasswordAuthUser } = await loadFirebaseApi();
     const credential = await signInWithUsername(username, password);
     state.adminUser = credential.user;
-    state.adminIsAdmin = await getFirebaseAdminClaim(true, credential.user);
+    state.adminIsAdmin = isPasswordAuthUser(credential.user);
     if (!state.adminIsAdmin) {
       const { signOutUser } = await loadFirebaseApi();
       await signOutUser();
@@ -2742,7 +2737,7 @@ export async function bootOcrDashboard() {
     try {
       const configured = await ensureDashboardCloudInitialized();
       if (configured) {
-        const { onUserChanged, getCurrentUser, getFirebaseAdminClaim, signOutUser } =
+        const { onUserChanged, getCurrentUser, isPasswordAuthUser, signOutUser } =
           await loadFirebaseApi();
         if (!state._adminAuthUnsub) {
           state._adminAuthUnsub = onUserChanged(async (user) => {
@@ -2754,7 +2749,7 @@ export async function bootOcrDashboard() {
             }
             try {
               state.adminUser = user;
-              state.adminIsAdmin = await getFirebaseAdminClaim(false, user);
+              state.adminIsAdmin = isPasswordAuthUser(user);
               if (!state.adminIsAdmin) {
                 await signOutUser();
                 setLoginError(dashT('adminCloudAdminRequired'));
@@ -2774,7 +2769,7 @@ export async function bootOcrDashboard() {
         const currentUser = getCurrentUser();
         if (currentUser) {
           state.adminUser = currentUser;
-          state.adminIsAdmin = await getFirebaseAdminClaim(false, currentUser);
+          state.adminIsAdmin = isPasswordAuthUser(currentUser);
           if (state.adminIsAdmin) await openAdminDashboardAfterAuth({ preferCloudFirst: true });
         }
       } else {

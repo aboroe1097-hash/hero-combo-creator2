@@ -14,13 +14,14 @@ test('admin dashboard uses Firebase auth instead of local password markers', () 
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /signInWithUsername/);
-  assert.match(source, /getFirebaseAdminClaim/);
+  assert.match(source, /isPasswordAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
   assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
   assert.doesNotMatch(source, /sessionStorage\.setItem\('vts_guest'/);
   assert.match(firebase, /signInWithEmailAndPassword/);
   assert.match(firebase, /usernameToEmail/);
+  assert.match(firebase, /isPasswordAuthUser/);
 });
 
 test('firebase config reads public web config without committed Google API keys', () => {
@@ -87,29 +88,31 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
 });
 
-test('shared admin dashboard reads stay available while writes require admin claim', () => {
+test('shared admin dashboard reads stay available while writes require password admin login', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
 
+  assert.match(rules, /function isAdminLogin\(\)/);
+  assert.match(rules, /sign_in_provider == 'password'/);
   assert.match(
     rules,
-    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validDashboardData\(\);/
+    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validDashboardData\(\);/
   );
   assert.match(
     rules,
-    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validRosterData\(\);/
+    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validRosterData\(\);/
   );
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
 });
 
-test('R5 conduct adjustments are stored separately and require admin writes', () => {
+test('R5 conduct adjustments are stored separately and use the shared password admin login', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
 
   assert.match(rules, /function validConductAdjustment\(\)/);
   assert.match(rules, /match \/vts_admin\/conduct_adjustments\/records\/\{adjustmentId\}/);
-  assert.match(rules, /allow read: if isAdmin\(\);/);
-  assert.match(rules, /allow create: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
-  assert.match(rules, /allow update: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /allow read: if signedIn\(\);/);
+  assert.match(rules, /allow create: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /allow update: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
   assert.match(rules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
 });
 
