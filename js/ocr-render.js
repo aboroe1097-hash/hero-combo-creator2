@@ -1017,21 +1017,16 @@ function renderWeightedScorePopover(row, index) {
 
 function renderFinalRewardPopover(row, index) {
   const tooltipId = `dashFinalRewardTip-${index}`;
-  let adjustment = '<span><span>Conduct adjustment</span><b>None</b></span>';
-  if (row.rewardReason === 'grant_premium') {
-    adjustment = `<span><span>Conduct override <small>R5 grant premium &mdash; bumped up</small></span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>`;
-  } else if (row.rewardReason === 'forfeit_premium') {
-    adjustment = `<span><span>Conduct override <small>R5 forfeit premium &mdash; dropped down</small></span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>`;
-  }
-  return `<button class="dash-weighted-score-trigger dash-weighted-reward-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final reward reasoning for ${esc(row.playerName)}">
+  const baseReward = contributionRewardLabel(row.baseReward);
+  const finalReward = contributionRewardLabel(row.finalReward);
+  const reason =
+    row.rewardReason === 'grant_premium'
+      ? `R5 grant premium override. Final rank #${row.finalRank}.`
+      : row.rewardReason === 'forfeit_premium'
+        ? `R5 forfeit premium override. Final rank #${row.finalRank}.`
+        : `Final rank #${row.finalRank}. Base reward: ${baseReward}.`;
+  return `<button class="dash-weighted-reward-trigger" type="button" id="${tooltipId}" title="${esc(reason)}" aria-label="Final reward for ${esc(row.playerName)}: ${esc(finalReward)}. ${esc(reason)}">
     <span class="dash-weighted-reward-value">${esc(contributionRewardLabel(row.finalReward))}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>Final reward reasoning</strong>
-      <span><span>Final rank</span><b>#${row.finalRank}</b></span>
-      <span><span>Rank tier <small>by final rank #${row.finalRank}</small></span><b>${esc(contributionRewardLabel(row.baseReward))}</b></span>
-      ${adjustment}
-      <span class="dash-weighted-score-popover-total"><span>Final reward</span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>
-    </span>
   </button>`;
 }
 

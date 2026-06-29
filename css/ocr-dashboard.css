@@ -4546,7 +4546,8 @@ body[style*='overflow: hidden'] .tab-panel {
   overflow: visible;
   position: relative;
 }
-#ocrDashboardRoot .dash-weighted-score-trigger {
+#ocrDashboardRoot .dash-weighted-score-trigger,
+#ocrDashboardRoot .dash-weighted-reward-trigger {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -4565,7 +4566,9 @@ body[style*='overflow: hidden'] .tab-panel {
   text-align: right;
 }
 #ocrDashboardRoot .dash-weighted-score-trigger:hover,
-#ocrDashboardRoot .dash-weighted-score-trigger:focus-visible {
+#ocrDashboardRoot .dash-weighted-score-trigger:focus-visible,
+#ocrDashboardRoot .dash-weighted-reward-trigger:hover,
+#ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible {
   background: rgba(103, 232, 249, 0.1);
   outline: 1px solid rgba(103, 232, 249, 0.4);
   outline-offset: 2px;
