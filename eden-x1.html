@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eden X1 - Weighted Contribution View | Hero Combo Creator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="View-only weighted contribution dashboard for Eden X1 season. See player rankings, duty counts, conduct bonuses and weighted scores." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#060b13" />
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/logo.png">
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  </noscript>
+  <link rel="stylesheet" href="css/_tokens.css?v=1" />
+  <link rel="stylesheet" href="css/app.css?v=1" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=1" />
+  <link rel="stylesheet" href="css/components.css?v=1" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=1" />
+  <link rel="stylesheet" href="css/mobile.css?v=1" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=1"></script>
+  <style>
+    .eden-x1-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 1rem;
+      text-align: center;
+    }
+    .eden-x1-loading .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border-subtle, #334155);
+      border-top-color: var(--blue-400, #60a5fa);
+      border-radius: 50%;
+      animation: eden-spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes eden-spin {
+      to { transform: rotate(360deg); }
+    }
+    .eden-x1-error {
+      color: var(--red-400, #f87171);
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body class="admin-standalone-page">
+  <div class="app-shell">
+    <header class="command-header admin-command-header">
+      <div class="command-brand admin-command-brand">
+        <div class="admin-brand-row">
+          <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="" class="admin-brand-logo dual-glow-logo" width="84" height="84"></picture>
+          <div>
+            <h1 class="admin-shell-title">Eden X1</h1>
+            <p class="admin-shell-kicker">Weighted Contribution — View Only</p>
+            <p class="admin-shell-team">TEAM VTS — STATE 1097</p>
+          </div>
+        </div>
+        <p class="seo-intro command-copy admin-shell-copy">Season contribution rankings with duty counts, conduct adjustments, and weighted final scores.</p>
+      </div>
+      <div class="command-actions admin-command-actions">
+        <div class="app-control-row admin-control-row">
+          <a href="admin.html" class="admin-back-tools">Admin Dashboard</a>
+          <a href="index.html" class="admin-back-tools">Back to Tools</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="adminPageRoot" class="admin-page-main">
+      <section id="ocrDashboardSection" class="admin-page-panel">
+        <div id="dashWeightedContributionPanel" class="dash-weighted-contribution-panel">
+          <div class="dash-empty eden-x1-loading">
+            <div class="spinner"></div>
+            <span>Loading weighted contribution data...</span>
+          </div>
+        </div>
+        <div id="edenX1Error" class="dash-empty eden-x1-error hidden"></div>
+      </section>
+    </main>
+
+    <footer class="roc-footer admin-footer">
+      <div class="footer-divider"></div>
+      <div class="footer-content">
+        <div class="footer-section brand-section">
+          <div class="footer-brand-row">
+            <picture><source srcset="images/logo-40.webp" type="image/webp"><img src="images/logo.png" alt="" class="footer-brand-logo" loading="lazy" decoding="async" width="40" height="40"></picture>
+            <h3 class="footer-logo">VTS 1097</h3>
+          </div>
+          <p class="footer-url"><a href="https://roc-vts.com/">roc-vts.com</a></p>
+        </div>
+        <div class="footer-section links-section">
+          <h4>Links</h4>
+          <ul>
+            <li><a href="index.html">Combo Generator</a></li>
+            <li><a href="admin.html">VTS Admin</a></li>
+          </ul>
+        </div>
+        <div class="footer-section community-section">
+          <p class="disclaimer">Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <span id="adminFooterYear">2026</span> VTS 1097</p>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toastContainer"></div>
+  <script type="module" src="js/eden-x1.js?v=1"></script>
+</body>
+</html>

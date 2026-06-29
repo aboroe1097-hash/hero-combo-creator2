@@ -14,6 +14,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, 'index.html'),
         admin: resolve(__dirname, 'admin.html'),
+        'eden-x1': resolve(__dirname, 'eden-x1.html'),
       },
       output: {
         manualChunks(id) {

@@ -1066,7 +1066,8 @@ function sortedWeightedRows(rows) {
     shieldWalls: (r) => r.shieldWalls,
     pathers: (r) => r.pathers,
     banners: (r) => r.banners,
-    total: (r) => valueOf(r.contributionScore) + r.shieldWalls + r.pathers + r.banners + r.conductBonus,
+    total: (r) =>
+      valueOf(r.contributionScore) + r.shieldWalls + r.pathers + r.banners + r.conductBonus,
     conduct: (r) => r.conductBonus,
     weighted: (r) => r.weightedScore,
     finalRank: (r) => r.finalRank ?? 999999,
@@ -1077,7 +1078,8 @@ function sortedWeightedRows(rows) {
   const sorted = rows.slice().sort((a, b) => {
     const av = get(a);
     const bv = get(b);
-    if (typeof av === 'string' || typeof bv === 'string') return String(av).localeCompare(String(bv));
+    if (typeof av === 'string' || typeof bv === 'string')
+      return String(av).localeCompare(String(bv));
     return av - bv;
   });
   return sort.dir === 'asc' ? sorted : sorted.reverse();
