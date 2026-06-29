@@ -711,7 +711,7 @@ export function getProtectedPlayerIdentity(name) {
   if (!/kika/i.test(text)) return '';
   if (/banner\s*2/i.test(text)) return '꧁Kika-banner2꧂';
   if (/banner/i.test(text)) return '꧁ Kika-banner ꧂';
-  if (/[༺༻≪≫]/.test(text)) return '꧁༺ Kika ༻꧂';
+  if (/[༺༻≪≫≼≽⪡⪢]/.test(text)) return '꧁༺ Kika ༻꧂';
   return '꧁ Kika ꧂';
 }
 
