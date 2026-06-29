@@ -38,12 +38,12 @@ test('player display cleanup strips leading guild tags and preserves real symbol
 
 test('canonical resolver reuses existing aliases after guild-prefix cleanup', () => {
   assert.equal(resolveCanonicalPlayerName('(Vts)AK Чапай'), 'AK Чапай');
-  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), resolveCanonicalPlayerName('Kika'));
+  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁༺ Kika ༻꧂');
   assert.equal(resolveCanonicalPlayerName('s)GoodnesGraycious'), 'GoodnesGraycious');
 });
 
 test('canonical resolver merges special-list alias clusters', () => {
-  assert.equal(key('Kika-banner'), key('Kika'));
+  assert.notEqual(key('Kika-banner'), key('Kika'));
   assert.notEqual(key('Kika-banner2'), key('Kika'));
 
   for (const raw of ['zubbs', 'Zubbs', 'Dr. Zubbs', 'zubbs?']) {
@@ -105,12 +105,15 @@ test('canonical player summary groups by resolved identity and keeps simple colu
     { name: 'Undead_Banner', time: '03:00', target: 'Gate' },
   ]);
 
+  // Kika and Kika-banner are now distinct accounts (banner no longer collapses
+  // into the secondary Kika identity).
   assert.deepEqual(
     summary.map((row) => [row.playerName, row.entries, row.times]),
     [
-      [resolveCanonicalPlayerName('Kika'), 2, ['00:23', '08:04']],
       ['UNDEAD', 2, ['01:25', '03:00']],
       ['Zubbs', 2, ['23:25', '23:55']],
+      [resolveCanonicalPlayerName('Kika'), 1, ['00:23']],
+      [resolveCanonicalPlayerName('Kika-banner'), 1, ['08:04']],
       ['Moldo', 1, ['23:55']],
     ]
   );

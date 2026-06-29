@@ -233,7 +233,7 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['✨ Anne ✨', 'Anne'],
     ['Kika', '꧁ Kika ꧂'],
     ['≪Kika≫', '꧁༺ Kika ༻꧂'],
-    ['✨ Kika ✨', '꧁ Kika ꧂'],
+    ['✨ Kika ✨', '꧁༺ Kika ༻꧂'],
     ['꧁ Kika ꧂', '꧁ Kika ꧂'],
     ['MasterVj~', 'MasterVj'],
     ['✨MasterVj✨', 'MasterVj'],

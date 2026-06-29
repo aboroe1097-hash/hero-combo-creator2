@@ -4621,7 +4621,10 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-weighted-score-trigger:hover .dash-weighted-score-popover,
 #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible .dash-weighted-score-popover,
-#ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover {
+#ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
@@ -5330,7 +5333,8 @@ body[style*='overflow: hidden'] .tab-panel {
 
   #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
   #ocrDashboardRoot .dash-contribution-weighted-table td > strong,
-  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger {
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-rank-trigger {
     min-width: 0;
     max-width: 100%;
     overflow-wrap: anywhere;
@@ -5342,6 +5346,180 @@ body[style*='overflow: hidden'] .tab-panel {
   }
 }
 
+
+@media (max-width: 768px) {
+  body.admin-standalone-page {
+    overflow-x: hidden;
+  }
+
+  #adminPageRoot.admin-page-main,
+  #ocrDashboardRoot .dash-container,
+  #ocrDashboardRoot .dash-card,
+  #ocrDashboardRoot .dash-contribution-compare-card,
+  #ocrDashboardRoot .dash-banner-card {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #ocrDashboardRoot .dash-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #ocrDashboardRoot .dash-metric-tile {
+    min-width: 0;
+    padding: 0.72rem 0.55rem;
+  }
+
+  #ocrDashboardRoot .dash-metric-label,
+  #ocrDashboardRoot .dash-insight-hdr {
+    overflow-wrap: anywhere;
+    letter-spacing: 0.035em;
+  }
+
+  #ocrDashboardRoot .dash-metric-value {
+    font-size: clamp(1rem, 6vw, 1.25rem);
+    overflow-wrap: anywhere;
+  }
+
+  #ocrDashboardRoot .dash-contribution-compare-table-wrap,
+  #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table tr {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td {
+    grid-template-columns: minmax(6.75rem, 0.45fr) minmax(0, 0.55fr);
+    column-gap: 0.65rem;
+    box-sizing: border-box;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td::before {
+    align-self: center;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
+  #ocrDashboardRoot .dash-contribution-weighted-table td > strong,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-reward-trigger {
+    justify-self: end;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    text-align: right;
+  }
+
+  #ocrDashboardRoot .dash-weighted-reward-value,
+  #ocrDashboardRoot .dash-weighted-score-value {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  #ocrDashboardRoot .dash-weighted-score-popover {
+    position: fixed;
+    top: 50%;
+    right: auto;
+    left: 50%;
+    width: min(330px, calc(100vw - 2rem));
+    max-height: min(78vh, 460px);
+    overflow-y: auto;
+    transform: translate(-50%, calc(-50% - 4px));
+  }
+
+  #ocrDashboardRoot .dash-weighted-score-popover::before {
+    display: none;
+  }
+
+  #ocrDashboardRoot .dash-weighted-score-trigger:hover .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
+    transform: translate(-50%, -50%);
+  }
+
+  #ocrDashboardRoot .dash-btn,
+  #ocrDashboardRoot .dash-btn-xs,
+  #ocrDashboardRoot .dash-banner-del-btn,
+  #ocrDashboardRoot .dash-weighted-view-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  #ocrDashboardRoot .dash-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td {
+    grid-template-columns: minmax(5.6rem, 0.42fr) minmax(0, 0.58fr);
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td::before {
+    font-size: 0.58rem;
+    letter-spacing: 0.045em;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
+  #ocrDashboardRoot .dash-contribution-weighted-table td > strong,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-reward-trigger {
+    font-size: clamp(0.88rem, 4.8vw, 1.08rem);
+  }
+}
+@media (max-width: 768px) {
+  #ocrDashboardRoot .dash-trend-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  #ocrDashboardRoot .dash-trend-delta {
+    justify-self: start;
+  }
+
+  #ocrDashboardRoot .dash-insight-list {
+    gap: 0.55rem;
+  }
+
+  #ocrDashboardRoot .dash-insight-list span {
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding-bottom: 0.18rem;
+  }
+
+  #ocrDashboardRoot .dash-insight-list span + span {
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    padding-top: 0.42rem;
+  }
+
+  #ocrDashboardRoot .dash-insight-list b {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #ocrDashboardRoot .dash-attack-item {
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #ocrDashboardRoot .dash-attack-item > div:last-child {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+}
 /* Long-table 25-by-25 pagination for admin subtab lists (keeps mobile short). */
 #ocrDashboardRoot .dash-row-hidden {
   display: none !important;

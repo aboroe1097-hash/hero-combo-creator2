@@ -145,9 +145,12 @@ test('weighted contribution labels hide image upload source notes', () => {
   );
 });
 
-test('weighted contribution keeps decorated Kika account duty counts separate', () => {
+test('weighted contribution consolidates a player family duty + conduct onto the main account', () => {
   withRosterNames(() => {
     const season = 'eden-x1-2026';
+    // KIKA_MAIN and KIKA_ALT are distinct accounts of the same person (family).
+    // Each stays its own row, but the person's duty + conduct consolidate onto
+    // the highest-contribution account (here KIKA_MAIN at 144650).
     const model = buildWeightedContributionRows({
       season,
       contributionRecords: [
@@ -161,7 +164,7 @@ test('weighted contribution keeps decorated Kika account duty counts separate', 
         },
       ],
       dutyRecords: [
-        { type: 'pather', entries: [{ name: KIKA_MAIN, confirmed: KIKA_MAIN }] },
+        { type: 'pather', entries: [{ name: KIKA_ALT, confirmed: KIKA_ALT }] },
         { type: 'banner', entries: [{ name: KIKA_MAIN, confirmed: KIKA_MAIN }] },
       ],
       r5Adjustments: [
@@ -175,13 +178,15 @@ test('weighted contribution keeps decorated Kika account duty counts separate', 
 
     assert.ok(main);
     assert.ok(alt);
-    assert.notEqual(main.playerKey, alt.playerKey);
-    assert.equal(main.pathers, 1);
+    assert.notEqual(main.playerKey, alt.playerKey); // accounts stay separate rows
+    // Family duty (banner on MAIN + pather on ALT) and conduct (+1 + -1) all
+    // land on the main account; the other account row carries none.
     assert.equal(main.banners, 1);
-    assert.equal(main.conductBonus, 1);
-    assert.equal(alt.pathers, 0);
+    assert.equal(main.pathers, 1);
+    assert.equal(main.conductBonus, 0);
     assert.equal(alt.banners, 0);
-    assert.equal(alt.conductBonus, -1);
+    assert.equal(alt.pathers, 0);
+    assert.equal(alt.conductBonus, 0);
   });
 });
 

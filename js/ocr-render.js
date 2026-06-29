@@ -1027,7 +1027,7 @@ function renderFinalRankPopover(row, index) {
       : delta < 0
         ? `▼ down ${-delta}`
         : 'no change';
-  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final rank reasoning for ${esc(row.playerName)}">
+  return `<button class="dash-weighted-rank-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final rank reasoning for ${esc(row.playerName)}">
     <span class="dash-weighted-score-value">#${row.finalRank}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>Final rank reasoning</strong>
