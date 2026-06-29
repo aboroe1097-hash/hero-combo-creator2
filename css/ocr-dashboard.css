@@ -2003,6 +2003,10 @@
 #ocrDashboardRoot .dash-table .dash-th-sort {
   cursor: pointer;
 }
+#ocrDashboardRoot .dash-sort-glyph {
+  font-size: 0.6rem;
+  user-select: none;
+}
 #ocrDashboardRoot .dash-table .dash-th-rank {
   width: 60px;
 }
@@ -4212,10 +4216,9 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-duty-match-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(
-      76px,
-      0.36fr
-    ) minmax(110px, 0.55fr) minmax(95px, 0.45fr) minmax(105px, 0.5fr);
+  grid-template-columns:
+    minmax(150px, 1fr) minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(76px, 0.36fr)
+    minmax(110px, 0.55fr) minmax(95px, 0.45fr) minmax(105px, 0.5fr);
   min-width: 910px;
   gap: 8px;
   align-items: center;
@@ -4305,10 +4308,9 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-contribution-match-head,
 #ocrDashboardRoot .dash-contribution-match-row {
   display: grid;
-  grid-template-columns: 74px minmax(170px, 1.2fr) minmax(110px, 0.7fr) minmax(130px, 0.7fr) minmax(
-      130px,
-      0.8fr
-    ) minmax(120px, 0.65fr) 34px;
+  grid-template-columns:
+    74px minmax(170px, 1.2fr) minmax(110px, 0.7fr) minmax(130px, 0.7fr) minmax(130px, 0.8fr)
+    minmax(120px, 0.65fr) 34px;
   gap: 8px;
   align-items: center;
   min-width: 890px;
@@ -4504,17 +4506,22 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-contribution-weighted-table {
   min-width: 1180px;
 }
-#ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
+#ocrDashboardRoot
+  .dash-contribution-weighted-card.dash-weighted-compact
   .dash-contribution-weighted-table {
   min-width: 0;
   width: 100%;
   /* Hidden detail columns drop out, so the 4 visible columns spread evenly. */
   table-layout: fixed;
 }
-#ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
-  .dash-contribution-weighted-table th,
-#ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
-  .dash-contribution-weighted-table td {
+#ocrDashboardRoot
+  .dash-contribution-weighted-card.dash-weighted-compact
+  .dash-contribution-weighted-table
+  th,
+#ocrDashboardRoot
+  .dash-contribution-weighted-card.dash-weighted-compact
+  .dash-contribution-weighted-table
+  td {
   overflow-wrap: anywhere;
 }
 #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact .dash-weighted-detail-col {
@@ -5099,6 +5106,23 @@ body[style*='overflow: hidden'] .tab-panel {
 [data-theme='light'] #ocrDashboardRoot .dash-roster-row.spy .dash-roster-row-name {
   color: #dc2626;
 }
+[data-theme='light'] #ocrDashboardRoot .dash-conduct-season {
+  background: #f1f5f9;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-table td {
+  border-bottom-color: #e2e8f0;
+}
+
+/* Light theme mobile row-card backgrounds */
+@media (max-width: 768px) {
+  [data-theme='light'] #ocrDashboardRoot .dash-duty-summary-table tr,
+  [data-theme='light'] #ocrDashboardRoot .dash-banner-table tr,
+  [data-theme='light'] #ocrDashboardRoot .dash-contribution-table tr,
+  [data-theme='light'] #ocrDashboardRoot .dash-contribution-compare-table tr {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+}
 
 /* 11.4.2 admin polish: tables and dense contribution controls stay readable. */
 #ocrDashboardRoot .dash-table-wrap,
@@ -5316,7 +5340,8 @@ body[style*='overflow: hidden'] .tab-panel {
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-card .dash-contribution-weighted-table,
-  #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
+  #ocrDashboardRoot
+    .dash-contribution-weighted-card.dash-weighted-compact
     .dash-contribution-weighted-table {
     width: 100%;
     min-width: 0;
@@ -5344,7 +5369,6 @@ body[style*='overflow: hidden'] .tab-panel {
     overflow: visible;
   }
 }
-
 
 @media (max-width: 768px) {
   body.admin-standalone-page {
@@ -5440,9 +5464,9 @@ body[style*='overflow: hidden'] .tab-panel {
   #ocrDashboardRoot .dash-weighted-score-trigger:hover .dash-weighted-score-popover,
   #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible .dash-weighted-score-popover,
   #ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover,
-#ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
-#ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
-#ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
+  #ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
     transform: translate(-50%, -50%);
   }
 
