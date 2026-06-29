@@ -325,22 +325,27 @@ export function buildWeightedContributionRows(options = {}) {
     )
     .map((row, index) => {
       const rank = index + 1;
-      let finalReward;
-      if (rank === 1) finalReward = 'guild_master';
-      else if (rank <= 20) finalReward = 'core';
-      else if (rank <= 110) finalReward = 'power_house';
-      else if (rank <= 200) finalReward = 'members';
-      else finalReward = 'standard';
+      let baseReward;
+      if (rank === 1) baseReward = 'guild_master';
+      else if (rank <= 20) baseReward = 'core';
+      else if (rank <= 110) baseReward = 'power_house';
+      else if (rank <= 200) baseReward = 'members';
+      else baseReward = 'standard';
+      // Final reward is the rank tier unless an R5 conduct flag overrides it.
+      let finalReward = baseReward;
+      let rewardReason = 'rank';
       if (grantPremiumPlayers.has(row.playerKey) && finalReward !== 'guild_master') {
         finalReward = 'core';
+        rewardReason = 'grant_premium';
       }
       if (
         forfeitPlayers.has(row.playerKey) &&
         (finalReward === 'guild_master' || finalReward === 'core')
       ) {
         finalReward = 'power_house';
+        rewardReason = 'forfeit_premium';
       }
-      return { ...row, finalRank: rank, finalReward };
+      return { ...row, finalRank: rank, baseReward, finalReward, rewardReason };
     });
 
   return {

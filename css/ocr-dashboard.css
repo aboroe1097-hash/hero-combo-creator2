@@ -4561,6 +4561,14 @@ body[style*='overflow: hidden'] .tab-panel {
   outline: 1px solid rgba(103, 232, 249, 0.4);
   outline-offset: 2px;
 }
+/* Final-reward variant: reads as a left-aligned reward label, not a score. */
+#ocrDashboardRoot .dash-weighted-reward-trigger {
+  justify-content: flex-start;
+  min-width: 0;
+  color: inherit;
+  font-weight: 700;
+  text-align: left;
+}
 #ocrDashboardRoot .dash-weighted-score-popover {
   position: absolute;
   top: calc(100% + 0.55rem);

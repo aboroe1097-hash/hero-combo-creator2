@@ -1015,6 +1015,26 @@ function renderWeightedScorePopover(row, index) {
   </button>`;
 }
 
+function renderFinalRewardPopover(row, index) {
+  const tooltipId = `dashFinalRewardTip-${index}`;
+  let adjustment = '<span><span>Conduct adjustment</span><b>None</b></span>';
+  if (row.rewardReason === 'grant_premium') {
+    adjustment = `<span><span>Conduct override <small>R5 grant premium &mdash; bumped up</small></span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>`;
+  } else if (row.rewardReason === 'forfeit_premium') {
+    adjustment = `<span><span>Conduct override <small>R5 forfeit premium &mdash; dropped down</small></span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>`;
+  }
+  return `<button class="dash-weighted-score-trigger dash-weighted-reward-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final reward reasoning for ${esc(row.playerName)}">
+    <span class="dash-weighted-reward-value">${esc(contributionRewardLabel(row.finalReward))}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>Final reward reasoning</strong>
+      <span><span>Final rank</span><b>#${row.finalRank}</b></span>
+      <span><span>Rank tier <small>by final rank #${row.finalRank}</small></span><b>${esc(contributionRewardLabel(row.baseReward))}</b></span>
+      ${adjustment}
+      <span class="dash-weighted-score-popover-total"><span>Final reward</span><b>${esc(contributionRewardLabel(row.finalReward))}</b></span>
+    </span>
+  </button>`;
+}
+
 function renderWeightedContributionDashboard() {
   const host = $id('dashWeightedContributionPanel');
   if (!host) return;
@@ -1068,7 +1088,7 @@ function renderWeightedContributionDashboard() {
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td>#${row.finalRank}</td>
-          <td>${esc(contributionRewardLabel(row.finalReward))}</td>
+          <td class="dash-weighted-score-cell">${renderFinalRewardPopover(row, index)}</td>
         </tr>`
           )
           .join('')}</tbody>
