@@ -4507,7 +4507,16 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
   .dash-contribution-weighted-table {
-  min-width: 640px;
+  min-width: 0;
+  width: 100%;
+  /* Hidden detail columns drop out, so the 4 visible columns spread evenly. */
+  table-layout: fixed;
+}
+#ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
+  .dash-contribution-weighted-table th,
+#ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
+  .dash-contribution-weighted-table td {
+  overflow-wrap: anywhere;
 }
 #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact .dash-weighted-detail-col {
   display: none;
