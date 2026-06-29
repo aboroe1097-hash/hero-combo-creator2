@@ -1028,7 +1028,6 @@ export function findBestMatch(name, minConfidence = 100) {
       'МяТная Лапка': 'Мятная Лапка',
       'yousef المحارب': 'المحارب yousef',
       '*DEAN JR*': '*DEAN*',
-      Moldo1313: 'Moldo1313',
       MalakAdo: 'MalakAdo',
       MalakAbo: 'MalakAbo',
       'WICKED RUSSIANO': 'WICKED RUSSIAN',
@@ -1107,7 +1106,6 @@ export function findBestMatch(name, minConfidence = 100) {
       'Uz': '!!Uzumaki!!',
       Moldo1313: 'Moldo',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
-      Uzumaki: '!!Uzumaki!!',
       // OCR typo for the RedBull owner tag; do not collapse separate
       // RedBull-family banner/operator accounts.
       redbull: 'RedBull',
@@ -1162,8 +1160,8 @@ export function findBestMatch(name, minConfidence = 100) {
 // getDutyOperatorNote(): it records either who physically operated the account at that
 // time ("Angel Banner (zubbs)" -> credit ANGEL, zubbs operated it) or which of an
 // owner's banners was used ("@redbull (osito)" -> credit redbull, osito is the banner).
-const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.\-]*/i;
-const DUTY_BANNER_SUFFIX = /[\s_\-]*banner\s*\d*$/i;
+const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.-]*/i;
+const DUTY_BANNER_SUFFIX = /[\s_-]*banner\s*\d*$/i;
 
 // The parenthetical note (operator / banner label). Metadata — preserved, but not the
 // primary credited name. It may *also* earn credit (see getDutyCreditedNames).
@@ -1199,7 +1197,7 @@ export function cleanDutyRawName(raw) {
   s = s.replace(DUTY_TARGET_PREFIX, '').trim(); // leading target word without an @
   s = s.replace(/[\s+]+$/g, '').replace(/^[\s+]+/g, '').trim(); // '+' reinforcement markers
   s = s.replace(DUTY_BANNER_SUFFIX, '').trim(); // banner-label suffix -> owner player
-  s = s.replace(/^[\s_·.\-]+|[\s_·.\-]+$/g, '').trim();
+  s = s.replace(/^[\s_·.-]+|[\s_·.-]+$/g, '').trim();
   return s;
 }
 
