@@ -1450,9 +1450,13 @@
   }
   /* Reward <select> must never spill past its contribution card on mobile. */
   #ocrDashboardRoot .dash-contribution-reward-select {
+    width: 100%;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
   }
 }
 
@@ -5265,4 +5269,68 @@ body[style*='overflow: hidden'] .tab-panel {
     right: 0;
     width: min(280px, calc(100vw - 3rem));
   }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card {
+    overflow: hidden;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-contribution-compare-head,
+  #ocrDashboardRoot .dash-weighted-contribution-card .dash-card-hdr-wrap {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-table-controls {
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-view-toggle {
+    justify-content: center;
+    width: 100%;
+    white-space: normal;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-contribution-weighted-table,
+  #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact
+    .dash-contribution-weighted-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table tr {
+    overflow: hidden;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td {
+    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr);
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
+  #ocrDashboardRoot .dash-contribution-weighted-table td > strong,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-score-cell {
+    overflow: visible;
+  }
+}
+
+/* Long-table 25-by-25 pagination for admin subtab lists (keeps mobile short). */
+#ocrDashboardRoot .dash-row-hidden {
+  display: none !important;
+}
+
+#ocrDashboardRoot .dash-table-more-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px 4px 2px;
 }

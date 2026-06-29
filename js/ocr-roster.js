@@ -77,6 +77,60 @@ function hydrateDashboardTableLabels(root) {
       });
     });
   });
+  paginateLongTables(root);
+}
+
+const TABLE_PAGE_STEP = 25;
+
+// Long roster/contribution tables are unwieldy on mobile (each row stacks to a
+// full-width card). Collapse them to the first TABLE_PAGE_STEP rows and let the
+// admin reveal more in 25-row increments, or expand/collapse the whole table.
+function paginateLongTables(root, step = TABLE_PAGE_STEP) {
+  if (!root) return;
+  root.querySelectorAll('table.dash-banner-table > tbody').forEach((tbody) => {
+    const table = tbody.parentElement;
+    const rows = Array.from(tbody.children).filter((el) => el.tagName === 'TR');
+    // Remove any control left over from a previous render of this table.
+    const stale = table.nextElementSibling;
+    if (stale && stale.classList && stale.classList.contains('dash-table-more-wrap')) stale.remove();
+    if (rows.length <= step) {
+      rows.forEach((row) => row.classList.remove('dash-row-hidden'));
+      return;
+    }
+    let limit = step;
+    const wrap = document.createElement('div');
+    wrap.className = 'dash-table-more-wrap';
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'dash-btn dash-btn-xs dash-table-more-btn';
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'dash-btn dash-btn-xs dash-table-all-btn';
+    const apply = () => {
+      rows.forEach((row, i) => row.classList.toggle('dash-row-hidden', i >= limit));
+      const remaining = rows.length - limit;
+      if (remaining > 0) {
+        moreBtn.style.display = '';
+        moreBtn.textContent = `Show ${Math.min(step, remaining)} more (${remaining} hidden)`;
+        allBtn.textContent = `Show all ${rows.length}`;
+      } else {
+        moreBtn.style.display = 'none';
+        allBtn.textContent = `Show first ${step}`;
+      }
+    };
+    moreBtn.addEventListener('click', () => {
+      limit = Math.min(limit + step, rows.length);
+      apply();
+    });
+    allBtn.addEventListener('click', () => {
+      limit = limit >= rows.length ? step : rows.length;
+      apply();
+    });
+    wrap.appendChild(moreBtn);
+    wrap.appendChild(allBtn);
+    table.insertAdjacentElement('afterend', wrap);
+    apply();
+  });
 }
 
 function loadRoster() {
@@ -2706,7 +2760,7 @@ function renderWeightedContributionTable() {
 function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
-  renderWeightedContributionTable();
+  // Weighted contribution table lives on the dashboard only (not this subtab).
   if (!body) return;
   const records = Array.isArray(state.contributionRecords)
     ? state.contributionRecords.slice().reverse()
@@ -2859,6 +2913,7 @@ export {
   loadContributionRecords,
   saveContributionRecords,
   showContributionPasteForm,
+  showExGuildPasteForm,
   showContributionConfirmModal,
   processContributionImages,
   editContributionRecord,
