@@ -135,6 +135,16 @@ function emptyDutyCounts() {
   return { shieldWalls: 0, pathers: 0, banners: 0 };
 }
 
+// Lower positive rank wins; a missing/zero rank is always worst.
+function isBetterContributionRank(rank, currentBest) {
+  const a = Number(rank);
+  const b = Number(currentBest);
+  const aValid = Number.isFinite(a) && a > 0;
+  const bValid = Number.isFinite(b) && b > 0;
+  if (aValid && bValid) return a < b;
+  return aValid && !bValid;
+}
+
 export function buildWeightedDutyCounts(dutyRecords = []) {
   const counts = new Map();
 
@@ -275,12 +285,10 @@ export function buildWeightedContributionRows(options = {}) {
   );
   const exGuildMap = buildExGuildMap(options.exGuildContributions);
 
-  const rows = entries
+  const baseRows = entries
     .map((entry) => {
       const identity = resolveWeightedPlayerIdentity(entry);
       if (!identity) return null;
-      const duties = dutyCounts.get(identity.playerKey) || emptyDutyCounts();
-      const exGuildScore = exGuildMap.get(identity.playerKey) || 0;
       return {
         playerKey: identity.playerKey,
         playerName: identity.playerName,
@@ -288,14 +296,45 @@ export function buildWeightedContributionRows(options = {}) {
         currentRank: numberValue(entry.rank),
         currentReward: getContributionRewardTier(entry, record),
         contributionScore: contributionValue(entry),
-        contributionExGuild: exGuildScore,
-        shieldWalls: duties.shieldWalls,
-        pathers: duties.pathers,
-        banners: duties.banners,
-        conductBonus: conductMap.get(identity.playerKey) || 0,
+        contributionExGuild: exGuildMap.get(identity.playerKey) || 0,
       };
     })
     .filter(Boolean);
+
+  // A player can hold several accounts that resolve to the same identity (e.g. a
+  // main + alt/banner accounts all named "Kika"). Their duty (banners / pathers /
+  // shield walls) and conduct are credited ONCE, to the main account — the row
+  // with the highest contribution, then the best current rank — instead of being
+  // duplicated onto every account row.
+  const primaryIndexByKey = new Map();
+  baseRows.forEach((row, index) => {
+    const currentBest = primaryIndexByKey.get(row.playerKey);
+    if (currentBest === undefined) {
+      primaryIndexByKey.set(row.playerKey, index);
+      return;
+    }
+    const best = baseRows[currentBest];
+    const betterContribution = row.contributionScore > best.contributionScore;
+    const tiedContribution = row.contributionScore === best.contributionScore;
+    if (betterContribution || (tiedContribution && isBetterContributionRank(row.currentRank, best.currentRank))) {
+      primaryIndexByKey.set(row.playerKey, index);
+    }
+  });
+
+  const rows = baseRows.map((row, index) => {
+    const isPrimaryAccount = primaryIndexByKey.get(row.playerKey) === index;
+    const duties = isPrimaryAccount
+      ? dutyCounts.get(row.playerKey) || emptyDutyCounts()
+      : emptyDutyCounts();
+    return {
+      ...row,
+      shieldWalls: duties.shieldWalls,
+      pathers: duties.pathers,
+      banners: duties.banners,
+      conductBonus: isPrimaryAccount ? conductMap.get(row.playerKey) || 0 : 0,
+      isPrimaryAccount,
+    };
+  });
 
   const premiumCutoff = getContributionPremiumCutoff(record);
   const BASE_POINT_VALUE = 10000;

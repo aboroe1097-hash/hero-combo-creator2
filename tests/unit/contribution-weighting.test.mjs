@@ -230,3 +230,44 @@ test('R5 premium grant and forfeit flags override weighted final reward tier', (
   assert.equal(grantedLow.finalRank, 25);
   assert.equal(grantedLow.finalReward, 'core');
 });
+
+test('shared-identity accounts credit duty + conduct to the highest-contribution row only', () => {
+  withRosterNames(() => {
+    const season = 'eden-x1-2026';
+    // Both entries are plain "Kika" -> same resolved identity/key (her alt/banner
+    // accounts often read without decorations). Duty + conduct must land on the
+    // main account (highest contribution), not be duplicated onto every row.
+    const model = buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'kika-shared',
+          date: '2026-06-25',
+          entries: [
+            { rank: 190, name: 'Kika', contribution: 2873 },
+            { rank: 9, name: 'Kika', contribution: 144650 },
+          ],
+        },
+      ],
+      dutyRecords: [
+        { type: 'banner', entries: [{ name: 'Kika', confirmed: 'Kika' }] },
+        { type: 'pather', entries: [{ name: 'Kika', confirmed: 'Kika' }] },
+      ],
+      r5Adjustments: [{ season, player: 'Kika', points: 1, category: 'banner_help' }],
+    });
+
+    const kikaKey = compactPlayerIdentity('꧁ Kika ꧂');
+    const kikaRows = model.rows.filter((row) => row.playerKey === kikaKey);
+    assert.equal(kikaRows.length, 2); // both accounts still shown as separate rows
+
+    const main = kikaRows.find((row) => row.contributionScore === 144650);
+    const secondary = kikaRows.find((row) => row.contributionScore === 2873);
+
+    assert.equal(main.banners, 1);
+    assert.equal(main.pathers, 1);
+    assert.equal(main.conductBonus, 1);
+    assert.equal(secondary.banners, 0);
+    assert.equal(secondary.pathers, 0);
+    assert.equal(secondary.conductBonus, 0);
+  });
+});
