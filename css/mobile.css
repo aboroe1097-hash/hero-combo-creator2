@@ -1735,6 +1735,22 @@ main#mainContent,
   max-width: 100% !important;
 }
 
+body.admin-standalone-page {
+  padding-inline: max(4px, var(--safe-left)) max(4px, var(--safe-right)) !important;
+}
+
+body.admin-standalone-page > .app-shell {
+  padding: 8px !important;
+}
+
+body.admin-standalone-page #adminPageRoot.admin-page-main {
+  padding-inline: 6px !important;
+}
+
+body.admin-standalone-page #ocrDashboardRoot .dash-container {
+  padding-inline: 6px;
+}
+
 .tab-pill {
   min-height: var(--tap-min) !important;
   align-items: center !important;

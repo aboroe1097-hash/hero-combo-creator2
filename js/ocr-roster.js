@@ -2760,7 +2760,7 @@ function renderWeightedContributionTable() {
 function renderContributions() {
   const body = $id('dashContributionBody');
   renderContributionComparison();
-  // Weighted contribution table lives on the dashboard only (not this subtab).
+  renderWeightedContributionTable();
   if (!body) return;
   const records = Array.isArray(state.contributionRecords)
     ? state.contributionRecords.slice().reverse()
