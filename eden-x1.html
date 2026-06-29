@@ -17,13 +17,19 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
   </noscript>
-  <link rel="stylesheet" href="css/_tokens.css?v=1" />
-  <link rel="stylesheet" href="css/app.css?v=1" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=1" />
-  <link rel="stylesheet" href="css/components.css?v=1" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=1" />
-  <link rel="stylesheet" href="css/mobile.css?v=1" media="(max-width: 768px)" />
-  <script src="js/maintenance-config.js?v=1"></script>
+  <script>
+    (function() {
+      var files = ['_tokens.css?v=20260629_200347','app.css?v=20260629_200347','ocr-dashboard.css?v=20260629_200347','components.css?v=20260629_200347','atmosphere.css?v=20260629_200347','mobile.css?v=20260629_200347'];
+      for (var i = 0; i < files.length; i++) {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'css/' + files[i];
+        if (files[i] === 'mobile.css?v=20260629_200347') l.media = '(max-width: 768px)';
+        document.head.appendChild(l);
+      }
+    })();
+  </script>
+  <script src="js/maintenance-config.js?v=20260629_200347"></script>
   <style>
     .eden-x1-loading {
       display: flex;
@@ -114,6 +120,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=1"></script>
+  <script type="module" src="js/eden-x1.js?v=20260629_200347"></script>
 </body>
 </html>

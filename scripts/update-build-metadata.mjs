@@ -45,7 +45,7 @@ function writeText(file, text) {
 }
 
 function updateCacheBusters() {
-  for (const file of ['index.html', 'admin.html']) {
+  for (const file of ['index.html', 'admin.html', 'eden-x1.html']) {
     if (!fs.existsSync(path.join(root, file))) continue;
     const html = readText(file)
       .replace(/\?v=[0-9A-Za-z_-]+/g, `?v=${buildVersion}`)

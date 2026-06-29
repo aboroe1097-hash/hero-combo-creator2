@@ -103,7 +103,7 @@ async function bootAdminPage() {
     await loadTranslationsForLanguage(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260629_200041');
+  const mod = await import('./ocr-dashboard.js?v=20260629_200347');
   await mod.bootOcrDashboard();
 }
 
