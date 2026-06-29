@@ -1055,6 +1055,59 @@ function renderFinalRewardPopover(row, index) {
   </button>`;
 }
 
+function sortedWeightedRows(rows) {
+  const sort = state._weightedSort;
+  if (!sort || !sort.col) return rows;
+  const accessors = {
+    player: (r) => r.playerName,
+    currentRank: (r) => (r.currentRank ? Number(r.currentRank) : 999999),
+    reward: (r) => contributionRewardLabel(r.currentReward),
+    contribution: (r) => valueOf(r.contributionScore),
+    shieldWalls: (r) => r.shieldWalls,
+    pathers: (r) => r.pathers,
+    banners: (r) => r.banners,
+    total: (r) => valueOf(r.contributionScore) + r.shieldWalls + r.pathers + r.banners + r.conductBonus,
+    conduct: (r) => r.conductBonus,
+    weighted: (r) => r.weightedScore,
+    finalRank: (r) => r.finalRank ?? 999999,
+    finalReward: (r) => contributionRewardLabel(r.finalReward),
+  };
+  const get = accessors[sort.col];
+  if (!get) return rows;
+  const sorted = rows.slice().sort((a, b) => {
+    const av = get(a);
+    const bv = get(b);
+    if (typeof av === 'string' || typeof bv === 'string') return String(av).localeCompare(String(bv));
+    return av - bv;
+  });
+  return sort.dir === 'asc' ? sorted : sorted.reverse();
+}
+
+function setWeightedSort(col) {
+  const cur = state._weightedSort || {};
+  if (cur.col === col) {
+    state._weightedSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
+  } else {
+    const ascFirst = col === 'player' || col === 'reward' || col === 'finalReward';
+    state._weightedSort = { col, dir: ascFirst ? 'asc' : 'desc' };
+  }
+  renderWeightedContributionDashboard();
+}
+
+function updateWeightedSortGlyphs(host) {
+  const sort = state._weightedSort;
+  host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
+    th.querySelector('.dash-sort-glyph')?.remove();
+    th.removeAttribute('aria-sort');
+    if (!sort || th.dataset.weightedSort !== sort.col) return;
+    th.setAttribute('aria-sort', sort.dir === 'asc' ? 'ascending' : 'descending');
+    const glyph = document.createElement('span');
+    glyph.className = 'dash-sort-glyph';
+    glyph.textContent = sort.dir === 'asc' ? ' ▲' : ' ▼';
+    th.appendChild(glyph);
+  });
+}
+
 function renderWeightedContributionDashboard() {
   const host = $id('dashWeightedContributionPanel');
   if (!host) return;
@@ -1094,8 +1147,8 @@ function renderWeightedContributionDashboard() {
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>Player</th><th class="dash-weighted-detail-col">Current rank</th><th class="dash-weighted-detail-col">Reward</th><th class="dash-weighted-detail-col" style="text-align:right">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
-        <tbody>${rows
+        <thead><tr><th data-weighted-sort="player">Player</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">Current rank</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">Reward</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">Total</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="conduct">Conduct (R5) bonus</th><th style="text-align:right" data-weighted-sort="weighted">Weighted score</th><th data-weighted-sort="finalRank">Final rank</th><th data-weighted-sort="finalReward">Final reward</th></tr></thead>
+        <tbody>${sortedWeightedRows(rows)
           .map(
             (row, index) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
@@ -1105,6 +1158,7 @@ function renderWeightedContributionDashboard() {
           <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td class="dash-weighted-score-cell">${renderFinalRankPopover(row, index)}</td>
@@ -1116,6 +1170,10 @@ function renderWeightedContributionDashboard() {
     </div>
   </div>`;
   bindWeightedContributionViewToggle(host);
+  host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
+    th.addEventListener('click', () => setWeightedSort(th.dataset.weightedSort));
+  });
+  updateWeightedSortGlyphs(host);
   hydrateDashboardTableLabels(host);
 }
 
