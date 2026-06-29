@@ -1015,6 +1015,31 @@ function renderWeightedScorePopover(row, index) {
   </button>`;
 }
 
+function renderFinalRankPopover(row, index) {
+  const tooltipId = `dashFinalRankTip-${index}`;
+  const cur = Number(row.currentRank);
+  const hasCur = Number.isFinite(cur) && cur > 0;
+  const delta = hasCur ? cur - row.finalRank : 0;
+  const movement = !hasCur
+    ? '--'
+    : delta > 0
+      ? `▲ up ${delta}`
+      : delta < 0
+        ? `▼ down ${-delta}`
+        : 'no change';
+  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final rank reasoning for ${esc(row.playerName)}">
+    <span class="dash-weighted-score-value">#${row.finalRank}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>Final rank reasoning</strong>
+      <span><span>Ranked by</span><b>Weighted score</b></span>
+      <span><span>Weighted score</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      <span><span>Current contribution rank</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
+      <span><span>Movement vs current</span><b>${movement}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>Final rank</span><b>#${row.finalRank}</b></span>
+    </span>
+  </button>`;
+}
+
 function renderFinalRewardPopover(row, index) {
   const tooltipId = `dashFinalRewardTip-${index}`;
   const baseReward = contributionRewardLabel(row.baseReward);
@@ -1082,7 +1107,7 @@ function renderWeightedContributionDashboard() {
           <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
-          <td>#${row.finalRank}</td>
+          <td class="dash-weighted-score-cell">${renderFinalRankPopover(row, index)}</td>
           <td class="dash-weighted-score-cell">${renderFinalRewardPopover(row, index)}</td>
         </tr>`
           )

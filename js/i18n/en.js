@@ -57,7 +57,7 @@ const en = {
   adminInsightTrend: 'Activity Trend',
   adminHistoryTitle: 'Attack History',
   adminHistoryPh: 'Filter by structure, level, day...',
-  adminLeaderboard: 'Leaderboard',
+  adminLeaderboard: 'Structures Leaderboard',
   adminTimeAll: 'All Time',
   adminTimeWeek: 'This Week (Mon-Sun)',
   adminTimeToday: 'Today (0:00-23:59 GT)',
