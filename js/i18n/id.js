@@ -1011,6 +1011,7 @@ const id = {
   adminExGuildUnmatched: '⏳ Unmatched',
   adminExGuildStatus: 'Status',
   adminExGuildMatchTo: 'Cocokkan ke',
+  adminExGuildMatchSearchPh: 'Cari pemain…',
   adminExGuildClearAll: 'Clear All Ex-Guild Data',
   adminExGuildTab: 'Ex-Guild Data',
   adminContributionPrimaryTitle: 'This is the default contribution snapshot for dashboard calculation',

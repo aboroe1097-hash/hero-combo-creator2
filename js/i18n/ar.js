@@ -1010,6 +1010,7 @@ const ar = {
   adminExGuildUnmatched: '⏳ Unmatched',
   adminExGuildStatus: 'Status',
   adminExGuildMatchTo: 'مطابقة',
+  adminExGuildMatchSearchPh: 'بحث عن لاعب…',
   adminExGuildClearAll: 'Clear All Ex-Guild Data',
   adminExGuildTab: 'Ex-Guild Data',
   adminContributionPrimaryTitle: 'This is the default contribution snapshot for dashboard calculation',

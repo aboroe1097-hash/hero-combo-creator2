@@ -1018,6 +1018,7 @@ const de = {
   adminExGuildUnmatched: '⏳ Unmatched',
   adminExGuildStatus: 'Status',
   adminExGuildMatchTo: 'Zuordnen zu',
+  adminExGuildMatchSearchPh: 'Spieler suchen…',
   adminExGuildClearAll: 'Clear All Ex-Guild Data',
   adminExGuildTab: 'Ex-Guild Data',
   adminContributionPrimaryTitle: 'This is the default contribution snapshot for dashboard calculation',

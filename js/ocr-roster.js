@@ -2856,11 +2856,20 @@ function renderExGuildTable() {
     host.innerHTML = `<div class="dash-empty">${esc(adminT('adminExGuildEmpty'))}</div>`;
     return;
   }
-  // Manual-match targets: the current roster players, sorted.
-  const rosterOptions = (state.rosterNames || [])
-    .slice()
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b));
+  // Full match-target list: every current contribution player + roster, cleaned
+  // and de-duped. Exposed via a shared <datalist> so each row's input can search.
+  const targetMap = new Map(); // lowercase key -> display name
+  const addTarget = (raw) => {
+    const clean = stripGuildTagsFromPlayerName(String(raw || '')).trim();
+    if (clean) targetMap.set(clean.toLowerCase(), clean);
+  };
+  (primaryRecord?.entries || []).forEach((e) => addTarget(e.name));
+  (state.rosterNames || []).forEach(addTarget);
+  const targets = Array.from(targetMap.values()).sort((a, b) => a.localeCompare(b));
+  const datalistId = 'dashExGuildMatchList';
+  const datalistHtml = `<datalist id="${datalistId}">${targets
+    .map((n) => `<option value="${esc(n)}"></option>`)
+    .join('')}</datalist>`;
   const rowsHtml = entries
     .map((entry) => {
       const cleanName = stripExGuildGuildTag(entry.playerName || '');
@@ -2871,26 +2880,17 @@ function renderExGuildTable() {
       const statusBadge = matched
         ? `<span class="dash-badge dash-badge-ok">${esc(adminT('adminExGuildMatched'))}</span>`
         : `<span class="dash-badge">${esc(adminT('adminExGuildUnmatched'))}</span>`;
-      const optionsHtml = [
-        `<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`,
-      ]
-        .concat(
-          rosterOptions.map(
-            (n) => `<option value="${esc(n)}"${manualMatch === n ? ' selected' : ''}>${esc(n)}</option>`
-          )
-        )
-        .join('');
       return `<tr>
         <td><strong>${esc(cleanName)}</strong></td>
         <td style="text-align:right;font-weight:800">${formatContributionValue(entry.contribution)}</td>
         <td style="font-size:0.72rem;color:var(--text-dim)">${esc(entry.sourceNote || '')}</td>
         <td>${statusBadge}</td>
-        <td><select class="dash-contribution-reward-select" onchange="setExGuildMatch('${esc(entry.id)}', this.value)">${optionsHtml}</select></td>
+        <td><input type="text" class="dash-contribution-reward-select dash-exguild-match-input" list="${datalistId}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" onchange="setExGuildMatch('${esc(entry.id)}', this.value)"></td>
         <td><button class="dash-banner-del-btn" onclick="deleteExGuildEntry('${esc(entry.id)}')" title="${esc(adminT('adminDelete'))}">x</button></td>
       </tr>`;
     })
     .join('');
-  host.innerHTML = `<table class="dash-banner-table">
+  host.innerHTML = `${datalistHtml}<table class="dash-banner-table">
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
