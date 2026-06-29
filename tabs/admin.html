@@ -1178,32 +1178,23 @@
               No contribution lists yet.
             </div>
           </div>
-          <details class="dash-exguild-section" style="margin-top: 1.5rem">
-            <summary
-              style="
-                cursor: pointer;
-                font-weight: 700;
-                font-size: 0.85rem;
-                color: var(--text-muted);
-                padding: 0.5rem 0;
-              "
-            >
-              <span data-i18n="adminExGuildToggle">Legacy / Ex-Guild Data</span>
-            </summary>
-            <div class="dash-card-hdr" style="padding: 0.5rem 0; border: none">
-              <div style="display: flex; gap: 6px; flex-wrap: wrap">
-                <button id="dashExGuildPasteBtn" class="dash-btn" style="font-size: 0.75rem">
+          <section class="dash-exguild-section dash-contribution-compare-card">
+            <div class="dash-contribution-compare-head dash-exguild-head">
+              <div>
+                <strong id="dashExGuildTitle" data-i18n="adminExGuildToggle"
+                  >Legacy / Ex-Guild Data</strong
+                >
+                <span data-i18n="adminExGuildPastePrompt"
+                  >Paste player names and contributions, one per line (Name, Contribution):</span
+                >
+              </div>
+              <div class="dash-card-actions dash-exguild-actions">
+                <button id="dashExGuildPasteBtn" class="dash-btn" type="button">
                   <span data-i18n="adminExGuildPasteRows">Paste Ex-Guild Rows</span>
                 </button>
-                <label
-                  id="dashExGuildUploadBtn"
-                  class="dash-btn dash-btn-primary dash-file-trigger"
-                  for="dashExGuildFileInput"
-                  role="button"
-                  tabindex="0"
-                  style="font-size: 0.75rem"
-                  ><span data-i18n="adminExGuildUploadImage">Upload Ex-Guild Image</span></label
-                >
+                <button id="dashExGuildUploadBtn" class="dash-btn dash-btn-primary" type="button">
+                  <span data-i18n="adminExGuildUploadImage">Upload Ex-Guild Image</span>
+                </button>
               </div>
               <input
                 id="dashExGuildFileInput"
@@ -1220,7 +1211,7 @@
                 No ex-guild legacy data yet.
               </div>
             </div>
-          </details>
+          </section>
         </div>
       </div>
 

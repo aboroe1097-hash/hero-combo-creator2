@@ -1743,6 +1743,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
       'Weighted Total Contribution'
     );
+    await page.evaluate(() => window.switchDashSubtab('contributions'));
+    await expect(page.locator('#dashExGuildTitle')).toBeVisible();
+    await expect(page.locator('#dashExGuildPasteBtn')).toBeVisible();
+    await expect(page.locator('#dashExGuildUploadBtn')).toBeVisible();
+    await expect(page.locator('#dashExGuildBody')).toContainText('Alpha');
 
     await page.locator('#dashExportMenuBtn').click();
     const weightedDownloadPromise = page.waitForEvent('download');

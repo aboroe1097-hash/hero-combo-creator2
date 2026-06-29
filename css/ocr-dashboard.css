@@ -4432,6 +4432,16 @@ body[style*='overflow: hidden'] .tab-panel {
   font-size: 0.76rem;
   font-weight: 700;
 }
+#ocrDashboardRoot .dash-exguild-section {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+#ocrDashboardRoot .dash-exguild-head {
+  align-items: flex-start;
+}
+#ocrDashboardRoot .dash-exguild-actions {
+  justify-content: flex-end;
+}
 #ocrDashboardRoot .dash-contribution-compare-controls {
   margin-bottom: 0.8rem;
 }

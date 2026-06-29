@@ -41,6 +41,7 @@ import {
   loadContributionRecords,
   loadExGuildContributions,
   showContributionPasteForm,
+  showExGuildPasteForm,
   processContributionImages,
   editContributionRecord,
   deleteContributionRecord,
@@ -2662,29 +2663,7 @@ export async function bootOcrDashboard() {
       refreshRosterSnapshotLabel();
       renderCloudSyncStatus();
       if ($id('dashChart')) render();
-      const exGuildPasteBtn = $id('dashExGuildPasteBtn');
-      const exGuildUploadBtn = $id('dashExGuildUploadBtn');
-      const exGuildInput = $id('dashExGuildFileInput');
-      if (exGuildPasteBtn) exGuildPasteBtn.onclick = showExGuildPasteForm;
-      if (exGuildUploadBtn && exGuildInput) {
-        exGuildUploadBtn.onclick = () => {
-          if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
-          exGuildInput.value = '';
-          exGuildInput.click();
-        };
-        exGuildUploadBtn.onkeydown = (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
-          exGuildInput.value = '';
-          exGuildInput.click();
-        };
-        exGuildInput.onchange = () => {
-          const files = Array.from(exGuildInput.files || []);
-          exGuildInput.value = '';
-          if (files.length) processContributionImages(files, 'exguild');
-        };
-      }
+      bindExGuildControls();
       renderContributions();
       renderConductAdjustments();
     });
@@ -2695,6 +2674,7 @@ export async function bootOcrDashboard() {
   if (loginUser && !loginUser.value) loginUser.value = '1097';
   bindSubtabNavigation();
   bindConductControls();
+  bindExGuildControls();
   loadRosterSnapshots();
   loadBannerRecords();
   loadDutyRecords();
@@ -2928,6 +2908,32 @@ export async function bootOcrDashboard() {
       if (!ready) showOcrBlockedFeedback(options);
     });
     return false;
+  }
+
+  function bindExGuildControls() {
+    const exGuildPasteBtn = $id('dashExGuildPasteBtn');
+    const exGuildUploadBtn = $id('dashExGuildUploadBtn');
+    const exGuildInput = $id('dashExGuildFileInput');
+    if (exGuildPasteBtn) exGuildPasteBtn.onclick = showExGuildPasteForm;
+    if (exGuildUploadBtn && exGuildInput) {
+      exGuildUploadBtn.onclick = () => {
+        if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
+        exGuildInput.value = '';
+        exGuildInput.click();
+      };
+      exGuildUploadBtn.onkeydown = (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        if (!canUseOcr({ statusId: 'dashContributionStatus' })) return;
+        exGuildInput.value = '';
+        exGuildInput.click();
+      };
+      exGuildInput.onchange = () => {
+        const files = Array.from(exGuildInput.files || []);
+        exGuildInput.value = '';
+        if (files.length) processContributionImages(files, 'exguild');
+      };
+    }
   }
 
   // Run on boot and whenever key input changes
