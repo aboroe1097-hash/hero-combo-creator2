@@ -25,7 +25,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "^1.61.1",
     "cssnano": "^8.0.2",
     "eslint": "^8.57.1",
     "firebase-admin": "^14.0.0",
