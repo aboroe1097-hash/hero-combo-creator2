@@ -970,13 +970,15 @@ function setWeightedContributionCompactView(enabled) {
   } catch {
     // Keep the in-page toggle usable even when localStorage is unavailable.
   }
-  document.querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card').forEach((card) => {
-    card.classList.toggle('dash-weighted-compact', enabled);
-    card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
-      button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-      button.textContent = enabled ? 'Full View' : 'Compact View';
+  document
+    .querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card')
+    .forEach((card) => {
+      card.classList.toggle('dash-weighted-compact', enabled);
+      card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+        button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        button.textContent = enabled ? 'Full View' : 'Compact View';
+      });
     });
-  });
 }
 
 function renderWeightedContributionViewToggle(compact) {
