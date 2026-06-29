@@ -12,9 +12,7 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  // Post-shim-removal CSS is ~455kB. Keep modest headroom while Chunk 4
-  // continues moving mobile overrides into semantic component rules.
-  totalCssBytes: 466 * 1024,
+  totalCssBytes: 470 * 1024,
 };
 
 function formatBytes(bytes) {

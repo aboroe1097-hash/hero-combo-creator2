@@ -998,7 +998,7 @@ section.tab-panel:not(.hidden) {
 .saved-combo-slots {
   display: flex; flex-direction: row; justify-content: center; align-items: center;
   flex-grow: 1; gap: 12px; flex-wrap: nowrap;
-  overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch;
+  overflow-x: auto; padding: 4px 0;
 }
 .generated-combo-card .saved-combo-slots {
   flex-grow: 0;
@@ -2180,7 +2180,6 @@ input[type=number] { -moz-appearance: textfield; }
 .research-page-tabs {
   display: flex; gap: 4px; padding: 8px 10px 4px;
   overflow-x: auto; scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid rgba(51,65,85,0.45);
   background: rgba(8,12,20,0.85);
 }
@@ -3165,7 +3164,6 @@ input[type=number] { -moz-appearance: textfield; }
 }
 .heroes-filter-pills {
   display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to right, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
   width: 100%;
@@ -3194,7 +3192,6 @@ input[type=number] { -moz-appearance: textfield; }
 /* â”€â”€ 3a2. Heroes tab â€” season selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .heroes-season-tabs {
   display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(to right, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
   width: 100%;
@@ -3256,7 +3253,6 @@ input[type=number] { -moz-appearance: textfield; }
     max-height: calc(100svh - 24px);
     overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
     padding-right: 2px;
   }
@@ -7427,12 +7423,10 @@ body {
   box-shadow: none !important;
   border-radius: 0 !important;
   padding: 0.15rem !important;
-  -webkit-overflow-scrolling: touch;
 }
 
 .season-filter-strip {
   padding-right: 20px;
-  -webkit-overflow-scrolling: touch;
   -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
   mask-image: linear-gradient(to right, black 90%, transparent 100%);
 }
@@ -11528,7 +11522,6 @@ body.hide-hero-info #heroTooltip {
   max-width: 100% !important;
   padding: 0.18rem 0.7rem !important;
   scroll-padding-inline: 0.7rem;
-  -webkit-overflow-scrolling: touch;
 }
 
 #tabNavScroll > div {

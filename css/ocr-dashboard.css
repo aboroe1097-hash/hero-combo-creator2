@@ -3070,7 +3070,6 @@ body[style*='overflow: hidden'] .tab-panel {
   border-radius: var(--radius-xl);
   overflow-x: auto;
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   max-width: 100%;
 }
 #ocrDashboardRoot .dash-subtab-nav::-webkit-scrollbar {
