@@ -37,6 +37,7 @@ import {
   getSpecialAccountIdentityKey,
   resolveCanonicalPlayerIdentity,
   stripGuildTagsFromPlayerName,
+  stripExGuildGuildTag,
   summarizeCanonicalPlayerRecords,
 } from './ocr-name-normalizer.js';
 import {
@@ -1859,6 +1860,17 @@ function clearExGuildData() {
   renderExGuildTable();
 }
 
+// Manually map an ex-guild entry to a current roster player (empty = unmatched).
+// The matched player receives the ex-guild contribution in the weighted table.
+function setExGuildMatch(id, name) {
+  const entry = (state.exGuildContributions || []).find((e) => e.id === id);
+  if (!entry) return;
+  entry.matchedName = String(name || '').trim();
+  saveExGuildContributions();
+  renderExGuildTable();
+  refreshDashboardOverview();
+}
+
 function parseContributionValue(value) {
   const text = String(value || '').replace(/[^\d]/g, '');
   const parsed = Number(text);
@@ -2838,29 +2850,48 @@ function renderExGuildTable() {
     (state.contributionRecords || [])[state.contributionRecords.length - 1];
   const primaryKeys = new Set();
   (primaryRecord?.entries || []).forEach((entry) => {
-    try { primaryKeys.add(compactPlayerIdentity(entry.name || '')); } catch {}
+    try { primaryKeys.add(compactPlayerIdentity(stripGuildTagsFromPlayerName(entry.name || ''))); } catch {}
   });
   if (!entries.length) {
     host.innerHTML = `<div class="dash-empty">${esc(adminT('adminExGuildEmpty'))}</div>`;
     return;
   }
+  // Manual-match targets: the current roster players, sorted.
+  const rosterOptions = (state.rosterNames || [])
+    .slice()
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
   const rowsHtml = entries
     .map((entry) => {
-      const matched = primaryKeys.has(compactPlayerIdentity(entry.playerName || ''));
+      const cleanName = stripExGuildGuildTag(entry.playerName || '');
+      const manualMatch = String(entry.matchedName || '').trim();
+      let autoKey = '';
+      try { autoKey = compactPlayerIdentity(cleanName); } catch {}
+      const matched = Boolean(manualMatch) || primaryKeys.has(autoKey);
       const statusBadge = matched
         ? `<span class="dash-badge dash-badge-ok">${esc(adminT('adminExGuildMatched'))}</span>`
         : `<span class="dash-badge">${esc(adminT('adminExGuildUnmatched'))}</span>`;
+      const optionsHtml = [
+        `<option value="">${esc(adminT('adminDutyMatchUnmatchedOption'))}</option>`,
+      ]
+        .concat(
+          rosterOptions.map(
+            (n) => `<option value="${esc(n)}"${manualMatch === n ? ' selected' : ''}>${esc(n)}</option>`
+          )
+        )
+        .join('');
       return `<tr>
-        <td>${esc(entry.playerName || '')}</td>
+        <td><strong>${esc(cleanName)}</strong></td>
         <td style="text-align:right;font-weight:800">${formatContributionValue(entry.contribution)}</td>
         <td style="font-size:0.72rem;color:var(--text-dim)">${esc(entry.sourceNote || '')}</td>
         <td>${statusBadge}</td>
+        <td><select class="dash-contribution-reward-select" onchange="setExGuildMatch('${esc(entry.id)}', this.value)">${optionsHtml}</select></td>
         <td><button class="dash-banner-del-btn" onclick="deleteExGuildEntry('${esc(entry.id)}')" title="${esc(adminT('adminDelete'))}">x</button></td>
       </tr>`;
     })
     .join('');
   host.innerHTML = `<table class="dash-banner-table">
-    <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th></th></tr></thead>
+    <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
   <div style="margin-top:0.5rem">
@@ -2920,6 +2951,10 @@ export {
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,
+  setContributionPrimary,
   exportContributionRecords,
   renderContributions,
+  deleteExGuildEntry,
+  clearExGuildData,
+  setExGuildMatch,
 };

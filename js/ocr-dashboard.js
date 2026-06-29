@@ -46,8 +46,12 @@ import {
   editContributionRecord,
   deleteContributionRecord,
   setContributionReward,
+  setContributionPrimary,
   exportContributionRecords,
   renderContributions,
+  deleteExGuildEntry,
+  clearExGuildData,
+  setExGuildMatch,
 } from './ocr-roster.js';
 
 import {
@@ -3507,8 +3511,12 @@ window.renderDutyRecords = renderDutyRecords;
 window.editContributionRecord = editContributionRecord;
 window.deleteContributionRecord = deleteContributionRecord;
 window.setContributionReward = setContributionReward;
+window.setContributionPrimary = setContributionPrimary;
 window.exportContributionRecords = exportContributionRecords;
 window.renderContributions = renderContributions;
+window.deleteExGuildEntry = deleteExGuildEntry;
+window.clearExGuildData = clearExGuildData;
+window.setExGuildMatch = setExGuildMatch;
 window.closeModal = closeModal;
 window.renderRoster = renderRoster;
 window.setRosterFilter = function (key, val) {

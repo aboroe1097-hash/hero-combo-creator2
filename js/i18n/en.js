@@ -1010,6 +1010,7 @@ const en = {
   adminExGuildMatched: '✅ Matched',
   adminExGuildUnmatched: '⏳ Unmatched',
   adminExGuildStatus: 'Status',
+  adminExGuildMatchTo: 'Match to',
   adminExGuildClearAll: 'Clear All Ex-Guild Data',
   adminExGuildTab: 'Ex-Guild Data',
   adminContributionPrimaryTitle: 'This is the default contribution snapshot for dashboard calculation',

@@ -84,6 +84,16 @@ export function stripGuildTagsFromPlayerName(name) {
   return cleaned;
 }
 
+// Ex-guild rosters carry the source guild's tag, e.g. "(BIG)Name", "(Pic)Name",
+// "(V3S)Name". Strip a leading parenthesised guild tag, then any (vts)/(s) tag.
+const EX_GUILD_TAG_RE = /^\s*\([^)]{1,16}\)\s*/;
+export function stripExGuildGuildTag(name) {
+  const once = String(name || '')
+    .replace(EX_GUILD_TAG_RE, '')
+    .trim();
+  return stripGuildTagsFromPlayerName(once);
+}
+
 export function expandDualCreditPlayerNames(player) {
   const displayName = stripGuildTagsFromPlayerName(readName(player));
   if (!displayName) return [];

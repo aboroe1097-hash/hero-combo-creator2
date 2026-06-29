@@ -3,6 +3,7 @@ import { compactPlayerIdentity, expandDutyRawNames, getDutyCreditedNames } from 
 import {
   getSpecialAccountIdentityKey,
   resolveCanonicalPlayerIdentity,
+  stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
@@ -260,7 +261,10 @@ function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
 function buildExGuildMap(exGuildContributions = []) {
   const map = new Map();
   (Array.isArray(exGuildContributions) ? exGuildContributions : []).forEach((entry) => {
-    const identity = resolveWeightedPlayerIdentity(entry?.playerName || entry);
+    // Prefer a manual match; otherwise resolve the ex-guild name with its source
+    // guild tag (e.g. "(BIG)") stripped so it can line up with a roster player.
+    const source = entry?.matchedName || entry?.playerName || entry;
+    const identity = resolveWeightedPlayerIdentity(stripExGuildGuildTag(source));
     if (!identity) return;
     const value = contributionValue(entry);
     if (!value) return;

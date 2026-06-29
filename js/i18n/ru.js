@@ -1011,6 +1011,7 @@ const ru = {
   adminExGuildMatched: '✅ Matched',
   adminExGuildUnmatched: '⏳ Unmatched',
   adminExGuildStatus: 'Status',
+  adminExGuildMatchTo: 'Сопоставить',
   adminExGuildClearAll: 'Clear All Ex-Guild Data',
   adminExGuildTab: 'Ex-Guild Data',
   adminContributionPrimaryTitle: 'This is the default contribution snapshot for dashboard calculation',
