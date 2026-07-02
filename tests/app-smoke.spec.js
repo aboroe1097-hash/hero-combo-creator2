@@ -1616,13 +1616,14 @@ test.describe('app smoke tabs', () => {
     );
     const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
     const altRow = weightedRows.find((cells) => cells[3] === '78,617');
+    const finalRewardCell = (cells) => cells?.[cells.length - 1];
 
     expect(mainRow?.[5]).toBe('1');
     expect(mainRow?.[6]).toBe('1');
-    expect(mainRow?.[10]).toBe('Guild Master Reward');
+    expect(finalRewardCell(mainRow)).toBe('Guild Master Reward');
     expect(altRow?.[5]).toBe('0');
     expect(altRow?.[6]).toBe('0');
-    expect(altRow?.[10]).toBe('Core Rewards');
+    expect(finalRewardCell(altRow)).toBe('Core Rewards');
 
     const mainScoreTrigger = panel
       .locator('tbody tr', { hasText: '144,650' })
