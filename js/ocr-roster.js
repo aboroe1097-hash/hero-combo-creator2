@@ -42,6 +42,7 @@ import {
 } from './ocr-name-normalizer.js';
 import {
   buildWeightedContributionRows,
+  getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
 } from './contribution-weighting.js';
 import {
@@ -1798,7 +1799,57 @@ function collectDutyPlayerSummary(records) {
   }));
 }
 
-function renderDutyPlayerSummary(type, hostId) {
+function buildDutyContributionLookup() {
+  const model = buildWeightedContributionRows({
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    r5Adjustments: state.r5Adjustments,
+    season: state.r5Season,
+    exGuildContributions: state.exGuildContributions,
+  });
+  const byPlayerKey = new Map();
+  const byFamilyKey = new Map();
+  (model.rows || []).forEach((row) => {
+    if (!row?.playerKey) return;
+    byPlayerKey.set(row.playerKey, row);
+    const familyKey = getWeightedPlayerFamilyKey(row.playerKey);
+    if (!familyKey) return;
+    if (row.isPrimaryAccount || !byFamilyKey.has(familyKey)) {
+      byFamilyKey.set(familyKey, row);
+    }
+  });
+  return { record: model.record, byPlayerKey, byFamilyKey };
+}
+
+function getDutyContributionTarget(row, lookup) {
+  if (!row?.playerKey || !lookup) return null;
+  const familyKey = getWeightedPlayerFamilyKey(row.playerKey);
+  return (
+    (familyKey ? lookup.byFamilyKey.get(familyKey) : null) ||
+    lookup.byPlayerKey.get(row.playerKey) ||
+    null
+  );
+}
+
+function renderDutyContributionTarget(row, lookup) {
+  const recordEntries = Array.isArray(lookup?.record?.entries) ? lookup.record.entries : [];
+  if (!recordEntries.length) {
+    return `<span class="dash-duty-contribution-miss">${esc(adminT('adminDutyContributionNoSnapshot'))}</span>`;
+  }
+  const target = getDutyContributionTarget(row, lookup);
+  if (!target) {
+    return `<span class="dash-duty-contribution-miss">${esc(adminT('adminDutyContributionNoMatch'))}</span>`;
+  }
+  const name = target.playerName || target.sourceName || '';
+  const rank = target.currentRank ? `<small>#${esc(target.currentRank)}</small>` : '';
+  const familyCredit =
+    target.playerKey !== row.playerKey
+      ? `<small>${esc(adminT('adminDutyContributionFamilyCredit'))}</small>`
+      : '';
+  return `<span class="dash-duty-contribution-target"><strong>${esc(name)}</strong>${rank}${familyCredit}</span>`;
+}
+
+function renderDutyPlayerSummary(type, hostId, contributionLookup = buildDutyContributionLookup()) {
   const host = $id(hostId);
   if (!host) return;
   const records = dutyRecordsForType(type).slice().reverse();
@@ -1820,11 +1871,12 @@ function renderDutyPlayerSummary(type, hostId) {
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
-        <thead><tr><th>${esc(adminT('adminDutySummaryPlayer'))}</th><th>${esc(adminT('adminDutySummaryEntries'))}</th><th>${esc(adminT('adminDutyStatus'))}</th><th>${esc(adminT('adminDutySummaryTimes'))}</th></tr></thead>
+        <thead><tr><th>${esc(adminT('adminDutySummaryPlayer'))}</th><th>${esc(adminT('adminDutyContributionTarget'))}</th><th>${esc(adminT('adminDutySummaryEntries'))}</th><th>${esc(adminT('adminDutyStatus'))}</th><th>${esc(adminT('adminDutySummaryTimes'))}</th></tr></thead>
         <tbody>${rows
           .map(
             (row) => `<tr>
           <td><strong class="dash-duty-cell-value">${esc(row.playerName)}</strong></td>
+          <td><span class="dash-duty-cell-value">${renderDutyContributionTarget(row, contributionLookup)}</span></td>
           <td><span class="dash-duty-cell-value">${row.entries}</span></td>
           <td><span class="dash-duty-cell-value dash-duty-status-breakdown">${formatDutyStatusBreakdown(row.statusCounts)}</span></td>
           <td><span class="dash-duty-cell-value dash-duty-times">${summarizeDutyValues(row.times, 8)}</span></td>
@@ -1934,8 +1986,9 @@ function renderDutySummary() {
 }
 
 function renderDutyRecords() {
-  renderDutyPlayerSummary('banner', 'dashBannerListSummary');
-  renderDutyPlayerSummary('pather', 'dashPatherListSummary');
+  const contributionLookup = buildDutyContributionLookup();
+  renderDutyPlayerSummary('banner', 'dashBannerListSummary', contributionLookup);
+  renderDutyPlayerSummary('pather', 'dashPatherListSummary', contributionLookup);
   renderDutyType('banner');
   renderDutyType('pather');
   renderDutyType('shield_wall');
@@ -2325,6 +2378,7 @@ function showContributionConfirmModal(
     const synced = await saveContributionRecords({ immediate: true, awaitCloud: true });
     closeModal();
     renderContributions();
+    renderDutyRecords();
     refreshDashboardOverview();
     log(
       adminT(existingRecord ? 'adminContributionUpdatedLog' : 'adminContributionSavedLog', {
@@ -2503,6 +2557,7 @@ function deleteContributionRecord(id) {
   state.contributionRecords.splice(index, 1);
   saveContributionRecords();
   renderContributions();
+  renderDutyRecords();
   refreshDashboardOverview();
   log(adminT('adminContributionDeletedLog'), 'warn');
 }
@@ -2513,6 +2568,7 @@ function setContributionPrimary(id) {
   });
   saveContributionRecords();
   renderContributions();
+  renderDutyRecords();
   refreshDashboardOverview();
 }
 
