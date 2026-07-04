@@ -666,23 +666,25 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #ocrDashboardRoot .dash-sigil-body,
+  #ocrDashboardRoot :is(
+    .dash-sigil-body,
+    .dash-sigil-aura,
+    .dash-sigil-grid,
+    .dash-sigil-sweep,
+    .dash-sigil-route,
+    .dash-sigil-ring--ice,
+    .dash-sigil-ring--fire,
+    .dash-sigil-crystal,
+    .dash-sigil-emblem,
+    .dash-sigil-ember,
+    .dash-analytics-card.dash-analytics-in,
+    .dash-dist-fill,
+    .dash-cloud-status[data-state='syncing'] .dash-cloud-status-dot,
+    .dash-roster-progress .spinner
+  ),
   #ocrDashboardRoot .dash-sigil-body::before,
-  #ocrDashboardRoot .dash-sigil-aura,
-  #ocrDashboardRoot .dash-sigil-grid,
-  #ocrDashboardRoot .dash-sigil-sweep,
-  #ocrDashboardRoot .dash-sigil-route,
-  #ocrDashboardRoot .dash-sigil-ring--ice,
-  #ocrDashboardRoot .dash-sigil-ring--fire,
-  #ocrDashboardRoot .dash-sigil-crystal,
-  #ocrDashboardRoot .dash-sigil-emblem,
-  #ocrDashboardRoot .dash-sigil-ember,
-  #ocrDashboardRoot .dash-analytics-card.dash-analytics-in,
-  #ocrDashboardRoot .dash-dist-fill,
   #ocrDashboardRoot .dash-connecting-status::before,
-  #ocrDashboardRoot .dash-connecting-bar-fill::after,
-  #ocrDashboardRoot .dash-cloud-status[data-state='syncing'] .dash-cloud-status-dot,
-  #ocrDashboardRoot .dash-roster-progress .spinner {
+  #ocrDashboardRoot .dash-connecting-bar-fill::after {
     animation: none !important;
   }
   #ocrDashboardRoot .dash-structure-item,
@@ -4220,15 +4222,6 @@ body[style*='overflow: hidden'] .tab-panel {
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 800;
-}
-#ocrDashboardRoot .dash-duty-status-breakdown {
-  display: inline-block;
-  max-width: 100%;
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 800;
-  line-height: 1.45;
-  white-space: normal;
 }
 #ocrDashboardRoot .dash-banner-team-tag {
   display: inline-block;
