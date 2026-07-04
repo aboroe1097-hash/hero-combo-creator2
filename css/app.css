@@ -13233,6 +13233,12 @@ body.admin-standalone-page > .app-shell {
   gap: 12px !important;
 }
 
+@media (max-width: 768px) {
+  .command-header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 .command-kicker {
   align-self: stretch !important;
   justify-content: center;

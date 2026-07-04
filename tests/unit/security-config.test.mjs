@@ -14,14 +14,14 @@ test('admin dashboard uses Firebase auth instead of local password markers', () 
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /signInWithUsername/);
-  assert.match(source, /isPasswordAuthUser/);
+  assert.match(source, /isAdminAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
   assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
   assert.doesNotMatch(source, /sessionStorage\.setItem\('vts_guest'/);
   assert.match(firebase, /signInWithEmailAndPassword/);
   assert.match(firebase, /usernameToEmail/);
-  assert.match(firebase, /isPasswordAuthUser/);
+  assert.match(firebase, /isAdminAuthUser/);
 });
 
 test('firebase config reads public web config without committed Google API keys', () => {
@@ -58,6 +58,23 @@ test('firebase app check token requests retry transient recaptcha failures', () 
   assert.match(source, /getToken\(currentAppCheck, forceRefresh \|\| attempt > 0\)/);
   assert.match(source, /unhandledrejection/);
   assert.match(source, /reCAPTCHA timed out/);
+});
+
+test('anonymous auth waits for persisted admin sessions before sign-in', () => {
+  const source = readFileSync('js/firebase.js', 'utf8');
+  const ensureStart = source.indexOf('export async function ensureAnonymousAuth()');
+  const ensureEnd = source.indexOf('async function ensureFirebaseAppCheck()', ensureStart);
+  assert.notEqual(ensureStart, -1);
+  assert.notEqual(ensureEnd, -1);
+  const ensureSource = source.slice(ensureStart, ensureEnd);
+
+  assert.match(source, /export async function waitForAuthReady\(\)/);
+  assert.match(source, /auth\.authStateReady/);
+  assert.match(ensureSource, /waitForAuthReady\(\)/);
+  assert.match(ensureSource, /signInAnonymously\(auth\)/);
+  assert.ok(
+    ensureSource.indexOf('waitForAuthReady()') < ensureSource.indexOf('signInAnonymously(auth)')
+  );
 });
 
 test('admin dashboard cloud saves are coalesced before Firestore writes', () => {
@@ -97,11 +114,15 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(rules, /request\.resource\.data\.playerRegistry is map/);
 });
 
-test('shared admin dashboard reads stay available while writes require password admin login', () => {
+test('shared admin dashboard reads stay available while writes require admin claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
   assert.match(rules, /function isAdminLogin\(\)/);
-  assert.match(rules, /sign_in_provider == 'password'/);
+  assert.match(rules, /function isAdminLogin\(\)\s*\{\s*return isAdmin\(\);\s*\}/);
+  assert.doesNotMatch(rules, /sign_in_provider == 'password'/);
+  assert.doesNotMatch(dashboard, /isPasswordAuthUser/);
+  assert.match(dashboard, /isAdminAuthUser/);
   assert.match(
     rules,
     /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validDashboardData\(\);/
@@ -114,7 +135,7 @@ test('shared admin dashboard reads stay available while writes require password 
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
 });
 
-test('R5 conduct adjustments are stored separately and use the shared password admin login', () => {
+test('R5 conduct adjustments are stored separately and use the admin claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
 
   assert.match(rules, /function validConductAdjustment\(\)/);

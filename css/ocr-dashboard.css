@@ -446,8 +446,11 @@
 
 /* Central shield emblem */
 #ocrDashboardRoot .dash-sigil-emblem {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
+  transform: translate(-50%, -50%);
   width: 74px;
   height: 74px;
   display: flex;
@@ -462,10 +465,6 @@
     inset 0 0 16px rgba(34, 211, 238, 0.13),
     0 0 0 3px rgba(251, 191, 36, 0.14);
   animation: dash-sigil-emblem 2.4s ease-in-out infinite;
-}
-#ocrDashboardRoot .dash-sigil-emblem svg {
-  position: relative;
-  z-index: 1;
 }
 @keyframes dash-sigil-emblem {
   0%,

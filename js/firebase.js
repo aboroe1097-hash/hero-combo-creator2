@@ -267,12 +267,27 @@ export function getCurrentUser() {
   return auth?.currentUser || null;
 }
 
-export function isPasswordAuthUser(userOverride = null) {
-  const user = userOverride || auth?.currentUser || null;
-  if (!user || user.isAnonymous) return false;
-  const providers = Array.isArray(user.providerData) ? user.providerData : [];
-  if (!providers.length) return true;
-  return providers.some((provider) => provider?.providerId === 'password');
+export async function waitForAuthReady() {
+  if (!auth) throw new Error('Firebase not initialized');
+  await ensureAuthPersistence();
+  if (typeof auth.authStateReady === 'function') {
+    await auth.authStateReady();
+    return auth.currentUser || null;
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsubscribe = () => {};
+    let timeout = null;
+    const finish = (user = null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      unsubscribe();
+      resolve(user || auth.currentUser || null);
+    };
+    timeout = setTimeout(() => finish(auth.currentUser), 1500);
+    unsubscribe = onAuthStateChanged(auth, finish);
+  });
 }
 
 export async function ensureAnonymousAuth() {
@@ -280,32 +295,16 @@ export async function ensureAnonymousAuth() {
   if (auth.currentUser) return auth.currentUser;
   if (authInFlight) return authInFlight;
 
-  await ensureAuthPersistence();
-
-  authInFlight = new Promise((resolve, reject) => {
-    let unsubs = () => {};
-    const timeout = setTimeout(() => {
-      unsubs();
+  authInFlight = (async () => {
+    try {
+      const restoredUser = await waitForAuthReady();
+      if (restoredUser) return restoredUser;
+      const credential = await signInAnonymously(auth);
+      return credential.user;
+    } finally {
       authInFlight = null;
-      reject(new Error('Auth timed out'));
-    }, 10000);
-
-    unsubs = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        clearTimeout(timeout);
-        unsubs();
-        authInFlight = null;
-        resolve(user);
-      }
-    });
-
-    signInAnonymously(auth).catch((err) => {
-      clearTimeout(timeout);
-      unsubs();
-      authInFlight = null;
-      reject(err);
-    });
-  });
+    }
+  })();
 
   return authInFlight;
 }
@@ -341,6 +340,12 @@ export async function getFirebaseAdminClaim(forceRefresh = false, userOverride =
   if (!user || user.isAnonymous) return false;
   const token = await getIdTokenResult(user, forceRefresh);
   return token?.claims?.admin === true;
+}
+
+export async function isAdminAuthUser(userOverride = null, options = {}) {
+  const user = userOverride || auth?.currentUser || null;
+  if (!user || user.isAnonymous) return false;
+  return getFirebaseAdminClaim(Boolean(options.forceRefresh), user);
 }
 
 export async function getFirebaseAppCheckToken(forceRefresh = false) {

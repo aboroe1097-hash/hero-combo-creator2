@@ -859,10 +859,10 @@ async function ensureDashboardCloudInitialized() {
   return state._cloudInitPromise;
 }
 
-async function waitForPasswordAdminUser(timeoutMs = 4000) {
-  const { getCurrentUser, isPasswordAuthUser, onUserChanged } = await loadFirebaseApi();
+async function waitForAdminAuthUser(timeoutMs = 4000, options = {}) {
+  const { getCurrentUser, isAdminAuthUser, onUserChanged } = await loadFirebaseApi();
   const currentUser = getCurrentUser() || state.adminUser;
-  if (isPasswordAuthUser(currentUser)) return currentUser;
+  if (await isAdminAuthUser(currentUser, options)) return currentUser;
 
   return new Promise((resolve) => {
     let done = false;
@@ -878,7 +878,11 @@ async function waitForPasswordAdminUser(timeoutMs = 4000) {
     };
     const timeout = setTimeout(() => finish(null), timeoutMs);
     unsubscribe = onUserChanged((user) => {
-      if (isPasswordAuthUser(user)) finish(user);
+      Promise.resolve(isAdminAuthUser(user, options))
+        .then((isAdmin) => {
+          if (isAdmin) finish(user);
+        })
+        .catch(() => {});
     });
   });
 }
@@ -886,16 +890,16 @@ async function waitForPasswordAdminUser(timeoutMs = 4000) {
 async function ensureCloudSyncReady() {
   await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
-  const { getCurrentUser, getDb, isPasswordAuthUser } = await loadFirebaseApi();
+  const { getCurrentUser, getDb, isAdminAuthUser } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
   let currentUser = getCurrentUser() || state.adminUser;
-  if (!isPasswordAuthUser(currentUser) && state.adminIsAdmin === true) {
-    currentUser = (await waitForPasswordAdminUser()) || currentUser;
+  let hasAdminClaim = await isAdminAuthUser(currentUser);
+  if (!hasAdminClaim && state.adminIsAdmin === true) {
+    currentUser = (await waitForAdminAuthUser(4000, { forceRefresh: true })) || currentUser;
+    hasAdminClaim = await isAdminAuthUser(currentUser);
   }
-  const hasDashboardAdminSession =
-    state.adminIsAdmin === true && currentUser && currentUser.isAnonymous !== true;
-  if (!isPasswordAuthUser(currentUser) && !hasDashboardAdminSession) {
+  if (!hasAdminClaim) {
     state.adminUser = null;
     state.adminIsAdmin = false;
     state.cloudAdminReady = false;
@@ -1584,10 +1588,10 @@ async function doLogin() {
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
   try {
-    const { signInWithUsername, isPasswordAuthUser } = await loadFirebaseApi();
+    const { signInWithUsername, isAdminAuthUser } = await loadFirebaseApi();
     const credential = await signInWithUsername(username, password);
     state.adminUser = credential.user;
-    state.adminIsAdmin = isPasswordAuthUser(credential.user);
+    state.adminIsAdmin = await isAdminAuthUser(credential.user, { forceRefresh: true });
     if (!state.adminIsAdmin) {
       const { signOutUser } = await loadFirebaseApi();
       await signOutUser();
@@ -3046,11 +3050,13 @@ export async function bootOcrDashboard() {
     try {
       const configured = await ensureDashboardCloudInitialized();
       if (configured) {
-        const { onUserChanged, getCurrentUser, isPasswordAuthUser } = await loadFirebaseApi();
+        const { onUserChanged, getCurrentUser, isAdminAuthUser, waitForAuthReady } =
+          await loadFirebaseApi();
+        await waitForAuthReady();
         if (!state._adminAuthUnsub) {
           state._adminAuthUnsub = onUserChanged(async (user) => {
             if (!user) {
-              const restoredUser = await waitForPasswordAdminUser(1500);
+              const restoredUser = await waitForAdminAuthUser(1500, { forceRefresh: true });
               if (restoredUser) {
                 state.adminUser = restoredUser;
                 state.adminIsAdmin = true;
@@ -3065,9 +3071,11 @@ export async function bootOcrDashboard() {
             try {
               const wasAdmin = state.adminIsAdmin === true;
               state.adminUser = user;
-              state.adminIsAdmin = isPasswordAuthUser(user);
+              state.adminIsAdmin = await isAdminAuthUser(user);
               if (!state.adminIsAdmin) {
-                const restoredUser = wasAdmin ? await waitForPasswordAdminUser(1500) : null;
+                const restoredUser = wasAdmin
+                  ? await waitForAdminAuthUser(1500, { forceRefresh: true })
+                  : null;
                 if (restoredUser) {
                   state.adminUser = restoredUser;
                   state.adminIsAdmin = true;
@@ -3091,7 +3099,9 @@ export async function bootOcrDashboard() {
         const currentUser = getCurrentUser() || state.adminUser;
         if (currentUser) {
           state.adminUser = currentUser;
-          state.adminIsAdmin = isPasswordAuthUser(currentUser);
+          state.adminIsAdmin =
+            (await isAdminAuthUser(currentUser)) ||
+            (await isAdminAuthUser(currentUser, { forceRefresh: true }));
           if (state.adminIsAdmin) await openAdminDashboardAfterAuth({ preferCloudFirst: true });
         }
       } else {

@@ -15,9 +15,7 @@ service cloud.firestore {
     }
 
     function isAdminLogin() {
-      return signedIn()
-        && (request.auth.token.firebase.sign_in_provider == 'password'
-          || request.auth.token.admin == true);
+      return isAdmin();
     }
 
     function validComment() {

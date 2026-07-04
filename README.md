@@ -202,14 +202,15 @@ The old maintenance splash/config gate has been removed. `index.html` and `admin
 ### Admin Auth
 The public toolkit still uses Firebase anonymous auth for comments and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
 
-Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require a password admin login or an `admin: true` Firebase custom claim. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Conduct records.
+Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Conduct records.
 
 The dashboard saves OCR results to localStorage first, then uploads to Firestore when cloud sync is available. Failed cloud writes must stay visible in the admin status/log instead of looking like a successful sync. On load, locally cached attacks are merged with cloud attacks by attack id and written back to Firestore when the signed-in admin session can write.
 
-If you also want to grant a Firebase Auth user the stronger custom claim, copy that user's UID and run:
+To grant the shared admin account the custom claim, use the account email or copy that user's UID from Firebase Authentication and run:
 
 ```bash
-$env:FIREBASE_ADMIN_UID="the-auth-uid"
+$env:FIREBASE_ADMIN_EMAIL="1097@abocombo.web.app"
+# or: $env:FIREBASE_ADMIN_UID="the-auth-uid"
 $env:FIREBASE_SERVICE_ACCOUNT_PATH="C:\path\to\service-account.json"
 npm run firebase:admin-claim
 ```
