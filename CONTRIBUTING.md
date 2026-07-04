@@ -53,6 +53,15 @@ npm run i18n:check
 npm run build
 ```
 
+For CSS, theme, layout, or responsive changes, run a fresh production build before committing or pushing:
+
+```bash
+npm run build
+npm run size:check
+```
+
+If the built CSS total grows intentionally, either trim CSS in the same change or update `scripts/check-size.mjs` with the measured build output and a short reason. Do this before pushing so GitHub Actions does not become the first size-budget signal.
+
 ## Pull Requests
 
 - Keep changes focused and explain the player/community impact.

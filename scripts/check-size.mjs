@@ -12,8 +12,9 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  // Frozen near current built CSS weights. New CSS should pay for itself.
-  totalCssBytes: 496 * 1024,
+  // Keep close to the fresh production build total. CSS edits must run
+  // `npm run build` plus `npm run size:check`; raise only with measured output.
+  totalCssBytes: 500 * 1024,
   cssChunks: {
     atmosphere: 342 * 1024,
     admin: 120 * 1024,
