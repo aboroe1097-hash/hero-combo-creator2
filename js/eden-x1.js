@@ -485,6 +485,16 @@ function updateTextContent(lang) {
     if (dict[key]) el.title = t(key);
   });
 
+  document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-label');
+    if (dict[key]) el.label = t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-aria');
+    if (dict[key]) el.setAttribute('aria-label', t(key));
+  });
+
   syncGameClockTitles();
   renderCurrentTable();
 }

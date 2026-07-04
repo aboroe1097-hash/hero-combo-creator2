@@ -12425,7 +12425,9 @@ body.admin-standalone-page .admin-control-row {
 .command-actions .lang-select-wrapper {
   position: relative;
   display: inline-block;
+  width: min(10rem, 100%);
   min-width: min(10rem, 100%);
+  max-width: 10rem;
 }
 
 .lang-select-wrapper > div,
@@ -12474,6 +12476,7 @@ body.admin-standalone-page .admin-control-row {
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
+  text-overflow: ellipsis;
 }
 
 #languageSelect option,

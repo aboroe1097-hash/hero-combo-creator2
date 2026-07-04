@@ -80,7 +80,7 @@ const visualSurfaces = [
 const WEIGHTED_TITLE_TEXT =
   /Weighted Total Contribution|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0439 \u043e\u0431\u0449\u0438\u0439 \u0432\u043a\u043b\u0430\u0434/;
 const WEIGHTED_SCORE_TEXT =
-  /Weighted score|Weighted Score|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0435 \u043e\u0447\u043a\u0438/;
+  /Weighted score|Weighted Score|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0435 \u043e\u0447\u043a\u0438|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0439 \u0431\u0430\u043b\u043b/;
 
 async function stabilizeVisuals(page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1812,9 +1812,36 @@ test.describe('app smoke tabs', () => {
     expect(noticeTitleStyle.fontSize).toBeGreaterThan(22);
     expect(noticeTitleStyle.textAlign).toBe('center');
     expect(noticeTitleStyle.flexBasis).toBe('100%');
+    const languageLabels = await page.locator('#languageSelect option').evaluateAll((options) =>
+      options.map((option) => option.textContent.trim())
+    );
+    expect(languageLabels).toEqual([
+      'English',
+      'Español',
+      'Português',
+      'Deutsch',
+      'Français',
+      'Türkçe',
+      'Русский',
+      'Bahasa Indonesia',
+      '中文',
+      'العربية',
+      '한국어',
+    ]);
     await page.locator('#languageSelect').selectOption('es');
     await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');
     await expect(page.locator('.eden-x1-notice')).toContainText('recompensas finales');
+    await page.locator('#languageSelect').selectOption('zh');
+    await expect(page.locator('.eden-x1-notice strong')).toHaveText('演示视图 - 非最终版。');
+    await expect(page.locator('.eden-x1-reward-panel')).toContainText('奖励流程');
+    await expect(page.locator('.eden-x1-reward-panel')).toContainText('计划的前20名奖励分配');
+    await expect(page.locator('.eden-x1-reward-flow')).toHaveAttribute(
+      'aria-label',
+      '计划的前20名奖励分配'
+    );
+    await expect(page.locator('[data-reward-view="support"]')).toContainText('支援工作');
+    await expect(panel.locator('h2')).toContainText('支援工作');
+    await expect(panel.locator('thead')).toContainText('加权分数');
     await page.locator('#languageSelect').selectOption('en');
 
     const supportCard = page.locator('[data-reward-view="support"]');

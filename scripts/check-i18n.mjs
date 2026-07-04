@@ -8,9 +8,84 @@ await Promise.all(availableLanguages.map(lang => loadTranslationsForLanguage(lan
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const htmlFiles = [
   'index.html',
+  'admin.html',
+  'eden-x1.html',
   ...fs.readdirSync(path.join(rootDir, 'tabs'))
     .filter(name => name.endsWith('.html'))
     .map(name => path.join('tabs', name)),
+];
+
+const NON_FALLBACK_EDEN_X1_KEYS = [
+  'adminContributionRewardGuildMaster',
+  'adminContributionRewardCore',
+  'adminContributionRewardPowerHouse',
+  'adminContributionRewardMembers',
+  'adminContributionRewardPremium',
+  'adminContributionRewardStandard',
+  'adminContributionRewardReview',
+  'adminContributionRewardNone',
+  'adminContributionRewardAuto',
+  'edenX1Kicker',
+  'edenX1Intro',
+  'edenX1DeckLabel',
+  'edenX1AdminDashboard',
+  'edenX1NoticeTitle',
+  'edenX1NoticeCopy',
+  'edenX1RewardFlowEyebrow',
+  'edenX1RewardFlowTitle',
+  'edenX1RewardFlowSubtitle',
+  'edenX1RewardLeaderboardTitle',
+  'edenX1RewardLeaderboardCopy',
+  'edenX1RewardSupportTitle',
+  'edenX1RewardSupportCopy',
+  'edenX1RewardManagementTitle',
+  'edenX1RewardManagementCopy',
+  'edenX1RewardTeamTitle',
+  'edenX1RewardTeamCopy',
+  'edenX1RewardContributionMeta',
+  'edenX1RewardSupportMeta',
+  'edenX1RewardManagementMeta',
+  'edenX1RewardTeamMeta',
+  'edenX1RewardSlotGroup',
+  'edenX1RewardAssigned',
+  'edenX1RewardManagementVotePending',
+  'edenX1RewardVotePending',
+  'edenX1Tba',
+  'edenX1Loading',
+  'edenX1WeightedTitle',
+  'edenX1ViewOnly',
+  'edenX1NoFirebase',
+  'edenX1NoData',
+  'edenX1NoRows',
+  'edenX1LoadFailed',
+  'edenX1ThShieldWalls',
+  'edenX1ThPathers',
+  'edenX1ThConduct',
+  'edenX1ThWeightedScore',
+  'edenX1ViewLink',
+  'edenX1CompactView',
+  'edenX1FullView',
+  'edenX1WeightedBreakdownTitle',
+  'edenX1WeightedBreakdownAria',
+  'edenX1BreakdownExGuild',
+  'edenX1BreakdownDuty',
+  'edenX1BreakdownConductPoints',
+  'edenX1DutyFormula',
+  'edenX1ConductFormula',
+  'edenX1ConductPrivateNotice',
+  'edenX1ConductAria',
+  'edenX1RankReasonTitle',
+  'edenX1RankReasonAria',
+  'edenX1RankedBy',
+  'edenX1RankMovement',
+  'edenX1RankUp',
+  'edenX1RankDown',
+  'edenX1RankSame',
+  'edenX1RewardReasonTitle',
+  'edenX1RewardReasonAria',
+  'edenX1RewardReasonRank',
+  'edenX1RewardReasonGrant',
+  'edenX1RewardReasonForfeit',
 ];
 
 const I18N_ATTRS = [
@@ -62,6 +137,15 @@ for (const [lang, dict] of Object.entries(translations)) {
       errors.push(`${lang}.${key} must be a string translation value`);
     } else if (value.includes('??') || value.includes('\uFFFD') || /[\p{L}]\?[\p{L}]/u.test(value)) {
       errors.push(`${lang}.${key} contains a broken placeholder translation: ${JSON.stringify(value)}`);
+    }
+  }
+}
+
+for (const [lang, dict] of Object.entries(translations)) {
+  if (lang === 'en') continue;
+  for (const key of NON_FALLBACK_EDEN_X1_KEYS) {
+    if (key in dict && dict[key] === translations.en[key]) {
+      errors.push(`${lang}.${key} still matches the English Eden X1 text`);
     }
   }
 }

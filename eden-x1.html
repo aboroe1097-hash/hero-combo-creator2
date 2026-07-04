@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260704_130658','app.css?v=20260704_130658','ocr-dashboard.css?v=20260704_130658','components.css?v=20260704_130658','atmosphere.css?v=20260704_130658','mobile.css?v=20260704_130658'];
+      var files = ['_tokens.css?v=20260704_184950','app.css?v=20260704_184950','ocr-dashboard.css?v=20260704_184950','components.css?v=20260704_184950','atmosphere.css?v=20260704_184950','mobile.css?v=20260704_184950'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260704_130658') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260704_184950') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260704_130658"></script>
+  <script src="js/maintenance-config.js?v=20260704_184950"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -60,16 +60,16 @@
               </div>
               <select id="languageSelect" class="admin-language-select" aria-label="Language">
                 <option value="en">English</option>
-                <option value="es">Espanol</option>
-                <option value="pt">Portugues</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
                 <option value="de">Deutsch</option>
-                <option value="fr">Francais</option>
-                <option value="tr">Turkce</option>
-                <option value="ru">Russian</option>
-                <option value="id">Indonesia</option>
-                <option value="zh">Chinese</option>
-                <option value="ar">Arabic</option>
-                <option value="kr">Korean</option>
+                <option value="fr">Français</option>
+                <option value="tr">Türkçe</option>
+                <option value="ru">Русский</option>
+              <option value="id">Bahasa Indonesia</option>
+                <option value="zh">中文</option>
+                <option value="ar">العربية</option>
+                <option value="kr">한국어</option>
               </select>
               <div class="lang-select-caret">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -111,7 +111,7 @@
             <h2 id="edenX1RewardFlowTitle" data-i18n="edenX1RewardFlowTitle">Planned Top 20 reward distribution</h2>
             <p data-i18n="edenX1RewardFlowSubtitle">The public list shows the working formula; leadership confirms the final season rewards after all duty records are reviewed.</p>
           </div>
-          <div class="eden-x1-reward-flow" aria-label="Planned Top 20 reward distribution">
+          <div class="eden-x1-reward-flow" aria-label="Planned Top 20 reward distribution" data-i18n-aria="edenX1RewardFlowTitle">
             <button class="eden-x1-flow-card" type="button" data-reward-view="support" data-reward-title-key="edenX1RewardSupportTitle" aria-pressed="false">
               <span class="eden-x1-flow-count">4</span>
               <span class="eden-x1-flow-label" data-i18n="edenX1RewardSupportTitle">Support Work</span>
@@ -173,6 +173,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260704_130658"></script>
+  <script type="module" src="js/eden-x1.js?v=20260704_184950"></script>
 </body>
 </html>
