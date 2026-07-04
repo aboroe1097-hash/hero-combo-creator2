@@ -79,12 +79,12 @@
   </noscript>
   <link rel="preload" as="image" href="images/boot/dreamy-wing-left.webp" type="image/webp" />
   <link rel="preload" as="image" href="images/boot/blazing-wing-right.webp" type="image/webp" />
-  <script src="js/maintenance-config.js?v=20260629_202131"></script>
-  <link rel="stylesheet" href="css/_tokens.css?v=20260629_202131" />
-  <link rel="stylesheet" href="css/app.css?v=20260629_202131" />
-  <link rel="stylesheet" href="css/components.css?v=20260629_202131" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=20260629_202131" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260629_202131" media="(max-width: 768px)" />
+  <script src="js/maintenance-config.js?v=20260704_122413"></script>
+  <link rel="stylesheet" href="css/_tokens.css?v=20260704_122413" />
+  <link rel="stylesheet" href="css/app.css?v=20260704_122413" />
+  <link rel="stylesheet" href="css/components.css?v=20260704_122413" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=20260704_122413" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260704_122413" media="(max-width: 768px)" />
   <script type="importmap">
     {
       "imports": {
@@ -96,7 +96,7 @@
       }
     }
   </script>
-  <script src="js/admin-auth-config.js?v=20260629_202131"></script>
+  <script src="js/admin-auth-config.js?v=20260704_122413"></script>
 </head>
 <body class="app-booting">
   <div class="maintenance-preload" role="status" aria-live="polite">
@@ -301,7 +301,7 @@
           </div>
         </div>
 
-        <div class="tool-filter-block">
+        <div class="tool-filter-block tool-filter-block--troops">
           <h2 id="filterByTroopTitle" data-i18n="filterByTroopTitle" class="section-heading">Filter Troops</h2>
           <div id="troopFilters" class="pill-group">
               <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
@@ -374,7 +374,7 @@
             </div>
           </div>
 
-          <div class="tool-filter-block">
+          <div class="tool-filter-block tool-filter-block--troops">
             <h3 data-i18n="filterByTroopTitle" class="sub-section-heading">Filter Troops</h3>
             <div id="generatorTroopFilters" class="pill-group">
                 <label class="filter-pill archers-pill"><input type="checkbox" value="Archers" /><span data-i18n="troopArchers">Archers</span></label>
@@ -556,10 +556,14 @@
 
       <div class="comments-form-wrap">
         <form id="commentForm" class="comment-form">
-          <div>
+          <div class="comment-identity-row">
             <div class="comment-name-wrap">
               <svg class="comment-field-icon" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
               <input id="commentName" data-i18n-ph="commentNamePh" type="text" class="comment-input" placeholder="Your name (optional)" />
+            </div>
+            <div class="comment-name-wrap">
+              <svg class="comment-field-icon" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c3.75-3.75 7.5-7.108 7.5-11.25a7.5 7.5 0 0 0-15 0C4.5 13.892 8.25 17.25 12 21Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 11.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>
+              <input id="commentState" data-i18n-ph="commentStatePh" type="text" class="comment-input" maxlength="40" placeholder="Your state (optional)" />
             </div>
           </div>
           <textarea id="commentText" data-i18n-ph="commentBodyPh" rows="3" required class="comment-textarea" placeholder="Write a suggestion, report a bug, or share feedback..."></textarea>
@@ -675,7 +679,7 @@
   })();
 
   </script>
-  <script type="module" src="js/app.js?v=20260629_202131"></script>
+  <script type="module" src="js/app.js?v=20260704_122413"></script>
 
 <script>
   // Lazy-load YouTube iframes

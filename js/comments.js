@@ -20,6 +20,7 @@ const MAX_RENDERED_ROOT_COMMENTS = 120;
 // DOM elements
 const commentForm = document.getElementById('commentForm');
 const commentName = document.getElementById('commentName');
+const commentState = document.getElementById('commentState');
 const commentText = document.getElementById('commentText');
 const postCommentBtn = document.getElementById('postCommentBtn');
 const commentsList = document.getElementById('commentsList');
@@ -51,6 +52,7 @@ function commentDocSignature(docSnap) {
     data.approved === false ? '0' : '1',
     data.public === false ? '0' : '1',
     String(data.name || ''),
+    String(data.state || ''),
     String(data.text || '').length,
   ].join(':');
 }
@@ -77,18 +79,28 @@ function createCommentCard(id, data, isReply = false) {
   const wrapper = document.createElement('div');
   wrapper.id = `comment-${id}`;
   const dt = data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000) : new Date();
-  const timeStr = dt.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const timeStr = dt.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   const displayName = data.name?.trim() || 'Anonymous';
   const safeName = escapeHtml(displayName);
+  const safeState = escapeHtml((data.state || '').trim());
   const safeText = escapeHtml(data.text || '');
   const initial = escapeHtml(displayName[0].toUpperCase());
   const isOwn = data.authorId && data.authorId === currentUserId;
 
   // Pick a gradient for avatar based on name char code
   const gradients = [
-    'comment-avatar--blue', 'comment-avatar--violet',
-    'comment-avatar--emerald', 'comment-avatar--orange',
-    'comment-avatar--sky', 'comment-avatar--pink',
+    'comment-avatar--blue',
+    'comment-avatar--violet',
+    'comment-avatar--emerald',
+    'comment-avatar--orange',
+    'comment-avatar--sky',
+    'comment-avatar--pink',
   ];
   const grad = gradients[(displayName.charCodeAt(0) || 65) % gradients.length];
 
@@ -107,6 +119,7 @@ function createCommentCard(id, data, isReply = false) {
     <div class="comment-body">
       <div class="comment-meta-row">
         <span class="comment-author">${safeName}</span>
+        ${safeState ? `<span class="comment-state-badge">S${safeState}</span>` : ''}
         <span class="comment-time">${escapeHtml(timeStr)}</span>
         ${isOwn ? `<button class="del-btn comment-delete-btn">Delete</button>` : ''}
       </div>
@@ -140,7 +153,9 @@ function createCommentCard(id, data, isReply = false) {
   if (submitReplyBtn) submitReplyBtn.onclick = () => window.submitReply(id);
 
   const cancelReplyBtn = wrapper.querySelector('.cancel-reply-btn');
-  if (cancelReplyBtn) cancelReplyBtn.onclick = () => document.getElementById(`reply-form-${id}`).classList.add('hidden');
+  if (cancelReplyBtn)
+    cancelReplyBtn.onclick = () =>
+      document.getElementById(`reply-form-${id}`).classList.add('hidden');
 
   return wrapper;
 }
@@ -157,12 +172,16 @@ function renderCommentsTree(docs) {
   const roots = [];
   const replies = [];
 
-  docs.forEach(docSnap => {
+  docs.forEach((docSnap) => {
     const data = docSnap.data();
     const item = { id: docSnap.id, ...data };
     if (data.approved === false && data.authorId !== currentUserId) return;
     allCommentsMap.set(item.id, item);
-    if (item.parentId) { replies.push(item); } else { roots.push(item); }
+    if (item.parentId) {
+      replies.push(item);
+    } else {
+      roots.push(item);
+    }
   });
   const visibleRoots = roots.slice(0, MAX_RENDERED_ROOT_COMMENTS);
   const visibleRootIds = new Set(visibleRoots.map((root) => root.id));
@@ -171,9 +190,10 @@ function renderCommentsTree(docs) {
   // Update count label
   const countLabel = document.getElementById('commentsCountLabel');
   if (countLabel) {
-    countLabel.textContent = roots.length === 0
-      ? 'No comments yet — be the first!'
-      : `${roots.length} comment${roots.length !== 1 ? 's' : ''}`;
+    countLabel.textContent =
+      roots.length === 0
+        ? 'No comments yet — be the first!'
+        : `${roots.length} comment${roots.length !== 1 ? 's' : ''}`;
   }
 
   if (countLabel && roots.length > MAX_RENDERED_ROOT_COMMENTS) {
@@ -193,13 +213,13 @@ function renderCommentsTree(docs) {
   }
 
   const fragment = document.createDocumentFragment();
-  visibleRoots.forEach(root => {
+  visibleRoots.forEach((root) => {
     const card = createCommentCard(root.id, root, false);
     fragment.appendChild(card);
   });
   commentsList.appendChild(fragment);
 
-  visibleReplies.reverse().forEach(reply => {
+  visibleReplies.reverse().forEach((reply) => {
     const parentContainer = document.getElementById(`replies-${reply.parentId}`);
     if (parentContainer) {
       const card = createCommentCard(reply.id, reply, true);
@@ -214,10 +234,7 @@ function createdAtMillis(docSnap) {
 }
 
 function renderMergedComments() {
-  const docsById = new Map([
-    ...approvedCommentDocs.entries(),
-    ...ownPendingCommentDocs.entries()
-  ]);
+  const docsById = new Map([...approvedCommentDocs.entries(), ...ownPendingCommentDocs.entries()]);
   const docs = [...docsById.values()].sort((a, b) => createdAtMillis(b) - createdAtMillis(a));
   const signature = docs.map(commentDocSignature).join('|');
   if (signature === lastCommentsRenderSignature) return;
@@ -253,7 +270,7 @@ function renderCommentsUnavailable(message = 'Firebase comments are disabled for
 window.submitReply = async (parentId) => {
   const input = document.getElementById(`reply-input-${parentId}`);
   const nameInput = document.getElementById(`reply-name-${parentId}`); // CHANGED: Grab specific name input
-  
+
   const text = input.value.trim();
   if (!text) return;
 
@@ -296,20 +313,27 @@ async function deleteComment(docId) {
   }
 }
 
-async function addCommentToDb(text, name, parentId = null) {
+async function addCommentToDb(text, name, parentId = null, userState = '') {
   const db = await getFirestoreDb();
   if (!db) throw new Error('Firebase comments are not configured');
   const { addDoc, collection, serverTimestamp } = await importFirestore();
 
-  await addDoc(collection(db, 'comments'), {
+  const payload = {
     text,
     name: name || null,
     parentId: parentId,
     authorId: currentUserId,
     createdAt: serverTimestamp(),
     approved: false,
-    public: true
-  });
+    public: true,
+  };
+  const cleanedState = String(userState || '')
+    .trim()
+    .replace(/^s/i, '')
+    .slice(0, 40);
+  if (cleanedState) payload.state = cleanedState;
+
+  await addDoc(collection(db, 'comments'), payload);
 }
 
 /* -------------------------------------------------- */
@@ -378,10 +402,10 @@ function wireCommentsUI() {
     ev.preventDefault();
     const text = commentText.value.trim();
     if (!text) return;
-    
+
     postCommentBtn.disabled = true;
     try {
-      await addCommentToDb(text, commentName.value.trim(), null);
+      await addCommentToDb(text, commentName.value.trim(), null, commentState?.value.trim() || '');
       commentText.value = '';
     } catch (e) {
       console.warn('[comments] post skipped:', e?.message || e);

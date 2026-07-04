@@ -1153,18 +1153,18 @@ function renderWeightedContributionDashboard() {
         <tbody>${sortedWeightedRows(rows)
           .map(
             (row, index) => `<tr>
-          <td><strong>${esc(row.playerName)}</strong></td>
-          <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-          <td class="dash-weighted-detail-col">${esc(contributionRewardLabel(row.currentReward))}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
-          <td class="dash-weighted-detail-col" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
-          <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
-          <td class="dash-weighted-score-cell">${renderFinalRankPopover(row, index)}</td>
-          <td class="dash-weighted-score-cell">${renderFinalRewardPopover(row, index)}</td>
+          <td data-label="Player"><strong>${esc(row.playerName)}</strong></td>
+          <td class="dash-weighted-detail-col" data-label="Current rank">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td class="dash-weighted-detail-col" data-label="Reward">${esc(contributionRewardLabel(row.currentReward))}</td>
+          <td class="dash-weighted-detail-col" data-label="Contribution score" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col" data-label="#Shield Walls" style="text-align:right">${row.shieldWalls}</td>
+          <td class="dash-weighted-detail-col" data-label="#Pathers" style="text-align:right">${row.pathers}</td>
+          <td class="dash-weighted-detail-col" data-label="#Banners" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col" data-label="Total" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" data-label="Conduct (R5)" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
+          <td class="dash-weighted-score-cell" data-label="Weighted score" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
+          <td class="dash-weighted-score-cell" data-label="Final rank">${renderFinalRankPopover(row, index)}</td>
+          <td class="dash-weighted-score-cell" data-label="Final reward">${renderFinalRewardPopover(row, index)}</td>
         </tr>`
           )
           .join('')}</tbody>
@@ -1482,7 +1482,7 @@ function render() {
   toShow.forEach((p) => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td class="dash-rank">#${p.original_rank}</td><td class="dash-pname">${esc(p.name)}</td><td class="dash-val">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center">${p.participation_count}</td><td class="dash-avg">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank" data-label="Rank">#${p.original_rank}</td><td class="dash-pname" data-label="Member">${esc(p.name)}</td><td class="dash-val" data-label="Total demo">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total" data-label="Adjusted total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center" data-label="Hits">${p.participation_count}</td><td class="dash-avg" data-label="Avg/hit">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p);
     tb.appendChild(tr);
   });

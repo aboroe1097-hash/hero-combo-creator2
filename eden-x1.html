@@ -19,86 +19,126 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260629_202131','app.css?v=20260629_202131','ocr-dashboard.css?v=20260629_202131','components.css?v=20260629_202131','atmosphere.css?v=20260629_202131','mobile.css?v=20260629_202131'];
+      var files = ['_tokens.css?v=20260704_122413','app.css?v=20260704_122413','ocr-dashboard.css?v=20260704_122413','components.css?v=20260704_122413','atmosphere.css?v=20260704_122413','mobile.css?v=20260704_122413'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260629_202131') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260704_122413') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260629_202131"></script>
-  <style>
-    .eden-x1-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 1rem;
-      text-align: center;
-    }
-    .eden-x1-loading .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid var(--border-subtle, #334155);
-      border-top-color: var(--blue-400, #60a5fa);
-      border-radius: 50%;
-      animation: eden-spin 0.8s linear infinite;
-      margin-bottom: 1rem;
-    }
-    @keyframes eden-spin {
-      to { transform: rotate(360deg); }
-    }
-    .eden-x1-error {
-      color: var(--red-400, #f87171);
-      padding: 2rem 1rem;
-      text-align: center;
-    }
-  </style>
+  <script src="js/maintenance-config.js?v=20260704_122413"></script>
 </head>
-<body class="admin-standalone-page">
+<body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
-    <header class="command-header admin-command-header">
+    <header class="command-header admin-command-header" aria-label="Eden X1 contribution view">
       <div class="command-brand admin-command-brand">
+        <div class="version-ribbon" data-i18n="edenX1BetaNote">V{version} - Eden X1 Rewards View</div>
         <div class="admin-brand-row">
           <picture><source srcset="images/logo-120.webp" type="image/webp"><img src="images/logo.png" alt="" class="admin-brand-logo dual-glow-logo" width="84" height="84"></picture>
           <div>
-            <h1 class="admin-shell-title">Eden X1</h1>
-            <p class="admin-shell-kicker">Weighted Contribution — View Only</p>
-            <p class="admin-shell-team">TEAM VTS — STATE 1097</p>
+            <h1 class="admin-shell-title" data-i18n="edenX1PageTitle">Eden X1</h1>
+            <p class="admin-shell-kicker" data-i18n="edenX1Kicker">Weighted Contribution - View Only</p>
+            <p class="admin-shell-team">TEAM VTS - STATE 1097</p>
           </div>
         </div>
-        <p class="seo-intro command-copy admin-shell-copy">Season contribution rankings with duty counts, conduct adjustments, and weighted final scores.</p>
+        <p class="seo-intro command-copy admin-shell-copy" data-i18n="edenX1Intro">Season contribution rankings with duty counts, conduct adjustments, and weighted final scores.</p>
       </div>
+
       <div class="command-actions admin-command-actions">
+        <div class="command-kicker" data-i18n="edenX1DeckLabel">S1097 Eden X1 Deck</div>
         <div class="app-control-row admin-control-row">
-          <a href="admin.html" class="admin-back-tools">Admin Dashboard</a>
-          <a href="index.html" class="admin-back-tools">Back to Tools</a>
+          <div id="globalGameClock" class="global-game-clock" data-i18n-title="gameClockTitle" title="Game time"></div>
+          <div class="lang-select-wrapper">
+            <div class="lang-select-shell">
+              <div class="lang-select-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75" />
+                </svg>
+              </div>
+              <select id="languageSelect" class="admin-language-select" aria-label="Language">
+                <option value="en">English</option>
+                <option value="es">Espanol</option>
+                <option value="pt">Portugues</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Francais</option>
+                <option value="tr">Turkce</option>
+                <option value="ru">Russian</option>
+                <option value="id">Indonesia</option>
+                <option value="zh">Chinese</option>
+                <option value="ar">Arabic</option>
+                <option value="kr">Korean</option>
+              </select>
+              <div class="lang-select-caret">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <button id="themeToggle" type="button" aria-label="Toggle light/dark theme" title="Toggle theme">
+            <span class="theme-icon-dark">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            </span>
+            <span class="theme-icon-light hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            </span>
+          </button>
+
+          <a href="admin.html" class="admin-back-tools" data-i18n="edenX1AdminDashboard">Admin Dashboard</a>
+          <a href="index.html" class="admin-back-tools" data-i18n="adminBackToTools">Back to Tools</a>
         </div>
       </div>
     </header>
 
     <main id="adminPageRoot" class="admin-page-main">
-      <section id="ocrDashboardSection" class="admin-page-panel">
-        <div class="dash-callout dash-callout-info" style="margin-bottom: 1rem;">
-          <strong>Demo view - not final.</strong>
-          This page is open for early tracking only. Final rewards will be reviewed and confirmed at season end after all contribution, banner, pathing, shield wall, and eligibility records are checked.
+      <section id="ocrDashboardSection" class="admin-page-panel eden-x1-panel">
+        <div class="eden-x1-notice">
+          <strong data-i18n="edenX1NoticeTitle">Demo view - not final.</strong>
+          <span data-i18n="edenX1NoticeCopy">This page is open for early tracking only. Final rewards will be reviewed and confirmed at season end after all contribution, banner, pathing, shield wall, and eligibility records are checked.</span>
         </div>
-        <div class="dash-callout" style="margin-bottom: 1rem;">
-          <strong>Planned Top 20 reward distribution</strong>
-          <ul style="margin: 0.75rem 0 0; padding-left: 1.25rem;">
-            <li><strong>10 rewards</strong> - in-game Total Contribution leaderboard.</li>
-            <li><strong>4 rewards</strong> - bonus contribution: banners, pathing, shield walls, and support work.</li>
-            <li><strong>4 rewards</strong> - R4 / management: 1 fixed for Wicked, 3 by anonymous guild vote.</li>
-            <li><strong>2 rewards</strong> - best teamplayers by anonymous guild vote.</li>
-          </ul>
-        </div>
+
+        <section class="eden-x1-reward-panel" aria-labelledby="edenX1RewardFlowTitle">
+          <div class="eden-x1-reward-heading">
+            <span class="eden-x1-reward-eyebrow" data-i18n="edenX1RewardFlowEyebrow">Reward flow</span>
+            <h2 id="edenX1RewardFlowTitle" data-i18n="edenX1RewardFlowTitle">Planned Top 20 reward distribution</h2>
+            <p data-i18n="edenX1RewardFlowSubtitle">The public list shows the working formula; leadership confirms the final season rewards after all duty records are reviewed.</p>
+          </div>
+          <div class="eden-x1-reward-flow" aria-label="Planned Top 20 reward distribution">
+            <article class="eden-x1-flow-card">
+              <span class="eden-x1-flow-count">10</span>
+              <span class="eden-x1-flow-label" data-i18n="edenX1RewardLeaderboardTitle">Total Contribution</span>
+              <p data-i18n="edenX1RewardLeaderboardCopy">Direct in-game contribution leaderboard rewards.</p>
+            </article>
+            <article class="eden-x1-flow-card">
+              <span class="eden-x1-flow-count">4</span>
+              <span class="eden-x1-flow-label" data-i18n="edenX1RewardSupportTitle">Support Work</span>
+              <p data-i18n="edenX1RewardSupportCopy">Banners, pathing, shield walls, and other recorded season support.</p>
+            </article>
+            <article class="eden-x1-flow-card">
+              <span class="eden-x1-flow-count">4</span>
+              <span class="eden-x1-flow-label" data-i18n="edenX1RewardManagementTitle">R4 / Management</span>
+              <p data-i18n="edenX1RewardManagementCopy">One fixed management reward plus three anonymous guild vote rewards.</p>
+            </article>
+            <article class="eden-x1-flow-card">
+              <span class="eden-x1-flow-count">2</span>
+              <span class="eden-x1-flow-label" data-i18n="edenX1RewardTeamTitle">Team Players</span>
+              <p data-i18n="edenX1RewardTeamCopy">Anonymous guild vote for standout teamwork and reliability.</p>
+            </article>
+          </div>
+        </section>
+
         <div id="dashWeightedContributionPanel" class="dash-weighted-contribution-panel">
           <div class="dash-empty eden-x1-loading">
             <div class="spinner"></div>
-            <span>Loading weighted contribution data...</span>
+            <span data-i18n="edenX1Loading">Loading weighted contribution data...</span>
           </div>
         </div>
         <div id="edenX1Error" class="dash-empty eden-x1-error hidden"></div>
@@ -116,23 +156,23 @@
           <p class="footer-url"><a href="https://roc-vts.com/">roc-vts.com</a></p>
         </div>
         <div class="footer-section links-section">
-          <h4>Links</h4>
+          <h4 data-i18n="adminFooterTools">Command Tools</h4>
           <ul>
-            <li><a href="index.html">Combo Generator</a></li>
-            <li><a href="admin.html">VTS Admin</a></li>
+            <li><a href="index.html" data-i18n="tabGenerator">Combo Generator</a></li>
+            <li><a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a></li>
           </ul>
         </div>
         <div class="footer-section community-section">
-          <p class="disclaimer">Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.</p>
+          <p class="disclaimer" data-i18n="adminFooterDisclaimer">Not affiliated with Camel Games or Rise of Castles. Game assets belong to their respective owners. This is a free fan-made community tool.</p>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; <span id="adminFooterYear">2026</span> VTS 1097</p>
+        <p>&copy; <span id="edenX1FooterYear">2026</span> VTS 1097</p>
       </div>
     </footer>
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260629_202131"></script>
+  <script type="module" src="js/eden-x1.js?v=20260704_122413"></script>
 </body>
 </html>

@@ -183,6 +183,8 @@ state.adminUser = null;
 state.adminIsAdmin = false;
 
 const DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS = 1200;
+const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = 'vts_dashboard_cloud_retry_queue';
+const DASHBOARD_CLOUD_RETRY_LIMIT = 6;
 const ADMIN_LOCAL_TEST_KEY = 'vts_admin_local_test_auth';
 const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
   let override =
@@ -203,6 +205,38 @@ let dashboardCloudSavePendingVersion = 0;
 let dashboardCloudSaveWaiters = [];
 let dashboardRenderFrame = 0;
 let dashboardLocalCacheJson = '';
+
+function readDashboardCloudRetryQueue() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DASHBOARD_CLOUD_RETRY_QUEUE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((entry) => entry?.payload) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDashboardCloudRetryQueue(queue) {
+  try {
+    const next = (Array.isArray(queue) ? queue : []).slice(-DASHBOARD_CLOUD_RETRY_LIMIT);
+    if (next.length) localStorage.setItem(DASHBOARD_CLOUD_RETRY_QUEUE_KEY, JSON.stringify(next));
+    else localStorage.removeItem(DASHBOARD_CLOUD_RETRY_QUEUE_KEY);
+  } catch (err) {
+    console.warn('Could not persist dashboard cloud retry queue', err);
+  }
+}
+
+function queueDashboardCloudRetry(kind, payload, reason = '') {
+  if (!payload || typeof payload !== 'object') return;
+  const queue = readDashboardCloudRetryQueue().filter((entry) => entry?.kind !== kind);
+  queue.push({
+    kind,
+    payload,
+    reason: String(reason || '').slice(0, 300),
+    queuedAt: new Date().toISOString(),
+  });
+  writeDashboardCloudRetryQueue(queue);
+  setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+}
 
 function withDashboardCloudTimeout(promise, timeoutMs, label) {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return promise;
@@ -567,7 +601,7 @@ function renderConductAdjustments() {
       return `<article class="dash-conduct-row">
         <div>
           <strong>${esc(record.playerName)}</strong>
-          <span>${esc(conductCategoryLabel(record.category))} · ${esc(conductCreatedAtLabel(record))}</span>
+          <span>${esc(conductCategoryLabel(record.category))} Â· ${esc(conductCreatedAtLabel(record))}</span>
           ${record.note ? `<p>${esc(record.note)}</p>` : ''}
         </div>
         <div class="dash-conduct-row-actions">
@@ -752,7 +786,7 @@ async function initDashboardFirebase() {
   const firebase = initFirebase();
   state.cloudSyncConfigured = Boolean(firebase?.configured && firebase.db && firebase.auth);
   if (!state.cloudSyncConfigured) {
-    log('Cloud sync disabled; using local storage only.', 'warn');
+    log(dashT('adminCloudLocalCache'), 'warn');
   }
   return state.cloudSyncConfigured;
 }
@@ -772,14 +806,43 @@ async function ensureDashboardCloudInitialized() {
   return state._cloudInitPromise;
 }
 
+async function waitForPasswordAdminUser(timeoutMs = 4000) {
+  const { getCurrentUser, isPasswordAuthUser, onUserChanged } = await loadFirebaseApi();
+  const currentUser = getCurrentUser() || state.adminUser;
+  if (isPasswordAuthUser(currentUser)) return currentUser;
+
+  return new Promise((resolve) => {
+    let done = false;
+    let unsubscribe = () => {};
+    const finish = (user = null) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeout);
+      try {
+        unsubscribe();
+      } catch (e) {}
+      resolve(user);
+    };
+    const timeout = setTimeout(() => finish(null), timeoutMs);
+    unsubscribe = onUserChanged((user) => {
+      if (isPasswordAuthUser(user)) finish(user);
+    });
+  });
+}
+
 async function ensureCloudSyncReady() {
   await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
   const { getCurrentUser, getDb, isPasswordAuthUser } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
-  const currentUser = getCurrentUser();
-  if (!isPasswordAuthUser(currentUser)) {
+  let currentUser = getCurrentUser() || state.adminUser;
+  if (!isPasswordAuthUser(currentUser) && state.adminIsAdmin === true) {
+    currentUser = (await waitForPasswordAdminUser()) || currentUser;
+  }
+  const hasDashboardAdminSession =
+    state.adminIsAdmin === true && currentUser && currentUser.isAnonymous !== true;
+  if (!isPasswordAuthUser(currentUser) && !hasDashboardAdminSession) {
     state.adminUser = null;
     state.adminIsAdmin = false;
     state.cloudAdminReady = false;
@@ -792,11 +855,21 @@ async function ensureCloudSyncReady() {
   return db;
 }
 
+window.getVtsAdminFirestoreContext = async function () {
+  const db = await ensureCloudSyncReady();
+  if (!db) throw new Error(dashT('adminCloudAdminRequired'));
+  return {
+    db,
+    user: state.adminUser,
+    firestore: await loadFirestoreApi(),
+  };
+};
+
 // --- Sub-tab Switching ---
 
 // --- Roster ---
 
-// â”€â”€ Sub-tab Switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function switchDashSubtab(name) {
   document
     .querySelectorAll('#ocrDashboardRoot .dash-subtab-panel')
@@ -925,7 +998,7 @@ window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(
   render();
 };
 
-// â”€â”€ Roster Snapshots (local + Firestore) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 export async function saveRosterSnapshotsToFirestore() {
   try {
     const db = await ensureCloudSyncReady();
@@ -986,7 +1059,7 @@ async function loadRosterSnapshotsFromFirestore() {
   }
 }
 
-// â”€â”€ Roster Image OCR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Roster Image OCR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function processRosterImages(files) {
   if (state._rosterProcessing) {
     log('Roster OCR already running...', 'warn');
@@ -998,8 +1071,10 @@ async function processRosterImages(files) {
     const rejected = describeRejectedOcrImageFiles(files);
     log(
       rejected.length
-        ? `No supported roster image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}`
-        : 'No roster image selected.',
+        ? dashT('adminRosterUnsupportedImageStatus', {
+            files: rejected.slice(0, 3).join(', '),
+          })
+        : dashT('adminRosterNoImageSelectedStatus'),
       'warn'
     );
     state._rosterProcessing = false;
@@ -1010,7 +1085,7 @@ async function processRosterImages(files) {
   const progText = $id('dashRosterProgressText');
   if (prog) prog.classList.remove('hidden');
 
-  log(`Scanning ${valid.length} roster screenshot(s)...`, 'info');
+  log(dashT('adminRosterScanningImagesLog', { count: valid.length }), 'info');
 
   let allNames = [];
 
@@ -1052,7 +1127,12 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
           const delayMs = getOcrRetryDelayMs(e, attempt);
           const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
           log(
-            `Roster OCR request failed: ${describeOcrRequestError(e)}. Retrying in ${delaySeconds}s (${attempt}/3)...`,
+            dashT('adminRosterOcrRetryLog', {
+              error: describeOcrRequestError(e, dashT),
+              seconds: delaySeconds,
+              attempt,
+              total: 3,
+            }),
             'warn',
             f.name
           );
@@ -1080,7 +1160,11 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
         .map((n) => n.trim());
       allNames.push(...names);
     } catch (e) {
-      log(`Roster OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
+      log(
+        dashT('adminRosterOcrErrorLog', { error: describeOcrRequestError(e, dashT) }),
+        'error',
+        f.name
+      );
     }
   }
 
@@ -1114,7 +1198,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   }
 }
 
-// â”€â”€ Banner Records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Banner Records Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function isLocalAdminTestBypass() {
   if (typeof location === 'undefined') return false;
@@ -1271,9 +1355,13 @@ function renderCloudSyncStatus() {
   const status = state.cloudSyncStatus;
   const statusEl = $id('dashCloudStatus');
   const textEl = $id('dashCloudStatusText');
+  const bannerEl = $id('dashCloudBanner');
+  const bannerTextEl = $id('dashCloudBannerText');
+  const bannerBtn = $id('dashCloudBannerBtn');
   if (!statusEl || !textEl) return;
   if (!status) {
     statusEl.classList.add('hidden');
+    bannerEl?.classList.add('hidden');
     setRefreshNeedsCloud(false);
     return;
   }
@@ -1284,15 +1372,33 @@ function renderCloudSyncStatus() {
     error: 'adminCloudSyncError',
   };
   const key = textKeys[status] || textKeys.syncing;
+  const detail = state.cloudSyncStatusDetail || '';
   statusEl.dataset.state = status;
   textEl.textContent = dashT(key);
-  if (state.cloudSyncStatusDetail) {
-    statusEl.title = state.cloudSyncStatusDetail;
+  if (detail) {
+    statusEl.title = detail;
   } else {
     statusEl.removeAttribute('title');
   }
   statusEl.classList.remove('hidden');
-  setRefreshNeedsCloud(status === 'local' || status === 'error');
+  const needsCloud = status === 'local' || status === 'error';
+  setRefreshNeedsCloud(needsCloud);
+
+  if (bannerEl && bannerTextEl) {
+    bannerEl.dataset.state = status;
+    bannerTextEl.textContent = detail || dashT(status === 'local' ? 'adminCloudRetryPending' : key);
+    bannerEl.classList.toggle('hidden', !needsCloud);
+  }
+  if (bannerBtn && bannerBtn.dataset.cloudBannerWired !== '1') {
+    bannerBtn.dataset.cloudBannerWired = '1';
+    bannerBtn.addEventListener('click', () => {
+      if (state.cloudSyncStatus === 'error' && !state.adminIsAdmin) {
+        showLogin();
+        return;
+      }
+      $id('dashRefreshBtn')?.click();
+    });
+  }
 }
 function setCloudSyncStatus(status, detail = '') {
   state.cloudSyncStatus = status;
@@ -1317,7 +1423,8 @@ function describeCloudSyncError(err) {
 function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
   const message = describeCloudSyncError(err);
   setCloudSyncStatus('error', message);
-  log(`${prefix}: ${message}`, 'error');
+  const lang = getDashboardLang();
+  log(lang === 'en' ? `${prefix}: ${message}` : message, 'error');
   if (!_isConnecting && typeof window.showToast === 'function')
     window.showToast(message, 'error', 7000);
   return message;
@@ -1330,8 +1437,12 @@ function setRefreshBusy(busy) {
   btn.setAttribute('aria-busy', busy ? 'true' : 'false');
 }
 
+function getDashboardLang() {
+  return localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+}
+
 function dashT(key, vars = {}) {
-  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  const lang = getDashboardLang();
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   let text =
     dictionaries[lang]?.[key] ||
@@ -1468,9 +1579,13 @@ async function openAdminDashboardAfterAuth(options = {}) {
         loadData({ preferCloudFirst: true }),
         loadConductAdjustmentsForSeason(),
       ]);
+      await flushDashboardCloudRetryQueue();
     } else {
       hydrateDashboardStateFromLocalStorage();
       await loadData({ preferCloudFirst: false });
+      if (readDashboardCloudRetryQueue().length) {
+        setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+      }
     }
     await completeConnectingProgress(dashT('adminConnectingData'));
     showApp();
@@ -1535,6 +1650,47 @@ function queueDashboardCloudSaveFlush(delayMs = DASHBOARD_CLOUD_SAVE_DEBOUNCE_MS
   }, delayMs);
 }
 
+async function flushDashboardCloudRetryQueue() {
+  const queued = readDashboardCloudRetryQueue();
+  if (!queued.length) return true;
+
+  try {
+    setCloudSyncStatus('syncing');
+    const db = await ensureCloudSyncReady();
+    if (!db) {
+      setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+      return false;
+    }
+
+    const { doc, setDoc } = await loadFirestoreApi();
+    const remaining = [];
+    for (const entry of queued) {
+      try {
+        if (entry.kind === 'auxiliary') {
+          await setDoc(doc(db, FS_PATH), entry.payload, { merge: true });
+        } else {
+          await setDoc(doc(db, FS_PATH), entry.payload);
+        }
+      } catch (err) {
+        remaining.push(entry);
+        console.warn('Dashboard queued cloud write failed', err);
+      }
+    }
+    writeDashboardCloudRetryQueue(remaining);
+    if (remaining.length) {
+      setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+      return false;
+    }
+    setCloudSyncStatus('live');
+    log('Queued cloud writes synced.', 'success');
+    updateLastSynced();
+    return true;
+  } catch (err) {
+    showCloudSyncFailure(err, 'Queued cloud sync failed');
+    return false;
+  }
+}
+
 async function flushDashboardCloudSave() {
   if (dashboardCloudSaveInFlight || !dashboardCloudSavePendingData) return false;
   if (dashboardCloudSaveTimer) {
@@ -1551,6 +1707,7 @@ async function flushDashboardCloudSave() {
     const db = await ensureCloudSyncReady();
     if (!db) {
       setCloudSyncStatus('local');
+      queueDashboardCloudRetry('dashboard', persistedData, dashT('adminCloudAdminRequired'));
       showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
       return false;
     }
@@ -1562,6 +1719,7 @@ async function flushDashboardCloudSave() {
     return true;
   } catch (e) {
     console.error('FIREBASE SAVE ERROR:', e);
+    queueDashboardCloudRetry('dashboard', persistedData, e?.message || e?.code || 'save failed');
     showCloudSyncFailure(e, 'Save error');
     return false;
   } finally {
@@ -1595,6 +1753,7 @@ export async function saveData(data, options = {}) {
   writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
   if (!state.adminIsAdmin) {
+    queueDashboardCloudRetry('dashboard', persistedData, dashT('adminCloudAdminRequired'));
     showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
     return false;
   }
@@ -1618,6 +1777,11 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
     const db = await ensureCloudSyncReady();
     if (!db) {
       setCloudSyncStatus('local');
+      queueDashboardCloudRetry(
+        'auxiliary',
+        getAuxiliaryRecordPayload(),
+        dashT('adminCloudAdminRequired')
+      );
       showCloudSyncFailure(
         new Error(dashT('adminCloudAdminRequired')),
         'Special list save blocked'
@@ -1632,6 +1796,11 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
     return true;
   } catch (e) {
     console.error('FIREBASE AUXILIARY SAVE ERROR:', e);
+    queueDashboardCloudRetry(
+      'auxiliary',
+      getAuxiliaryRecordPayload(),
+      e?.message || e?.code || 'auxiliary save failed'
+    );
     showCloudSyncFailure(e, 'Special list cloud save failed');
     return false;
   }
@@ -1667,7 +1836,7 @@ async function loadData(options = {}) {
   } catch (e) {}
   if (!preferCloudFirst && state.adminIsAdmin !== true) {
     setCloudSyncStatus('local');
-    log('Cloud sync requires admin sign-in; showing local dashboard cache.', 'warn');
+    log(dashT('adminCloudAdminRequired'), 'warn');
     return;
   }
   try {
@@ -1680,7 +1849,7 @@ async function loadData(options = {}) {
         render();
       }
       setCloudSyncStatus('local');
-      log('Firestore not available â€” using local storage only.', 'warn');
+      log('Firestore not available Ã¢â‚¬â€ using local storage only.', 'warn');
       return;
     }
     const { doc, getDoc, setDoc, onSnapshot } = await awaitCloud(
@@ -1742,7 +1911,7 @@ async function loadData(options = {}) {
         showCloudSyncFailure(err, 'Sync listener error');
       }
     );
-    log('Cloud sync active.', 'info');
+    log(dashT('adminCloudSynced'), 'info');
     updateLastSynced();
   } catch (e) {
     console.error('FIREBASE AUTH ERROR:', e);
@@ -2135,23 +2304,25 @@ function buildAdminAllDataRows() {
     });
   });
 
-  (Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots : []).forEach((snapshot, sIndex) => {
-    const members = Array.isArray(snapshot?.members) ? snapshot.members : [];
-    members.forEach((member, memberIndex) => {
-      pushAdminExportRow(rows, 'roster_snapshot_member', {
-        recordId: snapshot?.id || snapshot?.createdAt || `roster-snapshot-${sIndex + 1}`,
-        date: snapshot?.date || snapshot?.createdAt || '',
-        type: 'roster_snapshot',
-        player: readRosterDisplayName(member),
-        guild: member?.alliance || '',
-        rank: member?.rank || '',
-        metric: 'snapshot_member_index',
-        value: memberIndex + 1,
-        status: member?.status || '',
-        rawJson: member,
+  (Array.isArray(state.rosterSnapshots) ? state.rosterSnapshots : []).forEach(
+    (snapshot, sIndex) => {
+      const members = Array.isArray(snapshot?.members) ? snapshot.members : [];
+      members.forEach((member, memberIndex) => {
+        pushAdminExportRow(rows, 'roster_snapshot_member', {
+          recordId: snapshot?.id || snapshot?.createdAt || `roster-snapshot-${sIndex + 1}`,
+          date: snapshot?.date || snapshot?.createdAt || '',
+          type: 'roster_snapshot',
+          player: readRosterDisplayName(member),
+          guild: member?.alliance || '',
+          rank: member?.rank || '',
+          metric: 'snapshot_member_index',
+          value: memberIndex + 1,
+          status: member?.status || '',
+          rawJson: member,
+        });
       });
-    });
-  });
+    }
+  );
 
   (Array.isArray(state.bannerRecords) ? state.bannerRecords : []).forEach((record, index) => {
     Object.entries(record?.teams || {}).forEach(([team, members]) => {
@@ -2267,11 +2438,17 @@ function buildAdminAllDataRows() {
 }
 
 function exportData() {
-  downloadJson(buildAdminFullBackup(), `vts_admin_full_backup_${exportTimestampForFilename()}.json`);
+  downloadJson(
+    buildAdminFullBackup(),
+    `vts_admin_full_backup_${exportTimestampForFilename()}.json`
+  );
 }
 
 function exportAdminDebugJson() {
-  downloadJson(buildAdminDebugBundle(), `vts_admin_debug_bundle_${exportTimestampForFilename()}.json`);
+  downloadJson(
+    buildAdminDebugBundle(),
+    `vts_admin_debug_bundle_${exportTimestampForFilename()}.json`
+  );
 }
 
 function exportWeightedContributionCsv() {
@@ -2304,7 +2481,10 @@ function exportWeightedContributionCsv() {
 function exportAdminAllDataCsv() {
   const rows = buildAdminAllDataRows();
   if (!rows.length) return;
-  downloadCsv(rowsToCsv(ADMIN_EXPORT_COLUMNS, rows), `vts_admin_all_data_${exportTimestampForFilename()}.csv`);
+  downloadCsv(
+    rowsToCsv(ADMIN_EXPORT_COLUMNS, rows),
+    `vts_admin_all_data_${exportTimestampForFilename()}.csv`
+  );
 }
 
 function currentTopPerformersSubtitle() {
@@ -2700,6 +2880,7 @@ export async function bootOcrDashboard() {
         loadData({ preferCloudFirst: state.adminIsAdmin === true }),
         loadConductAdjustmentsForSeason(),
       ]);
+      if (state.adminIsAdmin === true) await flushDashboardCloudRetryQueue();
       render();
     } catch (e) {
       console.error('Refresh failed:', e);
@@ -2717,25 +2898,38 @@ export async function bootOcrDashboard() {
       console.error('Local admin test dashboard load failed during boot', e);
     }
   } else {
-    showLogin();
+    showConnecting(dashT('adminConnectingInit'));
     try {
       const configured = await ensureDashboardCloudInitialized();
       if (configured) {
-        const { onUserChanged, getCurrentUser, isPasswordAuthUser, signOutUser } =
-          await loadFirebaseApi();
+        const { onUserChanged, getCurrentUser, isPasswordAuthUser } = await loadFirebaseApi();
         if (!state._adminAuthUnsub) {
           state._adminAuthUnsub = onUserChanged(async (user) => {
             if (!user) {
+              const restoredUser = await waitForPasswordAdminUser(1500);
+              if (restoredUser) {
+                state.adminUser = restoredUser;
+                state.adminIsAdmin = true;
+                await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+                return;
+              }
               state.adminUser = null;
               state.adminIsAdmin = false;
               showLogin();
               return;
             }
             try {
+              const wasAdmin = state.adminIsAdmin === true;
               state.adminUser = user;
               state.adminIsAdmin = isPasswordAuthUser(user);
               if (!state.adminIsAdmin) {
-                await signOutUser();
+                const restoredUser = wasAdmin ? await waitForPasswordAdminUser(1500) : null;
+                if (restoredUser) {
+                  state.adminUser = restoredUser;
+                  state.adminIsAdmin = true;
+                  await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+                  return;
+                }
                 setLoginError(dashT('adminCloudAdminRequired'));
                 showLogin();
                 return;
@@ -2750,7 +2944,7 @@ export async function bootOcrDashboard() {
             }
           });
         }
-        const currentUser = getCurrentUser();
+        const currentUser = getCurrentUser() || state.adminUser;
         if (currentUser) {
           state.adminUser = currentUser;
           state.adminIsAdmin = isPasswordAuthUser(currentUser);
@@ -2785,7 +2979,7 @@ export async function bootOcrDashboard() {
     };
   }
 
-  // â”€â”€ API status watcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ API status watcher Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   let ocrReady = false;
   let lastLoggedOcrStatusKey = '';
   function summarizeOcrStatusReason(reason) {
@@ -3446,7 +3640,7 @@ window.showPlayer = function (pNameEncoded) {
   if (p) {
     showModal('player', p);
   } else {
-    // Player exists in attack but not aggregated yet â€” build a minimal view
+    // Player exists in attack but not aggregated yet Ã¢â‚¬â€ build a minimal view
     const minimalPlayer = {
       name: pName,
       total_demolition: 0,

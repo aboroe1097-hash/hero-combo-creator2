@@ -1,5 +1,6 @@
 // Shared constants, state, and helpers for OCR dashboard modules
 import { isLocalDevHost } from './utils.js';
+import { resolvePlayerRegistryAlias } from './player-registry.js';
 
 // --- Storage Keys ---
 export const STORAGE_KEY = 'vts_ocr_dashboard';
@@ -276,26 +277,66 @@ function parseRetryAfterSeconds(value) {
   return null;
 }
 
-export function describeOcrRequestError(err) {
+function formatOcrErrorMessage(t, key, vars, fallback) {
+  return typeof t === 'function' ? t(key, vars) || fallback : fallback;
+}
+
+function isNetworkOcrRequestError(err, message) {
+  if (Number.isFinite(err?.status)) return false;
+  return (
+    err?.name === 'TypeError' ||
+    /failed to fetch|networkerror|load failed|network request failed/i.test(message)
+  );
+}
+
+export function describeOcrRequestError(err, t = null) {
   const message = String(err?.message || '');
-  if (err?.status === 403 && /workers endpoint access denied/i.test(message)) {
-    return 'HTTP 403: DashScope/Worker permission denied. Check the Cloudflare Worker DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY account permissions, and redeploy workers/qwen-cors-proxy.js.';
-  }
-  if (err?.status === 403 && /origin not allowed/i.test(message)) {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'this origin';
-    return `HTTP 403: OCR Worker blocked ${origin}. Add it to ALLOWED_ORIGINS or deploy the current Worker code with private Vite dev origins enabled.`;
-  }
-  const parts = [];
-  if (Number.isFinite(err?.status)) parts.push(`HTTP ${err.status}`);
-  parts.push(message || 'unknown OCR request error');
   const details = Array.isArray(err?.details)
     ? err.details.join('; ')
     : err?.details && typeof err.details === 'object'
       ? JSON.stringify(err.details)
       : '';
+  const withDetails = (text) => (details ? `${text} (${details})` : text);
+
+  if (isNetworkOcrRequestError(err, message)) {
+    return withDetails(
+      formatOcrErrorMessage(
+        t,
+        'adminOcrNetworkError',
+        {},
+        'OCR service could not be reached. Check the connection, refresh, then try again.'
+      )
+    );
+  }
+  if (err?.status === 403 && /workers endpoint access denied/i.test(message)) {
+    return withDetails(
+      formatOcrErrorMessage(
+        t,
+        'adminOcrWorkerPermissionError',
+        {},
+        'HTTP 403: OCR Worker upstream denied access. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the Worker.'
+      )
+    );
+  }
+  if (err?.status === 403 && /origin not allowed/i.test(message)) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'this origin';
+    return withDetails(
+      formatOcrErrorMessage(
+        t,
+        'adminOcrOriginBlockedError',
+        { origin },
+        `HTTP 403: OCR Worker blocked ${origin}. Add this site to ALLOWED_ORIGINS and redeploy the Worker.`
+      )
+    );
+  }
+  const parts = [];
+  if (Number.isFinite(err?.status)) parts.push(`HTTP ${err.status}`);
+  parts.push(
+    message ||
+      formatOcrErrorMessage(t, 'adminOcrUnknownRequestError', {}, 'unknown OCR request error')
+  );
   return details ? `${parts.join(': ')} (${details})` : parts.join(': ');
 }
-
 export function isRetryableOcrRequestError(err) {
   if (err?.retryable === false || err?.localConfiguration) return false;
   if (!Number.isFinite(err?.status)) return true;
@@ -851,6 +892,8 @@ export function findBestMatch(name, minConfidence = 100) {
         .trim();
     }
     name = name.replace(/^Н/, 'H');
+    const registryAlias = resolvePlayerRegistryAlias(name);
+    if (registryAlias) return registryAlias;
     const protectedIdentity = getProtectedPlayerIdentity(name);
     if (protectedIdentity) return protectedIdentity;
     const aliasMap = {
@@ -1207,6 +1250,22 @@ export function resolveDutyPlayerName(raw) {
   return findBestMatch(cleaned);
 }
 
+// A parenthetical note only earns dual credit when it resolves to a player we
+// actually KNOW — via the player registry, a protected identity, the alias map,
+// or a roster match. findBestMatch returns its input unchanged when nothing
+// matches, so an unresolved note ("needs help", "after +3", "bubbles") is chat
+// noise, not a player, and must not mint a phantom summary row.
+export function resolvesToKnownDutyPlayer(value) {
+  const cleaned = cleanDutyRawName(value);
+  if (!cleaned) return false;
+  const resolved = findBestMatch(cleaned);
+  if (!resolved) return false;
+  if (resolved !== cleaned) return true; // some alias/registry/fuzzy mapping fired
+  const compact = compactPlayerIdentity(resolved);
+  if (!compact) return false;
+  return (state.rosterNames || []).some((rn) => compactPlayerIdentity(rn) === compact);
+}
+
 // The credited canonical names for one duty cell. Per product decision, BOTH the banner
 // account / @-tagged owner AND the operator earn credit for the duty work:
 //   "Angel Banner (zubbs)" -> credit ANGEL (account) AND zubbs (who operated it)
@@ -1217,11 +1276,14 @@ export function resolveDutyPlayerName(raw) {
 // ownerCredited is the name the aggregation already credits (admin Confirmed Name or a
 // raw fallback). The operator (if any) is resolved through the same authority and de-duped
 // against the owner's canonical form. The owner always comes first in the returned list.
+// The note must resolve to a KNOWN player to earn credit — unresolved parenthetical
+// text ("needs help", "bubbles") is a chat note, not an operator.
 export function getDutyCreditedNames(raw, ownerCredited) {
   const owner = String(ownerCredited || '').trim();
   const names = owner ? [owner] : [];
   const note = getDutyOperatorNote(raw);
   if (!looksLikeDutyOperator(note)) return names;
+  if (!resolvesToKnownDutyPlayer(note)) return names;
   const op = resolveDutyPlayerName(note);
   if (!op) return names;
   const ownerCanon = owner ? resolveDutyPlayerName(owner) : '';
@@ -1264,7 +1326,7 @@ export function expandDutyRawNames(raw) {
     if (canon && !out.includes(canon)) out.push(canon);
   };
   tokens.forEach(push);
-  if (looksLikeDutyOperator(note)) push(note);
+  if (looksLikeDutyOperator(note) && resolvesToKnownDutyPlayer(note)) push(note);
   return out;
 }
 

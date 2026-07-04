@@ -339,6 +339,10 @@ async function loadFirestoreApi() {
 }
 
 async function ensureR5AdjustmentAdminContext() {
+  if (typeof window !== 'undefined' && typeof window.getVtsAdminFirestoreContext === 'function') {
+    return window.getVtsAdminFirestoreContext();
+  }
+
   const { firestore, firebaseApi } = await loadFirestoreApi();
   const firebase = firebaseApi.initFirebase();
   if (!firebase?.configured) throw new Error('Firebase is not configured for R5 adjustments');

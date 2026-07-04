@@ -6,7 +6,7 @@
    — Finger-first: every interactive target ≥44px
    — Spatial zones: safe areas, inset-bottom, notch aware
    — Fluid type: rem-based scale, not px overrides
-   — Momentum scroll everywhere it should scroll
+   — Native mobile scrolling; no legacy momentum-scroll hacks
    — No layout jank: fixed heights only where truly needed
    — Light theme fully covered, not just dark
    ============================================================= */
@@ -1872,6 +1872,7 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 
   .hero-card,
   .generator-card {
+    grid-template-rows: 60px 1fr !important;
     width: 100% !important;
     min-height: 134px !important;
     padding: 34px 6px 8px !important;
@@ -1985,6 +1986,7 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 
   .hero-card-copy {
     min-height: 34px !important;
+    align-content: start !important;
     gap: 2px !important;
     padding-inline: 1px !important;
   }
@@ -2003,6 +2005,7 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 @media (max-width: 360px) {
   .hero-card,
   .generator-card {
+    grid-template-rows: 54px 1fr !important;
     min-height: 126px !important;
     padding-top: 32px !important;
   }

@@ -15,16 +15,22 @@ service cloud.firestore {
     }
 
     function isAdminLogin() {
-      return signedIn() && request.auth.token.firebase.sign_in_provider == 'password';
+      return signedIn()
+        && (request.auth.token.firebase.sign_in_provider == 'password'
+          || request.auth.token.admin == true);
     }
 
     function validComment() {
       return request.resource.data.keys().hasOnly([
-        'text', 'name', 'parentId', 'authorId', 'createdAt', 'approved', 'public'
+        'text', 'name', 'state', 'parentId', 'authorId', 'createdAt', 'approved', 'public'
       ])
       && request.resource.data.text is string
       && request.resource.data.text.size() > 0
       && request.resource.data.text.size() <= 2000
+      && (!('state' in request.resource.data)
+        || (request.resource.data.state is string
+          && request.resource.data.state.size() > 0
+          && request.resource.data.state.size() <= 40))
       && request.resource.data.authorId == request.auth.uid
       && request.resource.data.approved == false
       && request.resource.data.public == true;
@@ -101,7 +107,7 @@ service cloud.firestore {
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
         'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
-        'bannerRecords', 'dutyRecords', 'contributionRecords'
+        'bannerRecords', 'dutyRecords', 'contributionRecords', 'exGuildContributions'
       ])
       && (!('last_updated' in request.resource.data) || request.resource.data.last_updated is string)
       && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
@@ -110,7 +116,8 @@ service cloud.firestore {
       && (!('logs' in request.resource.data) || request.resource.data.logs is list)
       && (!('bannerRecords' in request.resource.data) || request.resource.data.bannerRecords is list)
       && (!('dutyRecords' in request.resource.data) || request.resource.data.dutyRecords is list)
-      && (!('contributionRecords' in request.resource.data) || request.resource.data.contributionRecords is list);
+      && (!('contributionRecords' in request.resource.data) || request.resource.data.contributionRecords is list)
+      && (!('exGuildContributions' in request.resource.data) || request.resource.data.exGuildContributions is list);
     }
 
     function validRosterData() {

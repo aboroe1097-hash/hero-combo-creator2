@@ -220,7 +220,45 @@ export const STRIFE_MONSTERS = [
     name: 'Trident of the North Sea',
     accent: '#c4b5fd',
     imageUrl: 'images/strife/monsters/trident-north-sea.jpg',
-    skills: [],
+    guideNotes: [
+      'New VTS field test: the X1 best lineup shown in-game is Immortal Guardian + Ramses II + Boudica.',
+      'Trident hits every squad, including friendly squads, so durable archer cores and strong round-to-round sustain matter more than fragile burst.',
+      'The opening damage-reduction window means the team must survive first, then keep enough damage online after the first three rounds.',
+    ],
+    skills: [
+      {
+        name: 'Trident Swing',
+        timing: 'During battle',
+        target: 'All squads in range',
+        effect: '100% chance to launch 10 attacks against all squads, including friendly squads, dealing 30% Damage each attack.',
+        answer: 'Use a durable lineup that can absorb repeated multi-target hits without relying on fragile burst only.',
+        tags: ['All Squads', 'Repeated Hits'],
+      },
+      {
+        name: 'Lasting Stamina',
+        timing: 'Rounds 1-3',
+        target: 'Trident',
+        effect: 'The boss takes 80% less Damage during the first three rounds.',
+        answer: 'Do not judge the lineup only by early damage. Survive the opener and keep damage ready after round 3.',
+        tags: ['Damage Reduction', 'Early Survival'],
+      },
+      {
+        name: 'Backlash',
+        timing: 'When damaged',
+        target: '3 random enemy squads',
+        effect: 'When the hero squad takes damage, 100% chance to deal 100% Skill Damage to 3 random enemy squads.',
+        answer: 'Expect retaliation whenever you pressure the boss. Sustain and archer durability help stabilize the fight.',
+        tags: ['Counter Damage', 'Skill Damage'],
+      },
+      {
+        name: 'Power of the Legion',
+        timing: 'Passive',
+        target: 'Trident army',
+        effect: 'The hero legion gains 500% more Might and 70% more Damage, with marching soldier cap increased by 487,570.',
+        answer: 'Treat this as a high-stat endurance fight. Favor strong cores over gimmick control plans.',
+        tags: ['Stat Boss', 'Endurance'],
+      },
+    ],
   },
   {
     id: 'black-annis',
@@ -377,6 +415,14 @@ export const STRIFE_MONSTER_COMBOS = {
       note: 'Source-listed X8 Sakura + Warden + Rainforest row. Rainforest Ranger is paid in this roster.',
     },
   ],
-  'trident-north-sea': [],
+  'trident-north-sea': [
+    {
+      stage: 'X1',
+      tier: STRIFE_TIERS.P2W,
+      heroes: ['Immortal Guardian', 'Ramses II', 'Boudica'],
+      score: '57.10M observed',
+      note: 'In-game X1 best-lineup screenshot for Trident of the North Sea: Immortal Guardian front, Ramses II middle, Boudica back reached 57,098,914 damage.',
+    },
+  ],
   'black-annis': [],
 };

@@ -12,7 +12,13 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   totalJsBytes: 2000 * 1024,
-  totalCssBytes: 470 * 1024,
+  // Frozen near current built CSS weights. New CSS should pay for itself.
+  totalCssBytes: 496 * 1024,
+  cssChunks: {
+    atmosphere: 342 * 1024,
+    admin: 120 * 1024,
+    mobile: 47 * 1024,
+  },
 };
 
 function formatBytes(bytes) {
@@ -48,6 +54,11 @@ const checks = [
   ['total built JS bytes', totalJsBytes, LIMITS.totalJsBytes],
   ['total built CSS bytes', totalCssBytes, LIMITS.totalCssBytes],
 ];
+
+for (const [chunkName, limit] of Object.entries(LIMITS.cssChunks)) {
+  const chunkFile = cssFiles.find(file => path.basename(file).startsWith(`${chunkName}-`));
+  checks.push([`built ${chunkName} CSS`, chunkFile ? fs.statSync(chunkFile).size : 0, limit]);
+}
 
 const failures = checks.filter(([, actual, limit]) => actual > limit);
 

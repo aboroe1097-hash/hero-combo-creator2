@@ -43,7 +43,10 @@ const {
 const workerModule = await import('../../workers/qwen-cors-proxy.js');
 const worker = workerModule.default;
 const {
+  buildDashscopeAttempts,
+  getConfiguredDashscopeModels,
   isAllowedDashscopeEndpoint,
+  proxyDashscopeWithFallback,
   readJsonBodyWithLimit,
   requestBodySize,
   resolveDashscopeChatCompletionsUrl,
@@ -185,6 +188,135 @@ test('Qwen worker status reports durable rate limiting when KV is bound', async 
   assert.equal(response.status, 200);
   assert.equal(body.rateLimitDurable, true);
   assert.equal(body.rateLimitBackend, 'kv');
+});
+
+test('Qwen worker reports fallback model configuration without exposing secrets', async () => {
+  const response = await worker.fetch(request('/status'), {
+    DASHSCOPE_API_KEY: 'primary-secret',
+    DASHSCOPE_FALLBACK_API_KEY: 'fallback-secret',
+    DASHSCOPE_MODEL: 'qwen-vl-plus',
+    DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max, qwen-vl-plus-latest',
+    FIREBASE_APP_CHECK_PROJECT_NUMBER: '123456789',
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.configured, true);
+  assert.equal(body.fallbackConfigured, true);
+  assert.equal(body.fallbackModelConfigured, true);
+  assert.equal(body.fallbackKeyConfigured, true);
+  assert.equal(body.primaryModel, 'qwen-vl-plus');
+  assert.equal(body.fallbackModelCount, 2);
+  assert.equal(body.modelCount >= 3, true);
+  assert.equal(JSON.stringify(body).includes('secret'), false);
+});
+
+test('Qwen worker builds primary model plus at most five fallback attempts', () => {
+  const attempts = buildDashscopeAttempts(
+    {
+      DASHSCOPE_API_KEY: 'primary-secret',
+      DASHSCOPE_FALLBACK_API_KEY: 'fallback-secret',
+      DASHSCOPE_MODEL: 'qwen-vl-plus',
+      DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max,model-a,model-b,model-c,model-d,model-e',
+      DASHSCOPE_BASE_URL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+      DASHSCOPE_FALLBACK_BASE_URL: 'https://fallback.example/compatible-mode/v1',
+    },
+    'qwen-vl-max'
+  );
+
+  assert.deepEqual(
+    attempts.map((attempt) => attempt.model),
+    ['qwen-vl-plus', 'qwen-vl-max', 'model-a', 'model-b', 'model-c', 'model-d']
+  );
+  assert.equal(attempts[0].apiKey, 'primary-secret');
+  assert.equal(attempts[1].apiKey, 'fallback-secret');
+  assert.equal(attempts[1].url, 'https://fallback.example/compatible-mode/v1/chat/completions');
+});
+
+test('Qwen worker configured model list rejects unsafe fallback names', () => {
+  assert.deepEqual(
+    getConfiguredDashscopeModels({
+      DASHSCOPE_MODEL: 'qwen-vl-plus',
+      DASHSCOPE_FALLBACK_MODELS: 'good-model,../bad,bad model,also.good:v1',
+    }).filter((model) => model.includes('bad') || model.includes('good') || model.includes('also')),
+    ['good-model', 'also.good:v1']
+  );
+});
+
+test('Qwen worker retries quota or transient upstream failures on fallback models', async () => {
+  const originalFetch = globalThis.fetch;
+  const urls = [];
+  globalThis.fetch = async (url, init) => {
+    urls.push({ url, body: JSON.parse(init.body) });
+    if (urls.length === 1) {
+      return new Response(JSON.stringify({ error: 'quota limit exceeded' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const response = await proxyDashscopeWithFallback(
+      { model: 'qwen-vl-plus', messages: [{ role: 'user', content: 'hi' }] },
+      buildDashscopeAttempts({
+        DASHSCOPE_API_KEY: 'primary-secret',
+        DASHSCOPE_FALLBACK_API_KEY: 'fallback-secret',
+        DASHSCOPE_MODEL: 'qwen-vl-plus',
+        DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max',
+      }),
+      request('/v1/chat/completions'),
+      {},
+      1024 * 1024
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('X-OCR-Model'), 'qwen-vl-max');
+    assert.equal(response.headers.get('X-OCR-Attempts'), '2');
+    assert.deepEqual(
+      urls.map((item) => item.body.model),
+      ['qwen-vl-plus', 'qwen-vl-max']
+    );
+    assert.deepEqual(await response.json(), { choices: [{ message: { content: 'ok' } }] });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Qwen worker does not retry non-retryable upstream validation failures', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response(JSON.stringify({ error: 'invalid image payload' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const response = await proxyDashscopeWithFallback(
+      { model: 'qwen-vl-plus', messages: [{ role: 'user', content: 'hi' }] },
+      buildDashscopeAttempts({
+        DASHSCOPE_API_KEY: 'primary-secret',
+        DASHSCOPE_MODEL: 'qwen-vl-plus',
+        DASHSCOPE_FALLBACK_MODELS: 'qwen-vl-max',
+      }),
+      request('/v1/chat/completions'),
+      {},
+      1024 * 1024
+    );
+
+    assert.equal(response.status, 400);
+    assert.equal(calls, 1);
+    assert.deepEqual(await response.json(), { error: 'invalid image payload' });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('Qwen worker parses bounded request body size from Content-Length only', () => {

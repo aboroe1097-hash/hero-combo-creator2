@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 globalThis.window = {
   VTS_ADMIN_AUTH: {},
 };
+const localStorageData = new Map();
 globalThis.localStorage = {
-  getItem: () => null,
-  setItem: () => {},
+  getItem: (key) => localStorageData.get(key) ?? null,
+  setItem: (key, value) => localStorageData.set(key, String(value)),
+  removeItem: (key) => localStorageData.delete(key),
 };
 globalThis.document = {
   getElementById: () => null,
@@ -33,6 +35,12 @@ const {
   trimRosterSnapshots,
   validateTotalDemolition,
 } = await import('../../js/ocr-shared.js');
+const {
+  PLAYER_REGISTRY_KEY,
+  normalizePlayerRegistry,
+  resolvePlayerRegistryAlias,
+  writeStoredPlayerRegistry,
+} = await import('../../js/player-registry.js');
 
 test('OCR structure normalization fixes common visual confusions', () => {
   assert.equal(normalizeStructureName('capita1'), 'Capital');
@@ -393,24 +401,38 @@ test('looksLikeDutyOperator distinguishes operators from labels', () => {
 });
 
 test('getDutyCreditedNames credits both banner account and operator', () => {
-  // Angel Banner (zubbs) -> credit ANGEL (account) AND zubbs (who operated it).
-  const angel = getDutyCreditedNames('Angel Banner (zubbs)', 'Angel');
-  assert.equal(angel[0], 'Angel');
-  assert.equal(angel.length, 2);
-  assert.equal(angel[1], resolveDutyPlayerName('zubbs'));
-  assert.notEqual(angel[1], angel[0]);
+  // Operators only earn dual credit when they resolve to a KNOWN player
+  // (roster/alias) — so run these with a roster fixture, like production.
+  const previousRosterNames = state.rosterNames;
+  state.rosterNames = ['Angel', 'Zubbs', 'osito', 'Moldo', 'redbull'];
+  try {
+    // Angel Banner (zubbs) -> credit ANGEL (account) AND zubbs (who operated it).
+    const angel = getDutyCreditedNames('Angel Banner (zubbs)', 'Angel');
+    assert.equal(angel[0], 'Angel');
+    assert.equal(angel.length, 2);
+    assert.equal(angel[1], resolveDutyPlayerName('zubbs'));
+    assert.notEqual(angel[1], angel[0]);
 
-  // @redbull (osito) -> credit redbull (owner) AND osito (banner/operator).
-  const rb = getDutyCreditedNames('@redbull (osito)', 'redbull');
-  assert.equal(rb[0], 'redbull');
-  assert.equal(rb.length, 2);
-  assert.ok(rb.includes('osito'));
+    // @redbull (osito) -> credit redbull (owner) AND osito (banner/operator).
+    const rb = getDutyCreditedNames('@redbull (osito)', 'redbull');
+    assert.equal(rb[0], 'redbull');
+    assert.equal(rb.length, 2);
+    assert.ok(rb.includes('osito'));
 
-  // Moldo (zubbs) -> credit Moldo AND zubbs.
-  const moldo = getDutyCreditedNames('Moldo (zubbs)', 'Moldo');
-  assert.equal(moldo[0], 'Moldo');
-  assert.ok(moldo.includes('zubbs'));
-  assert.equal(moldo.length, 2);
+    // Moldo (zubbs) -> credit Moldo AND zubbs (resolved through the roster).
+    const moldo = getDutyCreditedNames('Moldo (zubbs)', 'Moldo');
+    assert.equal(moldo[0], 'Moldo');
+    assert.ok(moldo.includes('Zubbs'));
+    assert.equal(moldo.length, 2);
+
+    // Parenthetical chat noise that resolves to NO known player -> owner only.
+    // These were minting phantom summary rows ("bubbles", "needs help").
+    assert.deepEqual(getDutyCreditedNames('Angel v2 (bubbles)', 'ANGEL'), ['ANGEL']);
+    assert.deepEqual(getDutyCreditedNames('Moldo (needs help)', 'Moldo'), ['Moldo']);
+    assert.deepEqual(getDutyCreditedNames('Moldo (after +3)', 'Moldo'), ['Moldo']);
+  } finally {
+    state.rosterNames = previousRosterNames;
+  }
 
   // A parenthetical that is a LABEL, not an operator -> owner only (no false credit).
   const label = getDutyCreditedNames('redbull (RedBull banner)', 'redbull');
@@ -526,12 +548,22 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   // Leading target word dropped: "town lvl1" before @tag.
   assert.deepEqual(expandDutyRawNames('town lvl1 @Uzumaki'), ['!!Uzumaki!!']);
 
-  // Parenthetical operator included (dual credit) — no roster loaded,
-  // so findBestMatch returns the cleaned raw name as-is.
-  const op = expandDutyRawNames('Angel Banner (zubbs)');
-  assert.equal(op[0], 'Angel');
-  assert.equal(op[1], 'zubbs');
-  assert.equal(op.length, 2);
+  // Parenthetical operator included (dual credit) — but ONLY when the note
+  // resolves to a known roster player; unresolved notes are chat noise.
+  const previousRosterNames = state.rosterNames;
+  state.rosterNames = ['Angel', 'Zubbs'];
+  try {
+    const op = expandDutyRawNames('Angel Banner (zubbs)');
+    assert.equal(op[0], 'Angel');
+    assert.equal(op[1], 'Zubbs');
+    assert.equal(op.length, 2);
+
+    // Noise notes never mint phantom players.
+    assert.deepEqual(expandDutyRawNames('Angel (needs help)'), ['Angel']);
+    assert.deepEqual(expandDutyRawNames('Angel v2 (bubbles)'), ['Angel v2']);
+  } finally {
+    state.rosterNames = previousRosterNames;
+  }
 
   // Structure-only cell -> empty (no real player).
   assert.deepEqual(expandDutyRawNames('town lvl1'), []);

@@ -6,6 +6,10 @@
 // Optional variables:
 //   ALLOWED_ORIGINS=https://roc-vts.com,http://localhost:5173
 //   DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+//   DASHSCOPE_MODEL=qwen-vl-plus
+//   wrangler secret put DASHSCOPE_FALLBACK_API_KEY (optional second DashScope key)
+//   DASHSCOPE_FALLBACK_BASE_URL=<optional second compatible-mode endpoint>
+//   DASHSCOPE_FALLBACK_MODELS=qwen-vl-max,qwen-vl-plus-latest
 //   FIREBASE_APP_CHECK_PROJECT_NUMBER=123456789
 //   FIREBASE_APP_CHECK_APP_ID=1:123456789:web:abcdef123456
 //     This is the Firebase Web App ID, not the reCAPTCHA Enterprise site key.
@@ -14,8 +18,9 @@
 //   RATE_LIMIT_MAX_REQUESTS=30
 //   MAX_BODY_BYTES=5242880
 
-const WORKER_BUILD_ID = '2026-06-25.1';
+const WORKER_BUILD_ID = '2026-07-03.1';
 const DEFAULT_DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1';
+const DEFAULT_DASHSCOPE_MODEL = 'qwen-vl-plus';
 const APP_CHECK_JWKS_URL = 'https://firebaseappcheck.googleapis.com/v1beta/jwks';
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://roc-vts.com',
@@ -33,7 +38,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 30;
 const DEFAULT_MAX_BODY_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MODELS = new Set(['qwen-vl-plus', 'qwen-vl-max']);
+const DEFAULT_ALLOWED_MODELS = ['qwen-vl-plus', 'qwen-vl-max'];
+const MAX_FALLBACK_MODELS = 5;
 const memoryRateLimit = new Map();
 let appCheckJwksCache = null;
 
@@ -62,6 +68,61 @@ function dashscopeEndpointDetails(env) {
   } catch {
     return { url, host: '', path: '' };
   }
+}
+
+function unique(values) {
+  return [...new Set(values)];
+}
+
+function isSafeDashscopeModelName(value) {
+  return /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(String(value || '').trim());
+}
+
+function parseCsvEnv(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function getConfiguredDashscopeModels(env = {}) {
+  const primaryModel = String(env.DASHSCOPE_MODEL || DEFAULT_DASHSCOPE_MODEL).trim();
+  const fallbackModels = parseCsvEnv(env.DASHSCOPE_FALLBACK_MODELS).slice(0, MAX_FALLBACK_MODELS);
+  const allowedModels = parseCsvEnv(env.DASHSCOPE_ALLOWED_MODELS);
+  return unique([
+    ...DEFAULT_ALLOWED_MODELS,
+    primaryModel,
+    ...fallbackModels,
+    ...allowedModels,
+  ]).filter(isSafeDashscopeModelName);
+}
+
+export function buildDashscopeAttempts(env = {}, requestedModel = '') {
+  const configuredModels = getConfiguredDashscopeModels(env);
+  const safeRequested = isSafeDashscopeModelName(requestedModel)
+    ? String(requestedModel).trim()
+    : '';
+  const primaryModel = String(
+    env.DASHSCOPE_MODEL ||
+      (configuredModels.includes(safeRequested) ? safeRequested : '') ||
+      DEFAULT_DASHSCOPE_MODEL
+  ).trim();
+  const fallbackModels = parseCsvEnv(env.DASHSCOPE_FALLBACK_MODELS).slice(0, MAX_FALLBACK_MODELS);
+  const fallbackKey = env.DASHSCOPE_FALLBACK_API_KEY || env.DASHSCOPE_API_KEY;
+  const primaryBaseUrl = resolveDashscopeChatCompletionsUrl(env);
+  const fallbackBaseUrl = resolveDashscopeChatCompletionsUrl({
+    DASHSCOPE_BASE_URL: env.DASHSCOPE_FALLBACK_BASE_URL || env.DASHSCOPE_BASE_URL,
+  });
+
+  return unique([primaryModel, ...fallbackModels])
+    .filter(isSafeDashscopeModelName)
+    .map((model, index) => ({
+      model,
+      apiKey: index === 0 ? env.DASHSCOPE_API_KEY : fallbackKey,
+      url: index === 0 ? primaryBaseUrl : fallbackBaseUrl,
+      source: index === 0 ? 'primary' : 'fallback',
+    }))
+    .filter((attempt) => attempt.apiKey);
 }
 
 function allowedOrigins(env) {
@@ -94,13 +155,14 @@ function isAllowedOrigin(request, env) {
 function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
   const allowlist = allowedOrigins(env);
-  const allowOrigin = allowlist.includes(origin) || isPrivateViteDevOrigin(origin) ? origin : allowlist[0];
+  const allowOrigin =
+    allowlist.includes(origin) || isPrivateViteDevOrigin(origin) ? origin : allowlist[0];
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Firebase-AppCheck',
     'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
+    Vary: 'Origin',
   };
 }
 
@@ -119,9 +181,17 @@ function statusPayload(request, env) {
   const origin = request.headers.get('Origin') || '';
   const upstream = dashscopeEndpointDetails(env);
   const rateLimitDurable = Boolean(env.RATE_LIMIT_KV);
+  const configuredModels = getConfiguredDashscopeModels(env);
+  const fallbackModels = parseCsvEnv(env.DASHSCOPE_FALLBACK_MODELS).slice(0, MAX_FALLBACK_MODELS);
   return {
     configured: Boolean(env.DASHSCOPE_API_KEY),
     appCheckConfigured: Boolean(env.FIREBASE_APP_CHECK_PROJECT_NUMBER),
+    fallbackConfigured: fallbackModels.length > 0 || Boolean(env.DASHSCOPE_FALLBACK_API_KEY),
+    fallbackModelConfigured: fallbackModels.length > 0,
+    fallbackKeyConfigured: Boolean(env.DASHSCOPE_FALLBACK_API_KEY),
+    primaryModel: String(env.DASHSCOPE_MODEL || DEFAULT_DASHSCOPE_MODEL).trim(),
+    modelCount: configuredModels.length,
+    fallbackModelCount: fallbackModels.length,
     rateLimitDurable,
     rateLimitBackend: rateLimitDurable ? 'kv' : 'memory',
     workerBuild: WORKER_BUILD_ID,
@@ -139,9 +209,11 @@ function numericEnv(env, key, fallback) {
 }
 
 function getClientIp(request) {
-  return request.headers.get('CF-Connecting-IP')
-    || request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim()
-    || 'unknown';
+  return (
+    request.headers.get('CF-Connecting-IP') ||
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    'unknown'
+  );
 }
 
 function pruneMemoryRateLimit(now) {
@@ -152,16 +224,23 @@ function pruneMemoryRateLimit(now) {
 
 async function checkRateLimit(request, env) {
   const ip = getClientIp(request);
-  const windowSeconds = numericEnv(env, 'RATE_LIMIT_WINDOW_SECONDS', DEFAULT_RATE_LIMIT_WINDOW_SECONDS);
+  const windowSeconds = numericEnv(
+    env,
+    'RATE_LIMIT_WINDOW_SECONDS',
+    DEFAULT_RATE_LIMIT_WINDOW_SECONDS
+  );
   const maxRequests = numericEnv(env, 'RATE_LIMIT_MAX_REQUESTS', DEFAULT_RATE_LIMIT_MAX_REQUESTS);
   const now = Date.now();
   const windowId = Math.floor(now / (windowSeconds * 1000));
   const key = `qwen:${ip}:${windowId}`;
 
   if (env.RATE_LIMIT_KV) {
-    const current = Number(await env.RATE_LIMIT_KV.get(key) || '0');
+    const current = Number((await env.RATE_LIMIT_KV.get(key)) || '0');
     if (current >= maxRequests) {
-      return { allowed: false, retryAfter: windowSeconds - Math.floor((now / 1000) % windowSeconds) };
+      return {
+        allowed: false,
+        retryAfter: windowSeconds - Math.floor((now / 1000) % windowSeconds),
+      };
     }
     await env.RATE_LIMIT_KV.put(key, String(current + 1), { expirationTtl: windowSeconds * 2 });
     return { allowed: true };
@@ -209,7 +288,7 @@ export async function readJsonBodyWithLimit(request, maxBodyBytes) {
 
   const chunks = [];
   let received = 0;
-  while (true) {
+  for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
@@ -256,13 +335,22 @@ function validateImageUrl(value, path, errors) {
   }
 }
 
-function validatePayload(payload) {
+function validatePayload(payload, env) {
   const errors = [];
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return ['Payload must be a JSON object'];
   }
-  if (!ALLOWED_MODELS.has(payload.model)) errors.push('Unsupported model');
-  if (!Array.isArray(payload.messages) || payload.messages.length === 0 || payload.messages.length > 20) {
+  if (
+    typeof payload.model !== 'string' ||
+    !getConfiguredDashscopeModels(env).includes(payload.model)
+  ) {
+    errors.push('Unsupported model');
+  }
+  if (
+    !Array.isArray(payload.messages) ||
+    payload.messages.length === 0 ||
+    payload.messages.length > 20
+  ) {
     errors.push('messages must contain 1-20 entries');
     return errors;
   }
@@ -280,7 +368,11 @@ function validatePayload(payload) {
       validateText(message.content, `${path}.content`, errors);
       return;
     }
-    if (!Array.isArray(message.content) || message.content.length === 0 || message.content.length > 32) {
+    if (
+      !Array.isArray(message.content) ||
+      message.content.length === 0 ||
+      message.content.length > 32
+    ) {
       errors.push(`${path}.content must be a string or 1-32 content parts`);
       return;
     }
@@ -291,12 +383,158 @@ function validatePayload(payload) {
         return;
       }
       if (part.type === 'text') validateText(part.text, `${partPath}.text`, errors);
-      else if (part.type === 'image_url') validateImageUrl(part.image_url, `${partPath}.image_url`, errors);
+      else if (part.type === 'image_url')
+        validateImageUrl(part.image_url, `${partPath}.image_url`, errors);
       else errors.push(`${partPath}.type is invalid`);
     });
   });
 
   return errors;
+}
+
+function shouldTryNextDashscopeAttempt(status, responseBody) {
+  const text = String(responseBody || '');
+  if (status === 408 || status === 409 || status === 425 || status === 429 || status >= 500)
+    return true;
+  if (status === 401 || status === 403) return true;
+  if (status === 400)
+    return /quota|rate|limit|capacity|temporar|unavailable|model|not found|not exist/i.test(text);
+  return false;
+}
+
+function safeAttemptLog(attempt, status, responseBody = '') {
+  const text = String(responseBody || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return {
+    model: attempt.model,
+    source: attempt.source,
+    status,
+    message: text.slice(0, 240),
+  };
+}
+
+function dashscopeResponseHeaders(request, env, dashscopeResponse, attempt, attemptCount) {
+  return {
+    'Content-Type': dashscopeResponse.headers.get('Content-Type') || 'application/json',
+    'X-OCR-Model': attempt.model,
+    'X-OCR-Attempts': String(attemptCount),
+    ...corsHeaders(request, env),
+  };
+}
+
+export async function proxyDashscopeWithFallback(payload, attempts, request, env, maxBodyBytes) {
+  const attemptErrors = [];
+
+  for (let index = 0; index < attempts.length; index += 1) {
+    const attempt = attempts[index];
+    const isLastAttempt = index === attempts.length - 1;
+
+    if (!isAllowedDashscopeEndpoint(attempt.url)) {
+      attemptErrors.push({
+        model: attempt.model,
+        source: attempt.source,
+        status: 0,
+        message: 'Invalid DashScope endpoint',
+      });
+      if (isLastAttempt) {
+        return json(
+          {
+            error:
+              'DASHSCOPE_BASE_URL is not a valid DashScope HTTPS endpoint. Set it to https://dashscope-intl.aliyuncs.com/compatible-mode/v1.',
+            attempts: attemptErrors,
+          },
+          { status: 503 },
+          request,
+          env
+        );
+      }
+      continue;
+    }
+
+    const attemptPayload = JSON.stringify({ ...payload, model: attempt.model });
+    if (new TextEncoder().encode(attemptPayload).byteLength > maxBodyBytes) {
+      return json(
+        { error: `Payload too large. Maximum size is ${maxBodyBytes} bytes.` },
+        { status: 413 },
+        request,
+        env
+      );
+    }
+
+    let dashscopeResponse;
+    try {
+      dashscopeResponse = await fetch(attempt.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${attempt.apiKey}`,
+        },
+        body: attemptPayload,
+      });
+    } catch (err) {
+      attemptErrors.push({
+        model: attempt.model,
+        source: attempt.source,
+        status: 0,
+        message: err?.message || 'Network error',
+      });
+      if (!isLastAttempt) continue;
+      return json(
+        {
+          error: 'OCR proxy failed after all configured fallback attempts.',
+          attempts: attemptErrors,
+        },
+        { status: 502 },
+        request,
+        env
+      );
+    }
+
+    const responseHeaders = dashscopeResponseHeaders(
+      request,
+      env,
+      dashscopeResponse,
+      attempt,
+      index + 1
+    );
+    if (dashscopeResponse.ok) {
+      return new Response(dashscopeResponse.body, {
+        status: dashscopeResponse.status,
+        headers: responseHeaders,
+      });
+    }
+
+    const responseBody = await dashscopeResponse.text();
+    attemptErrors.push(safeAttemptLog(attempt, dashscopeResponse.status, responseBody));
+    const canFallback = shouldTryNextDashscopeAttempt(dashscopeResponse.status, responseBody);
+    if (canFallback && !isLastAttempt) continue;
+
+    if (dashscopeResponse.status === 403 && /workers endpoint access denied/i.test(responseBody)) {
+      return json(
+        {
+          error:
+            'DashScope upstream returned 403: Workers endpoint access denied. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the current Worker code.',
+          attempts: attemptErrors,
+        },
+        { status: 403 },
+        request,
+        env
+      );
+    }
+
+    return new Response(responseBody, {
+      status: dashscopeResponse.status,
+      headers: responseHeaders,
+    });
+  }
+
+  return json(
+    { error: 'OCR worker has no configured DashScope model attempts.', attempts: attemptErrors },
+    { status: 503 },
+    request,
+    env
+  );
 }
 
 function base64UrlDecode(value) {
@@ -335,7 +573,11 @@ async function appCheckJwks() {
 async function verifyAppCheck(request, env) {
   const projectNumber = String(env.FIREBASE_APP_CHECK_PROJECT_NUMBER || '').trim();
   if (!projectNumber) {
-    return { ok: false, status: 503, error: 'OCR worker is missing FIREBASE_APP_CHECK_PROJECT_NUMBER' };
+    return {
+      ok: false,
+      status: 503,
+      error: 'OCR worker is missing FIREBASE_APP_CHECK_PROJECT_NUMBER',
+    };
   }
 
   const token = request.headers.get('X-Firebase-AppCheck') || '';
@@ -371,7 +613,11 @@ async function verifyAppCheck(request, env) {
     const audience = Array.isArray(parsed.payload.aud) ? parsed.payload.aud : [parsed.payload.aud];
     const expectedIssuer = `https://firebaseappcheck.googleapis.com/${projectNumber}`;
     if (parsed.payload.iss !== expectedIssuer || !audience.includes(expectedAudience)) {
-      return { ok: false, status: 401, error: 'Firebase App Check token is for a different project' };
+      return {
+        ok: false,
+        status: 401,
+        error: 'Firebase App Check token is for a different project',
+      };
     }
     if (typeof parsed.payload.exp !== 'number' || parsed.payload.exp <= now) {
       return { ok: false, status: 401, error: 'Firebase App Check token expired' };
@@ -418,7 +664,12 @@ export default {
     }
 
     if (!env.DASHSCOPE_API_KEY) {
-      return json({ error: 'OCR worker is missing DASHSCOPE_API_KEY' }, { status: 503 }, request, env);
+      return json(
+        { error: 'OCR worker is missing DASHSCOPE_API_KEY' },
+        { status: 503 },
+        request,
+        env
+      );
     }
 
     const maxBodyBytes = numericEnv(env, 'MAX_BODY_BYTES', DEFAULT_MAX_BODY_BYTES);
@@ -427,7 +678,12 @@ export default {
     if (!rateLimit.allowed) {
       return json(
         { error: 'Rate limit exceeded. Please retry shortly.' },
-        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter || DEFAULT_RATE_LIMIT_WINDOW_SECONDS) } },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter || DEFAULT_RATE_LIMIT_WINDOW_SECONDS),
+          },
+        },
         request,
         env
       );
@@ -443,22 +699,22 @@ export default {
       return json({ error: 'Invalid JSON body' }, { status: 400 }, request, env);
     }
 
-    const validationErrors = validatePayload(payload);
+    const validationErrors = validatePayload(payload, env);
     if (validationErrors.length) {
-      return json({ error: 'Invalid OCR request payload', details: validationErrors }, { status: 400 }, request, env);
+      return json(
+        { error: 'Invalid OCR request payload', details: validationErrors },
+        { status: 400 },
+        request,
+        env
+      );
     }
 
-    const serializedPayload = JSON.stringify(payload);
-    if (new TextEncoder().encode(serializedPayload).byteLength > maxBodyBytes) {
-      return json({ error: `Payload too large. Maximum size is ${maxBodyBytes} bytes.` }, { status: 413 }, request, env);
-    }
-
-    const upstream = dashscopeEndpointDetails(env);
-    if (!isAllowedDashscopeEndpoint(upstream.url)) {
+    const attempts = buildDashscopeAttempts(env, payload.model);
+    if (!attempts.length) {
       return json(
         {
-          error: 'DASHSCOPE_BASE_URL is not a valid DashScope HTTPS endpoint. Set it to https://dashscope-intl.aliyuncs.com/compatible-mode/v1.',
-          upstreamHost: upstream.host,
+          error:
+            'OCR worker has no configured DashScope model attempts. Set DASHSCOPE_API_KEY and at least one model.',
         },
         { status: 503 },
         request,
@@ -466,44 +722,6 @@ export default {
       );
     }
 
-    try {
-      const dashscopeResponse = await fetch(upstream.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${env.DASHSCOPE_API_KEY}`,
-        },
-        body: serializedPayload,
-      });
-
-      const responseHeaders = {
-        'Content-Type': dashscopeResponse.headers.get('Content-Type') || 'application/json',
-        ...corsHeaders(request, env),
-      };
-      if (dashscopeResponse.status === 403) {
-        const responseBody = await dashscopeResponse.text();
-        if (/workers endpoint access denied/i.test(responseBody)) {
-          return json(
-            {
-              error: 'DashScope upstream returned 403: Workers endpoint access denied. Check DASHSCOPE_BASE_URL, DASHSCOPE_API_KEY permissions, and redeploy the current Worker code.',
-              upstreamHost: upstream.host,
-            },
-            { status: 403 },
-            request,
-            env
-          );
-        }
-        return new Response(responseBody, {
-          status: dashscopeResponse.status,
-          headers: responseHeaders,
-        });
-      }
-      return new Response(dashscopeResponse.body, {
-        status: dashscopeResponse.status,
-        headers: responseHeaders,
-      });
-    } catch (err) {
-      return json({ error: err?.message || 'OCR proxy failed' }, { status: 500 }, request, env);
-    }
+    return proxyDashscopeWithFallback(payload, attempts, request, env, maxBodyBytes);
   },
 };

@@ -93,7 +93,8 @@ function paginateLongTables(root, step = TABLE_PAGE_STEP) {
     const rows = Array.from(tbody.children).filter((el) => el.tagName === 'TR');
     // Remove any control left over from a previous render of this table.
     const stale = table.nextElementSibling;
-    if (stale && stale.classList && stale.classList.contains('dash-table-more-wrap')) stale.remove();
+    if (stale && stale.classList && stale.classList.contains('dash-table-more-wrap'))
+      stale.remove();
     if (rows.length <= step) {
       rows.forEach((row) => row.classList.remove('dash-row-hidden'));
       return;
@@ -1190,6 +1191,23 @@ function normalizeDutyGameTime(rawTime) {
   return normalized ? `${normalized} GT` : text;
 }
 
+function splitDutyTargetAndName(text) {
+  const raw = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!raw) return { target: '', name: '' };
+  const match = raw.match(
+    /^(?:(gate|gates|bridge|bridges|town|capital|stronghold|checkpoint|check\s*point)\s*(?:l|lv|lvl|level)?\s*\d*|(?:team)\s*\d+)(?:\s+(team\s*\d+))?\s+(.+)$/i
+  );
+  if (!match) return { target: '', name: raw };
+  const target = [match[1] || '', match[2] || '']
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ');
+  const name = String(match[3] || '').trim();
+  return name ? { target, name } : { target: '', name: raw };
+}
+
 function parseDutyEntryFromLine(line, context = {}) {
   let text = String(line || '')
     .replace(/^\s*[-*\u2022]+/, '')
@@ -1246,8 +1264,9 @@ function parseDutyEntryFromLine(line, context = {}) {
     name = atMatch[1].trim();
     text = text.slice(0, atMatch.index).trim();
   } else {
-    name = text.trim();
-    text = '';
+    const split = splitDutyTargetAndName(text);
+    name = split.name;
+    text = split.target;
   }
 
   const target = text.replace(/\s+/g, ' ').trim();
@@ -1275,7 +1294,7 @@ function parseDutyEntriesFromText(text) {
     .forEach((line) => {
       const groupMatch = String(line || '')
         .trim()
-        .match(/^([^:\[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
+        .match(/^([^:[\]]+):(?:\s*\[([^\]]+)\])?\s*$/);
       if (groupMatch && !/^\d+[.)-]/.test(String(line || '').trim())) {
         context.group = groupMatch[1].trim();
         context.groupCount = String(groupMatch[2] || '').trim();
@@ -1292,6 +1311,12 @@ function parseDutyEntriesFromText(text) {
     seen.add(key);
     return true;
   });
+}
+
+function parseDutyEntriesFromOcrText(text) {
+  return parseDutyEntriesFromText(text).filter(
+    (entry) => entry.usageTime || entry.target || String(entry.original || '').includes('@')
+  );
 }
 
 function showDutyPasteForm(type) {
@@ -1498,8 +1523,11 @@ async function processDutyImages(type, files) {
     const rejected = describeRejectedOcrImageFiles(files);
     log(
       rejected.length
-        ? `No supported ${label} image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}`
-        : `No ${label} image selected.`,
+        ? adminT('adminDutyUnsupportedImageLog', {
+            label,
+            files: rejected.slice(0, 3).join(', '),
+          })
+        : adminT('adminDutyNoImageSelectedLog', { label }),
       'warn'
     );
     return;
@@ -1564,13 +1592,13 @@ Rules:
           : Array.isArray(parsed?.names)
             ? parseDutyEntriesFromText(parsed.names.join('\n'))
             : [];
-      allEntries.push(...entries);
+      allEntries.push(...(entries.length ? entries : parseDutyEntriesFromOcrText(cleaned)));
     } catch (e) {
       log(
         adminT('adminDutyOcrErrorLog', {
           label,
           file: file.name,
-          error: describeOcrRequestError(e),
+          error: describeOcrRequestError(e, adminT),
         }),
         'error'
       );
@@ -1911,7 +1939,7 @@ async function syncDashboardAuxiliaryRecords(options = {}) {
 
 function notifySpecialListCloudResult(ok, label) {
   if (ok) return;
-  const message = `${label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.`;
+  const message = adminT('adminSpecialListSavedLocalOnly', { label });
   log(message, 'warn');
   alert(message);
 }
@@ -2254,8 +2282,10 @@ async function processContributionImages(files, mode = 'normal') {
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
     const message = rejected.length
-      ? `No supported contribution image selected. Use PNG, JPG, or WebP. Rejected: ${rejected.slice(0, 3).join(', ')}`
-      : 'No contribution image selected.';
+      ? adminT('adminContributionUnsupportedImageStatus', {
+          files: rejected.slice(0, 3).join(', '),
+        })
+      : adminT('adminContributionNoImageSelectedStatus');
     log(message, 'warn');
     setContributionUploadStatus(message, 'warn');
     return;
@@ -2318,7 +2348,7 @@ Rules:
           : [];
       allEntries.push(...entries);
     } catch (e) {
-      const errorMessage = describeOcrRequestError(e);
+      const errorMessage = describeOcrRequestError(e, adminT);
       log(
         adminT('adminContributionOcrErrorLog', { file: file.name, error: errorMessage }),
         'error'
@@ -2672,13 +2702,15 @@ function setWeightedContributionCompactView(enabled) {
   } catch {
     // Keep the in-page toggle usable even when localStorage is unavailable.
   }
-  document.querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card').forEach((card) => {
-    card.classList.toggle('dash-weighted-compact', enabled);
-    card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
-      button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-      button.textContent = enabled ? 'Full View' : 'Compact View';
+  document
+    .querySelectorAll('#ocrDashboardRoot .dash-contribution-weighted-card')
+    .forEach((card) => {
+      card.classList.toggle('dash-weighted-compact', enabled);
+      card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
+        button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        button.textContent = enabled ? 'Full View' : 'Compact View';
+      });
     });
-  });
 }
 
 function renderWeightedContributionViewToggle(compact) {
@@ -2846,11 +2878,14 @@ function renderExGuildTable() {
   const host = $id('dashExGuildBody');
   if (!host) return;
   const entries = state.exGuildContributions || [];
-  const primaryRecord = (state.contributionRecords || []).find((r) => r.isPrimary) ||
+  const primaryRecord =
+    (state.contributionRecords || []).find((r) => r.isPrimary) ||
     (state.contributionRecords || [])[state.contributionRecords.length - 1];
   const primaryKeys = new Set();
   (primaryRecord?.entries || []).forEach((entry) => {
-    try { primaryKeys.add(compactPlayerIdentity(stripGuildTagsFromPlayerName(entry.name || ''))); } catch {}
+    try {
+      primaryKeys.add(compactPlayerIdentity(stripGuildTagsFromPlayerName(entry.name || '')));
+    } catch {}
   });
   if (!entries.length) {
     host.innerHTML = `<div class="dash-empty">${esc(adminT('adminExGuildEmpty'))}</div>`;
@@ -2875,7 +2910,9 @@ function renderExGuildTable() {
       const cleanName = stripExGuildGuildTag(entry.playerName || '');
       const manualMatch = String(entry.matchedName || '').trim();
       let autoKey = '';
-      try { autoKey = compactPlayerIdentity(cleanName); } catch {}
+      try {
+        autoKey = compactPlayerIdentity(cleanName);
+      } catch {}
       const matched = Boolean(manualMatch) || primaryKeys.has(autoKey);
       const statusBadge = matched
         ? `<span class="dash-badge dash-badge-ok">${esc(adminT('adminExGuildMatched'))}</span>`

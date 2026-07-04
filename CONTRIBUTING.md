@@ -62,6 +62,10 @@ npm run build
 - Call out any skipped checks and why.
 - Do not commit secrets, private API keys, admin credentials, or private alliance data.
 
+## `gh-pages` Writer Rule
+
+The live site is served directly from the `gh-pages` branch, so only one person or agent should write to that branch at a time. Before making broad CSS, dashboard, auth, or build changes, confirm who owns the active editing lane; do not commit, push, reset, stash, or reformat unrelated files while another lane is active.
+
 ## Release Notes
 
 Every user-visible change should update `CHANGELOG.md`. Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.

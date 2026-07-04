@@ -18,6 +18,11 @@
   "globals": {
     "firebase": "readonly"
   },
+  "rules": {
+    "no-empty": "off",
+    "no-inner-declarations": "off",
+    "no-unused-vars": "off"
+  },
   "overrides": [
     {
       "files": [

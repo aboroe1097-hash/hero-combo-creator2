@@ -538,12 +538,25 @@ function pulseGameNodeWrap(wrapEl) {
 
 function buildGameTreeTierHtml(nodesInRow) {
     const slots = [null, null, null];
-    nodesInRow.forEach((node) => {
-        const col = Math.min(3, Math.max(1, node.col || 2)) - 1;
-        slots[col] = node;
+    const displayColumns = nodesInRow.length === 1
+        ? [2]
+        : nodesInRow.length === 2
+            ? [1, 3]
+            : null;
+    nodesInRow.forEach((node, index) => {
+        const displayCol = displayColumns
+            ? displayColumns[index]
+            : Math.min(3, Math.max(1, node.col || 2));
+        const col = displayCol - 1;
+        slots[col] = { ...node, _displayCol: displayCol };
     });
     const wideConnector = nodesInRow.length >= 3 ? ' game-tree-connector--wide' : '';
-    let html = '<div class="game-tree-tier">';
+    const tierLayout = nodesInRow.length === 1
+        ? ' game-tree-tier--single'
+        : nodesInRow.length === 2
+            ? ' game-tree-tier--pair'
+            : '';
+    let html = `<div class="game-tree-tier${tierLayout}" data-row-count="${nodesInRow.length}">`;
     slots.forEach((node, idx) => {
         if (node) {
             const level = getStoredNodeLevel(node._techId || node.techId, node.id);
@@ -558,7 +571,8 @@ function buildGameTreeTierHtml(nodesInRow) {
             const iconMeta = resolveTechNodeIcon(node);
             html += `
               <div class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
-                data-node-id="${node.id}" data-icon-id="${iconMeta.id}">
+                data-node-id="${node.id}" data-node-col="${node._displayCol || node.col || 2}"
+                data-icon-id="${iconMeta.id}" style="--node-col: ${node._displayCol || node.col || 2};">
                 <button type="button" class="game-tech-tap game-tech-tap--${troopClass}${tapState}"
                   aria-label="${escapeHtml(node.name)}: level ${level} of ${node.maxLevel}">
                   <span class="game-tech-medallion" aria-hidden="true">
@@ -651,7 +665,7 @@ function wireGameTechNodeContainers(rootEl, tech) {
         const max = parseInt(input.max, 10);
         let current = parseInt(input.value, 10) || 0;
         const iconMeta = resolveTechNodeIcon(node);
-        wrap.style.setProperty('--node-col', node.col || 2);
+        wrap.style.setProperty('--node-col', wrap.dataset.nodeCol || node.col || 2);
         wrap.style.setProperty('--node-icon-tint', iconMeta.tint);
         syncGameNodeVisual(node, current, wrap);
 
@@ -718,9 +732,18 @@ function renderGameCalculator(tech, container) {
     const pageIds = Object.keys(pageGroups).map(Number).sort((a, b) => a - b);
 
     const pageTabsHtml = pages && pageIds.length > 1
-        ? `<div class="research-page-tabs" role="tablist">${pageIds.map((pid, i) =>
-            `<button type="button" class="research-page-tab${i === 0 ? ' active' : ''}" role="tab" data-game-page="${pid}" aria-selected="${i === 0}">${escapeHtml(pages[pid - 1] || `Page ${pid}`)}</button>`
-          ).join('')}</div>`
+        ? `<div class="research-page-sequence">
+            <div class="research-page-sequence-note">
+                <strong>${escapeHtml(appT('researchGameSequenceTitle'))}:</strong>
+                ${escapeHtml(appT('researchGameSequenceHint'))}
+            </div>
+            <div class="research-page-tabs" role="tablist">${pageIds.map((pid, i) =>
+                `<button type="button" class="research-page-tab${i === 0 ? ' active' : ''}" role="tab" data-game-page="${pid}" aria-selected="${i === 0}" aria-label="${escapeHtml(appT('researchGamePartLabel', { n: i + 1, total: pageIds.length }))}: ${escapeHtml(pages[pid - 1] || `Page ${pid}`)}">
+                    <span class="research-page-tab-step">${escapeHtml(appT('researchGamePartShort', { n: i + 1 }))}</span>
+                    <span class="research-page-tab-name">${escapeHtml(pages[pid - 1] || `Page ${pid}`)}</span>
+                </button>`
+              ).join('')}</div>
+          </div>`
         : '';
 
     const pagesHtml = pageIds.map((pid, i) =>
@@ -825,7 +848,7 @@ function renderCalculator(tech) {
         
         quickButtonsHtml += `<button class="quick-set-btn max-toggle-btn research-quick-btn research-max-toggle${toggleStateClass}" data-val="${toggleVal}">${toggleText}</button>`;
 
-        const colAttr = node.col ? ` data-node-col="${node.col}"` : '';
+        const colAttr = node._displayCol || node.col ? ` data-node-col="${node._displayCol || node.col}"` : '';
         const safeName = escapeHtml(node.name);
         const safeBuff = escapeHtml(node.buff);
 
@@ -877,7 +900,17 @@ function renderCalculator(tech) {
             const rNodes = rowGroups[rk];
             rNodes.sort((a,b) => a.col - b.col);
             
-            gHtml += `<div class="research-tree-row">`;
+            const rowLayoutClass = rNodes.length === 1
+                ? ' research-tree-row--single'
+                : rNodes.length === 2
+                    ? ' research-tree-row--pair'
+                    : '';
+            if (rNodes.length === 1) rNodes[0]._displayCol = 2;
+            if (rNodes.length === 2) {
+                rNodes[0]._displayCol = 1;
+                rNodes[1]._displayCol = 3;
+            }
+            gHtml += `<div class="research-tree-row${rowLayoutClass}" data-row-count="${rNodes.length}">`;
             rNodes.forEach(n => gHtml += buildNodeHtml(n));
             gHtml += `</div>`;
             

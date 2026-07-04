@@ -43,8 +43,10 @@ export function stopScoutSync() {
 
 export async function pullScoutIntel() {
   try {
-    const { db } = initFirebase();
-    await ensureAnonymousAuth();
+    const fb = await loadFirebase();
+    const { db } = fb.initFirebase();
+    await fb.ensureAnonymousAuth();
+    const { doc, getDoc } = await loadFirestore();
     const ref = doc(db, ...INTEL_PATH);
     const snap = await getDoc(ref);
     return snap.exists() ? snap.data() : null;
@@ -55,24 +57,30 @@ export async function pullScoutIntel() {
 
 export async function pushScoutIntel(plan) {
   try {
-    const { db } = initFirebase();
-    await ensureAnonymousAuth();
-    let hasAdminClaim = await getFirebaseAdminClaim(false);
-    if (!hasAdminClaim) hasAdminClaim = await getFirebaseAdminClaim(true);
+    const fb = await loadFirebase();
+    const { db } = fb.initFirebase();
+    await fb.ensureAnonymousAuth();
+    let hasAdminClaim = await fb.getFirebaseAdminClaim(false);
+    if (!hasAdminClaim) hasAdminClaim = await fb.getFirebaseAdminClaim(true);
     if (!hasAdminClaim) {
-      const uid = getAuthInstance()?.currentUser?.uid || 'unknown';
+      const uid = fb.getCurrentUser()?.uid || 'unknown';
       return {
         ok: false,
         error: `Firebase admin claim missing for UID ${uid}. Run npm run firebase:admin-claim, then reload.`,
       };
     }
+    const { doc, serverTimestamp, setDoc } = await loadFirestore();
     const ref = doc(db, ...INTEL_PATH);
-    await setDoc(ref, {
-      guilds: plan.guilds || {},
-      status: plan.status || {},
-      updatedAt: serverTimestamp(),
-      updatedBy: 'eden-map-planner',
-    }, { merge: true });
+    await setDoc(
+      ref,
+      {
+        guilds: plan.guilds || {},
+        status: plan.status || {},
+        updatedAt: serverTimestamp(),
+        updatedBy: 'eden-map-planner',
+      },
+      { merge: true }
+    );
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err?.message || 'Push failed' };

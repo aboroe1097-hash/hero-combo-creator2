@@ -4,6 +4,7 @@
   "main": "workers/qwen-cors-proxy.js",
   "compatibility_date": "2026-06-25",
   "workers_dev": true,
+  "preview_urls": false,
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
@@ -13,6 +14,8 @@
   "vars": {
     "ALLOWED_ORIGINS": "https://roc-vts.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:5176,http://127.0.0.1:5176,http://localhost:5177,http://127.0.0.1:5177,http://localhost:4173,http://127.0.0.1:4173,http://localhost:4174,http://127.0.0.1:4174",
     "DASHSCOPE_BASE_URL": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "DASHSCOPE_MODEL": "qwen-vl-plus",
+    "DASHSCOPE_FALLBACK_MODELS": "qwen-vl-max,qwen-vl-ocr-2025-11-20,qwen-vl-ocr",
     "FIREBASE_APP_CHECK_PROJECT_NUMBER": "103195597389",
     "FIREBASE_APP_CHECK_APP_ID": "1:103195597389:web:97788d99356b4e59839a04",
     "MAX_BODY_BYTES": "5242880",

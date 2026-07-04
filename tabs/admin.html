@@ -122,6 +122,17 @@
             <span class="dash-cloud-status-dot" aria-hidden="true"></span>
             <span id="dashCloudStatusText"></span>
           </div>
+          <div
+            id="dashCloudBanner"
+            class="dash-cloud-banner hidden"
+            role="alert"
+            aria-live="assertive"
+          >
+            <span id="dashCloudBannerText"></span>
+            <button id="dashCloudBannerBtn" class="dash-btn dash-btn-small" type="button">
+              <span data-i18n="adminBtnRefresh">Refresh</span>
+            </button>
+          </div>
           <div id="dashApiKeyContainer" class="dash-api-key">
             <span class="dash-api-key-note">OCR uploads use the secured Worker key.</span>
             <div class="dash-api-key-actions">
@@ -230,13 +241,52 @@
                 ><span>CSV Debug Data</span>
               </button>
               <button id="dashExpDutyDebugCsv">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Duty Debug (Banner/Pather)</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="12" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span>CSV Duty Debug (Banner/Pather)</span>
               </button>
               <button id="dashExpWeightedCsv">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV Weighted Contribution</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="12" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span>CSV Weighted Contribution</span>
               </button>
               <button id="dashExpAllDataCsv">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>CSV All Admin Data</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="12" y2="17" />
+                  <polyline points="10 9 9 9 8 9" /></svg
+                ><span>CSV All Admin Data</span>
               </button>
               <button id="dashExpPdf">
                 <svg
@@ -673,7 +723,10 @@
           </div>
         </div>
 
-        <div id="dashWeightedContributionPanel" class="dash-weighted-contribution-panel hidden"></div>
+        <div
+          id="dashWeightedContributionPanel"
+          class="dash-weighted-contribution-panel hidden"
+        ></div>
 
         <!-- Visuals Row -->
         <div class="dash-main-grid dash-visuals-grid">
