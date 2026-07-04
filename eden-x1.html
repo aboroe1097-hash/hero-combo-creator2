@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260704_230432','app.css?v=20260704_230432','ocr-dashboard.css?v=20260704_230432','components.css?v=20260704_230432','atmosphere.css?v=20260704_230432','mobile.css?v=20260704_230432'];
+      var files = ['_tokens.css?v=20260704_232435','app.css?v=20260704_232435','ocr-dashboard.css?v=20260704_232435','components.css?v=20260704_232435','atmosphere.css?v=20260704_232435','mobile.css?v=20260704_232435'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260704_230432') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260704_232435') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260704_230432"></script>
+  <script src="js/maintenance-config.js?v=20260704_232435"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -93,7 +93,13 @@
           </button>
 
           <a href="admin.html" class="admin-back-tools" data-i18n="edenX1AdminDashboard">Admin Dashboard</a>
-          <a href="index.html" class="admin-back-tools" data-i18n="adminBackToTools">Back to Tools</a>
+          <a
+            href="index.html"
+            class="admin-back-tools"
+            aria-label="New here? Explore the full VTS tools site."
+            title="New here? Explore the full VTS tools site."
+            style="border-color: rgba(250, 204, 21, 0.72); background: linear-gradient(135deg, #22d3ee, #facc15); color: #06111f; box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.24), 0 14px 30px rgba(34, 211, 238, 0.22);"
+          >Explore VTS Tools</a>
         </div>
       </div>
     </header>
@@ -178,6 +184,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260704_230432"></script>
+  <script type="module" src="js/eden-x1.js?v=20260704_232435"></script>
 </body>
 </html>
