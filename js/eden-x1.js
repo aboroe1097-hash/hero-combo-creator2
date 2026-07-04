@@ -230,22 +230,26 @@ function renderFinalRankPopover(row, index) {
   </button>`;
 }
 
-function renderFinalRewardPopover(row, index) {
+function renderFinalRewardPopover(row, index, context = {}) {
   const tooltipId = `edenX1FinalRewardTip-${index}`;
-  const baseReward = contributionRewardLabel(row.baseReward);
-  const finalReward = contributionRewardLabel(row.finalReward);
+  const baseReward = contributionRewardLabel(context.baseReward || row.baseReward);
+  const finalReward = contributionRewardLabel(context.finalReward || row.finalReward);
+  const rankLabel = context.rankLabel || t('adminContributionFinalRank');
+  const rankValue = context.rank || row.finalRank;
   const hasPrivateR5Decision =
     row.rewardReason === 'grant_premium' || row.rewardReason === 'forfeit_premium';
-  const reason = hasPrivateR5Decision
-    ? t('edenX1ConductPrivateNotice')
-    : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
+  const reason = context.reason
+    ? context.reason
+    : hasPrivateR5Decision
+      ? t('edenX1ConductPrivateNotice')
+      : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
   return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
       <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1ThWeightedScore'))}</b></span>
       <span><span>${esc(t('edenX1ThWeightedScore'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
-      <span><span>${esc(t('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
+      <span><span>${esc(rankLabel)}</span><b>#${rankValue}</b></span>
       <span><span>${esc(t('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
       <span><span>${esc(t('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
       <small>${esc(reason)}</small>
@@ -351,6 +355,8 @@ function renderTable(rows, recordLabel, options = {}) {
   const title = options.title || t('edenX1WeightedTitle');
   const meta = options.meta || `${recordLabel || t('edenX1PageTitle')} - ${t('edenX1ViewOnly')}`;
   const numberMode = options.numberMode || 'final';
+  const rewardContextForRow =
+    typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -393,7 +399,12 @@ function renderTable(rows, recordLabel, options = {}) {
                 row.banners +
                 row.conductBonus;
               const numberValue =
-                numberMode === 'current' ? row.currentRank || index + 1 : row.finalRank;
+                numberMode === 'current'
+                  ? row.currentRank || index + 1
+                  : numberMode === 'index'
+                    ? index + 1
+                    : row.finalRank;
+              const rewardContext = rewardContextForRow(row, index, numberValue);
               return `<tr>
                 <td data-label="${esc(t('edenX1ThNumber'))}">${numberValue}</td>
                 <td data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
@@ -407,7 +418,7 @@ function renderTable(rows, recordLabel, options = {}) {
                 <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
-                <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index)}</td>
+                <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, rewardContext)}</td>
               </tr>`;
             })
             .join('')}</tbody>
@@ -484,6 +495,18 @@ function renderCurrentTable() {
     options = {
       title: t('edenX1RewardSupportTitle'),
       meta: t('edenX1RewardSupportMeta'),
+      numberMode: 'index',
+      rewardContextForRow: (_row, index, numberValue) => {
+        const reward = index === 0 ? 'guild_master' : 'core';
+        const label = contributionRewardLabel(reward);
+        return {
+          rank: numberValue,
+          rankLabel: t('edenX1RewardSupportTitle'),
+          baseReward: reward,
+          finalReward: reward,
+          reason: `${t('edenX1RewardSupportTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
+        };
+      },
     };
   }
   panel.innerHTML = renderTable(rows, currentRecordLabel, options);

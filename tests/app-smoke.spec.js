@@ -1801,6 +1801,13 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Alpha');
     await expect(panel).not.toContainText('Echo');
+    await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
+    await expect(panel.locator('tbody tr .dash-weighted-reward-value')).toContainText([
+      'Guild Master Reward',
+      'Core Rewards',
+      'Core Rewards',
+      'Core Rewards',
+    ]);
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();
