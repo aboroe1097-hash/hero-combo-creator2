@@ -1627,19 +1627,19 @@ test.describe('app smoke tabs', () => {
     const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
     const altRow = weightedRows.find((cells) => cells[3] === '78,617');
 
-    expect(mainRow?.[5]).toBe('1');
-    expect(mainRow?.[6]).toBe('1');
+    expect(mainRow?.[5]).toBe('0');
+    expect(mainRow?.[6]).toBe('0');
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Guild Master Reward');
-    expect(altRow?.[5]).toBe('0');
-    expect(altRow?.[6]).toBe('0');
+    expect(altRow?.[5]).toBe('1');
+    expect(altRow?.[6]).toBe('1');
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
 
     const mainScoreTrigger = panel
-      .locator('tbody tr', { hasText: '144,650' })
+      .locator('tbody tr', { hasText: '78,617' })
       .locator('.dash-weighted-score-trigger');
     const scorePopover = mainScoreTrigger.locator('.dash-weighted-score-popover');
     await expect(scorePopover).toBeHidden();
