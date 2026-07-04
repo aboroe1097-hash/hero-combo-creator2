@@ -19,7 +19,9 @@ import {
 } from './ocr-name-normalizer.js';
 import {
   buildWeightedContributionRows,
+  getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
+  normalizeWeightedR5Adjustments,
 } from './contribution-weighting.js';
 import { translations } from './translations.js';
 
@@ -1022,6 +1024,53 @@ function renderWeightedScorePopover(row, index) {
   </button>`;
 }
 
+const CONDUCT_CATEGORY_I18N_KEYS = {
+  banner_help: 'adminConductCategoryBannerHelp',
+  connected_road: 'adminConductCategoryConnectedRoad',
+  extra_effort: 'adminConductCategoryExtraEffort',
+  merit_other: 'adminConductCategoryMeritOther',
+  path_block: 'adminConductCategoryPathBlock',
+  toxicity: 'adminConductCategoryToxicity',
+  ignored_coordination: 'adminConductCategoryIgnoredCoordination',
+  penalty_other: 'adminConductCategoryPenaltyOther',
+  forfeit_premium: 'adminConductCategoryForfeitPremium',
+  grant_premium: 'adminConductCategoryGrantPremium',
+};
+
+function weightedConductDetailsForRow(row) {
+  if (!row?.isPrimaryAccount) return [];
+  const familyKey = getWeightedPlayerFamilyKey(row.playerKey);
+  return normalizeWeightedR5Adjustments(state.r5Adjustments, state.r5Season).filter(
+    (adjustment) => adjustment.playerFamilyKey === familyKey
+  );
+}
+
+function conductCategoryLabel(categoryKey) {
+  const key = CONDUCT_CATEGORY_I18N_KEYS[String(categoryKey || '')] || '';
+  return key ? adminT(key) : String(categoryKey || adminT('edenX1ThConduct'));
+}
+
+function renderConductScorePopover(row, index) {
+  const tooltipId = `dashConductScoreTip-${index}`;
+  const details = weightedConductDetailsForRow(row);
+  const detailRows = details.length
+    ? details
+        .map((adjustment) => {
+          const note = String(adjustment.note || '').trim();
+          return `<span><span>${esc(conductCategoryLabel(adjustment.category))}${note ? `<small>${esc(note)}</small>` : ''}</span><b>${weightedContributionSignedNumber(adjustment.points)}</b></span>`;
+        })
+        .join('')
+    : `<span><span>${esc(adminT('edenX1ConductFormula', { conduct: weightedContributionSignedNumber(row.conductBonus) }))}</span><b>${weightedContributionSignedNumber(row.conductBonus)}</b></span>`;
+  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1ConductAria', { player: row.playerName }))}">
+    <span class="dash-weighted-score-value">${weightedContributionSignedNumber(row.conductBonus)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>${esc(adminT('adminConductTitle'))}</strong>
+      ${detailRows}
+      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('edenX1BreakdownConductPoints'))}</span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
+    </span>
+  </button>`;
+}
+
 function renderFinalRankPopover(row, index) {
   const tooltipId = `dashFinalRankTip-${index}`;
   const cur = Number(row.currentRank);
@@ -1061,6 +1110,8 @@ function renderFinalRewardPopover(row, index) {
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(adminT('edenX1RewardReasonTitle'))}</strong>
+      <span><span>${esc(adminT('edenX1RankedBy'))}</span><b>${esc(adminT('edenX1ThWeightedScore'))}</b></span>
+      <span><span>${esc(adminT('edenX1ThWeightedScore'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
       <span><span>${esc(adminT('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
       <span><span>${esc(adminT('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
       <span><span>${esc(adminT('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
@@ -1163,7 +1214,7 @@ function renderWeightedContributionDashboard() {
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${sortedWeightedRows(rows)
           .map(
             (row, index) => `<tr>
@@ -1175,7 +1226,7 @@ function renderWeightedContributionDashboard() {
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThTotal'))}" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" data-label="${esc(adminT('edenX1ThConduct'))}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
+          <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(adminT('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index)}</td>

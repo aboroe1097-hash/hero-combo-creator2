@@ -4578,12 +4578,15 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-contribution-weighted-table {
   min-width: 1180px;
 }
+.eden-x1-page #ocrDashboardRoot .eden-x1-slots-table {
+  min-width: min(680px, 100%);
+}
 #ocrDashboardRoot
   .dash-contribution-weighted-card.dash-weighted-compact
   .dash-contribution-weighted-table {
   min-width: 0;
   width: 100%;
-  /* Hidden detail columns drop out, so the 4 visible columns spread evenly. */
+  /* Hidden detail columns drop out, so the compact public columns spread evenly. */
   table-layout: fixed;
 }
 #ocrDashboardRoot
@@ -4598,6 +4601,11 @@ body[style*='overflow: hidden'] .tab-panel {
 }
 #ocrDashboardRoot .dash-contribution-weighted-card.dash-weighted-compact .dash-weighted-detail-col {
   display: none;
+}
+#ocrDashboardRoot
+  .dash-contribution-weighted-card.dash-weighted-compact
+  .dash-weighted-conduct-col {
+  display: table-cell;
 }
 #ocrDashboardRoot .dash-weighted-table-controls {
   display: flex;
@@ -4642,6 +4650,9 @@ body[style*='overflow: hidden'] .tab-panel {
   font-weight: 900;
   line-height: 1.2;
   text-align: right;
+}
+#ocrDashboardRoot .dash-weighted-conduct-trigger {
+  min-width: 2.4rem;
 }
 #ocrDashboardRoot .dash-weighted-rank-trigger {
   position: relative;
@@ -4724,7 +4735,10 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover,
 #ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
 #ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
-#ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-reward-trigger:hover .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible .dash-weighted-score-popover,
+#ocrDashboardRoot .dash-weighted-reward-trigger:focus .dash-weighted-score-popover {
   opacity: 1;
   transform: translateY(0);
   visibility: visible;

@@ -14148,7 +14148,10 @@ body.admin-standalone-page > .app-shell {
 }
 
 .eden-x1-flow-card {
+  appearance: none;
   position: relative;
+  display: block;
+  width: 100%;
   min-height: 168px;
   border: 1px solid rgba(34, 211, 238, 0.22);
   border-radius: 16px;
@@ -14156,6 +14159,32 @@ body.admin-standalone-page > .app-shell {
   background:
     linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.72)),
     radial-gradient(circle at 88% 12%, rgba(250, 204, 21, 0.18), transparent 36%);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.eden-x1-flow-card:hover,
+.eden-x1-flow-card:focus-visible,
+.eden-x1-flow-card.is-active {
+  border-color: rgba(103, 232, 249, 0.62);
+  box-shadow:
+    inset 0 0 0 1px rgba(103, 232, 249, 0.18),
+    0 16px 32px rgba(8, 145, 178, 0.16);
+}
+
+.eden-x1-flow-card:focus-visible {
+  outline: 2px solid rgba(103, 232, 249, 0.72);
+  outline-offset: 3px;
+}
+
+.eden-x1-flow-card.is-active {
+  transform: translateY(-1px);
 }
 
 .eden-x1-flow-card:not(:last-child)::after {
@@ -14191,7 +14220,8 @@ body.admin-standalone-page > .app-shell {
   font-weight: 900;
 }
 
-.eden-x1-flow-card p {
+.eden-x1-flow-copy {
+  display: block;
   margin: 0.5rem 0 0;
   color: var(--text-secondary);
   line-height: 1.45;
@@ -14301,6 +14331,15 @@ body.admin-standalone-page > .app-shell {
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.86)),
     radial-gradient(circle at 88% 12%, rgba(250, 204, 21, 0.16), transparent 36%);
+}
+
+[data-theme="light"] .eden-x1-flow-card:hover,
+[data-theme="light"] .eden-x1-flow-card:focus-visible,
+[data-theme="light"] .eden-x1-flow-card.is-active {
+  border-color: rgba(14, 116, 144, 0.48);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 116, 144, 0.12),
+    0 16px 32px rgba(15, 23, 42, 0.09);
 }
 
 [data-theme="light"] .eden-x1-weighted-card .dash-weighted-view-toggle {

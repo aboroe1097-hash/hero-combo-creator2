@@ -108,7 +108,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
         'bannerRecords', 'dutyRecords', 'contributionRecords', 'exGuildContributions',
-        'playerRegistry'
+        'playerRegistry', 'r5Season', 'publicConductAdjustments'
       ])
       && (!('last_updated' in request.resource.data) || request.resource.data.last_updated is string)
       && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
@@ -119,7 +119,9 @@ service cloud.firestore {
       && (!('dutyRecords' in request.resource.data) || request.resource.data.dutyRecords is list)
       && (!('contributionRecords' in request.resource.data) || request.resource.data.contributionRecords is list)
       && (!('exGuildContributions' in request.resource.data) || request.resource.data.exGuildContributions is list)
-      && (!('playerRegistry' in request.resource.data) || request.resource.data.playerRegistry is map);
+      && (!('playerRegistry' in request.resource.data) || request.resource.data.playerRegistry is map)
+      && (!('r5Season' in request.resource.data) || request.resource.data.r5Season is string)
+      && (!('publicConductAdjustments' in request.resource.data) || request.resource.data.publicConductAdjustments is list);
     }
 
     function validRosterData() {

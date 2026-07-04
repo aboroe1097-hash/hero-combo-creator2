@@ -1,18 +1,17 @@
-import { initFirebase, ensureAnonymousAuth } from './firebase.js';
-import { importFirestore } from './firebase-sdk.js';
 import { buildWeightedContributionRows } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 
 const APP_VERSION = '12.2.1';
 const FS_PATH = 'vts_admin/dashboard_data';
-const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
+const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 
 let currentLang = 'en';
 let currentRows = [];
 let currentRecordLabel = '';
+let currentRewardView = 'all';
 
 function $(id) {
   return document.getElementById(id);
@@ -89,6 +88,88 @@ function bindWeightedContributionViewToggle(host) {
   });
 }
 
+function rewardViewTitleKey(view) {
+  return (
+    {
+      contribution: 'edenX1RewardLeaderboardTitle',
+      support: 'edenX1RewardSupportTitle',
+      management: 'edenX1RewardManagementTitle',
+      team: 'edenX1RewardTeamTitle',
+    }[view] || 'edenX1WeightedTitle'
+  );
+}
+
+function rewardViewMetaKey(view) {
+  return (
+    {
+      contribution: 'edenX1RewardContributionMeta',
+      support: 'edenX1RewardSupportMeta',
+      management: 'edenX1RewardManagementMeta',
+      team: 'edenX1RewardTeamMeta',
+    }[view] || ''
+  );
+}
+
+function updateRewardFlowControls() {
+  document.querySelectorAll('[data-reward-view]').forEach((button) => {
+    const view = button.dataset.rewardView || '';
+    const active = view === currentRewardView;
+    const titleKey = button.dataset.rewardTitleKey || rewardViewTitleKey(view);
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    button.setAttribute('aria-label', t('edenX1RewardViewAria', { title: t(titleKey) }));
+  });
+}
+
+function bindRewardFlowControls() {
+  document.querySelectorAll('[data-reward-view]').forEach((button) => {
+    if (button.dataset.rewardBound) return;
+    button.dataset.rewardBound = '1';
+    button.addEventListener('click', () => {
+      const view = button.dataset.rewardView || 'all';
+      currentRewardView = view;
+      renderCurrentTable();
+    });
+  });
+  updateRewardFlowControls();
+}
+
+function getContributionRewardRows() {
+  return currentRows
+    .filter((row) => Number(row.currentRank) > 0)
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(a.currentRank) - Number(b.currentRank) ||
+        valueOf(b.contributionScore) - valueOf(a.contributionScore)
+    )
+    .slice(0, 10);
+}
+
+function getSupportRewardRows() {
+  return currentRows.slice(0, 4);
+}
+
+function rewardSlotRows(view) {
+  if (view === 'management') {
+    return Array.from({ length: 4 }, (_, index) => ({
+      slot: index + 1,
+      player: 'MalakAbo',
+      group: t('edenX1RewardManagementTitle'),
+      status: t('edenX1RewardAssigned'),
+    }));
+  }
+  if (view === 'team') {
+    return Array.from({ length: 2 }, (_, index) => ({
+      slot: index + 1,
+      player: t('edenX1Tba'),
+      group: t('edenX1RewardTeamTitle'),
+      status: t('edenX1RewardVotePending'),
+    }));
+  }
+  return [];
+}
+
 function renderWeightedScorePopover(row, index) {
   const tooltipId = `edenX1WeightedScoreTip-${index}`;
   const dutyCount = row.banners + row.pathers + row.shieldWalls;
@@ -98,9 +179,7 @@ function renderWeightedScorePopover(row, index) {
     shieldWalls: row.shieldWalls,
     count: dutyCount,
   });
-  const conductNote = t('edenX1ConductFormula', {
-    conduct: formatSignedNumber(row.conductBonus),
-  });
+  const conductNote = t('edenX1ConductPrivateNotice');
   return `<button class="dash-weighted-score-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${formatWeightedScore(row.weightedScore)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
@@ -110,6 +189,18 @@ function renderWeightedScorePopover(row, index) {
       <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
       <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(row.conductPoints || 0)}</b></span>
       <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+    </span>
+  </button>`;
+}
+
+function renderConductScorePopover(row, index) {
+  const tooltipId = `edenX1ConductTip-${index}`;
+  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
+    <span class="dash-weighted-score-value">${formatSignedNumber(row.conductBonus)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>${esc(t('edenX1BreakdownConductPoints'))}</strong>
+      <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(row.conductBonus)}</b></span>
+      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(t('edenX1ConductPrivateNotice'))}</small></span><b>${formatSignedNumber(row.conductPoints || 0)}</b></span>
     </span>
   </button>`;
 }
@@ -143,16 +234,17 @@ function renderFinalRewardPopover(row, index) {
   const tooltipId = `edenX1FinalRewardTip-${index}`;
   const baseReward = contributionRewardLabel(row.baseReward);
   const finalReward = contributionRewardLabel(row.finalReward);
-  const reason =
-    row.rewardReason === 'grant_premium'
-      ? t('edenX1RewardReasonGrant', { rank: row.finalRank })
-      : row.rewardReason === 'forfeit_premium'
-        ? t('edenX1RewardReasonForfeit', { rank: row.finalRank })
-        : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
+  const hasPrivateR5Decision =
+    row.rewardReason === 'grant_premium' || row.rewardReason === 'forfeit_premium';
+  const reason = hasPrivateR5Decision
+    ? t('edenX1ConductPrivateNotice')
+    : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
   return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
+      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1ThWeightedScore'))}</b></span>
+      <span><span>${esc(t('edenX1ThWeightedScore'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
       <span><span>${esc(t('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
       <span><span>${esc(t('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
       <span><span>${esc(t('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
@@ -254,22 +346,11 @@ function updateTextContent(lang) {
   renderCurrentTable();
 }
 
-async function loadR5Adjustments(db) {
-  try {
-    const { collection, getDocs } = await importFirestore();
-    const snapshot = await getDocs(collection(db, R5_COLLECTION_PATH));
-    const adjustments = [];
-    snapshot.forEach((doc) => {
-      adjustments.push(doc.data());
-    });
-    return adjustments.filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-function renderTable(rows, recordLabel) {
+function renderTable(rows, recordLabel, options = {}) {
   const compactView = isWeightedContributionCompactView();
+  const title = options.title || t('edenX1WeightedTitle');
+  const meta = options.meta || `${recordLabel || t('edenX1PageTitle')} - ${t('edenX1ViewOnly')}`;
+  const numberMode = options.numberMode || 'final';
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -279,10 +360,10 @@ function renderTable(rows, recordLabel) {
             <path d="M18 20V4" />
             <path d="M6 20v-6" />
           </svg>
-          <span>${esc(t('edenX1WeightedTitle'))}</span>
+          <span>${esc(title)}</span>
         </h2>
         <div class="dash-weighted-table-controls">
-          <span class="dash-weighted-contribution-meta">${esc(recordLabel || t('edenX1PageTitle'))} &middot; ${esc(t('edenX1ViewOnly'))}</span>
+          <span class="dash-weighted-contribution-meta">${esc(meta)}</span>
           ${renderWeightedContributionViewToggle(compactView)}
         </div>
       </div>
@@ -298,7 +379,7 @@ function renderTable(rows, recordLabel) {
             <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThPathers'))}</th>
             <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThBanners'))}</th>
             <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThTotal'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThConduct'))}</th>
+            <th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right">${esc(t('edenX1ThConduct'))}</th>
             <th style="text-align:right">${esc(t('edenX1ThWeightedScore'))}</th>
             <th>${esc(t('adminContributionFinalRank'))}</th>
             <th>${esc(t('adminContributionFinalReward'))}</th>
@@ -311,8 +392,10 @@ function renderTable(rows, recordLabel) {
                 row.pathers +
                 row.banners +
                 row.conductBonus;
+              const numberValue =
+                numberMode === 'current' ? row.currentRank || index + 1 : row.finalRank;
               return `<tr>
-                <td data-label="${esc(t('edenX1ThNumber'))}">${row.finalRank}</td>
+                <td data-label="${esc(t('edenX1ThNumber'))}">${numberValue}</td>
                 <td data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
@@ -321,7 +404,7 @@ function renderTable(rows, recordLabel) {
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
-                <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
+                <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index)}</td>
@@ -334,11 +417,78 @@ function renderTable(rows, recordLabel) {
   </div>`;
 }
 
+function renderRewardSlotTable(view) {
+  const title = t(rewardViewTitleKey(view));
+  const metaKey = rewardViewMetaKey(view);
+  const rows = rewardSlotRows(view);
+  return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
+    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card">
+      <div class="dash-card-hdr dash-card-hdr-wrap">
+        <h2 class="dash-card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20V10" />
+            <path d="M18 20V4" />
+            <path d="M6 20v-6" />
+          </svg>
+          <span>${esc(title)}</span>
+        </h2>
+        <div class="dash-weighted-table-controls">
+          <span class="dash-weighted-contribution-meta">${esc(metaKey ? t(metaKey) : t('edenX1ViewOnly'))}</span>
+        </div>
+      </div>
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table eden-x1-slots-table">
+          <thead><tr>
+            <th>${esc(t('edenX1ThNumber'))}</th>
+            <th>${esc(t('adminContributionMember'))}</th>
+            <th>${esc(t('edenX1RewardSlotGroup'))}</th>
+            <th>${esc(t('edenX1RewardSlotStatus'))}</th>
+          </tr></thead>
+          <tbody>${rows
+            .map(
+              (row) => `<tr>
+                <td data-label="${esc(t('edenX1ThNumber'))}">${row.slot}</td>
+                <td data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.player)}</strong></td>
+                <td data-label="${esc(t('edenX1RewardSlotGroup'))}">${esc(row.group)}</td>
+                <td data-label="${esc(t('edenX1RewardSlotStatus'))}">${esc(row.status)}</td>
+              </tr>`
+            )
+            .join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderCurrentTable() {
   const panel = $('dashWeightedContributionPanel');
-  if (!panel || !currentRows.length) return;
-  panel.innerHTML = renderTable(currentRows, currentRecordLabel);
+  if (!panel) return;
+  if (currentRewardView === 'management' || currentRewardView === 'team') {
+    panel.innerHTML = renderRewardSlotTable(currentRewardView);
+    updateRewardFlowControls();
+    return;
+  }
+  if (!currentRows.length) return;
+
+  let rows = currentRows;
+  let options = {};
+  if (currentRewardView === 'contribution') {
+    rows = getContributionRewardRows();
+    options = {
+      title: t('edenX1RewardLeaderboardTitle'),
+      meta: t('edenX1RewardContributionMeta'),
+      numberMode: 'current',
+    };
+  } else if (currentRewardView === 'support') {
+    rows = getSupportRewardRows();
+    options = {
+      title: t('edenX1RewardSupportTitle'),
+      meta: t('edenX1RewardSupportMeta'),
+    };
+  }
+  panel.innerHTML = renderTable(rows, currentRecordLabel, options);
   bindWeightedContributionViewToggle(panel);
+  updateRewardFlowControls();
 }
 
 async function bootShell() {
@@ -348,6 +498,7 @@ async function bootShell() {
   mountGameClock($('globalGameClock'), { compact: true, showUae: false });
   $('edenX1FooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   updateTextContent(currentLang);
+  bindRewardFlowControls();
 
   $('languageSelect')?.addEventListener('change', async (e) => {
     const nextLang = e.target.value || 'en';
@@ -363,6 +514,10 @@ async function main() {
   const errorEl = $('edenX1Error');
 
   try {
+    const [{ initFirebase, ensureAnonymousAuth }, { importFirestore }] = await Promise.all([
+      import('./firebase.js'),
+      import('./firebase-sdk.js'),
+    ]);
     const { configured, db } = initFirebase();
     if (!configured || !db) {
       if (errorEl) {
@@ -383,36 +538,7 @@ async function main() {
       return;
     }
 
-    const data = snap.data();
-    const contributionRecords = Array.isArray(data.contributionRecords)
-      ? data.contributionRecords
-      : [];
-    const dutyRecords = Array.isArray(data.dutyRecords) ? data.dutyRecords : [];
-    const exGuildContributions = Array.isArray(data.exGuildContributions)
-      ? data.exGuildContributions
-      : [];
-    const r5Adjustments = await loadR5Adjustments(db);
-    const season = data.r5Season || '';
-
-    const model = buildWeightedContributionRows({
-      contributionRecords,
-      dutyRecords,
-      r5Adjustments,
-      exGuildContributions,
-      season,
-    });
-
-    if (!model.rows || !model.rows.length) {
-      if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
-      return;
-    }
-
-    const dateStr = data.date || data.updatedAt || '';
-    currentRows = model.rows;
-    currentRecordLabel = dateStr
-      ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
-      : t('edenX1PageTitle');
-    renderCurrentTable();
+    applyDashboardData(snap.data());
   } catch (err) {
     console.error('Eden X1 view failed:', err);
     if (errorEl) {
@@ -425,4 +551,47 @@ async function main() {
   }
 }
 
-main();
+function applyDashboardData(data = {}) {
+  const contributionRecords = Array.isArray(data.contributionRecords)
+    ? data.contributionRecords
+    : [];
+  const dutyRecords = Array.isArray(data.dutyRecords) ? data.dutyRecords : [];
+  const exGuildContributions = Array.isArray(data.exGuildContributions)
+    ? data.exGuildContributions
+    : [];
+  const season = data.r5Season || '';
+  const r5Adjustments = Array.isArray(data.publicConductAdjustments)
+    ? data.publicConductAdjustments
+    : [];
+
+  const model = buildWeightedContributionRows({
+    contributionRecords,
+    dutyRecords,
+    r5Adjustments,
+    exGuildContributions,
+    season,
+  });
+
+  const panel = $('dashWeightedContributionPanel');
+  if (!model.rows || !model.rows.length) {
+    if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
+    return;
+  }
+
+  const dateStr = data.date || data.updatedAt || '';
+  currentRows = model.rows;
+  currentRecordLabel = dateStr
+    ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
+    : t('edenX1PageTitle');
+  renderCurrentTable();
+}
+
+window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
+  applyDashboardData(data);
+};
+
+if (EDEN_X1_TEST_MODE) {
+  bootShell().catch((err) => console.error('Eden X1 test shell failed:', err));
+} else {
+  main();
+}

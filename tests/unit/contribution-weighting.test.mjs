@@ -22,6 +22,7 @@ const {
   buildWeightedDutyCounts,
   getLatestContributionRecord,
   getWeightedContributionRecordLabel,
+  sanitizePublicR5Adjustments,
 } = await import('../../js/contribution-weighting.js');
 const { PLAYER_REGISTRY_KEY, writeStoredPlayerRegistry } = await import(
   '../../js/player-registry.js'
@@ -88,6 +89,56 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(undeadBanner.finalReward, 'core');
     assert.equal(Number(undeadBanner.weightedScore.toFixed(1)), 100000);
   });
+});
+
+test('public R5 conduct mirror keeps scores and premium flags without private notes', () => {
+  const season = 'eden-x1-2026';
+  const publicRows = sanitizePublicR5Adjustments(
+    [
+      {
+        season,
+        player: 'Alpha',
+        points: -2,
+        category: 'toxicity',
+        note: 'Private R5 note',
+        createdBy: 'admin-user',
+      },
+      {
+        season,
+        player: 'Bravo',
+        points: 0,
+        category: 'grant_premium',
+        note: 'Private grant reason',
+      },
+    ],
+    season
+  );
+
+  assert.deepEqual(
+    publicRows.map((row) => ({
+      playerName: row.playerName,
+      points: row.points,
+      category: row.category,
+      note: row.note,
+      createdBy: row.createdBy,
+    })),
+    [
+      {
+        playerName: 'Alpha',
+        points: -2,
+        category: 'penalty_other',
+        note: undefined,
+        createdBy: undefined,
+      },
+      {
+        playerName: 'Bravo',
+        points: 0,
+        category: 'grant_premium',
+        note: undefined,
+        createdBy: undefined,
+      },
+    ]
+  );
 });
 
 test('weighted duty counts credit both banner account and operator when present', () => {

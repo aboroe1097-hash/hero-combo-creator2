@@ -270,6 +270,28 @@ async function openLocalAdminDashboard(page) {
   await expect(page.locator('#dashApp')).toBeVisible({ timeout: 20000 });
 }
 
+async function openEdenX1ForTest(page) {
+  await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    window.VTS_EDEN_X1_TEST_MODE = true;
+    localStorage.setItem('vts_maintenance_bypass', '1');
+    localStorage.setItem('vts_hero_lang', 'en');
+    localStorage.setItem('vts_theme', 'dark');
+    localStorage.setItem('vts_weighted_contribution_compact', '0');
+    navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
+  });
+  await page.goto('/eden-x1.html', { waitUntil: 'load' });
+  await page.waitForFunction(
+    () =>
+      typeof window.setEdenX1DataForTest === 'function' &&
+      document.querySelector('[data-reward-view="contribution"]')?.dataset.rewardBound === '1',
+    null,
+    { timeout: 20000 }
+  );
+}
+
 test.describe('visual regression', () => {
   // Screenshot baselines are rendered on the dev OS (Windows). Linux CI renders
   // fonts/anti-aliasing differently, which diffs every snapshot. Run these locally;
@@ -1478,7 +1500,6 @@ test.describe('app smoke tabs', () => {
         },
       ],
     };
-
     await openAdmin(page);
     await openLocalAdminDashboard(page);
     await page.waitForFunction(
@@ -1596,6 +1617,15 @@ test.describe('app smoke tabs', () => {
         },
       ],
     };
+    const conductAdjustments = [
+      {
+        season: 'season-2026',
+        player: kikaAlt,
+        points: 1,
+        category: 'extra_effort',
+        note: 'Helped connect the south road',
+      },
+    ];
 
     await openAdmin(page);
     await openLocalAdminDashboard(page);
@@ -1604,10 +1634,10 @@ test.describe('app smoke tabs', () => {
         typeof window.setOcrDashboardDataForTest === 'function' &&
         typeof window.switchDashSubtab === 'function'
     );
-    await page.evaluate((dash) => {
-      window.setOcrDashboardDataForTest(dash, []);
+    await page.evaluate(({ dash, conduct }) => {
+      window.setOcrDashboardDataForTest(dash, [], conduct);
       window.switchDashSubtab('dashboard');
-    }, seededDash);
+    }, { dash: seededDash, conduct: conductAdjustments });
 
     const panel = page.locator('#dashWeightedContributionPanel');
     await expect(panel).toContainText('Weighted Total Contribution');
@@ -1637,6 +1667,14 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
+    const conductTrigger = panel
+      .locator('tbody tr', { hasText: '78,617' })
+      .locator('.dash-weighted-conduct-trigger');
+    await expect(conductTrigger).toBeVisible();
+    await conductTrigger.hover();
+    await expect(conductTrigger.locator('.dash-weighted-score-popover')).toContainText(
+      'Helped connect the south road'
+    );
     const finalRankStyle = await panel
       .locator('tbody tr', { hasText: '78,617' })
       .locator('.dash-weighted-rank-trigger')
@@ -1655,7 +1693,7 @@ test.describe('app smoke tabs', () => {
 
     const mainScoreTrigger = panel
       .locator('tbody tr', { hasText: '78,617' })
-      .locator('.dash-weighted-score-trigger');
+      .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
     const scorePopover = mainScoreTrigger.locator('.dash-weighted-score-popover');
     await expect(scorePopover).toBeHidden();
     await mainScoreTrigger.hover();
@@ -1665,19 +1703,135 @@ test.describe('app smoke tabs', () => {
     await expect(scorePopover).toContainText('20,000');
     await expect(scorePopover).toContainText('Total');
 
+    const rewardTrigger = panel
+      .locator('tbody tr', { hasText: '78,617' })
+      .locator('.dash-weighted-reward-trigger');
+    await rewardTrigger.hover();
+    const rewardPopover = rewardTrigger.locator('.dash-weighted-score-popover');
+    await expect(rewardPopover).toBeVisible();
+    await expect(rewardPopover).toContainText('Weighted Score');
+    await expect(rewardPopover).toContainText('Final rank');
+
     await page.evaluate(() => window.switchDashSubtab('contributions'));
     await expect(
       page.locator('#dashContributionWeightedPanel').getByRole('button', { name: 'Full View' })
     ).toBeVisible();
     const contributionScoreTrigger = page
       .locator('#dashContributionWeightedPanel tbody tr', { hasText: '144,650' })
-      .locator('.dash-weighted-score-trigger');
+      .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
     const contributionScorePopover = contributionScoreTrigger.locator(
       '.dash-weighted-score-popover'
     );
     await contributionScoreTrigger.focus();
     await expect(contributionScorePopover).toBeVisible();
     await expect(contributionScorePopover).toContainText('Weighted score breakdown');
+  });
+
+  test('eden x1 reward flow cards filter reward tables', async ({ page }) => {
+    const contributionEntries = [
+      'Alpha',
+      'Bravo',
+      'Charlie',
+      'Delta',
+      'Echo',
+      'Foxtrot',
+      'Golf',
+      'Hotel',
+      'India',
+      'Juliet',
+      'Kilo',
+      'Lima',
+    ].map((name, index) => ({
+      rank: String(index + 1),
+      name,
+      guild: 'VTS X1',
+      contribution: String(240000 - index * 9000),
+    }));
+    const seededDash = {
+      date: '2026-06-24',
+      r5Season: 'season-2026',
+      contributionRecords: [
+        {
+          id: 'eden-reward-flow-1',
+          date: '2026-06-24',
+          premiumSlots: 20,
+          entries: contributionEntries,
+        },
+      ],
+      dutyRecords: [
+        { type: 'banner', entries: [{ name: 'Alpha', confirmed: 'Alpha' }] },
+        { type: 'pather', entries: [{ name: 'Bravo', confirmed: 'Bravo' }] },
+        { type: 'shield_wall', entries: [{ name: 'Charlie', confirmed: 'Charlie' }] },
+      ],
+      publicConductAdjustments: [
+        {
+          season: 'season-2026',
+          player: 'Alpha',
+          points: 1,
+          category: 'merit_other',
+        },
+      ],
+    };
+
+    await openEdenX1ForTest(page);
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest(dash);
+    }, seededDash);
+
+    const panel = page.locator('#dashWeightedContributionPanel');
+    await expect(panel.locator('tbody tr')).toHaveCount(12);
+    await expect(panel).toContainText('Weighted Total Contribution');
+
+    const contributionCard = page.locator('[data-reward-view="contribution"]');
+    await contributionCard.click();
+    await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('h2')).toContainText('Total Contribution');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
+    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    await expect(panel).toContainText('Juliet');
+    await expect(panel).not.toContainText('Kilo');
+    await expect(panel).not.toContainText('Lima');
+
+    const supportCard = page.locator('[data-reward-view="support"]');
+    await supportCard.click();
+    await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('h2')).toContainText('Support Work');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 4');
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
+    await expect(panel).toContainText('Alpha');
+    await expect(panel).not.toContainText('Echo');
+
+    const managementCard = page.locator('[data-reward-view="management"]');
+    await managementCard.click();
+    await expect(managementCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('h2')).toContainText('R4 / Management');
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
+    const managementNames = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) => row.cells[1]?.textContent?.trim())
+    );
+    expect(managementNames).toEqual(['MalakAbo', 'MalakAbo', 'MalakAbo', 'MalakAbo']);
+
+    const teamCard = page.locator('[data-reward-view="team"]');
+    await teamCard.click();
+    await expect(teamCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('h2')).toContainText('Team Players');
+    await expect(panel.locator('tbody tr')).toHaveCount(2);
+    await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA']);
+
+    await page.evaluate(() => {
+      localStorage.setItem('vts_theme', 'light');
+      document.documentElement.setAttribute('data-theme', 'light');
+    });
+    const activeCardStyle = await page.locator('.eden-x1-flow-card.is-active').evaluate((card) => {
+      const style = window.getComputedStyle(card);
+      return {
+        borderColor: style.borderColor,
+        boxShadow: style.boxShadow,
+      };
+    });
+    expect(activeCardStyle.borderColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(activeCardStyle.boxShadow).not.toBe('none');
   });
 
   test('admin export menu downloads all-data CSV and debug bundles', async ({ page }) => {

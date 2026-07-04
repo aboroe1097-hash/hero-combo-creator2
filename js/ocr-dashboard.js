@@ -89,6 +89,7 @@ import {
 import {
   buildWeightedContributionRows,
   getWeightedContributionRecordLabel,
+  sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
 import {
@@ -321,6 +322,9 @@ function attachAuxiliaryRecords(data) {
   });
   const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
   if (registry.players.length || base.playerRegistry) base.playerRegistry = registry;
+  const r5Season = state.r5Season || getDashboardR5SeasonKey();
+  base.r5Season = r5Season;
+  base.publicConductAdjustments = sanitizePublicR5Adjustments(state.r5Adjustments, r5Season);
   return base;
 }
 
@@ -645,6 +649,7 @@ function renderConductAdjustments() {
         }
         state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
         renderConductAdjustments();
+        await savePublicConductSnapshot();
         render();
         setConductStatus(dashT('adminConductDeleted'), 'success');
       } catch (err) {
@@ -677,6 +682,15 @@ async function loadConductAdjustmentsForSeason() {
   } catch (err) {
     showCloudSyncFailure(err, 'Conduct adjustments load failed');
   }
+}
+
+async function savePublicConductSnapshot() {
+  const canCloudSave = state.cloudSyncConfigured !== false && state.adminIsAdmin === true;
+  return saveDashboardAuxiliaryRecords({
+    cloud: canCloudSave,
+    immediate: true,
+    awaitCloud: canCloudSave,
+  });
 }
 
 function bindConductControls() {
@@ -775,6 +789,7 @@ function bindConductControls() {
       }
       resetConductForm();
       await loadConductAdjustmentsForSeason();
+      await savePublicConductSnapshot();
       render();
     } catch (err) {
       setConductStatus(showCloudSyncFailure(err, 'Conduct adjustment save failed'), 'error');
@@ -1640,6 +1655,7 @@ function sanitizeDashboardDataForPersistence(data) {
 }
 
 function getAuxiliaryRecordPayload() {
+  const r5Season = state.r5Season || getDashboardR5SeasonKey();
   return sanitizeForFirestore({
     last_updated: fmtDate(new Date()),
     bannerRecords: Array.isArray(state.bannerRecords) ? state.bannerRecords : [],
@@ -1649,6 +1665,8 @@ function getAuxiliaryRecordPayload() {
       ? state.exGuildContributions
       : [],
     playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
+    r5Season,
+    publicConductAdjustments: sanitizePublicR5Adjustments(state.r5Adjustments, r5Season),
   });
 }
 

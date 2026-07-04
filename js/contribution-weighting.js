@@ -157,6 +157,50 @@ function playerFamilyKey(accountKey) {
   return key;
 }
 
+export function getWeightedPlayerFamilyKey(accountKey) {
+  return playerFamilyKey(accountKey);
+}
+
+export function normalizeWeightedR5Adjustments(adjustments = [], season = '') {
+  const seasonKey = String(season || '').trim();
+  const normalized = [];
+
+  (Array.isArray(adjustments) ? adjustments : []).forEach((entry) => {
+    let adjustment;
+    try {
+      adjustment = normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
+    } catch {
+      return;
+    }
+    if (seasonKey && String(adjustment.season || '').trim() !== seasonKey) return;
+
+    const playerKey = weightedPlayerKeyForName(adjustment.playerName || adjustment.playerKey);
+    if (!playerKey) return;
+    normalized.push({
+      ...adjustment,
+      playerKey,
+      playerFamilyKey: playerFamilyKey(playerKey),
+    });
+  });
+
+  return normalized;
+}
+
+export function sanitizePublicR5Adjustments(adjustments = [], season = '') {
+  return normalizeWeightedR5Adjustments(adjustments, season).map((adjustment) => ({
+    season: adjustment.season,
+    playerKey: adjustment.playerKey,
+    playerName: adjustment.playerName,
+    points: adjustment.points,
+    category:
+      adjustment.category === 'grant_premium' || adjustment.category === 'forfeit_premium'
+        ? adjustment.category
+        : adjustment.points < 0
+          ? 'penalty_other'
+          : 'merit_other',
+  }));
+}
+
 function isPreferredFamilyAccount(row, familyKey) {
   const preferredKey = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey];
   return Boolean(preferredKey && row?.playerKey === preferredKey);
@@ -205,71 +249,29 @@ export function buildWeightedDutyCounts(dutyRecords = []) {
 }
 
 function buildConductMap(adjustments = [], season = '') {
-  const seasonKey = String(season || '').trim();
-  if (!seasonKey) return new Map();
   const totals = new Map();
 
-  (Array.isArray(adjustments) ? adjustments : []).forEach((entry) => {
-    let adjustment;
-    try {
-      adjustment = normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
-    } catch {
-      return;
-    }
-    if (String(adjustment.season || '').trim() !== seasonKey) return;
-
-    const playerKey = weightedPlayerKeyForName(adjustment.playerName || adjustment.playerKey);
-    if (!playerKey) return;
-    totals.set(playerKey, (totals.get(playerKey) || 0) + adjustment.points);
+  normalizeWeightedR5Adjustments(adjustments, season).forEach((adjustment) => {
+    totals.set(adjustment.playerKey, (totals.get(adjustment.playerKey) || 0) + adjustment.points);
   });
 
   return totals;
 }
 
 function buildForfeitPlayerSet(adjustments = [], season = '') {
-  if (!season || !Array.isArray(adjustments)) return new Set();
-  const seasonKey = String(season || '')
-    .toLowerCase()
-    .trim();
   const forfeit = new Set();
-  adjustments.forEach((entry) => {
+  normalizeWeightedR5Adjustments(adjustments, season).forEach((entry) => {
     if (entry?.category !== 'forfeit_premium') return;
-    if (
-      String(entry?.season || '')
-        .toLowerCase()
-        .trim() !== seasonKey
-    )
-      return;
-    try {
-      const identity = resolveWeightedPlayerIdentity(entry?.player || entry);
-      if (identity) forfeit.add(identity.playerKey);
-    } catch {
-      /* skip unparseable player */
-    }
+    forfeit.add(entry.playerKey);
   });
   return forfeit;
 }
 
 function buildGrantPremiumPlayerSet(adjustments = [], season = '') {
-  if (!season || !Array.isArray(adjustments)) return new Set();
-  const seasonKey = String(season || '')
-    .toLowerCase()
-    .trim();
   const grants = new Set();
-  adjustments.forEach((entry) => {
+  normalizeWeightedR5Adjustments(adjustments, season).forEach((entry) => {
     if (entry?.category !== 'grant_premium') return;
-    if (
-      String(entry?.season || '')
-        .toLowerCase()
-        .trim() !== seasonKey
-    )
-      return;
-    try {
-      const identity = resolveWeightedPlayerIdentity(entry?.player || entry);
-      if (identity) grants.add(identity.playerKey);
-    } catch {
-      /* skip unparseable player */
-    }
+    grants.add(entry.playerKey);
   });
   return grants;
 }
