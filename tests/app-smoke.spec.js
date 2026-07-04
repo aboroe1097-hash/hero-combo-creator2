@@ -1533,8 +1533,8 @@ test.describe('app smoke tabs', () => {
     expect(layout.noDocumentOverflow).toBe(true);
     expect(layout.noRootOverflow).toBe(true);
     expect(layout.subnavScrollsInside).toBe(true);
-    expect(layout.summaryLabel).toContain('Player');
-    expect(layout.detailLabel).toContain('Group');
+    expect(layout.summaryLabel).toContain('Игрок');
+    expect(layout.detailLabel).toContain('Группа');
     expect(layout.summaryRowDisplay).toBe('block');
     expect(layout.detailRowDisplay).toBe('block');
 
