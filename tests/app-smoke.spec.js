@@ -286,7 +286,7 @@ async function openEdenX1ForTest(page) {
   await page.waitForFunction(
     () =>
       typeof window.setEdenX1DataForTest === 'function' &&
-      document.querySelector('[data-reward-view="contribution"]')?.dataset.rewardBound === '1',
+      document.querySelector('[data-reward-view="support"]')?.dataset.rewardBound === '1',
     null,
     { timeout: 20000 }
   );
@@ -1741,6 +1741,9 @@ test.describe('app smoke tabs', () => {
       'Juliet',
       'Kilo',
       'Lima',
+      'Mike',
+      'November',
+      'Oscar',
     ].map((name, index) => ({
       rank: String(index + 1),
       name,
@@ -1779,8 +1782,16 @@ test.describe('app smoke tabs', () => {
     }, seededDash);
 
     const panel = page.locator('#dashWeightedContributionPanel');
-    await expect(panel.locator('tbody tr')).toHaveCount(12);
-    await expect(panel).toContainText('Weighted Total Contribution');
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
+    await expect(panel).toContainText('Support Work');
+    await expect(page.locator('.eden-x1-flow-card').first()).toHaveAttribute(
+      'data-reward-view',
+      'support'
+    );
+    await expect(page.locator('[data-reward-view="support"]')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     const noticeTitleStyle = await page.locator('.eden-x1-notice strong').evaluate((title) => {
       const titleStyle = window.getComputedStyle(title);
       const noticeStyle = window.getComputedStyle(title.closest('.eden-x1-notice'));
@@ -1796,19 +1807,7 @@ test.describe('app smoke tabs', () => {
     expect(noticeTitleStyle.textAlign).toBe('center');
     expect(noticeTitleStyle.flexBasis).toBe('100%');
 
-    const contributionCard = page.locator('[data-reward-view="contribution"]');
-    await contributionCard.click();
-    await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel.locator('h2')).toContainText('Total Contribution');
-    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
-    await expect(panel).toContainText('Juliet');
-    await expect(panel).not.toContainText('Kilo');
-    await expect(panel).not.toContainText('Lima');
-
     const supportCard = page.locator('[data-reward-view="support"]');
-    await supportCard.click();
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('h2')).toContainText('Support Work');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 4');
@@ -1822,6 +1821,27 @@ test.describe('app smoke tabs', () => {
       'Core Rewards',
       'Core Rewards',
     ]);
+    const supportNames = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) => row.cells[1]?.textContent?.trim())
+    );
+
+    const contributionCard = page.locator('[data-reward-view="contribution"]');
+    await contributionCard.click();
+    await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('h2')).toContainText('Total Contribution');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
+    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr').first()).toContainText('Echo');
+    await expect(panel).toContainText('November');
+    await expect(panel).not.toContainText('Alpha');
+    await expect(panel).not.toContainText('Bravo');
+    await expect(panel).not.toContainText('Charlie');
+    await expect(panel).not.toContainText('Delta');
+    await expect(panel).not.toContainText('Oscar');
+    const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) => row.cells[1]?.textContent?.trim())
+    );
+    expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();

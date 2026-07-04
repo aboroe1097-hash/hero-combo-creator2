@@ -11,7 +11,7 @@ const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 let currentLang = 'en';
 let currentRows = [];
 let currentRecordLabel = '';
-let currentRewardView = 'all';
+let currentRewardView = 'support';
 
 function $(id) {
   return document.getElementById(id);
@@ -135,8 +135,9 @@ function bindRewardFlowControls() {
 }
 
 function getContributionRewardRows() {
+  const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
   return currentRows
-    .filter((row) => Number(row.currentRank) > 0)
+    .filter((row) => Number(row.currentRank) > 0 && !supportPlayerKeys.has(row.playerKey))
     .slice()
     .sort(
       (a, b) =>
