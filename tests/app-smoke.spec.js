@@ -1781,6 +1781,20 @@ test.describe('app smoke tabs', () => {
     const panel = page.locator('#dashWeightedContributionPanel');
     await expect(panel.locator('tbody tr')).toHaveCount(12);
     await expect(panel).toContainText('Weighted Total Contribution');
+    const noticeTitleStyle = await page.locator('.eden-x1-notice strong').evaluate((title) => {
+      const titleStyle = window.getComputedStyle(title);
+      const noticeStyle = window.getComputedStyle(title.closest('.eden-x1-notice'));
+      return {
+        color: titleStyle.color,
+        fontSize: Number.parseFloat(titleStyle.fontSize),
+        textAlign: noticeStyle.textAlign,
+        flexBasis: titleStyle.flexBasis,
+      };
+    });
+    expect(noticeTitleStyle.color).toBe('rgb(239, 68, 68)');
+    expect(noticeTitleStyle.fontSize).toBeGreaterThan(22);
+    expect(noticeTitleStyle.textAlign).toBe('center');
+    expect(noticeTitleStyle.flexBasis).toBe('100%');
 
     const contributionCard = page.locator('[data-reward-view="contribution"]');
     await contributionCard.click();
