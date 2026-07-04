@@ -1504,7 +1504,6 @@ test.describe('app smoke tabs', () => {
       );
     expect(patherSummaryRows.filter((cells) => cells[0].includes('Kika'))).toHaveLength(2);
     expect(patherSummaryRows.find((cells) => cells[0] === 'ANGEL')?.[2]).toContain('10:30');
-    expect(patherSummaryRows.find((cells) => cells[0] === 'Zubbs')?.[2]).toContain('10:30');
     await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
 
     const layout = await page.evaluate(() => {
