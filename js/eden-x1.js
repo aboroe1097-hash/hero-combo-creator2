@@ -18,6 +18,9 @@ let currentRecordLabel = '';
 let currentRewardView = 'support';
 let currentTableSearch = '';
 let currentTableSort = null;
+let weightedContributionCompactOverride = null;
+let weightedPopoverDismissalBound = false;
+let weightedPopoverOpenedAt = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -64,15 +67,24 @@ function conductBonusValue(row) {
   return Number.isFinite(points) ? points / 10000 : 0;
 }
 
+function isWeightedContributionMobileViewport() {
+  return Boolean(globalThis.matchMedia?.('(max-width: 768px)').matches);
+}
+
 function isWeightedContributionCompactView() {
+  if (weightedContributionCompactOverride !== null) {
+    return weightedContributionCompactOverride;
+  }
   try {
+    if (isWeightedContributionMobileViewport()) return true;
     return localStorage.getItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY) === '1';
   } catch {
-    return false;
+    return isWeightedContributionMobileViewport();
   }
 }
 
 function setWeightedContributionCompactView(enabled) {
+  weightedContributionCompactOverride = Boolean(enabled);
   try {
     localStorage.setItem(WEIGHTED_CONTRIBUTION_COMPACT_KEY, enabled ? '1' : '0');
   } catch {
@@ -233,16 +245,57 @@ function sortedWeightedRows(rows, numberMode) {
   return sort.dir === 'asc' ? sorted : sorted.reverse();
 }
 
-function setWeightedSort(col) {
+function defaultWeightedSortDir(col) {
+  return ['number', 'player', 'reward', 'currentRank', 'finalRank', 'finalReward'].includes(col)
+    ? 'asc'
+    : 'desc';
+}
+
+function setWeightedSort(col, options = {}) {
+  if (!col) {
+    currentTableSort = null;
+    renderCurrentTable();
+    return;
+  }
+  if (options.forceDefault) {
+    currentTableSort = { col, dir: defaultWeightedSortDir(col) };
+    renderCurrentTable();
+    return;
+  }
   const cur = currentTableSort || {};
   if (cur.col === col) {
     currentTableSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
   } else {
-    const ascFirst = ['number', 'player', 'reward', 'currentRank', 'finalRank', 'finalReward']
-      .includes(col);
-    currentTableSort = { col, dir: ascFirst ? 'asc' : 'desc' };
+    currentTableSort = { col, dir: defaultWeightedSortDir(col) };
   }
   renderCurrentTable();
+}
+
+function mobileSortRankKey(numberMode) {
+  return numberMode === 'current' ? 'currentRank' : 'finalRank';
+}
+
+function renderWeightedMobileSortSelect(numberMode) {
+  const rankKey = mobileSortRankKey(numberMode);
+  const fallbackCol = numberMode === 'current' ? 'currentRank' : 'weighted';
+  const activeCol = currentTableSort?.col || fallbackCol;
+  const options = [
+    ['weighted', t('edenX1ThWeightedScore')],
+    ['player', t('adminContributionMember')],
+    ['contribution', t('edenX1ThContribution')],
+    [rankKey, t(numberMode === 'current' ? 'adminContributionRank' : 'adminContributionFinalRank')],
+  ];
+  return `<label class="dash-weighted-mobile-sort" for="edenX1MobileSort">
+    <span class="sr-only">Sort weighted contribution table</span>
+    <select id="edenX1MobileSort" class="dash-select-sm" aria-label="Sort weighted contribution table">
+      ${options
+        .map(
+          ([value, label]) =>
+            `<option value="${esc(value)}"${activeCol === value ? ' selected' : ''}>${esc(label)}</option>`
+        )
+        .join('')}
+    </select>
+  </label>`;
 }
 
 function renderSortableHeader(key, label, options = {}) {
@@ -268,6 +321,13 @@ function bindWeightedTableControls(host) {
       renderCurrentTable({ focusSearch: true });
     });
   }
+  const mobileSort = $('edenX1MobileSort');
+  if (mobileSort && !mobileSort.dataset.bound) {
+    mobileSort.dataset.bound = '1';
+    mobileSort.addEventListener('change', (event) => {
+      setWeightedSort(event.target.value, { forceDefault: true });
+    });
+  }
   host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
     if (th.dataset.bound) return;
     th.dataset.bound = '1';
@@ -277,6 +337,57 @@ function bindWeightedTableControls(host) {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
       activate();
+    });
+  });
+  bindWeightedPopovers(host);
+}
+
+function closeWeightedPopovers(except = null) {
+  document.querySelectorAll('.eden-x1-popover-trigger.is-open').forEach((button) => {
+    if (button === except) return;
+    button.classList.remove('is-open');
+    button.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function bindWeightedPopoverDismissal() {
+  if (weightedPopoverDismissalBound) return;
+  weightedPopoverDismissalBound = true;
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.eden-x1-popover-trigger')) return;
+    closeWeightedPopovers();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeWeightedPopovers();
+  });
+  globalThis.addEventListener(
+    'scroll',
+    () => {
+      if (Date.now() - weightedPopoverOpenedAt < 180) return;
+      closeWeightedPopovers();
+    },
+    {
+      capture: true,
+      passive: true,
+    }
+  );
+}
+
+function bindWeightedPopovers(host) {
+  bindWeightedPopoverDismissal();
+  host.querySelectorAll('.eden-x1-popover-trigger').forEach((button) => {
+    if (button.dataset.popoverBound) return;
+    button.dataset.popoverBound = '1';
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', (event) => {
+      if (event.target.closest('.dash-weighted-score-popover')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const shouldOpen = !button.classList.contains('is-open');
+      closeWeightedPopovers(button);
+      if (shouldOpen) weightedPopoverOpenedAt = Date.now();
+      button.classList.toggle('is-open', shouldOpen);
+      button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
     });
   });
 }
@@ -528,6 +639,7 @@ function renderTable(rows, recordLabel, options = {}) {
             </svg>
             <input id="edenX1TableSearch" class="dash-search-input" type="search" value="${esc(currentTableSearch)}" placeholder="${esc(t('adminSearchPh'))}" autocomplete="off" />
           </label>
+          ${renderWeightedMobileSortSelect(numberMode)}
           ${renderWeightedContributionViewToggle(compactView)}
         </div>
       </div>
@@ -559,8 +671,14 @@ function renderTable(rows, recordLabel, options = {}) {
                     : row.finalRank;
               const rewardContext = rewardContextForRow(row, index, numberValue);
               return `<tr>
-                <td data-label="${esc(t('edenX1ThNumber'))}">${numberValue}</td>
-                <td data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
+                <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
+                  <span class="dash-weighted-desktop-number">${numberValue}</span>
+                  <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
+                    <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${numberValue}`)}" aria-hidden="true"></span>
+                    <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true"></strong>
+                  </span>
+                </td>
+                <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>

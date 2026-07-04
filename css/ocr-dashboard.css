@@ -4631,6 +4631,13 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-weighted-view-toggle {
   white-space: nowrap;
 }
+#ocrDashboardRoot .dash-weighted-mobile-sort,
+#ocrDashboardRoot .dash-weighted-mobile-header {
+  display: none;
+}
+#ocrDashboardRoot .dash-weighted-desktop-number {
+  display: inline;
+}
 #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
   max-height: min(56vh, 520px);
   overflow: auto;
@@ -4753,6 +4760,20 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible .dash-weighted-score-popover,
 #ocrDashboardRoot .dash-weighted-reward-trigger:focus .dash-weighted-score-popover {
   opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+#ocrDashboardRoot
+  .dash-weighted-score-trigger.eden-x1-popover-trigger.is-open
+  .dash-weighted-score-popover,
+#ocrDashboardRoot
+  .dash-weighted-rank-trigger.eden-x1-popover-trigger.is-open
+  .dash-weighted-score-popover,
+#ocrDashboardRoot
+  .dash-weighted-reward-trigger.eden-x1-popover-trigger.is-open
+  .dash-weighted-score-popover {
+  opacity: 1;
+  pointer-events: auto;
   transform: translateY(0);
   visibility: visible;
 }
@@ -5331,6 +5352,26 @@ body[style*='overflow: hidden'] .tab-panel {
     background: #f8fafc;
     border-color: #e2e8f0;
   }
+
+  [data-theme='light']
+    #ocrDashboardRoot
+    .dash-contribution-weighted-table
+    .dash-weighted-mobile-header-cell {
+    border-bottom-color: rgba(14, 116, 144, 0.16);
+    background:
+      linear-gradient(135deg, rgba(224, 242, 254, 0.94), rgba(248, 250, 252, 0.98)),
+      radial-gradient(circle at 100% 0%, rgba(250, 204, 21, 0.16), transparent 42%);
+  }
+
+  [data-theme='light'] #ocrDashboardRoot .dash-weighted-mobile-rank {
+    border-color: rgba(14, 116, 144, 0.24);
+    background: #ffffff;
+    color: #0e7490;
+  }
+
+  [data-theme='light'] #ocrDashboardRoot .dash-weighted-mobile-player-name {
+    color: #0f172a;
+  }
 }
 
 /* Light theme: duty upload summary + conduct adjustments */
@@ -5582,6 +5623,22 @@ body[style*='overflow: hidden'] .tab-panel {
     width: 100%;
   }
 
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-search {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-mobile-sort {
+    display: block;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-mobile-sort select {
+    width: 100%;
+    min-height: var(--tap-min);
+  }
+
   #ocrDashboardRoot .dash-contribution-weighted-card .dash-weighted-view-toggle {
     justify-content: center;
     width: 100%;
@@ -5600,8 +5657,75 @@ body[style*='overflow: hidden'] .tab-panel {
     overflow: hidden;
   }
 
+  #ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-mobile-header-cell {
+    display: flex;
+    align-items: center;
+    min-height: 0;
+    margin: -0.65rem -0.65rem 0.48rem;
+    padding: 0.72rem 0.78rem;
+    border-bottom: 1px solid rgba(103, 232, 249, 0.2);
+    border-radius: 11px 11px 0 0;
+    background:
+      linear-gradient(135deg, rgba(8, 47, 73, 0.54), rgba(15, 23, 42, 0.82)),
+      radial-gradient(circle at 100% 0%, rgba(250, 204, 21, 0.13), transparent 42%);
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-mobile-header-cell::before,
+  #ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-player-cell {
+    display: none;
+  }
+
+  #ocrDashboardRoot .dash-weighted-desktop-number {
+    display: none;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.68rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-rank {
+    display: inline-grid;
+    flex: 0 0 auto;
+    min-width: 2.45rem;
+    min-height: 2.25rem;
+    place-items: center;
+    border: 1px solid rgba(103, 232, 249, 0.36);
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.56);
+    color: var(--brand-light);
+    font-size: 0.9rem;
+    font-weight: 950;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-rank::before {
+    content: attr(data-rank);
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-player-name {
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-player-name::before {
+    content: attr(data-player);
+  }
+
   #ocrDashboardRoot .dash-contribution-weighted-table td {
     grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr);
+  }
+
+  #ocrDashboardRoot
+    .dash-contribution-weighted-card.dash-weighted-compact
+    .dash-weighted-conduct-col {
+    display: grid;
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
@@ -5653,10 +5777,15 @@ body[style*='overflow: hidden'] .tab-panel {
     overflow-wrap: anywhere;
   }
 
-  #ocrDashboardRoot .dash-contribution-compare-table-wrap,
-  #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
+  #ocrDashboardRoot .dash-contribution-compare-table-wrap {
     max-width: 100%;
     overflow-x: hidden;
+  }
+
+  #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
+    max-height: none;
+    max-width: 100%;
+    overflow: visible;
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-table tr {
@@ -5704,11 +5833,16 @@ body[style*='overflow: hidden'] .tab-panel {
     width: min(330px, calc(100vw - 2rem));
     max-height: min(78vh, 460px);
     overflow-y: auto;
+    background: rgba(8, 13, 24, 0.99);
     transform: translate(-50%, calc(-50% - 4px));
   }
 
   #ocrDashboardRoot .dash-weighted-score-popover::before {
     display: none;
+  }
+
+  [data-theme='light'] #ocrDashboardRoot .dash-weighted-score-popover {
+    background: rgba(255, 255, 255, 0.99);
   }
 
   #ocrDashboardRoot .dash-weighted-score-trigger:hover .dash-weighted-score-popover,
@@ -5718,6 +5852,36 @@ body[style*='overflow: hidden'] .tab-panel {
   #ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
   #ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover {
     transform: translate(-50%, -50%);
+  }
+
+  #ocrDashboardRoot .dash-weighted-score-trigger:hover .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-score-trigger:focus .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-rank-trigger:hover .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-rank-trigger:focus .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-reward-trigger:hover .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible .dash-weighted-score-popover,
+  #ocrDashboardRoot .dash-weighted-reward-trigger:focus .dash-weighted-score-popover {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, calc(-50% - 4px));
+    visibility: hidden;
+  }
+
+  #ocrDashboardRoot
+    .dash-weighted-score-trigger.eden-x1-popover-trigger.is-open
+    .dash-weighted-score-popover,
+  #ocrDashboardRoot
+    .dash-weighted-rank-trigger.eden-x1-popover-trigger.is-open
+    .dash-weighted-score-popover,
+  #ocrDashboardRoot
+    .dash-weighted-reward-trigger.eden-x1-popover-trigger.is-open
+    .dash-weighted-score-popover {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+    visibility: visible;
   }
 
   #ocrDashboardRoot .dash-btn,
@@ -5736,6 +5900,24 @@ body[style*='overflow: hidden'] .tab-panel {
 
   #ocrDashboardRoot .dash-contribution-weighted-table td {
     grid-template-columns: minmax(5.6rem, 0.42fr) minmax(0, 0.58fr);
+  }
+
+  #ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-mobile-header-cell {
+    padding: 0.68rem 0.7rem;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-header {
+    gap: 0.55rem;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-rank {
+    min-width: 2.2rem;
+    min-height: 2.05rem;
+    font-size: 0.82rem;
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-player-name {
+    font-size: clamp(0.95rem, 5vw, 1.04rem);
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-table td::before {
