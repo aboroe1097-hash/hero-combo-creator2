@@ -164,7 +164,8 @@ These are real distinct accounts/identities. They are protected by the
 *"keep known separate accounts apart"* unit test. Adding a merge that breaks them will fail CI.
 
 - **Kika ×4 accounts:** `꧁༺ Kika ༻꧂` (#1 main), `꧁ Kika ꧂`, `꧁ Kika-banner ꧂`,
-  `꧁Kika-banner2꧂`. Plain/ornamental `Kika` routes to `꧁ Kika ꧂`; service/conduct rolls up to
+  `꧁Kika-banner2꧂`. Plain `Kika` routes to `꧁ Kika ꧂`; ornamental/sparkle Kika forms such as
+  `≪Kika≫`, `✨ Kika ✨`, and `༺ Kika ༻` route to `꧁༺ Kika ༻꧂`. Service/conduct rolls up to
   `꧁༺ Kika ༻꧂` when that row exists.
 - **RedBull ×3 account groups:** `REDBULLS`/`REDBULL§`/`REDBULL$` are main; `REDBULL-#` plus
   `RedBull®`/`RedBull©`/`RedBull@`/`RedBull#` are secondary; `RedBull_Banner` stays separate.

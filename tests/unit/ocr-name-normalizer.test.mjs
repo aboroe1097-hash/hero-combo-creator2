@@ -38,7 +38,7 @@ test('player display cleanup strips leading guild tags and preserves real symbol
 
 test('canonical resolver reuses existing aliases after guild-prefix cleanup', () => {
   assert.equal(resolveCanonicalPlayerName('(Vts)AK Чапай'), 'AK Чапай');
-  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁ Kika ꧂');
+  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁༺ Kika ༻꧂');
   assert.equal(resolveCanonicalPlayerName('s)GoodnesGraycious'), 'GoodnesGraycious');
 });
 
