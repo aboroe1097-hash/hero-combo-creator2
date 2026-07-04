@@ -1414,7 +1414,7 @@ function renderDutyMatchRows(entries) {
         )
         .join('');
       return `<div class="dash-duty-match-row" data-raw="${esc(entry.original || rawName)}" data-name="${esc(rawName)}" data-order="${esc(entry.order || '')}" data-checked="${entry.checked ? '1' : ''}" data-allowed-colors="${esc(entry.allowedColors || '')}">
-      <div class="dash-duty-raw"><span>${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
+      <div class="dash-duty-raw"><div class="dash-duty-raw-meta"><span>${esc(adminT('adminDutyUploaded'))} #${index + 1}</span><button class="dash-duty-remove-row" type="button" data-duty-remove-row>${esc(adminT('adminDelete'))}</button></div><strong>${esc(rawName)}</strong><small>${esc(status)}</small></div>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyRosterMatch'))}</span><select class="dash-duty-match-select">${options}</select></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyManualCorrectionPh'))}</span><input class="dash-duty-manual-input" type="text" placeholder="${esc(adminT('adminDutyManualCorrectionPh'))}" value="${entry.confirmed && !suggestions.some((row) => row.name === entry.confirmed) ? esc(entry.confirmed) : ''}"></label>
       <label class="dash-match-field"><span class="dash-match-label">${esc(adminT('adminDutyTime'))}</span><input class="dash-duty-time-input" type="text" placeholder="HH:MM" value="${esc(entry.usageTime || '')}" title="${esc(adminT('adminDutyUsageTimeTitle'))}"></label>
@@ -1460,6 +1460,18 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
     <button id="dashDutySaveBtn" class="dash-btn dash-btn-primary" style="flex:1">${esc(adminT(existingRecord ? 'adminDutyUpdateRecord' : 'adminDutySaveRecord', { singular }))}</button>
     <button id="dashDutyCancelBtn" class="dash-btn" style="flex:1">${esc(adminT('adminCancel'))}</button>
   </div>`;
+  const updateDutyDraftCount = () => {
+    const count = body.querySelectorAll('.dash-duty-match-row').length;
+    $id('dashModalSub').textContent = adminT('adminDutyConfirmSub', { count });
+    const saveBtn = $id('dashDutySaveBtn');
+    if (saveBtn) saveBtn.disabled = count === 0;
+  };
+  body.querySelector('.dash-duty-match-list')?.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-duty-remove-row]')) return;
+    event.target.closest('.dash-duty-match-row')?.remove();
+    updateDutyDraftCount();
+  });
+  updateDutyDraftCount();
   $id('dashDutySaveBtn').onclick = async () => {
     const entries = Array.from(body.querySelectorAll('.dash-duty-match-row')).map((row) => {
       const original = row.dataset.raw || '';
@@ -1491,6 +1503,11 @@ function showDutyConfirmModal(type, names, sourceLabel = '', existingRecordId = 
         note: '',
       };
     });
+    if (!entries.length) {
+      log(adminT('adminDutyNoNamesLog', { label }), 'warn');
+      updateDutyDraftCount();
+      return;
+    }
     const record = {
       id: existingRecord?.id || `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
@@ -1807,10 +1824,10 @@ function renderDutyPlayerSummary(type, hostId) {
         <tbody>${rows
           .map(
             (row) => `<tr>
-          <td><strong>${esc(row.playerName)}</strong></td>
-          <td>${row.entries}</td>
-          <td><span class="dash-duty-status-breakdown">${formatDutyStatusBreakdown(row.statusCounts)}</span></td>
-          <td>${summarizeDutyValues(row.times, 8)}</td>
+          <td><strong class="dash-duty-cell-value">${esc(row.playerName)}</strong></td>
+          <td><span class="dash-duty-cell-value">${row.entries}</span></td>
+          <td><span class="dash-duty-cell-value dash-duty-status-breakdown">${formatDutyStatusBreakdown(row.statusCounts)}</span></td>
+          <td><span class="dash-duty-cell-value dash-duty-times">${summarizeDutyValues(row.times, 8)}</span></td>
         </tr>`
           )
           .join('')}</tbody>
@@ -1859,14 +1876,14 @@ function renderDutyType(type) {
           <tbody>${entries
             .map(
               (entry) => `<tr>
-            <td>${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</td>
-            <td>${entry.order ? esc(entry.order) : entry.checked ? '✓' : '<span style="color:var(--text-dim)">--</span>'}</td>
-            <td>${entry.usageTime ? esc(entry.usageTime) : '<span style="color:var(--text-dim)">--</span>'}</td>
-            <td>${entry.target ? esc(entry.target) : '<span style="color:var(--text-dim)">--</span>'}</td>
-            <td>${entry.pad ? esc(entry.pad) : entry.allowedColors ? esc(entry.allowedColors) : '<span style="color:var(--text-dim)">--</span>'}</td>
-            <td>${esc(entry.original || entry.name || '')}</td>
-            <td>${entry.confirmed ? esc(entry.confirmed) : `<span style="color:var(--text-dim)">${esc(adminT('adminDutyUnmatched'))}</span>`}</td>
-            <td>${esc(entry.status || 'unmatched')}</td>
+            <td><span class="dash-duty-cell-value">${entry.group ? esc(entry.group) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
+            <td><span class="dash-duty-cell-value">${entry.order ? esc(entry.order) : entry.checked ? 'checked' : '<span style="color:var(--text-dim)">--</span>'}</span></td>
+            <td><span class="dash-duty-cell-value">${entry.usageTime ? esc(entry.usageTime) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
+            <td><span class="dash-duty-cell-value">${entry.target ? esc(entry.target) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
+            <td><span class="dash-duty-cell-value">${entry.pad ? esc(entry.pad) : entry.allowedColors ? esc(entry.allowedColors) : '<span style="color:var(--text-dim)">--</span>'}</span></td>
+            <td><span class="dash-duty-cell-value">${esc(entry.original || entry.name || '')}</span></td>
+            <td><span class="dash-duty-cell-value">${entry.confirmed ? esc(entry.confirmed) : `<span style="color:var(--text-dim)">${esc(adminT('adminDutyUnmatched'))}</span>`}</span></td>
+            <td><span class="dash-duty-cell-value">${esc(entry.status || 'unmatched')}</span></td>
           </tr>`
             )
             .join('')}</tbody>
