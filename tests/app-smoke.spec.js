@@ -1264,6 +1264,29 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashLeaderboardCard thead')).not.toContainText('Bonus');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('2,101,000');
+    await page.setViewportSize({ width: 974, height: 768 });
+    const dashboardGridMetrics = await page.evaluate(() => {
+      const dashboard = document.querySelector('#dashSubtabDashboard');
+      const visualGrid = dashboard?.querySelector('.dash-visuals-grid');
+      const mainGrid = dashboard?.querySelector('.dash-main-grid:not(.dash-visuals-grid)');
+      const topCard = visualGrid?.querySelector('.dash-chart-card');
+      const insightsCard = dashboard?.querySelector('#dashInsightsCard');
+      const attackCard = dashboard?.querySelector('#dashAttackHistoryCard');
+      const leaderboardCard = dashboard?.querySelector('#dashLeaderboardCard');
+      const rectWidth = (el) => Math.round(el?.getBoundingClientRect?.().width || 0);
+      return {
+        visualAlign: visualGrid ? getComputedStyle(visualGrid).alignItems : '',
+        mainAlign: mainGrid ? getComputedStyle(mainGrid).alignItems : '',
+        topWidth: rectWidth(topCard),
+        insightWidth: rectWidth(insightsCard),
+        attackWidth: rectWidth(attackCard),
+        leaderboardWidth: rectWidth(leaderboardCard),
+      };
+    });
+    expect(dashboardGridMetrics.visualAlign).toBe('stretch');
+    expect(dashboardGridMetrics.mainAlign).toBe('stretch');
+    expect(Math.abs(dashboardGridMetrics.topWidth - dashboardGridMetrics.insightWidth)).toBeLessThanOrEqual(16);
+    expect(Math.abs(dashboardGridMetrics.attackWidth - dashboardGridMetrics.leaderboardWidth)).toBeLessThanOrEqual(16);
     const visibleLeaderRows = await page
       .locator('#dashLeaderBody tr')
       .evaluateAll(
@@ -1780,6 +1803,45 @@ test.describe('app smoke tabs', () => {
           category: 'merit_other',
         },
       ],
+      attacks: [
+        {
+          id: 'eden-public-attack-1',
+          structure_name: 'Large Town',
+          structure_level: 'Lv4',
+          game_time: '24/06/2026, 20:00 GT',
+          total_demolition: 120000,
+          players_count: 3,
+          players: [
+            { name: 'Alpha', value: 70000, rank: 1 },
+            { name: 'Bravo', value: 30000, rank: 2 },
+            { name: 'Charlie', value: 20000, rank: 3 },
+          ],
+        },
+        {
+          id: 'eden-public-attack-2',
+          structure_name: 'Gate',
+          structure_level: 'L3',
+          game_time: '24/06/2026, 21:00 GT',
+          total_demolition: 90000,
+          players_count: 2,
+          players: [
+            { name: 'Alpha', value: 60000, rank: 1 },
+            { name: 'Delta', value: 30000, rank: 2 },
+          ],
+        },
+        {
+          id: 'eden-public-attack-3',
+          structure_name: 'Large Town',
+          structure_level: 'Lv4',
+          game_time: '25/06/2026, 20:30 GT',
+          total_demolition: 80000,
+          players_count: 2,
+          players: [
+            { name: 'Echo', value: 50000, rank: 1 },
+            { name: 'Foxtrot', value: 30000, rank: 2 },
+          ],
+        },
+      ],
     };
 
     await openEdenX1ForTest(page);
@@ -1790,6 +1852,20 @@ test.describe('app smoke tabs', () => {
     const panel = page.locator('#dashWeightedContributionPanel');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Support Work');
+    const publicDashboard = page.locator('#edenX1PublicDashboard');
+    await expect(publicDashboard).toContainText('Complete Total Contribution');
+    await expect(publicDashboard).toContainText('Top Performers');
+    await expect(publicDashboard).toContainText('Insights');
+    await expect(publicDashboard).toContainText('Attack History');
+    await expect(publicDashboard).toContainText('Structures Leaderboard');
+    await expect(publicDashboard).toContainText('Lowest Performers');
+    await expect(publicDashboard).toContainText('Click a player name');
+    await publicDashboard.locator('[data-public-player]', { hasText: 'Alpha' }).first().click();
+    await expect(page.locator('#edenX1PublicDetail')).toContainText('Player Detail - Alpha');
+    await expect(page.locator('#edenX1PublicDetail')).toContainText('Large Town Lv4');
+    await publicDashboard.locator('[data-public-structure]', { hasText: 'Large Town' }).first().click();
+    await expect(page.locator('#edenX1PublicDetail')).toContainText('Structure Detail - Large Town Lv4');
+    await expect(page.locator('#edenX1PublicDetail')).toContainText('Top Players');
     await expect(page.locator('.eden-x1-flow-card').first()).toHaveAttribute(
       'data-reward-view',
       'support'

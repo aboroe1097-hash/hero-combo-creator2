@@ -1,9 +1,22 @@
 import {
   buildWeightedContributionRows,
+  getContributionRewardTier,
+  getPrimaryContributionRecord,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
+import {
+  formatDatasetStructureLabel,
+  getDatasetStructureTarget,
+  normalizeStructureTarget,
+} from './ocr-shared.js';
+import { parseGameTimeDateMs } from './ocr-time-filter.js';
+import {
+  compactPlayerIdentity,
+  resolveCanonicalPlayerName,
+  stripGuildTagsFromPlayerName,
+} from './ocr-name-normalizer.js';
 
 const APP_VERSION = '12.2.1';
 const FS_PATH = 'vts_admin/dashboard_data';
@@ -21,6 +34,10 @@ let currentTableSort = null;
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
 let weightedPopoverOpenedAt = 0;
+let publicDashboardData = null;
+let publicAttackRows = [];
+let publicPlayerRows = [];
+let publicStructureRows = [];
 
 function $(id) {
   return document.getElementById(id);
@@ -567,6 +584,545 @@ function contributionRewardLabel(reward) {
   return labels[reward] || reward;
 }
 
+function publicAttackPlayers(attack) {
+  return Array.isArray(attack?.players) ? attack.players : [];
+}
+
+function publicGameTimeLabel(value) {
+  const text = String(value || '').trim();
+  return text || 'Unknown time';
+}
+
+function publicAttackMs(attack) {
+  const parsed = parseGameTimeDateMs(attack?.game_time || attack?.time || attack?.date || '');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function sortPublicAttacks(attacks) {
+  return (Array.isArray(attacks) ? attacks : [])
+    .filter((attack) => attack && typeof attack === 'object')
+    .slice()
+    .sort(
+      (a, b) =>
+        publicAttackMs(b) - publicAttackMs(a) ||
+        String(b?.game_time || '').localeCompare(String(a?.game_time || ''))
+    );
+}
+
+function publicStructureLabel(attack) {
+  return formatDatasetStructureLabel(attack) || 'Unknown Structure';
+}
+
+function publicStructureKey(attack) {
+  const source = getDatasetStructureTarget(attack || {});
+  const target = normalizeStructureTarget(source.structure_name, source.structure_level);
+  return [target.structure_name || 'Unknown Structure', target.structure_level || '']
+    .map((part) => String(part).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''))
+    .join('|');
+}
+
+function publicPlayerName(player, attackPlayers = []) {
+  try {
+    return resolveCanonicalPlayerName(player, { attackPlayers }) || 'Unknown Player';
+  } catch {
+    const name = stripGuildTagsFromPlayerName(player?.name || player?.player || player || '');
+    return String(name || 'Unknown Player').trim();
+  }
+}
+
+function publicPlayerKey(name) {
+  return compactPlayerIdentity(stripGuildTagsFromPlayerName(name || '')) || 'unknown_player';
+}
+
+function buildPublicPlayerRows(attacks) {
+  const map = new Map();
+  (Array.isArray(attacks) ? attacks : []).forEach((attack) => {
+    const players = publicAttackPlayers(attack);
+    const seenInAttack = new Set();
+    players.forEach((entry) => {
+      const name = publicPlayerName(entry, players);
+      const key = publicPlayerKey(name);
+      const demo = valueOf(entry?.value ?? entry?.val ?? entry?.demolition ?? entry?.total);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          name,
+          total_demolition: 0,
+          participation_count: 0,
+          attacks: [],
+          structures: new Set(),
+          best_hit: 0,
+        });
+      }
+      const row = map.get(key);
+      row.total_demolition += demo;
+      row.best_hit = Math.max(row.best_hit, demo);
+      row.attacks.push({
+        attack,
+        structure: publicStructureLabel(attack),
+        structureKey: publicStructureKey(attack),
+        time: publicGameTimeLabel(attack?.game_time || attack?.time),
+        demo,
+        rank: entry?.rank || '',
+      });
+      if (!seenInAttack.has(key)) {
+        row.participation_count += 1;
+        row.structures.add(publicStructureKey(attack));
+        seenInAttack.add(key);
+      }
+    });
+  });
+  return [...map.values()]
+    .map((row) => ({
+      ...row,
+      unique_structures_count: row.structures.size,
+      average_demolition: row.participation_count
+        ? Math.round(row.total_demolition / row.participation_count)
+        : 0,
+    }))
+    .sort(
+      (a, b) =>
+        valueOf(b.total_demolition) - valueOf(a.total_demolition) ||
+        valueOf(b.participation_count) - valueOf(a.participation_count) ||
+        a.name.localeCompare(b.name)
+    );
+}
+
+function buildPublicStructureRows(attacks) {
+  const map = new Map();
+  (Array.isArray(attacks) ? attacks : []).forEach((attack) => {
+    const key = publicStructureKey(attack);
+    const label = publicStructureLabel(attack);
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        label,
+        total_demolition: 0,
+        attacks: [],
+        playerMap: new Map(),
+        best_hit: 0,
+      });
+    }
+    const row = map.get(key);
+    const attackTotal = valueOf(attack?.total_demolition ?? attack?.total ?? attack?.value);
+    row.total_demolition += attackTotal;
+    row.best_hit = Math.max(row.best_hit, attackTotal);
+    row.attacks.push(attack);
+    const players = publicAttackPlayers(attack);
+    players.forEach((entry) => {
+      const name = publicPlayerName(entry, players);
+      const keyForPlayer = publicPlayerKey(name);
+      const demo = valueOf(entry?.value ?? entry?.val ?? entry?.demolition ?? entry?.total);
+      if (!row.playerMap.has(keyForPlayer)) {
+        row.playerMap.set(keyForPlayer, { key: keyForPlayer, name, total: 0, hits: 0 });
+      }
+      const playerRow = row.playerMap.get(keyForPlayer);
+      playerRow.total += demo;
+      playerRow.hits += 1;
+    });
+  });
+  return [...map.values()]
+    .map((row) => {
+      const players = [...row.playerMap.values()].sort(
+        (a, b) => valueOf(b.total) - valueOf(a.total) || a.name.localeCompare(b.name)
+      );
+      return {
+        ...row,
+        players,
+        attack_count: row.attacks.length,
+        unique_players: players.length,
+        average_demo: row.attacks.length ? Math.round(row.total_demolition / row.attacks.length) : 0,
+        mvp: players[0] || null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        valueOf(b.total_demolition) - valueOf(a.total_demolition) ||
+        valueOf(b.attack_count) - valueOf(a.attack_count) ||
+        a.label.localeCompare(b.label)
+    );
+}
+
+function getPublicContributionRows(records) {
+  const record = getPrimaryContributionRecord(Array.isArray(records) ? records : []);
+  const entries = Array.isArray(record?.entries) ? record.entries : [];
+  const rows = entries
+    .map((entry, index) => {
+      const rank = Number(String(entry?.rank || '').replace(/[^\d.-]/g, ''));
+      return {
+        index,
+        rank: Number.isFinite(rank) && rank > 0 ? rank : index + 1,
+        name: String(entry?.name || entry?.player || 'Unknown Player').trim(),
+        guild: String(entry?.guild || '').trim(),
+        contribution: valueOf(entry?.contribution ?? entry?.value ?? entry?.points ?? entry?.total),
+        reward: getContributionRewardTier(entry, record, rank || index + 1),
+      };
+    })
+    .sort(
+      (a, b) =>
+        valueOf(a.rank) - valueOf(b.rank) ||
+        valueOf(b.contribution) - valueOf(a.contribution) ||
+        a.name.localeCompare(b.name)
+    );
+  return { record, rows };
+}
+
+function renderPublicEmpty(label) {
+  return `<div class="dash-empty">${esc(label)}</div>`;
+}
+
+function renderPublicCard(title, hint, body, className = '') {
+  const style = className.includes('eden-x1-public-wide') ? ' style="grid-column:1/-1"' : '';
+  return `<section class="dash-card eden-x1-public-card ${className}"${style}>
+    <div class="dash-card-hdr dash-card-hdr-wrap">
+      <h2 class="dash-card-title"><span>${esc(title)}</span></h2>
+      ${hint ? `<span class="dash-weighted-contribution-meta">${esc(hint)}</span>` : ''}
+    </div>
+    ${body}
+  </section>`;
+}
+
+function renderPublicContributionTable(contributionRecords) {
+  const { record, rows } = getPublicContributionRows(contributionRecords);
+  const metaParts = [
+    rows.length ? `${rows.length} players` : '',
+    record?.date ? `snapshot ${record.date}` : '',
+    record?.premiumSlots ? `${record.premiumSlots} premium slots` : '',
+  ].filter(Boolean);
+  const body = rows.length
+    ? `<div class="dash-table-wrap eden-x1-public-table-wrap">
+      <table class="dash-table">
+        <thead><tr>
+          <th class="dash-th-rank">#</th>
+          <th>Player</th>
+          <th>Guild</th>
+          <th class="dash-th-right">Contribution</th>
+          <th>Reward Tier</th>
+        </tr></thead>
+        <tbody>${rows
+          .map((row) => {
+            const playerKey = publicPlayerKey(row.name);
+            const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
+            return `<tr${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
+              <td data-label="#">${row.rank}</td>
+              <td data-label="Player"><strong>${esc(row.name)}</strong></td>
+              <td data-label="Guild">${esc(row.guild || '--')}</td>
+              <td class="dash-table-right" data-label="Contribution">${formatScore(row.contribution)}</td>
+              <td data-label="Reward Tier">${esc(contributionRewardLabel(row.reward))}</td>
+            </tr>`;
+          })
+          .join('')}</tbody>
+      </table>
+    </div>`
+    : renderPublicEmpty('No contribution snapshot has been published yet.');
+  const hint = rows.length
+    ? [...metaParts, 'click matched player rows'].filter(Boolean).join(' - ')
+    : 'Full public contribution snapshot';
+  return renderPublicCard(
+    'Complete Total Contribution',
+    hint,
+    body,
+    'eden-x1-public-wide'
+  );
+}
+
+function renderPublicKpis(attacks, players, structures) {
+  const totalDemo = attacks.reduce(
+    (sum, attack) => sum + valueOf(attack?.total_demolition ?? attack?.total),
+    0
+  );
+  const mvp = players[0]?.name || '--';
+  return `<div class="dash-kpi-grid eden-x1-public-wide" style="grid-column:1/-1">
+    <div class="dash-card dash-kpi blue"><span class="dash-kpi-icon">#</span><div><div class="dash-kpi-value">${formatScore(attacks.length)}</div><div class="dash-kpi-label">Structure Hits</div></div></div>
+    <div class="dash-card dash-kpi teal"><span class="dash-kpi-icon">D</span><div><div class="dash-kpi-value">${formatScore(totalDemo)}</div><div class="dash-kpi-label">Total Demolition</div></div></div>
+    <div class="dash-card dash-kpi purple"><span class="dash-kpi-icon">P</span><div><div class="dash-kpi-value">${formatScore(players.length)}</div><div class="dash-kpi-label">Active Players</div></div></div>
+    <div class="dash-card dash-kpi orange"><span class="dash-kpi-icon">*</span><div><div class="dash-kpi-value dash-kpi-value-compact">${esc(mvp)}</div><div class="dash-kpi-label">Top Contributor</div></div></div>
+  </div>`;
+}
+
+function renderPerformerRows(players, options = {}) {
+  const list = (Array.isArray(players) ? players : []).slice(0, options.limit || 10);
+  const max = Math.max(1, ...list.map((row) => valueOf(row.total_demolition)));
+  if (!list.length) return renderPublicEmpty('No player hits are available yet.');
+  return `<div class="dash-chart">${list
+    .map((row, index) => {
+      const pct = Math.max(4, Math.round((valueOf(row.total_demolition) / max) * 100));
+      return `<button type="button" class="dash-top-item dash-top-item--wide ${options.danger ? 'dash-top-item--danger' : ''} eden-x1-clickable" style="appearance:none;border:0;background:transparent;color:inherit;font:inherit;text-align:left;width:100%" data-public-player="${esc(row.key)}" aria-label="View ${esc(row.name)} details">
+        <span class="dash-top-rank rank-${index + 1}">#${index + 1}</span>
+        <span class="dash-top-main">
+          <span class="dash-top-bar" style="--dash-top-pct:${pct}%"></span>
+          <span class="dash-top-name">${esc(row.name)}</span>
+          <span class="dash-top-val">${formatScore(row.total_demolition)}</span>
+        </span>
+        <span class="dash-top-meta">${row.participation_count} hits - click</span>
+      </button>`;
+    })
+    .join('')}</div>`;
+}
+
+function renderPublicTopPerformers(players) {
+  return renderPublicCard(
+    'Top Performers',
+    'Click a player name to open their public attack detail.',
+    renderPerformerRows(players, { limit: 10 })
+  );
+}
+
+function renderPublicLowestPerformers(players) {
+  const lowRows = (Array.isArray(players) ? players : [])
+    .filter((row) => valueOf(row.total_demolition) > 0)
+    .slice()
+    .sort(
+      (a, b) =>
+        valueOf(a.total_demolition) - valueOf(b.total_demolition) ||
+        a.name.localeCompare(b.name)
+    );
+  return renderPublicCard(
+    'Lowest Performers',
+    'Useful for coaching and follow-up, not public shaming.',
+    renderPerformerRows(lowRows, { limit: 10, danger: true })
+  );
+}
+
+function renderPublicStructureRows(structures) {
+  const list = (Array.isArray(structures) ? structures : []).slice(0, 12);
+  const max = Math.max(1, ...list.map((row) => valueOf(row.total_demolition)));
+  if (!list.length) return renderPublicEmpty('No structure data is available yet.');
+  return `<div class="dash-chart">${list
+    .map((row, index) => {
+      const pct = Math.max(4, Math.round((valueOf(row.total_demolition) / max) * 100));
+      return `<button type="button" class="dash-structure-item eden-x1-clickable" style="font:inherit;color:inherit" data-public-structure="${esc(row.key)}" aria-label="View ${esc(row.label)} details">
+        <span class="dash-structure-bar" style="width:${pct}%"></span>
+        <span class="dash-structure-main">
+          <strong>${esc(row.label)}</strong>
+          <small>${row.attack_count} hits - ${row.unique_players} players - click</small>
+        </span>
+        <span class="dash-structure-side">
+          <strong>${formatScore(row.total_demolition)}</strong>
+          <small>#${index + 1}</small>
+        </span>
+      </button>`;
+    })
+    .join('')}</div>`;
+}
+
+function renderPublicStructures(structures) {
+  return renderPublicCard(
+    'Structures Leaderboard',
+    'Click any structure to see its public hit list and top players.',
+    renderPublicStructureRows(structures)
+  );
+}
+
+function renderPublicAttackHistory(attacks) {
+  const rows = (Array.isArray(attacks) ? attacks : []).slice(0, 18);
+  if (!rows.length) return renderPublicCard('Attack History', '', renderPublicEmpty('No attack history yet.'));
+  const body = `<div class="dash-attack-list">${rows
+    .map((attack) => {
+      const structure = publicStructureLabel(attack);
+      const total = valueOf(attack?.total_demolition ?? attack?.total ?? attack?.value);
+      const playerCount = publicAttackPlayers(attack).length || valueOf(attack?.players_count);
+      return `<button type="button" class="dash-attack-item eden-x1-clickable" style="font:inherit;color:inherit;width:100%" data-public-structure="${esc(publicStructureKey(attack))}" aria-label="View ${esc(structure)} details">
+        <span>
+          <span class="dash-attack-name">${esc(structure)}</span>
+          <span class="dash-attack-time">${esc(publicGameTimeLabel(attack?.game_time || attack?.time))} - ${playerCount} players</span>
+        </span>
+        <span class="dash-attack-val dash-attack-val--right">${formatScore(total)}</span>
+      </button>`;
+    })
+    .join('')}</div>`;
+  return renderPublicCard('Attack History', 'Click a structure row to open details.', body);
+}
+
+function renderPublicInsights(attacks, players, structures) {
+  const totalDemo = attacks.reduce(
+    (sum, attack) => sum + valueOf(attack?.total_demolition ?? attack?.total),
+    0
+  );
+  const largeTarget = structures[0];
+  const attendanceRisk = players.filter((row) => row.participation_count <= 1).length;
+  const bestHit = players.slice().sort((a, b) => valueOf(b.best_hit) - valueOf(a.best_hit))[0];
+  const avgHit = attacks.length ? Math.round(totalDemo / attacks.length) : 0;
+  const movementRows = players.slice(0, 5);
+  const body = `<div class="dash-ops-grid eden-x1-public-insights-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+    <div class="dash-ops-card"><span class="dash-ops-label">Target Mix</span><strong>${esc(largeTarget?.label || '--')}</strong><p>${largeTarget ? `${largeTarget.attack_count} hits - ${formatScore(largeTarget.total_demolition)} demo` : 'No targets yet'}</p></div>
+    <div class="dash-ops-card"><span class="dash-ops-label">Attendance Risk</span><strong>${formatScore(attendanceRisk)} players</strong><p>Low-frequency hitters to review</p></div>
+    <div class="dash-ops-card"><span class="dash-ops-label">Best Per Hit</span><strong>${esc(bestHit?.name || '--')}</strong><p>${bestHit ? `${formatScore(bestHit.best_hit)} best hit` : 'No hit data yet'}</p></div>
+    <div class="dash-ops-card"><span class="dash-ops-label">Data Health</span><strong>${formatScore(attacks.length)} attacks</strong><p>${formatScore(avgHit)} average demolition per hit</p></div>
+  </div>
+  <div class="dash-insight-list eden-x1-public-mini-list">
+    <strong>Consistency & Movement</strong>
+    ${movementRows.length ? movementRows
+      .map(
+        (row) => `<span><b>${esc(row.name)}</b><em>${row.participation_count} hits - ${formatScore(row.average_demolition)} avg</em></span>`
+      )
+      .join('') : '<span>No trend data yet.</span>'}
+  </div>`;
+  return renderPublicCard(
+    'Insights',
+    'Public summary cards from the same uploaded attack data.',
+    body
+  );
+}
+
+function renderPublicPlayerDetail(player) {
+  if (!player) return renderPublicDetailEmpty();
+  const attacks = player.attacks
+    .slice()
+    .sort((a, b) => publicAttackMs(b.attack) - publicAttackMs(a.attack));
+  return `<div class="dash-card eden-x1-public-detail-card">
+    <div class="dash-card-hdr dash-card-hdr-wrap">
+      <h2 class="dash-card-title"><span>Player Detail - ${esc(player.name)}</span></h2>
+      <span class="dash-weighted-contribution-meta">Click a target below to switch to structure detail.</span>
+    </div>
+    <div class="dash-modal-grid">
+      <div><span>Total Demo</span><strong>${formatScore(player.total_demolition)}</strong></div>
+      <div><span>Hits</span><strong>${formatScore(player.participation_count)}</strong></div>
+      <div><span>Targets</span><strong>${formatScore(player.unique_structures_count)}</strong></div>
+      <div><span>Best Hit</span><strong>${formatScore(player.best_hit)}</strong></div>
+    </div>
+    <div class="dash-table-wrap eden-x1-public-table-wrap">
+      <table class="dash-table">
+        <thead><tr><th>Time</th><th>Structure</th><th class="dash-th-right">Demo</th><th>Rank</th></tr></thead>
+        <tbody>${attacks
+          .map(
+            (attack) => `<tr data-public-structure="${esc(attack.structureKey)}">
+              <td>${esc(attack.time)}</td>
+              <td><strong>${esc(attack.structure)}</strong></td>
+              <td class="dash-table-right">${formatScore(attack.demo)}</td>
+              <td>${attack.rank ? `#${esc(attack.rank)}` : '--'}</td>
+            </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderPublicStructureDetail(structure) {
+  if (!structure) return renderPublicDetailEmpty();
+  const attacks = sortPublicAttacks(structure.attacks);
+  return `<div class="dash-card eden-x1-public-detail-card">
+    <div class="dash-card-hdr dash-card-hdr-wrap">
+      <h2 class="dash-card-title"><span>Structure Detail - ${esc(structure.label)}</span></h2>
+      <span class="dash-weighted-contribution-meta">Click a player below to switch to player detail.</span>
+    </div>
+    <div class="dash-modal-grid">
+      <div><span>Total Demo</span><strong>${formatScore(structure.total_demolition)}</strong></div>
+      <div><span>Hits</span><strong>${formatScore(structure.attack_count)}</strong></div>
+      <div><span>Players</span><strong>${formatScore(structure.unique_players)}</strong></div>
+      <div><span>Average Hit</span><strong>${formatScore(structure.average_demo)}</strong></div>
+    </div>
+    <div class="dash-main-grid eden-x1-public-detail-grid">
+      <div class="dash-card-align-start">
+        <h3 class="dash-card-title">Top Players</h3>
+        <div class="dash-chart">${structure.players
+          .slice(0, 8)
+          .map(
+            (player, index) => `<button type="button" class="dash-top-item dash-top-item--wide eden-x1-clickable" style="appearance:none;border:0;background:transparent;color:inherit;font:inherit;text-align:left;width:100%" data-public-player="${esc(player.key)}">
+              <span class="dash-top-rank rank-${index + 1}">#${index + 1}</span>
+              <span class="dash-top-name">${esc(player.name)}</span>
+              <span class="dash-top-val">${formatScore(player.total)}</span>
+              <span class="dash-top-meta">${player.hits} hits</span>
+            </button>`
+          )
+          .join('')}</div>
+      </div>
+      <div>
+        <h3 class="dash-card-title">Recent Hits</h3>
+        <div class="dash-attack-list">${attacks
+          .slice(0, 8)
+          .map(
+            (attack) => `<div class="dash-attack-item">
+              <span>
+                <span class="dash-attack-name">${esc(publicGameTimeLabel(attack?.game_time || attack?.time))}</span>
+                <span class="dash-attack-time">${publicAttackPlayers(attack).length || valueOf(attack?.players_count)} players</span>
+              </span>
+              <span class="dash-attack-val dash-attack-val--right">${formatScore(attack?.total_demolition ?? attack?.total)}</span>
+            </div>`
+          )
+          .join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderPublicDetailEmpty() {
+  return `<div class="dash-card eden-x1-public-detail-card">
+    <div class="dash-empty">Click a player or structure anywhere above to open the public detail view here.</div>
+  </div>`;
+}
+
+function showPublicDetail(type, key) {
+  const host = $('edenX1PublicDetail');
+  if (!host) return;
+  const normalizedKey = String(key || '');
+  if (type === 'player') {
+    host.innerHTML = renderPublicPlayerDetail(
+      publicPlayerRows.find((row) => row.key === normalizedKey)
+    );
+  } else if (type === 'structure') {
+    host.innerHTML = renderPublicStructureDetail(
+      publicStructureRows.find((row) => row.key === normalizedKey)
+    );
+  } else {
+    host.innerHTML = renderPublicDetailEmpty();
+  }
+  host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function bindPublicDashboardControls(host) {
+  if (!host || host.dataset.publicControlsBound) return;
+  host.dataset.publicControlsBound = '1';
+  host.addEventListener('click', (event) => {
+    const playerButton = event.target.closest('[data-public-player]');
+    if (playerButton) {
+      showPublicDetail('player', playerButton.getAttribute('data-public-player'));
+      return;
+    }
+    const structureButton = event.target.closest('[data-public-structure]');
+    if (structureButton) {
+      showPublicDetail('structure', structureButton.getAttribute('data-public-structure'));
+    }
+  });
+}
+
+function renderPublicDashboard(data = publicDashboardData) {
+  const host = $('edenX1PublicDashboard');
+  if (!host) return;
+  publicDashboardData = data || {};
+  publicAttackRows = sortPublicAttacks(publicDashboardData.attacks);
+  publicPlayerRows = buildPublicPlayerRows(publicAttackRows);
+  publicStructureRows = buildPublicStructureRows(publicAttackRows);
+  const hasContribution = Array.isArray(publicDashboardData.contributionRecords)
+    ? publicDashboardData.contributionRecords.some((record) => Array.isArray(record?.entries) && record.entries.length)
+    : false;
+  if (!publicAttackRows.length && !hasContribution) {
+    host.classList.add('hidden');
+    host.innerHTML = '';
+    return;
+  }
+  host.classList.remove('hidden');
+  host.innerHTML = `<div id="ocrDashboardRoot" class="eden-x1-public-root" style="display:grid;gap:1rem">
+    <div class="eden-x1-reward-heading">
+      <span class="eden-x1-reward-eyebrow">Public dashboard</span>
+      <h2>Complete season activity</h2>
+      <p>Public-safe attack, structure, and contribution summaries. Buttons marked with click open detail panels below.</p>
+    </div>
+    <div class="eden-x1-public-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:.85rem;align-items:start">
+      ${renderPublicContributionTable(publicDashboardData.contributionRecords)}
+      ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
+      ${renderPublicTopPerformers(publicPlayerRows)}
+      ${renderPublicInsights(publicAttackRows, publicPlayerRows, publicStructureRows)}
+      ${renderPublicAttackHistory(publicAttackRows)}
+      ${renderPublicStructures(publicStructureRows)}
+      ${renderPublicLowestPerformers(publicPlayerRows)}
+      <div id="edenX1PublicDetail" class="eden-x1-public-wide" style="grid-column:1/-1">${renderPublicDetailEmpty()}</div>
+    </div>
+  </div>`;
+  bindPublicDashboardControls(host);
+}
+
 function updateTextContent(lang) {
   currentLang = lang;
   const dict = translations[lang] || translations.en;
@@ -603,6 +1159,7 @@ function updateTextContent(lang) {
 
   syncGameClockTitles();
   renderCurrentTable();
+  if (publicDashboardData) renderPublicDashboard(publicDashboardData);
 }
 
 function renderTable(rows, recordLabel, options = {}) {
@@ -897,6 +1454,7 @@ function applyDashboardData(data = {}) {
   const panel = $('dashWeightedContributionPanel');
   if (!model.rows || !model.rows.length) {
     if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
+    renderPublicDashboard(data);
     return;
   }
 
@@ -906,6 +1464,7 @@ function applyDashboardData(data = {}) {
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   renderCurrentTable();
+  renderPublicDashboard(data);
 }
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {

@@ -729,7 +729,13 @@
         ></div>
 
         <!-- Visuals Row -->
-        <div class="dash-main-grid dash-visuals-grid">
+        <div
+          class="dash-main-grid dash-visuals-grid"
+          style="
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+            align-items: stretch;
+          "
+        >
           <div class="dash-card dash-chart-card">
             <div class="dash-card-hdr">
               <h2 class="dash-card-title">
@@ -841,7 +847,13 @@
         </div>
 
         <!-- Main Grid -->
-        <div class="dash-main-grid">
+        <div
+          class="dash-main-grid"
+          style="
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+            align-items: stretch;
+          "
+        >
           <div id="dashAttackHistoryCard" class="dash-card">
             <div class="dash-card-hdr dash-card-hdr-wrap">
               <h2 class="dash-card-title">

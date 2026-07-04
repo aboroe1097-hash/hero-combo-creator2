@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260704_224308','app.css?v=20260704_224308','ocr-dashboard.css?v=20260704_224308','components.css?v=20260704_224308','atmosphere.css?v=20260704_224308','mobile.css?v=20260704_224308'];
+      var files = ['_tokens.css?v=20260704_230432','app.css?v=20260704_230432','ocr-dashboard.css?v=20260704_230432','components.css?v=20260704_230432','atmosphere.css?v=20260704_230432','mobile.css?v=20260704_230432'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260704_224308') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260704_230432') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260704_224308"></script>
+  <script src="js/maintenance-config.js?v=20260704_230432"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -145,6 +145,7 @@
             <span data-i18n="edenX1Loading">Loading weighted contribution data...</span>
           </div>
         </div>
+        <section id="edenX1PublicDashboard" class="eden-x1-public-dashboard hidden" aria-label="Public Eden X1 dashboard"></section>
         <div id="edenX1Error" class="dash-empty eden-x1-error hidden"></div>
       </section>
     </main>
@@ -177,6 +178,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260704_224308"></script>
+  <script type="module" src="js/eden-x1.js?v=20260704_230432"></script>
 </body>
 </html>
