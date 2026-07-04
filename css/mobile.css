@@ -40,6 +40,11 @@ body {
   touch-action: manipulation;
 }
 
+body.eden-x1-page {
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+}
+
 /* Only add footer clearance when sticky bar is visible */
 body.tab-manual-active {
   padding-bottom: calc(var(--footer-h) + var(--safe-bottom) + 16px) !important;
