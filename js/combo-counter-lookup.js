@@ -35,7 +35,7 @@ export function initCounterLookup(containerEl) {
       html += `
         <div class="counter-lookup-hero">
           <div class="counter-lookup-hero-row">
-            <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" class="counter-lookup-avatar">
+            <img src="${getHeroImageUrl(hero.name)}" alt="${escapeHtml(hero.name)}" loading="lazy" decoding="async" class="counter-lookup-avatar">
             <span class="counter-lookup-name">${escapeHtml(hero.name)}</span>
           </div>
           <div class="counter-lookup-sections">

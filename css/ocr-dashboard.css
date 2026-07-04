@@ -680,7 +680,9 @@
   #ocrDashboardRoot .dash-analytics-card.dash-analytics-in,
   #ocrDashboardRoot .dash-dist-fill,
   #ocrDashboardRoot .dash-connecting-status::before,
-  #ocrDashboardRoot .dash-connecting-bar-fill::after {
+  #ocrDashboardRoot .dash-connecting-bar-fill::after,
+  #ocrDashboardRoot .dash-cloud-status[data-state='syncing'] .dash-cloud-status-dot,
+  #ocrDashboardRoot .dash-roster-progress .spinner {
     animation: none !important;
   }
   #ocrDashboardRoot .dash-structure-item,

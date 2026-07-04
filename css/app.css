@@ -462,6 +462,9 @@ html.maintenance-mode .maintenance-preload {
   .boot-splash-aurora, .boot-atmosphere, .boot-halo,
   .door-wing,
   .gate-lock { animation: none !important; }
+  .dual-glow-logo,
+  [data-theme="light"] .dual-glow-logo,
+  .eden-guide-highlight { animation: none !important; }
   body.app-ready .app-shell--revealed { animation: fade-in-up 0.2s ease both; filter: none; }
   section.tab-panel:not(.hidden) { animation: none !important; }
 }

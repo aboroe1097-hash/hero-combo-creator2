@@ -976,13 +976,13 @@ function setWeightedContributionCompactView(enabled) {
       card.classList.toggle('dash-weighted-compact', enabled);
       card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
         button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-        button.textContent = enabled ? 'Full View' : 'Compact View';
+        button.textContent = adminT(enabled ? 'edenX1FullView' : 'edenX1CompactView');
       });
     });
 }
 
 function renderWeightedContributionViewToggle(compact) {
-  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${compact ? 'Full View' : 'Compact View'}</button>`;
+  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${esc(adminT(compact ? 'edenX1FullView' : 'edenX1CompactView'))}</button>`;
 }
 
 function bindWeightedContributionViewToggle(host) {
@@ -1000,17 +1000,24 @@ function bindWeightedContributionViewToggle(host) {
 function renderWeightedScorePopover(row, index) {
   const tooltipId = `dashWeightedScoreTip-${index}`;
   const dutyCount = row.banners + row.pathers + row.shieldWalls;
-  const dutyNote = `${row.banners} banners + ${row.pathers} pathers + ${row.shieldWalls} shield walls`;
-  const conductNote = `${weightedContributionSignedNumber(row.conductBonus)} conduct x 10,000`;
-  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Weighted score breakdown for ${esc(row.playerName)}">
+  const dutyNote = adminT('edenX1DutyFormula', {
+    banners: row.banners,
+    pathers: row.pathers,
+    shieldWalls: row.shieldWalls,
+    count: dutyCount,
+  });
+  const conductNote = adminT('edenX1ConductFormula', {
+    conduct: weightedContributionSignedNumber(row.conductBonus),
+  });
+  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>Weighted score breakdown</strong>
-      <span><span>Contribution</span><b>${weightedContributionNumber(row.contributionScore)}</b></span>
-      <span><span>Ex-guild contribution</span><b>${weightedContributionNumber(row.contributionExGuild || 0)}</b></span>
-      <span><span>Duty points <small>${esc(dutyNote)} = ${dutyCount} x 10,000</small></span><b>${weightedContributionNumber(row.dutyPoints || 0)}</b></span>
-      <span><span>Conduct points <small>${esc(conductNote)}</small></span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>Total</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
+      <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${weightedContributionNumber(row.contributionScore)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${weightedContributionNumber(row.contributionExGuild || 0)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${weightedContributionNumber(row.dutyPoints || 0)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${weightedContributionSignedNumber(row.conductPoints || 0)}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('edenX1BreakdownTotal'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
     </span>
   </button>`;
 }
@@ -1023,19 +1030,19 @@ function renderFinalRankPopover(row, index) {
   const movement = !hasCur
     ? '--'
     : delta > 0
-      ? `▲ up ${delta}`
+      ? adminT('edenX1RankUp', { count: delta })
       : delta < 0
-        ? `▼ down ${-delta}`
-        : 'no change';
-  return `<button class="dash-weighted-rank-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Final rank reasoning for ${esc(row.playerName)}">
+        ? adminT('edenX1RankDown', { count: Math.abs(delta) })
+        : adminT('edenX1RankSame');
+  return `<button class="dash-weighted-rank-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1RankReasonAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">#${row.finalRank}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>Final rank reasoning</strong>
-      <span><span>Ranked by</span><b>Weighted score</b></span>
-      <span><span>Weighted score</span><b>${row.weightedScore.toFixed(1)}</b></span>
-      <span><span>Current contribution rank</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
-      <span><span>Movement vs current</span><b>${movement}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>Final rank</span><b>#${row.finalRank}</b></span>
+      <strong>${esc(adminT('edenX1RankReasonTitle'))}</strong>
+      <span><span>${esc(adminT('edenX1RankedBy'))}</span><b>${esc(adminT('edenX1ThWeightedScore'))}</b></span>
+      <span><span>${esc(adminT('edenX1ThWeightedScore'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      <span><span>${esc(adminT('adminContributionRank'))}</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
+      <span><span>${esc(adminT('edenX1RankMovement'))}</span><b>${esc(movement)}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
     </span>
   </button>`;
 }
@@ -1046,12 +1053,19 @@ function renderFinalRewardPopover(row, index) {
   const finalReward = contributionRewardLabel(row.finalReward);
   const reason =
     row.rewardReason === 'grant_premium'
-      ? `R5 grant premium override. Final rank #${row.finalRank}.`
+      ? adminT('edenX1RewardReasonGrant', { rank: row.finalRank })
       : row.rewardReason === 'forfeit_premium'
-        ? `R5 forfeit premium override. Final rank #${row.finalRank}.`
-        : `Final rank #${row.finalRank}. Base reward: ${baseReward}.`;
-  return `<button class="dash-weighted-reward-trigger" type="button" id="${tooltipId}" title="${esc(reason)}" aria-label="Final reward for ${esc(row.playerName)}: ${esc(finalReward)}. ${esc(reason)}">
-    <span class="dash-weighted-reward-value">${esc(contributionRewardLabel(row.finalReward))}</span>
+        ? adminT('edenX1RewardReasonForfeit', { rank: row.finalRank })
+        : adminT('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
+  return `<button class="dash-weighted-reward-trigger" type="button" aria-describedby="${tooltipId}" title="${esc(reason)}" aria-label="${esc(adminT('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
+    <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+      <strong>${esc(adminT('edenX1RewardReasonTitle'))}</strong>
+      <span><span>${esc(adminT('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
+      <span><span>${esc(adminT('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
+      <span><span>${esc(adminT('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
+      <small>${esc(reason)}</small>
+    </span>
   </button>`;
 }
 
@@ -1140,31 +1154,31 @@ function renderWeightedContributionDashboard() {
           <path d="M18 20V4" />
           <path d="M6 20v-6" />
         </svg>
-        <span>Weighted Total Contribution</span>
+        <span>${esc(adminT('edenX1WeightedTitle'))}</span>
       </h2>
       <div class="dash-weighted-table-controls">
-        <span class="dash-weighted-contribution-meta">${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} Premium</span>
+        <span class="dash-weighted-contribution-meta">${esc(recordLabel || adminT('edenX1PageTitle'))} &middot; ${esc(adminT('adminContributionPremiumSlots', { count: model.premiumCutoff }))}</span>
         ${renderWeightedContributionViewToggle(compactView)}
       </div>
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-weighted-sort="player">Player</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">Current rank</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">Reward</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">Total</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="conduct">Conduct (R5) bonus</th><th style="text-align:right" data-weighted-sort="weighted">Weighted score</th><th data-weighted-sort="finalRank">Final rank</th><th data-weighted-sort="finalReward">Final reward</th></tr></thead>
+        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${sortedWeightedRows(rows)
           .map(
             (row, index) => `<tr>
-          <td data-label="Player"><strong>${esc(row.playerName)}</strong></td>
-          <td class="dash-weighted-detail-col" data-label="Current rank">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-          <td class="dash-weighted-detail-col" data-label="Reward">${esc(contributionRewardLabel(row.currentReward))}</td>
-          <td class="dash-weighted-detail-col" data-label="Contribution score" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col" data-label="#Shield Walls" style="text-align:right">${row.shieldWalls}</td>
-          <td class="dash-weighted-detail-col" data-label="#Pathers" style="text-align:right">${row.pathers}</td>
-          <td class="dash-weighted-detail-col" data-label="#Banners" style="text-align:right">${row.banners}</td>
-          <td class="dash-weighted-detail-col" data-label="Total" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
-          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" data-label="Conduct (R5)" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
-          <td class="dash-weighted-score-cell" data-label="Weighted score" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
-          <td class="dash-weighted-score-cell" data-label="Final rank">${renderFinalRankPopover(row, index)}</td>
-          <td class="dash-weighted-score-cell" data-label="Final reward">${renderFinalRewardPopover(row, index)}</td>
+          <td data-label="${esc(adminT('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThTotal'))}" style="text-align:right">${(valueOf(row.contributionScore) + row.shieldWalls + row.pathers + row.banners + row.conductBonus).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" data-label="${esc(adminT('edenX1ThConduct'))}" style="text-align:right">${formatSignedNumber(row.conductBonus)}</td>
+          <td class="dash-weighted-score-cell" data-label="${esc(adminT('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
+          <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
+          <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index)}</td>
         </tr>`
           )
           .join('')}</tbody>
@@ -1688,6 +1702,30 @@ function render() {
   }
 }
 
+function bindModalDelegatedActions(body) {
+  if (!body || body.dataset.dashModalActionsBound === '1') return;
+  body.dataset.dashModalActionsBound = '1';
+  body.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-dash-action]');
+    if (!trigger || !body.contains(trigger)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const attackId = trigger.dataset.attackId || '';
+    const playerName = trigger.dataset.playerName || '';
+    const actions = {
+      'mark-attack-complete': () => window.markAttackComplete?.(attackId),
+      'add-player': () => window.addPlayer?.(attackId),
+      'edit-attack': () => window.editAttack?.(attackId),
+      'delete-attack': () => window.deleteAttack?.(attackId),
+      'show-player': () => window.showPlayer?.(playerName),
+      'edit-player': () => window.editPlayer?.(attackId, playerName),
+      'export-player-report': () => window.exportPlayerReport?.(playerName),
+      'show-attack': () => window.showAttack?.(attackId),
+    };
+    actions[trigger.dataset.dashAction]?.();
+  });
+}
+
 function showModal(type, data) {
   try {
     const m = $id('dashModal'),
@@ -1725,11 +1763,11 @@ function showModal(type, data) {
         if (validation.overridden) {
           h += `<div class="dash-validation-card dash-validation-card--complete"><div><strong>Marked Complete</strong><span>Admin override accepted this structure as complete.</span></div></div>`;
         } else {
-          h += `<div class="dash-validation-card dash-validation-card--warn"><div><strong>Missing Data Warning</strong><span>Current ${(data.total_demolition || 0).toLocaleString()} / expected ${validation.expected.toLocaleString()}${missing ? ` - missing ${missing.toLocaleString()}` : ''}.</span></div>${!isGuest() ? `<button type="button" class="dash-btn dash-btn-xs dash-complete-override-btn" onclick="window.markAttackComplete('${data.id}')">Mark Complete</button>` : ''}</div>`;
+          h += `<div class="dash-validation-card dash-validation-card--warn"><div><strong>Missing Data Warning</strong><span>Current ${(data.total_demolition || 0).toLocaleString()} / expected ${validation.expected.toLocaleString()}${missing ? ` - missing ${missing.toLocaleString()}` : ''}.</span></div>${!isGuest() ? `<button type="button" class="dash-btn dash-btn-xs dash-complete-override-btn" data-dash-action="mark-attack-complete" data-attack-id="${esc(data.id)}">Mark Complete</button>` : ''}</div>`;
         }
       }
       if (!isGuest()) {
-        h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="window.addPlayer('${data.id}')">Add Player</button><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="window.editAttack('${data.id}')">Edit Details</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" onclick="window.deleteAttack('${data.id}')">Delete</button></div>`;
+        h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="add-player" data-attack-id="${esc(data.id)}">Add Player</button><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-attack" data-attack-id="${esc(data.id)}">Edit Details</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" data-dash-action="delete-attack" data-attack-id="${esc(data.id)}">${esc(adminT('adminDelete'))}</button></div>`;
       }
       h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${esc(structureLabel(data))}</div></div></div>`;
       h += `<div class="dash-modal-section-label">Value Distribution</div><div class="dash-distrib">${Object.entries(
@@ -1744,9 +1782,9 @@ function showModal(type, data) {
       h += `<div class="dash-modal-section-label">Player Breakdown</div><table class="dash-table dash-table--stack"><thead><tr><th>#</th><th>Name</th><th class="dash-table-right">Demolition</th>${!isGuest() ? '<th></th>' : ''}</tr></thead><tbody>`;
       data.players.forEach((p) => {
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
-        h += `<tr onclick="window.showPlayer('${encName}')"><td data-label="Rank" class="dash-rank ${p.rank <= 3 ? 'rank-' + p.rank : ''}">#${p.rank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
+        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${p.rank <= 3 ? 'rank-' + p.rank : ''}">#${p.rank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
         if (!isGuest()) {
-          h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" onclick="event.stopPropagation(); window.editPlayer('${data.id}', '${encName}')">Edit</button></td>`;
+          h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-player" data-attack-id="${esc(data.id)}" data-player-name="${esc(encName)}">${esc(adminT('adminEdit'))}</button></td>`;
         }
         h += `</tr>`;
       });
@@ -1810,7 +1848,7 @@ function showModal(type, data) {
       }
 
       const encPname = encodeURIComponent(data.name).replace(/'/g, '%27');
-      let pb = `<div class="dash-modal-actions"><button type="button" class="dash-btn dash-btn-xs dash-btn-soft" onclick="event.stopPropagation(); window.exportPlayerReport('${encPname}')">Export CSV Report</button></div>`;
+      let pb = `<div class="dash-modal-actions"><button type="button" class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="export-player-report" data-player-name="${esc(encPname)}">${esc(adminT('adminBtnExport'))}</button></div>`;
 
       body.innerHTML =
         pb +
@@ -1820,12 +1858,13 @@ function showModal(type, data) {
         sortedAttacks
           .map(
             (att) =>
-              `<tr onclick="window.showAttack('${att.id || att.attack_id}')"><td data-label="Time">${displayGameTime(att.game_time)}</td><td data-label="Target" class="dash-table-link">${esc(formatDatasetStructureLabel(att))}</td><td data-label="Value" class="dash-table-right">${(att.val || att.value || 0).toLocaleString()}</td><td data-label="Rank" class="dash-table-center">#${att.rank || '-'}</td></tr>`
+              `<tr data-dash-action="show-attack" data-attack-id="${esc(att.id || att.attack_id)}"><td data-label="Time">${displayGameTime(att.game_time)}</td><td data-label="Target" class="dash-table-link">${esc(formatDatasetStructureLabel(att))}</td><td data-label="Value" class="dash-table-right">${(att.val || att.value || 0).toLocaleString()}</td><td data-label="Rank" class="dash-table-center">#${att.rank || '-'}</td></tr>`
           )
           .join('') +
         '</tbody></table>' +
         '<div class="dash-modal-note">Buildings are typically attackable only on Sunday, Tuesday, Thursday (server schedule). Active times reflect participation on those days.</div>';
     }
+    bindModalDelegatedActions(body);
     m.classList.add('active');
 
     if (!m._backdropListener) {

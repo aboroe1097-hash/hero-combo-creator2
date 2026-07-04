@@ -129,7 +129,7 @@ async function showHeroTooltip(e, heroName) {
   if (synergies.length > 0) {
     const synTags = synergies.map(syn => `
       <div class="hero-tooltip-synergy-card">
-         <img src="${getHeroImageUrl(syn)}" crossorigin="anonymous" class="hero-tooltip-synergy-img">
+         <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}" loading="lazy" decoding="async" crossorigin="anonymous" class="hero-tooltip-synergy-img">
          <span class="hero-tooltip-synergy-name">${escapeHtml(syn)}</span>
       </div>
     `).join('');

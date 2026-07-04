@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 globalThis.window = {
   VTS_ADMIN_AUTH: {},
 };
+const localStorageData = new Map();
 globalThis.localStorage = {
-  getItem: () => null,
-  setItem: () => {},
+  getItem: (key) => localStorageData.get(key) ?? null,
+  setItem: (key, value) => localStorageData.set(key, String(value)),
+  removeItem: (key) => localStorageData.delete(key),
 };
 globalThis.document = {
   getElementById: () => null,
@@ -21,6 +23,9 @@ const {
   getLatestContributionRecord,
   getWeightedContributionRecordLabel,
 } = await import('../../js/contribution-weighting.js');
+const { PLAYER_REGISTRY_KEY, writeStoredPlayerRegistry } = await import(
+  '../../js/player-registry.js'
+);
 
 const TEST_ROSTER_NAMES = ['~Sarafino~', 'UNDEAD', 'ANGEL', 'Zubbs', 'Kika'];
 const KIKA_MAIN = '\ua9c1 Kika \ua9c2';
@@ -188,6 +193,52 @@ test('weighted contribution consolidates a player family duty + conduct onto the
     assert.equal(alt.pathers, 0);
     assert.equal(alt.conductBonus, 0);
   });
+});
+
+test('weighted contribution uses registry families for custom account groups', () => {
+  localStorageData.delete(PLAYER_REGISTRY_KEY);
+  try {
+    writeStoredPlayerRegistry({
+      players: [
+        { canonical: 'Registry Main', family: 'registry-player', aliases: ['Registry Main'] },
+        { canonical: 'Registry Banner', family: 'registry-player', aliases: ['Registry Banner'] },
+      ],
+    });
+
+    const season = 'eden-x1-2026';
+    const model = buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'registry-family',
+          date: '2026-06-25',
+          entries: [
+            { rank: 1, name: 'Registry Main', contribution: 100000 },
+            { rank: 2, name: 'Registry Banner', contribution: 10000 },
+          ],
+        },
+      ],
+      dutyRecords: [
+        { type: 'banner', entries: [{ name: 'Registry Banner', confirmed: 'Registry Banner' }] },
+      ],
+      r5Adjustments: [
+        { season, player: 'Registry Banner', points: 2, category: 'banner_help' },
+      ],
+    });
+
+    const main = model.rows.find((row) => row.playerName === 'Registry Main');
+    const banner = model.rows.find((row) => row.playerName === 'Registry Banner');
+
+    assert.ok(main);
+    assert.ok(banner);
+    assert.notEqual(main.playerKey, banner.playerKey);
+    assert.equal(main.banners, 1);
+    assert.equal(main.conductBonus, 2);
+    assert.equal(banner.banners, 0);
+    assert.equal(banner.conductBonus, 0);
+  } finally {
+    localStorageData.delete(PLAYER_REGISTRY_KEY);
+  }
 });
 
 test('R5 premium grant and forfeit flags override weighted final reward tier', () => {

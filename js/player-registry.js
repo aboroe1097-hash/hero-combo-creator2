@@ -83,17 +83,25 @@ export function buildPlayerRegistryIndex(registryInput) {
   const registry = normalizePlayerRegistry(registryInput);
   const exact = new Map();
   const compact = new Map();
+  const familyExact = new Map();
+  const familyCompact = new Map();
 
   registry.players.forEach((player) => {
+    const familyKey = compactRegistryName(player.family);
     player.aliases.forEach((alias) => {
       exact.set(alias, player.canonical);
       exact.set(alias.toLowerCase(), player.canonical);
       const key = compactRegistryName(alias);
       if (key && !compact.has(key)) compact.set(key, player.canonical);
+      if (familyKey) {
+        familyExact.set(alias, familyKey);
+        familyExact.set(alias.toLowerCase(), familyKey);
+        if (key && !familyCompact.has(key)) familyCompact.set(key, familyKey);
+      }
     });
   });
 
-  return { registry, exact, compact };
+  return { registry, exact, compact, familyExact, familyCompact };
 }
 
 export function resolvePlayerRegistryAlias(name, registryInput = readStoredPlayerRegistry()) {
@@ -104,6 +112,18 @@ export function resolvePlayerRegistryAlias(name, registryInput = readStoredPlaye
     index.exact.get(text) ||
     index.exact.get(text.toLowerCase()) ||
     index.compact.get(compactRegistryName(text)) ||
+    ''
+  );
+}
+
+export function resolvePlayerRegistryFamilyKey(name, registryInput = readStoredPlayerRegistry()) {
+  const text = asText(name);
+  if (!text) return '';
+  const index = buildPlayerRegistryIndex(registryInput);
+  return (
+    index.familyExact.get(text) ||
+    index.familyExact.get(text.toLowerCase()) ||
+    index.familyCompact.get(compactRegistryName(text)) ||
     ''
   );
 }

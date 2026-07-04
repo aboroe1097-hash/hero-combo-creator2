@@ -324,6 +324,48 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('Dragon.Gold'), 'Dragon.Gold');
 });
 
+test('player registry aliases persist and resolve before roster matching', () => {
+  localStorageData.delete(PLAYER_REGISTRY_KEY);
+  const previousRosterNames = state.rosterNames;
+  state.rosterNames = ['Registry Axe'];
+  try {
+    const registry = writeStoredPlayerRegistry({
+      players: [
+        {
+          canonical: 'Registry Ace',
+          aliases: ['R3gistry Ace'],
+          accounts: [{ name: 'Ace Banner', type: 'banner' }],
+        },
+      ],
+    });
+
+    assert.equal(normalizePlayerRegistry(registry).players.length, 1);
+    assert.equal(resolvePlayerRegistryAlias('Ace Banner'), 'Registry Ace');
+    assert.equal(findBestMatch('R3gistry Ace'), 'Registry Ace');
+    assert.equal(findBestMatch('Ace Banner'), 'Registry Ace');
+  } finally {
+    localStorageData.delete(PLAYER_REGISTRY_KEY);
+    state.rosterNames = previousRosterNames;
+  }
+});
+
+test('player registry aliases make duty operator credit known', () => {
+  localStorageData.delete(PLAYER_REGISTRY_KEY);
+  try {
+    writeStoredPlayerRegistry({
+      players: [{ canonical: 'Cloud Operator', aliases: ['helper zero'] }],
+    });
+
+    assert.equal(resolveDutyPlayerName('bridge @helper zero'), 'Cloud Operator');
+    assert.deepEqual(getDutyCreditedNames('Main Banner (helper zero)', 'Main'), [
+      'Main',
+      'Cloud Operator',
+    ]);
+  } finally {
+    localStorageData.delete(PLAYER_REGISTRY_KEY);
+  }
+});
+
 test('player aliases fold decoration and OCR-typo variants into one master', () => {
   // From the 2026-06 debug-export dedup audit.
   assert.equal(findBestMatch('~Anne~'), 'Anne');

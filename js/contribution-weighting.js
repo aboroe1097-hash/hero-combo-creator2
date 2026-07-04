@@ -5,6 +5,7 @@ import {
   resolveCanonicalPlayerIdentity,
   stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
+import { resolvePlayerRegistryFamilyKey } from './player-registry.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -141,6 +142,8 @@ function emptyDutyCounts() {
 // Single-account players are their own family.
 function playerFamilyKey(accountKey) {
   const key = String(accountKey || '');
+  const registryFamily = resolvePlayerRegistryFamilyKey(key);
+  if (registryFamily) return registryFamily;
   if (/^kika(?:alt|banner2?)?$/.test(key)) return 'kika';
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
   return key;

@@ -645,7 +645,7 @@ function renderHeroesTab() {
       return `
         <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}">
           <span class="${rankClass}">${rankNumber}</span>
-          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" onerror="this.src='images/logo.png'">
+          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" loading="lazy" decoding="async" onerror="this.src='images/logo.png'">
           <div class="rank-info">
             <div class="rank-name">
               ${escapeHtml(hero.name)}
@@ -823,7 +823,7 @@ function renderHeroesTab() {
           <button type="button" class="heroes-mobile-back" data-hero-close>← Back to ranking</button>
           <button type="button" class="detail-close" data-hero-close aria-label="Close hero detail">✕</button>
           <div class="detail-header">
-            <img class="detail-img" src="${hero?.imageUrl}" alt="${escapeHtml(selected)}" onerror="this.src='images/logo.png'">
+            <img class="detail-img" src="${hero?.imageUrl}" alt="${escapeHtml(selected)}" decoding="async" onerror="this.src='images/logo.png'">
             <div class="detail-meta">
               <div class="detail-name">${escapeHtml(selected)}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
               <div class="detail-tags">

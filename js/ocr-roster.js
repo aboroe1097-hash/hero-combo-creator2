@@ -44,6 +44,11 @@ import {
   buildWeightedContributionRows,
   getWeightedContributionRecordLabel,
 } from './contribution-weighting.js';
+import {
+  normalizePlayerRegistry,
+  readStoredPlayerRegistry,
+  writeStoredPlayerRegistry,
+} from './player-registry.js';
 
 function adminT(key, vars = {}) {
   let lang = 'en';
@@ -63,6 +68,21 @@ function adminT(key, vars = {}) {
     text = text.replaceAll(`{${name}}`, String(value));
   });
   return text;
+}
+
+export function loadPlayerRegistry() {
+  state.playerRegistry = readStoredPlayerRegistry();
+  return state.playerRegistry;
+}
+
+export async function savePlayerRegistry(registry, options = {}) {
+  const normalized = normalizePlayerRegistry({
+    ...normalizePlayerRegistry(registry),
+    updatedAt: new Date().toISOString(),
+  });
+  state.playerRegistry = writeStoredPlayerRegistry(normalized);
+  if (options.cloud === false) return false;
+  return syncDashboardAuxiliaryRecords(options);
 }
 
 function hydrateDashboardTableLabels(root) {
@@ -2708,13 +2728,13 @@ function setWeightedContributionCompactView(enabled) {
       card.classList.toggle('dash-weighted-compact', enabled);
       card.querySelectorAll('[data-weighted-compact-toggle]').forEach((button) => {
         button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-        button.textContent = enabled ? 'Full View' : 'Compact View';
+        button.textContent = adminT(enabled ? 'edenX1FullView' : 'edenX1CompactView');
       });
     });
 }
 
 function renderWeightedContributionViewToggle(compact) {
-  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${compact ? 'Full View' : 'Compact View'}</button>`;
+  return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${esc(adminT(compact ? 'edenX1FullView' : 'edenX1CompactView'))}</button>`;
 }
 
 function bindWeightedContributionViewToggle(host) {
@@ -2732,17 +2752,24 @@ function bindWeightedContributionViewToggle(host) {
 function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeightedScoreTip') {
   const tooltipId = `${prefix}-${index}`;
   const dutyCount = row.banners + row.pathers + row.shieldWalls;
-  const dutyNote = `${row.banners} banners + ${row.pathers} pathers + ${row.shieldWalls} shield walls`;
-  const conductNote = `${formatConductContributionBonus(row.conductBonus)} conduct x 10,000`;
-  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="Weighted score breakdown for ${esc(row.playerName)}">
+  const dutyNote = adminT('edenX1DutyFormula', {
+    banners: row.banners,
+    pathers: row.pathers,
+    shieldWalls: row.shieldWalls,
+    count: dutyCount,
+  });
+  const conductNote = adminT('edenX1ConductFormula', {
+    conduct: formatConductContributionBonus(row.conductBonus),
+  });
+  return `<button class="dash-weighted-score-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(adminT('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${row.weightedScore.toFixed(1)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>Weighted score breakdown</strong>
-      <span><span>Contribution</span><b>${formatContributionValue(row.contributionScore)}</b></span>
-      <span><span>Ex-guild contribution</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
-      <span><span>Duty points <small>${esc(dutyNote)} = ${dutyCount} x 10,000</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
-      <span><span>Conduct points <small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>Total</span><b>${row.weightedScore.toFixed(1)}</b></span>
+      <strong>${esc(adminT('edenX1WeightedBreakdownTitle'))}</strong>
+      <span><span>${esc(adminT('edenX1BreakdownContribution'))}</span><b>${formatContributionValue(row.contributionScore)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownExGuild'))}</span><b>${formatContributionValue(row.contributionExGuild || 0)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatContributionValue(row.dutyPoints || 0)}</b></span>
+      <span><span>${esc(adminT('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedContributionValue(row.conductPoints || 0)}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>${esc(adminT('edenX1BreakdownTotal'))}</span><b>${row.weightedScore.toFixed(1)}</b></span>
     </span>
   </button>`;
 }
@@ -2770,14 +2797,14 @@ function renderWeightedContributionTable() {
   host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-contribution-compare-head">
       <div>
-        <strong>Weighted Total Contribution</strong>
-        <span>${esc(recordLabel || 'Latest contribution snapshot')} &middot; Top ${esc(model.premiumCutoff)} uses Premium reward tier</span>
+        <strong>${esc(adminT('edenX1WeightedTitle'))}</strong>
+        <span>${esc(recordLabel || adminT('edenX1PageTitle'))} &middot; ${esc(adminT('adminContributionPremiumSlots', { count: model.premiumCutoff }))}</span>
       </div>
       ${renderWeightedContributionViewToggle(compactView)}
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>Player</th><th class="dash-weighted-detail-col">Current rank</th><th class="dash-weighted-detail-col">Reward</th><th class="dash-weighted-detail-col" style="text-align:right">Contribution score</th><th class="dash-weighted-detail-col" style="text-align:right">#Shield Walls</th><th class="dash-weighted-detail-col" style="text-align:right">#Pathers</th><th class="dash-weighted-detail-col" style="text-align:right">#Banners</th><th class="dash-weighted-detail-col" style="text-align:right">Conduct (R5) bonus</th><th style="text-align:right">Weighted score</th><th>Final rank</th><th>Final reward</th></tr></thead>
+        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThConduct'))}</th><th style="text-align:right">${esc(adminT('edenX1ThWeightedScore'))}</th><th>${esc(adminT('adminContributionFinalRank'))}</th><th>${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${rows
           .map(
             (row, index) => `<tr>

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 class FakeElement {
   constructor(tagName) {
@@ -92,6 +93,28 @@ test('OCR log entry type is restricted before becoming a class name', () => {
   });
 
   assert.equal(out.children[0].children[1].className, 'log-msg log-info');
+});
+
+test('dashboard modal actions use delegated handlers instead of inline window calls', () => {
+  const source = readFileSync('js/ocr-render.js', 'utf8');
+  const modalStart = source.indexOf('function showModal(type, data)');
+  const modalEnd = source.indexOf('function closeModal()', modalStart);
+  assert.notEqual(modalStart, -1);
+  assert.notEqual(modalEnd, -1);
+  const showModalSource = source.slice(modalStart, modalEnd);
+
+  assert.match(source, /function bindModalDelegatedActions/);
+  for (const pattern of [
+    /onclick="window\.addPlayer/,
+    /onclick="window\.editAttack/,
+    /onclick="window\.deleteAttack/,
+    /onclick="window\.showPlayer/,
+    /onclick="window\.showAttack/,
+    /onclick="event\.stopPropagation\(\); window\.editPlayer/,
+    /onclick="event\.stopPropagation\(\); window\.exportPlayerReport/,
+  ]) {
+    assert.doesNotMatch(showModalSource, pattern);
+  }
 });
 
 test('Firestore sanitizer removes undefined values from OCR dashboard data', () => {

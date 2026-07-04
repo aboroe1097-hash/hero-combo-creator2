@@ -77,6 +77,11 @@ const visualSurfaces = [
   },
 ];
 
+const WEIGHTED_TITLE_TEXT =
+  /Weighted Total Contribution|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0439 \u043e\u0431\u0449\u0438\u0439 \u0432\u043a\u043b\u0430\u0434/;
+const WEIGHTED_SCORE_TEXT =
+  /Weighted score|Weighted Score|\u0412\u0437\u0432\u0435\u0448\u0435\u043d\u043d\u044b\u0435 \u043e\u0447\u043a\u0438/;
+
 async function stabilizeVisuals(page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addStyleTag({
@@ -1485,9 +1490,11 @@ test.describe('app smoke tabs', () => {
       window.setOcrDashboardDataForTest(seededDash, []);
     }, seededDash);
     await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
-      'Weighted Total Contribution'
+      WEIGHTED_TITLE_TEXT
     );
-    await expect(page.locator('#dashWeightedContributionPanel')).toContainText('Weighted score');
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
+      WEIGHTED_SCORE_TEXT
+    );
 
     await page.evaluate(() => window.switchDashSubtab('pathers'));
 
@@ -1539,9 +1546,11 @@ test.describe('app smoke tabs', () => {
 
     await page.evaluate(() => window.switchDashSubtab('contributions'));
     await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
-      'Weighted Total Contribution'
+      WEIGHTED_TITLE_TEXT
     );
-    await expect(page.locator('#dashContributionWeightedPanel')).toContainText('Weighted score');
+    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
+      WEIGHTED_SCORE_TEXT
+    );
     await expect(page.locator('#dashContributionBody')).toContainText('Kika');
     await expect(page.locator('#dashContributionBody')).not.toContainText('(Vts)Kika');
   });
@@ -1615,14 +1624,17 @@ test.describe('app smoke tabs', () => {
     );
     const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
     const altRow = weightedRows.find((cells) => cells[3] === '78,617');
-    const finalRewardCell = (cells) => cells?.[cells.length - 1];
 
     expect(mainRow?.[5]).toBe('1');
     expect(mainRow?.[6]).toBe('1');
-    expect(finalRewardCell(mainRow)).toBe('Guild Master Reward');
+    await expect(
+      panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
+    ).toHaveText('Guild Master Reward');
     expect(altRow?.[5]).toBe('0');
     expect(altRow?.[6]).toBe('0');
-    expect(finalRewardCell(altRow)).toBe('Core Rewards');
+    await expect(
+      panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
+    ).toHaveText('Core Rewards');
 
     const mainScoreTrigger = panel
       .locator('tbody tr', { hasText: '144,650' })

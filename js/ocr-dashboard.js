@@ -40,6 +40,7 @@ import {
   renderDutyRecords,
   loadContributionRecords,
   loadExGuildContributions,
+  loadPlayerRegistry,
   showContributionPasteForm,
   showExGuildPasteForm,
   processContributionImages,
@@ -90,6 +91,12 @@ import {
   getWeightedContributionRecordLabel,
 } from './contribution-weighting.js';
 import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
+import {
+  PLAYER_REGISTRY_KEY,
+  normalizePlayerRegistry,
+  readStoredPlayerRegistry,
+  writeStoredPlayerRegistry,
+} from './player-registry.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -169,6 +176,7 @@ state.bannerRecords = [];
 state.dutyRecords = [];
 state.contributionRecords = [];
 state.exGuildContributions = [];
+state.playerRegistry = readStoredPlayerRegistry();
 state.r5Adjustments = [];
 state.r5Season = '';
 state.r5EditingId = '';
@@ -279,6 +287,9 @@ function writeAuxiliaryLocalCaches() {
     AUXILIARY_RECORD_CACHES.forEach(([field, key]) => {
       localStorage.setItem(key, JSON.stringify(Array.isArray(state[field]) ? state[field] : []));
     });
+    const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+    if (registry.players.length)
+      localStorage.setItem(PLAYER_REGISTRY_KEY, JSON.stringify(registry));
   } catch (e) {}
 }
 
@@ -291,6 +302,10 @@ function hydrateAuxiliaryRecordsFromDashboardData(data) {
       changed = true;
     }
   });
+  if (data.playerRegistry && typeof data.playerRegistry === 'object') {
+    state.playerRegistry = writeStoredPlayerRegistry(data.playerRegistry);
+    changed = true;
+  }
   if (changed) writeAuxiliaryLocalCaches();
   return changed;
 }
@@ -304,6 +319,8 @@ function attachAuxiliaryRecords(data) {
     const records = Array.isArray(state[field]) ? state[field] : [];
     if (records.length || Array.isArray(base[field])) base[field] = records;
   });
+  const registry = normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry());
+  if (registry.players.length || base.playerRegistry) base.playerRegistry = registry;
   return base;
 }
 
@@ -1628,6 +1645,10 @@ function getAuxiliaryRecordPayload() {
     bannerRecords: Array.isArray(state.bannerRecords) ? state.bannerRecords : [],
     dutyRecords: Array.isArray(state.dutyRecords) ? state.dutyRecords : [],
     contributionRecords: Array.isArray(state.contributionRecords) ? state.contributionRecords : [],
+    exGuildContributions: Array.isArray(state.exGuildContributions)
+      ? state.exGuildContributions
+      : [],
+    playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
   });
 }
 
@@ -1970,6 +1991,7 @@ const ADMIN_EXPORT_STORAGE_KEYS = [
   DUTY_LIST_KEY,
   CONTRIBUTION_KEY,
   EX_GUILD_CONTRIBUTION_KEY,
+  PLAYER_REGISTRY_KEY,
   ALLIANCE_KEY,
   LOG_KEY,
   R5_ADJUSTMENTS_LOCAL_KEY,
@@ -2139,6 +2161,7 @@ function buildAdminFullBackup() {
     exGuildContributions: Array.isArray(state.exGuildContributions)
       ? state.exGuildContributions
       : [],
+    playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
     conductAdjustments: Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [],
     r5Season: state.r5Season || getDashboardR5SeasonKey(),
     alliances: Array.isArray(state.allianceList) ? state.allianceList : [],
@@ -2864,6 +2887,7 @@ export async function bootOcrDashboard() {
   loadDutyRecords();
   loadContributionRecords();
   loadExGuildContributions();
+  loadPlayerRegistry();
   loadAllianceList();
   loadRosterAuth();
   mountStructureUploadPanel();

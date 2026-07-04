@@ -82,10 +82,15 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(dashboard, /bannerRecords/);
   assert.match(dashboard, /dutyRecords/);
   assert.match(dashboard, /contributionRecords/);
+  assert.match(dashboard, /playerRegistry/);
+  assert.match(dashboard, /PLAYER_REGISTRY_KEY/);
   assert.match(roster, /syncDashboardAuxiliaryRecordsToCloud/);
+  assert.match(roster, /export async function savePlayerRegistry/);
   assert.match(roster, /await saveDutyRecords\(\{ immediate: true, awaitCloud: true \}\)/);
   assert.match(roster, /notifySpecialListCloudResult/);
   assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
+  assert.match(rules, /'playerRegistry'/);
+  assert.match(rules, /request\.resource\.data\.playerRegistry is map/);
 });
 
 test('shared admin dashboard reads stay available while writes require password admin login', () => {
