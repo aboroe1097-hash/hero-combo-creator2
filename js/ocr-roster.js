@@ -2771,6 +2771,15 @@ function formatConductContributionBonus(value) {
   return Number(value || 0) ? formatSignedContributionValue(value) : '0';
 }
 
+function weightedContributionBonusTotal(row) {
+  return (
+    Number(row?.shieldWalls || 0) +
+    Number(row?.pathers || 0) +
+    Number(row?.banners || 0) +
+    Number(row?.conductBonus || 0)
+  );
+}
+
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 
 function isWeightedContributionCompactView() {
@@ -2870,7 +2879,7 @@ function renderWeightedContributionTable() {
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThConduct'))}</th><th style="text-align:right">${esc(adminT('edenX1ThWeightedScore'))}</th><th>${esc(adminT('adminContributionFinalRank'))}</th><th>${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right">${esc(adminT('edenX1ThWeightedScore'))}</th><th>${esc(adminT('adminContributionFinalRank'))}</th><th>${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${rows
           .map(
             (row, index) => `<tr>
@@ -2882,6 +2891,7 @@ function renderWeightedContributionTable() {
           <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
           <td class="dash-weighted-detail-col ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" style="text-align:right">${formatConductContributionBonus(row.conductBonus)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${weightedContributionBonusTotal(row).toLocaleString()}</td>
           <td class="dash-weighted-score-cell" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
           <td>#${row.finalRank}</td>
           <td>${esc(getContributionRewardLabel(row.finalReward))}</td>

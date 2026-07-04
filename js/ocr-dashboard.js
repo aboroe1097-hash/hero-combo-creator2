@@ -1660,6 +1660,38 @@ function normalizeDashboardDataForCache(data) {
   };
 }
 
+function dashboardNumericValue(value, fallback = 0) {
+  const n = typeof value === 'string' ? Number(value.replace(/,/g, '').trim()) : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function dashboardUniqueStructureCount(player) {
+  if (player?.unique_structures instanceof Set) return player.unique_structures.size;
+  if (Array.isArray(player?.unique_structures)) return player.unique_structures.length;
+  return dashboardNumericValue(player?.unique_structures_count ?? player?.unique_structures);
+}
+
+function compactDashboardPlayerSummary(playersSummary = []) {
+  return (Array.isArray(playersSummary) ? playersSummary : [])
+    .map((player) => {
+      const name = String(
+        player?.name || player?.playerName || player?.display_player_name || ''
+      ).trim();
+      if (!name) return null;
+      return {
+        name,
+        total_demolition: dashboardNumericValue(
+          player?.total_demolition ?? player?.totalDemolition ?? player?.value
+        ),
+        participation_count: dashboardNumericValue(
+          player?.participation_count ?? player?.participationCount
+        ),
+        unique_structures_count: dashboardUniqueStructureCount(player),
+      };
+    })
+    .filter(Boolean);
+}
+
 function sanitizeDashboardDataForPersistence(data) {
   if (!data || typeof data !== 'object') return data;
   const clean = pruneDashboardCloudData(attachAuxiliaryRecords(data));
@@ -1672,12 +1704,24 @@ function sanitizeDashboardDataForPersistence(data) {
       return copy;
     });
   }
+  const summarySource =
+    Array.isArray(clean.players_summary) && clean.players_summary.length
+      ? clean.players_summary
+      : Array.isArray(clean.attacks) && clean.attacks.length
+        ? buildSerializablePlayerSummary(clean.attacks)
+        : [];
+  clean.players_summary = compactDashboardPlayerSummary(summarySource);
   return sanitizeForFirestore(clean);
 }
 
 function isFirestorePermissionDenied(err) {
   const text = `${err?.code || ''} ${err?.message || err || ''}`;
   return /permission-denied|insufficient permissions/i.test(text);
+}
+
+function isFirestoreDocumentTooLarge(err) {
+  const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  return /maximum allowed size|exceeds the maximum|document .*size/i.test(text);
 }
 
 function buildDashboardCloudRepairPayload(auxiliaryPayload = null) {
@@ -1698,7 +1742,7 @@ async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
     await setDoc(doc(db, FS_PATH), auxiliaryPayload, { merge: true });
     return { repaired: false };
   } catch (err) {
-    if (!isFirestorePermissionDenied(err)) throw err;
+    if (!isFirestorePermissionDenied(err) && !isFirestoreDocumentTooLarge(err)) throw err;
     const repairPayload = buildDashboardCloudRepairPayload(auxiliaryPayload);
     await setDoc(doc(db, FS_PATH), repairPayload);
     state.dashData = normalizeDashboardDataForCache(repairPayload);

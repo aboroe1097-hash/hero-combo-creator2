@@ -1831,6 +1831,26 @@ test.describe('app smoke tabs', () => {
       'Core Rewards',
       'Core Rewards',
     ]);
+    const rewardHeaders = await panel.locator('thead th').evaluateAll((headers) =>
+      headers.map((header) => header.textContent.trim())
+    );
+    expect(rewardHeaders.slice(8, 11)).toEqual(['Conduct', 'Total', 'Weighted Score']);
+    const alphaSupportRow = panel.locator('tbody tr', { hasText: 'Alpha' });
+    await expect(alphaSupportRow.locator('td').nth(8)).toContainText('+1');
+    await expect(alphaSupportRow.locator('td').nth(9)).toHaveText('2');
+    const playerSortHeader = panel.locator('th[data-weighted-sort="player"]');
+    await playerSortHeader.click();
+    await playerSortHeader.click();
+    await expect(playerSortHeader).toHaveAttribute('aria-sort', 'descending');
+    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(
+      panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
+    ).toContainText('Core Rewards');
+    await expect(
+      panel.locator('tbody tr', { hasText: 'Alpha' }).locator('.dash-weighted-reward-value')
+    ).toContainText('Guild Master Reward');
+    await panel.locator('th[data-weighted-sort="number"]').click();
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
     const supportNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
@@ -1855,6 +1875,16 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('tbody tr', { hasText: 'Mike' }).locator('.dash-weighted-conduct-trigger')
     ).toContainText('+2');
+    await panel.locator('#edenX1TableSearch').fill('Mike');
+    await expect(panel.locator('tbody tr')).toHaveCount(1);
+    await expect(panel.locator('tbody tr').first()).toContainText('Mike');
+    await panel.locator('#edenX1TableSearch').fill('');
+    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    const contributionPlayerSort = panel.locator('th[data-weighted-sort="player"]');
+    await contributionPlayerSort.click();
+    await contributionPlayerSort.click();
+    await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
+    await expect(panel.locator('tbody tr').first()).toContainText('November');
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();
@@ -2023,6 +2053,53 @@ test.describe('app smoke tabs', () => {
     expect(debugJson.counts.dutyEntries).toBe(1);
     expect(debugJson.debug.derived.weightedContribution.rows[0].playerName).toBe('Alpha');
     expect(debugJson.debug.localStorage.vts_ocr_dashboard.bytes).toBeGreaterThan(0);
+  });
+
+  test('admin dashboard persistence compacts player summary for cloud-safe saves', async ({
+    page,
+  }) => {
+    await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
+    const seededAttacks = Array.from({ length: 8 }, (_, index) => ({
+      id: `cloud-safe-${index + 1}`,
+      structure_name: 'Gate',
+      structure_level: 'Lv.5',
+      game_time: `04/07/2026, ${String(index + 1).padStart(2, '0')}:00`,
+      start_time: `${String(index).padStart(2, '0')}:45`,
+      total_demolition: 100000 + index * 1000,
+      players_count: 1,
+      players: [{ name: 'Alpha', value: 100000 + index * 1000, rank: 1 }],
+    }));
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(() => typeof window.setOcrDashboardDataForTest === 'function');
+    const result = await page.evaluate(async (attacks) => {
+      const dashboard = await import('/js/ocr-dashboard.js');
+      await dashboard.saveData(
+        {
+          last_updated: '04/07/2026, Saturday, 01:22 GT',
+          total_attacks: attacks.length,
+          attacks,
+          players_summary: [],
+        },
+        { cloud: false }
+      );
+      const saved = JSON.parse(localStorage.getItem('vts_ocr_dashboard') || '{}');
+      return {
+        bytes: new Blob([JSON.stringify(saved)]).size,
+        firstSummary: saved.players_summary?.[0],
+        hasNestedAttacks: Array.isArray(saved.players_summary?.[0]?.attacks),
+      };
+    }, seededAttacks);
+
+    expect(result.bytes).toBeLessThan(25000);
+    expect(result.hasNestedAttacks).toBe(false);
+    expect(result.firstSummary).toMatchObject({
+      name: 'Alpha',
+      total_demolition: 828000,
+      participation_count: 8,
+      unique_structures_count: 1,
+    });
   });
 
   test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {

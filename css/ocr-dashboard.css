@@ -4615,6 +4615,19 @@ body[style*='overflow: hidden'] .tab-panel {
   flex-wrap: wrap;
   min-width: 0;
 }
+#ocrDashboardRoot .dash-weighted-search {
+  flex: 1 1 180px;
+  max-width: 280px;
+}
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:hover,
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:focus-visible {
+  color: var(--brand);
+  outline: none;
+}
 #ocrDashboardRoot .dash-weighted-view-toggle {
   white-space: nowrap;
 }

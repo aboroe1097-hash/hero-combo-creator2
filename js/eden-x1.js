@@ -16,6 +16,8 @@ let currentLang = 'en';
 let currentRows = [];
 let currentRecordLabel = '';
 let currentRewardView = 'support';
+let currentTableSearch = '';
+let currentTableSort = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -53,6 +55,13 @@ function formatScore(value) {
 
 function formatWeightedScore(value) {
   return valueOf(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function conductBonusValue(row) {
+  const explicit = Number(row?.conductBonus);
+  if (Number.isFinite(explicit)) return explicit;
+  const points = Number(row?.conductPoints);
+  return Number.isFinite(points) ? points / 10000 : 0;
 }
 
 function isWeightedContributionCompactView() {
@@ -131,6 +140,7 @@ function bindRewardFlowControls() {
     button.dataset.rewardBound = '1';
     button.addEventListener('click', () => {
       const view = button.dataset.rewardView || 'all';
+      if (view !== currentRewardView) currentTableSort = null;
       currentRewardView = view;
       renderCurrentTable();
     });
@@ -152,7 +162,123 @@ function getContributionRewardRows() {
 }
 
 function getSupportRewardRows() {
-  return currentRows.slice(0, 4);
+  return currentRows.slice(0, 4).map((row, index) => ({
+    ...row,
+    edenX1RewardSlot: index + 1,
+    edenX1SupportReward: index === 0 ? 'guild_master' : 'core',
+  }));
+}
+
+function rowBonusTotal(row) {
+  return (
+    valueOf(row.shieldWalls) +
+    valueOf(row.pathers) +
+    valueOf(row.banners) +
+    conductBonusValue(row)
+  );
+}
+
+function rowNumberValue(row, numberMode) {
+  if (numberMode === 'current') return row.currentRank || 999999;
+  if (numberMode === 'index') return row.edenX1RewardSlot || row.finalRank || 999999;
+  return row.finalRank || 999999;
+}
+
+function filterWeightedRows(rows) {
+  const query = currentTableSearch.trim().toLowerCase();
+  if (!query) return rows;
+  return rows.filter((row) => {
+    const haystack = [
+      row.playerName,
+      row.sourceName,
+      row.playerKey,
+      contributionRewardLabel(row.currentReward),
+      contributionRewardLabel(row.finalReward),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(query);
+  });
+}
+
+function sortedWeightedRows(rows, numberMode) {
+  const sort = currentTableSort;
+  if (!sort || !sort.col) return rows;
+  const accessors = {
+    number: (row) => rowNumberValue(row, numberMode),
+    player: (row) => row.playerName,
+    currentRank: (row) => row.currentRank || 999999,
+    reward: (row) => contributionRewardLabel(row.currentReward),
+    contribution: (row) => valueOf(row.contributionScore),
+    shieldWalls: (row) => valueOf(row.shieldWalls),
+    pathers: (row) => valueOf(row.pathers),
+    banners: (row) => valueOf(row.banners),
+    conduct: conductBonusValue,
+    total: rowBonusTotal,
+    weighted: (row) => valueOf(row.weightedScore),
+    finalRank: (row) => row.finalRank || 999999,
+    finalReward: (row) => contributionRewardLabel(row.finalReward),
+  };
+  const get = accessors[sort.col];
+  if (!get) return rows;
+  const sorted = rows.slice().sort((a, b) => {
+    const av = get(a);
+    const bv = get(b);
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return String(av).localeCompare(String(bv));
+    }
+    return av - bv;
+  });
+  return sort.dir === 'asc' ? sorted : sorted.reverse();
+}
+
+function setWeightedSort(col) {
+  const cur = currentTableSort || {};
+  if (cur.col === col) {
+    currentTableSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
+  } else {
+    const ascFirst = ['number', 'player', 'reward', 'currentRank', 'finalRank', 'finalReward']
+      .includes(col);
+    currentTableSort = { col, dir: ascFirst ? 'asc' : 'desc' };
+  }
+  renderCurrentTable();
+}
+
+function renderSortableHeader(key, label, options = {}) {
+  const active = currentTableSort?.col === key;
+  const ariaSort = active
+    ? ` aria-sort="${currentTableSort.dir === 'asc' ? 'ascending' : 'descending'}"`
+    : '';
+  const className = options.className ? ` class="${options.className}"` : '';
+  const style = options.style ? ` style="${options.style}"` : '';
+  const glyph = active
+    ? `<span class="dash-sort-glyph">${currentTableSort.dir === 'asc' ? ' ^' : ' v'}</span>`
+    : '';
+  return `<th${className}${style} data-weighted-sort="${esc(key)}"${ariaSort} tabindex="0">${esc(label)}${glyph}</th>`;
+}
+
+function bindWeightedTableControls(host) {
+  bindWeightedContributionViewToggle(host);
+  const search = $('edenX1TableSearch');
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = '1';
+    search.addEventListener('input', (event) => {
+      currentTableSearch = event.target.value || '';
+      renderCurrentTable({ focusSearch: true });
+    });
+  }
+  host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
+    if (th.dataset.bound) return;
+    th.dataset.bound = '1';
+    const activate = () => setWeightedSort(th.dataset.weightedSort);
+    th.addEventListener('click', activate);
+    th.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      activate();
+    });
+  });
 }
 
 function rewardSlotRows(view) {
@@ -178,6 +304,10 @@ function rewardSlotRows(view) {
 function renderWeightedScorePopover(row, index) {
   const tooltipId = `edenX1WeightedScoreTip-${index}`;
   const dutyCount = row.banners + row.pathers + row.shieldWalls;
+  const conductBonus = conductBonusValue(row);
+  const conductPoints = Number.isFinite(Number(row.conductPoints))
+    ? Number(row.conductPoints)
+    : conductBonus * 10000;
   const dutyNote = t('edenX1DutyFormula', {
     banners: row.banners,
     pathers: row.pathers,
@@ -192,7 +322,7 @@ function renderWeightedScorePopover(row, index) {
       <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
       <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
       <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(row.conductPoints || 0)}</b></span>
+      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
       <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
     </span>
   </button>`;
@@ -200,12 +330,16 @@ function renderWeightedScorePopover(row, index) {
 
 function renderConductScorePopover(row, index) {
   const tooltipId = `edenX1ConductTip-${index}`;
-  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${row.conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
-    <span class="dash-weighted-score-value">${formatSignedNumber(row.conductBonus)}</span>
+  const conductBonus = conductBonusValue(row);
+  const conductPoints = Number.isFinite(Number(row.conductPoints))
+    ? Number(row.conductPoints)
+    : conductBonus * 10000;
+  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
+    <span class="dash-weighted-score-value">${formatSignedNumber(conductBonus)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1BreakdownConductPoints'))}</strong>
-      <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(row.conductBonus)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(t('edenX1ConductPrivateNotice'))}</small></span><b>${formatSignedNumber(row.conductPoints || 0)}</b></span>
+      <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(conductBonus)}</b></span>
+      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(t('edenX1ConductPrivateNotice'))}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
     </span>
   </button>`;
 }
@@ -362,6 +496,8 @@ function renderTable(rows, recordLabel, options = {}) {
   const numberMode = options.numberMode || 'final';
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
+  const visibleRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
+  const emptyRow = `<tr><td colspan="13" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -375,39 +511,41 @@ function renderTable(rows, recordLabel, options = {}) {
         </h2>
         <div class="dash-weighted-table-controls">
           <span class="dash-weighted-contribution-meta">${esc(meta)}</span>
+          <label class="dash-search-wrap dash-weighted-search" for="edenX1TableSearch">
+            <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input id="edenX1TableSearch" class="dash-search-input" type="search" value="${esc(currentTableSearch)}" placeholder="${esc(t('adminSearchPh'))}" autocomplete="off" />
+          </label>
           ${renderWeightedContributionViewToggle(compactView)}
         </div>
       </div>
       <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
           <thead><tr>
-            <th>${esc(t('edenX1ThNumber'))}</th>
-            <th>${esc(t('adminContributionMember'))}</th>
-            <th class="dash-weighted-detail-col">${esc(t('adminContributionRank'))}</th>
-            <th class="dash-weighted-detail-col">${esc(t('adminContributionReward'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThContribution'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThShieldWalls'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThPathers'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThBanners'))}</th>
-            <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThTotal'))}</th>
-            <th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right">${esc(t('edenX1ThConduct'))}</th>
-            <th style="text-align:right">${esc(t('edenX1ThWeightedScore'))}</th>
-            <th>${esc(t('adminContributionFinalRank'))}</th>
-            <th>${esc(t('adminContributionFinalReward'))}</th>
+            ${renderSortableHeader('number', t('edenX1ThNumber'))}
+            ${renderSortableHeader('player', t('adminContributionMember'))}
+            ${renderSortableHeader('currentRank', t('adminContributionRank'), { className: 'dash-weighted-detail-col' })}
+            ${renderSortableHeader('reward', t('adminContributionReward'), { className: 'dash-weighted-detail-col' })}
+            ${renderSortableHeader('contribution', t('edenX1ThContribution'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('shieldWalls', t('edenX1ThShieldWalls'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('pathers', t('edenX1ThPathers'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('banners', t('edenX1ThBanners'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('conduct', t('edenX1ThConduct'), { className: 'dash-weighted-detail-col dash-weighted-conduct-col', style: 'text-align:right' })}
+            ${renderSortableHeader('total', t('edenX1ThTotal'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('weighted', t('edenX1ThWeightedScore'), { style: 'text-align:right' })}
+            ${renderSortableHeader('finalRank', t('adminContributionFinalRank'))}
+            ${renderSortableHeader('finalReward', t('adminContributionFinalReward'))}
           </tr></thead>
-          <tbody>${rows
+          <tbody>${visibleRows.length ? visibleRows
             .map((row, index) => {
-              const total =
-                valueOf(row.contributionScore) +
-                row.shieldWalls +
-                row.pathers +
-                row.banners +
-                row.conductBonus;
+              const total = rowBonusTotal(row);
               const numberValue =
                 numberMode === 'current'
                   ? row.currentRank || index + 1
                   : numberMode === 'index'
-                    ? index + 1
+                    ? row.edenX1RewardSlot || index + 1
                     : row.finalRank;
               const rewardContext = rewardContextForRow(row, index, numberValue);
               return `<tr>
@@ -419,14 +557,14 @@ function renderTable(rows, recordLabel, options = {}) {
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
                 <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
+                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, rewardContext)}</td>
               </tr>`;
             })
-            .join('')}</tbody>
+            .join('') : emptyRow}</tbody>
         </table>
       </div>
     </div>
@@ -476,7 +614,7 @@ function renderRewardSlotTable(view) {
   </div>`;
 }
 
-function renderCurrentTable() {
+function renderCurrentTable(renderOptions = {}) {
   const panel = $('dashWeightedContributionPanel');
   if (!panel) return;
   if (currentRewardView === 'management' || currentRewardView === 'team') {
@@ -487,22 +625,22 @@ function renderCurrentTable() {
   if (!currentRows.length) return;
 
   let rows = currentRows;
-  let options = {};
+  let tableOptions = {};
   if (currentRewardView === 'contribution') {
     rows = getContributionRewardRows();
-    options = {
+    tableOptions = {
       title: t('edenX1RewardLeaderboardTitle'),
       meta: t('edenX1RewardContributionMeta'),
       numberMode: 'current',
     };
   } else if (currentRewardView === 'support') {
     rows = getSupportRewardRows();
-    options = {
+    tableOptions = {
       title: t('edenX1RewardSupportTitle'),
       meta: t('edenX1RewardSupportMeta'),
       numberMode: 'index',
-      rewardContextForRow: (_row, index, numberValue) => {
-        const reward = index === 0 ? 'guild_master' : 'core';
+      rewardContextForRow: (row, _index, numberValue) => {
+        const reward = row.edenX1SupportReward || 'core';
         const label = contributionRewardLabel(reward);
         return {
           rank: numberValue,
@@ -514,9 +652,16 @@ function renderCurrentTable() {
       },
     };
   }
-  panel.innerHTML = renderTable(rows, currentRecordLabel, options);
-  bindWeightedContributionViewToggle(panel);
+  panel.innerHTML = renderTable(rows, currentRecordLabel, tableOptions);
+  bindWeightedTableControls(panel);
   updateRewardFlowControls();
+  if (renderOptions.focusSearch) {
+    const search = $('edenX1TableSearch');
+    if (search) {
+      search.focus();
+      search.setSelectionRange(search.value.length, search.value.length);
+    }
+  }
 }
 
 async function loadPublicConductAdjustments(db, firestore, season) {
