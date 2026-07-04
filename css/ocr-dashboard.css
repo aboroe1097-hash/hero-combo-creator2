@@ -4643,8 +4643,30 @@ body[style*='overflow: hidden'] .tab-panel {
   line-height: 1.2;
   text-align: right;
 }
+#ocrDashboardRoot .dash-weighted-rank-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.1rem;
+  min-height: 1.35rem;
+  padding: 0.08rem 0.4rem;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 13, 24, 0.7);
+  color: var(--brand-light);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.42);
+  cursor: help;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+}
 #ocrDashboardRoot .dash-weighted-score-trigger:hover,
 #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible,
+#ocrDashboardRoot .dash-weighted-rank-trigger:hover,
+#ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible,
 #ocrDashboardRoot .dash-weighted-reward-trigger:hover,
 #ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible {
   background: rgba(103, 232, 249, 0.1);
@@ -5248,11 +5270,19 @@ body[style*='overflow: hidden'] .tab-panel {
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-score-popover-total b {
   color: #0e7490;
 }
+[data-theme='light'] #ocrDashboardRoot .dash-weighted-rank-trigger {
+  border-color: rgba(14, 116, 144, 0.24);
+  background: #e0f2fe;
+  color: #0f5f76;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-reward-trigger {
   color: #1e293b;
 }
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-score-trigger:hover,
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-score-trigger:focus-visible,
+[data-theme='light'] #ocrDashboardRoot .dash-weighted-rank-trigger:hover,
+[data-theme='light'] #ocrDashboardRoot .dash-weighted-rank-trigger:focus-visible,
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-reward-trigger:hover,
 [data-theme='light'] #ocrDashboardRoot .dash-weighted-reward-trigger:focus-visible {
   background: rgba(14, 165, 233, 0.1);
@@ -5623,6 +5653,7 @@ body[style*='overflow: hidden'] .tab-panel {
   #ocrDashboardRoot .dash-contribution-weighted-table td > :not(:first-child),
   #ocrDashboardRoot .dash-contribution-weighted-table td > strong,
   #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-score-trigger,
+  #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-rank-trigger,
   #ocrDashboardRoot .dash-contribution-weighted-table td .dash-weighted-reward-trigger {
     justify-self: end;
     min-width: 0;

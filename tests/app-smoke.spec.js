@@ -1637,6 +1637,21 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
+    const finalRankStyle = await panel
+      .locator('tbody tr', { hasText: '78,617' })
+      .locator('.dash-weighted-rank-trigger')
+      .evaluate((button) => {
+        const style = window.getComputedStyle(button);
+        return {
+          backgroundColor: style.backgroundColor,
+          color: style.color,
+          borderRadius: style.borderRadius,
+        };
+      });
+    expect(finalRankStyle.backgroundColor).toBe('rgba(8, 13, 24, 0.7)');
+    expect(finalRankStyle.backgroundColor).not.toBe('rgb(239, 239, 239)');
+    expect(finalRankStyle.color).not.toBe('rgb(0, 0, 0)');
+    expect(finalRankStyle.borderRadius).toBe('999px');
 
     const mainScoreTrigger = panel
       .locator('tbody tr', { hasText: '78,617' })
