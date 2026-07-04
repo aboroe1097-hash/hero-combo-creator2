@@ -895,9 +895,14 @@ async function ensureCloudSyncReady() {
   if (!db) return null;
   let currentUser = getCurrentUser() || state.adminUser;
   let hasAdminClaim = await isAdminAuthUser(currentUser);
+  if (!hasAdminClaim && currentUser) {
+    hasAdminClaim = await isAdminAuthUser(currentUser, { forceRefresh: true });
+  }
   if (!hasAdminClaim && state.adminIsAdmin === true) {
     currentUser = (await waitForAdminAuthUser(4000, { forceRefresh: true })) || currentUser;
-    hasAdminClaim = await isAdminAuthUser(currentUser);
+    hasAdminClaim =
+      (await isAdminAuthUser(currentUser)) ||
+      (await isAdminAuthUser(currentUser, { forceRefresh: true }));
   }
   if (!hasAdminClaim) {
     state.adminUser = null;
@@ -3071,7 +3076,9 @@ export async function bootOcrDashboard() {
             try {
               const wasAdmin = state.adminIsAdmin === true;
               state.adminUser = user;
-              state.adminIsAdmin = await isAdminAuthUser(user);
+              state.adminIsAdmin =
+                (await isAdminAuthUser(user)) ||
+                (await isAdminAuthUser(user, { forceRefresh: true }));
               if (!state.adminIsAdmin) {
                 const restoredUser = wasAdmin
                   ? await waitForAdminAuthUser(1500, { forceRefresh: true })

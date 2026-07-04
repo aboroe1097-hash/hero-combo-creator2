@@ -5391,10 +5391,7 @@ body[style*='overflow: hidden'] .tab-panel {
 
 /* Light theme mobile row-card backgrounds */
 @media (max-width: 768px) {
-  [data-theme='light'] #ocrDashboardRoot .dash-duty-summary-table tr,
-  [data-theme='light'] #ocrDashboardRoot .dash-banner-table tr,
-  [data-theme='light'] #ocrDashboardRoot .dash-contribution-table tr,
-  [data-theme='light'] #ocrDashboardRoot .dash-contribution-compare-table tr {
+  [data-theme='light'] #ocrDashboardRoot .dash-table--stack tr {
     background: #f8fafc;
     border-color: #e2e8f0;
   }
@@ -5540,22 +5537,22 @@ body[style*='overflow: hidden'] .tab-panel {
     overflow-x: visible;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) {
+  #ocrDashboardRoot .dash-table--stack {
     display: block;
     width: 100%;
     min-width: 0;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) thead {
+  #ocrDashboardRoot .dash-table--stack thead {
     display: none;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) :is(tbody, tr, td) {
+  #ocrDashboardRoot .dash-table--stack :is(tbody, tr, td) {
     display: block;
     width: 100%;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) tr {
+  #ocrDashboardRoot .dash-table--stack tr {
     max-width: 100%;
     margin-bottom: 0.65rem;
     padding: 0.65rem;
@@ -5565,7 +5562,7 @@ body[style*='overflow: hidden'] .tab-panel {
     background: rgba(15, 23, 42, 0.58);
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) td {
+  #ocrDashboardRoot .dash-table--stack td {
     display: grid;
     grid-template-columns: minmax(74px, 0.36fr) minmax(0, 1fr);
     gap: 0.55rem;
@@ -5578,11 +5575,11 @@ body[style*='overflow: hidden'] .tab-panel {
     text-align: left;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) td:last-child {
+  #ocrDashboardRoot .dash-table--stack td:last-child {
     border-bottom: 0;
   }
 
-  #ocrDashboardRoot :is(.dash-table--stack, .dash-duty-summary-table, .dash-banner-table, .dash-contribution-table, .dash-contribution-compare-table) td::before {
+  #ocrDashboardRoot .dash-table--stack td::before {
     content: attr(data-label);
     color: var(--text-dim);
     font-size: 0.62rem;

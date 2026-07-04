@@ -89,6 +89,7 @@ export async function savePlayerRegistry(registry, options = {}) {
 function hydrateDashboardTableLabels(root) {
   if (!root) return;
   root.querySelectorAll('table').forEach((table) => {
+    table.classList.add('dash-table--stack');
     const labels = Array.from(table.querySelectorAll('thead th')).map((th) =>
       (th.textContent || '').replace(/\s+/g, ' ').trim()
     );

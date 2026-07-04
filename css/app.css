@@ -13239,6 +13239,24 @@ body.admin-standalone-page > .app-shell {
   }
 }
 
+@media (min-width: 769px) and (max-width: 1180px) {
+  body.admin-standalone-page .admin-command-header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100% !important;
+    align-items: stretch;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    width: 100%;
+    grid-template-columns: minmax(120px, 0.9fr) minmax(170px, 1.25fr) 44px minmax(116px, 0.8fr) minmax(116px, 0.8fr) !important;
+  }
+}
+
 .command-kicker {
   align-self: stretch !important;
   justify-content: center;
