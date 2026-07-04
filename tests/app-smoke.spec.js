@@ -1493,8 +1493,8 @@ test.describe('app smoke tabs', () => {
 
     await expect(page.locator('#dashPatherListSummary .dash-duty-summary-table')).toBeVisible();
     await expect(page.locator('#dashPatherListSummary')).toContainText('Kika');
-    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Entries');
-    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Times');
+    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Записи');
+    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Время');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Targets');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Groups');
     const patherSummaryRows = await page
