@@ -69,22 +69,24 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
       ],
     });
 
-    const sarafino = model.rows.find((row) => row.playerKey === compactPlayerIdentity('Sarafino'));
-    const undead = model.rows.find((row) => row.playerKey === compactPlayerIdentity('UNDEAD'));
+    const sarafina = model.rows.find((row) => row.playerKey === compactPlayerIdentity('Sarafina'));
+    const undeadBanner = model.rows.find(
+      (row) => row.playerKey === compactPlayerIdentity('Undead_Banner')
+    );
 
     assert.equal(model.premiumCutoff, 1);
-    assert.equal(sarafino.pathers, 2);
-    assert.equal(sarafino.shieldWalls, 1);
-    assert.equal(sarafino.conductBonus, 2);
-    assert.equal(sarafino.finalRank, 1);
-    assert.equal(sarafino.finalReward, 'guild_master');
-    assert.equal(Number(sarafino.weightedScore.toFixed(1)), 250000);
+    assert.equal(sarafina.pathers, 2);
+    assert.equal(sarafina.shieldWalls, 1);
+    assert.equal(sarafina.conductBonus, 2);
+    assert.equal(sarafina.finalRank, 1);
+    assert.equal(sarafina.finalReward, 'guild_master');
+    assert.equal(Number(sarafina.weightedScore.toFixed(1)), 250000);
 
-    assert.equal(undead.banners, 1);
-    assert.equal(undead.conductBonus, -1);
-    assert.equal(undead.currentReward, 'core');
-    assert.equal(undead.finalReward, 'core');
-    assert.equal(Number(undead.weightedScore.toFixed(1)), 100000);
+    assert.equal(undeadBanner.banners, 1);
+    assert.equal(undeadBanner.conductBonus, -1);
+    assert.equal(undeadBanner.currentReward, 'core');
+    assert.equal(undeadBanner.finalReward, 'core');
+    assert.equal(Number(undeadBanner.weightedScore.toFixed(1)), 100000);
   });
 });
 
@@ -155,7 +157,8 @@ test('weighted contribution consolidates a player family duty + conduct onto the
     const season = 'eden-x1-2026';
     // KIKA_MAIN and KIKA_ALT are distinct accounts of the same person (family).
     // Each stays its own row, but the person's duty + conduct consolidate onto
-    // the highest-contribution account (here KIKA_MAIN at 144650).
+    // Kika's configured #1 main account (KIKA_ALT), even when it is not the
+    // highest-contribution row.
     const model = buildWeightedContributionRows({
       season,
       contributionRecords: [
@@ -185,13 +188,53 @@ test('weighted contribution consolidates a player family duty + conduct onto the
     assert.ok(alt);
     assert.notEqual(main.playerKey, alt.playerKey); // accounts stay separate rows
     // Family duty (banner on MAIN + pather on ALT) and conduct (+1 + -1) all
-    // land on the main account; the other account row carries none.
+    // land on the #1 account; the other account row carries none.
+    assert.equal(alt.banners, 1);
+    assert.equal(alt.pathers, 1);
+    assert.equal(alt.conductBonus, 0);
+    assert.equal(main.banners, 0);
+    assert.equal(main.pathers, 0);
+    assert.equal(main.conductBonus, 0);
+  });
+});
+
+test('weighted contribution routes RedBull service credit to the main managed account', () => {
+  withRosterNames(() => {
+    const season = 'eden-x1-2026';
+    const model = buildWeightedContributionRows({
+      season,
+      contributionRecords: [
+        {
+          id: 'redbull-split',
+          date: '2026-06-25',
+          entries: [
+            { rank: 11, name: 'REDBULLS', contribution: 50000 },
+            { rank: 12, name: 'REDBULL-#', contribution: 90000 },
+            { rank: 13, name: 'RedBull_Banner', contribution: 1000 },
+          ],
+        },
+      ],
+      dutyRecords: [
+        { type: 'banner', entries: [{ name: '@redbull (osito)', confirmed: 'redbull' }] },
+        { type: 'pather', entries: [{ name: 'RedBull®', confirmed: 'RedBull®' }] },
+      ],
+      r5Adjustments: [{ season, player: 'RedBull@', points: 2, category: 'banner_help' }],
+    });
+
+    const main = model.rows.find((row) => row.playerName === 'REDBULLS');
+    const secondary = model.rows.find((row) => row.playerName === 'REDBULL-#');
+    const banner = model.rows.find((row) => row.playerName === 'RedBull_Banner');
+
+    assert.ok(main);
+    assert.ok(secondary);
+    assert.ok(banner);
     assert.equal(main.banners, 1);
     assert.equal(main.pathers, 1);
-    assert.equal(main.conductBonus, 0);
-    assert.equal(alt.banners, 0);
-    assert.equal(alt.pathers, 0);
-    assert.equal(alt.conductBonus, 0);
+    assert.equal(main.conductBonus, 2);
+    assert.equal(secondary.banners, 0);
+    assert.equal(secondary.pathers, 0);
+    assert.equal(secondary.conductBonus, 0);
+    assert.equal(banner.banners, 0);
   });
 });
 

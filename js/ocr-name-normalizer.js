@@ -64,11 +64,20 @@ function resolveSupplementalSpecialListCluster(cleanedName, existingResolvedName
   ) {
     return 'ANGEL';
   }
-  if (/sarafin[ao]/.test(compactClean) || /sarafin[ao]/.test(compactResolved)) {
+  if (/sarafina/.test(compactClean) || /sarafina/.test(compactResolved)) {
+    return findBestMatch('Sarafina');
+  }
+  if (/sarafino/.test(compactClean) || /sarafino/.test(compactResolved)) {
     return findBestMatch('Sarafino');
+  }
+  if (compactClean === 'undeadbanner' || compactResolved === 'undeadbanner') {
+    return 'Undead_Banner';
   }
   if (compactClean.includes('undead') || compactResolved.includes('undead')) {
     return 'UNDEAD';
+  }
+  if (compactClean === 'redbullbanner' || compactResolved === 'redbullbanner') {
+    return 'RedBull_Banner';
   }
 
   return existingResolvedName;

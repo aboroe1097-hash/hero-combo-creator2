@@ -240,8 +240,8 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['^Anne^', 'Anne'],
     ['✨ Anne ✨', 'Anne'],
     ['Kika', '꧁ Kika ꧂'],
-    ['≪Kika≫', '꧁༺ Kika ༻꧂'],
-    ['✨ Kika ✨', '꧁༺ Kika ༻꧂'],
+    ['≪Kika≫', '꧁ Kika ꧂'],
+    ['✨ Kika ✨', '꧁ Kika ꧂'],
     ['꧁ Kika ꧂', '꧁ Kika ꧂'],
     ['MasterVj~', 'MasterVj'],
     ['✨MasterVj✨', 'MasterVj'],
@@ -306,7 +306,7 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('MalakAbo'), 'MalakAbo');
   assert.equal(findBestMatch('꧁ Kika ꧂'), '꧁ Kika ꧂');
   assert.equal(findBestMatch('꧁Kika꧂'), '꧁ Kika ꧂');
-  assert.equal(findBestMatch('≪Kika≫'), '꧁༺ Kika ༻꧂');
+  assert.equal(findBestMatch('≪Kika≫'), '꧁ Kika ꧂');
   assert.equal(findBestMatch('꧁༺ Kika ༻꧂'), '꧁༺ Kika ༻꧂');
   assert.equal(findBestMatch('꧁༺Kika༻꧂'), '꧁༺ Kika ༻꧂');
   assert.equal(findBestMatch('༺ Kika ༻'), '꧁༺ Kika ༻꧂');
@@ -318,6 +318,11 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('꧁Kika-banner2꧂'), '꧁Kika-banner2꧂');
   assert.equal(findBestMatch('REDBULL-#'), 'REDBULL-#');
   assert.equal(findBestMatch('REDBULLS'), 'REDBULLS');
+  assert.equal(findBestMatch('REDBULL§'), 'REDBULLS');
+  assert.equal(findBestMatch('REDBULL$'), 'REDBULLS');
+  assert.equal(findBestMatch('RedBull®'), 'REDBULL-#');
+  assert.equal(findBestMatch('RedBull©'), 'REDBULL-#');
+  assert.equal(findBestMatch('RedBull@'), 'REDBULL-#');
   assert.equal(findBestMatch('Sarafina'), '~Sarafina~');
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
@@ -455,11 +460,10 @@ test('getDutyCreditedNames credits both banner account and operator', () => {
     assert.equal(angel[1], resolveDutyPlayerName('zubbs'));
     assert.notEqual(angel[1], angel[0]);
 
-    // @redbull (osito) -> credit redbull (owner) AND osito (banner/operator).
+    // @redbull (osito) -> credit RedBull manager/main only.
     const rb = getDutyCreditedNames('@redbull (osito)', 'redbull');
     assert.equal(rb[0], 'redbull');
-    assert.equal(rb.length, 2);
-    assert.ok(rb.includes('osito'));
+    assert.equal(rb.length, 1);
 
     // Moldo (zubbs) -> credit Moldo AND zubbs (resolved through the roster).
     const moldo = getDutyCreditedNames('Moldo (zubbs)', 'Moldo');
@@ -581,11 +585,15 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   // Single @-tagged player: Viber tag stripped.
   assert.deepEqual(expandDutyRawNames('@ANGEL'), ['ANGEL']);
 
-  // Multi-player: "gate @redull @+ Ezeta TV" -> RedBull + Ezeta TV.
+  // Multi-player: "gate @redull @+ Ezeta TV" -> RedBull main + Ezeta TV.
   const multi = expandDutyRawNames('gate @redull @+ Ezeta TV');
-  assert.ok(multi.includes('RedBull'));
+  assert.ok(multi.includes('REDBULLS'));
   assert.ok(multi.includes('Ezeta TV'));
   assert.equal(multi.length, 2);
+
+  // RedBull parentheticals are manager labels, not second duty credits.
+  assert.deepEqual(expandDutyRawNames('@redbull (osito)'), ['REDBULLS']);
+  assert.deepEqual(expandDutyRawNames('bridge @redbull (Teresita)'), ['REDBULLS']);
 
   // Leading target word dropped: "town lvl1" before @tag.
   assert.deepEqual(expandDutyRawNames('town lvl1 @Uzumaki'), ['!!Uzumaki!!']);
@@ -621,7 +629,7 @@ test('expandDutyRawNames splits multi-player cells and strips structure words', 
   assert.deepEqual(expandDutyRawNames('capital @UNDEAD +'), ['UNDEAD']);
 
   // @-tagged player with banner suffix (redbull resolves through aliasMap).
-  assert.deepEqual(expandDutyRawNames('@redbull banner'), ['RedBull']);
+  assert.deepEqual(expandDutyRawNames('@redbull banner'), ['REDBULLS']);
 
   // Operator is same as owner -> dedup within function.
   const dedup = expandDutyRawNames('Moldo (Moldo)');

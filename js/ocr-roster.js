@@ -1675,6 +1675,65 @@ function summarizeDutyValues(values, limit = 3) {
   return clean.length > limit ? `${visible} +${clean.length - limit}` : visible;
 }
 
+const DUTY_SUMMARY_STATUS_KEYS = ['exact', 'manual', 'likely', 'weak', 'unmatched'];
+const DUTY_SUMMARY_STATUS_LABELS = Object.freeze({
+  exact: 'Exact',
+  manual: 'Manual',
+  likely: 'Likely',
+  weak: 'Weak',
+  unmatched: 'Unmatched',
+});
+
+function normalizeDutySummaryStatus(value) {
+  const status = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (!status) return '';
+  if (status === 'exact' || status === 'matched') return 'exact';
+  if (status === 'likely') return 'likely';
+  if (status === 'weak') return 'weak';
+  if (status === 'manual' || status === 'review') return 'manual';
+  if (status === 'unmatched') return 'unmatched';
+  return 'manual';
+}
+
+function getDutyEntrySummaryStatus(entry) {
+  const explicit = normalizeDutySummaryStatus(entry?.status);
+  if (explicit) return explicit;
+  const raw = entry?.original || entry?.name || '';
+  const confirmed = entry?.confirmed || entry?.name || '';
+  return normalizeDutySummaryStatus(getDutyMatchStatus(raw, confirmed)) || 'unmatched';
+}
+
+function emptyDutySummaryStatusCounts() {
+  return Object.fromEntries(DUTY_SUMMARY_STATUS_KEYS.map((key) => [key, 0]));
+}
+
+function buildDutySummaryStatusCounts(records = []) {
+  const counts = emptyDutySummaryStatusCounts();
+  records.forEach((record) => {
+    const status = getDutyEntrySummaryStatus(record);
+    counts[status] = (counts[status] || 0) + 1;
+  });
+  return counts;
+}
+
+function dutySummaryReviewCount(row) {
+  const counts = row?.statusCounts || {};
+  return DUTY_SUMMARY_STATUS_KEYS.filter((key) => key !== 'exact').reduce(
+    (sum, key) => sum + (counts[key] || 0),
+    0
+  );
+}
+
+function formatDutyStatusBreakdown(counts = {}) {
+  const parts = DUTY_SUMMARY_STATUS_KEYS.filter((key) => counts[key]).map(
+    (key) => `${DUTY_SUMMARY_STATUS_LABELS[key]} ${counts[key]}`
+  );
+  if (!parts.length) return '<span style="color:var(--text-dim)">--</span>';
+  return parts.map(esc).join(' / ');
+}
+
 function getDutyEntryCreditedNames(entry) {
   const raw = entry?.name || entry?.original || '';
   const confirmed = String(entry?.confirmed || '').trim();
@@ -1708,6 +1767,7 @@ function collectDutyPlayerSummary(records) {
           ...entry,
           name,
           time: entry.usageTime || record.gameTime,
+          status: getDutyEntrySummaryStatus(entry),
         });
       });
     });
@@ -1715,7 +1775,10 @@ function collectDutyPlayerSummary(records) {
   return summarizeCanonicalPlayerRecords(rows, {
     timeField: 'time',
     preserveSpecialAccounts: true,
-  });
+  }).map((row) => ({
+    ...row,
+    statusCounts: buildDutySummaryStatusCounts(row.records),
+  }));
 }
 
 function renderDutyPlayerSummary(type, hostId) {
@@ -1728,22 +1791,25 @@ function renderDutyPlayerSummary(type, hostId) {
   }
   const rows = collectDutyPlayerSummary(records);
   const totalRows = rows.reduce((sum, row) => sum + row.entries, 0);
+  const reviewRows = rows.reduce((sum, row) => sum + dutySummaryReviewCount(row), 0);
   const latest = records[0]?.date || '--';
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
       <div class="dash-duty-summary-kpi"><strong>${records.length}</strong><span>uploads</span></div>
       <div class="dash-duty-summary-kpi"><strong>${totalRows}</strong><span>entries</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${reviewRows}</strong><span>review</span></div>
       <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>players</span></div>
       <div class="dash-duty-summary-kpi"><strong>${esc(latest)}</strong><span>latest</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <table class="dash-duty-summary-table">
-        <thead><tr><th>${esc(adminT('adminDutySummaryPlayer'))}</th><th>${esc(adminT('adminDutySummaryEntries'))}</th><th>${esc(adminT('adminDutySummaryTimes'))}</th></tr></thead>
+        <thead><tr><th>${esc(adminT('adminDutySummaryPlayer'))}</th><th>${esc(adminT('adminDutySummaryEntries'))}</th><th>${esc(adminT('adminDutyStatus'))}</th><th>${esc(adminT('adminDutySummaryTimes'))}</th></tr></thead>
         <tbody>${rows
           .map(
             (row) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
           <td>${row.entries}</td>
+          <td><span class="dash-duty-status-breakdown">${formatDutyStatusBreakdown(row.statusCounts)}</span></td>
           <td>${summarizeDutyValues(row.times, 8)}</td>
         </tr>`
           )

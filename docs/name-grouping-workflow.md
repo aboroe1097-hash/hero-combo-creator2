@@ -87,15 +87,16 @@ merger** — pre-clean the Viber noise and route through the *same* `findBestMat
 Banner/Pather names inherit the Structures/Attacks authority automatically.
 
 **Decision (locked):** a duty cell credits **BOTH the banner account / @-tagged owner AND the
-parenthetical operator** (when the parenthetical is a real operator, not a label). Both players did
-the duty work and both earn participation credit in the duty summaries:
+parenthetical operator** (when the parenthetical is a real operator, not a label), except for
+confirmed manager-credit families such as RedBull. Both credited players earn participation credit
+in the duty summaries:
 - `Angel Banner (zubbs)` → credit **ANGEL** (the banner account) **and** **zubbs** (who operated
   the Angel account at that target).
-- `@redbull (osito)` → credit **redbull** (the `@`-tagged owner) **and** **osito** (the banner
-  account/operator redbull ran for).
+- `@redbull (osito)` → credit **REDBULLS** only. RedBull parentheticals such as `(osito)`,
+  `(Teresita)`, and `(RedBull banner)` are manager labels for service credit.
 - `Moldo (zubbs)` → credit **Moldo** **and** **zubbs**.
 - Parentheticals that are **labels, not operators**, earn no second credit:
-  `redbull (RedBull banner)` → credit **redbull** only.
+  `redbull (RedBull banner)` → credit **REDBULLS** only.
 - Operator == owner (same player): de-duped to a single credit, e.g. `Moldo (Moldo)` → **Moldo**.
 - Banner suffix strips to the owner: `BOiiE BANNER` → `BOiiE`, `Kika-banner` → `Kika`.
 
@@ -162,11 +163,15 @@ can't bridge it — surfaced by the duty debug CSV).
 These are real distinct accounts/identities. They are protected by the
 *"keep known separate accounts apart"* unit test. Adding a merge that breaks them will fail CI.
 
-- **Kika ×4 accounts:** `꧁ Kika ꧂`, `꧁༺ Kika ༻꧂`, `꧁ Kika-banner ꧂`, `꧁Kika-banner2꧂`
-  (routed by `getProtectedPlayerIdentity`).
-- **`REDBULL-#`** vs **`REDBULLS`** — the `-#` is a deliberate alt-account marker.
+- **Kika ×4 accounts:** `꧁༺ Kika ༻꧂` (#1 main), `꧁ Kika ꧂`, `꧁ Kika-banner ꧂`,
+  `꧁Kika-banner2꧂`. Plain/ornamental `Kika` routes to `꧁ Kika ꧂`; service/conduct rolls up to
+  `꧁༺ Kika ༻꧂` when that row exists.
+- **RedBull ×3 account groups:** `REDBULLS`/`REDBULL§`/`REDBULL$` are main; `REDBULL-#` plus
+  `RedBull®`/`RedBull©`/`RedBull@`/`RedBull#` are secondary; `RedBull_Banner` stays separate.
+  Duty/service credit rolls up to `REDBULLS` because he is the manager.
 - **`MalakAbo`** vs **`MalakAdo`** — two players (raw OCR is stable for each).
-- **`~Sarafino~`** vs **`~Sarafina~`** — two players (stable raw).
+- **`~Sarafino~`** vs **`~Sarafina~`** — two separate accounts managed by the same player.
+- **`UNDEAD`** vs **`Undead_Banner`** — separate accounts; `UNDEADO` is an OCR typo for `UNDEAD`.
 - **`Dragon.Gold`** — kept literal.
 
 ---

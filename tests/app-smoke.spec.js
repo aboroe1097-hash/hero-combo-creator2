@@ -1501,6 +1501,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashPatherListSummary .dash-duty-summary-table')).toBeVisible();
     await expect(page.locator('#dashPatherListSummary')).toContainText('Kika');
     await expect(page.locator('#dashPatherListSummary thead')).toContainText('Записи');
+    await expect(page.locator('#dashPatherListSummary thead')).toContainText('Статус');
     await expect(page.locator('#dashPatherListSummary thead')).toContainText('Время');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Targets');
     await expect(page.locator('#dashPatherListSummary thead')).not.toContainText('Groups');
@@ -1510,7 +1511,8 @@ test.describe('app smoke tabs', () => {
         rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
       );
     expect(patherSummaryRows.filter((cells) => cells[0].includes('Kika'))).toHaveLength(2);
-    expect(patherSummaryRows.find((cells) => cells[0] === 'ANGEL')?.[2]).toContain('10:30');
+    expect(patherSummaryRows.find((cells) => cells[0] === 'ANGEL')?.[2]).toContain('Exact');
+    expect(patherSummaryRows.find((cells) => cells[0] === 'ANGEL')?.[3]).toContain('10:30');
     await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
 
     const layout = await page.evaluate(() => {

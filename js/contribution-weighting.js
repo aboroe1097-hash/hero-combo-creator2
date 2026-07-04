@@ -137,6 +137,12 @@ function emptyDutyCounts() {
   return { shieldWalls: 0, pathers: 0, banners: 0 };
 }
 
+const PRIMARY_FAMILY_ACCOUNT_KEYS = Object.freeze({
+  kika: 'kikaalt',
+  redbull: 'redbulls',
+  undead: 'undead',
+});
+
 // Group a player's multiple accounts (main / secondary / banner) into one family
 // so their duty + conduct can be consolidated onto a single main account.
 // Single-account players are their own family.
@@ -145,8 +151,15 @@ function playerFamilyKey(accountKey) {
   const registryFamily = resolvePlayerRegistryFamilyKey(key);
   if (registryFamily) return registryFamily;
   if (/^kika(?:alt|banner2?)?$/.test(key)) return 'kika';
+  if (key === 'redbull' || key === 'redbulls' || key === 'redbullbanner') return 'redbull';
+  if (key === 'undead' || key === 'undeadbanner') return 'undead';
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
   return key;
+}
+
+function isPreferredFamilyAccount(row, familyKey) {
+  const preferredKey = PRIMARY_FAMILY_ACCOUNT_KEYS[familyKey];
+  return Boolean(preferredKey && row?.playerKey === preferredKey);
 }
 
 // Lower positive rank wins; a missing/zero rank is always worst.
@@ -321,8 +334,8 @@ export function buildWeightedContributionRows(options = {}) {
   // A player can hold several distinct accounts (e.g. Kika's main + secondary +
   // banner accounts). They stay as separate rows, but their duty (banners /
   // pathers / shield walls) and conduct belong to the PERSON, so we credit them
-  // once — to the family's main account, the row with the highest contribution
-  // (then best current rank) — by summing across every account key in the family.
+  // once — to the configured main account for known families, otherwise the row
+  // with the highest contribution (then best current rank).
   const familyDuty = new Map();
   dutyCounts.forEach((counts, accountKey) => {
     const fam = playerFamilyKey(accountKey);
@@ -347,9 +360,19 @@ export function buildWeightedContributionRows(options = {}) {
       return;
     }
     const best = baseRows[currentBest];
+    const candidatePreferred = isPreferredFamilyAccount(row, fam);
+    const bestPreferred = isPreferredFamilyAccount(best, fam);
+    if (candidatePreferred && !bestPreferred) {
+      primaryIndexByFamily.set(fam, index);
+      return;
+    }
+    if (!candidatePreferred && bestPreferred) return;
     const betterContribution = row.contributionScore > best.contributionScore;
     const tiedContribution = row.contributionScore === best.contributionScore;
-    if (betterContribution || (tiedContribution && isBetterContributionRank(row.currentRank, best.currentRank))) {
+    if (
+      betterContribution ||
+      (tiedContribution && isBetterContributionRank(row.currentRank, best.currentRank))
+    ) {
       primaryIndexByFamily.set(fam, index);
     }
   });

@@ -78,15 +78,15 @@ export function getSupportedOcrImageFiles(files) {
 
 export function describeRejectedOcrImageFiles(files) {
   return Array.from(files || [])
-    .filter(file => !isSupportedOcrImageFile(file))
-    .map(file => file?.name || file?.type || 'unnamed image')
+    .filter((file) => !isSupportedOcrImageFile(file))
+    .map((file) => file?.name || file?.type || 'unnamed image')
     .filter(Boolean);
 }
 
 export async function readOcrImageDataUrl(file) {
   const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = e => resolve(String(e.target?.result || ''));
+    reader.onload = (e) => resolve(String(e.target?.result || ''));
     reader.onerror = () => reject(reader.error || new Error('Could not read selected image.'));
     reader.readAsDataURL(file);
   });
@@ -143,9 +143,12 @@ export async function checkOcrService(options = {}) {
     return { configured: false, error };
   } catch (err) {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const localPortHint = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):(4173|4174|5173|5174|5175|5176|5177)$/.test(origin)
-      ? ` ${origin} is not currently allowed by the OCR Worker. Add this origin to ALLOWED_ORIGINS or redeploy the Worker with LAN dev origins enabled.`
-      : '';
+    const localPortHint =
+      /^http:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):(4173|4174|5173|5174|5175|5176|5177)$/.test(
+        origin
+      )
+        ? ` ${origin} is not currently allowed by the OCR Worker. Add this origin to ALLOWED_ORIGINS or redeploy the Worker with LAN dev origins enabled.`
+        : '';
     return {
       configured: false,
       error: `${err?.message || 'OCR worker unavailable'}${localPortHint}`,
@@ -176,7 +179,10 @@ function describeFirebaseAppCheckStatus(status) {
     return `Firebase App Check failed to initialize: ${status.appCheckInitError}`;
   }
   if (status.appCheckTokenError) {
-    if (/recaptcha/i.test(status.appCheckTokenError) && /timeout/i.test(status.appCheckTokenError)) {
+    if (
+      /recaptcha/i.test(status.appCheckTokenError) &&
+      /timeout/i.test(status.appCheckTokenError)
+    ) {
       return 'Firebase App Check reCAPTCHA timed out. Check network/ad blockers, then click Check OCR or retry the upload.';
     }
     if (isAppCheckForbiddenMessage(status.appCheckTokenError)) {
@@ -188,7 +194,9 @@ function describeFirebaseAppCheckStatus(status) {
 }
 
 function isAppCheckForbiddenMessage(message) {
-  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(String(message || ''));
+  return /403|fetch-status-error|exchangeDebugToken|debug token|permission|unauthorized/i.test(
+    String(message || '')
+  );
 }
 
 function describeAppCheckForbiddenStatus(status = {}) {
@@ -506,7 +514,11 @@ export function getDatasetStructureTarget(attack) {
   const rawName = attack.raw_structure_name;
   const rawLevel = attack.raw_structure_level;
   const canonicalName = attack.structure_name || attack.name;
-  if (/^ruins?$/i.test(String(rawName || '').trim()) && canonicalName && !/^ruins?$/i.test(canonicalName)) {
+  if (
+    /^ruins?$/i.test(String(rawName || '').trim()) &&
+    canonicalName &&
+    !/^ruins?$/i.test(canonicalName)
+  ) {
     return {
       structure_name: canonicalName,
       structure_level: attack.structure_level || '',
@@ -752,7 +764,7 @@ export function getProtectedPlayerIdentity(name) {
   if (!/kika/i.test(text)) return '';
   if (/banner\s*2/i.test(text)) return '꧁Kika-banner2꧂';
   if (/banner/i.test(text)) return '꧁ Kika-banner ꧂';
-  if (/[༺༻≪≫≼≽⪡⪢✨]/.test(text)) return '꧁༺ Kika ༻꧂';
+  if (/[༺༻]/.test(text)) return '꧁༺ Kika ༻꧂';
   return '꧁ Kika ꧂';
 }
 
@@ -964,10 +976,13 @@ export function findBestMatch(name, minConfidence = 100) {
       тyHГ3ахур: 'түнгзахурп',
       тyнгзахур: 'түнгзахурп',
       'REDBULL§': 'REDBULLS',
-      'RedBull©': 'REDBULLS',
-      'RedBull@': 'REDBULLS',
-      'RedBull®': 'REDBULLS',
-      'Redbull@': 'REDBULLS',
+      'RedBull©': 'REDBULL-#',
+      'RedBull@': 'REDBULL-#',
+      'RedBull®': 'REDBULL-#',
+      'Redbull@': 'REDBULL-#',
+      'RedBull#': 'REDBULL-#',
+      'REDBULL#': 'REDBULL-#',
+      'REDBULL-#': 'REDBULL-#',
       REDBULL$: 'REDBULLS',
       'Ar Ran★_YG+62': 'Ar Ran ★_YG+62',
       'Ar Ran ★YG+62': 'Ar Ran ★_YG+62',
@@ -1122,10 +1137,10 @@ export function findBestMatch(name, minConfidence = 100) {
       '~Anne~': 'Anne',
       '⌂ Anne ₿': 'Anne',
       '✨Anne ✨': 'Anne',
-      'Neutrin010': 'Neutrino10',
-      'Åñdëř$': 'A n d e R $',
-      'AndërS': 'A n d e R $',
-      'AndëRS': 'A n d e R $',
+      Neutrin010: 'Neutrino10',
+      Åñdëř$: 'A n d e R $',
+      AndërS: 'A n d e R $',
+      AndëRS: 'A n d e R $',
       '— L7 —': '- L7 -',
       'Hunter Killer.': 'Hunter killer.',
       'гутер killer.': 'Hunter killer.',
@@ -1135,28 +1150,31 @@ export function findBestMatch(name, minConfidence = 100) {
       '✨Nosferatu✨': 'Nosferatu',
       'Batou-Zar': 'Batou~Zar',
       '★ DEAN ★': '*DEAN*',
-      'ОUNDEA': 'UNDEAD',
-      'Spoilagege': 'Spoilage',
+      ОUNDEA: 'UNDEAD',
+      ОUNDEAD: 'UNDEAD',
+      ОUNDEADO: 'UNDEAD',
+      Spoilagege: 'Spoilage',
       'Mr. AHPD': 'Mr. AHDP',
-      'mohmedsaif': 'mohmmedsaif',
+      mohmedsaif: 'mohmmedsaif',
       'BiG BOiE': 'BiG BOiiE',
-      'Oblitereted': 'Obliterated',
-      'MasterVjs': 'MasterVj',
+      Oblitereted: 'Obliterated',
+      MasterVjs: 'MasterVj',
       // Duty (Banner/Pather) cleaned-name stragglers the roster fuzzy match can't bridge:
-      'Dvd': 'DvD18',
-      'BOiiE': 'BiG BOiiE',
+      Dvd: 'DvD18',
+      BOiiE: 'BiG BOiiE',
       BigBOIE: 'BiG BOiiE',
-      'Uz': '!!Uzumaki!!',
+      Uz: '!!Uzumaki!!',
       Moldo1313: 'Moldo',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
-      // OCR typo for the RedBull owner tag; do not collapse separate
-      // RedBull-family banner/operator accounts.
-      redbull: 'RedBull',
-      redull: 'RedBull',
+      // Duty owner tags for RedBull route to the manager/main account. Decorated
+      // account names above still preserve the explicit main/secondary split.
+      RedBull: 'REDBULLS',
+      redbull: 'REDBULLS',
+      redull: 'REDBULLS',
       ostio: 'osito',
       Jambo: 'JamboJango',
-      tersait: 'RedBull',
-      Teresita: 'RedBull',
+      tersait: 'REDBULLS',
+      Teresita: 'REDBULLS',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';
@@ -1199,11 +1217,12 @@ export function findBestMatch(name, minConfidence = 100) {
 // separate merge list.
 //
 // Credit goes to the BANNER ACCOUNT / @-tagged owner — the main token before any
-// parenthetical. The parenthetical is metadata only and is preserved separately via
-// getDutyOperatorNote(): it records either who physically operated the account at that
-// time ("Angel Banner (zubbs)" -> credit ANGEL, zubbs operated it) or which of an
-// owner's banners was used ("@redbull (osito)" -> credit redbull, osito is the banner).
-const DUTY_TARGET_PREFIX = /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.-]*/i;
+// parenthetical. The parenthetical is metadata preserved via getDutyOperatorNote():
+// it records either who physically operated the account at that time or which of an
+// owner's banners was used. RedBull duty tags are manager-credit exceptions: the
+// parenthetical is treated as a label and the credit stays on the RedBull main account.
+const DUTY_TARGET_PREFIX =
+  /^(?:bridges?|gates?|capital|reserve|team\s*\d*|town\s*[il]?v?l?\s*\d*|gate\s*[il]?\s*\d*)\b[\s:_·.-]*/i;
 const DUTY_BANNER_SUFFIX = /[\s_-]*banner\s*\d*$/i;
 
 // The parenthetical note (operator / banner label). Metadata — preserved, but not the
@@ -1231,14 +1250,23 @@ export function cleanDutyRawName(raw) {
   s = s.replace(/[",'`]+$/g, '').trim(); // trailing OCR quote/comma junk
   // Strip the parenthetical note — the credited identity is the @-owner / banner account
   // before it, not the operator/banner inside it.
-  s = s.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  s = s
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (s.includes('@')) {
     // keep the first @-segment that isn't a pure target word (handles multi-tag cells)
-    const segs = s.split('@').map((x) => x.trim()).filter(Boolean);
+    const segs = s
+      .split('@')
+      .map((x) => x.trim())
+      .filter(Boolean);
     s = segs.find((p) => !DUTY_TARGET_PREFIX.test(p)) || segs[segs.length - 1] || '';
   }
   s = s.replace(DUTY_TARGET_PREFIX, '').trim(); // leading target word without an @
-  s = s.replace(/[\s+]+$/g, '').replace(/^[\s+]+/g, '').trim(); // '+' reinforcement markers
+  s = s
+    .replace(/[\s+]+$/g, '')
+    .replace(/^[\s+]+/g, '')
+    .trim(); // '+' reinforcement markers
   s = s.replace(DUTY_BANNER_SUFFIX, '').trim(); // banner-label suffix -> owner player
   s = s.replace(/^[\s_·.-]+|[\s_·.-]+$/g, '').trim();
   return s;
@@ -1266,10 +1294,18 @@ export function resolvesToKnownDutyPlayer(value) {
   return (state.rosterNames || []).some((rn) => compactPlayerIdentity(rn) === compact);
 }
 
+function isRedBullDutyOwner(value) {
+  const cleaned = cleanDutyRawName(value);
+  if (!cleaned) return false;
+  const resolved = findBestMatch(cleaned);
+  const key = compactPlayerIdentity(resolved || cleaned);
+  return key === 'redbull' || key === 'redbulls';
+}
+
 // The credited canonical names for one duty cell. Per product decision, BOTH the banner
 // account / @-tagged owner AND the operator earn credit for the duty work:
 //   "Angel Banner (zubbs)" -> credit ANGEL (account) AND zubbs (who operated it)
-//   "@redbull (osito)"     -> credit redbull (owner)  AND osito (banner account/operator)
+//   "@redbull (osito)"     -> credit redbull only (manager/main-account exception)
 //   "Moldo (zubbs)"        -> credit Moldo AND zubbs
 //   "redbull (RedBull banner)" -> credit redbull only (label, not an operator)
 //   "Moldo (Moldo)"        -> credit Moldo once (operator == owner, de-duped)
@@ -1282,6 +1318,7 @@ export function getDutyCreditedNames(raw, ownerCredited) {
   const owner = String(ownerCredited || '').trim();
   const names = owner ? [owner] : [];
   const note = getDutyOperatorNote(raw);
+  if (isRedBullDutyOwner(owner) || isRedBullDutyOwner(raw)) return names;
   if (!looksLikeDutyOperator(note)) return names;
   if (!resolvesToKnownDutyPlayer(note)) return names;
   const op = resolveDutyPlayerName(note);
@@ -1326,7 +1363,10 @@ export function expandDutyRawNames(raw) {
     if (canon && !out.includes(canon)) out.push(canon);
   };
   tokens.forEach(push);
-  if (looksLikeDutyOperator(note) && resolvesToKnownDutyPlayer(note)) push(note);
+  const hasRedBullOwner = tokens.some((token) => isRedBullDutyOwner(token));
+  if (!hasRedBullOwner && looksLikeDutyOperator(note) && resolvesToKnownDutyPlayer(note)) {
+    push(note);
+  }
   return out;
 }
 

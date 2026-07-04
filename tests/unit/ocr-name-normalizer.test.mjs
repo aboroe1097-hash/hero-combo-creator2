@@ -38,7 +38,7 @@ test('player display cleanup strips leading guild tags and preserves real symbol
 
 test('canonical resolver reuses existing aliases after guild-prefix cleanup', () => {
   assert.equal(resolveCanonicalPlayerName('(Vts)AK Чапай'), 'AK Чапай');
-  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁༺ Kika ༻꧂');
+  assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁ Kika ꧂');
   assert.equal(resolveCanonicalPlayerName('s)GoodnesGraycious'), 'GoodnesGraycious');
 });
 
@@ -58,8 +58,8 @@ test('canonical resolver merges special-list alias clusters', () => {
     assert.equal(resolveCanonicalPlayerName(raw), 'ANGEL');
   }
 
-  assert.equal(key('Sarafina~'), key('~Sarafino~'));
-  assert.equal(key('UNDEAD'), key('Undead_Banner'));
+  assert.notEqual(key('Sarafina~'), key('~Sarafino~'));
+  assert.notEqual(key('UNDEAD'), key('Undead_Banner'));
 });
 
 test('canonical roster option names collapse known OCR duplicate spellings', () => {
@@ -107,16 +107,15 @@ test('canonical player summary groups by resolved identity and keeps simple colu
 
   // Kika and Kika-banner are now distinct accounts (banner no longer collapses
   // into the secondary Kika identity).
-  assert.deepEqual(
-    summary.map((row) => [row.playerName, row.entries, row.times]),
-    [
-      ['UNDEAD', 2, ['01:25', '03:00']],
-      ['Zubbs', 2, ['23:25', '23:55']],
-      [resolveCanonicalPlayerName('Kika'), 1, ['00:23']],
-      [resolveCanonicalPlayerName('Kika-banner'), 1, ['08:04']],
-      ['Moldo', 1, ['23:55']],
-    ]
+  const byPlayer = Object.fromEntries(
+    summary.map((row) => [row.playerName, [row.entries, row.times]])
   );
+  assert.deepEqual(byPlayer.UNDEAD, [1, ['01:25']]);
+  assert.deepEqual(byPlayer.Undead_Banner, [1, ['03:00']]);
+  assert.deepEqual(byPlayer.Zubbs, [2, ['23:25', '23:55']]);
+  assert.deepEqual(byPlayer[resolveCanonicalPlayerName('Kika')], [1, ['00:23']]);
+  assert.deepEqual(byPlayer[resolveCanonicalPlayerName('Kika-banner')], [1, ['08:04']]);
+  assert.deepEqual(byPlayer.Moldo, [1, ['23:55']]);
 });
 
 test('canonical player summary can preserve special account identities', () => {

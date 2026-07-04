@@ -46,8 +46,10 @@ test('R5 player identity uses the shared canonical name resolver', () => {
   const sarafino = resolveR5PlayerIdentity('~Sarafino~');
   const undead = resolveR5PlayerIdentity('Undead_Banner');
 
-  assert.equal(sarafina.playerKey, sarafino.playerKey);
-  assert.equal(undead.playerName, 'UNDEAD');
+  assert.equal(sarafina.playerName, '~Sarafina~');
+  assert.equal(sarafino.playerName, '~Sarafino~');
+  assert.notEqual(sarafina.playerKey, sarafino.playerKey);
+  assert.equal(undead.playerName, 'Undead_Banner');
 });
 
 test('R5 adjustments normalize defaults, notes, and signed integer points', () => {
@@ -67,6 +69,7 @@ test('R5 adjustments normalize defaults, notes, and signed integer points', () =
 
 test('R5 aggregation is scoped per season and sums merit plus penalty rows', () => {
   const season = '2026-x1';
+  const sarafinaKey = resolveR5PlayerIdentity('Sarafina~').playerKey;
   const sarafinoKey = resolveR5PlayerIdentity('~Sarafino~').playerKey;
   const bonusMap = aggregateR5Bonuses(
     [
@@ -78,7 +81,8 @@ test('R5 aggregation is scoped per season and sums merit plus penalty rows', () 
     season
   );
 
-  assert.equal(bonusMap.get(sarafinoKey), 300);
+  assert.equal(bonusMap.get(sarafinaKey), 500);
+  assert.equal(bonusMap.get(sarafinoKey), -200);
   assert.equal(bonusMap.get(resolveR5PlayerIdentity('UNDEAD').playerKey), 300);
   assert.equal(
     [...bonusMap.values()].reduce((sum, points) => sum + points, 0),
@@ -109,7 +113,7 @@ test('R5 adjustment record batches skip malformed historical cloud rows', () => 
 test('R5 adjusted ranking uses adjusted total without mutating OCR total', () => {
   const rows = [
     { name: 'Kika', total_demolition: 120000, participation_count: 3 },
-    { name: '~Sarafino~', total_demolition: 100000, participation_count: 2 },
+    { name: '~Sarafina~', total_demolition: 100000, participation_count: 2 },
     { name: 'UNDEAD', total_demolition: 50000, participation_count: 1 },
   ];
   const adjustments = [
@@ -118,12 +122,12 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
   ];
 
   const adjusted = applyR5AdjustmentsToPlayerTotals(rows, adjustments, 'season-a');
-  const sarafino = adjusted.find((row) => row.name === '~Sarafino~');
+  const sarafina = adjusted.find((row) => row.name === '~Sarafina~');
   const undead = adjusted.find((row) => row.name === 'UNDEAD');
 
-  assert.equal(sarafino.total_demolition, 100000);
-  assert.equal(sarafino.bonusR5, 400);
-  assert.equal(sarafino.adjustedTotal, 100400);
+  assert.equal(sarafina.total_demolition, 100000);
+  assert.equal(sarafina.bonusR5, 400);
+  assert.equal(sarafina.adjustedTotal, 100400);
   assert.equal(undead.adjustedTotal, 49900);
 
   const ranking = buildAdjustedGiftRanking(rows, adjustments, 'season-a');
@@ -131,7 +135,7 @@ test('R5 adjusted ranking uses adjusted total without mutating OCR total', () =>
     ranking.map((row) => [row.name, row.adjustedRank, row.adjustedTotal]),
     [
       ['Kika', 1, 120000],
-      ['~Sarafino~', 2, 100400],
+      ['~Sarafina~', 2, 100400],
       ['UNDEAD', 3, 49900],
     ]
   );

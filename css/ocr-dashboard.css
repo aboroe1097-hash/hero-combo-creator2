@@ -4221,6 +4221,15 @@ body[style*='overflow: hidden'] .tab-panel {
   font-size: 0.68rem;
   font-weight: 800;
 }
+#ocrDashboardRoot .dash-duty-status-breakdown {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.45;
+  white-space: normal;
+}
 #ocrDashboardRoot .dash-banner-team-tag {
   display: inline-block;
   padding: 2px 8px;
