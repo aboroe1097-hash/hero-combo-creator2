@@ -1773,6 +1773,12 @@ test.describe('app smoke tabs', () => {
           points: 1,
           category: 'merit_other',
         },
+        {
+          season: 'season-2026',
+          player: 'Mike',
+          points: 2,
+          category: 'merit_other',
+        },
       ],
     };
 
@@ -1806,6 +1812,10 @@ test.describe('app smoke tabs', () => {
     expect(noticeTitleStyle.fontSize).toBeGreaterThan(22);
     expect(noticeTitleStyle.textAlign).toBe('center');
     expect(noticeTitleStyle.flexBasis).toBe('100%');
+    await page.locator('#languageSelect').selectOption('es');
+    await expect(page.locator('.eden-x1-notice strong')).toHaveText('Vista demo - no final.');
+    await expect(page.locator('.eden-x1-notice')).toContainText('recompensas finales');
+    await page.locator('#languageSelect').selectOption('en');
 
     const supportCard = page.locator('[data-reward-view="support"]');
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
@@ -1842,16 +1852,27 @@ test.describe('app smoke tabs', () => {
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
+    await expect(
+      panel.locator('tbody tr', { hasText: 'Mike' }).locator('.dash-weighted-conduct-trigger')
+    ).toContainText('+2');
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();
     await expect(managementCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('h2')).toContainText('R4 / Management');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
-    const managementNames = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map((row) => row.cells[1]?.textContent?.trim())
+    const managementRows = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) => ({
+        name: row.cells[1]?.textContent?.trim(),
+        status: row.cells[3]?.textContent?.trim(),
+      }))
     );
-    expect(managementNames).toEqual(['MalakAbo', 'MalakAbo', 'MalakAbo', 'MalakAbo']);
+    expect(managementRows).toEqual([
+      { name: 'Wicked Russian', status: 'Assigned' },
+      { name: 'TBA', status: 'Management team voting' },
+      { name: 'TBA', status: 'Management team voting' },
+      { name: 'TBA', status: 'Management team voting' },
+    ]);
 
     const teamCard = page.locator('[data-reward-view="team"]');
     await teamCard.click();

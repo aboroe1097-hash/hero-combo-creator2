@@ -1,9 +1,13 @@
-import { buildWeightedContributionRows } from './contribution-weighting.js';
+import {
+  buildWeightedContributionRows,
+  sanitizePublicR5Adjustments,
+} from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 
 const APP_VERSION = '12.2.1';
 const FS_PATH = 'vts_admin/dashboard_data';
+const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
@@ -155,9 +159,9 @@ function rewardSlotRows(view) {
   if (view === 'management') {
     return Array.from({ length: 4 }, (_, index) => ({
       slot: index + 1,
-      player: 'MalakAbo',
+      player: index === 0 ? 'Wicked Russian' : t('edenX1Tba'),
       group: t('edenX1RewardManagementTitle'),
-      status: t('edenX1RewardAssigned'),
+      status: index === 0 ? t('edenX1RewardAssigned') : t('edenX1RewardManagementVotePending'),
     }));
   }
   if (view === 'team') {
@@ -515,6 +519,22 @@ function renderCurrentTable() {
   updateRewardFlowControls();
 }
 
+async function loadPublicConductAdjustments(db, firestore, season) {
+  try {
+    const { collection, getDocs, query, where } = firestore;
+    const ref = collection(db, R5_COLLECTION_PATH);
+    const seasonKey = String(season || '').trim();
+    const snapshot = await getDocs(seasonKey ? query(ref, where('season', '==', seasonKey)) : ref);
+    const adjustments = [];
+    snapshot.forEach((docSnap) => {
+      adjustments.push(docSnap.data());
+    });
+    return sanitizePublicR5Adjustments(adjustments, seasonKey);
+  } catch {
+    return [];
+  }
+}
+
 async function bootShell() {
   currentLang = getLanguage();
   await loadTranslationsForLanguage(currentLang);
@@ -554,7 +574,8 @@ async function main() {
 
     await ensureAnonymousAuth();
 
-    const { doc, getDoc } = await importFirestore();
+    const firestore = await importFirestore();
+    const { doc, getDoc } = firestore;
     const snap = await getDoc(doc(db, FS_PATH));
 
     if (!snap.exists()) {
@@ -562,7 +583,16 @@ async function main() {
       return;
     }
 
-    applyDashboardData(snap.data());
+    const data = { ...snap.data() };
+    const liveConductAdjustments = await loadPublicConductAdjustments(
+      db,
+      firestore,
+      data.r5Season || ''
+    );
+    if (liveConductAdjustments.length) {
+      data.publicConductAdjustments = liveConductAdjustments;
+    }
+    applyDashboardData(data);
   } catch (err) {
     console.error('Eden X1 view failed:', err);
     if (errorEl) {

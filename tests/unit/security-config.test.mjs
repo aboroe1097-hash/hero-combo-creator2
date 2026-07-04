@@ -78,7 +78,11 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   assert.match(dashboard, /function attachAuxiliaryRecords/);
   assert.match(dashboard, /function getAuxiliaryRecordPayload/);
+  assert.match(dashboard, /function pruneDashboardCloudData/);
+  assert.match(dashboard, /const DASHBOARD_CLOUD_FIELD_KEYS = new Set/);
+  assert.match(dashboard, /function writeAuxiliaryPayloadToCloud/);
   assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), auxiliaryPayload, \{ merge: true \}\)/);
+  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), repairPayload\)/);
   assert.match(dashboard, /bannerRecords/);
   assert.match(dashboard, /dutyRecords/);
   assert.match(dashboard, /contributionRecords/);

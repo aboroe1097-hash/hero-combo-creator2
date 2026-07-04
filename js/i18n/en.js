@@ -1065,6 +1065,7 @@ const en = {
   edenX1RewardSlotGroup: "Reward group",
   edenX1RewardSlotStatus: "Status",
   edenX1RewardAssigned: "Assigned",
+  edenX1RewardManagementVotePending: "Management team voting",
   edenX1RewardVotePending: "TBA - guild vote pending",
   edenX1Tba: "TBA",
   edenX1Loading: "Loading weighted contribution data...",

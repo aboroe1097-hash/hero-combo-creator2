@@ -282,6 +282,20 @@ const AUXILIARY_RECORD_CACHES = [
   ['contributionRecords', CONTRIBUTION_KEY],
   ['exGuildContributions', EX_GUILD_CONTRIBUTION_KEY],
 ];
+const DASHBOARD_CLOUD_FIELD_KEYS = new Set([
+  'last_updated',
+  'total_attacks',
+  'attacks',
+  'players_summary',
+  'logs',
+  'bannerRecords',
+  'dutyRecords',
+  'contributionRecords',
+  'exGuildContributions',
+  'playerRegistry',
+  'r5Season',
+  'publicConductAdjustments',
+]);
 
 function writeAuxiliaryLocalCaches() {
   try {
@@ -326,6 +340,13 @@ function attachAuxiliaryRecords(data) {
   base.r5Season = r5Season;
   base.publicConductAdjustments = sanitizePublicR5Adjustments(state.r5Adjustments, r5Season);
   return base;
+}
+
+function pruneDashboardCloudData(data) {
+  if (!data || typeof data !== 'object') return data;
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => DASHBOARD_CLOUD_FIELD_KEYS.has(key))
+  );
 }
 
 function renderAuxiliaryRecords() {
@@ -1641,7 +1662,7 @@ function normalizeDashboardDataForCache(data) {
 
 function sanitizeDashboardDataForPersistence(data) {
   if (!data || typeof data !== 'object') return data;
-  const clean = attachAuxiliaryRecords(data);
+  const clean = pruneDashboardCloudData(attachAuxiliaryRecords(data));
   delete clean.logs;
   if (Array.isArray(clean.attacks)) {
     clean.attacks = clean.attacks.map((attack) => {
@@ -1652,6 +1673,39 @@ function sanitizeDashboardDataForPersistence(data) {
     });
   }
   return sanitizeForFirestore(clean);
+}
+
+function isFirestorePermissionDenied(err) {
+  const text = `${err?.code || ''} ${err?.message || err || ''}`;
+  return /permission-denied|insufficient permissions/i.test(text);
+}
+
+function buildDashboardCloudRepairPayload(auxiliaryPayload = null) {
+  const base =
+    state.dashData && typeof state.dashData === 'object'
+      ? { ...state.dashData }
+      : { last_updated: fmtDate(new Date()), total_attacks: 0, attacks: [], players_summary: [] };
+  return sanitizeDashboardDataForPersistence(
+    auxiliaryPayload && typeof auxiliaryPayload === 'object'
+      ? { ...base, ...auxiliaryPayload }
+      : base
+  );
+}
+
+async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
+  const { doc, setDoc } = firestore;
+  try {
+    await setDoc(doc(db, FS_PATH), auxiliaryPayload, { merge: true });
+    return { repaired: false };
+  } catch (err) {
+    if (!isFirestorePermissionDenied(err)) throw err;
+    const repairPayload = buildDashboardCloudRepairPayload(auxiliaryPayload);
+    await setDoc(doc(db, FS_PATH), repairPayload);
+    state.dashData = normalizeDashboardDataForCache(repairPayload);
+    writeDashboardLocalCache(repairPayload);
+    writeAuxiliaryLocalCaches();
+    return { repaired: true };
+  }
 }
 
 function getAuxiliaryRecordPayload() {
@@ -1701,14 +1755,15 @@ async function flushDashboardCloudRetryQueue() {
       return false;
     }
 
-    const { doc, setDoc } = await loadFirestoreApi();
+    const firestore = await loadFirestoreApi();
+    const { doc, setDoc } = firestore;
     const remaining = [];
     for (const entry of queued) {
       try {
         if (entry.kind === 'auxiliary') {
-          await setDoc(doc(db, FS_PATH), entry.payload, { merge: true });
+          await writeAuxiliaryPayloadToCloud(db, firestore, entry.payload);
         } else {
-          await setDoc(doc(db, FS_PATH), entry.payload);
+          await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(entry.payload));
         }
       } catch (err) {
         remaining.push(entry);
@@ -1804,9 +1859,11 @@ export async function saveData(data, options = {}) {
 }
 
 export async function saveDashboardAuxiliaryRecords(options = {}) {
-  const localData = attachAuxiliaryRecords(
-    state.dashData && typeof state.dashData === 'object' ? state.dashData : null
-  );
+  const sourceData =
+    state.dashData && typeof state.dashData === 'object'
+      ? state.dashData
+      : { last_updated: fmtDate(new Date()), total_attacks: 0, attacks: [], players_summary: [] };
+  const localData = sanitizeDashboardDataForPersistence(sourceData);
   state.dashData = normalizeDashboardDataForCache(localData);
   writeDashboardLocalCache(localData);
   writeAuxiliaryLocalCaches();
@@ -1827,10 +1884,11 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
       );
       return false;
     }
-    const { doc, setDoc } = await loadFirestoreApi();
+    const firestore = await loadFirestoreApi();
     const auxiliaryPayload = getAuxiliaryRecordPayload();
-    await setDoc(doc(db, FS_PATH), auxiliaryPayload, { merge: true });
+    const result = await writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload);
     setCloudSyncStatus('live');
+    if (result.repaired) log('Cloud dashboard document repaired and special lists synced.', 'warn');
     updateLastSynced();
     return true;
   } catch (e) {
