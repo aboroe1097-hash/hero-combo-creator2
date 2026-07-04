@@ -1064,6 +1064,7 @@ const fr = {
   edenX1RewardManagementCopy: "Une récompense fixe de gestion plus trois récompenses par vote anonyme de la guilde.",
   edenX1RewardTeamTitle: "Joueurs d’équipe",
   edenX1RewardTeamCopy: "Vote anonyme de la guilde pour le travail d’équipe et la fiabilité remarquables.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Afficher les places de récompense pour {title}",
   edenX1RewardContributionMeta: "Les 10 premiers du dernier instantané de contribution en jeu.",
   edenX1RewardSupportMeta: "Les 4 premiers par score de soutien pondéré.",

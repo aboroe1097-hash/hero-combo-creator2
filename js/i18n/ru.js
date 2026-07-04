@@ -1065,6 +1065,7 @@ const ru = {
   edenX1RewardManagementCopy: 'Одна фиксированная награда управления и три награды по анонимному голосованию гильдии.',
   edenX1RewardTeamTitle: 'Командные игроки',
   edenX1RewardTeamCopy: 'Анонимное голосование гильдии за командную работу и надежность.',
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Показать места наград для {title}",
   edenX1RewardContributionMeta: "Первые 10 из последнего игрового снимка вклада.",
   edenX1RewardSupportMeta: "Первые 4 по взвешенному баллу помощи.",

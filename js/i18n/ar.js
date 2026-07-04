@@ -1060,6 +1060,7 @@ const ar = {
   edenX1RewardManagementCopy: "مكافأة إدارية ثابتة واحدة وثلاث مكافآت بتصويت مجهول من النقابة.",
   edenX1RewardTeamTitle: "لاعبو الفريق",
   edenX1RewardTeamCopy: "تصويت مجهول من النقابة لأفضل تعاون وموثوقية.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "عرض خانات مكافآت {title}",
   edenX1RewardContributionMeta: "أفضل 10 من أحدث لقطة مساهمات داخل اللعبة.",
   edenX1RewardSupportMeta: "أفضل 4 حسب نتيجة الدعم الموزونة.",

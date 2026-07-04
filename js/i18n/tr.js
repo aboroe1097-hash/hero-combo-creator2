@@ -1062,6 +1062,7 @@ const tr = {
   edenX1RewardManagementCopy: "Bir sabit yönetim ödülü ve üç anonim lonca oylaması ödülü.",
   edenX1RewardTeamTitle: "Takım oyuncuları",
   edenX1RewardTeamCopy: "Öne çıkan takım çalışması ve güvenilirlik için anonim lonca oylaması.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "{title} ödül slotlarını göster",
   edenX1RewardContributionMeta: "En son oyun içi katkı görüntüsünden ilk 10.",
   edenX1RewardSupportMeta: "Ağırlıklı destek skoruna göre ilk 4.",

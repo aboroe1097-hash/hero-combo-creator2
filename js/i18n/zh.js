@@ -1049,6 +1049,7 @@ const zh = {
   edenX1RewardManagementCopy: "一个固定管理奖励，加上三个匿名公会投票奖励。",
   edenX1RewardTeamTitle: "团队玩家",
   edenX1RewardTeamCopy: "匿名公会投票，用于表彰突出的团队合作和可靠性。",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "显示 {title} 奖励名额",
   edenX1RewardContributionMeta: "最新游戏内贡献快照前10名。",
   edenX1RewardSupportMeta: "按加权支援分数排名前4名。",

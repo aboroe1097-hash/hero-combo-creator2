@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260704_223518','app.css?v=20260704_223518','ocr-dashboard.css?v=20260704_223518','components.css?v=20260704_223518','atmosphere.css?v=20260704_223518','mobile.css?v=20260704_223518'];
+      var files = ['_tokens.css?v=20260704_224308','app.css?v=20260704_224308','ocr-dashboard.css?v=20260704_224308','components.css?v=20260704_224308','atmosphere.css?v=20260704_224308','mobile.css?v=20260704_224308'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260704_223518') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260704_224308') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260704_223518"></script>
+  <script src="js/maintenance-config.js?v=20260704_224308"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -116,21 +116,25 @@
               <span class="eden-x1-flow-count">4</span>
               <span class="eden-x1-flow-label" data-i18n="edenX1RewardSupportTitle">Support Work</span>
               <span class="eden-x1-flow-copy" data-i18n="edenX1RewardSupportCopy">Banners, pathing, shield walls, and other recorded season support.</span>
+              <span class="eden-x1-flow-label eden-x1-flow-action" data-i18n="edenX1RewardCardAction">View table &gt;</span>
             </button>
             <button class="eden-x1-flow-card" type="button" data-reward-view="contribution" data-reward-title-key="edenX1RewardLeaderboardTitle" aria-pressed="false">
               <span class="eden-x1-flow-count">10</span>
               <span class="eden-x1-flow-label" data-i18n="edenX1RewardLeaderboardTitle">Total Contribution</span>
               <span class="eden-x1-flow-copy" data-i18n="edenX1RewardLeaderboardCopy">Direct in-game contribution leaderboard rewards.</span>
+              <span class="eden-x1-flow-label eden-x1-flow-action" data-i18n="edenX1RewardCardAction">View table &gt;</span>
             </button>
             <button class="eden-x1-flow-card" type="button" data-reward-view="management" data-reward-title-key="edenX1RewardManagementTitle" aria-pressed="false">
               <span class="eden-x1-flow-count">4</span>
               <span class="eden-x1-flow-label" data-i18n="edenX1RewardManagementTitle">R4 / Management</span>
               <span class="eden-x1-flow-copy" data-i18n="edenX1RewardManagementCopy">One fixed management reward plus three anonymous guild vote rewards.</span>
+              <span class="eden-x1-flow-label eden-x1-flow-action" data-i18n="edenX1RewardCardAction">View table &gt;</span>
             </button>
             <button class="eden-x1-flow-card" type="button" data-reward-view="team" data-reward-title-key="edenX1RewardTeamTitle" aria-pressed="false">
               <span class="eden-x1-flow-count">2</span>
               <span class="eden-x1-flow-label" data-i18n="edenX1RewardTeamTitle">Team Players</span>
               <span class="eden-x1-flow-copy" data-i18n="edenX1RewardTeamCopy">Anonymous guild vote for standout teamwork and reliability.</span>
+              <span class="eden-x1-flow-label eden-x1-flow-action" data-i18n="edenX1RewardCardAction">View table &gt;</span>
             </button>
           </div>
         </section>
@@ -173,6 +177,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260704_223518"></script>
+  <script type="module" src="js/eden-x1.js?v=20260704_224308"></script>
 </body>
 </html>

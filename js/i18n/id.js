@@ -1061,6 +1061,7 @@ const id = {
   edenX1RewardManagementCopy: "Satu hadiah manajemen tetap ditambah tiga hadiah vote guild anonim.",
   edenX1RewardTeamTitle: "Pemain tim",
   edenX1RewardTeamCopy: "Vote guild anonim untuk kerja sama tim dan keandalan yang menonjol.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Tampilkan slot hadiah {title}",
   edenX1RewardContributionMeta: "10 teratas dari snapshot kontribusi dalam game terbaru.",
   edenX1RewardSupportMeta: "4 teratas berdasarkan skor dukungan berbobot.",

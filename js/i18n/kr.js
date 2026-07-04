@@ -1058,6 +1058,7 @@ const kr = {
   edenX1RewardManagementCopy: "고정 관리 보상 1개와 익명 길드 투표 보상 3개입니다.",
   edenX1RewardTeamTitle: "팀 플레이어",
   edenX1RewardTeamCopy: "뛰어난 팀워크와 신뢰도를 위한 익명 길드 투표입니다.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "{title} 보상 슬롯 표시",
   edenX1RewardContributionMeta: "최신 게임 내 기여도 스냅샷 상위 10명입니다.",
   edenX1RewardSupportMeta: "가중 지원 점수 상위 4명입니다.",

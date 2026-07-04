@@ -1846,6 +1846,7 @@ test.describe('app smoke tabs', () => {
 
     const supportCard = page.locator('[data-reward-view="support"]');
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(supportCard.locator('.eden-x1-flow-action')).toHaveText('View table');
     await expect(panel.locator('h2')).toContainText('Support Work');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 4');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
@@ -1899,9 +1900,18 @@ test.describe('app smoke tabs', () => {
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
-    await expect(
-      panel.locator('tbody tr', { hasText: 'Mike' }).locator('.dash-weighted-conduct-trigger')
-    ).toContainText('+2');
+    const mikeConductTrigger = panel
+      .locator('tbody tr', { hasText: 'Mike' })
+      .locator('.dash-weighted-conduct-trigger');
+    await expect(mikeConductTrigger).toContainText('+2');
+    await mikeConductTrigger.hover();
+    const conductPopover = mikeConductTrigger.locator('.dash-weighted-score-popover');
+    await expect(conductPopover).toBeVisible();
+    await expect(conductPopover).toHaveText(
+      'This score is assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
+    );
+    await expect(conductPopover).not.toContainText('Conduct points');
+    await expect(conductPopover).not.toContainText('20,000');
     await panel.locator('#edenX1TableSearch').fill('Mike');
     await expect(panel.locator('tbody tr')).toHaveCount(1);
     await expect(panel.locator('tbody tr').first()).toContainText('Mike');

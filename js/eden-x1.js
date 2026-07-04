@@ -442,15 +442,10 @@ function renderWeightedScorePopover(row, index) {
 function renderConductScorePopover(row, index) {
   const tooltipId = `edenX1ConductTip-${index}`;
   const conductBonus = conductBonusValue(row);
-  const conductPoints = Number.isFinite(Number(row.conductPoints))
-    ? Number(row.conductPoints)
-    : conductBonus * 10000;
   return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${formatSignedNumber(conductBonus)}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>${esc(t('edenX1BreakdownConductPoints'))}</strong>
-      <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(conductBonus)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(t('edenX1ConductPrivateNotice'))}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover dash-weighted-conduct-popover" role="tooltip">
+      <small class="dash-weighted-conduct-note">${esc(t('edenX1ConductPrivateNotice'))}</small>
     </span>
   </button>`;
 }

@@ -1068,6 +1068,7 @@ const de = {
   edenX1RewardManagementCopy: "Eine feste Verwaltungsbelohnung plus drei anonyme Gildenabstimmungs-Belohnungen.",
   edenX1RewardTeamTitle: "Teamspieler",
   edenX1RewardTeamCopy: "Anonyme Gildenabstimmung für herausragende Teamarbeit und Zuverlässigkeit.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Belohnungsplätze für {title} anzeigen",
   edenX1RewardContributionMeta: "Beste 10 aus dem neuesten Beitrags-Snapshot im Spiel.",
   edenX1RewardSupportMeta: "Beste 4 nach gewichteter Unterstützungswertung.",

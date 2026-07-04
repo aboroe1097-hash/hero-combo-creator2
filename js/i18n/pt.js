@@ -1048,6 +1048,7 @@ const pt = {
   edenX1RewardManagementCopy: "Uma recompensa fixa de gestão mais três recompensas por voto anônimo da guilda.",
   edenX1RewardTeamTitle: "Jogadores de equipe",
   edenX1RewardTeamCopy: "Voto anônimo da guilda para destaque em trabalho em equipe e confiabilidade.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Mostrar vagas de recompensa de {title}",
   edenX1RewardContributionMeta: "Os 10 melhores do snapshot mais recente de contribuição do jogo.",
   edenX1RewardSupportMeta: "Os 4 melhores por pontuação ponderada de apoio.",

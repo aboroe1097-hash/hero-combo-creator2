@@ -1061,6 +1061,7 @@ const en = {
   edenX1RewardManagementCopy: "One fixed management reward plus three anonymous guild vote rewards.",
   edenX1RewardTeamTitle: "Team Players",
   edenX1RewardTeamCopy: "Anonymous guild vote for standout teamwork and reliability.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Show {title} reward slots",
   edenX1RewardContributionMeta: "Top 10 from the latest in-game contribution snapshot.",
   edenX1RewardSupportMeta: "Top 4 by weighted support score.",

@@ -1065,6 +1065,7 @@ const es = {
   edenX1RewardManagementCopy: "Una recompensa fija de gestión más tres recompensas por voto anónimo del gremio.",
   edenX1RewardTeamTitle: "Jugadores de equipo",
   edenX1RewardTeamCopy: "Voto anónimo del gremio por trabajo en equipo y fiabilidad destacados.",
+  edenX1RewardCardAction: "View table",
   edenX1RewardViewAria: "Mostrar plazas de recompensa de {title}",
   edenX1RewardContributionMeta: "Los 10 mejores de la última captura de contribución del juego.",
   edenX1RewardSupportMeta: "Los 4 mejores por puntuación ponderada de apoyo.",
