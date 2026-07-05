@@ -65,7 +65,7 @@ function isSkinSeasonAvailable(heroOrName, seasons = generatorSelectedSeasons) {
   if (!hero) return false;
   const releaseIndex = getSeasonIndex(hero.releaseSeason || hero.season);
   if (releaseIndex < 0) return false;
-  return getMaxSelectedSeasonIndex(seasons) >= releaseIndex + 1;
+  return getMaxSelectedSeasonIndex(seasons) >= releaseIndex;
 }
 
 function normalizeStoredHeroList(value) {

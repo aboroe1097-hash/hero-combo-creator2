@@ -883,6 +883,17 @@
   flex-wrap: wrap;
   gap: 1rem;
 }
+#ocrDashboardRoot .dash-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.52rem;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-header > div:first-child > *,
+#ocrDashboardRoot .dash-api-key {
+  margin-top: 0;
+}
 #ocrDashboardRoot .dash-h1 {
   font-size: 1.5rem;
   font-weight: 800;
@@ -892,9 +903,10 @@
 #ocrDashboardRoot .dash-subtitle {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-top: 0.25rem;
+  margin-top: 0;
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 #ocrDashboardRoot .dash-updated {
@@ -907,7 +919,7 @@
   flex-wrap: wrap;
   width: fit-content;
   max-width: 100%;
-  margin-top: 0.65rem;
+  margin-top: 0;
   padding: 0.45rem 0.65rem;
   border: 1px solid rgba(56, 189, 248, 0.28);
   border-radius: 999px;
@@ -1200,7 +1212,7 @@
   display: grid;
   grid-template-columns: minmax(220px, 0.72fr) minmax(0, 2fr);
   gap: 0.85rem;
-  margin: 0 0 1.35rem;
+  margin: 0.85rem 0 1.35rem;
   padding: 0.85rem;
   border: 1px solid rgba(45, 212, 191, 0.22);
   border-radius: 16px;
@@ -1282,8 +1294,8 @@
   display: block;
   margin-top: 0.45rem;
   color: var(--text-primary);
-  font-size: 1rem;
-  line-height: 1.16;
+  font-size: clamp(1.06rem, 1.05vw, 1.24rem);
+  line-height: 1.12;
 }
 #ocrDashboardRoot .dash-ops-card p {
   margin: 0.45rem 0 0;
@@ -1341,7 +1353,7 @@
 }
 @media (max-width: 640px) {
   #ocrDashboardRoot .dash-ops-overview {
-    margin-bottom: 1rem;
+    margin: 0.65rem 0 1rem;
     padding: 0.65rem;
     border-radius: 14px;
   }
@@ -1730,6 +1742,22 @@
   color: var(--text-dim);
 }
 
+@media (min-width: 981px) {
+  #dashInsightsCard {
+    align-self: start;
+    padding: 1rem;
+  }
+
+  #dashInsightsCard .dash-insights-body {
+    gap: 0.95rem;
+    padding: 0;
+  }
+
+  #dashInsightsCard .dash-activity-chart-panel {
+    height: 204px;
+  }
+}
+
 /* Unified Dropdown */
 #ocrDashboardRoot .dash-dropdown {
   position: relative;
@@ -1937,6 +1965,23 @@
   gap: 0.5rem;
   max-height: 480px;
   overflow-y: auto;
+}
+@media (min-width: 981px) {
+  #dashAttackHistoryCard {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #dashAttackHistoryCard .dash-card-hdr {
+    flex: 0 0 auto;
+  }
+
+  #dashAttackHistoryCard .dash-attack-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
 }
 #ocrDashboardRoot .dash-attack-day-header {
   margin-bottom: 6px;

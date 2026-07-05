@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260705_120720','app.css?v=20260705_120720','ocr-dashboard.css?v=20260705_120720','components.css?v=20260705_120720','atmosphere.css?v=20260705_120720','mobile.css?v=20260705_120720','eden-x1.css?v=20260705_120720'];
+      var files = ['_tokens.css?v=20260705_144535','app.css?v=20260705_144535','ocr-dashboard.css?v=20260705_144535','components.css?v=20260705_144535','atmosphere.css?v=20260705_144535','mobile.css?v=20260705_144535','eden-x1.css?v=20260705_144535'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260705_120720') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260705_144535') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260705_120720"></script>
+  <script src="js/maintenance-config.js?v=20260705_144535"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -108,7 +108,7 @@
     </header>
 
     <main id="adminPageRoot" class="admin-page-main">
-      <section id="ocrDashboardSection" class="admin-page-panel eden-x1-panel">
+      <section id="ocrDashboardSection" class="admin-page-panel eden-x1-panel eden-x1-panel--loading">
         <div class="eden-x1-notice">
           <strong data-i18n="edenX1NoticeTitle">Demo view - not final.</strong>
           <span data-i18n="edenX1NoticeCopy">This page is open for early tracking only. Final rewards will be reviewed and confirmed at season end after all contribution, banner, pathing, shield wall, and eligibility records are checked.</span>
@@ -226,6 +226,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260705_120720"></script>
+  <script type="module" src="js/eden-x1.js?v=20260705_144535"></script>
 </body>
 </html>

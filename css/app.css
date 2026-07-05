@@ -11071,19 +11071,19 @@ body {
 .door-wing-left .door-wing-art {
   object-position: right center;
   filter:
-    drop-shadow(0 0 18px rgba(34, 211, 238, 0.44))
-    drop-shadow(0 0 34px rgba(217, 70, 239, 0.32))
-    saturate(1.16)
-    contrast(1.06);
+    drop-shadow(0 0 12px rgba(34, 211, 238, 0.36))
+    drop-shadow(0 0 24px rgba(217, 70, 239, 0.22))
+    saturate(1.08)
+    contrast(1.03);
 }
 
 .door-wing-right .door-wing-art {
   object-position: left center;
   filter:
-    drop-shadow(0 0 18px rgba(251, 191, 36, 0.44))
-    drop-shadow(0 0 36px rgba(244, 63, 94, 0.34))
-    saturate(1.18)
-    contrast(1.05);
+    drop-shadow(0 0 12px rgba(251, 191, 36, 0.36))
+    drop-shadow(0 0 26px rgba(244, 63, 94, 0.24))
+    saturate(1.09)
+    contrast(1.03);
 }
 
 .door-wing-art--front {
@@ -11092,8 +11092,8 @@ body {
 
 /* V10.4 larger generated wing cutouts */
 .door-wing {
-  --boot-wing-w: clamp(440px, 43vw, 760px);
-  --boot-wing-h: clamp(360px, 58vh, 680px);
+  --boot-wing-w: clamp(340px, 34vw, 600px);
+  --boot-wing-h: clamp(280px, 48vh, 560px);
   top: 50%;
   width: var(--boot-wing-w);
   height: var(--boot-wing-h);
@@ -11106,8 +11106,8 @@ body {
 }
 
 .door-wing-right {
-  --boot-wing-w: clamp(410px, 40vw, 700px);
-  --boot-wing-h: clamp(390px, 61vh, 720px);
+  --boot-wing-w: clamp(320px, 32vw, 560px);
+  --boot-wing-h: clamp(300px, 50vh, 590px);
   left: calc(50% - clamp(220px, 18vw, 330px));
 }
 
@@ -11173,23 +11173,39 @@ body {
   background:
     conic-gradient(from 0deg, transparent 0 11%, rgba(34, 211, 238, 0.58) 14%, transparent 22% 37%, rgba(251, 191, 36, 0.58) 42%, transparent 52% 72%, rgba(217, 70, 239, 0.38) 78%, transparent 88% 100%);
   filter: blur(0.6px);
-  opacity: 0.78;
+  opacity: 0.5;
   animation: gate-portal-rotate 3s linear 1;
 }
 
 .gate-lock::after {
   inset: -8px;
   background:
-    radial-gradient(circle, rgba(255,255,255,0.32), transparent 28%),
-    radial-gradient(circle, rgba(34, 211, 238, 0.2), transparent 58%);
+    radial-gradient(circle, rgba(255,255,255,0.18), transparent 28%),
+    radial-gradient(circle, rgba(34, 211, 238, 0.14), transparent 58%);
   box-shadow:
-    0 0 26px rgba(34, 211, 238, 0.36),
-    0 0 40px rgba(251, 191, 36, 0.2);
+    0 0 18px rgba(34, 211, 238, 0.28),
+    0 0 28px rgba(251, 191, 36, 0.16);
 }
 
-.gate-lock img {
+.gate-lock picture {
   position: relative;
   z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.boot-splash .gate-lock img {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 74%;
+  height: 74%;
+  margin: 0 !important;
+  border: 0 !important;
+  object-fit: contain !important;
+  object-position: center !important;
 }
 
 .boot-status-text {
@@ -11201,45 +11217,29 @@ body {
   transform: translateY(3px);
 }
 
-.door-open-left .door-wing-art,
-.door-open-right .door-wing-art {
-  animation-play-state: paused;
-  transition: transform 1.05s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.9s ease, filter 0.9s ease;
-}
-
-.door-open-left .door-wing-art {
-  transform: translate3d(22vw, -18px, 0) scale(0.86) rotate(-10deg);
-  opacity: 0;
-}
-
-.door-open-right .door-wing-art {
-  transform: translate3d(-22vw, -18px, 0) scale(0.86) rotate(10deg);
-  opacity: 0;
-}
-
 /* V11 wing-led boot reveal: the wings are the gate, not decoration on doors. */
 @keyframes boot-wing-unfurl-left {
   0% {
     transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.35), calc(var(--boot-tilt-y, 0px) * 0.35), 0) scale(0.98) rotate(-5deg);
     opacity: 1;
     filter:
-      drop-shadow(0 0 18px rgba(34, 211, 238, 0.58))
-      drop-shadow(0 0 36px rgba(217, 70, 239, 0.34));
+      drop-shadow(0 0 12px rgba(34, 211, 238, 0.5))
+      drop-shadow(0 0 24px rgba(217, 70, 239, 0.24));
   }
   42% {
-    transform: translate3d(-8vw, -4vh, 0) scale(1.12) rotate(-15deg);
+    transform: translate3d(-5vw, -2.5vh, 0) scale(1.04) rotate(-11deg);
     opacity: 1;
     filter:
-      drop-shadow(0 0 30px rgba(34, 211, 238, 0.8))
-      drop-shadow(0 0 74px rgba(217, 70, 239, 0.48));
+      drop-shadow(0 0 18px rgba(34, 211, 238, 0.62))
+      drop-shadow(0 0 42px rgba(217, 70, 239, 0.3));
   }
   100% {
-    transform: translate3d(-34vw, -7vh, 0) scale(1.22) rotate(-29deg);
-    opacity: 0.3;
+    transform: translate3d(-25vw, -4vh, 0) scale(1.06) rotate(-21deg);
+    opacity: 0.22;
     filter:
-      drop-shadow(0 0 28px rgba(34, 211, 238, 0.72))
-      drop-shadow(0 0 82px rgba(217, 70, 239, 0.4))
-      blur(0.3px);
+      drop-shadow(0 0 18px rgba(34, 211, 238, 0.52))
+      drop-shadow(0 0 46px rgba(217, 70, 239, 0.24))
+      blur(0.2px);
   }
 }
 
@@ -11248,23 +11248,23 @@ body {
     transform: translate3d(calc(var(--boot-tilt-x, 0px) * 0.35), calc(var(--boot-tilt-y, 0px) * 0.35), 0) scale(0.98) rotate(5deg);
     opacity: 1;
     filter:
-      drop-shadow(0 0 18px rgba(251, 191, 36, 0.58))
-      drop-shadow(0 0 38px rgba(244, 63, 94, 0.36));
+      drop-shadow(0 0 12px rgba(251, 191, 36, 0.5))
+      drop-shadow(0 0 24px rgba(244, 63, 94, 0.26));
   }
   42% {
-    transform: translate3d(8vw, -4vh, 0) scale(1.12) rotate(15deg);
+    transform: translate3d(5vw, -2.5vh, 0) scale(1.04) rotate(11deg);
     opacity: 1;
     filter:
-      drop-shadow(0 0 31px rgba(251, 191, 36, 0.82))
-      drop-shadow(0 0 76px rgba(244, 63, 94, 0.48));
+      drop-shadow(0 0 18px rgba(251, 191, 36, 0.64))
+      drop-shadow(0 0 42px rgba(244, 63, 94, 0.3));
   }
   100% {
-    transform: translate3d(34vw, -7vh, 0) scale(1.2) rotate(29deg);
-    opacity: 0.3;
+    transform: translate3d(25vw, -4vh, 0) scale(1.05) rotate(21deg);
+    opacity: 0.22;
     filter:
-      drop-shadow(0 0 30px rgba(251, 191, 36, 0.74))
-      drop-shadow(0 0 82px rgba(244, 63, 94, 0.42))
-      blur(0.3px);
+      drop-shadow(0 0 18px rgba(251, 191, 36, 0.54))
+      drop-shadow(0 0 46px rgba(244, 63, 94, 0.26))
+      blur(0.2px);
   }
 }
 
@@ -12689,24 +12689,6 @@ body.admin-standalone-page .admin-control-row {
   }
 }
 
-.boot-splash .perspective-container {
-  --wing-flap-duration: 3.6s;
-}
-
-.boot-splash .door-wing {
-  animation-duration: var(--wing-flap-duration, 3.6s) !important;
-  filter:
-    drop-shadow(0 0 18px color-mix(in srgb, var(--wing-secondary) 58%, transparent))
-    drop-shadow(0 0 34px color-mix(in srgb, var(--wing-hot) 24%, transparent)) !important;
-}
-
-.door-open-left .door-wing,
-.door-open-right .door-wing {
-  animation-duration: 1.2s !important;
-  animation-direction: normal !important;
-  animation-iteration-count: 1 !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .boot-splash .door-wing,
   .boot-splash .door-wing-art,
@@ -13235,6 +13217,59 @@ body.admin-standalone-page > .app-shell {
 .command-actions {
   padding: clamp(12px, 1.5vw, 18px) !important;
   gap: 12px !important;
+}
+
+@media (min-width: 1181px) {
+  body.admin-standalone-page .admin-command-header {
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 370px) !important;
+    gap: clamp(10px, 1.1vw, 16px) !important;
+    align-items: stretch;
+  }
+
+  body.admin-standalone-page .admin-brand-row {
+    grid-template-columns: clamp(140px, 10vw, 176px) minmax(0, 1fr);
+    column-gap: clamp(1.35rem, 2vw, 2rem);
+  }
+
+  body.admin-standalone-page .admin-command-brand .version-ribbon {
+    margin-left: calc(clamp(140px, 10vw, 176px) + clamp(1.35rem, 2vw, 2rem));
+  }
+
+  body.admin-standalone-page .admin-brand-logo {
+    width: clamp(140px, 10vw, 176px) !important;
+    height: clamp(140px, 10vw, 176px) !important;
+  }
+
+  body.admin-standalone-page .admin-brand-row > div {
+    align-self: center;
+  }
+
+  body.admin-standalone-page .admin-shell-copy {
+    margin-left: calc(clamp(140px, 10vw, 176px) + clamp(1.35rem, 2vw, 2rem)) !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions {
+    justify-self: end;
+    width: 100% !important;
+    padding: 12px !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .admin-control-row {
+    display: grid;
+    grid-template-columns: minmax(78px, 0.72fr) minmax(136px, 1fr) 40px;
+    gap: 8px !important;
+    width: 100%;
+    justify-content: stretch !important;
+  }
+
+  body.admin-standalone-page .admin-command-actions .global-game-clock,
+  body.admin-standalone-page .admin-command-actions .lang-select-wrapper,
+  body.admin-standalone-page .admin-command-actions .lang-select-wrapper > div,
+  body.admin-standalone-page .admin-command-actions .admin-back-tools {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 768px) {
@@ -14274,54 +14309,6 @@ body.admin-standalone-page > .app-shell {
   text-align: center;
 }
 
-.eden-x1-weighted-card .dash-card-hdr-wrap {
-  align-items: flex-start;
-  gap: 0.85rem;
-}
-
-.eden-x1-weighted-card .dash-weighted-table-controls {
-  justify-content: flex-end;
-}
-
-.eden-x1-weighted-card .dash-weighted-view-toggle {
-  border-color: rgba(103, 232, 249, 0.38);
-  background: rgba(15, 23, 42, 0.72);
-  color: var(--text-primary);
-}
-
-.eden-x1-weighted-card .dash-weighted-view-toggle:hover,
-.eden-x1-weighted-card .dash-weighted-view-toggle:focus-visible {
-  border-color: rgba(103, 232, 249, 0.72);
-  background: rgba(34, 211, 238, 0.14);
-}
-
-.eden-x1-weighted-card .dash-weighted-reward-trigger .dash-weighted-score-popover {
-  right: auto;
-  left: 0;
-}
-
-.eden-x1-weighted-card .dash-weighted-reward-trigger .dash-weighted-score-popover::before {
-  right: auto;
-  left: 1.25rem;
-}
-
-.eden-x1-weighted-card .dash-weighted-reward-trigger:hover .dash-weighted-score-popover,
-.eden-x1-weighted-card .dash-weighted-reward-trigger:focus-visible .dash-weighted-score-popover,
-.eden-x1-weighted-card .dash-weighted-reward-trigger:focus .dash-weighted-score-popover {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
-}
-
-.eden-x1-weighted-card .dash-weighted-score-popover > small {
-  display: block;
-  margin-top: 0.55rem;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 1.4;
-}
-
 @media (min-width: 981px) {
   .eden-x1-page #ocrDashboardRoot .eden-x1-public-analytics {
     display: block !important;
@@ -14346,17 +14333,11 @@ body.admin-standalone-page > .app-shell {
   color: #334155;
 }
 
-[data-theme="light"] .eden-x1-notice strong {
-  color: #dc2626;
-  text-shadow: 0 0 18px rgba(220, 38, 38, 0.14);
-}
-
 [data-theme="light"] .eden-x1-reward-panel {
   border-color: rgba(14, 116, 144, 0.18);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 245, 249, 0.9)),
     radial-gradient(circle at 12% 0%, rgba(34, 211, 238, 0.12), transparent 34%);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
 }
 
 [data-theme="light"] .eden-x1-flow-card {
@@ -14373,11 +14354,6 @@ body.admin-standalone-page > .app-shell {
   box-shadow:
     inset 0 0 0 1px rgba(14, 116, 144, 0.12),
     0 16px 32px rgba(15, 23, 42, 0.09);
-}
-
-[data-theme="light"] .eden-x1-weighted-card .dash-weighted-view-toggle {
-  background: rgba(255, 255, 255, 0.88);
-  color: #0f172a;
 }
 
 @media (max-width: 980px) {
@@ -14402,16 +14378,6 @@ body.admin-standalone-page > .app-shell {
     transform: translateX(50%) rotate(135deg);
   }
 
-  .eden-x1-weighted-card .dash-card-hdr-wrap,
-  .eden-x1-weighted-card .dash-weighted-table-controls {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .eden-x1-weighted-card .dash-weighted-view-toggle {
-    justify-content: center;
-    width: 100%;
-  }
 }
 
 @media (max-width: 480px) {

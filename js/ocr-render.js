@@ -459,7 +459,7 @@ function renderStructurePerformance(attacks) {
         mvpValue: mvp?.[1] || 0,
       };
     })
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total || b.attacks - a.attacks || a.label.localeCompare(b.label));
 
   if (!rows.length) {
     host.innerHTML = '<div class="dash-empty">No structure data yet</div>';
@@ -1284,17 +1284,17 @@ function renderSpecialOpsCards() {
   const shieldLatest = latestRecord(shieldRecords);
   return `
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-banners">
-      <span class="dash-ops-label">Banners</span>
+      <span class="dash-ops-label">${esc(adminT('adminBannersTab'))}</span>
       <strong>${bannerRows ? `${bannerRows} names` : 'No records'}</strong>
       <p>${bannerRecords.length} upload${bannerRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(bannerRecords)} matched${bannerLatest ? ` &middot; latest ${esc(bannerLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-pathers">
-      <span class="dash-ops-label">Pathers / Speed Tiles</span>
+      <span class="dash-ops-label">${esc(adminT('edenX1ThPathers'))}</span>
       <strong>${patherRows ? `${patherRows} assignments` : 'No records'}</strong>
       <p>${patherRecords.length} plan${patherRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(patherRecords)} matched${patherLatest ? ` &middot; latest ${esc(patherLatest.date || 'saved')}` : ''}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-special dash-ops-card-shield">
-      <span class="dash-ops-label">Shield Wall</span>
+      <span class="dash-ops-label">${esc(adminT('adminShieldWallTab'))}</span>
       <strong>${shieldRows ? `${shieldRows} names` : 'No records'}</strong>
       <p>${shieldRecords.length} list${shieldRecords.length === 1 ? '' : 's'} &middot; ${countDutyMatched(shieldRecords)} matched${shieldLatest ? ` &middot; latest ${esc(shieldLatest.date || 'saved')}` : ''}</p>
     </div>
@@ -1370,22 +1370,22 @@ function renderOpsOverview(attacks, psum) {
   const lowNames = lowParticipation.map((p) => esc(p.name)).join(', ');
   host.innerHTML = `
     <div class="dash-ops-card dash-ops-card-target">
-      <span class="dash-ops-label">Target Mix</span>
+      <span class="dash-ops-label">${esc(adminT('edenX1InsightTargetMix'))}</span>
       <strong>${esc(topStructure.label)}</strong>
       <p>${topStructure.count} hit${topStructure.count === 1 ? '' : 's'} · ${compactValue(topStructure.total)} demo · ${structures.length} unique target groups</p>
     </div>
     <div class="dash-ops-card dash-ops-card-attendance">
-      <span class="dash-ops-label">Attendance Risk</span>
+      <span class="dash-ops-label">${esc(adminT('edenX1InsightAttendanceRisk'))}</span>
       <strong>${avgAttendance} avg players</strong>
       <p>${lowParticipation.length ? `${lowParticipation.length} low-frequency names: ${lowNames}` : 'No low-frequency names in the current filter.'}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-mvp">
-      <span class="dash-ops-label">Best Per Hit</span>
+      <span class="dash-ops-label">${esc(adminT('edenX1InsightBestPerHit'))}</span>
       <strong>${esc(bestPlayer?.name || '---')}</strong>
       <p>${bestPlayer ? `${compactValue(bestPlayer.avg)} avg · ${bestPlayer.participation_count} hit${bestPlayer.participation_count === 1 ? '' : 's'}` : 'No player data yet.'}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-health">
-      <span class="dash-ops-label">Data Health</span>
+      <span class="dash-ops-label">${esc(adminT('edenX1InsightDataHealth'))}</span>
       <strong>${validationIssues ? `${validationIssues} review` : 'Clean'}</strong>
       <p>${latest ? `Latest: ${esc(structureLabel(latest))} · ${displayGameTime(latest.game_time)}` : 'No recent target found.'}</p>
     </div>`;
@@ -1508,34 +1508,43 @@ function render() {
       if (!grouped[day]) grouped[day] = [];
       grouped[day].push(a);
     });
-    const sortedDays = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+    const dayLatestMs = (day) =>
+      Math.max(
+        ...(grouped[day] || []).map((attack) => parseGameTimeDate(attack.game_time)?.getTime() || 0)
+      );
+    const sortedDays = Object.keys(grouped).sort(
+      (a, b) => dayLatestMs(b) - dayLatestMs(a) || String(b).localeCompare(String(a))
+    );
     sortedDays.forEach((day) => {
       const dayHeader = document.createElement('div');
       dayHeader.className = 'dash-attack-day-header';
       dayHeader.textContent = day;
       al.appendChild(dayHeader);
-      grouped[day].forEach((a) => {
-        const val = getAttackValidation(a);
-        let badge = '';
-        if (val) {
-          badge = val.overridden
-            ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
-            : val.match
-              ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
-              : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct * 100).toFixed(1)}% off)">!</span>`;
-        }
-        const d = document.createElement('div');
-        d.className = 'dash-attack-item';
-        let timeStr = displayGameTime(a.game_time);
-        if (a.start_time) {
-          const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
-          if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
-          else timeStr = `${esc(a.start_time)} - ${timeStr}`;
-        }
-        d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
-        d.onclick = () => showModal('attack', a);
-        al.appendChild(d);
-      });
+      sortAttacksChrono(grouped[day])
+        .slice()
+        .reverse()
+        .forEach((a) => {
+          const val = getAttackValidation(a);
+          let badge = '';
+          if (val) {
+            badge = val.overridden
+              ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
+              : val.match
+                ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
+                : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct * 100).toFixed(1)}% off)">!</span>`;
+          }
+          const d = document.createElement('div');
+          d.className = 'dash-attack-item';
+          let timeStr = displayGameTime(a.game_time);
+          if (a.start_time) {
+            const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
+            if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
+            else timeStr = `${esc(a.start_time)} - ${timeStr}`;
+          }
+          d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
+          d.onclick = () => showModal('attack', a);
+          al.appendChild(d);
+        });
     });
   }
 
@@ -1839,10 +1848,17 @@ function showModal(type, data) {
             `<div class="dash-distrib-item"><span class="dash-distrib-bar" style="width:${(v / data.players_count) * 100}%"></span><span class="dash-distrib-label">${k}</span><span class="dash-distrib-count">${v}</span></div>`
         )
         .join('')}</div>`;
+      const orderedPlayers = [...(data.players || [])].sort(
+        (a, b) =>
+          valueOf(b.value || b.val) - valueOf(a.value || a.val) ||
+          (valueOf(a.rank) || 9999) - (valueOf(b.rank) || 9999) ||
+          String(a.name || '').localeCompare(String(b.name || ''))
+      );
       h += `<div class="dash-modal-section-label">Player Breakdown</div><table class="dash-table dash-table--stack"><thead><tr><th>#</th><th>Name</th><th class="dash-table-right">Demolition</th>${!isGuest() ? '<th></th>' : ''}</tr></thead><tbody>`;
-      data.players.forEach((p) => {
+      orderedPlayers.forEach((p, index) => {
+        const displayRank = index + 1;
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
-        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${p.rank <= 3 ? 'rank-' + p.rank : ''}">#${p.rank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
+        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${displayRank <= 3 ? 'rank-' + displayRank : ''}">#${displayRank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
         if (!isGuest()) {
           h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-player" data-attack-id="${esc(data.id)}" data-player-name="${esc(encName)}">${esc(adminT('adminEdit'))}</button></td>`;
         }

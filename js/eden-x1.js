@@ -186,6 +186,10 @@ function setRewardFlowReady(ready) {
   updateRewardFlowControls();
 }
 
+function setEdenPanelLoading(loading) {
+  $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', Boolean(loading));
+}
+
 function bindRewardFlowControls() {
   document.querySelectorAll('[data-reward-view]').forEach((button) => {
     if (button.dataset.rewardBound) return;
@@ -1388,6 +1392,14 @@ function renderPublicPlayerDetail(player) {
 function renderPublicStructureDetail(structure) {
   if (!structure) return renderPublicEmpty(t('edenX1NoStructureData'));
   const attacks = sortPublicAttacks(structure.attacks);
+  const players = (Array.isArray(structure.players) ? structure.players : [])
+    .slice()
+    .sort(
+      (a, b) =>
+        valueOf(b.total) - valueOf(a.total) ||
+        (valueOf(a.rank) || 9999) - (valueOf(b.rank) || 9999) ||
+        String(a.name || '').localeCompare(String(b.name || ''))
+    );
   return `<div class="dash-modal-grid">
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${formatScore(structure.total_demolition)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${formatScore(structure.attack_count)}</div></div>
@@ -1397,7 +1409,7 @@ function renderPublicStructureDetail(structure) {
     <div class="dash-main-grid eden-x1-public-detail-grid" style="grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:start">
       <div class="dash-card-align-start">
         <div class="dash-modal-section-label">${esc(t('edenX1ModalTopPlayers'))}</div>
-        <div class="dash-chart">${structure.players
+        <div class="dash-chart">${players
           .slice(0, 8)
           .map(
             (player, index) => `<button type="button" class="dash-top-item dash-top-item--wide eden-x1-clickable" style="appearance:none;border:0;background:transparent;color:inherit;font:inherit;text-align:left;width:100%" data-public-player="${esc(player.key)}">
@@ -1844,6 +1856,7 @@ async function main() {
       }
       setRewardFlowReady(false);
       if (panel) panel.innerHTML = '';
+      setEdenPanelLoading(false);
       return;
     }
 
@@ -1856,6 +1869,7 @@ async function main() {
     if (!snap.exists()) {
       setRewardFlowReady(false);
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
+      setEdenPanelLoading(false);
       return;
     }
 
@@ -1879,6 +1893,7 @@ async function main() {
     }
     if (panel) panel.innerHTML = '';
     setRewardFlowReady(false);
+    setEdenPanelLoading(false);
   }
 }
 
@@ -1907,6 +1922,7 @@ function applyDashboardData(data = {}) {
   const panel = $('dashWeightedContributionPanel');
   if (!model.rows || !model.rows.length) {
     if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
+    setEdenPanelLoading(false);
     renderPublicDashboard(data);
     return;
   }
@@ -1919,6 +1935,7 @@ function applyDashboardData(data = {}) {
   setRewardFlowReady(true);
   renderCurrentTable();
   renderPublicDashboard(data);
+  setEdenPanelLoading(false);
 }
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {

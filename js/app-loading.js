@@ -125,7 +125,7 @@ function seedBootParticles() {
     };
 
     const frag = document.createDocumentFragment();
-    for (let i = 0; i < 42; i += 1) {
+    for (let i = 0; i < 24; i += 1) {
         frag.appendChild(makeParticle(i % 2 === 0 ? 'ice' : 'fire', i));
     }
     layer.appendChild(frag);
