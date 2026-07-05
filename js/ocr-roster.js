@@ -2254,13 +2254,13 @@ function showExGuildMatchResults(input) {
   const matches = findExGuildMatchTargets(input.value);
   if (!matches.length) {
     results.hidden = false;
-    results.innerHTML = `<div class="dash-exguild-match-empty">No contribution names found</div>`;
+    results.innerHTML = `<div class="dash-xg-empty">No contribution names found</div>`;
     return;
   }
   results.hidden = false;
   results.innerHTML = matches
     .map(
-      (target) => `<button type="button" class="dash-exguild-match-option" data-exguild-match-option data-value="${esc(target.value)}">
+      (target) => `<button type="button" class="dash-xg-option" data-exguild-match-option data-value="${esc(target.value)}">
         <strong>${esc(target.value)}</strong>
         <span>${target.rank ? `#${esc(target.rank)} · ` : ''}${esc(target.guild || target.source)}${target.recordLabel ? ` · ${esc(target.recordLabel)}` : ''}</span>
       </button>`
@@ -3426,20 +3426,20 @@ function renderExGuildTable() {
         <td style="font-size:0.72rem;color:var(--text-dim)">${esc(entry.sourceNote || '')}</td>
         <td>${statusBadge}</td>
         <td>
-          <div class="dash-exguild-match-combobox" data-exguild-match>
-            <input type="text" class="dash-exguild-match-input" data-exguild-match-input data-entry-id="${esc(entry.id)}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" autocomplete="off" spellcheck="false">
-            <button type="button" class="dash-exguild-match-clear" data-exguild-clear-match title="Clear match" aria-label="Clear match">x</button>
-            <div class="dash-exguild-match-results" data-exguild-match-results hidden></div>
+          <div class="dash-xg-box" data-exguild-match>
+            <input type="text" class="dash-input dash-xg-input" data-exguild-match-input data-entry-id="${esc(entry.id)}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" autocomplete="off" spellcheck="false">
+            <button type="button" class="dash-banner-del-btn dash-xg-clear" data-exguild-clear-match title="Clear match" aria-label="Clear match">x</button>
+            <div class="dash-xg-results" data-exguild-match-results hidden></div>
           </div>
         </td>
         <td><button class="dash-banner-del-btn" onclick="deleteExGuildEntry('${esc(entry.id)}')" title="${esc(adminT('adminDelete'))}">x</button></td>
       </tr>`;
     })
     .join('');
-  host.innerHTML = `<div class="dash-exguild-tools">
+  host.innerHTML = `<div class="dash-xg-tools">
     <span>${targets.length} searchable contribution / roster names</span>
   </div>
-  <table class="dash-banner-table dash-exguild-table">
+  <table class="dash-banner-table dash-xg-table">
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
