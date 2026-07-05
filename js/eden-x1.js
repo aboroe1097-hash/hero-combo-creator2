@@ -260,6 +260,7 @@ function filterWeightedRows(rows) {
       row.playerName,
       row.sourceName,
       row.playerKey,
+      formatScore(row.contributionExGuild || 0),
       contributionRewardLabel(row.currentReward),
       contributionRewardLabel(row.finalReward),
     ]
@@ -279,6 +280,7 @@ function sortedWeightedRows(rows, numberMode) {
     currentRank: (row) => row.currentRank || 999999,
     reward: (row) => contributionRewardLabel(row.currentReward),
     contribution: (row) => valueOf(row.contributionScore),
+    exGuild: (row) => valueOf(row.contributionExGuild),
     shieldWalls: (row) => valueOf(row.shieldWalls),
     pathers: (row) => valueOf(row.pathers),
     banners: (row) => valueOf(row.banners),
@@ -339,6 +341,7 @@ function renderWeightedMobileSortSelect(numberMode) {
     ['weighted', t('edenX1ThWeightedScore')],
     ['player', t('adminContributionMember')],
     ['contribution', t('edenX1ThContribution')],
+    ['exGuild', t('edenX1ThExGuild')],
     [rankKey, t(numberMode === 'current' ? 'adminContributionRank' : 'adminContributionFinalRank')],
   ];
   return `<label class="dash-weighted-mobile-sort" for="edenX1MobileSort">
@@ -983,6 +986,7 @@ function renderPublicWeightedContributionTable() {
           <th class="dash-weighted-detail-col">${esc(t('adminContributionRank'))}</th>
           <th class="dash-weighted-detail-col">${esc(t('adminContributionReward'))}</th>
           <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThContribution'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThExGuild'))}</th>
           <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThShieldWalls'))}</th>
           <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThPathers'))}</th>
           <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThBanners'))}</th>
@@ -1011,6 +1015,7 @@ function renderPublicWeightedContributionTable() {
               <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
@@ -1641,7 +1646,7 @@ function renderTable(rows, recordLabel, options = {}) {
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   const visibleRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
-  const emptyRow = `<tr><td colspan="13" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
+  const emptyRow = `<tr><td colspan="14" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -1674,6 +1679,7 @@ function renderTable(rows, recordLabel, options = {}) {
             ${renderSortableHeader('currentRank', t('adminContributionRank'), { className: 'dash-weighted-detail-col' })}
             ${renderSortableHeader('reward', t('adminContributionReward'), { className: 'dash-weighted-detail-col' })}
             ${renderSortableHeader('contribution', t('edenX1ThContribution'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+            ${renderSortableHeader('exGuild', t('edenX1ThExGuild'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
             ${renderSortableHeader('shieldWalls', t('edenX1ThShieldWalls'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
             ${renderSortableHeader('pathers', t('edenX1ThPathers'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
             ${renderSortableHeader('banners', t('edenX1ThBanners'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
@@ -1706,6 +1712,7 @@ function renderTable(rows, recordLabel, options = {}) {
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
+                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>

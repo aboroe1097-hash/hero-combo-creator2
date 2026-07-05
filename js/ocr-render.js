@@ -1138,6 +1138,7 @@ function sortedWeightedRows(rows) {
     currentRank: (r) => (r.currentRank ? Number(r.currentRank) : 999999),
     reward: (r) => contributionRewardLabel(r.currentReward),
     contribution: (r) => valueOf(r.contributionScore),
+    exGuild: (r) => valueOf(r.contributionExGuild),
     shieldWalls: (r) => r.shieldWalls,
     pathers: (r) => r.pathers,
     banners: (r) => r.banners,
@@ -1157,6 +1158,42 @@ function sortedWeightedRows(rows) {
     return av - bv;
   });
   return sort.dir === 'asc' ? sorted : sorted.reverse();
+}
+
+function weightedSearchNumber(value) {
+  const n = valueOf(value);
+  return [String(n), n.toLocaleString()].join(' ');
+}
+
+function weightedRowSearchText(row) {
+  return [
+    row.playerName,
+    row.sourceName,
+    row.playerKey,
+    row.currentRank ? `#${row.currentRank}` : '',
+    row.finalRank ? `#${row.finalRank}` : '',
+    contributionRewardLabel(row.currentReward),
+    contributionRewardLabel(row.finalReward),
+    weightedSearchNumber(row.contributionScore),
+    weightedSearchNumber(row.contributionExGuild),
+    weightedSearchNumber(row.shieldWalls),
+    weightedSearchNumber(row.pathers),
+    weightedSearchNumber(row.banners),
+    weightedSearchNumber(row.conductBonus),
+    weightedSearchNumber(weightedContributionBonusTotal(row)),
+    weightedSearchNumber(row.weightedScore),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function filterWeightedRows(rows) {
+  const query = String(state._weightedSearchQ || '')
+    .trim()
+    .toLowerCase();
+  if (!query) return rows;
+  return rows.filter((row) => weightedRowSearchText(row).includes(query));
 }
 
 function setWeightedSort(col) {
@@ -1184,7 +1221,7 @@ function updateWeightedSortGlyphs(host) {
   });
 }
 
-function renderWeightedContributionDashboard() {
+function renderWeightedContributionDashboard(options = {}) {
   const host = $id('dashWeightedContributionPanel');
   if (!host) return;
 
@@ -1205,6 +1242,7 @@ function renderWeightedContributionDashboard() {
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
   const compactView = isWeightedContributionCompactView();
+  const visibleRows = sortedWeightedRows(filterWeightedRows(rows));
   host.classList.remove('hidden');
   host.innerHTML = `<div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -1218,19 +1256,29 @@ function renderWeightedContributionDashboard() {
       </h2>
       <div class="dash-weighted-table-controls">
         <span class="dash-weighted-contribution-meta">${esc(recordLabel || adminT('edenX1PageTitle'))} &middot; ${esc(adminT('adminContributionPremiumSlots', { count: model.premiumCutoff }))}</span>
+        <label class="dash-search-wrap dash-weighted-search" for="dashWeightedSearch">
+          <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input id="dashWeightedSearch" class="dash-search-input" type="search" value="${esc(state._weightedSearchQ || '')}" placeholder="${esc(adminT('adminSearchPh'))}" autocomplete="off" />
+        </label>
         ${renderWeightedContributionViewToggle(compactView)}
       </div>
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
-        <tbody>${sortedWeightedRows(rows)
-          .map(
-            (row, index) => `<tr>
+        <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="exGuild">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <tbody>${
+          visibleRows.length
+            ? visibleRows
+                .map(
+                  (row, index) => `<tr>
           <td data-label="${esc(adminT('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
+          <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThExGuild'))}" style="text-align:right">${valueOf(row.contributionExGuild).toLocaleString()}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
@@ -1240,12 +1288,25 @@ function renderWeightedContributionDashboard() {
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
           <td class="dash-weighted-score-cell" data-label="${esc(adminT('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index)}</td>
         </tr>`
-          )
-          .join('')}</tbody>
+                )
+                .join('')
+            : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
+        }</tbody>
       </table>
     </div>
   </div>`;
   bindWeightedContributionViewToggle(host);
+  const search = $id('dashWeightedSearch');
+  if (search) {
+    search.oninput = (event) => {
+      state._weightedSearchQ = event.target.value || '';
+      renderWeightedContributionDashboard({ focusSearch: true });
+    };
+    if (options.focusSearch) {
+      search.focus();
+      search.setSelectionRange(search.value.length, search.value.length);
+    }
+  }
   host.querySelectorAll('th[data-weighted-sort]').forEach((th) => {
     th.addEventListener('click', () => setWeightedSort(th.dataset.weightedSort));
   });

@@ -2214,6 +2214,50 @@ function buildExGuildMatchTargets(primaryRecord) {
   };
 }
 
+function getPrimaryContributionRecord() {
+  const records = Array.isArray(state.contributionRecords) ? state.contributionRecords : [];
+  return records.find((record) => record.isPrimary) || records[records.length - 1] || null;
+}
+
+function getExGuildMatchContext() {
+  const { primaryKeys, targets } = buildExGuildMatchTargets(getPrimaryContributionRecord());
+  return { primaryKeys, targets };
+}
+
+function resolveExGuildMatch(entry, context = {}) {
+  const cleanName = stripExGuildGuildTag(entry?.playerName || entry?.name || '');
+  const manualMatch = String(entry?.matchedName || '').trim();
+  let autoKey = '';
+  try {
+    autoKey = compactPlayerIdentity(cleanName);
+  } catch {}
+  const targets = Array.isArray(context.targets) ? context.targets : [];
+  const primaryKeys = context.primaryKeys instanceof Set ? context.primaryKeys : new Set();
+  const autoMatch = targets.find((target) => target.compact && target.compact === autoKey);
+  const matchedName = manualMatch || (primaryKeys.has(autoKey) ? autoMatch?.value || cleanName : '');
+  return {
+    cleanName,
+    manualMatch,
+    autoKey,
+    matchedName,
+    exportName: matchedName || cleanName,
+  };
+}
+
+function buildExGuildDebuffNames() {
+  const context = getExGuildMatchContext();
+  const seen = new Set();
+  return (Array.isArray(state.exGuildContributions) ? state.exGuildContributions : [])
+    .map((entry) => resolveExGuildMatch(entry, context).exportName.trim())
+    .filter((name) => {
+      if (!name) return false;
+      const key = safeCompactPlayerIdentity(name) || normalizeExGuildSearchText(name);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 function scoreExGuildMatchTarget(target, query, compactQuery) {
   if (!query && !compactQuery) return target.priority;
   if (target.searchText === query || (compactQuery && target.compact === compactQuery)) return 0;
@@ -2389,6 +2433,19 @@ function setExGuildMatch(id, name) {
   saveExGuildContributions();
   renderContributions();
   refreshDashboardOverview();
+}
+
+function exportExGuildDebuffList() {
+  const names = buildExGuildDebuffNames();
+  if (!names.length) return;
+  const blob = new Blob([`${names.join('\n')}\n`], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vts_ex_guild_debuff_${new Date().toISOString().slice(0, 10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  log(adminT('adminExGuildDebuffExportedLog', { count: names.length }), 'success');
 }
 
 function parseContributionValue(value) {
@@ -3258,6 +3315,108 @@ function renderWeightedScorePopover(row, index, prefix = 'dashContributionWeight
   </button>`;
 }
 
+function sortedContributionWeightedRows(rows) {
+  const sort = state._contributionWeightedSort;
+  if (!sort || !sort.col) return rows;
+  const accessors = {
+    player: (row) => row.playerName,
+    currentRank: (row) => (row.currentRank ? Number(row.currentRank) : 999999),
+    reward: (row) => getContributionRewardLabel(row.currentReward),
+    contribution: (row) => parseContributionValue(row.contributionScore),
+    exGuild: (row) => parseContributionValue(row.contributionExGuild),
+    shieldWalls: (row) => Number(row.shieldWalls || 0),
+    pathers: (row) => Number(row.pathers || 0),
+    banners: (row) => Number(row.banners || 0),
+    conduct: (row) => Number(row.conductBonus || 0),
+    total: weightedContributionBonusTotal,
+    weighted: (row) => Number(row.weightedScore || 0),
+    finalRank: (row) => row.finalRank || 999999,
+    finalReward: (row) => getContributionRewardLabel(row.finalReward),
+  };
+  const get = accessors[sort.col];
+  if (!get) return rows;
+  const sorted = rows.slice().sort((a, b) => {
+    const av = get(a);
+    const bv = get(b);
+    if (typeof av === 'string' || typeof bv === 'string')
+      return String(av).localeCompare(String(bv));
+    return av - bv;
+  });
+  return sort.dir === 'asc' ? sorted : sorted.reverse();
+}
+
+function contributionWeightedSearchNumber(value) {
+  const n = Number(value || 0);
+  const safe = Number.isFinite(n) ? n : 0;
+  return [String(safe), safe.toLocaleString()].join(' ');
+}
+
+function contributionWeightedSearchText(row) {
+  return [
+    row.playerName,
+    row.sourceName,
+    row.playerKey,
+    row.currentRank ? `#${row.currentRank}` : '',
+    row.finalRank ? `#${row.finalRank}` : '',
+    getContributionRewardLabel(row.currentReward),
+    getContributionRewardLabel(row.finalReward),
+    contributionWeightedSearchNumber(row.contributionScore),
+    contributionWeightedSearchNumber(row.contributionExGuild),
+    contributionWeightedSearchNumber(row.shieldWalls),
+    contributionWeightedSearchNumber(row.pathers),
+    contributionWeightedSearchNumber(row.banners),
+    contributionWeightedSearchNumber(row.conductBonus),
+    contributionWeightedSearchNumber(weightedContributionBonusTotal(row)),
+    contributionWeightedSearchNumber(row.weightedScore),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
+function filterContributionWeightedRows(rows) {
+  const query = String(state._contributionWeightedSearchQ || '').trim().toLowerCase();
+  if (!query) return rows;
+  return rows.filter((row) => contributionWeightedSearchText(row).includes(query));
+}
+
+function setContributionWeightedSort(col) {
+  const cur = state._contributionWeightedSort || {};
+  if (cur.col === col) {
+    state._contributionWeightedSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
+  } else {
+    const ascFirst = ['player', 'currentRank', 'reward', 'finalRank', 'finalReward'].includes(col);
+    state._contributionWeightedSort = { col, dir: ascFirst ? 'asc' : 'desc' };
+  }
+  renderWeightedContributionTable();
+}
+
+function updateContributionWeightedSortGlyphs(host) {
+  const sort = state._contributionWeightedSort;
+  host.querySelectorAll('th[data-contribution-weighted-sort]').forEach((th) => {
+    th.querySelector('.dash-sort-glyph')?.remove();
+    th.removeAttribute('aria-sort');
+    if (!sort || th.dataset.contributionWeightedSort !== sort.col) return;
+    th.setAttribute('aria-sort', sort.dir === 'asc' ? 'ascending' : 'descending');
+    const glyph = document.createElement('span');
+    glyph.className = 'dash-sort-glyph';
+    glyph.textContent = sort.dir === 'asc' ? ' ^' : ' v';
+    th.appendChild(glyph);
+  });
+}
+
+function bindContributionWeightedSort(host) {
+  host.querySelectorAll('th[data-contribution-weighted-sort]').forEach((th) => {
+    th.addEventListener('click', () => setContributionWeightedSort(th.dataset.contributionWeightedSort));
+    th.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      setContributionWeightedSort(th.dataset.contributionWeightedSort);
+    });
+  });
+  updateContributionWeightedSortGlyphs(host);
+}
+
 function renderWeightedContributionTable() {
   const host = $id('dashContributionWeightedPanel');
   if (!host) return;
@@ -3278,24 +3437,35 @@ function renderWeightedContributionTable() {
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
   const compactView = isWeightedContributionCompactView();
+  const visibleRows = sortedContributionWeightedRows(filterContributionWeightedRows(rows));
   host.innerHTML = `<div class="dash-contribution-compare-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-contribution-compare-head">
       <div>
         <strong>${esc(adminT('edenX1WeightedTitle'))}</strong>
         <span>${esc(recordLabel || adminT('edenX1PageTitle'))} &middot; ${esc(adminT('adminContributionPremiumSlots', { count: model.premiumCutoff }))}</span>
       </div>
-      ${renderWeightedContributionViewToggle(compactView)}
+      <div class="dash-weighted-table-controls">
+        <label class="dash-search-wrap dash-weighted-search" for="dashContributionWeightedSearch">
+          <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input id="dashContributionWeightedSearch" class="dash-search-input" type="search" value="${esc(state._contributionWeightedSearchQ || '')}" placeholder="${esc(adminT('adminSearchPh'))}" autocomplete="off" />
+        </label>
+        ${renderWeightedContributionViewToggle(compactView)}
+      </div>
     </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
-        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right">${esc(adminT('edenX1ThWeightedScore'))}</th><th>${esc(adminT('adminContributionFinalRank'))}</th><th>${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
-        <tbody>${rows
+        <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
+        <tbody>${visibleRows.length ? visibleRows
           .map(
             (row, index) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
           <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionScore)}</td>
+          <td class="dash-weighted-detail-col" style="text-align:right">${formatContributionValue(row.contributionExGuild || 0)}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.shieldWalls}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.pathers}</td>
           <td class="dash-weighted-detail-col" style="text-align:right">${row.banners}</td>
@@ -3306,12 +3476,25 @@ function renderWeightedContributionTable() {
           <td>${esc(getContributionRewardLabel(row.finalReward))}</td>
         </tr>`
           )
-          .join('')}</tbody>
+          .join('') : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`}</tbody>
       </table>
     </div>
   </div>`;
   bindWeightedContributionViewToggle(host);
+  const search = $id('dashContributionWeightedSearch');
+  if (search) {
+    search.oninput = (event) => {
+      state._contributionWeightedSearchQ = event.target.value || '';
+      renderWeightedContributionTable();
+      const nextSearch = $id('dashContributionWeightedSearch');
+      if (nextSearch) {
+        nextSearch.focus();
+        nextSearch.setSelectionRange(nextSearch.value.length, nextSearch.value.length);
+      }
+    };
+  }
   hydrateDashboardTableLabels(host);
+  bindContributionWeightedSort(host);
 }
 
 function renderContributions() {
@@ -3390,10 +3573,7 @@ function renderExGuildTable() {
   const host = $id('dashExGuildBody');
   if (!host) return;
   const entries = state.exGuildContributions || [];
-  const primaryRecord =
-    (state.contributionRecords || []).find((r) => r.isPrimary) ||
-    (state.contributionRecords || [])[state.contributionRecords.length - 1];
-  const { primaryKeys, targets } = buildExGuildMatchTargets(primaryRecord);
+  const { primaryKeys, targets } = getExGuildMatchContext();
   state._exGuildMatchTargets = targets;
   if (!entries.length) {
     const recoverable = getRecoverableExGuildCandidate();
@@ -3410,14 +3590,10 @@ function renderExGuildTable() {
   }
   const rowsHtml = entries
     .map((entry) => {
-      const cleanName = stripExGuildGuildTag(entry.playerName || '');
-      const manualMatch = String(entry.matchedName || '').trim();
-      let autoKey = '';
-      try {
-        autoKey = compactPlayerIdentity(cleanName);
-      } catch {}
-      const autoMatch = targets.find((target) => target.compact && target.compact === autoKey);
-      const matchedName = manualMatch || (primaryKeys.has(autoKey) ? autoMatch?.value || cleanName : '');
+      const { cleanName, manualMatch, matchedName } = resolveExGuildMatch(entry, {
+        primaryKeys,
+        targets,
+      });
       const matchedLabel = `${adminT('adminExGuildMatchTo')}: ${matchedName}`;
       const matched = Boolean(matchedName);
       const statusBadge = matched
@@ -3441,6 +3617,7 @@ function renderExGuildTable() {
     .join('');
   host.innerHTML = `<div class="dash-xg-tools">
     <span>${targets.length} searchable contribution / roster names</span>
+    <button id="dashExGuildDebuffExportInlineBtn" class="dash-btn dash-btn-xs dash-btn-soft" type="button">${esc(adminT('adminExGuildExportDebuff'))}</button>
   </div>
   <table class="dash-banner-table dash-xg-table">
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
@@ -3450,6 +3627,7 @@ function renderExGuildTable() {
     <button class="dash-btn" onclick="clearExGuildData()" style="font-size:0.75rem">${esc(adminT('adminExGuildClearAll'))}</button>
   </div>`;
   bindExGuildMatchSearch(host);
+  $id('dashExGuildDebuffExportInlineBtn')?.addEventListener('click', exportExGuildDebuffList);
   hydrateDashboardTableLabels(host);
 }
 
@@ -3506,6 +3684,7 @@ export {
   setContributionReward,
   setContributionPrimary,
   exportContributionRecords,
+  exportExGuildDebuffList,
   renderContributions,
   deleteExGuildEntry,
   clearExGuildData,

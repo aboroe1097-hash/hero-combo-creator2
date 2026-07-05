@@ -62,6 +62,7 @@ const NON_FALLBACK_EDEN_X1_KEYS = [
   'edenX1NoRows',
   'edenX1LoadFailed',
   'edenX1ThShieldWalls',
+  'edenX1ThExGuild',
   'edenX1ThPathers',
   'edenX1ThConduct',
   'edenX1ThWeightedScore',

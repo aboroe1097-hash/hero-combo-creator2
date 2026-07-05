@@ -1662,6 +1662,15 @@ test.describe('app smoke tabs', () => {
           ],
         },
       ],
+      exGuildContributions: [
+        {
+          id: 'kika-exguild-1',
+          playerName: kikaAlt,
+          matchedName: kikaAlt,
+          contribution: 5000,
+          status: 'matched',
+        },
+      ],
     };
     const conductAdjustments = [
       {
@@ -1695,6 +1704,7 @@ test.describe('app smoke tabs', () => {
     await panel.getByRole('button', { name: 'Compact View' }).click();
     await expect(panel.getByRole('button', { name: 'Full View' })).toBeVisible();
     await expect(panel.locator('th', { hasText: 'Contribution score' })).toBeHidden();
+    await expect(panel.locator('th', { hasText: 'Ex-Guild' })).toBeHidden();
     await expect(panel.locator('th', { hasText: 'Weighted score' })).toBeVisible();
 
     const weightedRows = await panel.locator('tbody tr').evaluateAll((rows) =>
@@ -1703,13 +1713,15 @@ test.describe('app smoke tabs', () => {
     const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
     const altRow = weightedRows.find((cells) => cells[3] === '78,617');
 
-    expect(mainRow?.[5]).toBe('0');
+    expect(mainRow?.[4]).toBe('0');
     expect(mainRow?.[6]).toBe('0');
+    expect(mainRow?.[7]).toBe('0');
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
-    expect(altRow?.[5]).toBe('1');
+    expect(altRow?.[4]).toBe('5,000');
     expect(altRow?.[6]).toBe('1');
+    expect(altRow?.[7]).toBe('1');
     await expect(
       panel.locator('tbody tr', { hasText: '78,617' }).locator('.dash-weighted-reward-value')
     ).toHaveText('Core Rewards');
@@ -1762,6 +1774,10 @@ test.describe('app smoke tabs', () => {
     await expect(
       page.locator('#dashContributionWeightedPanel').getByRole('button', { name: 'Full View' })
     ).toBeVisible();
+    await page
+      .locator('#dashContributionWeightedPanel')
+      .getByRole('button', { name: 'Full View' })
+      .click();
     const contributionScoreTrigger = page
       .locator('#dashContributionWeightedPanel tbody tr', { hasText: '144,650' })
       .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
@@ -1771,6 +1787,13 @@ test.describe('app smoke tabs', () => {
     await contributionScoreTrigger.focus();
     await expect(contributionScorePopover).toBeVisible();
     await expect(contributionScorePopover).toContainText('Weighted score breakdown');
+    await expect(
+      page.locator('#dashContributionWeightedPanel thead')
+    ).toContainText('Ex-Guild');
+    await page.locator('#dashContributionWeightedPanel th', { hasText: 'Ex-Guild' }).click();
+    await expect(page.locator('#dashContributionWeightedPanel tbody tr').first()).toContainText(
+      '5,000'
+    );
   });
 
   test('eden x1 reward flow cards filter reward tables', async ({ page }) => {
@@ -1806,6 +1829,15 @@ test.describe('app smoke tabs', () => {
           date: '2026-06-24',
           premiumSlots: 20,
           entries: contributionEntries,
+        },
+      ],
+      exGuildContributions: [
+        {
+          id: 'eden-exguild-alpha',
+          playerName: 'Alpha',
+          matchedName: 'Alpha',
+          contribution: 5000,
+          status: 'matched',
         },
       ],
       dutyRecords: [
@@ -1899,6 +1931,7 @@ test.describe('app smoke tabs', () => {
     await expect(publicDashboard).toContainText('Demo view - not final yet');
     await expect(publicDashboard).toContainText('Weighted Score');
     const publicWeightedTable = publicDashboard.locator('.eden-x1-public-weighted-table');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Ex-Guild');
     await expect(publicWeightedTable.locator('thead')).toContainText('Shield Walls');
     await expect(publicWeightedTable.locator('thead')).toContainText('Pathers');
     await expect(publicWeightedTable.locator('thead')).toContainText('Banners');
@@ -2037,10 +2070,30 @@ test.describe('app smoke tabs', () => {
     const rewardHeaders = await panel.locator('thead th').evaluateAll((headers) =>
       headers.map((header) => header.textContent.trim())
     );
-    expect(rewardHeaders.slice(8, 11)).toEqual(['Conduct', 'Total', 'Weighted Score']);
+    expect(rewardHeaders.slice(5, 12)).toEqual([
+      'Ex-Guild',
+      'Shield Walls',
+      'Pathers',
+      'Banners',
+      'Conduct',
+      'Total',
+      'Weighted Score',
+    ]);
+    await expect(panel.locator('#edenX1MobileSort')).toContainText('Ex-Guild');
     const alphaSupportRow = panel.locator('tbody tr', { hasText: 'Alpha' });
-    await expect(alphaSupportRow.locator('td').nth(8)).toContainText('+1');
-    await expect(alphaSupportRow.locator('td').nth(9)).toHaveText('2');
+    await expect(alphaSupportRow.locator('td').nth(5)).toHaveText('5,000');
+    await expect(alphaSupportRow.locator('td').nth(9)).toContainText('+1');
+    await expect(alphaSupportRow.locator('td').nth(10)).toHaveText('2');
+    const exGuildSortHeader = panel.locator('th[data-weighted-sort="exGuild"]');
+    await exGuildSortHeader.click();
+    await expect(exGuildSortHeader).toHaveAttribute('aria-sort', 'descending');
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    await expect(panel.locator('tbody tr').first()).toContainText('5,000');
+    await panel.locator('#edenX1TableSearch').fill('5,000');
+    await expect(panel.locator('tbody tr')).toHaveCount(1);
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    await panel.locator('#edenX1TableSearch').fill('');
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
     const playerSortHeader = panel.locator('th[data-weighted-sort="player"]');
     await playerSortHeader.click();
     await playerSortHeader.click();
@@ -2253,6 +2306,13 @@ test.describe('app smoke tabs', () => {
         )
       )
       .toContain('Match to: Alpha');
+    await expect(page.locator('#dashExGuildDebuffExportInlineBtn')).toBeVisible();
+    const debuffDownloadPromise = page.waitForEvent('download');
+    await page.locator('#dashExGuildDebuffExportInlineBtn').click();
+    const debuffDownload = await debuffDownloadPromise;
+    expect(debuffDownload.suggestedFilename()).toMatch(/^vts_ex_guild_debuff_.*\.txt$/);
+    const debuffText = await fs.readFile(await debuffDownload.path(), 'utf8');
+    expect(debuffText.trim().split(/\r?\n/)).toEqual(['Alpha']);
 
     await page.locator('#dashExportMenuBtn').click();
     const weightedDownloadPromise = page.waitForEvent('download');

@@ -4682,7 +4682,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 }
 #ocrDashboardRoot .dash-xg-tools {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin: -0.15rem 0 0.45rem;
   color: var(--text-dim);
   font-size: 0.72rem;
@@ -4811,7 +4814,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   margin: 0 0 1rem;
 }
 #ocrDashboardRoot .dash-contribution-weighted-table {
-  min-width: 1180px;
+  min-width: 1260px;
 }
 .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table {
   min-width: min(680px, 100%);
@@ -4854,12 +4857,15 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   flex: 1 1 180px;
   max-width: 280px;
 }
-#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort] {
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort],
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort] {
   cursor: pointer;
   user-select: none;
 }
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:hover,
-#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:focus-visible {
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:focus-visible,
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:hover,
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:focus-visible {
   color: var(--brand);
   outline: none;
 }
