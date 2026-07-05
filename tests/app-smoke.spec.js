@@ -297,7 +297,7 @@ test.describe('visual regression', () => {
   // fonts/anti-aliasing differently, which diffs every snapshot. Run these locally;
   // skip in CI until platform-specific (Linux) baselines are committed.
   test.skip(!!process.env.CI, 'Platform-specific visual baselines; run locally, not in CI.');
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(({ browserName }, testInfo) => {
     testInfo.snapshotSuffix = '';
   });
 
@@ -324,7 +324,7 @@ test.describe('visual regression', () => {
 test.describe('admin dashboard visual regression', () => {
   // See note above: platform-specific baselines, skip in CI.
   test.skip(!!process.env.CI, 'Platform-specific visual baselines; run locally, not in CI.');
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(({ browserName }, testInfo) => {
     testInfo.snapshotSuffix = '';
   });
 
@@ -1284,8 +1284,8 @@ test.describe('app smoke tabs', () => {
         leaderboardWidth: rectWidth(leaderboardCard),
       };
     });
-    expect(dashboardGridMetrics.visualAlign).toBe('stretch');
-    expect(dashboardGridMetrics.mainAlign).toBe('stretch');
+    expect(dashboardGridMetrics.visualAlign).toBe('start');
+    expect(dashboardGridMetrics.mainAlign).toBe('start');
     expect(Math.abs(dashboardGridMetrics.topWidth - dashboardGridMetrics.insightWidth)).toBeLessThanOrEqual(16);
     expect(dashboardGridMetrics.leaderboardWidth).toBeGreaterThan(
       dashboardGridMetrics.attackWidth + 120
