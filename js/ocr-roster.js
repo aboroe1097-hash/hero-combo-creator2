@@ -1,4 +1,5 @@
 import {
+  STORAGE_KEY,
   ROSTER_KEY,
   ROSTER_SNAPSHOTS_KEY,
   BANNER_KEY,
@@ -104,6 +105,21 @@ function hydrateDashboardTableLabels(root) {
 }
 
 const TABLE_PAGE_STEP = 25;
+const EX_GUILD_BACKUP_KEY = `${EX_GUILD_CONTRIBUTION_KEY}_backup`;
+const DASHBOARD_CLOUD_RETRY_QUEUE_KEY = 'vts_dashboard_cloud_retry_queue';
+const EX_GUILD_MATCH_LIMIT = 8;
+
+function cloneJson(value, fallback = []) {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return fallback;
+  }
+}
+
+function cloneExGuildEntries(entries) {
+  return cloneJson(Array.isArray(entries) ? entries : [], []);
+}
 
 // Long roster/contribution tables are unwieldy on mobile (each row stacks to a
 // full-width card). Collapse them to the first TABLE_PAGE_STEP rows and let the
@@ -2033,16 +2049,333 @@ function saveExGuildContributions(options = {}) {
   return syncDashboardAuxiliaryRecords(options);
 }
 
+function backupExGuildContributions(reason = 'edit') {
+  const entries = cloneExGuildEntries(state.exGuildContributions);
+  if (!entries.length) return;
+  try {
+    localStorage.setItem(
+      EX_GUILD_BACKUP_KEY,
+      JSON.stringify({ createdAt: new Date().toISOString(), reason, entries })
+    );
+  } catch (e) {}
+}
+
+function normalizeRecoverableExGuildCandidate(source, label, createdAt = '') {
+  const entries = Array.isArray(source?.entries) ? source.entries : Array.isArray(source) ? source : [];
+  const cleanEntries = cloneExGuildEntries(entries).filter(
+    (entry) => entry && typeof entry === 'object' && (entry.playerName || entry.name)
+  );
+  if (!cleanEntries.length) return null;
+  return { label, createdAt: source?.createdAt || createdAt || '', entries: cleanEntries };
+}
+
+function readStoredJson(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getRecoverableExGuildCandidate() {
+  const candidates = [];
+  const backup = normalizeRecoverableExGuildCandidate(
+    readStoredJson(EX_GUILD_BACKUP_KEY),
+    'local backup'
+  );
+  if (backup) candidates.push(backup);
+
+  const dashboardCache = readStoredJson(STORAGE_KEY);
+  const cached = normalizeRecoverableExGuildCandidate(
+    dashboardCache?.exGuildContributions,
+    'dashboard cache',
+    dashboardCache?.last_updated || ''
+  );
+  if (cached) candidates.push(cached);
+
+  const retryQueue = readStoredJson(DASHBOARD_CLOUD_RETRY_QUEUE_KEY, []);
+  if (Array.isArray(retryQueue)) {
+    retryQueue.forEach((entry) => {
+      const candidate = normalizeRecoverableExGuildCandidate(
+        entry?.payload?.exGuildContributions,
+        'pending cloud retry',
+        entry?.createdAt || ''
+      );
+      if (candidate) candidates.push(candidate);
+    });
+  }
+
+  return candidates.sort(
+    (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+  )[0];
+}
+
+async function restoreExGuildBackup() {
+  const candidate = getRecoverableExGuildCandidate();
+  if (!candidate?.entries?.length) {
+    if (typeof window.showToast === 'function')
+      window.showToast('No Ex-Guild backup was found in this browser.', 'warn', 3000);
+    return;
+  }
+  state.exGuildContributions = cloneExGuildEntries(candidate.entries).map((entry) => ({
+    id: entry.id || `exg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    playerName: entry.playerName || entry.name || '',
+    contribution: entry.contribution || entry.value || entry.points || 0,
+    sourceNote: entry.sourceNote || entry.note || candidate.label,
+    matchedName: entry.matchedName || '',
+  }));
+  await saveExGuildContributions({ immediate: true, awaitCloud: true });
+  renderContributions();
+  refreshDashboardOverview();
+  log(`Restored ${state.exGuildContributions.length} Ex-Guild entries from ${candidate.label}.`, 'success');
+  if (typeof window.showToast === 'function')
+    window.showToast('Ex-Guild data restored.', 'success', 2500);
+}
+
+function safeCompactPlayerIdentity(name) {
+  try {
+    return compactPlayerIdentity(name);
+  } catch {
+    return '';
+  }
+}
+
+function normalizeExGuildSearchText(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function buildExGuildMatchTargets(primaryRecord) {
+  const targetMap = new Map();
+  const primaryKeys = new Set();
+  const primaryId = primaryRecord?.id || '';
+
+  const addTarget = (rawName, meta = {}) => {
+    const clean = stripGuildTagsFromPlayerName(String(rawName || '')).trim();
+    if (!clean) return;
+    const compact = safeCompactPlayerIdentity(clean);
+    const key = compact || normalizeExGuildSearchText(clean);
+    if (!key) return;
+    const existing = targetMap.get(key);
+    const priority = meta.priority ?? 9;
+    const next = {
+      key,
+      value: clean,
+      searchText: normalizeExGuildSearchText(clean),
+      compact,
+      rank: meta.rank || existing?.rank || '',
+      guild: meta.guild || existing?.guild || '',
+      recordLabel: meta.recordLabel || existing?.recordLabel || '',
+      source: meta.source || existing?.source || 'Contribution',
+      priority,
+    };
+    if (existing && existing.priority <= priority) {
+      targetMap.set(key, {
+        ...existing,
+        rank: existing.rank || next.rank,
+        guild: existing.guild || next.guild,
+        recordLabel: existing.recordLabel || next.recordLabel,
+      });
+    } else {
+      targetMap.set(key, next);
+    }
+    if (meta.primary && compact) primaryKeys.add(compact);
+  };
+
+  (Array.isArray(state.contributionRecords) ? state.contributionRecords : []).forEach(
+    (record, recordIndex) => {
+      const recordLabel = getContributionRecordLabel(record, recordIndex);
+      const isPrimary = Boolean(primaryId && record.id === primaryId);
+      (Array.isArray(record.entries) ? record.entries : []).forEach((entry) => {
+        addTarget(entry.name, {
+          rank: entry.rank,
+          guild: entry.guild,
+          recordLabel,
+          source: isPrimary ? 'Default contribution' : 'Contribution list',
+          priority: isPrimary ? 0 : 2,
+          primary: isPrimary,
+        });
+      });
+    }
+  );
+  (state.rosterNames || []).forEach((name) =>
+    addTarget(name, { source: 'Roster', priority: 4, primary: false })
+  );
+
+  return {
+    primaryKeys,
+    targets: Array.from(targetMap.values()).sort(
+      (a, b) => a.priority - b.priority || String(a.value).localeCompare(String(b.value))
+    ),
+  };
+}
+
+function scoreExGuildMatchTarget(target, query, compactQuery) {
+  if (!query && !compactQuery) return target.priority;
+  if (target.searchText === query || (compactQuery && target.compact === compactQuery)) return 0;
+  if (target.searchText.startsWith(query)) return 1;
+  if (compactQuery && target.compact.startsWith(compactQuery)) return 2;
+  if (target.searchText.includes(query)) return 3;
+  if (compactQuery && target.compact.includes(compactQuery)) return 4;
+  return Infinity;
+}
+
+function findExGuildMatchTargets(query) {
+  const normalized = normalizeExGuildSearchText(query);
+  const compact = safeCompactPlayerIdentity(query);
+  return (state._exGuildMatchTargets || [])
+    .map((target) => ({ target, score: scoreExGuildMatchTarget(target, normalized, compact) }))
+    .filter((row) => Number.isFinite(row.score))
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        a.target.priority - b.target.priority ||
+        String(a.target.value).localeCompare(String(b.target.value))
+    )
+    .slice(0, EX_GUILD_MATCH_LIMIT)
+    .map((row) => row.target);
+}
+
+function hideExGuildMatchResults(combo) {
+  const results = combo?.querySelector('[data-exguild-match-results]');
+  if (!results) return;
+  results.hidden = true;
+  results.innerHTML = '';
+}
+
+function showExGuildMatchResults(input) {
+  const combo = input?.closest('[data-exguild-match]');
+  const results = combo?.querySelector('[data-exguild-match-results]');
+  if (!combo || !results) return;
+  const matches = findExGuildMatchTargets(input.value);
+  if (!matches.length) {
+    results.hidden = false;
+    results.innerHTML = `<div class="dash-exguild-match-empty">No contribution names found</div>`;
+    return;
+  }
+  results.hidden = false;
+  results.innerHTML = matches
+    .map(
+      (target) => `<button type="button" class="dash-exguild-match-option" data-exguild-match-option data-value="${esc(target.value)}">
+        <strong>${esc(target.value)}</strong>
+        <span>${target.rank ? `#${esc(target.rank)} · ` : ''}${esc(target.guild || target.source)}${target.recordLabel ? ` · ${esc(target.recordLabel)}` : ''}</span>
+      </button>`
+    )
+    .join('');
+}
+
+function commitExGuildMatchInput(input) {
+  const id = input?.dataset?.entryId || '';
+  if (!id) return;
+  setExGuildMatch(id, input.value);
+}
+
+function bindExGuildMatchSearch(host) {
+  if (host.dataset.exguildSearchBound === '1') return;
+  host.dataset.exguildSearchBound = '1';
+  host.addEventListener('focusin', (event) => {
+    const input = event.target.closest('[data-exguild-match-input]');
+    if (input) showExGuildMatchResults(input);
+  });
+  host.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-exguild-match-input]');
+    if (input) showExGuildMatchResults(input);
+  });
+  host.addEventListener('keydown', (event) => {
+    const input = event.target.closest('[data-exguild-match-input]');
+    if (!input) return;
+    if (event.key === 'Escape') {
+      hideExGuildMatchResults(input.closest('[data-exguild-match]'));
+      return;
+    }
+    if (event.key !== 'Enter') return;
+    const option = input
+      .closest('[data-exguild-match]')
+      ?.querySelector('[data-exguild-match-option]');
+    if (!option) return;
+    event.preventDefault();
+    input.value = option.dataset.value || '';
+    commitExGuildMatchInput(input);
+  });
+  host.addEventListener('click', (event) => {
+    const option = event.target.closest('[data-exguild-match-option]');
+    if (option) {
+      const combo = option.closest('[data-exguild-match]');
+      const input = combo?.querySelector('[data-exguild-match-input]');
+      if (input) {
+        input.value = option.dataset.value || '';
+        commitExGuildMatchInput(input);
+      }
+      return;
+    }
+    const clear = event.target.closest('[data-exguild-clear-match]');
+    if (clear) {
+      const combo = clear.closest('[data-exguild-match]');
+      const input = combo?.querySelector('[data-exguild-match-input]');
+      if (input) {
+        input.value = '';
+        commitExGuildMatchInput(input);
+      }
+    }
+  });
+  host.addEventListener('focusout', (event) => {
+    const input = event.target.closest('[data-exguild-match-input]');
+    if (!input) return;
+    window.setTimeout(() => {
+      const combo = input.closest('[data-exguild-match]');
+      if (combo?.contains(document.activeElement)) return;
+      hideExGuildMatchResults(combo);
+      commitExGuildMatchInput(input);
+    }, 120);
+  });
+}
+
 function deleteExGuildEntry(id) {
-  state.exGuildContributions = (state.exGuildContributions || []).filter((e) => e.id !== id);
+  const previous = cloneExGuildEntries(state.exGuildContributions);
+  const removed = previous.find((e) => e.id === id);
+  if (!removed) return;
+  backupExGuildContributions('delete-row');
+  state.exGuildContributions = previous.filter((e) => e.id !== id);
   saveExGuildContributions();
-  renderExGuildTable();
+  renderContributions();
+  refreshDashboardOverview();
+  pushUndoAction({
+    label: 'Ex-Guild row',
+    message: 'Ex-Guild row deleted.',
+    undo: async () => {
+      state.exGuildContributions = previous;
+      await saveExGuildContributions({ immediate: true, awaitCloud: true });
+      renderContributions();
+      refreshDashboardOverview();
+      log('Ex-Guild row restored.', 'success');
+    },
+  });
 }
 
 function clearExGuildData() {
+  const previous = cloneExGuildEntries(state.exGuildContributions);
+  if (!previous.length) return;
+  if (!confirm(`Clear all ${previous.length} Ex-Guild entries?`)) return;
+  backupExGuildContributions('clear-all');
   state.exGuildContributions = [];
   saveExGuildContributions();
-  renderExGuildTable();
+  renderContributions();
+  refreshDashboardOverview();
+  pushUndoAction({
+    label: 'Ex-Guild data',
+    message: `${previous.length} Ex-Guild entries cleared.`,
+    undo: async () => {
+      state.exGuildContributions = previous;
+      await saveExGuildContributions({ immediate: true, awaitCloud: true });
+      renderContributions();
+      refreshDashboardOverview();
+      log('Ex-Guild data restored.', 'success');
+    },
+  });
 }
 
 // Manually map an ex-guild entry to a current roster player (empty = unmatched).
@@ -2050,9 +2383,11 @@ function clearExGuildData() {
 function setExGuildMatch(id, name) {
   const entry = (state.exGuildContributions || []).find((e) => e.id === id);
   if (!entry) return;
-  entry.matchedName = String(name || '').trim();
+  const next = String(name || '').trim();
+  if (String(entry.matchedName || '').trim() === next) return;
+  entry.matchedName = next;
   saveExGuildContributions();
-  renderExGuildTable();
+  renderContributions();
   refreshDashboardOverview();
 }
 
@@ -3058,30 +3393,21 @@ function renderExGuildTable() {
   const primaryRecord =
     (state.contributionRecords || []).find((r) => r.isPrimary) ||
     (state.contributionRecords || [])[state.contributionRecords.length - 1];
-  const primaryKeys = new Set();
-  (primaryRecord?.entries || []).forEach((entry) => {
-    try {
-      primaryKeys.add(compactPlayerIdentity(stripGuildTagsFromPlayerName(entry.name || '')));
-    } catch {}
-  });
+  const { primaryKeys, targets } = buildExGuildMatchTargets(primaryRecord);
+  state._exGuildMatchTargets = targets;
   if (!entries.length) {
-    host.innerHTML = `<div class="dash-empty">${esc(adminT('adminExGuildEmpty'))}</div>`;
+    const recoverable = getRecoverableExGuildCandidate();
+    host.innerHTML = `<div class="dash-empty dash-exguild-empty">
+      <span>${esc(adminT('adminExGuildEmpty'))}</span>
+      ${
+        recoverable
+          ? `<button id="dashExGuildRestoreBtn" class="dash-btn dash-btn-soft" type="button">Restore ${recoverable.entries.length} from ${esc(recoverable.label)}</button>`
+          : ''
+      }
+    </div>`;
+    $id('dashExGuildRestoreBtn')?.addEventListener('click', restoreExGuildBackup);
     return;
   }
-  // Full match-target list: every current contribution player + roster, cleaned
-  // and de-duped. Exposed via a shared <datalist> so each row's input can search.
-  const targetMap = new Map(); // lowercase key -> display name
-  const addTarget = (raw) => {
-    const clean = stripGuildTagsFromPlayerName(String(raw || '')).trim();
-    if (clean) targetMap.set(clean.toLowerCase(), clean);
-  };
-  (primaryRecord?.entries || []).forEach((e) => addTarget(e.name));
-  (state.rosterNames || []).forEach(addTarget);
-  const targets = Array.from(targetMap.values()).sort((a, b) => a.localeCompare(b));
-  const datalistId = 'dashExGuildMatchList';
-  const datalistHtml = `<datalist id="${datalistId}">${targets
-    .map((n) => `<option value="${esc(n)}"></option>`)
-    .join('')}</datalist>`;
   const rowsHtml = entries
     .map((entry) => {
       const cleanName = stripExGuildGuildTag(entry.playerName || '');
@@ -3099,18 +3425,28 @@ function renderExGuildTable() {
         <td style="text-align:right;font-weight:800">${formatContributionValue(entry.contribution)}</td>
         <td style="font-size:0.72rem;color:var(--text-dim)">${esc(entry.sourceNote || '')}</td>
         <td>${statusBadge}</td>
-        <td><input type="text" class="dash-contribution-reward-select dash-exguild-match-input" list="${datalistId}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" onchange="setExGuildMatch('${esc(entry.id)}', this.value)"></td>
+        <td>
+          <div class="dash-exguild-match-combobox" data-exguild-match>
+            <input type="text" class="dash-exguild-match-input" data-exguild-match-input data-entry-id="${esc(entry.id)}" value="${esc(manualMatch)}" placeholder="${esc(adminT('adminExGuildMatchSearchPh'))}" autocomplete="off" spellcheck="false">
+            <button type="button" class="dash-exguild-match-clear" data-exguild-clear-match title="Clear match" aria-label="Clear match">x</button>
+            <div class="dash-exguild-match-results" data-exguild-match-results hidden></div>
+          </div>
+        </td>
         <td><button class="dash-banner-del-btn" onclick="deleteExGuildEntry('${esc(entry.id)}')" title="${esc(adminT('adminDelete'))}">x</button></td>
       </tr>`;
     })
     .join('');
-  host.innerHTML = `${datalistHtml}<table class="dash-banner-table">
+  host.innerHTML = `<div class="dash-exguild-tools">
+    <span>${targets.length} searchable contribution / roster names</span>
+  </div>
+  <table class="dash-banner-table dash-exguild-table">
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>
   <div style="margin-top:0.5rem">
     <button class="dash-btn" onclick="clearExGuildData()" style="font-size:0.75rem">${esc(adminT('adminExGuildClearAll'))}</button>
   </div>`;
+  bindExGuildMatchSearch(host);
   hydrateDashboardTableLabels(host);
 }
 

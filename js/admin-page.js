@@ -1,6 +1,7 @@
 import { translations, loadTranslationsForLanguage } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
+import { initUndoToasts } from './app-undo.js';
 
 const APP_VERSION = '12.2.1';
 const THEME_STORAGE_KEY = 'vts_theme';
@@ -92,6 +93,7 @@ async function bootAdminPage() {
   const lang = getLanguage();
   await loadTranslationsForLanguage(lang);
   installShowToast();
+  initUndoToasts();
   initTheme();
   mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false });
   document.getElementById('adminFooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
