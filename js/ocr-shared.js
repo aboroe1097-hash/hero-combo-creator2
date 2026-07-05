@@ -398,7 +398,7 @@ const STRUCTURE_NAME_CORRECTIONS = {
   gate5: 'Gates',
   gates: 'Gates',
   'large town': 'Large Town',
-  'small town': 'Small Town',
+  'small town': 'City',
   strongho1d: 'Stronghold',
   stronghold: 'Stronghold',
   structure: 'Stronghold',

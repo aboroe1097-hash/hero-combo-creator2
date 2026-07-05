@@ -87,6 +87,14 @@ test('structure target normalization treats common aliases as the same target', 
     });
   }
 
+  assert.deepEqual(normalizeStructureTarget('Small Town Lv2', ''), {
+    structure_name: 'City',
+    structure_level: 'Lv2',
+  });
+  assert.equal(formatStructureLabel('Small Town', 'Lv2'), 'City Lv2');
+  assert.equal(validateTotalDemolition('Small Town', 'Lv2', 2000000)?.expected, 2000000);
+  assert.equal(validateTotalDemolition('Small Town', 'Lv2', 2000000)?.match, true);
+
   assert.deepEqual(normalizeStructureTarget('Check Point Lv2', ''), {
     structure_name: 'Gates',
     structure_level: 'Lv2',
