@@ -1888,16 +1888,31 @@ test.describe('app smoke tabs', () => {
     await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
     await expect(publicDashboard).toContainText('Insights');
+    await expect(publicDashboard).toContainText('Player Trends');
+    await expect(publicDashboard).toContainText('Participation Heatmap');
     await expect(publicDashboard).toContainText('Attack History');
     await expect(publicDashboard).toContainText('Structures Leaderboard');
-    await expect(publicDashboard).toContainText('Lowest Performers');
+    await expect(publicDashboard).not.toContainText('Lowest Performers');
     await expect(publicDashboard).toContainText('Click a player name');
     await publicDashboard.locator('[data-public-player]', { hasText: 'Alpha' }).first().click();
-    await expect(page.locator('#edenX1PublicDetail')).toContainText('Player Detail - Alpha');
-    await expect(page.locator('#edenX1PublicDetail')).toContainText('Large Town Lv4');
+    const publicModal = page.locator('#edenX1PublicModal');
+    await expect(publicModal).toHaveClass(/active/);
+    await expect(publicModal.locator('#edenX1PublicModalTitle')).toContainText(
+      'Player Detail - Alpha'
+    );
+    await expect(publicModal).toContainText('Large Town Lv4');
+    await expect(publicModal.locator('#edenX1PublicModalClose')).toBeVisible();
+    await publicModal.locator('#edenX1PublicModalClose').click();
+    await expect(publicModal).not.toHaveClass(/active/);
     await publicDashboard.locator('[data-public-structure]', { hasText: 'Large Town' }).first().click();
-    await expect(page.locator('#edenX1PublicDetail')).toContainText('Structure Detail - Large Town Lv4');
-    await expect(page.locator('#edenX1PublicDetail')).toContainText('Top Players');
+    await expect(publicModal).toHaveClass(/active/);
+    await expect(publicModal.locator('#edenX1PublicModalTitle')).toContainText(
+      'Structure Detail - Large Town Lv4'
+    );
+    await expect(publicModal).toContainText('Top Players');
+    await expect(publicModal.locator('#edenX1PublicModalClose')).toBeVisible();
+    await publicModal.locator('#edenX1PublicModalClose').click();
+    await expect(publicModal).not.toHaveClass(/active/);
     await expect(page.locator('.eden-x1-flow-card').first()).toHaveAttribute(
       'data-reward-view',
       'support'
