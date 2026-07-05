@@ -853,29 +853,49 @@ function renderPublicWeightedContributionTable() {
     clickableCount ? 'click matched player rows' : '',
   ].filter(Boolean);
   const body = rows.length
-    ? `<div class="dash-table-wrap eden-x1-public-table-wrap">
-      <table class="dash-table">
+    ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
+      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table eden-x1-public-weighted-table">
         <thead><tr>
-          <th class="dash-th-rank">#</th>
-          <th>Player</th>
-          <th class="dash-th-right">Contribution</th>
-          <th class="dash-th-right">Support Points</th>
-          <th class="dash-th-right">Conduct Points</th>
-          <th class="dash-th-right">Weighted Score</th>
-          <th>Final Reward</th>
+          <th>${esc(t('edenX1ThNumber'))}</th>
+          <th>${esc(t('adminContributionMember'))}</th>
+          <th class="dash-weighted-detail-col">${esc(t('adminContributionRank'))}</th>
+          <th class="dash-weighted-detail-col">${esc(t('adminContributionReward'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThContribution'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThShieldWalls'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThPathers'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThBanners'))}</th>
+          <th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right">${esc(t('edenX1ThConduct'))}</th>
+          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThTotal'))}</th>
+          <th style="text-align:right">${esc(t('edenX1ThWeightedScore'))}</th>
+          <th>${esc(t('adminContributionFinalRank'))}</th>
+          <th>${esc(t('adminContributionFinalReward'))}</th>
         </tr></thead>
         <tbody>${rows
-          .map((row) => {
+          .map((row, index) => {
             const playerKey = row.playerKey || publicPlayerKey(row.playerName);
             const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
+            const total = rowBonusTotal(row);
+            const tooltipIndex = `public-${index}`;
             return `<tr${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
-              <td data-label="#">${row.finalRank || '--'}</td>
-              <td data-label="Player"><strong>${esc(row.playerName)}</strong></td>
-              <td class="dash-table-right" data-label="Contribution">${formatScore(row.contributionScore)}</td>
-              <td class="dash-table-right" data-label="Support Points">${formatScore(row.dutyPoints)}</td>
-              <td class="dash-table-right" data-label="Conduct Points">${formatSignedNumber(valueOf(row.conductPoints))}</td>
-              <td class="dash-table-right" data-label="Weighted Score"><strong>${formatWeightedScore(row.weightedScore)}</strong></td>
-              <td data-label="Final Reward">${esc(contributionRewardLabel(row.finalReward))}</td>
+              <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
+                <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
+                <span class="dash-weighted-mobile-header" aria-label="${esc(`#${row.finalRank || '--'} ${row.playerName}`)}">
+                  <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${row.finalRank || '--'}`)}" aria-hidden="true"></span>
+                  <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true"></strong>
+                </span>
+              </td>
+              <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+              <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
+              <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex)}</td>
             </tr>`;
           })
           .join('')}</tbody>
@@ -1139,7 +1159,9 @@ function showPublicDetail(type, key) {
 }
 
 function bindPublicDashboardControls(host) {
-  if (!host || host.dataset.publicControlsBound) return;
+  if (!host) return;
+  bindWeightedPopovers(host);
+  if (host.dataset.publicControlsBound) return;
   host.dataset.publicControlsBound = '1';
   host.addEventListener('click', (event) => {
     const playerButton = event.target.closest('[data-public-player]');

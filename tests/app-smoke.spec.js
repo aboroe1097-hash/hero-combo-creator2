@@ -1857,7 +1857,13 @@ test.describe('app smoke tabs', () => {
     await expect(publicDashboard).toContainText('Weighted Total Contribution');
     await expect(publicDashboard).toContainText('Demo view - not final yet');
     await expect(publicDashboard).toContainText('Weighted Score');
-    await expect(publicDashboard).toContainText('Support Points');
+    const publicWeightedTable = publicDashboard.locator('.eden-x1-public-weighted-table');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Shield Walls');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Pathers');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Banners');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Conduct');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Total');
+    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(15);
     await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
     await expect(publicDashboard).toContainText('Insights');
