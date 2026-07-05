@@ -95,6 +95,10 @@ test('structure target normalization treats common aliases as the same target', 
     structure_name: 'Bridge',
     structure_level: 'Lv1',
   });
+  assert.deepEqual(normalizeStructureTarget('Checkpoint Lv7', ''), {
+    structure_name: 'Gates',
+    structure_level: 'Lv4',
+  });
   assert.deepEqual(normalizeStructureTarget('Gates', 'Lv1'), {
     structure_name: 'Bridge',
     structure_level: 'Lv1',
@@ -109,6 +113,8 @@ test('structure target normalization treats common aliases as the same target', 
   assert.equal(validateTotalDemolition('Bridge', 'Lv1', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Bridges', '', 200000)?.match, true);
   assert.equal(validateTotalDemolition('Check Point', 'Lv1', 200000)?.match, true);
+  assert.equal(validateTotalDemolition('Checkpoint', 'Lv7', 2500000)?.expected, 2500000);
+  assert.equal(validateTotalDemolition('Checkpoint', 'Lv7', 2500000)?.match, true);
   assert.equal(validateTotalDemolition('Town 4', '', 3750000)?.match, true);
 });
 
@@ -156,6 +162,19 @@ test('Capital Lv7 expected demolition is 4.5M', () => {
   assert.equal(capital.match, true);
   assert.equal(capitolAlias.expected, 4500000);
   assert.equal(capitolAlias.match, true);
+});
+
+test('Checkpoint Lv7 displays as Gate Lv4 and validates at 2.5M', () => {
+  const attack = {
+    structure_name: 'Gates',
+    structure_level: 'Lv4',
+    raw_structure_name: 'Checkpoint',
+    raw_structure_level: '7',
+  };
+
+  assert.equal(formatDatasetStructureLabel(attack), 'Gate Lv4');
+  assert.equal(validateTotalDemolition('Gates', 'Lv4', 2500000)?.expected, 2500000);
+  assert.equal(validateTotalDemolition('Gates', 'Lv4', 2500000)?.match, true);
 });
 
 test('dataset structure labels preserve extracted names while canonical fields drive validation', () => {

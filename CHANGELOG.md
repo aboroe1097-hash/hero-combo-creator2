@@ -1,5 +1,12 @@
 # Changelog
 
+## 12.4.0 - 2026-07-05
+
+- Fixed VTS Admin dashboard grid alignment so analytics, insights, attack history, and leaderboard panels keep the tightened gap-free layout.
+- Improved Ex-Guild contribution matching by keeping search responsive across the full contribution list and clarifying the dark-theme match controls.
+- Expanded VTS OCR player alias handling with confirmed variants from the debug export while preserving protected separate accounts.
+- Synced README, changelog, planning notes, public footer labels, and app version constants to 12.4.0.
+
 ## 12.2.1 - 2026-07-04
 
 - Broadened ESLint coverage to every JavaScript module and script while keeping the newly covered pass focused on correctness checks.

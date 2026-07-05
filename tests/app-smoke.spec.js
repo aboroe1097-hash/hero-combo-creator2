@@ -1707,7 +1707,7 @@ test.describe('app smoke tabs', () => {
     expect(mainRow?.[6]).toBe('0');
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
-    ).toHaveText('Guild Master Reward');
+    ).toHaveText('Core Rewards');
     expect(altRow?.[5]).toBe('1');
     expect(altRow?.[6]).toBe('1');
     await expect(
@@ -1784,6 +1784,7 @@ test.describe('app smoke tabs', () => {
       'Golf',
       'Hotel',
       'India',
+      'MalakAbo',
       'Juliet',
       'Kilo',
       'Lima',
@@ -1903,7 +1904,7 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('thead')).toContainText('Banners');
     await expect(publicWeightedTable.locator('thead')).toContainText('Conduct');
     await expect(publicWeightedTable.locator('thead')).toContainText('Total');
-    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(15);
+    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(16);
     await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
     await expect(publicDashboard).toContainText('Insights');
@@ -2024,6 +2025,7 @@ test.describe('app smoke tabs', () => {
       supportPopoverMetrics.viewportHeight - 8
     );
     await expect(panel).toContainText('Alpha');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     await expect(panel).not.toContainText('Echo');
     await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
     await expect(panel.locator('tbody tr .dash-weighted-reward-value')).toContainText([
@@ -2043,15 +2045,15 @@ test.describe('app smoke tabs', () => {
     await playerSortHeader.click();
     await playerSortHeader.click();
     await expect(playerSortHeader).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
-    ).toContainText('Core Rewards');
+    ).toContainText('Guild Master Reward');
     await expect(
       panel.locator('tbody tr', { hasText: 'Alpha' }).locator('.dash-weighted-reward-value')
-    ).toContainText('Guild Master Reward');
+    ).toContainText('Core Rewards');
     await panel.locator('th[data-weighted-sort="number"]').click();
-    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     const supportNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
@@ -2062,16 +2064,16 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('h2')).toContainText('Total Contribution');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
     await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Echo');
-    await expect(panel).toContainText('November');
+    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel).toContainText('Mike');
     await expect(panel).not.toContainText('Alpha');
     await expect(panel).not.toContainText('Bravo');
     await expect(panel).not.toContainText('Charlie');
-    await expect(panel).not.toContainText('Delta');
     await expect(panel).not.toContainText('Oscar');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
+    expect(contributionNames).not.toContain('MalakAbo');
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     const mikeConductTrigger = panel
       .locator('tbody tr', { hasText: 'Mike' })
@@ -2094,7 +2096,7 @@ test.describe('app smoke tabs', () => {
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('November');
+    await expect(panel.locator('tbody tr').first()).toContainText('Mike');
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();
@@ -2183,6 +2185,7 @@ test.describe('app smoke tabs', () => {
           entries: [
             { rank: '1', name: 'Alpha', guild: 'VTS', contribution: '100,000' },
             { rank: '2', name: 'Bravo', guild: 'VTS', contribution: '80,000' },
+            { rank: '3', name: 'MalakAbo', guild: 'VTS', contribution: '1,000' },
           ],
         },
       ],
@@ -2233,6 +2236,23 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashExGuildPasteBtn')).toBeVisible();
     await expect(page.locator('#dashExGuildUploadBtn')).toBeVisible();
     await expect(page.locator('#dashExGuildBody')).toContainText('Alpha');
+    const exGuildMatchedBadge = page.locator('#dashExGuildBody .dash-badge-match-tip').first();
+    await expect(exGuildMatchedBadge).toHaveAttribute('data-match-tooltip', 'Match to: Alpha');
+    await exGuildMatchedBadge.hover();
+    await expect
+      .poll(() =>
+        exGuildMatchedBadge.evaluate((badge) =>
+          window.getComputedStyle(badge, '::after').opacity
+        )
+      )
+      .toBe('1');
+    await expect
+      .poll(() =>
+        exGuildMatchedBadge.evaluate((badge) =>
+          window.getComputedStyle(badge, '::after').content
+        )
+      )
+      .toContain('Match to: Alpha');
 
     await page.locator('#dashExportMenuBtn').click();
     const weightedDownloadPromise = page.waitForEvent('download');

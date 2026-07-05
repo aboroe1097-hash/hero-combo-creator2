@@ -16,6 +16,9 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
 });
 
 export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
+export const DEFAULT_GUILD_MASTER_NAME = 'MalakAbo';
+
+const DEFAULT_GUILD_MASTER_PLAYER_KEY = compactPlayerIdentity(DEFAULT_GUILD_MASTER_NAME);
 
 const CONTRIBUTION_FIELDS = ['contribution', 'value', 'points', 'total', 'score'];
 const IMAGE_SOURCE_NOTE_RE =
@@ -57,12 +60,22 @@ export function getContributionPremiumCutoff(record) {
   return cutoff > 0 ? cutoff : DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF;
 }
 
-export function getContributionRewardTier(entry, record, rankOverride = null) {
+export function isDefaultGuildMasterPlayerKey(playerKey) {
+  return String(playerKey || '') === DEFAULT_GUILD_MASTER_PLAYER_KEY;
+}
+
+function isDefaultGuildMasterEntry(entry, playerKey = '') {
+  if (isDefaultGuildMasterPlayerKey(playerKey)) return true;
+  const name = String(entry?.matchedName || entry?.playerName || entry?.name || entry || '').trim();
+  return compactPlayerIdentity(name) === DEFAULT_GUILD_MASTER_PLAYER_KEY;
+}
+
+export function getContributionRewardTier(entry, record, rankOverride = null, playerKey = '') {
   const override = normalizeRewardTier(entry?.rewardOverride || entry?.reward);
   if (override) return override;
+  if (isDefaultGuildMasterEntry(entry, playerKey)) return 'guild_master';
   const rank = numberValue(rankOverride ?? entry?.rank);
   if (rank < 1) return 'standard';
-  if (rank === 1) return 'guild_master';
   if (rank <= 20) return 'core';
   if (rank <= 110) return 'power_house';
   if (rank <= 200) return 'members';
@@ -326,7 +339,7 @@ export function buildWeightedContributionRows(options = {}) {
         playerName: identity.playerName,
         sourceName: entry.name || identity.playerName,
         currentRank: numberValue(entry.rank),
-        currentReward: getContributionRewardTier(entry, record),
+        currentReward: getContributionRewardTier(entry, record, null, identity.playerKey),
         contributionScore: contributionValue(entry),
         contributionExGuild: exGuildMap.get(identity.playerKey) || 0,
       };
@@ -422,7 +435,7 @@ export function buildWeightedContributionRows(options = {}) {
     .map((row, index) => {
       const rank = index + 1;
       let baseReward;
-      if (rank === 1) baseReward = 'guild_master';
+      if (isDefaultGuildMasterPlayerKey(row.playerKey)) baseReward = 'guild_master';
       else if (rank <= 20) baseReward = 'core';
       else if (rank <= 110) baseReward = 'power_house';
       else if (rank <= 200) baseReward = 'members';

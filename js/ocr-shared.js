@@ -367,7 +367,7 @@ export function getOcrRetryDelayMs(err, attempt) {
 
 // --- Durability ---
 export const DURABILITY_TABLE = {
-  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 1500000, 5: 2000000 },
+  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 2500000, 5: 2000000 },
   bridge: { 1: 200000 },
   city: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   cities: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
@@ -434,6 +434,14 @@ function stripStructureLevelFromName(name) {
     .trim();
 }
 
+function isCheckpointLevelSeven(name, level) {
+  const cleaned = stripStructureLevelFromName(name);
+  const lower = cleaned.toLowerCase().trim();
+  const compact = lower.replace(/[^a-z0-9]+/g, '');
+  const normalizedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
+  return normalizedLevel === 'Lv7' && (lower === 'checkpoint' || lower === 'check point' || compact === 'checkpoint');
+}
+
 function canonicalizeStructureName(name, level) {
   const cleaned = stripStructureLevelFromName(name);
   const lower = cleaned.toLowerCase().trim();
@@ -472,6 +480,9 @@ export function normalizeStructureName(name) {
 export function normalizeStructureTarget(name, level = '') {
   if (!name && !level) return { structure_name: name, structure_level: '' };
   const extractedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
+  if (isCheckpointLevelSeven(name, extractedLevel)) {
+    return { structure_name: 'Gates', structure_level: 'Lv4' };
+  }
   const structureName = canonicalizeStructureName(name, extractedLevel);
   const structureLevel =
     structureName === 'Bridge'
@@ -525,6 +536,12 @@ export function getDatasetStructureTarget(attack) {
     };
   }
   if (rawName || rawLevel) {
+    if (isCheckpointLevelSeven(rawName, rawLevel ?? attack.structure_level)) {
+      return {
+        structure_name: 'Gate',
+        structure_level: 'Lv4',
+      };
+    }
     return {
       structure_name: rawName || attack.structure_name || 'Unknown Structure',
       structure_level: rawLevel ?? attack.structure_level ?? '',

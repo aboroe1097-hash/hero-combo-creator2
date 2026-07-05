@@ -3,7 +3,7 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 
-const APP_VERSION = '12.2.1';
+const APP_VERSION = '12.4.0';
 const THEME_STORAGE_KEY = 'vts_theme';
 
 function getPreferredTheme() {

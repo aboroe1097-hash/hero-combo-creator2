@@ -3416,9 +3416,12 @@ function renderExGuildTable() {
       try {
         autoKey = compactPlayerIdentity(cleanName);
       } catch {}
-      const matched = Boolean(manualMatch) || primaryKeys.has(autoKey);
+      const autoMatch = targets.find((target) => target.compact && target.compact === autoKey);
+      const matchedName = manualMatch || (primaryKeys.has(autoKey) ? autoMatch?.value || cleanName : '');
+      const matchedLabel = `${adminT('adminExGuildMatchTo')}: ${matchedName}`;
+      const matched = Boolean(matchedName);
       const statusBadge = matched
-        ? `<span class="dash-badge dash-badge-ok">${esc(adminT('adminExGuildMatched'))}</span>`
+        ? `<span class="dash-badge dash-badge-ok dash-badge-match-tip" tabindex="0" role="status" aria-label="${esc(matchedLabel)}" data-match-tooltip="${esc(matchedLabel)}">${esc(adminT('adminExGuildMatched'))}</span>`
         : `<span class="dash-badge">${esc(adminT('adminExGuildUnmatched'))}</span>`;
       return `<tr>
         <td><strong>${esc(cleanName)}</strong></td>

@@ -80,7 +80,7 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(sarafina.shieldWalls, 1);
     assert.equal(sarafina.conductBonus, 2);
     assert.equal(sarafina.finalRank, 1);
-    assert.equal(sarafina.finalReward, 'guild_master');
+    assert.equal(sarafina.finalReward, 'core');
     assert.equal(Number(sarafina.weightedScore.toFixed(1)), 250000);
 
     assert.equal(undeadBanner.banners, 1);
@@ -179,11 +179,38 @@ test('latest contribution record selection uses newest date and premiumSlots fal
     assert.deepEqual(
       model.rows.map((row) => [row.playerKey, row.currentReward, row.finalReward]),
       [
-        [compactPlayerIdentity('Kika'), 'guild_master', 'guild_master'],
+        [compactPlayerIdentity('Kika'), 'core', 'core'],
         [compactPlayerIdentity('UNDEAD'), 'core', 'core'],
       ]
     );
   });
+});
+
+test('weighted contribution reserves guild master reward for MalakAbo by default', () => {
+  const model = buildWeightedContributionRows({
+    contributionRecords: [
+      {
+        id: 'leader-default',
+        date: '2026-07-05',
+        entries: [
+          { rank: 1, name: 'Alpha', contribution: 300000 },
+          { rank: 2, name: 'MalakAdo', contribution: 250000 },
+          { rank: 9, name: 'MalakAbo', contribution: 100000 },
+        ],
+      },
+    ],
+  });
+
+  const alpha = model.rows.find((row) => row.playerName === 'Alpha');
+  const malakAdo = model.rows.find((row) => row.playerName === 'MalakAdo');
+  const malakAbo = model.rows.find((row) => row.playerName === 'MalakAbo');
+
+  assert.equal(alpha.currentReward, 'core');
+  assert.equal(alpha.finalReward, 'core');
+  assert.equal(malakAdo.currentReward, 'core');
+  assert.equal(malakAdo.finalReward, 'core');
+  assert.equal(malakAbo.currentReward, 'guild_master');
+  assert.equal(malakAbo.finalReward, 'guild_master');
 });
 
 test('weighted contribution labels hide image upload source notes', () => {

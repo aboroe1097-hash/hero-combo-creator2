@@ -1,5 +1,6 @@
 import {
   buildWeightedContributionRows,
+  isDefaultGuildMasterPlayerKey,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
@@ -16,7 +17,7 @@ import {
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
 
-const APP_VERSION = '12.2.1';
+const APP_VERSION = '12.4.0';
 const FS_PATH = 'vts_admin/dashboard_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const THEME_STORAGE_KEY = 'vts_theme';
@@ -219,10 +220,20 @@ function getContributionRewardRows() {
 }
 
 function getSupportRewardRows() {
-  return currentRows.slice(0, 4).map((row, index) => ({
+  const leaderIndex = currentRows.findIndex((row) =>
+    isDefaultGuildMasterPlayerKey(row.playerKey)
+  );
+  const supportRows =
+    leaderIndex < 0
+      ? currentRows.slice(0, 4)
+      : [
+          currentRows[leaderIndex],
+          ...currentRows.filter((_row, index) => index !== leaderIndex),
+        ].slice(0, 4);
+  return supportRows.map((row, index) => ({
     ...row,
     edenX1RewardSlot: index + 1,
-    edenX1SupportReward: index === 0 ? 'guild_master' : 'core',
+    edenX1SupportReward: isDefaultGuildMasterPlayerKey(row.playerKey) ? 'guild_master' : 'core',
   }));
 }
 
