@@ -1926,7 +1926,7 @@
 }
 @media (max-width: 980px) {
   #ocrDashboardRoot .dash-main-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
 

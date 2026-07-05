@@ -1264,7 +1264,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashLeaderboardCard thead')).not.toContainText('Bonus');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('Bravo');
     await expect(page.locator('#dashLeaderBody tr').first()).toContainText('2,101,000');
-    await page.setViewportSize({ width: 974, height: 768 });
+    await page.setViewportSize({ width: 1280, height: 768 });
     const dashboardGridMetrics = await page.evaluate(() => {
       const dashboard = document.querySelector('#dashSubtabDashboard');
       const visualGrid = dashboard?.querySelector('.dash-visuals-grid');
@@ -1286,7 +1286,28 @@ test.describe('app smoke tabs', () => {
     expect(dashboardGridMetrics.visualAlign).toBe('stretch');
     expect(dashboardGridMetrics.mainAlign).toBe('stretch');
     expect(Math.abs(dashboardGridMetrics.topWidth - dashboardGridMetrics.insightWidth)).toBeLessThanOrEqual(16);
-    expect(Math.abs(dashboardGridMetrics.attackWidth - dashboardGridMetrics.leaderboardWidth)).toBeLessThanOrEqual(16);
+    expect(dashboardGridMetrics.leaderboardWidth).toBeGreaterThan(
+      dashboardGridMetrics.attackWidth + 120
+    );
+    await page.setViewportSize({ width: 974, height: 768 });
+    const compactDashboardMetrics = await page.evaluate(() => {
+      const dashboard = document.querySelector('#dashSubtabDashboard');
+      const attackCard = dashboard?.querySelector('#dashAttackHistoryCard');
+      const leaderboardCard = dashboard?.querySelector('#dashLeaderboardCard');
+      const rectWidth = (el) => Math.round(el?.getBoundingClientRect?.().width || 0);
+      return {
+        attackWidth: rectWidth(attackCard),
+        leaderboardWidth: rectWidth(leaderboardCard),
+        attackTop: Math.round(attackCard?.getBoundingClientRect?.().top || 0),
+        leaderboardTop: Math.round(leaderboardCard?.getBoundingClientRect?.().top || 0),
+      };
+    });
+    expect(compactDashboardMetrics.leaderboardTop).toBeGreaterThan(
+      compactDashboardMetrics.attackTop
+    );
+    expect(
+      Math.abs(compactDashboardMetrics.attackWidth - compactDashboardMetrics.leaderboardWidth)
+    ).toBeLessThanOrEqual(16);
     const visibleLeaderRows = await page
       .locator('#dashLeaderBody tr')
       .evaluateAll(

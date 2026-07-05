@@ -848,9 +848,9 @@
 
         <!-- Main Grid -->
         <div
-          class="dash-main-grid"
+          class="dash-main-grid dash-history-leader-grid"
           style="
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+            grid-template-columns: minmax(280px, 0.78fr) minmax(520px, 1.22fr);
             align-items: stretch;
           "
         >
@@ -943,7 +943,7 @@
               </div>
             </div>
             <div class="dash-table-wrap">
-              <table class="dash-table">
+              <table class="dash-table" style="min-width: 680px">
                 <thead>
                   <tr>
                     <th class="dash-th-static dash-th-rank" data-i18n="adminThRank">Rank</th>
