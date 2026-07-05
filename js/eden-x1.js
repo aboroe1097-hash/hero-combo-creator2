@@ -1,7 +1,5 @@
 import {
   buildWeightedContributionRows,
-  getContributionRewardTier,
-  getPrimaryContributionRecord,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
@@ -120,6 +118,12 @@ function setWeightedContributionCompactView(enabled) {
 
 function renderWeightedContributionViewToggle(compact) {
   return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${esc(compact ? t('edenX1FullView') : t('edenX1CompactView'))}</button>`;
+}
+
+function weightedTableWrapStyle(rowCount) {
+  const rows = Math.max(1, Number(rowCount) || 0);
+  const maxHeight = Math.min(620, Math.max(170, rows * 48 + 104));
+  return `max-height:${maxHeight}px;overflow:auto`;
 }
 
 function bindWeightedContributionViewToggle(host) {
@@ -364,6 +368,7 @@ function closeWeightedPopovers(except = null) {
     if (button === except) return;
     button.classList.remove('is-open');
     button.setAttribute('aria-expanded', 'false');
+    hideWeightedPopover(button);
   });
 }
 
@@ -390,21 +395,92 @@ function bindWeightedPopoverDismissal() {
   );
 }
 
+function positionWeightedPopover(button) {
+  const popover = button?.querySelector('.dash-weighted-score-popover');
+  if (!popover) return;
+  if (isWeightedContributionMobileViewport()) {
+    popover.style.display = '';
+    return;
+  }
+
+  const margin = 12;
+  const previousVisibility = popover.style.visibility;
+  const previousOpacity = popover.style.opacity;
+  popover.style.display = 'block';
+  popover.style.visibility = 'hidden';
+  popover.style.opacity = '0';
+
+  const buttonRect = button.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const popoverWidth = Math.min(
+    Math.max(popoverRect.width || 310, 220),
+    Math.max(220, globalThis.innerWidth - margin * 2)
+  );
+  const popoverHeight = Math.min(
+    Math.max(popoverRect.height || 220, 140),
+    Math.max(140, globalThis.innerHeight - margin * 2)
+  );
+  const idealLeft = buttonRect.left + buttonRect.width / 2;
+  const left = Math.min(
+    Math.max(idealLeft, margin + popoverWidth / 2),
+    globalThis.innerWidth - margin - popoverWidth / 2
+  );
+  const belowTop = buttonRect.bottom + 10;
+  const aboveTop = buttonRect.top - popoverHeight - 10;
+  const hasMoreRoomAbove =
+    globalThis.innerHeight - belowTop < Math.min(popoverHeight, 180) &&
+    aboveTop >= margin;
+  const top = hasMoreRoomAbove
+    ? Math.max(margin, aboveTop)
+    : Math.min(belowTop, globalThis.innerHeight - margin - popoverHeight);
+
+  popover.style.position = 'fixed';
+  popover.style.top = `${Math.round(Math.max(margin, top))}px`;
+  popover.style.right = 'auto';
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.maxHeight = 'min(72vh, 420px)';
+  popover.style.overflowY = 'auto';
+  popover.style.transform = 'translateX(-50%)';
+  popover.style.visibility = previousVisibility;
+  popover.style.opacity = previousOpacity;
+}
+
+function hideWeightedPopover(button) {
+  const popover = button?.querySelector('.dash-weighted-score-popover');
+  if (!popover || isWeightedContributionMobileViewport()) return;
+  popover.style.display = 'none';
+}
+
 function bindWeightedPopovers(host) {
   bindWeightedPopoverDismissal();
   host.querySelectorAll('.eden-x1-popover-trigger').forEach((button) => {
     if (button.dataset.popoverBound) return;
     button.dataset.popoverBound = '1';
     button.setAttribute('aria-expanded', 'false');
+    hideWeightedPopover(button);
+    button.addEventListener('pointerenter', () => positionWeightedPopover(button));
+    button.addEventListener('pointerleave', () => {
+      if (button.classList.contains('is-open') || button.contains(document.activeElement)) return;
+      hideWeightedPopover(button);
+    });
+    button.addEventListener('focusin', () => positionWeightedPopover(button));
+    button.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (button.classList.contains('is-open') || button.contains(document.activeElement)) return;
+        hideWeightedPopover(button);
+      }, 0);
+    });
     button.addEventListener('click', (event) => {
       if (event.target.closest('.dash-weighted-score-popover')) return;
       event.preventDefault();
       event.stopPropagation();
       const shouldOpen = !button.classList.contains('is-open');
       closeWeightedPopovers(button);
+      if (shouldOpen) positionWeightedPopover(button);
       if (shouldOpen) weightedPopoverOpenedAt = Date.now();
       button.classList.toggle('is-open', shouldOpen);
       button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      if (!shouldOpen) hideWeightedPopover(button);
     });
   });
 }
@@ -743,30 +819,6 @@ function buildPublicStructureRows(attacks) {
     );
 }
 
-function getPublicContributionRows(records) {
-  const record = getPrimaryContributionRecord(Array.isArray(records) ? records : []);
-  const entries = Array.isArray(record?.entries) ? record.entries : [];
-  const rows = entries
-    .map((entry, index) => {
-      const rank = Number(String(entry?.rank || '').replace(/[^\d.-]/g, ''));
-      return {
-        index,
-        rank: Number.isFinite(rank) && rank > 0 ? rank : index + 1,
-        name: String(entry?.name || entry?.player || 'Unknown Player').trim(),
-        guild: String(entry?.guild || '').trim(),
-        contribution: valueOf(entry?.contribution ?? entry?.value ?? entry?.points ?? entry?.total),
-        reward: getContributionRewardTier(entry, record, rank || index + 1),
-      };
-    })
-    .sort(
-      (a, b) =>
-        valueOf(a.rank) - valueOf(b.rank) ||
-        valueOf(b.contribution) - valueOf(a.contribution) ||
-        a.name.localeCompare(b.name)
-    );
-  return { record, rows };
-}
-
 function renderPublicEmpty(label) {
   return `<div class="dash-empty">${esc(label)}</div>`;
 }
@@ -782,12 +834,23 @@ function renderPublicCard(title, hint, body, className = '') {
   </section>`;
 }
 
-function renderPublicContributionTable(contributionRecords) {
-  const { record, rows } = getPublicContributionRows(contributionRecords);
+function renderPublicWeightedContributionTable() {
+  const rows = currentRows
+    .slice()
+    .sort(
+      (a, b) =>
+        valueOf(a.finalRank) - valueOf(b.finalRank) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
+        String(a.playerName || '').localeCompare(String(b.playerName || ''))
+    );
+  const clickableCount = rows.filter((row) =>
+    publicPlayerRows.some((player) => player.key === row.playerKey)
+  ).length;
   const metaParts = [
+    'Demo view - not final yet',
     rows.length ? `${rows.length} players` : '',
-    record?.date ? `snapshot ${record.date}` : '',
-    record?.premiumSlots ? `${record.premiumSlots} premium slots` : '',
+    'weighted score includes contribution, support, and conduct',
+    clickableCount ? 'click matched player rows' : '',
   ].filter(Boolean);
   const body = rows.length
     ? `<div class="dash-table-wrap eden-x1-public-table-wrap">
@@ -795,31 +858,35 @@ function renderPublicContributionTable(contributionRecords) {
         <thead><tr>
           <th class="dash-th-rank">#</th>
           <th>Player</th>
-          <th>Guild</th>
           <th class="dash-th-right">Contribution</th>
-          <th>Reward Tier</th>
+          <th class="dash-th-right">Support Points</th>
+          <th class="dash-th-right">Conduct Points</th>
+          <th class="dash-th-right">Weighted Score</th>
+          <th>Final Reward</th>
         </tr></thead>
         <tbody>${rows
           .map((row) => {
-            const playerKey = publicPlayerKey(row.name);
+            const playerKey = row.playerKey || publicPlayerKey(row.playerName);
             const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
             return `<tr${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
-              <td data-label="#">${row.rank}</td>
-              <td data-label="Player"><strong>${esc(row.name)}</strong></td>
-              <td data-label="Guild">${esc(row.guild || '--')}</td>
-              <td class="dash-table-right" data-label="Contribution">${formatScore(row.contribution)}</td>
-              <td data-label="Reward Tier">${esc(contributionRewardLabel(row.reward))}</td>
+              <td data-label="#">${row.finalRank || '--'}</td>
+              <td data-label="Player"><strong>${esc(row.playerName)}</strong></td>
+              <td class="dash-table-right" data-label="Contribution">${formatScore(row.contributionScore)}</td>
+              <td class="dash-table-right" data-label="Support Points">${formatScore(row.dutyPoints)}</td>
+              <td class="dash-table-right" data-label="Conduct Points">${formatSignedNumber(valueOf(row.conductPoints))}</td>
+              <td class="dash-table-right" data-label="Weighted Score"><strong>${formatWeightedScore(row.weightedScore)}</strong></td>
+              <td data-label="Final Reward">${esc(contributionRewardLabel(row.finalReward))}</td>
             </tr>`;
           })
           .join('')}</tbody>
       </table>
     </div>`
-    : renderPublicEmpty('No contribution snapshot has been published yet.');
+    : renderPublicEmpty('No weighted contribution data has been published yet.');
   const hint = rows.length
-    ? [...metaParts, 'click matched player rows'].filter(Boolean).join(' - ')
-    : 'Full public contribution snapshot';
+    ? metaParts.join(' - ')
+    : 'Full weighted contribution snapshot';
   return renderPublicCard(
-    'Complete Total Contribution',
+    'Weighted Total Contribution',
     hint,
     body,
     'eden-x1-public-wide'
@@ -1109,14 +1176,20 @@ function renderPublicDashboard(data = publicDashboardData) {
       <h2>Complete season activity</h2>
       <p>Public-safe attack, structure, and contribution summaries. Buttons marked with click open detail panels below.</p>
     </div>
-    <div class="eden-x1-public-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:.85rem;align-items:start">
-      ${renderPublicContributionTable(publicDashboardData.contributionRecords)}
+    <div class="eden-x1-public-grid" style="display:grid;gap:.85rem;align-items:start">
+      ${renderPublicWeightedContributionTable()}
       ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
-      ${renderPublicTopPerformers(publicPlayerRows)}
-      ${renderPublicInsights(publicAttackRows, publicPlayerRows, publicStructureRows)}
-      ${renderPublicAttackHistory(publicAttackRows)}
-      ${renderPublicStructures(publicStructureRows)}
-      ${renderPublicLowestPerformers(publicPlayerRows)}
+      <div class="eden-x1-public-columns" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:.85rem;align-items:start">
+        <div style="display:grid;gap:.85rem;min-width:0">
+          ${renderPublicTopPerformers(publicPlayerRows)}
+          ${renderPublicStructures(publicStructureRows)}
+        </div>
+        <div style="display:grid;gap:.85rem;min-width:0">
+          ${renderPublicInsights(publicAttackRows, publicPlayerRows, publicStructureRows)}
+          ${renderPublicAttackHistory(publicAttackRows)}
+          ${renderPublicLowestPerformers(publicPlayerRows)}
+        </div>
+      </div>
       <div id="edenX1PublicDetail" class="eden-x1-public-wide" style="grid-column:1/-1">${renderPublicDetailEmpty()}</div>
     </div>
   </div>`;
@@ -1195,7 +1268,7 @@ function renderTable(rows, recordLabel, options = {}) {
           ${renderWeightedContributionViewToggle(compactView)}
         </div>
       </div>
-      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(visibleRows.length)}">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
           <thead><tr>
             ${renderSortableHeader('number', t('edenX1ThNumber'))}
@@ -1270,7 +1343,7 @@ function renderRewardSlotTable(view) {
           <span class="dash-weighted-contribution-meta">${esc(metaKey ? t(metaKey) : t('edenX1ViewOnly'))}</span>
         </div>
       </div>
-      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table eden-x1-slots-table">
           <thead><tr>
             <th>${esc(t('edenX1ThNumber'))}</th>

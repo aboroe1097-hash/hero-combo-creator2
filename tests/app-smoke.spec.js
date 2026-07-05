@@ -1854,7 +1854,11 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Support Work');
     const publicDashboard = page.locator('#edenX1PublicDashboard');
-    await expect(publicDashboard).toContainText('Complete Total Contribution');
+    await expect(publicDashboard).toContainText('Weighted Total Contribution');
+    await expect(publicDashboard).toContainText('Demo view - not final yet');
+    await expect(publicDashboard).toContainText('Weighted Score');
+    await expect(publicDashboard).toContainText('Support Points');
+    await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
     await expect(publicDashboard).toContainText('Insights');
     await expect(publicDashboard).toContainText('Attack History');
@@ -1927,6 +1931,37 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('h2')).toContainText('Support Work');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 4');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
+    const supportTableMetrics = await panel
+      .locator('.dash-weighted-contribution-table-wrap')
+      .evaluate((wrap) => ({
+        clientHeight: Math.ceil(wrap.clientHeight),
+        scrollHeight: Math.ceil(wrap.scrollHeight),
+      }));
+    expect(supportTableMetrics.clientHeight).toBeLessThan(360);
+    expect(supportTableMetrics.scrollHeight - supportTableMetrics.clientHeight).toBeLessThanOrEqual(
+      8
+    );
+    const supportScoreTrigger = panel
+      .locator('tbody tr')
+      .first()
+      .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
+    await supportScoreTrigger.hover();
+    const supportPopoverMetrics = await supportScoreTrigger
+      .locator('.dash-weighted-score-popover')
+      .evaluate((popover) => {
+        const rect = popover.getBoundingClientRect();
+        return {
+          position: window.getComputedStyle(popover).position,
+          top: Math.floor(rect.top),
+          bottom: Math.ceil(rect.bottom),
+          viewportHeight: window.innerHeight,
+        };
+      });
+    expect(supportPopoverMetrics.position).toBe('fixed');
+    expect(supportPopoverMetrics.top).toBeGreaterThanOrEqual(8);
+    expect(supportPopoverMetrics.bottom).toBeLessThanOrEqual(
+      supportPopoverMetrics.viewportHeight - 8
+    );
     await expect(panel).toContainText('Alpha');
     await expect(panel).not.toContainText('Echo');
     await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
