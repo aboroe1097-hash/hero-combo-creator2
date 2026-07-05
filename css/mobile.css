@@ -45,6 +45,21 @@ body.eden-x1-page {
   touch-action: pan-y;
 }
 
+html.admin-standalone-root {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+}
+
+html.admin-standalone-root body.admin-standalone-page {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y pinch-zoom;
+}
+
 /* Only add footer clearance when sticky bar is visible */
 body.tab-manual-active {
   padding-bottom: calc(var(--footer-h) + var(--safe-bottom) + 16px) !important;

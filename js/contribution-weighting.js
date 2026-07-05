@@ -16,10 +16,6 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
 });
 
 export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
-export const DEFAULT_GUILD_MASTER_NAME = 'MalakAbo';
-
-const DEFAULT_GUILD_MASTER_PLAYER_KEY = compactPlayerIdentity(DEFAULT_GUILD_MASTER_NAME);
-
 const CONTRIBUTION_FIELDS = ['contribution', 'value', 'points', 'total', 'score'];
 const IMAGE_SOURCE_NOTE_RE =
   /(?:whatsapp\s+image|screenshot|screen\s*shot|\.jpe?g\b|\.png\b|\.webp\b|\.heic\b|\.gif\b|[a-z]:[\\/])/i;
@@ -60,20 +56,9 @@ export function getContributionPremiumCutoff(record) {
   return cutoff > 0 ? cutoff : DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF;
 }
 
-export function isDefaultGuildMasterPlayerKey(playerKey) {
-  return String(playerKey || '') === DEFAULT_GUILD_MASTER_PLAYER_KEY;
-}
-
-function isDefaultGuildMasterEntry(entry, playerKey = '') {
-  if (isDefaultGuildMasterPlayerKey(playerKey)) return true;
-  const name = String(entry?.matchedName || entry?.playerName || entry?.name || entry || '').trim();
-  return compactPlayerIdentity(name) === DEFAULT_GUILD_MASTER_PLAYER_KEY;
-}
-
-export function getContributionRewardTier(entry, record, rankOverride = null, playerKey = '') {
+export function getContributionRewardTier(entry, record, rankOverride = null) {
   const override = normalizeRewardTier(entry?.rewardOverride || entry?.reward);
   if (override) return override;
-  if (isDefaultGuildMasterEntry(entry, playerKey)) return 'guild_master';
   const rank = numberValue(rankOverride ?? entry?.rank);
   if (rank < 1) return 'standard';
   if (rank <= 20) return 'core';
@@ -435,8 +420,7 @@ export function buildWeightedContributionRows(options = {}) {
     .map((row, index) => {
       const rank = index + 1;
       let baseReward;
-      if (isDefaultGuildMasterPlayerKey(row.playerKey)) baseReward = 'guild_master';
-      else if (rank <= 20) baseReward = 'core';
+      if (rank <= 20) baseReward = 'core';
       else if (rank <= 110) baseReward = 'power_house';
       else if (rank <= 200) baseReward = 'members';
       else baseReward = 'standard';

@@ -674,7 +674,10 @@ function renderConductAdjustments() {
         render();
         setConductStatus(dashT('adminConductDeleted'), 'success');
       } catch (err) {
-        setConductStatus(showCloudSyncFailure(err, 'Conduct adjustment delete failed'), 'error');
+        setConductStatus(
+          showCloudSyncFailure(err, 'Bonus team effort points delete failed'),
+          'error'
+        );
       }
     });
   });
@@ -813,7 +816,7 @@ function bindConductControls() {
       await savePublicConductSnapshot();
       render();
     } catch (err) {
-      setConductStatus(showCloudSyncFailure(err, 'Conduct adjustment save failed'), 'error');
+      setConductStatus(showCloudSyncFailure(err, 'Bonus team effort points save failed'), 'error');
     }
   });
 }
@@ -2615,9 +2618,9 @@ function exportWeightedContributionCsv() {
     ['#Shield Walls', 'shieldWalls'],
     ['#Pathers', 'pathers'],
     ['#Banners', 'banners'],
-    ['Conduct (R5) bonus', 'conductBonus'],
+    ['Bonus Team Effort (R5)', 'conductBonus'],
     ['Duty points', 'dutyPoints'],
-    ['Conduct points', 'conductPoints'],
+    ['Bonus Team Effort points', 'conductPoints'],
     ['Weighted score', 'weightedScore'],
     ['Final rank', 'finalRank'],
     ['Final reward', 'finalReward'],
@@ -2989,20 +2992,34 @@ function importData(file) {
 
 // --- Render ---
 
+function scheduleAdminLanguageRefresh() {
+  const token = (state._adminLanguageRefreshToken || 0) + 1;
+  state._adminLanguageRefreshToken = token;
+  refreshRosterSnapshotLabel();
+  renderCloudSyncStatus();
+  requestAnimationFrame(() => {
+    if (state._adminLanguageRefreshToken !== token) return;
+    if ($id('dashChart')) render();
+    const refreshSecondaryPanels = () => {
+      if (state._adminLanguageRefreshToken !== token) return;
+      renderContributions();
+      renderConductAdjustments();
+    };
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(refreshSecondaryPanels, { timeout: 300 });
+    } else {
+      setTimeout(refreshSecondaryPanels, 0);
+    }
+  });
+}
+
 export async function bootOcrDashboard() {
   if (state._booted) return;
   state._booted = true;
   loadRoster();
   if (!state._adminLanguageRefreshBound) {
     state._adminLanguageRefreshBound = true;
-    window.addEventListener('vts:admin-language-change', () => {
-      refreshRosterSnapshotLabel();
-      renderCloudSyncStatus();
-      if ($id('dashChart')) render();
-      bindExGuildControls();
-      renderContributions();
-      renderConductAdjustments();
-    });
+    window.addEventListener('vts:admin-language-change', scheduleAdminLanguageRefresh);
   }
   $id('dashLoginBtn').onclick = doLogin;
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);

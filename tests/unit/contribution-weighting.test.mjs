@@ -186,7 +186,7 @@ test('latest contribution record selection uses newest date and premiumSlots fal
   });
 });
 
-test('weighted contribution reserves guild master reward for MalakAbo by default', () => {
+test('weighted contribution does not reserve guild master reward for MalakAbo by default', () => {
   const model = buildWeightedContributionRows({
     contributionRecords: [
       {
@@ -209,8 +209,8 @@ test('weighted contribution reserves guild master reward for MalakAbo by default
   assert.equal(alpha.finalReward, 'core');
   assert.equal(malakAdo.currentReward, 'core');
   assert.equal(malakAdo.finalReward, 'core');
-  assert.equal(malakAbo.currentReward, 'guild_master');
-  assert.equal(malakAbo.finalReward, 'guild_master');
+  assert.equal(malakAbo.currentReward, 'core');
+  assert.equal(malakAbo.finalReward, 'core');
 });
 
 test('weighted contribution labels hide image upload source notes', () => {

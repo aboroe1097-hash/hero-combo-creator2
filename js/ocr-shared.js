@@ -367,7 +367,7 @@ export function getOcrRetryDelayMs(err, attempt) {
 
 // --- Durability ---
 export const DURABILITY_TABLE = {
-  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 2500000, 5: 2000000 },
+  gates: { 1: 200000, 2: 400000, 3: 1200000, 4: 2500000, 5: 2000000, 7: 2500000 },
   bridge: { 1: 200000 },
   city: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
   cities: { 1: 1500000, 2: 2000000, 3: 3500000, 4: 3750000, 5: 4000000 },
@@ -434,12 +434,17 @@ function stripStructureLevelFromName(name) {
     .trim();
 }
 
-function isCheckpointLevelSeven(name, level) {
+function isCheckpointName(name) {
   const cleaned = stripStructureLevelFromName(name);
   const lower = cleaned.toLowerCase().trim();
   const compact = lower.replace(/[^a-z0-9]+/g, '');
-  const normalizedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
-  return normalizedLevel === 'Lv7' && (lower === 'checkpoint' || lower === 'check point' || compact === 'checkpoint');
+  return (
+    lower === 'checkpoint' ||
+    lower === 'check point' ||
+    lower === 'check points' ||
+    compact === 'checkpoint' ||
+    compact === 'checkpoints'
+  );
 }
 
 function canonicalizeStructureName(name, level) {
@@ -454,7 +459,7 @@ function canonicalizeStructureName(name, level) {
     else if (level === 'Lv1') canonical = 'Small Town';
   }
 
-  if (canonical === 'Gates' && level === 'Lv1') canonical = 'Bridge';
+  if (canonical === 'Gates' && level === 'Lv1' && !isCheckpointName(name)) canonical = 'Bridge';
 
   return canonical;
 }
@@ -480,9 +485,6 @@ export function normalizeStructureName(name) {
 export function normalizeStructureTarget(name, level = '') {
   if (!name && !level) return { structure_name: name, structure_level: '' };
   const extractedLevel = normalizeStructureLevel(level) || extractStructureLevelFromName(name);
-  if (isCheckpointLevelSeven(name, extractedLevel)) {
-    return { structure_name: 'Gates', structure_level: 'Lv4' };
-  }
   const structureName = canonicalizeStructureName(name, extractedLevel);
   const structureLevel =
     structureName === 'Bridge'
@@ -536,10 +538,11 @@ export function getDatasetStructureTarget(attack) {
     };
   }
   if (rawName || rawLevel) {
-    if (isCheckpointLevelSeven(rawName, rawLevel ?? attack.structure_level)) {
+    if (isCheckpointName(rawName)) {
+      const target = normalizeStructureTarget(rawName, rawLevel ?? attack.structure_level);
       return {
         structure_name: 'Gate',
-        structure_level: 'Lv4',
+        structure_level: target.structure_level,
       };
     }
     return {

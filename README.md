@@ -14,7 +14,7 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 | **Eden Map Planner** | Canvas-based 1700x1600 tile map with scout mode, route planning, layer toggles, team plans (up to 4 teams), terrain-aware distance |
 | **Tech Research Calculator** | Full Academy tracker across S0-X2 seasons, game-layout trees, War Badge/Courage Medal global summary |
 | **Eden Loyalty Calculator** | Poison mitigation, camp presets, deficit/surplus calculations |
-| **Seasonal VTS Admin** | Eden-season OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, R5 Conduct Adjustments, CSV/PNG/JSON exports |
+| **Seasonal VTS Admin** | Eden-season OCR attack report analysis (Qwen VL API), dedicated structure upload tab, contribution reward lists, leaderboard, trend charts, R5 Bonus Team Effort Points, CSV/PNG/JSON exports |
 | **Seasonal Roster Ops** | Screenshot-based roster extraction, alliance assignment, trusted/spy/unknown status, snapshot history with auto-diff |
 | **Duty List Tracking** | Banner, Pather, and Shield Wall lists with roster-name suggestions, nickname confirmation, and local history |
 | **YouTube** | Lazy-loaded VTS 1097 playlists |
@@ -165,7 +165,7 @@ js/
   ocr-render.js         Dashboard UI rendering
   ocr-engine.js         OCR parsing logic (structure names, durability)
   ocr-shared.js         Shared constants, state, helpers for OCR module
-  ocr-adjustments.js    R5 Conduct Adjustments panel: merit/penalty points, Firestore sync
+  ocr-adjustments.js    R5 Bonus Team Effort Points panel: merit/penalty points, Firestore sync
 
   eden-map.js           Eden Map: render, plans, routing
   eden-map-data.js      Static data, sector definitions
@@ -202,7 +202,7 @@ The old maintenance splash/config gate has been removed. `index.html` and `admin
 ### Admin Auth
 The public toolkit still uses Firebase anonymous auth for comments and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
 
-Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Conduct records.
+Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Bonus Team Effort records.
 
 The dashboard saves OCR results to localStorage first, then uploads to Firestore when cloud sync is available. Failed cloud writes must stay visible in the admin status/log instead of looking like a successful sync. On load, locally cached attacks are merged with cloud attacks by attack id and written back to Firestore when the signed-in admin session can write.
 
@@ -295,7 +295,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 - **Firestore paths:**
   - `vts_admin/dashboard_data` -- OCR attack data
   - `vts_admin/roster_data` -- roster snapshots
-  - `vts_admin/conduct_adjustments/records` -- R5 Conduct Adjustments (admin write only)
+  - `vts_admin/conduct_adjustments/records` -- R5 Bonus Team Effort Points (admin write only)
   - `vts_saved_combos` -- community shared combos
 - **Real-time listeners** via `onSnapshot()` for roster and comments
 - **Offline-first:** All saves go to localStorage first, then Firestore

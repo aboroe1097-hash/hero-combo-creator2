@@ -1,6 +1,5 @@
 import {
   buildWeightedContributionRows,
-  isDefaultGuildMasterPlayerKey,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage } from './translations.js';
@@ -38,6 +37,8 @@ let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
 let publicStructureRows = [];
+let localizedRenderToken = 0;
+let currentPublicTableSearch = '';
 
 function $(id) {
   return document.getElementById(id);
@@ -191,6 +192,21 @@ function setEdenPanelLoading(loading) {
   $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', Boolean(loading));
 }
 
+function shouldScrollRewardTableOnClick() {
+  return window.matchMedia?.('(max-width: 768px)').matches === true;
+}
+
+function scrollRewardTableIntoView() {
+  const target = $('dashWeightedContributionPanel')?.querySelector('.eden-x1-weighted-card');
+  if (!target) return;
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  target.scrollIntoView({
+    behavior: reducedMotion ? 'auto' : 'smooth',
+    block: 'start',
+    inline: 'nearest',
+  });
+}
+
 function bindRewardFlowControls() {
   document.querySelectorAll('[data-reward-view]').forEach((button) => {
     if (button.dataset.rewardBound) return;
@@ -200,7 +216,7 @@ function bindRewardFlowControls() {
       const view = button.dataset.rewardView || 'all';
       if (view !== currentRewardView) currentTableSort = null;
       currentRewardView = view;
-      renderCurrentTable();
+      renderCurrentTable({ scrollIntoView: shouldScrollRewardTableOnClick() });
     });
   });
   updateRewardFlowControls();
@@ -220,20 +236,10 @@ function getContributionRewardRows() {
 }
 
 function getSupportRewardRows() {
-  const leaderIndex = currentRows.findIndex((row) =>
-    isDefaultGuildMasterPlayerKey(row.playerKey)
-  );
-  const supportRows =
-    leaderIndex < 0
-      ? currentRows.slice(0, 4)
-      : [
-          currentRows[leaderIndex],
-          ...currentRows.filter((_row, index) => index !== leaderIndex),
-        ].slice(0, 4);
-  return supportRows.map((row, index) => ({
+  return currentRows.slice(0, 4).map((row, index) => ({
     ...row,
     edenX1RewardSlot: index + 1,
-    edenX1SupportReward: isDefaultGuildMasterPlayerKey(row.playerKey) ? 'guild_master' : 'core',
+    edenX1SupportReward: 'core',
   }));
 }
 
@@ -959,8 +965,21 @@ function renderPublicCard(title, hint, body, className = '') {
   </section>`;
 }
 
+function publicWeightedRowSearchText(row) {
+  return [
+    row.playerName,
+    row.sourceName,
+    row.playerKey,
+    row.currentRank ? `#${row.currentRank}` : '',
+    row.finalRank ? `#${row.finalRank}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
 function renderPublicWeightedContributionTable() {
-  const rows = currentRows
+  const allRows = currentRows
     .slice()
     .sort(
       (a, b) =>
@@ -968,16 +987,31 @@ function renderPublicWeightedContributionTable() {
         valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     );
-  const clickableCount = rows.filter((row) =>
+  const searchQuery = currentPublicTableSearch.trim().toLowerCase();
+  const rows = searchQuery
+    ? allRows.filter((row) => publicWeightedRowSearchText(row).includes(searchQuery))
+    : allRows;
+  const clickableCount = allRows.filter((row) =>
     publicPlayerRows.some((player) => player.key === row.playerKey)
   ).length;
   const metaParts = [
     t('edenX1PublicDemoMeta'),
-    rows.length ? t('edenX1PlayersCount', { count: rows.length }) : '',
+    allRows.length ? t('edenX1PlayersCount', { count: allRows.length }) : '',
     t('edenX1WeightedIncludesMeta'),
     clickableCount ? t('edenX1ClickMatchedRowsMeta') : '',
   ].filter(Boolean);
-  const body = rows.length
+  const searchControl = allRows.length
+    ? `<div class="eden-x1-public-table-toolbar">
+      <label class="dash-search-wrap dash-weighted-search eden-x1-public-search" for="edenX1PublicWeightedSearch">
+        <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input id="edenX1PublicWeightedSearch" class="dash-search-input" type="search" value="${esc(currentPublicTableSearch)}" placeholder="${esc(t('adminSearchPh'))}" autocomplete="off" aria-label="${esc(t('adminSearchPh'))}" />
+      </label>
+    </div>`
+    : '';
+  const tableBody = rows.length
     ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-public-weighted-table">
         <thead><tr>
@@ -1029,15 +1063,16 @@ function renderPublicWeightedContributionTable() {
           .join('')}</tbody>
       </table>
     </div>`
-    : renderPublicEmpty(t('edenX1NoPublicWeightedRows'));
-  const hint = rows.length
+    : renderPublicEmpty(searchQuery ? t('edenX1NoPublicSearchRows') : t('edenX1NoPublicWeightedRows'));
+  const body = allRows.length ? `${searchControl}${tableBody}` : renderPublicEmpty(t('edenX1NoPublicWeightedRows'));
+  const hint = allRows.length
     ? metaParts.join(' - ')
     : t('edenX1WeightedPublicMeta');
   return renderPublicCard(
     t('edenX1WeightedTitle'),
     hint,
     body,
-    'eden-x1-public-wide'
+    'eden-x1-public-wide eden-x1-public-weighted-card'
   );
 }
 
@@ -1525,6 +1560,21 @@ function bindPublicDashboardControls(host) {
   bindWeightedPopovers(host);
   if (host.dataset.publicControlsBound) return;
   host.dataset.publicControlsBound = '1';
+  host.addEventListener('input', (event) => {
+    const input = event.target.closest('#edenX1PublicWeightedSearch');
+    if (!input) return;
+    currentPublicTableSearch = input.value || '';
+    const selectionStart = input.selectionStart ?? currentPublicTableSearch.length;
+    const card = host.querySelector('.eden-x1-public-weighted-card');
+    if (!card) return;
+    card.outerHTML = renderPublicWeightedContributionTable();
+    bindWeightedPopovers(host);
+    const nextInput = host.querySelector('#edenX1PublicWeightedSearch');
+    if (nextInput) {
+      nextInput.focus();
+      nextInput.setSelectionRange(selectionStart, selectionStart);
+    }
+  });
   host.addEventListener('click', (event) => {
     if (
       event.target.closest('#edenX1PublicModalClose') ||
@@ -1599,6 +1649,23 @@ function renderPublicDashboard(data = publicDashboardData) {
   bindPublicDashboardControls(host);
 }
 
+function scheduleLocalizedRerender() {
+  const token = ++localizedRenderToken;
+  requestAnimationFrame(() => {
+    if (token !== localizedRenderToken) return;
+    renderCurrentTable();
+    const renderPublic = () => {
+      if (token !== localizedRenderToken || !publicDashboardData) return;
+      renderPublicDashboard(publicDashboardData);
+    };
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(renderPublic, { timeout: 300 });
+    } else {
+      setTimeout(renderPublic, 0);
+    }
+  });
+}
+
 function updateTextContent(lang) {
   currentLang = lang;
   const dict = translations[lang] || translations.en;
@@ -1634,8 +1701,7 @@ function updateTextContent(lang) {
   });
 
   syncGameClockTitles();
-  renderCurrentTable();
-  if (publicDashboardData) renderPublicDashboard(publicDashboardData);
+  scheduleLocalizedRerender();
 }
 
 function renderTable(rows, recordLabel, options = {}) {
@@ -1779,6 +1845,9 @@ function renderCurrentTable(renderOptions = {}) {
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
     updateRewardFlowControls();
+    if (renderOptions.scrollIntoView) {
+      requestAnimationFrame(scrollRewardTableIntoView);
+    }
     return;
   }
   if (!currentRows.length) return;
@@ -1820,6 +1889,9 @@ function renderCurrentTable(renderOptions = {}) {
       search.focus();
       search.setSelectionRange(search.value.length, search.value.length);
     }
+  }
+  if (renderOptions.scrollIntoView) {
+    requestAnimationFrame(scrollRewardTableIntoView);
   }
 }
 

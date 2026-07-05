@@ -4845,6 +4845,12 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   .dash-weighted-conduct-col {
   display: table-cell;
 }
+#ocrDashboardRoot .dash-contribution-weighted-table .dash-weighted-conduct-col {
+  min-width: 7.8rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 #ocrDashboardRoot .dash-weighted-table-controls {
   display: flex;
   align-items: center;

@@ -349,7 +349,7 @@ async function ensureR5AdjustmentAdminContext() {
 
   const user = firebaseApi.getCurrentUser?.();
   if (!(await firebaseApi.isAdminAuthUser?.(user))) {
-    throw new Error('Sign in as admin before changing R5 conduct adjustments');
+    throw new Error('Sign in as admin before changing R5 bonus team effort points');
   }
 
   const db = firebaseApi.getDb();

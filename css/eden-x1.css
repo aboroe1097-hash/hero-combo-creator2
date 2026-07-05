@@ -47,6 +47,23 @@
   --eden-reward-glow-rgb: 45, 212, 191;
 }
 
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0.8rem;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-search {
+  flex: 1 1 18rem;
+  max-width: 26rem;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-search .dash-search-input {
+  min-height: 2.55rem;
+}
+
 @keyframes edenX1RewardNudge {
   0%,
   88%,
@@ -173,20 +190,24 @@
 
   .eden-x1-page .admin-control-row .admin-back-tools {
     width: 100% !important;
+    height: auto !important;
     min-height: 40px !important;
     padding: 0.58rem 0.48rem !important;
     border-radius: 10px !important;
     font-size: 0.72rem !important;
     letter-spacing: 0 !important;
-    white-space: nowrap;
+    line-height: 1.12 !important;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    white-space: normal;
   }
 
   .eden-x1-page .admin-control-row .admin-back-tools:not(.eden-x1-website-link) {
-    grid-column: 1 / 2;
+    grid-column: 1 / -1;
   }
 
   .eden-x1-page .admin-control-row .eden-x1-website-link {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
   }
 
   .eden-x1-flow-card {
@@ -249,6 +270,39 @@
     overflow: visible;
   }
 
+  .eden-x1-page #ocrDashboardRoot.eden-x1-public-root {
+    gap: 0.75rem !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-card {
+    padding: 0.82rem !important;
+    border-radius: 12px !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-card .dash-card-hdr-wrap {
+    gap: 0.38rem !important;
+    margin-bottom: 0.2rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-card .dash-card-title {
+    font-size: 1rem;
+    line-height: 1.16;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-card .dash-weighted-contribution-meta {
+    font-size: 0.68rem;
+    line-height: 1.22;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-table-toolbar {
+    margin: 0.62rem 0 0.72rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack {
     width: 100% !important;
     min-width: 0 !important;
@@ -281,16 +335,47 @@
     margin-bottom: 0;
   }
 
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack tbody tr {
+    margin-bottom: 0.72rem;
+    border-radius: 12px;
+  }
+
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td {
     grid-column: 1 / -1;
     grid-template-columns: minmax(5.8rem, 0.42fr) minmax(0, 0.58fr) !important;
     width: auto !important;
   }
 
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack td {
+    grid-template-columns: minmax(6.1rem, 0.46fr) minmax(0, 0.54fr) !important;
+    min-height: 31px;
+    padding: 0.32rem 0.72rem !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack td::before {
+    font-size: 0.58rem;
+    line-height: 1.14;
+    letter-spacing: 0.045em;
+    text-align: left;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    .eden-x1-public-weighted-table.dash-table--stack
+    td:not(.dash-weighted-mobile-header-cell):not(.dash-weighted-score-cell):not(
+      .dash-weighted-conduct-col
+    ):not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) {
+    text-align: right !important;
+  }
+
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-mobile-header-cell {
     display: block !important;
     padding: 0.84rem 0.82rem !important;
     border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-mobile-header-cell {
+    padding: 0.72rem !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-player-cell {
@@ -313,31 +398,46 @@
 
   .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-header {
     display: grid !important;
-    grid-template-columns: 3.1rem minmax(0, 1fr) 3.1rem;
+    grid-template-columns: 2.8rem minmax(0, 1fr) 2.8rem;
     align-items: center;
     width: 100%;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table .dash-weighted-mobile-header {
+    grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-rank {
     grid-column: 1;
     white-space: nowrap;
     color: var(--text-primary);
-    font-size: 1.3rem;
+    font-size: 1.16rem;
     font-weight: 900;
     line-height: 1;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table .dash-weighted-mobile-rank {
+    font-size: 1.08rem;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-player-name {
     grid-column: 2;
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
     color: var(--text-primary);
-    font-size: 1.28rem;
+    font-size: 1.08rem;
     font-weight: 950;
-    line-height: 1.12;
+    line-height: 1.08;
     text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table .dash-weighted-mobile-player-name {
+    font-size: 1rem;
+    line-height: 1.05;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col,
@@ -348,17 +448,53 @@
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col {
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center;
+    text-align: center !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) {
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center;
+    text-align: center !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col::before,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell)::before {
+    justify-self: center;
+    text-align: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col::before {
+    max-width: min(14rem, 100%);
+    font-size: 0.62rem;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-conduct-col::before {
+    max-width: min(12.5rem, 100%);
+    font-size: 0.58rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col .dash-weighted-conduct-trigger,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) .dash-weighted-score-trigger {
+    justify-content: center !important;
+    justify-self: center !important;
+    width: 100%;
+    text-align: center !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-trigger .dash-weighted-score-value,
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) .dash-weighted-score-value {
     font-size: 1.42rem;
     line-height: 1;
+    text-align: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-conduct-trigger .dash-weighted-score-value,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) .dash-weighted-score-value {
+    font-size: 1.28rem;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-rank-cell,
@@ -375,6 +511,11 @@
     background:
       linear-gradient(135deg, rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.18), rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.1)),
       rgba(15, 23, 42, 0.78);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-final-rank-cell,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-final-reward-cell {
+    padding: 0.66rem 0.55rem !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-rank-cell {
@@ -409,6 +550,12 @@
     text-align: center !important;
   }
 
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-rank-trigger,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-reward-trigger {
+    min-height: 3rem;
+    border-radius: 12px;
+  }
+
   .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-rank-trigger .dash-weighted-score-value {
     font-size: 1.28rem;
   }
@@ -423,6 +570,78 @@
     font-weight: 950;
     line-height: 1.08;
     text-align: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack .dash-weighted-reward-value {
+    font-size: 1.08rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
+    position: fixed !important;
+    inset: auto max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: min(58svh, 420px) !important;
+    padding: 1.1rem 1rem 0.95rem !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-radius: 14px !important;
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 13, 24, 0.98)),
+      rgba(8, 13, 24, 0.98) !important;
+    box-shadow:
+      0 -18px 48px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(103, 232, 249, 0.18) !important;
+    overscroll-behavior: contain;
+    transform: translateY(10px) !important;
+    z-index: 2200;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover::before {
+    display: none !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover::after {
+    content: '';
+    position: absolute;
+    top: 0.42rem;
+    left: 50%;
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.34);
+    transform: translateX(-50%);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
+    transform: translateY(0) !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover strong {
+    margin-bottom: 0.62rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover > span {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+    padding: 0.54rem 0;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover small,
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover > span > span,
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
+    justify-self: start;
+    text-align: left;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-top-item {

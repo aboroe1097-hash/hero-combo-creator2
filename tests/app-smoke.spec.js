@@ -1362,7 +1362,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashLeaderBody tr').nth(1)).toContainText('Echo');
   });
 
-  test('conduct adjustment saves locally when Firebase is not configured', async ({ page }) => {
+  test('bonus team effort points save locally when Firebase is not configured', async ({ page }) => {
     await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
     await page.addInitScript(() => {
       window.VTS_FIREBASE_CONFIG = {
@@ -1420,7 +1420,9 @@ test.describe('app smoke tabs', () => {
     await page.locator('#dashConductNote').fill('Helped connecting roads for L4 town');
     await page.locator('#dashConductSaveBtn').click();
 
-    await expect(page.locator('#dashConductStatus')).toContainText('Conduct adjustment saved.');
+    await expect(page.locator('#dashConductStatus')).toContainText(
+      'Bonus team effort points saved.'
+    );
     await expect(page.locator('#dashConductList')).toContainText('~Sarafino~');
     await expect(page.locator('#dashConductList')).toContainText(
       'Helped connecting roads for L4 town'
@@ -1434,7 +1436,9 @@ test.describe('app smoke tabs', () => {
     await page.locator('#dashConductNote').fill('Grant premium regardless of weighted rank');
     await page.locator('#dashConductSaveBtn').click();
 
-    await expect(page.locator('#dashConductStatus')).toContainText('Conduct adjustment saved.');
+    await expect(page.locator('#dashConductStatus')).toContainText(
+      'Bonus team effort points saved.'
+    );
     await expect(page.locator('#dashConductList')).toContainText('External R5');
     await expect(page.locator('#dashConductList')).toContainText('Grant premium reward');
     const saved = await page.evaluate(() =>
@@ -1935,8 +1939,15 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('thead')).toContainText('Shield Walls');
     await expect(publicWeightedTable.locator('thead')).toContainText('Pathers');
     await expect(publicWeightedTable.locator('thead')).toContainText('Banners');
-    await expect(publicWeightedTable.locator('thead')).toContainText('Conduct');
+    await expect(publicWeightedTable.locator('thead')).toContainText('Bonus Team Effort Points');
     await expect(publicWeightedTable.locator('thead')).toContainText('Total');
+    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(16);
+    const publicWeightedSearch = publicDashboard.locator('#edenX1PublicWeightedSearch');
+    await expect(publicWeightedSearch).toBeVisible();
+    await publicWeightedSearch.fill('Mike');
+    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(1);
+    await expect(publicWeightedTable.locator('tbody tr').first()).toContainText('Mike');
+    await publicWeightedSearch.fill('');
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(16);
     await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
@@ -2058,11 +2069,11 @@ test.describe('app smoke tabs', () => {
       supportPopoverMetrics.viewportHeight - 8
     );
     await expect(panel).toContainText('Alpha');
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
     await expect(panel).not.toContainText('Echo');
     await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
     await expect(panel.locator('tbody tr .dash-weighted-reward-value')).toContainText([
-      'Guild Master Reward',
+      'Core Rewards',
       'Core Rewards',
       'Core Rewards',
       'Core Rewards',
@@ -2075,7 +2086,7 @@ test.describe('app smoke tabs', () => {
       'Shield Walls',
       'Pathers',
       'Banners',
-      'Conduct',
+      'Bonus Team Effort Points',
       'Total',
       'Weighted Score',
     ]);
@@ -2098,15 +2109,15 @@ test.describe('app smoke tabs', () => {
     await playerSortHeader.click();
     await playerSortHeader.click();
     await expect(playerSortHeader).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
-    ).toContainText('Guild Master Reward');
+    ).toContainText('Core Rewards');
     await expect(
       panel.locator('tbody tr', { hasText: 'Alpha' }).locator('.dash-weighted-reward-value')
     ).toContainText('Core Rewards');
     await panel.locator('th[data-weighted-sort="number"]').click();
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
     const supportNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
@@ -2117,7 +2128,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('h2')).toContainText('Total Contribution');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
     await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel.locator('tbody tr').first()).toContainText('Echo');
     await expect(panel).toContainText('Mike');
     await expect(panel).not.toContainText('Alpha');
     await expect(panel).not.toContainText('Bravo');
@@ -2126,7 +2137,7 @@ test.describe('app smoke tabs', () => {
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => row.cells[1]?.textContent?.trim())
     );
-    expect(contributionNames).not.toContain('MalakAbo');
+    expect(contributionNames).toContain('MalakAbo');
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     const mikeConductTrigger = panel
       .locator('tbody tr', { hasText: 'Mike' })
@@ -2136,9 +2147,8 @@ test.describe('app smoke tabs', () => {
     const conductPopover = mikeConductTrigger.locator('.dash-weighted-score-popover');
     await expect(conductPopover).toBeVisible();
     await expect(conductPopover).toHaveText(
-      'This score is assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
+      'These bonus team effort points are assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
     );
-    await expect(conductPopover).not.toContainText('Conduct points');
     await expect(conductPopover).not.toContainText('20,000');
     await panel.locator('#edenX1TableSearch').fill('Mike');
     await expect(panel.locator('tbody tr')).toHaveCount(1);
@@ -2321,7 +2331,7 @@ test.describe('app smoke tabs', () => {
     expect(weightedDownload.suggestedFilename()).toMatch(/^vts_weighted_contribution_.*\.csv$/);
     const weightedCsv = await fs.readFile(await weightedDownload.path(), 'utf8');
     expect(weightedCsv).toContain('Ex-guild contribution');
-    expect(weightedCsv).toContain('Guild Master Reward');
+    expect(weightedCsv).not.toContain('Guild Master Reward');
 
     await page.locator('#dashExportMenuBtn').click();
     const allDataDownloadPromise = page.waitForEvent('download');
