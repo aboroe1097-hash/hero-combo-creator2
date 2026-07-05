@@ -1,4 +1,4 @@
-import { normalizeR5Adjustment } from './ocr-adjustments.js';
+import { mergeSeededR5Adjustments, normalizeR5Adjustment } from './ocr-adjustments.js';
 import { compactPlayerIdentity, expandDutyRawNames, getDutyCreditedNames } from './ocr-shared.js';
 import {
   getSpecialAccountIdentityKey,
@@ -163,7 +163,7 @@ export function normalizeWeightedR5Adjustments(adjustments = [], season = '') {
   const seasonKey = String(season || '').trim();
   const normalized = [];
 
-  (Array.isArray(adjustments) ? adjustments : []).forEach((entry) => {
+  mergeSeededR5Adjustments(adjustments, seasonKey).forEach((entry) => {
     let adjustment;
     try {
       adjustment = normalizeR5Adjustment(entry, { season: entry?.season || seasonKey });
@@ -185,6 +185,14 @@ export function normalizeWeightedR5Adjustments(adjustments = [], season = '') {
 }
 
 export function sanitizePublicR5Adjustments(adjustments = [], season = '') {
+  const publicMeritCategories = new Set([
+    'banner_help',
+    'connected_road',
+    'extra_effort',
+    'merit_other',
+    'grant_premium',
+    'forfeit_premium',
+  ]);
   return normalizeWeightedR5Adjustments(adjustments, season).map((adjustment) => ({
     season: adjustment.season,
     playerKey: adjustment.playerKey,
@@ -193,9 +201,11 @@ export function sanitizePublicR5Adjustments(adjustments = [], season = '') {
     category:
       adjustment.category === 'grant_premium' || adjustment.category === 'forfeit_premium'
         ? adjustment.category
-        : adjustment.points < 0
-          ? 'penalty_other'
-          : 'merit_other',
+        : publicMeritCategories.has(adjustment.category)
+          ? adjustment.category
+          : adjustment.points < 0
+            ? 'penalty_other'
+            : 'merit_other',
   }));
 }
 

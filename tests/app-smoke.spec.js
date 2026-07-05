@@ -101,6 +101,9 @@ async function stabilizeVisuals(page) {
       #globalGameClock {
         visibility: hidden !important;
       }
+      .visual-surface-crop #generatorResults {
+        scroll-margin-top: 140px !important;
+      }
       .visual-surface-crop #availableHeroes,
       .visual-surface-crop #heroesSection,
       .visual-surface-crop #techListContainer,
@@ -1822,7 +1825,8 @@ test.describe('app smoke tabs', () => {
       rank: String(index + 1),
       name,
       guild: 'VTS X1',
-      contribution: String(240000 - index * 9000),
+      contribution: String(name === 'MalakAbo' ? 500000 : 240000 - index * 9000),
+      ...(name === 'MalakAbo' ? { rewardOverride: 'guild_master' } : {}),
     }));
     const seededDash = {
       date: '2026-06-24',
@@ -1861,6 +1865,12 @@ test.describe('app smoke tabs', () => {
           player: 'Mike',
           points: 2,
           category: 'merit_other',
+        },
+        {
+          season: 'season-2026',
+          player: 'MalakAbo',
+          points: 0,
+          category: 'forfeit_premium',
         },
       ],
       attacks: [
@@ -2070,6 +2080,11 @@ test.describe('app smoke tabs', () => {
     );
     await expect(panel).toContainText('Alpha');
     await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    await expect(panel).toContainText('Mike');
+    const supportPlayerNames = await panel
+      .locator('tbody tr .dash-weighted-player-cell strong')
+      .evaluateAll((cells) => cells.map((cell) => cell.textContent.trim()));
+    expect(supportPlayerNames).not.toContain('MalakAbo');
     await expect(panel).not.toContainText('Echo');
     await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
     await expect(panel.locator('tbody tr .dash-weighted-reward-value')).toContainText([
@@ -2095,6 +2110,18 @@ test.describe('app smoke tabs', () => {
     await expect(alphaSupportRow.locator('td').nth(5)).toHaveText('5,000');
     await expect(alphaSupportRow.locator('td').nth(9)).toContainText('+1');
     await expect(alphaSupportRow.locator('td').nth(10)).toHaveText('2');
+    const mikeSupportRow = panel.locator('tbody tr', { hasText: 'Mike' });
+    await expect(mikeSupportRow.locator('td').nth(9)).toContainText('+2');
+    await expect(mikeSupportRow.locator('td').nth(10)).toHaveText('2');
+    const mikeConductTrigger = mikeSupportRow.locator('.dash-weighted-conduct-trigger');
+    await expect(mikeConductTrigger).toContainText('+2');
+    await mikeConductTrigger.hover();
+    const conductPopover = mikeConductTrigger.locator('.dash-weighted-score-popover');
+    await expect(conductPopover).toBeVisible();
+    await expect(conductPopover).toHaveText(
+      'These bonus team effort points are assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
+    );
+    await expect(conductPopover).not.toContainText('20,000');
     const exGuildSortHeader = panel.locator('th[data-weighted-sort="exGuild"]');
     await exGuildSortHeader.click();
     await expect(exGuildSortHeader).toHaveAttribute('aria-sort', 'descending');
@@ -2109,7 +2136,7 @@ test.describe('app smoke tabs', () => {
     await playerSortHeader.click();
     await playerSortHeader.click();
     await expect(playerSortHeader).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel.locator('tbody tr').first()).toContainText('Mike');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
     ).toContainText('Core Rewards');
@@ -2128,8 +2155,8 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('h2')).toContainText('Total Contribution');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
     await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Echo');
-    await expect(panel).toContainText('Mike');
+    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel).not.toContainText('Mike');
     await expect(panel).not.toContainText('Alpha');
     await expect(panel).not.toContainText('Bravo');
     await expect(panel).not.toContainText('Charlie');
@@ -2139,27 +2166,16 @@ test.describe('app smoke tabs', () => {
     );
     expect(contributionNames).toContain('MalakAbo');
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
-    const mikeConductTrigger = panel
-      .locator('tbody tr', { hasText: 'Mike' })
-      .locator('.dash-weighted-conduct-trigger');
-    await expect(mikeConductTrigger).toContainText('+2');
-    await mikeConductTrigger.hover();
-    const conductPopover = mikeConductTrigger.locator('.dash-weighted-score-popover');
-    await expect(conductPopover).toBeVisible();
-    await expect(conductPopover).toHaveText(
-      'These bonus team effort points are assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
-    );
-    await expect(conductPopover).not.toContainText('20,000');
-    await panel.locator('#edenX1TableSearch').fill('Mike');
+    await panel.locator('#edenX1TableSearch').fill('MalakAbo');
     await expect(panel.locator('tbody tr')).toHaveCount(1);
-    await expect(panel.locator('tbody tr').first()).toContainText('Mike');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     await panel.locator('#edenX1TableSearch').fill('');
     await expect(panel.locator('tbody tr')).toHaveCount(10);
     const contributionPlayerSort = panel.locator('th[data-weighted-sort="player"]');
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('Mike');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();

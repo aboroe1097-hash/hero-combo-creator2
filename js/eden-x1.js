@@ -16,7 +16,7 @@ import {
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
 
-const APP_VERSION = '12.4.0';
+const APP_VERSION = '12.4.1';
 const FS_PATH = 'vts_admin/dashboard_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const THEME_STORAGE_KEY = 'vts_theme';
@@ -236,11 +236,22 @@ function getContributionRewardRows() {
 }
 
 function getSupportRewardRows() {
-  return currentRows.slice(0, 4).map((row, index) => ({
-    ...row,
-    edenX1RewardSlot: index + 1,
-    edenX1SupportReward: 'core',
-  }));
+  return currentRows
+    .filter((row) => rowBonusTotal(row) > 0)
+    .slice()
+    .sort(
+      (a, b) =>
+        rowBonusTotal(b) - rowBonusTotal(a) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
+        valueOf(a.finalRank) - valueOf(b.finalRank) ||
+        String(a.playerName || '').localeCompare(String(b.playerName || ''))
+    )
+    .slice(0, 4)
+    .map((row, index) => ({
+      ...row,
+      edenX1RewardSlot: index + 1,
+      edenX1SupportReward: 'core',
+    }));
 }
 
 function rowBonusTotal(row) {
@@ -1765,6 +1776,7 @@ function renderTable(rows, recordLabel, options = {}) {
                     ? row.edenX1RewardSlot || index + 1
                     : row.finalRank;
               const rewardContext = rewardContextForRow(row, index, numberValue);
+              const rowReward = rewardContext.baseReward || rewardContext.currentReward || row.currentReward;
               const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
               return `<tr class="${rewardClass}">
                 <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
@@ -1776,7 +1788,7 @@ function renderTable(rows, recordLabel, options = {}) {
                 </td>
                 <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
+                <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>

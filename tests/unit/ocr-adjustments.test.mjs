@@ -26,6 +26,7 @@ const {
   deleteLocalR5Adjustment,
   defaultR5PointsForCategory,
   loadLocalR5Adjustments,
+  mergeSeededR5Adjustments,
   normalizeR5Adjustment,
   normalizeR5AdjustmentRecords,
   resolveR5PlayerIdentity,
@@ -108,6 +109,34 @@ test('R5 adjustment record batches skip malformed historical cloud rows', () => 
       [resolveR5PlayerIdentity('Kika').playerKey, -1],
     ]
   );
+});
+
+test('R5 seeded 12.4.1 road support points merge without double-counting cloud rows', () => {
+  const seeded = mergeSeededR5Adjustments([], 'season-2026');
+
+  assert.deepEqual(
+    seeded.map((row) => [row.playerName, row.points, row.category, row.note]),
+    [
+      ['Феечка))', 1, 'connected_road', 'Help with Connecting Roads to Structures'],
+      ['Obliterated', 1, 'connected_road', 'Help with Connecting Roads to Structures'],
+    ]
+  );
+
+  const merged = mergeSeededR5Adjustments(
+    [
+      {
+        season: 'season-2026',
+        player: 'Obliterated',
+        points: 1,
+        category: 'connected_road',
+        note: 'Cloud copy of road help',
+      },
+    ],
+    'season-2026'
+  );
+
+  assert.equal(merged.filter((row) => row.playerName === 'Obliterated').length, 1);
+  assert.equal(mergeSeededR5Adjustments([], 'season-2027').length, 0);
 });
 
 test('R5 adjusted ranking uses adjusted total without mutating OCR total', () => {

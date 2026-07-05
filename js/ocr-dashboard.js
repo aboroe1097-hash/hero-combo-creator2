@@ -207,6 +207,18 @@ const DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = (() => {
   }
   return Number.isFinite(override) && override > 0 ? override : 6500;
 })();
+const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
+  let override =
+    typeof globalThis !== 'undefined'
+      ? Number(globalThis.VTS_DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
+      : NaN;
+  if (!Number.isFinite(override) && typeof localStorage !== 'undefined') {
+    try {
+      override = Number(localStorage.getItem('vts_dashboard_cloud_write_timeout_ms'));
+    } catch (e) {}
+  }
+  return Number.isFinite(override) && override > 0 ? override : 6500;
+})();
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
@@ -266,6 +278,87 @@ function withDashboardCloudTimeout(promise, timeoutMs, label) {
 function isDashboardCloudTimeout(err) {
   return err?.code === 'dashboard-cloud-timeout' || err?.name === 'DashboardCloudTimeoutError';
 }
+
+function getDashboardErrorText(err) {
+  if (!err) return '';
+  if (typeof err === 'string') return err;
+  return `${err?.name || ''} ${err?.code || ''} ${err?.message || err || ''} ${err?.stack || ''}`;
+}
+
+function isDashboardPermissionErrorText(text) {
+  return /permission-denied|permission|insufficient|admin/i.test(text);
+}
+
+function isFirestoreInternalWatchAssertion(err) {
+  const text = getDashboardErrorText(err);
+  return /FIRESTORE\s*\([^)]*\):\s*(?:INTERNAL\s+)?ASSERTION FAILED:\s*Unexpected state|Unexpected state\s*\(ID:\s*(?:ca9|b815)\)/i.test(
+    text
+  );
+}
+
+function isRecoverableDashboardCloudError(err) {
+  if (isDashboardCloudTimeout(err)) return true;
+  const text = getDashboardErrorText(err);
+  if (isDashboardPermissionErrorText(text)) return false;
+  return (
+    /network|fetch|offline|unavailable|connection|closed|proxy|timeout|ERR_/i.test(text) ||
+    isFirestoreInternalWatchAssertion(err)
+  );
+}
+
+function handleDashboardFirestoreBackgroundError(event) {
+  const err = event?.reason || event?.error || event?.message || event;
+  if (!isFirestoreInternalWatchAssertion(err)) return;
+  state._cloudInitPromise = null;
+  if (typeof event?.preventDefault === 'function') event.preventDefault();
+  if (state.cloudSyncStatus !== 'error') {
+    setCloudSyncStatus('local', dashT('adminCloudLocalCache'));
+  }
+  console.warn(
+    'Firestore background listener failed after cloud fallback; continuing with local dashboard cache.',
+    err?.message || err
+  );
+}
+
+let dashboardFirestoreErrorGuardInstalled = false;
+function installDashboardFirestoreErrorGuard() {
+  if (
+    dashboardFirestoreErrorGuardInstalled ||
+    typeof window === 'undefined' ||
+    typeof window.addEventListener !== 'function'
+  ) {
+    return;
+  }
+  dashboardFirestoreErrorGuardInstalled = true;
+  window.addEventListener('error', handleDashboardFirestoreBackgroundError);
+  window.addEventListener('unhandledrejection', handleDashboardFirestoreBackgroundError);
+}
+
+function showDashboardCloudFallback(err, label = 'Cloud sync') {
+  if (isRecoverableDashboardCloudError(err)) {
+    state._cloudInitPromise = null;
+    const message = dashT('adminCloudLocalCache');
+    setCloudSyncStatus('local', message);
+    log(`${label} unavailable; showing local dashboard cache.`, 'warn');
+    return message;
+  }
+  return showCloudSyncFailure(err, `${label} failed`);
+}
+
+async function runDashboardCloudTaskWithTimeout(
+  label,
+  task,
+  timeoutMs = DASHBOARD_CLOUD_BOOT_TIMEOUT_MS
+) {
+  try {
+    return await withDashboardCloudTimeout(Promise.resolve().then(task), timeoutMs, label);
+  } catch (err) {
+    showDashboardCloudFallback(err, label);
+    return null;
+  }
+}
+
+installDashboardFirestoreErrorGuard();
 
 function writeDashboardLocalCache(data) {
   try {
@@ -1483,15 +1576,20 @@ function describeCloudSyncError(err) {
   if (/Firebase not initialized|missing|config/i.test(text)) {
     return 'Firebase is not configured for this deployment.';
   }
+  if (isRecoverableDashboardCloudError(err)) {
+    return dashT('adminCloudLocalCache');
+  }
   return err?.message || err?.code || String(err || dashT('adminCloudSyncError'));
 }
 function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
   const message = describeCloudSyncError(err);
-  setCloudSyncStatus('error', message);
+  const recoverable = isRecoverableDashboardCloudError(err);
+  if (recoverable) state._cloudInitPromise = null;
+  setCloudSyncStatus(recoverable ? 'local' : 'error', message);
   const lang = getDashboardLang();
-  log(lang === 'en' ? `${prefix}: ${message}` : message, 'error');
+  log(lang === 'en' ? `${prefix}: ${message}` : message, recoverable ? 'warn' : 'error');
   if (!_isConnecting && typeof window.showToast === 'function')
-    window.showToast(message, 'error', 7000);
+    window.showToast(message, recoverable ? 'info' : 'error', 7000);
   return message;
 }
 function setRefreshBusy(busy) {
@@ -1618,6 +1716,19 @@ async function doLogin() {
 }
 
 async function doSignOut() {
+  if (state._fsUnsub) {
+    try {
+      state._fsUnsub();
+    } catch (e) {}
+    state._fsUnsub = null;
+  }
+  if (state._fsRosterUnsub) {
+    try {
+      state._fsRosterUnsub();
+    } catch (e) {}
+    state._fsRosterUnsub = null;
+  }
+  state._cloudInitPromise = null;
   try {
     const { signOutUser } = await loadFirebaseApi();
     await signOutUser();
@@ -1640,11 +1751,21 @@ async function openAdminDashboardAfterAuth(options = {}) {
     setConnectingProgress(45, dashT('adminConnectingData'), { cap: 92 });
     if (preferCloudFirst) {
       await Promise.allSettled([
-        loadRosterSnapshotsFromFirestore(),
-        loadData({ preferCloudFirst: true }),
-        loadConductAdjustmentsForSeason(),
+        runDashboardCloudTaskWithTimeout('Roster cloud load', loadRosterSnapshotsFromFirestore),
+        loadData({
+          preferCloudFirst: true,
+          cloudTimeoutMs: DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+        }),
+        runDashboardCloudTaskWithTimeout(
+          'Bonus team effort points cloud load',
+          loadConductAdjustmentsForSeason
+        ),
       ]);
-      await flushDashboardCloudRetryQueue();
+      await runDashboardCloudTaskWithTimeout(
+        'Queued cloud sync',
+        flushDashboardCloudRetryQueue,
+        Math.min(DASHBOARD_CLOUD_BOOT_TIMEOUT_MS, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
+      );
     } else {
       hydrateDashboardStateFromLocalStorage();
       await loadData({ preferCloudFirst: false });
@@ -1805,21 +1926,29 @@ async function flushDashboardCloudRetryQueue() {
 
   try {
     setCloudSyncStatus('syncing');
-    const db = await ensureCloudSyncReady();
+    const awaitCloud = (promise, label) =>
+      withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
+    const db = await awaitCloud(ensureCloudSyncReady(), 'Queued cloud connection');
     if (!db) {
       setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
       return false;
     }
 
-    const firestore = await loadFirestoreApi();
+    const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
     const { doc, setDoc } = firestore;
     const remaining = [];
     for (const entry of queued) {
       try {
         if (entry.kind === 'auxiliary') {
-          await writeAuxiliaryPayloadToCloud(db, firestore, entry.payload);
+          await awaitCloud(
+            writeAuxiliaryPayloadToCloud(db, firestore, entry.payload),
+            'Queued auxiliary cloud write'
+          );
         } else {
-          await setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(entry.payload));
+          await awaitCloud(
+            setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(entry.payload)),
+            'Queued dashboard cloud write'
+          );
         }
       } catch (err) {
         remaining.push(entry);
@@ -1851,18 +1980,20 @@ async function flushDashboardCloudSave() {
   const version = dashboardCloudSavePendingVersion;
   dashboardCloudSavePendingData = null;
   dashboardCloudSaveInFlight = true;
+  const awaitCloud = (promise, label) =>
+    withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
   let result = false;
   try {
     setCloudSyncStatus('syncing');
-    const db = await ensureCloudSyncReady();
+    const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
     if (!db) {
       setCloudSyncStatus('local');
       queueDashboardCloudRetry('dashboard', persistedData, dashT('adminCloudAdminRequired'));
       showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
       return false;
     }
-    const { doc, setDoc } = await loadFirestoreApi();
-    await setDoc(doc(db, FS_PATH), persistedData);
+    const { doc, setDoc } = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
+    await awaitCloud(setDoc(doc(db, FS_PATH), persistedData), 'Dashboard cloud save');
     setCloudSyncStatus('live');
     log('Synced to cloud.', 'info');
     result = true;
@@ -1910,7 +2041,23 @@ export async function saveData(data, options = {}) {
   const cloudSave = scheduleDashboardCloudSave(persistedData, {
     immediate: options.immediate === true,
   });
-  if (options.awaitCloud === true) return cloudSave;
+  if (options.awaitCloud === true) {
+    try {
+      return await withDashboardCloudTimeout(
+        cloudSave,
+        DASHBOARD_CLOUD_WRITE_TIMEOUT_MS,
+        'Dashboard cloud save'
+      );
+    } catch (err) {
+      queueDashboardCloudRetry(
+        'dashboard',
+        persistedData,
+        err?.message || err?.code || 'save timed out'
+      );
+      showDashboardCloudFallback(err, 'Dashboard cloud save');
+      return false;
+    }
+  }
   return false;
 }
 
@@ -1925,8 +2072,10 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
   writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
   try {
+    const awaitCloud = (promise, label) =>
+      withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
     setCloudSyncStatus('syncing');
-    const db = await ensureCloudSyncReady();
+    const db = await awaitCloud(ensureCloudSyncReady(), 'Special list cloud connection');
     if (!db) {
       setCloudSyncStatus('local');
       queueDashboardCloudRetry(
@@ -1940,9 +2089,12 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
       );
       return false;
     }
-    const firestore = await loadFirestoreApi();
+    const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
     const auxiliaryPayload = getAuxiliaryRecordPayload();
-    const result = await writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload);
+    const result = await awaitCloud(
+      writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload),
+      'Special list cloud save'
+    );
     setCloudSyncStatus('live');
     if (result.repaired) log('Cloud dashboard document repaired and special lists synced.', 'warn');
     updateLastSynced();
@@ -3048,9 +3200,20 @@ export async function bootOcrDashboard() {
     try {
       await Promise.allSettled([
         loadData({ preferCloudFirst: state.adminIsAdmin === true }),
-        loadConductAdjustmentsForSeason(),
+        state.adminIsAdmin === true
+          ? runDashboardCloudTaskWithTimeout(
+              'Bonus team effort points cloud load',
+              loadConductAdjustmentsForSeason
+            )
+          : loadConductAdjustmentsForSeason(),
       ]);
-      if (state.adminIsAdmin === true) await flushDashboardCloudRetryQueue();
+      if (state.adminIsAdmin === true) {
+        await runDashboardCloudTaskWithTimeout(
+          'Queued cloud sync',
+          flushDashboardCloudRetryQueue,
+          Math.min(DASHBOARD_CLOUD_BOOT_TIMEOUT_MS, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
+        );
+      }
       render();
     } catch (e) {
       console.error('Refresh failed:', e);

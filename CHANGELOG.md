@@ -1,5 +1,15 @@
 # Changelog
 
+## 12.4.1 - 2026-07-06
+
+- Fixed Eden X1 Support Work rewards so only players with real support points are eligible, preventing raw Guild Master reward overrides from appearing in the support table.
+- Kept support reward labels scoped to Support Work rewards and added regression coverage for MalakAbo's forfeited Guild Master reward case.
+- Added +1 Bonus Team Effort Points for `Феечка))` and `Obliterated` for helping connect roads to structures.
+- Bounded VTS Admin cloud boot and save attempts so Firestore proxy/network failures fall back to local cache instead of leaving the connecting overlay stuck.
+- Treated Firebase's known internal Firestore watch-stream assertion as a recoverable local-cache fallback and tightened sign-out listener cleanup.
+- Raised the CSS size-check ceiling by 1 KiB for the measured 12.4.1 admin/translation layout baseline.
+- Synced public version labels, README, and app version constants to 12.4.1.
+
 ## 12.4.0 - 2026-07-05
 
 - Fixed VTS Admin dashboard grid alignment so analytics, insights, attack history, and leaderboard panels keep the tightened gap-free layout.

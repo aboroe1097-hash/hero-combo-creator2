@@ -68,6 +68,31 @@ export const R5_ADJUSTMENT_CATEGORIES = Object.freeze({
 
 export const R5_ADJUSTMENT_CATEGORY_KEYS = Object.freeze(Object.keys(R5_ADJUSTMENT_CATEGORIES));
 
+export const SEEDED_R5_ADJUSTMENTS = Object.freeze([
+  Object.freeze({
+    id: 'seed-2026-feechka-connected-road',
+    season: 'season-2026',
+    playerKey: compactPlayerIdentity('Феечка))'),
+    playerName: 'Феечка))',
+    points: 1,
+    category: 'connected_road',
+    note: 'Help with Connecting Roads to Structures',
+    createdAt: '2026-07-06T00:00:00.000Z',
+    createdBy: 'release-12.4.1',
+  }),
+  Object.freeze({
+    id: 'seed-2026-obliterated-connected-road',
+    season: 'season-2026',
+    playerKey: compactPlayerIdentity('Obliterated'),
+    playerName: 'Obliterated',
+    points: 1,
+    category: 'connected_road',
+    note: 'Help with Connecting Roads to Structures',
+    createdAt: '2026-07-06T00:00:00.000Z',
+    createdBy: 'release-12.4.1',
+  }),
+]);
+
 const MAX_R5_POINTS = 1000;
 const DEFAULT_CATEGORY = 'merit_other';
 const TOTAL_FIELDS = ['total_demolition', 'totalDemolition', 'ocrTotal', 'total', 'value'];
@@ -162,11 +187,47 @@ export function normalizeR5AdjustmentRecords(records = [], options = {}) {
   return normalized;
 }
 
+function r5AdjustmentSeedSignature(adjustment) {
+  return [adjustment.season, adjustment.playerKey, adjustment.category, adjustment.points].join(
+    '|'
+  );
+}
+
+export function mergeSeededR5Adjustments(records = [], season) {
+  const seasonKey = String(season || '').trim();
+  if (!seasonKey) return normalizeR5AdjustmentRecords(records);
+  const merged = [];
+  const seenIds = new Set();
+  const seenSeedSignatures = new Set();
+
+  normalizeR5AdjustmentRecords(records, { season: seasonKey }).forEach((adjustment) => {
+    if (adjustment.season !== seasonKey) return;
+    if (adjustment.id) seenIds.add(adjustment.id);
+    seenSeedSignatures.add(r5AdjustmentSeedSignature(adjustment));
+    merged.push(adjustment);
+  });
+
+  normalizeR5AdjustmentRecords(SEEDED_R5_ADJUSTMENTS, { season: seasonKey }).forEach(
+    (adjustment) => {
+      if (adjustment.season !== seasonKey) return;
+      const signature = r5AdjustmentSeedSignature(adjustment);
+      if ((adjustment.id && seenIds.has(adjustment.id)) || seenSeedSignatures.has(signature)) {
+        return;
+      }
+      seenIds.add(adjustment.id);
+      seenSeedSignatures.add(signature);
+      merged.push(adjustment);
+    }
+  );
+
+  return merged;
+}
+
 export function aggregateR5Bonuses(adjustments = [], season) {
   const seasonKey = normalizeR5Season(season);
   const totals = new Map();
 
-  normalizeR5AdjustmentRecords(adjustments, { season: seasonKey }).forEach((adjustment) => {
+  mergeSeededR5Adjustments(adjustments, seasonKey).forEach((adjustment) => {
     if (adjustment.season !== seasonKey) return;
     totals.set(adjustment.playerKey, (totals.get(adjustment.playerKey) || 0) + adjustment.points);
   });

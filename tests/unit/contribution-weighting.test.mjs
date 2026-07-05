@@ -105,6 +105,13 @@ test('public R5 conduct mirror keeps scores and premium flags without private no
       },
       {
         season,
+        player: 'Road Helper',
+        points: 1,
+        category: 'connected_road',
+        note: 'Public-safe category, private note',
+      },
+      {
+        season,
         player: 'Bravo',
         points: 0,
         category: 'grant_premium',
@@ -131,6 +138,13 @@ test('public R5 conduct mirror keeps scores and premium flags without private no
         createdBy: undefined,
       },
       {
+        playerName: 'Road Helper',
+        points: 1,
+        category: 'connected_road',
+        note: undefined,
+        createdBy: undefined,
+      },
+      {
         playerName: 'Bravo',
         points: 0,
         category: 'grant_premium',
@@ -139,6 +153,40 @@ test('public R5 conduct mirror keeps scores and premium flags without private no
       },
     ]
   );
+});
+
+test('weighted contribution applies seeded 12.4.1 road support points once', () => {
+  const season = 'season-2026';
+  const model = buildWeightedContributionRows({
+    season,
+    contributionRecords: [
+      {
+        id: 'seeded-road-support',
+        date: '2026-07-06',
+        entries: [
+          { rank: 1, name: 'Феечка))', contribution: 100000 },
+          { rank: 2, name: 'Obliterated', contribution: 90000 },
+        ],
+      },
+    ],
+    r5Adjustments: [
+      {
+        season,
+        player: 'Obliterated',
+        points: 1,
+        category: 'connected_road',
+        note: 'Cloud copy of road help',
+      },
+    ],
+  });
+
+  const feechka = model.rows.find((row) => row.playerName === 'Феечка))');
+  const obliterated = model.rows.find((row) => row.playerName === 'Obliterated');
+
+  assert.equal(feechka.conductBonus, 1);
+  assert.equal(feechka.conductPoints, 10000);
+  assert.equal(obliterated.conductBonus, 1);
+  assert.equal(obliterated.conductPoints, 10000);
 });
 
 test('weighted duty counts credit both banner account and operator when present', () => {

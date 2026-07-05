@@ -114,6 +114,29 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(rules, /request\.resource\.data\.playerRegistry is map/);
 });
 
+test('admin cloud boot and saves have bounded local-cache fallback', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  assert.match(dashboard, /DASHBOARD_CLOUD_BOOT_TIMEOUT_MS/);
+  assert.match(dashboard, /DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
+  assert.match(dashboard, /function isRecoverableDashboardCloudError/);
+  assert.match(dashboard, /function isFirestoreInternalWatchAssertion/);
+  assert.match(dashboard, /installDashboardFirestoreErrorGuard\(\)/);
+  assert.match(dashboard, /window\.addEventListener\('unhandledrejection'/);
+  assert.match(dashboard, /state\._fsRosterUnsub = null/);
+  assert.match(dashboard, /function runDashboardCloudTaskWithTimeout/);
+  assert.match(
+    dashboard,
+    /runDashboardCloudTaskWithTimeout\('Roster cloud load', loadRosterSnapshotsFromFirestore\)/
+  );
+  assert.match(
+    dashboard,
+    /runDashboardCloudTaskWithTimeout\(\s*'Bonus team effort points cloud load',\s*loadConductAdjustmentsForSeason/
+  );
+  assert.match(dashboard, /withDashboardCloudTimeout\(\s*cloudSave/);
+  assert.match(dashboard, /withDashboardCloudTimeout\(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
+});
+
 test('shared admin dashboard reads stay available while writes require admin claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
