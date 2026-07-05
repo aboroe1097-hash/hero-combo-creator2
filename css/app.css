@@ -14268,31 +14268,6 @@ body.admin-standalone-page > .app-shell {
   line-height: 1.45;
 }
 
-.eden-x1-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 1rem;
-  text-align: center;
-}
-
-.eden-x1-loading .spinner {
-  width: 36px;
-  height: 36px;
-  margin-bottom: 1rem;
-  border: 3px solid var(--border-subtle, #334155);
-  border-top-color: var(--blue-400, #60a5fa);
-  border-radius: 50%;
-  animation: eden-spin 0.8s linear infinite;
-}
-
-@keyframes eden-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .eden-x1-error {
   padding: 2rem 1rem;
   color: var(--red-400, #f87171);
@@ -14345,6 +14320,22 @@ body.admin-standalone-page > .app-shell {
   font-size: 0.68rem;
   font-weight: 800;
   line-height: 1.4;
+}
+
+@media (min-width: 981px) {
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-analytics {
+    display: block !important;
+    columns: 2;
+    gap: 0 !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-analytics > .eden-x1-public-card {
+    display: inline-block;
+    width: 100%;
+    margin: 0 0 0.75rem;
+    break-inside: avoid;
+  }
+
 }
 
 [data-theme="light"] .eden-x1-notice {

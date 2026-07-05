@@ -1867,9 +1867,27 @@ test.describe('app smoke tabs', () => {
     };
 
     await openEdenX1ForTest(page);
+    const preLoadSupportCard = page.locator('[data-reward-view="support"]');
+    const preLoadContributionCard = page.locator('[data-reward-view="contribution"]');
+    const preLoadPanel = page.locator('#dashWeightedContributionPanel');
+    await expect(preLoadPanel.locator('.dash-connecting')).toBeVisible();
+    await expect(preLoadPanel).toContainText('Reward tables unlock');
+    await expect(preLoadSupportCard).toBeDisabled();
+    await expect(preLoadContributionCard).toBeDisabled();
+    await page.evaluate(() => {
+      document
+        .querySelector('[data-reward-view="contribution"]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await expect(preLoadContributionCard).toHaveAttribute('aria-pressed', 'false');
+    await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
+
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
+    await expect(preLoadSupportCard).toBeEnabled();
+    await expect(preLoadContributionCard).toBeEnabled();
+    await expect(preLoadPanel.locator('.dash-connecting')).toHaveCount(0);
 
     const panel = page.locator('#dashWeightedContributionPanel');
     await expect(panel.locator('tbody tr')).toHaveCount(4);

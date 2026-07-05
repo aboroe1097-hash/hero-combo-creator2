@@ -29,6 +29,7 @@ let currentRecordLabel = '';
 let currentRewardView = 'support';
 let currentTableSearch = '';
 let currentTableSort = null;
+let rewardFlowReady = false;
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
 let weightedPopoverOpenedAt = 0;
@@ -170,10 +171,19 @@ function updateRewardFlowControls() {
     const view = button.dataset.rewardView || '';
     const active = view === currentRewardView;
     const titleKey = button.dataset.rewardTitleKey || rewardViewTitleKey(view);
+    const disabled = !rewardFlowReady;
+    button.disabled = disabled;
+    button.classList.toggle('is-loading', disabled);
     button.classList.toggle('is-active', active);
+    button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
     button.setAttribute('aria-label', t('edenX1RewardViewAria', { title: t(titleKey) }));
   });
+}
+
+function setRewardFlowReady(ready) {
+  rewardFlowReady = Boolean(ready);
+  updateRewardFlowControls();
 }
 
 function bindRewardFlowControls() {
@@ -181,6 +191,7 @@ function bindRewardFlowControls() {
     if (button.dataset.rewardBound) return;
     button.dataset.rewardBound = '1';
     button.addEventListener('click', () => {
+      if (!rewardFlowReady) return;
       const view = button.dataset.rewardView || 'all';
       if (view !== currentRewardView) currentTableSort = null;
       currentRewardView = view;
@@ -1815,6 +1826,7 @@ async function main() {
         errorEl.classList.remove('hidden');
         errorEl.textContent = t('edenX1NoFirebase');
       }
+      setRewardFlowReady(false);
       if (panel) panel.innerHTML = '';
       return;
     }
@@ -1826,6 +1838,7 @@ async function main() {
     const snap = await getDoc(doc(db, FS_PATH));
 
     if (!snap.exists()) {
+      setRewardFlowReady(false);
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
       return;
     }
@@ -1849,10 +1862,12 @@ async function main() {
       });
     }
     if (panel) panel.innerHTML = '';
+    setRewardFlowReady(false);
   }
 }
 
 function applyDashboardData(data = {}) {
+  setRewardFlowReady(false);
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];
@@ -1885,6 +1900,7 @@ function applyDashboardData(data = {}) {
   currentRecordLabel = dateStr
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
+  setRewardFlowReady(true);
   renderCurrentTable();
   renderPublicDashboard(data);
 }
