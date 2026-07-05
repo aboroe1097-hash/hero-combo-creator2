@@ -590,6 +590,7 @@ function renderFinalRankPopover(row, index) {
 
 function renderFinalRewardPopover(row, index, context = {}) {
   const tooltipId = `edenX1FinalRewardTip-${index}`;
+  const rewardClass = rewardThemeClass(context.finalReward || row.finalReward);
   const baseReward = contributionRewardLabel(context.baseReward || row.baseReward);
   const finalReward = contributionRewardLabel(context.finalReward || row.finalReward);
   const rankLabel = context.rankLabel || t('adminContributionFinalRank');
@@ -601,7 +602,7 @@ function renderFinalRewardPopover(row, index, context = {}) {
     : hasPrivateR5Decision
       ? t('edenX1ConductPrivateNotice')
       : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
-  return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
+  return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger ${rewardClass}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
@@ -678,6 +679,20 @@ function contributionRewardLabel(reward) {
     none: t('adminContributionRewardNone'),
   };
   return labels[reward] || reward;
+}
+
+function rewardThemeClass(reward) {
+  const themes = {
+    guild_master: 'guild-master',
+    core: 'core',
+    power_house: 'power-house',
+    members: 'members',
+    premium: 'premium',
+    standard: 'standard',
+    review: 'review',
+    none: 'none',
+  };
+  return `eden-x1-reward-theme-${themes[reward] || 'default'}`;
 }
 
 function publicAttackPlayers(attack) {
@@ -946,7 +961,7 @@ function renderPublicWeightedContributionTable() {
   ].filter(Boolean);
   const body = rows.length
     ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
-      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table eden-x1-public-weighted-table">
+      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-public-weighted-table">
         <thead><tr>
           <th>${esc(t('edenX1ThNumber'))}</th>
           <th>${esc(t('adminContributionMember'))}</th>
@@ -968,7 +983,8 @@ function renderPublicWeightedContributionTable() {
             const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
             const total = rowBonusTotal(row);
             const tooltipIndex = `public-${index}`;
-            return `<tr${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
+            const rewardClass = rewardThemeClass(row.finalReward);
+            return `<tr class="${rewardClass}"${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
               <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
                 <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
                 <span class="dash-weighted-mobile-header" aria-label="${esc(`#${row.finalRank || '--'} ${row.playerName}`)}">
@@ -986,8 +1002,8 @@ function renderPublicWeightedContributionTable() {
               <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex)}</td>
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
               <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex)}</td>
             </tr>`;
           })
           .join('')}</tbody>
@@ -1057,12 +1073,11 @@ function renderPublicStructureRows(structures) {
       return `<button type="button" class="dash-structure-item eden-x1-clickable" style="font:inherit;color:inherit" data-public-structure="${esc(row.key)}" aria-label="${esc(t('edenX1OpenStructureAria', { structure: row.label }))}">
         <span class="dash-structure-bar" style="width:${pct}%"></span>
         <span class="dash-structure-main">
-          <strong>${esc(row.label)}</strong>
+          <span class="eden-x1-structure-title-row"><strong>${esc(row.label)}</strong><em>#${index + 1}</em></span>
           <small>${esc(t('edenX1StructureRowMeta', { hits: row.attack_count, players: row.unique_players }))}</small>
         </span>
         <span class="dash-structure-side">
           <strong>${formatScore(row.total_demolition)}</strong>
-          <small>#${index + 1}</small>
         </span>
       </button>`;
     })
@@ -1354,15 +1369,15 @@ function renderPublicPlayerDetail(player) {
     </div>
     <div class="dash-modal-section-label">${esc(t('edenX1PlayerAttackBreakdown'))}</div>
     <div class="dash-table-wrap eden-x1-public-table-wrap">
-      <table class="dash-table">
+      <table class="dash-table dash-table--stack">
         <thead><tr><th>${esc(t('edenX1ModalTime'))}</th><th>${esc(t('edenX1ModalStructure'))}</th><th class="dash-th-right">${esc(t('edenX1ModalDemo'))}</th><th>${esc(t('edenX1ModalRank'))}</th></tr></thead>
         <tbody>${attacks
           .map(
             (attack) => `<tr data-public-structure="${esc(attack.structureKey)}">
-              <td>${esc(attack.time)}</td>
-              <td>${publicStructureButton(attack.structure, attack.structureKey, 'dash-table-link')}</td>
-              <td class="dash-table-right">${formatScore(attack.demo)}</td>
-              <td>${attack.rank ? `#${esc(attack.rank)}` : '--'}</td>
+              <td data-label="${esc(t('edenX1ModalTime'))}">${esc(attack.time)}</td>
+              <td data-label="${esc(t('edenX1ModalStructure'))}">${publicStructureButton(attack.structure, attack.structureKey, 'dash-table-link')}</td>
+              <td class="dash-table-right" data-label="${esc(t('edenX1ModalDemo'))}">${formatScore(attack.demo)}</td>
+              <td data-label="${esc(t('edenX1ModalRank'))}">${attack.rank ? `#${esc(attack.rank)}` : '--'}</td>
             </tr>`
           )
           .join('')}</tbody>
@@ -1546,7 +1561,7 @@ function renderPublicDashboard(data = publicDashboardData) {
         </div>
       </div>
       ${renderPublicAdvancedAnalytics(publicAttackRows, publicPlayerRows)}
-      <div class="dash-main-grid dash-history-leader-grid eden-x1-public-wide" style="grid-column:1/-1;grid-template-columns:minmax(280px,0.78fr) minmax(520px,1.22fr);align-items:stretch">
+      <div class="dash-main-grid dash-history-leader-grid eden-x1-public-wide" style="grid-column:1/-1;grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);align-items:stretch">
         ${renderPublicAttackHistory(publicAttackRows)}
         ${renderPublicStructures(publicStructureRows)}
       </div>
@@ -1629,7 +1644,7 @@ function renderTable(rows, recordLabel, options = {}) {
         </div>
       </div>
       <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(visibleRows.length)}">
-        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack">
           <thead><tr>
             ${renderSortableHeader('number', t('edenX1ThNumber'))}
             ${renderSortableHeader('player', t('adminContributionMember'))}
@@ -1655,7 +1670,8 @@ function renderTable(rows, recordLabel, options = {}) {
                     ? row.edenX1RewardSlot || index + 1
                     : row.finalRank;
               const rewardContext = rewardContextForRow(row, index, numberValue);
-              return `<tr>
+              const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
+              return `<tr class="${rewardClass}">
                 <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
                   <span class="dash-weighted-desktop-number">${numberValue}</span>
                   <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
@@ -1673,8 +1689,8 @@ function renderTable(rows, recordLabel, options = {}) {
                 <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
                 <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
-                <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
-                <td class="dash-weighted-score-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, rewardContext)}</td>
+                <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
+                <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, rewardContext)}</td>
               </tr>`;
             })
             .join('') : emptyRow}</tbody>
@@ -1704,7 +1720,7 @@ function renderRewardSlotTable(view) {
         </div>
       </div>
       <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
-        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table eden-x1-slots-table">
+        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-slots-table">
           <thead><tr>
             <th>${esc(t('edenX1ThNumber'))}</th>
             <th>${esc(t('adminContributionMember'))}</th>

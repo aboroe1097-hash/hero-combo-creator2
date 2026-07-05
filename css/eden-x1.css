@@ -1,0 +1,513 @@
+/* Eden X1 route-only polish. Kept out of the shared app bundle. */
+.eden-x1-page .eden-x1-website-link {
+  border-color: rgba(250, 204, 21, 0.82) !important;
+  background: linear-gradient(135deg, #67e8f9 0%, #34d399 48%, #facc15 100%) !important;
+  color: #06111f !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 16px 32px rgba(34, 211, 238, 0.28) !important;
+}
+
+.eden-x1-page .eden-x1-website-link:hover,
+.eden-x1-page .eden-x1-website-link:focus-visible {
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  background: linear-gradient(135deg, #a7f3d0 0%, #67e8f9 52%, #fde047 100%) !important;
+  color: #020617 !important;
+}
+
+.eden-x1-reward-theme-default,
+.eden-x1-reward-theme-review,
+.eden-x1-reward-theme-none {
+  --eden-reward-accent-rgb: 148, 163, 184;
+  --eden-reward-glow-rgb: 71, 85, 105;
+}
+
+.eden-x1-reward-theme-guild-master {
+  --eden-reward-accent-rgb: 250, 204, 21;
+  --eden-reward-glow-rgb: 34, 211, 238;
+}
+
+.eden-x1-reward-theme-core {
+  --eden-reward-accent-rgb: 94, 234, 212;
+  --eden-reward-glow-rgb: 14, 165, 233;
+}
+
+.eden-x1-reward-theme-power-house {
+  --eden-reward-accent-rgb: 251, 146, 60;
+  --eden-reward-glow-rgb: 244, 63, 94;
+}
+
+.eden-x1-reward-theme-members {
+  --eden-reward-accent-rgb: 167, 139, 250;
+  --eden-reward-glow-rgb: 59, 130, 246;
+}
+
+.eden-x1-reward-theme-premium {
+  --eden-reward-accent-rgb: 232, 121, 249;
+  --eden-reward-glow-rgb: 250, 204, 21;
+}
+
+.eden-x1-reward-theme-standard {
+  --eden-reward-accent-rgb: 125, 211, 252;
+  --eden-reward-glow-rgb: 45, 212, 191;
+}
+
+@keyframes edenX1RewardNudge {
+  0%,
+  88%,
+  100% {
+    transform: translateY(0);
+  }
+
+  91% {
+    transform: translateY(-2px);
+  }
+
+  94% {
+    transform: translateY(0);
+  }
+
+  96% {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 640px) {
+  .eden-x1-page .app-shell {
+    gap: 0.85rem !important;
+    padding: 0.55rem !important;
+  }
+
+  .eden-x1-page .admin-command-header {
+    gap: 0.58rem !important;
+    margin-bottom: 0.78rem !important;
+    padding: 0.72rem !important;
+  }
+
+  .eden-x1-page .admin-command-brand {
+    gap: 0.58rem !important;
+    padding: 0 !important;
+  }
+
+  .eden-x1-page .version-ribbon {
+    justify-self: start !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    padding: 0.34rem 0.58rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.08 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .eden-x1-page .admin-brand-row {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+    align-items: center !important;
+    column-gap: 0.62rem !important;
+  }
+
+  .eden-x1-page .admin-brand-logo {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .eden-x1-page .admin-shell-title {
+    overflow-wrap: normal !important;
+    font-size: 2.15rem !important;
+    line-height: 0.94 !important;
+    text-wrap: nowrap !important;
+  }
+
+  .eden-x1-page .admin-shell-kicker,
+  .eden-x1-page .admin-shell-team {
+    font-size: 0.74rem !important;
+    line-height: 1.12 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .eden-x1-page .admin-shell-kicker {
+    margin-top: 0.2rem !important;
+  }
+
+  .eden-x1-page .admin-shell-team {
+    margin-top: 0.18rem !important;
+  }
+
+  .eden-x1-page .admin-shell-copy {
+    display: none !important;
+  }
+
+  .eden-x1-page .admin-command-actions {
+    gap: 0.45rem !important;
+    padding: 0.58rem !important;
+  }
+
+  .eden-x1-page .command-kicker {
+    min-height: 0 !important;
+    padding: 0.3rem 0.5rem !important;
+    color: rgba(103, 232, 249, 0.92) !important;
+    font-size: 0.62rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .eden-x1-page .admin-control-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 0.42rem !important;
+    width: 100% !important;
+  }
+
+  .eden-x1-page .admin-control-row .global-game-clock,
+  .eden-x1-page .admin-control-row .lang-select-wrapper,
+  .eden-x1-page .admin-control-row .lang-select-shell,
+  .eden-x1-page .admin-control-row #themeToggle {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+  }
+
+  .eden-x1-page .admin-control-row .lang-select-wrapper {
+    max-width: none !important;
+  }
+
+  .eden-x1-page .admin-control-row #themeToggle {
+    height: 40px !important;
+  }
+
+  .eden-x1-page .admin-control-row .admin-back-tools {
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 0.58rem 0.48rem !important;
+    border-radius: 10px !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
+  }
+
+  .eden-x1-page .admin-control-row .admin-back-tools:not(.eden-x1-website-link) {
+    grid-column: 1 / 2;
+  }
+
+  .eden-x1-page .admin-control-row .eden-x1-website-link {
+    grid-column: 2 / -1;
+  }
+
+  .eden-x1-flow-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.8rem;
+    min-height: 0;
+    padding: 0.88rem;
+  }
+
+  .eden-x1-flow-count {
+    width: 2.7rem;
+    height: 2.7rem;
+    font-size: 1.26rem;
+  }
+
+  .eden-x1-flow-card > .eden-x1-flow-label:not(.eden-x1-flow-action) {
+    min-width: 0;
+    margin-top: 0;
+    align-self: center;
+  }
+
+  .eden-x1-flow-copy,
+  .eden-x1-flow-action {
+    grid-column: 1 / -1;
+  }
+
+  .eden-x1-flow-copy {
+    margin-top: 0.55rem;
+  }
+
+  .eden-x1-flow-action {
+    margin-top: 0.65rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-grid,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-columns,
+  .eden-x1-page #ocrDashboardRoot .dash-history-leader-grid,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-analytics {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+    overflow-x: clip;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-grid,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-columns,
+  .eden-x1-page #ocrDashboardRoot .dash-history-leader-grid,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-analytics {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-card,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-card {
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
+    column-gap: 0.7rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack tbody {
+    display: block;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack tbody tr {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 0;
+    margin-bottom: 0.82rem;
+    overflow: visible;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    background:
+      linear-gradient(135deg, rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.11), transparent 42%),
+      rgba(15, 23, 42, 0.68);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(5.8rem, 0.42fr) minmax(0, 0.58fr) !important;
+    width: auto !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-mobile-header-cell {
+    display: block !important;
+    padding: 0.84rem 0.82rem !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-player-cell {
+    display: none !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td > :not(:first-child),
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td > strong,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td .dash-weighted-score-trigger,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td .dash-weighted-rank-trigger,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td .dash-weighted-reward-trigger {
+    justify-self: start !important;
+    text-align: left !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-trigger,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-reward-trigger {
+    justify-content: flex-start !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-header {
+    display: grid !important;
+    grid-template-columns: 3.1rem minmax(0, 1fr) 3.1rem;
+    align-items: center;
+    width: 100%;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-rank {
+    grid-column: 1;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-player-name {
+    grid-column: 2;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 1.28rem;
+    font-weight: 950;
+    line-height: 1.12;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) {
+    min-height: 3.25rem;
+    padding-block: 0.68rem !important;
+    border-bottom-color: rgba(148, 163, 184, 0.14);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-col {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-conduct-trigger .dash-weighted-score-value,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-score-cell:not(.dash-weighted-final-rank-cell):not(.dash-weighted-final-reward-cell) .dash-weighted-score-value {
+    font-size: 1.42rem;
+    line-height: 1;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-rank-cell,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-reward-cell {
+    display: inline-grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: center;
+    align-items: center;
+    justify-items: center;
+    min-height: 0;
+    padding: 0.82rem !important;
+    vertical-align: top;
+    border-bottom: 0;
+    background:
+      linear-gradient(135deg, rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.18), rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.1)),
+      rgba(15, 23, 42, 0.78);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-rank-cell {
+    grid-column: 1;
+    margin-right: 0;
+    border-right: 1px solid rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.22);
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-reward-cell {
+    grid-column: 2;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-rank-cell::before,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-final-reward-cell::before {
+    justify-self: center;
+    text-align: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-rank-trigger,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-reward-trigger {
+    justify-content: center !important;
+    width: 100%;
+    min-height: 3.4rem;
+    border: 1px solid rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.46);
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.28), transparent 34%),
+      linear-gradient(135deg, rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.22), rgba(15, 23, 42, 0.84));
+    box-shadow:
+      inset 0 0 0 1px rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.12),
+      0 10px 22px rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.12);
+    text-align: center !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-rank-trigger .dash-weighted-score-value {
+    font-size: 1.28rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-reward-trigger {
+    animation: edenX1RewardNudge 4.8s ease-in-out infinite;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-reward-value {
+    color: var(--text-primary);
+    font-size: 1.24rem;
+    font-weight: 950;
+    line-height: 1.08;
+    text-align: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-item {
+    display: grid !important;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    align-items: start !important;
+    min-width: 0;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-main {
+    display: block !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-name,
+  .eden-x1-page #ocrDashboardRoot .dash-top-val {
+    display: block;
+    margin-left: 0.45rem;
+    white-space: normal;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-meta {
+    grid-column: 2;
+    justify-self: start;
+    margin: 0.35rem 0 0 0.45rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-structure-item,
+  .eden-x1-page #ocrDashboardRoot .dash-attack-item {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    text-align: left !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-attack-val {
+    justify-self: start !important;
+    text-align: left !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-structure-item {
+    gap: 0.55rem;
+    padding-block: 0.78rem;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-structure-side {
+    justify-self: end !important;
+    text-align: right !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-structure-side strong {
+    font-size: 0.9rem !important;
+    white-space: nowrap;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-structure-title-row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    max-width: 100%;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-structure-title-row strong {
+    min-width: 0;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-structure-title-row em {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-analytics-body {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack .dash-weighted-reward-trigger {
+    animation: none !important;
+  }
+}

@@ -19,6 +19,7 @@ const baseAppShellFiles = [
   '/images/logo.png',
   '/images/boot/blazing-wing-right.webp',
   '/images/boot/dreamy-wing-left.webp',
+  '/css/eden-x1.css',
   '/eden-x1.html',
 ];
 
