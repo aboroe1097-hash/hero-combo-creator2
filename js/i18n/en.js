@@ -1048,6 +1048,8 @@ const en = {
   edenX1Intro: "Season contribution rankings with duty counts, conduct adjustments, and weighted final scores.",
   edenX1DeckLabel: "S1097 Eden X1 Deck",
   edenX1AdminDashboard: "Admin Dashboard",
+  edenX1ExploreWebsite: "Explore VTS Website",
+  edenX1ExploreWebsiteTitle: "New here? Explore the full VTS website.",
   edenX1NoticeTitle: "Demo view - not final.",
   edenX1NoticeCopy: "This page is open for early tracking only. Final rewards will be reviewed and confirmed at season end after all contribution, banner, pathing, shield wall, and eligibility records are checked.",
   edenX1RewardFlowEyebrow: "Reward flow",

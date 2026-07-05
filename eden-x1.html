@@ -19,17 +19,17 @@
   </noscript>
   <script>
     (function() {
-      var files = ['_tokens.css?v=20260705_012057','app.css?v=20260705_012057','ocr-dashboard.css?v=20260705_012057','components.css?v=20260705_012057','atmosphere.css?v=20260705_012057','mobile.css?v=20260705_012057'];
+      var files = ['_tokens.css?v=20260705_092637','app.css?v=20260705_092637','ocr-dashboard.css?v=20260705_092637','components.css?v=20260705_092637','atmosphere.css?v=20260705_092637','mobile.css?v=20260705_092637'];
       for (var i = 0; i < files.length; i++) {
         var l = document.createElement('link');
         l.rel = 'stylesheet';
         l.href = 'css/' + files[i];
-        if (files[i] === 'mobile.css?v=20260705_012057') l.media = '(max-width: 768px)';
+        if (files[i] === 'mobile.css?v=20260705_092637') l.media = '(max-width: 768px)';
         document.head.appendChild(l);
       }
     })();
   </script>
-  <script src="js/maintenance-config.js?v=20260705_012057"></script>
+  <script src="js/maintenance-config.js?v=20260705_092637"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page">
   <div class="app-shell">
@@ -95,11 +95,14 @@
           <a href="admin.html" class="admin-back-tools" data-i18n="edenX1AdminDashboard">Admin Dashboard</a>
           <a
             href="index.html"
-            class="admin-back-tools"
-            aria-label="New here? Explore the full VTS tools site."
-            title="New here? Explore the full VTS tools site."
-            style="border-color: rgba(250, 204, 21, 0.72); background: linear-gradient(135deg, #22d3ee, #facc15); color: #06111f; box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.24), 0 14px 30px rgba(34, 211, 238, 0.22);"
-          >Explore VTS Tools</a>
+            class="admin-back-tools eden-x1-website-link"
+            data-i18n="edenX1ExploreWebsite"
+            data-i18n-aria="edenX1ExploreWebsiteTitle"
+            data-i18n-title="edenX1ExploreWebsiteTitle"
+            aria-label="New here? Explore the full VTS website."
+            title="New here? Explore the full VTS website."
+            style="border-color: rgba(250, 204, 21, 0.82); background: linear-gradient(135deg, #67e8f9 0%, #34d399 48%, #facc15 100%); color: #06111f; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 16px 32px rgba(34, 211, 238, 0.28);"
+          >Explore VTS Website</a>
         </div>
       </div>
     </header>
@@ -184,6 +187,6 @@
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260705_012057"></script>
+  <script type="module" src="js/eden-x1.js?v=20260705_092637"></script>
 </body>
 </html>
