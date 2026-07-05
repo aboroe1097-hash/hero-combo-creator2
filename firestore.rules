@@ -14,8 +14,11 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    // Dashboard/roster/conduct writes are gated on a real email/password
+    // sign-in (the shared admin login), not a custom claim. The client mirrors
+    // this via isPasswordAuthUser().
     function isAdminLogin() {
-      return isAdmin();
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'password';
     }
 
     function validComment() {

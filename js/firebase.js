@@ -348,6 +348,27 @@ export async function isAdminAuthUser(userOverride = null, options = {}) {
   return getFirebaseAdminClaim(Boolean(options.forceRefresh), user);
 }
 
+// Admin cloud writes are gated on a real email/password sign-in (matches the
+// Firestore rule isAdminLogin() -> sign_in_provider == 'password'). Accepts and
+// ignores an options arg so it can be swapped in for isAdminAuthUser call-sites.
+export async function isPasswordAuthUser(userOverride = null, _options = {}) {
+  const user = userOverride || auth?.currentUser || null;
+  if (!user || user.isAnonymous) return false;
+  if (
+    Array.isArray(user.providerData) &&
+    user.providerData.some((p) => p?.providerId === 'password')
+  ) {
+    return true;
+  }
+  try {
+    const token = await getIdTokenResult(user);
+    return token?.signInProvider === 'password';
+  } catch {
+    // Non-anonymous authenticated user; token read failed (e.g. offline).
+    return true;
+  }
+}
+
 export async function getFirebaseAppCheckToken(forceRefresh = false) {
   const currentAppCheck = await ensureFirebaseAppCheck();
   if (!currentAppCheck) return '';

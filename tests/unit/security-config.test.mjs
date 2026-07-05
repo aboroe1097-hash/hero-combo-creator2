@@ -14,14 +14,14 @@ test('admin dashboard uses Firebase auth instead of local password markers', () 
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /signInWithUsername/);
-  assert.match(source, /isAdminAuthUser/);
+  assert.match(source, /isPasswordAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
   assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
   assert.doesNotMatch(source, /sessionStorage\.setItem\('vts_guest'/);
   assert.match(firebase, /signInWithEmailAndPassword/);
   assert.match(firebase, /usernameToEmail/);
-  assert.match(firebase, /isAdminAuthUser/);
+  assert.match(firebase, /isPasswordAuthUser/);
 });
 
 test('firebase config reads public web config without committed Google API keys', () => {
@@ -137,15 +137,14 @@ test('admin cloud boot and saves have bounded local-cache fallback', () => {
   assert.match(dashboard, /withDashboardCloudTimeout\(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
 });
 
-test('shared admin dashboard reads stay available while writes require admin claim', () => {
+test('shared admin dashboard reads stay available while writes require a password admin login', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
   assert.match(rules, /function isAdminLogin\(\)/);
-  assert.match(rules, /function isAdminLogin\(\)\s*\{\s*return isAdmin\(\);\s*\}/);
-  assert.doesNotMatch(rules, /sign_in_provider == 'password'/);
-  assert.doesNotMatch(dashboard, /isPasswordAuthUser/);
-  assert.match(dashboard, /isAdminAuthUser/);
+  // Writes are gated on a real email/password sign-in, not a per-account claim.
+  assert.match(rules, /sign_in_provider == 'password'/);
+  assert.match(dashboard, /isPasswordAuthUser/);
   assert.match(
     rules,
     /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validDashboardData\(\);/
@@ -156,6 +155,23 @@ test('shared admin dashboard reads stay available while writes require admin cla
   );
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
+});
+
+test('admin gate uses a password sign-in check and sign-out cannot auto re-login', () => {
+  const firebase = readFileSync('js/firebase.js', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const adjustments = readFileSync('js/ocr-adjustments.js', 'utf8');
+
+  // The password-sign-in helper exists and inspects the password provider.
+  assert.match(firebase, /export async function isPasswordAuthUser/);
+  assert.match(firebase, /providerId === 'password'|signInProvider === 'password'/);
+  // Both the dashboard gates and the conduct-write context use it.
+  assert.match(dashboard, /isPasswordAuthUser/);
+  assert.match(adjustments, /isPasswordAuthUser/);
+  // Explicit sign-out sets a guard so the auth-state listener cannot restore
+  // the session or reopen the dashboard (the auto re-login bug).
+  assert.match(dashboard, /state\._signingOut = true/);
+  assert.match(dashboard, /if \(state\._signingOut\)/);
 });
 
 test('R5 conduct adjustments are stored separately and use the admin claim', () => {
