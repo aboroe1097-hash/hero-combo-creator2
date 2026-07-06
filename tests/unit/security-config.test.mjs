@@ -311,7 +311,26 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   );
   assert.match(rules, /request\.resource\.data\.voterAuthUid == request\.auth\.uid/);
   assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
+  assert.match(rules, /function validEdenX1VoteHistory\(\)/);
+  assert.match(rules, /match \/vts_admin\/eden_x1_vote_history\/records\/\{historyId\}/);
+  assert.match(rules, /allow read: if isAdmin\(\);/);
+  assert.match(
+    rules,
+    /allow create: if signedIn\(\)[\s\S]*validEdenX1VoteHistory\(\)[\s\S]*validEdenX1VoteHistoryPath\(historyId\)/
+  );
+  assert.match(rules, /allow update, delete: if false;/);
+  assert.match(rules, /match \/vts_admin\/eden_x1_vote_settings\/config/);
+  assert.match(rules, /allow read: if signedIn\(\);/);
+  assert.match(rules, /allow create, update: if isAdmin\(\) && validEdenX1VoteSettings\(\);/);
   assert.match(eden, /EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin\/eden_x1_votes\/records'/);
+  assert.match(
+    eden,
+    /EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin\/eden_x1_vote_history\/records'/
+  );
+  assert.match(
+    eden,
+    /EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin\/eden_x1_vote_settings\/config'/
+  );
   assert.match(
     eden,
     /const voterAuthUid = edenVoteWriteContext\?\.user\?\.uid \|\| 'local-test';[\s\S]*const id = edenVoteDocId\(season, voterAuthUid\);/
@@ -319,7 +338,7 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   assert.doesNotMatch(eden, /edenVoteDocId\(season, voter\.playerKey\)/);
   assert.match(eden, /voterAuthUid/);
   assert.match(eden, /serverTimestamp\(\)/);
-  assert.match(dashboard, /loadEdenX1Votes/);
+  assert.match(dashboard, /loadEdenX1VoteAdminData/);
   assert.match(dashboard, /setEdenX1VotesForTest/);
 });
 

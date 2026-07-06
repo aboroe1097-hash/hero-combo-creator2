@@ -18,11 +18,13 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 
-const APP_VERSION = '13.0.0';
+const APP_VERSION = '13.0.1';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
+const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
+const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings/config';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
 const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
@@ -32,8 +34,12 @@ const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
   'edenX1CandidateName4',
 ];
 const EDEN_X1_VOTE_CANDIDATE_LIMIT = 4;
+const EDEN_X1_VOTE_HELPER_MOBILE_VISIBLE_LIMIT = 3;
 const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
 const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
+const EDEN_X1_ATTACK_WINDOW_DAYS = new Set([0, 2, 4]);
+const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
+const MS_PER_DAY = 86_400_000;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
@@ -43,7 +49,7 @@ let currentRows = [];
 let currentRecordLabel = '';
 let currentSeason = '';
 let currentMemberOptions = [];
-let currentRewardView = 'support';
+let currentRewardView = 'team';
 let currentTableSearch = '';
 let currentTableSort = null;
 let rewardFlowReady = false;
@@ -58,6 +64,7 @@ let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let edenVoteWriteContext = null;
+let edenVoteSettings = { votingOpen: true, allowEditing: true };
 let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
 let edenVoteInfoDismissalBound = false;
@@ -495,6 +502,20 @@ function getEdenVoteCandidateInputs(host) {
   );
 }
 
+function normalizeEdenVoteSettings(settings = {}) {
+  return {
+    votingOpen: settings.votingOpen !== false,
+    allowEditing: settings.allowEditing !== false,
+    showPublicResults: settings.showPublicResults === true,
+    showVoterNames: settings.showVoterNames === true,
+  };
+}
+
+function hasLocalEdenVoteForCurrentSeason() {
+  const saved = readLocalEdenVote();
+  return Boolean(saved && saved.season === edenVoteSeason() && getEdenVoteSavedSummary(saved).candidateNames.length);
+}
+
 function getEdenVoteDetailInput(host) {
   const preferredId = host?.dataset?.edenVoteInspectInputId;
   const preferred = preferredId ? host.querySelector(`#${preferredId}`) : null;
@@ -673,46 +694,87 @@ function edenVoteHelperDisplayRow(row) {
   };
 }
 
-function edenVoteHelperToggleLabel(expanded) {
-  return t(expanded ? 'edenX1VoteShowTop5' : 'edenX1VoteShowTop10');
+function isEdenVoteHelperMobileViewport() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 680px)').matches
+  );
 }
 
-function edenVoteHelperToggleAttrs(expanded = false) {
-  const label = esc(edenVoteHelperToggleLabel(expanded));
-  return `aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${label}" title="${label}"`;
+function edenVoteHelperInitialLimit() {
+  return isEdenVoteHelperMobileViewport()
+    ? EDEN_X1_VOTE_HELPER_MOBILE_VISIBLE_LIMIT
+    : EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT;
 }
 
-function setEdenVoteHelperToggleState(button, expanded) {
+function edenVoteHelperNextLimit(currentLimit, totalRows) {
+  const total = Math.min(Number(totalRows || 0), EDEN_X1_VOTE_HELPER_FULL_LIMIT);
+  const base = Math.min(edenVoteHelperInitialLimit(), total);
+  const mid = Math.min(EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT, total);
+  const full = Math.min(EDEN_X1_VOTE_HELPER_FULL_LIMIT, total);
+  const current = Math.max(base, Math.min(Number(currentLimit || base), full));
+  if (isEdenVoteHelperMobileViewport()) {
+    if (current < mid) return mid;
+    if (current < full) return full;
+    return base;
+  }
+  return current < full ? full : base;
+}
+
+function edenVoteHelperToggleLabel(currentLimit, totalRows) {
+  const nextLimit = edenVoteHelperNextLimit(currentLimit, totalRows);
+  if (nextLimit >= Math.min(EDEN_X1_VOTE_HELPER_FULL_LIMIT, Number(totalRows || 0))) {
+    return t('edenX1VoteShowTop10');
+  }
+  if (nextLimit >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT) return t('edenX1VoteShowTop5');
+  return t('edenX1VoteShowTop3');
+}
+
+function edenVoteHelperToggleAttrs(currentLimit, totalRows) {
+  const base = Math.min(edenVoteHelperInitialLimit(), Number(totalRows || 0));
+  const label = esc(edenVoteHelperToggleLabel(currentLimit, totalRows));
+  const expanded = Number(currentLimit || base) > base;
+  return `aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${label}" title="${label}" data-eden-vote-helper-limit="${Number(currentLimit || base)}"`;
+}
+
+function setEdenVoteHelperToggleState(button, currentLimit, totalRows) {
   if (!button) return;
-  const label = edenVoteHelperToggleLabel(expanded);
-  button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  const base = Math.min(edenVoteHelperInitialLimit(), Number(totalRows || 0));
+  const full = Math.min(EDEN_X1_VOTE_HELPER_FULL_LIMIT, Number(totalRows || 0));
+  const limit = Number(currentLimit || base);
+  const label = edenVoteHelperToggleLabel(limit, totalRows);
+  button.setAttribute('aria-expanded', limit > base ? 'true' : 'false');
   button.setAttribute('aria-label', label);
   button.setAttribute('title', label);
-  button.classList.toggle('is-expanded', expanded);
+  button.setAttribute('data-eden-vote-helper-limit', String(limit));
+  button.classList.toggle('is-expanded', limit >= full && full > base);
 }
 
 function renderEdenVotePickList(title, hint, rows) {
-  const hasMore = rows.length > EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT;
+  const initialLimit = Math.min(edenVoteHelperInitialLimit(), EDEN_X1_VOTE_HELPER_FULL_LIMIT);
+  const limitedRows = rows.slice(0, EDEN_X1_VOTE_HELPER_FULL_LIMIT);
+  const hasMore = limitedRows.length > initialLimit;
   const body = rows.length
-    ? rows
+    ? limitedRows
         .map(
           (
             row,
             index
-          ) => `<button class="eden-x1-vote-helper-row${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' is-helper-extra' : ''}" type="button" data-eden-vote-pick="${esc(row.name)}"${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' hidden' : ''}>
+          ) => `<button class="eden-x1-vote-helper-row" type="button" data-eden-vote-pick="${esc(row.name)}"${index >= initialLimit ? ' hidden' : ''}>
             <span class="eden-x1-vote-helper-name"><b>#${index + 1}</b><span class="eden-x1-vote-helper-player">${renderTaggedPlayerName(edenVoteHelperDisplayRow(row))}</span></span>
             <em>${esc(row.value)}</em>
           </button>`
         )
         .join('')
     : `<span class="eden-x1-vote-helper-empty">${esc(t('edenX1VoteHelperEmpty'))}</span>`;
-  return `<div class="eden-x1-vote-helper-card">
+  return `<div class="eden-x1-vote-helper-card" data-helper-visible-limit="${initialLimit}">
     <strong>${esc(title)}</strong>
     ${hint ? `<span class="eden-x1-vote-helper-hint">${esc(hint)}</span>` : ''}
     <div>${body}</div>
     ${
       hasMore
-        ? `<button class="eden-x1-vote-helper-toggle" type="button" data-eden-vote-helper-toggle ${edenVoteHelperToggleAttrs(false)}></button>`
+        ? `<button class="eden-x1-vote-helper-toggle" type="button" data-eden-vote-helper-toggle ${edenVoteHelperToggleAttrs(initialLimit, limitedRows.length)}></button>`
         : ''
     }
   </div>`;
@@ -735,7 +797,7 @@ function renderEdenVoteGuidance() {
     [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
     [t('edenX1VoteTopConsistent'), t('edenX1VoteTopConsistentHint'), rankedEdenConsistentRows()],
   ];
-  return `<div class="eden-x1-vote-guidance">
+  return `<div id="edenX1VoteGuidance" class="eden-x1-vote-guidance" tabindex="-1">
     <div class="eden-x1-vote-guidance-head">
       <strong>${esc(t('edenX1VoteGuidanceTitle'))}</strong>
       <span>${esc(t('edenX1VoteGuidanceCopy'))}</span>
@@ -773,6 +835,7 @@ function closeEdenVoteInfoPopovers(except = null) {
     if (button === except) return;
     button.classList.remove('is-open');
     button.setAttribute('aria-expanded', 'false');
+    resetEdenVoteInfoPopover(button);
   });
 }
 
@@ -788,12 +851,72 @@ function bindEdenVoteInfoDismissal() {
   });
 }
 
+function isEdenVoteInfoSheetViewport() {
+  return globalThis.matchMedia?.('(max-width: 720px)').matches;
+}
+
+function resetEdenVoteInfoPopover(infoButton) {
+  const popover = infoButton?.querySelector('.eden-x1-vote-info-popover');
+  if (!popover) return;
+  popover.removeAttribute('style');
+}
+
+function positionEdenVoteInfoPopover(infoButton) {
+  const popover = infoButton?.querySelector('.eden-x1-vote-info-popover');
+  if (!popover) return;
+  if (isEdenVoteInfoSheetViewport()) {
+    resetEdenVoteInfoPopover(infoButton);
+    return;
+  }
+  const margin = 10;
+  const prevVisibility = popover.style.visibility;
+  const prevOpacity = popover.style.opacity;
+  popover.style.display = 'block';
+  popover.style.position = 'fixed';
+  popover.style.visibility = 'hidden';
+  popover.style.opacity = '0';
+  popover.style.maxHeight = 'min(42vh, 260px)';
+  popover.style.overflowY = 'auto';
+
+  const buttonRect = infoButton.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const width = Math.min(
+    Math.max(popoverRect.width || 260, 210),
+    Math.max(210, globalThis.innerWidth - margin * 2)
+  );
+  const height = Math.min(
+    Math.max(popoverRect.height || 96, 48),
+    Math.max(48, globalThis.innerHeight - margin * 2)
+  );
+  const center = Math.min(
+    Math.max(buttonRect.left + buttonRect.width / 2, margin + width / 2),
+    globalThis.innerWidth - margin - width / 2
+  );
+  const above = buttonRect.top - height - 10;
+  const below = buttonRect.bottom + 10;
+  const top =
+    above >= margin
+      ? above
+      : Math.min(below, globalThis.innerHeight - margin - height);
+
+  popover.style.width = `${Math.round(width)}px`;
+  popover.style.left = `${Math.round(center)}px`;
+  popover.style.top = `${Math.round(Math.max(margin, top))}px`;
+  popover.style.right = 'auto';
+  popover.style.bottom = 'auto';
+  popover.style.transform = 'translateX(-50%)';
+  popover.style.visibility = prevVisibility;
+  popover.style.opacity = prevOpacity;
+}
+
 function toggleEdenVoteInfoPopover(infoButton) {
   if (!infoButton) return;
   const shouldOpen = !infoButton.classList.contains('is-open');
   closeEdenVoteInfoPopovers(infoButton);
+  if (shouldOpen) positionEdenVoteInfoPopover(infoButton);
   infoButton.classList.toggle('is-open', shouldOpen);
   infoButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  if (!shouldOpen) resetEdenVoteInfoPopover(infoButton);
 }
 
 function renderEdenVoteInfoBadge(info) {
@@ -1013,6 +1136,38 @@ function formatEdenTrendAxisTime(row) {
   return fallback.length > 28 ? `${fallback.slice(0, 25)}...` : fallback;
 }
 
+function countAllowedEdenAttackWindowsBeforeDay(dayIndex) {
+  if (!Number.isFinite(dayIndex)) return 0;
+  const wholeWeeks = Math.floor(dayIndex / 7);
+  const remainder = dayIndex - wholeWeeks * 7;
+  let count = wholeWeeks * EDEN_X1_ATTACK_WINDOW_DAYS.size;
+  for (let offset = 0; offset < remainder; offset += 1) {
+    const dow = (EDEN_X1_ATTACK_WINDOW_EPOCH_DOW + offset) % 7;
+    if (EDEN_X1_ATTACK_WINDOW_DAYS.has(dow)) count += 1;
+  }
+  return count;
+}
+
+function edenAttackWindowCoordinate(row, fallbackIndex) {
+  const ms = publicAttackMs(row?.attack || row);
+  if (!Number.isFinite(ms) || ms <= 0) return fallbackIndex;
+  const dayIndex = Math.floor(ms / MS_PER_DAY);
+  const dow = new Date(ms).getUTCDay();
+  const dayFraction = (ms - dayIndex * MS_PER_DAY) / MS_PER_DAY;
+  const base = countAllowedEdenAttackWindowsBeforeDay(dayIndex);
+  if (EDEN_X1_ATTACK_WINDOW_DAYS.has(dow)) return base + dayFraction;
+  return base;
+}
+
+function edenTrendXCoordinates(rows) {
+  const coords = rows.map((row, index) => edenAttackWindowCoordinate(row, index));
+  const finite = coords.every((coord) => Number.isFinite(coord));
+  if (!finite) return rows.map((_, index) => index);
+  const first = coords[0] ?? 0;
+  const allSame = coords.every((coord) => Math.abs(coord - first) < 0.0001);
+  return allSame ? rows.map((_, index) => index) : coords;
+}
+
 function renderEdenTrendXAxis(rows, xFor, padX, plotWidth) {
   if (!rows.length) return '';
   const indexes =
@@ -1064,8 +1219,12 @@ function renderEdenVoteStructureTrend(attacks) {
   const plotWidth = width - padX * 2;
   const plotHeight = height - padTop - padBottom;
   const bottom = height - padBottom;
+  const xCoordinates = edenTrendXCoordinates(rows);
+  const minX = Math.min(...xCoordinates);
+  const maxX = Math.max(...xCoordinates);
+  const xSpan = Math.max(0.0001, maxX - minX);
   const xFor = (index) =>
-    values.length <= 1 ? width / 2 : padX + (index / (values.length - 1)) * plotWidth;
+    values.length <= 1 ? width / 2 : padX + ((xCoordinates[index] - minX) / xSpan) * plotWidth;
   const yFor = (value) => bottom - ((value - min) / span) * plotHeight;
   const points = values.map(
     (value, index) => `${xFor(index).toFixed(1)},${yFor(value).toFixed(1)}`
@@ -1221,6 +1380,14 @@ function updateEdenVoteCandidateDetail(host) {
 async function submitEdenTeamVoteForm(form) {
   if (!form) return;
   const submit = form.querySelector('button[type="submit"]');
+  if (edenVoteSettings.votingOpen === false) {
+    setEdenVoteStatus(t('edenX1VoteClosed'), 'error');
+    return;
+  }
+  if (edenVoteSettings.allowEditing === false && hasLocalEdenVoteForCurrentSeason()) {
+    setEdenVoteStatus(t('edenX1VoteEditingClosed'), 'error');
+    return;
+  }
   const voter = resolveEdenVoteInput(form, 'edenX1VoterName', {
     closeSuggestions: true,
     markInvalid: true,
@@ -1246,11 +1413,18 @@ async function submitEdenTeamVoteForm(form) {
   if (!voter) {
     pendingPartialEdenVoteSignature = '';
     setEdenVoteStatus(t('edenX1VoteErrUnknownSelf'), 'error');
+    markEdenVoteInputInvalid(form, 'edenX1VoterName', { nudge: true });
     return;
   }
   if (hasInvalidCandidate) {
     pendingPartialEdenVoteSignature = '';
     setEdenVoteStatus(t('edenX1VoteErrUnknownCandidate'), 'error');
+    EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => {
+      const input = form.querySelector(`#${id}`);
+      if (input?.value.trim() && !findEdenMemberOption(input.value)) {
+        markEdenVoteInputInvalid(form, id, { nudge: true });
+      }
+    });
     return;
   }
   if (!candidates.length) {
@@ -1310,12 +1484,47 @@ async function submitEdenTeamVoteForm(form) {
     setEdenVoteStatus(t('edenX1VoteStatusSaving'), 'info');
     if (edenVoteWriteContext) {
       const { db, firestore, user } = edenVoteWriteContext;
-      const { doc, serverTimestamp, setDoc } = firestore;
-      await setDoc(doc(db, EDEN_X1_VOTES_COLLECTION_PATH, id), {
+      const { collection, doc, getDoc, serverTimestamp, writeBatch } = firestore;
+      const voteRef = doc(db, EDEN_X1_VOTES_COLLECTION_PATH, id);
+      const existingSnap = await getDoc(voteRef).catch(() => null);
+      const previousVote = existingSnap?.exists?.() ? existingSnap.data() || {} : null;
+      const previousCandidateNames = Array.isArray(previousVote?.candidateNames)
+        ? previousVote.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
+        : [previousVote?.candidateName]
+            .map((name) => String(name || '').trim())
+            .filter(Boolean);
+      const previousCandidateKeys = Array.isArray(previousVote?.candidateKeys)
+        ? previousVote.candidateKeys.map((key) => String(key || '').trim()).filter(Boolean)
+        : [previousVote?.candidateKey].map((key) => String(key || '').trim()).filter(Boolean);
+      const changed =
+        !previousVote ||
+        String(previousVote.voterKey || '') !== voter.playerKey ||
+        previousCandidateKeys.join('|') !== candidateKeys.join('|');
+      const batch = writeBatch(db);
+      batch.set(voteRef, {
         ...localVote,
         voterAuthUid: user.uid,
         updatedAt: serverTimestamp(),
       });
+      if (changed) {
+        const historyRef = doc(collection(db, EDEN_X1_VOTE_HISTORY_COLLECTION_PATH));
+        batch.set(historyRef, {
+          id: historyRef.id,
+          voteId: id,
+          season,
+          category: EDEN_X1_TEAM_VOTE_CATEGORY,
+          voterKey: voter.playerKey,
+          voterName: voter.playerName,
+          previousCandidateKeys,
+          previousCandidateNames,
+          candidateKeys,
+          candidateNames,
+          voterAuthUid: user.uid,
+          action: previousVote ? 'updated' : 'created',
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
       localVote.voterAuthUid = user.uid;
     }
     writeLocalEdenVote(localVote);
@@ -1397,6 +1606,41 @@ function bindEdenVoteControls(host) {
     host.addEventListener('pointerdown', (event) => {
       if (event.target.closest('[data-eden-vote-suggest]')) event.preventDefault();
     });
+    host.addEventListener('pointerover', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (infoButton) positionEdenVoteInfoPopover(infoButton);
+    });
+    host.addEventListener('pointerout', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (
+        !infoButton ||
+        infoButton.contains(event.relatedTarget) ||
+        infoButton.classList.contains('is-open')
+      ) {
+        return;
+      }
+      resetEdenVoteInfoPopover(infoButton);
+    });
+    host.addEventListener('focusin', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (infoButton) {
+        positionEdenVoteInfoPopover(infoButton);
+        return;
+      }
+      const input = event.target.closest(voteInputSelector);
+      if (input) updateEdenVoteInputSuggestions(host, input.id);
+    });
+    host.addEventListener('focusout', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (
+        !infoButton ||
+        infoButton.contains(event.relatedTarget) ||
+        infoButton.classList.contains('is-open')
+      ) {
+        return;
+      }
+      resetEdenVoteInfoPopover(infoButton);
+    });
     host.addEventListener('click', (event) => {
       const infoButton = event.target.closest('.eden-x1-vote-info');
       if (infoButton) {
@@ -1422,14 +1666,26 @@ function bindEdenVoteControls(host) {
       if (helperToggle) {
         event.preventDefault();
         const card = helperToggle.closest('.eden-x1-vote-helper-card');
-        const expanded = card?.dataset.helperExpanded !== '1';
         if (card) {
-          card.dataset.helperExpanded = expanded ? '1' : '0';
-          card.querySelectorAll('.eden-x1-vote-helper-row.is-helper-extra').forEach((row) => {
-            row.hidden = !expanded;
+          const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
+          const currentLimit = Number(card.dataset.helperVisibleLimit || helperToggle.dataset.edenVoteHelperLimit);
+          const nextLimit = edenVoteHelperNextLimit(currentLimit, rows.length);
+          card.dataset.helperVisibleLimit = String(nextLimit);
+          rows.forEach((row, index) => {
+            row.hidden = index >= nextLimit;
           });
+          setEdenVoteHelperToggleState(helperToggle, nextLimit, rows.length);
         }
-        setEdenVoteHelperToggleState(helperToggle, expanded);
+        return;
+      }
+      const helpLink = event.target.closest('[data-eden-vote-help-link]');
+      if (helpLink) {
+        event.preventDefault();
+        const guidance = host.querySelector('#edenX1VoteGuidance');
+        if (guidance) {
+          guidance.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          guidance.focus({ preventScroll: true });
+        }
         return;
       }
       const suggestion = event.target.closest('[data-eden-vote-suggest]');
@@ -1495,10 +1751,10 @@ function bindEdenVoteControls(host) {
       toggleEdenVoteInfoPopover(infoButton);
     });
   }
-  updateEdenVoteInputSuggestions(host, 'edenX1VoterName');
+  clearEdenVoteInputSuggestions(host, 'edenX1VoterName');
   updateEdenVoteInputConfirmation(host, 'edenX1VoterName');
   EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => {
-    updateEdenVoteInputSuggestions(host, id);
+    clearEdenVoteInputSuggestions(host, id);
     updateEdenVoteInputConfirmation(host, id);
   });
   updateEdenVoteCandidateDetail(host);
@@ -1517,6 +1773,7 @@ function renderEdenTeamVotePanel() {
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
+        <a class="eden-x1-vote-help-link" href="#edenX1VoteGuidance" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
@@ -1709,12 +1966,11 @@ function bindRewardFlowControls() {
 
 function getContributionRewardRows() {
   const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
-  return currentRows
+  const sorted = currentRows
     .filter(
       (row) =>
         Number(row.currentRank) > 0 &&
-        !supportPlayerKeys.has(row.playerKey) &&
-        row.rewardReason !== 'forfeit_premium'
+        !supportPlayerKeys.has(row.playerKey)
     )
     .slice()
     .sort(
@@ -1723,12 +1979,30 @@ function getContributionRewardRows() {
         valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
         Number(a.currentRank) - Number(b.currentRank) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
-    )
-    .slice(0, 10)
-    .map((row, index) => ({
+    );
+  const rows = [];
+  let rewardSlot = 0;
+  for (const row of sorted) {
+    const isForfeited = row.rewardReason === 'forfeit_premium';
+    if (isForfeited) {
+      if (rewardSlot < 10) {
+        rows.push({
+          ...row,
+          edenX1RewardSlot: null,
+          edenX1RewardSkipped: true,
+        });
+      }
+      continue;
+    }
+    if (rewardSlot >= 10) break;
+    rewardSlot += 1;
+    rows.push({
       ...row,
-      edenX1RewardSlot: index + 1,
-    }));
+      edenX1RewardSlot: rewardSlot,
+      edenX1RewardSkipped: false,
+    });
+  }
+  return rows;
 }
 
 function getSupportRewardRows() {
@@ -2168,7 +2442,7 @@ function renderFinalRewardPopover(row, index, context = {}) {
   const tooltipId = `edenX1FinalRewardTip-${index}`;
   const rewardClass = rewardThemeClass(context.finalReward || row.finalReward);
   const baseReward = contributionRewardLabel(context.baseReward || row.baseReward);
-  const finalReward = contributionRewardLabel(context.finalReward || row.finalReward);
+  const finalReward = context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
   const rankLabel = context.rankLabel || t('adminContributionFinalRank');
   const rankValue = context.rank || row.finalRank;
   const rankScore = rowContributionRewardScore(row);
@@ -3387,7 +3661,9 @@ function renderTable(rows, recordLabel, options = {}) {
                       numberMode === 'current'
                         ? row.currentRank || index + 1
                         : numberMode === 'index'
-                          ? row.edenX1RewardSlot || index + 1
+                          ? row.edenX1RewardSkipped
+                            ? row.finalRank || index + 1
+                            : row.edenX1RewardSlot || index + 1
                           : row.finalRank;
                     const rewardContext = rewardContextForRow(row, index, numberValue);
                     const rowReward =
@@ -3497,6 +3773,16 @@ function renderCurrentTable(renderOptions = {}) {
       rewardView: 'contribution',
       numberMode: 'index',
       rewardContextForRow: (row, _index, numberValue) => {
+        if (row.edenX1RewardSkipped) {
+          return {
+            rank: row.finalRank,
+            rankLabel: t('adminContributionFinalRank'),
+            baseReward: row.baseReward || 'core',
+            finalReward: 'none',
+            finalRewardLabel: t('edenX1RewardSkippedPremium'),
+            reason: t('edenX1RewardSkippedPremiumReason', { rank: row.finalRank }),
+          };
+        }
         const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
         const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
         const label = contributionRewardLabel(finalReward);
@@ -3605,10 +3891,16 @@ async function main() {
     const firestore = await importFirestore();
     const { doc, getDoc } = firestore;
     edenVoteWriteContext = { db, firestore, user: voteUser };
-    const [snap, rosterSnap] = await Promise.all([
+    const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
       getDoc(doc(db, FS_PATH)),
       getDoc(doc(db, FS_ROSTER_PATH)).catch(() => null),
+      getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)).catch(() => null),
     ]);
+    if (voteSettingsSnap?.exists?.()) {
+      edenVoteSettings = normalizeEdenVoteSettings(voteSettingsSnap.data());
+    } else {
+      edenVoteSettings = normalizeEdenVoteSettings();
+    }
 
     if (!snap.exists()) {
       setRewardFlowReady(false);

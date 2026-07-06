@@ -1,7 +1,18 @@
 # Changelog
 
+## 13.0.1 - 2026-07-06
+
+- Moved Eden X1 Team Players vote admin into its own VTS Admin subtab with voting-open/editing/public-result controls, current ballots, and immutable edit-history review.
+- Added Firestore validation for Eden X1 vote history and vote settings documents; these rule changes require a Firebase rules deploy before live cloud vote history/settings work.
+- Changed Team Players voting helper UX so the top-name tables are reached from a translated "Need Help With Voting? - View Top Names" jump link; mobile starts helper cards at top 3, then expands to top 5 and top 10.
+- Kept saved vote fields quiet on reload so confirmed names do not reopen suggestion panels until the user focuses or types in a field.
+- Compressed structure-hit trend x-axis spacing to Eden X1 attack windows only: Sunday, Tuesday, and Thursday game-time windows count; blocked days no longer take visual width.
+- Preserved forfeited premium-rank names in the Total Contribution table with a skipped-premium label so generosity is visible while reward slots continue to the next eligible player.
+- Synced public version labels, README, changelog, app constants, i18n keys, and regression coverage to 13.0.1.
+
 ## 13.0.0 - 2026-07-06
 
+- Added a DM Materials tab as a Coming Soon placeholder while the Dragon Master material calculator remains staged for a later launch.
 - Expanded Eden X1 Team Players voting to four teammate picks with resolved roster-name selection, confirmation chips, clear controls, invalid-name nudges, translated saved-vote messages, and a final-results timing note.
 - Updated Eden X1 reward slots so R4 / Management and Team Players both expose three reward rows, and tightened Firestore vote validation/tests for four unique candidates.
 - Post-push polish: Team Players voting now accepts one to four unique votes, asks for a second confirmation on partial ballots, blocks duplicates without saving, offers a one-click self-vote shortcut, and places the translated "Vote here for Best TeamPlayers" tag on the Team Players reward card.

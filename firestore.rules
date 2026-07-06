@@ -271,6 +271,82 @@ service cloud.firestore {
         && voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
     }
 
+    function validEdenX1VoteHistoryPath(historyId) {
+      return request.resource.data.id == historyId
+        && request.resource.data.voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
+    }
+
+    function validEdenX1VoteStringList(values, minSize) {
+      return values is list
+        && values.size() >= minSize
+        && values.size() <= 4
+        && (
+          values.size() < 1
+          || (values[0] is string && values[0].size() > 0 && values[0].size() <= 120)
+        )
+        && (
+          values.size() < 2
+          || (values[1] is string && values[1].size() > 0 && values[1].size() <= 120)
+        )
+        && (
+          values.size() < 3
+          || (values[2] is string && values[2].size() > 0 && values[2].size() <= 120)
+        )
+        && (
+          values.size() < 4
+          || (values[3] is string && values[3].size() > 0 && values[3].size() <= 120)
+        );
+    }
+
+    function validEdenX1VoteHistory() {
+      return request.resource.data.keys().hasOnly([
+        'id', 'voteId', 'season', 'category', 'voterKey', 'voterName',
+        'previousCandidateKeys', 'previousCandidateNames', 'candidateKeys', 'candidateNames',
+        'voterAuthUid', 'action', 'createdAt'
+      ])
+      && request.resource.data.id is string
+      && request.resource.data.id.size() > 0
+      && request.resource.data.id.size() <= 180
+      && request.resource.data.voteId is string
+      && request.resource.data.voteId.size() > 0
+      && request.resource.data.voteId.size() <= 180
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.category == 'team_players'
+      && request.resource.data.voterKey is string
+      && request.resource.data.voterKey.size() > 0
+      && request.resource.data.voterKey.size() <= 120
+      && request.resource.data.voterName is string
+      && request.resource.data.voterName.size() > 0
+      && request.resource.data.voterName.size() <= 120
+      && validEdenX1VoteStringList(request.resource.data.previousCandidateKeys, 0)
+      && validEdenX1VoteStringList(request.resource.data.previousCandidateNames, 0)
+      && request.resource.data.previousCandidateNames.size() == request.resource.data.previousCandidateKeys.size()
+      && validEdenX1VoteStringList(request.resource.data.candidateKeys, 1)
+      && validEdenX1VoteStringList(request.resource.data.candidateNames, 1)
+      && request.resource.data.candidateNames.size() == request.resource.data.candidateKeys.size()
+      && request.resource.data.voterAuthUid == request.auth.uid
+      && request.resource.data.action in ['created', 'updated']
+      && request.resource.data.createdAt == request.time;
+    }
+
+    function validEdenX1VoteSettings() {
+      return request.resource.data.keys().hasOnly([
+        'season', 'votingOpen', 'allowEditing', 'showPublicResults',
+        'showVoterNames', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.season is string
+      && request.resource.data.season.size() > 0
+      && request.resource.data.season.size() <= 40
+      && request.resource.data.votingOpen is bool
+      && request.resource.data.allowEditing is bool
+      && request.resource.data.showPublicResults is bool
+      && request.resource.data.showVoterNames is bool
+      && request.resource.data.updatedAt == request.time
+      && request.resource.data.updatedBy == request.auth.uid;
+    }
+
     function hasStableConductMetadata() {
       return ('createdAt' in resource.data)
         && resource.data.createdAt is timestamp
@@ -359,6 +435,20 @@ service cloud.firestore {
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId)
         && resource.data.voterAuthUid == request.auth.uid;
+    }
+
+    match /vts_admin/eden_x1_vote_history/records/{historyId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && validEdenX1VoteHistory()
+        && validEdenX1VoteHistoryPath(historyId);
+      allow update, delete: if false;
+    }
+
+    match /vts_admin/eden_x1_vote_settings/config {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validEdenX1VoteSettings();
+      allow delete: if false;
     }
 
     match /vts_admin/{document=**} {

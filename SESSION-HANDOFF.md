@@ -1,9 +1,9 @@
-# Session Handoff - v13.0.0 Eden X1 Closeout
+# Session Handoff - v13.0.1 Eden X1 Closeout
 
 Date: 2026-07-06
 Branch: gh-pages
 Repo: D:\Project\hero-combo-creator2
-Release: 13.0.0
+Release: 13.0.1
 
 ## What Changed
 
@@ -20,14 +20,19 @@ Release: 13.0.0
 - Partial ballots ask for a second confirmation before saving, duplicate votes are blocked without saving, and voters can optionally put their own in-game name into the next open vote slot.
 - Public Eden X1 layout received alignment, spacing, chart axis, sortable table, and attack-history stretch fixes for desktop/mobile consistency.
 - Shield Wall and Bonus Team Effort summary tables now include matched-name confirmation/source context.
-- Version metadata, README, changelog, HTML cache busting, and service worker metadata were updated for 13.0.0.
+- Eden X1 vote admin was moved into its own VTS Admin subtab with voting-open/editing/public-results toggles, current ballot summaries, and immutable edit-history review.
+- Public Team Players voting now honors admin voting-open/editing-closed settings, keeps saved vote suggestions closed on reload, and writes vote history entries alongside the latest ballot.
+- The voting helper is reached from the translated "Need Help With Voting? - View Top Names" link; mobile helper cards start at top 3 and expand to top 5 then top 10.
+- Structure-hit trend x-axis spacing now compresses to Eden X1 attack windows only: Sunday, Tuesday, and Thursday game-time windows.
+- Total Contribution keeps forfeited premium-rank names visible with a skipped-premium label while reward slots continue to the next eligible player.
+- Version metadata, README, changelog, HTML cache busting, and service worker metadata were updated for 13.0.1.
 
 ## Copilot Assessment Disposition
 
 Handled or already covered:
 
 - Admin custom-claim gate and related tests/rules are already in place.
-- i18n coverage is green for the new post-push strings: 810 template keys, 1245 runtime keys, 11 languages.
+- i18n coverage is green for the new post-push strings: 844 template keys, 1277 runtime keys, 11 languages.
 - Eden X1 vote validation now covers one to four unique teammate votes in rules and tests.
 - CSS growth is tracked through the size budget, with the Eden X1 split budget intentionally raised for this release.
 - Visual/layout concerns from the queued screenshots are covered by updated smoke snapshots and overflow assertions.
@@ -42,19 +47,18 @@ Deferred backlog from the Copilot report:
 
 ## Validation
 
-- `node --check js\eden-x1.js` passed.
-- `npm run i18n:check` passed with 810 template keys, 1245 runtime keys, and 11 languages.
-- `npm run test:unit -- tests/unit/contribution-weighting.test.mjs` passed, 151/151 unit tests.
-- `npm run build` passed and refreshed cache-bust metadata to `20260706_182742`; the remaining tech-db and non-module script messages are existing build warnings.
-- `npm run size:check` passed with total CSS 575.7 kB.
-- `npx playwright test tests/app-smoke.spec.js -g "eden x1 reward flow cards filter reward tables|eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names" --reporter=line` passed, 2/2.
+- `npm run check` passed.
+- `npm run check` includes lint, Prettier check, 151/151 unit tests, i18n validation with 844 template keys / 1277 runtime keys / 11 languages, production build, bundle-size check, and 50/50 Playwright smoke + visual tests.
+- `npm run build` refreshed cache-bust metadata to `20260706_203433`; the remaining tech-db and non-module script messages are existing build warnings.
+- The 13.0.1 CSS size budgets were raised against measured output: total CSS 577.7 kB, Eden X1 CSS 54.27 kB, OCR Dashboard CSS 132.10 kB.
+- Visual baselines were refreshed for the intentional mobile/admin/research layout changes.
 - `git diff --check` passed with only normal Windows CRLF warnings.
 
 ## Notes For Claude
 
-- Review `CHANGELOG.md` for the user-facing 13.0.0 release summary.
-- The main implementation files are `js/eden-x1.js`, `js/contribution-weighting.js`, `js/ocr-dashboard.js`, `js/ocr-roster.js`, `css/eden-x1.css`, `css/ocr-dashboard.css`, `eden-x1.html`, and `firestore.rules`.
-- Snapshot changes are intentional: pathers duty tables gained matched-name context, and the mobile header/version changed for 13.0.0.
+- Review `CHANGELOG.md` for the user-facing 13.0.1 release summary.
+- The main implementation files are `js/eden-x1.js`, `js/contribution-weighting.js`, `js/ocr-dashboard.js`, `js/ocr-roster.js`, `js/material-calculator.js`, `css/eden-x1.css`, `css/ocr-dashboard.css`, `eden-x1.html`, and `firestore.rules`.
+- Snapshot changes are intentional: pathers duty tables gained matched-name context, and the mobile header/version changed for 13.0.1.
 - Historical `release-12.4.1` repair markers were intentionally left alone.
-- GitHub Pages deploys static assets only. Because Team Players vote validation changed, deploy `firestore.rules` separately with `npx firebase-tools deploy --only firestore:rules --project abocombo`; otherwise live voting can still show `Missing or insufficient permissions` even after Pages succeeds.
+- GitHub Pages deploys static assets only. Because Team Players vote validation, vote history, and vote settings rules changed, deploy `firestore.rules` separately with `npx firebase-tools deploy --only firestore:rules --project abocombo`; otherwise live voting/history/settings can still show `Missing or insufficient permissions` even after Pages succeeds.
 - `scripts/post-build.mjs` now copies `js/theme-prepaint.js` into `dist`, addressing the live 404 seen for that plain script.

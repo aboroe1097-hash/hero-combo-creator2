@@ -181,6 +181,8 @@ state.playerRegistry = readStoredPlayerRegistry();
 state.r5Adjustments = [];
 state.r5Season = '';
 state.edenX1Votes = [];
+state.edenX1VoteHistory = [];
+state.edenX1VoteSettings = null;
 state.r5EditingId = '';
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
@@ -222,6 +224,9 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
 })();
 const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
+const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
+const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings/config';
+const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = 'vts_eden_x1_vote_admin_settings';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
@@ -475,7 +480,7 @@ function renderAuxiliaryRecords() {
   renderDutyRecords();
   renderContributions();
   renderConductAdjustments();
-  renderEdenX1VoteResults();
+  renderEdenX1VoteAdmin();
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -541,14 +546,14 @@ function normalizeEdenX1VoteRecord(record = {}) {
 }
 
 function edenVoteUpdatedAtMs(record) {
-  const raw = record?.updatedAt;
+  const raw = record?.updatedAt || record?.createdAt;
   if (typeof raw?.toMillis === 'function') return raw.toMillis();
   if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
   return Date.parse(raw || '') || 0;
 }
 
 function edenVoteUpdatedAtLabel(record) {
-  const raw = record?.updatedAt;
+  const raw = record?.updatedAt || record?.createdAt;
   const date =
     typeof raw?.toDate === 'function'
       ? raw.toDate()
@@ -566,6 +571,135 @@ function edenVoteUpdatedAtLabel(record) {
 
 function currentEdenVoteSeason() {
   return state.r5Season || getDashboardR5SeasonKey();
+}
+
+function defaultEdenX1VoteSettings() {
+  return {
+    season: currentEdenVoteSeason(),
+    votingOpen: true,
+    allowEditing: true,
+    showPublicResults: false,
+    showVoterNames: false,
+  };
+}
+
+function normalizeEdenX1VoteSettings(settings = {}) {
+  const defaults = defaultEdenX1VoteSettings();
+  return {
+    ...defaults,
+    season: String(settings.season || defaults.season),
+    votingOpen: settings.votingOpen !== false,
+    allowEditing: settings.allowEditing !== false,
+    showPublicResults: settings.showPublicResults === true,
+    showVoterNames: settings.showVoterNames === true,
+  };
+}
+
+function readLocalEdenX1VoteSettings() {
+  try {
+    return normalizeEdenX1VoteSettings(
+      JSON.parse(localStorage.getItem(EDEN_X1_VOTE_SETTINGS_LOCAL_KEY) || 'null') || {}
+    );
+  } catch {
+    return defaultEdenX1VoteSettings();
+  }
+}
+
+function writeLocalEdenX1VoteSettings(settings) {
+  try {
+    localStorage.setItem(
+      EDEN_X1_VOTE_SETTINGS_LOCAL_KEY,
+      JSON.stringify(normalizeEdenX1VoteSettings(settings))
+    );
+  } catch (err) {
+    console.warn('Could not persist Eden X1 vote settings locally', err);
+  }
+}
+
+function normalizeEdenX1VoteHistoryRecord(record = {}) {
+  const voterName = String(record.voterName || '').trim();
+  const voterKey = String(record.voterKey || compactPlayerIdentity(voterName)).trim();
+  const beforeNames = Array.isArray(record.previousCandidateNames)
+    ? record.previousCandidateNames.map((name) => String(name || '').trim()).filter(Boolean)
+    : [];
+  const afterNames = Array.isArray(record.candidateNames)
+    ? record.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
+    : [];
+  return {
+    id: String(record.id || '').trim(),
+    voteId: String(record.voteId || '').trim(),
+    season: String(record.season || '').trim(),
+    category: String(record.category || '').trim(),
+    voterKey,
+    voterName,
+    previousCandidateNames: beforeNames,
+    candidateNames: afterNames,
+    action: String(record.action || '').trim(),
+    createdAt: record.createdAt || '',
+  };
+}
+
+function renderEdenX1VoteSettings() {
+  const settings = normalizeEdenX1VoteSettings(
+    state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
+  );
+  state.edenX1VoteSettings = settings;
+  const setChecked = (id, value) => {
+    const input = $id(id);
+    if (input) input.checked = Boolean(value);
+  };
+  setChecked('dashEdenVoteOpenToggle', settings.votingOpen);
+  setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
+  setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
+  setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
+  const status = $id('dashEdenVoteSettingsStatus');
+  if (status) {
+    status.textContent = settings.votingOpen
+      ? dashT('adminEdenVotesSettingsOpen')
+      : dashT('adminEdenVotesSettingsClosed');
+  }
+}
+
+function renderEdenX1VoteHistory() {
+  const host = $id('dashEdenVoteHistory');
+  if (!host) return;
+  const season = currentEdenVoteSeason();
+  const history = (Array.isArray(state.edenX1VoteHistory) ? state.edenX1VoteHistory : [])
+    .map(normalizeEdenX1VoteHistoryRecord)
+    .filter(
+      (entry) =>
+        entry.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
+        (!season || entry.season === season) &&
+        entry.voterName
+    )
+    .sort((a, b) => edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a));
+  if (!history.length) {
+    host.innerHTML = `<div class="dash-empty">${esc(dashT('adminEdenVotesHistoryEmpty'))}</div>`;
+    return;
+  }
+  host.innerHTML = `<div class="dash-duty-summary-table-wrap">
+    <table class="dash-duty-summary-table dash-eden-vote-history-table">
+      <thead><tr><th>${esc(dashT('adminVoteVoter'))}</th><th>${esc(dashT('adminEdenVotesHistoryBefore'))}</th><th>${esc(dashT('adminEdenVotesHistoryAfter'))}</th><th>${esc(dashT('adminEdenVotesHistoryAction'))}</th><th>${esc(dashT('adminVoteUpdated'))}</th></tr></thead>
+      <tbody>${history
+        .map(
+          (entry) => `<tr>
+            <td><strong class="dash-duty-cell-value">${esc(entry.voterName)}</strong></td>
+            <td><span class="dash-duty-cell-value">${esc(entry.previousCandidateNames.join(', ') || '--')}</span></td>
+            <td><span class="dash-duty-cell-value">${esc(entry.candidateNames.join(', ') || '--')}</span></td>
+            <td><span class="dash-duty-cell-value">${esc(entry.action || '--')}</span></td>
+            <td><span class="dash-duty-cell-value dash-duty-times">${esc(edenVoteUpdatedAtLabel(entry))}</span></td>
+          </tr>`
+        )
+        .join('')}</tbody>
+    </table>
+  </div>`;
+  hydrateConductSummaryTableLabels(host);
+}
+
+function renderEdenX1VoteAdmin() {
+  renderEdenX1VoteSettings();
+  renderEdenX1VoteResults();
+  renderEdenX1VoteHistory();
 }
 
 function renderEdenX1VoteResults() {
@@ -661,13 +795,13 @@ async function loadEdenX1Votes() {
   const host = $id('dashEdenVoteResults');
   if (!host) return false;
   if (state.adminIsAdmin !== true) {
-    renderEdenX1VoteResults();
+    renderEdenX1VoteAdmin();
     return false;
   }
   try {
     const db = await ensureCloudSyncReady();
     if (!db) {
-      renderEdenX1VoteResults();
+      renderEdenX1VoteAdmin();
       return false;
     }
     const { collection, getDocs, query, where } = await loadFirestoreApi();
@@ -677,7 +811,7 @@ async function loadEdenX1Votes() {
     const votes = [];
     snapshot.forEach((docSnap) => votes.push(normalizeEdenX1VoteRecord(docSnap.data())));
     state.edenX1Votes = votes;
-    renderEdenX1VoteResults();
+    renderEdenX1VoteAdmin();
     return true;
   } catch (err) {
     console.error('EDEN X1 VOTE LOAD ERROR:', err);
@@ -685,6 +819,112 @@ async function loadEdenX1Votes() {
     showCloudSyncFailure(err, 'Eden X1 vote load failed');
     return false;
   }
+}
+
+async function loadEdenX1VoteHistory() {
+  if (!$id('dashEdenVoteHistory')) return false;
+  if (state.adminIsAdmin !== true) {
+    renderEdenX1VoteHistory();
+    return false;
+  }
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) {
+      renderEdenX1VoteHistory();
+      return false;
+    }
+    const { collection, getDocs, query, where } = await loadFirestoreApi();
+    const season = currentEdenVoteSeason();
+    const ref = collection(db, EDEN_X1_VOTE_HISTORY_COLLECTION_PATH);
+    const snapshot = await getDocs(season ? query(ref, where('season', '==', season)) : ref);
+    const history = [];
+    snapshot.forEach((docSnap) => history.push(normalizeEdenX1VoteHistoryRecord(docSnap.data())));
+    state.edenX1VoteHistory = history;
+    renderEdenX1VoteHistory();
+    return true;
+  } catch (err) {
+    console.error('EDEN X1 VOTE HISTORY LOAD ERROR:', err);
+    const host = $id('dashEdenVoteHistory');
+    if (host) {
+      host.innerHTML = `<div class="dash-empty">Vote history could not load: ${esc(err?.message || err || 'unknown error')}</div>`;
+    }
+    showCloudSyncFailure(err, 'Eden X1 vote history load failed');
+    return false;
+  }
+}
+
+async function loadEdenX1VoteSettings() {
+  state.edenX1VoteSettings = readLocalEdenX1VoteSettings();
+  renderEdenX1VoteSettings();
+  if (state.adminIsAdmin !== true) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, getDoc } = await loadFirestoreApi();
+    const snap = await getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH));
+    if (snap.exists()) {
+      state.edenX1VoteSettings = normalizeEdenX1VoteSettings(snap.data());
+      writeLocalEdenX1VoteSettings(state.edenX1VoteSettings);
+      renderEdenX1VoteSettings();
+    }
+    return true;
+  } catch (err) {
+    console.error('EDEN X1 VOTE SETTINGS LOAD ERROR:', err);
+    return false;
+  }
+}
+
+async function saveEdenX1VoteSettings(nextSettings) {
+  const settings = normalizeEdenX1VoteSettings(nextSettings);
+  state.edenX1VoteSettings = settings;
+  writeLocalEdenX1VoteSettings(settings);
+  renderEdenX1VoteSettings();
+  if (state.adminIsAdmin !== true) return false;
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) return false;
+    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+    await setDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH), {
+      ...settings,
+      updatedAt: serverTimestamp(),
+      updatedBy: state.adminUser?.uid || '',
+    });
+    const status = $id('dashEdenVoteSettingsStatus');
+    if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
+    return true;
+  } catch (err) {
+    console.error('EDEN X1 VOTE SETTINGS SAVE ERROR:', err);
+    const status = $id('dashEdenVoteSettingsStatus');
+    if (status)
+      status.textContent = `${dashT('adminEdenVotesSettingsSaveFailed')}: ${err?.message || err}`;
+    showCloudSyncFailure(err, 'Eden X1 vote settings save failed');
+    return false;
+  }
+}
+
+async function loadEdenX1VoteAdminData() {
+  renderEdenX1VoteAdmin();
+  await Promise.all([loadEdenX1VoteSettings(), loadEdenX1Votes(), loadEdenX1VoteHistory()]);
+  renderEdenX1VoteAdmin();
+}
+
+function bindEdenX1VoteAdminControls() {
+  if (bindEdenX1VoteAdminControls.bound) return;
+  bindEdenX1VoteAdminControls.bound = true;
+  $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => loadEdenX1VoteAdminData());
+  [
+    ['dashEdenVoteOpenToggle', 'votingOpen'],
+    ['dashEdenVoteEditingToggle', 'allowEditing'],
+    ['dashEdenVotePublicResultsToggle', 'showPublicResults'],
+    ['dashEdenVoteShowNamesToggle', 'showVoterNames'],
+  ].forEach(([id, key]) => {
+    $id(id)?.addEventListener('change', (event) => {
+      saveEdenX1VoteSettings({
+        ...(state.edenX1VoteSettings || readLocalEdenX1VoteSettings()),
+        [key]: Boolean(event.target.checked),
+      });
+    });
+  });
 }
 
 function formatSignedPoints(points) {
@@ -1401,8 +1641,10 @@ function switchDashSubtab(name) {
     renderDutyRecords();
   if (name === 'contributions') {
     renderContributions();
-    renderEdenX1VoteResults();
-    if (state.adminIsAdmin === true) loadEdenX1Votes();
+  }
+  if (name === 'edenVotes') {
+    renderEdenX1VoteAdmin();
+    if (state.adminIsAdmin === true) loadEdenX1VoteAdminData();
   }
   if (name === 'conduct') renderConductAdjustments();
 }
@@ -1504,9 +1746,17 @@ window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(
   render();
 };
 
-window.setEdenX1VotesForTest = function setEdenX1VotesForTest(votes = []) {
+window.setEdenX1VotesForTest = function setEdenX1VotesForTest(
+  votes = [],
+  history = [],
+  settings = null
+) {
   state.edenX1Votes = (Array.isArray(votes) ? votes : []).map(normalizeEdenX1VoteRecord);
-  renderEdenX1VoteResults();
+  state.edenX1VoteHistory = (Array.isArray(history) ? history : []).map(
+    normalizeEdenX1VoteHistoryRecord
+  );
+  if (settings) state.edenX1VoteSettings = normalizeEdenX1VoteSettings(settings);
+  renderEdenX1VoteAdmin();
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -2129,7 +2379,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
           'Bonus team effort points cloud load',
           loadConductAdjustmentsForSeason
         ),
-        runDashboardCloudTaskWithTimeout('Eden X1 vote load', loadEdenX1Votes),
+        runDashboardCloudTaskWithTimeout('Eden X1 vote admin load', loadEdenX1VoteAdminData),
       ]);
       await runDashboardCloudTaskWithTimeout(
         'Queued cloud sync',
@@ -4052,8 +4302,8 @@ export async function bootOcrDashboard() {
     };
   }
   renderContributions();
-  renderEdenX1VoteResults();
-  $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => loadEdenX1Votes());
+  renderEdenX1VoteAdmin();
+  bindEdenX1VoteAdminControls();
   const clearLogBtn = $id('dashClearLogBtn');
   if (clearLogBtn)
     clearLogBtn.onclick = () => {

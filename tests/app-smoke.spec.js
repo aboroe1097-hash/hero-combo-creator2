@@ -289,7 +289,7 @@ async function openEdenX1ForTest(page) {
   await page.waitForFunction(
     () =>
       typeof window.setEdenX1DataForTest === 'function' &&
-      document.querySelector('[data-reward-view="support"]')?.dataset.rewardBound === '1',
+      document.querySelector('[data-reward-view="team"]')?.dataset.rewardBound === '1',
     null,
     { timeout: 20000 }
   );
@@ -804,6 +804,17 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
     await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
     await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
+  });
+
+  test('dragon master materials tab renders calculator', async ({ page }) => {
+    await openApp(page);
+    await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot .dm-slot-table');
+    await expect(page.locator('#materialCalculatorRoot')).toContainText(
+      'Dragon Master Material Calculator'
+    );
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('Purple pieces still needed');
+    await page.locator('#materialCalculatorRoot [data-dm-field="owned"]').first().fill('16');
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('Slots ready to combine');
   });
 
   test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {
@@ -2016,11 +2027,10 @@ test.describe('app smoke tabs', () => {
 
     await openEdenX1ForTest(page);
     const preLoadSupportCard = page.locator('[data-reward-view="support"]');
+    const preLoadTeamCard = page.locator('[data-reward-view="team"]');
     const preLoadContributionCard = page.locator('[data-reward-view="contribution"]');
     const preLoadPanel = page.locator('#dashWeightedContributionPanel');
-    await expect(preLoadPanel.locator('.dash-connecting')).toBeVisible();
-    await expect(preLoadPanel).toContainText('Reward tables unlock');
-    await expect(preLoadSupportCard).toBeDisabled();
+    await expect(preLoadTeamCard).toBeDisabled();
     await expect(preLoadContributionCard).toBeDisabled();
     await page.evaluate(() => {
       document
@@ -2028,16 +2038,23 @@ test.describe('app smoke tabs', () => {
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     await expect(preLoadContributionCard).toHaveAttribute('aria-pressed', 'false');
-    await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
 
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
+    await expect(preLoadTeamCard).toBeEnabled();
     await expect(preLoadSupportCard).toBeEnabled();
     await expect(preLoadContributionCard).toBeEnabled();
     await expect(preLoadPanel.locator('.dash-connecting')).toHaveCount(0);
 
     const panel = page.locator('#dashWeightedContributionPanel');
+    await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
+    await expect(panel.locator('tbody tr')).toHaveCount(3);
+    await expect(panel).toContainText('Team Players Vote');
+    await preLoadSupportCard.click();
+    await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Support Work');
     const publicDashboard = page.locator('#edenX1PublicDashboard');
@@ -2268,12 +2285,14 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'current contribution + ex-guild only'
     );
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Charlie');
+    await expect(panel.locator('tbody tr')).toHaveCount(11);
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
     ).toHaveText('1');
-    await expect(panel.locator('tbody tr').first()).toContainText('#3');
+    await expect(panel.locator('tbody tr').first()).toContainText('Skipped premium tier');
+    await expect(panel.locator('tbody tr').nth(1)).toContainText('Charlie');
+    await expect(panel.locator('tbody tr').nth(1)).toContainText('#3');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map(
         (row) =>
@@ -2282,6 +2301,7 @@ test.describe('app smoke tabs', () => {
       )
     );
     expect(contributionNames).toEqual([
+      'MalakAbo',
       'Charlie',
       'Delta',
       'Echo',
@@ -2295,7 +2315,6 @@ test.describe('app smoke tabs', () => {
     ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     expect(contributionNames).not.toContain('Mike');
-    expect(contributionNames).not.toContain('MalakAbo');
     expect(contributionNames).not.toContain('Alpha');
     expect(contributionNames).not.toContain('Bravo');
     expect(contributionNames).not.toContain('Oscar');
@@ -2305,7 +2324,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(1);
     await expect(panel.locator('tbody tr').first()).toContainText('Kilo');
     await panel.locator('#edenX1TableSearch').fill('');
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr')).toHaveCount(11);
     const contributionPlayerSort = panel.locator('th[data-weighted-sort="player"]');
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
@@ -2342,7 +2361,9 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA', 'TBA']);
     await expect(panel).toContainText('Team Players Vote');
-    await expect(panel).toContainText('Need help choosing?');
+    await expect(panel).toContainText('Need Help With Voting? - View Top Names');
+    await panel.locator('[data-eden-vote-help-link]').click();
+    await expect(panel.locator('#edenX1VoteGuidance')).toBeFocused();
     await expect(panel).toContainText('Most Banners Placed');
     await expect(panel).toContainText('Most banners placed for the team');
     await expect(panel).not.toContainText('Most Shield Walls Built');
@@ -2351,6 +2372,57 @@ test.describe('app smoke tabs', () => {
     await expect(panel).toContainText('Best on Buildings');
     await expect(panel).toContainText('Most R5 Bonus Team Effort Points');
     await expect(panel).toContainText('Steadiest Damage');
+    const helperCards = panel.locator('.eden-x1-vote-helper-card');
+    await expect(helperCards).toHaveCount(6);
+    const helperInitialMetrics = await helperCards.evaluateAll((cards) =>
+      cards.map((card) => {
+        const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
+        const visibleRows = rows.filter((row) => !row.hidden && row.offsetParent !== null);
+        const cardRect = card.getBoundingClientRect();
+        const firstRect = visibleRows[0]?.getBoundingClientRect();
+        return {
+          totalRows: rows.length,
+          visibleRows: visibleRows.length,
+          firstTopOffset: firstRect ? Math.round(firstRect.top - cardRect.top) : null,
+        };
+      })
+    );
+    expect(helperInitialMetrics.every((metric) => metric.totalRows <= 10)).toBe(true);
+    expect(
+      helperInitialMetrics.every(
+        (metric) => metric.visibleRows === Math.min(5, metric.totalRows)
+      )
+    ).toBe(true);
+    const helperFirstTopOffsets = helperInitialMetrics
+      .map((metric) => metric.firstTopOffset)
+      .filter((top) => Number.isFinite(top));
+    expect(Math.max(...helperFirstTopOffsets) - Math.min(...helperFirstTopOffsets)).toBeLessThanOrEqual(
+      4
+    );
+    const firstHelperToggle = panel.locator('[data-eden-vote-helper-toggle]').first();
+    await expect(firstHelperToggle).toBeVisible();
+    await firstHelperToggle.click();
+    await expect(firstHelperToggle).toHaveAttribute('aria-expanded', 'true');
+    const firstHelperExpanded = await firstHelperToggle.evaluate((button) => {
+      const card = button.closest('.eden-x1-vote-helper-card');
+      const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
+      return {
+        totalRows: rows.length,
+        visibleRows: rows.filter((row) => !row.hidden && row.offsetParent !== null).length,
+      };
+    });
+    expect(firstHelperExpanded.visibleRows).toBe(Math.min(10, firstHelperExpanded.totalRows));
+    await firstHelperToggle.click();
+    await expect(firstHelperToggle).toHaveAttribute('aria-expanded', 'false');
+    const firstHelperCollapsed = await firstHelperToggle.evaluate((button) => {
+      const card = button.closest('.eden-x1-vote-helper-card');
+      const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
+      return {
+        totalRows: rows.length,
+        visibleRows: rows.filter((row) => !row.hidden && row.offsetParent !== null).length,
+      };
+    });
+    expect(firstHelperCollapsed.visibleRows).toBe(Math.min(5, firstHelperCollapsed.totalRows));
     await expect(panel.locator('#edenX1VoterName')).toHaveAttribute(
       'placeholder',
       'Put your In-Game Name'
@@ -2405,6 +2477,37 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
     await expect(panel.locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')).toHaveCount(10);
+    const firstInfoPopoverTrigger = panel
+      .locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')
+      .first();
+    await firstInfoPopoverTrigger.click();
+    await expect(firstInfoPopoverTrigger).toHaveAttribute('aria-expanded', 'true');
+    const firstInfoPopoverMetrics = await firstInfoPopoverTrigger
+      .locator('.eden-x1-vote-info-popover')
+      .evaluate((popover) => {
+        const rect = popover.getBoundingClientRect();
+        const style = getComputedStyle(popover);
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          width: rect.width,
+          visibility: style.visibility,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        };
+      });
+    expect(firstInfoPopoverMetrics.visibility).toBe('visible');
+    expect(firstInfoPopoverMetrics.width).toBeGreaterThan(200);
+    expect(firstInfoPopoverMetrics.left).toBeGreaterThanOrEqual(8);
+    expect(firstInfoPopoverMetrics.right).toBeLessThanOrEqual(
+      firstInfoPopoverMetrics.viewportWidth - 8
+    );
+    expect(firstInfoPopoverMetrics.top).toBeGreaterThanOrEqual(8);
+    expect(firstInfoPopoverMetrics.bottom).toBeLessThanOrEqual(
+      firstInfoPopoverMetrics.viewportHeight - 8
+    );
     const detailStatColumns = await panel
       .locator('#edenX1VoteCandidateDetail .eden-x1-vote-stat-grid')
       .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
@@ -2510,6 +2613,23 @@ test.describe('app smoke tabs', () => {
       candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
       candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
     });
+    await page.reload({ waitUntil: 'load' });
+    await openEdenX1ForTest(page);
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest(dash);
+    }, seededDash);
+    const reloadedPanel = page.locator('#dashWeightedContributionPanel');
+    await expect(reloadedPanel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
+    await expect(reloadedPanel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
+    await expect(reloadedPanel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(reloadedPanel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+    await expect(reloadedPanel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+    await expect(reloadedPanel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
+    await expect(reloadedPanel.locator('.eden-x1-vote-suggestions')).toHaveText(['', '', '', '', '']);
+    await reloadedPanel.locator('#edenX1CandidateName').focus();
+    await expect(
+      reloadedPanel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+    ).toContainText('Alpha');
 
     await page.evaluate(() => {
       localStorage.setItem('vts_theme', 'light');
@@ -2535,52 +2655,70 @@ test.describe('app smoke tabs', () => {
         typeof window.switchDashSubtab === 'function'
     );
     await page.evaluate(() => {
-      window.setEdenX1VotesForTest([
-        {
-          id: 'season-2026__team_players__delta',
-          season: 'season-2026',
-          category: 'team_players',
-          voterKey: 'delta',
-          voterName: 'Delta',
-          candidateKey: 'alpha',
-          candidateName: 'Alpha',
-          candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
-          candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
-          voterAuthUid: 'test-delta',
-          updatedAt: '2026-06-24T20:00:00.000Z',
-        },
-        {
-          id: 'season-2026__team_players__echo',
-          season: 'season-2026',
-          category: 'team_players',
-          voterKey: 'echo',
-          voterName: 'Echo',
-          candidateKey: 'alpha',
-          candidateName: 'Alpha',
-          voterAuthUid: 'test-echo',
-          updatedAt: '2026-06-24T20:05:00.000Z',
-        },
-        {
-          id: 'season-2026__team_players__foxtrot',
-          season: 'season-2026',
-          category: 'team_players',
-          voterKey: 'foxtrot',
-          voterName: 'Foxtrot',
-          candidateKey: 'bravo',
-          candidateName: 'Bravo',
-          candidateKeys: ['bravo', 'alpha', 'charlie', 'delta'],
-          candidateNames: ['Bravo', 'Alpha', 'Charlie', 'Delta'],
-          voterAuthUid: 'test-foxtrot',
-          updatedAt: '2026-06-24T20:10:00.000Z',
-        },
-      ]);
-      window.switchDashSubtab('contributions');
+      window.setEdenX1VotesForTest(
+        [
+          {
+            id: 'season-2026__team_players__delta',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'delta',
+            voterName: 'Delta',
+            candidateKey: 'alpha',
+            candidateName: 'Alpha',
+            candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
+            candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
+            voterAuthUid: 'test-delta',
+            updatedAt: '2026-06-24T20:00:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__echo',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'echo',
+            voterName: 'Echo',
+            candidateKey: 'alpha',
+            candidateName: 'Alpha',
+            voterAuthUid: 'test-echo',
+            updatedAt: '2026-06-24T20:05:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__foxtrot',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'foxtrot',
+            voterName: 'Foxtrot',
+            candidateKey: 'bravo',
+            candidateName: 'Bravo',
+            candidateKeys: ['bravo', 'alpha', 'charlie', 'delta'],
+            candidateNames: ['Bravo', 'Alpha', 'Charlie', 'Delta'],
+            voterAuthUid: 'test-foxtrot',
+            updatedAt: '2026-06-24T20:10:00.000Z',
+          },
+        ],
+        [
+          {
+            id: 'hist-1',
+            voteId: 'season-2026__team_players__delta',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'delta',
+            voterName: 'Delta',
+            previousCandidateNames: ['Alpha', 'Bravo'],
+            candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
+            action: 'updated',
+            createdAt: '2026-06-24T20:01:00.000Z',
+          },
+        ],
+        { votingOpen: true, allowEditing: false, showPublicResults: true, showVoterNames: false }
+      );
+      window.switchDashSubtab('edenVotes');
     });
 
     const results = page.locator('#dashEdenVoteResults');
-    await expect(page.locator('.dash-eden-votes-panel')).toContainText(
-      'Eden X1 Team Players Vote'
-    );
+    await expect(page.locator('#dashSubtabEdenVotes')).toContainText('Eden X1 Team Players Vote');
+    await expect(page.locator('#dashEdenVoteOpenToggle')).toBeChecked();
+    await expect(page.locator('#dashEdenVoteEditingToggle')).not.toBeChecked();
+    await expect(page.locator('#dashEdenVotePublicResultsToggle')).toBeChecked();
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
     await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('3');
@@ -2591,6 +2729,10 @@ test.describe('app smoke tabs', () => {
     await expect(results).toContainText('Delta');
     await expect(results).toContainText('Echo');
     await expect(results).toContainText('Foxtrot');
+    const history = page.locator('#dashEdenVoteHistory');
+    await expect(history).toContainText('Delta');
+    await expect(history).toContainText('Alpha, Bravo');
+    await expect(history).toContainText('Alpha, Bravo, Charlie, Delta');
   });
 
   test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({ page }) => {
@@ -2674,6 +2816,7 @@ test.describe('app smoke tabs', () => {
     await openEdenX1ForTest(page);
     await page.locator('#languageSelect').selectOption('ru');
     await page.evaluate((dash) => window.setEdenX1DataForTest(dash), seededDash);
+    await page.locator('[data-reward-view="support"]').click();
     await expect(page.locator('#dashWeightedContributionPanel tbody tr')).toHaveCount(4);
 
     const layout = await page.evaluate(() => {

@@ -469,6 +469,22 @@
             <path d="M19 4h2v3a3 3 0 0 1-4 2.83" /></svg
           ><span data-i18n="adminContributionsTab">Contributions</span>
         </button>
+        <button class="dash-subtab-btn" data-subtab="edenVotes">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M4 19V5" />
+            <path d="M8 17V9" />
+            <path d="M12 19V7" />
+            <path d="M16 15V11" />
+            <path d="M20 17V5" /></svg
+          ><span data-i18n="adminEdenVotesTab">Eden X1 Votes</span>
+        </button>
         <button class="dash-subtab-btn" data-subtab="conduct">
           <svg
             width="14"
@@ -1238,20 +1254,6 @@
           <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
           <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
           <div id="dashContributionWeightedPanel" class="dash-contribution-weighted-panel"></div>
-          <section class="dash-contribution-compare-card dash-eden-votes-panel">
-            <div class="dash-contribution-compare-head">
-              <div>
-                <strong>Eden X1 Team Players Vote</strong>
-                <span>Honor-system votes submitted from the public Eden X1 page.</span>
-              </div>
-              <button id="dashEdenVoteRefreshBtn" class="dash-btn" type="button">
-                <span>Refresh Votes</span>
-              </button>
-            </div>
-            <div id="dashEdenVoteResults">
-              <div class="dash-empty">No votes yet.</div>
-            </div>
-          </section>
           <div id="dashContributionBody">
             <div class="dash-empty" data-i18n="adminContributionEmpty">
               No contribution lists yet.
@@ -1288,6 +1290,104 @@
             <div id="dashExGuildBody">
               <div class="dash-empty" data-i18n="adminExGuildEmpty">
                 No ex-guild legacy data yet.
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Sub-tab: Eden X1 Votes -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabEdenVotes">
+        <div class="dash-card dash-eden-votes-admin-card">
+          <div class="dash-card-hdr">
+            <div>
+              <h2 class="dash-card-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M4 19V5" />
+                  <path d="M8 17V9" />
+                  <path d="M12 19V7" />
+                  <path d="M16 15V11" />
+                  <path d="M20 17V5" /></svg
+                ><span data-i18n="adminEdenVotesTitle">Eden X1 Team Players Vote</span>
+              </h2>
+              <p class="dash-card-subtitle" data-i18n="adminEdenVotesSubtitle">
+                Control the public voting window, review current ballots, and audit edits.
+              </p>
+            </div>
+            <div class="dash-card-actions">
+              <button id="dashEdenVoteRefreshBtn" class="dash-btn" type="button">
+                <span data-i18n="adminEdenVotesRefresh">Refresh Votes</span>
+              </button>
+            </div>
+          </div>
+          <section class="dash-eden-vote-admin-options" aria-labelledby="dashEdenVoteSettingsTitle">
+            <div>
+              <strong id="dashEdenVoteSettingsTitle" data-i18n="adminEdenVotesSettings"
+                >Voting controls</strong
+              >
+              <span id="dashEdenVoteSettingsStatus" class="dash-muted"></span>
+            </div>
+            <div class="dash-eden-vote-toggle-grid">
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteOpenToggle" type="checkbox" checked />
+                <span>
+                  <strong data-i18n="adminEdenVotesOpen">Voting open</strong>
+                  <small data-i18n="adminEdenVotesOpenHint">Allow public vote submissions.</small>
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteEditingToggle" type="checkbox" checked />
+                <span>
+                  <strong data-i18n="adminEdenVotesEditing">Allow editing</strong>
+                  <small data-i18n="adminEdenVotesEditingHint"
+                    >Players can update submitted votes until this is turned off.</small
+                  >
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVotePublicResultsToggle" type="checkbox" />
+                <span>
+                  <strong data-i18n="adminEdenVotesPublicResults">Show results publicly</strong>
+                  <small data-i18n="adminEdenVotesPublicResultsHint"
+                    >Make vote standings visible on the public Eden X1 page when ready.</small
+                  >
+                </span>
+              </label>
+              <label class="dash-eden-vote-toggle">
+                <input id="dashEdenVoteShowNamesToggle" type="checkbox" />
+                <span>
+                  <strong data-i18n="adminEdenVotesShowNames">Show voter names</strong>
+                  <small data-i18n="adminEdenVotesShowNamesHint"
+                    >Keep off if public results should stay anonymous.</small
+                  >
+                </span>
+              </label>
+            </div>
+          </section>
+          <section class="dash-contribution-compare-card dash-eden-votes-panel">
+            <div id="dashEdenVoteResults">
+              <div class="dash-empty" data-i18n="adminEdenVotesEmpty">No votes yet.</div>
+            </div>
+          </section>
+          <section class="dash-contribution-compare-card dash-eden-votes-history-panel">
+            <div class="dash-contribution-compare-head">
+              <div>
+                <strong data-i18n="adminEdenVotesHistory">Edit history</strong>
+                <span data-i18n="adminEdenVotesHistorySubtitle"
+                  >Every saved change is listed here for admin audit.</span
+                >
+              </div>
+            </div>
+            <div id="dashEdenVoteHistory">
+              <div class="dash-empty" data-i18n="adminEdenVotesHistoryEmpty">
+                No vote edits logged yet.
               </div>
             </div>
           </section>

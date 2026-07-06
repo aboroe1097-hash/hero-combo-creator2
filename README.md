@@ -1,10 +1,10 @@
-# Hero Combo Creator - VTS 1097 (v13.0.0)
+# Hero Combo Creator - VTS 1097 (v13.0.1)
 
-A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
+A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
 ## Features
 
-Nine top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
+Ten top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
 
 | Tool | Source files | Purpose | Dependencies | Perf notes |
 |---|---|---|---|---|
@@ -12,6 +12,7 @@ Nine top-level tools are exposed from the main navigation in `index.html`, with 
 | **Combo Generator** | `js/app-generator.js`, `js/combos-db.js`, `js/hero-bonuses.js`, `js/combo-counters.js`, `js/skins-db.js`, `js/skin-heroes-data.js` | Select owned heroes -> top-5 ranked combos, no overlap; "Surprise Me" random; skin mode | Hero, combo, counter, and skin datasets | Pure client-side ranking |
 | **Hero Atlas** | `js/app-hero-atlas.js`, `js/heroes-info.js`, `js/heroes-data.js`, `js/skins-db.js`, `js/skin-heroes-data.js`, `js/hero-bonuses.js` | 68+ heroes DB; search/filter; skills, synergies, counters, top combos; seasonal filters; adjustable bonuses | Static hero, combo, counter, and skin data | New badge; dynamically imported |
 | **Tech Research** | `js/app-research.js`, `js/tech-db.js`, `js/research-buffs.js`, `js/research-advanced.js`, `js/research-node-icons.js` | Academy tracker S0-X8; War Badge/Courage Medal summary; game-layout trees; buff progress | Static research data | `tech-db.js` is data-heavy and split into its own build chunk |
+| **DM Materials** | `js/material-calculator.js` | Coming-soon Dragon Master material planner; calculator module is staged but not enabled in the tab yet | Static crafting constants | Tab currently shows a launch placeholder |
 | **Eden Map** | `tabs/eden-map.html`, `js/eden-map.js`, `js/eden-map-*.js`, `js/eden-datasets-loader.js`, `database/` | Canvas 1700x1600 tile map; scout mode; route planning; layer toggles; <=4 teams; terrain-aware distance | Static datasets in `database/` | Lazy-loaded tab via `data-tab-src` and dynamic import |
 | **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js`, `js/heroes-data.js` | Monster/stage matchup recommendations using local combo and hero data | Static data | New badge; dynamically imported |
 | **Eden Loyalty** | `tabs/loyalty.html`, `js/loyalty-calculator.js` | Poison mitigation, camp presets, deficit/surplus | None | Lazy-loaded tab via `data-tab-src` |
@@ -71,7 +72,7 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 13.0.0 release should pass the full local gate before shipping.
+That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 13.0.1 release should pass the full local gate before shipping.
 
 Version cadence: after the 11.3.0 baseline, every pushed release increments the patch slot through `11.3.19`; the next release after that becomes `11.4.0`. The same 20-release cycle repeats for future minor versions.
 
@@ -131,6 +132,7 @@ js/
   app-generator.js      Combo generator: best & random modes
   app-hero-atlas.js     Hero Atlas tab: search, skills, synergies, skins
   app-research.js       Tech Research Calculator tab
+  material-calculator.js Dragon Master material calculator
   app-strife.js         Strife over Dragon recommendations
   app-export.js         Export functions (html2canvas, CSV, text)
   app-error-reporting.js  Client error queue and Firestore flush

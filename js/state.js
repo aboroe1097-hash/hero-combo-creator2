@@ -6,7 +6,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '13.0.0';
+export const APP_VERSION = '13.0.1';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -152,12 +152,14 @@ export const generatorSection = document.getElementById('generatorSection');
 export const loyaltySection = document.getElementById('loyaltySection');
 export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
+export const materialsSection = document.getElementById('materialsSection');
 
 export const tabManualBtn = document.getElementById('tabManual');
 export const tabGeneratorBtn = document.getElementById('tabGenerator');
 export const tabLoyaltyBtn = document.getElementById('tabLoyalty');
 export const tabYouTubeBtn = document.getElementById('tabYouTube');
 export const tabResearchBtn = document.getElementById('tabResearch');
+export const tabMaterialsBtn = document.getElementById('tabMaterials');
 export const tabHeroesBtn = document.getElementById('tabHeroes');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');

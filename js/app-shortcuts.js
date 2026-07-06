@@ -1,4 +1,14 @@
-const TAB_ORDER = ['manual', 'generator', 'heroes', 'research', 'edenMap', 'loyalty', 'youtube', 'ocrDashboard'];
+const TAB_ORDER = [
+  'manual',
+  'generator',
+  'heroes',
+  'research',
+  'materials',
+  'edenMap',
+  'strife',
+  'loyalty',
+  'youtube',
+];
 
 function isTypingTarget(el) {
   return ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName) || el?.isContentEditable;
@@ -26,6 +36,7 @@ function focusVisibleSearch() {
     '#generatorSection:not(.hidden) #generatorHeroSearch',
     '#heroesSection:not(.hidden) #heroesTabSearch',
     '#researchSection:not(.hidden) #techSearchInput',
+    '#materialsSection:not(.hidden) input[type="number"]',
     '#edenMapSection:not(.hidden) #edenStructSearch',
     '#ocrDashboardSection:not(.hidden) input[type="search"]',
   ];
@@ -49,7 +60,7 @@ export function initKeyboardShortcuts({ switchTab }) {
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && /^[1-8]$/.test(key)) {
+    if ((event.ctrlKey || event.metaKey) && /^[1-9]$/.test(key)) {
       event.preventDefault();
       switchTab?.(TAB_ORDER[Number(key) - 1]);
       return;
