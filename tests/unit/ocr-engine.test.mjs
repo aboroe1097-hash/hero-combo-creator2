@@ -432,7 +432,7 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('IDN/Dragon.Gold'), 'IDN Dragon.Gold');
   assert.equal(findBestMatch('MasterVje'), 'MasterVj');
   assert.equal(findBestMatch('MasterVjce'), 'MasterVj');
-  assert.equal(findBestMatch('I N d \'/Made3110'), 'Made3110');
+  assert.equal(findBestMatch("I N d '/Made3110"), 'Made3110');
   assert.equal(findBestMatch('I N d \\/Made3110'), 'Made3110');
   assert.equal(findBestMatch('iN d°/Made3110'), 'Made3110');
   assert.equal(findBestMatch('«I N d ø»Made3110'), 'Made3110');

@@ -223,7 +223,11 @@ test('updateR5Adjustment creates a missing cloud doc (uid + serverTimestamp)', a
     points: 2,
     note: 'old',
   });
-  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'admin-uid-123' }, firestore });
+  window.getVtsAdminFirestoreContext = () => ({
+    db: {},
+    user: { uid: 'admin-uid-123' },
+    firestore,
+  });
   try {
     const record = await updateR5Adjustment(seeded.id, {
       playerKey: 'feechka',
@@ -234,7 +238,11 @@ test('updateR5Adjustment creates a missing cloud doc (uid + serverTimestamp)', a
     });
     assert.ok(written, 'a missing cloud doc should be written via setDoc');
     assert.equal(written.ref.id, 'local-only-1');
-    assert.equal(written.record.createdBy, 'admin-uid-123', 'create rule needs createdBy == auth.uid');
+    assert.equal(
+      written.record.createdBy,
+      'admin-uid-123',
+      'create rule needs createdBy == auth.uid'
+    );
     assert.equal(written.record.createdAt, SERVER_TS, 'create uses serverTimestamp()');
     assert.equal(written.record.points, 5);
     assert.equal(written.record.note, 'updated');
@@ -271,7 +279,11 @@ test('updateR5Adjustment preserves createdAt/createdBy when the cloud doc exists
   };
   // A different editor uid must NOT overwrite createdBy/createdAt (the update
   // rule requires both unchanged).
-  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'different-uid' }, firestore });
+  window.getVtsAdminFirestoreContext = () => ({
+    db: {},
+    user: { uid: 'different-uid' },
+    firestore,
+  });
   try {
     await updateR5Adjustment('cloud-9', {
       playerKey: 'feechka',
@@ -282,7 +294,11 @@ test('updateR5Adjustment preserves createdAt/createdBy when the cloud doc exists
     });
     assert.ok(written);
     assert.equal(written.record.createdAt, CREATED_AT, 'createdAt must stay unchanged on update');
-    assert.equal(written.record.createdBy, 'original-admin-uid', 'createdBy must stay unchanged on update');
+    assert.equal(
+      written.record.createdBy,
+      'original-admin-uid',
+      'createdBy must stay unchanged on update'
+    );
     assert.equal(written.record.points, 7);
     assert.equal(written.record.note, 'edited');
   } finally {
@@ -314,7 +330,11 @@ test('updateR5Adjustment repairs historical cloud metadata on edit', async () =>
     },
     serverTimestamp: () => SERVER_TS,
   };
-  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'admin-uid-123' }, firestore });
+  window.getVtsAdminFirestoreContext = () => ({
+    db: {},
+    user: { uid: 'admin-uid-123' },
+    firestore,
+  });
   try {
     await updateR5Adjustment('seeded-cloud-1', {
       playerKey: 'feechka',
@@ -325,7 +345,11 @@ test('updateR5Adjustment repairs historical cloud metadata on edit', async () =>
     });
     assert.ok(written);
     assert.equal(written.record.createdAt, SERVER_TS, 'historical string timestamps are repaired');
-    assert.equal(written.record.createdBy, 'admin-uid-123', 'historical release creators are repaired');
+    assert.equal(
+      written.record.createdBy,
+      'admin-uid-123',
+      'historical release creators are repaired'
+    );
     assert.equal(written.record.points, 2);
   } finally {
     delete window.getVtsAdminFirestoreContext;

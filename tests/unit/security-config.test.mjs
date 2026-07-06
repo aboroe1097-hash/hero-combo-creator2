@@ -119,12 +119,22 @@ test('admin cloud boot and saves have bounded local-cache fallback', () => {
 
   assert.match(dashboard, /DASHBOARD_CLOUD_BOOT_TIMEOUT_MS/);
   assert.match(dashboard, /DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
+  assert.match(dashboard, /DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS/);
+  assert.match(
+    dashboard,
+    /return Number\.isFinite\(override\) && override > 0 \? override : 20000;/
+  );
   assert.match(dashboard, /function isRecoverableDashboardCloudError/);
   assert.match(dashboard, /function isFirestoreInternalWatchAssertion/);
   assert.match(dashboard, /installDashboardFirestoreErrorGuard\(\)/);
   assert.match(dashboard, /window\.addEventListener\('unhandledrejection'/);
   assert.match(dashboard, /state\._fsRosterUnsub = null/);
   assert.match(dashboard, /function runDashboardCloudTaskWithTimeout/);
+  assert.match(dashboard, /function scheduleDashboardCloudRetryFlush/);
+  assert.match(
+    dashboard,
+    /if \(shouldAutoFlushDashboardCloudRetry\(reason\)\) scheduleDashboardCloudRetryFlush\(\);/
+  );
   assert.match(
     dashboard,
     /runDashboardCloudTaskWithTimeout\('Roster cloud load', loadRosterSnapshotsFromFirestore\)/

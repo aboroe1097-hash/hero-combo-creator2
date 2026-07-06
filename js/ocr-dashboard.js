@@ -217,13 +217,16 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
       override = Number(localStorage.getItem('vts_dashboard_cloud_write_timeout_ms'));
     } catch (e) {}
   }
-  return Number.isFinite(override) && override > 0 ? override : 6500;
+  return Number.isFinite(override) && override > 0 ? override : 20000;
 })();
+const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
 let dashboardCloudSavePendingVersion = 0;
 let dashboardCloudSaveWaiters = [];
+let dashboardCloudRetryFlushTimer = null;
+let dashboardCloudRetryFlushInFlight = false;
 let dashboardRenderFrame = 0;
 let dashboardLocalCacheJson = '';
 
@@ -257,6 +260,28 @@ function queueDashboardCloudRetry(kind, payload, reason = '') {
   });
   writeDashboardCloudRetryQueue(queue);
   setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+  if (shouldAutoFlushDashboardCloudRetry(reason)) scheduleDashboardCloudRetryFlush();
+}
+
+function shouldAutoFlushDashboardCloudRetry(reason = '') {
+  if (state.adminIsAdmin !== true || state.cloudSyncConfigured === false) return false;
+  return !isDashboardPermissionErrorText(reason);
+}
+
+function scheduleDashboardCloudRetryFlush(delayMs = DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS) {
+  if (dashboardCloudRetryFlushTimer || dashboardCloudRetryFlushInFlight) return;
+  const schedule =
+    typeof window !== 'undefined' && window.setTimeout ? window.setTimeout : setTimeout;
+  dashboardCloudRetryFlushTimer = schedule(async () => {
+    dashboardCloudRetryFlushTimer = null;
+    if (!readDashboardCloudRetryQueue().length) return;
+    dashboardCloudRetryFlushInFlight = true;
+    try {
+      await flushDashboardCloudRetryQueue();
+    } finally {
+      dashboardCloudRetryFlushInFlight = false;
+    }
+  }, delayMs);
 }
 
 function withDashboardCloudTimeout(promise, timeoutMs, label) {

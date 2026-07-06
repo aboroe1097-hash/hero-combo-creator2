@@ -24,9 +24,8 @@ const {
   getWeightedContributionRecordLabel,
   sanitizePublicR5Adjustments,
 } = await import('../../js/contribution-weighting.js');
-const { PLAYER_REGISTRY_KEY, writeStoredPlayerRegistry } = await import(
-  '../../js/player-registry.js'
-);
+const { PLAYER_REGISTRY_KEY, writeStoredPlayerRegistry } =
+  await import('../../js/player-registry.js');
 
 const TEST_ROSTER_NAMES = ['~Sarafino~', 'UNDEAD', 'ANGEL', 'Zubbs', 'Kika'];
 const KIKA_MAIN = '\ua9c1 Kika \ua9c2';
@@ -414,9 +413,7 @@ test('weighted contribution uses registry families for custom account groups', (
       dutyRecords: [
         { type: 'banner', entries: [{ name: 'Registry Banner', confirmed: 'Registry Banner' }] },
       ],
-      r5Adjustments: [
-        { season, player: 'Registry Banner', points: 2, category: 'banner_help' },
-      ],
+      r5Adjustments: [{ season, player: 'Registry Banner', points: 2, category: 'banner_help' }],
     });
 
     const main = model.rows.find((row) => row.playerName === 'Registry Main');
