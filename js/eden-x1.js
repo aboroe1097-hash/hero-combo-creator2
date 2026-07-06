@@ -1979,8 +1979,9 @@ function bindWeightedPopoverDismissal() {
   });
   globalThis.addEventListener(
     'scroll',
-    () => {
+    (event) => {
       if (Date.now() - weightedPopoverOpenedAt < 180) return;
+      if (event.target?.closest?.('.dash-weighted-score-popover')) return;
       closeWeightedPopovers();
     },
     {

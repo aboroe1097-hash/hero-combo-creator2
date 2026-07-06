@@ -2200,36 +2200,41 @@
     font-size: 1.08rem;
   }
 
-  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
+  #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
     position: fixed !important;
     inset: auto max(12px, env(safe-area-inset-right, 0px))
       calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
     width: auto !important;
-    max-height: min(48svh, 360px) !important;
-    padding: 0.95rem 0.9rem 0.82rem !important;
+    max-height: min(44svh, 350px) !important;
+    padding: 1.05rem 0.86rem 0.82rem !important;
     overflow-y: auto !important;
     border-radius: 14px !important;
     transform: translateY(10px) !important;
     z-index: 2200;
   }
 
-  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover::before {
-    display: none !important;
+  #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover::before {
+    content: '';
+    position: absolute;
+    top: 0.42rem;
+    left: 50%;
+    display: block;
+    width: 2.8rem;
+    height: 3px;
+    border-radius: 1rem;
+    background: #64748b99;
+    transform: translateX(-50%);
   }
 
-  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
+  #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
     transform: translateY(0) !important;
   }
 
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover small,
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover > span > span,
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
-    overflow-wrap: anywhere;
+  #ocrDashboardRoot .dash-weighted-score-popover small,
+  #ocrDashboardRoot .dash-weighted-score-popover > span > span,
+  #ocrDashboardRoot .dash-weighted-score-popover b {
+    overflow-wrap: break-word;
     white-space: normal;
-  }
-
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
-    text-align: right;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-top-item {

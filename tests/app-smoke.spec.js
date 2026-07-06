@@ -2729,6 +2729,43 @@ test.describe('app smoke tabs', () => {
       () => document.documentElement.scrollWidth > window.innerWidth + 2
     );
     expect(contributionOverflow).toBe(false);
+
+    const mobileRewardTrigger = page
+      .locator('#dashWeightedContributionPanel tbody tr')
+      .first()
+      .locator('.dash-weighted-reward-trigger');
+    await mobileRewardTrigger.click();
+    const mobileRewardPopover = await page.evaluate(() => {
+      const popover = document.querySelector(
+        '#dashWeightedContributionPanel .eden-x1-popover-trigger.is-open .dash-weighted-score-popover'
+      );
+      if (!popover) return { missing: true };
+      const rect = popover.getBoundingClientRect();
+      return {
+        missing: false,
+        left: Math.floor(rect.left),
+        right: Math.ceil(rect.right),
+        width: Math.round(rect.width),
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        bottom: Math.ceil(rect.bottom),
+        maxChildWidth: Math.max(
+          ...Array.from(popover.querySelectorAll('b, small')).map((node) =>
+            Math.ceil(node.getBoundingClientRect().width)
+          )
+        ),
+      };
+    });
+    expect(mobileRewardPopover.missing).toBe(false);
+    expect(mobileRewardPopover.left).toBeGreaterThanOrEqual(8);
+    expect(mobileRewardPopover.right).toBeLessThanOrEqual(mobileRewardPopover.viewportWidth - 8);
+    expect(mobileRewardPopover.width).toBeGreaterThanOrEqual(320);
+    expect(mobileRewardPopover.bottom).toBeLessThanOrEqual(
+      mobileRewardPopover.viewportHeight - 8
+    );
+    expect(mobileRewardPopover.maxChildWidth).toBeLessThanOrEqual(
+      mobileRewardPopover.width - 24
+    );
   });
 
   test('admin export menu downloads all-data CSV and debug bundles', async ({ page }) => {
