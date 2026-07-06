@@ -1,5 +1,12 @@
 # Changelog
 
+## 13.0.3 - 2026-07-07
+
+- Merged the Eden X1 voting helper's separate banner and pathing cards into one wider "Most Banners & Paths" helper ranked by combined banner/path support.
+- Widened Eden X1 helper-card columns and reduced value-column reservation so long player names have more usable room on PC.
+- Added translated combined banner/path labels and regression coverage for the five-card helper layout.
+- Synced public version labels, README, changelog, app constants, i18n keys, and smoke coverage to 13.0.3.
+
 ## 13.0.2 - 2026-07-07
 
 - Fixed the Eden X1 vote settings Firestore document path so public/admin pages no longer throw an invalid document reference before falling back to defaults.

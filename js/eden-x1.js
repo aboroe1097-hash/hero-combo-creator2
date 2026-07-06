@@ -18,7 +18,7 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 
-const APP_VERSION = '13.0.2';
+const APP_VERSION = '13.0.3';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -541,13 +541,24 @@ function getEdenPublicPlayerForKey(playerKey) {
   return publicPlayerRows.find((row) => row.key === key) || null;
 }
 
-function rankedEdenDutyRows(field, limit = 5) {
+function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return currentRows
-    .filter((row) => valueOf(row[field]) > 0)
-    .slice()
+    .map((row) => {
+      const banners = valueOf(row.banners);
+      const pathers = valueOf(row.pathers);
+      return {
+        ...row,
+        banners,
+        pathers,
+        supportTotal: banners + pathers,
+      };
+    })
+    .filter((row) => row.supportTotal > 0)
     .sort(
       (a, b) =>
-        valueOf(b[field]) - valueOf(a[field]) ||
+        valueOf(b.supportTotal) - valueOf(a.supportTotal) ||
+        valueOf(b.banners) - valueOf(a.banners) ||
+        valueOf(b.pathers) - valueOf(a.pathers) ||
         valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
@@ -555,7 +566,10 @@ function rankedEdenDutyRows(field, limit = 5) {
     .map((row) => ({
       key: row.playerKey || compactPlayerIdentity(row.playerName),
       name: row.playerName,
-      value: valueOf(row[field]).toLocaleString(),
+      value: t('edenX1VoteBannerPathValue', {
+        banners: row.banners.toLocaleString(),
+        pathers: row.pathers.toLocaleString(),
+      }),
     }));
 }
 
@@ -783,14 +797,9 @@ function renderEdenVotePickList(title, hint, rows) {
 function renderEdenVoteGuidance() {
   const groups = [
     [
-      t('edenX1VoteTopBanner'),
-      t('edenX1VoteTopBannerHint'),
-      rankedEdenDutyRows('banners', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
-    ],
-    [
-      t('edenX1VoteTopPath'),
-      t('edenX1VoteTopPathHint'),
-      rankedEdenDutyRows('pathers', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
+      t('edenX1VoteTopBannerPath'),
+      t('edenX1VoteTopBannerPathHint'),
+      rankedEdenBannerPathRows(),
     ],
     [t('edenX1VoteTopStructure'), t('edenX1VoteTopStructureHint'), rankedEdenStructureHelpRows()],
     [t('edenX1VoteTopBuildingMvp'), t('edenX1VoteTopBuildingMvpHint'), rankedEdenBuildingMvpRows()],

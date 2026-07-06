@@ -1,9 +1,16 @@
-# Session Handoff - v13.0.2 Hotfix
+# Session Handoff - v13.0.3 Eden X1 Helper Layout
 
 Date: 2026-07-07
 Branch: gh-pages
 Repo: D:\Project\hero-combo-creator2
-Release: 13.0.2
+Release: 13.0.3
+
+## 13.0.3 Notes
+
+- Eden X1 voting guidance now merges the separate banner and pathing helper cards into a single translated "Most Banners & Paths" card.
+- The combined helper ranks by `banners + pathers`, then by banners, pathers, weighted score, and name.
+- Helper cards use a wider grid and smaller value-column reservation so long player names get more room on PC.
+- Smoke coverage now expects five helper cards and verifies the old separate banner/path cards are not shown.
 
 ## 13.0.2 Hotfix Notes
 

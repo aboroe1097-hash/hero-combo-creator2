@@ -2383,16 +2383,17 @@ test.describe('app smoke tabs', () => {
     await expect(panel).toContainText('Need Help With Voting? - View Top Names');
     await panel.locator('[data-eden-vote-help-link]').click();
     await expect(panel.locator('#edenX1VoteGuidance')).toBeFocused();
-    await expect(panel).toContainText('Most Banners Placed');
-    await expect(panel).toContainText('Most banners placed for the team');
+    await expect(panel).toContainText('Most Banners & Paths');
+    await expect(panel).toContainText('Combined banners, march paths, and speed tiles laid');
+    await expect(panel).not.toContainText('Most Banners Placed');
+    await expect(panel).not.toContainText('Most Paths & Speed Tiles');
     await expect(panel).not.toContainText('Most Shield Walls Built');
-    await expect(panel).toContainText('Most Paths & Speed Tiles');
     await expect(panel).toContainText('Most Structures Hit');
     await expect(panel).toContainText('Best on Buildings');
     await expect(panel).toContainText('Most R5 Bonus Team Effort Points');
     await expect(panel).toContainText('Steadiest Damage');
     const helperCards = panel.locator('.eden-x1-vote-helper-card');
-    await expect(helperCards).toHaveCount(6);
+    await expect(helperCards).toHaveCount(5);
     const helperInitialMetrics = await helperCards.evaluateAll((cards) =>
       cards.map((card) => {
         const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
