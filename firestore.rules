@@ -194,39 +194,72 @@ service cloud.firestore {
       && request.resource.data.candidateName.size() > 0
       && request.resource.data.candidateName.size() <= 120
       && request.resource.data.candidateKeys is list
-      && request.resource.data.candidateKeys.size() == 4
+      && request.resource.data.candidateKeys.size() >= 1
+      && request.resource.data.candidateKeys.size() <= 4
       && request.resource.data.candidateKeys[0] is string
       && request.resource.data.candidateKeys[0].size() > 0
       && request.resource.data.candidateKeys[0].size() <= 120
-      && request.resource.data.candidateKeys[1] is string
-      && request.resource.data.candidateKeys[1].size() > 0
-      && request.resource.data.candidateKeys[1].size() <= 120
-      && request.resource.data.candidateKeys[2] is string
-      && request.resource.data.candidateKeys[2].size() > 0
-      && request.resource.data.candidateKeys[2].size() <= 120
-      && request.resource.data.candidateKeys[3] is string
-      && request.resource.data.candidateKeys[3].size() > 0
-      && request.resource.data.candidateKeys[3].size() <= 120
-      && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[1]
-      && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[2]
-      && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[3]
-      && request.resource.data.candidateKeys[1] != request.resource.data.candidateKeys[2]
-      && request.resource.data.candidateKeys[1] != request.resource.data.candidateKeys[3]
-      && request.resource.data.candidateKeys[2] != request.resource.data.candidateKeys[3]
+      && (
+        request.resource.data.candidateKeys.size() < 2
+        || (
+          request.resource.data.candidateKeys[1] is string
+          && request.resource.data.candidateKeys[1].size() > 0
+          && request.resource.data.candidateKeys[1].size() <= 120
+          && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[1]
+        )
+      )
+      && (
+        request.resource.data.candidateKeys.size() < 3
+        || (
+          request.resource.data.candidateKeys[2] is string
+          && request.resource.data.candidateKeys[2].size() > 0
+          && request.resource.data.candidateKeys[2].size() <= 120
+          && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[2]
+          && request.resource.data.candidateKeys[1] != request.resource.data.candidateKeys[2]
+        )
+      )
+      && (
+        request.resource.data.candidateKeys.size() < 4
+        || (
+          request.resource.data.candidateKeys[3] is string
+          && request.resource.data.candidateKeys[3].size() > 0
+          && request.resource.data.candidateKeys[3].size() <= 120
+          && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[3]
+          && request.resource.data.candidateKeys[1] != request.resource.data.candidateKeys[3]
+          && request.resource.data.candidateKeys[2] != request.resource.data.candidateKeys[3]
+        )
+      )
       && request.resource.data.candidateNames is list
-      && request.resource.data.candidateNames.size() == 4
+      && request.resource.data.candidateNames.size() == request.resource.data.candidateKeys.size()
+      && request.resource.data.candidateNames.size() >= 1
+      && request.resource.data.candidateNames.size() <= 4
       && request.resource.data.candidateNames[0] is string
       && request.resource.data.candidateNames[0].size() > 0
       && request.resource.data.candidateNames[0].size() <= 120
-      && request.resource.data.candidateNames[1] is string
-      && request.resource.data.candidateNames[1].size() > 0
-      && request.resource.data.candidateNames[1].size() <= 120
-      && request.resource.data.candidateNames[2] is string
-      && request.resource.data.candidateNames[2].size() > 0
-      && request.resource.data.candidateNames[2].size() <= 120
-      && request.resource.data.candidateNames[3] is string
-      && request.resource.data.candidateNames[3].size() > 0
-      && request.resource.data.candidateNames[3].size() <= 120
+      && (
+        request.resource.data.candidateNames.size() < 2
+        || (
+          request.resource.data.candidateNames[1] is string
+          && request.resource.data.candidateNames[1].size() > 0
+          && request.resource.data.candidateNames[1].size() <= 120
+        )
+      )
+      && (
+        request.resource.data.candidateNames.size() < 3
+        || (
+          request.resource.data.candidateNames[2] is string
+          && request.resource.data.candidateNames[2].size() > 0
+          && request.resource.data.candidateNames[2].size() <= 120
+        )
+      )
+      && (
+        request.resource.data.candidateNames.size() < 4
+        || (
+          request.resource.data.candidateNames[3] is string
+          && request.resource.data.candidateNames[3].size() > 0
+          && request.resource.data.candidateNames[3].size() <= 120
+        )
+      )
       && request.resource.data.candidateKey == request.resource.data.candidateKeys[0]
       && request.resource.data.candidateName == request.resource.data.candidateNames[0]
       && request.resource.data.voterAuthUid == request.auth.uid

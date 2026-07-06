@@ -1105,13 +1105,13 @@ const de = {
   edenX1RewardLeaderboardCopy: 'Belohnungen nach Beitrag plus Ex-Gilde nach Support-Slots.',
   edenX1RewardSupportTitle: 'Unterstützungsarbeit',
   edenX1RewardSupportCopy: 'Banner, Pfade, Schildwälle und andere erfasste Saisonunterstützung.',
-  edenX1RewardSupportVoteTag: 'Hier für beste Teammitglieder abstimmen',
   edenX1RewardManagementTitle: 'R4 / Verwaltung',
   edenX1RewardManagementCopy:
     'Eine feste Verwaltungsbelohnung plus zwei anonyme Gildenabstimmungs-Belohnungen.',
   edenX1RewardTeamTitle: 'Teamspieler',
   edenX1RewardTeamCopy:
     'Drei anonyme Gildenabstimmungs-Belohnungen für herausragende Teamarbeit und Zuverlässigkeit.',
+  edenX1RewardTeamVoteTag: 'Hier für beste Teamspieler abstimmen',
   edenX1RewardCardAction: 'Tabelle anzeigen',
   edenX1RewardViewAria: 'Belohnungsplätze für {title} anzeigen',
   edenX1RewardContributionMeta: 'Top 10 nach Beitrag plus Ex-Gilde, nach Support Work.',
@@ -1124,7 +1124,9 @@ const de = {
   edenX1RewardManagementVotePending: 'Abstimmung des Verwaltungsteams',
   edenX1RewardVotePending: 'Noch offen - Gildenabstimmung ausstehend',
   edenX1Tba: 'Noch offen',
+  edenX1LoadingKicker: 'Eden X1-Belohnungsansicht - Staat 1097',
   edenX1Loading: 'Gewichtete Beitragsdaten werden geladen...',
+  edenX1LoadingStatus: 'Belohnungstabellen werden freigeschaltet, sobald der Saison-Snapshot bereit ist.',
   edenX1WeightedTitle: 'Gewichteter Gesamtbeitrag',
   edenX1ViewOnly: 'Nur Ansicht',
   edenX1NoFirebase: 'Firebase ist nicht konfiguriert. Daten können nicht geladen werden.',
@@ -1270,7 +1272,7 @@ const de = {
   edenX1StructureRowMeta: '{hits} Treffer - {players} Spieler - klicken',
   edenX1VoteTitle: 'Teamspieler-Abstimmung',
   edenX1VoteSubtitle:
-    'Honor-System-Abstimmung für Eden X1. Identifiziere dich, wähle vier Teamkollegen und sende erneut, wenn du deine Stimmen ändern musst.',
+    'Honor-System-Abstimmung für Eden X1. Identifiziere dich, wähle bis zu vier Teamkollegen und sende erneut, wenn du deine Stimmen ändern musst.',
   edenX1VoteYourName: 'Dein Spielername',
   edenX1VoteYourVote: 'Deine Stimme #1',
   edenX1VoteYourVoteSecond: 'Deine Stimme #2',
@@ -1282,15 +1284,23 @@ const de = {
   edenX1VotePhTeammateThird: 'Dritten Teamkollegen wählen',
   edenX1VotePhTeammateFourth: 'Vierten Teamkollegen wählen',
   edenX1VoteSelfConfirmed: 'Bestätigt: {player}',
+  edenX1VoteSelfPick: 'Mich auf Stimme #1 setzen',
   edenX1VoteClearPicked: '{player} entfernen',
   edenX1VoteCast: 'Stimmen abgeben',
   edenX1VoteInspectEmpty: 'Mitglied wählen, um Statistiken zu sehen',
   edenX1VoteInspectNamed: 'Statistiken von {player} ansehen',
-  edenX1VoteSavedDevice: 'Auf diesem Gerät gespeichert: {voter} hat für {candidates} gestimmt.',
+  edenX1VoteSavedDevice: 'Danke, {voter}. Deine Stimmen wurden für {candidates} abgegeben.',
   edenX1VoteErrUnknownSelf: 'Wähle deinen In-Game-Namen aus der Mitgliederliste.',
-  edenX1VoteErrPickBoth: 'Wähle deinen Namen und vier Teamkollegen aus der Mitgliederliste.',
-  edenX1VoteErrDuplicate: 'Wähle vier verschiedene Teamkollegen.',
+  edenX1VoteErrPickBoth:
+    'Wähle deinen Namen und mindestens einen Teamkollegen aus der Mitgliederliste.',
+  edenX1VoteErrUnknownCandidate: 'Wähle Teamkollegen aus der Mitgliederliste. Nichts wurde gespeichert.',
+  edenX1VoteErrPickAtLeastOne:
+    'Wähle mindestens einen Teamkollegen aus der Mitgliederliste. Nichts wurde gespeichert.',
+  edenX1VoteErrDuplicate:
+    'Doppelte Stimme gefunden. Nichts wurde gespeichert. Wähle jeden Teamkollegen nur einmal.',
   edenX1VoteErrCloud: 'Cloud-Abstimmung ist nicht bereit. Bitte Seite neu laden.',
+  edenX1VotePartialConfirm:
+    'Du hast noch {count} freie Stimmplätze. Drücke Stimmen abgeben erneut, um diese Stimmen trotzdem zu speichern.',
   edenX1VoteStatusSaving: 'Stimme wird gespeichert...',
   edenX1VoteSaved:
     'Stimmen gespeichert. Du kannst sie ändern, indem du von diesem Gerät erneut sendest.',
@@ -1299,15 +1309,24 @@ const de = {
   edenX1VoteGuidanceCopy:
     'Diese Listen sind nur Hinweise. Stimme für den Teamkollegen, der deiner Meinung nach am meisten herausstach.',
   edenX1VoteHelperEmpty: 'Noch keine Daten',
-  edenX1VoteTopBanner: 'Top 5 Banner-Hilfe',
-  edenX1VoteTopShield: 'Top 5 Schildmauer-Hilfe',
-  edenX1VoteTopPath: 'Top 5 Weg-Hilfe',
-  edenX1VoteTopStructure: 'Top 5 Struktur-Angriffe',
-  edenX1VoteTopBuildingMvp: 'Top 5 Gebäude-MVPs',
+  edenX1VoteShowTop10: 'Top 10 anzeigen',
+  edenX1VoteShowTop5: 'Top 5 anzeigen',
+  edenX1VoteTopBanner: 'Meiste Banner platziert',
+  edenX1VoteTopBannerHint: 'Meiste Banner für das Team platziert',
+  edenX1VoteTopShield: 'Meiste Schildmauern gebaut',
+  edenX1VoteTopShieldHint: 'Meiste Schildmauern für das Team gebaut',
+  edenX1VoteTopPath: 'Meiste Wege & Speed-Tiles',
+  edenX1VoteTopPathHint: 'Meiste Marschwege und Speed-Tiles gelegt',
+  edenX1VoteTopStructure: 'Meiste Strukturen getroffen',
+  edenX1VoteTopStructureHint: 'Feindliche Strukturen, auf denen Treffer gelandet wurden',
+  edenX1VoteTopBuildingMvp: 'Beste bei Gebäuden',
+  edenX1VoteTopBuildingMvpHint: 'Gebäude, bei denen dieser Spieler den besten Treffer hatte',
   edenX1VoteBuildingMvpValue: 'MVP × {count} Mal',
-  edenX1VoteTopR5Bonus: 'Top 5 R5-Teamleistungs-Bonuspunkte',
+  edenX1VoteTopR5Bonus: 'Meiste R5-Teamleistungs-Bonuspunkte',
+  edenX1VoteTopR5BonusHint: 'Zusätzliche Teamleistungs-Punkte, die von R5 vergeben wurden',
   edenX1VoteR5BonusValue: '{points} Pkt.',
-  edenX1VoteTopConsistent: 'Top 5 konstante Namen',
+  edenX1VoteTopConsistent: 'Stetigster Schaden',
+  edenX1VoteTopConsistentHint: 'Wie gleichmäßig der Schaden über die Angriffe war',
   edenX1VoteDetailSubtitle: 'Beitrag, Support und Strukturaktivität',
   edenX1VoteOpenDetail: 'Angriffsdetails öffnen',
   edenX1VoteNoTrend: 'Noch kein Struktur-Treffer-Trend.',
@@ -1320,6 +1339,26 @@ const de = {
   edenX1VoteConductBonus: 'R5-Bonuspunkte',
   edenX1VoteStructureConsistency: 'Struktur-Konstanz & Bewegung',
   edenX1VoteMovementDelta: 'Bewegung vs frühe Treffer',
+  edenX1InfoButtonLabel: 'So wird es berechnet',
+  edenX1InfoWeightedScore:
+    'Gewichtete Punkte addieren Beitrag, Ex-Gilden-Beitrag, Support-Arbeit und R5-Bonuspunkte.',
+  edenX1InfoFinalRank:
+    'Der Endrang ist die Position des Spielers nach Sortierung der gewichteten Punkte.',
+  edenX1InfoContribution: 'Beitrag ist der hochgeladene Saison-Beitragswert.',
+  edenX1InfoExGuild:
+    'Ex-Gilden-Beitrag ist genehmigter alter Beitragskredit, der zu Beitragsbelohnungen addiert wird.',
+  edenX1InfoR5Bonus:
+    'R5-Bonuspunkte sind manuelle Teamleistungs-Punkte. Jeder Punkt addiert 10.000 zur gewichteten Punktzahl.',
+  edenX1InfoSupportTotal:
+    'Support gesamt zählt Banner, Wege, Schildmauern und R5-Bonuspunkte vor der Punktegewichtung.',
+  edenX1InfoBannerPathShield:
+    'Banner / Weg / Schild zeigt die aufgezeichneten Support-Zahlen je Aufgabe.',
+  edenX1InfoStructureHits:
+    'Struktur-Treffer zählt öffentliche Angriffszeilen, die diesem Spieler zugeordnet sind.',
+  edenX1InfoTotalDemolition:
+    'Gesamtdemolierung summiert die öffentliche Struktur-Treffer-Demolierung dieses Spielers.',
+  edenX1InfoStructureConsistency:
+    'Konstanz vergleicht Trefferwerte über Zeit und die Bewegung zwischen frühen und aktuellen Treffern.',
   edenX1VoteNoSimilarMember: 'Kein ähnliches Mitglied gefunden.',
   edenX1VoteSavingShort: 'Speichern...',
   edenX1VoteSyncFailed: 'Stimme wurde nicht synchronisiert: {error}',

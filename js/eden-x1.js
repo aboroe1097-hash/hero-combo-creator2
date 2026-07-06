@@ -32,6 +32,8 @@ const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
   'edenX1CandidateName4',
 ];
 const EDEN_X1_VOTE_CANDIDATE_LIMIT = 4;
+const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
+const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
@@ -57,6 +59,7 @@ let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let edenVoteWriteContext = null;
 let edenVotePointerSubmitUntil = 0;
+let pendingPartialEdenVoteSignature = '';
 
 function $(id) {
   return document.getElementById(id);
@@ -316,12 +319,14 @@ function updateEdenVoteInputConfirmation(host, inputId, option = null) {
   const resolved = option || findEdenMemberOption(host?.querySelector(`#${inputId}`)?.value);
   if (!resolved) {
     chip.innerHTML = '';
+    if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, null);
     return;
   }
   const clearButton = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(inputId)
     ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">x</button>`
     : '';
   chip.innerHTML = `<span class="eden-x1-vote-confirm-chip">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}${clearButton}</span>`;
+  if (inputId === 'edenX1VoterName') updateEdenVoteSelfPickButton(host, resolved);
 }
 
 function resetEdenVoteInputState(host, inputId) {
@@ -357,6 +362,7 @@ function applyEdenVoteInputResolved(host, inputId, option) {
 }
 
 function clearEdenVotePickedInput(host, inputId) {
+  pendingPartialEdenVoteSignature = '';
   const input = host?.querySelector(`#${inputId}`);
   if (!input) return;
   input.value = '';
@@ -381,6 +387,57 @@ function resolveEdenVoteInput(host, inputId, options = {}) {
   if (options.closeSuggestions) clearEdenVoteInputSuggestions(host, inputId);
   else updateEdenVoteInputSuggestions(host, inputId);
   return option;
+}
+
+function edenVoteCandidateSignature(voter, candidateKeys) {
+  return [voter?.playerKey || '', ...candidateKeys].join('|');
+}
+
+function applyEdenVoteSelfPick(host, source = null) {
+  pendingPartialEdenVoteSignature = '';
+  const sourceKey = source?.getAttribute?.('data-eden-vote-self-key');
+  const sourceName = source?.getAttribute?.('data-eden-vote-self-name');
+  const voter =
+    findEdenMemberOptionByKey(sourceKey) ||
+    findEdenMemberOption(sourceName) ||
+    findEdenMemberOption(host?.querySelector('#edenX1VoterName')?.value);
+  const input = host?.querySelector('#edenX1CandidateName');
+  if (!voter || !input) return;
+  input.value = voter.playerName;
+  applyEdenVoteInputResolved(host, input.id, voter);
+  host.dataset.edenVoteInspectInputId = input.id;
+  clearEdenVoteInputSuggestions(host, input.id);
+  const detail = host.querySelector('#edenX1VoteCandidateDetail');
+  if (detail) detail.dataset.open = '1';
+  updateEdenVoteCandidateDetail(host);
+  input.focus();
+}
+
+function bindEdenVoteSelfPickButton(host, button) {
+  if (!button || button.dataset.edenVoteSelfPickBound) return;
+  button.dataset.edenVoteSelfPickBound = '1';
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    applyEdenVoteSelfPick(host, button);
+  });
+}
+
+function updateEdenVoteSelfPickButton(host, option) {
+  const button = host?.querySelector('#edenX1VoteSelfPickBtn');
+  if (!button) return;
+  if (!option) {
+    button.hidden = true;
+    button.disabled = true;
+    button.removeAttribute('data-eden-vote-self-key');
+    button.removeAttribute('data-eden-vote-self-name');
+    return;
+  }
+  button.hidden = false;
+  button.disabled = false;
+  button.setAttribute('data-eden-vote-self-key', option.playerKey);
+  button.setAttribute('data-eden-vote-self-name', option.playerName);
+  bindEdenVoteSelfPickButton(host, button);
 }
 
 function readSavedEdenVoteCandidateNames(vote) {
@@ -476,7 +533,7 @@ function rankedEdenDutyRows(field, limit = 5) {
     }));
 }
 
-function rankedEdenR5BonusRows(limit = 5) {
+function rankedEdenR5BonusRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return currentRows
     .map((row) => ({
       ...row,
@@ -497,7 +554,7 @@ function rankedEdenR5BonusRows(limit = 5) {
     }));
 }
 
-function rankedEdenStructureHelpRows(limit = 5) {
+function rankedEdenStructureHelpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return publicPlayerRows
     .filter((row) => valueOf(row.participation_count) > 0)
     .slice()
@@ -516,7 +573,7 @@ function rankedEdenStructureHelpRows(limit = 5) {
     }));
 }
 
-function rankedEdenBuildingMvpRows(limit = 5) {
+function rankedEdenBuildingMvpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   const mvpMap = new Map();
   (Array.isArray(publicAttackRows) ? publicAttackRows : []).forEach((attack) => {
     const players = publicAttackPlayers(attack);
@@ -568,7 +625,7 @@ function rankedEdenBuildingMvpRows(limit = 5) {
     }));
 }
 
-function rankedEdenConsistentRows(limit = 5) {
+function rankedEdenConsistentRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
   return publicPlayerRows
     .map((player) => {
       const values = player.attacks
@@ -593,15 +650,16 @@ function rankedEdenConsistentRows(limit = 5) {
     .slice(0, limit);
 }
 
-function renderEdenVotePickList(title, rows) {
+function renderEdenVotePickList(title, hint, rows) {
+  const hasMore = rows.length > EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT;
   const body = rows.length
     ? rows
         .map(
           (
             row,
             index
-          ) => `<button class="eden-x1-vote-helper-row" type="button" data-eden-vote-pick="${esc(row.name)}">
-            <span><b>#${index + 1}</b>${renderTaggedPlayerName(row)}</span>
+          ) => `<button class="eden-x1-vote-helper-row${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' is-helper-extra' : ''}" type="button" data-eden-vote-pick="${esc(row.name)}"${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' hidden' : ''}>
+            <span class="eden-x1-vote-helper-name"><b>#${index + 1}</b><span class="eden-x1-vote-helper-player">${renderTaggedPlayerName(row)}</span></span>
             <em>${esc(row.value)}</em>
           </button>`
         )
@@ -609,19 +667,37 @@ function renderEdenVotePickList(title, rows) {
     : `<span class="eden-x1-vote-helper-empty">${esc(t('edenX1VoteHelperEmpty'))}</span>`;
   return `<div class="eden-x1-vote-helper-card">
     <strong>${esc(title)}</strong>
+    ${hint ? `<span class="eden-x1-vote-helper-hint">${esc(hint)}</span>` : ''}
     <div>${body}</div>
+    ${
+      hasMore
+        ? `<button class="eden-x1-vote-helper-toggle" type="button" data-eden-vote-helper-toggle aria-expanded="false">${esc(t('edenX1VoteShowTop10'))}</button>`
+        : ''
+    }
   </div>`;
 }
 
 function renderEdenVoteGuidance() {
   const groups = [
-    [t('edenX1VoteTopBanner'), rankedEdenDutyRows('banners')],
-    [t('edenX1VoteTopShield'), rankedEdenDutyRows('shieldWalls')],
-    [t('edenX1VoteTopPath'), rankedEdenDutyRows('pathers')],
-    [t('edenX1VoteTopStructure'), rankedEdenStructureHelpRows()],
-    [t('edenX1VoteTopBuildingMvp'), rankedEdenBuildingMvpRows()],
-    [t('edenX1VoteTopR5Bonus'), rankedEdenR5BonusRows()],
-    [t('edenX1VoteTopConsistent'), rankedEdenConsistentRows()],
+    [
+      t('edenX1VoteTopBanner'),
+      t('edenX1VoteTopBannerHint'),
+      rankedEdenDutyRows('banners', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
+    ],
+    [
+      t('edenX1VoteTopShield'),
+      t('edenX1VoteTopShieldHint'),
+      rankedEdenDutyRows('shieldWalls', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
+    ],
+    [
+      t('edenX1VoteTopPath'),
+      t('edenX1VoteTopPathHint'),
+      rankedEdenDutyRows('pathers', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
+    ],
+    [t('edenX1VoteTopStructure'), t('edenX1VoteTopStructureHint'), rankedEdenStructureHelpRows()],
+    [t('edenX1VoteTopBuildingMvp'), t('edenX1VoteTopBuildingMvpHint'), rankedEdenBuildingMvpRows()],
+    [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
+    [t('edenX1VoteTopConsistent'), t('edenX1VoteTopConsistentHint'), rankedEdenConsistentRows()],
   ];
   return `<div class="eden-x1-vote-guidance">
     <div class="eden-x1-vote-guidance-head">
@@ -629,7 +705,7 @@ function renderEdenVoteGuidance() {
       <span>${esc(t('edenX1VoteGuidanceCopy'))}</span>
     </div>
     <div class="eden-x1-vote-helper-grid">
-      ${groups.map(([title, rows]) => renderEdenVotePickList(title, rows)).join('')}
+      ${groups.map(([title, hint, rows]) => renderEdenVotePickList(title, hint, rows)).join('')}
     </div>
   </div>`;
 }
@@ -656,22 +732,36 @@ function renderEdenVoteBreakdownRows(rows) {
     .join('');
 }
 
-function renderEdenVoteStatTile(label, value, tone = '') {
-  const toneClass = tone ? ` ${tone}` : '';
-  return `<div class="dash-modal-stat eden-x1-vote-stat-tile"><div>${esc(label)}</div><div class="dash-modal-stat-value${toneClass}">${esc(value)}</div></div>`;
+function renderEdenVoteInfoBadge(info) {
+  if (!info) return '';
+  return `<span class="eden-x1-vote-info" role="img" aria-label="${esc(t('edenX1InfoButtonLabel'))}: ${esc(info)}" title="${esc(info)}">i</span>`;
 }
 
-function renderEdenVoteBreakdownTile(label, value, rows, tone = '') {
+function renderEdenVoteStatLabel(label, info = '') {
+  return `<span class="eden-x1-vote-stat-label"><span>${esc(label)}</span>${renderEdenVoteInfoBadge(info)}</span>`;
+}
+
+function renderEdenVoteStatTile(label, value, tone = '', info = '') {
+  const toneClass = tone ? ` ${tone}` : '';
+  return `<div class="dash-modal-stat eden-x1-vote-stat-tile"><div>${renderEdenVoteStatLabel(label, info)}</div><div class="dash-modal-stat-value${toneClass}">${esc(value)}</div></div>`;
+}
+
+function renderEdenVoteBreakdownTile(label, value, rows, tone = '', info = '') {
   const toneClass = tone ? ` ${tone}` : '';
   return `<details class="dash-modal-stat eden-x1-vote-breakdown-tile${toneClass}">
-    <summary><span>${esc(label)}</span><b>${esc(value)}</b></summary>
+    <summary>${renderEdenVoteStatLabel(label, info)}<b>${esc(value)}</b></summary>
     <div>${renderEdenVoteBreakdownRows(rows)}</div>
   </details>`;
 }
 
 function renderEdenVoteWeightedBreakdown(weighted) {
   if (!weighted)
-    return renderEdenVoteStatTile(t('edenX1ThWeightedScore'), '--', 'dash-modal-stat-value--blue');
+    return renderEdenVoteStatTile(
+      t('edenX1ThWeightedScore'),
+      '--',
+      'dash-modal-stat-value--blue',
+      t('edenX1InfoWeightedScore')
+    );
   const dutyCount =
     valueOf(weighted.banners) + valueOf(weighted.pathers) + valueOf(weighted.shieldWalls);
   const conductBonus = conductBonusValue(weighted);
@@ -701,7 +791,8 @@ function renderEdenVoteWeightedBreakdown(weighted) {
       ],
       [t('edenX1BreakdownTotal'), formatWeightedScore(weighted.weightedScore)],
     ],
-    'eden-x1-vote-breakdown-tile--blue'
+    'eden-x1-vote-breakdown-tile--blue',
+    t('edenX1InfoWeightedScore')
   );
 }
 
@@ -710,7 +801,8 @@ function renderEdenVoteContributionBreakdown(weighted) {
     return renderEdenVoteStatTile(
       t('edenX1BreakdownContribution'),
       '--',
-      'dash-modal-stat-value--amber'
+      'dash-modal-stat-value--amber',
+      t('edenX1InfoContribution')
     );
   const contribution = valueOf(weighted.contributionScore);
   return renderEdenVoteBreakdownTile(
@@ -720,7 +812,8 @@ function renderEdenVoteContributionBreakdown(weighted) {
       [t('edenX1BreakdownContribution'), formatScore(contribution)],
       [t('edenX1BreakdownTotal'), formatScore(contribution)],
     ],
-    'eden-x1-vote-breakdown-tile--amber'
+    'eden-x1-vote-breakdown-tile--amber',
+    t('edenX1InfoContribution')
   );
 }
 
@@ -729,7 +822,8 @@ function renderEdenVoteExGuildBreakdown(weighted) {
     return renderEdenVoteStatTile(
       t('edenX1BreakdownExGuild'),
       '--',
-      'dash-modal-stat-value--purple'
+      'dash-modal-stat-value--purple',
+      t('edenX1InfoExGuild')
     );
   const total = valueOf(weighted.contributionExGuild);
   const breakdown = Array.isArray(weighted.contributionExGuildBreakdown)
@@ -739,7 +833,8 @@ function renderEdenVoteExGuildBreakdown(weighted) {
     return renderEdenVoteStatTile(
       t('edenX1BreakdownExGuild'),
       formatScore(total),
-      'dash-modal-stat-value--purple'
+      'dash-modal-stat-value--purple',
+      t('edenX1InfoExGuild')
     );
   }
   return renderEdenVoteBreakdownTile(
@@ -752,15 +847,26 @@ function renderEdenVoteExGuildBreakdown(weighted) {
       ]),
       [t('edenX1BreakdownTotal'), formatScore(total)],
     ],
-    'eden-x1-vote-breakdown-tile--purple'
+    'eden-x1-vote-breakdown-tile--purple',
+    t('edenX1InfoExGuild')
   );
 }
 
 function renderEdenVoteSupportBreakdown(weighted) {
   if (!weighted) {
     return [
-      renderEdenVoteStatTile(t('edenX1VoteConductBonus'), '--', 'dash-modal-stat-value--purple'),
-      renderEdenVoteStatTile(t('edenX1VoteSupportTotal'), '--', 'dash-modal-stat-value--teal'),
+      renderEdenVoteStatTile(
+        t('edenX1VoteConductBonus'),
+        '--',
+        'dash-modal-stat-value--purple',
+        t('edenX1InfoR5Bonus')
+      ),
+      renderEdenVoteStatTile(
+        t('edenX1VoteSupportTotal'),
+        '--',
+        'dash-modal-stat-value--teal',
+        t('edenX1InfoSupportTotal')
+      ),
     ].join('');
   }
   const conductBonus = conductBonusValue(weighted);
@@ -769,7 +875,8 @@ function renderEdenVoteSupportBreakdown(weighted) {
     renderEdenVoteStatTile(
       t('edenX1VoteConductBonus'),
       formatSignedNumber(conductBonus),
-      conductBonus >= 0 ? 'dash-modal-stat-value--purple' : 'dash-modal-stat-value--amber'
+      conductBonus >= 0 ? 'dash-modal-stat-value--purple' : 'dash-modal-stat-value--amber',
+      t('edenX1InfoR5Bonus')
     ),
     renderEdenVoteBreakdownTile(
       t('edenX1VoteSupportTotal'),
@@ -781,7 +888,8 @@ function renderEdenVoteSupportBreakdown(weighted) {
         [t('edenX1VoteConductBonus'), formatSignedNumber(conductBonus)],
         [t('edenX1BreakdownTotal'), total.toLocaleString()],
       ],
-      'eden-x1-vote-breakdown-tile--teal'
+      'eden-x1-vote-breakdown-tile--teal',
+      t('edenX1InfoSupportTotal')
     ),
   ].join('');
 }
@@ -791,7 +899,8 @@ function renderEdenVoteStructureBreakdown(player, values) {
     return renderEdenVoteStatTile(
       t('edenX1VoteStructureConsistency'),
       '--',
-      'dash-modal-stat-value--blue'
+      'dash-modal-stat-value--blue',
+      t('edenX1InfoStructureConsistency')
     );
   }
   const consistency = scoreConsistencyValues(values);
@@ -811,7 +920,8 @@ function renderEdenVoteStructureBreakdown(player, values) {
       [t('edenX1ModalAverageHit'), formatScore(player.average_demolition)],
       [t('edenX1ModalBestHit'), formatScore(player.best_hit)],
     ],
-    'eden-x1-vote-breakdown-tile--structure'
+    'eden-x1-vote-breakdown-tile--structure',
+    t('edenX1InfoStructureConsistency')
   );
 }
 
@@ -979,13 +1089,13 @@ function renderEdenVoteCandidateDetail(option) {
     </div>
     <div class="dash-modal-grid eden-x1-vote-stat-grid">
       ${renderEdenVoteWeightedBreakdown(weighted)}
-      ${renderEdenVoteStatTile(t('adminContributionFinalRank'), weighted?.finalRank ? `#${weighted.finalRank}` : '--', 'dash-modal-stat-value--teal')}
+      ${renderEdenVoteStatTile(t('adminContributionFinalRank'), weighted?.finalRank ? `#${weighted.finalRank}` : '--', 'dash-modal-stat-value--teal', t('edenX1InfoFinalRank'))}
       ${renderEdenVoteContributionBreakdown(weighted)}
       ${renderEdenVoteExGuildBreakdown(weighted)}
       ${renderEdenVoteSupportBreakdown(weighted)}
-      <div class="dash-modal-stat"><div>${esc(t('edenX1VoteBannerPathShield'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1KpiStructureHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${player ? formatScore(player.participation_count) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1KpiTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${player ? formatScore(player.total_demolition) : '--'}</div></div>
+      ${renderEdenVoteStatTile(t('edenX1VoteBannerPathShield'), weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--', 'dash-modal-stat-value--blue', t('edenX1InfoBannerPathShield'))}
+      ${renderEdenVoteStatTile(t('edenX1KpiStructureHits'), player ? formatScore(player.participation_count) : '--', 'dash-modal-stat-value--amber', t('edenX1InfoStructureHits'))}
+      ${renderEdenVoteStatTile(t('edenX1KpiTotalDemo'), player ? formatScore(player.total_demolition) : '--', 'dash-modal-stat-value--purple', t('edenX1InfoTotalDemolition'))}
       ${renderEdenVoteStructureBreakdown(player, values)}
     </div>
     <div class="eden-x1-vote-trend">
@@ -1048,27 +1158,59 @@ async function submitEdenTeamVoteForm(form) {
     markInvalid: true,
     nudgeInvalid: true,
   });
-  const candidates = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) =>
-    resolveEdenVoteInput(form, id, {
+  const candidates = [];
+  let hasInvalidCandidate = false;
+  EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => {
+    const input = form.querySelector(`#${id}`);
+    if (!input?.value.trim()) {
+      resetEdenVoteInputState(form, id);
+      clearEdenVoteInputSuggestions(form, id);
+      return;
+    }
+    const candidate = resolveEdenVoteInput(form, id, {
       closeSuggestions: true,
       markInvalid: true,
       nudgeInvalid: true,
-    })
-  );
+    });
+    if (candidate) candidates.push(candidate);
+    else hasInvalidCandidate = true;
+  });
   if (!voter) {
+    pendingPartialEdenVoteSignature = '';
     setEdenVoteStatus(t('edenX1VoteErrUnknownSelf'), 'error');
     return;
   }
-  if (!voter || candidates.some((candidate) => !candidate)) {
-    setEdenVoteStatus(t('edenX1VoteErrPickBoth'), 'error');
+  if (hasInvalidCandidate) {
+    pendingPartialEdenVoteSignature = '';
+    setEdenVoteStatus(t('edenX1VoteErrUnknownCandidate'), 'error');
+    return;
+  }
+  if (!candidates.length) {
+    pendingPartialEdenVoteSignature = '';
+    setEdenVoteStatus(t('edenX1VoteErrPickAtLeastOne'), 'error');
     return;
   }
   const candidateKeys = candidates.map((candidate) => candidate.playerKey);
   if (new Set(candidateKeys).size !== candidates.length) {
+    pendingPartialEdenVoteSignature = '';
     setEdenVoteStatus(t('edenX1VoteErrDuplicate'), 'error');
     return;
   }
   const candidateNames = candidates.map((candidate) => candidate.playerName);
+  if (candidateKeys.length < EDEN_X1_VOTE_CANDIDATE_LIMIT) {
+    const signature = edenVoteCandidateSignature(voter, candidateKeys);
+    if (pendingPartialEdenVoteSignature !== signature) {
+      pendingPartialEdenVoteSignature = signature;
+      setEdenVoteStatus(
+        t('edenX1VotePartialConfirm', {
+          count: EDEN_X1_VOTE_CANDIDATE_LIMIT - candidateKeys.length,
+        }),
+        'warning'
+      );
+      return;
+    }
+  }
+  pendingPartialEdenVoteSignature = '';
 
   const season = edenVoteSeason();
   const voterAuthUid = edenVoteWriteContext?.user?.uid || 'local-test';
@@ -1163,6 +1305,7 @@ function bindEdenVoteControls(host) {
     host.addEventListener('input', (event) => {
       const input = event.target.closest(voteInputSelector);
       if (!input) return;
+      pendingPartialEdenVoteSignature = '';
       updateEdenVoteInputSuggestions(host, input.id);
       resetEdenVoteInputState(host, input.id);
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
@@ -1175,6 +1318,7 @@ function bindEdenVoteControls(host) {
     host.addEventListener('change', (event) => {
       const input = event.target.closest(voteInputSelector);
       if (!input) return;
+      pendingPartialEdenVoteSignature = '';
       resolveEdenVoteInput(host, input.id, { closeSuggestions: true, markInvalid: true });
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
@@ -1192,9 +1336,31 @@ function bindEdenVoteControls(host) {
         clearEdenVotePickedInput(host, clear.getAttribute('data-eden-vote-clear') || '');
         return;
       }
+      const selfPick = event.target.closest('[data-eden-vote-self-pick]');
+      if (selfPick) {
+        event.preventDefault();
+        applyEdenVoteSelfPick(host, selfPick);
+        return;
+      }
+      const helperToggle = event.target.closest('[data-eden-vote-helper-toggle]');
+      if (helperToggle) {
+        event.preventDefault();
+        const card = helperToggle.closest('.eden-x1-vote-helper-card');
+        const expanded = card?.dataset.helperExpanded !== '1';
+        if (card) {
+          card.dataset.helperExpanded = expanded ? '1' : '0';
+          card.querySelectorAll('.eden-x1-vote-helper-row.is-helper-extra').forEach((row) => {
+            row.hidden = !expanded;
+          });
+        }
+        helperToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        helperToggle.textContent = expanded ? t('edenX1VoteShowTop5') : t('edenX1VoteShowTop10');
+        return;
+      }
       const suggestion = event.target.closest('[data-eden-vote-suggest]');
       if (suggestion) {
         event.preventDefault();
+        pendingPartialEdenVoteSignature = '';
         const targetId = suggestion.getAttribute('data-eden-vote-target') || '';
         const input = targetId ? host.querySelector(`#${targetId}`) : null;
         if (input) {
@@ -1216,6 +1382,7 @@ function bindEdenVoteControls(host) {
       const pick = event.target.closest('[data-eden-vote-pick]');
       if (pick) {
         event.preventDefault();
+        pendingPartialEdenVoteSignature = '';
         const input =
           getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
           host.querySelector('#edenX1CandidateName');
@@ -1272,33 +1439,36 @@ function renderEdenTeamVotePanel() {
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
       ${renderEdenVoteMemberOptions()}
-      <label class="eden-x1-vote-field" for="edenX1VoterName">
-        <span>${esc(t('edenX1VoteYourName'))}</span>
-        <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
-        <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
-        <div id="edenX1VoterNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1VoterName" aria-live="polite"></div>
-      </label>
+      <div class="eden-x1-vote-name-stack">
+        <label class="eden-x1-vote-field" for="edenX1VoterName">
+          <span>${esc(t('edenX1VoteYourName'))}</span>
+          <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
+          <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
+          <div id="edenX1VoterNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1VoterName" aria-live="polite"></div>
+        </label>
+        <button id="edenX1VoteSelfPickBtn" class="eden-x1-vote-self-pick" type="button" data-eden-vote-self-pick hidden disabled>${esc(t('edenX1VoteSelfPick'))}</button>
+      </div>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
         <span>${esc(t('edenX1VoteYourVote'))}</span>
-        <input id="edenX1CandidateName" class="dash-input" type="text" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" aria-describedby="edenX1CandidateNameConfirm" required />
+        <input id="edenX1CandidateName" class="dash-input" type="text" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" aria-describedby="edenX1CandidateNameConfirm" />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName"></div>
         <div id="edenX1CandidateNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName" aria-live="polite"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName2">
         <span>${esc(t('edenX1VoteYourVoteSecond'))}</span>
-        <input id="edenX1CandidateName2" class="dash-input" type="text" value="${esc(savedCandidateNames[1] || '')}" placeholder="${esc(t('edenX1VotePhTeammateSecond'))}" autocomplete="off" aria-describedby="edenX1CandidateName2Confirm" required />
+        <input id="edenX1CandidateName2" class="dash-input" type="text" value="${esc(savedCandidateNames[1] || '')}" placeholder="${esc(t('edenX1VotePhTeammateSecond'))}" autocomplete="off" aria-describedby="edenX1CandidateName2Confirm" />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName2"></div>
         <div id="edenX1CandidateName2Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName2" aria-live="polite"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName3">
         <span>${esc(t('edenX1VoteYourVoteThird'))}</span>
-        <input id="edenX1CandidateName3" class="dash-input" type="text" value="${esc(savedCandidateNames[2] || '')}" placeholder="${esc(t('edenX1VotePhTeammateThird'))}" autocomplete="off" aria-describedby="edenX1CandidateName3Confirm" required />
+        <input id="edenX1CandidateName3" class="dash-input" type="text" value="${esc(savedCandidateNames[2] || '')}" placeholder="${esc(t('edenX1VotePhTeammateThird'))}" autocomplete="off" aria-describedby="edenX1CandidateName3Confirm" />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName3"></div>
         <div id="edenX1CandidateName3Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName3" aria-live="polite"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName4">
         <span>${esc(t('edenX1VoteYourVoteFourth'))}</span>
-        <input id="edenX1CandidateName4" class="dash-input" type="text" value="${esc(savedCandidateNames[3] || '')}" placeholder="${esc(t('edenX1VotePhTeammateFourth'))}" autocomplete="off" aria-describedby="edenX1CandidateName4Confirm" required />
+        <input id="edenX1CandidateName4" class="dash-input" type="text" value="${esc(savedCandidateNames[3] || '')}" placeholder="${esc(t('edenX1VotePhTeammateFourth'))}" autocomplete="off" aria-describedby="edenX1CandidateName4Confirm" />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName4"></div>
         <div id="edenX1CandidateName4Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName4" aria-live="polite"></div>
       </label>
@@ -1388,6 +1558,17 @@ function rewardViewMetaKey(view) {
       team: 'edenX1RewardTeamMeta',
     }[view] || ''
   );
+}
+
+function rewardViewAccentClass(view) {
+  const safeView =
+    {
+      contribution: 'contribution',
+      support: 'support',
+      management: 'management',
+      team: 'team',
+    }[view] || '';
+  return safeView ? ` eden-x1-reward-table--${safeView}` : '';
 }
 
 function updateRewardFlowControls() {
@@ -3066,13 +3247,14 @@ function renderTable(rows, recordLabel, options = {}) {
   const compactView = isWeightedContributionCompactView();
   const title = options.title || t('edenX1WeightedTitle');
   const meta = options.meta || `${recordLabel || t('edenX1PageTitle')} - ${t('edenX1ViewOnly')}`;
+  const rewardViewClass = rewardViewAccentClass(options.rewardView || currentRewardView);
   const numberMode = options.numberMode || 'final';
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   const visibleRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
   const emptyRow = `<tr><td colspan="14" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
-    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
+    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card${rewardViewClass} ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3167,8 +3349,9 @@ function renderRewardSlotTable(view) {
   const metaKey = rewardViewMetaKey(view);
   const rows = rewardSlotRows(view);
   const votePanel = view === 'team' ? renderEdenTeamVotePanel() : '';
+  const rewardViewClass = rewardViewAccentClass(view);
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
-    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card">
+    <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card${rewardViewClass}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3228,6 +3411,7 @@ function renderCurrentTable(renderOptions = {}) {
     tableOptions = {
       title: t('edenX1RewardLeaderboardTitle'),
       meta: t('edenX1RewardContributionMeta'),
+      rewardView: 'contribution',
       numberMode: 'index',
       rewardContextForRow: (row, _index, numberValue) => {
         const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
@@ -3247,6 +3431,7 @@ function renderCurrentTable(renderOptions = {}) {
     tableOptions = {
       title: t('edenX1RewardSupportTitle'),
       meta: t('edenX1RewardSupportMeta'),
+      rewardView: 'support',
       numberMode: 'index',
       rewardContextForRow: (row, _index, numberValue) => {
         const reward = row.edenX1SupportReward || 'core';

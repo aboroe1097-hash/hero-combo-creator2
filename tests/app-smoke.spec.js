@@ -2151,9 +2151,6 @@ test.describe('app smoke tabs', () => {
     const supportCard = page.locator('[data-reward-view="support"]');
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(supportCard.locator('.eden-x1-flow-action')).toHaveText('View table');
-    await expect(supportCard.locator('.eden-x1-flow-vote-tag')).toHaveText(
-      'Vote here for Best TeamMembers'
-    );
     await expect(panel.locator('h2')).toContainText('Support Work');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'total weighted contribution'
@@ -2338,6 +2335,9 @@ test.describe('app smoke tabs', () => {
     ]);
 
     const teamCard = page.locator('[data-reward-view="team"]');
+    await expect(teamCard.locator('.eden-x1-flow-vote-tag')).toHaveText(
+      'Vote here for Best TeamPlayers'
+    );
     await teamCard.click();
     await expect(teamCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
@@ -2345,13 +2345,14 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA', 'TBA']);
     await expect(panel).toContainText('Team Players Vote');
     await expect(panel).toContainText('Need help choosing?');
-    await expect(panel).toContainText('Top 5 Banner Help');
-    await expect(panel).toContainText('Top 5 Shield Wall Help');
-    await expect(panel).toContainText('Top 5 Pathing Help');
-    await expect(panel).toContainText('Top 5 Structure Attacks');
-    await expect(panel).toContainText('Top 5 MVP on Buildings');
-    await expect(panel).toContainText('Top 5 R5 Bonus Team Effort Points');
-    await expect(panel).toContainText('Top 5 Consistent Names');
+    await expect(panel).toContainText('Most Banners Placed');
+    await expect(panel).toContainText('Most banners placed for the team');
+    await expect(panel).toContainText('Most Shield Walls Built');
+    await expect(panel).toContainText('Most Paths & Speed Tiles');
+    await expect(panel).toContainText('Most Structures Hit');
+    await expect(panel).toContainText('Best on Buildings');
+    await expect(panel).toContainText('Most R5 Bonus Team Effort Points');
+    await expect(panel).toContainText('Steadiest Damage');
     await expect(panel.locator('#edenX1VoterName')).toHaveAttribute(
       'placeholder',
       'Put your In-Game Name'
@@ -2378,6 +2379,14 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')
     ).toBeEmpty();
+    await expect(panel.locator('[data-eden-vote-self-pick]')).toHaveText('Put me in vote #1');
+    await panel.locator('[data-eden-vote-self-pick]').click();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('MalakAbo');
+    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText(
+      'Confirmed: MalakAbo'
+    );
+    await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
     await panel.locator('[data-eden-vote-pick="Alpha"]').first().click();
     await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
     await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
@@ -2392,6 +2401,11 @@ test.describe('app smoke tabs', () => {
     );
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
+    await expect(panel.locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')).toHaveCount(10);
+    const detailStatColumns = await panel
+      .locator('#edenX1VoteCandidateDetail .eden-x1-vote-stat-grid')
+      .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
+    expect(detailStatColumns).toBe(5);
     await panel.locator('#edenX1CandidateName').fill('\u0410lpha');
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
@@ -2416,6 +2430,38 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
     ).toBeEmpty();
+    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'You still have 2 vote slot(s) open. Press Cast Votes again to save these votes anyway.'
+    );
+    const voteBeforePartialConfirm = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+    );
+    expect(voteBeforePartialConfirm).toBeNull();
+    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo.'
+    );
+    const partialVote = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+    );
+    expect(partialVote).toMatchObject({
+      voterName: 'MalakAbo',
+      candidateNames: ['Alpha', 'Bravo'],
+      candidateKeys: ['alpha', 'bravo'],
+    });
+    await panel.locator('#edenX1CandidateName3').fill('Bravo');
+    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'Duplicate vote found. Nothing was saved. Pick each teammate only once.'
+    );
+    const voteAfterDuplicate = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+    );
+    expect(voteAfterDuplicate).toMatchObject({
+      candidateNames: ['Alpha', 'Bravo'],
+      candidateKeys: ['alpha', 'bravo'],
+    });
     await panel.locator('#edenX1CandidateName3').fill('Charli');
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
@@ -2440,7 +2486,7 @@ test.describe('app smoke tabs', () => {
     ).toBeEmpty();
     await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
     await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Saved on this device: MalakAbo voted for Alpha, Bravo, Charlie, Delta.'
+      'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo, Charlie, Delta.'
     );
     await expect(panel.locator('#edenX1VoteStatus')).toContainText(
       'Final results will be announced during the last day.'

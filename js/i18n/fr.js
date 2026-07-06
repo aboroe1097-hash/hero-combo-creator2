@@ -1102,13 +1102,13 @@ const fr = {
   edenX1RewardSupportTitle: 'Travail de soutien',
   edenX1RewardSupportCopy:
     'Bannières, chemins, murs de boucliers et autre soutien de saison enregistré.',
-  edenX1RewardSupportVoteTag: 'Votez ici pour les meilleurs membres d’équipe',
   edenX1RewardManagementTitle: 'R4 / Gestion',
   edenX1RewardManagementCopy:
     'Une récompense fixe de gestion plus deux récompenses par vote anonyme de la guilde.',
   edenX1RewardTeamTitle: 'Joueurs d’équipe',
   edenX1RewardTeamCopy:
     'Trois récompenses par vote anonyme de la guilde pour le travail d’équipe et la fiabilité remarquables.',
+  edenX1RewardTeamVoteTag: 'Votez ici pour les meilleurs joueurs d’équipe',
   edenX1RewardCardAction: 'Voir le tableau',
   edenX1RewardViewAria: 'Afficher les places de récompense pour {title}',
   edenX1RewardContributionMeta: 'Top 10 par contribution plus ex-guilde, après soutien.',
@@ -1121,7 +1121,9 @@ const fr = {
   edenX1RewardManagementVotePending: 'Vote de l’équipe de gestion',
   edenX1RewardVotePending: 'À venir - vote de guilde en attente',
   edenX1Tba: 'À venir',
+  edenX1LoadingKicker: 'Vue des récompenses Eden X1 - État 1097',
   edenX1Loading: 'Chargement des données de contribution pondérée...',
+  edenX1LoadingStatus: 'Les tableaux de récompenses se déverrouillent lorsque l’instantané de saison est prêt.',
   edenX1WeightedTitle: 'Contribution totale pondérée',
   edenX1ViewOnly: 'Lecture seule',
   edenX1NoFirebase: 'Firebase n’est pas configuré. Impossible de charger les données.',
@@ -1266,7 +1268,7 @@ const fr = {
   edenX1StructureRowMeta: '{hits} hits - {players} players - click',
   edenX1VoteTitle: "Vote des joueurs d'équipe",
   edenX1VoteSubtitle:
-    "Vote sur l'honneur pour Eden X1. Identifiez-vous, choisissez quatre coéquipiers et renvoyez si vous devez changer vos votes.",
+    "Vote sur l'honneur pour Eden X1. Identifiez-vous, choisissez jusqu'à quatre coéquipiers et renvoyez si vous devez changer vos votes.",
   edenX1VoteYourName: 'Votre nom en jeu',
   edenX1VoteYourVote: 'Votre vote #1',
   edenX1VoteYourVoteSecond: 'Votre vote #2',
@@ -1278,16 +1280,24 @@ const fr = {
   edenX1VotePhTeammateThird: 'Choisissez le troisième coéquipier',
   edenX1VotePhTeammateFourth: 'Choisissez le quatrième coéquipier',
   edenX1VoteSelfConfirmed: 'Confirmé : {player}',
+  edenX1VoteSelfPick: 'Me mettre en vote #1',
   edenX1VoteClearPicked: 'Retirer {player}',
   edenX1VoteCast: 'Envoyer les votes',
   edenX1VoteInspectEmpty: 'Sélectionnez un membre pour voir les stats',
   edenX1VoteInspectNamed: 'Voir les stats de {player}',
-  edenX1VoteSavedDevice: 'Enregistré sur cet appareil : {voter} a voté pour {candidates}.',
+  edenX1VoteSavedDevice: 'Merci, {voter}. Vos votes ont été envoyés pour {candidates}.',
   edenX1VoteErrUnknownSelf: 'Choisissez votre nom en jeu dans la liste des membres.',
   edenX1VoteErrPickBoth:
-    'Choisissez votre nom et quatre coéquipiers dans la liste des membres.',
-  edenX1VoteErrDuplicate: 'Choisissez quatre coéquipiers différents.',
+    'Choisissez votre nom et au moins un coéquipier dans la liste des membres.',
+  edenX1VoteErrUnknownCandidate:
+    "Choisissez des coéquipiers dans la liste des membres. Rien n'a été enregistré.",
+  edenX1VoteErrPickAtLeastOne:
+    "Choisissez au moins un coéquipier dans la liste des membres. Rien n'a été enregistré.",
+  edenX1VoteErrDuplicate:
+    "Vote en double trouvé. Rien n'a été enregistré. Choisissez chaque coéquipier une seule fois.",
   edenX1VoteErrCloud: "Le vote cloud n'est pas prêt. Actualisez et réessayez.",
+  edenX1VotePartialConfirm:
+    'Il reste {count} emplacement(s) de vote libre(s). Appuyez encore sur Envoyer les votes pour enregistrer ces votes quand même.',
   edenX1VoteStatusSaving: 'Enregistrement du vote...',
   edenX1VoteSaved: 'Votes enregistrés. Vous pouvez les modifier en renvoyant depuis cet appareil.',
   edenX1VoteResultsNote: 'Les résultats finaux seront annoncés pendant le dernier jour.',
@@ -1295,15 +1305,24 @@ const fr = {
   edenX1VoteGuidanceCopy:
     "Ces listes ne sont que des repères. Votez pour le coéquipier qui vous semble s'être le plus distingué.",
   edenX1VoteHelperEmpty: 'Pas encore de données',
-  edenX1VoteTopBanner: 'Top 5 aide bannières',
-  edenX1VoteTopShield: 'Top 5 aide murs',
-  edenX1VoteTopPath: 'Top 5 aide chemins',
-  edenX1VoteTopStructure: 'Top 5 attaques de structures',
-  edenX1VoteTopBuildingMvp: 'Top 5 MVP sur bâtiments',
+  edenX1VoteShowTop10: 'Afficher le top 10',
+  edenX1VoteShowTop5: 'Afficher le top 5',
+  edenX1VoteTopBanner: 'Le plus de bannières placées',
+  edenX1VoteTopBannerHint: "Le plus de bannières placées pour l'équipe",
+  edenX1VoteTopShield: 'Le plus de murs bouclier construits',
+  edenX1VoteTopShieldHint: "Le plus de murs bouclier construits pour l'équipe",
+  edenX1VoteTopPath: 'Le plus de chemins et cases vitesse',
+  edenX1VoteTopPathHint: 'Le plus de chemins de marche et cases vitesse posés',
+  edenX1VoteTopStructure: 'Le plus de structures touchées',
+  edenX1VoteTopStructureHint: 'Structures ennemies sur lesquelles ils ont touché',
+  edenX1VoteTopBuildingMvp: 'Meilleurs sur bâtiments',
+  edenX1VoteTopBuildingMvpHint: 'Bâtiments où ce joueur a eu le meilleur coup',
   edenX1VoteBuildingMvpValue: 'MVP × {count} fois',
-  edenX1VoteTopR5Bonus: 'Top 5 points R5 d’effort d’équipe',
+  edenX1VoteTopR5Bonus: "Le plus de points R5 d'effort d'équipe",
+  edenX1VoteTopR5BonusHint: "Points bonus d'effort d'équipe accordés par R5",
   edenX1VoteR5BonusValue: '{points} points',
-  edenX1VoteTopConsistent: 'Top 5 noms réguliers',
+  edenX1VoteTopConsistent: 'Dégâts les plus réguliers',
+  edenX1VoteTopConsistentHint: 'À quel point leurs dégâts sont réguliers entre les attaques',
   edenX1VoteDetailSubtitle: 'Contribution, soutien et activité sur structures',
   edenX1VoteOpenDetail: 'Ouvrir le détail des attaques',
   edenX1VoteNoTrend: 'Pas encore de tendance de coups sur structures.',
@@ -1316,6 +1335,26 @@ const fr = {
   edenX1VoteConductBonus: 'Points bonus R5',
   edenX1VoteStructureConsistency: 'Régularité et mouvement des structures',
   edenX1VoteMovementDelta: 'Mouvement vs premiers coups',
+  edenX1InfoButtonLabel: 'Mode de calcul',
+  edenX1InfoWeightedScore:
+    'Le score pondéré additionne contribution, contribution ex-guilde, soutien et points bonus R5.',
+  edenX1InfoFinalRank:
+    'Le rang final est la position du joueur après classement des scores pondérés.',
+  edenX1InfoContribution: 'La contribution est la valeur de saison importée.',
+  edenX1InfoExGuild:
+    'La contribution ex-guilde est un crédit de contribution approuvé ajouté aux récompenses.',
+  edenX1InfoR5Bonus:
+    "Les points bonus R5 sont des points manuels d'effort d'équipe. Chaque point ajoute 10 000 au score pondéré.",
+  edenX1InfoSupportTotal:
+    'Le total de soutien compte bannières, chemins, murs bouclier et points R5 avant pondération.',
+  edenX1InfoBannerPathShield:
+    'Bannière / Chemin / Mur montre les comptes de soutien enregistrés par type.',
+  edenX1InfoStructureHits:
+    "Coups sur structures compte les lignes d'attaque publiques associées à ce joueur.",
+  edenX1InfoTotalDemolition:
+    'La démolition totale additionne la démolition publique des coups sur structures de ce joueur.',
+  edenX1InfoStructureConsistency:
+    'La régularité compare les valeurs de coups dans le temps et le mouvement entre coups anciens et récents.',
   edenX1VoteNoSimilarMember: 'Aucun membre similaire trouvé.',
   edenX1VoteSavingShort: 'Enregistrement...',
   edenX1VoteSyncFailed: "Le vote n'a pas été synchronisé : {error}",

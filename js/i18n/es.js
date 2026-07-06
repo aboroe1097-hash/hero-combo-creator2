@@ -1102,13 +1102,13 @@ const es = {
   edenX1RewardSupportTitle: 'Trabajo de apoyo',
   edenX1RewardSupportCopy:
     'Banderas, caminos, muros de escudo y otro apoyo registrado de la temporada.',
-  edenX1RewardSupportVoteTag: 'Vota aquí por los mejores miembros del equipo',
   edenX1RewardManagementTitle: 'R4 / Gestión',
   edenX1RewardManagementCopy:
     'Una recompensa fija de gestión más dos recompensas por voto anónimo del gremio.',
   edenX1RewardTeamTitle: 'Jugadores de equipo',
   edenX1RewardTeamCopy:
     'Tres recompensas por voto anónimo del gremio por trabajo en equipo y fiabilidad destacados.',
+  edenX1RewardTeamVoteTag: 'Vota aquí por los mejores jugadores de equipo',
   edenX1RewardCardAction: 'Ver tabla',
   edenX1RewardViewAria: 'Mostrar plazas de recompensa de {title}',
   edenX1RewardContributionMeta: 'Top 10 por contribución más ex-gremio, después de apoyo.',
@@ -1121,7 +1121,9 @@ const es = {
   edenX1RewardManagementVotePending: 'Votación del equipo de gestión',
   edenX1RewardVotePending: 'Pendiente - voto del gremio',
   edenX1Tba: 'Pendiente',
+  edenX1LoadingKicker: 'Vista de recompensas de Eden X1 - Estado 1097',
   edenX1Loading: 'Cargando datos de contribución ponderada...',
+  edenX1LoadingStatus: 'Las tablas de recompensas se desbloquean cuando la instantánea de temporada está lista.',
   edenX1WeightedTitle: 'Contribución total ponderada',
   edenX1ViewOnly: 'Solo lectura',
   edenX1NoFirebase: 'Firebase no está configurado. No se pueden cargar los datos.',
@@ -1267,7 +1269,7 @@ const es = {
   edenX1StructureRowMeta: '{hits} hits - {players} players - click',
   edenX1VoteTitle: 'Voto de jugadores del equipo',
   edenX1VoteSubtitle:
-    'Votación de honor para Eden X1. Identifícate, elige cuatro compañeros y vuelve a enviar si necesitas cambiar tus votos.',
+    'Votación de honor para Eden X1. Identifícate, elige hasta cuatro compañeros y vuelve a enviar si necesitas cambiar tus votos.',
   edenX1VoteYourName: 'Tu nombre en el juego',
   edenX1VoteYourVote: 'Tu voto #1',
   edenX1VoteYourVoteSecond: 'Tu voto #2',
@@ -1279,15 +1281,22 @@ const es = {
   edenX1VotePhTeammateThird: 'Elige el tercer compañero',
   edenX1VotePhTeammateFourth: 'Elige el cuarto compañero',
   edenX1VoteSelfConfirmed: 'Confirmado: {player}',
+  edenX1VoteSelfPick: 'Ponerme en voto #1',
   edenX1VoteClearPicked: 'Quitar {player}',
   edenX1VoteCast: 'Emitir votos',
   edenX1VoteInspectEmpty: 'Selecciona un miembro para ver estadísticas',
   edenX1VoteInspectNamed: 'Ver estadísticas de {player}',
-  edenX1VoteSavedDevice: 'Guardado en este dispositivo: {voter} votó por {candidates}.',
+  edenX1VoteSavedDevice: 'Gracias, {voter}. Tus votos fueron emitidos por {candidates}.',
   edenX1VoteErrUnknownSelf: 'Elige tu nombre en el juego desde la lista de miembros.',
-  edenX1VoteErrPickBoth: 'Elige tu nombre y cuatro compañeros de la lista de miembros.',
-  edenX1VoteErrDuplicate: 'Elige cuatro compañeros diferentes.',
+  edenX1VoteErrPickBoth: 'Elige tu nombre y al menos un compañero de la lista de miembros.',
+  edenX1VoteErrUnknownCandidate: 'Elige compañeros desde la lista de miembros. No se guardó nada.',
+  edenX1VoteErrPickAtLeastOne:
+    'Elige al menos un compañero desde la lista de miembros. No se guardó nada.',
+  edenX1VoteErrDuplicate:
+    'Se encontró un voto duplicado. No se guardó nada. Elige cada compañero solo una vez.',
   edenX1VoteErrCloud: 'La votación en la nube no está lista. Actualiza e inténtalo de nuevo.',
+  edenX1VotePartialConfirm:
+    'Aún tienes {count} espacio(s) de voto libres. Pulsa Emitir votos otra vez para guardar estos votos igualmente.',
   edenX1VoteStatusSaving: 'Guardando voto...',
   edenX1VoteSaved: 'Votos guardados. Puedes cambiarlos enviando de nuevo desde este dispositivo.',
   edenX1VoteResultsNote: 'Los resultados finales se anunciarán durante el último día.',
@@ -1295,15 +1304,24 @@ const es = {
   edenX1VoteGuidanceCopy:
     'Estas listas son solo referencias. Vota por el compañero que crees que más destacó.',
   edenX1VoteHelperEmpty: 'Sin datos aún',
-  edenX1VoteTopBanner: 'Top 5 ayuda con banners',
-  edenX1VoteTopShield: 'Top 5 ayuda con muros',
-  edenX1VoteTopPath: 'Top 5 ayuda con caminos',
-  edenX1VoteTopStructure: 'Top 5 ataques a estructuras',
-  edenX1VoteTopBuildingMvp: 'Top 5 MVP en edificios',
+  edenX1VoteShowTop10: 'Mostrar top 10',
+  edenX1VoteShowTop5: 'Mostrar top 5',
+  edenX1VoteTopBanner: 'Más banners colocados',
+  edenX1VoteTopBannerHint: 'Más banners colocados para el equipo',
+  edenX1VoteTopShield: 'Más muros de escudo construidos',
+  edenX1VoteTopShieldHint: 'Más muros de escudo construidos para el equipo',
+  edenX1VoteTopPath: 'Más caminos y casillas rápidas',
+  edenX1VoteTopPathHint: 'Más rutas de marcha y casillas rápidas colocadas',
+  edenX1VoteTopStructure: 'Más estructuras golpeadas',
+  edenX1VoteTopStructureHint: 'Estructuras enemigas donde lograron golpes',
+  edenX1VoteTopBuildingMvp: 'Mejores en edificios',
+  edenX1VoteTopBuildingMvpHint: 'Edificios donde este jugador tuvo el mejor golpe',
   edenX1VoteBuildingMvpValue: 'MVP × {count} veces',
-  edenX1VoteTopR5Bonus: 'Top 5 puntos R5 de esfuerzo de equipo',
+  edenX1VoteTopR5Bonus: 'Más puntos R5 de esfuerzo de equipo',
+  edenX1VoteTopR5BonusHint: 'Puntos extra de esfuerzo de equipo otorgados por R5',
   edenX1VoteR5BonusValue: '{points} puntos',
-  edenX1VoteTopConsistent: 'Top 5 nombres constantes',
+  edenX1VoteTopConsistent: 'Daño más estable',
+  edenX1VoteTopConsistentHint: 'Qué tan parejo fue su daño entre ataques',
   edenX1VoteDetailSubtitle: 'Contribución, apoyo y actividad en estructuras',
   edenX1VoteOpenDetail: 'Abrir detalle de ataques',
   edenX1VoteNoTrend: 'Aún no hay tendencia de golpes a estructuras.',
@@ -1316,6 +1334,26 @@ const es = {
   edenX1VoteConductBonus: 'Puntos bonus R5',
   edenX1VoteStructureConsistency: 'Consistencia y movimiento en estructuras',
   edenX1VoteMovementDelta: 'Movimiento vs primeros golpes',
+  edenX1InfoButtonLabel: 'Cómo se calcula',
+  edenX1InfoWeightedScore:
+    'La puntuación ponderada suma contribución, contribución de ex-gremio, apoyo y puntos bonus R5.',
+  edenX1InfoFinalRank:
+    'El rango final es la posición del jugador tras ordenar las puntuaciones ponderadas.',
+  edenX1InfoContribution: 'La contribución es el valor de temporada subido.',
+  edenX1InfoExGuild:
+    'La contribución de ex-gremio es crédito aprobado de contribución anterior añadido a recompensas.',
+  edenX1InfoR5Bonus:
+    'Los puntos bonus R5 son puntos manuales de esfuerzo de equipo. Cada punto suma 10.000 a la puntuación ponderada.',
+  edenX1InfoSupportTotal:
+    'El total de apoyo cuenta banners, caminos, muros de escudo y puntos R5 antes de ponderar.',
+  edenX1InfoBannerPathShield:
+    'Banner / Camino / Muro muestra los conteos de apoyo registrados para cada tarea.',
+  edenX1InfoStructureHits:
+    'Golpes a estructuras cuenta filas de ataques públicos vinculadas a este jugador.',
+  edenX1InfoTotalDemolition:
+    'Demolición total suma la demolición pública de golpes a estructuras de este jugador.',
+  edenX1InfoStructureConsistency:
+    'La consistencia compara valores de golpe en el tiempo y el movimiento entre golpes tempranos y recientes.',
   edenX1VoteNoSimilarMember: 'No se encontró un miembro similar.',
   edenX1VoteSavingShort: 'Guardando...',
   edenX1VoteSyncFailed: 'El voto no se sincronizó: {error}',
