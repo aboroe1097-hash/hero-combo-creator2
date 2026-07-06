@@ -5760,7 +5760,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 
   #ocrDashboardRoot .dash-table-wrap {
     padding-bottom: 4px;
-    max-height: min(48svh, 420px);
+    max-height: min(52svh, 440px);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -6018,7 +6018,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   #ocrDashboardRoot .dash-duty-summary-table-wrap,
   #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
     max-width: 100%;
-    max-height: min(48svh, 420px);
+    max-height: min(52svh, 440px);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;

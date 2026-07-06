@@ -37,3 +37,4 @@ media-player/
 !/tests/
 !/tests/unit/
 !/tests/unit/research-buffs.test.mjs
+/tests

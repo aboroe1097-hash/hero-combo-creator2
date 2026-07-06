@@ -74,7 +74,7 @@ body.eden-x1-page #ocrDashboardRoot :is(
   .dash-table-wrap,
   .eden-x1-public-table-wrap
 ) {
-  max-height: min(48svh, 420px);
+  max-height: min(52svh, 440px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2176,10 +2176,6 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
     min-width: 0 !important;
     max-width: none !important;
     font-size: 0.66rem !important;
-  }
-
-  #tabOcrDashboard.seasonal-admin-tab::after {
-    content: none !important;
   }
 }
 
