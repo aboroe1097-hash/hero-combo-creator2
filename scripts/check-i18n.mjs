@@ -1,18 +1,24 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { availableLanguages, loadTranslationsForLanguage, translations, translationCoverage } from '../js/translations.js';
+import {
+  availableLanguages,
+  loadTranslationsForLanguage,
+  translations,
+  translationCoverage,
+} from '../js/translations.js';
 
-await Promise.all(availableLanguages.map(lang => loadTranslationsForLanguage(lang)));
+await Promise.all(availableLanguages.map((lang) => loadTranslationsForLanguage(lang)));
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const htmlFiles = [
   'index.html',
   'admin.html',
   'eden-x1.html',
-  ...fs.readdirSync(path.join(rootDir, 'tabs'))
-    .filter(name => name.endsWith('.html'))
-    .map(name => path.join('tabs', name)),
+  ...fs
+    .readdirSync(path.join(rootDir, 'tabs'))
+    .filter((name) => name.endsWith('.html'))
+    .map((name) => path.join('tabs', name)),
 ];
 
 const NON_FALLBACK_EDEN_X1_KEYS = [
@@ -90,6 +96,66 @@ const NON_FALLBACK_EDEN_X1_KEYS = [
   'edenX1RewardReasonRank',
   'edenX1RewardReasonGrant',
   'edenX1RewardReasonForfeit',
+  'adminAnalyticsTrends',
+  'adminAnalyticsHeatmap',
+  'adminAnalyticsDistribution',
+  'adminAnalyticsConsistency',
+  'adminAnalyticsStreaks',
+  'edenX1AdvancedPublicHint',
+  'edenX1HeatmapCardHint',
+  'edenX1DistributionCardHint',
+  'edenX1ConsistencyCardHint',
+  'edenX1StreaksCardHint',
+  'adminModalPlayerBreakdown',
+  'adminModalActiveHours',
+  'adminModalThDemolition',
+  'adminModalThTarget',
+  'adminModalThValue',
+  'adminShowMore',
+  'adminDeleteAttackTitle',
+  'adminActivityTargets',
+  'adminVoteCandidateTotals',
+  'adminVoteBallots',
+  'edenX1VoteTitle',
+  'edenX1VoteSubtitle',
+  'edenX1VoteYourName',
+  'edenX1VoteYourVote',
+  'edenX1VoteYourVoteSecond',
+  'edenX1VotePhSelf',
+  'edenX1VotePhTeammate',
+  'edenX1VotePhTeammateSecond',
+  'edenX1VoteCast',
+  'edenX1VoteInspectEmpty',
+  'edenX1VoteInspectNamed',
+  'edenX1VoteSavedDevice',
+  'edenX1VoteErrPickBoth',
+  'edenX1VoteErrDuplicate',
+  'edenX1VoteErrCloud',
+  'edenX1VoteStatusSaving',
+  'edenX1VoteSaved',
+  'edenX1VoteGuidanceTitle',
+  'edenX1VoteGuidanceCopy',
+  'edenX1VoteHelperEmpty',
+  'edenX1VoteTopBanner',
+  'edenX1VoteTopShield',
+  'edenX1VoteTopPath',
+  'edenX1VoteTopStructure',
+  'edenX1VoteTopConsistent',
+  'edenX1VoteDetailSubtitle',
+  'edenX1VoteOpenDetail',
+  'edenX1VoteNoTrend',
+  'edenX1VoteTrendLabel',
+  'edenX1VoteMatchBest',
+  'edenX1VoteMatchSimilar',
+  'edenX1VoteSupportTotal',
+  'edenX1VoteBannerPathShield',
+  'edenX1VoteContributionTotal',
+  'edenX1VoteConductBonus',
+  'edenX1VoteStructureConsistency',
+  'edenX1VoteMovementDelta',
+  'edenX1VoteNoSimilarMember',
+  'edenX1VoteSavingShort',
+  'edenX1VoteSyncFailed',
 ];
 
 const I18N_ATTRS = [
@@ -132,7 +198,8 @@ function walkJsFiles(dir, out = []) {
 }
 
 const jsKeyRe = /\b(?:adminT|dashT|t)\(\s*['"]([a-zA-Z][a-zA-Z0-9_]*)['"]/g;
-const RUNTIME_KEY_PREFIXES = /^(admin|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
+const RUNTIME_KEY_PREFIXES =
+  /^(admin|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
 for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
   const relPath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
   const source = fs.readFileSync(absolutePath, 'utf8');
@@ -154,18 +221,47 @@ for (const [key, locations] of referencedKeys.entries()) {
 }
 
 for (const [lang, dict] of Object.entries(translations)) {
-  const missing = englishKeys.filter(key => !(key in dict));
+  const missing = englishKeys.filter((key) => !(key in dict));
   if (missing.length) {
-    errors.push(`${lang} is missing ${missing.length} runtime keys: ${missing.slice(0, 20).join(', ')}`);
+    errors.push(
+      `${lang} is missing ${missing.length} runtime keys: ${missing.slice(0, 20).join(', ')}`
+    );
   }
+}
+
+function placeholderSignature(value) {
+  return [...String(value || '').matchAll(/\{([A-Za-z0-9_]+)\}/g)]
+    .map((match) => match[1])
+    .sort()
+    .join('|');
 }
 
 for (const [lang, dict] of Object.entries(translations)) {
   for (const [key, value] of Object.entries(dict)) {
     if (typeof value !== 'string') {
       errors.push(`${lang}.${key} must be a string translation value`);
-    } else if (value.includes('??') || value.includes('\uFFFD') || /[\p{L}]\?[\p{L}]/u.test(value)) {
-      errors.push(`${lang}.${key} contains a broken placeholder translation: ${JSON.stringify(value)}`);
+    } else if (
+      value.includes('??') ||
+      value.includes('\uFFFD') ||
+      /[\p{L}]\?[\p{L}]/u.test(value)
+    ) {
+      errors.push(
+        `${lang}.${key} contains a broken placeholder translation: ${JSON.stringify(value)}`
+      );
+    }
+  }
+}
+
+for (const [lang, dict] of Object.entries(translations)) {
+  if (lang === 'en') continue;
+  for (const key of englishKeys) {
+    if (!(key in dict)) continue;
+    const englishPlaceholders = placeholderSignature(translations.en[key]);
+    const translatedPlaceholders = placeholderSignature(dict[key]);
+    if (translatedPlaceholders !== englishPlaceholders) {
+      errors.push(
+        `${lang}.${key} placeholders ${translatedPlaceholders || '(none)'} do not match English ${englishPlaceholders || '(none)'}`
+      );
     }
   }
 }
@@ -185,10 +281,14 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`i18n check passed: ${referencedKeys.size} template keys, ${englishKeys.length} runtime keys, ${Object.keys(translations).length} languages.`);
+console.log(
+  `i18n check passed: ${referencedKeys.size} template keys, ${englishKeys.length} runtime keys, ${Object.keys(translations).length} languages.`
+);
 for (const [lang, coverage] of Object.entries(translationCoverage)) {
   const fallbackCount = coverage.missingBeforeFallback.length;
   if (fallbackCount) {
-    console.log(`i18n coverage: ${lang} uses English fallback for ${fallbackCount}/${coverage.total} keys.`);
+    console.log(
+      `i18n coverage: ${lang} uses English fallback for ${fallbackCount}/${coverage.total} keys.`
+    );
   }
 }

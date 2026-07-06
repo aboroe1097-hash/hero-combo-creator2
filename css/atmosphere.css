@@ -175,9 +175,11 @@
 }
 @keyframes u-burst {
   0% {
+    box-shadow: 0 0 0 0 rgba(247, 185, 85, 0.65);
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent), transparent 35%);
   }
   100% {
+    box-shadow: 0 0 0 18px rgba(247, 185, 85, 0);
     box-shadow: 0 0 0 18px color-mix(in srgb, var(--accent), transparent 100%);
   }
 }

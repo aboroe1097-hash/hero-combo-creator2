@@ -14,11 +14,14 @@ const LIMITS = {
   totalJsBytes: 2000 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
-  totalCssBytes: 520 * 1024,
+  // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
+  // keep individual route surfaces from growing unchecked.
+  totalCssBytes: 560 * 1024,
   cssChunks: {
-    atmosphere: 342 * 1024,
-    admin: 128 * 1024,
-    mobile: 50 * 1024,
+    atmosphere: 346 * 1024,
+    'eden-x1': 36 * 1024,
+    mobile: 51 * 1024,
+    'ocr-dashboard': 128 * 1024,
   },
 };
 
@@ -30,21 +33,24 @@ const indexSource = fs.readFileSync(indexPath, 'utf8');
 const indexBytes = Buffer.byteLength(indexSource);
 const indexLines = indexSource.split(/\r?\n/).length;
 const assetFiles = fs.existsSync(distDir)
-  ? fs.readdirSync(distDir, { withFileTypes: true })
-    .filter(entry => entry.isFile())
-    .map(entry => path.join(distDir, entry.name))
+  ? fs
+      .readdirSync(distDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => path.join(distDir, entry.name))
   : [];
-const jsFiles = assetFiles.filter(file => file.endsWith('.js'));
-const cssFiles = assetFiles.filter(file => file.endsWith('.css'));
-const mediaFiles = assetFiles.filter(file => !file.endsWith('.js') && !file.endsWith('.css') && !file.endsWith('.map'));
+const jsFiles = assetFiles.filter((file) => file.endsWith('.js'));
+const cssFiles = assetFiles.filter((file) => file.endsWith('.css'));
+const mediaFiles = assetFiles.filter(
+  (file) => !file.endsWith('.js') && !file.endsWith('.css') && !file.endsWith('.map')
+);
 const totalJsBytes = jsFiles.reduce((sum, file) => sum + fs.statSync(file).size, 0);
 const totalCssBytes = cssFiles.reduce((sum, file) => sum + fs.statSync(file).size, 0);
 const totalMediaBytes = mediaFiles.reduce((sum, file) => sum + fs.statSync(file).size, 0);
 const entryJs = assetFiles
-  .filter(file => /[\\/]index-[^\\/]+\.js$/.test(file))
+  .filter((file) => /[\\/]index-[^\\/]+\.js$/.test(file))
   .sort((a, b) => fs.statSync(b).size - fs.statSync(a).size)[0];
 const entryCss = assetFiles
-  .filter(file => /[\\/]index-[^\\/]+\.css$/.test(file))
+  .filter((file) => /[\\/]index-[^\\/]+\.css$/.test(file))
   .sort((a, b) => fs.statSync(b).size - fs.statSync(a).size)[0];
 
 const checks = [
@@ -57,7 +63,7 @@ const checks = [
 ];
 
 for (const [chunkName, limit] of Object.entries(LIMITS.cssChunks)) {
-  const chunkFile = cssFiles.find(file => path.basename(file).startsWith(`${chunkName}-`));
+  const chunkFile = cssFiles.find((file) => path.basename(file).startsWith(`${chunkName}-`));
   checks.push([`built ${chunkName} CSS`, chunkFile ? fs.statSync(chunkFile).size : 0, limit]);
 }
 
@@ -65,8 +71,12 @@ const failures = checks.filter(([, actual, limit]) => actual > limit);
 
 console.log('Size check:');
 console.log(`- index.html: ${formatBytes(indexBytes)}, ${indexLines} lines`);
-console.log(`- entry JS: ${entryJs ? `${path.basename(entryJs)} ${formatBytes(fs.statSync(entryJs).size)}` : 'not found'}`);
-console.log(`- entry CSS: ${entryCss ? `${path.basename(entryCss)} ${formatBytes(fs.statSync(entryCss).size)}` : 'not found'}`);
+console.log(
+  `- entry JS: ${entryJs ? `${path.basename(entryJs)} ${formatBytes(fs.statSync(entryJs).size)}` : 'not found'}`
+);
+console.log(
+  `- entry CSS: ${entryCss ? `${path.basename(entryCss)} ${formatBytes(fs.statSync(entryCss).size)}` : 'not found'}`
+);
 console.log(`- total JS: ${formatBytes(totalJsBytes)}`);
 console.log(`- total CSS: ${formatBytes(totalCssBytes)}`);
 console.log(`- top-level media: ${formatBytes(totalMediaBytes)}`);

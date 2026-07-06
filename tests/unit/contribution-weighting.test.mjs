@@ -223,6 +223,55 @@ test('weighted contribution joins Wicked Russian duties to typoed Vicked contrib
   assert.equal(row.pathers, 1);
 });
 
+test('weighted contribution exposes ex-guild contribution breakdown by source guild', () => {
+  const model = buildWeightedContributionRows({
+    contributionRecords: [
+      {
+        id: 'ex-guild-breakdown-main',
+        date: '2026-07-06',
+        entries: [{ rank: 1, name: 'Alpha', contribution: 100000 }],
+      },
+    ],
+    exGuildContributions: [
+      {
+        id: 'ex-guild-big-1',
+        playerName: '(BIG) Alpha',
+        matchedName: 'Alpha',
+        guild: 'BIG',
+        contribution: 5000,
+      },
+      {
+        id: 'ex-guild-big-2',
+        playerName: '(BIG) Alpha',
+        matchedName: 'Alpha',
+        guild: 'BIG',
+        contribution: 2000,
+      },
+      {
+        id: 'ex-guild-dev-1',
+        playerName: '(DEV) Alpha',
+        matchedName: 'Alpha',
+        guild: 'DEV',
+        contribution: 11000,
+      },
+    ],
+  });
+
+  const alpha = model.rows.find((row) => row.playerName === 'Alpha');
+
+  assert.equal(alpha.contributionExGuild, 18000);
+  assert.deepEqual(
+    alpha.contributionExGuildBreakdown.map((row) => ({
+      guild: row.guild,
+      contribution: row.contribution,
+    })),
+    [
+      { guild: 'DEV', contribution: 11000 },
+      { guild: 'BIG', contribution: 7000 },
+    ]
+  );
+});
+
 test('latest contribution record selection uses newest date and premiumSlots fallback', () => {
   withRosterNames(() => {
     const contributionRecords = [

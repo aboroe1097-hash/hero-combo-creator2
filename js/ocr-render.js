@@ -11,6 +11,7 @@ import {
 import { displayGameTime } from './ocr-engine.js';
 import { filterGameTimeAttacks, parseGameTimeDateMs } from './ocr-time-filter.js';
 import { applyR5AdjustmentsToPlayerTotals, buildAdjustedGiftRanking } from './ocr-adjustments.js';
+import { compareConsistencyScores, scoreConsistencyValues } from './consistency-score.js';
 import {
   compactPlayerIdentity,
   resolveCanonicalPlayerIdentity,
@@ -250,7 +251,7 @@ function buildPlayerSummary(attacks) {
         };
       }
       globalSum[n].total_demolition += val;
-      if (!seen.has(n)) {
+      if (val > 0 && !seen.has(n)) {
         globalSum[n].participation_count++;
         seen.add(n);
         globalSum[n].unique_structures.add(structureKey(a));
@@ -689,25 +690,26 @@ function renderConsistency(psum) {
   const host = $id('dashConsistencyInsights');
   if (!host) return;
   const scored = psum
-    .filter((p) => (p.attacks || []).length >= 2)
     .map((p) => {
       const values = sortAttacksChrono(p.attacks).map((a) => valueOf(a.val ?? a.value));
-      const avg = average(values);
-      const variance = average(values.map((v) => Math.pow(v - avg, 2)));
-      const coeff = avg ? Math.sqrt(variance) / avg : 99;
+      const consistency = scoreConsistencyValues(values);
+      if (!consistency) return null;
       const half = Math.floor(values.length / 2);
       const span = Math.min(5, half || 1);
       const first = average(values.slice(0, span));
       const last = average(values.slice(-span));
-      return { ...p, values, coeff, delta: last - first };
-    });
+      return { ...p, values, consistency, steadyPercent: consistency.percent, delta: last - first };
+    })
+    .filter(Boolean);
 
   if (!scored.length) {
     host.innerHTML = '<div class="dash-empty">Need at least two hits per player</div>';
     return;
   }
 
-  const consistent = [...scored].sort((a, b) => a.coeff - b.coeff).slice(0, 5);
+  const consistent = [...scored]
+    .sort((a, b) => compareConsistencyScores(a.consistency, b.consistency))
+    .slice(0, 5);
   const improvers = [...scored]
     .filter((p) => p.delta > 0)
     .sort((a, b) => b.delta - a.delta)
@@ -718,7 +720,7 @@ function renderConsistency(psum) {
     .slice(0, 4);
   const list = (title, rows, kind) => `<div class="dash-insight-list">
     <strong>${title}</strong>
-    ${rows.length ? rows.map((p) => `<span><em>${renderTaggedPlayerName(p)}</em><b class="${kind}">${kind === 'steady' ? `${Math.round((1 - Math.min(p.coeff, 1)) * 100)}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
+    ${rows.length ? rows.map((p) => `<span><em>${renderTaggedPlayerName(p)}</em><b class="${kind}">${kind === 'steady' ? `${p.steadyPercent}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
   </div>`;
 
   host.innerHTML =

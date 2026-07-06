@@ -161,11 +161,11 @@ export function renderAvailableHeroes() {
   if (!availableHeroesEl) return;
   const t = translations[currentLanguage] || translations.en;
   const searchQuery = (document.getElementById('manualHeroSearch')?.value || '').trim().toLowerCase();
-  availableHeroesEl.innerHTML = '';
+  const fragment = document.createDocumentFragment();
   allHeroesData
     .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
     .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
-    .forEach(hero => {
+    .forEach((hero, index) => {
       const card = document.createElement('div');
       card.className = `hero-card season-${cssToken(hero.season)}`;
       card.draggable = true;
@@ -249,9 +249,11 @@ export function renderAvailableHeroes() {
         }, { passive: false });
       }
 
-      card.style.animationDelay = (availableHeroesEl.children.length * 0.025) + 's';
-      availableHeroesEl.appendChild(card);
+      card.style.animationDelay = ((index + 1) * 0.025) + 's';
+      fragment.appendChild(card);
     });
+
+  availableHeroesEl.replaceChildren(fragment);
 
   let sourceNote = document.getElementById('heroesSourceNote1');
   if (!sourceNote) {

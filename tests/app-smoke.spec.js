@@ -765,6 +765,41 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabGenerator', '#generatorSection', '#generatorHeroes');
   });
 
+  test('main tab pills and theme toggle expose accessible state', async ({ page }) => {
+    await openApp(page);
+
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'false');
+
+    await page.locator('#tabManual').click();
+    await expect(page.locator('#tabManual')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tabManual')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'false');
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#manualSection')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'true');
+
+    const themeToggle = page.locator('#themeToggle');
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'false');
+    await themeToggle.click();
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('footer tool links switch tabs without inline handlers', async ({ page }) => {
+    await openApp(page);
+
+    await page.locator('[data-footer-tab="manual"]').click();
+    await expect(page.locator('#manualSection')).toBeVisible();
+    await expect(page.locator('#tabManual')).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/#manual$/);
+
+    await page.locator('[data-footer-tab="generator"]').click();
+    await expect(page.locator('#generatorSection')).toBeVisible();
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/#generator$/);
+  });
+
   test('hero atlas and research tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabHeroes', '#heroesSection', '#heroesSection .heroes-layout');
@@ -2270,15 +2305,18 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     const managementRows = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => ({
-        name: row.cells[1]?.textContent?.trim(),
+        name:
+          row.cells[1]?.querySelector('.dash-player-rank-label')?.textContent?.trim() ||
+          row.cells[1]?.textContent?.trim(),
+        tag: row.cells[1]?.querySelector('.dash-player-rank-tag')?.textContent?.trim() || '',
         status: row.cells[3]?.textContent?.trim(),
       }))
     );
     expect(managementRows).toEqual([
-      { name: 'Wicked Russian', status: 'Assigned' },
-      { name: 'TBA', status: 'Management team voting' },
-      { name: 'TBA', status: 'Management team voting' },
-      { name: 'TBA', status: 'Management team voting' },
+      { name: 'Wicked Russian', tag: 'R4', status: 'Assigned' },
+      { name: 'TBA', tag: '', status: 'Management team voting' },
+      { name: 'TBA', tag: '', status: 'Management team voting' },
+      { name: 'TBA', tag: '', status: 'Management team voting' },
     ]);
 
     const teamCard = page.locator('[data-reward-view="team"]');
@@ -2305,17 +2343,35 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
     ).toContainText('Alpha');
+    await panel
+      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName"] [data-eden-vote-suggest="Alpha"]')
+      .click();
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+    ).toBeEmpty();
     await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
       'View Alpha stats'
     );
+    await panel.locator('#edenX1CandidateName2').fill('Bravoo');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
+    ).toContainText('Bravo');
+    await panel
+      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"] [data-eden-vote-suggest="Bravo"]')
+      .click();
+    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
+    ).toBeEmpty();
     await panel.locator('#edenX1VoterName').fill('Deltta');
     await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toContainText(
       'Delta'
     );
     await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText('Vote saved');
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText('Votes saved');
     await expect(panel.locator('#edenX1VoterName')).toHaveValue('Delta');
     await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
     const savedVote = await page.evaluate(() =>
       JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
     );
@@ -2324,6 +2380,8 @@ test.describe('app smoke tabs', () => {
       category: 'team_players',
       voterName: 'Delta',
       candidateName: 'Alpha',
+      candidateNames: ['Alpha', 'Bravo'],
+      candidateKeys: ['alpha', 'bravo'],
     });
 
     await page.evaluate(() => {
@@ -2359,6 +2417,8 @@ test.describe('app smoke tabs', () => {
           voterName: 'Delta',
           candidateKey: 'alpha',
           candidateName: 'Alpha',
+          candidateKeys: ['alpha', 'bravo'],
+          candidateNames: ['Alpha', 'Bravo'],
           voterAuthUid: 'test-delta',
           updatedAt: '2026-06-24T20:00:00.000Z',
         },
@@ -2381,6 +2441,8 @@ test.describe('app smoke tabs', () => {
           voterName: 'Foxtrot',
           candidateKey: 'bravo',
           candidateName: 'Bravo',
+          candidateKeys: ['bravo', 'alpha'],
+          candidateNames: ['Bravo', 'Alpha'],
           voterAuthUid: 'test-foxtrot',
           updatedAt: '2026-06-24T20:10:00.000Z',
         },
@@ -2394,8 +2456,9 @@ test.describe('app smoke tabs', () => {
     );
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
-    await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('2');
-    await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('1');
+    await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('3');
+    await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('2');
+    await expect(results).toContainText('Alpha, Bravo');
     await expect(results).toContainText('Delta');
     await expect(results).toContainText('Echo');
     await expect(results).toContainText('Foxtrot');

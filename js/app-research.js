@@ -386,9 +386,11 @@ function initResearchCalculator() {
 
     const searchInput = document.getElementById('techSearchInput');
     if (searchInput) {
+        let searchTimer;
         searchInput.addEventListener('input', (e) => {
             setTechSearchQuery(e.target.value);
-            renderTechList();
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => renderTechList(), 180);
         });
     }
 
@@ -460,6 +462,7 @@ function renderTechList() {
         return;
     }
 
+    const fragment = document.createDocumentFragment();
     let lastSeason = null;
     const showSeasonHeaders = activeTechSeasons.size > 1;
     let cardIndex = 0;
@@ -471,7 +474,7 @@ function renderTechList() {
             header.className = 'research-season-header';
             header.style.setProperty('--season-color', TechseasonColors[tech.season] || '#3b82f6');
             header.innerHTML = `<span class="research-season-chip">${tech.season}</span><span class="research-season-line"></span>`;
-            wrapper.appendChild(header);
+            fragment.appendChild(header);
         }
 
         const sColor = TechseasonColors[tech.season] || '#3b82f6';
@@ -527,8 +530,10 @@ function renderTechList() {
             if (e.target.closest('button')) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCalc(); }
         });
-        wrapper.appendChild(card);
+        fragment.appendChild(card);
     });
+
+    wrapper.replaceChildren(fragment);
 
     let sourceNote = document.getElementById('researchSourceNote');
     if (!sourceNote) {

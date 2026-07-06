@@ -505,17 +505,36 @@ state.r5Season = state.r5Season || getDashboardR5SeasonKey();
 
 function normalizeEdenX1VoteRecord(record = {}) {
   const voterName = String(record.voterName || '').trim();
-  const candidateName = String(record.candidateName || '').trim();
   const voterKey = String(record.voterKey || compactPlayerIdentity(voterName)).trim();
-  const candidateKey = String(record.candidateKey || compactPlayerIdentity(candidateName)).trim();
+  const rawCandidateNames = Array.isArray(record.candidateNames)
+    ? record.candidateNames
+    : [record.candidateName, record.candidateName2];
+  const rawCandidateKeys = Array.isArray(record.candidateKeys)
+    ? record.candidateKeys
+    : [record.candidateKey, record.candidateKey2];
+  const candidates = rawCandidateNames
+    .map((name, index) => {
+      const candidateName = String(name || '').trim();
+      const candidateKey = String(
+        rawCandidateKeys[index] || compactPlayerIdentity(candidateName)
+      ).trim();
+      return { candidateKey, candidateName };
+    })
+    .filter((candidate) => candidate.candidateName && candidate.candidateKey)
+    .slice(0, 2);
+  const candidateNames = candidates.map((candidate) => candidate.candidateName);
+  const candidateKeys = candidates.map((candidate) => candidate.candidateKey);
   return {
     id: String(record.id || '').trim(),
     season: String(record.season || '').trim(),
     category: String(record.category || '').trim(),
     voterKey,
     voterName,
-    candidateKey,
-    candidateName,
+    candidateKey: candidateKeys[0] || '',
+    candidateName: candidateNames[0] || '',
+    candidateKeys,
+    candidateNames,
+    candidates,
     voterAuthUid: String(record.voterAuthUid || '').trim(),
     updatedAt: record.updatedAt || '',
   };
@@ -560,7 +579,7 @@ function renderEdenX1VoteResults() {
         vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
         (!season || vote.season === season) &&
         vote.voterName &&
-        vote.candidateName
+        vote.candidates.length
     );
   if (!votes.length) {
     host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
@@ -569,20 +588,23 @@ function renderEdenX1VoteResults() {
 
   const totals = new Map();
   votes.forEach((vote) => {
-    const key = vote.candidateKey || compactPlayerIdentity(vote.candidateName);
-    if (!totals.has(key)) {
-      totals.set(key, {
-        candidateName: vote.candidateName,
-        count: 0,
-        voters: new Set(),
-        latest: 0,
-      });
-    }
-    const row = totals.get(key);
-    row.count += 1;
-    row.voters.add(vote.voterKey || vote.voterName);
-    row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
+    vote.candidates.forEach((candidate) => {
+      const key = candidate.candidateKey || compactPlayerIdentity(candidate.candidateName);
+      if (!totals.has(key)) {
+        totals.set(key, {
+          candidateName: candidate.candidateName,
+          count: 0,
+          voters: new Set(),
+          latest: 0,
+        });
+      }
+      const row = totals.get(key);
+      row.count += 1;
+      row.voters.add(vote.voterKey || vote.voterName);
+      row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
+    });
   });
+  const totalSelections = votes.reduce((sum, vote) => sum + vote.candidates.length, 0);
   const totalRows = [...totals.values()].sort(
     (a, b) =>
       b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
@@ -596,7 +618,7 @@ function renderEdenX1VoteResults() {
 
   host.innerHTML = `<div class="dash-duty-upload-summary">
     <div class="dash-duty-summary-kpis">
-      <div class="dash-duty-summary-kpi"><strong>${votes.length}</strong><span>votes</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalSelections}</strong><span>votes</span></div>
       <div class="dash-duty-summary-kpi"><strong>${totalRows.length}</strong><span>candidates</span></div>
       <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>season</span></div>
     </div>
@@ -624,7 +646,7 @@ function renderEdenX1VoteResults() {
           .map(
             (vote) => `<tr>
               <td><strong class="dash-duty-cell-value">${esc(vote.voterName)}</strong></td>
-              <td><span class="dash-duty-cell-value">${esc(vote.candidateName)}</span></td>
+              <td><span class="dash-duty-cell-value">${esc(vote.candidateNames.join(', '))}</span></td>
               <td><span class="dash-duty-cell-value dash-duty-times">${esc(edenVoteUpdatedAtLabel(vote))}</span></td>
             </tr>`
           )
@@ -2029,10 +2051,10 @@ async function doLogin() {
   showConnecting(dashT('adminConnectingAuth'));
   setConnectingProgress(30, dashT('adminConnectingAuth'));
   try {
-    const { signInWithUsername, isPasswordAuthUser } = await loadFirebaseApi();
+    const { signInWithUsername, isAdminAuthUser } = await loadFirebaseApi();
     const credential = await signInWithUsername(username, password);
     state.adminUser = credential.user;
-    state.adminIsAdmin = await isPasswordAuthUser(credential.user);
+    state.adminIsAdmin = await isAdminAuthUser(credential.user, { forceRefresh: true });
     if (!state.adminIsAdmin) {
       const { signOutUser } = await loadFirebaseApi();
       await signOutUser();

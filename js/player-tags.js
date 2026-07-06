@@ -35,6 +35,7 @@ function readPlayerTagCandidates(player) {
   return [
     player.playerKey,
     player.playerName,
+    player.player,
     player.name,
     player.displayName,
     player.sourceName,

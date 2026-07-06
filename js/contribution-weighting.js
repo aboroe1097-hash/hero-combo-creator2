@@ -299,6 +299,35 @@ function buildExGuildMap(exGuildContributions = []) {
   return map;
 }
 
+function buildExGuildBreakdownMap(exGuildContributions = []) {
+  const map = new Map();
+  (Array.isArray(exGuildContributions) ? exGuildContributions : []).forEach((entry) => {
+    const source = entry?.matchedName || entry?.playerName || entry;
+    const identity = resolveWeightedPlayerIdentity(stripExGuildGuildTag(source));
+    if (!identity) return;
+    const value = contributionValue(entry);
+    if (!value) return;
+    const guild = String(entry?.guild || entry?.alliance || entry?.sourceGuild || '').trim();
+    const sourceName = String(entry?.playerName || entry?.name || identity.playerName || '').trim();
+    const groupKey = guild || sourceName || 'ex-guild';
+    const rows = map.get(identity.playerKey) || [];
+    const existing = rows.find((row) => row.groupKey === groupKey);
+    if (existing) {
+      existing.contribution += value;
+    } else {
+      rows.push({
+        groupKey,
+        guild,
+        sourceName,
+        contribution: value,
+      });
+    }
+    map.set(identity.playerKey, rows);
+  });
+  map.forEach((rows) => rows.sort((a, b) => b.contribution - a.contribution));
+  return map;
+}
+
 function normalizeWeights(weights) {
   return {
     ...WEIGHTED_CONTRIBUTION_WEIGHTS,
@@ -324,6 +353,7 @@ export function buildWeightedContributionRows(options = {}) {
     options.season || options.r5Season
   );
   const exGuildMap = buildExGuildMap(options.exGuildContributions);
+  const exGuildBreakdownMap = buildExGuildBreakdownMap(options.exGuildContributions);
 
   const baseRows = entries
     .map((entry) => {
@@ -337,6 +367,7 @@ export function buildWeightedContributionRows(options = {}) {
         currentReward: getContributionRewardTier(entry, record, null, identity.playerKey),
         contributionScore: contributionValue(entry),
         contributionExGuild: exGuildMap.get(identity.playerKey) || 0,
+        contributionExGuildBreakdown: exGuildBreakdownMap.get(identity.playerKey) || [],
       };
     })
     .filter(Boolean);

@@ -16,20 +16,21 @@ const copyFiles = [
   'robots.txt',
   'sitemap.xml',
   'site.webmanifest',
+  'site-light.webmanifest',
   '.nojekyll',
   '.htaccess',
   'public/404.html',
   'public/sw.js',
   'js/eden-datasets.payload.json',
   'js/admin-auth-config.js',
-  'js/maintenance-config.js'
+  'js/maintenance-config.js',
 ];
 const copyDest = {
   'public/404.html': '404.html',
   'public/sw.js': 'sw.js',
   'js/eden-datasets.payload.json': 'js/eden-datasets.payload.json',
   'js/admin-auth-config.js': 'js/admin-auth-config.js',
-  'js/maintenance-config.js': 'js/maintenance-config.js'
+  'js/maintenance-config.js': 'js/maintenance-config.js',
 };
 
 function copyRecursive(src, dest) {

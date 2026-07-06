@@ -228,7 +228,7 @@ function setGeneratorBusy(isBusy) {
 
 export function renderGeneratorHeroes(options = {}) {
   if (!generatorHeroesEl) return;
-  generatorHeroesEl.innerHTML = '';
+  const fragment = document.createDocumentFragment();
 
   const activeSeasons = options.seasons || generatorSelectedSeasons;
   const activeStates = options.states || generatorSelectedStates;
@@ -426,8 +426,10 @@ export function renderGeneratorHeroes(options = {}) {
         });
       }
 
-      generatorHeroesEl.appendChild(card);
+      fragment.appendChild(card);
     });
+
+    generatorHeroesEl.replaceChildren(fragment);
 
     let sourceNote = document.getElementById('heroesSourceNote2');
     if (!sourceNote) {

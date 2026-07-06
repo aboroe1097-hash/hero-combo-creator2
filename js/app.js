@@ -1,5 +1,5 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
-import { translations, loadTranslationsForLanguage } from './translations.js';
+import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
 import { initComments } from './comments.js';
 import { allHeroesData } from './heroes-data.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
@@ -134,6 +134,8 @@ const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(sync
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 const GENERATOR_SKIN_NUDGE_KEY = 'vts_generator_skin_nudge_seen';
 const THEME_STORAGE_KEY = 'vts_theme';
+const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
+const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
 let researchModulePromise = null;
 
 function loadResearchModule() {
@@ -166,12 +168,17 @@ function applyTheme(theme) {
   } else {
     root.removeAttribute('data-theme');
   }
-  const meta = document.querySelector('meta[name="theme-color"]');
+  const meta = document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0f172a');
+    meta.setAttribute('content', THEME_CHROME_COLORS[theme] || THEME_CHROME_COLORS.dark);
+  }
+  const manifest = document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
+  if (manifest) {
+    manifest.setAttribute('href', THEME_MANIFESTS[theme] || THEME_MANIFESTS.dark);
   }
   const btn = document.getElementById('themeToggle');
   if (btn) {
+    btn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
     const darkIcon = btn.querySelector('.theme-icon-dark');
     const lightIcon = btn.querySelector('.theme-icon-light');
     if (darkIcon && lightIcon) {
@@ -268,6 +275,25 @@ const TAB_BTN_IDS = {
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
 };
+
+function syncTabA11yState(activeTabName = '') {
+  Object.entries(TAB_BTN_IDS).forEach(([tabName, buttonId]) => {
+    const btn = document.getElementById(buttonId);
+    const panel = document.getElementById(`${tabName}Section`);
+    const selected = tabName === activeTabName;
+    if (btn) {
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      if (panel) btn.setAttribute('aria-controls', panel.id);
+    }
+    if (panel) {
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-hidden', selected ? 'false' : 'true');
+      if (btn) panel.setAttribute('aria-labelledby', buttonId);
+    }
+  });
+}
 
 // --- HERO HOVER TOOLTIP ---
 const heroTooltip = document.createElement('div');
@@ -707,6 +733,7 @@ const tabs = [
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
 ];
+const validTabNames = new Set(tabs.map((tab) => tab.name));
 
 tabs.forEach(tab => {
   if (tab.btn) {
@@ -756,6 +783,7 @@ tabs.forEach(tab => {
       setCurrentLanguage(e.target.value);
       localStorage.setItem('vts_hero_lang', currentLanguage);
       await loadTranslationsForLanguage(currentLanguage);
+      applyLanguageDirection(currentLanguage);
       updateTextContent();
       renderAvailableHeroes();
       renderGeneratorHeroes(syncGeneratorControlState());
@@ -953,12 +981,15 @@ tabs.forEach(tab => {
     });
     if (comboFooterBar) comboFooterBar.classList.add('hidden');
 
-    document.querySelectorAll('.tab-pill').forEach((btn) => btn.classList.replace('tab-pill-active', 'tab-pill-inactive'));
+    document.querySelectorAll('.tab-pill').forEach((btn) => {
+      btn.classList.replace('tab-pill-active', 'tab-pill-inactive');
+    });
     const activeBtn = document.getElementById(TAB_BTN_IDS[tabName] || `tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
     if (activeBtn) {
       activeBtn.classList.replace('tab-pill-inactive', 'tab-pill-active');
       requestAnimationFrame(() => keepActiveTabInView(activeBtn));
     }
+    syncTabA11yState(tabName);
 
     if (targetSection) targetSection.classList.remove('hidden');
 
@@ -984,6 +1015,18 @@ tabs.forEach(tab => {
     } catch {}
   }
   window.vtsSwitchTab = switchTab;
+  window.vtsTabNames = validTabNames;
+  document.querySelectorAll('[data-footer-tab]').forEach((link) => {
+    if (link.dataset.footerTabBound) return;
+    link.dataset.footerTabBound = '1';
+    link.addEventListener('click', (event) => {
+      const tabName = link.dataset.footerTab || '';
+      if (!validTabNames.has(tabName)) return;
+      event.preventDefault();
+      switchTab(tabName, true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
   initKeyboardShortcuts({ switchTab });
   wireFilterSets();
   wireGeneratorSkinToggle();
@@ -1081,9 +1124,8 @@ tabs.forEach(tab => {
       downloadComboImage(lastGeneratedCombos, t.generatorTitle || 'Best Combos', 'vts-generator-results.png');
     };
   }
-  const validHashTabs = ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'];
   const hashTab = window.location.hash?.replace('#', '').split('?')[0];
-  const startTab = validHashTabs.includes(hashTab) ? hashTab : 'generator';
+  const startTab = validTabNames.has(hashTab) ? hashTab : 'generator';
   switchTab(startTab, true);
 }
 
@@ -1467,7 +1509,7 @@ async function startApp() {
     window.addEventListener('hashchange', () => {
       const tab = window.location.hash?.replace('#', '').split('?')[0];
       const targetSection = tab ? document.getElementById(`${tab}Section`) : null;
-      if (tab && targetSection?.classList.contains('hidden') && ['manual', 'generator', 'heroes', 'research', 'edenMap', 'strife', 'loyalty', 'youtube'].includes(tab)) {
+      if (tab && targetSection?.classList.contains('hidden') && window.vtsTabNames?.has?.(tab)) {
         window.vtsSwitchTab?.(tab, true);
       }
     });

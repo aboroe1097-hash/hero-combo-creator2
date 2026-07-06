@@ -2,6 +2,11 @@
 
 ## 12.4.1 - 2026-07-06
 
+- Marked Wicked Russian with the R4 management badge in Eden X1 management slot rows.
+- Revised Eden X1 and VTS Admin consistency scoring so inactive or tiny-sample players no longer appear as perfect steady contributors.
+- Added accessible pressed/selected state handling for the main theme toggle and tab pills.
+- Tightened comment Firestore rules so reply `parentId` values must be null or bounded safe document-id strings.
+- Locked Eden X1 vote documents to each authenticated voter id so duplicate vote documents cannot be created by changing Firestore ids.
 - Fixed Eden X1 Support Work rewards so only players with real support points are eligible, preventing raw Guild Master reward overrides from appearing in the support table.
 - Kept support reward labels scoped to Support Work rewards and added regression coverage for MalakAbo's forfeited Guild Master reward case.
 - Added +1 Bonus Team Effort Points for `Феечка))` and `Obliterated` for helping connect roads to structures.

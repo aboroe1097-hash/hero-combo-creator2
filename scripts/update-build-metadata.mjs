@@ -9,6 +9,7 @@ const baseAppShellFiles = [
   '/index.html',
   '/404.html',
   '/site.webmanifest',
+  '/site-light.webmanifest',
   '/js/admin-auth-config.js',
   '/js/app-loading.js',
   '/js/app.js',

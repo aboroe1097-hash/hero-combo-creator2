@@ -2180,3 +2180,75 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 }
 
 /* Admin and command-header mobile rules now live in app.css. */
+
+/* Final light-theme contrast guardrails.
+   These live at the end because mobile.css has late dark-first overrides. */
+[data-theme="light"] .command-actions {
+  border-color: rgba(14, 116, 144, 0.22) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+[data-theme="light"] .command-kicker {
+  border-color: rgba(14, 148, 136, 0.24) !important;
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(224, 242, 254, 0.92)) !important;
+  color: #064e3b !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] #generateCombosBtn {
+  background: linear-gradient(135deg, #15803d, #16a34a) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 14px rgba(22, 163, 74, 0.22) !important;
+}
+
+[data-theme="light"] #generateRandomBtn {
+  background: linear-gradient(135deg, #b45309, #d97706) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 14px rgba(217, 119, 6, 0.22) !important;
+}
+
+[data-theme="light"] #downloadGeneratorBtn {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 14px rgba(124, 58, 237, 0.22) !important;
+}
+
+[data-theme="light"] .selection-action-btn,
+[data-theme="light"] #genSelectAllBtn,
+[data-theme="light"] #genClearAllBtn,
+[data-theme="light"] #genResetFiltersBtn {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .selection-action-btn--select,
+[data-theme="light"] #genSelectAllBtn {
+  border-color: rgba(21, 128, 61, 0.3) !important;
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(240, 253, 244, 0.92)) !important;
+  color: #14532d !important;
+}
+
+[data-theme="light"] .selection-action-btn--clear,
+[data-theme="light"] #genClearAllBtn {
+  border-color: rgba(148, 163, 184, 0.42) !important;
+  background: linear-gradient(135deg, #ffffff, #e2e8f0) !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .selection-action-btn--reset,
+[data-theme="light"] #genResetFiltersBtn {
+  border-color: rgba(180, 83, 9, 0.28) !important;
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.98), rgba(254, 243, 199, 0.82)) !important;
+  color: #7c2d12 !important;
+}
+
+[data-theme="light"] .research-card-max {
+  border-color: rgba(14, 116, 144, 0.28) !important;
+  background: linear-gradient(135deg, rgba(224, 242, 254, 0.92), rgba(255, 255, 255, 0.9)) !important;
+  color: #075985 !important;
+  text-shadow: none !important;
+}
+
+[data-theme="light"] .research-card-max:hover {
+  color: #052e2b !important;
+}

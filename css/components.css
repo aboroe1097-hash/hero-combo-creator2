@@ -1742,3 +1742,79 @@ textarea.comment-reply-field {
 [data-theme='light'] .comment-empty-svg {
   color: #64748b;
 }
+
+/* =============================================================
+   Light theme overrides — remaining hardcoded color gaps
+   ============================================================= */
+
+[data-theme='light'] .section-heading,
+[data-theme='light'] .sub-section-heading {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .section-intro-text,
+[data-theme='light'] .gen-section-intro {
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .combo-footer-title,
+[data-theme='light'] .last-best-title {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .combo-footer-bar {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+[data-theme='light'] .combo-slot {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+[data-theme='light'] .combo-slot-empty-label {
+  color: var(--text-dim);
+}
+
+[data-theme='light'] .combo-score-value {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .combo-score-label,
+[data-theme='light'] .counter-label {
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .gen-section-title,
+[data-theme='light'] .gen-select-title {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .hero-atlas-title {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .hero-atlas-desc {
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .seasonal-admin-tab {
+  color: var(--text-secondary);
+}
+
+[data-theme='light'] .loyalty-section-title {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .loyalty-result-card {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+[data-theme='light'] .loyalty-result-value {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .loyalty-result-label {
+  color: var(--text-muted);
+}

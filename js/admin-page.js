@@ -1,10 +1,12 @@
-import { translations, loadTranslationsForLanguage } from './translations.js';
+import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 
 const APP_VERSION = '12.4.1';
 const THEME_STORAGE_KEY = 'vts_theme';
+const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
+const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
 
 function getPreferredTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
@@ -17,10 +19,14 @@ function applyTheme(theme) {
   if (theme === 'light') root.setAttribute('data-theme', 'light');
   else root.removeAttribute('data-theme');
 
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0f172a');
+  const meta = document.getElementById('themeColorMeta') || document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', THEME_CHROME_COLORS[theme] || THEME_CHROME_COLORS.dark);
+
+  const manifest = document.getElementById('manifestLink') || document.querySelector('link[rel="manifest"]');
+  if (manifest) manifest.setAttribute('href', THEME_MANIFESTS[theme] || THEME_MANIFESTS.dark);
 
   const btn = document.getElementById('themeToggle');
+  if (btn) btn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
   const darkIcon = btn?.querySelector('.theme-icon-dark');
   const lightIcon = btn?.querySelector('.theme-icon-light');
   if (darkIcon && lightIcon) {
@@ -103,9 +109,10 @@ async function bootAdminPage() {
     const nextLang = e.target.value || 'en';
     localStorage.setItem('vts_hero_lang', nextLang);
     await loadTranslationsForLanguage(nextLang);
+    applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260706_132113');
+  const mod = await import('./ocr-dashboard.js?v=20260706_141604');
   await mod.bootOcrDashboard();
 }
 

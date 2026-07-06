@@ -14,12 +14,13 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
-    // Dashboard/roster/conduct writes are gated on a real email/password
-    // sign-in (the shared admin login), not a custom claim. The client mirrors
-    // this via isPasswordAuthUser().
-    function isAdminLogin() {
-      return signedIn() && request.auth.token.firebase.sign_in_provider == 'password';
-    }
+    // Admin writes (dashboard/roster/conduct, eden_x1 vote moderation) require
+    // the `admin` custom claim (set on the admin UID via
+    // `node scripts/firebase-set-admin-claim.mjs <uid-or-email>`), NOT a mere
+    // password sign-in. The public web API key lets anyone self-register a
+    // password account via the Identity Toolkit REST API, so the provider check
+    // was not a safe gate; the custom claim is the only thing an attacker
+    // cannot forge. The client login gate mirrors this via isAdminAuthUser().
 
     function validComment() {
       return request.resource.data.keys().hasOnly([
@@ -28,6 +29,10 @@ service cloud.firestore {
       && request.resource.data.text is string
       && request.resource.data.text.size() > 0
       && request.resource.data.text.size() <= 2000
+      && (!('parentId' in request.resource.data)
+        || request.resource.data.parentId == null
+        || (request.resource.data.parentId is string
+          && request.resource.data.parentId.matches('^[A-Za-z0-9_-]{1,150}$')))
       && (!('state' in request.resource.data)
         || (request.resource.data.state is string
           && request.resource.data.state.size() > 0
@@ -167,7 +172,7 @@ service cloud.firestore {
     function validEdenX1Vote() {
       return request.resource.data.keys().hasOnly([
         'id', 'season', 'category', 'voterKey', 'voterName', 'candidateKey', 'candidateName',
-        'voterAuthUid', 'updatedAt'
+        'candidateKeys', 'candidateNames', 'voterAuthUid', 'updatedAt'
       ])
       && request.resource.data.id is string
       && request.resource.data.id.size() > 0
@@ -188,8 +193,32 @@ service cloud.firestore {
       && request.resource.data.candidateName is string
       && request.resource.data.candidateName.size() > 0
       && request.resource.data.candidateName.size() <= 120
+      && request.resource.data.candidateKeys is list
+      && request.resource.data.candidateKeys.size() == 2
+      && request.resource.data.candidateKeys[0] is string
+      && request.resource.data.candidateKeys[0].size() > 0
+      && request.resource.data.candidateKeys[0].size() <= 120
+      && request.resource.data.candidateKeys[1] is string
+      && request.resource.data.candidateKeys[1].size() > 0
+      && request.resource.data.candidateKeys[1].size() <= 120
+      && request.resource.data.candidateKeys[0] != request.resource.data.candidateKeys[1]
+      && request.resource.data.candidateNames is list
+      && request.resource.data.candidateNames.size() == 2
+      && request.resource.data.candidateNames[0] is string
+      && request.resource.data.candidateNames[0].size() > 0
+      && request.resource.data.candidateNames[0].size() <= 120
+      && request.resource.data.candidateNames[1] is string
+      && request.resource.data.candidateNames[1].size() > 0
+      && request.resource.data.candidateNames[1].size() <= 120
+      && request.resource.data.candidateKey == request.resource.data.candidateKeys[0]
+      && request.resource.data.candidateName == request.resource.data.candidateNames[0]
       && request.resource.data.voterAuthUid == request.auth.uid
       && request.resource.data.updatedAt == request.time;
+    }
+
+    function validEdenX1VotePath(voteId) {
+      return request.resource.data.id == voteId
+        && voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
     }
 
     function hasStableConductMetadata() {
@@ -215,7 +244,9 @@ service cloud.firestore {
     match /comments/{commentId} {
       allow read: if canReadComment();
       allow create: if signedIn() && validComment();
-      allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.authorId == request.auth.uid
+        && resource.data.approved == false;
       allow update: if isAdmin();
     }
 
@@ -246,37 +277,37 @@ service cloud.firestore {
 
     match /vts_admin/dashboard_data {
       allow read: if signedIn();
-      allow create, update: if isAdminLogin() && validDashboardData();
+      allow create, update: if isAdmin() && validDashboardData();
       allow delete: if false;
     }
 
     match /vts_admin/roster_data {
       allow read: if signedIn();
-      allow create, update: if isAdminLogin() && validRosterData();
+      allow create, update: if isAdmin() && validRosterData();
       allow delete: if false;
     }
 
     match /vts_admin/conduct_adjustments/records/{adjustmentId} {
       allow read: if signedIn();
-      allow create: if isAdminLogin()
+      allow create: if isAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAdminLogin()
+      allow update: if isAdmin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
         && (keepsConductMetadata() || repairsHistoricalConductMetadata());
-      allow delete: if isAdminLogin();
+      allow delete: if isAdmin();
     }
 
     match /vts_admin/eden_x1_votes/records/{voteId} {
-      allow read, delete: if isAdminLogin();
+      allow read, delete: if isAdmin();
       allow create: if signedIn()
         && validEdenX1Vote()
-        && request.resource.data.id == voteId;
+        && validEdenX1VotePath(voteId);
       allow update: if signedIn()
         && validEdenX1Vote()
-        && request.resource.data.id == voteId
+        && validEdenX1VotePath(voteId)
         && resource.data.voterAuthUid == request.auth.uid;
     }
 

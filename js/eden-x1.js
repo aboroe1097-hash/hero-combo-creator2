@@ -2,7 +2,7 @@ import {
   buildWeightedContributionRows,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
-import { translations, loadTranslationsForLanguage } from './translations.js';
+import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import {
   formatDatasetStructureLabel,
@@ -10,6 +10,7 @@ import {
   normalizeStructureTarget,
 } from './ocr-shared.js';
 import { parseGameTimeDateMs } from './ocr-time-filter.js';
+import { compareConsistencyScores, scoreConsistencyValues } from './consistency-score.js';
 import {
   compactPlayerIdentity,
   resolveCanonicalPlayerName,
@@ -24,6 +25,8 @@ const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
+const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = ['edenX1CandidateName', 'edenX1CandidateName2'];
+const EDEN_X1_VOTE_CANDIDATE_LIMIT = 2;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
@@ -47,6 +50,7 @@ let publicStructureRows = [];
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let edenVoteWriteContext = null;
+let edenVotePointerSubmitUntil = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -114,8 +118,8 @@ function edenVoteLocalKey(season = edenVoteSeason()) {
   return `${EDEN_X1_VOTE_LOCAL_PREFIX}_${season}_${EDEN_X1_TEAM_VOTE_CATEGORY}`;
 }
 
-function edenVoteDocId(season, voterKey) {
-  return `${String(season || '').trim()}__${EDEN_X1_TEAM_VOTE_CATEGORY}__${String(voterKey || '').trim()}`
+function edenVoteDocId(season, voterAuthUid) {
+  return `${String(season || '').trim()}__${EDEN_X1_TEAM_VOTE_CATEGORY}__${String(voterAuthUid || '').trim()}`
     .replace(/[^a-z0-9_-]+/gi, '_')
     .slice(0, 180);
 }
@@ -278,7 +282,8 @@ function renderEdenMemberSuggestionList(value, targetId) {
   return shown
     .map((row, index) => {
       const isResolved = exact?.playerKey === row.playerKey;
-      const label = isResolved && index === 0 ? t('edenX1VoteMatchBest') : t('edenX1VoteMatchSimilar');
+      const label =
+        isResolved && index === 0 ? t('edenX1VoteMatchBest') : t('edenX1VoteMatchSimilar');
       return `<button class="eden-x1-vote-suggestion" type="button" data-eden-vote-suggest="${esc(row.playerName)}" data-eden-vote-target="${esc(targetId)}">
         <span>${renderTaggedPlayerName(row)}</span>
         <em>${esc(label)}</em>
@@ -294,13 +299,44 @@ function updateEdenVoteInputSuggestions(host, inputId) {
   box.innerHTML = renderEdenMemberSuggestionList(input.value, inputId);
 }
 
-function resolveEdenVoteInput(host, inputId) {
+function clearEdenVoteInputSuggestions(host, inputId) {
+  const box = host?.querySelector(`[data-eden-vote-suggestions-for="${inputId}"]`);
+  if (box) box.innerHTML = '';
+}
+
+function resolveEdenVoteInput(host, inputId, options = {}) {
   const input = host?.querySelector(`#${inputId}`);
   if (!input) return null;
   const option = findEdenMemberOption(input.value);
   if (option) input.value = option.playerName;
-  updateEdenVoteInputSuggestions(host, inputId);
+  if (options.closeSuggestions) clearEdenVoteInputSuggestions(host, inputId);
+  else updateEdenVoteInputSuggestions(host, inputId);
   return option;
+}
+
+function readSavedEdenVoteCandidateNames(vote) {
+  const names = Array.isArray(vote?.candidateNames)
+    ? vote.candidateNames
+    : [vote?.candidateName, vote?.candidateName2];
+  return names
+    .map((name) => String(name || '').trim())
+    .filter(Boolean)
+    .slice(0, EDEN_X1_VOTE_CANDIDATE_LIMIT);
+}
+
+function getEdenVoteCandidateInputs(host) {
+  return EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) => host?.querySelector(`#${id}`)).filter(
+    Boolean
+  );
+}
+
+function getEdenVoteDetailInput(host) {
+  const preferredId = host?.dataset?.edenVoteInspectInputId;
+  const preferred = preferredId ? host.querySelector(`#${preferredId}`) : null;
+  if (preferred && findEdenMemberOption(preferred.value)) return preferred;
+  return (
+    getEdenVoteCandidateInputs(host).find((input) => findEdenMemberOption(input.value)) || null
+  );
 }
 
 function getEdenWeightedRowForPlayer(playerKey) {
@@ -358,23 +394,26 @@ function rankedEdenStructureHelpRows(limit = 5) {
 
 function rankedEdenConsistentRows(limit = 5) {
   return publicPlayerRows
-    .filter((player) => (player.attacks || []).length >= 2)
     .map((player) => {
       const values = player.attacks
         .slice()
         .sort((a, b) => publicAttackMs(a.attack) - publicAttackMs(b.attack))
         .map((attack) => valueOf(attack.demo));
-      const avg = publicAverage(values);
-      const variance = publicAverage(values.map((value) => Math.pow(value - avg, 2)));
-      const coeff = avg ? Math.sqrt(variance) / avg : 99;
+      const consistency = scoreConsistencyValues(values);
+      if (!consistency) return null;
       return {
         key: player.key,
         name: player.name,
-        coeff,
-        value: `${Math.max(0, Math.round((1 - Math.min(coeff, 1)) * 100))}% steady`,
+        consistency,
+        value: `${consistency.percent}% steady`,
       };
     })
-    .sort((a, b) => a.coeff - b.coeff || String(a.name || '').localeCompare(String(b.name || '')))
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        compareConsistencyScores(a.consistency, b.consistency) ||
+        String(a.name || '').localeCompare(String(b.name || ''))
+    )
     .slice(0, limit);
 }
 
@@ -430,18 +469,287 @@ function setEdenVoteStatus(message, type = 'info') {
   status.dataset.status = type;
 }
 
+function renderEdenVoteBreakdownRows(rows) {
+  return rows
+    .map(([label, value, note]) => {
+      const noteHtml = note ? `<small>${esc(note)}</small>` : '';
+      return `<span><span>${esc(label)}${noteHtml}</span><b>${esc(value)}</b></span>`;
+    })
+    .join('');
+}
+
+function renderEdenVoteStatTile(label, value, tone = '') {
+  const toneClass = tone ? ` ${tone}` : '';
+  return `<div class="dash-modal-stat eden-x1-vote-stat-tile"><div>${esc(label)}</div><div class="dash-modal-stat-value${toneClass}">${esc(value)}</div></div>`;
+}
+
+function renderEdenVoteBreakdownTile(label, value, rows, tone = '') {
+  const toneClass = tone ? ` ${tone}` : '';
+  return `<details class="dash-modal-stat eden-x1-vote-breakdown-tile${toneClass}">
+    <summary><span>${esc(label)}</span><b>${esc(value)}</b></summary>
+    <div>${renderEdenVoteBreakdownRows(rows)}</div>
+  </details>`;
+}
+
+function renderEdenVoteWeightedBreakdown(weighted) {
+  if (!weighted)
+    return renderEdenVoteStatTile(t('edenX1ThWeightedScore'), '--', 'dash-modal-stat-value--blue');
+  const dutyCount =
+    valueOf(weighted.banners) + valueOf(weighted.pathers) + valueOf(weighted.shieldWalls);
+  const conductBonus = conductBonusValue(weighted);
+  const conductPoints = Number.isFinite(Number(weighted.conductPoints))
+    ? Number(weighted.conductPoints)
+    : conductBonus * 10000;
+  return renderEdenVoteBreakdownTile(
+    t('edenX1ThWeightedScore'),
+    formatWeightedScore(weighted.weightedScore),
+    [
+      [t('edenX1BreakdownContribution'), formatScore(weighted.contributionScore)],
+      [t('edenX1BreakdownExGuild'), formatScore(weighted.contributionExGuild || 0)],
+      [
+        t('edenX1BreakdownDuty'),
+        formatScore(weighted.dutyPoints || dutyCount * 10000),
+        t('edenX1DutyFormula', {
+          banners: weighted.banners,
+          pathers: weighted.pathers,
+          shieldWalls: weighted.shieldWalls,
+          count: dutyCount,
+        }),
+      ],
+      [
+        t('edenX1BreakdownConductPoints'),
+        formatSignedNumber(conductPoints),
+        t('edenX1ConductPrivateNotice'),
+      ],
+      [t('edenX1BreakdownTotal'), formatWeightedScore(weighted.weightedScore)],
+    ],
+    'eden-x1-vote-breakdown-tile--blue'
+  );
+}
+
+function renderEdenVoteContributionBreakdown(weighted) {
+  if (!weighted)
+    return renderEdenVoteStatTile(
+      t('edenX1BreakdownContribution'),
+      '--',
+      'dash-modal-stat-value--amber'
+    );
+  const contribution = valueOf(weighted.contributionScore);
+  return renderEdenVoteBreakdownTile(
+    t('edenX1BreakdownContribution'),
+    formatScore(contribution),
+    [
+      [t('edenX1BreakdownContribution'), formatScore(contribution)],
+      [t('edenX1BreakdownTotal'), formatScore(contribution)],
+    ],
+    'eden-x1-vote-breakdown-tile--amber'
+  );
+}
+
+function renderEdenVoteExGuildBreakdown(weighted) {
+  if (!weighted)
+    return renderEdenVoteStatTile(
+      t('edenX1BreakdownExGuild'),
+      '--',
+      'dash-modal-stat-value--purple'
+    );
+  const total = valueOf(weighted.contributionExGuild);
+  const breakdown = Array.isArray(weighted.contributionExGuildBreakdown)
+    ? weighted.contributionExGuildBreakdown.filter((row) => valueOf(row?.contribution) > 0)
+    : [];
+  if (breakdown.length <= 1) {
+    return renderEdenVoteStatTile(
+      t('edenX1BreakdownExGuild'),
+      formatScore(total),
+      'dash-modal-stat-value--purple'
+    );
+  }
+  return renderEdenVoteBreakdownTile(
+    t('edenX1BreakdownExGuild'),
+    formatScore(total),
+    [
+      ...breakdown.map((row) => [
+        [row.guild, row.sourceName].filter(Boolean).join(' - ') || t('edenX1BreakdownExGuild'),
+        formatScore(row.contribution),
+      ]),
+      [t('edenX1BreakdownTotal'), formatScore(total)],
+    ],
+    'eden-x1-vote-breakdown-tile--purple'
+  );
+}
+
+function renderEdenVoteSupportBreakdown(weighted) {
+  if (!weighted) {
+    return [
+      renderEdenVoteStatTile(t('edenX1VoteConductBonus'), '--', 'dash-modal-stat-value--purple'),
+      renderEdenVoteStatTile(t('edenX1VoteSupportTotal'), '--', 'dash-modal-stat-value--teal'),
+    ].join('');
+  }
+  const conductBonus = conductBonusValue(weighted);
+  const total = rowBonusTotal(weighted);
+  return [
+    renderEdenVoteStatTile(
+      t('edenX1VoteConductBonus'),
+      formatSignedNumber(conductBonus),
+      conductBonus >= 0 ? 'dash-modal-stat-value--purple' : 'dash-modal-stat-value--amber'
+    ),
+    renderEdenVoteBreakdownTile(
+      t('edenX1VoteSupportTotal'),
+      total.toLocaleString(),
+      [
+        [t('edenX1ThBanners'), formatScore(weighted.banners)],
+        [t('edenX1ThPathers'), formatScore(weighted.pathers)],
+        [t('edenX1ThShieldWalls'), formatScore(weighted.shieldWalls)],
+        [t('edenX1VoteConductBonus'), formatSignedNumber(conductBonus)],
+        [t('edenX1BreakdownTotal'), total.toLocaleString()],
+      ],
+      'eden-x1-vote-breakdown-tile--teal'
+    ),
+  ].join('');
+}
+
+function renderEdenVoteStructureBreakdown(player, values) {
+  if (!player) {
+    return renderEdenVoteStatTile(
+      t('edenX1VoteStructureConsistency'),
+      '--',
+      'dash-modal-stat-value--blue'
+    );
+  }
+  const consistency = scoreConsistencyValues(values);
+  const half = Math.floor(values.length / 2);
+  const span = Math.min(5, half || 1);
+  const first = publicAverage(values.slice(0, span));
+  const last = publicAverage(values.slice(-span));
+  const delta = values.length > 1 ? last - first : 0;
+  const steady = consistency ? t('edenX1SteadyPercent', { percent: consistency.percent }) : '--';
+  const movement = values.length > 1 ? `${delta >= 0 ? '+' : ''}${compactValue(delta)}` : '--';
+  return renderEdenVoteBreakdownTile(
+    t('edenX1VoteStructureConsistency'),
+    steady,
+    [
+      [t('edenX1RankMovement'), movement],
+      [t('edenX1ModalHits'), formatScore(player.participation_count)],
+      [t('edenX1ModalAverageHit'), formatScore(player.average_demolition)],
+      [t('edenX1ModalBestHit'), formatScore(player.best_hit)],
+    ],
+    'eden-x1-vote-breakdown-tile--structure'
+  );
+}
+
+function renderEdenVoteStructureTrend(attacks) {
+  const rows = (Array.isArray(attacks) ? attacks : [])
+    .map((attack) => ({ ...attack, demo: valueOf(attack.demo) }))
+    .filter((attack) => attack.demo > 0);
+  if (!rows.length) return `<div class="dash-empty">${esc(t('edenX1VoteNoTrend'))}</div>`;
+
+  const values = rows.map((row) => row.demo);
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const span = Math.max(1, max - min);
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const avg = Math.round(total / values.length);
+  const first = values[0] || 0;
+  const latest = values[values.length - 1] || 0;
+  const delta = latest - first;
+  const structureKeys = rows.map((row) => row.structureKey || row.structure).filter(Boolean);
+  const structureCount = new Set(structureKeys).size;
+  const bestIndex = values.indexOf(max);
+  const latestIndex = values.length - 1;
+  const width = 680;
+  const height = 178;
+  const padX = 34;
+  const padTop = 20;
+  const padBottom = 38;
+  const plotWidth = width - padX * 2;
+  const plotHeight = height - padTop - padBottom;
+  const bottom = height - padBottom;
+  const xFor = (index) =>
+    values.length <= 1 ? width / 2 : padX + (index / (values.length - 1)) * plotWidth;
+  const yFor = (value) => bottom - ((value - min) / span) * plotHeight;
+  const points = values.map(
+    (value, index) => `${xFor(index).toFixed(1)},${yFor(value).toFixed(1)}`
+  );
+  const firstX = xFor(0).toFixed(1);
+  const lastX = xFor(latestIndex).toFixed(1);
+  const areaPath = `M ${firstX} ${bottom} L ${points.join(' L ')} L ${lastX} ${bottom} Z`;
+  const gridLines = [0, 0.25, 0.5, 0.75, 1]
+    .map((step) => {
+      const y = padTop + step * plotHeight;
+      return `<line class="eden-x1-trend-grid-line" x1="${padX}" y1="${y.toFixed(1)}" x2="${width - padX}" y2="${y.toFixed(1)}"></line>`;
+    })
+    .join('');
+  const barSlot = plotWidth / Math.max(values.length, 1);
+  const barWidth = Math.max(3, Math.min(12, barSlot * 0.58));
+  const bars = values
+    .map((value, index) => {
+      const h = Math.max(3, ((value - min) / span) * 24);
+      const x = xFor(index) - barWidth / 2;
+      return `<rect class="eden-x1-trend-bar" x="${x.toFixed(1)}" y="${(bottom + 8 - h).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${h.toFixed(1)}" rx="2"></rect>`;
+    })
+    .join('');
+  const latestPoint = { x: xFor(latestIndex), y: yFor(latest) };
+  const bestPoint = { x: xFor(bestIndex), y: yFor(max) };
+  const deltaClass = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
+  const deltaText = values.length > 1 ? `${delta >= 0 ? '+' : ''}${compactValue(delta)}` : '--';
+  const firstTitle = rows[0]?.time || rows[0]?.structure || t('edenX1ModalTime');
+  const latestTitle =
+    rows[latestIndex]?.time || rows[latestIndex]?.structure || t('edenX1ModalTime');
+
+  return `<div class="eden-x1-structure-trend-card" role="img" aria-label="${esc(`${t('edenX1VoteTrendLabel')}: ${values.length} ${t('edenX1ModalHits')}, ${formatScore(total)} ${t('edenX1ModalTotalDemo')}`)}">
+    <div class="eden-x1-structure-trend-head">
+      <div>
+        <strong>${esc(t('edenX1VoteTrendLabel'))}</strong>
+        <span>${esc(t('edenX1HitsAverageMeta', { hits: values.length, avg: formatScore(avg) }))}</span>
+      </div>
+      <em class="${deltaClass}">${deltaText}</em>
+    </div>
+    <div class="eden-x1-structure-trend-stats">
+      <span><b>${formatScore(values.length)}</b><small>${esc(t('edenX1ModalHits'))}</small></span>
+      <span><b>${formatScore(avg)}</b><small>${esc(t('edenX1ModalAverageHit'))}</small></span>
+      <span><b>${formatScore(max)}</b><small>${esc(t('edenX1ModalBestHit'))}</small></span>
+      <span><b>${formatScore(structureCount)}</b><small>${esc(t('edenX1ModalTargets'))}</small></span>
+    </div>
+    <div class="eden-x1-structure-chart">
+      <div class="eden-x1-structure-axis eden-x1-structure-axis--high">${compactValue(max)}</div>
+      <div class="eden-x1-structure-axis eden-x1-structure-axis--low">${compactValue(min)}</div>
+      <svg class="eden-x1-structure-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="edenX1StructureTrendStroke" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stop-color="#60a5fa"></stop>
+            <stop offset="52%" stop-color="#34d399"></stop>
+            <stop offset="100%" stop-color="#facc15"></stop>
+          </linearGradient>
+          <linearGradient id="edenX1StructureTrendFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#34d399" stop-opacity="0.28"></stop>
+            <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <g>${gridLines}</g>
+        <path class="eden-x1-trend-area" d="${areaPath}" fill="url(#edenX1StructureTrendFill)"></path>
+        <g>${bars}</g>
+        <polyline class="eden-x1-trend-line" points="${points.join(' ')}" stroke="url(#edenX1StructureTrendStroke)"></polyline>
+        ${bestIndex !== latestIndex ? `<circle class="eden-x1-trend-point eden-x1-trend-point--best" cx="${bestPoint.x.toFixed(1)}" cy="${bestPoint.y.toFixed(1)}" r="5"></circle>` : ''}
+        <circle class="eden-x1-trend-point eden-x1-trend-point--latest" cx="${latestPoint.x.toFixed(1)}" cy="${latestPoint.y.toFixed(1)}" r="6"></circle>
+      </svg>
+      <div class="eden-x1-structure-chart-footer">
+        <span>${esc(firstTitle)}</span>
+        <strong title="${esc(latestTitle)}">${formatScore(latest)}</strong>
+        <span>${esc(latestTitle)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderEdenVoteCandidateDetail(option) {
   if (!option) return '';
   const weighted = getEdenWeightedRowForPlayer(option.playerKey);
   const player = getEdenPublicPlayerForKey(option.playerKey);
-  const dutyTotal = weighted ? rowBonusTotal(weighted) : 0;
   const attacks = player?.attacks
     ? player.attacks.slice().sort((a, b) => publicAttackMs(a.attack) - publicAttackMs(b.attack))
     : [];
   const values = attacks.map((attack) => valueOf(attack.demo));
-  const sparkline = values.length
-    ? publicSparkline(values, 'var(--green)')
-    : `<div class="dash-empty">${esc(t('edenX1VoteNoTrend'))}</div>`;
+  const trend = renderEdenVoteStructureTrend(attacks);
   const fullDetailButton = player
     ? `<button class="dash-btn dash-btn-xs" type="button" data-eden-vote-open-player="${esc(player.key)}">${esc(t('edenX1VoteOpenDetail'))}</button>`
     : '';
@@ -454,31 +762,44 @@ function renderEdenVoteCandidateDetail(option) {
       ${fullDetailButton}
     </div>
     <div class="dash-modal-grid eden-x1-vote-stat-grid">
-      <div class="dash-modal-stat"><div>${esc(t('edenX1ThWeightedScore'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('adminContributionFinalRank'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted?.finalRank ? `#${esc(weighted.finalRank)}` : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1ThContribution'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${weighted ? formatScore(weighted.contributionScore) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1ThExGuild'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${weighted ? formatScore(weighted.contributionExGuild || 0) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1VoteSupportTotal'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted ? dutyTotal.toLocaleString() : '--'}</div></div>
+      ${renderEdenVoteWeightedBreakdown(weighted)}
+      ${renderEdenVoteStatTile(t('adminContributionFinalRank'), weighted?.finalRank ? `#${weighted.finalRank}` : '--', 'dash-modal-stat-value--teal')}
+      ${renderEdenVoteContributionBreakdown(weighted)}
+      ${renderEdenVoteExGuildBreakdown(weighted)}
+      ${renderEdenVoteSupportBreakdown(weighted)}
       <div class="dash-modal-stat"><div>${esc(t('edenX1VoteBannerPathShield'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--'}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1KpiStructureHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${player ? formatScore(player.participation_count) : '--'}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1KpiTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${player ? formatScore(player.total_demolition) : '--'}</div></div>
+      ${renderEdenVoteStructureBreakdown(player, values)}
     </div>
     <div class="eden-x1-vote-trend">
-      <span>${esc(t('edenX1VoteTrendLabel'))}</span>
-      ${sparkline}
+      ${trend}
     </div>
   </div>`;
 }
 
 function updateEdenVoteCandidateDetail(host) {
-  const input = host?.querySelector('#edenX1CandidateName');
+  const input = getEdenVoteDetailInput(host);
   const toggle = host?.querySelector('#edenX1VoteCandidateInspectBtn');
   const detail = host?.querySelector('#edenX1VoteCandidateDetail');
-  if (!input || !toggle || !detail) return;
+  if (!toggle || !detail) return;
+  if (!input) {
+    toggle.disabled = true;
+    toggle.textContent = t('edenX1VoteInspectEmpty');
+    toggle.classList.remove('is-ready', 'is-open');
+    toggle.dataset.state = 'empty';
+    toggle.setAttribute('aria-expanded', 'false');
+    detail.hidden = true;
+    detail.dataset.open = '0';
+    detail.innerHTML = '';
+    return;
+  }
   const option = findEdenMemberOption(input.value);
   if (!option) {
     toggle.disabled = true;
     toggle.textContent = t('edenX1VoteInspectEmpty');
+    toggle.classList.remove('is-ready', 'is-open');
+    toggle.dataset.state = 'empty';
     toggle.setAttribute('aria-expanded', 'false');
     detail.hidden = true;
     detail.dataset.open = '0';
@@ -488,39 +809,53 @@ function updateEdenVoteCandidateDetail(host) {
   toggle.disabled = false;
   toggle.textContent = t('edenX1VoteInspectNamed', { player: option.playerName });
   if (detail.dataset.open === '1') {
+    toggle.classList.remove('is-ready');
+    toggle.classList.add('is-open');
+    toggle.dataset.state = 'open';
     detail.hidden = false;
     detail.innerHTML = renderEdenVoteCandidateDetail(option);
     toggle.setAttribute('aria-expanded', 'true');
   } else {
+    toggle.classList.add('is-ready');
+    toggle.classList.remove('is-open');
+    toggle.dataset.state = 'ready';
     detail.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
   }
 }
 
-async function submitEdenTeamVote(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
+async function submitEdenTeamVoteForm(form) {
+  if (!form) return;
   const submit = form.querySelector('button[type="submit"]');
-  const voterInput = form.querySelector('#edenX1VoterName');
-  const candidateInput = form.querySelector('#edenX1CandidateName');
-  const voter = resolveEdenVoteInput(form, 'edenX1VoterName');
-  const candidate = resolveEdenVoteInput(form, 'edenX1CandidateName');
-  if (!voter || !candidate) {
+  const voter = resolveEdenVoteInput(form, 'edenX1VoterName', { closeSuggestions: true });
+  const candidates = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) =>
+    resolveEdenVoteInput(form, id, { closeSuggestions: true })
+  );
+  if (!voter || candidates.some((candidate) => !candidate)) {
     setEdenVoteStatus(t('edenX1VoteErrPickBoth'), 'error');
     return;
   }
+  const candidateKeys = candidates.map((candidate) => candidate.playerKey);
+  if (new Set(candidateKeys).size !== candidates.length) {
+    setEdenVoteStatus(t('edenX1VoteErrDuplicate'), 'error');
+    return;
+  }
+  const candidateNames = candidates.map((candidate) => candidate.playerName);
 
   const season = edenVoteSeason();
-  const id = edenVoteDocId(season, voter.playerKey);
+  const voterAuthUid = edenVoteWriteContext?.user?.uid || 'local-test';
+  const id = edenVoteDocId(season, voterAuthUid);
   const localVote = {
     id,
     season,
     category: EDEN_X1_TEAM_VOTE_CATEGORY,
     voterKey: voter.playerKey,
     voterName: voter.playerName,
-    candidateKey: candidate.playerKey,
-    candidateName: candidate.playerName,
-    voterAuthUid: edenVoteWriteContext?.user?.uid || 'local-test',
+    candidateKey: candidateKeys[0],
+    candidateName: candidateNames[0],
+    candidateKeys,
+    candidateNames,
+    voterAuthUid,
     updatedAt: new Date().toISOString(),
   };
 
@@ -549,7 +884,10 @@ async function submitEdenTeamVote(event) {
     setEdenVoteStatus(t('edenX1VoteSaved'), 'success');
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
-    setEdenVoteStatus(t('edenX1VoteSyncFailed', { error: err?.message || err || 'unknown error' }), 'error');
+    setEdenVoteStatus(
+      t('edenX1VoteSyncFailed', { error: err?.message || err || 'unknown error' }),
+      'error'
+    );
   } finally {
     if (submit) {
       submit.disabled = false;
@@ -558,28 +896,58 @@ async function submitEdenTeamVote(event) {
   }
 }
 
+async function submitEdenTeamVote(event) {
+  event.preventDefault();
+  if (Date.now() < edenVotePointerSubmitUntil) return;
+  await submitEdenTeamVoteForm(event.currentTarget);
+}
+
+function submitEdenTeamVoteFromPointer(event) {
+  if (typeof event.button === 'number' && event.button !== 0) return;
+  const form = event.currentTarget?.closest?.('#edenX1TeamVoteForm');
+  if (!form) return;
+  event.preventDefault();
+  edenVotePointerSubmitUntil = Date.now() + 750;
+  submitEdenTeamVoteForm(form);
+}
+
 function bindEdenVoteControls(host) {
   if (!host) return;
+  const form = host.querySelector('#edenX1TeamVoteForm');
+  if (form && !form.dataset.edenVoteSubmitBound) {
+    form.dataset.edenVoteSubmitBound = '1';
+    form.addEventListener('submit', submitEdenTeamVote);
+  }
+  const submit = form?.querySelector('button[type="submit"]');
+  if (submit && !submit.dataset.edenVotePointerSubmitBound) {
+    submit.dataset.edenVotePointerSubmitBound = '1';
+    submit.addEventListener('pointerdown', submitEdenTeamVoteFromPointer);
+  }
   if (!host.dataset.edenVoteControlsBound) {
     host.dataset.edenVoteControlsBound = '1';
-    host.addEventListener('submit', (event) => {
-      if (event.target.closest('#edenX1TeamVoteForm')) submitEdenTeamVote(event);
-    });
     host.addEventListener('input', (event) => {
-      const input = event.target.closest('#edenX1VoterName, #edenX1CandidateName');
+      const input = event.target.closest(
+        '#edenX1VoterName, #edenX1CandidateName, #edenX1CandidateName2'
+      );
       if (!input) return;
       updateEdenVoteInputSuggestions(host, input.id);
-      if (input.id === 'edenX1CandidateName') {
+      if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
+        host.dataset.edenVoteInspectInputId = input.id;
         const detail = host.querySelector('#edenX1VoteCandidateDetail');
         if (detail) detail.dataset.open = '0';
         updateEdenVoteCandidateDetail(host);
       }
     });
     host.addEventListener('change', (event) => {
-      const input = event.target.closest('#edenX1VoterName, #edenX1CandidateName');
+      const input = event.target.closest(
+        '#edenX1VoterName, #edenX1CandidateName, #edenX1CandidateName2'
+      );
       if (!input) return;
-      resolveEdenVoteInput(host, input.id);
-      if (input.id === 'edenX1CandidateName') updateEdenVoteCandidateDetail(host);
+      resolveEdenVoteInput(host, input.id, { closeSuggestions: true });
+      if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
+        host.dataset.edenVoteInspectInputId = input.id;
+        updateEdenVoteCandidateDetail(host);
+      }
     });
     host.addEventListener('click', (event) => {
       const suggestion = event.target.closest('[data-eden-vote-suggest]');
@@ -588,8 +956,9 @@ function bindEdenVoteControls(host) {
         const input = targetId ? host.querySelector(`#${targetId}`) : null;
         if (input) {
           input.value = suggestion.getAttribute('data-eden-vote-suggest') || '';
-          updateEdenVoteInputSuggestions(host, targetId);
-          if (targetId === 'edenX1CandidateName') {
+          clearEdenVoteInputSuggestions(host, targetId);
+          if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(targetId)) {
+            host.dataset.edenVoteInspectInputId = targetId;
             const detail = host.querySelector('#edenX1VoteCandidateDetail');
             if (detail) detail.dataset.open = '1';
             updateEdenVoteCandidateDetail(host);
@@ -600,9 +969,13 @@ function bindEdenVoteControls(host) {
       }
       const pick = event.target.closest('[data-eden-vote-pick]');
       if (pick) {
-        const input = host.querySelector('#edenX1CandidateName');
+        const input =
+          getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
+          host.querySelector('#edenX1CandidateName');
         if (input) {
           input.value = pick.getAttribute('data-eden-vote-pick') || '';
+          host.dataset.edenVoteInspectInputId = input.id;
+          clearEdenVoteInputSuggestions(host, input.id);
           const detail = host.querySelector('#edenX1VoteCandidateDetail');
           if (detail) detail.dataset.open = '1';
           updateEdenVoteCandidateDetail(host);
@@ -624,15 +997,17 @@ function bindEdenVoteControls(host) {
     });
   }
   updateEdenVoteInputSuggestions(host, 'edenX1VoterName');
-  updateEdenVoteInputSuggestions(host, 'edenX1CandidateName');
+  EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => updateEdenVoteInputSuggestions(host, id));
   updateEdenVoteCandidateDetail(host);
 }
 
 function renderEdenTeamVotePanel() {
   const saved = readLocalEdenVote();
-  const savedStatus = saved?.candidateName
-    ? `<div class="eden-x1-vote-saved">${esc(t('edenX1VoteSavedDevice', { voter: saved.voterName, candidate: saved.candidateName }))}</div>`
-    : '';
+  const savedCandidateNames = readSavedEdenVoteCandidateNames(saved);
+  const savedStatus =
+    saved?.voterName && savedCandidateNames.length
+      ? `<div class="eden-x1-vote-saved">${esc(t('edenX1VoteSavedDevice', { voter: saved.voterName, candidates: savedCandidateNames.join(', ') }))}</div>`
+      : '';
   return `<section class="dash-card eden-x1-vote-panel">
     <div class="dash-card-hdr dash-card-hdr-wrap">
       <div>
@@ -649,12 +1024,17 @@ function renderEdenTeamVotePanel() {
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
         <span>${esc(t('edenX1VoteYourVote'))}</span>
-        <input id="edenX1CandidateName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.candidateName || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" required />
+        <input id="edenX1CandidateName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName"></div>
+      </label>
+      <label class="eden-x1-vote-field" for="edenX1CandidateName2">
+        <span>${esc(t('edenX1VoteYourVoteSecond'))}</span>
+        <input id="edenX1CandidateName2" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(savedCandidateNames[1] || '')}" placeholder="${esc(t('edenX1VotePhTeammateSecond'))}" autocomplete="off" required />
+        <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName2"></div>
       </label>
       <div class="eden-x1-vote-actions">
         <button class="dash-btn dash-btn-primary" type="submit">${esc(t('edenX1VoteCast'))}</button>
-        <button id="edenX1VoteCandidateInspectBtn" class="dash-btn" type="button" aria-expanded="false">${esc(t('edenX1VoteInspectEmpty'))}</button>
+        <button id="edenX1VoteCandidateInspectBtn" class="dash-btn eden-x1-vote-inspect-btn" type="button" aria-expanded="false" data-state="empty">${esc(t('edenX1VoteInspectEmpty'))}</button>
       </div>
       <div id="edenX1VoteStatus" class="eden-x1-vote-status" role="status">${savedStatus}</div>
       <div id="edenX1VoteCandidateDetail" class="eden-x1-vote-candidate-detail" hidden></div>
@@ -1484,7 +1864,7 @@ function buildPublicPlayerRows(attacks) {
         demo,
         rank: entry?.rank || '',
       });
-      if (!seenInAttack.has(key)) {
+      if (demo > 0 && !seenInAttack.has(key)) {
         row.participation_count += 1;
         row.structures.add(publicStructureKey(attack));
         seenInAttack.add(key);
@@ -1961,23 +2341,30 @@ function renderPublicDistribution(attacks) {
 
 function renderPublicConsistency(players) {
   const scored = (Array.isArray(players) ? players : [])
-    .filter((player) => (player.attacks || []).length >= 2)
     .map((player) => {
       const values = player.attacks
         .slice()
         .sort((a, b) => publicAttackMs(a.attack) - publicAttackMs(b.attack))
         .map((attack) => valueOf(attack.demo));
-      const avg = publicAverage(values);
-      const variance = publicAverage(values.map((value) => Math.pow(value - avg, 2)));
-      const coeff = avg ? Math.sqrt(variance) / avg : 99;
+      const consistency = scoreConsistencyValues(values);
+      if (!consistency) return null;
       const half = Math.floor(values.length / 2);
       const span = Math.min(5, half || 1);
       const first = publicAverage(values.slice(0, span));
       const last = publicAverage(values.slice(-span));
-      return { ...player, values, coeff, delta: last - first };
-    });
+      return {
+        ...player,
+        values,
+        consistency,
+        steadyPercent: consistency.percent,
+        delta: last - first,
+      };
+    })
+    .filter(Boolean);
   if (!scored.length) return renderPublicEmpty(t('edenX1NeedTwoHits'));
-  const consistent = [...scored].sort((a, b) => a.coeff - b.coeff).slice(0, 5);
+  const consistent = [...scored]
+    .sort((a, b) => compareConsistencyScores(a.consistency, b.consistency))
+    .slice(0, 5);
   const improvers = [...scored]
     .filter((p) => p.delta > 0)
     .sort((a, b) => b.delta - a.delta)
@@ -1988,7 +2375,7 @@ function renderPublicConsistency(players) {
     .slice(0, 4);
   const list = (title, rows, kind) => `<div class="dash-insight-list">
     <strong>${esc(title)}</strong>
-    ${rows.length ? rows.map((player) => `<span><em>${publicPlayerButton(player.name, player.key)}</em><b class="${kind}">${kind === 'steady' ? t('edenX1SteadyPercent', { percent: Math.round((1 - Math.min(player.coeff, 1)) * 100) }) : `${player.delta >= 0 ? '+' : ''}${compactValue(player.delta)}`}</b></span>`).join('') : `<span class="muted">${esc(t('edenX1NoMovement'))}</span>`}
+    ${rows.length ? rows.map((player) => `<span><em>${publicPlayerButton(player.name, player.key)}</em><b class="${kind}">${kind === 'steady' ? t('edenX1SteadyPercent', { percent: player.steadyPercent }) : `${player.delta >= 0 ? '+' : ''}${compactValue(player.delta)}`}</b></span>`).join('') : `<span class="muted">${esc(t('edenX1NoMovement'))}</span>`}
   </div>`;
   return (
     list(t('edenX1MostConsistent'), consistent, 'steady') +
@@ -2588,6 +2975,7 @@ async function bootShell() {
     const nextLang = e.target.value || 'en';
     localStorage.setItem('vts_hero_lang', nextLang);
     await loadTranslationsForLanguage(nextLang);
+    applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
 }

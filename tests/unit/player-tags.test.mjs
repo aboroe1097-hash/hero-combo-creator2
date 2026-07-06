@@ -36,6 +36,7 @@ test('special player tags use canonical player keys for known variants', () => {
     getSpecialPlayerTag({ playerName: 'Vicked Russian', playerKey: 'wickedrussian' })?.label,
     'R4'
   );
+  assert.equal(getSpecialPlayerTag({ player: 'Wicked Russian' })?.label, 'R4');
 });
 
 test('special player tag HTML is escaped through the renderer callback', () => {

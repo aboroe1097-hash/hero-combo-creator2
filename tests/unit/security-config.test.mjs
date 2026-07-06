@@ -4,10 +4,45 @@ import test from 'node:test';
 
 test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
-  assert.match(source, /clearHash:\s*'(?:|[a-f0-9]{64})'/);
-  assert.match(source, /deleteHashes:\s*(?:\[\s*\]|\[\s*'[a-f0-9]{64}'\s*\])/);
+  assert.match(source, /clearHash:\s*''/);
+  assert.match(source, /deleteHashes:\s*\[\s*\]/);
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
+  assert.doesNotMatch(source, /5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5/);
+});
+
+test('frontend CSP and markup avoid executable inline script bypasses', () => {
+  const pages = ['index.html', 'admin.html', 'eden-x1.html'];
+  const inlineExecutableScript =
+    /<script(?![^>]*\bsrc=)(?![^>]*type="(?:application\/ld\+json|importmap)")/i;
+
+  for (const page of pages) {
+    const source = readFileSync(page, 'utf8');
+    assert.doesNotMatch(source, /\son(?:click|load)\s*=/i, `${page} should not use inline handlers`);
+    assert.doesNotMatch(source, inlineExecutableScript, `${page} should not use executable inline scripts`);
+  }
+
+  for (const page of ['index.html', 'admin.html']) {
+    const source = readFileSync(page, 'utf8');
+    const csp = source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
+    const scriptSrc = csp.match(/script-src\s+([^;]+)/)?.[1] || '';
+    assert.ok(scriptSrc, `${page} should define script-src`);
+    assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
+  }
+
+  const index = readFileSync('index.html', 'utf8');
+  assert.match(index, /js\/theme-prepaint\.js/);
+  assert.match(index, /js\/index-page-enhancements\.js/);
+  assert.match(index, /data-footer-tab="manual"/);
+});
+
+test('theme manifests include dark and light install colors', () => {
+  const darkManifest = JSON.parse(readFileSync('site.webmanifest', 'utf8'));
+  const lightManifest = JSON.parse(readFileSync('site-light.webmanifest', 'utf8'));
+  assert.equal(darkManifest.theme_color, '#0f172a');
+  assert.equal(darkManifest.background_color, '#0f172a');
+  assert.equal(lightManifest.theme_color, '#f8fafc');
+  assert.equal(lightManifest.background_color, '#f8fafc');
 });
 
 test('admin dashboard uses Firebase auth instead of local password markers', () => {
@@ -147,21 +182,22 @@ test('admin cloud boot and saves have bounded local-cache fallback', () => {
   assert.match(dashboard, /withDashboardCloudTimeout\(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
 });
 
-test('shared admin dashboard reads stay available while writes require a password admin login', () => {
+test('shared admin dashboard reads stay available while writes require the admin custom claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
-  assert.match(rules, /function isAdminLogin\(\)/);
-  // Writes are gated on a real email/password sign-in, not a per-account claim.
-  assert.match(rules, /sign_in_provider == 'password'/);
-  assert.match(dashboard, /isPasswordAuthUser/);
+  // Writes are gated on the `admin` custom claim, not the sign-in provider,
+  // because the public web API key lets anyone self-register a password account.
+  assert.match(rules, /function isAdmin\(\)/);
+  assert.doesNotMatch(rules, /sign_in_provider == 'password'/);
+  assert.match(dashboard, /isAdminAuthUser/);
   assert.match(
     rules,
-    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validDashboardData\(\);/
+    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validDashboardData\(\);/
   );
   assert.match(
     rules,
-    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdminLogin\(\) && validRosterData\(\);/
+    /match \/vts_admin\/roster_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validRosterData\(\);/
   );
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
@@ -175,6 +211,8 @@ test('admin gate uses a password sign-in check and sign-out cannot auto re-login
   // The password-sign-in helper exists and inspects the password provider.
   assert.match(firebase, /export async function isPasswordAuthUser/);
   assert.match(firebase, /providerId === 'password'|signInProvider === 'password'/);
+  assert.match(firebase, /catch\s*\{[\s\S]*return false;[\s\S]*\}/);
+  assert.doesNotMatch(firebase, /token read failed[\s\S]*return true;/i);
   // Both the dashboard gates and the conduct-write context use it.
   assert.match(dashboard, /isPasswordAuthUser/);
   assert.match(adjustments, /isPasswordAuthUser/);
@@ -202,8 +240,8 @@ test('R5 conduct adjustments are stored separately and use the admin claim', () 
   assert.match(rules, /function validConductAdjustment\(\)/);
   assert.match(rules, /match \/vts_admin\/conduct_adjustments\/records\/\{adjustmentId\}/);
   assert.match(rules, /allow read: if signedIn\(\);/);
-  assert.match(rules, /allow create: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
-  assert.match(rules, /allow update: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /allow create: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
+  assert.match(rules, /allow update: if isAdmin\(\)[\s\S]*validConductAdjustment\(\)/);
   assert.match(rules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
   assert.match(rules, /function repairsHistoricalConductMetadata\(\)/);
   assert.match(rules, /keepsConductMetadata\(\) \|\| repairsHistoricalConductMetadata\(\)/);
@@ -215,17 +253,44 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
   assert.match(rules, /function validEdenX1Vote\(\)/);
+  assert.match(rules, /function validEdenX1VotePath\(voteId\)/);
   assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
-  assert.match(rules, /allow read, delete: if isAdminLogin\(\);/);
+  assert.match(rules, /allow read, delete: if isAdmin\(\);/);
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
+  assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)/);
   assert.match(
     rules,
-    /allow update: if signedIn\(\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/
+    /allow update: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/
+  );
+  assert.match(
+    rules,
+    /voteId == request\.resource\.data\.season \+ '__team_players__' \+ request\.auth\.uid/
   );
   assert.match(rules, /request\.resource\.data\.category == 'team_players'/);
+  assert.match(rules, /request\.resource\.data\.candidateKeys is list/);
+  assert.match(rules, /request\.resource\.data\.candidateKeys\.size\(\) == 2/);
+  assert.match(rules, /request\.resource\.data\.candidateNames is list/);
+  assert.match(rules, /request\.resource\.data\.candidateNames\.size\(\) == 2/);
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[0\] != request\.resource\.data\.candidateKeys\[1\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKey == request\.resource\.data\.candidateKeys\[0\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateName == request\.resource\.data\.candidateNames\[0\]/
+  );
   assert.match(rules, /request\.resource\.data\.voterAuthUid == request\.auth\.uid/);
   assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
   assert.match(eden, /EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin\/eden_x1_votes\/records'/);
+  assert.match(
+    eden,
+    /const voterAuthUid = edenVoteWriteContext\?\.user\?\.uid \|\| 'local-test';[\s\S]*const id = edenVoteDocId\(season, voterAuthUid\);/
+  );
+  assert.doesNotMatch(eden, /edenVoteDocId\(season, voter\.playerKey\)/);
   assert.match(eden, /voterAuthUid/);
   assert.match(eden, /serverTimestamp\(\)/);
   assert.match(dashboard, /loadEdenX1Votes/);
@@ -236,9 +301,11 @@ test('service worker precaches only the lightweight app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
 
-  assert.ok(urls.length <= 25, `expected lean app shell, found ${urls.length} URLs`);
+  assert.ok(urls.length <= 28, `expected lean app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/js/app.js'));
+  assert.ok(urls.includes('/js/theme-prepaint.js'));
+  assert.ok(urls.includes('/js/index-page-enhancements.js'));
   assert.ok(urls.includes('/images/logo.png'));
   assert.ok(!urls.includes('/admin.html'));
   assert.ok(!urls.includes('/js/ocr-dashboard.js'));
@@ -267,6 +334,9 @@ test('comments no longer store email or allow public reads', () => {
   assert.match(rules, /resource\.data\.authorId == request\.auth\.uid/);
   assert.match(rules, /allow read: if canReadComment\(\);/);
   assert.match(rules, /approved == false/);
+  assert.match(rules, /request\.resource\.data\.parentId == null/);
+  assert.match(rules, /request\.resource\.data\.parentId is string/);
+  assert.match(rules, /request\.resource\.data\.parentId\.matches\('\^\[A-Za-z0-9_-\]\{1,150\}\$'\)/);
   assert.doesNotMatch(comments, /email:/);
   assert.doesNotMatch(comments, /commentEmail/);
   assert.match(comments, /where\('approved', '==', true\)/);
