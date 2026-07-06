@@ -195,6 +195,8 @@ test('R5 conduct adjustments are stored separately and use the admin claim', () 
   assert.match(rules, /allow create: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
   assert.match(rules, /allow update: if isAdminLogin\(\)[\s\S]*validConductAdjustment\(\)/);
   assert.match(rules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
+  assert.match(rules, /function repairsHistoricalConductMetadata\(\)/);
+  assert.match(rules, /keepsConductMetadata\(\) \|\| repairsHistoricalConductMetadata\(\)/);
 });
 
 test('service worker precaches only the lightweight app shell', () => {

@@ -246,7 +246,7 @@ test('updateR5Adjustment creates a missing cloud doc (uid + serverTimestamp)', a
 });
 
 test('updateR5Adjustment preserves createdAt/createdBy when the cloud doc exists', async () => {
-  const CREATED_AT = { __ts: 'original' };
+  const CREATED_AT = { toMillis: () => 123456789 };
   let written = null;
   const firestore = {
     doc: (_db, path, id) => ({ path, id }),
@@ -285,6 +285,48 @@ test('updateR5Adjustment preserves createdAt/createdBy when the cloud doc exists
     assert.equal(written.record.createdBy, 'original-admin-uid', 'createdBy must stay unchanged on update');
     assert.equal(written.record.points, 7);
     assert.equal(written.record.note, 'edited');
+  } finally {
+    delete window.getVtsAdminFirestoreContext;
+  }
+});
+
+test('updateR5Adjustment repairs historical cloud metadata on edit', async () => {
+  const SERVER_TS = { __ts: 'server' };
+  let written = null;
+  const firestore = {
+    doc: (_db, path, id) => ({ path, id }),
+    getDoc: async () => ({
+      exists: () => true,
+      data: () => ({
+        id: 'seeded-cloud-1',
+        season: 'season-2026',
+        playerKey: 'feechka',
+        playerName: 'Феечка))',
+        points: 1,
+        category: 'connected_road',
+        note: 'seeded',
+        createdAt: '2026-07-06T00:00:00.000Z',
+        createdBy: 'release-12.4.1',
+      }),
+    }),
+    setDoc: async (ref, record) => {
+      written = { ref, record };
+    },
+    serverTimestamp: () => SERVER_TS,
+  };
+  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'admin-uid-123' }, firestore });
+  try {
+    await updateR5Adjustment('seeded-cloud-1', {
+      playerKey: 'feechka',
+      playerName: 'Феечка))',
+      category: 'connected_road',
+      points: 2,
+      note: 'edited seeded',
+    });
+    assert.ok(written);
+    assert.equal(written.record.createdAt, SERVER_TS, 'historical string timestamps are repaired');
+    assert.equal(written.record.createdBy, 'admin-uid-123', 'historical release creators are repaired');
+    assert.equal(written.record.points, 2);
   } finally {
     delete window.getVtsAdminFirestoreContext;
   }

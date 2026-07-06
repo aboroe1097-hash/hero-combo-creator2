@@ -498,13 +498,19 @@ export async function updateR5Adjustment(adjustmentId, patch) {
     // storage (or were written under an older shape), so a partial updateDoc
     // would target a missing cloud doc, or merge into a record that no longer
     // satisfies validConductAdjustment(). Writing the whole record repairs both:
-    //  - existing doc -> reuse its createdAt/createdBy (the rules require both
-    //    unchanged on update) and refresh every other field.
-    //  - missing doc  -> create it with createdBy = uid + serverTimestamp(),
-    //    mirroring createR5Adjustment so the create rule passes.
+    //  - stable existing doc -> reuse createdAt/createdBy (the rules require
+    //    both unchanged on update) and refresh every other field.
+    //  - missing or historical doc -> use uid + serverTimestamp(), mirroring
+    //    createR5Adjustment so the create/metadata-repair rules pass.
     const ref = doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, id);
     const existing = await getDoc(ref);
     const cloudData = existing.exists() ? existing.data() : null;
+    const hasStableCloudMetadata =
+      cloudData &&
+      typeof cloudData.createdAt?.toMillis === 'function' &&
+      typeof cloudData.createdBy === 'string' &&
+      cloudData.createdBy.trim() &&
+      cloudData.createdBy !== 'release-12.4.1';
     const base = cloudData
       ? { id, ...cloudData }
       : readLocalR5AdjustmentRecords().find((entry) => entry?.id === id) || {};
@@ -513,8 +519,8 @@ export async function updateR5Adjustment(adjustmentId, patch) {
         ...base,
         ...updates,
         id,
-        createdAt: cloudData ? cloudData.createdAt : serverTimestamp(),
-        createdBy: cloudData ? cloudData.createdBy : user.uid,
+        createdAt: hasStableCloudMetadata ? cloudData.createdAt : serverTimestamp(),
+        createdBy: hasStableCloudMetadata ? cloudData.createdBy : user.uid,
       },
       { season: base.season }
     );

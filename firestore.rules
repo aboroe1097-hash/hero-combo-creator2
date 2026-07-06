@@ -164,6 +164,26 @@ service cloud.firestore {
       && request.resource.data.createdBy.size() <= 128;
     }
 
+    function hasStableConductMetadata() {
+      return ('createdAt' in resource.data)
+        && resource.data.createdAt is timestamp
+        && ('createdBy' in resource.data)
+        && resource.data.createdBy is string
+        && resource.data.createdBy.size() > 0
+        && resource.data.createdBy != 'release-12.4.1';
+    }
+
+    function keepsConductMetadata() {
+      return request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    function repairsHistoricalConductMetadata() {
+      return !hasStableConductMetadata()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+    }
+
     match /comments/{commentId} {
       allow read: if canReadComment();
       allow create: if signedIn() && validComment();
@@ -217,8 +237,7 @@ service cloud.firestore {
       allow update: if isAdminLogin()
         && validConductAdjustment()
         && request.resource.data.id == adjustmentId
-        && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && (keepsConductMetadata() || repairsHistoricalConductMetadata());
       allow delete: if isAdminLogin();
     }
 
