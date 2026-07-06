@@ -3,7 +3,7 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 
-const APP_VERSION = '13.0.1';
+const APP_VERSION = '13.0.2';
 const THEME_STORAGE_KEY = 'vts_theme';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
@@ -112,7 +112,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260706_203433');
+  const mod = await import('./ocr-dashboard.js?v=20260706_211439');
   await mod.bootOcrDashboard();
 }
 

@@ -948,6 +948,9 @@ const pt = {
     'Você conhece navegação, coords, ferramentas, plano de equipes opcional, camadas e atalhos. Reset para repetir após atualizações.',
   edenGuideDoneTip1:
     'Guia v2.7 cobre pergaminho, plano opcional e salto por coords — use Resetar progresso.',
+  skinFilterTitle: 'Skins de Heróis',
+  skinCountOne: '{n} skin',
+  skinCountMany: '{n} skins',
   genSkinsOnly: 'Aplicar efeitos e ícones de skins',
   heroSearchPh: 'Pesquisar heróis...',
   heroesSkillsTitle: 'Habilidades',

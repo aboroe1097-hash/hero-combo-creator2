@@ -1018,6 +1018,9 @@ const en = {
     'You now know navigation, coords, tools, optional team planning, layers, and shortcuts. Reset progress anytime to replay the tour after updates.',
   edenGuideDoneTip1:
     'Guide v2.7 covers parchment map, optional team plan, and coord jump — use Reset progress to replay.',
+  skinFilterTitle: 'Hero Skins',
+  skinCountOne: '{n} skin',
+  skinCountMany: '{n} skins',
   genSkinsOnly: 'Apply skin effects & skin icons',
   heroSearchPh: 'Search heroes...',
   heroesSkillsTitle: 'Skills',

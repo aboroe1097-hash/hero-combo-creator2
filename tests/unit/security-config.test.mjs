@@ -319,7 +319,7 @@ test('Eden X1 votes are public-write but admin-read only', () => {
     /allow create: if signedIn\(\)[\s\S]*validEdenX1VoteHistory\(\)[\s\S]*validEdenX1VoteHistoryPath\(historyId\)/
   );
   assert.match(rules, /allow update, delete: if false;/);
-  assert.match(rules, /match \/vts_admin\/eden_x1_vote_settings\/config/);
+  assert.match(rules, /match \/vts_admin\/eden_x1_vote_settings/);
   assert.match(rules, /allow read: if signedIn\(\);/);
   assert.match(rules, /allow create, update: if isAdmin\(\) && validEdenX1VoteSettings\(\);/);
   assert.match(eden, /EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin\/eden_x1_votes\/records'/);
@@ -329,7 +329,7 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   );
   assert.match(
     eden,
-    /EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin\/eden_x1_vote_settings\/config'/
+    /EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin\/eden_x1_vote_settings'/
   );
   assert.match(
     eden,

@@ -225,7 +225,7 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
 const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
-const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings/config';
+const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
 const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = 'vts_eden_x1_vote_admin_settings';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;

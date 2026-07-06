@@ -58,6 +58,7 @@ import {
   generatorSelectedTypes,
   setGeneratorSelectedTypes,
   setGeneratorSkinsOnly,
+  setManualSkinsOnly,
   generatorSelectedHeroes,
   getUserId,
   setUserId,
@@ -140,7 +141,6 @@ const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
 const MATERIAL_TAB_LABELS = { de: 'DM Material', en: 'DM Materials' };
 let researchModulePromise = null;
-let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
@@ -150,16 +150,6 @@ function loadResearchModule() {
     });
   }
   return researchModulePromise;
-}
-
-function loadMaterialModule() {
-  if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js').catch((err) => {
-      materialModulePromise = null;
-      throw err;
-    });
-  }
-  return materialModulePromise;
 }
 
 function resolveDroppedHeroName(dataTransfer) {
@@ -504,6 +494,23 @@ function wireGeneratorSkinToggle() {
   genSkinToggle.addEventListener('change', syncGeneratorSkinToggle);
 }
 
+function syncManualSkinMode() {
+  const manualSkinToggle = document.getElementById('manualSkinToggle');
+  setManualSkinsOnly(!!manualSkinToggle?.checked);
+  renderAvailableHeroes();
+  document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
+    updateComboSlotDisplay(slot, currentCombo[idx], idx);
+  });
+}
+
+function wireManualSkinToggle() {
+  const manualSkinToggle = document.getElementById('manualSkinToggle');
+  if (!manualSkinToggle || manualSkinToggle.dataset.skinToggleWired === '1') return;
+  manualSkinToggle.dataset.skinToggleWired = '1';
+  syncManualSkinMode();
+  manualSkinToggle.addEventListener('change', syncManualSkinMode);
+}
+
 function rememberGeneratorSkinNudge() {
   try {
     localStorage.setItem(GENERATOR_SKIN_NUDGE_KEY, '1');
@@ -686,6 +693,19 @@ function wireGlobalControlDelegates() {
       return;
     }
 
+    const manualSkinLabel = event.target.closest?.('#manualSkinToggleLabel');
+    if (manualSkinLabel) {
+      const toggle = document.getElementById('manualSkinToggle');
+      if (!toggle || toggle.disabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = true;
+      window.setTimeout(() => { suppressClick = false; }, 350);
+      toggle.checked = !toggle.checked;
+      syncManualSkinMode();
+      return;
+    }
+
     const pill = event.target.closest?.('label.filter-pill');
     const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
     if (!pill || !container) return;
@@ -720,6 +740,16 @@ function wireGlobalControlDelegates() {
         if (!toggle) return;
         renderGeneratorHeroes(syncGeneratorControlState());
       }, 0);
+      return;
+    }
+
+    const manualSkinLabel = event.target.closest?.('#manualSkinToggleLabel');
+    if (manualSkinLabel) {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      window.setTimeout(syncManualSkinMode, 0);
       return;
     }
 
@@ -759,6 +789,7 @@ tabs.forEach(tab => {
   wireGlobalControlDelegates();
   wireFilterSets();
   wireGeneratorSkinToggle();
+  wireManualSkinToggle();
   wireGeneratorSkinNudge();
   wireHeroSearchInputs();
 
@@ -832,8 +863,6 @@ tabs.forEach(tab => {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
-  let _materialsReady = false;
-  let _materialsBooting = false;
   let _strifeReady = false;
   let _strifeBooting = false;
 
@@ -959,23 +988,6 @@ tabs.forEach(tab => {
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.', 'error', 4000);
-          }
-        });
-    }
-    if (tabName === 'materials' && !_materialsReady) {
-      if (_materialsBooting) return;
-      _materialsBooting = true;
-      loadMaterialModule()
-        .then((mod) => {
-          mod.initMaterialCalculator();
-          _materialsReady = true;
-        })
-        .catch((err) => {
-          _materialsBooting = false;
-          console.error('DM Materials failed to load', err);
-          if (typeof window.showToast === 'function') {
-            const t = translations[currentLanguage] || translations.en;
-            window.showToast(t.moduleLoadFailed?.replace('{name}', 'DM Materials') || 'DM Materials failed to load.', 'error', 4000);
           }
         });
     }

@@ -5,6 +5,7 @@ let builderFirestoreUnsub = null;
 import { allHeroesData } from './heroes-data.js';
 import { importFirestore } from './firebase-sdk.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
+import { hasSkin, getHeroSkins, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import {
   currentLanguage,
   heroMatchesFilters,
@@ -20,6 +21,8 @@ import {
   selectedTypes,
   currentCombo,
   getSourceCreditText,
+  getManualHeroPool,
+  manualSkinsOnly,
   availableHeroesEl,
   loadingSpinner,
   savedCombosEl,
@@ -38,7 +41,24 @@ let touchDragGhost = null;
 let keyboardSelectedHero = null;
 
 function getKnownHero(name) {
-  return allHeroesData.find(hero => hero.name === name) || null;
+  const activeSkinsOnly = manualSkinsOnly || !!document.getElementById('manualSkinToggle')?.checked;
+  return getManualHeroPool(activeSkinsOnly).find(hero => hero.name === name)
+    || allHeroesData.find(hero => hero.name === name)
+    || null;
+}
+
+function getSkinBadgeHtml(hero, activeSkinsOnly) {
+  const skin = getSkinForHero(hero.name);
+  const hasSkinFlag = activeSkinsOnly && (hero.hasSkin || hasSkin(hero.name)) && skin;
+  if (!hasSkinFlag) return '';
+  const typeInfo = hero.skinType
+    ? (SKIN_TYPES[hero.skinType] || SKIN_TYPES.Mythic)
+    : (SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic);
+  const skinCount = getHeroSkins(hero.name).length || 1;
+  const label = hero.skinTypeIcon || typeInfo.icon || `S${skinCount > 1 ? skinCount : ''}`;
+  const color = hero.skinTypeColor || typeInfo.color || '#f59e0b';
+  const title = `${hero.skinName || skin.name || 'Hero skin'} (${hero.skinType || skin.type || 'Skin'})`;
+  return `<span class="generator-skin-badge generator-skin-badge--priority" title="${escapeHtml(title)}" style="--skin-color:${escapeHtml(color)};--skin-gradient:${escapeHtml(`${color},#fbbf24`)}">${escapeHtml(label)}</span>`;
 }
 
 function announceManualCombo(message) {
@@ -162,12 +182,18 @@ export function renderAvailableHeroes() {
   const t = translations[currentLanguage] || translations.en;
   const searchQuery = (document.getElementById('manualHeroSearch')?.value || '').trim().toLowerCase();
   const fragment = document.createDocumentFragment();
-  allHeroesData
+  const activeSkinsOnly = manualSkinsOnly || !!document.getElementById('manualSkinToggle')?.checked;
+  getManualHeroPool(activeSkinsOnly)
     .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
     .filter(h => !searchQuery || h.name.toLowerCase().includes(searchQuery))
     .forEach((hero, index) => {
+      const hasActiveSkin = activeSkinsOnly && Boolean(hero.hasSkin || hasSkin(hero.name));
+      const portraitUrl = hasActiveSkin
+        ? (hero.skinImageUrl || hero.imageUrl || getHeroImageUrl(hero.name))
+        : (hero.imageUrl || getHeroImageUrl(hero.name));
+      const skinBadge = getSkinBadgeHtml(hero, activeSkinsOnly);
       const card = document.createElement('div');
-      card.className = `hero-card season-${cssToken(hero.season)}`;
+      card.className = `hero-card season-${cssToken(hero.season)}${hasActiveSkin ? ' skin-priority-card skin-animated-portrait has-skin skin-owned' : ''}`;
       card.draggable = true;
       card.dataset.heroName = hero.name;
       card.tabIndex = 0;
@@ -182,6 +208,7 @@ export function renderAvailableHeroes() {
         <div class="hero-card-badges">
           <span class="hero-tag" style="background:${escapeHtml(tagColor)}">${escapeHtml(hero.season)}</span>
           <span class="hero-card-badge-spacer"></span>
+          ${skinBadge}
           ${hero.State === 'Paid' ? paidBadgeHtml('card') : ''}
         </div>
         ${originTag}
@@ -193,7 +220,7 @@ export function renderAvailableHeroes() {
         </div>
 
         <span class="hero-portrait-frame">
-          <img src="${escapeHtml(hero.imageUrl || getHeroImageUrl(hero.name))}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
+          <img src="${escapeHtml(portraitUrl)}" alt="${escapeHtml(hero.name)}" loading="lazy" draggable="false">
         </span>
         <div class="hero-card-copy">
             <span class="hero-card-name">${escapeHtml(hero.name)}</span>
@@ -269,6 +296,19 @@ export function renderAvailableHeroes() {
     const count = availableHeroesEl.querySelectorAll('.hero-card').length;
     const label = count === 1 ? (t.heroCountOne || '{n} hero') : (t.heroCountMany || '{n} heroes');
     countEl.textContent = label.replace('{n}', count);
+  }
+  const skinCountEl = document.getElementById('manualSkinCount');
+  if (skinCountEl) {
+    const visibleSkinCount = activeSkinsOnly
+      ? availableHeroesEl.querySelectorAll('.hero-card.has-skin').length
+      : getManualHeroPool(true)
+        .filter(h => heroMatchesFilters(h, selectedSeasons, selectedStates, selectedTypes))
+        .filter(h => h.hasSkin || hasSkin(h.name)).length;
+    const skinLabel = visibleSkinCount === 1
+      ? (t.skinCountOne || '{n} skin')
+      : (t.skinCountMany || '{n} skins');
+    skinCountEl.textContent = skinLabel.replace('{n}', visibleSkinCount);
+    skinCountEl.classList.toggle('hidden', !visibleSkinCount);
   }
 }
 

@@ -445,7 +445,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    match /vts_admin/eden_x1_vote_settings/config {
+    match /vts_admin/eden_x1_vote_settings {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1VoteSettings();
       allow delete: if false;

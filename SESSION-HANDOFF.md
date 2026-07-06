@@ -1,9 +1,16 @@
-# Session Handoff - v13.0.1 Eden X1 Closeout
+# Session Handoff - v13.0.2 Hotfix
 
-Date: 2026-07-06
+Date: 2026-07-07
 Branch: gh-pages
 Repo: D:\Project\hero-combo-creator2
-Release: 13.0.1
+Release: 13.0.2
+
+## 13.0.2 Hotfix Notes
+
+- Fixed the Eden X1 vote settings Firestore document path from the invalid three-segment `vts_admin/eden_x1_vote_settings/config` reference to the valid document path `vts_admin/eden_x1_vote_settings` in public/admin code, rules, and tests.
+- DM Materials is back to a Coming Soon tab with a visible `SOON` nav badge. The staged `js/material-calculator.js` module remains in the repo but is no longer loaded by the tab.
+- Manual Builder now has a skin-mode toggle that uses the existing translated generator skin label, localized skin-count badges, skin portraits, and visible skin badges.
+- Firebase rules still need a separate deploy for the vote settings/history permissions to match the static Pages release.
 
 ## What Changed
 

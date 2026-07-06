@@ -6,7 +6,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '13.0.1';
+export const APP_VERSION = '13.0.2';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -33,6 +33,7 @@ export let generatorSelectedTypes = ['Archers', 'Footmen', 'Cavalry', 'All'];
 export const generatorSelectedHeroes = runtimeState.generatorSelectedHeroes || new Set();
 runtimeState.generatorSelectedHeroes = generatorSelectedHeroes;
 export let generatorSkinsOnly = false;
+export let manualSkinsOnly = false;
 
 export let userId = 'anonymous';
 export function getUserId() { return userId; }
@@ -49,9 +50,13 @@ export function setGeneratorSelectedSeasons(v) { generatorSelectedSeasons = v; }
 export function setGeneratorSelectedStates(v) { generatorSelectedStates = v; }
 export function setGeneratorSelectedTypes(v) { generatorSelectedTypes = v; }
 export function setGeneratorSkinsOnly(v) { generatorSkinsOnly = v; }
+export function setManualSkinsOnly(v) { manualSkinsOnly = v; }
 export function setActiveTechSeasons(v) { activeTechSeasons = v; }
 export function setTechSearchQuery(v) { techSearchQuery = v; }
 export function getGeneratorHeroPool(skinsOnly = generatorSkinsOnly) {
+  return skinsOnly ? skinHeroesData : allHeroesData;
+}
+export function getManualHeroPool(skinsOnly = manualSkinsOnly) {
   return skinsOnly ? skinHeroesData : allHeroesData;
 }
 export const savedCombosCache = [];

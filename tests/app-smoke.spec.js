@@ -765,6 +765,23 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabGenerator', '#generatorSection', '#generatorHeroes');
   });
 
+  test('manual builder can show skin icons and data', async ({ page }) => {
+    await openApp(page);
+    await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
+    const toggle = page.locator('#manualSkinToggle');
+    await expect(toggle).not.toBeChecked();
+    await page.locator('#manualSkinToggleLabel').click();
+    await expect(toggle).toBeChecked();
+    await expect(page.locator('#manualSkinCount')).toContainText('skins');
+
+    const jeanneCard = page
+      .locator('#availableHeroes .hero-card', { hasText: "Jeanne d'Arc" })
+      .first();
+    await expect(jeanneCard).toHaveClass(/has-skin/);
+    await expect(jeanneCard.locator('.generator-skin-badge')).toBeVisible();
+    await expect(jeanneCard.locator('img')).toHaveAttribute('src', /assets\/skins\//);
+  });
+
   test('main tab pills and theme toggle expose accessible state', async ({ page }) => {
     await openApp(page);
 
@@ -806,15 +823,17 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
   });
 
-  test('dragon master materials tab renders calculator', async ({ page }) => {
+  test('dragon master materials tab shows coming soon message', async ({ page }) => {
     await openApp(page);
-    await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot .dm-slot-table');
+    await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot');
+    const materialsTabItem = page.locator('.tab-item', { has: page.locator('#tabMaterials') });
+    await expect(materialsTabItem.locator('.tab-badge-soon')).toHaveText('SOON');
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('Coming Soon');
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('DM Materials');
     await expect(page.locator('#materialCalculatorRoot')).toContainText(
-      'Dragon Master Material Calculator'
+      'Dragon Master set material planning is being prepared'
     );
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('Purple pieces still needed');
-    await page.locator('#materialCalculatorRoot [data-dm-field="owned"]').first().fill('16');
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('Slots ready to combine');
+    await expect(page.locator('#materialCalculatorRoot .dm-slot-table')).toHaveCount(0);
   });
 
   test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {

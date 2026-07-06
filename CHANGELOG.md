@@ -1,5 +1,12 @@
 # Changelog
 
+## 13.0.2 - 2026-07-07
+
+- Fixed the Eden X1 vote settings Firestore document path so public/admin pages no longer throw an invalid document reference before falling back to defaults.
+- Kept DM Materials in Coming Soon state, moved its main-nav badge to "Soon", and stopped the staged calculator module from loading in production tabs until launch.
+- Added Manual Builder skin mode with translated filter text, localized skin-count badges, skin portraits, and visible skin badges using the existing skin dataset.
+- Synced public version labels, README, changelog, app constants, Firestore rules/tests, and smoke coverage to 13.0.2.
+
 ## 13.0.1 - 2026-07-06
 
 - Moved Eden X1 Team Players vote admin into its own VTS Admin subtab with voting-open/editing/public-result controls, current ballots, and immutable edit-history review.
