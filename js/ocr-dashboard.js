@@ -989,15 +989,26 @@ async function ensureCloudSyncReady() {
   const { getCurrentUser, getDb, isPasswordAuthUser } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
-  let currentUser = getCurrentUser() || state.adminUser;
-  let hasAdminClaim = await isPasswordAuthUser(currentUser);
-  if (!hasAdminClaim && state.adminIsAdmin === true) {
-    currentUser = (await waitForAdminAuthUser(4000)) || currentUser;
-    hasAdminClaim = await isPasswordAuthUser(currentUser);
+  // Validate the SAME account we hand back to callers. state.adminUser is the
+  // session whose token Firestore actually uses; prefer it because a token
+  // refresh can transiently blank getCurrentUser()'s providerData, which sends
+  // the password check down a flaky network path (getIdTokenResult) that can
+  // wrongly report "not password" on a slow/cold connection.
+  let currentUser = null;
+  if (await isPasswordAuthUser(state.adminUser)) {
+    currentUser = state.adminUser;
+  } else {
+    const liveUser = getCurrentUser();
+    if (await isPasswordAuthUser(liveUser)) currentUser = liveUser;
   }
-  if (!hasAdminClaim) {
-    state.adminUser = null;
-    state.adminIsAdmin = false;
+  if (!currentUser && state.adminIsAdmin === true) {
+    const waited = await waitForAdminAuthUser(4000);
+    if (await isPasswordAuthUser(waited)) currentUser = waited;
+  }
+  if (!currentUser) {
+    // Transient probe miss: mark cloud not-ready but do NOT tear down the admin
+    // session. Nulling state.adminUser/adminIsAdmin here poisons every later
+    // write until a full re-login, which is exactly the failure we hit.
     state.cloudAdminReady = false;
     setCloudSyncStatus('error', dashT('adminCloudAdminRequired'));
     return null;
