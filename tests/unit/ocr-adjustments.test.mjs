@@ -31,6 +31,7 @@ const {
   normalizeR5AdjustmentRecords,
   resolveR5PlayerIdentity,
   updateLocalR5Adjustment,
+  updateR5Adjustment,
 } = await import('../../js/ocr-adjustments.js');
 
 test('R5 adjustment categories expose editable merit and penalty defaults', () => {
@@ -199,4 +200,92 @@ test('R5 local adjustments persist when Firebase is unavailable', () => {
 
   assert.equal(deleteLocalR5Adjustment(created.id), true);
   assert.equal(loadLocalR5Adjustments('season-local').length, 0);
+});
+
+test('updateR5Adjustment creates a missing cloud doc (uid + serverTimestamp)', async () => {
+  const SERVER_TS = { __ts: 'server' };
+  let written = null;
+  const firestore = {
+    doc: (_db, path, id) => ({ path, id }),
+    getDoc: async () => ({ exists: () => false, data: () => undefined }),
+    setDoc: async (ref, record) => {
+      written = { ref, record };
+    },
+    serverTimestamp: () => SERVER_TS,
+  };
+  // A record only ever written locally while cloud sync was blocked.
+  const seeded = createLocalR5Adjustment({
+    id: 'local-only-1',
+    season: 'eden-x1-2026',
+    playerName: 'Феечка))',
+    playerKey: 'feechka',
+    category: 'connected_road',
+    points: 2,
+    note: 'old',
+  });
+  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'admin-uid-123' }, firestore });
+  try {
+    const record = await updateR5Adjustment(seeded.id, {
+      playerKey: 'feechka',
+      playerName: 'Феечка))',
+      category: 'connected_road',
+      points: 5,
+      note: 'updated',
+    });
+    assert.ok(written, 'a missing cloud doc should be written via setDoc');
+    assert.equal(written.ref.id, 'local-only-1');
+    assert.equal(written.record.createdBy, 'admin-uid-123', 'create rule needs createdBy == auth.uid');
+    assert.equal(written.record.createdAt, SERVER_TS, 'create uses serverTimestamp()');
+    assert.equal(written.record.points, 5);
+    assert.equal(written.record.note, 'updated');
+    assert.equal(written.record.season, seeded.season);
+    assert.equal(record.createdBy, 'admin-uid-123');
+  } finally {
+    delete window.getVtsAdminFirestoreContext;
+  }
+});
+
+test('updateR5Adjustment preserves createdAt/createdBy when the cloud doc exists', async () => {
+  const CREATED_AT = { __ts: 'original' };
+  let written = null;
+  const firestore = {
+    doc: (_db, path, id) => ({ path, id }),
+    getDoc: async () => ({
+      exists: () => true,
+      data: () => ({
+        id: 'cloud-9',
+        season: 'eden-x1-2026',
+        playerKey: 'feechka',
+        playerName: 'Феечка))',
+        points: 2,
+        category: 'connected_road',
+        note: 'old',
+        createdAt: CREATED_AT,
+        createdBy: 'original-admin-uid',
+      }),
+    }),
+    setDoc: async (ref, record) => {
+      written = { ref, record };
+    },
+    serverTimestamp: () => ({ __ts: 'server' }),
+  };
+  // A different editor uid must NOT overwrite createdBy/createdAt (the update
+  // rule requires both unchanged).
+  window.getVtsAdminFirestoreContext = () => ({ db: {}, user: { uid: 'different-uid' }, firestore });
+  try {
+    await updateR5Adjustment('cloud-9', {
+      playerKey: 'feechka',
+      playerName: 'Феечка))',
+      category: 'connected_road',
+      points: 7,
+      note: 'edited',
+    });
+    assert.ok(written);
+    assert.equal(written.record.createdAt, CREATED_AT, 'createdAt must stay unchanged on update');
+    assert.equal(written.record.createdBy, 'original-admin-uid', 'createdBy must stay unchanged on update');
+    assert.equal(written.record.points, 7);
+    assert.equal(written.record.note, 'edited');
+  } finally {
+    delete window.getVtsAdminFirestoreContext;
+  }
 });

@@ -461,8 +461,9 @@ export async function createR5Adjustment(input) {
 
 export async function updateR5Adjustment(adjustmentId, patch) {
   try {
-    const { db, firestore } = await ensureR5AdjustmentAdminContext();
-    const { doc, updateDoc } = firestore;
+    const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
+    const { doc, getDoc, serverTimestamp, setDoc } = firestore;
+    const id = requireString(adjustmentId, 'R5 adjustment id', 80);
     const updates = {};
 
     if ('category' in patch) {
@@ -491,11 +492,35 @@ export async function updateR5Adjustment(adjustmentId, patch) {
     }
 
     if (!Object.keys(updates).length) return {};
-    await updateDoc(
-      doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80)),
-      updates
+
+    // Upsert a full, normalized record instead of a partial updateDoc. Conduct
+    // adjustments made while cloud sync was blocked only ever lived in local
+    // storage (or were written under an older shape), so a partial updateDoc
+    // would target a missing cloud doc, or merge into a record that no longer
+    // satisfies validConductAdjustment(). Writing the whole record repairs both:
+    //  - existing doc -> reuse its createdAt/createdBy (the rules require both
+    //    unchanged on update) and refresh every other field.
+    //  - missing doc  -> create it with createdBy = uid + serverTimestamp(),
+    //    mirroring createR5Adjustment so the create rule passes.
+    const ref = doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, id);
+    const existing = await getDoc(ref);
+    const cloudData = existing.exists() ? existing.data() : null;
+    const base = cloudData
+      ? { id, ...cloudData }
+      : readLocalR5AdjustmentRecords().find((entry) => entry?.id === id) || {};
+    const record = normalizeR5Adjustment(
+      {
+        ...base,
+        ...updates,
+        id,
+        createdAt: cloudData ? cloudData.createdAt : serverTimestamp(),
+        createdBy: cloudData ? cloudData.createdBy : user.uid,
+      },
+      { season: base.season }
     );
-    return updates;
+
+    await setDoc(ref, record);
+    return record;
   } catch (err) {
     if (isR5PersistenceUnavailable(err)) return updateLocalR5Adjustment(adjustmentId, patch);
     throw err;
