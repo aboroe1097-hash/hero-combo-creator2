@@ -23,6 +23,7 @@ import {
   getWeightedContributionRecordLabel,
   normalizeWeightedR5Adjustments,
 } from './contribution-weighting.js';
+import { renderSpecialPlayerTag } from './player-tags.js';
 import { translations } from './translations.js';
 
 function adminT(key, vars = {}) {
@@ -43,6 +44,18 @@ function adminT(key, vars = {}) {
     text = text.replaceAll(`{${name}}`, String(value));
   });
   return text;
+}
+
+function readPlayerDisplayName(player) {
+  if (typeof player === 'string') return player;
+  return player?.playerName || player?.name || player?.displayName || '';
+}
+
+function renderTaggedPlayerName(player, nameHtml = '') {
+  const labelHtml = nameHtml || esc(readPlayerDisplayName(player));
+  const tagHtml = renderSpecialPlayerTag(player, esc);
+  if (!tagHtml) return labelHtml;
+  return `<span class="dash-player-rank-name"><span class="dash-player-rank-label">${labelHtml}</span>${tagHtml}</span>`;
 }
 
 function hydrateDashboardTableLabels(root) {
@@ -534,7 +547,7 @@ function renderPlayerTrends(attacks, psum) {
         index % 3 === 0 ? 'var(--blue-400)' : index % 3 === 1 ? 'var(--green)' : 'var(--yellow)';
       return `<div class="dash-trend-row">
       <div class="dash-trend-person">
-        <strong>${esc(player.name)}</strong>
+        <strong>${renderTaggedPlayerName(player)}</strong>
         <span>${player.participation_count} hits · ${compactValue(player.total_demolition)}</span>
       </div>
       ${renderSparkline(vals, color)}
@@ -705,7 +718,7 @@ function renderConsistency(psum) {
     .slice(0, 4);
   const list = (title, rows, kind) => `<div class="dash-insight-list">
     <strong>${title}</strong>
-    ${rows.length ? rows.map((p) => `<span><em>${esc(p.name)}</em><b class="${kind}">${kind === 'steady' ? `${Math.round((1 - Math.min(p.coeff, 1)) * 100)}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
+    ${rows.length ? rows.map((p) => `<span><em>${renderTaggedPlayerName(p)}</em><b class="${kind}">${kind === 'steady' ? `${Math.round((1 - Math.min(p.coeff, 1)) * 100)}% steady` : `${p.delta >= 0 ? '+' : ''}${compactValue(p.delta)}`}</b></span>`).join('') : '<span class="muted">Not enough movement yet</span>'}
   </div>`;
 
   host.innerHTML =
@@ -772,7 +785,7 @@ function renderAllianceInsights(psum) {
       unmapped.length
         ? ` Unmapped hits: ${unmapped
             .slice(0, 4)
-            .map((p) => esc(p.name))
+            .map((p) => renderTaggedPlayerName(p))
             .join(', ')}${unmapped.length > 4 ? '...' : ''}`
         : ''
     }</div>`;
@@ -832,11 +845,11 @@ function renderStreaks(attacks, psum) {
   host.innerHTML = `<div class="dash-streak-columns">
     <div class="dash-insight-list">
       <strong>Current streaks</strong>
-      ${top.length ? top.map((r) => `<span><em>${esc(r.name)}</em><b class="up">${r.streak} in a row</b></span>`).join('') : '<span class="muted">No active streaks yet</span>'}
+      ${top.length ? top.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="up">${r.streak} in a row</b></span>`).join('') : '<span class="muted">No active streaks yet</span>'}
     </div>
     <div class="dash-insight-list">
       <strong>At risk</strong>
-      ${atRisk.length ? atRisk.map((r) => `<span><em>${esc(r.name)}</em><b class="down">missed last ${Math.min(3, attackSets.length)}</b></span>`).join('') : '<span class="muted">No one missed the latest run window</span>'}
+      ${atRisk.length ? atRisk.map((r) => `<span><em>${renderTaggedPlayerName(r)}</em><b class="down">missed last ${Math.min(3, attackSets.length)}</b></span>`).join('') : '<span class="muted">No one missed the latest run window</span>'}
     </div>
   </div>`;
 }
@@ -1274,7 +1287,7 @@ function renderWeightedContributionDashboard(options = {}) {
             ? visibleRows
                 .map(
                   (row, index) => `<tr>
-          <td data-label="${esc(adminT('adminContributionMember'))}"><strong>${esc(row.playerName)}</strong></td>
+          <td data-label="${esc(adminT('adminContributionMember'))}"><strong>${renderTaggedPlayerName(row)}</strong></td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
           <td class="dash-weighted-detail-col" data-label="${esc(adminT('edenX1ThContribution'))}" style="text-align:right">${valueOf(row.contributionScore).toLocaleString()}</td>
@@ -1428,7 +1441,7 @@ function renderOpsOverview(attacks, psum) {
     return sum + (result && !result.match && !result.overridden ? 1 : 0);
   }, 0);
 
-  const lowNames = lowParticipation.map((p) => esc(p.name)).join(', ');
+  const lowNames = lowParticipation.map((p) => renderTaggedPlayerName(p)).join(', ');
   host.innerHTML = `
     <div class="dash-ops-card dash-ops-card-target">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightTargetMix'))}</span>
@@ -1442,7 +1455,7 @@ function renderOpsOverview(attacks, psum) {
     </div>
     <div class="dash-ops-card dash-ops-card-mvp">
       <span class="dash-ops-label">${esc(adminT('edenX1InsightBestPerHit'))}</span>
-      <strong>${esc(bestPlayer?.name || '---')}</strong>
+      <strong>${bestPlayer ? renderTaggedPlayerName(bestPlayer) : '---'}</strong>
       <p>${bestPlayer ? `${compactValue(bestPlayer.avg)} avg · ${bestPlayer.participation_count} hit${bestPlayer.participation_count === 1 ? '' : 's'}` : 'No player data yet.'}</p>
     </div>
     <div class="dash-ops-card dash-ops-card-health">
@@ -1462,7 +1475,7 @@ window.clearStructureLeaderboardFilter = function () {
 function renderPerformerRow(row, player, pct, danger = false) {
   row.className = `dash-top-item dash-top-item--wide${danger ? ' dash-top-item--danger' : ''}`;
   row.style.setProperty('--dash-top-pct', `${pct}%`);
-  row.innerHTML = `<span class="dash-top-rank">#${player.original_rank}</span><div class="dash-top-main"><div class="dash-top-bar"></div><span class="dash-top-name" title="${esc(player.name)}">${esc(player.name)}</span><span class="dash-top-meta">${player.participation_count} hits (${uniqueStructureCount(player)} structs)</span></div><span class="dash-top-val">${(player.total_demolition / 1000).toFixed(0)}k</span>`;
+  row.innerHTML = `<span class="dash-top-rank">#${player.original_rank}</span><div class="dash-top-main"><div class="dash-top-bar"></div><span class="dash-top-name" title="${esc(player.name)}">${renderTaggedPlayerName(player)}</span><span class="dash-top-meta">${player.participation_count} hits (${uniqueStructureCount(player)} structs)</span></div><span class="dash-top-val">${(player.total_demolition / 1000).toFixed(0)}k</span>`;
 }
 
 function render() {
@@ -1626,7 +1639,7 @@ function render() {
   toShow.forEach((p) => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td class="dash-rank" data-label="Rank">#${p.original_rank}</td><td class="dash-pname" data-label="Member">${esc(p.name)}</td><td class="dash-val" data-label="Total demo">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total" data-label="Adjusted total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center" data-label="Hits">${p.participation_count}</td><td class="dash-avg" data-label="Avg/hit">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
+    tr.innerHTML = `<td class="dash-rank" data-label="Rank">#${p.original_rank}</td><td class="dash-pname" data-label="Member">${renderTaggedPlayerName(p)}</td><td class="dash-val" data-label="Total demo">${(p.total_demolition || 0).toLocaleString()}</td><td class="dash-val dash-adjusted-total" data-label="Adjusted total">${valueOf(p.adjustedTotal ?? p.total_demolition).toLocaleString()}</td><td class="dash-table-center" data-label="Hits">${p.participation_count}</td><td class="dash-avg" data-label="Avg/hit">${Math.round((p.total_demolition || 0) / Math.max(p.participation_count, 1)).toLocaleString()}</td>`;
     tr.onclick = () => showModal('player', p);
     tb.appendChild(tr);
   });
@@ -1919,7 +1932,7 @@ function showModal(type, data) {
       orderedPlayers.forEach((p, index) => {
         const displayRank = index + 1;
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
-        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${displayRank <= 3 ? 'rank-' + displayRank : ''}">#${displayRank}</td><td data-label="Name" class="dash-pname dash-table-link">${esc(p.name)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
+        h += `<tr data-dash-action="show-player" data-player-name="${esc(encName)}"><td data-label="Rank" class="dash-rank ${displayRank <= 3 ? 'rank-' + displayRank : ''}">#${displayRank}</td><td data-label="Name" class="dash-pname dash-table-link">${renderTaggedPlayerName(p)}</td><td data-label="Demolition" class="dash-val">${(p.value || p.val || 0).toLocaleString()}</td>`;
         if (!isGuest()) {
           h += `<td data-label="Edit" class="dash-table-right"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-player" data-attack-id="${esc(data.id)}" data-player-name="${esc(encName)}">${esc(adminT('adminEdit'))}</button></td>`;
         }
@@ -1930,7 +1943,7 @@ function showModal(type, data) {
       if (data._not_in_summary) {
         body.innerHTML = `<div class="dash-player-empty-state">
           <div class="dash-player-empty-icon">?</div>
-          <div class="dash-player-empty-name">${esc(data.name)}</div>
+          <div class="dash-player-empty-name">${renderTaggedPlayerName(data)}</div>
           <div>This player appeared in one attack but hasn't been fully aggregated yet.</div>
           <div class="dash-player-empty-hint">Upload more screenshots or refresh the dashboard to see their full profile.</div>
         </div>`;

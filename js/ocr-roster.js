@@ -2006,6 +2006,7 @@ function renderDutyRecords() {
   const contributionLookup = buildDutyContributionLookup();
   renderDutyPlayerSummary('banner', 'dashBannerListSummary', contributionLookup);
   renderDutyPlayerSummary('pather', 'dashPatherListSummary', contributionLookup);
+  renderDutyPlayerSummary('shield_wall', 'dashShieldWallListSummary', contributionLookup);
   renderDutyType('banner');
   renderDutyType('pather');
   renderDutyType('shield_wall');

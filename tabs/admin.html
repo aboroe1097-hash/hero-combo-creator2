@@ -1238,6 +1238,20 @@
           <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
           <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
           <div id="dashContributionWeightedPanel" class="dash-contribution-weighted-panel"></div>
+          <section class="dash-contribution-compare-card dash-eden-votes-panel">
+            <div class="dash-contribution-compare-head">
+              <div>
+                <strong>Eden X1 Team Players Vote</strong>
+                <span>Honor-system votes submitted from the public Eden X1 page.</span>
+              </div>
+              <button id="dashEdenVoteRefreshBtn" class="dash-btn" type="button">
+                <span>Refresh Votes</span>
+              </button>
+            </div>
+            <div id="dashEdenVoteResults">
+              <div class="dash-empty">No votes yet.</div>
+            </div>
+          </section>
           <div id="dashContributionBody">
             <div class="dash-empty" data-i18n="adminContributionEmpty">
               No contribution lists yet.
@@ -1385,6 +1399,7 @@
             </div>
           </form>
           <div id="dashConductStatus" class="dash-upload-status hidden"></div>
+          <div id="dashConductSummary"></div>
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminConductRecent">Recent adjustments</h3>
             <input
@@ -1529,6 +1544,7 @@
               <span data-i18n="adminShieldWallAddNames">Add Names</span>
             </button>
           </div>
+          <div id="dashShieldWallListSummary"></div>
           <div id="dashShieldWallBody">
             <div class="dash-empty" data-i18n="adminShieldWallEmpty">
               No shield wall records yet.

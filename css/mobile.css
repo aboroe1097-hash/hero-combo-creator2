@@ -45,6 +45,42 @@ body.eden-x1-page {
   touch-action: pan-y;
 }
 
+body.eden-x1-page .eden-x1-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body.eden-x1-page .eden-x1-reward-panel,
+body.eden-x1-page #dashWeightedContributionPanel,
+body.eden-x1-page #edenX1PublicDashboard {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.eden-x1-page #ocrDashboardRoot .dash-weighted-table-controls > * {
+  min-height: var(--tap-min);
+}
+
+body.eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-sort select,
+body.eden-x1-page #ocrDashboardRoot .eden-x1-public-search .dash-search-input,
+body.eden-x1-page #ocrDashboardRoot #edenX1TableSearch {
+  min-height: var(--tap-min);
+}
+
+body.eden-x1-page #ocrDashboardRoot :is(
+  .dash-weighted-contribution-table-wrap,
+  .dash-contribution-compare-table-wrap,
+  .dash-table-wrap,
+  .eden-x1-public-table-wrap
+) {
+  max-height: min(48svh, 420px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 html.admin-standalone-root {
   height: auto;
   min-height: 100%;
@@ -565,6 +601,13 @@ input, textarea, select {
 .research-tech-card { padding: 6px !important; border-radius: 8px !important; }
 .research-card-title { font-size: 0.65rem !important; }
 .research-card-unlock { font-size: 0.5rem !important; }
+.research-card-buff-preview { gap: 3px !important; margin-bottom: 6px !important; }
+.research-card-buff-pill,
+.research-card-buff-more,
+.research-card-buff-preview--missing,
+.research-card-buff-preview--unlock { font-size: 0.46rem !important; padding: 2px 4px !important; }
+.research-card-actions { grid-template-columns: 1fr !important; gap: 4px !important; }
+.research-card-buffs,
 .research-card-cta { font-size: 0.5rem !important; padding: 5px 4px !important; min-height: 28px !important; }
 .research-card-resource { font-size: 0.65rem !important; margin-right: 4px !important; }
 .research-card-icon { width: 12px !important; height: 12px !important; }
@@ -578,6 +621,15 @@ input, textarea, select {
 .research-summary-pct { font-size: 0.92rem !important; }
 .research-summary-stat-value { font-size: 0.96rem !important; }
 .research-medal-icon { width: 14px !important; height: 14px !important; }
+.research-buff-summary-modal { padding: 10px !important; align-items: start !important; }
+.research-buff-summary-card { max-height: calc(100vh - 20px) !important; border-radius: 8px !important; }
+.research-buff-summary-head { padding: 14px !important; gap: 10px !important; }
+.research-buff-summary-head h3 { font-size: 0.92rem !important; }
+.research-buff-summary-head p { font-size: 0.58rem !important; }
+.research-buff-summary-grid { grid-template-columns: 1fr !important; padding: 12px 14px !important; }
+.research-buff-summary-empty { max-width: 26ch !important; margin-inline: auto !important; padding: 14px 10px !important; font-size: 0.78rem !important; line-height: 1.4 !important; }
+.research-buff-summary-section { padding: 0 14px 14px !important; }
+.research-buff-summary-tags span { max-width: 100% !important; line-height: 1.25 !important; overflow-wrap: anywhere !important; text-align: center !important; }
 .research-calculator { padding: 10px !important; border-radius: 12px !important; margin-top: 10px !important; }
 
 /* Legacy tech calculator IDs */
@@ -2059,6 +2111,75 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   .hero-card,
   .generator-card {
     min-height: 142px !important;
+  }
+}
+
+/* Final primary tools mobile formation: complete buttons instead of clipped scroll. */
+@media (max-width: 768px) {
+  .tool-nav-inner {
+    align-items: stretch !important;
+    overflow: visible !important;
+  }
+
+  #tabNavScroll {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    padding: 2px !important;
+    scroll-padding-inline: 0 !important;
+  }
+
+  #tabNavScroll > .tab-item {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    padding-top: 0 !important;
+  }
+
+  #tabNavScroll .tab-badge-wrap {
+    padding-top: 0 !important;
+  }
+
+  #tabNavScroll .tab-pill {
+    width: 100%;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: var(--tap-min) !important;
+    flex: 1 1 auto !important;
+    white-space: normal !important;
+    line-height: 1.05 !important;
+    text-align: center;
+    padding: 6px 5px !important;
+  }
+
+  #tabNavScroll .tab-badge {
+    top: -4px !important;
+    right: 2px !important;
+    padding: 1px 3px !important;
+    font-size: 0.42rem !important;
+    transform: none !important;
+  }
+
+  #tabScrollLeft,
+  #tabScrollRight {
+    display: none !important;
+  }
+
+  .seasonal-admin-wrap {
+    margin-left: 0 !important;
+  }
+
+  #tabOcrDashboard.seasonal-admin-tab {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    font-size: 0.66rem !important;
+  }
+
+  #tabOcrDashboard.seasonal-admin-tab::after {
+    content: none !important;
   }
 }
 

@@ -180,6 +180,7 @@ state.exGuildContributions = [];
 state.playerRegistry = readStoredPlayerRegistry();
 state.r5Adjustments = [];
 state.r5Season = '';
+state.edenX1Votes = [];
 state.r5EditingId = '';
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
@@ -220,6 +221,8 @@ const DASHBOARD_CLOUD_WRITE_TIMEOUT_MS = (() => {
   return Number.isFinite(override) && override > 0 ? override : 20000;
 })();
 const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
+const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
+const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
@@ -472,6 +475,7 @@ function renderAuxiliaryRecords() {
   renderDutyRecords();
   renderContributions();
   renderConductAdjustments();
+  renderEdenX1VoteResults();
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -498,6 +502,170 @@ function getDashboardR5SeasonKey() {
 }
 
 state.r5Season = state.r5Season || getDashboardR5SeasonKey();
+
+function normalizeEdenX1VoteRecord(record = {}) {
+  const voterName = String(record.voterName || '').trim();
+  const candidateName = String(record.candidateName || '').trim();
+  const voterKey = String(record.voterKey || compactPlayerIdentity(voterName)).trim();
+  const candidateKey = String(record.candidateKey || compactPlayerIdentity(candidateName)).trim();
+  return {
+    id: String(record.id || '').trim(),
+    season: String(record.season || '').trim(),
+    category: String(record.category || '').trim(),
+    voterKey,
+    voterName,
+    candidateKey,
+    candidateName,
+    voterAuthUid: String(record.voterAuthUid || '').trim(),
+    updatedAt: record.updatedAt || '',
+  };
+}
+
+function edenVoteUpdatedAtMs(record) {
+  const raw = record?.updatedAt;
+  if (typeof raw?.toMillis === 'function') return raw.toMillis();
+  if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
+  return Date.parse(raw || '') || 0;
+}
+
+function edenVoteUpdatedAtLabel(record) {
+  const raw = record?.updatedAt;
+  const date =
+    typeof raw?.toDate === 'function'
+      ? raw.toDate()
+      : typeof raw === 'string'
+        ? new Date(raw)
+        : null;
+  if (!date || Number.isNaN(date.getTime())) return 'pending';
+  return date.toLocaleString(localStorage.getItem('vts_hero_lang') || 'en', {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function currentEdenVoteSeason() {
+  return state.r5Season || getDashboardR5SeasonKey();
+}
+
+function renderEdenX1VoteResults() {
+  const host = $id('dashEdenVoteResults');
+  if (!host) return;
+  const season = currentEdenVoteSeason();
+  const votes = (Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [])
+    .map(normalizeEdenX1VoteRecord)
+    .filter(
+      (vote) =>
+        vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
+        (!season || vote.season === season) &&
+        vote.voterName &&
+        vote.candidateName
+    );
+  if (!votes.length) {
+    host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
+    return;
+  }
+
+  const totals = new Map();
+  votes.forEach((vote) => {
+    const key = vote.candidateKey || compactPlayerIdentity(vote.candidateName);
+    if (!totals.has(key)) {
+      totals.set(key, {
+        candidateName: vote.candidateName,
+        count: 0,
+        voters: new Set(),
+        latest: 0,
+      });
+    }
+    const row = totals.get(key);
+    row.count += 1;
+    row.voters.add(vote.voterKey || vote.voterName);
+    row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
+  });
+  const totalRows = [...totals.values()].sort(
+    (a, b) => b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
+  );
+  const ballotRows = votes
+    .slice()
+    .sort(
+      (a, b) =>
+        edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a) ||
+        a.voterName.localeCompare(b.voterName)
+    );
+
+  host.innerHTML = `<div class="dash-duty-upload-summary">
+    <div class="dash-duty-summary-kpis">
+      <div class="dash-duty-summary-kpi"><strong>${votes.length}</strong><span>votes</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${totalRows.length}</strong><span>candidates</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>season</span></div>
+    </div>
+    <div class="dash-duty-summary-table-wrap">
+      <h3 class="dash-modal-section-label">Candidate totals</h3>
+      <table class="dash-duty-summary-table">
+        <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th></tr></thead>
+        <tbody>${totalRows
+          .map(
+            (row, index) => `<tr>
+              <td>${index + 1}</td>
+              <td><strong class="dash-duty-cell-value">${esc(row.candidateName)}</strong></td>
+              <td><span class="dash-duty-cell-value dash-positive">${row.count}</span></td>
+              <td><span class="dash-duty-cell-value dash-duty-times">${row.voters.size}</span></td>
+            </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+    <div class="dash-duty-summary-table-wrap">
+      <h3 class="dash-modal-section-label">Ballots</h3>
+      <table class="dash-duty-summary-table">
+        <thead><tr><th>Voter</th><th>Vote</th><th>Updated</th></tr></thead>
+        <tbody>${ballotRows
+          .map(
+            (vote) => `<tr>
+              <td><strong class="dash-duty-cell-value">${esc(vote.voterName)}</strong></td>
+              <td><span class="dash-duty-cell-value">${esc(vote.candidateName)}</span></td>
+              <td><span class="dash-duty-cell-value dash-duty-times">${esc(edenVoteUpdatedAtLabel(vote))}</span></td>
+            </tr>`
+          )
+          .join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  hydrateConductSummaryTableLabels(host);
+}
+
+async function loadEdenX1Votes() {
+  const host = $id('dashEdenVoteResults');
+  if (!host) return false;
+  if (state.adminIsAdmin !== true) {
+    renderEdenX1VoteResults();
+    return false;
+  }
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db) {
+      renderEdenX1VoteResults();
+      return false;
+    }
+    const { collection, getDocs, query, where } = await loadFirestoreApi();
+    const season = currentEdenVoteSeason();
+    const ref = collection(db, EDEN_X1_VOTES_COLLECTION_PATH);
+    const snapshot = await getDocs(
+      season ? query(ref, where('season', '==', season)) : ref
+    );
+    const votes = [];
+    snapshot.forEach((docSnap) => votes.push(normalizeEdenX1VoteRecord(docSnap.data())));
+    state.edenX1Votes = votes;
+    renderEdenX1VoteResults();
+    return true;
+  } catch (err) {
+    console.error('EDEN X1 VOTE LOAD ERROR:', err);
+    host.innerHTML = `<div class="dash-empty">Vote results could not load: ${esc(err?.message || err || 'unknown error')}</div>`;
+    showCloudSyncFailure(err, 'Eden X1 vote load failed');
+    return false;
+  }
+}
 
 function formatSignedPoints(points) {
   const n = Number(points || 0);
@@ -527,6 +695,121 @@ function conductCreatedAtLabel(record) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function conductCreatedAtMs(record) {
+  const raw = record?.createdAt;
+  if (typeof raw?.toMillis === 'function') return raw.toMillis();
+  if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
+  return Date.parse(raw || '') || 0;
+}
+
+function hydrateConductSummaryTableLabels(root) {
+  if (!root) return;
+  root.querySelectorAll('table').forEach((table) => {
+    table.classList.add('dash-table--stack');
+    const labels = Array.from(table.querySelectorAll('thead th')).map((th) =>
+      (th.textContent || '').replace(/\s+/g, ' ').trim()
+    );
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (cell.tagName === 'TD' && labels[index]) cell.dataset.label = labels[index];
+      });
+    });
+  });
+}
+
+function collectConductPlayerSummary(rows) {
+  const byPlayer = new Map();
+  rows.forEach((record) => {
+    const playerName = String(record?.playerName || '').trim();
+    const playerKey = String(record?.playerKey || compactPlayerIdentity(playerName)).trim();
+    if (!playerKey || !playerName) return;
+    if (!byPlayer.has(playerKey)) {
+      byPlayer.set(playerKey, {
+        playerName,
+        entries: 0,
+        points: 0,
+        categoryCounts: new Map(),
+        latestMs: 0,
+        latestLabel: dashT('adminConductDatePending'),
+      });
+    }
+    const row = byPlayer.get(playerKey);
+    const points = Number(record.points || 0);
+    row.entries += 1;
+    row.points += Number.isFinite(points) ? points : 0;
+    const categoryKey = String(record.category || '').trim();
+    if (categoryKey) {
+      row.categoryCounts.set(categoryKey, (row.categoryCounts.get(categoryKey) || 0) + 1);
+    }
+    const createdMs = conductCreatedAtMs(record);
+    if (createdMs >= row.latestMs) {
+      row.latestMs = createdMs;
+      row.latestLabel = conductCreatedAtLabel(record);
+    }
+  });
+  return Array.from(byPlayer.values()).sort(
+    (a, b) =>
+      b.points - a.points || b.entries - a.entries || a.playerName.localeCompare(b.playerName)
+  );
+}
+
+function formatConductCategoryBreakdown(categoryCounts) {
+  const parts = Array.from(categoryCounts || [])
+    .sort(
+      (a, b) => b[1] - a[1] || conductCategoryLabel(a[0]).localeCompare(conductCategoryLabel(b[0]))
+    )
+    .map(([categoryKey, count]) => `${conductCategoryLabel(categoryKey)} ${count}`);
+  if (!parts.length) return '<span style="color:var(--text-dim)">--</span>';
+  return parts.map(esc).join(' / ');
+}
+
+function renderConductSummary(rows) {
+  const host = $id('dashConductSummary');
+  if (!host) return;
+  if (!rows.length) {
+    host.innerHTML = '';
+    return;
+  }
+  const summaryRows = collectConductPlayerSummary(rows);
+  const totalPoints = rows.reduce((sum, record) => {
+    const points = Number(record.points || 0);
+    return sum + (Number.isFinite(points) ? points : 0);
+  }, 0);
+  const bonusRows = rows.filter((record) => Number(record.points || 0) > 0).length;
+  const penaltyRows = rows.filter((record) => Number(record.points || 0) < 0).length;
+  const latestRow = rows.reduce((latest, record) => {
+    return conductCreatedAtMs(record) > conductCreatedAtMs(latest) ? record : latest;
+  }, rows[0]);
+  host.innerHTML = `<div class="dash-duty-upload-summary">
+    <div class="dash-duty-summary-kpis">
+      <div class="dash-duty-summary-kpi"><strong>${rows.length}</strong><span>entries</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(formatSignedPoints(totalPoints))}</strong><span>points</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${bonusRows}</strong><span>bonus</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${penaltyRows}</strong><span>penalty</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${summaryRows.length}</strong><span>players</span></div>
+      <div class="dash-duty-summary-kpi"><strong>${esc(conductCreatedAtLabel(latestRow))}</strong><span>latest</span></div>
+    </div>
+    <div class="dash-duty-summary-table-wrap">
+      <table class="dash-duty-summary-table">
+        <thead><tr><th>${esc(dashT('adminDutySummaryPlayer'))}</th><th>${esc(dashT('adminConductPoints'))}</th><th>${esc(dashT('adminDutySummaryEntries'))}</th><th>${esc(dashT('adminConductCategory'))}</th><th>${esc(dashT('adminDutySummaryTimes'))}</th></tr></thead>
+        <tbody>${summaryRows
+          .map((row) => {
+            const pointsClass = row.points >= 0 ? 'dash-positive' : 'dash-negative';
+            return `<tr>
+          <td><strong class="dash-duty-cell-value">${esc(row.playerName)}</strong></td>
+          <td><span class="dash-duty-cell-value ${pointsClass}">${esc(formatSignedPoints(row.points))}</span></td>
+          <td><span class="dash-duty-cell-value">${row.entries}</span></td>
+          <td><span class="dash-duty-cell-value dash-duty-status-breakdown">${formatConductCategoryBreakdown(row.categoryCounts)}</span></td>
+          <td><span class="dash-duty-cell-value dash-duty-times">${esc(row.latestLabel)}</span></td>
+        </tr>`;
+          })
+          .join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  hydrateConductSummaryTableLabels(host);
 }
 
 function setConductStatus(message = '', type = 'info') {
@@ -751,6 +1034,7 @@ function renderConductAdjustments() {
       return bMs - aMs;
     });
 
+  renderConductSummary(rows);
   if (!rows.length) {
     list.innerHTML = `<div class="dash-empty">${esc(dashT('adminConductEmpty'))}</div>`;
     return;
@@ -1087,7 +1371,11 @@ function switchDashSubtab(name) {
   if (name === 'banners') renderBanners();
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
     renderDutyRecords();
-  if (name === 'contributions') renderContributions();
+  if (name === 'contributions') {
+    renderContributions();
+    renderEdenX1VoteResults();
+    if (state.adminIsAdmin === true) loadEdenX1Votes();
+  }
   if (name === 'conduct') renderConductAdjustments();
 }
 window.switchDashSubtab = switchDashSubtab;
@@ -1186,6 +1474,11 @@ window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(
   } catch (e) {}
   renderConductAdjustments();
   render();
+};
+
+window.setEdenX1VotesForTest = function setEdenX1VotesForTest(votes = []) {
+  state.edenX1Votes = (Array.isArray(votes) ? votes : []).map(normalizeEdenX1VoteRecord);
+  renderEdenX1VoteResults();
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -1808,6 +2101,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
           'Bonus team effort points cloud load',
           loadConductAdjustmentsForSeason
         ),
+        runDashboardCloudTaskWithTimeout('Eden X1 vote load', loadEdenX1Votes),
       ]);
       await runDashboardCloudTaskWithTimeout(
         'Queued cloud sync',
@@ -3730,6 +4024,8 @@ export async function bootOcrDashboard() {
     };
   }
   renderContributions();
+  renderEdenX1VoteResults();
+  $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => loadEdenX1Votes());
   const clearLogBtn = $id('dashClearLogBtn');
   if (clearLogBtn)
     clearLogBtn.onclick = () => {

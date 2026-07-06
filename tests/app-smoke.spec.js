@@ -623,10 +623,28 @@ test.describe('admin dashboard visual regression', () => {
           documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
           clippedCyrillicName: Boolean(clippedName),
         });
+        const tableWrap = panel.querySelector(
+          '.dash-weighted-contribution-table-wrap, .dash-contribution-compare-table-wrap, .dash-table-wrap, .dash-duty-summary-table-wrap'
+        );
+        if (tableWrap) {
+          const wrapStyle = window.getComputedStyle(tableWrap);
+          results.push({
+            name: `${survey.name}-table-scroll`,
+            missing: false,
+            maxHeight: wrapStyle.maxHeight,
+            capped: wrapStyle.maxHeight !== 'none' && tableWrap.clientHeight <= window.innerHeight,
+          });
+        }
       }
       return results;
     });
     for (const check of checks) {
+      if (check.name?.endsWith('-table-scroll')) {
+        expect(check.missing, `${check.name} table wrap rendered`).toBe(false);
+        expect(check.maxHeight, `${check.name} max-height`).not.toBe('none');
+        expect(check.capped, `${check.name} height capped to viewport`).toBe(true);
+        continue;
+      }
       expect(check.missing, `${check.name} panel rendered`).toBe(false);
       expect(check.rootOverflow, `${check.name} root horizontal overflow`).toBe(false);
       expect(check.documentOverflow, `${check.name} document horizontal overflow`).toBe(false);
@@ -1430,6 +1448,10 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashConductList')).toContainText(
       'Helped connecting roads for L4 town'
     );
+    await expect(page.locator('#dashConductSummary .dash-duty-summary-table')).toBeVisible();
+    await expect(page.locator('#dashConductSummary')).toContainText('~Sarafino~');
+    await expect(page.locator('#dashConductSummary')).toContainText('+1,000');
+    await expect(page.locator('#dashConductSummary')).toContainText('Connected road');
 
     await page.locator('#dashConductPlayer').selectOption({ label: 'Other / external R5' });
     await expect(page.locator('#dashConductManualPlayerInput')).toBeVisible();
@@ -1532,6 +1554,24 @@ test.describe('app smoke tabs', () => {
             },
           ],
         },
+        {
+          id: 'shield-wall-1',
+          type: 'shield_wall',
+          date: '2026-06-25',
+          gameTime: '23:59 GT',
+          note: 'Shield',
+          createdAt: '2026-06-25T20:30:00.000Z',
+          entries: [
+            {
+              name: '~Sarafino~',
+              original: '~Sarafino~',
+              confirmed: '~Sarafino~',
+              usageTime: '23:59',
+              target: 'Shield Wall',
+              status: 'exact',
+            },
+          ],
+        },
       ],
       contributionRecords: [
         {
@@ -1619,6 +1659,12 @@ test.describe('app smoke tabs', () => {
     expect(layout.detailLabel).toContain('Группа');
     expect(layout.summaryRowDisplay).toBe('block');
     expect(layout.detailRowDisplay).toBe('block');
+
+    await page.evaluate(() => window.switchDashSubtab('shieldWall'));
+    await expect(page.locator('#dashShieldWallListSummary .dash-duty-summary-table')).toBeVisible();
+    await expect(page.locator('#dashShieldWallListSummary')).toContainText('~Sarafino~');
+    await expect(page.locator('#dashShieldWallListSummary')).toContainText('23:59');
+    await expect(page.locator('#dashShieldWallBody .dash-duty-detail-table')).toBeVisible();
 
     await page.evaluate(() => window.switchDashSubtab('contributions'));
     await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
@@ -1847,11 +1893,21 @@ test.describe('app smoke tabs', () => {
           contribution: 5000,
           status: 'matched',
         },
+        {
+          id: 'eden-exguild-november',
+          playerName: 'November',
+          matchedName: 'November',
+          contribution: 65000,
+          status: 'matched',
+        },
       ],
       dutyRecords: [
         { type: 'banner', entries: [{ name: 'Alpha', confirmed: 'Alpha' }] },
         { type: 'pather', entries: [{ name: 'Bravo', confirmed: 'Bravo' }] },
         { type: 'shield_wall', entries: [{ name: 'Charlie', confirmed: 'Charlie' }] },
+        { type: 'banner', entries: [{ name: 'Oscar', confirmed: 'Oscar' }] },
+        { type: 'pather', entries: [{ name: 'Oscar', confirmed: 'Oscar' }] },
+        { type: 'shield_wall', entries: [{ name: 'Oscar', confirmed: 'Oscar' }] },
       ],
       publicConductAdjustments: [
         {
@@ -2045,7 +2101,9 @@ test.describe('app smoke tabs', () => {
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(supportCard.locator('.eden-x1-flow-action')).toHaveText('View table');
     await expect(panel.locator('h2')).toContainText('Support Work');
-    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 4');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
+      'total weighted contribution'
+    );
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     const supportTableMetrics = await panel
       .locator('.dash-weighted-contribution-table-wrap')
@@ -2084,9 +2142,13 @@ test.describe('app smoke tabs', () => {
     const supportPlayerNames = await panel
       .locator('tbody tr .dash-weighted-player-cell strong')
       .evaluateAll((cells) => cells.map((cell) => cell.textContent.trim()));
+    expect(supportPlayerNames).toEqual(['Alpha', 'Bravo', 'Charlie', 'Mike']);
     expect(supportPlayerNames).not.toContain('MalakAbo');
+    expect(supportPlayerNames).not.toContain('Oscar');
     await expect(panel).not.toContainText('Echo');
-    await expect(panel.locator('tbody tr').first().locator('td').first()).toHaveText('1');
+    await expect(
+      panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
+    ).toHaveText('1');
     await expect(panel.locator('tbody tr .dash-weighted-reward-value')).toContainText([
       'Core Rewards',
       'Core Rewards',
@@ -2153,19 +2215,43 @@ test.describe('app smoke tabs', () => {
     await contributionCard.click();
     await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('h2')).toContainText('Total Contribution');
-    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText('Top 10');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
+      'contribution plus ex-guild'
+    );
     await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(
+      panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
+    ).toHaveText('1');
+    await expect(panel.locator('tbody tr').first()).toContainText('#10');
     await expect(panel).not.toContainText('Mike');
     await expect(panel).not.toContainText('Alpha');
     await expect(panel).not.toContainText('Bravo');
     await expect(panel).not.toContainText('Charlie');
     await expect(panel).not.toContainText('Oscar');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map((row) => row.cells[1]?.textContent?.trim())
+      rows.map(
+        (row) =>
+          row.cells[1]?.querySelector('.dash-player-rank-label')?.textContent?.trim() ||
+          row.cells[1]?.textContent?.trim()
+      )
     );
-    expect(contributionNames).toContain('MalakAbo');
+    expect(contributionNames).toEqual([
+      'MalakAbo',
+      'Delta',
+      'Echo',
+      'Foxtrot',
+      'Golf',
+      'November',
+      'Hotel',
+      'India',
+      'Juliet',
+      'Kilo',
+    ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
+    expect(contributionNames).not.toContain('Lima');
+    const novemberContributionRow = panel.locator('tbody tr', { hasText: 'November' });
+    await expect(novemberContributionRow.locator('td').nth(5)).toHaveText('65,000');
     await panel.locator('#edenX1TableSearch').fill('MalakAbo');
     await expect(panel.locator('tbody tr')).toHaveCount(1);
     await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
@@ -2198,9 +2284,47 @@ test.describe('app smoke tabs', () => {
     const teamCard = page.locator('[data-reward-view="team"]');
     await teamCard.click();
     await expect(teamCard).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel.locator('h2')).toContainText('Team Players');
+    await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(2);
     await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA']);
+    await expect(panel).toContainText('Team Players Vote');
+    await expect(panel).toContainText('Need help choosing?');
+    await expect(panel).toContainText('Top 5 Banner Help');
+    await expect(panel).toContainText('Top 5 Shield Wall Help');
+    await expect(panel).toContainText('Top 5 Pathing Help');
+    await expect(panel).toContainText('Top 5 Structure Help');
+    await expect(panel).toContainText('Top 5 Consistent Names');
+    await panel.locator('[data-eden-vote-pick="Alpha"]').first().click();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
+      'View Alpha stats'
+    );
+    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
+    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
+    await panel.locator('#edenX1CandidateName').fill('\u0410lpha');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+    ).toContainText('Alpha');
+    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
+      'View Alpha stats'
+    );
+    await panel.locator('#edenX1VoterName').fill('Deltta');
+    await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toContainText(
+      'Delta'
+    );
+    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText('Vote saved');
+    await expect(panel.locator('#edenX1VoterName')).toHaveValue('Delta');
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    const savedVote = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+    );
+    expect(savedVote).toMatchObject({
+      season: 'season-2026',
+      category: 'team_players',
+      voterName: 'Delta',
+      candidateName: 'Alpha',
+    });
 
     await page.evaluate(() => {
       localStorage.setItem('vts_theme', 'light');
@@ -2215,6 +2339,204 @@ test.describe('app smoke tabs', () => {
     });
     expect(activeCardStyle.borderColor).not.toBe('rgba(0, 0, 0, 0)');
     expect(activeCardStyle.boxShadow).not.toBe('none');
+  });
+
+  test('admin shows Eden X1 team player vote results', async ({ page }) => {
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(
+      () =>
+        typeof window.setEdenX1VotesForTest === 'function' &&
+        typeof window.switchDashSubtab === 'function'
+    );
+    await page.evaluate(() => {
+      window.setEdenX1VotesForTest([
+        {
+          id: 'season-2026__team_players__delta',
+          season: 'season-2026',
+          category: 'team_players',
+          voterKey: 'delta',
+          voterName: 'Delta',
+          candidateKey: 'alpha',
+          candidateName: 'Alpha',
+          voterAuthUid: 'test-delta',
+          updatedAt: '2026-06-24T20:00:00.000Z',
+        },
+        {
+          id: 'season-2026__team_players__echo',
+          season: 'season-2026',
+          category: 'team_players',
+          voterKey: 'echo',
+          voterName: 'Echo',
+          candidateKey: 'alpha',
+          candidateName: 'Alpha',
+          voterAuthUid: 'test-echo',
+          updatedAt: '2026-06-24T20:05:00.000Z',
+        },
+        {
+          id: 'season-2026__team_players__foxtrot',
+          season: 'season-2026',
+          category: 'team_players',
+          voterKey: 'foxtrot',
+          voterName: 'Foxtrot',
+          candidateKey: 'bravo',
+          candidateName: 'Bravo',
+          voterAuthUid: 'test-foxtrot',
+          updatedAt: '2026-06-24T20:10:00.000Z',
+        },
+      ]);
+      window.switchDashSubtab('contributions');
+    });
+
+    const results = page.locator('#dashEdenVoteResults');
+    await expect(page.locator('.dash-eden-votes-panel')).toContainText(
+      'Eden X1 Team Players Vote'
+    );
+    await expect(results).toContainText('Candidate totals');
+    await expect(results).toContainText('Ballots');
+    await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('2');
+    await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('1');
+    await expect(results).toContainText('Delta');
+    await expect(results).toContainText('Echo');
+    await expect(results).toContainText('Foxtrot');
+  });
+
+  test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_hero_lang', 'ru');
+      localStorage.setItem('vts_theme', 'light');
+    });
+
+    const cyrillicNames = [
+      'АльфаВоинДлинноеИмя',
+      'БравоСтраж',
+      'ЧарлиМаг',
+      'ДельтаЛучник',
+      'ЭхоРыцарь',
+      'ФокстротГерой',
+      'ГольфВоин',
+      'ХотелСтраж',
+      'ИндияМаг',
+      'МалакАбо',
+      'Джульетта',
+      'Кило',
+      'Лима',
+      'Майк',
+      'Ноябрь',
+      'Оскар',
+    ];
+    const seededDash = {
+      date: '2026-06-24',
+      r5Season: 'season-2026',
+      contributionRecords: [
+        {
+          id: 'eden-mobile-1',
+          date: '2026-06-24',
+          premiumSlots: 20,
+          entries: cyrillicNames.map((name, index) => ({
+            rank: String(index + 1),
+            name,
+            guild: 'VTS',
+            contribution: String(500000 - index * 10000),
+          })),
+        },
+      ],
+      exGuildContributions: [
+        {
+          id: 'eden-mobile-exguild',
+          playerName: cyrillicNames[0],
+          matchedName: cyrillicNames[0],
+          contribution: 5000,
+          status: 'matched',
+        },
+      ],
+      dutyRecords: [
+        { type: 'banner', entries: [{ name: cyrillicNames[0], confirmed: cyrillicNames[0] }] },
+        { type: 'pather', entries: [{ name: cyrillicNames[1], confirmed: cyrillicNames[1] }] },
+        { type: 'shield_wall', entries: [{ name: cyrillicNames[2], confirmed: cyrillicNames[2] }] },
+        { type: 'banner', entries: [{ name: cyrillicNames[15], confirmed: cyrillicNames[15] }] },
+      ],
+      publicConductAdjustments: [
+        {
+          season: 'season-2026',
+          player: cyrillicNames[0],
+          points: 1,
+          category: 'merit_other',
+        },
+      ],
+      attacks: [
+        {
+          id: 'eden-mobile-attack-1',
+          structure_name: 'Large Town',
+          structure_level: 'Lv4',
+          game_time: '24/06/2026, 20:00 GT',
+          total_demolition: 120000,
+          players_count: 1,
+          players: [{ name: cyrillicNames[0], value: 70000, rank: 1 }],
+        },
+      ],
+    };
+
+    await openEdenX1ForTest(page);
+    await page.locator('#languageSelect').selectOption('ru');
+    await page.evaluate((dash) => window.setEdenX1DataForTest(dash), seededDash);
+    await expect(page.locator('#dashWeightedContributionPanel tbody tr')).toHaveCount(4);
+
+    const layout = await page.evaluate(() => {
+      const rewardRow = document.querySelector('#dashWeightedContributionPanel tbody tr');
+      const publicRow = document.querySelector('.eden-x1-public-weighted-table tbody tr');
+      const kpiGrid = document.querySelector('.dash-kpi-grid');
+      const clipped = Array.from(
+        document.querySelectorAll(
+          '.dash-weighted-mobile-player-name, .eden-x1-notice strong, .eden-x1-notice span, .dash-kpi-value-compact button'
+        )
+      ).find((cell) => {
+        const style = window.getComputedStyle(cell);
+        return (
+          style.whiteSpace === 'nowrap' &&
+          cell.scrollWidth > cell.clientWidth + 2 &&
+          /[\u0400-\u04FF]/.test(cell.textContent || '')
+        );
+      });
+      return {
+        documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+        rewardRowDisplay: rewardRow ? window.getComputedStyle(rewardRow).display : null,
+        publicRowDisplay: publicRow ? window.getComputedStyle(publicRow).display : null,
+        kpiColumns: kpiGrid ? window.getComputedStyle(kpiGrid).gridTemplateColumns : null,
+        clippedCyrillicName: Boolean(clipped),
+      };
+    });
+
+    expect(layout.documentOverflow).toBe(false);
+    expect(layout.rewardRowDisplay).toBe('grid');
+    expect(layout.publicRowDisplay).toBe('grid');
+    expect(layout.kpiColumns).toContain(' ');
+    expect(layout.clippedCyrillicName).toBe(false);
+
+    const scrollCaps = await page.evaluate(() => {
+      const wrap = document.querySelector('#dashWeightedContributionPanel .dash-weighted-contribution-table-wrap');
+      if (!wrap) return { missing: true };
+      const style = window.getComputedStyle(wrap);
+      const maxHeight = style.maxHeight;
+      return {
+        missing: false,
+        maxHeight,
+        capped: maxHeight !== 'none' && wrap.clientHeight <= window.innerHeight,
+        scrollable: wrap.scrollHeight > wrap.clientHeight + 4,
+      };
+    });
+    expect(scrollCaps.missing).toBe(false);
+    expect(scrollCaps.maxHeight).not.toBe('none');
+    expect(scrollCaps.capped).toBe(true);
+
+    await page.locator('[data-reward-view="contribution"]').click();
+    await expect(page.locator('#dashWeightedContributionPanel tbody tr')).toHaveCount(10);
+    const contributionOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth + 2
+    );
+    expect(contributionOverflow).toBe(false);
   });
 
   test('admin export menu downloads all-data CSV and debug bundles', async ({ page }) => {

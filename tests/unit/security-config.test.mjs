@@ -209,6 +209,26 @@ test('R5 conduct adjustments are stored separately and use the admin claim', () 
   assert.match(rules, /keepsConductMetadata\(\) \|\| repairsHistoricalConductMetadata\(\)/);
 });
 
+test('Eden X1 votes are public-write but admin-read only', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const eden = readFileSync('js/eden-x1.js', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  assert.match(rules, /function validEdenX1Vote\(\)/);
+  assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
+  assert.match(rules, /allow read, delete: if isAdminLogin\(\);/);
+  assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
+  assert.match(rules, /allow update: if signedIn\(\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/);
+  assert.match(rules, /request\.resource\.data\.category == 'team_players'/);
+  assert.match(rules, /request\.resource\.data\.voterAuthUid == request\.auth\.uid/);
+  assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
+  assert.match(eden, /EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin\/eden_x1_votes\/records'/);
+  assert.match(eden, /voterAuthUid/);
+  assert.match(eden, /serverTimestamp\(\)/);
+  assert.match(dashboard, /loadEdenX1Votes/);
+  assert.match(dashboard, /setEdenX1VotesForTest/);
+});
+
 test('service worker precaches only the lightweight app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);

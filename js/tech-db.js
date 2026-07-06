@@ -15,6 +15,7 @@
  * @property {number[]} [courageCosts] - Courage medals cost per level.
  * @property {number[]} [wb_costs] - War Badges cost per level.
  * @property {number[]} [cm_costs] - Courage Medals cost per level.
+ * @property {Object|Object[]} [buffStats] - Exact buff value metadata when the text alone is not enough.
  * @property {number} row - Grid layout row (1-indexed).
  * @property {number} col - Grid layout column (1-indexed).
  * @property {number} [b] - Branch index for branch view.
@@ -49,6 +50,15 @@ const X8_LOFTY_LEGION_COSTS = {
     grandExpansion: [1100, 1100, 1200, 1200, 1300, 1300, 1400, 1500, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2600, 2700, 2800, 2900, 3100, 3200, 3300, 3500, 3600, 3800, 3900, 4000, 4200, 4300, 4500, 4700, 4800, 5000, 5200, 5300, 5500, 5700],
     blessing: [1800, 1900, 2100, 2300, 2600, 2900, 3200, 3600, 4000, 4400, 4800, 5300, 5700, 6200, 6700, 7300, 7800, 8400, 8900, 9500]
 };
+
+const S0_LEGION_GATHERING_SPEED_VALUES = [3, 6, 10, 15, 25];
+const S0_LEGION_25_PERCENT_VALUES = [5, 10, 15, 20, 25];
+const S0_LEGION_DURABILITY_RECOVERY_VALUES = [6, 12, 18, 25, 35];
+const S0_LEGION_35_PERCENT_VALUES = [2, 4, 6, 8, 10, 13, 16, 20, 25, 35];
+
+function legionBuff(label, levelValues) {
+    return { label, unit: "%", levelValues };
+}
 
 /**
  * Global technology database for academy research trees.
@@ -134,6 +144,45 @@ export const techDatabase = [
         ]
     },
     {
+        id: "4a932eb0",
+        name: "Accessory Production",
+        default_pos: { row: 1, col: 4 },
+        layoutMode: "game",
+        season: "S0",
+        unlockCondition: "None",
+        primaryResource: "Resources",
+        nodes: [
+            { id: "node_1", name: "Furnace Expansion I", troop: "ALL", buff: "Unlock first Material Crafting Slot", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
+            { id: "node_2", name: "Basic Refining I", troop: "ALL", buff: "Increase Production Speed", maxLevel: 10, costType: "None", costs: [] , row: 1, col: 2},
+            { id: "node_3", name: "Basic Processing I", troop: "ALL", buff: "Increase Material Crafting Speed", maxLevel: 10, costType: "None", costs: [] , row: 1, col: 3},
+            { id: "node_4", name: "Furnace Expansion II", troop: "ALL", buff: "Unlock second Material Crafting Slot", maxLevel: 1, costType: "None", costs: [] , row: 2, col: 1},
+            { id: "node_5", name: "Basic Refining II", troop: "ALL", buff: "Increase Production Speed", maxLevel: 20, costType: "None", costs: [] , row: 2, col: 2},
+            { id: "node_6", name: "Basic Processing II", troop: "ALL", buff: "Increase Material Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 2, col: 3},
+            { id: "node_7", name: "Furnace Expansion III", troop: "ALL", buff: "Unlock third Material Crafting Slot", maxLevel: 1, costType: "None", costs: [] , row: 3, col: 1},
+            { id: "node_8", name: "Weapon Processing", troop: "ALL", buff: "Increase Weapon Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 3, col: 2},
+            { id: "node_9", name: "Helmet Craft", troop: "ALL", buff: "Increase Helmet Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 3, col: 3},
+            { id: "node_10", name: "Armorer", troop: "ALL", buff: "Increase Armor Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 4, col: 1},
+            { id: "node_11", name: "Shoe Maker", troop: "ALL", buff: "Increase Boot Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 4, col: 2},
+            { id: "node_12", name: "Jeweler", troop: "ALL", buff: "Increased Amulet Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 4, col: 3},
+            { id: "node_13", name: "Accessory Processing", troop: "ALL", buff: "Increase Accessory Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 5, col: 1},
+            { id: "node_14", name: "Workshop Expansion", troop: "ALL", buff: "Unlock Extra Dragonite Workshop", maxLevel: 2, costType: "None", costs: [] , row: 5, col: 2},
+            { id: "node_15", name: "Basic Refining III", troop: "ALL", buff: "Increase Production Speed", maxLevel: 20, costType: "None", costs: [] , row: 5, col: 3},
+            { id: "node_16", name: "Basic Processing III", troop: "ALL", buff: "Increase Material Crafting Speed", maxLevel: 20, costType: "None", costs: [] , row: 6, col: 1},
+            { id: "node_17", name: "Furnace Expansion IV", troop: "ALL", buff: "Unlock fourth Material Crafting Slot", maxLevel: 1, costType: "None", costs: [] , row: 6, col: 2},
+            { id: "node_18", name: "Weapons Furnace", troop: "ALL", buff: "Less Dragonite cost in weapon forging", maxLevel: 20, costType: "None", costs: [] , row: 6, col: 3},
+            { id: "node_19", name: "Helmet Furnace", troop: "ALL", buff: "Less Dragonite cost in headgear forging", maxLevel: 20, costType: "None", costs: [] , row: 7, col: 1},
+            { id: "node_20", name: "Armor Furnace", troop: "ALL", buff: "Less Dragonite cost in armor forging", maxLevel: 20, costType: "None", costs: [] , row: 7, col: 2},
+            { id: "node_21", name: "Boots Furnace", troop: "ALL", buff: "Less Dragonite cost in shoe forging", maxLevel: 20, costType: "None", costs: [] , row: 7, col: 3},
+            { id: "node_22", name: "Amulet Furnace", troop: "ALL", buff: "Less Dragonite cost in amulet forging", maxLevel: 20, costType: "None", costs: [] , row: 8, col: 1},
+            { id: "node_23", name: "Trinket Furnace", troop: "ALL", buff: "Less Dragonite cost in accessory forging", maxLevel: 20, costType: "None", costs: [] , row: 8, col: 2},
+            { id: "node_24", name: "Furnace Expansion V", troop: "ALL", buff: "Unlock fifth Material Crafting Slot", maxLevel: 1, costType: "None", costs: [] , row: 8, col: 3},
+            { id: "node_25", name: "New Materials", troop: "ALL", buff: "Unlock green material crafting", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 1},
+            { id: "node_26", name: "Material Salvaging", troop: "ALL", buff: "Material can be disenchanted into Dragonites", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 2},
+            { id: "node_27", name: "Bulk Salvage", troop: "ALL", buff: "Increase Dragonite obtained through disenchanting", maxLevel: 20, costType: "None", costs: [] , row: 9, col: 3},
+            { id: "node_28", name: "Skilled Salvage", troop: "ALL", buff: "Increased return when Equipment disassembled", maxLevel: 20, costType: "None", costs: [] , row: 10, col: 1}
+        ]
+    },
+    {
         id: "802e7893",
         name: "Research Legion I",
         default_pos: { row: 2, col: 1 },
@@ -142,21 +191,73 @@ export const techDatabase = [
         unlockCondition: "None",
         primaryResource: "Resources",
         nodes: [
-            { id: "node_1", name: "Hero Appointment", troop: "ALL", buff: "Deploy 1 Hero", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
-            { id: "node_2", name: "High-Speed Gathering", troop: "ALL", buff: "Gathering Speed", maxLevel: 5, costType: "None", costs: [] , row: 2, col: 1},
-            { id: "node_3", name: "Enhanced Physique", troop: "ALL", buff: "March Load", maxLevel: 5, costType: "None", costs: [] , row: 2, col: 2},
-            { id: "node_4", name: "Footmen Immunity", troop: "Footmen", buff: "Resistance", maxLevel: 10, costType: "None", costs: [] , row: 3, col: 1},
-            { id: "node_5", name: "Archer Immunity", troop: "Archer", buff: "Resistance", maxLevel: 10, costType: "None", costs: [] , row: 3, col: 2},
-            { id: "node_6", name: "Cavalry Immunity", troop: "Cavalry", buff: "Resistance", maxLevel: 10, costType: "None", costs: [] , row: 3, col: 3},
-            { id: "node_7", name: "Commanding Banner", troop: "ALL", buff: "Speed Up", maxLevel: 1, costType: "None", costs: [] , row: 4, col: 1},
-            { id: "node_8", name: "Hero Cooperation", troop: "ALL", buff: "Deploy 2 Heroes", maxLevel: 1, costType: "None", costs: [] , row: 5, col: 1},
-            { id: "node_9", name: "Recall Order", troop: "ALL", buff: "Recalled", maxLevel: 1, costType: "None", costs: [] , row: 6, col: 1},
-            { id: "node_10", name: "Alloy Horseshoe", troop: "ALL", buff: "Marching Speed", maxLevel: 5, costType: "None", costs: [] , row: 7, col: 1},
-            { id: "node_11", name: "Supply Unit", troop: "ALL", buff: "Durability Recovery Speed", maxLevel: 5, costType: "None", costs: [] , row: 7, col: 2},
-            { id: "node_12", name: "Footmen Assault", troop: "Footmen", buff: "Might", maxLevel: 10, costType: "None", costs: [] , row: 8, col: 1},
-            { id: "node_13", name: "Archer Assault", troop: "Archer", buff: "Might", maxLevel: 10, costType: "None", costs: [] , row: 8, col: 2},
-            { id: "node_14", name: "Cavalry Assault", troop: "Cavalry", buff: "Might", maxLevel: 10, costType: "None", costs: [] , row: 8, col: 3},
-            { id: "node_15", name: "Hero Command", troop: "ALL", buff: "Deploy 3 Heroes", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 1}
+            { id: "node_1", name: "Hero Appointment", troop: "ALL", buff: "Unlock Front-Row Legion I", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
+            { id: "node_2", name: "High-Speed Gathering", troop: "ALL", buff: "+25% Gathering Speed Legion I", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Gathering Speed Legion I", S0_LEGION_GATHERING_SPEED_VALUES), row: 2, col: 1},
+            { id: "node_3", name: "Enhanced Physique", troop: "ALL", buff: "+25% March Load Legion I", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("March Load Legion I", S0_LEGION_25_PERCENT_VALUES), row: 2, col: 2},
+            { id: "node_4", name: "Footmen Immunity", troop: "Footmen", buff: "+35% Resistance Footmen Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Footmen Legion I", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 1},
+            { id: "node_5", name: "Archer Immunity", troop: "Archer", buff: "+35% Resistance Archer Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Archer Legion I", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 2},
+            { id: "node_6", name: "Cavalry Immunity", troop: "Cavalry", buff: "+35% Resistance Cavalry Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Cavalry Legion I", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 3},
+            { id: "node_7", name: "Commanding Banner", troop: "ALL", buff: "Unlock Speed Up Legion I", maxLevel: 1, costType: "None", costs: [] , row: 4, col: 1},
+            { id: "node_8", name: "Hero Cooperation", troop: "ALL", buff: "Unlock Mid-Row Legion I", maxLevel: 1, costType: "None", costs: [] , row: 5, col: 1},
+            { id: "node_9", name: "Recall Order", troop: "ALL", buff: "Unlock Recalled Legion I", maxLevel: 1, costType: "None", costs: [] , row: 6, col: 1},
+            { id: "node_10", name: "Alloy Horseshoe", troop: "ALL", buff: "+25% Marching Speed Legion I", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Marching Speed Legion I", S0_LEGION_25_PERCENT_VALUES), row: 7, col: 1},
+            { id: "node_11", name: "Supply Unit", troop: "ALL", buff: "+35% Durability Recovery Speed Legion I", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Durability Recovery Speed Legion I", S0_LEGION_DURABILITY_RECOVERY_VALUES), row: 7, col: 2},
+            { id: "node_12", name: "Footmen Assault", troop: "Footmen", buff: "+35% Might Footmen Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Footmen Legion I", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 1},
+            { id: "node_13", name: "Archer Assault", troop: "Archer", buff: "+35% Might Archer Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Archer Legion I", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 2},
+            { id: "node_14", name: "Cavalry Assault", troop: "Cavalry", buff: "+35% Might Cavalry Legion I", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Cavalry Legion I", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 3},
+            { id: "node_15", name: "Hero Command", troop: "ALL", buff: "Unlock Back-Row Legion I", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 1}
+        ]
+    },
+    {
+        id: "38d12254",
+        name: "Research Legion II",
+        default_pos: { row: 3, col: 1 },
+        layoutMode: "game",
+        season: "S0",
+        unlockCondition: "None",
+        primaryResource: "Resources",
+        nodes: [
+            { id: "node_1", name: "Hero Appointment", troop: "ALL", buff: "Unlock Front-Row Legion II", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
+            { id: "node_2", name: "High-Speed Gathering", troop: "ALL", buff: "+25% Gathering Speed Legion II", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Gathering Speed Legion II", S0_LEGION_GATHERING_SPEED_VALUES), row: 2, col: 1},
+            { id: "node_3", name: "Enhanced Physique", troop: "ALL", buff: "+25% March Load Legion II", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("March Load Legion II", S0_LEGION_25_PERCENT_VALUES), row: 2, col: 2},
+            { id: "node_4", name: "Footmen Immunity", troop: "Footmen", buff: "+35% Resistance Footmen Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Footmen Legion II", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 1},
+            { id: "node_5", name: "Archer Immunity", troop: "Archer", buff: "+35% Resistance Archer Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Archer Legion II", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 2},
+            { id: "node_6", name: "Cavalry Immunity", troop: "Cavalry", buff: "+35% Resistance Cavalry Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Cavalry Legion II", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 3},
+            { id: "node_7", name: "Commanding Banner", troop: "ALL", buff: "Unlock Speed Up Legion II", maxLevel: 1, costType: "None", costs: [] , row: 4, col: 1},
+            { id: "node_8", name: "Hero Cooperation", troop: "ALL", buff: "Unlock Mid-Row Legion II", maxLevel: 1, costType: "None", costs: [] , row: 5, col: 1},
+            { id: "node_9", name: "Recall Order", troop: "ALL", buff: "Unlock Recalled Legion II", maxLevel: 1, costType: "None", costs: [] , row: 6, col: 1},
+            { id: "node_10", name: "Alloy Horseshoe", troop: "ALL", buff: "+25% Marching Speed Legion II", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Marching Speed Legion II", S0_LEGION_25_PERCENT_VALUES), row: 7, col: 1},
+            { id: "node_11", name: "Supply Unit", troop: "ALL", buff: "+35% Durability Recovery Speed Legion II", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Durability Recovery Speed Legion II", S0_LEGION_DURABILITY_RECOVERY_VALUES), row: 7, col: 2},
+            { id: "node_12", name: "Footmen Assault", troop: "Footmen", buff: "+35% Might Footmen Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Footmen Legion II", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 1},
+            { id: "node_13", name: "Archer Assault", troop: "Archer", buff: "+35% Might Archer Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Archer Legion II", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 2},
+            { id: "node_14", name: "Cavalry Assault", troop: "Cavalry", buff: "+35% Might Cavalry Legion II", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Cavalry Legion II", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 3},
+            { id: "node_15", name: "Hero Command", troop: "ALL", buff: "Unlock Back-Row Legion II", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 1}
+        ]
+    },
+    {
+        id: "5fef2163",
+        name: "Research Legion III",
+        default_pos: { row: 3, col: 2 },
+        layoutMode: "game",
+        season: "S0",
+        unlockCondition: "None",
+        primaryResource: "Resources",
+        nodes: [
+            { id: "node_1", name: "Hero Appointment", troop: "ALL", buff: "Unlock Front-Row Legion III", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
+            { id: "node_2", name: "High-Speed Gathering", troop: "ALL", buff: "+25% Gathering Speed Legion III", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Gathering Speed Legion III", S0_LEGION_GATHERING_SPEED_VALUES), row: 2, col: 1},
+            { id: "node_3", name: "Enhanced Physique", troop: "ALL", buff: "+25% March Load Legion III", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("March Load Legion III", S0_LEGION_25_PERCENT_VALUES), row: 2, col: 2},
+            { id: "node_4", name: "Footmen Immunity", troop: "Footmen", buff: "+35% Resistance Footmen Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Footmen Legion III", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 1},
+            { id: "node_5", name: "Archer Immunity", troop: "Archer", buff: "+35% Resistance Archer Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Archer Legion III", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 2},
+            { id: "node_6", name: "Cavalry Immunity", troop: "Cavalry", buff: "+35% Resistance Cavalry Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Resistance Cavalry Legion III", S0_LEGION_35_PERCENT_VALUES), row: 3, col: 3},
+            { id: "node_7", name: "Commanding Banner", troop: "ALL", buff: "Unlock Speed Up Legion III", maxLevel: 1, costType: "None", costs: [] , row: 4, col: 1},
+            { id: "node_8", name: "Hero Cooperation", troop: "ALL", buff: "Unlock Mid-Row Legion III", maxLevel: 1, costType: "None", costs: [] , row: 5, col: 1},
+            { id: "node_9", name: "Recall Order", troop: "ALL", buff: "Unlock Recalled Legion III", maxLevel: 1, costType: "None", costs: [] , row: 6, col: 1},
+            { id: "node_10", name: "Alloy Horseshoe", troop: "ALL", buff: "+25% Marching Speed Legion III", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Marching Speed Legion III", S0_LEGION_25_PERCENT_VALUES), row: 7, col: 1},
+            { id: "node_11", name: "Supply Unit", troop: "ALL", buff: "+35% Durability Recovery Speed Legion III", maxLevel: 5, costType: "None", costs: [] , buffStats: legionBuff("Durability Recovery Speed Legion III", S0_LEGION_DURABILITY_RECOVERY_VALUES), row: 7, col: 2},
+            { id: "node_12", name: "Footmen Assault", troop: "Footmen", buff: "+35% Might Footmen Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Footmen Legion III", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 1},
+            { id: "node_13", name: "Archer Assault", troop: "Archer", buff: "+35% Might Archer Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Archer Legion III", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 2},
+            { id: "node_14", name: "Cavalry Assault", troop: "Cavalry", buff: "+35% Might Cavalry Legion III", maxLevel: 10, costType: "None", costs: [] , buffStats: legionBuff("Might Cavalry Legion III", S0_LEGION_35_PERCENT_VALUES), row: 8, col: 3},
+            { id: "node_15", name: "Hero Command", troop: "ALL", buff: "Unlock Back-Row Legion III", maxLevel: 1, costType: "None", costs: [] , row: 9, col: 1}
         ]
     },
     {

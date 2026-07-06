@@ -4892,6 +4892,66 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   font-weight: 800;
   overflow-wrap: anywhere;
 }
+#ocrDashboardRoot .dash-player-rank-name,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  vertical-align: baseline;
+}
+#ocrDashboardRoot .dash-player-rank-label,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#ocrDashboardRoot .dash-player-rank-label > .eden-x1-clickable-name,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-label > .eden-x1-clickable-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+#ocrDashboardRoot .dash-weighted-player-cell .dash-player-rank-name,
+.eden-x1-page #edenX1PublicDashboard .dash-weighted-player-cell .dash-player-rank-name {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .dash-player-rank-tag,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.55rem;
+  min-height: 1.05rem;
+  padding: 0.12rem 0.34rem;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 14px rgba(15, 23, 42, 0.2);
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+#ocrDashboardRoot .dash-player-rank-tag--r5,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag--r5 {
+  border-color: rgba(250, 204, 21, 0.68);
+  background: linear-gradient(135deg, #facc15, #fb923c);
+  color: #1f1300;
+}
+#ocrDashboardRoot .dash-player-rank-tag--r4,
+.eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag--r4 {
+  border-color: rgba(125, 211, 252, 0.58);
+  background: linear-gradient(135deg, #0891b2, #4f46e5);
+  color: #ecfeff;
+}
 #ocrDashboardRoot .dash-weighted-score-cell {
   overflow: visible;
   position: relative;
@@ -5578,6 +5638,24 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   color: #0f172a;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
+[data-theme='light'] #ocrDashboardRoot .dash-player-rank-tag,
+[data-theme='light'] .eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 4px 12px rgba(15, 23, 42, 0.12);
+}
+[data-theme='light'] #ocrDashboardRoot .dash-player-rank-tag--r5,
+[data-theme='light'] .eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag--r5 {
+  border-color: rgba(217, 119, 6, 0.48);
+  background: linear-gradient(135deg, #fde047, #fb923c);
+  color: #422006;
+}
+[data-theme='light'] #ocrDashboardRoot .dash-player-rank-tag--r4,
+[data-theme='light'] .eden-x1-page #edenX1PublicDashboard .dash-player-rank-tag--r4 {
+  border-color: rgba(37, 99, 235, 0.36);
+  background: linear-gradient(135deg, #06b6d4, #6366f1);
+  color: #ffffff;
+}
 
 /* Light theme mobile row-card backgrounds */
 @media (max-width: 768px) {
@@ -5682,7 +5760,11 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 
   #ocrDashboardRoot .dash-table-wrap {
     padding-bottom: 4px;
-    overflow-x: visible;
+    max-height: min(48svh, 420px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   #ocrDashboardRoot .dash-contribution-card .dash-banner-head {
@@ -5724,7 +5806,7 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   #ocrDashboardRoot .dash-duty-summary-table-wrap,
   #ocrDashboardRoot .dash-contribution-compare-table-wrap,
   #ocrDashboardRoot .dash-banner-body {
-    overflow-x: visible;
+    overflow-x: hidden;
   }
 
   #ocrDashboardRoot .dash-table--stack {
@@ -5863,8 +5945,14 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     overflow-wrap: anywhere;
   }
 
-  #ocrDashboardRoot .dash-weighted-mobile-player-name::before {
+  #ocrDashboardRoot .dash-weighted-mobile-player-name:empty::before,
+  .eden-x1-page #edenX1PublicDashboard .dash-weighted-mobile-player-name:empty::before {
     content: attr(data-player);
+  }
+
+  #ocrDashboardRoot .dash-weighted-mobile-player-name .dash-player-rank-name,
+  .eden-x1-page #edenX1PublicDashboard .dash-weighted-mobile-player-name .dash-player-rank-name {
+    justify-content: flex-start;
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-table td {
@@ -5926,15 +6014,31 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     overflow-wrap: anywhere;
   }
 
-  #ocrDashboardRoot .dash-contribution-compare-table-wrap {
+  #ocrDashboardRoot .dash-contribution-compare-table-wrap,
+  #ocrDashboardRoot .dash-duty-summary-table-wrap,
+  #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
     max-width: 100%;
+    max-height: min(48svh, 420px);
     overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(103, 232, 249, 0.42) transparent;
   }
 
-  #ocrDashboardRoot .dash-weighted-contribution-table-wrap {
-    max-height: none;
-    max-width: 100%;
-    overflow: visible;
+  #ocrDashboardRoot .dash-contribution-compare-table-wrap::-webkit-scrollbar,
+  #ocrDashboardRoot .dash-duty-summary-table-wrap::-webkit-scrollbar,
+  #ocrDashboardRoot .dash-weighted-contribution-table-wrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  #ocrDashboardRoot .dash-contribution-compare-table-wrap::-webkit-scrollbar-thumb,
+  #ocrDashboardRoot .dash-duty-summary-table-wrap::-webkit-scrollbar-thumb,
+  #ocrDashboardRoot .dash-weighted-contribution-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(103, 232, 249, 0.36);
+    border-radius: 999px;
   }
 
   #ocrDashboardRoot .dash-contribution-weighted-table tr {

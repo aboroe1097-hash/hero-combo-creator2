@@ -3,7 +3,7 @@ import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setAct
 // Extracted Research Calculator Module
 import { techDatabase } from './tech-db.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { describeNodeBuffProgress } from './research-buffs.js';
+import { describeNodeBuffProgress, summarizeTechBuffs } from './research-buffs.js';
 import { appT } from './utils.js';
 
 const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
@@ -111,30 +111,178 @@ function getTechMedalTotals(tech) {
 
 function renderNodeBuffProgress(summary, compact = false) {
     const statusClass = `research-buff-chip--${summary.status}`;
-    const detail = escapeHtml(summary.detailLabel);
+    const detail = escapeHtml(getBuffProgressTitle(summary));
     if (compact) {
         const text = summary.status === 'known'
-            ? `${summary.currentLabel} / ${summary.maxLabel}`
+            ? summary.effects.map((effect) => `${effect.currentLabel}/${effect.maxLabel} ${effect.label}`).join(' + ')
             : summary.status === 'unlock'
-                ? (summary.currentLabel === 'Unlocked' ? 'Unlocked' : 'Unlock')
-                : 'Buff ?';
+                ? (summary.currentLabel === 'Unlocked' ? appT('researchBuffUnlocked') : appT('researchBuffUnlockShort'))
+                : appT('researchBuffUnknownShort');
         return `<span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(text)}</span>`;
     }
 
     if (summary.status === 'known') {
+        const label = summary.effectLabels.join(' + ');
         return `
             <span class="research-buff-chip ${statusClass}" title="${detail}">
-                <span>${escapeHtml(summary.currentLabel)}</span>
+                <span class="research-buff-chip-value">${escapeHtml(summary.currentLabel)}</span>
                 <span class="research-buff-chip-max">/ ${escapeHtml(summary.maxLabel)}</span>
+                <span class="research-buff-chip-label">${escapeHtml(label)}</span>
             </span>
-            <span class="research-buff-detail">${escapeHtml(summary.remainingLabel)} left · ${escapeHtml(summary.perLevelLabel)}</span>
+            <span class="research-buff-detail">${escapeHtml(appT('researchBuffNodeDetail', { remaining: summary.remainingLabel, perLevel: summary.perLevelLabel }))}</span>
         `;
     }
 
+    const statusLabel = summary.status === 'missing'
+        ? appT('researchBuffValuesNeedData')
+        : summary.currentLabel === 'Unlocked'
+            ? appT('researchBuffUnlocked')
+            : appT('researchBuffLocked');
     return `
-        <span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(summary.currentLabel)}</span>
-        <span class="research-buff-detail">${escapeHtml(summary.detailLabel)}</span>
+        <span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(statusLabel)}</span>
+        <span class="research-buff-detail">${detail}</span>
     `;
+}
+
+function getBuffProgressTitle(summary) {
+    if (summary.status === 'known') {
+        return appT('researchBuffKnownDetailTitle', {
+            current: summary.currentWithLabel,
+            max: summary.maxWithLabel,
+            remaining: summary.remainingLabel,
+            perLevel: summary.perLevelLabel,
+        });
+    }
+    if (summary.status === 'unlock') {
+        return appT('researchBuffUnlockDetailTitle');
+    }
+    return appT('researchBuffMissingDetailTitle');
+}
+
+function getTechBuffSummary(tech) {
+    return summarizeTechBuffs(tech, {
+        getLevel: (node) => getStoredNodeLevel(tech.id, node.id),
+    });
+}
+
+function formatResearchCount(count, singularKey, pluralKey) {
+    return appT(count === 1 ? singularKey : pluralKey, { n: count });
+}
+
+function renderResearchCardBuffPreview(tech) {
+    const summary = getTechBuffSummary(tech);
+    const topBuffs = summary.known.slice(0, 3);
+    if (!topBuffs.length) {
+        if (summary.missing.length) {
+            return `<div class="research-card-buff-preview research-card-buff-preview--missing">${escapeHtml(appT('researchBuffValuesNeedData'))}</div>`;
+        }
+        if (summary.unlocks.length) {
+            return `<div class="research-card-buff-preview research-card-buff-preview--unlock">${escapeHtml(appT('researchBuffUnlockCount', { n: summary.unlocks.length }))}</div>`;
+        }
+        return '';
+    }
+
+    const moreCount = Math.max(0, summary.known.length - topBuffs.length);
+    return `
+        <div class="research-card-buff-preview" aria-label="${escapeHtml(appT('researchBuffTopBuffsAria'))}">
+            ${topBuffs.map((buff) => `
+                <span class="research-card-buff-pill" title="${escapeHtml(buff.nodes.slice(0, 4).join(', '))}">
+                    <strong>${escapeHtml(buff.maxLabel)}</strong> ${escapeHtml(buff.label)}
+                </span>
+            `).join('')}
+            ${moreCount > 0 ? `<span class="research-card-buff-more">${escapeHtml(appT('researchBuffMore', { n: moreCount }))}</span>` : ''}
+        </div>
+    `;
+}
+
+let researchBuffSummaryKeyHandler = null;
+
+function closeResearchBuffSummaryModal() {
+    document.getElementById('researchBuffSummaryModal')?.remove();
+    if (researchBuffSummaryKeyHandler) {
+        document.removeEventListener('keydown', researchBuffSummaryKeyHandler);
+        researchBuffSummaryKeyHandler = null;
+    }
+}
+
+function renderResearchBuffSummaryModal(tech) {
+    closeResearchBuffSummaryModal();
+    const summary = getTechBuffSummary(tech);
+    const sColor = TechseasonColors[tech.season] || '#38bdf8';
+    const knownHtml = summary.known.length
+        ? summary.known.map((buff) => {
+            const pct = buff.maxValue
+                ? Math.min(100, Math.max(0, Math.abs(buff.currentValue / buff.maxValue) * 100))
+                : 0;
+            return `
+                <article class="research-buff-summary-item" title="${escapeHtml(buff.nodes.join(', '))}">
+                    <div class="research-buff-summary-meter" style="--buff-pct: ${pct.toFixed(1)}%"></div>
+                    <span class="research-buff-summary-value">${escapeHtml(buff.maxLabel)}</span>
+                    <span class="research-buff-summary-label">${escapeHtml(buff.label)}</span>
+                    <span class="research-buff-summary-meta">${escapeHtml(appT('researchBuffSummaryItemMeta', {
+                        current: buff.currentLabel,
+                        remaining: buff.remainingLabel,
+                        nodes: buff.nodeCount,
+                        nodeLabel: formatResearchCount(buff.nodeCount, 'researchBuffNodeSingular', 'researchBuffNodePlural'),
+                    }))}</span>
+                </article>
+            `;
+        }).join('')
+        : `<p class="research-buff-summary-empty">${escapeHtml(appT('researchBuffSummaryEmpty'))}</p>`;
+    const unlockHtml = summary.unlocks.length
+        ? `<div class="research-buff-summary-section">
+            <h4>${escapeHtml(appT('researchBuffUnlocksTitle'))}</h4>
+            <div class="research-buff-summary-tags">
+                ${summary.unlocks.slice(0, 12).map((item) => `<span>${escapeHtml(item.name)}</span>`).join('')}
+                ${summary.unlocks.length > 12 ? `<span>${escapeHtml(appT('researchBuffMore', { n: summary.unlocks.length - 12 }))}</span>` : ''}
+            </div>
+        </div>`
+        : '';
+    const missingHtml = summary.missing.length
+        ? `<div class="research-buff-summary-section research-buff-summary-section--missing">
+            <h4>${escapeHtml(appT('researchBuffNeedValuesTitle'))}</h4>
+            <div class="research-buff-summary-tags">
+                ${summary.missing.slice(0, 12).map((item) => `<span>${escapeHtml(item.name)}</span>`).join('')}
+                ${summary.missing.length > 12 ? `<span>${escapeHtml(appT('researchBuffMore', { n: summary.missing.length - 12 }))}</span>` : ''}
+            </div>
+        </div>`
+        : '';
+
+    const modal = document.createElement('div');
+    modal.id = 'researchBuffSummaryModal';
+    modal.className = 'research-buff-summary-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', appT('researchBuffSummaryDialogAria', { tech: tech.name }));
+    modal.innerHTML = `
+        <div class="research-buff-summary-card" style="--season-color: ${sColor}">
+            <div class="research-buff-summary-head">
+                <div>
+                    <span class="research-buff-summary-season">${escapeHtml(tech.season)}</span>
+                    <h3>${escapeHtml(appT('researchBuffSummaryTitle', { tech: tech.name }))}</h3>
+                    <p>${escapeHtml(appT('researchBuffSummaryMeta', {
+                        buffs: summary.totals.known,
+                        unlocks: summary.totals.unlocks,
+                        missing: summary.totals.missing,
+                    }))}</p>
+                </div>
+                <button type="button" class="research-buff-summary-close" aria-label="${escapeHtml(appT('researchBuffCloseAria'))}">&times;</button>
+            </div>
+            <div class="research-buff-summary-grid">${knownHtml}</div>
+            ${unlockHtml}
+            ${missingHtml}
+        </div>
+    `;
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeResearchBuffSummaryModal();
+    });
+    modal.querySelector('.research-buff-summary-close')?.addEventListener('click', closeResearchBuffSummaryModal);
+    researchBuffSummaryKeyHandler = (e) => {
+        if (e.key === 'Escape') closeResearchBuffSummaryModal();
+    };
+    document.addEventListener('keydown', researchBuffSummaryKeyHandler);
+    document.body.appendChild(modal);
+    modal.querySelector('.research-buff-summary-close')?.focus();
 }
 
 function syncTechSeasonButtons() {
@@ -354,19 +502,29 @@ function renderTechList() {
             </div>
             <p class="research-card-unlock">${appT('researchUnlock')}: ${tech.unlockCondition}</p>
             <p class="research-card-resource">${resourceLabel}</p>
+            ${renderResearchCardBuffPreview(tech)}
             <div class="research-card-progress">
                 <div class="research-card-progress-bar"></div>
             </div>
             <span class="research-card-pct">${appT('researchProgress', { pct: progressPct.toFixed(0) })}</span>
-            <span class="research-card-cta">${appT('researchOpenCalc')}</span>
+            <div class="research-card-actions">
+                <button type="button" class="research-card-buffs" aria-label="${escapeHtml(appT('researchBuffSummaryOpenAria', { tech: tech.name }))}">${escapeHtml(appT('researchBuffButton'))}</button>
+                <span class="research-card-cta">${appT('researchOpenCalc')}</span>
+            </div>
         `;
         card
             .querySelector('.research-card-progress-bar')
             ?.style.setProperty('--progress-pct', `${progressPct.toFixed(1)}%`);
 
+        card.querySelector('.research-card-buffs')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            renderResearchBuffSummaryModal(tech);
+        });
+
         const openCalc = () => renderCalculator(tech);
         card.addEventListener('click', openCalc);
         card.addEventListener('keydown', (e) => {
+            if (e.target.closest('button')) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCalc(); }
         });
         wrapper.appendChild(card);
