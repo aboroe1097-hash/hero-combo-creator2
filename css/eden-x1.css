@@ -1512,14 +1512,14 @@
   }
 
   .eden-x1-page .admin-brand-row {
-    grid-template-columns: 58px minmax(0, 1fr) !important;
+    grid-template-columns: clamp(62px, 18vw, 68px) minmax(0, 1fr) !important;
     align-items: center !important;
-    column-gap: 0.62rem !important;
+    column-gap: clamp(0.5rem, 2vw, 0.64rem) !important;
   }
 
   .eden-x1-page .admin-brand-logo {
-    width: 58px !important;
-    height: 58px !important;
+    width: clamp(62px, 18vw, 68px) !important;
+    height: clamp(62px, 18vw, 68px) !important;
   }
 
   .eden-x1-page .admin-shell-title {
@@ -1564,10 +1564,10 @@
 
   .eden-x1-page .admin-control-row {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px !important;
+    grid-template-columns: minmax(4.8rem, 0.7fr) minmax(6.6rem, 1fr) 40px !important;
     align-items: stretch !important;
     justify-content: stretch !important;
-    gap: 0.42rem !important;
+    gap: 0.36rem !important;
     width: 100% !important;
   }
 
@@ -1580,8 +1580,33 @@
     min-height: 40px !important;
   }
 
+  .eden-x1-page .admin-control-row .global-game-clock {
+    justify-content: center !important;
+    gap: 0.28rem !important;
+    padding-inline: 0.42rem !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+  }
+
   .eden-x1-page .admin-control-row .lang-select-wrapper {
     max-width: none !important;
+  }
+
+  .eden-x1-page .admin-control-row .lang-select-icon {
+    flex: 0 0 auto !important;
+    padding-inline: 0.48rem 0.1rem !important;
+  }
+
+  .eden-x1-page .admin-control-row .admin-language-select {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: 0.45rem 1.38rem 0.45rem 0.28rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .eden-x1-page .admin-control-row .lang-select-caret {
+    padding-inline-end: 0.44rem !important;
   }
 
   .eden-x1-page .admin-control-row #themeToggle {
