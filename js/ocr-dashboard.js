@@ -957,7 +957,8 @@ async function ensureDashboardCloudInitialized() {
 
 async function waitForAdminAuthUser(timeoutMs = 4000, options = {}) {
   const { getCurrentUser, isPasswordAuthUser, onUserChanged } = await loadFirebaseApi();
-  const currentUser = getCurrentUser() || state.adminUser;
+  if (await isPasswordAuthUser(state.adminUser, options)) return state.adminUser;
+  const currentUser = getCurrentUser();
   if (await isPasswordAuthUser(currentUser, options)) return currentUser;
 
   return new Promise((resolve) => {
@@ -3287,9 +3288,8 @@ export async function bootOcrDashboard() {
             }
             try {
               const wasAdmin = state.adminIsAdmin === true;
-              state.adminUser = user;
-              state.adminIsAdmin = await isPasswordAuthUser(user);
-              if (!state.adminIsAdmin) {
+              const candidateIsAdmin = await isPasswordAuthUser(user);
+              if (!candidateIsAdmin) {
                 const restoredUser = wasAdmin ? await waitForAdminAuthUser(1500) : null;
                 if (restoredUser) {
                   state.adminUser = restoredUser;
@@ -3301,6 +3301,8 @@ export async function bootOcrDashboard() {
                 showLogin();
                 return;
               }
+              state.adminUser = user;
+              state.adminIsAdmin = true;
               await openAdminDashboardAfterAuth({ preferCloudFirst: true });
             } catch (e) {
               console.error('Admin auth listener failed', e);
@@ -3311,11 +3313,12 @@ export async function bootOcrDashboard() {
             }
           });
         }
-        const currentUser = getCurrentUser() || state.adminUser;
-        if (currentUser) {
+        const restoredUser = await waitForAdminAuthUser(1500);
+        const currentUser = restoredUser || getCurrentUser();
+        if (currentUser && (await isPasswordAuthUser(currentUser))) {
           state.adminUser = currentUser;
-          state.adminIsAdmin = await isPasswordAuthUser(currentUser);
-          if (state.adminIsAdmin) await openAdminDashboardAfterAuth({ preferCloudFirst: true });
+          state.adminIsAdmin = true;
+          await openAdminDashboardAfterAuth({ preferCloudFirst: true });
         }
       } else {
         setLoginError('Firebase is not configured for admin sign-in.');

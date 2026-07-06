@@ -168,6 +168,18 @@ test('admin gate uses a password sign-in check and sign-out cannot auto re-login
   // Both the dashboard gates and the conduct-write context use it.
   assert.match(dashboard, /isPasswordAuthUser/);
   assert.match(adjustments, /isPasswordAuthUser/);
+  // Auth-state changes must validate a candidate before replacing the stored
+  // admin session; anonymous/public auth events can arrive while the admin UI
+  // is still open and should not poison later conduct writes.
+  assert.match(dashboard, /const candidateIsAdmin = await isPasswordAuthUser\(user\)/);
+  assert.doesNotMatch(
+    dashboard,
+    /state\.adminUser = user;\s*state\.adminIsAdmin = await isPasswordAuthUser\(user\);/
+  );
+  assert.match(
+    dashboard,
+    /if \(await isPasswordAuthUser\(state\.adminUser, options\)\) return state\.adminUser;/
+  );
   // Explicit sign-out sets a guard so the auth-state listener cannot restore
   // the session or reopen the dashboard (the auto re-login bug).
   assert.match(dashboard, /state\._signingOut = true/);
