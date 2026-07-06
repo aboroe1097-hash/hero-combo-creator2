@@ -1099,8 +1099,10 @@ const kr = {
   edenX1RewardTeamVoteTag: '최고의 팀 플레이어는 여기서 투표',
   edenX1RewardCardAction: '표 보기',
   edenX1RewardViewAria: '{title} 보상 슬롯 표시',
-  edenX1RewardContributionMeta: '지원 작업 이후 기여도와 이전 길드 값을 합산한 상위 10명입니다.',
-  edenX1RewardSupportMeta: '총 가중 기여도 기준 상위 4명의 지원 플레이어입니다.',
+  edenX1RewardContributionMeta:
+    '지원 작업 이후 현재 기여도 + 이전 길드 기여만 기준으로 한 상위 10명입니다.',
+  edenX1RewardSupportMeta:
+    '배너, 길, 방벽, 팀 노력 보너스 포인트 합산 기준 상위 4명입니다.',
   edenX1RewardManagementMeta: '최종 검토가 진행되는 동안의 임시 관리 배정입니다.',
   edenX1RewardTeamMeta: '길드 투표 보상 슬롯은 대기 중입니다.',
   edenX1RewardSlotGroup: '보상 그룹',
@@ -1265,7 +1267,7 @@ const kr = {
   edenX1VotePhTeammateThird: '세 번째 팀원 선택',
   edenX1VotePhTeammateFourth: '네 번째 팀원 선택',
   edenX1VoteSelfConfirmed: '확인됨: {player}',
-  edenX1VoteSelfPick: '나를 투표 #1에 넣기',
+  edenX1VoteSelfPick: '나를 투표에 추가',
   edenX1VoteClearPicked: '{player} 지우기',
   edenX1VoteCast: '투표 제출',
   edenX1VoteInspectEmpty: '통계를 볼 멤버 선택',

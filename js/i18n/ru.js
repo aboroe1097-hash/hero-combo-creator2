@@ -1106,8 +1106,10 @@ const ru = {
   edenX1RewardTeamVoteTag: 'Голосуйте здесь за лучших командных игроков',
   edenX1RewardCardAction: 'Открыть таблицу',
   edenX1RewardViewAria: 'Показать места наград для {title}',
-  edenX1RewardContributionMeta: 'Первые 10 по вкладу плюс экс-гильдия, после помощи.',
-  edenX1RewardSupportMeta: 'Первые 4 помощника по общему взвешенному вкладу.',
+  edenX1RewardContributionMeta:
+    'Первые 10 только по текущему вкладу + экс-гильдии, после помощи.',
+  edenX1RewardSupportMeta:
+    'Первые 4 по сумме баннеров, дорог, щитовых стен и командных бонусных очков.',
   edenX1RewardManagementMeta: 'Временное назначение управления, пока идет финальная проверка.',
   edenX1RewardTeamMeta: 'Места наград голосования гильдии ожидают решения.',
   edenX1RewardSlotGroup: 'Группа награды',
@@ -1274,7 +1276,7 @@ const ru = {
   edenX1VotePhTeammateThird: 'Выберите третьего товарища',
   edenX1VotePhTeammateFourth: 'Выберите четвертого товарища',
   edenX1VoteSelfConfirmed: 'Подтверждено: {player}',
-  edenX1VoteSelfPick: 'Поставить меня в голос #1',
+  edenX1VoteSelfPick: 'Добавить меня в голоса',
   edenX1VoteClearPicked: 'Убрать {player}',
   edenX1VoteCast: 'Отдать голоса',
   edenX1VoteInspectEmpty: 'Выберите участника, чтобы посмотреть статистику',

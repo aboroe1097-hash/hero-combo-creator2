@@ -1111,8 +1111,10 @@ const es = {
   edenX1RewardTeamVoteTag: 'Vota aquí por los mejores jugadores de equipo',
   edenX1RewardCardAction: 'Ver tabla',
   edenX1RewardViewAria: 'Mostrar plazas de recompensa de {title}',
-  edenX1RewardContributionMeta: 'Top 10 por contribución más ex-gremio, después de apoyo.',
-  edenX1RewardSupportMeta: 'Los 4 mejores apoyos por contribución ponderada total.',
+  edenX1RewardContributionMeta:
+    'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',
+  edenX1RewardSupportMeta:
+    'Top 4 por banners, caminos, muros de escudo y puntos de esfuerzo de equipo combinados.',
   edenX1RewardManagementMeta: 'Asignación temporal de gestión mientras continúa la revisión final.',
   edenX1RewardTeamMeta: 'Las plazas de recompensa por voto del gremio están pendientes.',
   edenX1RewardSlotGroup: 'Grupo de recompensa',
@@ -1281,7 +1283,7 @@ const es = {
   edenX1VotePhTeammateThird: 'Elige el tercer compañero',
   edenX1VotePhTeammateFourth: 'Elige el cuarto compañero',
   edenX1VoteSelfConfirmed: 'Confirmado: {player}',
-  edenX1VoteSelfPick: 'Ponerme en voto #1',
+  edenX1VoteSelfPick: 'Agregarme a los votos',
   edenX1VoteClearPicked: 'Quitar {player}',
   edenX1VoteCast: 'Emitir votos',
   edenX1VoteInspectEmpty: 'Selecciona un miembro para ver estadísticas',

@@ -718,6 +718,7 @@
 }
 
 .eden-x1-page #ocrDashboardRoot .eden-x1-vote-info {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 0.95rem;
@@ -727,18 +728,46 @@
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.12);
   color: #67e8f9;
-  cursor: help;
+  cursor: pointer;
   font-size: 0.66rem;
-  font-style: normal;
   font-weight: 950;
   line-height: 1;
 }
 
-.eden-x1-page #ocrDashboardRoot .eden-x1-vote-stat-label:hover .eden-x1-vote-info,
-.eden-x1-page #ocrDashboardRoot .eden-x1-vote-stat-label:focus-within .eden-x1-vote-info {
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info-popover {
+  position: absolute;
+  bottom: calc(100% + 0.55rem);
+  left: 50%;
+  z-index: 60;
+  width: min(17rem, calc(100vw - 2rem));
+  padding: 0.62rem 0.72rem;
+  border: 1px solid rgba(103, 232, 249, 0.34);
+  border-radius: 8px;
+  background: rgba(8, 13, 24, 0.98);
+  color: rgba(226, 232, 240, 0.96);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  opacity: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+  visibility: hidden;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info:hover,
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info:focus-visible,
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info.is-open {
   border-color: rgba(94, 234, 212, 0.74);
   background: rgba(20, 184, 166, 0.2);
   color: #ecfeff;
+  outline: none;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info:hover .eden-x1-vote-info-popover,
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info:focus-visible .eden-x1-vote-info-popover,
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-info.is-open .eden-x1-vote-info-popover {
+  opacity: 1;
+  visibility: visible;
 }
 
 .eden-x1-page #ocrDashboardRoot .eden-x1-vote-stat-grid .dash-modal-stat-value {
@@ -1213,18 +1242,31 @@
 }
 
 .eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-toggle {
+  display: grid;
+  place-items: center;
   justify-self: center;
-  min-height: 1.72rem;
-  padding: 0.2rem 0.62rem;
+  width: 2.05rem;
+  height: 2.05rem;
+  padding: 0;
   border: 1px solid rgba(103, 232, 249, 0.26);
   border-radius: 999px;
   background: rgba(8, 13, 23, 0.38);
   color: #93c5fd;
   cursor: pointer;
   font: inherit;
-  font-size: 0.72rem;
-  font-weight: 950;
-  line-height: 1.1;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-toggle::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.12rem) rotate(45deg);
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-toggle.is-expanded::before {
+  transform: translateY(0.12rem) rotate(225deg);
 }
 
 .eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-toggle:hover,
@@ -1232,14 +1274,7 @@
   border-color: rgba(103, 232, 249, 0.62);
   background: rgba(14, 165, 233, 0.14);
   outline: none;
-}
-
-@media (min-width: 981px) {
-  .eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-card > strong {
-    display: grid;
-    min-height: 2.05rem;
-    place-items: center;
-  }
+  transform: translateY(-1px);
 }
 
 .eden-x1-page #ocrDashboardRoot .eden-x1-slots-card .dash-card-hdr {
@@ -1457,6 +1492,11 @@
     font-size: 1.06rem;
   }
 
+  .eden-x1-page #ocrDashboardRoot .eden-x1-vote-info-popover {
+    position: fixed;
+    inset: auto 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
   .eden-x1-page #ocrDashboardRoot .eden-x1-slots-card .dash-card-hdr,
   .eden-x1-page #ocrDashboardRoot .eden-x1-slots-card .dash-weighted-table-controls {
     display: grid;
@@ -1472,7 +1512,18 @@
   .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table td:nth-child(2),
   .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table td:nth-child(3),
   .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table td:last-child {
-    text-align: center !important;
+    text-align: left !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table.dash-table--stack td {
+    grid-template-columns: 6.25rem minmax(0, 1fr) !important;
+    min-height: 2.58rem;
+    padding-inline: 0.72rem !important;
+    overflow-wrap: anywhere;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-slots-table.dash-table--stack td::before {
+    text-align: left;
   }
 
   .eden-x1-page #ocrDashboardRoot .eden-x1-vote-helper-grid {
@@ -2052,13 +2103,7 @@
     padding: 0.82rem !important;
     vertical-align: top;
     border-bottom: 0;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.18),
-        rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.1)
-      ),
-      rgba(15, 23, 42, 0.78);
+    background: rgba(15, 23, 42, 0.78);
   }
 
   .eden-x1-page
@@ -2112,21 +2157,8 @@
     width: 100%;
     min-height: 3.4rem;
     border: 1px solid rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.46);
-    border-radius: 14px;
-    background:
-      radial-gradient(
-        circle at 20% 10%,
-        rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.28),
-        transparent 34%
-      ),
-      linear-gradient(
-        135deg,
-        rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.22),
-        rgba(15, 23, 42, 0.84)
-      );
-    box-shadow:
-      inset 0 0 0 1px rgba(var(--eden-reward-accent-rgb, 103, 232, 249), 0.12),
-      0 10px 22px rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.12);
+    border-radius: 12px;
+    background: rgba(8, 13, 24, 0.42);
     text-align: center !important;
   }
 
@@ -2153,13 +2185,6 @@
   .eden-x1-page
     #ocrDashboardRoot
     .dash-contribution-weighted-table.dash-table--stack
-    .dash-weighted-reward-trigger {
-    animation: edenX1RewardNudge 4.8s ease-in-out infinite;
-  }
-
-  .eden-x1-page
-    #ocrDashboardRoot
-    .dash-contribution-weighted-table.dash-table--stack
     .dash-weighted-reward-value {
     color: var(--text-primary);
     font-size: 1.24rem;
@@ -2180,18 +2205,10 @@
     inset: auto max(12px, env(safe-area-inset-right, 0px))
       calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
     width: auto !important;
-    max-width: none !important;
-    max-height: min(58svh, 420px) !important;
-    padding: 1.1rem 1rem 0.95rem !important;
-    overflow-x: hidden !important;
+    max-height: min(48svh, 360px) !important;
+    padding: 0.95rem 0.9rem 0.82rem !important;
     overflow-y: auto !important;
     border-radius: 14px !important;
-    background:
-      linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(8, 13, 24, 0.98)), rgba(8, 13, 24, 0.98) !important;
-    box-shadow:
-      0 -18px 48px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(103, 232, 249, 0.18) !important;
-    overscroll-behavior: contain;
     transform: translateY(10px) !important;
     z-index: 2200;
   }
@@ -2200,70 +2217,66 @@
     display: none !important;
   }
 
-  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover::after {
-    content: '';
-    position: absolute;
-    top: 0.42rem;
-    left: 50%;
-    width: 38px;
-    height: 4px;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.34);
-    transform: translateX(-50%);
-  }
-
   .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
     transform: translateY(0) !important;
-  }
-
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover strong {
-    margin-bottom: 0.62rem;
-    font-size: 0.78rem;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-  }
-
-  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover > span {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.2rem;
-    padding: 0.54rem 0;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover small,
   .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover > span > span,
   .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
-    max-width: 100%;
     overflow-wrap: anywhere;
     white-space: normal;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover b {
-    justify-self: start;
-    text-align: left;
+    text-align: right;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-top-item {
     display: grid !important;
     grid-template-columns: 2rem minmax(0, 1fr);
-    align-items: start !important;
+    align-items: center !important;
+    gap: 0.28rem 0.5rem !important;
     min-width: 0;
+    padding: 0.36rem 0 !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-top-main {
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 2.22rem;
+    padding: 0.34rem 0.42rem !important;
+    overflow: hidden;
+    border-radius: 8px;
   }
 
-  .eden-x1-page #ocrDashboardRoot .dash-top-name,
-  .eden-x1-page #ocrDashboardRoot .dash-top-val {
-    display: block;
-    margin-left: 0.45rem;
+  .eden-x1-page #ocrDashboardRoot .dash-top-rank {
+    justify-content: center;
+  }
+
+  .eden-x1-page #ocrDashboardRoot :is(.dash-top-name, .dash-top-val) {
+    margin: 0 !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-name {
+    padding-right: 0.42rem !important;
+    font-size: 0.82rem !important;
+    line-height: 1.12;
     white-space: normal;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-top-val {
+    justify-self: end;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-top-meta {
     grid-column: 2;
-    justify-self: start;
-    margin: 0.35rem 0 0 0.45rem;
+    justify-self: end;
+    margin: 0.1rem 0.1rem 0 0;
+    font-size: 0.66rem !important;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-structure-item,
@@ -2323,19 +2336,39 @@
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-kpi {
+    display: grid !important;
+    grid-template-columns: 2.05rem minmax(0, 1fr);
+    align-items: center !important;
     gap: 0.62rem !important;
-    padding: 0.62rem !important;
+    min-width: 0;
+    min-height: 4.72rem;
+    padding: 0.56rem !important;
+    overflow: hidden;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-kpi-icon {
-    width: 2.25rem !important;
-    height: 2.25rem !important;
+    width: 2.05rem !important;
+    height: 2.05rem !important;
     border-radius: 10px !important;
     font-size: 0.82rem !important;
   }
 
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-kpi-copy {
+    overflow: hidden;
+  }
+
   .eden-x1-page #ocrDashboardRoot .dash-kpi-value {
-    font-size: clamp(0.95rem, 4.8vw, 1.15rem) !important;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: clamp(0.78rem, 3.55vw, 1.1rem) !important;
+    line-height: 1.04 !important;
+    white-space: nowrap;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-kpi-value-compact .eden-x1-clickable-name {
+    max-width: 100%;
+    font-size: clamp(0.86rem, 3.9vw, 1.05rem);
+    line-height: 1.05;
   }
 
   .eden-x1-page #ocrDashboardRoot .dash-kpi-label {
@@ -2387,14 +2420,5 @@
         rgba(var(--eden-reward-glow-rgb, 14, 165, 233), 0.06)
       ),
       #ffffff;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eden-x1-page
-    #ocrDashboardRoot
-    .dash-contribution-weighted-table.dash-table--stack
-    .dash-weighted-reward-trigger {
-    animation: none !important;
   }
 }

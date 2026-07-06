@@ -60,6 +60,7 @@ let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let edenVoteWriteContext = null;
 let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
+let edenVoteInfoDismissalBound = false;
 
 function $(id) {
   return document.getElementById(id);
@@ -401,7 +402,11 @@ function applyEdenVoteSelfPick(host, source = null) {
     findEdenMemberOptionByKey(sourceKey) ||
     findEdenMemberOption(sourceName) ||
     findEdenMemberOption(host?.querySelector('#edenX1VoterName')?.value);
-  const input = host?.querySelector('#edenX1CandidateName');
+  const inputs = getEdenVoteCandidateInputs(host);
+  const existingInput = inputs.find(
+    (candidateInput) => findEdenMemberOption(candidateInput.value)?.playerKey === voter?.playerKey
+  );
+  const input = existingInput || inputs.find((candidateInput) => !candidateInput.value.trim());
   if (!voter || !input) return;
   input.value = voter.playerName;
   applyEdenVoteInputResolved(host, input.id, voter);
@@ -650,6 +655,42 @@ function rankedEdenConsistentRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     .slice(0, limit);
 }
 
+function shortEdenVoteHelperName(row) {
+  const rawName = readPlayerDisplayName(row);
+  const key = String(row?.key || row?.playerKey || compactPlayerIdentity(rawName)).toLowerCase();
+  return key.startsWith('kika') ? 'Kika' : rawName;
+}
+
+function edenVoteHelperDisplayRow(row) {
+  const shortName = shortEdenVoteHelperName(row);
+  return {
+    ...row,
+    playerKey: row?.playerKey || row?.key,
+    playerName: shortName,
+    name: shortName,
+    displayName: shortName,
+    sourceName: row?.name,
+  };
+}
+
+function edenVoteHelperToggleLabel(expanded) {
+  return t(expanded ? 'edenX1VoteShowTop5' : 'edenX1VoteShowTop10');
+}
+
+function edenVoteHelperToggleAttrs(expanded = false) {
+  const label = esc(edenVoteHelperToggleLabel(expanded));
+  return `aria-expanded="${expanded ? 'true' : 'false'}" aria-label="${label}" title="${label}"`;
+}
+
+function setEdenVoteHelperToggleState(button, expanded) {
+  if (!button) return;
+  const label = edenVoteHelperToggleLabel(expanded);
+  button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  button.setAttribute('aria-label', label);
+  button.setAttribute('title', label);
+  button.classList.toggle('is-expanded', expanded);
+}
+
 function renderEdenVotePickList(title, hint, rows) {
   const hasMore = rows.length > EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT;
   const body = rows.length
@@ -659,7 +700,7 @@ function renderEdenVotePickList(title, hint, rows) {
             row,
             index
           ) => `<button class="eden-x1-vote-helper-row${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' is-helper-extra' : ''}" type="button" data-eden-vote-pick="${esc(row.name)}"${index >= EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT ? ' hidden' : ''}>
-            <span class="eden-x1-vote-helper-name"><b>#${index + 1}</b><span class="eden-x1-vote-helper-player">${renderTaggedPlayerName(row)}</span></span>
+            <span class="eden-x1-vote-helper-name"><b>#${index + 1}</b><span class="eden-x1-vote-helper-player">${renderTaggedPlayerName(edenVoteHelperDisplayRow(row))}</span></span>
             <em>${esc(row.value)}</em>
           </button>`
         )
@@ -671,7 +712,7 @@ function renderEdenVotePickList(title, hint, rows) {
     <div>${body}</div>
     ${
       hasMore
-        ? `<button class="eden-x1-vote-helper-toggle" type="button" data-eden-vote-helper-toggle aria-expanded="false">${esc(t('edenX1VoteShowTop10'))}</button>`
+        ? `<button class="eden-x1-vote-helper-toggle" type="button" data-eden-vote-helper-toggle ${edenVoteHelperToggleAttrs(false)}></button>`
         : ''
     }
   </div>`;
@@ -683,11 +724,6 @@ function renderEdenVoteGuidance() {
       t('edenX1VoteTopBanner'),
       t('edenX1VoteTopBannerHint'),
       rankedEdenDutyRows('banners', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
-    ],
-    [
-      t('edenX1VoteTopShield'),
-      t('edenX1VoteTopShieldHint'),
-      rankedEdenDutyRows('shieldWalls', EDEN_X1_VOTE_HELPER_FULL_LIMIT),
     ],
     [
       t('edenX1VoteTopPath'),
@@ -732,9 +768,41 @@ function renderEdenVoteBreakdownRows(rows) {
     .join('');
 }
 
+function closeEdenVoteInfoPopovers(except = null) {
+  document.querySelectorAll('.eden-x1-vote-info.is-open').forEach((button) => {
+    if (button === except) return;
+    button.classList.remove('is-open');
+    button.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function bindEdenVoteInfoDismissal() {
+  if (edenVoteInfoDismissalBound) return;
+  edenVoteInfoDismissalBound = true;
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.eden-x1-vote-info')) return;
+    closeEdenVoteInfoPopovers();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeEdenVoteInfoPopovers();
+  });
+}
+
+function toggleEdenVoteInfoPopover(infoButton) {
+  if (!infoButton) return;
+  const shouldOpen = !infoButton.classList.contains('is-open');
+  closeEdenVoteInfoPopovers(infoButton);
+  infoButton.classList.toggle('is-open', shouldOpen);
+  infoButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+}
+
 function renderEdenVoteInfoBadge(info) {
   if (!info) return '';
-  return `<span class="eden-x1-vote-info" role="img" aria-label="${esc(t('edenX1InfoButtonLabel'))}: ${esc(info)}" title="${esc(info)}">i</span>`;
+  const label = `${t('edenX1InfoButtonLabel')}: ${info}`;
+  return `<span class="eden-x1-vote-info" role="button" tabindex="0" aria-expanded="false" aria-label="${esc(label)}">
+    <span aria-hidden="true">i</span>
+    <span class="eden-x1-vote-info-popover" role="tooltip">${esc(info)}</span>
+  </span>`;
 }
 
 function renderEdenVoteStatLabel(label, info = '') {
@@ -1287,6 +1355,7 @@ function submitEdenTeamVoteFromPointer(event) {
 
 function bindEdenVoteControls(host) {
   if (!host) return;
+  bindEdenVoteInfoDismissal();
   const form = host.querySelector('#edenX1TeamVoteForm');
   if (form && !form.dataset.edenVoteSubmitBound) {
     form.dataset.edenVoteSubmitBound = '1';
@@ -1329,6 +1398,13 @@ function bindEdenVoteControls(host) {
       if (event.target.closest('[data-eden-vote-suggest]')) event.preventDefault();
     });
     host.addEventListener('click', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (infoButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleEdenVoteInfoPopover(infoButton);
+        return;
+      }
       const clear = event.target.closest('[data-eden-vote-clear]');
       if (clear) {
         event.preventDefault();
@@ -1353,8 +1429,7 @@ function bindEdenVoteControls(host) {
             row.hidden = !expanded;
           });
         }
-        helperToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        helperToggle.textContent = expanded ? t('edenX1VoteShowTop5') : t('edenX1VoteShowTop10');
+        setEdenVoteHelperToggleState(helperToggle, expanded);
         return;
       }
       const suggestion = event.target.closest('[data-eden-vote-suggest]');
@@ -1411,6 +1486,13 @@ function bindEdenVoteControls(host) {
       if (openPlayer) {
         showPublicDetail('player', openPlayer.getAttribute('data-eden-vote-open-player'));
       }
+    });
+    host.addEventListener('keydown', (event) => {
+      const infoButton = event.target.closest('.eden-x1-vote-info');
+      if (!infoButton || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggleEdenVoteInfoPopover(infoButton);
     });
   }
   updateEdenVoteInputSuggestions(host, 'edenX1VoterName');
@@ -1655,9 +1737,9 @@ function getSupportRewardRows() {
     .slice()
     .sort(
       (a, b) =>
-        valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         rowBonusTotal(b) - rowBonusTotal(a) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
+        valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
     .slice(0, 4)

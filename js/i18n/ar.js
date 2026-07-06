@@ -1102,8 +1102,10 @@ const ar = {
   edenX1RewardTeamVoteTag: 'صوّت هنا لأفضل لاعبي الفريق',
   edenX1RewardCardAction: 'عرض الجدول',
   edenX1RewardViewAria: 'عرض خانات مكافآت {title}',
-  edenX1RewardContributionMeta: 'أفضل 10 حسب المساهمة بالإضافة إلى النقابة السابقة، بعد الدعم.',
-  edenX1RewardSupportMeta: 'أفضل 4 لاعبي دعم حسب إجمالي المساهمة الموزونة.',
+  edenX1RewardContributionMeta:
+    'أفضل 10 حسب المساهمة الحالية + مساهمة النقابة السابقة فقط، بعد أعمال الدعم.',
+  edenX1RewardSupportMeta:
+    'أفضل 4 حسب مجموع اللافتات والطرق وجدران الحماية ونقاط جهد الفريق.',
   edenX1RewardManagementMeta: 'تعيين إداري مؤقت أثناء تقدم المراجعة النهائية.',
   edenX1RewardTeamMeta: 'خانات مكافآت تصويت النقابة قيد الانتظار.',
   edenX1RewardSlotGroup: 'مجموعة المكافأة',
@@ -1268,7 +1270,7 @@ const ar = {
   edenX1VotePhTeammateThird: 'اختر الزميل الثالث',
   edenX1VotePhTeammateFourth: 'اختر الزميل الرابع',
   edenX1VoteSelfConfirmed: 'تم التأكيد: {player}',
-  edenX1VoteSelfPick: 'ضعني في التصويت #1',
+  edenX1VoteSelfPick: 'أضفني إلى الأصوات',
   edenX1VoteClearPicked: 'مسح {player}',
   edenX1VoteCast: 'إرسال الأصوات',
   edenX1VoteInspectEmpty: 'اختر عضوًا لعرض الإحصائيات',

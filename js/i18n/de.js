@@ -1114,8 +1114,10 @@ const de = {
   edenX1RewardTeamVoteTag: 'Hier für beste Teamspieler abstimmen',
   edenX1RewardCardAction: 'Tabelle anzeigen',
   edenX1RewardViewAria: 'Belohnungsplätze für {title} anzeigen',
-  edenX1RewardContributionMeta: 'Top 10 nach Beitrag plus Ex-Gilde, nach Support Work.',
-  edenX1RewardSupportMeta: 'Top 4 Support-Spieler nach gewichteter Gesamtbeteiligung.',
+  edenX1RewardContributionMeta:
+    'Top 10 nur nach aktuellem Beitrag + Ex-Gilde, nach Support Work.',
+  edenX1RewardSupportMeta:
+    'Top 4 nach kombinierten Bannern, Wegen, Schildmauern und Teamleistungs-Bonuspunkten.',
   edenX1RewardManagementMeta: 'Temporäre Verwaltungszuweisung während die finale Prüfung läuft.',
   edenX1RewardTeamMeta: 'Belohnungsplätze der Gildenabstimmung stehen noch aus.',
   edenX1RewardSlotGroup: 'Belohnungsgruppe',
@@ -1284,7 +1286,7 @@ const de = {
   edenX1VotePhTeammateThird: 'Dritten Teamkollegen wählen',
   edenX1VotePhTeammateFourth: 'Vierten Teamkollegen wählen',
   edenX1VoteSelfConfirmed: 'Bestätigt: {player}',
-  edenX1VoteSelfPick: 'Mich auf Stimme #1 setzen',
+  edenX1VoteSelfPick: 'Mich zu den Stimmen hinzufügen',
   edenX1VoteClearPicked: '{player} entfernen',
   edenX1VoteCast: 'Stimmen abgeben',
   edenX1VoteInspectEmpty: 'Mitglied wählen, um Statistiken zu sehen',

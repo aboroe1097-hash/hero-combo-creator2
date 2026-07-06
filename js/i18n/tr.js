@@ -1104,8 +1104,10 @@ const tr = {
   edenX1RewardTeamVoteTag: 'En iyi takım oyuncuları için burada oy ver',
   edenX1RewardCardAction: 'Tabloyu görüntüle',
   edenX1RewardViewAria: '{title} ödül slotlarını göster',
-  edenX1RewardContributionMeta: 'Destekten sonra katkı artı eski lonca değerine göre ilk 10.',
-  edenX1RewardSupportMeta: 'Toplam ağırlıklı katkıya göre ilk 4 destek oyuncusu.',
+  edenX1RewardContributionMeta:
+    'Destekten sonra yalnızca mevcut katkı + eski lonca katkısına göre ilk 10.',
+  edenX1RewardSupportMeta:
+    'Banner, yol, kalkan duvarı ve takım emeği bonus puanları toplamına göre ilk 4.',
   edenX1RewardManagementMeta: 'Final inceleme sürerken geçici yönetim ataması.',
   edenX1RewardTeamMeta: 'Lonca oylaması ödül slotları beklemede.',
   edenX1RewardSlotGroup: 'Ödül grubu',
@@ -1272,7 +1274,7 @@ const tr = {
   edenX1VotePhTeammateThird: 'Üçüncü takım arkadaşını seç',
   edenX1VotePhTeammateFourth: 'Dördüncü takım arkadaşını seç',
   edenX1VoteSelfConfirmed: 'Onaylandı: {player}',
-  edenX1VoteSelfPick: 'Beni oy #1 yap',
+  edenX1VoteSelfPick: 'Beni oylara ekle',
   edenX1VoteClearPicked: '{player} seçimini kaldır',
   edenX1VoteCast: 'Oyları gönder',
   edenX1VoteInspectEmpty: 'İstatistik için bir üye seç',

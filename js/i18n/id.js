@@ -1103,8 +1103,10 @@ const id = {
   edenX1RewardTeamVoteTag: 'Vote di sini untuk pemain tim terbaik',
   edenX1RewardCardAction: 'Lihat tabel',
   edenX1RewardViewAria: 'Tampilkan slot hadiah {title}',
-  edenX1RewardContributionMeta: '10 teratas dari kontribusi plus ex-guild, setelah dukungan.',
-  edenX1RewardSupportMeta: '4 pemain dukungan teratas berdasarkan total kontribusi berbobot.',
+  edenX1RewardContributionMeta:
+    '10 teratas hanya dari kontribusi saat ini + ex-guild, setelah dukungan.',
+  edenX1RewardSupportMeta:
+    '4 teratas dari gabungan banner, jalur, shield wall, dan poin usaha tim.',
   edenX1RewardManagementMeta: 'Penugasan manajemen sementara selama tinjauan akhir berlangsung.',
   edenX1RewardTeamMeta: 'Slot hadiah vote guild masih menunggu.',
   edenX1RewardSlotGroup: 'Grup hadiah',
@@ -1272,7 +1274,7 @@ const id = {
   edenX1VotePhTeammateThird: 'Pilih rekan ketiga',
   edenX1VotePhTeammateFourth: 'Pilih rekan keempat',
   edenX1VoteSelfConfirmed: 'Terkonfirmasi: {player}',
-  edenX1VoteSelfPick: 'Masukkan aku ke suara #1',
+  edenX1VoteSelfPick: 'Tambahkan saya ke suara',
   edenX1VoteClearPicked: 'Hapus {player}',
   edenX1VoteCast: 'Kirim suara',
   edenX1VoteInspectEmpty: 'Pilih anggota untuk melihat statistik',

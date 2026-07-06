@@ -1105,8 +1105,10 @@ const en = {
   edenX1RewardTeamVoteTag: 'Vote here for Best TeamPlayers',
   edenX1RewardCardAction: 'View table',
   edenX1RewardViewAria: 'Show {title} reward slots',
-  edenX1RewardContributionMeta: 'Top 10 by contribution plus ex-guild, after Support Work.',
-  edenX1RewardSupportMeta: 'Top 4 support workers by total weighted contribution.',
+  edenX1RewardContributionMeta:
+    'Top 10 by current contribution + ex-guild only, after Support Work.',
+  edenX1RewardSupportMeta:
+    'Top 4 by combined banners, pathing, shield walls, and bonus team effort points.',
   edenX1RewardManagementMeta: 'Temporary management assignment while final review is in progress.',
   edenX1RewardTeamMeta: 'Guild vote reward slots are pending.',
   edenX1RewardSlotGroup: 'Reward group',
@@ -1273,7 +1275,7 @@ const en = {
   edenX1VotePhTeammateThird: 'Choose third teammate',
   edenX1VotePhTeammateFourth: 'Choose fourth teammate',
   edenX1VoteSelfConfirmed: 'Confirmed: {player}',
-  edenX1VoteSelfPick: 'Put me in vote #1',
+  edenX1VoteSelfPick: 'Add me to votes',
   edenX1VoteClearPicked: 'Clear {player}',
   edenX1VoteCast: 'Cast Votes',
   edenX1VoteInspectEmpty: 'Select a member to view stats',

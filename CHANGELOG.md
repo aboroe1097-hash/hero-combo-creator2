@@ -8,6 +8,7 @@
 - Added translated calculation info chips to Eden X1 player stat tiles and clearer helper-card labels with one-line explanations; helper lists show five rows by default and can expand toward the top ten when more data exists.
 - Documented that GitHub Pages deploys do not push Firestore rules, so public Team Players vote rule changes require a separate Firebase rules deploy before live cloud writes pass.
 - Reworked Total Contribution reward ordering to use current contribution plus ex-guild contribution for final reward rank, while keeping R5 Bonus Team Effort Points visible as support signal data rather than reward-rank input.
+- Finalized the post-queue Eden X1 polish: Support Work now ranks the top four by combined support signals, helper cards dropped the separate Shield Wall list, long Kika helper names display as `Kika`, and helper expansion uses compact arrow controls.
 - Added MVP on Buildings and R5 Bonus Team Effort Points guidance cards, renamed helper guidance with clearer plain-language labels, added translated helper hints, centered helper headings, and completed the new i18n strings across all 11 languages.
 - Improved Eden X1 public/table UX with sortable weighted-contribution columns, better chart x-axis labels, fuller Attack History height usage, tighter dashboard gutters, and consistent card/table start-end alignment.
 - Added matched-name confirmation tags to Shield Wall and R5 Bonus Team Effort summary tables so uploaded aliases visibly map back to confirmed roster names.

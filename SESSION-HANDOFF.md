@@ -15,9 +15,9 @@ Release: 13.0.0
 - R4 / Management and Team Players reward slots are now three total each.
 - Total Contribution rewards are ranked by contribution plus ex-guild contribution after Support Work slots. R5 conduct/bonus points no longer affect that reward rank.
 - Forfeited premium rewards are skipped and backfilled by the next eligible player.
-- Eden X1 helper lists were cleaned up with plain-language labels, translated one-line hints, default top-five rows, top-ten expansion, MVP on Buildings, and R5 Bonus Team Effort Points.
-- Player stat tiles now have translated info chips that explain how weighted score, final rank, contribution, support, R5 bonus, structure hits, total demolition, and consistency are calculated.
-- Partial ballots ask for a second confirmation before saving, duplicate votes are blocked without saving, and voters can optionally put their own in-game name into vote slot #1.
+- Eden X1 helper lists were cleaned up with plain-language labels, translated one-line hints, default top-five rows, compact arrow expansion to top ten, MVP on Buildings, R5 Bonus Team Effort Points, shortened long Kika display names, and no separate Shield Wall helper card.
+- Player stat tiles now have translated info chips that explain how weighted score, final rank, contribution, support, R5 bonus, structure hits, total demolition, and consistency are calculated; the chips open on hover, focus, or click.
+- Partial ballots ask for a second confirmation before saving, duplicate votes are blocked without saving, and voters can optionally put their own in-game name into the next open vote slot.
 - Public Eden X1 layout received alignment, spacing, chart axis, sortable table, and attack-history stretch fixes for desktop/mobile consistency.
 - Shield Wall and Bonus Team Effort summary tables now include matched-name confirmation/source context.
 - Version metadata, README, changelog, HTML cache busting, and service worker metadata were updated for 13.0.0.
@@ -27,7 +27,7 @@ Release: 13.0.0
 Handled or already covered:
 
 - Admin custom-claim gate and related tests/rules are already in place.
-- i18n coverage is green for the new post-push strings: 814 template keys, 1245 runtime keys, 11 languages.
+- i18n coverage is green for the new post-push strings: 810 template keys, 1245 runtime keys, 11 languages.
 - Eden X1 vote validation now covers one to four unique teammate votes in rules and tests.
 - CSS growth is tracked through the size budget, with the Eden X1 split budget intentionally raised for this release.
 - Visual/layout concerns from the queued screenshots are covered by updated smoke snapshots and overflow assertions.
@@ -42,10 +42,13 @@ Deferred backlog from the Copilot report:
 
 ## Validation
 
-- `npm run i18n:check` passed.
-- `npx playwright test tests/app-smoke.spec.js --update-snapshots --reporter=line` passed, 49/49, regenerating the intentional visual snapshots.
-- `npm run check` passed: lint, format, 151 unit tests, i18n, data check, build, size check, and smoke 49/49.
-- Size check passed with total CSS 569.1 kB and Eden X1 CSS 46.67 kB.
+- `node --check js\eden-x1.js` passed.
+- `npm run i18n:check` passed with 810 template keys, 1245 runtime keys, and 11 languages.
+- `npm run test:unit -- tests/unit/contribution-weighting.test.mjs` passed, 151/151 unit tests.
+- `npm run build` passed and refreshed cache-bust metadata to `20260706_182742`; the remaining tech-db and non-module script messages are existing build warnings.
+- `npm run size:check` passed with total CSS 575.7 kB.
+- `npx playwright test tests/app-smoke.spec.js -g "eden x1 reward flow cards filter reward tables|eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names" --reporter=line` passed, 2/2.
+- `git diff --check` passed with only normal Windows CRLF warnings.
 
 ## Notes For Claude
 

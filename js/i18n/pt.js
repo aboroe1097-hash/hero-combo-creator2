@@ -1092,8 +1092,10 @@ const pt = {
   edenX1RewardTeamVoteTag: 'Vote aqui nos melhores jogadores de equipe',
   edenX1RewardCardAction: 'Ver tabela',
   edenX1RewardViewAria: 'Mostrar vagas de recompensa de {title}',
-  edenX1RewardContributionMeta: 'Top 10 por contribuição mais ex-guilda, após apoio.',
-  edenX1RewardSupportMeta: 'Top 4 apoios por contribuição total ponderada.',
+  edenX1RewardContributionMeta:
+    'Top 10 apenas por contribuição atual + ex-guilda, após apoio.',
+  edenX1RewardSupportMeta:
+    'Top 4 por banners, caminhos, muralhas de escudo e pontos de esforço da equipe somados.',
   edenX1RewardManagementMeta:
     'Atribuição temporária de gestão enquanto a revisão final está em andamento.',
   edenX1RewardTeamMeta: 'As vagas de recompensa por voto da guilda estão pendentes.',
@@ -1263,7 +1265,7 @@ const pt = {
   edenX1VotePhTeammateThird: 'Escolha o terceiro colega',
   edenX1VotePhTeammateFourth: 'Escolha o quarto colega',
   edenX1VoteSelfConfirmed: 'Confirmado: {player}',
-  edenX1VoteSelfPick: 'Colocar-me no voto #1',
+  edenX1VoteSelfPick: 'Adicionar-me aos votos',
   edenX1VoteClearPicked: 'Remover {player}',
   edenX1VoteCast: 'Enviar votos',
   edenX1VoteInspectEmpty: 'Selecione um membro para ver estatísticas',
