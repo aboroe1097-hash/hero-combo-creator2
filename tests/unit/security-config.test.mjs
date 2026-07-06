@@ -268,12 +268,32 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   );
   assert.match(rules, /request\.resource\.data\.category == 'team_players'/);
   assert.match(rules, /request\.resource\.data\.candidateKeys is list/);
-  assert.match(rules, /request\.resource\.data\.candidateKeys\.size\(\) == 2/);
+  assert.match(rules, /request\.resource\.data\.candidateKeys\.size\(\) == 4/);
   assert.match(rules, /request\.resource\.data\.candidateNames is list/);
-  assert.match(rules, /request\.resource\.data\.candidateNames\.size\(\) == 2/);
+  assert.match(rules, /request\.resource\.data\.candidateNames\.size\(\) == 4/);
   assert.match(
     rules,
     /request\.resource\.data\.candidateKeys\[0\] != request\.resource\.data\.candidateKeys\[1\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[0\] != request\.resource\.data\.candidateKeys\[2\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[0\] != request\.resource\.data\.candidateKeys\[3\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[1\] != request\.resource\.data\.candidateKeys\[2\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[1\] != request\.resource\.data\.candidateKeys\[3\]/
+  );
+  assert.match(
+    rules,
+    /request\.resource\.data\.candidateKeys\[2\] != request\.resource\.data\.candidateKeys\[3\]/
   );
   assert.match(
     rules,

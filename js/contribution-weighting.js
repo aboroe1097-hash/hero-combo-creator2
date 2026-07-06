@@ -438,15 +438,17 @@ export function buildWeightedContributionRows(options = {}) {
   const rankedRows = rows
     .map((row) => {
       const exGuildPoints = row.contributionExGuild || 0;
+      const contributionRewardScore = row.contributionScore + exGuildPoints;
       const dutyPoints =
         row.banners * BASE_POINT_VALUE +
         row.pathers * BASE_POINT_VALUE +
         row.shieldWalls * BASE_POINT_VALUE;
       const conductPoints = row.conductBonus * BASE_POINT_VALUE;
-      const weightedScore = row.contributionScore + exGuildPoints + dutyPoints + conductPoints;
+      const weightedScore = contributionRewardScore + dutyPoints + conductPoints;
 
       return {
         ...row,
+        contributionRewardScore,
         dutyPoints,
         conductPoints,
         weightedScore,
@@ -454,7 +456,7 @@ export function buildWeightedContributionRows(options = {}) {
     })
     .sort(
       (a, b) =>
-        b.weightedScore - a.weightedScore ||
+        b.contributionRewardScore - a.contributionRewardScore ||
         b.contributionScore - a.contributionScore ||
         String(a.playerName).localeCompare(String(b.playerName))
     )

@@ -1487,6 +1487,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashConductSummary')).toContainText('~Sarafino~');
     await expect(page.locator('#dashConductSummary')).toContainText('+1,000');
     await expect(page.locator('#dashConductSummary')).toContainText('Connected road');
+    await expect(page.locator('#dashConductSummary .dash-duty-match-confirm').first()).toContainText(
+      'Match to'
+    );
+    await expect(page.locator('#dashConductSummary .dash-duty-match-confirm').first()).toContainText(
+      '~Sarafino~'
+    );
 
     await page.locator('#dashConductPlayer').selectOption({ label: 'Other / external R5' });
     await expect(page.locator('#dashConductManualPlayerInput')).toBeVisible();
@@ -1659,7 +1665,7 @@ test.describe('app smoke tabs', () => {
         rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
       );
     expect(patherSummaryRows.filter((cells) => cells[0].includes('Kika'))).toHaveLength(2);
-    const angelSummaryRow = patherSummaryRows.find((cells) => cells[0] === 'ANGEL');
+    const angelSummaryRow = patherSummaryRows.find((cells) => cells[0]?.includes('ANGEL'));
     expect(angelSummaryRow?.[3]).toContain('Exact');
     expect(angelSummaryRow?.[4]).toContain('10:30');
     await expect(page.locator('#dashPatherListBody .dash-duty-detail-table')).toBeVisible();
@@ -1698,6 +1704,9 @@ test.describe('app smoke tabs', () => {
     await page.evaluate(() => window.switchDashSubtab('shieldWall'));
     await expect(page.locator('#dashShieldWallListSummary .dash-duty-summary-table')).toBeVisible();
     await expect(page.locator('#dashShieldWallListSummary')).toContainText('~Sarafino~');
+    await expect(
+      page.locator('#dashShieldWallListSummary .dash-duty-match-confirm').first()
+    ).toContainText('~Sarafino~');
     await expect(page.locator('#dashShieldWallListSummary')).toContainText('23:59');
     await expect(page.locator('#dashShieldWallBody .dash-duty-detail-table')).toBeVisible();
 
@@ -2043,6 +2052,13 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('thead')).toContainText('Bonus Team Effort Points');
     await expect(publicWeightedTable.locator('thead')).toContainText('Total');
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(16);
+    const publicExGuildSortHeader = publicWeightedTable.locator(
+      'th[data-public-weighted-sort="exGuild"]'
+    );
+    await publicExGuildSortHeader.click();
+    await expect(publicExGuildSortHeader).toHaveAttribute('aria-sort', 'descending');
+    await expect(publicWeightedTable.locator('tbody tr').first()).toContainText('November');
+    await expect(publicWeightedTable.locator('tbody tr').first()).toContainText('65,000');
     const publicWeightedSearch = publicDashboard.locator('#edenX1PublicWeightedSearch');
     await expect(publicWeightedSearch).toBeVisible();
     await publicWeightedSearch.fill('Mike');
@@ -2135,6 +2151,9 @@ test.describe('app smoke tabs', () => {
     const supportCard = page.locator('[data-reward-view="support"]');
     await expect(supportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(supportCard.locator('.eden-x1-flow-action')).toHaveText('View table');
+    await expect(supportCard.locator('.eden-x1-flow-vote-tag')).toHaveText(
+      'Vote here for Best TeamMembers'
+    );
     await expect(panel.locator('h2')).toContainText('Support Work');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'total weighted contribution'
@@ -2254,16 +2273,11 @@ test.describe('app smoke tabs', () => {
       'contribution plus ex-guild'
     );
     await expect(panel.locator('tbody tr')).toHaveCount(10);
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('Delta');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
     ).toHaveText('1');
-    await expect(panel.locator('tbody tr').first()).toContainText('#10');
-    await expect(panel).not.toContainText('Mike');
-    await expect(panel).not.toContainText('Alpha');
-    await expect(panel).not.toContainText('Bravo');
-    await expect(panel).not.toContainText('Charlie');
-    await expect(panel).not.toContainText('Oscar');
+    await expect(panel.locator('tbody tr').first()).toContainText('#4');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map(
         (row) =>
@@ -2272,7 +2286,6 @@ test.describe('app smoke tabs', () => {
       )
     );
     expect(contributionNames).toEqual([
-      'MalakAbo',
       'Delta',
       'Echo',
       'Foxtrot',
@@ -2282,27 +2295,33 @@ test.describe('app smoke tabs', () => {
       'India',
       'Juliet',
       'Kilo',
+      'Lima',
     ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
-    expect(contributionNames).not.toContain('Lima');
+    expect(contributionNames).not.toContain('Mike');
+    expect(contributionNames).not.toContain('MalakAbo');
+    expect(contributionNames).not.toContain('Alpha');
+    expect(contributionNames).not.toContain('Bravo');
+    expect(contributionNames).not.toContain('Charlie');
+    expect(contributionNames).not.toContain('Oscar');
     const novemberContributionRow = panel.locator('tbody tr', { hasText: 'November' });
     await expect(novemberContributionRow.locator('td').nth(5)).toHaveText('65,000');
-    await panel.locator('#edenX1TableSearch').fill('MalakAbo');
+    await panel.locator('#edenX1TableSearch').fill('Lima');
     await expect(panel.locator('tbody tr')).toHaveCount(1);
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('Lima');
     await panel.locator('#edenX1TableSearch').fill('');
     await expect(panel.locator('tbody tr')).toHaveCount(10);
     const contributionPlayerSort = panel.locator('th[data-weighted-sort="player"]');
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(panel.locator('tbody tr').first()).toContainText('November');
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();
     await expect(managementCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('h2')).toContainText('R4 / Management');
-    await expect(panel.locator('tbody tr')).toHaveCount(4);
+    await expect(panel.locator('tbody tr')).toHaveCount(3);
     const managementRows = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => ({
         name:
@@ -2316,24 +2335,58 @@ test.describe('app smoke tabs', () => {
       { name: 'Wicked Russian', tag: 'R4', status: 'Assigned' },
       { name: 'TBA', tag: '', status: 'Management team voting' },
       { name: 'TBA', tag: '', status: 'Management team voting' },
-      { name: 'TBA', tag: '', status: 'Management team voting' },
     ]);
 
     const teamCard = page.locator('[data-reward-view="team"]');
     await teamCard.click();
     await expect(teamCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
-    await expect(panel.locator('tbody tr')).toHaveCount(2);
-    await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA']);
+    await expect(panel.locator('tbody tr')).toHaveCount(3);
+    await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA', 'TBA']);
     await expect(panel).toContainText('Team Players Vote');
     await expect(panel).toContainText('Need help choosing?');
     await expect(panel).toContainText('Top 5 Banner Help');
     await expect(panel).toContainText('Top 5 Shield Wall Help');
     await expect(panel).toContainText('Top 5 Pathing Help');
-    await expect(panel).toContainText('Top 5 Structure Help');
+    await expect(panel).toContainText('Top 5 Structure Attacks');
+    await expect(panel).toContainText('Top 5 MVP on Buildings');
+    await expect(panel).toContainText('Top 5 R5 Bonus Team Effort Points');
     await expect(panel).toContainText('Top 5 Consistent Names');
+    await expect(panel.locator('#edenX1VoterName')).toHaveAttribute(
+      'placeholder',
+      'Put your In-Game Name'
+    );
+    await panel.locator('#edenX1VoterName').fill('NotARealMember');
+    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'Choose your in-game name from the member list.'
+    );
+    await expect(panel.locator('#edenX1VoterName')).toHaveAttribute('aria-invalid', 'true');
+    await expect(panel.locator('#edenX1VoterName')).toHaveClass(/is-invalid/);
+    await panel.locator('#edenX1VoterName').fill('Mala');
+    await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toContainText(
+      'MalakAbo'
+    );
+    await panel
+      .locator('[data-eden-vote-suggestions-for="edenX1VoterName"] [data-eden-vote-suggest="MalakAbo"]')
+      .click();
+    await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
+    await expect(panel.locator('#edenX1VoterName')).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(panel.locator('#edenX1VoterNameConfirm')).toContainText(
+      'Confirmed: MalakAbo'
+    );
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')
+    ).toBeEmpty();
     await panel.locator('[data-eden-vote-pick="Alpha"]').first().click();
     await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
+    await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
+    await expect(panel.locator('#edenX1CandidateNameConfirm')).toBeEmpty();
+    await panel.locator('[data-eden-vote-pick="Alpha"]').first().click();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
     await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
       'View Alpha stats'
     );
@@ -2363,25 +2416,50 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
     ).toBeEmpty();
-    await panel.locator('#edenX1VoterName').fill('Deltta');
-    await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toContainText(
-      'Delta'
-    );
+    await panel.locator('#edenX1CandidateName3').fill('Charli');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
+    ).toContainText('Charlie');
+    await panel
+      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"] [data-eden-vote-suggest="Charlie"]')
+      .click();
+    await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
+    ).toBeEmpty();
+    await panel.locator('#edenX1CandidateName4').fill('Delt');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
+    ).toContainText('Delta');
+    await panel
+      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"] [data-eden-vote-suggest="Delta"]')
+      .click();
+    await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
+    await expect(
+      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
+    ).toBeEmpty();
     await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText('Votes saved');
-    await expect(panel.locator('#edenX1VoterName')).toHaveValue('Delta');
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'Saved on this device: MalakAbo voted for Alpha, Bravo, Charlie, Delta.'
+    );
+    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+      'Final results will be announced during the last day.'
+    );
+    await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
     await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
     await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+    await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+    await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
     const savedVote = await page.evaluate(() =>
       JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
     );
     expect(savedVote).toMatchObject({
       season: 'season-2026',
       category: 'team_players',
-      voterName: 'Delta',
+      voterName: 'MalakAbo',
       candidateName: 'Alpha',
-      candidateNames: ['Alpha', 'Bravo'],
-      candidateKeys: ['alpha', 'bravo'],
+      candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
+      candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
     });
 
     await page.evaluate(() => {
@@ -2417,8 +2495,8 @@ test.describe('app smoke tabs', () => {
           voterName: 'Delta',
           candidateKey: 'alpha',
           candidateName: 'Alpha',
-          candidateKeys: ['alpha', 'bravo'],
-          candidateNames: ['Alpha', 'Bravo'],
+          candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
+          candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
           voterAuthUid: 'test-delta',
           updatedAt: '2026-06-24T20:00:00.000Z',
         },
@@ -2441,8 +2519,8 @@ test.describe('app smoke tabs', () => {
           voterName: 'Foxtrot',
           candidateKey: 'bravo',
           candidateName: 'Bravo',
-          candidateKeys: ['bravo', 'alpha'],
-          candidateNames: ['Bravo', 'Alpha'],
+          candidateKeys: ['bravo', 'alpha', 'charlie', 'delta'],
+          candidateNames: ['Bravo', 'Alpha', 'Charlie', 'Delta'],
           voterAuthUid: 'test-foxtrot',
           updatedAt: '2026-06-24T20:10:00.000Z',
         },
@@ -2458,7 +2536,9 @@ test.describe('app smoke tabs', () => {
     await expect(results).toContainText('Ballots');
     await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('3');
     await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('2');
-    await expect(results).toContainText('Alpha, Bravo');
+    await expect(results.locator('tbody tr', { hasText: 'Charlie' }).first()).toContainText('2');
+    await expect(results.locator('tbody tr', { hasText: 'Delta' }).first()).toContainText('2');
+    await expect(results).toContainText('Alpha, Bravo, Charlie, Delta');
     await expect(results).toContainText('Delta');
     await expect(results).toContainText('Echo');
     await expect(results).toContainText('Foxtrot');

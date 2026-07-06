@@ -4311,6 +4311,42 @@ body[style*='overflow: hidden'] .tab-panel {
   color: var(--text-primary);
   font-weight: 900;
 }
+#ocrDashboardRoot .dash-duty-player-stack {
+  display: grid;
+  justify-items: start;
+  gap: 0.28rem;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-duty-match-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.16rem 0.45rem;
+  border: 1px solid rgba(94, 234, 212, 0.35);
+  border-radius: var(--radius-pill);
+  background: rgba(45, 212, 191, 0.09);
+  color: var(--accent-2);
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+#ocrDashboardRoot .dash-duty-match-confirm span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .dash-duty-match-confirm b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#ocrDashboardRoot .dash-duty-source-names {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
 #ocrDashboardRoot .dash-duty-contribution-target {
   display: grid;
   gap: 2px;
@@ -4864,14 +4900,17 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   max-width: 280px;
 }
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort],
-#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort] {
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort],
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-public-weighted-sort] {
   cursor: pointer;
   user-select: none;
 }
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:hover,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:focus-visible,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:hover,
-#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:focus-visible {
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:focus-visible,
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-public-weighted-sort]:hover,
+#ocrDashboardRoot .dash-contribution-weighted-table th[data-public-weighted-sort]:focus-visible {
   color: var(--brand);
   outline: none;
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 13.0.0 - 2026-07-06
+
+- Expanded Eden X1 Team Players voting to four teammate picks with resolved roster-name selection, confirmation chips, clear controls, invalid-name nudges, a translated "Vote here for Best TeamMembers" Support Work tag, translated saved-vote messages, and a final-results timing note.
+- Updated Eden X1 reward slots so R4 / Management and Team Players both expose three reward rows, and tightened Firestore vote validation/tests for four unique candidates.
+- Reworked Total Contribution reward ordering to use current contribution plus ex-guild contribution for final reward rank, while keeping R5 Bonus Team Effort Points visible as support signal data rather than reward-rank input.
+- Added Top 5 MVP on Buildings and Top 5 R5 Bonus Team Effort Points guidance cards, renamed structure guidance to Structure Attacks, centered helper headings, and completed the new i18n strings across all 11 languages.
+- Improved Eden X1 public/table UX with sortable weighted-contribution columns, better chart x-axis labels, fuller Attack History height usage, tighter dashboard gutters, and consistent card/table start-end alignment.
+- Added matched-name confirmation tags to Shield Wall and R5 Bonus Team Effort summary tables so uploaded aliases visibly map back to confirmed roster names.
+- Raised the measured CSS size budget for the larger Eden X1 route split: Eden X1 CSS cap 36 KiB -> 46 KiB and total CSS cap 560 KiB -> 572 KiB.
+- Reconciled the GitHub Copilot audit: the release keeps the already-resolved admin custom-claim gate and i18n validation improvements, while broader recommendations such as comment rate limiting, Dependabot SLA, CSP hardening, and long-term type/JSDoc coverage remain non-blocking backlog.
+- Synced public version labels, README, changelog, handoff notes, and app version constants to 13.0.0.
+
 ## 12.4.1 - 2026-07-06
 
 - Marked Wicked Russian with the R4 management badge in Eden X1 management slot rows.

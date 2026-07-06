@@ -16,10 +16,10 @@ const LIMITS = {
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
   // keep individual route surfaces from growing unchecked.
-  totalCssBytes: 560 * 1024,
+  totalCssBytes: 572 * 1024,
   cssChunks: {
     atmosphere: 346 * 1024,
-    'eden-x1': 36 * 1024,
+    'eden-x1': 46 * 1024,
     mobile: 51 * 1024,
     'ocr-dashboard': 128 * 1024,
   },

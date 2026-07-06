@@ -18,15 +18,20 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 
-const APP_VERSION = '12.4.1';
+const APP_VERSION = '13.0.0';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
-const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = ['edenX1CandidateName', 'edenX1CandidateName2'];
-const EDEN_X1_VOTE_CANDIDATE_LIMIT = 2;
+const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
+  'edenX1CandidateName',
+  'edenX1CandidateName2',
+  'edenX1CandidateName3',
+  'edenX1CandidateName4',
+];
+const EDEN_X1_VOTE_CANDIDATE_LIMIT = 4;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
@@ -49,6 +54,7 @@ let publicPlayerRows = [];
 let publicStructureRows = [];
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
+let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let edenVoteWriteContext = null;
 let edenVotePointerSubmitUntil = 0;
 
@@ -304,24 +310,121 @@ function clearEdenVoteInputSuggestions(host, inputId) {
   if (box) box.innerHTML = '';
 }
 
+function updateEdenVoteInputConfirmation(host, inputId, option = null) {
+  const chip = host?.querySelector(`[data-eden-vote-confirm-for="${inputId}"]`);
+  if (!chip) return;
+  const resolved = option || findEdenMemberOption(host?.querySelector(`#${inputId}`)?.value);
+  if (!resolved) {
+    chip.innerHTML = '';
+    return;
+  }
+  const clearButton = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(inputId)
+    ? `<button class="eden-x1-vote-confirm-clear" type="button" data-eden-vote-clear="${esc(inputId)}" aria-label="${esc(t('edenX1VoteClearPicked', { player: resolved.playerName }))}">x</button>`
+    : '';
+  chip.innerHTML = `<span class="eden-x1-vote-confirm-chip">${esc(t('edenX1VoteSelfConfirmed', { player: resolved.playerName }))}${clearButton}</span>`;
+}
+
+function resetEdenVoteInputState(host, inputId) {
+  const input = host?.querySelector(`#${inputId}`);
+  if (!input) return;
+  input.classList.remove('is-invalid', 'is-invalid-nudge');
+  input.removeAttribute('aria-invalid');
+  input.closest('.eden-x1-vote-field')?.classList.remove('is-invalid');
+  updateEdenVoteInputConfirmation(host, inputId);
+}
+
+function markEdenVoteInputInvalid(host, inputId, options = {}) {
+  const input = host?.querySelector(`#${inputId}`);
+  if (!input) return;
+  input.classList.add('is-invalid');
+  input.setAttribute('aria-invalid', 'true');
+  input.closest('.eden-x1-vote-field')?.classList.add('is-invalid');
+  updateEdenVoteInputConfirmation(host, inputId, null);
+  if (!options.nudge) return;
+  input.classList.remove('is-invalid-nudge');
+  void input.offsetWidth;
+  input.classList.add('is-invalid-nudge');
+}
+
+function applyEdenVoteInputResolved(host, inputId, option) {
+  const input = host?.querySelector(`#${inputId}`);
+  if (!input || !option) return;
+  input.value = option.playerName;
+  input.classList.remove('is-invalid', 'is-invalid-nudge');
+  input.removeAttribute('aria-invalid');
+  input.closest('.eden-x1-vote-field')?.classList.remove('is-invalid');
+  updateEdenVoteInputConfirmation(host, inputId, option);
+}
+
+function clearEdenVotePickedInput(host, inputId) {
+  const input = host?.querySelector(`#${inputId}`);
+  if (!input) return;
+  input.value = '';
+  clearEdenVoteInputSuggestions(host, inputId);
+  resetEdenVoteInputState(host, inputId);
+  if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(inputId)) {
+    const detail = host.querySelector('#edenX1VoteCandidateDetail');
+    if (detail && host.dataset.edenVoteInspectInputId === inputId) detail.dataset.open = '0';
+    updateEdenVoteCandidateDetail(host);
+  }
+  input.focus();
+}
+
 function resolveEdenVoteInput(host, inputId, options = {}) {
   const input = host?.querySelector(`#${inputId}`);
   if (!input) return null;
   const option = findEdenMemberOption(input.value);
-  if (option) input.value = option.playerName;
+  if (option) applyEdenVoteInputResolved(host, inputId, option);
+  else if (options.markInvalid && input.value.trim())
+    markEdenVoteInputInvalid(host, inputId, { nudge: options.nudgeInvalid });
+  else resetEdenVoteInputState(host, inputId);
   if (options.closeSuggestions) clearEdenVoteInputSuggestions(host, inputId);
   else updateEdenVoteInputSuggestions(host, inputId);
   return option;
 }
 
 function readSavedEdenVoteCandidateNames(vote) {
+  return getEdenVoteSavedSummary(vote).candidateNames;
+}
+
+function findEdenMemberOptionByKey(key) {
+  const normalized = String(key || '').trim();
+  if (!normalized) return null;
+  return currentMemberOptions.find((row) => row.playerKey === normalized) || null;
+}
+
+function edenSavedVoteName(name, key) {
+  const clean = String(name || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (clean) return clean;
+  return findEdenMemberOptionByKey(key)?.playerName || '';
+}
+
+function getEdenVoteSavedSummary(vote) {
   const names = Array.isArray(vote?.candidateNames)
     ? vote.candidateNames
-    : [vote?.candidateName, vote?.candidateName2];
-  return names
-    .map((name) => String(name || '').trim())
+    : [vote?.candidateName, vote?.candidateName2, vote?.candidateName3, vote?.candidateName4];
+  const keys = Array.isArray(vote?.candidateKeys)
+    ? vote.candidateKeys
+    : [vote?.candidateKey, vote?.candidateKey2, vote?.candidateKey3, vote?.candidateKey4];
+  const candidateNames = names
+    .map((name, index) => edenSavedVoteName(name, keys[index]))
     .filter(Boolean)
     .slice(0, EDEN_X1_VOTE_CANDIDATE_LIMIT);
+  return {
+    voterName: edenSavedVoteName(vote?.voterName, vote?.voterKey),
+    candidateNames,
+  };
+}
+
+function edenVoteSavedStatusText(vote) {
+  const summary = getEdenVoteSavedSummary(vote);
+  if (!summary.voterName || !summary.candidateNames.length) return '';
+  return `${t('edenX1VoteSavedDevice', {
+    voter: summary.voterName,
+    candidates: summary.candidateNames.join(', '),
+  })} ${t('edenX1VoteResultsNote')}`;
 }
 
 function getEdenVoteCandidateInputs(host) {
@@ -373,6 +476,27 @@ function rankedEdenDutyRows(field, limit = 5) {
     }));
 }
 
+function rankedEdenR5BonusRows(limit = 5) {
+  return currentRows
+    .map((row) => ({
+      ...row,
+      r5Bonus: conductBonusValue(row),
+    }))
+    .filter((row) => row.r5Bonus > 0)
+    .sort(
+      (a, b) =>
+        valueOf(b.r5Bonus) - valueOf(a.r5Bonus) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
+        String(a.playerName || '').localeCompare(String(b.playerName || ''))
+    )
+    .slice(0, limit)
+    .map((row) => ({
+      key: row.playerKey || compactPlayerIdentity(row.playerName),
+      name: row.playerName,
+      value: t('edenX1VoteR5BonusValue', { points: formatSignedNumber(row.r5Bonus) }),
+    }));
+}
+
 function rankedEdenStructureHelpRows(limit = 5) {
   return publicPlayerRows
     .filter((row) => valueOf(row.participation_count) > 0)
@@ -389,6 +513,58 @@ function rankedEdenStructureHelpRows(limit = 5) {
       key: row.key,
       name: row.name,
       value: `${valueOf(row.participation_count).toLocaleString()} hits`,
+    }));
+}
+
+function rankedEdenBuildingMvpRows(limit = 5) {
+  const mvpMap = new Map();
+  (Array.isArray(publicAttackRows) ? publicAttackRows : []).forEach((attack) => {
+    const players = publicAttackPlayers(attack);
+    const perPlayer = new Map();
+    players.forEach((entry) => {
+      const name = publicPlayerName(entry, players);
+      const key = publicPlayerKey(name);
+      const demo = valueOf(entry?.value ?? entry?.val ?? entry?.demolition ?? entry?.total);
+      if (demo <= 0) return;
+      if (!perPlayer.has(key)) {
+        perPlayer.set(key, { key, name, total: 0 });
+      }
+      perPlayer.get(key).total += demo;
+    });
+    const entries = [...perPlayer.values()];
+    if (!entries.length) return;
+    const topDemo = Math.max(...entries.map((entry) => entry.total));
+    entries
+      .filter((entry) => entry.total === topDemo)
+      .forEach((winner) => {
+        if (!mvpMap.has(winner.key)) {
+          mvpMap.set(winner.key, {
+            key: winner.key,
+            name: winner.name,
+            wins: 0,
+            total: 0,
+            structures: new Set(),
+          });
+        }
+        const row = mvpMap.get(winner.key);
+        row.wins += 1;
+        row.total += winner.total;
+        row.structures.add(publicStructureKey(attack));
+      });
+  });
+  return [...mvpMap.values()]
+    .sort(
+      (a, b) =>
+        valueOf(b.wins) - valueOf(a.wins) ||
+        valueOf(b.total) - valueOf(a.total) ||
+        valueOf(b.structures.size) - valueOf(a.structures.size) ||
+        String(a.name || '').localeCompare(String(b.name || ''))
+    )
+    .slice(0, limit)
+    .map((row) => ({
+      key: row.key,
+      name: row.name,
+      value: t('edenX1VoteBuildingMvpValue', { count: row.wins.toLocaleString() }),
     }));
 }
 
@@ -443,6 +619,8 @@ function renderEdenVoteGuidance() {
     [t('edenX1VoteTopShield'), rankedEdenDutyRows('shieldWalls')],
     [t('edenX1VoteTopPath'), rankedEdenDutyRows('pathers')],
     [t('edenX1VoteTopStructure'), rankedEdenStructureHelpRows()],
+    [t('edenX1VoteTopBuildingMvp'), rankedEdenBuildingMvpRows()],
+    [t('edenX1VoteTopR5Bonus'), rankedEdenR5BonusRows()],
     [t('edenX1VoteTopConsistent'), rankedEdenConsistentRows()],
   ];
   return `<div class="eden-x1-vote-guidance">
@@ -637,6 +815,50 @@ function renderEdenVoteStructureBreakdown(player, values) {
   );
 }
 
+function formatEdenTrendAxisTime(row) {
+  const parsed = parsePublicGameTime(row?.time);
+  if (parsed) {
+    const dateLabel = new Intl.DateTimeFormat(currentLang || undefined, {
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'UTC',
+    }).format(parsed.date);
+    const timeLabel = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'UTC',
+    }).format(parsed.date);
+    return `${dateLabel} · ${timeLabel} GT`;
+  }
+  const fallback = String(row?.time || row?.structure || t('edenX1ModalTime')).trim();
+  return fallback.length > 28 ? `${fallback.slice(0, 25)}...` : fallback;
+}
+
+function renderEdenTrendXAxis(rows, xFor, padX, plotWidth) {
+  if (!rows.length) return '';
+  const indexes =
+    rows.length <= 2
+      ? [0, rows.length - 1]
+      : [0, Math.round((rows.length - 1) / 2), rows.length - 1];
+  const uniqueIndexes = [...new Set(indexes)].filter((index) => index >= 0 && index < rows.length);
+  return `<div class="eden-x1-structure-x-axis" aria-hidden="true">
+    ${uniqueIndexes
+      .map((index) => {
+        const row = rows[index];
+        const position = Math.min(100, Math.max(0, ((xFor(index) - padX) / plotWidth) * 100));
+        let align = 'center';
+        if (rows.length > 1 && index === 0) align = 'start';
+        if (rows.length > 1 && index === rows.length - 1) align = 'end';
+        return `<span class="eden-x1-structure-x-tick eden-x1-structure-x-tick--${align}" style="--tick-x:${position.toFixed(2)}%" title="${esc(row.time || row.structure || '')}">
+          <b>${esc(formatEdenTrendAxisTime(row))}</b>
+          <small>${esc(row.structure || '')}</small>
+        </span>`;
+      })
+      .join('')}
+  </div>`;
+}
+
 function renderEdenVoteStructureTrend(attacks) {
   const rows = (Array.isArray(attacks) ? attacks : [])
     .map((attack) => ({ ...attack, demo: valueOf(attack.demo) }))
@@ -692,9 +914,7 @@ function renderEdenVoteStructureTrend(attacks) {
   const bestPoint = { x: xFor(bestIndex), y: yFor(max) };
   const deltaClass = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
   const deltaText = values.length > 1 ? `${delta >= 0 ? '+' : ''}${compactValue(delta)}` : '--';
-  const firstTitle = rows[0]?.time || rows[0]?.structure || t('edenX1ModalTime');
-  const latestTitle =
-    rows[latestIndex]?.time || rows[latestIndex]?.structure || t('edenX1ModalTime');
+  const xAxis = renderEdenTrendXAxis(rows, xFor, padX, plotWidth);
 
   return `<div class="eden-x1-structure-trend-card" role="img" aria-label="${esc(`${t('edenX1VoteTrendLabel')}: ${values.length} ${t('edenX1ModalHits')}, ${formatScore(total)} ${t('edenX1ModalTotalDemo')}`)}">
     <div class="eden-x1-structure-trend-head">
@@ -732,11 +952,7 @@ function renderEdenVoteStructureTrend(attacks) {
         ${bestIndex !== latestIndex ? `<circle class="eden-x1-trend-point eden-x1-trend-point--best" cx="${bestPoint.x.toFixed(1)}" cy="${bestPoint.y.toFixed(1)}" r="5"></circle>` : ''}
         <circle class="eden-x1-trend-point eden-x1-trend-point--latest" cx="${latestPoint.x.toFixed(1)}" cy="${latestPoint.y.toFixed(1)}" r="6"></circle>
       </svg>
-      <div class="eden-x1-structure-chart-footer">
-        <span>${esc(firstTitle)}</span>
-        <strong title="${esc(latestTitle)}">${formatScore(latest)}</strong>
-        <span>${esc(latestTitle)}</span>
-      </div>
+      ${xAxis}
     </div>
   </div>`;
 }
@@ -827,10 +1043,22 @@ function updateEdenVoteCandidateDetail(host) {
 async function submitEdenTeamVoteForm(form) {
   if (!form) return;
   const submit = form.querySelector('button[type="submit"]');
-  const voter = resolveEdenVoteInput(form, 'edenX1VoterName', { closeSuggestions: true });
+  const voter = resolveEdenVoteInput(form, 'edenX1VoterName', {
+    closeSuggestions: true,
+    markInvalid: true,
+    nudgeInvalid: true,
+  });
   const candidates = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) =>
-    resolveEdenVoteInput(form, id, { closeSuggestions: true })
+    resolveEdenVoteInput(form, id, {
+      closeSuggestions: true,
+      markInvalid: true,
+      nudgeInvalid: true,
+    })
   );
+  if (!voter) {
+    setEdenVoteStatus(t('edenX1VoteErrUnknownSelf'), 'error');
+    return;
+  }
   if (!voter || candidates.some((candidate) => !candidate)) {
     setEdenVoteStatus(t('edenX1VoteErrPickBoth'), 'error');
     return;
@@ -881,7 +1109,11 @@ async function submitEdenTeamVoteForm(form) {
       localVote.voterAuthUid = user.uid;
     }
     writeLocalEdenVote(localVote);
-    setEdenVoteStatus(t('edenX1VoteSaved'), 'success');
+    setEdenVoteStatus(
+      edenVoteSavedStatusText(localVote) ||
+        `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
+      'success'
+    );
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
     setEdenVoteStatus(
@@ -925,12 +1157,14 @@ function bindEdenVoteControls(host) {
   }
   if (!host.dataset.edenVoteControlsBound) {
     host.dataset.edenVoteControlsBound = '1';
+    const voteInputSelector = ['#edenX1VoterName', ...EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) => `#${id}`)].join(
+      ', '
+    );
     host.addEventListener('input', (event) => {
-      const input = event.target.closest(
-        '#edenX1VoterName, #edenX1CandidateName, #edenX1CandidateName2'
-      );
+      const input = event.target.closest(voteInputSelector);
       if (!input) return;
       updateEdenVoteInputSuggestions(host, input.id);
+      resetEdenVoteInputState(host, input.id);
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
         const detail = host.querySelector('#edenX1VoteCandidateDetail');
@@ -939,23 +1173,35 @@ function bindEdenVoteControls(host) {
       }
     });
     host.addEventListener('change', (event) => {
-      const input = event.target.closest(
-        '#edenX1VoterName, #edenX1CandidateName, #edenX1CandidateName2'
-      );
+      const input = event.target.closest(voteInputSelector);
       if (!input) return;
-      resolveEdenVoteInput(host, input.id, { closeSuggestions: true });
+      resolveEdenVoteInput(host, input.id, { closeSuggestions: true, markInvalid: true });
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
         updateEdenVoteCandidateDetail(host);
       }
     });
+    host.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('[data-eden-vote-suggest]')) event.preventDefault();
+    });
     host.addEventListener('click', (event) => {
+      const clear = event.target.closest('[data-eden-vote-clear]');
+      if (clear) {
+        event.preventDefault();
+        event.stopPropagation();
+        clearEdenVotePickedInput(host, clear.getAttribute('data-eden-vote-clear') || '');
+        return;
+      }
       const suggestion = event.target.closest('[data-eden-vote-suggest]');
       if (suggestion) {
+        event.preventDefault();
         const targetId = suggestion.getAttribute('data-eden-vote-target') || '';
         const input = targetId ? host.querySelector(`#${targetId}`) : null;
         if (input) {
-          input.value = suggestion.getAttribute('data-eden-vote-suggest') || '';
+          const selectedName = suggestion.getAttribute('data-eden-vote-suggest') || '';
+          const option = findEdenMemberOption(selectedName);
+          input.value = selectedName;
+          if (option) applyEdenVoteInputResolved(host, targetId, option);
           clearEdenVoteInputSuggestions(host, targetId);
           if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(targetId)) {
             host.dataset.edenVoteInspectInputId = targetId;
@@ -969,11 +1215,15 @@ function bindEdenVoteControls(host) {
       }
       const pick = event.target.closest('[data-eden-vote-pick]');
       if (pick) {
+        event.preventDefault();
         const input =
           getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
           host.querySelector('#edenX1CandidateName');
         if (input) {
-          input.value = pick.getAttribute('data-eden-vote-pick') || '';
+          const selectedName = pick.getAttribute('data-eden-vote-pick') || '';
+          const option = findEdenMemberOption(selectedName);
+          input.value = selectedName;
+          if (option) applyEdenVoteInputResolved(host, input.id, option);
           host.dataset.edenVoteInspectInputId = input.id;
           clearEdenVoteInputSuggestions(host, input.id);
           const detail = host.querySelector('#edenX1VoteCandidateDetail');
@@ -997,17 +1247,22 @@ function bindEdenVoteControls(host) {
     });
   }
   updateEdenVoteInputSuggestions(host, 'edenX1VoterName');
-  EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => updateEdenVoteInputSuggestions(host, id));
+  updateEdenVoteInputConfirmation(host, 'edenX1VoterName');
+  EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => {
+    updateEdenVoteInputSuggestions(host, id);
+    updateEdenVoteInputConfirmation(host, id);
+  });
   updateEdenVoteCandidateDetail(host);
 }
 
 function renderEdenTeamVotePanel() {
   const saved = readLocalEdenVote();
-  const savedCandidateNames = readSavedEdenVoteCandidateNames(saved);
-  const savedStatus =
-    saved?.voterName && savedCandidateNames.length
-      ? `<div class="eden-x1-vote-saved">${esc(t('edenX1VoteSavedDevice', { voter: saved.voterName, candidates: savedCandidateNames.join(', ') }))}</div>`
-      : '';
+  const savedSummary = getEdenVoteSavedSummary(saved);
+  const savedCandidateNames = savedSummary.candidateNames;
+  const savedStatusText = edenVoteSavedStatusText(saved);
+  const savedStatus = savedStatusText
+    ? `<div class="eden-x1-vote-saved">${esc(savedStatusText)}</div>`
+    : '';
   return `<section class="dash-card eden-x1-vote-panel">
     <div class="dash-card-hdr dash-card-hdr-wrap">
       <div>
@@ -1019,18 +1274,33 @@ function renderEdenTeamVotePanel() {
       ${renderEdenVoteMemberOptions()}
       <label class="eden-x1-vote-field" for="edenX1VoterName">
         <span>${esc(t('edenX1VoteYourName'))}</span>
-        <input id="edenX1VoterName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" required />
+        <input id="edenX1VoterName" class="dash-input" type="text" value="${esc(savedSummary.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" aria-describedby="edenX1VoterNameConfirm" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
+        <div id="edenX1VoterNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1VoterName" aria-live="polite"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
         <span>${esc(t('edenX1VoteYourVote'))}</span>
-        <input id="edenX1CandidateName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" required />
+        <input id="edenX1CandidateName" class="dash-input" type="text" value="${esc(savedCandidateNames[0] || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" aria-describedby="edenX1CandidateNameConfirm" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName"></div>
+        <div id="edenX1CandidateNameConfirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName" aria-live="polite"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName2">
         <span>${esc(t('edenX1VoteYourVoteSecond'))}</span>
-        <input id="edenX1CandidateName2" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(savedCandidateNames[1] || '')}" placeholder="${esc(t('edenX1VotePhTeammateSecond'))}" autocomplete="off" required />
+        <input id="edenX1CandidateName2" class="dash-input" type="text" value="${esc(savedCandidateNames[1] || '')}" placeholder="${esc(t('edenX1VotePhTeammateSecond'))}" autocomplete="off" aria-describedby="edenX1CandidateName2Confirm" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName2"></div>
+        <div id="edenX1CandidateName2Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName2" aria-live="polite"></div>
+      </label>
+      <label class="eden-x1-vote-field" for="edenX1CandidateName3">
+        <span>${esc(t('edenX1VoteYourVoteThird'))}</span>
+        <input id="edenX1CandidateName3" class="dash-input" type="text" value="${esc(savedCandidateNames[2] || '')}" placeholder="${esc(t('edenX1VotePhTeammateThird'))}" autocomplete="off" aria-describedby="edenX1CandidateName3Confirm" required />
+        <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName3"></div>
+        <div id="edenX1CandidateName3Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName3" aria-live="polite"></div>
+      </label>
+      <label class="eden-x1-vote-field" for="edenX1CandidateName4">
+        <span>${esc(t('edenX1VoteYourVoteFourth'))}</span>
+        <input id="edenX1CandidateName4" class="dash-input" type="text" value="${esc(savedCandidateNames[3] || '')}" placeholder="${esc(t('edenX1VotePhTeammateFourth'))}" autocomplete="off" aria-describedby="edenX1CandidateName4Confirm" required />
+        <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName4"></div>
+        <div id="edenX1CandidateName4Confirm" class="eden-x1-vote-confirm" data-eden-vote-confirm-for="edenX1CandidateName4" aria-live="polite"></div>
       </label>
       <div class="eden-x1-vote-actions">
         <button class="dash-btn dash-btn-primary" type="submit">${esc(t('edenX1VoteCast'))}</button>
@@ -1177,11 +1447,17 @@ function bindRewardFlowControls() {
 function getContributionRewardRows() {
   const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
   return currentRows
-    .filter((row) => Number(row.currentRank) > 0 && !supportPlayerKeys.has(row.playerKey))
+    .filter(
+      (row) =>
+        Number(row.currentRank) > 0 &&
+        !supportPlayerKeys.has(row.playerKey) &&
+        row.rewardReason !== 'forfeit_premium'
+    )
     .slice()
     .sort(
       (a, b) =>
         rowContributionRewardScore(b) - rowContributionRewardScore(a) ||
+        valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
         Number(a.currentRank) - Number(b.currentRank) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
@@ -1212,7 +1488,10 @@ function getSupportRewardRows() {
 }
 
 function rowContributionRewardScore(row) {
-  return valueOf(row.contributionScore) + valueOf(row.contributionExGuild);
+  const explicit = Number(row?.contributionRewardScore);
+  return Number.isFinite(explicit)
+    ? explicit
+    : valueOf(row.contributionScore) + valueOf(row.contributionExGuild);
 }
 
 function rowBonusTotal(row) {
@@ -1246,8 +1525,7 @@ function filterWeightedRows(rows) {
   });
 }
 
-function sortedWeightedRows(rows, numberMode) {
-  const sort = currentTableSort;
+function sortWeightedRowsBy(rows, sort, numberMode) {
   if (!sort || !sort.col) return rows;
   const accessors = {
     number: (row) => rowNumberValue(row, numberMode),
@@ -1276,6 +1554,10 @@ function sortedWeightedRows(rows, numberMode) {
     return av - bv;
   });
   return sort.dir === 'asc' ? sorted : sorted.reverse();
+}
+
+function sortedWeightedRows(rows, numberMode) {
+  return sortWeightedRowsBy(rows, currentTableSort, numberMode);
 }
 
 function defaultWeightedSortDir(col) {
@@ -1343,6 +1625,43 @@ function renderSortableHeader(key, label, options = {}) {
     ? `<span class="dash-sort-glyph">${currentTableSort.dir === 'asc' ? ' ^' : ' v'}</span>`
     : '';
   return `<th${className}${style} data-weighted-sort="${esc(key)}"${ariaSort} tabindex="0">${esc(label)}${glyph}</th>`;
+}
+
+function renderPublicSortableHeader(key, label, options = {}) {
+  const active = currentPublicTableSort?.col === key;
+  const ariaSort = active
+    ? ` aria-sort="${currentPublicTableSort.dir === 'asc' ? 'ascending' : 'descending'}"`
+    : '';
+  const className = options.className ? ` class="${options.className}"` : '';
+  const style = options.style ? ` style="${options.style}"` : '';
+  const glyph = active
+    ? `<span class="dash-sort-glyph">${currentPublicTableSort.dir === 'asc' ? ' ^' : ' v'}</span>`
+    : '';
+  return `<th${className}${style} data-public-weighted-sort="${esc(key)}"${ariaSort} tabindex="0">${esc(label)}${glyph}</th>`;
+}
+
+function rerenderPublicWeightedContributionCard(host, options = {}) {
+  const card = host?.querySelector('.eden-x1-public-weighted-card');
+  if (!card) return;
+  card.outerHTML = renderPublicWeightedContributionTable();
+  bindWeightedPopovers(host);
+  if (!options.focusSearch) return;
+  const nextInput = host.querySelector('#edenX1PublicWeightedSearch');
+  if (!nextInput) return;
+  const cursor = options.selectionStart ?? nextInput.value.length;
+  nextInput.focus();
+  nextInput.setSelectionRange(cursor, cursor);
+}
+
+function setPublicWeightedSort(col, host) {
+  if (!col) return;
+  const cur = currentPublicTableSort || {};
+  if (cur.col === col) {
+    currentPublicTableSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
+  } else {
+    currentPublicTableSort = { col, dir: defaultWeightedSortDir(col) };
+  }
+  rerenderPublicWeightedContributionCard(host);
 }
 
 function bindWeightedTableControls(host) {
@@ -1499,7 +1818,7 @@ function bindWeightedPopovers(host) {
 
 function rewardSlotRows(view) {
   if (view === 'management') {
-    return Array.from({ length: 4 }, (_, index) => ({
+    return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
       player: index === 0 ? 'Wicked Russian' : t('edenX1Tba'),
       group: t('edenX1RewardManagementTitle'),
@@ -1507,7 +1826,7 @@ function rewardSlotRows(view) {
     }));
   }
   if (view === 'team') {
-    return Array.from({ length: 2 }, (_, index) => ({
+    return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
       player: t('edenX1Tba'),
       group: t('edenX1RewardTeamTitle'),
@@ -1560,6 +1879,7 @@ function renderFinalRankPopover(row, index) {
   const cur = Number(row.currentRank);
   const hasCur = Number.isFinite(cur) && cur > 0;
   const delta = hasCur ? cur - row.finalRank : 0;
+  const rankScore = rowContributionRewardScore(row);
   const movement = !hasCur
     ? '--'
     : delta > 0
@@ -1571,8 +1891,8 @@ function renderFinalRankPopover(row, index) {
     <span class="dash-weighted-score-value">#${row.finalRank}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1RankReasonTitle'))}</strong>
-      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1ThWeightedScore'))}</b></span>
-      <span><span>${esc(t('edenX1ThWeightedScore'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
+      <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
       <span><span>${esc(t('adminContributionRank'))}</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
       <span><span>${esc(t('edenX1RankMovement'))}</span><b>${esc(movement)}</b></span>
       <span class="dash-weighted-score-popover-total"><span>${esc(t('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
@@ -1587,6 +1907,7 @@ function renderFinalRewardPopover(row, index, context = {}) {
   const finalReward = contributionRewardLabel(context.finalReward || row.finalReward);
   const rankLabel = context.rankLabel || t('adminContributionFinalRank');
   const rankValue = context.rank || row.finalRank;
+  const rankScore = rowContributionRewardScore(row);
   const hasPrivateR5Decision =
     row.rewardReason === 'grant_premium' || row.rewardReason === 'forfeit_premium';
   const reason = context.reason
@@ -1598,8 +1919,8 @@ function renderFinalRewardPopover(row, index, context = {}) {
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
       <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
-      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1ThWeightedScore'))}</b></span>
-      <span><span>${esc(t('edenX1ThWeightedScore'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
+      <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
       <span><span>${esc(rankLabel)}</span><b>#${rankValue}</b></span>
       <span><span>${esc(t('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
       <span><span>${esc(t('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
@@ -1973,14 +2294,11 @@ function publicWeightedRowSearchText(row) {
 }
 
 function renderPublicWeightedContributionTable() {
-  const allRows = currentRows
-    .slice()
-    .sort(
-      (a, b) =>
-        valueOf(a.finalRank) - valueOf(b.finalRank) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
-        String(a.playerName || '').localeCompare(String(b.playerName || ''))
-    );
+  const allRows = sortWeightedRowsBy(
+    currentRows.slice(),
+    currentPublicTableSort || { col: 'finalRank', dir: 'asc' },
+    'final'
+  );
   const searchQuery = currentPublicTableSearch.trim().toLowerCase();
   const rows = searchQuery
     ? allRows.filter((row) => publicWeightedRowSearchText(row).includes(searchQuery))
@@ -2009,20 +2327,20 @@ function renderPublicWeightedContributionTable() {
     ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-public-weighted-table">
         <thead><tr>
-          <th>${esc(t('edenX1ThNumber'))}</th>
-          <th>${esc(t('adminContributionMember'))}</th>
-          <th class="dash-weighted-detail-col">${esc(t('adminContributionRank'))}</th>
-          <th class="dash-weighted-detail-col">${esc(t('adminContributionReward'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThContribution'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThExGuild'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThShieldWalls'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThPathers'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThBanners'))}</th>
-          <th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right">${esc(t('edenX1ThConduct'))}</th>
-          <th class="dash-weighted-detail-col" style="text-align:right">${esc(t('edenX1ThTotal'))}</th>
-          <th style="text-align:right">${esc(t('edenX1ThWeightedScore'))}</th>
-          <th>${esc(t('adminContributionFinalRank'))}</th>
-          <th>${esc(t('adminContributionFinalReward'))}</th>
+          ${renderPublicSortableHeader('number', t('edenX1ThNumber'))}
+          ${renderPublicSortableHeader('player', t('adminContributionMember'))}
+          ${renderPublicSortableHeader('currentRank', t('adminContributionRank'), { className: 'dash-weighted-detail-col' })}
+          ${renderPublicSortableHeader('reward', t('adminContributionReward'), { className: 'dash-weighted-detail-col' })}
+          ${renderPublicSortableHeader('contribution', t('edenX1ThContribution'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('exGuild', t('edenX1ThExGuild'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('shieldWalls', t('edenX1ThShieldWalls'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('pathers', t('edenX1ThPathers'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('banners', t('edenX1ThBanners'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('conduct', t('edenX1ThConduct'), { className: 'dash-weighted-detail-col dash-weighted-conduct-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('total', t('edenX1ThTotal'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
+          ${renderPublicSortableHeader('weighted', t('edenX1ThWeightedScore'), { style: 'text-align:right' })}
+          ${renderPublicSortableHeader('finalRank', t('adminContributionFinalRank'))}
+          ${renderPublicSortableHeader('finalReward', t('adminContributionFinalReward'))}
         </tr></thead>
         <tbody>${rows
           .map((row, index) => {
@@ -2078,11 +2396,11 @@ function renderPublicKpis(attacks, players, structures) {
     0
   );
   const mvp = players[0];
-  return `<div class="dash-kpi-grid eden-x1-public-wide" style="grid-column:1/-1">
-    <div class="dash-card dash-kpi blue"><span class="dash-kpi-icon">#</span><div><div class="dash-kpi-value">${formatScore(attacks.length)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiStructureHits'))}</div></div></div>
-    <div class="dash-card dash-kpi teal"><span class="dash-kpi-icon">D</span><div><div class="dash-kpi-value">${formatScore(totalDemo)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiTotalDemo'))}</div></div></div>
-    <div class="dash-card dash-kpi purple"><span class="dash-kpi-icon">P</span><div><div class="dash-kpi-value">${formatScore(players.length)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiActivePlayers'))}</div></div></div>
-    <div class="dash-card dash-kpi orange"><span class="dash-kpi-icon">*</span><div><div class="dash-kpi-value dash-kpi-value-compact">${mvp ? publicPlayerButton(mvp.name, mvp.key, 'eden-x1-kpi-name') : '--'}</div><div class="dash-kpi-label">${esc(t('edenX1KpiTopContributor'))}</div></div></div>
+  return `<div class="dash-kpi-grid eden-x1-public-wide eden-x1-public-kpis" style="grid-column:1/-1">
+    <div class="dash-card dash-kpi blue"><span class="dash-kpi-icon">#</span><div class="eden-x1-public-kpi-copy"><div class="dash-kpi-value">${formatScore(attacks.length)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiStructureHits'))}</div></div></div>
+    <div class="dash-card dash-kpi teal"><span class="dash-kpi-icon">D</span><div class="eden-x1-public-kpi-copy"><div class="dash-kpi-value">${formatScore(totalDemo)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiTotalDemo'))}</div></div></div>
+    <div class="dash-card dash-kpi purple"><span class="dash-kpi-icon">P</span><div class="eden-x1-public-kpi-copy"><div class="dash-kpi-value">${formatScore(players.length)}</div><div class="dash-kpi-label">${esc(t('edenX1KpiActivePlayers'))}</div></div></div>
+    <div class="dash-card dash-kpi orange"><span class="dash-kpi-icon">*</span><div class="eden-x1-public-kpi-copy"><div class="dash-kpi-value dash-kpi-value-compact">${mvp ? publicPlayerButton(mvp.name, mvp.key, 'eden-x1-kpi-name') : '--'}</div><div class="dash-kpi-label">${esc(t('edenX1KpiTopContributor'))}</div></div></div>
   </div>`;
 }
 
@@ -2110,7 +2428,8 @@ function renderPublicTopPerformers(players) {
   return renderPublicCard(
     t('adminChartTop'),
     t('edenX1TopPerformersHint'),
-    renderPerformerRows(players, { limit: 10 })
+    renderPerformerRows(players, { limit: 10 }),
+    'eden-x1-public-top-card'
   );
 }
 
@@ -2150,7 +2469,8 @@ function renderPublicAttackHistory(attacks) {
     return renderPublicCard(
       t('adminHistoryTitle'),
       '',
-      renderPublicEmpty(t('edenX1NoAttackHistory'))
+      renderPublicEmpty(t('edenX1NoAttackHistory')),
+      'eden-x1-public-history-card'
     );
   }
   const grouped = new Map();
@@ -2159,7 +2479,7 @@ function renderPublicAttackHistory(attacks) {
     if (!grouped.has(day)) grouped.set(day, []);
     grouped.get(day).push(attack);
   });
-  const body = `<div class="dash-attack-list">${[...grouped.entries()]
+  const body = `<div class="dash-attack-list eden-x1-public-attack-list">${[...grouped.entries()]
     .map(([day, dayRows]) => {
       return `<div class="dash-attack-day-header">${esc(day)}</div>${dayRows
         .map((attack) => {
@@ -2177,7 +2497,7 @@ function renderPublicAttackHistory(attacks) {
         .join('')}`;
     })
     .join('')}</div>`;
-  return renderPublicCard(t('adminHistoryTitle'), t('edenX1AttackHistoryHint'), body);
+  return renderPublicCard(t('adminHistoryTitle'), t('edenX1AttackHistoryHint'), body, 'eden-x1-public-history-card');
 }
 
 function renderPublicInsights(attacks, players, structures) {
@@ -2209,7 +2529,12 @@ function renderPublicInsights(attacks, players, structures) {
         : `<span>${esc(t('edenX1NoTrendData'))}</span>`
     }
   </div>`;
-  return renderPublicCard(t('edenX1InsightsTitle'), t('edenX1InsightsHint'), body);
+  return renderPublicCard(
+    t('edenX1InsightsTitle'),
+    t('edenX1InsightsHint'),
+    body,
+    'eden-x1-public-insights-card'
+  );
 }
 
 function renderPublicPlayerTrends(attacks, players) {
@@ -2592,15 +2917,14 @@ function bindPublicDashboardControls(host) {
     if (!input) return;
     currentPublicTableSearch = input.value || '';
     const selectionStart = input.selectionStart ?? currentPublicTableSearch.length;
-    const card = host.querySelector('.eden-x1-public-weighted-card');
-    if (!card) return;
-    card.outerHTML = renderPublicWeightedContributionTable();
-    bindWeightedPopovers(host);
-    const nextInput = host.querySelector('#edenX1PublicWeightedSearch');
-    if (nextInput) {
-      nextInput.focus();
-      nextInput.setSelectionRange(selectionStart, selectionStart);
-    }
+    rerenderPublicWeightedContributionCard(host, { focusSearch: true, selectionStart });
+  });
+  host.addEventListener('keydown', (event) => {
+    const sortHeader = event.target.closest('th[data-public-weighted-sort]');
+    if (!sortHeader || !host.contains(sortHeader)) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
   });
   host.addEventListener('click', (event) => {
     if (
@@ -2608,6 +2932,11 @@ function bindPublicDashboardControls(host) {
       event.target === $('edenX1PublicModal')
     ) {
       closePublicModal();
+      return;
+    }
+    const sortHeader = event.target.closest('th[data-public-weighted-sort]');
+    if (sortHeader) {
+      setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
       return;
     }
     const playerButton = event.target.closest('[data-public-player]');
@@ -2659,11 +2988,11 @@ function renderPublicDashboard(data = publicDashboardData) {
     <div class="eden-x1-public-grid" style="display:grid;gap:.85rem;align-items:start">
       ${renderPublicWeightedContributionTable()}
       ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
-      <div class="eden-x1-public-columns" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:.85rem;align-items:start;grid-column:1/-1">
-        <div style="display:grid;gap:.85rem;min-width:0">
+      <div class="eden-x1-public-columns" style="grid-column:1/-1">
+        <div class="eden-x1-public-column eden-x1-public-column-main">
           ${renderPublicTopPerformers(publicPlayerRows)}
         </div>
-        <div style="display:grid;gap:.85rem;min-width:0">
+        <div class="eden-x1-public-column eden-x1-public-column-side">
           ${renderPublicInsights(publicAttackRows, publicPlayerRows, publicStructureRows)}
         </div>
       </div>
@@ -2901,13 +3230,14 @@ function renderCurrentTable(renderOptions = {}) {
       meta: t('edenX1RewardContributionMeta'),
       numberMode: 'index',
       rewardContextForRow: (row, _index, numberValue) => {
-        const reward = row.currentReward || 'core';
-        const label = contributionRewardLabel(reward);
+        const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
+        const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
+        const label = contributionRewardLabel(finalReward);
         return {
           rank: numberValue,
           rankLabel: t('edenX1RewardLeaderboardTitle'),
           baseReward: reward,
-          finalReward: reward,
+          finalReward,
           reason: `${t('edenX1RewardLeaderboardTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
         };
       },

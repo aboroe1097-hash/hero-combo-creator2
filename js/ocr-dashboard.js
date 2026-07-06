@@ -508,10 +508,10 @@ function normalizeEdenX1VoteRecord(record = {}) {
   const voterKey = String(record.voterKey || compactPlayerIdentity(voterName)).trim();
   const rawCandidateNames = Array.isArray(record.candidateNames)
     ? record.candidateNames
-    : [record.candidateName, record.candidateName2];
+    : [record.candidateName, record.candidateName2, record.candidateName3, record.candidateName4];
   const rawCandidateKeys = Array.isArray(record.candidateKeys)
     ? record.candidateKeys
-    : [record.candidateKey, record.candidateKey2];
+    : [record.candidateKey, record.candidateKey2, record.candidateKey3, record.candidateKey4];
   const candidates = rawCandidateNames
     .map((name, index) => {
       const candidateName = String(name || '').trim();
@@ -521,7 +521,7 @@ function normalizeEdenX1VoteRecord(record = {}) {
       return { candidateKey, candidateName };
     })
     .filter((candidate) => candidate.candidateName && candidate.candidateKey)
-    .slice(0, 2);
+    .slice(0, 4);
   const candidateNames = candidates.map((candidate) => candidate.candidateName);
   const candidateKeys = candidates.map((candidate) => candidate.candidateKey);
   return {
@@ -785,6 +785,14 @@ function formatConductCategoryBreakdown(categoryCounts) {
   return parts.map(esc).join(' / ');
 }
 
+function renderConductMatchedPlayerCell(row) {
+  const playerName = row?.playerName || '';
+  return `<span class="dash-duty-player-stack">
+    <strong class="dash-duty-cell-value">${esc(playerName)}</strong>
+    <span class="dash-duty-match-confirm"><span>${esc(dashT('adminExGuildMatchTo'))}</span><b>${esc(playerName)}</b></span>
+  </span>`;
+}
+
 function renderConductSummary(rows) {
   const host = $id('dashConductSummary');
   if (!host) return;
@@ -818,7 +826,7 @@ function renderConductSummary(rows) {
           .map((row) => {
             const pointsClass = row.points >= 0 ? 'dash-positive' : 'dash-negative';
             return `<tr>
-          <td><strong class="dash-duty-cell-value">${esc(row.playerName)}</strong></td>
+          <td>${renderConductMatchedPlayerCell(row)}</td>
           <td><span class="dash-duty-cell-value ${pointsClass}">${esc(formatSignedPoints(row.points))}</span></td>
           <td><span class="dash-duty-cell-value">${row.entries}</span></td>
           <td><span class="dash-duty-cell-value dash-duty-status-breakdown">${formatConductCategoryBreakdown(row.categoryCounts)}</span></td>

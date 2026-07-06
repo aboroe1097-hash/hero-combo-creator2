@@ -1866,6 +1866,36 @@ function renderDutyContributionTarget(row, lookup) {
   return `<span class="dash-duty-contribution-target"><strong>${esc(name)}</strong>${rank}${familyCredit}</span>`;
 }
 
+function summarizeDutySourceNames(row) {
+  const playerKey = String(row?.playerKey || '').trim();
+  const seen = new Set();
+  const names = [];
+  (Array.isArray(row?.records) ? row.records : []).forEach((record) => {
+    const raw = String(record?.original || record?.rawName || record?.name || '').trim();
+    if (!raw) return;
+    const rawKey = compactPlayerIdentity(raw);
+    if (rawKey && rawKey === playerKey) return;
+    const sourceKey = rawKey || raw.toLowerCase();
+    if (seen.has(sourceKey)) return;
+    seen.add(sourceKey);
+    names.push(raw);
+  });
+  return names;
+}
+
+function renderDutyMatchedPlayerCell(row) {
+  const playerName = row?.playerName || '';
+  const sources = summarizeDutySourceNames(row).slice(0, 3);
+  const sourceHtml = sources.length
+    ? `<small class="dash-duty-source-names">${esc(adminT('adminDutyUploaded'))}: ${summarizeDutyValues(sources, 3)}</small>`
+    : '';
+  return `<span class="dash-duty-player-stack">
+    <strong class="dash-duty-cell-value">${esc(playerName)}</strong>
+    <span class="dash-duty-match-confirm"><span>${esc(adminT('adminExGuildMatchTo'))}</span><b>${esc(playerName)}</b></span>
+    ${sourceHtml}
+  </span>`;
+}
+
 function renderDutyPlayerSummary(type, hostId, contributionLookup = buildDutyContributionLookup()) {
   const host = $id(hostId);
   if (!host) return;
@@ -1892,7 +1922,7 @@ function renderDutyPlayerSummary(type, hostId, contributionLookup = buildDutyCon
         <tbody>${rows
           .map(
             (row) => `<tr>
-          <td><strong class="dash-duty-cell-value">${esc(row.playerName)}</strong></td>
+          <td>${renderDutyMatchedPlayerCell(row)}</td>
           <td><span class="dash-duty-cell-value">${renderDutyContributionTarget(row, contributionLookup)}</span></td>
           <td><span class="dash-duty-cell-value">${row.entries}</span></td>
           <td><span class="dash-duty-cell-value dash-duty-status-breakdown">${formatDutyStatusBreakdown(row.statusCounts)}</span></td>
