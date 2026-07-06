@@ -415,6 +415,8 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('Hunter Killer.'), 'Hunter killer.');
   assert.equal(findBestMatch('гутер killer.'), 'Hunter killer.');
   assert.equal(findBestMatch('Һunter Killer.'), 'Hunter killer.');
+  assert.equal(findBestMatch('VICKED RUSSIAN'), 'WICKED RUSSIAN');
+  assert.equal(findBestMatch('vicked Russian'), 'WICKED RUSSIAN');
   assert.equal(findBestMatch('WICKED WOMEN'), 'WICKED WOMEN☆');
   assert.equal(findBestMatch('☆r@mze$$$☆'), '★r@mze$$$★');
   assert.equal(findBestMatch('★r@nze$$$★'), '★r@mze$$$★');

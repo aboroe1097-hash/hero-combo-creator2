@@ -200,6 +200,30 @@ test('weighted duty counts credit both banner account and operator when present'
   });
 });
 
+test('weighted contribution joins Wicked Russian duties to typoed Vicked contribution row', () => {
+  const model = buildWeightedContributionRows({
+    contributionRecords: [
+      {
+        id: 'wicked-typo',
+        date: '2026-07-05',
+        entries: [{ rank: 29, name: 'VICKED RUSSIAN', contribution: 93950 }],
+      },
+    ],
+    dutyRecords: [
+      { type: 'banner', entries: [{ name: 'WICKED RUSSIAN', confirmed: 'WICKED RUSSIAN' }] },
+      { type: 'pather', entries: [{ name: 'Wicked Russian', confirmed: 'Wicked Russian' }] },
+    ],
+  });
+
+  const row = model.rows.find((entry) => entry.playerName === 'WICKED RUSSIAN');
+
+  assert.ok(row);
+  assert.equal(row.playerKey, compactPlayerIdentity('WICKED RUSSIAN'));
+  assert.equal(row.sourceName, 'VICKED RUSSIAN');
+  assert.equal(row.banners, 1);
+  assert.equal(row.pathers, 1);
+});
+
 test('latest contribution record selection uses newest date and premiumSlots fallback', () => {
   withRosterNames(() => {
     const contributionRecords = [
