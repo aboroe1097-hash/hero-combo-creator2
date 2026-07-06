@@ -1209,6 +1209,9 @@ export function findBestMatch(name, minConfidence = 100) {
       Uz: '!!Uzumaki!!',
       Moldo1313: 'Moldo',
       'Uzumaki 1097 R4': '!!Uzumaki!!',
+      // This is the player's in-game name, not just a Viber tag, so keep the @.
+      Sheselkie: '@Sheselkie',
+      sheselkie: '@Sheselkie',
       // Duty owner tags for RedBull route to the manager/main account. Decorated
       // account names above still preserve the explicit main/secondary split.
       RedBull: 'REDBULLS',

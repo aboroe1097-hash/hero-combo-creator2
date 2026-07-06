@@ -548,6 +548,8 @@ test('resolveDutyPlayerName routes cleaned duty names through the shared authori
   // Falls back to the same aliasMap / protected identities as structures.
   assert.equal(resolveDutyPlayerName('Kika-banner'), '꧁ Kika ꧂'); // rolls up to operating player
   assert.equal(resolveDutyPlayerName('@Maximus'), 'Maximus');
+  assert.equal(resolveDutyPlayerName('@Sheselkie'), '@Sheselkie');
+  assert.equal(resolveDutyPlayerName('@sheselkie'), '@Sheselkie');
   assert.equal(resolveDutyPlayerName('capital @UNDEAD +'), 'UNDEAD');
   // Empty / junk-only input degrades to the trimmed raw, never throws.
   assert.equal(resolveDutyPlayerName('   '), '');
@@ -658,6 +660,7 @@ test('duplicate Kika-family rows on the same target split into separate account 
 test('expandDutyRawNames splits multi-player cells and strips structure words', () => {
   // Single @-tagged player: Viber tag stripped.
   assert.deepEqual(expandDutyRawNames('@ANGEL'), ['ANGEL']);
+  assert.deepEqual(expandDutyRawNames('gate @Sheselkie'), ['@Sheselkie']);
 
   // Multi-player: "gate @redull @+ Ezeta TV" -> RedBull main + Ezeta TV.
   const multi = expandDutyRawNames('gate @redull @+ Ezeta TV');
