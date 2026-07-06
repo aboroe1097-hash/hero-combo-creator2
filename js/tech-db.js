@@ -28,11 +28,27 @@
  * @property {number} default_pos.row - Row coordinate.
  * @property {number} default_pos.col - Column coordinate.
  * @property {string} layoutMode - Layout strategy ("game" or "branch").
- * @property {string} season - Release season (S0 to X2).
+ * @property {string} season - Release season (S0 to X8).
  * @property {string} unlockCondition - Prerequisite statement.
  * @property {string} primaryResource - Primary resource requirements explanation.
  * @property {TechNode[]} nodes - List of tech nodes inside this tree.
  */
+
+// Shared X8 tracks sourced from the Rise of Castles research tool data.
+const X8_LOFTY_LEGION_COSTS = {
+    alliedRescue: [180, 190, 210, 230, 260, 290, 330, 360, 400, 440, 490, 530, 580, 630, 680, 730, 780, 840, 900, 950],
+    cooperation: [270, 290, 310, 350, 390, 440, 490, 540, 600, 660, 730, 800, 870, 940, 1000, 1100, 1100, 1200, 1300, 1300],
+    troopBoost1: [720, 770, 840, 930, 1000, 1100, 1300, 1400, 1600, 1700, 1900, 2100, 2300, 2500, 2700, 2900, 3100, 3300, 3500, 3800],
+    hospital: [540, 570, 630, 700, 780, 870, 980, 1000, 1200, 1300, 1400, 1500, 1700, 1800, 2000, 2100, 2300, 2500, 2600, 2800],
+    troopBoost2: [900, 960, 1000, 1100, 1300, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3100, 3300, 3600, 3900, 4200, 4400, 4700],
+    expansion1: [1000, 1100, 1200, 1400, 1500, 1700, 1900, 2100, 2400, 2600, 2900, 3100, 3400, 3700, 4000, 4300, 4700, 5000, 5300, 5700],
+    tacticalMight: [990, 1000, 1100, 1300, 1400, 1600, 1700, 1900, 2200, 2400, 2600, 2900, 3100, 3400, 3700, 4000, 4300, 4600, 4900, 5200],
+    expansion2: [1200, 1300, 1400, 1600, 1800, 2000, 2200, 2500, 2800, 3100, 3400, 3700, 4000, 4300, 4700, 5100, 5400, 5800, 6200, 6600],
+    loftyResistance: [940, 960, 990, 1000, 1000, 1100, 1100, 1200, 1300, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2200, 2300, 2400, 2500, 2700, 2800, 2900, 3000, 3100, 3200, 3400, 3500, 3600, 3800, 3900, 4000, 4100, 4300, 4400, 4600, 4800],
+    loftyMight: [1000, 1000, 1000, 1100, 1100, 1200, 1300, 1300, 1400, 1500, 1600, 1700, 1700, 1800, 1900, 2000, 2100, 2200, 2400, 2500, 2600, 2700, 2800, 2900, 3100, 3200, 3300, 3400, 3600, 3700, 3900, 4000, 4100, 4400, 4500, 4600, 4700, 4900, 5000, 5200],
+    grandExpansion: [1100, 1100, 1200, 1200, 1300, 1300, 1400, 1500, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2600, 2700, 2800, 2900, 3100, 3200, 3300, 3500, 3600, 3800, 3900, 4000, 4200, 4300, 4500, 4700, 4800, 5000, 5200, 5300, 5500, 5700],
+    blessing: [1800, 1900, 2100, 2300, 2600, 2900, 3200, 3600, 4000, 4400, 4800, 5300, 5700, 6200, 6700, 7300, 7800, 8400, 8900, 9500]
+};
 
 /**
  * Global technology database for academy research trees.
@@ -1074,6 +1090,55 @@ export const techDatabase = [
             { id: "node_41", page: 3, row: 21, col: 1, name: "Strenious Swordplay II", troop: "Footmen", buff: "+30% HP Footmen", maxLevel: 30, costType: "War Badge", wisdomCosts: [4900, 5300, 5700, 6100, 6500, 6900, 7300, 7700, 8100, 8500, 8900, 9300, 9700, 10100, 10500, 10900, 11300, 11600, 12000, 12400, 12800, 13200, 13600, 14000, 14400, 14800, 15200, 15600, 16000, 16400] },
             { id: "node_42", page: 3, row: 21, col: 2, name: "Strenious Archery II", troop: "Archer", buff: "+30% HP Archer", maxLevel: 30, costType: "War Badge", wisdomCosts: [4900, 5300, 5700, 6100, 6500, 6900, 7300, 7700, 8100, 8500, 8900, 9300, 9700, 10100, 10500, 10900, 11300, 11600, 12000, 12400, 12800, 13200, 13600, 14000, 14400, 14800, 15200, 15600, 16000, 16400] },
             { id: "node_43", page: 3, row: 21, col: 3, name: "Strenious Riding II", troop: "Cavalry", buff: "+30% HP Cavalry", maxLevel: 30, costType: "War Badge", wisdomCosts: [4900, 5300, 5700, 6100, 6500, 6900, 7300, 7700, 8100, 8500, 8900, 9300, 9700, 10100, 10500, 10900, 11300, 11600, 12000, 12400, 12800, 13200, 13600, 14000, 14400, 14800, 15200, 15600, 16000, 16400] }
+        ]
+    },
+    {
+        id: "19ae0569",
+        name: "Lofty Legion",
+        default_pos: { row: 9, col: 1 },
+        treePages: ["Lofty Legion"],
+        layoutMode: "game",
+        season: "X8",
+        unlockCondition: "Start of Eden X8",
+        primaryResource: "War Badges",
+        nodes: [
+            { id: "node_1", page: 1, row: 1, col: 1, name: "Well Planned Rescue", troop: "ALL", buff: "+10% RF Resistance Ally", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.alliedRescue },
+            { id: "node_2", page: 1, row: 1, col: 2, name: "Training Master", troop: "ALL", buff: "+3000 Trained Troops", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.alliedRescue },
+            { id: "node_3", page: 1, row: 1, col: 3, name: "Joint Defence", troop: "ALL", buff: "+10% RF Resistance To You", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.alliedRescue },
+            { id: "node_4", page: 1, row: 2, col: 1, name: "Perfect Cooperation", troop: "ALL", buff: "+10% Might When You RF", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.cooperation },
+            { id: "node_5", page: 1, row: 2, col: 2, name: "Enhancement Master", troop: "ALL", buff: "+20000 Enhanced", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.cooperation },
+            { id: "node_6", page: 1, row: 2, col: 3, name: "Fighting Back", troop: "ALL", buff: "+10% Ally Might When You Are RF", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.cooperation },
+            { id: "node_7", page: 1, row: 3, col: 1, name: "Footman Mania I", troop: "Footmen", buff: "+10% HP Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost1 },
+            { id: "node_8", page: 1, row: 3, col: 2, name: "Cavalry in Fight I", troop: "Cavalry", buff: "+10% Might Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost1 },
+            { id: "node_9", page: 1, row: 3, col: 3, name: "Archer Mania I", troop: "Archer", buff: "+10% HP Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost1 },
+            { id: "node_10", page: 1, row: 4, col: 2, name: "Field Hospital", troop: "ALL", buff: "+150k Hospital Capacity", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.hospital },
+            { id: "node_11", page: 1, row: 5, col: 1, name: "Footman Mania II", troop: "Footmen", buff: "+10% HP Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost2 },
+            { id: "node_12", page: 1, row: 5, col: 2, name: "Cavalry in Fight II", troop: "Cavalry", buff: "+10% Might Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost2 },
+            { id: "node_13", page: 1, row: 5, col: 3, name: "Archer Mania II", troop: "Archer", buff: "+10% HP Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost2 },
+            { id: "node_14", page: 1, row: 6, col: 1, name: "Footmen Expansion I", troop: "Footmen", buff: "+500k Capacity Lofty Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_15", page: 1, row: 6, col: 2, name: "Cavalry Expansion I", troop: "Cavalry", buff: "+500k Capacity Lofty Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_16", page: 1, row: 6, col: 3, name: "Archer Expansion I", troop: "Archer", buff: "+500k Capacity Lofty Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_17", page: 1, row: 7, col: 2, name: "Armor Refinement", troop: "ALL", buff: "+5% Resistance", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.troopBoost2 },
+            { id: "node_18", page: 1, row: 8, col: 1, name: "Footmans Raid", troop: "Footmen", buff: "+10% Tact Might Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.tacticalMight },
+            { id: "node_19", page: 1, row: 8, col: 2, name: "Cavalry Assault", troop: "Cavalry", buff: "+10% Tact Might Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.tacticalMight },
+            { id: "node_20", page: 1, row: 8, col: 3, name: "Archers Shooting", troop: "Archer", buff: "+10% Tact Might Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.tacticalMight },
+            { id: "node_21", page: 1, row: 9, col: 1, name: "Footmans Shield", troop: "Footmen", buff: "+10% Tact Resistance Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_22", page: 1, row: 9, col: 2, name: "Cavalry at Rear", troop: "Cavalry", buff: "+10% Tact Resistance Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_23", page: 1, row: 9, col: 3, name: "Archer Cover Up", troop: "Archer", buff: "+10% Tact Resistance Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_24", page: 1, row: 10, col: 1, name: "Footmen Expansion II", troop: "Footmen", buff: "+500k Capacity Lofty Footmen", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion2 },
+            { id: "node_25", page: 1, row: 10, col: 2, name: "Cavalry Expansion II", troop: "Cavalry", buff: "+500k Capacity Lofty Cavalry", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion2 },
+            { id: "node_26", page: 1, row: 10, col: 3, name: "Archer Expansion II", troop: "Archer", buff: "+500k Capacity Lofty Archer", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion2 },
+            { id: "node_27", page: 1, row: 11, col: 2, name: "Blade Hardening", troop: "ALL", buff: "+5% Might", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.expansion1 },
+            { id: "node_28", page: 1, row: 12, col: 1, name: "Steel Shield", troop: "Footmen", buff: "+10% Resistance Lofty Footmen", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyResistance },
+            { id: "node_29", page: 1, row: 12, col: 2, name: "Horse Armour", troop: "Cavalry", buff: "+10% Resistance Lofty Cavalry", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyResistance },
+            { id: "node_30", page: 1, row: 12, col: 3, name: "Gauntlets", troop: "Archer", buff: "+10% Resistance Lofty Archer", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyResistance },
+            { id: "node_31", page: 1, row: 13, col: 1, name: "Steel Sword", troop: "Footmen", buff: "+10% Might Lofty Footmen", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyMight },
+            { id: "node_32", page: 1, row: 13, col: 2, name: "Sharp Spear", troop: "Cavalry", buff: "+10% Might Lofty Cavalry", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyMight },
+            { id: "node_33", page: 1, row: 13, col: 3, name: "Crossbow", troop: "Archer", buff: "+10% Might Lofty Archer", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.loftyMight },
+            { id: "node_34", page: 1, row: 14, col: 1, name: "Gr Footman Expansion", troop: "Footmen", buff: "+1m Capacity Lofty Footmen", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.grandExpansion },
+            { id: "node_35", page: 1, row: 14, col: 2, name: "Gr Cavalry Expansion", troop: "Cavalry", buff: "+1m Capacity Lofty Cavalry", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.grandExpansion },
+            { id: "node_36", page: 1, row: 14, col: 3, name: "Gr Archer Expansion", troop: "Archer", buff: "+1m Capacity Lofty Archer", maxLevel: 40, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.grandExpansion },
+            { id: "node_37", page: 1, row: 15, col: 2, name: "Blessing of Life", troop: "ALL", buff: "+5% HP Lofty", maxLevel: 20, costType: "War Badge", wisdomCosts: X8_LOFTY_LEGION_COSTS.blessing }
         ]
     }
 ];

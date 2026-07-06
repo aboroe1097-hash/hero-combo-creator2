@@ -548,9 +548,10 @@ input, textarea, select {
 .game-tech-core { width: 58px !important; height: 64px !important; }
 .game-tech-icon-svg { width: 20px !important; height: 20px !important; }
 .game-tech-level-badge { font-size: 0.46rem !important; min-width: 30px !important; }
-.game-tech-stepper, .game-tech-cost-pill { max-width: 100% !important; }
+.game-tech-stepper, .game-tech-cost-pill, .game-tech-buff-pill { max-width: 100% !important; }
 .game-tech-step { padding: 5px 0 !important; font-size: 0.76rem !important; }
 .game-tech-step--max { font-size: 0.48rem !important; }
+.game-tech-buff-pill .research-buff-chip { font-size: 0.43rem !important; padding: 2px 5px !important; }
 .game-tech-name { font-size: 0.5rem !important; max-width: 78px !important; }
 .game-tree-tier { gap: 7px !important; }
 .research-page-tab { font-size: 0.54rem !important; padding: 5px 8px !important; min-height: 30px; }

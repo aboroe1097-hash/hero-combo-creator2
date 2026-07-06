@@ -88,7 +88,7 @@ export function getSourceCreditText() {
 
 // --- COLORS (defined in constants.js, re-exported for convenience) ---
 export { seasonColors, TechseasonColors };
-export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2'];
+export const TECH_SEASON_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
 
 export const HERO_ATLAS_ALL_SEASONS = ['S0', 'S1', 'S2', 'S3', 'S4', 'X1', 'X2', 'X8'];
 

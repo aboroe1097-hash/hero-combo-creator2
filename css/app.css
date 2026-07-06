@@ -1351,6 +1351,49 @@ input[type=number] { -moz-appearance: textfield; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.research-node-buff-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  min-height: 1.25rem;
+}
+.research-buff-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 100%;
+  padding: 0.16rem 0.42rem;
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 999px;
+  background: rgba(8, 47, 73, 0.46);
+  color: #bae6fd;
+  font-size: 0.56rem;
+  font-weight: 900;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+.research-buff-chip--unlock {
+  border-color: rgba(34, 197, 94, 0.32);
+  background: rgba(20, 83, 45, 0.34);
+  color: #bbf7d0;
+}
+.research-buff-chip--missing {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(120, 53, 15, 0.28);
+  color: #fde68a;
+}
+.research-buff-chip-max {
+  color: rgba(224, 242, 254, 0.72);
+}
+.research-buff-detail {
+  color: #94a3b8;
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
 .research-node-remaining {
   display: flex;
   flex: 0 0 auto;
@@ -2394,6 +2437,21 @@ input[type=number] { -moz-appearance: textfield; }
 .game-tech-pill--res { color: #fcd34d; background: rgba(120,53,15,0.35); border-color: rgba(245,158,11,0.35); }
 .game-tech-cost-pill img, .game-tech-cost-pill svg {
   width: 10px !important; height: 10px !important;
+}
+.game-tech-buff-pill {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 118px;
+  min-height: 18px;
+  text-align: center;
+}
+.game-tech-buff-pill .research-buff-chip {
+  justify-content: center;
+  max-width: 100%;
+  padding: 2px 7px;
+  font-size: 0.48rem;
+  white-space: normal;
 }
 .game-tech-name {
   font-size: 0.58rem; font-weight: 700; color: #e2e8f0;
@@ -6284,6 +6342,25 @@ body.hide-hero-info .info-btn { display: none !important; }
 }
 [data-theme="light"] .research-node-buff {
   color: #2563eb;
+}
+[data-theme="light"] .research-buff-chip {
+  border-color: rgba(2, 132, 199, 0.25);
+  background: rgba(224, 242, 254, 0.8);
+  color: #075985;
+}
+[data-theme="light"] .research-buff-chip--unlock {
+  border-color: rgba(22, 163, 74, 0.25);
+  background: rgba(220, 252, 231, 0.78);
+  color: #166534;
+}
+[data-theme="light"] .research-buff-chip--missing {
+  border-color: rgba(217, 119, 6, 0.28);
+  background: rgba(254, 243, 199, 0.78);
+  color: #92400e;
+}
+[data-theme="light"] .research-buff-chip-max,
+[data-theme="light"] .research-buff-detail {
+  color: #64748b;
 }
 [data-theme="light"] .research-node-slider-row {
   background: #f8fafc;

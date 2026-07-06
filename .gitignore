@@ -34,3 +34,6 @@ media-player/
 .firebaserc
 /tests
 /tests/unit
+!/tests/
+!/tests/unit/
+!/tests/unit/research-buffs.test.mjs

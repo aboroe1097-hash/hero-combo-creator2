@@ -3,6 +3,7 @@ import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setAct
 // Extracted Research Calculator Module
 import { techDatabase } from './tech-db.js';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
+import { describeNodeBuffProgress } from './research-buffs.js';
 import { appT } from './utils.js';
 
 const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
@@ -106,6 +107,34 @@ function getTechMedalTotals(tech) {
         remainingWb: wbMax - wbCurrent,
         remainingCm: cmMax - cmCurrent,
     };
+}
+
+function renderNodeBuffProgress(summary, compact = false) {
+    const statusClass = `research-buff-chip--${summary.status}`;
+    const detail = escapeHtml(summary.detailLabel);
+    if (compact) {
+        const text = summary.status === 'known'
+            ? `${summary.currentLabel} / ${summary.maxLabel}`
+            : summary.status === 'unlock'
+                ? (summary.currentLabel === 'Unlocked' ? 'Unlocked' : 'Unlock')
+                : 'Buff ?';
+        return `<span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(text)}</span>`;
+    }
+
+    if (summary.status === 'known') {
+        return `
+            <span class="research-buff-chip ${statusClass}" title="${detail}">
+                <span>${escapeHtml(summary.currentLabel)}</span>
+                <span class="research-buff-chip-max">/ ${escapeHtml(summary.maxLabel)}</span>
+            </span>
+            <span class="research-buff-detail">${escapeHtml(summary.remainingLabel)} left · ${escapeHtml(summary.perLevelLabel)}</span>
+        `;
+    }
+
+    return `
+        <span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(summary.currentLabel)}</span>
+        <span class="research-buff-detail">${escapeHtml(summary.detailLabel)}</span>
+    `;
 }
 
 function syncTechSeasonButtons() {
@@ -569,6 +598,7 @@ function buildGameTreeTierHtml(nodesInRow) {
             const maxStep = level >= node.maxLevel ? '0' : 'max';
             const maxUndo = level >= node.maxLevel ? ' game-tech-step--undo' : '';
             const iconMeta = resolveTechNodeIcon(node);
+            const buffSummary = describeNodeBuffProgress(node, level);
             html += `
               <div class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
                 data-node-id="${node.id}" data-node-col="${node._displayCol || node.col || 2}"
@@ -589,6 +619,7 @@ function buildGameTreeTierHtml(nodesInRow) {
                   <button type="button" class="game-tech-step" data-step="1" aria-label="Increase level">+</button>
                 </div>
                 <div class="node-cost-display game-tech-cost-pill" aria-live="polite"></div>
+                <div class="node-buff-display game-tech-buff-pill" aria-live="polite">${renderNodeBuffProgress(buffSummary, true)}</div>
                 <span class="game-tech-name" title="${escapeHtml(node.name)}">${escapeHtml(shortName)}</span>
                 <input type="number" class="tech-node-input" min="0" max="${node.maxLevel}" value="${level}" tabindex="-1" aria-hidden="true" hidden>
               </div>`;
@@ -851,6 +882,7 @@ function renderCalculator(tech) {
         const colAttr = node._displayCol || node.col ? ` data-node-col="${node._displayCol || node.col}"` : '';
         const safeName = escapeHtml(node.name);
         const safeBuff = escapeHtml(node.buff);
+        const buffSummary = describeNodeBuffProgress(node, savedLevel);
 
         return `
             <div class="research-tree-node-cell"${colAttr}>
@@ -859,6 +891,7 @@ function renderCalculator(tech) {
                         <div class="research-node-copy">
                             <span class="research-node-title">${safeName}</span>
                             <span class="research-node-buff">${safeBuff}</span>
+                            <span class="node-buff-display research-node-buff-progress" aria-live="polite">${renderNodeBuffProgress(buffSummary)}</span>
                         </div>
                         <div class="research-node-remaining">
                             <span class="research-node-remaining-label">Remaining</span>
@@ -1095,6 +1128,7 @@ function calculateTechTotals(tech) {
         const container = document.querySelector(`.tech-node-container[data-node-id="${node.id}"]`);
         const input = container?.querySelector('.tech-node-input');
         const display = container?.querySelector('.node-cost-display');
+        const buffDisplay = container?.querySelector('.node-buff-display');
         const currentLevel = input
             ? (parseInt(input.value, 10) || 0)
             : getStoredNodeLevel(tech.id, node.id);
@@ -1142,6 +1176,14 @@ function calculateTechTotals(tech) {
                     ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
                     : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`;
             }
+        }
+
+        if (buffDisplay) {
+            const compact = buffDisplay.classList.contains('game-tech-buff-pill');
+            buffDisplay.innerHTML = renderNodeBuffProgress(
+                describeNodeBuffProgress(node, currentLevel),
+                compact,
+            );
         }
 
         syncGameNodeButton(node, currentLevel);
