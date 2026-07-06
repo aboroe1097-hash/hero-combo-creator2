@@ -584,14 +584,14 @@ function renderEdenX1VoteResults() {
     row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
   });
   const totalRows = [...totals.values()].sort(
-    (a, b) => b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
+    (a, b) =>
+      b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
   );
   const ballotRows = votes
     .slice()
     .sort(
       (a, b) =>
-        edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a) ||
-        a.voterName.localeCompare(b.voterName)
+        edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a) || a.voterName.localeCompare(b.voterName)
     );
 
   host.innerHTML = `<div class="dash-duty-upload-summary">
@@ -601,7 +601,7 @@ function renderEdenX1VoteResults() {
       <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>season</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
-      <h3 class="dash-modal-section-label">Candidate totals</h3>
+      <h3 class="dash-modal-section-label">${esc(dashT('adminVoteCandidateTotals'))}</h3>
       <table class="dash-duty-summary-table">
         <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th></tr></thead>
         <tbody>${totalRows
@@ -617,7 +617,7 @@ function renderEdenX1VoteResults() {
       </table>
     </div>
     <div class="dash-duty-summary-table-wrap">
-      <h3 class="dash-modal-section-label">Ballots</h3>
+      <h3 class="dash-modal-section-label">${esc(dashT('adminVoteBallots'))}</h3>
       <table class="dash-duty-summary-table">
         <thead><tr><th>Voter</th><th>Vote</th><th>Updated</th></tr></thead>
         <tbody>${ballotRows
@@ -651,9 +651,7 @@ async function loadEdenX1Votes() {
     const { collection, getDocs, query, where } = await loadFirestoreApi();
     const season = currentEdenVoteSeason();
     const ref = collection(db, EDEN_X1_VOTES_COLLECTION_PATH);
-    const snapshot = await getDocs(
-      season ? query(ref, where('season', '==', season)) : ref
-    );
+    const snapshot = await getDocs(season ? query(ref, where('season', '==', season)) : ref);
     const votes = [];
     snapshot.forEach((docSnap) => votes.push(normalizeEdenX1VoteRecord(docSnap.data())));
     state.edenX1Votes = votes;
@@ -3219,7 +3217,7 @@ async function exportChartPng() {
 
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
-    titleH2.innerHTML = `<svg class="dash-export-title-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span class="dash-export-title-text">Top Performers</span>`;
+    titleH2.innerHTML = `<svg class="dash-export-title-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span class="dash-export-title-text">${esc(dashT('adminChartTop'))}</span>`;
     const subDiv = document.createElement('div');
     subDiv.className = 'dash-export-subtitle';
     subDiv.textContent = subTitle;
@@ -3294,7 +3292,7 @@ window.shareChartImage = async function () {
   const subTitle = currentTopPerformersSubtitle();
   const titleH2 = clone.querySelector('h2.dash-card-title');
   if (titleH2) {
-    titleH2.innerHTML = `<svg class="dash-export-title-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span class="dash-export-title-text">Top Performers</span>`;
+    titleH2.innerHTML = `<svg class="dash-export-title-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <span class="dash-export-title-text">${esc(dashT('adminChartTop'))}</span>`;
     const subDiv = document.createElement('div');
     subDiv.className = 'dash-export-subtitle';
     subDiv.textContent = subTitle;
@@ -3335,7 +3333,7 @@ window.shareChartImage = async function () {
       c.toBlob((blob) => {
         const file = new File([blob], 'vts_top_performers.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({ title: 'Top Performers', files: [file] }).catch(() => {});
+          navigator.share({ title: dashT('adminChartTop'), files: [file] }).catch(() => {});
         } else {
           alert('Sharing not supported on this browser. Use the download button instead.');
         }

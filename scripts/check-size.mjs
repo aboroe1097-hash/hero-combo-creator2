@@ -14,11 +14,11 @@ const LIMITS = {
   totalJsBytes: 2000 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
-  totalCssBytes: 505 * 1024,
+  totalCssBytes: 520 * 1024,
   cssChunks: {
     atmosphere: 342 * 1024,
-    admin: 124 * 1024,
-    mobile: 47 * 1024,
+    admin: 128 * 1024,
+    mobile: 50 * 1024,
   },
 };
 

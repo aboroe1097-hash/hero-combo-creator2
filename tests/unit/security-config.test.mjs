@@ -218,7 +218,10 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
   assert.match(rules, /allow read, delete: if isAdminLogin\(\);/);
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
-  assert.match(rules, /allow update: if signedIn\(\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/);
+  assert.match(
+    rules,
+    /allow update: if signedIn\(\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/
+  );
   assert.match(rules, /request\.resource\.data\.category == 'team_players'/);
   assert.match(rules, /request\.resource\.data\.voterAuthUid == request\.auth\.uid/);
   assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);

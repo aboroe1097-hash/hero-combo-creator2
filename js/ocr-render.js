@@ -1615,7 +1615,7 @@ function render() {
             if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
             else timeStr = `${esc(a.start_time)} - ${timeStr}`;
           }
-          d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${a.players_count} players</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="Delete Attack" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
+          d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${esc(adminT('edenX1PlayersCount', { count: a.players_count }))}</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="${esc(adminT('adminDeleteAttackTitle'))}" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
           d.onclick = () => showModal('attack', a);
           al.appendChild(d);
         });
@@ -1654,7 +1654,7 @@ function render() {
     const tr = document.createElement('tr');
     const remaining = filteredLeader.length - state.leaderLimit;
     const pageSize = Math.min(state.leaderPageSize || 20, remaining);
-    tr.innerHTML = `<td colspan="6" class="dash-load-more-cell"><button type="button" class="dash-btn dash-load-more-btn">Show More (${pageSize})</button></td>`;
+    tr.innerHTML = `<td colspan="6" class="dash-load-more-cell"><button type="button" class="dash-btn dash-load-more-btn">${esc(adminT('adminShowMore', { count: pageSize }))}</button></td>`;
     tr.querySelector('.dash-load-more-btn')?.addEventListener('click', () => {
       state.leaderLimit += pageSize;
       render();
@@ -1837,8 +1837,8 @@ function render() {
         </div>
         <div class="dash-activity-chart-panel">${svg}</div>
         <div class="dash-activity-legend">
-          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--targets"></b>Targets</span>
-          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--members"></b>Members</span>
+          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--targets"></b>${esc(adminT('adminActivityTargets'))}</span>
+          <span class="dash-activity-legend-item"><b class="dash-activity-swatch dash-activity-swatch--members"></b>${esc(adminT('edenX1ModalPlayers'))}</span>
           <span class="dash-activity-legend-muted">${days.length} active day${days.length === 1 ? '' : 's'}</span>
         </div>`;
     }
@@ -1913,7 +1913,7 @@ function showModal(type, data) {
         h += `<div class="dash-modal-actions"><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="add-player" data-attack-id="${esc(data.id)}">Add Player</button><button class="dash-btn dash-btn-xs dash-btn-soft" data-dash-action="edit-attack" data-attack-id="${esc(data.id)}">Edit Details</button><button class="dash-btn dash-btn-xs dash-btn-danger-soft" data-dash-action="delete-attack" data-attack-id="${esc(data.id)}">${esc(adminT('adminDelete'))}</button></div>`;
       }
       h += `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Participants</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${data.players_count}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${(avg || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Start Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${data.start_time ? esc(data.start_time) : '---'}</div></div><div class="dash-modal-stat"><div>End Time</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${displayGameTime(data.game_time)}</div></div><div class="dash-modal-stat"><div>Structure</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${esc(structureLabel(data))}</div></div></div>`;
-      h += `<div class="dash-modal-section-label">Value Distribution</div><div class="dash-distrib">${Object.entries(
+      h += `<div class="dash-modal-section-label">${esc(adminT('adminAnalyticsDistribution'))}</div><div class="dash-distrib">${Object.entries(
         tiers
       )
         .filter(([, v]) => v > 0)
@@ -1928,7 +1928,7 @@ function showModal(type, data) {
           (valueOf(a.rank) || 9999) - (valueOf(b.rank) || 9999) ||
           String(a.name || '').localeCompare(String(b.name || ''))
       );
-      h += `<div class="dash-modal-section-label">Player Breakdown</div><table class="dash-table dash-table--stack"><thead><tr><th>#</th><th>Name</th><th class="dash-table-right">Demolition</th>${!isGuest() ? '<th></th>' : ''}</tr></thead><tbody>`;
+      h += `<div class="dash-modal-section-label">${esc(adminT('adminModalPlayerBreakdown'))}</div><table class="dash-table dash-table--stack"><thead><tr><th>${esc(adminT('edenX1ThNumber'))}</th><th>${esc(adminT('adminContributionMember'))}</th><th class="dash-table-right">${esc(adminT('adminModalThDemolition'))}</th>${!isGuest() ? '<th></th>' : ''}</tr></thead><tbody>`;
       orderedPlayers.forEach((p, index) => {
         const displayRank = index + 1;
         const encName = encodeURIComponent(p.name).replace(/'/g, '%27');
@@ -1974,7 +1974,7 @@ function showModal(type, data) {
       let chartHtml = '';
       if (hrs.some((h) => hrMap[h] > 0)) {
         const maxHr = Math.max(...Object.values(hrMap), 1);
-        chartHtml = `<div class="dash-active-hours"><div class="dash-modal-section-label">Active Hours (Game Time)</div>
+        chartHtml = `<div class="dash-active-hours"><div class="dash-modal-section-label">${esc(adminT('adminModalActiveHours'))}</div>
           <div class="dash-active-hours-track">
           ${hrs
             .map((hr) => {
@@ -2004,7 +2004,15 @@ function showModal(type, data) {
         pb +
         `<div class="dash-modal-grid"><div class="dash-modal-stat"><div>Total Demolition</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${(data.total_demolition || 0).toLocaleString()}</div></div><div class="dash-modal-stat"><div>Structures Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${data.attacks?.length || 0}</div></div><div class="dash-modal-stat"><div>Avg per Hit</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${data.attacks?.length ? Math.round((data.total_demolition || 0) / data.attacks.length).toLocaleString() : '0'}</div></div></div>` +
         chartHtml +
-        '<table class="dash-table dash-table--stack"><thead><tr><th>Time</th><th>Target</th><th class="dash-table-right">Value</th><th class="dash-table-center">Rank</th></tr></thead><tbody>' +
+        '<table class="dash-table dash-table--stack"><thead><tr><th>' +
+        esc(adminT('edenX1ModalTime')) +
+        '</th><th>' +
+        esc(adminT('adminModalThTarget')) +
+        '</th><th class="dash-table-right">' +
+        esc(adminT('adminModalThValue')) +
+        '</th><th class="dash-table-center">' +
+        esc(adminT('edenX1ModalRank')) +
+        '</th></tr></thead><tbody>' +
         sortedAttacks
           .map(
             (att) =>

@@ -274,11 +274,11 @@ function renderEdenMemberSuggestionList(value, targetId) {
     ? [exact, ...matches.filter((row) => row.playerKey !== exact.playerKey)].slice(0, 5)
     : matches;
   if (!shown.length)
-    return '<span class="eden-x1-vote-suggestion-empty">No similar member found.</span>';
+    return `<span class="eden-x1-vote-suggestion-empty">${esc(t('edenX1VoteNoSimilarMember'))}</span>`;
   return shown
     .map((row, index) => {
       const isResolved = exact?.playerKey === row.playerKey;
-      const label = isResolved && index === 0 ? 'Best match' : 'Similar';
+      const label = isResolved && index === 0 ? t('edenX1VoteMatchBest') : t('edenX1VoteMatchSimilar');
       return `<button class="eden-x1-vote-suggestion" type="button" data-eden-vote-suggest="${esc(row.playerName)}" data-eden-vote-target="${esc(targetId)}">
         <span>${renderTaggedPlayerName(row)}</span>
         <em>${esc(label)}</em>
@@ -391,7 +391,7 @@ function renderEdenVotePickList(title, rows) {
           </button>`
         )
         .join('')
-    : `<span class="eden-x1-vote-helper-empty">No data yet</span>`;
+    : `<span class="eden-x1-vote-helper-empty">${esc(t('edenX1VoteHelperEmpty'))}</span>`;
   return `<div class="eden-x1-vote-helper-card">
     <strong>${esc(title)}</strong>
     <div>${body}</div>
@@ -400,16 +400,16 @@ function renderEdenVotePickList(title, rows) {
 
 function renderEdenVoteGuidance() {
   const groups = [
-    ['Top 5 Banner Help', rankedEdenDutyRows('banners')],
-    ['Top 5 Shield Wall Help', rankedEdenDutyRows('shieldWalls')],
-    ['Top 5 Pathing Help', rankedEdenDutyRows('pathers')],
-    ['Top 5 Structure Help', rankedEdenStructureHelpRows()],
-    ['Top 5 Consistent Names', rankedEdenConsistentRows()],
+    [t('edenX1VoteTopBanner'), rankedEdenDutyRows('banners')],
+    [t('edenX1VoteTopShield'), rankedEdenDutyRows('shieldWalls')],
+    [t('edenX1VoteTopPath'), rankedEdenDutyRows('pathers')],
+    [t('edenX1VoteTopStructure'), rankedEdenStructureHelpRows()],
+    [t('edenX1VoteTopConsistent'), rankedEdenConsistentRows()],
   ];
   return `<div class="eden-x1-vote-guidance">
     <div class="eden-x1-vote-guidance-head">
-      <strong>Need help choosing?</strong>
-      <span>These lists are only signals. Vote for the teammate you believe stood out most.</span>
+      <strong>${esc(t('edenX1VoteGuidanceTitle'))}</strong>
+      <span>${esc(t('edenX1VoteGuidanceCopy'))}</span>
     </div>
     <div class="eden-x1-vote-helper-grid">
       ${groups.map(([title, rows]) => renderEdenVotePickList(title, rows)).join('')}
@@ -441,30 +441,30 @@ function renderEdenVoteCandidateDetail(option) {
   const values = attacks.map((attack) => valueOf(attack.demo));
   const sparkline = values.length
     ? publicSparkline(values, 'var(--green)')
-    : `<div class="dash-empty">No structure-hit trend yet.</div>`;
+    : `<div class="dash-empty">${esc(t('edenX1VoteNoTrend'))}</div>`;
   const fullDetailButton = player
-    ? `<button class="dash-btn dash-btn-xs" type="button" data-eden-vote-open-player="${esc(player.key)}">Open attack detail</button>`
+    ? `<button class="dash-btn dash-btn-xs" type="button" data-eden-vote-open-player="${esc(player.key)}">${esc(t('edenX1VoteOpenDetail'))}</button>`
     : '';
   return `<div class="eden-x1-vote-player-detail-card">
     <div class="eden-x1-vote-player-detail-head">
       <div>
         <strong>${esc(option.playerName)}</strong>
-        <span>Contribution, support, and structure activity</span>
+        <span>${esc(t('edenX1VoteDetailSubtitle'))}</span>
       </div>
       ${fullDetailButton}
     </div>
     <div class="dash-modal-grid eden-x1-vote-stat-grid">
-      <div class="dash-modal-stat"><div>Weighted Score</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Final Rank</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted?.finalRank ? `#${esc(weighted.finalRank)}` : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Contribution</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${weighted ? formatScore(weighted.contributionScore) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Ex-Guild</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${weighted ? formatScore(weighted.contributionExGuild || 0) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Support Total</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted ? dutyTotal.toLocaleString() : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Banner / Path / Shield</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Structure Hits</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${player ? formatScore(player.participation_count) : '--'}</div></div>
-      <div class="dash-modal-stat"><div>Total Demo</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${player ? formatScore(player.total_demolition) : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1ThWeightedScore'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('adminContributionFinalRank'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted?.finalRank ? `#${esc(weighted.finalRank)}` : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1ThContribution'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${weighted ? formatScore(weighted.contributionScore) : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1ThExGuild'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${weighted ? formatScore(weighted.contributionExGuild || 0) : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1VoteSupportTotal'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${weighted ? dutyTotal.toLocaleString() : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1VoteBannerPathShield'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1KpiStructureHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${player ? formatScore(player.participation_count) : '--'}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1KpiTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${player ? formatScore(player.total_demolition) : '--'}</div></div>
     </div>
     <div class="eden-x1-vote-trend">
-      <span>Structure-hit progress</span>
+      <span>${esc(t('edenX1VoteTrendLabel'))}</span>
       ${sparkline}
     </div>
   </div>`;
@@ -478,7 +478,7 @@ function updateEdenVoteCandidateDetail(host) {
   const option = findEdenMemberOption(input.value);
   if (!option) {
     toggle.disabled = true;
-    toggle.textContent = 'Select a member to view stats';
+    toggle.textContent = t('edenX1VoteInspectEmpty');
     toggle.setAttribute('aria-expanded', 'false');
     detail.hidden = true;
     detail.dataset.open = '0';
@@ -486,7 +486,7 @@ function updateEdenVoteCandidateDetail(host) {
     return;
   }
   toggle.disabled = false;
-  toggle.textContent = `View ${option.playerName} stats`;
+  toggle.textContent = t('edenX1VoteInspectNamed', { player: option.playerName });
   if (detail.dataset.open === '1') {
     detail.hidden = false;
     detail.innerHTML = renderEdenVoteCandidateDetail(option);
@@ -506,7 +506,7 @@ async function submitEdenTeamVote(event) {
   const voter = resolveEdenVoteInput(form, 'edenX1VoterName');
   const candidate = resolveEdenVoteInput(form, 'edenX1CandidateName');
   if (!voter || !candidate) {
-    setEdenVoteStatus('Please choose both names from the member list.', 'error');
+    setEdenVoteStatus(t('edenX1VoteErrPickBoth'), 'error');
     return;
   }
 
@@ -525,16 +525,16 @@ async function submitEdenTeamVote(event) {
   };
 
   if (!edenVoteWriteContext && !EDEN_X1_TEST_MODE) {
-    setEdenVoteStatus('Cloud voting is not ready. Please refresh and try again.', 'error');
+    setEdenVoteStatus(t('edenX1VoteErrCloud'), 'error');
     return;
   }
 
   try {
     if (submit) {
       submit.disabled = true;
-      submit.textContent = 'Saving...';
+      submit.textContent = t('edenX1VoteSavingShort');
     }
-    setEdenVoteStatus('Saving vote...', 'info');
+    setEdenVoteStatus(t('edenX1VoteStatusSaving'), 'info');
     if (edenVoteWriteContext) {
       const { db, firestore, user } = edenVoteWriteContext;
       const { doc, serverTimestamp, setDoc } = firestore;
@@ -546,17 +546,14 @@ async function submitEdenTeamVote(event) {
       localVote.voterAuthUid = user.uid;
     }
     writeLocalEdenVote(localVote);
-    setEdenVoteStatus(
-      'Vote saved. You can change it by submitting again from this device.',
-      'success'
-    );
+    setEdenVoteStatus(t('edenX1VoteSaved'), 'success');
   } catch (err) {
     console.error('Eden X1 vote save failed:', err);
-    setEdenVoteStatus(`Vote did not sync: ${err?.message || err || 'unknown error'}`, 'error');
+    setEdenVoteStatus(t('edenX1VoteSyncFailed', { error: err?.message || err || 'unknown error' }), 'error');
   } finally {
     if (submit) {
       submit.disabled = false;
-      submit.textContent = 'Cast Vote';
+      submit.textContent = t('edenX1VoteCast');
     }
   }
 }
@@ -634,30 +631,30 @@ function bindEdenVoteControls(host) {
 function renderEdenTeamVotePanel() {
   const saved = readLocalEdenVote();
   const savedStatus = saved?.candidateName
-    ? `<div class="eden-x1-vote-saved">Saved on this device: ${esc(saved.voterName)} voted for ${esc(saved.candidateName)}.</div>`
+    ? `<div class="eden-x1-vote-saved">${esc(t('edenX1VoteSavedDevice', { voter: saved.voterName, candidate: saved.candidateName }))}</div>`
     : '';
   return `<section class="dash-card eden-x1-vote-panel">
     <div class="dash-card-hdr dash-card-hdr-wrap">
       <div>
-        <h2 class="dash-card-title"><span>Team Players Vote</span></h2>
-        <p class="dash-card-subtitle">Honor-system voting for Eden X1. Identify yourself, choose one teammate, and submit again if you need to change your vote.</p>
+        <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
+        <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
       </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
       ${renderEdenVoteMemberOptions()}
       <label class="eden-x1-vote-field" for="edenX1VoterName">
-        <span>Your game name</span>
-        <input id="edenX1VoterName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.voterName || '')}" placeholder="Start typing your member name" autocomplete="off" required />
+        <span>${esc(t('edenX1VoteYourName'))}</span>
+        <input id="edenX1VoterName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.voterName || '')}" placeholder="${esc(t('edenX1VotePhSelf'))}" autocomplete="off" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1VoterName"></div>
       </label>
       <label class="eden-x1-vote-field" for="edenX1CandidateName">
-        <span>Your vote</span>
-        <input id="edenX1CandidateName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.candidateName || '')}" placeholder="Choose a teammate" autocomplete="off" required />
+        <span>${esc(t('edenX1VoteYourVote'))}</span>
+        <input id="edenX1CandidateName" class="dash-input" type="text" list="edenX1VoteMemberOptions" value="${esc(saved?.candidateName || '')}" placeholder="${esc(t('edenX1VotePhTeammate'))}" autocomplete="off" required />
         <div class="eden-x1-vote-suggestions" data-eden-vote-suggestions-for="edenX1CandidateName"></div>
       </label>
       <div class="eden-x1-vote-actions">
-        <button class="dash-btn dash-btn-primary" type="submit">Cast Vote</button>
-        <button id="edenX1VoteCandidateInspectBtn" class="dash-btn" type="button" aria-expanded="false">Select a member to view stats</button>
+        <button class="dash-btn dash-btn-primary" type="submit">${esc(t('edenX1VoteCast'))}</button>
+        <button id="edenX1VoteCandidateInspectBtn" class="dash-btn" type="button" aria-expanded="false">${esc(t('edenX1VoteInspectEmpty'))}</button>
       </div>
       <div id="edenX1VoteStatus" class="eden-x1-vote-status" role="status">${savedStatus}</div>
       <div id="edenX1VoteCandidateDetail" class="eden-x1-vote-candidate-detail" hidden></div>

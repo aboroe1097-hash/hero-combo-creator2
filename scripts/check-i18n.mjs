@@ -119,6 +119,31 @@ for (const relPath of htmlFiles) {
   }
 }
 
+function walkJsFiles(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const absolutePath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!['node_modules', 'dist', '.git'].includes(entry.name)) walkJsFiles(absolutePath, out);
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith('.js')) out.push(absolutePath);
+  }
+  return out;
+}
+
+const jsKeyRe = /\b(?:adminT|dashT|t)\(\s*['"]([a-zA-Z][a-zA-Z0-9_]*)['"]/g;
+const RUNTIME_KEY_PREFIXES = /^(admin|eden|tab|game|dash|message|toast|hero|combo|research|loyalty|bug|footer|lang|seo|step|upgrade|cost|lvl|next|after|loading)/;
+for (const absolutePath of walkJsFiles(path.join(rootDir, 'js'))) {
+  const relPath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
+  const source = fs.readFileSync(absolutePath, 'utf8');
+  let match;
+  while ((match = jsKeyRe.exec(source))) {
+    const key = match[1];
+    if (!RUNTIME_KEY_PREFIXES.test(key) && (!/[A-Z]/.test(key) || key.length < 6)) continue;
+    addKey(key, `${relPath}:runtime`);
+  }
+}
+
 const englishKeys = Object.keys(translations.en || {});
 const errors = [];
 
