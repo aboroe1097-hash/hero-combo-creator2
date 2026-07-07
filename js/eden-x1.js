@@ -3508,13 +3508,18 @@ function bindPublicDashboardControls(host) {
   }
 }
 
-function renderPublicDashboard(data = publicDashboardData) {
-  const host = $('edenX1PublicDashboard');
-  if (!host) return;
+function preparePublicDashboardRows(data = publicDashboardData) {
   publicDashboardData = data || {};
   publicAttackRows = sortPublicAttacks(publicDashboardData.attacks);
   publicPlayerRows = buildPublicPlayerRows(publicAttackRows);
   publicStructureRows = buildPublicStructureRows(publicAttackRows);
+  return publicDashboardData;
+}
+
+function renderPublicDashboard(data = publicDashboardData) {
+  const host = $('edenX1PublicDashboard');
+  if (!host) return;
+  publicDashboardData = preparePublicDashboardRows(data);
   const hasContribution = Array.isArray(publicDashboardData.contributionRecords)
     ? publicDashboardData.contributionRecords.some(
         (record) => Array.isArray(record?.entries) && record.entries.length
@@ -3969,6 +3974,7 @@ function applyDashboardData(data = {}) {
   });
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);
+  preparePublicDashboardRows(data);
 
   const panel = $('dashWeightedContributionPanel');
   if (!model.rows || !model.rows.length) {

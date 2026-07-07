@@ -72,7 +72,7 @@ export const techDatabase = [
         layoutMode: "game",
         season: "S0",
         unlockCondition: "None",
-        primaryResource: "Only Resourcess",
+        primaryResource: "Only Resources",
         nodes: [
             { id: "node_1", name: "Rapid Growth", troop: "ALL", buff: "Unlock Farm Rapid Production", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 1},
             { id: "node_2", name: "Moonshine", troop: "ALL", buff: "Unlock Distillery Rapid Production", maxLevel: 1, costType: "None", costs: [] , row: 1, col: 2},
@@ -98,7 +98,7 @@ export const techDatabase = [
         layoutMode: "game",
         season: "S0",
         unlockCondition: "None",
-        primaryResource: "Only Resourcess",
+        primaryResource: "Only Resources",
         nodes: [
             { id: "node_1", name: "Fertilizer", troop: "ALL", buff: "+3% Food Income per Level", maxLevel: 10, costType: "None", costs: [] , row: 1, col: 1},
             { id: "node_2", name: "High-Grade Sugar", troop: "ALL", buff: "+3% Ale Income per Level", maxLevel: 10, costType: "None", costs: [] , row: 1, col: 2},

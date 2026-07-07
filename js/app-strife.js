@@ -352,6 +352,15 @@ function renderComboSection(title, subtitle, combos, model, variant, sourceMode)
   `;
 }
 
+function keepActiveMonsterInView() {
+  if (!strifeRoot || !window.matchMedia?.('(max-width: 640px)').matches) return;
+  const grid = strifeRoot.querySelector('.strife-monster-grid');
+  const active = grid?.querySelector('.strife-monster-card.active');
+  if (!grid || !active) return;
+  const nextLeft = active.offsetLeft - ((grid.clientWidth - active.clientWidth) / 2);
+  grid.scrollTo({ left: Math.max(0, nextLeft), behavior: 'auto' });
+}
+
 function renderStrifeTool() {
   if (!strifeRoot) return;
   const model = getStrifeRecommendations();
@@ -405,6 +414,7 @@ function renderStrifeTool() {
       ${renderComboSection('Paid Combos', `${model.stage} available heroes`, model.p2wCombos, model, STRIFE_TIERS.P2W, model.p2wSourceMode)}
     </div>
   `;
+  requestAnimationFrame(keepActiveMonsterInView);
 }
 
 function handleStrifeClick(event) {

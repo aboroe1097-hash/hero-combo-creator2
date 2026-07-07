@@ -22,6 +22,10 @@ export function initEdenSeasonPicker(api) {
   const select = document.getElementById('edenDatasetSelect');
   const badge = document.getElementById('edenDatasetBadge');
 
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+
   const catalog = () => getEdenDatasetCatalog();
 
   function datasetLabel(id) {

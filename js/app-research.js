@@ -1,7 +1,7 @@
 import { escapeHtml } from './utils.js';
 import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setActiveTechSeasons, setTechSearchQuery, getSourceCreditText, TechseasonColors, TECH_SEASON_ORDER, researchSection } from './state.js';
 // Extracted Research Calculator Module
-import { techDatabase } from './tech-db.js';
+import { techDatabase } from './tech-db.js?v=20260707_162501';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
 import { describeNodeBuffProgress, summarizeTechBuffs } from './research-buffs.js';
 import { appT } from './utils.js';
@@ -312,6 +312,7 @@ function closeTechCalculator() {
     const container = document.getElementById('techCalculatorContainer');
     if (!container || container.classList.contains('hidden')) return;
     container.classList.add('research-calculator--closing');
+    document.body.classList.remove('research-calculator-open');
     window.setTimeout(() => {
         container.classList.add('hidden');
         container.classList.remove('research-calculator--closing');
@@ -1000,6 +1001,7 @@ function renderGameCalculator(tech, container) {
 function renderCalculator(tech) {
     const container = document.getElementById('techCalculatorContainer');
     container.classList.remove('hidden', 'research-calculator--closing');
+    document.body.classList.add('research-calculator-open');
 
     // 1. Cleanly normalize the manual Row/Col/Branch tags from the DB. 
     // ZERO auto-guessing logic here.
@@ -1018,10 +1020,30 @@ function renderCalculator(tech) {
     const b1Nodes = tech.nodes.filter(n => n.b == 1 || n.b === '1');
     const b2Nodes = tech.nodes.filter(n => n.b == 2 || n.b === '2');
     const b3Nodes = tech.nodes.filter(n => n.b == 3 || n.b === '3');
+    const branchGroups = [b1Nodes, b2Nodes, b3Nodes];
 
-    [trunkNodes, b1Nodes, b2Nodes, b3Nodes].forEach(group => {
+    [trunkNodes, ...branchGroups].forEach(group => {
         if (group.length) applyAutoGridToGroup(group);
     });
+
+    const canRenderBranchesAsLanes = branchGroups.filter(group => group.length).length >= 2
+        && branchGroups.every(group => {
+            const seenRows = new Set();
+            return group.every(node => {
+                const row = Number(node.row);
+                if (!Number.isFinite(row) || seenRows.has(row)) return false;
+                seenRows.add(row);
+                return true;
+            });
+        });
+
+    const branchLaneNodes = canRenderBranchesAsLanes
+        ? branchGroups.flatMap((group, index) => group.map(node => ({
+            ...node,
+            col: index + 1,
+            _displayCol: index + 1,
+        })))
+        : [];
 
     const buildNodeHtml = (node) => {
         const savedLevel = getStoredNodeLevel(tech.id, node.id);
@@ -1083,7 +1105,8 @@ function renderCalculator(tech) {
         `;
     };
 
-    const renderNodeGroup = (nodes) => {
+    const renderNodeGroup = (nodes, options = {}) => {
+        const { preserveDisplayCols = false } = options;
         let rowGroups = {};
         nodes.forEach(node => {
             if (!rowGroups[node.row]) rowGroups[node.row] = [];
@@ -1094,15 +1117,15 @@ function renderCalculator(tech) {
         let gHtml = '<div class="research-tree-group">';
         rKeys.forEach((rk, i) => {
             const rNodes = rowGroups[rk];
-            rNodes.sort((a,b) => a.col - b.col);
+            rNodes.sort((a,b) => (a._displayCol || a.col || 0) - (b._displayCol || b.col || 0));
             
             const rowLayoutClass = rNodes.length === 1
                 ? ' research-tree-row--single'
                 : rNodes.length === 2
                     ? ' research-tree-row--pair'
                     : '';
-            if (rNodes.length === 1) rNodes[0]._displayCol = 2;
-            if (rNodes.length === 2) {
+            if (rNodes.length === 1 && !(preserveDisplayCols && rNodes[0]._displayCol)) rNodes[0]._displayCol = 2;
+            if (rNodes.length === 2 && !preserveDisplayCols) {
                 rNodes[0]._displayCol = 1;
                 rNodes[1]._displayCol = 3;
             }
@@ -1138,7 +1161,7 @@ function renderCalculator(tech) {
             </div>
         </div>
         
-        <div class="research-tree-scroll custom-scrollbar">
+        <div class="research-tree-scroll custom-scrollbar${canRenderBranchesAsLanes ? ' research-tree-scroll--lanes' : ''}">
     `;
 
     let treeHtml = `<div class="research-tree-root">`;
@@ -1157,31 +1180,50 @@ function renderCalculator(tech) {
             `;
         }
 
-        treeHtml += `
-            <div class="research-branch-segment">
-                <button type="button" class="research-branch-btn branch-tab-btn active" data-target="branch_1">
-                    <span>+</span><span>Footmen</span>
-                </button>
-                <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_2">
-                    <span>+</span><span>Cavalry</span>
-                </button>
-                <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_3">
-                    <span>+</span><span>Archer</span>
-                </button>
-            </div>
-        `;
+        if (canRenderBranchesAsLanes) {
+            treeHtml += `
+                <div class="research-branch-segment research-branch-segment--lanes" aria-label="Troop branch lanes">
+                    <div class="research-branch-btn research-branch-label">
+                        <span>+</span><span>Footmen</span>
+                    </div>
+                    <div class="research-branch-btn research-branch-label">
+                        <span>+</span><span>Cavalry</span>
+                    </div>
+                    <div class="research-branch-btn research-branch-label">
+                        <span>+</span><span>Archer</span>
+                    </div>
+                </div>
+                <div class="branch-content research-branch-content research-branch-content--lanes">
+                    ${renderNodeGroup(branchLaneNodes, { preserveDisplayCols: true })}
+                </div>
+            `;
+        } else {
+            treeHtml += `
+                <div class="research-branch-segment">
+                    <button type="button" class="research-branch-btn branch-tab-btn active" data-target="branch_1">
+                        <span>+</span><span>Footmen</span>
+                    </button>
+                    <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_2">
+                        <span>+</span><span>Cavalry</span>
+                    </button>
+                    <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_3">
+                        <span>+</span><span>Archer</span>
+                    </button>
+                </div>
+            `;
 
-        treeHtml += `
-            <div id="branch_1" class="branch-content research-branch-content">
-                ${b1Nodes.length ? renderNodeGroup(b1Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
-            </div>
-            <div id="branch_2" class="branch-content research-branch-content hidden">
-                ${b2Nodes.length ? renderNodeGroup(b2Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
-            </div>
-            <div id="branch_3" class="branch-content research-branch-content hidden">
-                ${b3Nodes.length ? renderNodeGroup(b3Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
-            </div>
-        `;
+            treeHtml += `
+                <div id="branch_1" class="branch-content research-branch-content">
+                    ${b1Nodes.length ? renderNodeGroup(b1Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+                </div>
+                <div id="branch_2" class="branch-content research-branch-content hidden">
+                    ${b2Nodes.length ? renderNodeGroup(b2Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+                </div>
+                <div id="branch_3" class="branch-content research-branch-content hidden">
+                    ${b3Nodes.length ? renderNodeGroup(b3Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+                </div>
+            `;
+        }
     }
     
     treeHtml += `</div></div>`; 

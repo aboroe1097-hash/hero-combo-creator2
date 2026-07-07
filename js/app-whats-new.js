@@ -39,6 +39,17 @@ function renderWhatsNew(version, changes) {
 
 export async function initWhatsNewBanner(version) {
   if (!version) return;
+  const params = new URLSearchParams(window.location.search || '');
+  const host = window.location.hostname || '';
+  const isLocalPreview =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+  if (isLocalPreview || params.has('qa') || params.has('visual')) return;
+
   let lastSeen = '';
   try { lastSeen = localStorage.getItem(LAST_SEEN_KEY) || ''; } catch {}
   if (lastSeen === version) return;

@@ -798,12 +798,16 @@ export function preloadStrategyFloor(onReady) {
   if (_strategyFloorLoading) return _strategyFloorImage;
   _strategyFloorLoading = true;
   const img = new Image();
+  _strategyFloorImage = img;
   img.onload = () => {
     _strategyFloorImage = img;
     _strategyFloorLoading = false;
     onReady?.(img);
   };
-  img.onerror = () => { _strategyFloorLoading = false; };
+  img.onerror = () => {
+    if (_strategyFloorImage === img) _strategyFloorImage = null;
+    _strategyFloorLoading = false;
+  };
   img.src = EDEN_STRATEGY_FLOOR.url;
   return _strategyFloorImage;
 }

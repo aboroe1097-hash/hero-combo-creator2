@@ -15,7 +15,7 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js';
+import { initWhatsNewBanner } from './app-whats-new.js?v=20260707_162501';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
@@ -144,7 +144,7 @@ let researchModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260707_162501').catch((err) => {
       researchModulePromise = null;
       throw err;
     });
@@ -783,7 +783,7 @@ const validTabNames = new Set(tabs.map((tab) => tab.name));
 
 tabs.forEach(tab => {
   if (tab.btn) {
-    tab.btn.addEventListener('click', () => switchTab(tab.name));
+    tab.btn.addEventListener('click', () => switchTab(tab.name, false, { scrollToSection: true }));
   }
 });
   wireGlobalControlDelegates();
@@ -875,7 +875,9 @@ tabs.forEach(tab => {
     document.querySelectorAll('#youtubeSection iframe[data-src]').forEach((iframe) => {
       const srcAttr = iframe.getAttribute('src');
       if ((!srcAttr || srcAttr === '') && iframe.dataset.src) {
+        iframe.loading = 'eager';
         iframe.src = iframe.dataset.src;
+        iframe.removeAttribute('data-src');
       }
     });
   }
@@ -936,7 +938,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js')
+        import('./eden-map.js?v=20260707_162501')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -994,7 +996,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js')
+      import('./app-strife.js?v=20260707_162501')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
@@ -1018,7 +1020,17 @@ tabs.forEach(tab => {
     }
   }
 
-  function switchTab(tabName, force = false) {
+  function scrollToTabStart(targetSection) {
+    if (!targetSection) return;
+    const nav = document.querySelector('.tool-nav-shell');
+    const navStyle = nav ? window.getComputedStyle(nav) : null;
+    const navIsSticky = navStyle?.position === 'sticky';
+    const navOffset = navIsSticky ? nav.getBoundingClientRect().height + 14 : 10;
+    const top = Math.max(0, targetSection.getBoundingClientRect().top + window.scrollY - navOffset);
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+
+  function switchTab(tabName, force = false, options = {}) {
     if (!force && tabName === _lastTab) return;
 
     const targetSection = document.getElementById(`${tabName}Section`);
@@ -1050,11 +1062,16 @@ tabs.forEach(tab => {
       comboFooterBar.classList.remove('hidden');
     }
 
+    document.body.dataset.activeTab = tabName;
     document.body.classList.toggle('tab-manual-active', tabName === 'manual');
     document.body.classList.toggle('tab-combo-active', tabName === 'manual' || tabName === 'generator');
+    document.body.classList.toggle('tab-strife-active', tabName === 'strife');
 
     onTabActivated(tabName);
     _lastTab = tabName;
+    if (options.scrollToSection) {
+      requestAnimationFrame(() => scrollToTabStart(targetSection));
+    }
     try {
       if (window.location.hash !== '#' + tabName) {
         history.replaceState({ tab: tabName }, '', '#' + tabName);
@@ -1070,8 +1087,7 @@ tabs.forEach(tab => {
       const tabName = link.dataset.footerTab || '';
       if (!validTabNames.has(tabName)) return;
       event.preventDefault();
-      switchTab(tabName, true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      switchTab(tabName, true, { scrollToSection: true });
     });
   });
   initKeyboardShortcuts({ switchTab });
@@ -1173,7 +1189,7 @@ tabs.forEach(tab => {
   }
   const hashTab = window.location.hash?.replace('#', '').split('?')[0];
   const startTab = validTabNames.has(hashTab) ? hashTab : 'generator';
-  switchTab(startTab, true);
+  switchTab(startTab, true, { scrollToSection: startTab !== 'generator' });
 }
 
 // --- TRANSLATIONS / TEXT ---
@@ -1322,7 +1338,28 @@ function keepActiveTabInView(activeBtn, behavior = 'smooth') {
   }
 }
 
+function isLocalQaHost(hostname = '') {
+  const host = hostname.toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.startsWith('10.') ||
+    host.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  );
+}
+
+function shouldAutoStartQuickTour() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('tour') || params.has('quickTour')) return true;
+  if (params.has('noTour') || params.has('qa') || params.has('visual')) return false;
+  return !isLocalQaHost(window.location.hostname);
+}
+
 function initQuickTour() {
+  if (!shouldAutoStartQuickTour()) return;
+
   const storageKey = 'vts_quick_tour_done';
   try {
     if (localStorage.getItem(storageKey) === '1') return;

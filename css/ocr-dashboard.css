@@ -2976,6 +2976,7 @@
   }
   #ocrDashboardRoot .dash-api-key-actions {
     max-width: none;
+    grid-template-columns: minmax(0, 1.15fr) minmax(116px, 0.85fr);
   }
   #ocrDashboardRoot :is(.dash-actions > .dash-btn, .dash-actions > .dash-dropdown) {
     min-width: 0;
@@ -2989,6 +2990,25 @@
     font-size: 0.8rem;
     font-weight: 800;
     text-align: center;
+  }
+  #ocrDashboardRoot .dash-roster-api-status {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: center;
+    align-items: center;
+    text-align: left;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+  #ocrDashboardRoot .dash-roster-api-status b {
+    min-width: 0;
+    flex: initial;
+  }
+  #ocrDashboardRoot .dash-roster-api-status .dash-api-reason {
+    grid-column: 1 / -1;
+    padding-inline-start: 1.35rem;
+    overflow-wrap: normal;
+    word-break: normal;
   }
   #ocrDashboardRoot .dash-actions .dash-btn {
     width: 100%;
@@ -3206,14 +3226,15 @@ body[style*='overflow: hidden'] .tab-panel {
 
 /* Sub-tab Navigation */
 #ocrDashboardRoot .dash-subtab-nav {
-  display: flex;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.4rem;
   margin-bottom: 0.85rem;
   padding: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  overflow-x: auto;
+  overflow: visible;
   scrollbar-width: none;
   max-width: 100%;
 }
@@ -3223,16 +3244,21 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-subtab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-pill);
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.58rem 0.72rem;
+  border-radius: 12px;
   border: none;
   background: transparent;
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.08;
+  text-align: center;
   transition: var(--t-fast);
   font-family: inherit;
 }
@@ -3264,38 +3290,37 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-subtab-btn svg {
   flex-shrink: 0;
 }
+#ocrDashboardRoot .dash-subtab-btn span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 @media (min-width: 1201px) {
   #ocrDashboardRoot .dash-subtab-nav {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(9, minmax(0, 1fr));
     gap: 0.35rem;
     padding: 0.35rem;
   }
 
   #ocrDashboardRoot .dash-subtab-btn {
-    justify-content: center;
-    min-width: 0;
     padding: 0.62rem 0.72rem;
   }
 
   #ocrDashboardRoot .dash-subtab-btn span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 }
 
 @media (min-width: 769px) and (max-width: 1200px) {
   #ocrDashboardRoot .dash-subtab-nav {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
     gap: 0.35rem;
     padding: 0.35rem;
   }
 
   #ocrDashboardRoot .dash-subtab-btn {
-    justify-content: center;
     min-width: 0;
   }
 }
@@ -3326,6 +3351,11 @@ body[style*='overflow: hidden'] .tab-panel {
   }
   #ocrDashboardRoot .dash-subtab-btn[data-subtab='analytics']::after {
     margin-left: auto;
+  }
+}
+@media (min-width: 641px) and (max-width: 768px) {
+  #ocrDashboardRoot .dash-subtab-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 #ocrDashboardRoot .dash-subtab-panel {
@@ -6293,4 +6323,697 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   gap: 8px;
   justify-content: center;
   padding: 10px 4px 2px;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-kpi > div:last-child,
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-main,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-item > div:first-child,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-actions {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-item {
+  gap: 0.7rem;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-item > div:first-child {
+  flex: 1 1 0;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-kpi-value,
+#ocrDashboardRoot #dashSubtabDashboard .dash-kpi-label,
+#ocrDashboardRoot #dashSubtabDashboard .dash-ops-card :is(strong, p),
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-name,
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-meta,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-name,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-time,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-count,
+#ocrDashboardRoot #dashSubtabDashboard .dash-attack-val {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-main {
+  flex-wrap: wrap;
+  row-gap: 0.18rem;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-name {
+  flex: 1 1 14rem;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-meta {
+  margin-left: 0.45rem;
+}
+
+#ocrDashboardRoot #dashSubtabDashboard .dash-top-val {
+  margin-left: auto;
+}
+
+/* VTS X1 admin dashboard responsive pass. Keep the heavy reporting panels usable
+   on smaller screens without changing the dedicated admin sub-tools. */
+@media (max-width: 1024px) {
+  #ocrDashboardRoot #dashSubtabDashboard {
+    --dash-dashboard-panel-cap: min(42svh, 390px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-visuals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-history-leader-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-card {
+    border-radius: 12px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-overview {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: min(36svh, 300px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.2rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(103, 232, 249, 0.42) transparent;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-chart,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-list,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-table-wrap,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-weighted-contribution-table-wrap {
+    max-height: var(--dash-dashboard-panel-cap);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(103, 232, 249, 0.42) transparent;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard #dashLeaderboardCard .dash-table {
+    min-width: 620px !important;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-weighted-contribution-table-wrap {
+    max-height: min(40svh, 360px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-item {
+    padding: 0.58rem 0.55rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-main {
+    min-height: 34px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-mini-trend {
+    height: 130px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-activity-chart-panel {
+    min-height: 0;
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot #dashSubtabDashboard {
+    --dash-dashboard-panel-cap: min(38svh, 340px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi {
+    min-height: 74px;
+    padding: 0.62rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-value {
+    font-size: clamp(1rem, 5.2vw, 1.22rem);
+    line-height: 1.05;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-value-compact {
+    font-size: clamp(0.82rem, 4vw, 1.05rem);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-label {
+    margin-top: 0.15rem;
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
+
+  #ocrDashboardRoot .dash-terminal-shared {
+    border-radius: 12px;
+  }
+
+  #ocrDashboardRoot .dash-log-hdr {
+    min-height: 38px;
+    padding: 0.42rem 0.55rem;
+  }
+
+  #ocrDashboardRoot .dash-log-hdr .dash-btn {
+    min-width: 0;
+    min-height: 30px;
+    padding: 0.28rem 0.52rem;
+    border-radius: 7px;
+    font-size: 0.72rem;
+  }
+
+  #ocrDashboardRoot .dash-log-output {
+    height: 96px;
+    padding: 0.58rem;
+    font-size: 0.66rem;
+    line-height: 1.4;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-overview {
+    margin-block: 0.65rem 0.9rem;
+    padding: 0.58rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-grid {
+    max-height: min(30svh, 240px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-lead {
+    min-height: 0;
+    padding: 0.68rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-lead strong {
+    max-width: none;
+    font-size: 0.92rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-card {
+    min-height: 92px;
+    padding: 0.62rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-card strong {
+    font-size: 0.88rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-card p {
+    font-size: 0.62rem;
+    line-height: 1.3;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-visuals-grid {
+    grid-template-columns: 1fr !important;
+    margin-bottom: 0.7rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-card-hdr {
+    margin-bottom: 0.55rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-card-title {
+    font-size: 0.88rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-chart {
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-item {
+    min-height: 48px;
+    padding: 0.45rem 0.42rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-rank {
+    flex-basis: 28px;
+    min-width: 24px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-name {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    flex-basis: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-top-meta {
+    font-size: 0.62rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-insights-body {
+    gap: 0.68rem;
+    padding: 0.25rem 0 0;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-insight-item {
+    gap: 0.52rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-mini-pie {
+    min-height: 46px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-mini-trend {
+    height: 108px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-activity-chart-panel {
+    height: 145px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-list {
+    max-height: min(34svh, 300px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-table-wrap {
+    max-height: min(36svh, 320px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-weighted-contribution-table-wrap {
+    max-height: min(34svh, 300px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-leader-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-leader-controls :is(.dash-select-sm, .dash-select-lg, .dash-search-leader) {
+    width: 100%;
+    max-width: none;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-search-input {
+    min-height: 40px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-item {
+    padding: 0.55rem 0.62rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-time {
+    gap: 0.35rem;
+    font-size: 0.66rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 900px) {
+  #ocrDashboardRoot #dashSubtabDashboard .dash-visuals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #ocrDashboardRoot #dashSubtabDashboard {
+    --dash-dashboard-panel-cap: min(34svh, 270px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-grid {
+    gap: 0.45rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi {
+    align-items: flex-start;
+    gap: 0.42rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-kpi-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-grid {
+    gap: 0.5rem;
+    max-height: min(28svh, 220px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-card {
+    min-height: 82px;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-ops-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-chart,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-attack-list,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-table-wrap,
+  #ocrDashboardRoot #dashSubtabDashboard .dash-weighted-contribution-table-wrap {
+    max-height: var(--dash-dashboard-panel-cap);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-table-wrap {
+    max-height: min(32svh, 260px);
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-card {
+    padding: 0.58rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabDashboard .dash-card-title svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* VTS admin analytics responsive polish. Keep the mobile card behavior, but
+   make desktop and tablet rows pack like the better adaptive mobile panels. */
+#ocrDashboardRoot #dashSubtabAnalytics,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-card,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-card-hdr,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-card-title,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-body,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-structure-item,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-trend-row,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-insight-list,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-dist-row {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-card-title,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-lead p,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-structure-main :is(strong, span),
+#ocrDashboardRoot #dashSubtabAnalytics .dash-structure-side :is(strong, span),
+#ocrDashboardRoot #dashSubtabAnalytics .dash-trend-person :is(strong, span),
+#ocrDashboardRoot #dashSubtabAnalytics .dash-dist-label,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-dist-value,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-insight-list :is(strong, span, em, b),
+#ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-hint {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-grid {
+  grid-auto-flow: dense;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr));
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-sparkline,
+#ocrDashboardRoot #dashSubtabAnalytics .dash-dist-track {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-insight-list span {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-insight-list b {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: right;
+  white-space: normal;
+}
+
+#ocrDashboardRoot #dashSubtabAnalytics .dash-heatmap-grid {
+  max-width: 100%;
+}
+
+@media (min-width: 1100px) {
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "structure structure"
+      "trends heatmap"
+      "distribution consistency"
+      "streaks streaks";
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(1) {
+    grid-area: structure;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(2) {
+    grid-area: trends;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(3) {
+    grid-area: heatmap;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(4) {
+    grid-area: distribution;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(5) {
+    grid-area: consistency;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(6) {
+    grid-area: streaks;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1099px) {
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card-wide,
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(6) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-lead {
+    gap: 0.72rem;
+    margin-bottom: 0.75rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-grid {
+    gap: 0.72rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card {
+    border-radius: 12px;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-structure-item {
+    gap: 0.5rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-streak-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-summary,
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-roster-stats {
+    gap: 0.45rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-summary span,
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-roster-stats span {
+    padding: 0.58rem 0.64rem;
+    border-radius: 10px;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-dist-row {
+    grid-template-columns: minmax(4.9rem, 0.34fr) minmax(0, 1fr) minmax(3.4rem, 0.26fr);
+    gap: 0.42rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-dist-label,
+  #ocrDashboardRoot #dashSubtabAnalytics .dash-dist-value {
+    font-size: 0.68rem;
+  }
+}
+
+/* VTS admin Contributions polish: uploaded screenshot batches should read like
+   batches, not unbounded filename dumps. */
+#ocrDashboardRoot #dashSubtabContributions,
+#ocrDashboardRoot #dashSubtabContributions .dash-card,
+#ocrDashboardRoot #dashSubtabContributions .dash-banner-card,
+#ocrDashboardRoot #dashSubtabContributions .dash-banner-head,
+#ocrDashboardRoot #dashSubtabContributions .dash-banner-date,
+#ocrDashboardRoot #dashSubtabContributions .dash-banner-body,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-card,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-head,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-weighted-card,
+#ocrDashboardRoot #dashSubtabContributions .dash-xg-box {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-date {
+  display: flex;
+  align-items: center;
+  align-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-event,
+#ocrDashboardRoot #dashSubtabContributions .dash-weighted-contribution-meta,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-head span {
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-event {
+  display: -webkit-box;
+  flex: 1 1 18rem;
+  line-height: 1.25;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions .dash-btn-xs {
+  min-height: 34px;
+  padding: 0.36rem 0.72rem;
+  font-size: 0.74rem;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-banner-body,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-table-wrap,
+#ocrDashboardRoot #dashSubtabContributions #dashExGuildBody {
+  max-height: min(62vh, 680px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-weighted-card .dash-contribution-compare-table-wrap {
+  max-height: min(58vh, 580px);
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-xg-tools {
+  min-width: 0;
+}
+
+#ocrDashboardRoot #dashSubtabContributions .dash-xg-input,
+#ocrDashboardRoot #dashSubtabContributions .dash-contribution-reward-select {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-date {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-event,
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-count,
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-premium-pill {
+    grid-column: 1 / -1;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-event {
+    flex: none;
+    -webkit-line-clamp: 3;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions .dash-btn,
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions .dash-banner-del-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-banner-body,
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-table-wrap,
+  #ocrDashboardRoot #dashSubtabContributions #dashExGuildBody {
+    max-height: min(48svh, 430px);
+    overflow-x: hidden;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-weighted-card .dash-contribution-compare-table-wrap {
+    max-height: min(46svh, 410px);
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-table--stack .dash-contribution-reward-select,
+  #ocrDashboardRoot #dashSubtabContributions .dash-table--stack .dash-xg-box {
+    width: 100%;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-xg-tools {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 430px) {
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card .dash-banner-head {
+    padding: 0.65rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-card-actions {
+    gap: 0.38rem;
+  }
+
+  #ocrDashboardRoot #dashSubtabContributions .dash-banner-body,
+  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-compare-table-wrap,
+  #ocrDashboardRoot #dashSubtabContributions #dashExGuildBody {
+    max-height: min(44svh, 360px);
+  }
 }

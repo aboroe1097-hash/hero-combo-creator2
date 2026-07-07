@@ -45,6 +45,7 @@ import {
   buildWeightedContributionRows,
   getWeightedPlayerFamilyKey,
   getWeightedContributionRecordLabel,
+  isImageSourceContributionNote,
 } from './contribution-weighting.js';
 import {
   normalizePlayerRegistry,
@@ -1955,13 +1956,15 @@ function renderDutyType(type) {
       const weak = entries.filter(
         (entry) => entry.status === 'weak' || entry.status === 'unmatched'
       ).length;
+      const rawNote = String(record.note || '').trim();
+      const displayNote = getContributionDisplayNote(rawNote, entries.length);
       return `<div class="dash-banner-card">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span>${esc(record.date || '')}</span>
           <span class="dash-banner-event">${esc(dutySingular(record.type) || dutySingular(type))}</span>
           ${record.gameTime ? `<span class="dash-banner-event">${esc(record.gameTime)}</span>` : ''}
-          ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
+          ${displayNote ? `<span class="dash-banner-event" title="${esc(rawNote)}">${esc(displayNote)}</span>` : ''}
           <span class="dash-banner-count">${esc(adminT('adminDutyMatchedCount', { confirmed, total: entries.length }))}${weak ? `, ${esc(adminT('adminDutyReviewCount', { count: weak }))}` : ''}</span>
         </div>
         <div style="display:flex;gap:6px">
@@ -2706,7 +2709,7 @@ function showContributionConfirmModal(
   </div>
   <div class="dash-banner-form-row">
     <label>${esc(adminT('adminContributionNoteLabel'))}</label>
-    <input type="text" id="dashContributionNote" value="${esc(existingRecord?.note || sourceLabel)}" placeholder="${esc(adminT('adminContributionNotePh'))}" style="flex:1">
+    <input type="text" id="dashContributionNote" value="${esc(getContributionDisplayNote(existingRecord?.note || sourceLabel, cleanEntries.length))}" placeholder="${esc(adminT('adminContributionNotePh'))}" style="flex:1">
   </div>
   <div class="dash-banner-form-row">
     <label>${esc(adminT('adminContributionPremiumLabel'))}</label>
@@ -3047,10 +3050,31 @@ function exportContributionRecords(recordId = '') {
   log(adminT('adminContributionSheetExportedLog'), 'success');
 }
 
+function summarizeContributionImageSourceNote(note, rowCount = 0) {
+  const raw = String(note || '').trim();
+  if (!raw) return '';
+  const parts = raw.split(/\s*,\s*/).filter(Boolean);
+  const imageParts = parts.filter((part) => isImageSourceContributionNote(part));
+  const extensionMatches = raw.match(/\.(?:jpe?g|png|webp|heic|gif)\b/gi) || [];
+  const isImageSource = imageParts.length > 1 || isImageSourceContributionNote(raw);
+  if (!isImageSource) return raw;
+  const count = imageParts.length || extensionMatches.length;
+  const label = count > 1 ? `${count} uploaded screenshots` : 'Uploaded screenshot';
+  return rowCount ? `${label} - ${rowCount} rows` : label;
+}
+
+function getContributionDisplayNote(note, rowCount = 0) {
+  const raw = String(note || '').trim();
+  if (!raw) return '';
+  const sourceSummary = summarizeContributionImageSourceNote(raw, rowCount);
+  if (sourceSummary !== raw) return sourceSummary;
+  return raw.length > 120 ? `${raw.slice(0, 96).trim()}...` : raw;
+}
+
 function getContributionRecordLabel(record, fallbackIndex = 0) {
   const date = record?.date || `Snapshot ${fallbackIndex + 1}`;
-  const note = String(record?.note || '').trim();
   const count = Array.isArray(record?.entries) ? record.entries.length : 0;
+  const note = getContributionDisplayNote(record?.note, count);
   return `${date}${note ? ` - ${note}` : ''} (${count} rows)`;
 }
 
@@ -3551,24 +3575,26 @@ function renderContributions() {
         (entry) => getContributionReward(entry, record) === 'premium'
       ).length;
       const isPrimary = record.isPrimary === true;
+      const rawNote = String(record.note || '').trim();
+      const displayNote = getContributionDisplayNote(rawNote, entries.length);
       return `<div class="dash-banner-card dash-contribution-card ${isPrimary ? 'dash-contribution-primary' : ''}">
       <div class="dash-banner-head">
         <div class="dash-banner-date">
           <span style="cursor:pointer" onclick="setContributionPrimary('${esc(record.id)}')" title="${esc(adminT(isPrimary ? 'adminContributionPrimaryTitle' : 'adminContributionSetPrimaryTitle'))}">${isPrimary ? '★' : '☆'}</span>
           <span>${esc(record.date || '')}</span>
-          ${record.note ? `<span class="dash-banner-event">${esc(record.note)}</span>` : ''}
+          ${displayNote ? `<span class="dash-banner-event" title="${esc(rawNote)}">${esc(displayNote)}</span>` : ''}
           <span class="dash-banner-count">${esc(adminT('adminContributionRowsCount', { count: entries.length }))}</span>
           <span class="dash-banner-count">${esc(adminT('adminContributionTotalCount', { total: formatContributionValue(total) }))}</span>
           <span class="dash-contribution-premium-pill">${esc(adminT('adminContributionPremiumCount', { count: premiumCount }))}</span>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="exportContributionRecords('${esc(record.id)}')">${esc(adminT('adminBtnExport'))}</button>
-          <button class="dash-btn" style="padding:4px 10px;font-size:0.72rem;min-height:0" onclick="editContributionRecord('${esc(record.id)}')">${esc(adminT('adminEdit'))}</button>
-          <button class="dash-banner-del-btn" onclick="deleteContributionRecord('${esc(record.id)}')" title="${esc(adminT('adminDelete'))}">x</button>
+        <div class="dash-contribution-card-actions">
+          <button class="dash-btn dash-btn-xs" onclick="exportContributionRecords('${esc(record.id)}')">${esc(adminT('adminBtnExport'))}</button>
+          <button class="dash-btn dash-btn-xs" onclick="editContributionRecord('${esc(record.id)}')">${esc(adminT('adminEdit'))}</button>
+          <button class="dash-banner-del-btn" onclick="deleteContributionRecord('${esc(record.id)}')" title="${esc(adminT('adminDelete'))}" aria-label="${esc(adminT('adminDelete'))}">x</button>
         </div>
       </div>
       <div class="dash-banner-body">
-        <table class="dash-banner-table dash-contribution-table">
+        <table class="dash-banner-table dash-table--stack dash-contribution-table">
           <thead><tr><th>${esc(adminT('adminContributionRank'))}</th><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionGuild'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionPosition'))}</th><th>${esc(adminT('adminContributionReward'))}</th></tr></thead>
           <tbody>${entries
             .map((entry, index) => {
@@ -3650,7 +3676,7 @@ function renderExGuildTable() {
     <span>${targets.length} searchable contribution / roster names</span>
     <button id="dashExGuildDebuffExportInlineBtn" class="dash-btn dash-btn-xs dash-btn-soft" type="button">${esc(adminT('adminExGuildExportDebuff'))}</button>
   </div>
-  <table class="dash-banner-table dash-xg-table">
+  <table class="dash-banner-table dash-table--stack dash-xg-table">
     <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th style="text-align:right">${esc(adminT('adminContributionValue'))}</th><th>${esc(adminT('adminContributionNoteLabel'))}</th><th>${esc(adminT('adminExGuildStatus'))}</th><th>${esc(adminT('adminExGuildMatchTo'))}</th><th></th></tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table>

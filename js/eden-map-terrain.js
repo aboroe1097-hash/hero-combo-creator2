@@ -3,7 +3,7 @@ import {
   TERRAIN_STYLES, PARCHMENT_BASE, MAP_REFERENCE, EDEN_STRATEGY_FLOOR,
   getReferenceMapImage, getStrategyFloorImage, isReferenceReady, getReferenceWorldBounds,
   getScreenshotRefs, getScreenshotImage,
-} from './eden-map-assets.js';
+} from './eden-map-assets.js?v=20260707_162501';
 
 export const MAP_BOUNDS = { minX: 0, maxX: 1600, minY: 0, maxY: 1600 };
 export const CELL_SIZE = 10;

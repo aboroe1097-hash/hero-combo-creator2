@@ -148,6 +148,13 @@ export function initEdenControlTips() {
   if (!deck || deck.dataset.tipsReady === '1') return;
   deck.dataset.tipsReady = '1';
 
+  const canHoverPrecisely = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
+  const compactViewport = window.matchMedia?.('(max-width: 768px)').matches;
+  if (!canHoverPrecisely || compactViewport) {
+    syncEdenControlTipText();
+    return;
+  }
+
   ensureTipEl();
   syncEdenControlTipText();
 

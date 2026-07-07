@@ -15,13 +15,15 @@ const LIMITS = {
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
-  // keep individual route surfaces from growing unchecked.
-  totalCssBytes: 580 * 1024,
+  // keep individual route surfaces from growing unchecked. The 2026-07-07
+  // responsive pass intentionally added mobile/admin route CSS, so these caps
+  // stay close to the measured production output instead of masking future jumps.
+  totalCssBytes: 660 * 1024,
   cssChunks: {
-    atmosphere: 346 * 1024,
-    'eden-x1': 54 * 1024,
-    mobile: 51 * 1024,
-    'ocr-dashboard': 130 * 1024,
+    atmosphere: 352 * 1024,
+    'eden-x1': 60 * 1024,
+    mobile: 84 * 1024,
+    'ocr-dashboard': 150 * 1024,
   },
 };
 

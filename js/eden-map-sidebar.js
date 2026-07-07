@@ -2,11 +2,11 @@ import {
   STRUCTURE_TYPES, getSectorStructures, getStructureLabel, getStructureShort,
   getStructurePoints, getSectorFaction,
 } from './eden-map-data.js';
-import { getStructureIcon, isIconReady } from './eden-map-assets.js';
+import { getStructureIcon, isIconReady } from './eden-map-assets.js?v=20260707_162501';
 import {
   estimateTravelMinutes, formatTravelTime, fuzzyIncludes,
-} from './eden-map-features.js';
-import { findRoute } from './eden-map-terrain.js';
+} from './eden-map-features.js?v=20260707_162501';
+import { findRoute } from './eden-map-terrain.js?v=20260707_162501';
 import {
   isTeamPlanEnabled, getActiveTeamIds, getTeamInfo, getStructTeamMeta,
   renderTeamBoardHtml,
