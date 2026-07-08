@@ -75,6 +75,7 @@ let publicStructureRows = [];
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
+let currentPublicStatsSearch = '';
 let edenVoteWriteContext = null;
 let edenVoteSettings = { votingOpen: true, allowEditing: true };
 let edenVotePointerSubmitUntil = 0;
@@ -291,6 +292,42 @@ function getEdenMemberMatches(value, limit = 5) {
   return scored.slice(0, limit);
 }
 
+function getPublicStatsMatches(value, limit = 6) {
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  const merged = new Map();
+  const addOption = (option, source = '') => {
+    const playerName = String(option?.playerName || option?.name || '').trim();
+    const playerKey = String(option?.playerKey || option?.key || compactPlayerIdentity(playerName)).trim();
+    if (!playerName || !playerKey || merged.has(playerKey)) return;
+    const score = scoreEdenMemberOption(raw, { playerKey, playerName });
+    if (score <= 0) return;
+    merged.set(playerKey, {
+      playerKey,
+      playerName,
+      source,
+      score,
+    });
+  };
+  currentMemberOptions.forEach((option) => addOption(option, 'member'));
+  publicPlayerRows.forEach((row) =>
+    addOption(
+      {
+        playerKey: row.key,
+        playerName: row.name,
+      },
+      'activity'
+    )
+  );
+  return Array.from(merged.values())
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.playerName.localeCompare(b.playerName, currentLang || 'en', { sensitivity: 'base' })
+    )
+    .slice(0, limit);
+}
+
 function findEdenMemberOption(value) {
   const raw = String(value || '').trim();
   if (!raw) return null;
@@ -493,6 +530,26 @@ function resolveEdenVoteInput(host, inputId, options = {}) {
 
 function edenVoteCandidateSignature(voter, candidateKeys) {
   return [voter?.playerKey || '', ...candidateKeys].join('|');
+}
+
+function currentEdenPartialVoteSignature(host) {
+  const voter = findEdenMemberOption(host?.querySelector('#edenX1VoterName')?.value);
+  if (!voter) return '';
+  const candidateKeys = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) =>
+    findEdenMemberOption(host?.querySelector(`#${id}`)?.value)?.playerKey
+  ).filter(Boolean);
+  if (!candidateKeys.length || candidateKeys.length >= EDEN_X1_VOTE_CANDIDATE_LIMIT) return '';
+  return edenVoteCandidateSignature(voter, candidateKeys);
+}
+
+function resetPendingPartialEdenVoteSignatureIfChanged(host) {
+  if (
+    pendingPartialEdenVoteSignature &&
+    pendingPartialEdenVoteSignature === currentEdenPartialVoteSignature(host)
+  ) {
+    return;
+  }
+  pendingPartialEdenVoteSignature = '';
 }
 
 function applyEdenVoteSelfPick(host, source = null) {
@@ -1588,14 +1645,22 @@ function renderEdenVoteCandidateDetail(option) {
 function updateEdenVoteCandidateDetail(host) {
   const input = getEdenVoteDetailInput(host);
   const toggle = host?.querySelector('#edenX1VoteCandidateInspectBtn');
+  const clearStats = host?.querySelector('#edenX1VoteClearStatsBtn');
   const detail = host?.querySelector('#edenX1VoteCandidateDetail');
   if (!toggle || !detail) return;
+  const resetClearStats = () => {
+    if (!clearStats) return;
+    clearStats.hidden = true;
+    clearStats.disabled = true;
+    clearStats.removeAttribute('data-eden-vote-clear-stats');
+  };
   if (!input) {
     toggle.disabled = true;
     toggle.textContent = t('edenX1VoteInspectEmpty');
     toggle.classList.remove('is-ready', 'is-open');
     toggle.dataset.state = 'empty';
     toggle.setAttribute('aria-expanded', 'false');
+    resetClearStats();
     detail.hidden = true;
     detail.dataset.open = '0';
     detail.innerHTML = '';
@@ -1608,6 +1673,7 @@ function updateEdenVoteCandidateDetail(host) {
     toggle.classList.remove('is-ready', 'is-open');
     toggle.dataset.state = 'empty';
     toggle.setAttribute('aria-expanded', 'false');
+    resetClearStats();
     detail.hidden = true;
     detail.dataset.open = '0';
     detail.innerHTML = '';
@@ -1622,12 +1688,20 @@ function updateEdenVoteCandidateDetail(host) {
     detail.hidden = false;
     detail.innerHTML = renderEdenVoteCandidateDetail(option);
     toggle.setAttribute('aria-expanded', 'true');
+    if (clearStats) {
+      clearStats.hidden = false;
+      clearStats.disabled = false;
+      clearStats.textContent = t('edenX1VoteClearStats', { player: option.playerName });
+      clearStats.setAttribute('aria-label', t('edenX1VoteClearStats', { player: option.playerName }));
+      clearStats.setAttribute('data-eden-vote-clear-stats', option.playerKey);
+    }
   } else {
     toggle.classList.add('is-ready');
     toggle.classList.remove('is-open');
     toggle.dataset.state = 'ready';
     detail.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
+    resetClearStats();
   }
 }
 
@@ -1850,12 +1924,12 @@ function bindEdenVoteControls(host) {
     host.addEventListener('change', (event) => {
       const input = event.target.closest(voteInputSelector);
       if (!input) return;
-      pendingPartialEdenVoteSignature = '';
       resolveEdenVoteInput(host, input.id, { closeSuggestions: true, markInvalid: true });
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
         updateEdenVoteCandidateDetail(host);
       }
+      resetPendingPartialEdenVoteSignatureIfChanged(host);
     });
     host.addEventListener('pointerdown', (event) => {
       if (event.target.closest('[data-eden-vote-suggest]')) event.preventDefault();
@@ -1972,6 +2046,19 @@ function bindEdenVoteControls(host) {
         updateEdenVoteCandidateDetail(host);
         return;
       }
+      const clearStats = event.target.closest('[data-eden-vote-clear-stats]');
+      if (clearStats) {
+        event.preventDefault();
+        const detail = host.querySelector('#edenX1VoteCandidateDetail');
+        if (detail) {
+          detail.dataset.open = '0';
+          detail.hidden = true;
+          detail.innerHTML = '';
+        }
+        updateEdenVoteCandidateDetail(host);
+        host.querySelector('#edenX1VoteCandidateInspectBtn')?.focus();
+        return;
+      }
       const openPlayer = event.target.closest('[data-eden-vote-open-player]');
       if (openPlayer) {
         showPublicDetail('player', openPlayer.getAttribute('data-eden-vote-open-player'));
@@ -2048,6 +2135,7 @@ function renderEdenTeamVotePanel() {
       <div class="eden-x1-vote-actions">
         <button class="dash-btn dash-btn-primary" type="submit">${esc(t('edenX1VoteCast'))}</button>
         <button id="edenX1VoteCandidateInspectBtn" class="dash-btn eden-x1-vote-inspect-btn" type="button" aria-expanded="false" data-state="empty">${esc(t('edenX1VoteInspectEmpty'))}</button>
+        <button id="edenX1VoteClearStatsBtn" class="dash-btn eden-x1-vote-clear-stats" type="button" hidden disabled>${esc(t('edenX1VoteClearStats', { player: '' }))}</button>
       </div>
       <div id="edenX1VoteStatus" class="eden-x1-vote-status" role="status">${savedStatus}</div>
       <div id="edenX1VoteCandidateDetail" class="eden-x1-vote-candidate-detail" hidden></div>
@@ -2261,12 +2349,24 @@ function bindEdenQuickNav() {
     if (!button) return;
     event.preventDefault();
     const target = button.getAttribute('data-quicknav') || '';
+    if (target === 'rewards') {
+      queueEdenQuickNavScroll('#edenX1RewardFlowPanel, #edenX1RewardFlowTitle', {
+        focusTarget: true,
+      });
+      return;
+    }
     if (target === 'vote') {
       activateEdenRewardView('team');
       queueEdenQuickNavScroll('#edenX1TeamVotePanel, #dashWeightedContributionPanel .eden-x1-vote-panel');
       return;
     }
     if (target === 'my-stats') {
+      queueEdenQuickNavScroll('#edenX1MyStatsCard, #edenX1TeamVotePanel', {
+        focusSelector: '#edenX1MyStatsSearch, #edenX1VoterName',
+      });
+      return;
+    }
+    if (target === 'guild-contribution') {
       queueEdenQuickNavScroll('#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card', {
         focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
       });
@@ -2561,6 +2661,92 @@ function rerenderPublicWeightedContributionCard(host, options = {}) {
   bindWeightedPopovers(host);
   if (!options.focusSearch) return;
   const nextInput = host.querySelector('#edenX1PublicWeightedSearch');
+  if (!nextInput) return;
+  const cursor = options.selectionStart ?? nextInput.value.length;
+  nextInput.focus();
+  nextInput.setSelectionRange(cursor, cursor);
+}
+
+function resolvePublicStatsOption(value = currentPublicStatsSearch) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const matchedMember = findEdenMemberOption(raw);
+  if (matchedMember) return matchedMember;
+  const compact = compactPlayerIdentity(raw);
+  const publicPlayer =
+    (compact ? publicPlayerRows.find((row) => row.key === compact) : null) ||
+    publicPlayerRows.find((row) => String(row.name || '').toLowerCase() === raw.toLowerCase()) ||
+    (compact
+      ? publicPlayerRows.find((row) => row.key.includes(compact) || compact.includes(row.key))
+      : null);
+  if (!publicPlayer) return null;
+  return {
+    playerKey: publicPlayer.key,
+    playerName: publicPlayer.name,
+  };
+}
+
+function renderPublicMyStatsCard() {
+  const option = resolvePublicStatsOption();
+  const query = currentPublicStatsSearch.trim();
+  const compactQuery = compactPlayerIdentity(query);
+  const hasExactSelection =
+    Boolean(option && query) &&
+    (option.playerName === query ||
+      option.playerName.toLowerCase() === query.toLowerCase() ||
+      option.playerKey === compactQuery);
+  const suggestions = query && !hasExactSelection ? getPublicStatsMatches(query, 6) : [];
+  const detail = option
+    ? renderEdenVoteCandidateDetail(option)
+    : `<div class="dash-empty eden-x1-my-stats-empty">${esc(
+        query ? t('edenX1MyStatsNoMatch') : t('edenX1MyStatsEmpty')
+      )}</div>`;
+  const suggestionList = suggestions.length
+    ? suggestions
+        .map(
+          (row, index) => `<button class="eden-x1-vote-suggestion eden-x1-my-stats-suggestion" type="button" data-eden-my-stats-pick="${esc(row.playerName)}" data-eden-my-stats-key="${esc(row.playerKey)}">
+            <span>${renderTaggedPlayerName(row)}</span>
+            <em>${esc(index === 0 ? t('edenX1VoteMatchBest') : t('edenX1VoteMatchSimilar'))}</em>
+          </button>`
+        )
+        .join('')
+    : query
+      ? hasExactSelection
+        ? ''
+        : `<span class="eden-x1-vote-suggestion-empty">${esc(t('edenX1MyStatsNoMatch'))}</span>`
+      : '';
+  const body = `<div class="eden-x1-my-stats-shell">
+    <label class="dash-search-wrap dash-weighted-search eden-x1-my-stats-search" for="edenX1MyStatsSearch">
+      <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="M21 21l-4.35-4.35" />
+      </svg>
+      <input id="edenX1MyStatsSearch" class="dash-search-input" type="search" value="${esc(currentPublicStatsSearch)}" placeholder="${esc(t('edenX1MyStatsPlaceholder'))}" autocomplete="off" aria-label="${esc(t('edenX1MyStatsPlaceholder'))}" />
+    </label>
+    <div class="eden-x1-vote-suggestions eden-x1-my-stats-suggestions" aria-label="${esc(t('edenX1MyStatsTitle'))}">
+      ${suggestionList}
+    </div>
+    <div id="edenX1MyStatsDetail" class="eden-x1-my-stats-detail" aria-live="polite">
+      ${detail}
+    </div>
+  </div>`;
+  return renderPublicCard(
+    t('edenX1MyStatsTitle'),
+    t('edenX1MyStatsHint'),
+    body,
+    'eden-x1-public-wide eden-x1-my-stats-card',
+    'id="edenX1MyStatsCard" tabindex="-1"'
+  );
+}
+
+function rerenderPublicMyStatsCard(host, options = {}) {
+  const card = host?.querySelector('.eden-x1-my-stats-card');
+  if (!card) return;
+  card.outerHTML = renderPublicMyStatsCard();
+  bindWeightedPopovers(host);
+  bindEdenVoteInfoDismissal();
+  if (!options.focusSearch) return;
+  const nextInput = host.querySelector('#edenX1MyStatsSearch');
   if (!nextInput) return;
   const cursor = options.selectionStart ?? nextInput.value.length;
   nextInput.focus();
@@ -3955,6 +4141,13 @@ function bindPublicDashboardControls(host) {
   if (host.dataset.publicControlsBound) return;
   host.dataset.publicControlsBound = '1';
   host.addEventListener('input', (event) => {
+    const statsInput = event.target.closest('#edenX1MyStatsSearch');
+    if (statsInput) {
+      currentPublicStatsSearch = statsInput.value || '';
+      const selectionStart = statsInput.selectionStart ?? currentPublicStatsSearch.length;
+      rerenderPublicMyStatsCard(host, { focusSearch: true, selectionStart });
+      return;
+    }
     const input = event.target.closest('#edenX1PublicWeightedSearch');
     if (!input) return;
     currentPublicTableSearch = input.value || '';
@@ -3974,6 +4167,17 @@ function bindPublicDashboardControls(host) {
       event.target === $('edenX1PublicModal')
     ) {
       closePublicModal();
+      return;
+    }
+    const myStatsPick = event.target.closest('[data-eden-my-stats-pick]');
+    if (myStatsPick) {
+      event.preventDefault();
+      const selectedName = myStatsPick.getAttribute('data-eden-my-stats-pick') || '';
+      currentPublicStatsSearch = selectedName;
+      rerenderPublicMyStatsCard(host, {
+        focusSearch: true,
+        selectionStart: selectedName.length,
+      });
       return;
     }
     const helperToggle = event.target.closest('[data-eden-vote-helper-toggle]');
@@ -4057,6 +4261,7 @@ function renderPublicDashboard(data = publicDashboardData) {
       <p>${esc(t('edenX1PublicSubtitle'))}</p>
     </div>
     <div class="eden-x1-public-grid" style="display:grid;gap:.85rem;align-items:start">
+      ${renderPublicMyStatsCard()}
       ${renderPublicWeightedContributionTable()}
       ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
       <div class="eden-x1-public-columns" style="grid-column:1/-1">
@@ -4081,18 +4286,18 @@ function renderPublicDashboard(data = publicDashboardData) {
 
 function scheduleLocalizedRerender() {
   const token = ++localizedRenderToken;
-  requestAnimationFrame(() => {
+  const scheduleIdle =
+    'requestIdleCallback' in window
+      ? (callback) => window.requestIdleCallback(callback, { timeout: 450 })
+      : (callback) => setTimeout(callback, 0);
+  scheduleIdle(() => {
     if (token !== localizedRenderToken) return;
-    renderCurrentTable();
+    renderCurrentTable({ fromSchedule: true });
     const renderPublic = () => {
       if (token !== localizedRenderToken || !publicDashboardData) return;
       renderPublicDashboard(publicDashboardData);
     };
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(renderPublic, { timeout: 300 });
-    } else {
-      setTimeout(renderPublic, 0);
-    }
+    scheduleIdle(renderPublic);
   });
 }
 

@@ -2154,6 +2154,18 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('tbody tr').first()).toContainText('Mike');
     await publicWeightedSearch.fill('');
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(22);
+    const myStatsCard = publicDashboard.locator('#edenX1MyStatsCard');
+    const myStatsSearch = myStatsCard.locator('#edenX1MyStatsSearch');
+    await expect(myStatsSearch).toBeVisible();
+    await myStatsSearch.fill('Mal');
+    await expect(myStatsCard.locator('.eden-x1-my-stats-suggestion').first()).toContainText(
+      'MalakAbo'
+    );
+    await myStatsCard.locator('.eden-x1-my-stats-suggestion').first().click();
+    await expect(myStatsSearch).toHaveValue('MalakAbo');
+    await expect(myStatsCard.locator('.eden-x1-my-stats-suggestion')).toHaveCount(0);
+    await expect(myStatsCard.locator('#edenX1MyStatsDetail')).toContainText('MalakAbo');
+    await expect(myStatsCard.locator('#edenX1MyStatsDetail')).toContainText('Weighted Score');
     await expect(publicDashboard).not.toContainText('Reward Tier');
     await expect(publicDashboard).toContainText('Top Performers');
     await expect(publicDashboard).toContainText('Insights');
@@ -2639,6 +2651,20 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('#edenX1VoteCandidateDetail')).not.toContainText(
       'No structure-hit trend yet.'
     );
+    const clearStatsButton = panel.locator('#edenX1VoteClearStatsBtn');
+    await expect(clearStatsButton).toBeVisible();
+    await expect(clearStatsButton).toHaveText('Clear Alpha Stats');
+    await clearStatsButton.click();
+    await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeHidden();
+    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(clearStatsButton).toBeHidden();
+    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toHaveAttribute(
+      'data-state',
+      'ready'
+    );
+    await panel.locator('#edenX1VoteCandidateInspectBtn').click();
+    await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeVisible();
+    await expect(clearStatsButton).toBeVisible();
     await expect(panel.locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')).toHaveCount(10);
     const firstInfoPopoverTrigger = panel
       .locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')
