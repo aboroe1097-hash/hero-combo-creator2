@@ -58,8 +58,13 @@
   backdrop-filter: blur(16px);
 }
 
+.eden-x1-quicknav[hidden] {
+  display: none !important;
+}
+
 .eden-x1-quicknav-chip {
   appearance: none;
+  -webkit-appearance: none;
   flex: 1 1 7rem;
   min-width: 0;
   max-width: 10.5rem;
@@ -94,7 +99,6 @@
 
 .eden-x1-page :is(
   #dashWeightedContributionPanel,
-  #edenX1RewardTopNamesOverview,
   #edenX1TeamVotePanel,
   #edenX1TopNamesOverview,
   #edenX1PublicWeightedCard,

@@ -649,10 +649,18 @@ function getEdenWeightedRowForPlayer(playerKey) {
   );
 }
 
-function getEdenPublicPlayerForKey(playerKey) {
-  const key = String(playerKey || '').trim();
-  if (!key) return null;
-  return publicPlayerRows.find((row) => row.key === key) || null;
+function getEdenPublicPlayerForKey(playerKey, playerName = '') {
+  const displayName = String(playerName || '').trim();
+  const keys = [
+    String(playerKey || '').trim(),
+    displayName ? publicPlayerKey(displayName) : '',
+    displayName ? compactPlayerIdentity(displayName) : '',
+  ].filter(Boolean);
+  for (const key of [...new Set(keys)]) {
+    const match = publicPlayerRows.find((row) => row.key === key);
+    if (match) return match;
+  }
+  return null;
 }
 
 function rankedEdenBannerPathRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
@@ -1543,7 +1551,7 @@ function renderEdenVoteStructureTrend(attacks) {
 function renderEdenVoteCandidateDetail(option) {
   if (!option) return '';
   const weighted = getEdenWeightedRowForPlayer(option.playerKey);
-  const player = getEdenPublicPlayerForKey(option.playerKey);
+  const player = getEdenPublicPlayerForKey(option.playerKey, option.playerName);
   const attacks = player?.attacks
     ? player.attacks.slice().sort((a, b) => publicAttackMs(a.attack) - publicAttackMs(b.attack))
     : [];
@@ -2156,8 +2164,14 @@ function setRewardFlowReady(ready) {
 }
 
 function setEdenPanelLoading(loading) {
-  $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', Boolean(loading));
-  document.body?.classList.toggle('eden-x1-loading', Boolean(loading));
+  const isLoading = Boolean(loading);
+  $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', isLoading);
+  document.body?.classList.toggle('eden-x1-loading', isLoading);
+  const nav = document.querySelector('.eden-x1-quicknav');
+  if (nav) {
+    nav.hidden = isLoading;
+    nav.setAttribute('aria-hidden', String(isLoading));
+  }
 }
 
 function shouldScrollRewardTableOnClick() {
@@ -4218,7 +4232,6 @@ function renderTable(rows, recordLabel, options = {}) {
         </table>
       </div>
     </div>
-    ${renderEdenTopNamesOverview({ id: 'edenX1RewardTopNamesOverview' })}
   </div>`;
 }
 
@@ -4227,7 +4240,6 @@ function renderRewardSlotTable(view) {
   const metaKey = rewardViewMetaKey(view);
   const rows = rewardSlotRows(view);
   const votePanel = view === 'team' ? renderEdenTeamVotePanel() : '';
-  const guidance = renderEdenTopNamesOverview({ id: 'edenX1RewardTopNamesOverview' });
   const rewardViewClass = rewardViewAccentClass(view);
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card${rewardViewClass}">
@@ -4266,7 +4278,6 @@ function renderRewardSlotTable(view) {
       </div>
     </div>
     ${votePanel}
-    ${guidance}
   </div>`;
 }
 
