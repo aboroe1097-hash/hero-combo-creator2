@@ -1920,12 +1920,11 @@ function bindEdenVoteControls(host) {
         const href = helpLink.getAttribute('href') || '';
         const targetId = href.startsWith('#') ? href.slice(1) : '';
         const guidance =
-          (targetId ? document.getElementById(targetId) : null) ||
           document.getElementById('edenX1TopNamesOverview') ||
+          (targetId ? document.getElementById(targetId) : null) ||
           host.querySelector('#edenX1VoteGuidance');
         if (guidance) {
-          guidance.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          guidance.focus({ preventScroll: true });
+          scrollEdenTargetIntoView(guidance, { focusTarget: true });
         }
         return;
       }
@@ -2000,7 +1999,7 @@ function renderEdenTeamVotePanel() {
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
-        <a class="eden-x1-vote-help-link" href="#edenX1RewardTopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
+        <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
@@ -2210,8 +2209,17 @@ function scrollEdenTargetIntoView(target, options = {}) {
   }
 }
 
+function queryEdenQuickNavTarget(selector) {
+  return String(selector || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => document.querySelector(part))
+    .find(Boolean);
+}
+
 function queueEdenQuickNavScroll(selector, options = {}) {
-  const scroll = () => scrollEdenTargetIntoView(document.querySelector(selector), options);
+  const scroll = () => scrollEdenTargetIntoView(queryEdenQuickNavTarget(selector), options);
   requestAnimationFrame(() => {
     scroll();
     window.setTimeout(scroll, 160);
@@ -2251,7 +2259,7 @@ function bindEdenQuickNav() {
       return;
     }
     if (target === 'team') {
-      queueEdenQuickNavScroll('#edenX1RewardTopNamesOverview, #edenX1TopNamesOverview, #edenX1VoteGuidance', {
+      queueEdenQuickNavScroll('#edenX1TopNamesOverview, #edenX1RewardTopNamesOverview, #edenX1VoteGuidance', {
         focusTarget: true,
       });
       return;
