@@ -21,7 +21,10 @@ const LIMITS = {
   totalCssBytes: 660 * 1024,
   cssChunks: {
     atmosphere: 352 * 1024,
-    'eden-x1': 60 * 1024,
+    // Eden X1 now includes the rewards flow, My Stats suggestions, and the
+    // mobile quicknav in the route CSS. Keep the cap close to the measured
+    // minified output so future growth still trips this check.
+    'eden-x1': 62 * 1024,
     mobile: 84 * 1024,
     'ocr-dashboard': 150 * 1024,
   },

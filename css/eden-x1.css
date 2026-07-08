@@ -51,11 +51,8 @@
   padding: 0.34rem;
   border: 1px solid rgba(103, 232, 249, 0.2);
   border-radius: 14px;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(103, 232, 249, 0.14), transparent 42%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.78));
-  box-shadow: 0 16px 32px rgba(2, 8, 23, 0.24);
-  backdrop-filter: blur(16px);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(17, 24, 39, 0.82));
+  box-shadow: 0 12px 24px rgba(2, 8, 23, 0.22);
 }
 
 .eden-x1-quicknav[hidden] {
@@ -63,8 +60,6 @@
 }
 
 .eden-x1-quicknav-chip {
-  appearance: none;
-  -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -76,29 +71,22 @@
   padding: 0.42rem 0.56rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 11px;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.8)),
-    rgba(15, 23, 42, 0.78);
+  background: rgba(15, 23, 42, 0.82);
   color: var(--text-primary);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 950;
   letter-spacing: 0;
   line-height: 1.05;
-  text-align: center;
   white-space: normal;
   cursor: pointer;
-  transition:
-    transform 0.16s ease,
-    border-color 0.16s ease,
-    background 0.16s ease;
+  transition: border-color 0.16s ease, background 0.16s ease;
 }
 
 .eden-x1-quicknav-chip:hover,
 .eden-x1-quicknav-chip:focus-visible {
   border-color: rgba(103, 232, 249, 0.62);
   background: linear-gradient(135deg, rgba(103, 232, 249, 0.26), rgba(52, 211, 153, 0.16));
-  transform: translateY(-1px);
   outline: none;
 }
 
@@ -408,13 +396,6 @@
   border-radius: var(--eden-public-section-radius);
 }
 
-#ocrDashboardRoot .eden-x1-my-stats-card {
-  border-color: rgba(45, 212, 191, 0.24);
-  background:
-    radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.1), transparent 38%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.76), rgba(15, 23, 42, 0.48));
-}
-
 #ocrDashboardRoot .eden-x1-my-stats-shell {
   display: grid;
   gap: 0.85rem;
@@ -429,25 +410,6 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   width: min(100%, 44rem);
   margin-top: -0.45rem;
-  padding: 0.36rem;
-  border: 1px solid rgba(103, 232, 249, 0.14);
-  border-radius: 10px;
-  background: rgba(2, 6, 23, 0.28);
-}
-
-#ocrDashboardRoot .eden-x1-my-stats-suggestions:empty {
-  display: none;
-}
-
-#ocrDashboardRoot .eden-x1-my-stats-suggestion {
-  min-height: 2.35rem;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(30, 41, 59, 0.54)),
-    rgba(8, 13, 28, 0.5);
-}
-
-#ocrDashboardRoot .eden-x1-my-stats-detail {
-  min-width: 0;
 }
 
 #ocrDashboardRoot .eden-x1-my-stats-empty {
@@ -1935,9 +1897,7 @@
     margin: 0;
     padding: 0.38rem;
     border-radius: 16px;
-    box-shadow:
-      0 18px 38px rgba(2, 8, 23, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 34px rgba(2, 8, 23, 0.38);
   }
 
   .eden-x1-quicknav-chip {
@@ -3133,16 +3093,5 @@
   #ocrDashboardRoot .eden-x1-public-modal .dash-modal-content {
     max-height: 88svh !important;
     overflow-y: auto !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eden-x1-quicknav-chip {
-    transition: none;
-  }
-
-  .eden-x1-quicknav-chip:hover,
-  .eden-x1-quicknav-chip:focus-visible {
-    transform: none;
   }
 }
