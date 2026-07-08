@@ -1310,7 +1310,7 @@ const en = {
   edenX1VotePhTeammateThird: 'Choose third teammate',
   edenX1VotePhTeammateFourth: 'Choose fourth teammate',
   edenX1VoteSelfConfirmed: 'Confirmed: {player}',
-  edenX1VoteSelfPick: 'Add me to votes',
+  edenX1VoteSelfPick: 'Add My Name to Votes',
   edenX1VoteClearPicked: 'Clear {player}',
   edenX1VoteCast: 'Cast Votes',
   edenX1VoteInspectEmpty: 'Select a member to view stats',

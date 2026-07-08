@@ -15,7 +15,7 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260707_162501';
+import { initWhatsNewBanner } from './app-whats-new.js?v=20260708_101500';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
@@ -144,7 +144,7 @@ let researchModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260707_162501').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260708_101500').catch((err) => {
       researchModulePromise = null;
       throw err;
     });
@@ -938,7 +938,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260707_162501')
+        import('./eden-map.js?v=20260708_101500')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -996,7 +996,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260707_162501')
+      import('./app-strife.js?v=20260708_101500')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;

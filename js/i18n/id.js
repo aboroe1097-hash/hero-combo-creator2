@@ -1309,7 +1309,7 @@ const id = {
   edenX1VotePhTeammateThird: 'Pilih rekan ketiga',
   edenX1VotePhTeammateFourth: 'Pilih rekan keempat',
   edenX1VoteSelfConfirmed: 'Terkonfirmasi: {player}',
-  edenX1VoteSelfPick: 'Tambahkan saya ke suara',
+  edenX1VoteSelfPick: 'Tambahkan nama saya ke suara',
   edenX1VoteClearPicked: 'Hapus {player}',
   edenX1VoteCast: 'Kirim suara',
   edenX1VoteInspectEmpty: 'Pilih anggota untuk melihat statistik',

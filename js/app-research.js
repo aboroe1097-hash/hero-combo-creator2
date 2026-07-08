@@ -1,7 +1,7 @@
 import { escapeHtml } from './utils.js';
 import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setActiveTechSeasons, setTechSearchQuery, getSourceCreditText, TechseasonColors, TECH_SEASON_ORDER, researchSection } from './state.js';
 // Extracted Research Calculator Module
-import { techDatabase } from './tech-db.js?v=20260707_162501';
+import { techDatabase } from './tech-db.js?v=20260708_101500';
 import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
 import { describeNodeBuffProgress, summarizeTechBuffs } from './research-buffs.js';
 import { appT } from './utils.js';

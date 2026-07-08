@@ -1,6 +1,6 @@
 // Eden Map UI — minimap, keyboard shortcuts, quick-jump, mobile sidebar
 import { OVERVIEW_STRUCTURE_TYPES, getQuickJumpSectors } from './eden-map-data.js';
-import { getSectorTileIds } from './eden-map-assets.js?v=20260707_162501';
+import { getSectorTileIds } from './eden-map-assets.js?v=20260708_101500';
 
 const MAJOR_TYPES = OVERVIEW_STRUCTURE_TYPES;
 const MINIMAP_SIZE = 150;

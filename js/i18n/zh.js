@@ -1288,7 +1288,7 @@ const zh = {
   edenX1VotePhTeammateThird: '选择第三名队友',
   edenX1VotePhTeammateFourth: '选择第四名队友',
   edenX1VoteSelfConfirmed: '已确认：{player}',
-  edenX1VoteSelfPick: '把我加入投票',
+  edenX1VoteSelfPick: '将我的名字加入投票',
   edenX1VoteClearPicked: '清除 {player}',
   edenX1VoteCast: '提交投票',
   edenX1VoteInspectEmpty: '选择成员以查看数据',

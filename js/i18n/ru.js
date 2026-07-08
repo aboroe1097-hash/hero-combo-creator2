@@ -1311,7 +1311,7 @@ const ru = {
   edenX1VotePhTeammateThird: 'Выберите третьего товарища',
   edenX1VotePhTeammateFourth: 'Выберите четвертого товарища',
   edenX1VoteSelfConfirmed: 'Подтверждено: {player}',
-  edenX1VoteSelfPick: 'Добавить меня в голоса',
+  edenX1VoteSelfPick: 'Добавить мое имя в список голосов',
   edenX1VoteClearPicked: 'Убрать {player}',
   edenX1VoteCast: 'Отдать голоса',
   edenX1VoteInspectEmpty: 'Выберите участника, чтобы посмотреть статистику',

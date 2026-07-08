@@ -1302,7 +1302,7 @@ const kr = {
   edenX1VotePhTeammateThird: '세 번째 팀원 선택',
   edenX1VotePhTeammateFourth: '네 번째 팀원 선택',
   edenX1VoteSelfConfirmed: '확인됨: {player}',
-  edenX1VoteSelfPick: '나를 투표에 추가',
+  edenX1VoteSelfPick: '내 이름을 투표에 추가',
   edenX1VoteClearPicked: '{player} 지우기',
   edenX1VoteCast: '투표 제출',
   edenX1VoteInspectEmpty: '통계를 볼 멤버 선택',

@@ -4,24 +4,24 @@ import {
   getStructurePoints, getSectorFaction, syncEdenSectorSelect, isEdenSectorKey,
   parseCoordInput, findStructureByCoords, findSectorForCoords, ensureEdenDatasetsLoaded,
 } from './eden-map-data.js';
-import { initEdenSeasonPicker } from './eden-map-season.js?v=20260707_162501';
+import { initEdenSeasonPicker } from './eden-map-season.js?v=20260708_101500';
 import {
   MAP_BOUNDS, drawTerrainLayer, findRoute, routeThroughWaypoints, getTerrainAt,
-} from './eden-map-terrain.js?v=20260707_162501';
+} from './eden-map-terrain.js?v=20260708_101500';
 import {
   preloadStructureIcons, onStructureIconsReady, getStructureIcon, isIconReady,
   loadStructureIcon, preloadReferenceMap, preloadScreenshotRefs, preloadSectorTiles,
   preloadStrategyFloor, getSectorTileIds, getSectorTileImage, isSectorTileReady,
   isUserStructureIcon, EDEN_STRATEGY_FLOOR,
-} from './eden-map-assets.js?v=20260707_162501';
-import { initEdenMapUI } from './eden-map-ui.js?v=20260707_162501';
+} from './eden-map-assets.js?v=20260708_101500';
+import { initEdenMapUI } from './eden-map-ui.js?v=20260708_101500';
 import {
   createEmptyPlan, loadPlansStore, savePlansStore, fuzzyIncludes,
   estimateTravelMinutes, formatTravelTime, hitTestPath, drawSegmentLabels,
   drawTerritoryOverlay, drawFogOfWar, drawHeatmap, drawSectorSheetFlat,
   maskReferenceCapitals, animateCamera, exportMapAsPng, drawPlanSketches,
   applySectorClip, drawSectorIsolateChrome, pathTouchesSector,
-} from './eden-map-features.js?v=20260707_162501';
+} from './eden-map-features.js?v=20260708_101500';
 import {
   startScoutSync, stopScoutSync, pullScoutIntel, pushScoutIntel, mergeScoutIntel,
 } from './eden-map-scout.js';
@@ -34,9 +34,9 @@ import {
   normalizeTeamPlanSettings, pruneTeamAssignments, setStructTeamMeta,
   renderTeamBoardHtml,
 } from './eden-map-teams.js';
-import { initEdenControlTips } from './eden-tooltips.js?v=20260707_162501';
+import { initEdenControlTips } from './eden-tooltips.js?v=20260708_101500';
 import { EDEN_MAP_CONFIG } from './eden-map-config.js';
-import { renderSidebar as renderSidebarModule } from './eden-map-sidebar.js?v=20260707_162501';
+import { renderSidebar as renderSidebarModule } from './eden-map-sidebar.js?v=20260708_101500';
 import { bindToolbar as bindToolbarModule } from './eden-map-toolbar.js';
 
 let _edenLiveMapApi = null;

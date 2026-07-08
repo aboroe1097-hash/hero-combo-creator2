@@ -2305,6 +2305,24 @@ test.describe('app smoke tabs', () => {
       'current contribution + ex-guild only'
     );
     await expect(panel.locator('tbody tr')).toHaveCount(11);
+    const contributionDisplayNumbers = await panel.locator('tbody tr').evaluateAll((rows) =>
+      rows.map((row) =>
+        row.querySelector('.dash-weighted-desktop-number')?.textContent?.trim()
+      )
+    );
+    expect(contributionDisplayNumbers).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '10',
+      '11',
+    ]);
     await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
@@ -2469,7 +2487,7 @@ test.describe('app smoke tabs', () => {
     await expect(
       panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')
     ).toBeEmpty();
-    await expect(panel.locator('[data-eden-vote-self-pick]')).toHaveText('Add me to votes');
+    await expect(panel.locator('[data-eden-vote-self-pick]')).toHaveText('Add My Name to Votes');
     await panel.locator('[data-eden-vote-self-pick]').click();
     await expect(panel.locator('#edenX1CandidateName')).toHaveValue('MalakAbo');
     await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText(

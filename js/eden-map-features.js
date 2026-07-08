@@ -1,8 +1,8 @@
 // Eden Map advanced features — Phases 2–4 utilities & overlays
-import { MAP_BOUNDS } from './eden-map-terrain.js?v=20260707_162501';
+import { MAP_BOUNDS } from './eden-map-terrain.js?v=20260708_101500';
 import {
   getSectorTileImage, isSectorTileReady, getSectorTileIds, PARCHMENT_BASE,
-} from './eden-map-assets.js?v=20260707_162501';
+} from './eden-map-assets.js?v=20260708_101500';
 import { SECTOR_FACTION, getEdenSectors, getSectorBounds } from './eden-map-data.js';
 
 export const PLANS_STORE_KEY = 'vts_eden_plans_store_v1';

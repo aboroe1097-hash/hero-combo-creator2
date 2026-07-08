@@ -52,6 +52,7 @@ let currentMemberOptions = [];
 let currentRewardView = 'team';
 let currentTableSearch = '';
 let currentTableSort = null;
+let rewardTableRenderToken = 0;
 let rewardFlowReady = false;
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
@@ -1951,10 +1952,56 @@ function scrollRewardTableIntoView() {
   const target = $('dashWeightedContributionPanel')?.querySelector('.eden-x1-weighted-card');
   if (!target) return;
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-  target.scrollIntoView({
+  const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - 12);
+  window.scrollTo({
+    top,
     behavior: reducedMotion ? 'auto' : 'smooth',
-    block: 'start',
-    inline: 'nearest',
+  });
+}
+
+function queueRewardTableScroll() {
+  requestAnimationFrame(() => {
+    scrollRewardTableIntoView();
+    window.setTimeout(scrollRewardTableIntoView, 120);
+  });
+}
+
+function renderRewardTablePending() {
+  return `<div id="ocrDashboardRoot" class="eden-x1-table-loading" aria-busy="true" role="status">
+    <div class="dash-connecting eden-x1-table-loading-card" style="min-height:260px;border-radius:16px">
+      <div class="dash-connecting-grid" aria-hidden="true"></div>
+      <div class="dash-connecting-stage">
+        <span class="dash-connecting-kicker">${esc(t('edenX1LoadingKicker'))}</span>
+        <h2 class="dash-connecting-title">${esc(t('edenX1Loading'))}</h2>
+        <div class="dash-connecting-bar-wrap">
+          <span class="dash-connecting-bar"><span class="dash-connecting-bar-fill" style="width:58%"></span></span>
+          <span class="dash-connecting-bar-pct">...</span>
+        </div>
+        <p class="dash-connecting-status">${esc(t('edenX1LoadingStatus'))}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function showRewardTablePending() {
+  const panel = $('dashWeightedContributionPanel');
+  if (!panel) return;
+  panel.innerHTML = renderRewardTablePending();
+  updateRewardFlowControls();
+}
+
+function afterNextPaint(callback) {
+  requestAnimationFrame(() => {
+    window.setTimeout(callback, 0);
+  });
+}
+
+function scheduleCurrentTableRender(renderOptions = {}) {
+  const token = ++rewardTableRenderToken;
+  showRewardTablePending();
+  afterNextPaint(() => {
+    if (token !== rewardTableRenderToken) return;
+    renderCurrentTable({ ...renderOptions, fromSchedule: true });
   });
 }
 
@@ -1965,9 +2012,10 @@ function bindRewardFlowControls() {
     button.addEventListener('click', () => {
       if (!rewardFlowReady) return;
       const view = button.dataset.rewardView || 'all';
-      if (view !== currentRewardView) currentTableSort = null;
+      if (view === currentRewardView) return;
+      currentTableSort = null;
       currentRewardView = view;
-      renderCurrentTable({ scrollIntoView: shouldScrollRewardTableOnClick() });
+      scheduleCurrentTableRender({ scrollIntoView: shouldScrollRewardTableOnClick() });
     });
   });
   updateRewardFlowControls();
@@ -2046,9 +2094,9 @@ function rowBonusTotal(row) {
   );
 }
 
-function rowNumberValue(row, numberMode) {
+function rowNumberValue(row, numberMode, index = 0) {
   if (numberMode === 'current') return row.currentRank || 999999;
-  if (numberMode === 'index') return row.edenX1RewardSlot || row.finalRank || 999999;
+  if (numberMode === 'index') return index + 1;
   return row.finalRank || 999999;
 }
 
@@ -2091,15 +2139,17 @@ function sortWeightedRowsBy(rows, sort, numberMode) {
   };
   const get = accessors[sort.col];
   if (!get) return rows;
-  const sorted = rows.slice().sort((a, b) => {
-    const av = get(a);
-    const bv = get(b);
+  const indexedRows = rows.map((row, index) => ({ row, index }));
+  const sorted = indexedRows.sort((a, b) => {
+    const av = get(a.row, a.index);
+    const bv = get(b.row, b.index);
     if (typeof av === 'string' || typeof bv === 'string') {
       return String(av).localeCompare(String(bv));
     }
     return av - bv;
   });
-  return sort.dir === 'asc' ? sorted : sorted.reverse();
+  const ordered = sort.dir === 'asc' ? sorted : sorted.reverse();
+  return ordered.map((entry) => entry.row);
 }
 
 function sortedWeightedRows(rows, numberMode) {
@@ -3675,9 +3725,7 @@ function renderTable(rows, recordLabel, options = {}) {
                       numberMode === 'current'
                         ? row.currentRank || index + 1
                         : numberMode === 'index'
-                          ? row.edenX1RewardSkipped
-                            ? row.finalRank || index + 1
-                            : row.edenX1RewardSlot || index + 1
+                          ? index + 1
                           : row.finalRank;
                     const rewardContext = rewardContextForRow(row, index, numberValue);
                     const rowReward =
@@ -3764,14 +3812,16 @@ function renderRewardSlotTable(view) {
 }
 
 function renderCurrentTable(renderOptions = {}) {
+  if (!renderOptions.fromSchedule) rewardTableRenderToken += 1;
   const panel = $('dashWeightedContributionPanel');
   if (!panel) return;
+  if (!rewardFlowReady) return;
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
     if (currentRewardView === 'team') bindEdenVoteControls(panel);
     updateRewardFlowControls();
     if (renderOptions.scrollIntoView) {
-      requestAnimationFrame(scrollRewardTableIntoView);
+      queueRewardTableScroll();
     }
     return;
   }
@@ -3840,7 +3890,7 @@ function renderCurrentTable(renderOptions = {}) {
     }
   }
   if (renderOptions.scrollIntoView) {
-    requestAnimationFrame(scrollRewardTableIntoView);
+    queueRewardTableScroll();
   }
 }
 

@@ -8,6 +8,11 @@
   display: none !important;
 }
 
+.eden-x1-page .eden-x1-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 .eden-x1-page .eden-x1-panel,
 .eden-x1-page .eden-x1-notice,
 .eden-x1-page .eden-x1-reward-panel,
@@ -23,6 +28,12 @@
   margin-top: 0.95rem;
 }
 
+.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel {
+  order: -1;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
 .eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel #ocrDashboardRoot {
   width: 100%;
   max-width: 100%;
@@ -32,6 +43,20 @@
 .eden-x1-page .eden-x1-panel--loading .dash-connecting {
   min-height: clamp(260px, 42svh, 420px) !important;
   border-radius: 16px !important;
+}
+
+.eden-x1-page .eden-x1-table-loading {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.eden-x1-page .eden-x1-table-loading .dash-connecting {
+  min-height: clamp(180px, 28svh, 300px) !important;
+}
+
+.eden-x1-page .eden-x1-table-loading .dash-connecting-stage {
+  gap: 0.65rem;
 }
 
 .eden-x1-reward-theme-default,

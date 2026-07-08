@@ -1318,7 +1318,7 @@ const es = {
   edenX1VotePhTeammateThird: 'Elige el tercer compañero',
   edenX1VotePhTeammateFourth: 'Elige el cuarto compañero',
   edenX1VoteSelfConfirmed: 'Confirmado: {player}',
-  edenX1VoteSelfPick: 'Agregarme a los votos',
+  edenX1VoteSelfPick: 'Agregar mi nombre a los votos',
   edenX1VoteClearPicked: 'Quitar {player}',
   edenX1VoteCast: 'Emitir votos',
   edenX1VoteInspectEmpty: 'Selecciona un miembro para ver estadísticas',

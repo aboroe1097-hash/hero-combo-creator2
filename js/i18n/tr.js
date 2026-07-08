@@ -1309,7 +1309,7 @@ const tr = {
   edenX1VotePhTeammateThird: 'Üçüncü takım arkadaşını seç',
   edenX1VotePhTeammateFourth: 'Dördüncü takım arkadaşını seç',
   edenX1VoteSelfConfirmed: 'Onaylandı: {player}',
-  edenX1VoteSelfPick: 'Beni oylara ekle',
+  edenX1VoteSelfPick: 'Adımı oylara ekle',
   edenX1VoteClearPicked: '{player} seçimini kaldır',
   edenX1VoteCast: 'Oyları gönder',
   edenX1VoteInspectEmpty: 'İstatistik için bir üye seç',

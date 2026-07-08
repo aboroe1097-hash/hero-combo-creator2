@@ -1305,7 +1305,7 @@ const ar = {
   edenX1VotePhTeammateThird: 'اختر الزميل الثالث',
   edenX1VotePhTeammateFourth: 'اختر الزميل الرابع',
   edenX1VoteSelfConfirmed: 'تم التأكيد: {player}',
-  edenX1VoteSelfPick: 'أضفني إلى الأصوات',
+  edenX1VoteSelfPick: 'أضف اسمي إلى الأصوات',
   edenX1VoteClearPicked: 'مسح {player}',
   edenX1VoteCast: 'إرسال الأصوات',
   edenX1VoteInspectEmpty: 'اختر عضوًا لعرض الإحصائيات',
