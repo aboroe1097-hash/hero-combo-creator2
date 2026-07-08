@@ -98,6 +98,7 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
+import { edenVotesUnlocked, requireEdenVotesPin } from './admin-pin-gate.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -1613,6 +1614,12 @@ window.getVtsAdminFirestoreContext = async function () {
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function switchDashSubtab(name) {
+  if (name === 'edenVotes' && !edenVotesUnlocked()) {
+    requireEdenVotesPin().then((ok) => {
+      if (ok) switchDashSubtab('edenVotes');
+    });
+    return;
+  }
   document
     .querySelectorAll('#ocrDashboardRoot .dash-subtab-panel')
     .forEach((p) => p.classList.add('hidden'));

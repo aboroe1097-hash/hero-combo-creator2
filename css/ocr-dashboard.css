@@ -7017,3 +7017,122 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     max-height: min(44svh, 360px);
   }
 }
+
+.pin-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.pin-gate-dialog {
+  width: min(28rem, 100%);
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 16% 0, rgba(45, 212, 191, 0.18), transparent 38%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(8, 13, 26, 0.98));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.46);
+  color: #f8fbff;
+}
+
+.pin-gate-form {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.25rem;
+}
+
+.pin-gate-kicker,
+.pin-gate-field span {
+  margin: 0;
+  color: rgba(148, 163, 184, 0.95);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pin-gate-dialog h2 {
+  margin: 0;
+  color: #f8fbff;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  line-height: 1.05;
+}
+
+.pin-gate-copy {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.86);
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.pin-gate-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pin-gate-input {
+  width: 100%;
+  min-height: 3.1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: rgba(8, 13, 24, 0.82);
+  color: #f8fbff;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  padding: 0.75rem 0.9rem;
+}
+
+.pin-gate-input:focus {
+  border-color: rgba(94, 234, 212, 0.72);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
+}
+
+.pin-gate-error {
+  margin: -0.2rem 0 0;
+  color: #fb7185;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.pin-gate-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.pin-gate-btn {
+  min-height: 2.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  color: #f8fbff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 950;
+}
+
+.pin-gate-btn-primary {
+  border-color: rgba(94, 234, 212, 0.54);
+  background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+  color: #06111f;
+}
+
+.pin-gate-btn-ghost {
+  background: rgba(15, 23, 42, 0.88);
+}
+
+@media (max-width: 430px) {
+  .pin-gate-form {
+    padding: 1rem;
+  }
+
+  .pin-gate-actions {
+    grid-template-columns: 1fr;
+  }
+}

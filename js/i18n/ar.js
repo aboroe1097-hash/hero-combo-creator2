@@ -103,6 +103,11 @@ const ar = {
   adminConductTab: 'نقاط جهد الفريق الإضافية',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "أدخل رمز PIN للمشرف",
+  adminEdenVotesPinPrompt: "لوحة التصويت هذه محمية. أدخل رمز PIN للمشرف للمتابعة.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "فتح",
+  adminEdenVotesPinError: "رمز PIN غير صحيح.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1134,12 +1139,15 @@ const ar = {
   edenX1RewardContributionMeta:
     'أفضل 10 حسب المساهمة الحالية + مساهمة النقابة السابقة فقط، بعد أعمال الدعم.',
   edenX1RewardSupportMeta:
-    'أفضل 4 حسب مجموع اللافتات والطرق وجدران الحماية ونقاط جهد الفريق.',
+    'أفضل 10 حسب مجموع اللافتات والطرق وجدران الحماية ونقاط جهد الفريق.',
   edenX1RewardManagementMeta: 'تعيين إداري مؤقت أثناء تقدم المراجعة النهائية.',
   edenX1RewardTeamMeta: 'خانات مكافآت تصويت النقابة قيد الانتظار.',
   edenX1RewardSlotGroup: 'مجموعة المكافأة',
   edenX1RewardSlotStatus: 'الحالة',
   edenX1RewardAssigned: 'معين',
+  edenX1RewardAssignedReasonTitle: 'سبب التعيين',
+  edenX1RewardWickedAssignedReason:
+    'السبب: كان Wicked Russian عضو R5 سابقًا في NM5. ساعد في إدارة VTS و NM5.',
   edenX1RewardManagementVotePending: 'تصويت فريق الإدارة',
   edenX1RewardVotePending: 'لاحقا - تصويت النقابة قيد الانتظار',
   edenX1Tba: 'لاحقا',

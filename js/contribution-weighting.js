@@ -149,6 +149,7 @@ function playerFamilyKey(accountKey) {
   const registryFamily = resolvePlayerRegistryFamilyKey(key);
   if (registryFamily) return registryFamily;
   if (/^kika(?:alt|banner2?)?$/.test(key)) return 'kika';
+  if (key === 'goodness' || key === 'goodnesgraycious') return 'goodnesgraycious';
   if (key === 'redbull' || key === 'redbulls' || key === 'redbullbanner') return 'redbull';
   if (key === 'undead' || key === 'undeadbanner') return 'undead';
   if (/^sarafin[ao]$/.test(key)) return 'sarafino';
@@ -463,22 +464,18 @@ export function buildWeightedContributionRows(options = {}) {
     .map((row, index) => {
       const rank = index + 1;
       let baseReward;
-      if (rank === 1) baseReward = 'guild_master';
-      else if (rank <= 20) baseReward = 'core';
+      if (rank <= 20) baseReward = 'core';
       else if (rank <= 110) baseReward = 'power_house';
       else if (rank <= 200) baseReward = 'members';
       else baseReward = 'standard';
       // Final reward is the rank tier unless an R5 conduct flag overrides it.
       let finalReward = baseReward;
       let rewardReason = 'rank';
-      if (grantPremiumPlayers.has(row.playerKey) && finalReward !== 'guild_master') {
+      if (grantPremiumPlayers.has(row.playerKey)) {
         finalReward = 'core';
         rewardReason = 'grant_premium';
       }
-      if (
-        forfeitPlayers.has(row.playerKey) &&
-        (finalReward === 'guild_master' || finalReward === 'core')
-      ) {
+      if (forfeitPlayers.has(row.playerKey) && finalReward === 'core') {
         finalReward = 'power_house';
         rewardReason = 'forfeit_premium';
       }

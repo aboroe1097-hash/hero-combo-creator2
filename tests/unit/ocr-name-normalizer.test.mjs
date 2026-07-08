@@ -62,6 +62,17 @@ test('canonical resolver merges special-list alias clusters', () => {
   assert.notEqual(key('UNDEAD'), key('Undead_Banner'));
 });
 
+test('canonical resolver collapses 2026-07 structure leaderboard OCR typos', () => {
+  assert.equal(resolveCanonicalPlayerName('MasterVjpe'), 'MasterVj');
+  assert.equal(resolveCanonicalPlayerName('yli90'), 'ylli90');
+  assert.equal(resolveCanonicalPlayerName("INd'/Made3110"), 'Made3110');
+  assert.equal(resolveCanonicalPlayerName('★★★ ЗВЕРЬ ★★★'), '3BEPb');
+  assert.equal(resolveCanonicalPlayerName('★★★ЗВЕРЬ★★★'), '3BEPb');
+  assert.equal(resolveCanonicalPlayerName('Dragon.Gold'), 'IDN Dragon.Gold');
+  assert.equal(resolveCanonicalPlayerName('Northern fox,'), 'Northerner.');
+  assert.equal(resolveCanonicalPlayerName('Ar Ran Dil★+62'), 'Ar Ran ★_YG+62');
+});
+
 test('canonical roster option names collapse known OCR duplicate spellings', () => {
   const options = canonicalizePlayerOptionNames([
     'Феечка))',

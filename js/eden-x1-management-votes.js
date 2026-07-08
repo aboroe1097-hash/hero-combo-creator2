@@ -1,0 +1,404 @@
+const DEFAULT_SHEET_ID = '14gUmeDyTT-Bb9Yvqhz21HcyVKxrkK_hxvkTwpVLKwcM';
+const DEFAULT_RESULTS_SHEET_NAME = 'Vote Results';
+const DEFAULT_RAW_SHEET_NAME = 'Form Responses 1';
+const DEFAULT_PICK_COLUMN_LABEL = 'Pick 4 Names';
+const DEFAULT_NAME_COLUMN_LABEL = 'Name';
+const DEFAULT_VOTES_COLUMN_LABEL = 'Votes';
+const GOOGLE_VISUALIZATION_BASE = 'https://docs.google.com/spreadsheets/d';
+const JSONP_CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const KIKA_ALT_DISPLAY_NAME = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
+const GOODNESS_CANONICAL_NAME = 'GoodnesGraycious';
+
+export const EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS = Object.freeze([
+  'wickedrussian',
+  'vickedrussian',
+]);
+
+function compactVoteKey(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, '')
+    .toLowerCase();
+}
+
+function normalizeHeader(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function readCellText(cell) {
+  if (!cell || typeof cell !== 'object') return '';
+  if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+  if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
+  return '';
+}
+
+function replaceStylizedLetters(value) {
+  return String(value || '')
+    .replace(/[\u039b\u03bb]/g, 'A')
+    .replace(/[\u039e\u03be]/g, 'E')
+    .replace(/[\u0394\u03b4]/g, 'A');
+}
+
+function uniqueValues(values) {
+  const seen = new Set();
+  return values
+    .map((value) =>
+      String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    )
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+export function buildManagementVotesUrl(options = {}) {
+  const sheetId = String(options.sheetId || DEFAULT_SHEET_ID).trim();
+  const sheetName = String(options.sheetName || DEFAULT_RESULTS_SHEET_NAME).trim();
+  const callbackName = String(options.callbackName || '').trim();
+  if (!sheetId) throw new Error('Missing Google Sheet id');
+  if (callbackName && !JSONP_CALLBACK_RE.test(callbackName)) {
+    throw new Error('Invalid Google Visualization callback name');
+  }
+
+  const url = new URL(`${GOOGLE_VISUALIZATION_BASE}/${encodeURIComponent(sheetId)}/gviz/tq`);
+  url.searchParams.set('sheet', sheetName);
+  url.searchParams.set('tqx', callbackName ? `responseHandler:${callbackName}` : 'out:json');
+  return url.toString();
+}
+
+export function parseGoogleVisualizationResponse(source) {
+  const text = String(source || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end <= start) {
+    throw new Error('Google Visualization response did not contain JSON payload');
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
+
+export function splitManagementVotePicks(value) {
+  return uniqueValues(String(value || '').split(/[,;\n]+/));
+}
+
+export function normalizeManagementVoteCandidateName(value) {
+  return replaceStylizedLetters(value)
+    .normalize('NFKC')
+    .replace(/\([^)]*\b(?:vts|r4|r5|management)\b[^)]*\)/gi, ' ')
+    .replace(/\[[^\]]*\b(?:vts|r4|r5|management)\b[^\]]*\]/gi, ' ')
+    .replace(/\b(?:state\s*)?1097\b/gi, ' ')
+    .replace(/\bs1097\b/gi, ' ')
+    .replace(/\b\d{2,4}\b/g, ' ')
+    .replace(/\b(?:vts|r4|r5)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function managementVoteCandidateVariants(value) {
+  const raw = String(value || '').trim();
+  const normalized = normalizeManagementVoteCandidateName(raw);
+  const undecorated = normalized.replace(/[~*_`'"]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const compactRaw = compactVoteKey(raw);
+  const compactNormalized = compactVoteKey(normalized);
+  const preferred = [
+    ...(compactRaw.includes('victoria') && compactRaw.endsWith('kika')
+      ? [KIKA_ALT_DISPLAY_NAME]
+      : []),
+    ...(compactRaw === 'goodness' || compactNormalized === 'goodness'
+      ? [GOODNESS_CANONICAL_NAME]
+      : []),
+  ];
+  return uniqueValues([...preferred, raw, normalized, undecorated]);
+}
+
+function getTable(payloadOrTable) {
+  if (payloadOrTable?.table) return payloadOrTable.table;
+  return payloadOrTable || {};
+}
+
+function findColumnIndex(table, preferredLabel, fallbackPredicate) {
+  const labels = (Array.isArray(table.cols) ? table.cols : []).map((col) =>
+    normalizeHeader(col?.label || col?.id)
+  );
+  const preferred = normalizeHeader(preferredLabel);
+  const exactIndex = labels.findIndex((label) => label === preferred);
+  if (exactIndex >= 0) return exactIndex;
+  return labels.findIndex(fallbackPredicate);
+}
+
+export function readManagementVoteRows(payloadOrTable, options = {}) {
+  const table = getTable(payloadOrTable);
+  const pickIndex = findColumnIndex(
+    table,
+    options.pickColumnLabel || DEFAULT_PICK_COLUMN_LABEL,
+    (label) => label.includes('pick') && label.includes('name')
+  );
+  if (pickIndex < 0) return [];
+
+  const voterIndex = findColumnIndex(table, 'Your Game Name', (label) =>
+    label.includes('game name')
+  );
+  const timestampIndex = findColumnIndex(table, 'Timestamp', (label) =>
+    label.includes('timestamp')
+  );
+
+  return (Array.isArray(table.rows) ? table.rows : [])
+    .map((row, rowIndex) => {
+      const cells = Array.isArray(row?.c) ? row.c : [];
+      return {
+        rowIndex,
+        timestamp: readCellText(cells[timestampIndex]),
+        voterName: readCellText(cells[voterIndex]),
+        picks: splitManagementVotePicks(readCellText(cells[pickIndex])),
+      };
+    })
+    .filter((row) => row.picks.length > 0);
+}
+
+export function readManagementVoteResultRows(payloadOrTable, options = {}) {
+  const table = getTable(payloadOrTable);
+  const nameIndex = findColumnIndex(
+    table,
+    options.nameColumnLabel || DEFAULT_NAME_COLUMN_LABEL,
+    (label) => label.includes('name') || label.includes('player')
+  );
+  const votesIndex = findColumnIndex(
+    table,
+    options.votesColumnLabel || DEFAULT_VOTES_COLUMN_LABEL,
+    (label) => label.includes('vote')
+  );
+  if (nameIndex < 0 || votesIndex < 0) return [];
+
+  return (Array.isArray(table.rows) ? table.rows : [])
+    .map((row, rowIndex) => {
+      const cells = Array.isArray(row?.c) ? row.c : [];
+      const rawName = readCellText(cells[nameIndex]);
+      const votes = Number(readCellText(cells[votesIndex]).replace(/[^\d.-]/g, ''));
+      return {
+        rowIndex,
+        rawName,
+        votes: Number.isFinite(votes) && votes > 0 ? votes : 0,
+      };
+    })
+    .filter((row) => row.rawName && row.votes > 0);
+}
+
+function defaultResolveCandidate(rawName) {
+  const playerName = normalizeManagementVoteCandidateName(rawName) || String(rawName || '').trim();
+  const playerKey = compactVoteKey(playerName);
+  return playerKey ? { playerKey, playerName, rawName } : null;
+}
+
+export function aggregateManagementVotes(payloadOrRows, options = {}) {
+  const rows = Array.isArray(payloadOrRows)
+    ? payloadOrRows
+    : readManagementVoteRows(payloadOrRows, options);
+  const resolveCandidate =
+    typeof options.resolveCandidate === 'function'
+      ? options.resolveCandidate
+      : defaultResolveCandidate;
+  const excluded = new Set(
+    (Array.isArray(options.excludeKeys) ? options.excludeKeys : []).map(compactVoteKey)
+  );
+  const totals = new Map();
+  let totalVotes = 0;
+
+  rows.forEach((row) => {
+    const seenInBallot = new Set();
+    row.picks.forEach((rawName, pickIndex) => {
+      const resolved = resolveCandidate(rawName, row);
+      if (!resolved) return;
+      const playerName = String(resolved.playerName || resolved.name || rawName || '').trim();
+      const playerKey = compactVoteKey(resolved.playerKey || resolved.key || playerName);
+      if (!playerKey || excluded.has(playerKey) || seenInBallot.has(playerKey)) return;
+      seenInBallot.add(playerKey);
+      totalVotes += 1;
+      const rowOrder = Number.isFinite(row.rowIndex) ? row.rowIndex * 1000 : totals.size * 1000;
+      const voteOrder = rowOrder + pickIndex;
+
+      const current = totals.get(playerKey) || {
+        playerKey,
+        playerName,
+        votes: 0,
+        voters: [],
+        rawNameCounts: new Map(),
+        firstSeen: voteOrder,
+        lastSeen: voteOrder,
+        matched: resolved.matched === true,
+      };
+      current.votes += 1;
+      current.lastSeen = voteOrder;
+      current.matched = current.matched || resolved.matched === true;
+      if (playerName && (!current.playerName || playerName.length < current.playerName.length)) {
+        current.playerName = playerName;
+      }
+      const raw = String(rawName || '').trim();
+      if (raw) current.rawNameCounts.set(raw, (current.rawNameCounts.get(raw) || 0) + 1);
+      if (row.voterName) current.voters.push(row.voterName);
+      totals.set(playerKey, current);
+    });
+  });
+
+  const rankings = [...totals.values()]
+    .map((row) => ({
+      ...row,
+      rawNames: [...row.rawNameCounts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([name]) => name),
+      rawNameCounts: undefined,
+    }))
+    .sort(
+      (a, b) =>
+        b.votes - a.votes ||
+        a.firstSeen - b.firstSeen ||
+        a.playerName.localeCompare(b.playerName)
+    );
+  const limit = Math.max(0, Number(options.limit || 0));
+
+  return {
+    totalBallots: rows.length,
+    totalVotes,
+    rankings,
+    winners: limit ? rankings.slice(0, limit) : rankings,
+  };
+}
+
+export function summarizeManagementVoteResults(payloadOrRows, options = {}) {
+  const rows = Array.isArray(payloadOrRows)
+    ? payloadOrRows
+    : readManagementVoteResultRows(payloadOrRows, options);
+  const resolveCandidate =
+    typeof options.resolveCandidate === 'function'
+      ? options.resolveCandidate
+      : defaultResolveCandidate;
+  const excluded = new Set(
+    (Array.isArray(options.excludeKeys) ? options.excludeKeys : []).map(compactVoteKey)
+  );
+  const totals = new Map();
+
+  rows.forEach((row) => {
+    const resolved = resolveCandidate(row.rawName, row);
+    if (!resolved) return;
+    const playerName = String(resolved.playerName || resolved.name || row.rawName || '').trim();
+    const playerKey = compactVoteKey(resolved.playerKey || resolved.key || playerName);
+    if (!playerKey || excluded.has(playerKey)) return;
+
+    const current = totals.get(playerKey) || {
+      playerKey,
+      playerName,
+      votes: 0,
+      voters: [],
+      rawNameCounts: new Map(),
+      firstSeen: Number.isFinite(row.rowIndex) ? row.rowIndex : totals.size,
+      lastSeen: Number.isFinite(row.rowIndex) ? row.rowIndex : totals.size,
+      matched: resolved.matched === true,
+    };
+    current.votes += row.votes;
+    current.lastSeen = Number.isFinite(row.rowIndex) ? row.rowIndex : current.lastSeen;
+    current.matched = current.matched || resolved.matched === true;
+    const raw = String(row.rawName || '').trim();
+    if (raw) current.rawNameCounts.set(raw, (current.rawNameCounts.get(raw) || 0) + row.votes);
+    totals.set(playerKey, current);
+  });
+
+  const rankings = [...totals.values()]
+    .map((row) => ({
+      ...row,
+      rawNames: [...row.rawNameCounts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([name]) => name),
+      rawNameCounts: undefined,
+    }))
+    .sort(
+      (a, b) =>
+        b.votes - a.votes ||
+        a.firstSeen - b.firstSeen ||
+        a.playerName.localeCompare(b.playerName)
+    );
+  const limit = Math.max(0, Number(options.limit || 0));
+
+  return {
+    totalBallots: 0,
+    totalVotes: rows.reduce((sum, row) => sum + row.votes, 0),
+    rankings,
+    winners: limit ? rankings.slice(0, limit) : rankings,
+  };
+}
+
+export function summarizeManagementVotePayload(payloadOrRows, options = {}) {
+  if (Array.isArray(payloadOrRows)) {
+    const hasRawBallotRows = payloadOrRows.some((row) => Array.isArray(row?.picks));
+    return hasRawBallotRows
+      ? aggregateManagementVotes(payloadOrRows, options)
+      : summarizeManagementVoteResults(payloadOrRows, options);
+  }
+
+  const resultRows = Array.isArray(payloadOrRows)
+    ? []
+    : readManagementVoteResultRows(payloadOrRows, options);
+  if (resultRows.length) return summarizeManagementVoteResults(resultRows, options);
+  return aggregateManagementVotes(payloadOrRows, options);
+}
+
+export function loadManagementVotesViaJsonp(options = {}) {
+  if (typeof document === 'undefined') {
+    return Promise.reject(new Error('Google Sheet vote loading requires a browser document'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const callbackName = `__edenX1ManagementVotes${Date.now()}${Math.floor(Math.random() * 10000)}`;
+    const script = document.createElement('script');
+    const timeoutMs = Math.max(1000, Number(options.timeoutMs || 12000));
+    let settled = false;
+    let timeoutId = 0;
+
+    function cleanup() {
+      settled = true;
+      clearTimeout(timeoutId);
+      delete globalThis[callbackName];
+      script.remove();
+    }
+
+    globalThis[callbackName] = (payload) => {
+      if (settled) return;
+      cleanup();
+      resolve(payload);
+    };
+
+    script.async = true;
+    script.src = buildManagementVotesUrl({ ...options, callbackName });
+    script.onerror = () => {
+      if (settled) return;
+      cleanup();
+      reject(new Error('Management vote Sheet could not be loaded'));
+    };
+    timeoutId = globalThis.setTimeout(() => {
+      if (settled) return;
+      cleanup();
+      reject(new Error('Management vote Sheet timed out'));
+    }, timeoutMs);
+
+    document.head.appendChild(script);
+  });
+}
+
+export async function loadManagementVotesPayloadWithFallback(options = {}) {
+  const payload = await loadManagementVotesViaJsonp({
+    ...options,
+    sheetName: options.sheetName || DEFAULT_RESULTS_SHEET_NAME,
+  });
+  if (readManagementVoteResultRows(payload, options).length) return payload;
+  return loadManagementVotesViaJsonp({
+    ...options,
+    sheetName: options.rawSheetName || DEFAULT_RAW_SHEET_NAME,
+  });
+}

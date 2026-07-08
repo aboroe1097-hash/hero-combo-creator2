@@ -20,7 +20,35 @@ test('special player tags identify R5 and R4 management names', () => {
   assert.equal(getSpecialPlayerTag('MalakAbo')?.label, 'R5');
   assert.equal(getSpecialPlayerTag('MalakAdo'), null);
 
-  for (const player of ['Lady Zubbs', 'Dr Thunder', 'Kika', 'ANGEL', 'Wicked Russian']) {
+  for (const player of [
+    'Goodness',
+    '~Sarafino~',
+    'BiG BOiiE',
+    'Bil',
+    'BoneSmoker 1097',
+    'Dr Thunder (VTS R4)',
+    'Jasper',
+    'Juli',
+    'Lisaveta',
+    'MasterVj-1097',
+    'Moldo',
+    'Peter',
+    'Redbull',
+    'Roha',
+    'RuCCaK',
+    'Tazz',
+    'Uzumaki',
+    'Victoria ~Kika~',
+    'Lady Zubbs',
+    'Dr Thunder',
+    'Kika',
+    'ANGEL',
+    'ANGEL 1097',
+    'Wicked Russian NM5 1111',
+    'Wicked Russian',
+    'ZenaXeya',
+    'Irop (Peaceful Warrior)',
+  ]) {
     assert.equal(getSpecialPlayerTag(player)?.label, 'R4');
   }
 });

@@ -1,5 +1,7 @@
 import {
   buildWeightedContributionRows,
+  getWeightedPlayerFamilyKey,
+  normalizeWeightedR5Adjustments,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
@@ -17,6 +19,12 @@ import {
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
+import {
+  EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS,
+  loadManagementVotesPayloadWithFallback,
+  managementVoteCandidateVariants,
+  summarizeManagementVotePayload,
+} from './eden-x1-management-votes.js';
 
 const APP_VERSION = '13.0.3';
 const FS_PATH = 'vts_admin/dashboard_data';
@@ -37,6 +45,8 @@ const EDEN_X1_VOTE_CANDIDATE_LIMIT = 4;
 const EDEN_X1_VOTE_HELPER_MOBILE_VISIBLE_LIMIT = 3;
 const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
 const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
+const EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT = 2;
+const EDEN_X1_MANAGEMENT_VOTE_STATUS = 'Voted By Management';
 const EDEN_X1_ATTACK_WINDOW_DAYS = new Set([0, 2, 4]);
 const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
 const MS_PER_DAY = 86_400_000;
@@ -46,6 +56,7 @@ const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 
 let currentLang = 'en';
 let currentRows = [];
+let currentForfeitedRewardIdentities = createRewardPriorityIdentitySet();
 let currentRecordLabel = '';
 let currentSeason = '';
 let currentMemberOptions = [];
@@ -69,6 +80,15 @@ let edenVoteSettings = { votingOpen: true, allowEditing: true };
 let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
 let edenVoteInfoDismissalBound = false;
+let currentManagementVoteResults = {
+  status: 'idle',
+  totalBallots: 0,
+  totalVotes: 0,
+  winners: [],
+  rankings: [],
+  error: '',
+};
+let managementVoteLoadToken = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -287,6 +307,79 @@ function findEdenMemberOption(value) {
   return best;
 }
 
+function resolveEdenManagementVoteCandidate(rawName) {
+  const candidateVariants = managementVoteCandidateVariants(rawName);
+  for (const candidateName of candidateVariants) {
+    const option = findEdenMemberOption(candidateName);
+    if (!option) continue;
+    return {
+      playerKey: option.playerKey,
+      playerName: option.playerName,
+      rawName,
+      matched: true,
+    };
+  }
+
+  const fallbackName =
+    candidateVariants[0] === '\ua9c1\u0f3a Kika \u0f3b\ua9c2'
+      ? '\ua9c1\u0f3a Kika \u0f3b\ua9c2'
+      : candidateVariants.at(-1) || String(rawName || '');
+  const fallbackKey =
+    fallbackName === '\ua9c1\u0f3a Kika \u0f3b\ua9c2'
+      ? 'kikaalt'
+      : compactPlayerIdentity(fallbackName);
+  if (!fallbackKey) return null;
+  return {
+    playerKey: fallbackKey,
+    playerName: fallbackName,
+    rawName,
+    matched: false,
+  };
+}
+
+function summarizeEdenManagementVotes(payloadOrRows) {
+  return summarizeManagementVotePayload(payloadOrRows, {
+    limit: EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT,
+    excludeKeys: EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS,
+    resolveCandidate: resolveEdenManagementVoteCandidate,
+  });
+}
+
+function applyEdenManagementVoteResults(nextResults, status = 'loaded') {
+  currentManagementVoteResults = {
+    status,
+    totalBallots: valueOf(nextResults?.totalBallots),
+    totalVotes: valueOf(nextResults?.totalVotes),
+    winners: Array.isArray(nextResults?.winners) ? nextResults.winners : [],
+    rankings: Array.isArray(nextResults?.rankings) ? nextResults.rankings : [],
+    error: nextResults?.error || '',
+  };
+  if (rewardFlowReady && currentRewardView === 'management') {
+    renderCurrentTable({ fromSchedule: true });
+  }
+}
+
+async function loadEdenManagementVoteResults() {
+  const token = (managementVoteLoadToken += 1);
+  applyEdenManagementVoteResults({ winners: [], rankings: [] }, 'loading');
+  try {
+    const payload = await loadManagementVotesPayloadWithFallback();
+    if (token !== managementVoteLoadToken) return;
+    applyEdenManagementVoteResults(summarizeEdenManagementVotes(payload), 'loaded');
+  } catch (err) {
+    if (token !== managementVoteLoadToken) return;
+    console.warn('Eden X1 management vote Sheet failed:', err);
+    applyEdenManagementVoteResults(
+      {
+        winners: [],
+        rankings: [],
+        error: err?.message || String(err || 'unknown error'),
+      },
+      'error'
+    );
+  }
+}
+
 function renderEdenMemberSuggestionList(value, targetId) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -501,6 +594,26 @@ function getEdenVoteCandidateInputs(host) {
   return EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) => host?.querySelector(`#${id}`)).filter(
     Boolean
   );
+}
+
+function applyEdenVotePickToForm(host, pick) {
+  if (!host || !pick) return false;
+  const input =
+    getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
+    host.querySelector('#edenX1CandidateName');
+  if (!input) return false;
+  pendingPartialEdenVoteSignature = '';
+  const selectedName = pick.getAttribute('data-eden-vote-pick') || '';
+  const option = findEdenMemberOption(selectedName);
+  input.value = selectedName;
+  if (option) applyEdenVoteInputResolved(host, input.id, option);
+  host.dataset.edenVoteInspectInputId = input.id;
+  clearEdenVoteInputSuggestions(host, input.id);
+  const detail = host.querySelector('#edenX1VoteCandidateDetail');
+  if (detail) detail.dataset.open = '1';
+  updateEdenVoteCandidateDetail(host);
+  input.focus();
+  return true;
 }
 
 function normalizeEdenVoteSettings(settings = {}) {
@@ -766,6 +879,20 @@ function setEdenVoteHelperToggleState(button, currentLimit, totalRows) {
   button.classList.toggle('is-expanded', limit >= full && full > base);
 }
 
+function toggleEdenVoteHelperRows(helperToggle) {
+  if (!helperToggle) return;
+  const card = helperToggle.closest('.eden-x1-vote-helper-card');
+  if (!card) return;
+  const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
+  const currentLimit = Number(card.dataset.helperVisibleLimit || helperToggle.dataset.edenVoteHelperLimit);
+  const nextLimit = edenVoteHelperNextLimit(currentLimit, rows.length);
+  card.dataset.helperVisibleLimit = String(nextLimit);
+  rows.forEach((row, index) => {
+    row.hidden = index >= nextLimit;
+  });
+  setEdenVoteHelperToggleState(helperToggle, nextLimit, rows.length);
+}
+
 function renderEdenVotePickList(title, hint, rows) {
   const initialLimit = Math.min(edenVoteHelperInitialLimit(), EDEN_X1_VOTE_HELPER_FULL_LIMIT);
   const limitedRows = rows.slice(0, EDEN_X1_VOTE_HELPER_FULL_LIMIT);
@@ -776,7 +903,7 @@ function renderEdenVotePickList(title, hint, rows) {
           (
             row,
             index
-          ) => `<button class="eden-x1-vote-helper-row" type="button" data-eden-vote-pick="${esc(row.name)}"${index >= initialLimit ? ' hidden' : ''}>
+          ) => `<button class="eden-x1-vote-helper-row" type="button" data-eden-vote-pick="${esc(row.name)}" data-eden-vote-player-key="${esc(row.key || row.playerKey || publicPlayerKey(row.name))}"${index >= initialLimit ? ' hidden' : ''}>
             <span class="eden-x1-vote-helper-name"><b>#${index + 1}</b><span class="eden-x1-vote-helper-player">${renderTaggedPlayerName(edenVoteHelperDisplayRow(row))}</span></span>
             <em>${esc(row.value)}</em>
           </button>`
@@ -795,7 +922,9 @@ function renderEdenVotePickList(title, hint, rows) {
   </div>`;
 }
 
-function renderEdenVoteGuidance() {
+function renderEdenVoteGuidance(options = {}) {
+  const guidanceId = options.id || 'edenX1VoteGuidance';
+  const extraClass = options.className ? ` ${options.className}` : '';
   const groups = [
     [
       t('edenX1VoteTopBannerPath'),
@@ -807,7 +936,7 @@ function renderEdenVoteGuidance() {
     [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
     [t('edenX1VoteTopConsistent'), t('edenX1VoteTopConsistentHint'), rankedEdenConsistentRows()],
   ];
-  return `<div id="edenX1VoteGuidance" class="eden-x1-vote-guidance" tabindex="-1">
+  return `<div id="${esc(guidanceId)}" class="eden-x1-vote-guidance${extraClass}" tabindex="-1">
     <div class="eden-x1-vote-guidance-head">
       <strong>${esc(t('edenX1VoteGuidanceTitle'))}</strong>
       <span>${esc(t('edenX1VoteGuidanceCopy'))}</span>
@@ -816,6 +945,13 @@ function renderEdenVoteGuidance() {
       ${groups.map(([title, hint, rows]) => renderEdenVotePickList(title, hint, rows)).join('')}
     </div>
   </div>`;
+}
+
+function renderEdenTopNamesOverview() {
+  return renderEdenVoteGuidance({
+    id: 'edenX1TopNamesOverview',
+    className: 'eden-x1-vote-guidance--dashboard',
+  });
 }
 
 function renderEdenVoteMemberOptions() {
@@ -1675,23 +1811,18 @@ function bindEdenVoteControls(host) {
       const helperToggle = event.target.closest('[data-eden-vote-helper-toggle]');
       if (helperToggle) {
         event.preventDefault();
-        const card = helperToggle.closest('.eden-x1-vote-helper-card');
-        if (card) {
-          const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
-          const currentLimit = Number(card.dataset.helperVisibleLimit || helperToggle.dataset.edenVoteHelperLimit);
-          const nextLimit = edenVoteHelperNextLimit(currentLimit, rows.length);
-          card.dataset.helperVisibleLimit = String(nextLimit);
-          rows.forEach((row, index) => {
-            row.hidden = index >= nextLimit;
-          });
-          setEdenVoteHelperToggleState(helperToggle, nextLimit, rows.length);
-        }
+        toggleEdenVoteHelperRows(helperToggle);
         return;
       }
       const helpLink = event.target.closest('[data-eden-vote-help-link]');
       if (helpLink) {
         event.preventDefault();
-        const guidance = host.querySelector('#edenX1VoteGuidance');
+        const href = helpLink.getAttribute('href') || '';
+        const targetId = href.startsWith('#') ? href.slice(1) : '';
+        const guidance =
+          (targetId ? document.getElementById(targetId) : null) ||
+          document.getElementById('edenX1TopNamesOverview') ||
+          host.querySelector('#edenX1VoteGuidance');
         if (guidance) {
           guidance.scrollIntoView({ behavior: 'smooth', block: 'start' });
           guidance.focus({ preventScroll: true });
@@ -1723,21 +1854,7 @@ function bindEdenVoteControls(host) {
       const pick = event.target.closest('[data-eden-vote-pick]');
       if (pick) {
         event.preventDefault();
-        pendingPartialEdenVoteSignature = '';
-        const input =
-          getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
-          host.querySelector('#edenX1CandidateName');
-        if (input) {
-          const selectedName = pick.getAttribute('data-eden-vote-pick') || '';
-          const option = findEdenMemberOption(selectedName);
-          input.value = selectedName;
-          if (option) applyEdenVoteInputResolved(host, input.id, option);
-          host.dataset.edenVoteInspectInputId = input.id;
-          clearEdenVoteInputSuggestions(host, input.id);
-          const detail = host.querySelector('#edenX1VoteCandidateDetail');
-          if (detail) detail.dataset.open = '1';
-          updateEdenVoteCandidateDetail(host);
-        }
+        if (!applyEdenVotePickToForm(host, pick)) showEdenVoteHelperPlayerDetail(pick);
         return;
       }
       const inspect = event.target.closest('#edenX1VoteCandidateInspectBtn');
@@ -1783,7 +1900,7 @@ function renderEdenTeamVotePanel() {
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
-        <a class="eden-x1-vote-help-link" href="#edenX1VoteGuidance" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
+        <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
@@ -1828,7 +1945,6 @@ function renderEdenTeamVotePanel() {
       <div id="edenX1VoteStatus" class="eden-x1-vote-status" role="status">${savedStatus}</div>
       <div id="edenX1VoteCandidateDetail" class="eden-x1-vote-candidate-detail" hidden></div>
     </form>
-    ${renderEdenVoteGuidance()}
   </section>`;
 }
 
@@ -1942,6 +2058,7 @@ function setRewardFlowReady(ready) {
 
 function setEdenPanelLoading(loading) {
   $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', Boolean(loading));
+  document.body?.classList.toggle('eden-x1-loading', Boolean(loading));
 }
 
 function shouldScrollRewardTableOnClick() {
@@ -2069,15 +2186,15 @@ function getSupportRewardRows() {
     .sort(
       (a, b) =>
         rowBonusTotal(b) - rowBonusTotal(a) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
-    .slice(0, 4)
+    .slice(0, 10)
     .map((row, index) => ({
       ...row,
       edenX1RewardSlot: index + 1,
-      edenX1SupportReward: 'core',
+      edenX1SupportReward: index === 0 ? 'guild_master' : 'core',
     }));
 }
 
@@ -2413,13 +2530,106 @@ function bindWeightedPopovers(host) {
   });
 }
 
+function managementVoteWinnerReason(winner) {
+  const ballotCount = valueOf(currentManagementVoteResults.totalBallots);
+  const rawNames = Array.isArray(winner?.rawNames) ? winner.rawNames.filter(Boolean) : [];
+  const ballotLabel = ballotCount === 1 ? 'ballot' : 'ballots';
+  const sourceNames = rawNames.length ? rawNames.join(', ') : winner?.playerName || '';
+  return [
+    'X management form votes',
+    ballotCount ? `from ${ballotCount.toLocaleString()} ${ballotLabel}` : '',
+    sourceNames ? `Source name(s): ${sourceNames}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function createRewardPriorityIdentitySet() {
+  return { keys: new Set(), familyKeys: new Set() };
+}
+
+function addRewardPriorityIdentity(reserved, playerKey) {
+  const key = String(playerKey || '').trim();
+  if (!key) return;
+  reserved.keys.add(key);
+  const familyKey = getWeightedPlayerFamilyKey(key);
+  if (familyKey) reserved.familyKeys.add(familyKey);
+}
+
+function mergeRewardPriorityIdentities(target, source) {
+  if (!target || !source) return;
+  source.keys?.forEach((key) => addRewardPriorityIdentity(target, key));
+  source.familyKeys?.forEach((familyKey) => {
+    if (familyKey) target.familyKeys.add(familyKey);
+  });
+}
+
+function getForfeitedRewardPriorityIdentities(adjustments, season) {
+  const reserved = createRewardPriorityIdentitySet();
+  normalizeWeightedR5Adjustments(adjustments, season).forEach((adjustment) => {
+    if (adjustment?.category !== 'forfeit_premium') return;
+    addRewardPriorityIdentity(reserved, adjustment.playerKey);
+  });
+  return reserved;
+}
+
+function managementVoteCandidateIsReserved(winner, reserved) {
+  const key = String(winner?.playerKey || '').trim();
+  if (!key) return false;
+  if (reserved.keys.has(key)) return true;
+  const familyKey = getWeightedPlayerFamilyKey(key);
+  return Boolean(familyKey && reserved.familyKeys.has(familyKey));
+}
+
+function getReservedRewardPriorityIdentities() {
+  const reserved = createRewardPriorityIdentitySet();
+  getSupportRewardRows().forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+  getContributionRewardRows()
+    .filter((row) => !row.edenX1RewardSkipped)
+    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+  currentRows
+    .filter((row) => row.rewardReason === 'forfeit_premium')
+    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+  mergeRewardPriorityIdentities(reserved, currentForfeitedRewardIdentities);
+  return reserved;
+}
+
+function getEligibleManagementVoteWinners() {
+  const rankings = Array.isArray(currentManagementVoteResults.rankings)
+    ? currentManagementVoteResults.rankings
+    : [];
+  const reserved = getReservedRewardPriorityIdentities();
+  return rankings
+    .filter((winner) => !managementVoteCandidateIsReserved(winner, reserved))
+    .slice(0, EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT);
+}
+
 function rewardSlotRows(view) {
   if (view === 'management') {
+    const winners = getEligibleManagementVoteWinners();
     return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
-      player: index === 0 ? 'Wicked Russian' : t('edenX1Tba'),
+      ...(index === 0
+        ? { playerName: 'Wicked Russian', playerKey: 'wickedrussian' }
+        : winners[index - 1]
+          ? {
+              playerName: winners[index - 1].playerName,
+              playerKey: winners[index - 1].playerKey,
+            }
+          : { playerName: t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
-      status: index === 0 ? t('edenX1RewardAssigned') : t('edenX1RewardManagementVotePending'),
+      status:
+        index === 0 || winners[index - 1]
+          ? index === 0
+            ? t('edenX1RewardAssigned')
+            : EDEN_X1_MANAGEMENT_VOTE_STATUS
+          : t('edenX1RewardManagementVotePending'),
+      statusReason:
+        index === 0
+          ? t('edenX1RewardWickedAssignedReason')
+          : winners[index - 1]
+            ? managementVoteWinnerReason(winners[index - 1])
+            : '',
     }));
   }
   if (view === 'team') {
@@ -2431,6 +2641,18 @@ function rewardSlotRows(view) {
     }));
   }
   return [];
+}
+
+function renderRewardSlotStatus(row, view) {
+  if (!row.statusReason) return esc(row.status);
+  const tooltipId = `edenX1SlotStatusTip-${view}-${row.slot}`;
+  return `<button class="eden-x1-slot-status-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(row.statusReason)}">
+    <span class="eden-x1-slot-status-label">${esc(row.status)}</span>
+    <span id="${tooltipId}" class="dash-weighted-score-popover eden-x1-slot-status-popover" role="tooltip">
+      <strong>${esc(t('edenX1RewardAssignedReasonTitle'))}</strong>
+      <small>${esc(row.statusReason)}</small>
+    </span>
+  </button>`;
 }
 
 function renderWeightedScorePopover(row, index) {
@@ -3504,6 +3726,26 @@ function showPublicDetail(type, key) {
   }
 }
 
+function showEdenVoteHelperPlayerDetail(pick) {
+  if (!pick) return;
+  const playerKey = String(pick.getAttribute('data-eden-vote-player-key') || '').trim();
+  const playerName = String(pick.getAttribute('data-eden-vote-pick') || '').trim();
+  if (playerKey && publicPlayerRows.some((row) => row.key === playerKey)) {
+    showPublicDetail('player', playerKey);
+    return;
+  }
+  const option =
+    findEdenMemberOptionByKey(playerKey) ||
+    findEdenMemberOption(playerName) ||
+    (playerKey ? { playerKey, playerName: playerName || playerKey } : null);
+  if (!option) return;
+  openPublicModal(
+    t('edenX1PlayerDetailTitle', { player: option.playerName }),
+    t('edenX1VoteDetailSubtitle'),
+    renderEdenVoteCandidateDetail(option)
+  );
+}
+
 function bindPublicDashboardControls(host) {
   if (!host) return;
   bindWeightedPopovers(host);
@@ -3529,6 +3771,29 @@ function bindPublicDashboardControls(host) {
       event.target === $('edenX1PublicModal')
     ) {
       closePublicModal();
+      return;
+    }
+    const helperToggle = event.target.closest('[data-eden-vote-helper-toggle]');
+    if (helperToggle) {
+      event.preventDefault();
+      toggleEdenVoteHelperRows(helperToggle);
+      return;
+    }
+    const helperPick = event.target.closest('[data-eden-vote-pick]');
+    if (helperPick) {
+      event.preventDefault();
+      if (
+        currentRewardView === 'team' &&
+        applyEdenVotePickToForm($('dashWeightedContributionPanel'), helperPick)
+      ) {
+        return;
+      }
+      showEdenVoteHelperPlayerDetail(helperPick);
+      return;
+    }
+    const voteOpenPlayer = event.target.closest('[data-eden-vote-open-player]');
+    if (voteOpenPlayer) {
+      showPublicDetail('player', voteOpenPlayer.getAttribute('data-eden-vote-open-player'));
       return;
     }
     const sortHeader = event.target.closest('th[data-public-weighted-sort]');
@@ -3582,6 +3847,7 @@ function renderPublicDashboard(data = publicDashboardData) {
   }
   host.classList.remove('hidden');
   host.innerHTML = `<div id="ocrDashboardRoot" class="eden-x1-public-root" style="display:grid;gap:1rem">
+    ${renderEdenTopNamesOverview()}
     <div class="eden-x1-reward-heading">
       <span class="eden-x1-reward-eyebrow">${esc(t('edenX1PublicEyebrow'))}</span>
       <h2>${esc(t('edenX1PublicTitle'))}</h2>
@@ -3800,7 +4066,7 @@ function renderRewardSlotTable(view) {
                 <td data-label="${esc(t('edenX1ThNumber'))}">${row.slot}</td>
                 <td data-label="${esc(t('adminContributionMember'))}"><strong>${renderTaggedPlayerName(row)}</strong></td>
                 <td data-label="${esc(t('edenX1RewardSlotGroup'))}">${esc(row.group)}</td>
-                <td data-label="${esc(t('edenX1RewardSlotStatus'))}">${esc(row.status)}</td>
+                <td data-label="${esc(t('edenX1RewardSlotStatus'))}">${renderRewardSlotStatus(row, view)}</td>
               </tr>`
             )
             .join('')}</tbody>
@@ -3819,6 +4085,7 @@ function renderCurrentTable(renderOptions = {}) {
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
     if (currentRewardView === 'team') bindEdenVoteControls(panel);
+    bindWeightedPopovers(panel);
     updateRewardFlowControls();
     if (renderOptions.scrollIntoView) {
       queueRewardTableScroll();
@@ -3847,12 +4114,7 @@ function renderCurrentTable(renderOptions = {}) {
             reason: t('edenX1RewardSkippedPremiumReason', { rank: row.finalRank }),
           };
         }
-        const reward =
-          numberValue === 1
-            ? 'guild_master'
-            : row.rewardReason === 'grant_premium'
-              ? row.finalReward || 'core'
-              : 'core';
+        const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
         const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
         const label = contributionRewardLabel(finalReward);
         return {
@@ -4019,6 +4281,7 @@ function applyDashboardData(data = {}) {
   const r5Adjustments = Array.isArray(data.publicConductAdjustments)
     ? data.publicConductAdjustments
     : [];
+  currentForfeitedRewardIdentities = getForfeitedRewardPriorityIdentities(r5Adjustments, season);
 
   const model = buildWeightedContributionRows({
     contributionRecords,
@@ -4047,11 +4310,18 @@ function applyDashboardData(data = {}) {
   setRewardFlowReady(true);
   renderCurrentTable();
   renderPublicDashboard(data);
+  if (!EDEN_X1_TEST_MODE) {
+    loadEdenManagementVoteResults();
+  }
   setEdenPanelLoading(false);
 }
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
   applyDashboardData(data);
+};
+
+window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {
+  applyEdenManagementVoteResults(summarizeEdenManagementVotes(payloadOrRows), 'loaded');
 };
 
 if (EDEN_X1_TEST_MODE) {

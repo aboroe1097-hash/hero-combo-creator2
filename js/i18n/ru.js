@@ -103,6 +103,11 @@ const ru = {
   adminConductTab: 'Бонусные очки командной работы',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Введите PIN администратора",
+  adminEdenVotesPinPrompt: "Эта панель голосования защищена. Введите PIN администратора, чтобы продолжить.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Разблокировать",
+  adminEdenVotesPinError: "Неверный PIN.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1138,12 +1143,15 @@ const ru = {
   edenX1RewardContributionMeta:
     'Первые 10 только по текущему вкладу + экс-гильдии, после помощи.',
   edenX1RewardSupportMeta:
-    'Первые 4 по сумме баннеров, дорог, щитовых стен и командных бонусных очков.',
+    'Первые 10 по сумме баннеров, дорог, щитовых стен и командных бонусных очков.',
   edenX1RewardManagementMeta: 'Временное назначение управления, пока идет финальная проверка.',
   edenX1RewardTeamMeta: 'Места наград голосования гильдии ожидают решения.',
   edenX1RewardSlotGroup: 'Группа награды',
   edenX1RewardSlotStatus: 'Статус',
   edenX1RewardAssigned: 'Назначено',
+  edenX1RewardAssignedReasonTitle: 'Причина назначения',
+  edenX1RewardWickedAssignedReason:
+    'Причина: Wicked Russian был бывшим R5 в NM5. Он помогал управлять VTS и NM5.',
   edenX1RewardManagementVotePending: 'Голосование команды управления',
   edenX1RewardVotePending: 'Позже - голосование гильдии ожидается',
   edenX1Tba: 'Позже',

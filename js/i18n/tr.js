@@ -103,6 +103,11 @@ const tr = {
   adminConductTab: 'Bonus Takim Emegi Puanlari',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Admin PIN'ini gir",
+  adminEdenVotesPinPrompt: "Bu oylama paneli korumalıdır. Devam etmek için admin PIN'ini gir.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Kilidi aç",
+  adminEdenVotesPinError: "Hatalı PIN.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1136,12 +1141,15 @@ const tr = {
   edenX1RewardContributionMeta:
     'Destekten sonra yalnızca mevcut katkı + eski lonca katkısına göre ilk 10.',
   edenX1RewardSupportMeta:
-    'Banner, yol, kalkan duvarı ve takım emeği bonus puanları toplamına göre ilk 4.',
+    'Banner, yol, kalkan duvarı ve takım emeği bonus puanları toplamına göre ilk 10.',
   edenX1RewardManagementMeta: 'Final inceleme sürerken geçici yönetim ataması.',
   edenX1RewardTeamMeta: 'Lonca oylaması ödül slotları beklemede.',
   edenX1RewardSlotGroup: 'Ödül grubu',
   edenX1RewardSlotStatus: 'Durum',
   edenX1RewardAssigned: 'Atandı',
+  edenX1RewardAssignedReasonTitle: 'Atama gerekçesi',
+  edenX1RewardWickedAssignedReason:
+    "Gerekçe: Wicked Russian NM5'te eski R5'ti. VTS ve NM5 yönetimine yardım etti.",
   edenX1RewardManagementVotePending: 'Yönetim ekibi oylaması',
   edenX1RewardVotePending: 'Belirlenecek - lonca oylaması beklemede',
   edenX1Tba: 'Belirlenecek',

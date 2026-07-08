@@ -103,6 +103,11 @@ const id = {
   adminConductTab: 'Poin bonus usaha tim',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Masukkan PIN admin",
+  adminEdenVotesPinPrompt: "Panel voting ini dilindungi. Masukkan PIN admin untuk melanjutkan.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Buka kunci",
+  adminEdenVotesPinError: "PIN salah.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1135,12 +1140,15 @@ const id = {
   edenX1RewardContributionMeta:
     '10 teratas hanya dari kontribusi saat ini + ex-guild, setelah dukungan.',
   edenX1RewardSupportMeta:
-    '4 teratas dari gabungan banner, jalur, shield wall, dan poin usaha tim.',
+    '10 teratas dari gabungan banner, jalur, shield wall, dan poin usaha tim.',
   edenX1RewardManagementMeta: 'Penugasan manajemen sementara selama tinjauan akhir berlangsung.',
   edenX1RewardTeamMeta: 'Slot hadiah vote guild masih menunggu.',
   edenX1RewardSlotGroup: 'Grup hadiah',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Ditugaskan',
+  edenX1RewardAssignedReasonTitle: 'Alasan penugasan',
+  edenX1RewardWickedAssignedReason:
+    'Alasan: Wicked Russian adalah mantan R5 di NM5. Dia membantu mengelola VTS dan NM5.',
   edenX1RewardManagementVotePending: 'Vote tim manajemen',
   edenX1RewardVotePending: 'Akan diumumkan - vote guild menunggu',
   edenX1Tba: 'Akan diumumkan',

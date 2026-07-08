@@ -103,6 +103,11 @@ const es = {
   adminConductTab: 'Puntos extra de esfuerzo de equipo',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Ingresa el PIN de admin",
+  adminEdenVotesPinPrompt: "Este panel de votación está protegido. Ingresa el PIN de admin para continuar.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Desbloquear",
+  adminEdenVotesPinError: "PIN incorrecto.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1143,12 +1148,15 @@ const es = {
   edenX1RewardContributionMeta:
     'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',
   edenX1RewardSupportMeta:
-    'Top 4 por banners, caminos, muros de escudo y puntos de esfuerzo de equipo combinados.',
+    'Top 10 por banners, caminos, muros de escudo y puntos de esfuerzo de equipo combinados.',
   edenX1RewardManagementMeta: 'Asignación temporal de gestión mientras continúa la revisión final.',
   edenX1RewardTeamMeta: 'Las plazas de recompensa por voto del gremio están pendientes.',
   edenX1RewardSlotGroup: 'Grupo de recompensa',
   edenX1RewardSlotStatus: 'Estado',
   edenX1RewardAssigned: 'Asignado',
+  edenX1RewardAssignedReasonTitle: 'Motivo de la asignación',
+  edenX1RewardWickedAssignedReason:
+    'Motivo: Wicked Russian fue ex-R5 en NM5. Ayudó a gestionar VTS y NM5.',
   edenX1RewardManagementVotePending: 'Votación del equipo de gestión',
   edenX1RewardVotePending: 'Pendiente - voto del gremio',
   edenX1Tba: 'Pendiente',

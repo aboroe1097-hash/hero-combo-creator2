@@ -105,6 +105,11 @@ const fr = {
   adminConductTab: "Points bonus d'effort d'equipe",
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Saisir le PIN admin",
+  adminEdenVotesPinPrompt: "Ce panneau de vote est protégé. Saisis le PIN admin pour continuer.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Déverrouiller",
+  adminEdenVotesPinError: "PIN incorrect.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1143,12 +1148,15 @@ const fr = {
   edenX1RewardContributionMeta:
     'Top 10 uniquement par contribution actuelle + ex-guilde, après soutien.',
   edenX1RewardSupportMeta:
-    "Top 4 par bannières, chemins, murs bouclier et points d'effort d'équipe cumulés.",
+    "Top 10 par bannières, chemins, murs bouclier et points d'effort d'équipe cumulés.",
   edenX1RewardManagementMeta: 'Affectation temporaire de gestion pendant la révision finale.',
   edenX1RewardTeamMeta: 'Les places de récompense du vote de guilde sont en attente.',
   edenX1RewardSlotGroup: 'Groupe de récompense',
   edenX1RewardSlotStatus: 'Statut',
   edenX1RewardAssigned: 'Attribué',
+  edenX1RewardAssignedReasonTitle: "Motif de l'affectation",
+  edenX1RewardWickedAssignedReason:
+    'Motif : Wicked Russian était ex-R5 chez NM5. Il a aidé à gérer VTS et NM5.',
   edenX1RewardManagementVotePending: 'Vote de l’équipe de gestion',
   edenX1RewardVotePending: 'À venir - vote de guilde en attente',
   edenX1Tba: 'À venir',

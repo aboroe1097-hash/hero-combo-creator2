@@ -106,6 +106,11 @@ const de = {
   adminConductTab: 'Bonuspunkte fuer Teamleistung',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Admin-PIN eingeben",
+  adminEdenVotesPinPrompt: "Dieses Abstimmungsfenster ist geschützt. Gib die Admin-PIN ein, um fortzufahren.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Entsperren",
+  adminEdenVotesPinError: "Falsche PIN.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1146,12 +1151,15 @@ const de = {
   edenX1RewardContributionMeta:
     'Top 10 nur nach aktuellem Beitrag + Ex-Gilde, nach Support Work.',
   edenX1RewardSupportMeta:
-    'Top 4 nach kombinierten Bannern, Wegen, Schildmauern und Teamleistungs-Bonuspunkten.',
+    'Top 10 nach kombinierten Bannern, Wegen, Schildmauern und Teamleistungs-Bonuspunkten.',
   edenX1RewardManagementMeta: 'Temporäre Verwaltungszuweisung während die finale Prüfung läuft.',
   edenX1RewardTeamMeta: 'Belohnungsplätze der Gildenabstimmung stehen noch aus.',
   edenX1RewardSlotGroup: 'Belohnungsgruppe',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Zugewiesen',
+  edenX1RewardAssignedReasonTitle: 'Begründung der Zuweisung',
+  edenX1RewardWickedAssignedReason:
+    'Grund: Wicked Russian war Ex-R5 in NM5. Er half bei der Verwaltung von VTS und NM5.',
   edenX1RewardManagementVotePending: 'Abstimmung des Verwaltungsteams',
   edenX1RewardVotePending: 'Noch offen - Gildenabstimmung ausstehend',
   edenX1Tba: 'Noch offen',

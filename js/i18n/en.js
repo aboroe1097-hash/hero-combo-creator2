@@ -115,6 +115,11 @@ const en = {
   adminConductTab: 'Bonus Team Effort Points',
   adminEdenVotesTab: "Eden X1 Votes",
   adminEdenVotesTitle: "Eden X1 Team Players Vote",
+  adminEdenVotesPinTitle: "Enter admin PIN",
+  adminEdenVotesPinPrompt: "This voting panel is protected. Enter the admin PIN to continue.",
+  adminEdenVotesPinLabel: "PIN",
+  adminEdenVotesPinUnlock: "Unlock",
+  adminEdenVotesPinError: "Incorrect PIN.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
   adminEdenVotesSettings: "Voting controls",
@@ -1137,12 +1142,15 @@ const en = {
   edenX1RewardContributionMeta:
     'Top 10 by current contribution + ex-guild only, after Support Work.',
   edenX1RewardSupportMeta:
-    'Top 4 by combined banners, pathing, shield walls, and bonus team effort points.',
+    'Top 10 by total support bonus points: banners, pathing, shield walls, and bonus team effort points.',
   edenX1RewardManagementMeta: 'Temporary management assignment while final review is in progress.',
   edenX1RewardTeamMeta: 'Guild vote reward slots are pending.',
   edenX1RewardSlotGroup: 'Reward group',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Assigned',
+  edenX1RewardAssignedReasonTitle: 'Assignment reasoning',
+  edenX1RewardWickedAssignedReason:
+    'Reason: Wicked Russian was ex-R5 in NM5. He helped manage VTS and NM5.',
   edenX1RewardManagementVotePending: 'Management team voting',
   edenX1RewardVotePending: 'TBA - guild vote pending',
   edenX1Tba: 'TBA',

@@ -309,7 +309,7 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['тунгзахур', 'түнгзахурп'],
     ['Серей', 'Сергей'],
     ['Jjamaica pete', 'Jjamaica pete'],
-    ['★★★ЗВЕРЬ★★★', '★★★ ЗВЕРЬ ★★★'],
+    ['★★★ЗВЕРЬ★★★', '3BEPb'],
   ];
 
   for (const [raw, canonical] of aliases) {
@@ -354,7 +354,7 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('Sarafina'), '~Sarafina~');
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
-  assert.equal(findBestMatch('Dragon.Gold'), 'Dragon.Gold');
+  assert.equal(findBestMatch('Dragon.Gold'), 'IDN Dragon.Gold');
 });
 
 test('player registry aliases persist and resolve before roster matching', () => {
