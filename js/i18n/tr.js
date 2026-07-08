@@ -1152,7 +1152,7 @@ const tr = {
   edenX1RewardContributionMeta:
     'Destekten sonra yalnızca mevcut katkı + eski lonca katkısına göre ilk 10.',
   edenX1RewardSupportMeta:
-    'Banner, yol, kalkan duvarı ve takım emeği bonus puanları toplamına göre ilk 4.',
+    'Destek isi olan oyuncular arasinda agirlikli skora gore ilk 4: katk?, eski lonca, banner, yol, kalkan duvari ve takim emegi bonus puanlari.',
   edenX1RewardManagementMeta: 'Final inceleme sürerken geçici yönetim ataması.',
   edenX1RewardTeamMeta: 'Lonca oylaması ödül slotları beklemede.',
   edenX1RewardSlotGroup: 'Ödül grubu',

@@ -1153,7 +1153,7 @@ const en = {
   edenX1RewardContributionMeta:
     'Top 10 by current contribution + ex-guild only, after Support Work.',
   edenX1RewardSupportMeta:
-    'Top 4 by total support bonus points: banners, pathing, shield walls, and bonus team effort points.',
+    'Top 4 by weighted score among players with support work: contribution, ex-guild, banners, pathing, shield walls, and bonus team effort points.',
   edenX1RewardManagementMeta: 'Temporary management assignment while final review is in progress.',
   edenX1RewardTeamMeta: 'Guild vote reward slots are pending.',
   edenX1RewardSlotGroup: 'Reward group',

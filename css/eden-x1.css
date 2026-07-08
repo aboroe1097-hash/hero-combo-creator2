@@ -1202,6 +1202,40 @@
   font-weight: 800;
 }
 
+#ocrDashboardRoot .eden-x1-structure-trend-pills {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+#ocrDashboardRoot .eden-x1-structure-trend-average-pill {
+  display: grid;
+  justify-items: end;
+  gap: 0.02rem;
+  padding: 0.22rem 0.52rem;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.08);
+  color: #fde68a;
+  line-height: 1.05;
+}
+
+#ocrDashboardRoot .eden-x1-structure-trend-average-pill small {
+  color: rgba(253, 230, 138, 0.78);
+  font-size: 0.54rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#ocrDashboardRoot .eden-x1-structure-trend-average-pill b {
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
 #ocrDashboardRoot .eden-x1-structure-trend-head em {
   flex: 0 0 auto;
   padding: 0.24rem 0.55rem;
@@ -1318,21 +1352,6 @@
   stroke-dasharray: 5 5;
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
-}
-
-#ocrDashboardRoot .eden-x1-trend-average rect {
-  fill: rgba(8, 13, 23, 0.9);
-  stroke: rgba(250, 204, 21, 0.5);
-  stroke-width: 1;
-}
-
-#ocrDashboardRoot .eden-x1-trend-average text {
-  fill: #fde68a;
-  font-size: 0.62rem;
-  font-weight: 950;
-  paint-order: stroke;
-  stroke: rgba(8, 13, 23, 0.86);
-  stroke-width: 3px;
 }
 
 #ocrDashboardRoot .eden-x1-trend-point {
@@ -1971,6 +1990,10 @@
 
   #ocrDashboardRoot .eden-x1-structure-trend-head {
     display: grid;
+  }
+
+  #ocrDashboardRoot .eden-x1-structure-trend-pills {
+    justify-content: start;
   }
 
   #ocrDashboardRoot .eden-x1-structure-trend-card {

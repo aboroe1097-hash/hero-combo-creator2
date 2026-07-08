@@ -1147,7 +1147,7 @@ const kr = {
   edenX1RewardContributionMeta:
     '지원 작업 이후 현재 기여도 + 이전 길드 기여만 기준으로 한 상위 10명입니다.',
   edenX1RewardSupportMeta:
-    '배너, 길, 방벽, 팀 노력 보너스 포인트 합산 기준 상위 4명입니다.',
+    '지원 작업 기록이 있는 플레이어 중 가중 점수 상위 4명: 기여도, 이전 길드, 배너, 경로, 방벽, 팀 노력 보너스 점수.',
   edenX1RewardManagementMeta: '최종 검토가 진행되는 동안의 임시 관리 배정입니다.',
   edenX1RewardTeamMeta: '길드 투표 보상 슬롯은 대기 중입니다.',
   edenX1RewardSlotGroup: '보상 그룹',

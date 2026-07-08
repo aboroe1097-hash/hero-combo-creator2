@@ -1159,7 +1159,7 @@ const es = {
   edenX1RewardContributionMeta:
     'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',
   edenX1RewardSupportMeta:
-    'Top 4 por banners, caminos, muros de escudo y puntos de esfuerzo de equipo combinados.',
+    'Top 4 por puntuacion ponderada entre jugadores con apoyo: contribucion, ex-gremio, banners, caminos, muros de escudo y puntos de esfuerzo de equipo.',
   edenX1RewardManagementMeta: 'Asignación temporal de gestión mientras continúa la revisión final.',
   edenX1RewardTeamMeta: 'Las plazas de recompensa por voto del gremio están pendientes.',
   edenX1RewardSlotGroup: 'Grupo de recompensa',

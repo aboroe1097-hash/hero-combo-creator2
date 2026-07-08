@@ -1151,7 +1151,7 @@ const id = {
   edenX1RewardContributionMeta:
     '10 teratas hanya dari kontribusi saat ini + ex-guild, setelah dukungan.',
   edenX1RewardSupportMeta:
-    '4 teratas dari gabungan banner, jalur, shield wall, dan poin usaha tim.',
+    '4 teratas menurut skor berbobot di antara pemain dengan dukungan: kontribusi, ex-guild, banner, jalur, shield wall, dan poin usaha tim.',
   edenX1RewardManagementMeta: 'Penugasan manajemen sementara selama tinjauan akhir berlangsung.',
   edenX1RewardTeamMeta: 'Slot hadiah vote guild masih menunggu.',
   edenX1RewardSlotGroup: 'Grup hadiah',

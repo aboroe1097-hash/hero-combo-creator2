@@ -1140,7 +1140,7 @@ const pt = {
   edenX1RewardContributionMeta:
     'Top 10 apenas por contribuição atual + ex-guilda, após apoio.',
   edenX1RewardSupportMeta:
-    'Top 4 por banners, caminhos, muralhas de escudo e pontos de esforço da equipe somados.',
+    'Top 4 por pontuacao ponderada entre jogadores com apoio: contribuicao, ex-guilda, banners, caminhos, muralhas de escudo e pontos de esforco da equipe.',
   edenX1RewardManagementMeta:
     'Atribuição temporária de gestão enquanto a revisão final está em andamento.',
   edenX1RewardTeamMeta: 'As vagas de recompensa por voto da guilda estão pendentes.',

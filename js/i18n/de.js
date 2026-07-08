@@ -1162,7 +1162,7 @@ const de = {
   edenX1RewardContributionMeta:
     'Top 10 nur nach aktuellem Beitrag + Ex-Gilde, nach Support Work.',
   edenX1RewardSupportMeta:
-    'Top 4 nach kombinierten Bannern, Wegen, Schildmauern und Teamleistungs-Bonuspunkten.',
+    'Top 4 nach gewichtetem Score unter Spielern mit Support Work: Beitrag, Ex-Gilde, Banner, Wege, Schildmauern und Teamleistungs-Bonuspunkte.',
   edenX1RewardManagementMeta: 'Temporäre Verwaltungszuweisung während die finale Prüfung läuft.',
   edenX1RewardTeamMeta: 'Belohnungsplätze der Gildenabstimmung stehen noch aus.',
   edenX1RewardSlotGroup: 'Belohnungsgruppe',

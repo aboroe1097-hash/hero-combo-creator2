@@ -1159,7 +1159,7 @@ const fr = {
   edenX1RewardContributionMeta:
     'Top 10 uniquement par contribution actuelle + ex-guilde, après soutien.',
   edenX1RewardSupportMeta:
-    "Top 4 par bannières, chemins, murs bouclier et points d'effort d'équipe cumulés.",
+    'Top 4 par score pondere parmi les joueurs avec soutien: contribution, ex-guilde, bannieres, chemins, murs bouclier et points d effort d equipe.',
   edenX1RewardManagementMeta: 'Affectation temporaire de gestion pendant la révision finale.',
   edenX1RewardTeamMeta: 'Les places de récompense du vote de guilde sont en attente.',
   edenX1RewardSlotGroup: 'Groupe de récompense',

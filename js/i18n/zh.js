@@ -1135,7 +1135,7 @@ const zh = {
   edenX1RewardCardAction: '查看表格',
   edenX1RewardViewAria: '显示 {title} 奖励名额',
   edenX1RewardContributionMeta: '支援工作之后，仅按当前贡献 + 前公会贡献排名前10。',
-  edenX1RewardSupportMeta: '按旗帜、铺路、盾墙和团队努力加分合计排名前4。',
+  edenX1RewardSupportMeta: '有支援记录的玩家中按加权分数排名前4：贡献、前公会贡献、旗帜、铺路、盾墙和团队努力加分。',
   edenX1RewardManagementMeta: '最终审核进行中，暂时管理分配。',
   edenX1RewardTeamMeta: '公会投票奖励名额待定。',
   edenX1RewardSlotGroup: '奖励组',

@@ -1553,12 +1553,8 @@ function renderEdenVoteStructureTrend(attacks) {
   const yTicks = edenTrendDemoTicks(yMax);
   const gridLines = renderEdenTrendYAxis(yTicks, yFor, padX, width);
   const avgY = yFor(avg);
-  const avgLabel = `AVG ${compactValue(avg)}`;
-  const avgBadgeY = Math.min(bottom - 18, Math.max(padTop + 4, avgY - 12));
   const avgLine = `<g class="eden-x1-trend-average">
     <line x1="${padX}" y1="${avgY.toFixed(1)}" x2="${width - padX}" y2="${avgY.toFixed(1)}"></line>
-    <rect x="${padX + 8}" y="${avgBadgeY.toFixed(1)}" width="70" height="18" rx="9"></rect>
-    <text x="${padX + 43}" y="${(avgBadgeY + 12.5).toFixed(1)}" text-anchor="middle">${esc(avgLabel)}</text>
   </g>`;
   const latestPoint = { x: xFor(latestIndex), y: yFor(latest) };
   const bestPoint = { x: xFor(bestIndex), y: yFor(max) };
@@ -1577,7 +1573,13 @@ function renderEdenVoteStructureTrend(attacks) {
         <strong>${esc(t('edenX1VoteTrendLabel'))}</strong>
         <span>${esc(t('edenX1HitsAverageMeta', { hits: values.length, avg: formatScore(avg) }))}</span>
       </div>
-      <em class="${deltaClass}">${deltaText}</em>
+      <div class="eden-x1-structure-trend-pills">
+        <span class="eden-x1-structure-trend-average-pill">
+          <small>${esc(t('edenX1ModalAverageHit'))}</small>
+          <b>${formatScore(avg)}</b>
+        </span>
+        <em class="${deltaClass}">${deltaText}</em>
+      </div>
     </div>
     <div class="eden-x1-structure-trend-stats">
       <span><b>${formatScore(values.length)}</b><small>${esc(t('edenX1ModalHits'))}</small></span>
@@ -2491,9 +2493,9 @@ function getSupportRewardRows() {
     .slice()
     .sort(
       (a, b) =>
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         rowBonusTotal(b) - rowBonusTotal(a) ||
         valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
     .slice(0, 4)
@@ -3983,7 +3985,7 @@ function renderPublicPlayerDetail(player) {
   return `<div class="dash-modal-grid">
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalTotalDemo'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--blue">${formatScore(player.total_demolition)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalHits'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--teal">${formatScore(player.participation_count)}</div></div>
-      <div class="dash-modal-stat"><div>${esc(t('edenX1ModalTargets'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${formatScore(player.unique_structures_count)}</div></div>
+      <div class="dash-modal-stat"><div>${esc(t('edenX1ModalAverageHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${formatScore(player.average_demolition)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalBestHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${formatScore(player.best_hit)}</div></div>
     </div>
     <div class="dash-modal-section-label">${esc(t('edenX1PlayerAttackBreakdown'))}</div>
