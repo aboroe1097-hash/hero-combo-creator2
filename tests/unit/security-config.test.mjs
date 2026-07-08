@@ -234,6 +234,21 @@ test('admin gate uses a password sign-in check and sign-out cannot auto re-login
   assert.match(dashboard, /if \(state\._signingOut\)/);
 });
 
+test('admin stale chunk failures trigger one guarded asset recovery reload', () => {
+  const adminPage = readFileSync('js/admin-page.js', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+
+  for (const source of [adminPage, dashboard]) {
+    assert.match(source, /vts_admin_stale_asset_recovery_v1/);
+    assert.match(source, /Failed to fetch dynamically imported module/);
+    assert.match(source, /caches\.delete/);
+    assert.match(source, /registration\.unregister\(\)/);
+    assert.match(source, /window\.location\.reload\(\)/);
+  }
+  assert.match(adminPage, /vite:preloadError/);
+  assert.match(dashboard, /recoverFromStaleAssetGraph\(e\)/);
+});
+
 test('R5 conduct adjustments are stored separately and use the admin claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
 

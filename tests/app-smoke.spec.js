@@ -2106,7 +2106,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel).toContainText('Team Players Vote');
     await preLoadSupportCard.click();
     await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Support Work');
     const publicDashboard = page.locator('#edenX1PublicDashboard');
     const topNamesOverview = publicDashboard.locator('#edenX1TopNamesOverview');
@@ -2255,7 +2255,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'total support bonus points'
     );
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
     const supportTableMetrics = await panel
       .locator('.dash-weighted-contribution-table-wrap')
       .evaluate((wrap) => ({
@@ -2298,12 +2298,6 @@ test.describe('app smoke tabs', () => {
       'Alpha',
       'Mike',
       'Bravo',
-      'Charlie',
-      'Delta',
-      'Echo',
-      'Foxtrot',
-      'Golf',
-      'Hotel',
     ]);
     expect(supportPlayerNames).not.toContain('MalakAbo');
     await expect(

@@ -13,8 +13,6 @@ const baseAppShellFiles = [
   '/js/admin-auth-config.js',
   '/js/app-loading.js',
   '/js/app.js',
-  '/js/firebase.js',
-  '/js/firebase-sdk.js',
   '/js/maintenance-config.js',
   '/js/pwa-register.js',
   '/images/logo.png',

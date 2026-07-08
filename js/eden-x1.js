@@ -1553,9 +1553,12 @@ function renderEdenVoteStructureTrend(attacks) {
   const yTicks = edenTrendDemoTicks(yMax);
   const gridLines = renderEdenTrendYAxis(yTicks, yFor, padX, width);
   const avgY = yFor(avg);
+  const avgLabel = `AVG ${compactValue(avg)}`;
+  const avgBadgeY = Math.min(bottom - 18, Math.max(padTop + 4, avgY - 12));
   const avgLine = `<g class="eden-x1-trend-average">
     <line x1="${padX}" y1="${avgY.toFixed(1)}" x2="${width - padX}" y2="${avgY.toFixed(1)}"></line>
-    <text x="${width - padX - 4}" y="${(avgY - 5).toFixed(1)}" text-anchor="end">${esc(`${t('edenX1ModalAverageHit')}: ${compactValue(avg)}`)}</text>
+    <rect x="${padX + 8}" y="${avgBadgeY.toFixed(1)}" width="70" height="18" rx="9"></rect>
+    <text x="${padX + 43}" y="${(avgBadgeY + 12.5).toFixed(1)}" text-anchor="middle">${esc(avgLabel)}</text>
   </g>`;
   const latestPoint = { x: xFor(latestIndex), y: yFor(latest) };
   const bestPoint = { x: xFor(bestIndex), y: yFor(max) };
@@ -2379,7 +2382,9 @@ function bindEdenQuickNav() {
       return;
     }
     if (target === 'public') {
-      queueEdenQuickNavScroll('#edenX1PublicDashboard', { focusTarget: true });
+      queueEdenQuickNavScroll('#edenX1TopPerformersCard, #edenX1PublicDashboard', {
+        focusTarget: true,
+      });
     }
   });
 }
@@ -2491,7 +2496,7 @@ function getSupportRewardRows() {
         valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
     )
-    .slice(0, 10)
+    .slice(0, 4)
     .map((row, index) => ({
       ...row,
       edenX1RewardSlot: index + 1,
@@ -2723,6 +2728,7 @@ function renderPublicMyStatsCard() {
       </svg>
       <input id="edenX1MyStatsSearch" class="dash-search-input" type="search" value="${esc(currentPublicStatsSearch)}" placeholder="${esc(t('edenX1MyStatsPlaceholder'))}" autocomplete="off" aria-label="${esc(t('edenX1MyStatsPlaceholder'))}" />
     </label>
+    <p class="eden-x1-my-stats-helper">${esc(t('edenX1MyStatsHint'))}</p>
     <div class="eden-x1-vote-suggestions eden-x1-my-stats-suggestions" aria-label="${esc(t('edenX1MyStatsTitle'))}">
       ${suggestionList}
     </div>
@@ -2732,7 +2738,7 @@ function renderPublicMyStatsCard() {
   </div>`;
   return renderPublicCard(
     t('edenX1MyStatsTitle'),
-    t('edenX1MyStatsHint'),
+    '',
     body,
     'eden-x1-public-wide eden-x1-my-stats-card',
     'id="edenX1MyStatsCard" tabindex="-1"'
@@ -3637,7 +3643,8 @@ function renderPublicTopPerformers(players) {
     t('adminChartTop'),
     t('edenX1TopPerformersHint'),
     renderPerformerRows(players, { limit: 10 }),
-    'eden-x1-public-top-card'
+    'eden-x1-public-top-card',
+    'id="edenX1TopPerformersCard" tabindex="-1"'
   );
 }
 

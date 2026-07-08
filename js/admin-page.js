@@ -5,8 +5,47 @@ import { initUndoToasts } from './app-undo.js';
 
 const APP_VERSION = '13.0.3';
 const THEME_STORAGE_KEY = 'vts_theme';
+const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
+
+function isDynamicImportLoadFailure(err) {
+  const message = String(err?.message || err?.reason?.message || err || '');
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload/i.test(
+    message
+  );
+}
+
+async function recoverFromStaleAssetGraph(reason) {
+  if (!isDynamicImportLoadFailure(reason)) return false;
+
+  try {
+    if (sessionStorage.getItem(STALE_ASSET_RECOVERY_KEY) === '1') return false;
+    sessionStorage.setItem(STALE_ASSET_RECOVERY_KEY, '1');
+  } catch {}
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+  } catch (err) {
+    console.warn('[assets] stale admin asset cleanup failed:', err);
+  }
+
+  console.warn('[assets] refreshing admin after stale asset graph:', reason);
+  window.location.reload();
+  return true;
+}
+
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  recoverFromStaleAssetGraph(event.payload || event);
+});
 
 function getPreferredTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('theme');
@@ -116,8 +155,9 @@ async function bootAdminPage() {
   await mod.bootOcrDashboard();
 }
 
-if (!window.VTS_MAINTENANCE_ACTIVE) bootAdminPage().catch((err) => {
+if (!window.VTS_MAINTENANCE_ACTIVE) bootAdminPage().catch(async (err) => {
   console.error('Admin dashboard failed to load', err);
+  if (await recoverFromStaleAssetGraph(err)) return;
   const section = document.getElementById('ocrDashboardSection');
   if (section) {
     section.innerHTML = '<div class="admin-load-error">Failed to load admin dashboard. Refresh and try again.</div>';

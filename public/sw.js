@@ -19,8 +19,6 @@ const APP_SHELL = [
   '/js/admin-page.js',
   '/js/app-loading.js',
   '/js/app.js',
-  '/js/firebase-sdk.js',
-  '/js/firebase.js',
   '/js/index-page-enhancements.js',
   '/js/maintenance-config.js',
   '/js/pwa-register.js',

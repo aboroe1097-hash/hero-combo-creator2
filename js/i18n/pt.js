@@ -1114,15 +1114,15 @@ const pt = {
   edenX1RewardFlowSubtitle:
     'A lista pública mostra a fórmula de trabalho; a liderança confirma as recompensas finais da temporada depois de revisar todos os registros de tarefas.',
   edenX1QuickVote: "Votar",
-  edenX1QuickMyStats: "Meus dados",
+  edenX1QuickMyStats: "Encontrar jogador",
   edenX1QuickRewards: "Recompensas",
   edenX1QuickTeam: "MVPs do time",
   edenX1QuickGuildContribution: "Contribuicao da guilda",
   edenX1QuickPublic: "Analise",
-  edenX1MyStatsTitle: "Meus dados",
-  edenX1MyStatsHint: "Pesquise seu nome para abrir o painel completo de contribuicao, suporte e ataques.",
-  edenX1MyStatsPlaceholder: "Pesquise seu nome no jogo...",
-  edenX1MyStatsEmpty: "Pesquise um jogador para ver contribuicao, suporte e atividade de estruturas.",
+  edenX1MyStatsTitle: "Encontrar jogador",
+  edenX1MyStatsHint: "Digite seu nome no jogo para abrir detalhes de contribuicao, suporte e ataques.",
+  edenX1MyStatsPlaceholder: "Digite seu nome no jogo...",
+  edenX1MyStatsEmpty: "Comece a digitar um nome para ver correspondencias e abrir os dados.",
   edenX1MyStatsNoMatch: "Nenhum jogador correspondente encontrado ainda.",
   edenX1RewardLeaderboardTitle: 'Contribuição total',
   edenX1RewardLeaderboardCopy: 'Recompensas por contribuição mais ex-guilda após apoio.',
@@ -1140,7 +1140,7 @@ const pt = {
   edenX1RewardContributionMeta:
     'Top 10 apenas por contribuição atual + ex-guilda, após apoio.',
   edenX1RewardSupportMeta:
-    'Top 10 por banners, caminhos, muralhas de escudo e pontos de esforço da equipe somados.',
+    'Top 4 por banners, caminhos, muralhas de escudo e pontos de esforço da equipe somados.',
   edenX1RewardManagementMeta:
     'Atribuição temporária de gestão enquanto a revisão final está em andamento.',
   edenX1RewardTeamMeta: 'As vagas de recompensa por voto da guilda estão pendentes.',

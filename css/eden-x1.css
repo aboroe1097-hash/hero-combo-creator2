@@ -406,6 +406,12 @@
   width: min(100%, 38rem);
 }
 
+#ocrDashboardRoot .eden-x1-my-stats-helper {
+  margin: -0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 #ocrDashboardRoot .eden-x1-my-stats-suggestions {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   width: min(100%, 44rem);
@@ -1312,6 +1318,12 @@
   stroke-dasharray: 5 5;
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
+}
+
+#ocrDashboardRoot .eden-x1-trend-average rect {
+  fill: rgba(8, 13, 23, 0.9);
+  stroke: rgba(250, 204, 21, 0.5);
+  stroke-width: 1;
 }
 
 #ocrDashboardRoot .eden-x1-trend-average text {

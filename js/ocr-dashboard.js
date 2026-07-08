@@ -102,17 +102,65 @@ import { edenVotesUnlocked, requireEdenVotesPin } from './admin-pin-gate.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
+const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
+
+function isDynamicImportLoadFailure(err) {
+  const message = String(err?.message || err?.reason?.message || err || '');
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload/i.test(
+    message
+  );
+}
+
+async function recoverFromStaleAssetGraph(reason) {
+  if (!isDynamicImportLoadFailure(reason)) return false;
+
+  try {
+    if (sessionStorage.getItem(STALE_ASSET_RECOVERY_KEY) === '1') return false;
+    sessionStorage.setItem(STALE_ASSET_RECOVERY_KEY, '1');
+  } catch {}
+
+  try {
+    setLoginError('Updating dashboard files...');
+  } catch {}
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+  } catch (err) {
+    console.warn('[assets] stale admin asset cleanup failed:', err);
+  }
+
+  console.warn('[assets] refreshing admin after stale asset graph:', reason);
+  window.location.reload();
+  return true;
+}
 
 function loadFirebaseApi() {
-  if (!firebaseApiPromise) firebaseApiPromise = import('./firebase.js');
+  if (!firebaseApiPromise) {
+    firebaseApiPromise = import('./firebase.js').catch((err) => {
+      firebaseApiPromise = null;
+      recoverFromStaleAssetGraph(err);
+      throw err;
+    });
+  }
   return firebaseApiPromise;
 }
 
 function loadFirestoreApi() {
   if (!firestoreApiPromise) {
-    firestoreApiPromise = import('./firebase-sdk.js').then(({ importFirestore }) =>
-      importFirestore()
-    );
+    firestoreApiPromise = import('./firebase-sdk.js')
+      .then(({ importFirestore }) => importFirestore())
+      .catch((err) => {
+        firestoreApiPromise = null;
+        recoverFromStaleAssetGraph(err);
+        throw err;
+      });
   }
   return firestoreApiPromise;
 }
@@ -2328,6 +2376,7 @@ async function doLogin() {
     await openAdminDashboardAfterAuth({ preferCloudFirst: true });
   } catch (e) {
     console.error('Dashboard sign-in failed', e);
+    if (await recoverFromStaleAssetGraph(e)) return;
     state.adminUser = null;
     state.adminIsAdmin = false;
     setLoginError(describeAdminAuthError(e));
