@@ -1125,6 +1125,10 @@ const ar = {
   edenX1RewardFlowTitle: 'توزيع مخطط لأفضل 20 مكافأة',
   edenX1RewardFlowSubtitle:
     'تعرض القائمة العامة الصيغة الحالية؛ تؤكد القيادة مكافآت الموسم النهائية بعد مراجعة كل سجلات المهام.',
+  edenX1QuickVote: 'التصويت',
+  edenX1QuickMyStats: 'إحصائياتي',
+  edenX1QuickTeam: 'الفريق',
+  edenX1QuickPublic: 'العام',
   edenX1RewardLeaderboardTitle: 'إجمالي المساهمة',
   edenX1RewardLeaderboardCopy: 'مكافآت المساهمة مع النقابة السابقة بعد خانات الدعم.',
   edenX1RewardSupportTitle: 'عمل الدعم',

@@ -947,10 +947,10 @@ function renderEdenVoteGuidance(options = {}) {
   </div>`;
 }
 
-function renderEdenTopNamesOverview() {
+function renderEdenTopNamesOverview(options = {}) {
   return renderEdenVoteGuidance({
-    id: 'edenX1TopNamesOverview',
-    className: 'eden-x1-vote-guidance--dashboard',
+    id: options.id || 'edenX1TopNamesOverview',
+    className: ['eden-x1-vote-guidance--dashboard', options.className].filter(Boolean).join(' '),
   });
 }
 
@@ -1314,28 +1314,135 @@ function edenTrendXCoordinates(rows) {
   return allSame ? rows.map((_, index) => index) : coords;
 }
 
-function renderEdenTrendXAxis(rows, xFor, padX, plotWidth) {
-  if (!rows.length) return '';
-  const indexes =
-    rows.length <= 2
-      ? [0, rows.length - 1]
-      : [0, Math.round((rows.length - 1) / 2), rows.length - 1];
-  const uniqueIndexes = [...new Set(indexes)].filter((index) => index >= 0 && index < rows.length);
+function formatEdenTrendTickDate(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return '';
+  return new Intl.DateTimeFormat(currentLang || undefined, {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(ms));
+}
+
+function niceEdenTrendStep(maxValue) {
+  const target = Math.max(1, Number(maxValue || 0) / 4);
+  const power = 10 ** Math.floor(Math.log10(target));
+  const normalized = target / power;
+  const multiplier =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 5 ? 5 : 10;
+  return multiplier * power;
+}
+
+function niceEdenTrendMax(maxValue) {
+  const step = niceEdenTrendStep(maxValue);
+  return Math.max(step, Math.ceil(Math.max(1, maxValue) / step) * step);
+}
+
+function edenTrendDemoTicks(topValue) {
+  const step = niceEdenTrendStep(topValue);
+  const top = Math.max(step, Math.ceil(topValue / step) * step);
+  const ticks = [];
+  for (let value = 0; value <= top + step * 0.1; value += step) ticks.push(value);
+  return ticks;
+}
+
+function edenSharedTrendTimeDomain(rows) {
+  const rowTimes = rows.map((row) => publicAttackMs(row.attack || row)).filter((ms) => ms > 0);
+  const allTimes = (Array.isArray(publicAttackRows) ? publicAttackRows : [])
+    .map(publicAttackMs)
+    .filter((ms) => ms > 0);
+  const domainTimes = allTimes.length ? allTimes : rowTimes;
+  if (!domainTimes.length) return { start: 0, end: Math.max(1, rows.length - 1), isTime: false };
+  const start = Math.min(...domainTimes);
+  const observedEnd = Math.max(...domainTimes);
+  const now = Date.now();
+  const end = Number.isFinite(now) && now > observedEnd ? now : observedEnd;
+  return {
+    start,
+    end: Math.max(start + 1, end),
+    isTime: true,
+  };
+}
+
+function edenSharedTrendDemoMax(values) {
+  const playerMax = Math.max(...values, 1);
+  const globalMax = Math.max(
+    playerMax,
+    ...(Array.isArray(publicPlayerRows) ? publicPlayerRows : []).map((row) => valueOf(row.best_hit))
+  );
+  return niceEdenTrendMax(globalMax);
+}
+
+function renderEdenTrendYAxis(ticks, yFor, padX, width) {
+  return ticks
+    .slice()
+    .reverse()
+    .map((tick) => {
+      const y = yFor(tick);
+      return `<g class="eden-x1-trend-y-tick">
+        <line class="eden-x1-trend-grid-line" x1="${padX}" y1="${y.toFixed(1)}" x2="${width - padX}" y2="${y.toFixed(1)}"></line>
+        <text class="eden-x1-trend-axis-label" x="${padX - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">${esc(compactValue(tick))}</text>
+      </g>`;
+    })
+    .join('');
+}
+
+function renderEdenTrendXAxis(ticks, xForTime, padX, plotWidth, domain) {
+  if (!ticks.length || !domain?.isTime) return '';
   return `<div class="eden-x1-structure-x-axis" aria-hidden="true">
-    ${uniqueIndexes
-      .map((index) => {
-        const row = rows[index];
-        const position = Math.min(100, Math.max(0, ((xFor(index) - padX) / plotWidth) * 100));
+    ${ticks
+      .map((tick, index) => {
+        const position = Math.min(100, Math.max(0, ((xForTime(tick) - padX) / plotWidth) * 100));
         let align = 'center';
-        if (rows.length > 1 && index === 0) align = 'start';
-        if (rows.length > 1 && index === rows.length - 1) align = 'end';
-        return `<span class="eden-x1-structure-x-tick eden-x1-structure-x-tick--${align}" style="--tick-x:${position.toFixed(2)}%" title="${esc(row.time || row.structure || '')}">
-          <b>${esc(formatEdenTrendAxisTime(row))}</b>
-          <small>${esc(row.structure || '')}</small>
+        if (index === 0) align = 'start';
+        if (index === ticks.length - 1) align = 'end';
+        const extraClass = index > 0 && index < ticks.length - 1 && index % 2 === 0 ? ' eden-x1-structure-x-tick--extra' : '';
+        return `<span class="eden-x1-structure-x-tick eden-x1-structure-x-tick--${align}${extraClass}" style="--tick-x:${position.toFixed(2)}%" title="${esc(formatEdenTrendTickDate(tick))}">
+          <b>${esc(formatEdenTrendTickDate(tick))}</b>
         </span>`;
       })
       .join('')}
   </div>`;
+}
+
+function edenTrendTimeTicks(domain, count = 6) {
+  if (!domain?.isTime) return [];
+  const total = Math.max(1, count - 1);
+  return Array.from({ length: count }, (_, index) => domain.start + ((domain.end - domain.start) * index) / total);
+}
+
+function edenTrendPointLabel(value, point, tone, anchor = 'middle') {
+  const y = Math.max(14, point.y - 12);
+  return `<text class="eden-x1-trend-point-label eden-x1-trend-point-label--${tone}" x="${point.x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}">${esc(compactValue(value))}</text>`;
+}
+
+function renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIndex) {
+  return values
+    .map((value, index) => {
+      const row = rows[index];
+      const x = xFor(index);
+      const y = yFor(value);
+      const tooltipY = y > 64 ? y - 48 : y + 16;
+      const tooltipAnchor = x > 560 ? 'end' : x < 120 ? 'start' : 'middle';
+      const tooltipX = tooltipAnchor === 'end' ? x - 8 : tooltipAnchor === 'start' ? x + 8 : x;
+      const label = [
+        formatEdenTrendAxisTime(row),
+        row.structure || '',
+        `${formatScore(value)} ${t('adminModalThDemolition')}`,
+      ]
+        .filter(Boolean)
+        .join(' - ');
+      return `<g class="eden-x1-trend-hit" tabindex="0" role="button" aria-label="${esc(label)}">
+        <line class="eden-x1-trend-crosshair" x1="${x.toFixed(1)}" y1="20" x2="${x.toFixed(1)}" y2="${yFor(0).toFixed(1)}"></line>
+        <circle class="eden-x1-trend-hit-target" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"></circle>
+        ${index !== bestIndex && index !== latestIndex ? `<circle class="eden-x1-trend-point eden-x1-trend-point--hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.8"></circle>` : ''}
+        <g class="eden-x1-trend-tooltip" transform="translate(${tooltipX.toFixed(1)} ${tooltipY.toFixed(1)})">
+          <rect x="${tooltipAnchor === 'end' ? -146 : tooltipAnchor === 'middle' ? -73 : 0}" y="0" width="146" height="40" rx="6"></rect>
+          <text x="${tooltipAnchor === 'end' ? -136 : tooltipAnchor === 'middle' ? -63 : 10}" y="15">${esc(formatEdenTrendAxisTime(row))}</text>
+          <text x="${tooltipAnchor === 'end' ? -136 : tooltipAnchor === 'middle' ? -63 : 10}" y="30">${esc(compactValue(value))} ${esc(t('adminModalThDemolition'))}${row.structure ? ` - ${esc(row.structure)}` : ''}</text>
+        </g>
+      </g>`;
+    })
+    .join('');
 }
 
 function renderEdenVoteStructureTrend(attacks) {
@@ -1346,8 +1453,9 @@ function renderEdenVoteStructureTrend(attacks) {
 
   const values = rows.map((row) => row.demo);
   const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const span = Math.max(1, max - min);
+  const yMax = edenSharedTrendDemoMax(values);
+  const min = 0;
+  const span = Math.max(1, yMax - min);
   const total = values.reduce((sum, value) => sum + value, 0);
   const avg = Math.round(total / values.length);
   const first = values[0] || 0;
@@ -1365,12 +1473,11 @@ function renderEdenVoteStructureTrend(attacks) {
   const plotWidth = width - padX * 2;
   const plotHeight = height - padTop - padBottom;
   const bottom = height - padBottom;
-  const xCoordinates = edenTrendXCoordinates(rows);
-  const minX = Math.min(...xCoordinates);
-  const maxX = Math.max(...xCoordinates);
-  const xSpan = Math.max(0.0001, maxX - minX);
-  const xFor = (index) =>
-    values.length <= 1 ? width / 2 : padX + ((xCoordinates[index] - minX) / xSpan) * plotWidth;
+  const domain = edenSharedTrendTimeDomain(rows);
+  const rowTimes = rows.map((row, index) => publicAttackMs(row.attack || row) || domain.start + index);
+  const xForTime = (ms) =>
+    domain.isTime ? padX + ((ms - domain.start) / (domain.end - domain.start)) * plotWidth : width / 2;
+  const xFor = (index) => (domain.isTime ? xForTime(rowTimes[index]) : width / 2);
   const yFor = (value) => bottom - ((value - min) / span) * plotHeight;
   const points = values.map(
     (value, index) => `${xFor(index).toFixed(1)},${yFor(value).toFixed(1)}`
@@ -1378,26 +1485,23 @@ function renderEdenVoteStructureTrend(attacks) {
   const firstX = xFor(0).toFixed(1);
   const lastX = xFor(latestIndex).toFixed(1);
   const areaPath = `M ${firstX} ${bottom} L ${points.join(' L ')} L ${lastX} ${bottom} Z`;
-  const gridLines = [0, 0.25, 0.5, 0.75, 1]
-    .map((step) => {
-      const y = padTop + step * plotHeight;
-      return `<line class="eden-x1-trend-grid-line" x1="${padX}" y1="${y.toFixed(1)}" x2="${width - padX}" y2="${y.toFixed(1)}"></line>`;
-    })
-    .join('');
-  const barSlot = plotWidth / Math.max(values.length, 1);
-  const barWidth = Math.max(3, Math.min(12, barSlot * 0.58));
-  const bars = values
-    .map((value, index) => {
-      const h = Math.max(3, ((value - min) / span) * 24);
-      const x = xFor(index) - barWidth / 2;
-      return `<rect class="eden-x1-trend-bar" x="${x.toFixed(1)}" y="${(bottom + 8 - h).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${h.toFixed(1)}" rx="2"></rect>`;
-    })
-    .join('');
+  const yTicks = edenTrendDemoTicks(yMax);
+  const gridLines = renderEdenTrendYAxis(yTicks, yFor, padX, width);
+  const avgY = yFor(avg);
+  const avgLine = `<g class="eden-x1-trend-average">
+    <line x1="${padX}" y1="${avgY.toFixed(1)}" x2="${width - padX}" y2="${avgY.toFixed(1)}"></line>
+    <text x="${width - padX - 4}" y="${(avgY - 5).toFixed(1)}" text-anchor="end">${esc(`${t('edenX1ModalAverageHit')}: ${compactValue(avg)}`)}</text>
+  </g>`;
   const latestPoint = { x: xFor(latestIndex), y: yFor(latest) };
   const bestPoint = { x: xFor(bestIndex), y: yFor(max) };
   const deltaClass = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
   const deltaText = values.length > 1 ? `${delta >= 0 ? '+' : ''}${compactValue(delta)}` : '--';
-  const xAxis = renderEdenTrendXAxis(rows, xFor, padX, plotWidth);
+  const xAxis = renderEdenTrendXAxis(edenTrendTimeTicks(domain), xForTime, padX, plotWidth, domain);
+  const pointLabels = [
+    bestIndex !== latestIndex ? edenTrendPointLabel(max, bestPoint, 'best') : '',
+    edenTrendPointLabel(latest, latestPoint, 'latest', latestPoint.x > width - 78 ? 'end' : 'middle'),
+  ].join('');
+  const hitTargets = renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIndex);
 
   return `<div class="eden-x1-structure-trend-card" role="img" aria-label="${esc(`${t('edenX1VoteTrendLabel')}: ${values.length} ${t('edenX1ModalHits')}, ${formatScore(total)} ${t('edenX1ModalTotalDemo')}`)}">
     <div class="eden-x1-structure-trend-head">
@@ -1414,26 +1518,22 @@ function renderEdenVoteStructureTrend(attacks) {
       <span><b>${formatScore(structureCount)}</b><small>${esc(t('edenX1ModalTargets'))}</small></span>
     </div>
     <div class="eden-x1-structure-chart">
-      <div class="eden-x1-structure-axis eden-x1-structure-axis--high">${compactValue(max)}</div>
-      <div class="eden-x1-structure-axis eden-x1-structure-axis--low">${compactValue(min)}</div>
-      <svg class="eden-x1-structure-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+      <div class="eden-x1-structure-axis-title">${esc(t('adminModalThDemolition'))}</div>
+      <svg class="eden-x1-structure-chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="edenX1StructureTrendStroke" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stop-color="#60a5fa"></stop>
-            <stop offset="52%" stop-color="#34d399"></stop>
-            <stop offset="100%" stop-color="#facc15"></stop>
-          </linearGradient>
           <linearGradient id="edenX1StructureTrendFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#34d399" stop-opacity="0.28"></stop>
+            <stop offset="0%" stop-color="#67e8f9" stop-opacity="0.22"></stop>
             <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
           </linearGradient>
         </defs>
         <g>${gridLines}</g>
+        ${avgLine}
         <path class="eden-x1-trend-area" d="${areaPath}" fill="url(#edenX1StructureTrendFill)"></path>
-        <g>${bars}</g>
-        <polyline class="eden-x1-trend-line" points="${points.join(' ')}" stroke="url(#edenX1StructureTrendStroke)"></polyline>
+        <polyline class="eden-x1-trend-line" points="${points.join(' ')}"></polyline>
         ${bestIndex !== latestIndex ? `<circle class="eden-x1-trend-point eden-x1-trend-point--best" cx="${bestPoint.x.toFixed(1)}" cy="${bestPoint.y.toFixed(1)}" r="5"></circle>` : ''}
         <circle class="eden-x1-trend-point eden-x1-trend-point--latest" cx="${latestPoint.x.toFixed(1)}" cy="${latestPoint.y.toFixed(1)}" r="6"></circle>
+        ${pointLabels}
+        ${hitTargets}
       </svg>
       ${xAxis}
     </div>
@@ -1895,12 +1995,12 @@ function renderEdenTeamVotePanel() {
   const savedStatus = savedStatusText
     ? `<div class="eden-x1-vote-saved">${esc(savedStatusText)}</div>`
     : '';
-  return `<section class="dash-card eden-x1-vote-panel">
+  return `<section id="edenX1TeamVotePanel" class="dash-card eden-x1-vote-panel">
     <div class="dash-card-hdr dash-card-hdr-wrap">
       <div>
         <h2 class="dash-card-title"><span>${esc(t('edenX1VoteTitle'))}</span></h2>
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
-        <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
+        <a class="eden-x1-vote-help-link" href="#edenX1RewardTopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
@@ -1949,7 +2049,7 @@ function renderEdenTeamVotePanel() {
 }
 
 function isWeightedContributionMobileViewport() {
-  return Boolean(globalThis.matchMedia?.('(max-width: 768px)').matches);
+  return Boolean(globalThis.matchMedia?.('(max-width: 1024px)').matches);
 }
 
 function isWeightedContributionCompactView() {
@@ -2080,6 +2180,85 @@ function queueRewardTableScroll() {
   requestAnimationFrame(() => {
     scrollRewardTableIntoView();
     window.setTimeout(scrollRewardTableIntoView, 120);
+  });
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+function scrollEdenTargetIntoView(target, options = {}) {
+  if (!target) return;
+  target.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: options.block || 'start',
+  });
+  if (options.focusSelector) {
+    const focusTarget =
+      target.querySelector?.(options.focusSelector) || document.querySelector(options.focusSelector);
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      window.setTimeout(() => {
+        focusTarget.focus({ preventScroll: true });
+        if (typeof focusTarget.setSelectionRange === 'function') {
+          const end = String(focusTarget.value || '').length;
+          focusTarget.setSelectionRange(end, end);
+        }
+      }, 180);
+    }
+  } else if (options.focusTarget && typeof target.focus === 'function') {
+    window.setTimeout(() => target.focus({ preventScroll: true }), 180);
+  }
+}
+
+function queueEdenQuickNavScroll(selector, options = {}) {
+  const scroll = () => scrollEdenTargetIntoView(document.querySelector(selector), options);
+  requestAnimationFrame(() => {
+    scroll();
+    window.setTimeout(scroll, 160);
+  });
+}
+
+function activateEdenRewardView(view) {
+  if (!rewardFlowReady || !view) return false;
+  if (currentRewardView === view) {
+    updateRewardFlowControls();
+    return false;
+  }
+  currentTableSort = null;
+  currentRewardView = view;
+  scheduleCurrentTableRender({ scrollIntoView: false });
+  return true;
+}
+
+function bindEdenQuickNav() {
+  const nav = document.querySelector('.eden-x1-quicknav');
+  if (!nav || nav.dataset.quickNavBound) return;
+  nav.dataset.quickNavBound = '1';
+  nav.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-quicknav]');
+    if (!button) return;
+    event.preventDefault();
+    const target = button.getAttribute('data-quicknav') || '';
+    if (target === 'vote') {
+      activateEdenRewardView('team');
+      queueEdenQuickNavScroll('#edenX1TeamVotePanel, #dashWeightedContributionPanel .eden-x1-vote-panel');
+      return;
+    }
+    if (target === 'my-stats') {
+      queueEdenQuickNavScroll('#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card', {
+        focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
+      });
+      return;
+    }
+    if (target === 'team') {
+      queueEdenQuickNavScroll('#edenX1RewardTopNamesOverview, #edenX1TopNamesOverview, #edenX1VoteGuidance', {
+        focusTarget: true,
+      });
+      return;
+    }
+    if (target === 'public') {
+      queueEdenQuickNavScroll('#edenX1PublicDashboard', { focusTarget: true });
+    }
   });
 }
 
@@ -3088,9 +3267,10 @@ function renderPublicEmpty(label) {
   return `<div class="dash-empty">${esc(label)}</div>`;
 }
 
-function renderPublicCard(title, hint, body, className = '') {
+function renderPublicCard(title, hint, body, className = '', attrs = '') {
   const style = className.includes('eden-x1-public-wide') ? ' style="grid-column:1/-1"' : '';
-  return `<section class="dash-card eden-x1-public-card ${className}"${style}>
+  const attrText = attrs ? ` ${attrs}` : '';
+  return `<section class="dash-card eden-x1-public-card ${className}"${style}${attrText}>
     <div class="dash-card-hdr dash-card-hdr-wrap">
       <h2 class="dash-card-title"><span>${esc(title)}</span></h2>
       ${hint ? `<span class="dash-weighted-contribution-meta">${esc(hint)}</span>` : ''}
@@ -3205,7 +3385,8 @@ function renderPublicWeightedContributionTable() {
     t('edenX1WeightedTitle'),
     hint,
     body,
-    'eden-x1-public-wide eden-x1-public-weighted-card'
+    'eden-x1-public-wide eden-x1-public-weighted-card',
+    'id="edenX1PublicWeightedCard"'
   );
 }
 
@@ -3873,6 +4054,7 @@ function renderPublicDashboard(data = publicDashboardData) {
     ${renderPublicModal()}
   </div>`;
   bindPublicDashboardControls(host);
+  bindEdenQuickNav();
 }
 
 function scheduleLocalizedRerender() {
@@ -4028,6 +4210,7 @@ function renderTable(rows, recordLabel, options = {}) {
         </table>
       </div>
     </div>
+    ${renderEdenTopNamesOverview({ id: 'edenX1RewardTopNamesOverview' })}
   </div>`;
 }
 
@@ -4036,6 +4219,7 @@ function renderRewardSlotTable(view) {
   const metaKey = rewardViewMetaKey(view);
   const rows = rewardSlotRows(view);
   const votePanel = view === 'team' ? renderEdenTeamVotePanel() : '';
+  const guidance = renderEdenTopNamesOverview({ id: 'edenX1RewardTopNamesOverview' });
   const rewardViewClass = rewardViewAccentClass(view);
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card${rewardViewClass}">
@@ -4074,6 +4258,7 @@ function renderRewardSlotTable(view) {
       </div>
     </div>
     ${votePanel}
+    ${guidance}
   </div>`;
 }
 
@@ -4084,7 +4269,7 @@ function renderCurrentTable(renderOptions = {}) {
   if (!rewardFlowReady) return;
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
-    if (currentRewardView === 'team') bindEdenVoteControls(panel);
+    bindEdenVoteControls(panel);
     bindWeightedPopovers(panel);
     updateRewardFlowControls();
     if (renderOptions.scrollIntoView) {
@@ -4148,6 +4333,7 @@ function renderCurrentTable(renderOptions = {}) {
   }
   panel.innerHTML = renderTable(rows, currentRecordLabel, tableOptions);
   bindWeightedTableControls(panel);
+  bindEdenVoteControls(panel);
   updateRewardFlowControls();
   if (renderOptions.focusSearch) {
     const search = $('edenX1TableSearch');
@@ -4185,6 +4371,7 @@ async function bootShell() {
   $('edenX1FooterYear')?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   updateTextContent(currentLang);
   bindRewardFlowControls();
+  bindEdenQuickNav();
 
   $('languageSelect')?.addEventListener('change', async (e) => {
     const nextLang = e.target.value || 'en';

@@ -1131,6 +1131,10 @@ const es = {
   edenX1RewardFlowTitle: 'Distribución prevista de las 20 mejores recompensas',
   edenX1RewardFlowSubtitle:
     'La lista pública muestra la fórmula de trabajo; el liderazgo confirma las recompensas finales de temporada después de revisar todos los registros de tareas.',
+  edenX1QuickVote: 'Votar',
+  edenX1QuickMyStats: 'Mis estadísticas',
+  edenX1QuickTeam: 'Equipo',
+  edenX1QuickPublic: 'Público',
   edenX1RewardLeaderboardTitle: 'Contribución total',
   edenX1RewardLeaderboardCopy: 'Recompensas por contribución más ex-gremio tras apoyo.',
   edenX1RewardSupportTitle: 'Trabajo de apoyo',

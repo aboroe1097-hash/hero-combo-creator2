@@ -1135,6 +1135,10 @@ const de = {
   edenX1RewardFlowTitle: 'Geplante Verteilung der besten 20 Belohnungen',
   edenX1RewardFlowSubtitle:
     'Die öffentliche Liste zeigt die Arbeitsformel; die Führung bestätigt die finalen Saisonbelohnungen nach Prüfung aller Dienstdaten.',
+  edenX1QuickVote: 'Abstimmen',
+  edenX1QuickMyStats: 'Meine Werte',
+  edenX1QuickTeam: 'Team',
+  edenX1QuickPublic: 'Öffentlich',
   edenX1RewardLeaderboardTitle: 'Gesamtbeitrag',
   edenX1RewardLeaderboardCopy: 'Belohnungen nach Beitrag plus Ex-Gilde nach Support-Slots.',
   edenX1RewardSupportTitle: 'Unterstützungsarbeit',

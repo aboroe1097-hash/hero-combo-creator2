@@ -1128,6 +1128,10 @@ const ru = {
   edenX1RewardFlowTitle: 'План распределения Top 20 наград',
   edenX1RewardFlowSubtitle:
     'Публичный список показывает рабочую формулу; руководство подтверждает финальные сезонные награды после проверки всех записей.',
+  edenX1QuickVote: 'Голос',
+  edenX1QuickMyStats: 'Моя статистика',
+  edenX1QuickTeam: 'Команда',
+  edenX1QuickPublic: 'Публично',
   edenX1RewardLeaderboardTitle: 'Общий вклад',
   edenX1RewardLeaderboardCopy: 'Награды по вкладу плюс экс-гильдия после слотов помощи.',
   edenX1RewardSupportTitle: 'Помощь альянсу',

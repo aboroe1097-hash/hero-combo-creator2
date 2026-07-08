@@ -1126,6 +1126,10 @@ const id = {
   edenX1RewardFlowTitle: 'Rencana distribusi 20 hadiah teratas',
   edenX1RewardFlowSubtitle:
     'Daftar publik menampilkan formula kerja; pimpinan mengonfirmasi hadiah akhir musim setelah semua catatan tugas ditinjau.',
+  edenX1QuickVote: 'Vote',
+  edenX1QuickMyStats: 'Stat Saya',
+  edenX1QuickTeam: 'Tim',
+  edenX1QuickPublic: 'Publik',
   edenX1RewardLeaderboardTitle: 'Total kontribusi',
   edenX1RewardLeaderboardCopy: 'Hadiah kontribusi plus ex-guild setelah slot dukungan.',
   edenX1RewardSupportTitle: 'Kerja dukungan',

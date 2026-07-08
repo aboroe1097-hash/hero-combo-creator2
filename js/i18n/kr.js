@@ -1122,6 +1122,10 @@ const kr = {
   edenX1RewardFlowTitle: '상위 20개 보상 예정 분배',
   edenX1RewardFlowSubtitle:
     '공개 목록은 작업 공식을 보여 주며, 리더십은 모든 임무 기록 검토 후 최종 시즌 보상을 확정합니다.',
+  edenX1QuickVote: '투표',
+  edenX1QuickMyStats: '내 기록',
+  edenX1QuickTeam: '팀',
+  edenX1QuickPublic: '공개',
   edenX1RewardLeaderboardTitle: '총 기여도',
   edenX1RewardLeaderboardCopy: '지원 슬롯 이후 기여도와 이전 길드 값을 합산한 보상입니다.',
   edenX1RewardSupportTitle: '지원 작업',

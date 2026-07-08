@@ -1127,6 +1127,10 @@ const en = {
   edenX1RewardFlowTitle: 'Planned Top 20 reward distribution',
   edenX1RewardFlowSubtitle:
     'The public list shows the working formula; leadership confirms the final season rewards after all duty records are reviewed.',
+  edenX1QuickVote: 'Vote',
+  edenX1QuickMyStats: 'My Stats',
+  edenX1QuickTeam: 'Team',
+  edenX1QuickPublic: 'Public',
   edenX1RewardLeaderboardTitle: 'Total Contribution',
   edenX1RewardLeaderboardCopy: 'Contribution plus ex-guild rewards after support slots.',
   edenX1RewardSupportTitle: 'Support Work',

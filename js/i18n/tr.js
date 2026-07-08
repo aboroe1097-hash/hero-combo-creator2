@@ -1127,6 +1127,10 @@ const tr = {
   edenX1RewardFlowTitle: 'Planlanan en iyi 20 ödül dağılımı',
   edenX1RewardFlowSubtitle:
     'Herkese açık liste çalışma formülünü gösterir; liderlik tüm görev kayıtları incelendikten sonra final sezon ödüllerini onaylar.',
+  edenX1QuickVote: 'Oy ver',
+  edenX1QuickMyStats: 'İstatistiklerim',
+  edenX1QuickTeam: 'Takım',
+  edenX1QuickPublic: 'Genel',
   edenX1RewardLeaderboardTitle: 'Toplam katkı',
   edenX1RewardLeaderboardCopy: 'Destek slotlarından sonra katkı artı eski lonca ödülleri.',
   edenX1RewardSupportTitle: 'Destek çalışması',
