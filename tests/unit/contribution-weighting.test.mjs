@@ -79,7 +79,7 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
     assert.equal(sarafina.shieldWalls, 1);
     assert.equal(sarafina.conductBonus, 2);
     assert.equal(sarafina.finalRank, 1);
-    assert.equal(sarafina.finalReward, 'core');
+    assert.equal(sarafina.finalReward, 'guild_master');
     assert.equal(Number(sarafina.weightedScore.toFixed(1)), 250000);
 
     assert.equal(undeadBanner.banners, 1);
@@ -350,14 +350,14 @@ test('latest contribution record selection uses newest date and premiumSlots fal
     assert.deepEqual(
       model.rows.map((row) => [row.playerKey, row.currentReward, row.finalReward]),
       [
-        [compactPlayerIdentity('Kika'), 'core', 'core'],
+        [compactPlayerIdentity('Kika'), 'core', 'guild_master'],
         [compactPlayerIdentity('UNDEAD'), 'core', 'core'],
       ]
     );
   });
 });
 
-test('weighted contribution does not reserve guild master reward for MalakAbo by default', () => {
+test('weighted contribution gives guild master reward to the top contributor only', () => {
   const model = buildWeightedContributionRows({
     contributionRecords: [
       {
@@ -377,7 +377,7 @@ test('weighted contribution does not reserve guild master reward for MalakAbo by
   const malakAbo = model.rows.find((row) => row.playerName === 'MalakAbo');
 
   assert.equal(alpha.currentReward, 'core');
-  assert.equal(alpha.finalReward, 'core');
+  assert.equal(alpha.finalReward, 'guild_master');
   assert.equal(malakAdo.currentReward, 'core');
   assert.equal(malakAdo.finalReward, 'core');
   assert.equal(malakAbo.currentReward, 'core');

@@ -2367,6 +2367,23 @@ test.describe('app smoke tabs', () => {
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
     await expect(panel.locator('tbody tr').first()).toContainText('November');
+    const noForfeitDash = {
+      ...seededDash,
+      publicConductAdjustments: seededDash.publicConductAdjustments.filter(
+        (entry) => entry.category !== 'forfeit_premium'
+      ),
+    };
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest(dash);
+    }, noForfeitDash);
+    await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
+    await expect(
+      panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
+    ).toContainText('Guild Master Reward');
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest(dash);
+    }, seededDash);
 
     const managementCard = page.locator('[data-reward-view="management"]');
     await managementCard.click();

@@ -463,7 +463,8 @@ export function buildWeightedContributionRows(options = {}) {
     .map((row, index) => {
       const rank = index + 1;
       let baseReward;
-      if (rank <= 20) baseReward = 'core';
+      if (rank === 1) baseReward = 'guild_master';
+      else if (rank <= 20) baseReward = 'core';
       else if (rank <= 110) baseReward = 'power_house';
       else if (rank <= 200) baseReward = 'members';
       else baseReward = 'standard';

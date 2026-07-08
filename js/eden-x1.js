@@ -3847,7 +3847,12 @@ function renderCurrentTable(renderOptions = {}) {
             reason: t('edenX1RewardSkippedPremiumReason', { rank: row.finalRank }),
           };
         }
-        const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
+        const reward =
+          numberValue === 1
+            ? 'guild_master'
+            : row.rewardReason === 'grant_premium'
+              ? row.finalReward || 'core'
+              : 'core';
         const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
         const label = contributionRewardLabel(finalReward);
         return {
