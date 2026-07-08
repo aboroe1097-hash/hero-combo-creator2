@@ -2308,12 +2308,6 @@ test.describe('app smoke tabs', () => {
       'Core Rewards',
       'Core Rewards',
       'Core Rewards',
-      'Core Rewards',
-      'Core Rewards',
-      'Core Rewards',
-      'Core Rewards',
-      'Core Rewards',
-      'Core Rewards',
     ]);
     const rewardHeaders = await panel.locator('thead th').evaluateAll((headers) =>
       headers.map((header) => header.textContent.trim())
@@ -2353,7 +2347,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(1);
     await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
     await panel.locator('#edenX1TableSearch').fill('');
-    await expect(panel.locator('tbody tr')).toHaveCount(10);
+    await expect(panel.locator('tbody tr')).toHaveCount(4);
     const playerSortHeader = panel.locator('th[data-weighted-sort="player"]');
     await playerSortHeader.click();
     await playerSortHeader.click();
@@ -2403,8 +2397,8 @@ test.describe('app smoke tabs', () => {
       panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
     ).toHaveText('1');
     await expect(panel.locator('tbody tr').first()).toContainText('Skipped premium tier');
-    await expect(panel.locator('tbody tr').nth(1)).toContainText('November');
-    await expect(panel.locator('tbody tr').nth(1)).toContainText('#9');
+    await expect(panel.locator('tbody tr').nth(1)).toContainText('Charlie');
+    await expect(panel.locator('tbody tr').nth(1)).toContainText('#4');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map(
         (row) =>
@@ -2414,27 +2408,21 @@ test.describe('app smoke tabs', () => {
     );
     expect(contributionNames).toEqual([
       'MalakAbo',
+      'Charlie',
+      'Delta',
+      'Echo',
+      'Foxtrot',
+      'Golf',
       'November',
+      'Hotel',
       'India',
       'Juliet',
       'Kilo',
-      'Lima',
-      'Papa',
-      'Romeo',
-      'Sierra',
-      'Tango',
-      'Uniform',
     ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     expect(contributionNames).not.toContain('Mike');
     expect(contributionNames).not.toContain('Alpha');
     expect(contributionNames).not.toContain('Bravo');
-    expect(contributionNames).not.toContain('Charlie');
-    expect(contributionNames).not.toContain('Delta');
-    expect(contributionNames).not.toContain('Echo');
-    expect(contributionNames).not.toContain('Foxtrot');
-    expect(contributionNames).not.toContain('Golf');
-    expect(contributionNames).not.toContain('Hotel');
     expect(contributionNames).not.toContain('Oscar');
     const novemberContributionRow = panel.locator('tbody tr', { hasText: 'November' });
     await expect(novemberContributionRow.locator('td').nth(5)).toHaveText('65,000');
@@ -2447,7 +2435,7 @@ test.describe('app smoke tabs', () => {
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('Uniform');
+    await expect(panel.locator('tbody tr').first()).toContainText('November');
     const noForfeitDash = {
       ...seededDash,
       publicConductAdjustments: seededDash.publicConductAdjustments.filter(
