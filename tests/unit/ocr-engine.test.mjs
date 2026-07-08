@@ -31,6 +31,7 @@ const {
   formatStructureLabel,
   MAX_ROSTER_SNAPSHOTS,
   normalizeStructureLevelForName,
+  resolvePlayerNameForAttack,
   state,
   trimRosterSnapshots,
   validateTotalDemolition,
@@ -404,8 +405,12 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('⌂ Anne ₿'), 'Anne');
   assert.equal(findBestMatch('✨Anne ✨'), 'Anne');
   assert.equal(findBestMatch('^^Anne^^'), 'Anne');
+  assert.equal(findBestMatch('∧Anne∧'), 'Anne');
+  assert.equal(findBestMatch('∧ Anne ∧'), 'Anne');
   assert.equal(findBestMatch('Neutrin010'), 'Neutrino10');
   assert.equal(findBestMatch('Åñdëř$'), 'A n d e R $');
+  assert.equal(findBestMatch('Ånder$'), 'A n d e R $');
+  assert.equal(findBestMatch('ÅñdëR$'), 'A n d e R $');
   assert.equal(findBestMatch('AndërS'), 'A n d e R $');
   assert.equal(findBestMatch('AndëRS'), 'A n d e R $');
   assert.equal(findBestMatch('AnděR$'), 'A n d e R $');
@@ -448,10 +453,27 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('BiG BOiE'), 'BiG BOiiE');
   assert.equal(findBestMatch('Oblitereted'), 'Obliterated');
   assert.equal(findBestMatch('MasterVjs'), 'MasterVj');
+  assert.equal(findBestMatch('МЯТНАЯ ЛАПКА'), 'Мятная Лапка');
+  assert.equal(findBestMatch('БратХраБрец'), 'БратХрабрец');
   assert.equal(findBestMatch('БратХрапець'), 'БратХрабрец');
   assert.equal(findBestMatch('БрюНерКаЯ'), 'БрюНетКаЯ');
   assert.equal(findBestMatch('БрЮНеТКаЯ'), 'БрюНетКаЯ');
   assert.equal(findBestMatch('Бешеный-Енот~'), 'Бешенный-Енот~');
+});
+
+test('known player aliases stay merged when canonical rows share one attack', () => {
+  const attackPlayers = [
+    { name: 'q. Immortal', value: 42000, rank: 1 },
+    { name: 'q. Immortalis', value: 7000, rank: 2 },
+    { name: 'DvD18', value: 12000, rank: 3 },
+    { name: 'DvD18 x2', value: 3000, rank: 4 },
+    { name: 'Феечка))', value: 8000, rank: 5 },
+    { name: 'Феюшка))', value: 2000, rank: 6 },
+  ];
+
+  assert.equal(resolvePlayerNameForAttack(attackPlayers[1], attackPlayers), 'q. Immortal');
+  assert.equal(resolvePlayerNameForAttack(attackPlayers[3], attackPlayers), 'DvD18');
+  assert.equal(resolvePlayerNameForAttack(attackPlayers[5], attackPlayers), 'Феечка))');
 });
 
 test('cleanDutyRawName strips Viber noise and credits the banner account / @-owner', () => {

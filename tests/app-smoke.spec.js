@@ -1845,7 +1845,7 @@ test.describe('app smoke tabs', () => {
     expect(mainRow?.[7]).toBe('0');
     await expect(
       panel.locator('tbody tr', { hasText: '144,650' }).locator('.dash-weighted-reward-value')
-    ).toHaveText('Core Rewards');
+    ).toHaveText('Guild Master Reward');
     expect(altRow?.[4]).toBe('5,000');
     expect(altRow?.[6]).toBe('1');
     expect(altRow?.[7]).toBe('1');
@@ -3096,7 +3096,7 @@ test.describe('app smoke tabs', () => {
     expect(weightedDownload.suggestedFilename()).toMatch(/^vts_weighted_contribution_.*\.csv$/);
     const weightedCsv = await fs.readFile(await weightedDownload.path(), 'utf8');
     expect(weightedCsv).toContain('Ex-guild contribution');
-    expect(weightedCsv).not.toContain('Guild Master Reward');
+    expect(weightedCsv).toContain('"#1","Guild Master Reward"');
 
     await page.locator('#dashExportMenuBtn').click();
     const allDataDownloadPromise = page.waitForEvent('download');

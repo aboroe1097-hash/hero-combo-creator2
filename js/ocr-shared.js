@@ -910,8 +910,7 @@ export function resolvePlayerNameForAttack(player, attackPlayers = []) {
     return `꧁ Kika ꧂ alt ${impactPosition + 1}`;
   }
 
-  if (!hasDifferentRawNames || !hasDifferentValues || impactPosition <= 0) return baseName;
-  return current.rawName || `${baseName} alt ${impactPosition + 1}`;
+  return baseName;
 }
 
 export function findBestMatch(name, minConfidence = 100) {
@@ -1020,6 +1019,8 @@ export function findBestMatch(name, minConfidence = 100) {
       '^ Anne ^': 'Anne',
       '^Anne ^': 'Anne',
       '^^ Anne ^^': 'Anne',
+      '∧Anne∧': 'Anne',
+      '∧ Anne ∧': 'Anne',
       'q. Immortalis': 'q. Immortal',
       'D off y.': 'D offy.',
       'Doffy.': 'D offy.',
@@ -1030,6 +1031,7 @@ export function findBestMatch(name, minConfidence = 100) {
       '★ KoThawwKa ★': 'KoThawwKa',
       БратХрабрепц: 'БратХрабрец',
       БратХрапець: 'БратХрабрец',
+      БратХраБрец: 'БратХрабрец',
       洋人在弄啥嘢: '洋人在弄啥嘞',
       洋人在弄哈嘞: '洋人在弄啥嘞',
       '_._5G': '_5G',
@@ -1104,6 +1106,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'IDN°/Dragon.Gold': 'IDN Dragon.Gold',
       '↘I D N ø/Dragon.Gold': 'IDN Dragon.Gold',
       'МяТная Лапка': 'Мятная Лапка',
+      'МЯТНАЯ ЛАПКА': 'Мятная Лапка',
       'yousef المحارب': 'المحارب yousef',
       '*DEAN JR*': '*DEAN*',
       MalakAdo: 'MalakAdo',
@@ -1166,6 +1169,8 @@ export function findBestMatch(name, minConfidence = 100) {
       '^^Anne^^': 'Anne',
       Neutrin010: 'Neutrino10',
       Åñdëř$: 'A n d e R $',
+      Ånder$: 'A n d e R $',
+      ÅñdëR$: 'A n d e R $',
       AndërS: 'A n d e R $',
       AndëRS: 'A n d e R $',
       'AnděR$': 'A n d e R $',
