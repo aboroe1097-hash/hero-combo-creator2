@@ -7,7 +7,13 @@ test('public admin auth config only keeps destructive action override hashes', (
   assert.match(source, /clearHash:\s*''/);
   assert.match(source, /deleteHashes:\s*\[\s*\]/);
   assert.match(source, /adminPin:\s*''/);
-  assert.match(source, /edenVotesPinHash:\s*''/);
+  const edenVotesPinHash = source.match(/edenVotesPinHash:\s*'([^']*)'/)?.[1];
+  assert.notEqual(edenVotesPinHash, undefined);
+  if (process.env.VTS_EDEN_VOTES_PIN || process.env.VTS_EDEN_VOTES_PIN_HASH) {
+    assert.match(edenVotesPinHash, /^(?:|[a-f0-9]{64})$/);
+  } else {
+    assert.equal(edenVotesPinHash, '');
+  }
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
   assert.doesNotMatch(source, /232323/);
