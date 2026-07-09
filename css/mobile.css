@@ -2661,11 +2661,6 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
     right: 5px !important;
     font-size: 0.44rem !important;
   }
-
-  #tabOcrDashboard.seasonal-admin-tab::after {
-    content: "Admin" !important;
-    display: none !important;
-  }
 }
 
 @media (min-width: 641px) and (max-width: 768px) {

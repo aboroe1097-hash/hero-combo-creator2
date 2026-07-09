@@ -1170,6 +1170,8 @@ const ar = {
   edenX1NoData: 'لم يتم العثور على بيانات مساهمة.',
   edenX1NoRows: 'لا توجد صفوف مساهمة موزونة للعرض.',
   edenX1LoadFailed: 'فشل تحميل البيانات: {error}',
+  edenX1Retry: 'إعادة المحاولة',
+  edenX1LoadTimeout: 'يستغرق الاتصال وقتًا طويلاً. تحقق من الإشارة وأعد المحاولة.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'المساهمة',
   edenX1ThExGuild: 'خارج النقابة',

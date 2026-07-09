@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.0';
+const APP_VERSION = '13.1.1';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -4706,18 +4706,117 @@ async function bootShell() {
   });
 }
 
-async function main() {
-  await bootShell();
+const EDEN_X1_BOOT_TIMEOUT_MS = 20000;
+let edenBootGeneration = 0;
+let lastEdenBootError = null;
+
+function isEdenDynamicImportLoadFailure(err) {
+  const message = String(err?.message || err?.reason?.message || err || '');
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload/i.test(
+    message
+  );
+}
+
+function withEdenBootTimeout(promise) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const timeoutError = new Error(t('edenX1LoadTimeout'));
+      timeoutError.code = 'eden-x1/boot-timeout';
+      reject(timeoutError);
+    }, EDEN_X1_BOOT_TIMEOUT_MS);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+function showEdenBootError(err) {
+  const errorEl = $('edenX1Error');
+  if (!errorEl) return;
+  errorEl.classList.remove('hidden');
+  errorEl.replaceChildren();
+  const message = document.createElement('p');
+  message.className = 'eden-x1-error-message';
+  message.textContent = t('edenX1LoadFailed', {
+    error: err?.message || err || 'Unknown error',
+  });
+  const retryBtn = document.createElement('button');
+  retryBtn.type = 'button';
+  retryBtn.className = 'eden-x1-retry-btn';
+  retryBtn.textContent = t('edenX1Retry');
+  retryBtn.addEventListener('click', () => {
+    // A dynamic-import failure is cached in the module map for the rest of
+    // the page's life, so an in-place retry can never succeed — reload to
+    // get a fresh module graph. Timeouts/auth failures retry in place.
+    if (isEdenDynamicImportLoadFailure(lastEdenBootError)) {
+      window.location.reload();
+      return;
+    }
+    loadEdenX1Dashboard();
+  });
+  errorEl.append(message, retryBtn);
+}
+
+async function loadEdenX1Dashboard() {
+  const generation = ++edenBootGeneration;
   const panel = $('dashWeightedContributionPanel');
   const errorEl = $('edenX1Error');
+  if (errorEl) {
+    errorEl.classList.add('hidden');
+    errorEl.replaceChildren();
+  }
+  setEdenPanelLoading(true);
 
   try {
-    const [{ initFirebase, ensureAnonymousAuth }, { importFirestore }] = await Promise.all([
-      import('./firebase.js'),
-      import('./firebase-sdk.js'),
-    ]);
-    const { configured, db } = initFirebase();
-    if (!configured || !db) {
+    const result = await withEdenBootTimeout(
+      (async () => {
+        const [{ initFirebase, ensureAnonymousAuth }, { importFirestore }] = await Promise.all([
+          import('./firebase.js'),
+          import('./firebase-sdk.js'),
+        ]);
+        const { configured, db } = initFirebase();
+        if (!configured || !db) return { kind: 'unconfigured' };
+
+        const voteUser = await ensureAnonymousAuth();
+        const firestore = await importFirestore();
+        const { doc, getDoc } = firestore;
+        const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
+          getDoc(doc(db, FS_PATH)),
+          getDoc(doc(db, FS_ROSTER_PATH)).catch(() => null),
+          getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)).catch(() => null),
+        ]);
+
+        if (!snap.exists()) {
+          return { kind: 'no-data', db, firestore, voteUser, voteSettingsSnap };
+        }
+
+        const data = { ...snap.data() };
+        if (rosterSnap?.exists?.()) {
+          const rosterData = rosterSnap.data() || {};
+          if (Array.isArray(rosterData.snapshots)) data.rosterSnapshots = rosterData.snapshots;
+        }
+        const liveConductAdjustments = await loadPublicConductAdjustments(
+          db,
+          firestore,
+          data.r5Season || ''
+        );
+        if (liveConductAdjustments.length) {
+          data.publicConductAdjustments = liveConductAdjustments;
+        }
+        return { kind: 'ok', db, firestore, voteUser, voteSettingsSnap, data };
+      })()
+    );
+
+    if (generation !== edenBootGeneration) return;
+
+    if (result.kind === 'unconfigured') {
       if (errorEl) {
         errorEl.classList.remove('hidden');
         errorEl.textContent = t('edenX1NoFirebase');
@@ -4728,55 +4827,35 @@ async function main() {
       return;
     }
 
-    const voteUser = await ensureAnonymousAuth();
-
-    const firestore = await importFirestore();
-    const { doc, getDoc } = firestore;
-    edenVoteWriteContext = { db, firestore, user: voteUser };
-    const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
-      getDoc(doc(db, FS_PATH)),
-      getDoc(doc(db, FS_ROSTER_PATH)).catch(() => null),
-      getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)).catch(() => null),
-    ]);
-    if (voteSettingsSnap?.exists?.()) {
-      edenVoteSettings = normalizeEdenVoteSettings(voteSettingsSnap.data());
+    edenVoteWriteContext = { db: result.db, firestore: result.firestore, user: result.voteUser };
+    if (result.voteSettingsSnap?.exists?.()) {
+      edenVoteSettings = normalizeEdenVoteSettings(result.voteSettingsSnap.data());
     } else {
       edenVoteSettings = normalizeEdenVoteSettings();
     }
 
-    if (!snap.exists()) {
+    if (result.kind === 'no-data') {
       setRewardFlowReady(false);
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
       setEdenPanelLoading(false);
       return;
     }
 
-    const data = { ...snap.data() };
-    if (rosterSnap?.exists?.()) {
-      const rosterData = rosterSnap.data() || {};
-      if (Array.isArray(rosterData.snapshots)) data.rosterSnapshots = rosterData.snapshots;
-    }
-    const liveConductAdjustments = await loadPublicConductAdjustments(
-      db,
-      firestore,
-      data.r5Season || ''
-    );
-    if (liveConductAdjustments.length) {
-      data.publicConductAdjustments = liveConductAdjustments;
-    }
-    applyDashboardData(data);
+    applyDashboardData(result.data);
   } catch (err) {
+    if (generation !== edenBootGeneration) return;
+    lastEdenBootError = err;
     console.error('Eden X1 view failed:', err);
-    if (errorEl) {
-      errorEl.classList.remove('hidden');
-      errorEl.textContent = t('edenX1LoadFailed', {
-        error: err?.message || err || 'Unknown error',
-      });
-    }
+    showEdenBootError(err);
     if (panel) panel.innerHTML = '';
     setRewardFlowReady(false);
     setEdenPanelLoading(false);
   }
+}
+
+async function main() {
+  await bootShell();
+  await loadEdenX1Dashboard();
 }
 
 function applyDashboardData(data = {}) {

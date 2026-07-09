@@ -7,15 +7,23 @@ function notifyServiceWorkerUpdate() {
   }
 }
 
+// startApp can call this after the window 'load' event has already fired
+// (slow networks delay module init past load), so a bare load listener would
+// never run. Run immediately when the document is already complete.
+function runWhenLoaded(fn) {
+  if (document.readyState === 'complete') fn();
+  else window.addEventListener('load', fn, { once: true });
+}
+
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (import.meta.env?.DEV) {
-    window.addEventListener('load', () => {
+    runWhenLoaded(() => {
       navigator.serviceWorker.getRegistration('/').then((reg) => reg?.unregister()).catch(() => {});
     });
     return;
   }
-  window.addEventListener('load', async () => {
+  runWhenLoaded(async () => {
     try {
       const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/', updateViaCache: 'none' });
       let updateNotified = false;

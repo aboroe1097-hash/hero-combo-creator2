@@ -14,22 +14,49 @@ export const FIREBASE_MODULE_URLS = Object.freeze({
   appCheck: `${FIREBASE_CDN_BASE}/firebase-app-check.js`,
 });
 
+const IMPORT_RETRY_DELAYS_MS = [800, 2000];
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// A failed dynamic import is cached in the browser's module map for the exact
+// URL, so bare re-imports of the same URL rethrow instantly. Retries append a
+// cache-busting query instead; the module's internal relative imports keep
+// their plain URLs, so Firebase's shared internal state is unaffected.
+async function importWithRetry(url) {
+  let lastError;
+  for (let attempt = 0; attempt <= IMPORT_RETRY_DELAYS_MS.length; attempt += 1) {
+    const attemptUrl = attempt === 0 ? url : `${url}?cdnretry=${attempt}`;
+    try {
+      return await import(/* @vite-ignore */ attemptUrl);
+    } catch (err) {
+      lastError = err;
+      if (attempt < IMPORT_RETRY_DELAYS_MS.length) {
+        console.warn(`[firebase-sdk] import failed (attempt ${attempt + 1}), retrying:`, url);
+        await sleep(IMPORT_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function importFirebaseApp() {
-  return import(/* @vite-ignore */ FIREBASE_MODULE_URLS.app);
+  return importWithRetry(FIREBASE_MODULE_URLS.app);
 }
 
 export function importFirebaseAuth() {
-  return import(/* @vite-ignore */ FIREBASE_MODULE_URLS.auth);
+  return importWithRetry(FIREBASE_MODULE_URLS.auth);
 }
 
 export function importFirestore() {
-  return import(/* @vite-ignore */ FIREBASE_MODULE_URLS.firestore);
+  return importWithRetry(FIREBASE_MODULE_URLS.firestore);
 }
 
 export function importFirebaseAnalytics() {
-  return import(/* @vite-ignore */ FIREBASE_MODULE_URLS.analytics);
+  return importWithRetry(FIREBASE_MODULE_URLS.analytics);
 }
 
 export function importFirebaseAppCheck() {
-  return import(/* @vite-ignore */ FIREBASE_MODULE_URLS.appCheck);
+  return importWithRetry(FIREBASE_MODULE_URLS.appCheck);
 }

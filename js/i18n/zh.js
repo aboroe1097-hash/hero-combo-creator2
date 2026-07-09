@@ -1154,6 +1154,8 @@ const zh = {
   edenX1NoData: '未找到贡献数据。',
   edenX1NoRows: '没有可显示的加权贡献行。',
   edenX1LoadFailed: '加载数据失败：{error}',
+  edenX1Retry: '重试',
+  edenX1LoadTimeout: '连接时间过长。请检查信号后重试。',
   edenX1ThNumber: '#',
   edenX1ThContribution: '贡献',
   edenX1ThExGuild: '非公会',

@@ -1171,6 +1171,8 @@ const id = {
   edenX1NoData: 'Data kontribusi tidak ditemukan.',
   edenX1NoRows: 'Tidak ada baris kontribusi berbobot untuk ditampilkan.',
   edenX1LoadFailed: 'Gagal memuat data: {error}',
+  edenX1Retry: 'Coba lagi',
+  edenX1LoadTimeout: 'Koneksi terlalu lama. Periksa sinyal Anda dan coba lagi.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Kontribusi',
   edenX1ThExGuild: 'Ex-guild',

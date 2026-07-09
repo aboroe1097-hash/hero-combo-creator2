@@ -111,8 +111,15 @@ function isDynamicImportLoadFailure(err) {
   );
 }
 
+let staleAssetRecoveryAttempted = false;
+
 async function recoverFromStaleAssetGraph(reason) {
   if (!isDynamicImportLoadFailure(reason)) return false;
+
+  // In-memory guard first: if sessionStorage is unavailable (e.g. blocked
+  // storage), the storage guard below can never engage and reloads would loop.
+  if (staleAssetRecoveryAttempted) return false;
+  staleAssetRecoveryAttempted = true;
 
   try {
     if (sessionStorage.getItem(STALE_ASSET_RECOVERY_KEY) === '1') return false;

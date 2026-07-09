@@ -1160,6 +1160,8 @@ const pt = {
   edenX1NoData: 'Nenhum dado de contribuição encontrado.',
   edenX1NoRows: 'Não há linhas de contribuição ponderada para exibir.',
   edenX1LoadFailed: 'Falha ao carregar dados: {error}',
+  edenX1Retry: 'Tentar novamente',
+  edenX1LoadTimeout: 'A conexão está demorando demais. Verifique seu sinal e tente novamente.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Contribuição',
   edenX1ThExGuild: 'Ex-guild',
