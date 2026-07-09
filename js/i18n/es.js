@@ -10,6 +10,9 @@ const es = {
   adminCloudSyncError: 'Problema de sincronización en la nube - haga clic en Actualizar',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'La nube tiene datos más recientes de otro dispositivo: este guardado NO se subió. Actualiza primero para cargar los datos más recientes.',
+  adminCloudStaleQueueDropped: 'Se descartó una escritura en cola antigua porque la nube ya tiene datos más recientes.',
+  adminLocalNewerRestorePrompt: 'Este dispositivo tiene datos MÁS RECIENTES que la nube.\n\nEste dispositivo: {localAttacks} ataques ({localDate})\nNube: {cloudAttacks} ataques ({cloudDate})\n\n¿Restaurar los datos de este dispositivo a la nube? (Cancelar mantiene la versión de la nube; se conserva una copia local en ambos casos.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'Administrador VTS',

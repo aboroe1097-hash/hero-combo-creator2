@@ -12,6 +12,9 @@ const fr = {
   adminCloudSyncError: 'Problème de synchronisation cloud - cliquez sur Actualiser',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: "Le cloud contient des données plus récentes d'un autre appareil - cette sauvegarde n'a PAS été envoyée. Actualisez d'abord pour charger les dernières données.",
+  adminCloudStaleQueueDropped: 'Écriture cloud en attente ignorée : le cloud contient déjà des données plus récentes.',
+  adminLocalNewerRestorePrompt: 'Cet appareil contient des données PLUS RÉCENTES que le cloud.\n\nCet appareil : {localAttacks} attaques ({localDate})\nCloud : {cloudAttacks} attaques ({cloudDate})\n\nRestaurer les données de cet appareil vers le cloud ? (Annuler garde la version cloud ; une sauvegarde locale est conservée dans tous les cas.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'Admin VTS',

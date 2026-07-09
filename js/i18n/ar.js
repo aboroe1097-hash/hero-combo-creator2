@@ -10,6 +10,9 @@ const ar = {
   adminCloudSyncError: 'مشكلة في مزامنة السحابة - انقر على تحديث',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'تحتوي السحابة على بيانات أحدث من جهاز آخر - لم يتم رفع هذا الحفظ. حدّث الصفحة أولاً لتحميل أحدث البيانات.',
+  adminCloudStaleQueueDropped: 'تم تجاهل كتابة قديمة في قائمة الانتظار لأن السحابة تحتوي بالفعل على بيانات أحدث.',
+  adminLocalNewerRestorePrompt: 'يحتوي هذا الجهاز على بيانات أحدث من السحابة.\n\nهذا الجهاز: {localAttacks} هجمات ({localDate})\nالسحابة: {cloudAttacks} هجمات ({cloudDate})\n\nهل تريد استعادة بيانات هذا الجهاز إلى السحابة؟ (الإلغاء يحتفظ بنسخة السحابة؛ يتم الاحتفاظ بنسخة احتياطية محلية في كل الأحوال.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'مشرف VTS',
