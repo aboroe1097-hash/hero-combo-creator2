@@ -1392,10 +1392,6 @@ const es = {
   edenX1VoteContributionTotal: 'Total de contribución',
   edenX1VoteConductBonus: 'Puntos bonus R5',
   edenX1VoteStructureConsistency: 'Consistencia y movimiento en estructuras',
-  edenX1SpecializationPoints: 'Specialization points',
-  edenX1SpecializationPointsBeforeSeason: 'Before season start',
-  edenX1SpecializationPointsHint:
-    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'Movimiento vs primeros golpes',
   edenX1InfoButtonLabel: 'Cómo se calcula',
   edenX1InfoWeightedScore:

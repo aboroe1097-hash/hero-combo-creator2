@@ -8,7 +8,7 @@ import {
   translations,
   loadTranslationsForLanguage,
   applyLanguageDirection,
-} from './translations.js?v=20260709_192905';
+} from './translations.js?v=20260709_191406';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import {
   formatDatasetStructureLabel,
@@ -50,8 +50,6 @@ const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
 const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
 const EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT = 3;
 const EDEN_X1_MANAGEMENT_VOTE_STATUS = 'Voted By Management';
-const EDEN_X1_SPECIALIZATION_POINTS_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/1qL6MbAb6rcYcpjg1NLddbX1ktpmxIouNwvPzeJ_ISMo/export?format=csv&gid=1635242320';
 const EDEN_X1_ATTACK_WINDOW_DAYS = new Set([0, 2, 4]);
 const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
 const MS_PER_DAY = 86_400_000;
@@ -77,9 +75,6 @@ let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
 let publicStructureRows = [];
-let specializationPointsByKey = new Map();
-let specializationPointsPromise = null;
-let currentPublicModalDetail = null;
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
@@ -131,139 +126,6 @@ function formatSignedNumber(n) {
 
 function formatScore(value) {
   return valueOf(value).toLocaleString();
-}
-
-function splitCsvLine(line) {
-  const cells = [];
-  let cell = '';
-  let quoted = false;
-  const text = String(line || '');
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    if (char === '"') {
-      if (quoted && text[index + 1] === '"') {
-        cell += '"';
-        index += 1;
-      } else {
-        quoted = !quoted;
-      }
-      continue;
-    }
-    if (char === ',' && !quoted) {
-      cells.push(cell);
-      cell = '';
-      continue;
-    }
-    cell += char;
-  }
-  cells.push(cell);
-  return cells.map((value) => value.trim());
-}
-
-function addSpecializationPointAlias(map, rawName, rawPoints) {
-  const points = String(rawPoints || '').trim();
-  if (!points) return;
-  let canonicalName = '';
-  try {
-    canonicalName = resolveCanonicalPlayerName({ name: rawName }) || '';
-  } catch {
-    canonicalName = '';
-  }
-  const names = [
-    rawName,
-    stripGuildTagsFromPlayerName(rawName),
-    canonicalName,
-  ];
-  names.forEach((name) => {
-    const key = compactPlayerIdentity(name);
-    if (key && !map.has(key)) {
-      map.set(key, {
-        points,
-        sourceName: String(rawName || '').trim(),
-      });
-    }
-  });
-}
-
-function parseSpecializationPointsCsv(source) {
-  const map = new Map();
-  String(source || '')
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/)
-    .map((line) => splitCsvLine(line))
-    .forEach((cells, index) => {
-      const name = String(cells[0] || '').trim();
-      const points = String(cells[1] || '').trim();
-      if (!name || !points) return;
-      if (index === 0 && /name/i.test(name) && /specialization/i.test(points)) return;
-      addSpecializationPointAlias(map, name, points);
-    });
-  return map;
-}
-
-function specializationPointLookupKeys(player) {
-  const names = [
-    player?.name,
-    player?.playerName,
-    player?.displayName,
-    player?.sourceName,
-    player?.rawName,
-  ].filter(Boolean);
-  const keys = [
-    player?.key,
-    player?.playerKey,
-    ...names.map((name) => compactPlayerIdentity(name)),
-    ...names.map((name) => compactPlayerIdentity(stripGuildTagsFromPlayerName(name))),
-  ];
-  return [...new Set(keys.map((key) => String(key || '').trim()).filter(Boolean))];
-}
-
-function getSpecializationPointsForPlayer(...players) {
-  for (const player of players) {
-    for (const key of specializationPointLookupKeys(player)) {
-      const points = specializationPointsByKey.get(key);
-      if (points) return points;
-    }
-  }
-  return null;
-}
-
-function refreshSpecializationPointViews() {
-  const modal = $('edenX1PublicModal');
-  if (modal?.classList.contains('active') && currentPublicModalDetail?.type) {
-    renderCurrentPublicModalDetail();
-  }
-  const publicDashboard = $('edenX1PublicDashboard');
-  if (publicDashboard?.querySelector('#edenX1MyStatsCard')) {
-    rerenderPublicMyStatsCard(publicDashboard);
-  }
-  const votePanel = $('edenX1TeamVotePanel');
-  if (votePanel) updateEdenVoteCandidateDetail(votePanel);
-}
-
-function setSpecializationPointsMap(nextMap) {
-  specializationPointsByKey = nextMap instanceof Map ? nextMap : new Map();
-  refreshSpecializationPointViews();
-}
-
-async function ensureSpecializationPointsLoaded() {
-  if (specializationPointsPromise) return specializationPointsPromise;
-  specializationPointsPromise = fetch(EDEN_X1_SPECIALIZATION_POINTS_CSV_URL, {
-    cache: 'no-store',
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Specialization sheet failed: ${res.status}`);
-      return res.text();
-    })
-    .then((csv) => {
-      setSpecializationPointsMap(parseSpecializationPointsCsv(csv));
-      return specializationPointsByKey;
-    })
-    .catch((err) => {
-      console.warn('Eden X1 specialization points Sheet failed:', err);
-      return specializationPointsByKey;
-    });
-  return specializationPointsPromise;
 }
 
 function compactValue(value) {
@@ -1457,20 +1319,7 @@ function renderEdenVoteSupportBreakdown(weighted) {
   ].join('');
 }
 
-function renderEdenVoteStructureBreakdown(player, values, identity = {}) {
-  const specializationPoints = getSpecializationPointsForPlayer(player, identity);
-  if (specializationPoints) {
-    return renderEdenVoteBreakdownTile(
-      t('edenX1SpecializationPoints'),
-      specializationPoints.points,
-      [
-        [t('edenX1SpecializationPointsBeforeSeason'), specializationPoints.points],
-        [t('adminContributionMember'), specializationPoints.sourceName || readPlayerDisplayName(identity)],
-      ],
-      'eden-x1-vote-breakdown-tile--structure',
-      t('edenX1SpecializationPointsHint')
-    );
-  }
+function renderEdenVoteStructureBreakdown(player, values) {
   if (!player) {
     return renderEdenVoteStatTile(
       t('edenX1VoteStructureConsistency'),
@@ -1859,7 +1708,7 @@ function renderEdenVoteCandidateDetail(option) {
       ${renderEdenVoteStatTile(t('edenX1VoteBannerPathShield'), weighted ? `${weighted.banners} / ${weighted.pathers} / ${weighted.shieldWalls}` : '--', 'dash-modal-stat-value--blue', t('edenX1InfoBannerPathShield'))}
       ${renderEdenVoteStatTile(t('edenX1KpiStructureHits'), player ? formatScore(player.participation_count) : '--', 'dash-modal-stat-value--amber', t('edenX1InfoStructureHits'))}
       ${renderEdenVoteStatTile(t('edenX1KpiTotalDemo'), player ? formatScore(player.total_demolition) : '--', 'dash-modal-stat-value--purple', t('edenX1InfoTotalDemolition'))}
-      ${renderEdenVoteStructureBreakdown(player, values, { ...(option || {}), ...(weighted || {}) })}
+      ${renderEdenVoteStructureBreakdown(player, values)}
     </div>
     <div class="eden-x1-vote-trend">
       ${trend}
@@ -4312,7 +4161,6 @@ function renderPublicModal() {
 
 function closePublicModal() {
   $('edenX1PublicModal')?.classList.remove('active');
-  currentPublicModalDetail = null;
   window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
   if (window._overlayStack === 0) {
     document.body.style.overflow = '';
@@ -4337,41 +4185,11 @@ function openPublicModal(title, subtitle, body) {
   modal.classList.add('active');
 }
 
-function renderCurrentPublicModalDetail() {
-  const detail = currentPublicModalDetail || {};
-  if (detail.type === 'player') {
-    const player = publicPlayerRows.find((row) => row.key === detail.key);
-    if (!player) return;
-    openPublicModal(
-      t('edenX1PlayerDetailTitle', { player: player.name }),
-      t('edenX1PlayerDetailHint'),
-      renderPublicPlayerDetail(player)
-    );
-  } else if (detail.type === 'candidate') {
-    const option = detail.option;
-    if (!option) return;
-    openPublicModal(
-      t('edenX1PlayerDetailTitle', { player: option.playerName }),
-      t('edenX1VoteDetailSubtitle'),
-      renderEdenVoteCandidateDetail(option)
-    );
-  } else if (detail.type === 'structure') {
-    const structure = publicStructureRows.find((row) => row.key === detail.key);
-    if (!structure) return;
-    openPublicModal(
-      t('edenX1StructureDetailTitle', { structure: structure.label }),
-      t('edenX1StructureDetailHint'),
-      renderPublicStructureDetail(structure)
-    );
-  }
-}
-
 function showPublicDetail(type, key) {
   const normalizedKey = String(key || '');
   if (type === 'player') {
     const player = publicPlayerRows.find((row) => row.key === normalizedKey);
     if (!player) return;
-    currentPublicModalDetail = { type: 'player', key: normalizedKey };
     openPublicModal(
       t('edenX1PlayerDetailTitle', { player: player.name }),
       t('edenX1PlayerDetailHint'),
@@ -4380,7 +4198,6 @@ function showPublicDetail(type, key) {
   } else if (type === 'structure') {
     const structure = publicStructureRows.find((row) => row.key === normalizedKey);
     if (!structure) return;
-    currentPublicModalDetail = { type: 'structure', key: normalizedKey };
     openPublicModal(
       t('edenX1StructureDetailTitle', { structure: structure.label }),
       t('edenX1StructureDetailHint'),
@@ -4402,7 +4219,6 @@ function showEdenVoteHelperPlayerDetail(pick) {
     findEdenMemberOption(playerName) ||
     (playerKey ? { playerKey, playerName: playerName || playerKey } : null);
   if (!option) return;
-  currentPublicModalDetail = { type: 'candidate', option };
   openPublicModal(
     t('edenX1PlayerDetailTitle', { player: option.playerName }),
     t('edenX1VoteDetailSubtitle'),
@@ -4988,9 +4804,6 @@ function applyDashboardData(data = {}) {
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);
   preparePublicDashboardRows(data);
-  if (!EDEN_X1_TEST_MODE) {
-    ensureSpecializationPointsLoaded();
-  }
 
   const panel = $('dashWeightedContributionPanel');
   if (!model.rows || !model.rows.length) {
@@ -5020,20 +4833,6 @@ window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {
   applyEdenManagementVoteResults(summarizeEdenManagementVotes(payloadOrRows), 'loaded');
-};
-
-window.setEdenX1SpecializationPointsForTest = function setEdenX1SpecializationPointsForTest(
-  rowsOrCsv
-) {
-  if (typeof rowsOrCsv === 'string') {
-    setSpecializationPointsMap(parseSpecializationPointsCsv(rowsOrCsv));
-    return;
-  }
-  const map = new Map();
-  (Array.isArray(rowsOrCsv) ? rowsOrCsv : []).forEach((row) => {
-    addSpecializationPointAlias(map, row?.name || row?.playerName, row?.points);
-  });
-  setSpecializationPointsMap(map);
 };
 
 if (EDEN_X1_TEST_MODE) {

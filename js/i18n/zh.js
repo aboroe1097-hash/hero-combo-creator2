@@ -1358,10 +1358,6 @@ const zh = {
   edenX1VoteContributionTotal: '贡献总计',
   edenX1VoteConductBonus: 'R5 奖励点',
   edenX1VoteStructureConsistency: '建筑稳定性与变动',
-  edenX1SpecializationPoints: 'Specialization points',
-  edenX1SpecializationPointsBeforeSeason: 'Before season start',
-  edenX1SpecializationPointsHint:
-    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: '相对早期命中的变动',
   edenX1InfoButtonLabel: '计算方式',
   edenX1InfoWeightedScore:

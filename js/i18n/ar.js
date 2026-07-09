@@ -1376,10 +1376,6 @@ const ar = {
   edenX1VoteContributionTotal: 'إجمالي المساهمة',
   edenX1VoteConductBonus: 'نقاط مكافأة R5',
   edenX1VoteStructureConsistency: 'ثبات وحركة الهياكل',
-  edenX1SpecializationPoints: 'Specialization points',
-  edenX1SpecializationPointsBeforeSeason: 'Before season start',
-  edenX1SpecializationPointsHint:
-    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'الحركة مقابل الضربات الأولى',
   edenX1InfoButtonLabel: 'طريقة الحساب',
   edenX1InfoWeightedScore:

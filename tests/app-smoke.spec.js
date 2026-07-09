@@ -2118,9 +2118,6 @@ test.describe('app smoke tabs', () => {
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
-    await page.evaluate(() => {
-      window.setEdenX1SpecializationPointsForTest([{ name: 'Alpha', points: '88' }]);
-    });
     await expect(preLoadTeamCard).toBeEnabled();
     await expect(preLoadSupportCard).toBeEnabled();
     await expect(preLoadContributionCard).toBeEnabled();
@@ -2665,13 +2662,6 @@ test.describe('app smoke tabs', () => {
     );
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
     await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText(
-      'Specialization points'
-    );
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('88');
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).not.toContainText(
-      'Structure consistency & movement'
-    );
     await expect(
       panel.locator('#edenX1VoteCandidateDetail .eden-x1-structure-trend-card')
     ).toBeVisible();

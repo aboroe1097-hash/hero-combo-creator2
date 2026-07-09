@@ -1374,10 +1374,6 @@ const kr = {
   edenX1VoteContributionTotal: '기여 합계',
   edenX1VoteConductBonus: 'R5 보너스 점수',
   edenX1VoteStructureConsistency: '구조물 일관성 및 이동',
-  edenX1SpecializationPoints: 'Specialization points',
-  edenX1SpecializationPointsBeforeSeason: 'Before season start',
-  edenX1SpecializationPointsHint:
-    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: '초반 타격 대비 이동',
   edenX1InfoButtonLabel: '계산 방식',
   edenX1InfoWeightedScore:
