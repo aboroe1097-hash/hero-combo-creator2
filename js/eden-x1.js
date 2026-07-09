@@ -4983,16 +4983,6 @@ async function main() {
   await loadEdenX1Dashboard();
 }
 
-// Lets the browser paint and handle input between heavy render stages so one
-// giant synchronous DOM build doesn't lock the main thread.
-function yieldToBrowser() {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      setTimeout(resolve, 0);
-    });
-  });
-}
-
 async function applyDashboardData(data = {}) {
   setRewardFlowReady(false);
   const contributionRecords = Array.isArray(data.contributionRecords)
