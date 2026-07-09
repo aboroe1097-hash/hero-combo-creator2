@@ -112,11 +112,13 @@ service cloud.firestore {
 
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
-        'updatedAtMs', 'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
+        'updatedAtMs', 'syncRevision', 'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
         'bannerRecords', 'dutyRecords', 'contributionRecords', 'exGuildContributions',
         'playerRegistry', 'r5Season', 'publicConductAdjustments'
       ])
       && request.resource.data.updatedAtMs is number
+      && request.resource.data.syncRevision is int
+      && request.resource.data.syncRevision > 0
       && (!('last_updated' in request.resource.data) || request.resource.data.last_updated is string)
       && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
       && (!('attacks' in request.resource.data) || request.resource.data.attacks is list)
@@ -410,9 +412,17 @@ service cloud.firestore {
 
     match /vts_admin/dashboard_data {
       allow read: if signedIn();
-      allow create: if isAdmin() && validDashboardData();
+      allow create: if isAdmin()
+        && validDashboardData()
+        && request.resource.data.syncRevision == 1;
       allow update: if isAdmin()
         && validDashboardData()
+        && (
+          (!('syncRevision' in resource.data)
+            && request.resource.data.syncRevision == 1)
+          || ('syncRevision' in resource.data
+            && request.resource.data.syncRevision == resource.data.syncRevision + 1)
+        )
         && (!('updatedAtMs' in resource.data)
           || request.resource.data.updatedAtMs >= resource.data.updatedAtMs);
       allow delete: if false;

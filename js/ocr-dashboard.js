@@ -287,6 +287,7 @@ const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
 let dashboardCloudSaveInFlight = false;
 let dashboardCloudSavePendingData = null;
+let dashboardCloudSavePendingBaseRevision = null;
 let dashboardCloudSavePendingVersion = 0;
 let dashboardCloudSaveWaiters = [];
 let dashboardCloudRetryFlushTimer = null;
@@ -313,15 +314,19 @@ function writeDashboardCloudRetryQueue(queue) {
   }
 }
 
-function queueDashboardCloudRetry(kind, payload, reason = '') {
+function queueDashboardCloudRetry(kind, payload, reason = '', baseRevision = null) {
   if (!payload || typeof payload !== 'object') return;
   const queue = readDashboardCloudRetryQueue().filter((entry) => entry?.kind !== kind);
-  queue.push({
+  const entry = {
     kind,
     payload,
     reason: String(reason || '').slice(0, 300),
     queuedAt: new Date().toISOString(),
-  });
+  };
+  if (Number.isInteger(baseRevision) && baseRevision >= 0) {
+    entry.baseRevision = baseRevision;
+  }
+  queue.push(entry);
   writeDashboardCloudRetryQueue(queue);
   setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
   if (shouldAutoFlushDashboardCloudRetry(reason)) scheduleDashboardCloudRetryFlush();
@@ -466,6 +471,7 @@ const AUXILIARY_RECORD_CACHES = [
 ];
 const DASHBOARD_CLOUD_FIELD_KEYS = new Set([
   'updatedAtMs',
+  'syncRevision',
   'last_updated',
   'total_attacks',
   'attacks',
@@ -2571,15 +2577,11 @@ function sanitizeDashboardDataForPersistence(data) {
   return sanitizeForFirestore(clean);
 }
 
-// --- Cloud freshness guard -------------------------------------------------
-// The dashboard doc is written whole (setDoc without merge), so any client
-// holding an old snapshot can silently erase days of uploads: a queued retry
-// from a stale device, or a session that fell back to local cache when the
-// cloud read stalled. Every full-doc write is therefore checked against the
-// cloud doc's timestamp before it is allowed to overwrite it.
-const DASHBOARD_FRESHNESS_SKEW_MS = 60 * 1000;
+// --- Cloud revision guard --------------------------------------------------
+// Client clocks cannot identify the latest real data. Full dashboard writes
+// must begin from the same cloud revision they read, or they become backups.
 const DASHBOARD_LOCAL_BACKUP_KEY = 'vts_ocr_dashboard_backup_v1';
-let dashboardCloudBaseTs = 0;
+let dashboardCloudBaseRevision = null;
 let dashboardLoadGeneration = 0;
 
 function parseDashboardLastUpdatedMs(value) {
@@ -2605,18 +2607,6 @@ function dashboardDataTimestampMs(data) {
   return parseDashboardLastUpdatedMs(data.last_updated);
 }
 
-function dashboardSnapshotIsOlder(candidate, baseline) {
-  const candidateTs = dashboardDataTimestampMs(candidate);
-  const baselineTs = dashboardDataTimestampMs(baseline);
-  return baselineTs > 0 && (!candidateTs || baselineTs > candidateTs + DASHBOARD_FRESHNESS_SKEW_MS);
-}
-
-function newerDashboardSnapshot(first, second) {
-  if (!first) return second;
-  if (!second) return first;
-  return dashboardSnapshotIsOlder(first, second) ? second : first;
-}
-
 function withDashboardTimestamp(data, fallbackTimestamp = Date.now()) {
   if (!data || typeof data !== 'object') return data;
   return {
@@ -2625,8 +2615,13 @@ function withDashboardTimestamp(data, fallbackTimestamp = Date.now()) {
   };
 }
 
+function dashboardSyncRevision(data) {
+  const revision = Number(data?.syncRevision);
+  return Number.isInteger(revision) && revision >= 0 ? revision : 0;
+}
+
 function noteDashboardCloudBase(data) {
-  dashboardCloudBaseTs = Math.max(dashboardCloudBaseTs, dashboardDataTimestampMs(data));
+  dashboardCloudBaseRevision = dashboardSyncRevision(data);
 }
 
 function dashboardAttackCount(data) {
@@ -2652,13 +2647,26 @@ function backupDashboardSnapshot(data) {
   }
 }
 
+function dashboardSnapshotsDiffer(first, second) {
+  if (!first || !second) return Boolean(first || second);
+  const firstRevision = dashboardSyncRevision(first);
+  const secondRevision = dashboardSyncRevision(second);
+  if (firstRevision || secondRevision) return firstRevision !== secondRevision;
+  return (
+    dashboardDataTimestampMs(first) !== dashboardDataTimestampMs(second) ||
+    dashboardAttackCount(first) !== dashboardAttackCount(second)
+  );
+}
+
+function preserveLocalDashboardConflict(localData, cloudData) {
+  if (!localData || !dashboardSnapshotsDiffer(localData, cloudData)) return false;
+  backupDashboardSnapshot(localData);
+  return true;
+}
+
 function applyDashboardCloudSnapshot(cloudData, { schedule = false } = {}) {
-  if (dashboardSnapshotIsOlder(cloudData, state.dashData)) {
-    if (state.dashData) backupDashboardSnapshot(state.dashData);
-    log('Ignored an older dashboard snapshot returned by cloud sync.', 'warn');
-    return false;
-  }
   state.dashData = normalizeDashboardDataForCache(cloudData);
+  noteDashboardCloudBase(state.dashData);
   hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
   if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
   writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
@@ -2668,9 +2676,8 @@ function applyDashboardCloudSnapshot(cloudData, { schedule = false } = {}) {
 }
 
 function restoreDashboardLocalFallback(localData) {
-  if (!localData || (state.dashData && !dashboardSnapshotIsOlder(state.dashData, localData))) {
-    if (state.dashData)
-      log('Cloud sync failed; kept newer dashboard data already in memory.', 'warn');
+  if (!localData || state.dashData) {
+    if (state.dashData) log('Cloud sync failed; kept dashboard data already in memory.', 'warn');
     return false;
   }
   state.dashData = normalizeDashboardDataForCache(localData);
@@ -2680,23 +2687,63 @@ function restoreDashboardLocalFallback(localData) {
   return true;
 }
 
-// Returns true when the cloud document is meaningfully newer than the payload
-// about to overwrite it. A failed cloud read returns false — blocking every
-// save on a flaky read would disable offline sync entirely.
-async function cloudDashboardNewerThan(db, firestore, referenceTs, label) {
-  if (!referenceTs) return false;
-  try {
-    const { doc, getDoc } = firestore;
-    const snap = await withDashboardCloudTimeout(
-      getDoc(doc(db, FS_PATH)),
-      DASHBOARD_CLOUD_WRITE_TIMEOUT_MS,
-      label
-    );
-    if (!snap?.exists?.()) return false;
-    return dashboardDataTimestampMs(snap.data()) > referenceTs + DASHBOARD_FRESHNESS_SKEW_MS;
-  } catch {
-    return false;
+// A write conflict preserves the cloud snapshot and keeps the local payload as a backup.
+function createDashboardCloudConflictError(cloudData = null) {
+  const err = new Error('Cloud data changed before this device could save.');
+  err.name = 'DashboardCloudConflictError';
+  err.code = 'dashboard-cloud-conflict';
+  err.cloudData = cloudData;
+  return err;
+}
+
+function isDashboardCloudConflict(err) {
+  return err?.code === 'dashboard-cloud-conflict' || err?.name === 'DashboardCloudConflictError';
+}
+
+function handleDashboardCloudConflict(localData, err, label = 'Dashboard save') {
+  backupDashboardSnapshot(localData);
+  if (err?.cloudData) applyDashboardCloudSnapshot(err.cloudData, { schedule: true });
+  setCloudSyncStatus('live');
+  log(`${label} skipped because cloud data changed. A local backup was kept.`, 'warn');
+  if (typeof window.showToast === 'function') {
+    window.showToast('Cloud data changed first. This device kept a local backup.', 'warn', 8000);
   }
+}
+
+async function writeDashboardSnapshotToCloud(db, firestore, payload, baseRevision) {
+  const { doc, runTransaction } = firestore;
+  const expectedBaseRevision =
+    Number.isInteger(baseRevision) && baseRevision >= 0 ? baseRevision : null;
+  const preparedPayload = sanitizeForFirestore({ ...(payload || {}) });
+  let writtenPayload = null;
+
+  await runTransaction(db, async (transaction) => {
+    const ref = doc(db, FS_PATH);
+    const snap = await transaction.get(ref);
+    const cloudData = snap.exists() ? normalizeDashboardDataForCache(snap.data()) : null;
+    const cloudRevision = cloudData ? dashboardSyncRevision(cloudData) : 0;
+
+    if (
+      (cloudData && (expectedBaseRevision === null || expectedBaseRevision !== cloudRevision)) ||
+      (!cloudData && expectedBaseRevision !== null && expectedBaseRevision !== 0)
+    ) {
+      throw createDashboardCloudConflictError(cloudData);
+    }
+
+    writtenPayload = {
+      ...preparedPayload,
+      updatedAtMs: Math.max(
+        Date.now(),
+        dashboardDataTimestampMs(preparedPayload),
+        dashboardDataTimestampMs(cloudData) + 1
+      ),
+      syncRevision: cloudRevision + 1,
+    };
+    transaction.set(ref, writtenPayload);
+  });
+
+  noteDashboardCloudBase(writtenPayload);
+  return writtenPayload;
 }
 
 function isFirestorePermissionDenied(err) {
@@ -2723,29 +2770,43 @@ function buildDashboardCloudRepairPayload(auxiliaryPayload = null) {
 }
 
 async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
-  const { doc, setDoc } = firestore;
+  const { doc, runTransaction } = firestore;
   const payload = withDashboardTimestamp(auxiliaryPayload);
   try {
-    await setDoc(doc(db, FS_PATH), payload, { merge: true });
+    let mergedCloudPayload = null;
+    await runTransaction(db, async (transaction) => {
+      const ref = doc(db, FS_PATH);
+      const snap = await transaction.get(ref);
+      const cloudData = snap.exists() ? normalizeDashboardDataForCache(snap.data()) : null;
+      const cloudRevision = cloudData ? dashboardSyncRevision(cloudData) : 0;
+      const sourcePayload = cloudData ? payload : buildDashboardCloudRepairPayload(payload);
+      const nextPayload = {
+        ...sourcePayload,
+        updatedAtMs: Math.max(
+          Date.now(),
+          dashboardDataTimestampMs(sourcePayload),
+          dashboardDataTimestampMs(cloudData) + 1
+        ),
+        syncRevision: cloudRevision + 1,
+      };
+      if (cloudData) transaction.set(ref, nextPayload, { merge: true });
+      else transaction.set(ref, nextPayload);
+      mergedCloudPayload = { ...(cloudData || {}), ...nextPayload };
+    });
+    noteDashboardCloudBase(mergedCloudPayload);
     return { repaired: false };
   } catch (err) {
     if (!isFirestorePermissionDenied(err) && !isFirestoreDocumentTooLarge(err)) throw err;
-    // The repair replaces the whole doc from this session's state — refuse if
-    // the cloud doc is newer than what this session is holding.
-    if (
-      await cloudDashboardNewerThan(
-        db,
-        firestore,
-        dashboardCloudBaseTs || 1,
-        'Auxiliary repair freshness check'
-      )
-    ) {
-      throw err;
-    }
+    // Repair the complete snapshot through the same revision fence.
     const repairPayload = buildDashboardCloudRepairPayload(payload);
-    await setDoc(doc(db, FS_PATH), repairPayload);
-    state.dashData = normalizeDashboardDataForCache(repairPayload);
-    writeDashboardLocalCache(repairPayload);
+    const writtenPayload = await writeDashboardSnapshotToCloud(
+      db,
+      firestore,
+      repairPayload,
+      dashboardCloudBaseRevision
+    );
+    state.dashData = normalizeDashboardDataForCache(writtenPayload);
+    writeDashboardLocalCache(writtenPayload);
     writeAuxiliaryLocalCaches();
     return { repaired: true };
   }
@@ -2802,7 +2863,6 @@ async function flushDashboardCloudRetryQueue() {
     }
 
     const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
-    const { doc, setDoc } = firestore;
     const remaining = [];
     for (const entry of queued) {
       try {
@@ -2810,27 +2870,23 @@ async function flushDashboardCloudRetryQueue() {
         // days old. Never let it overwrite a cloud doc that other devices
         // have updated since (this exact replay erased three days of uploads
         // once). The entry is dropped, not retried: it can only get staler.
-        const entryTs =
-          dashboardDataTimestampMs(entry.payload) || Date.parse(entry.queuedAt || '') || 1;
-        const queuedPayload = withDashboardTimestamp(
-          sanitizeDashboardDataForPersistence(entry.payload),
-          entryTs
-        );
-        if (await cloudDashboardNewerThan(db, firestore, entryTs, 'Queued write freshness check')) {
-          backupDashboardSnapshot(entry.payload);
-          log(dashT('adminCloudStaleQueueDropped'), 'warn');
-          continue;
-        }
         if (entry.kind === 'auxiliary') {
           await awaitCloud(
-            writeAuxiliaryPayloadToCloud(db, firestore, queuedPayload),
+            writeAuxiliaryPayloadToCloud(db, firestore, entry.payload),
             'Queued auxiliary cloud write'
           );
         } else {
-          await awaitCloud(setDoc(doc(db, FS_PATH), queuedPayload), 'Queued dashboard cloud write');
-          noteDashboardCloudBase(queuedPayload);
+          await awaitCloud(
+            writeDashboardSnapshotToCloud(db, firestore, entry.payload, entry.baseRevision),
+            'Queued dashboard cloud write'
+          );
         }
       } catch (err) {
+        if (entry.kind === 'dashboard' && isDashboardCloudConflict(err)) {
+          handleDashboardCloudConflict(entry.payload, err, 'Queued dashboard save');
+          log(dashT('adminCloudStaleQueueDropped'), 'warn');
+          continue;
+        }
         remaining.push(entry);
         console.warn('Dashboard queued cloud write failed', err);
       }
@@ -2857,8 +2913,10 @@ async function flushDashboardCloudSave() {
     dashboardCloudSaveTimer = null;
   }
   const persistedData = dashboardCloudSavePendingData;
+  const baseRevision = dashboardCloudSavePendingBaseRevision;
   const version = dashboardCloudSavePendingVersion;
   dashboardCloudSavePendingData = null;
+  dashboardCloudSavePendingBaseRevision = null;
   dashboardCloudSaveInFlight = true;
   const awaitCloud = (promise, label) =>
     withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
@@ -2868,54 +2926,57 @@ async function flushDashboardCloudSave() {
     const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
     if (!db) {
       setCloudSyncStatus('local');
-      queueDashboardCloudRetry('dashboard', persistedData, dashT('adminCloudAdminRequired'));
+      queueDashboardCloudRetry(
+        'dashboard',
+        persistedData,
+        dashT('adminCloudAdminRequired'),
+        baseRevision
+      );
       showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
       return false;
     }
     const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
-    const { doc, setDoc } = firestore;
-    // Sessions that booted from a stale local fallback (cloud read stalled)
-    // must not overwrite data other devices uploaded since. Live sessions
-    // track the cloud baseline via onSnapshot, so this only trips when the
-    // session's view of the cloud is genuinely behind.
-    if (
-      // A session that never managed to read the cloud (base 0) is treated as
-      // maximally stale: it may create data, but not overwrite a stamped doc.
-      await cloudDashboardNewerThan(
-        db,
-        firestore,
-        dashboardCloudBaseTs || 1,
-        'Dashboard cloud freshness check'
-      )
-    ) {
-      backupDashboardSnapshot(persistedData);
-      setCloudSyncStatus('local', dashT('adminCloudStaleWriteSkipped'));
-      log(dashT('adminCloudStaleWriteSkipped'), 'warn');
-      if (typeof window.showToast === 'function') {
-        window.showToast(dashT('adminCloudStaleWriteSkipped'), 'warn', 8000);
-      }
-      return false;
-    }
-    await awaitCloud(setDoc(doc(db, FS_PATH), persistedData), 'Dashboard cloud save');
-    noteDashboardCloudBase(persistedData);
+    const writtenPayload = await awaitCloud(
+      writeDashboardSnapshotToCloud(db, firestore, persistedData, baseRevision),
+      'Dashboard cloud save'
+    );
+    state.dashData = normalizeDashboardDataForCache(writtenPayload);
+    writeDashboardLocalCache(writtenPayload);
     setCloudSyncStatus('live');
     log('Synced to cloud.', 'info');
     result = true;
     return true;
   } catch (e) {
+    if (isDashboardCloudConflict(e)) {
+      handleDashboardCloudConflict(persistedData, e);
+      return false;
+    }
     console.error('FIREBASE SAVE ERROR:', e);
-    queueDashboardCloudRetry('dashboard', persistedData, e?.message || e?.code || 'save failed');
+    queueDashboardCloudRetry(
+      'dashboard',
+      persistedData,
+      e?.message || e?.code || 'save failed',
+      baseRevision
+    );
     showCloudSyncFailure(e, 'Save error');
     return false;
   } finally {
     dashboardCloudSaveInFlight = false;
     resolveDashboardCloudSaveWaiters(version, result);
-    if (dashboardCloudSavePendingData) queueDashboardCloudSaveFlush();
+    if (dashboardCloudSavePendingData) {
+      // A coalesced follow-up can advance only after this transaction really
+      // succeeded. A failure forces it through the conflict path instead.
+      dashboardCloudSavePendingBaseRevision = result ? dashboardCloudBaseRevision : null;
+      queueDashboardCloudSaveFlush();
+    }
   }
 }
 
 function scheduleDashboardCloudSave(persistedData, options = {}) {
   dashboardCloudSavePendingData = persistedData;
+  dashboardCloudSavePendingBaseRevision = dashboardCloudSaveInFlight
+    ? null
+    : dashboardCloudBaseRevision;
   const version = ++dashboardCloudSavePendingVersion;
   setCloudSyncStatus('syncing');
   const promise = new Promise((resolve) => {
@@ -2934,9 +2995,8 @@ export async function saveData(data, options = {}) {
   }
   const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
   if (persistedData && typeof persistedData === 'object') {
-    // Save-time stamp: freshness guards compare this against the cloud doc,
-    // and queued retries keep their original stamp so a stale queued snapshot
-    // can never overwrite newer cloud data days later.
+    // Kept for display and legacy cache migration; revision fencing controls
+    // whether this full snapshot may replace the current cloud document.
     persistedData.updatedAtMs = Date.now();
   }
   state.dashData = normalizeDashboardDataForCache(persistedData);
@@ -2944,10 +3004,16 @@ export async function saveData(data, options = {}) {
   writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
   if (!state.adminIsAdmin) {
-    queueDashboardCloudRetry('dashboard', persistedData, dashT('adminCloudAdminRequired'));
+    queueDashboardCloudRetry(
+      'dashboard',
+      persistedData,
+      dashT('adminCloudAdminRequired'),
+      dashboardCloudBaseRevision
+    );
     showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'Save blocked');
     return false;
   }
+  const requestedBaseRevision = dashboardCloudSaveInFlight ? null : dashboardCloudBaseRevision;
   const cloudSave = scheduleDashboardCloudSave(persistedData, {
     immediate: options.immediate === true,
   });
@@ -2962,7 +3028,8 @@ export async function saveData(data, options = {}) {
       queueDashboardCloudRetry(
         'dashboard',
         persistedData,
-        err?.message || err?.code || 'save timed out'
+        err?.message || err?.code || 'save timed out',
+        requestedBaseRevision
       );
       showDashboardCloudFallback(err, 'Dashboard cloud save');
       return false;
@@ -3067,49 +3134,25 @@ async function loadData(options = {}) {
       log('Firestore not available Ã¢â‚¬â€ using local storage only.', 'warn');
       return;
     }
-    const { doc, getDoc, setDoc, onSnapshot } = await awaitCloud(
-      loadFirestoreApi(),
-      'Firestore module load'
-    );
+    const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
+    const { doc, getDoc, onSnapshot } = firestore;
     if (!isCurrentLoad()) return;
     const snap = await awaitCloud(getDoc(doc(db, FS_PATH)), 'Dashboard cloud read');
     if (!isCurrentLoad()) return;
     if (snap.exists()) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
       noteDashboardCloudBase(cloudData);
-      // If this device holds NEWER data than the cloud (e.g. the cloud doc
-      // was clobbered by another stale client), don't silently erase it —
-      // keep a backup and offer to push it back to the cloud.
-      const localCandidate = newerDashboardSnapshot(localData, state.dashData);
-      const localTs = dashboardDataTimestampMs(localCandidate);
-      const cloudTs = dashboardDataTimestampMs(cloudData);
-      let restoredLocal = false;
-      if (localCandidate && localTs > cloudTs + DASHBOARD_FRESHNESS_SKEW_MS) {
-        backupDashboardSnapshot(localCandidate);
-        restoredLocal = window.confirm(
-          dashT('adminLocalNewerRestorePrompt', {
-            localAttacks: dashboardAttackCount(localCandidate),
-            localDate: localCandidate.last_updated || '?',
-            cloudAttacks: dashboardAttackCount(cloudData),
-            cloudDate: cloudData.last_updated || '?',
-          })
-        );
-        if (restoredLocal) {
-          state.dashData = localCandidate;
-          hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
-          if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-          render();
-          saveData(state.dashData, { immediate: true });
-          log('Restored newer local dashboard data to the cloud.', 'warn');
-        }
+      // A readable cloud snapshot is authoritative. Any differing local copy
+      // is kept as a backup, never offered as an automatic overwrite.
+      const localCandidate = state.dashData || localData;
+      if (preserveLocalDashboardConflict(localCandidate, cloudData)) {
+        log('Cloud snapshot replaced a different local cache; a local backup was kept.', 'warn');
       }
-      if (!restoredLocal) {
-        if (applyDashboardCloudSnapshot(cloudData)) setCloudSyncStatus('live');
-        else setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
-      }
+      applyDashboardCloudSnapshot(cloudData);
+      setCloudSyncStatus('live');
     } else {
       if (hadLocalData && localData) {
-        const seedData = newerDashboardSnapshot(localData, state.dashData);
+        const seedData = state.dashData || localData;
         state.dashData = seedData;
         hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
@@ -3118,11 +3161,20 @@ async function loadData(options = {}) {
           sanitizeDashboardDataForPersistence(seedData),
           Date.now()
         );
-        await awaitCloud(setDoc(doc(db, FS_PATH), seedPayload), 'Dashboard cloud seed');
-        if (!isCurrentLoad()) return;
-        noteDashboardCloudBase(seedPayload);
-        setCloudSyncStatus('live');
-        log('Uploaded local dashboard cache to cloud.', 'success');
+        try {
+          const writtenPayload = await awaitCloud(
+            writeDashboardSnapshotToCloud(db, firestore, seedPayload, 0),
+            'Dashboard cloud seed'
+          );
+          if (!isCurrentLoad()) return;
+          state.dashData = normalizeDashboardDataForCache(writtenPayload);
+          writeDashboardLocalCache(writtenPayload);
+          setCloudSyncStatus('live');
+          log('Uploaded local dashboard cache to cloud.', 'success');
+        } catch (err) {
+          if (!isDashboardCloudConflict(err)) throw err;
+          handleDashboardCloudConflict(seedData, err, 'Dashboard cloud seed');
+        }
       } else {
         state.dashData = null;
         try {
@@ -3140,11 +3192,7 @@ async function loadData(options = {}) {
       (snap) => {
         if (snap.exists()) {
           const cloudData = normalizeDashboardDataForCache(snap.data());
-          if (!applyDashboardCloudSnapshot(cloudData, { schedule: true })) {
-            setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
-            return;
-          }
-          noteDashboardCloudBase(cloudData);
+          applyDashboardCloudSnapshot(cloudData, { schedule: true });
           updateLastSynced();
           setCloudSyncStatus('live');
           const ind = $id('dashSyncIndicator');
@@ -3194,7 +3242,7 @@ async function clearData() {
     setCloudSyncStatus('syncing');
     const db = await ensureCloudSyncReady();
     if (db) {
-      const { doc, setDoc } = await loadFirestoreApi();
+      const firestore = await loadFirestoreApi();
       const clearedPayload = {
         updatedAtMs: Date.now(),
         last_updated: fmtDate(new Date()),
@@ -3202,8 +3250,14 @@ async function clearData() {
         attacks: [],
         players_summary: [],
       };
-      await setDoc(doc(db, FS_PATH), clearedPayload);
-      noteDashboardCloudBase(clearedPayload);
+      const writtenPayload = await writeDashboardSnapshotToCloud(
+        db,
+        firestore,
+        clearedPayload,
+        dashboardCloudBaseRevision
+      );
+      state.dashData = normalizeDashboardDataForCache(writtenPayload);
+      writeDashboardLocalCache(writtenPayload);
       setCloudSyncStatus('live');
     } else {
       setCloudSyncStatus('local');
