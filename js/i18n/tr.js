@@ -1143,7 +1143,7 @@ const tr = {
   edenX1RewardSupportTitle: 'Destek çalışması',
   edenX1RewardSupportCopy: 'Bayraklar, yollar, kalkan duvarları ve kayıtlı diğer sezon desteği.',
   edenX1RewardManagementTitle: 'R4 / Yönetim',
-  edenX1RewardManagementCopy: 'Bir sabit yönetim ödülü ve iki anonim lonca oylaması ödülü.',
+  edenX1RewardManagementCopy: 'Anonim yönetim oylamasından ilk üç uygun isim.',
   edenX1RewardTeamTitle: 'Takım oyuncuları',
   edenX1RewardTeamCopy: 'Öne çıkan takım çalışması ve güvenilirlik için üç anonim lonca oylaması ödülü.',
   edenX1RewardTeamVoteTag: 'En iyi takım oyuncuları için burada oy ver',
@@ -1153,14 +1153,13 @@ const tr = {
     'Destekten sonra yalnızca mevcut katkı + eski lonca katkısına göre ilk 10.',
   edenX1RewardSupportMeta:
     'Destek isi olan oyuncular arasinda agirlikli skora gore ilk 4: katk?, eski lonca, banner, yol, kalkan duvari ve takim emegi bonus puanlari.',
-  edenX1RewardManagementMeta: 'Final inceleme sürerken geçici yönetim ataması.',
+  edenX1RewardManagementMeta:
+    'Üç uygun yönetim adı; daha yüksek öncelikli kazananlar atlanır.',
   edenX1RewardTeamMeta: 'Lonca oylaması ödül slotları beklemede.',
   edenX1RewardSlotGroup: 'Ödül grubu',
   edenX1RewardSlotStatus: 'Durum',
   edenX1RewardAssigned: 'Atandı',
   edenX1RewardAssignedReasonTitle: 'Atama gerekçesi',
-  edenX1RewardWickedAssignedReason:
-    "Gerekçe: Wicked Russian NM5'te eski R5'ti. VTS ve NM5 yönetimine yardım etti.",
   edenX1RewardManagementVotePending: 'Yönetim ekibi oylaması',
   edenX1RewardVotePending: 'Belirlenecek - lonca oylaması beklemede',
   edenX1Tba: 'Belirlenecek',

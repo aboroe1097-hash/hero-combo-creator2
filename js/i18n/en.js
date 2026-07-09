@@ -1159,8 +1159,6 @@ const en = {
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Assigned',
   edenX1RewardAssignedReasonTitle: 'Status detail',
-  edenX1RewardWickedAssignedReason:
-    'Reason: Wicked Russian was ex-R5 in NM5. He helped manage VTS and NM5.',
   edenX1RewardManagementVotePending: 'Management team voting',
   edenX1RewardVotePending: 'TBA - guild vote pending',
   edenX1Tba: 'TBA',

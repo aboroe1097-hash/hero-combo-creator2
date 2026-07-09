@@ -1149,7 +1149,7 @@ const es = {
     'Banderas, caminos, muros de escudo y otro apoyo registrado de la temporada.',
   edenX1RewardManagementTitle: 'R4 / Gestión',
   edenX1RewardManagementCopy:
-    'Una recompensa fija de gestión más dos recompensas por voto anónimo del gremio.',
+    'Tres nombres elegibles principales del voto anónimo de gestión.',
   edenX1RewardTeamTitle: 'Jugadores de equipo',
   edenX1RewardTeamCopy:
     'Tres recompensas por voto anónimo del gremio por trabajo en equipo y fiabilidad destacados.',
@@ -1160,14 +1160,13 @@ const es = {
     'Top 10 solo por contribución actual + ex-gremio, después de apoyo.',
   edenX1RewardSupportMeta:
     'Top 4 por puntuacion ponderada entre jugadores con apoyo: contribucion, ex-gremio, banners, caminos, muros de escudo y puntos de esfuerzo de equipo.',
-  edenX1RewardManagementMeta: 'Asignación temporal de gestión mientras continúa la revisión final.',
+  edenX1RewardManagementMeta:
+    'Tres nombres elegibles de gestión; se saltan ganadores de mayor prioridad.',
   edenX1RewardTeamMeta: 'Las plazas de recompensa por voto del gremio están pendientes.',
   edenX1RewardSlotGroup: 'Grupo de recompensa',
   edenX1RewardSlotStatus: 'Estado',
   edenX1RewardAssigned: 'Asignado',
   edenX1RewardAssignedReasonTitle: 'Motivo de la asignación',
-  edenX1RewardWickedAssignedReason:
-    'Motivo: Wicked Russian fue ex-R5 en NM5. Ayudó a gestionar VTS y NM5.',
   edenX1RewardManagementVotePending: 'Votación del equipo de gestión',
   edenX1RewardVotePending: 'Pendiente - voto del gremio',
   edenX1Tba: 'Pendiente',

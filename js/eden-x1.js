@@ -8,7 +8,7 @@ import {
   translations,
   loadTranslationsForLanguage,
   applyLanguageDirection,
-} from './translations.js';
+} from './translations.js?v=20260709_191406';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import {
   formatDatasetStructureLabel,

@@ -1142,7 +1142,7 @@ const id = {
   edenX1RewardSupportTitle: 'Kerja dukungan',
   edenX1RewardSupportCopy: 'Banner, jalur, shield wall, dan dukungan musim lain yang tercatat.',
   edenX1RewardManagementTitle: 'R4 / Manajemen',
-  edenX1RewardManagementCopy: 'Satu hadiah manajemen tetap ditambah dua hadiah vote guild anonim.',
+  edenX1RewardManagementCopy: 'Tiga nama eligible teratas dari vote manajemen anonim.',
   edenX1RewardTeamTitle: 'Pemain tim',
   edenX1RewardTeamCopy: 'Tiga hadiah vote guild anonim untuk kerja sama tim dan keandalan yang menonjol.',
   edenX1RewardTeamVoteTag: 'Vote di sini untuk pemain tim terbaik',
@@ -1152,14 +1152,13 @@ const id = {
     '10 teratas hanya dari kontribusi saat ini + ex-guild, setelah dukungan.',
   edenX1RewardSupportMeta:
     '4 teratas menurut skor berbobot di antara pemain dengan dukungan: kontribusi, ex-guild, banner, jalur, shield wall, dan poin usaha tim.',
-  edenX1RewardManagementMeta: 'Penugasan manajemen sementara selama tinjauan akhir berlangsung.',
+  edenX1RewardManagementMeta:
+    'Tiga nama manajemen eligible; pemenang prioritas lebih tinggi dilewati.',
   edenX1RewardTeamMeta: 'Slot hadiah vote guild masih menunggu.',
   edenX1RewardSlotGroup: 'Grup hadiah',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Ditugaskan',
   edenX1RewardAssignedReasonTitle: 'Alasan penugasan',
-  edenX1RewardWickedAssignedReason:
-    'Alasan: Wicked Russian adalah mantan R5 di NM5. Dia membantu mengelola VTS dan NM5.',
   edenX1RewardManagementVotePending: 'Vote tim manajemen',
   edenX1RewardVotePending: 'Akan diumumkan - vote guild menunggu',
   edenX1Tba: 'Akan diumumkan',

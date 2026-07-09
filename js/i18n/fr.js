@@ -1149,7 +1149,7 @@ const fr = {
     'Bannières, chemins, murs de boucliers et autre soutien de saison enregistré.',
   edenX1RewardManagementTitle: 'R4 / Gestion',
   edenX1RewardManagementCopy:
-    'Une récompense fixe de gestion plus deux récompenses par vote anonyme de la guilde.',
+    'Les trois noms éligibles en tête du vote anonyme de gestion.',
   edenX1RewardTeamTitle: 'Joueurs d’équipe',
   edenX1RewardTeamCopy:
     'Trois récompenses par vote anonyme de la guilde pour le travail d’équipe et la fiabilité remarquables.',
@@ -1160,14 +1160,13 @@ const fr = {
     'Top 10 uniquement par contribution actuelle + ex-guilde, après soutien.',
   edenX1RewardSupportMeta:
     'Top 4 par score pondere parmi les joueurs avec soutien: contribution, ex-guilde, bannieres, chemins, murs bouclier et points d effort d equipe.',
-  edenX1RewardManagementMeta: 'Affectation temporaire de gestion pendant la révision finale.',
+  edenX1RewardManagementMeta:
+    'Trois noms éligibles de gestion; les gagnants de priorité supérieure sont ignorés.',
   edenX1RewardTeamMeta: 'Les places de récompense du vote de guilde sont en attente.',
   edenX1RewardSlotGroup: 'Groupe de récompense',
   edenX1RewardSlotStatus: 'Statut',
   edenX1RewardAssigned: 'Attribué',
   edenX1RewardAssignedReasonTitle: "Motif de l'affectation",
-  edenX1RewardWickedAssignedReason:
-    'Motif : Wicked Russian était ex-R5 chez NM5. Il a aidé à gérer VTS et NM5.',
   edenX1RewardManagementVotePending: 'Vote de l’équipe de gestion',
   edenX1RewardVotePending: 'À venir - vote de guilde en attente',
   edenX1Tba: 'À venir',

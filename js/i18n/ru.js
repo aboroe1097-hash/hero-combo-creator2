@@ -1145,7 +1145,7 @@ const ru = {
   edenX1RewardSupportCopy: 'Баннеры, дороги, щиты и другая зафиксированная помощь сезона.',
   edenX1RewardManagementTitle: 'R4 / управление',
   edenX1RewardManagementCopy:
-    'Одна фиксированная награда управления и две награды по анонимному голосованию гильдии.',
+    'Три лучших подходящих имени по анонимному голосованию управления.',
   edenX1RewardTeamTitle: 'Командные игроки',
   edenX1RewardTeamCopy: 'Три награды по анонимному голосованию гильдии за командную работу и надежность.',
   edenX1RewardTeamVoteTag: 'Голосуйте здесь за лучших командных игроков',
@@ -1155,14 +1155,13 @@ const ru = {
     'Первые 10 только по текущему вкладу + экс-гильдии, после помощи.',
   edenX1RewardSupportMeta:
     'Первые 4 по взвешенному счету среди игроков с поддержкой: вклад, экс-гильдия, баннеры, дороги, щитовые стены и командные бонусные очки.',
-  edenX1RewardManagementMeta: 'Временное назначение управления, пока идет финальная проверка.',
+  edenX1RewardManagementMeta:
+    'Три подходящих имени управления; победители с более высоким приоритетом пропускаются.',
   edenX1RewardTeamMeta: 'Места наград голосования гильдии ожидают решения.',
   edenX1RewardSlotGroup: 'Группа награды',
   edenX1RewardSlotStatus: 'Статус',
   edenX1RewardAssigned: 'Назначено',
   edenX1RewardAssignedReasonTitle: 'Причина назначения',
-  edenX1RewardWickedAssignedReason:
-    'Причина: Wicked Russian был бывшим R5 в NM5. Он помогал управлять VTS и NM5.',
   edenX1RewardManagementVotePending: 'Голосование команды управления',
   edenX1RewardVotePending: 'Позже - голосование гильдии ожидается',
   edenX1Tba: 'Позже',

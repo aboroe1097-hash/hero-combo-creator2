@@ -1152,7 +1152,7 @@ const de = {
   edenX1RewardSupportCopy: 'Banner, Pfade, Schildwälle und andere erfasste Saisonunterstützung.',
   edenX1RewardManagementTitle: 'R4 / Verwaltung',
   edenX1RewardManagementCopy:
-    'Eine feste Verwaltungsbelohnung plus zwei anonyme Gildenabstimmungs-Belohnungen.',
+    'Die drei besten berechtigten Namen aus der anonymen Verwaltungsabstimmung.',
   edenX1RewardTeamTitle: 'Teamspieler',
   edenX1RewardTeamCopy:
     'Drei anonyme Gildenabstimmungs-Belohnungen für herausragende Teamarbeit und Zuverlässigkeit.',
@@ -1163,14 +1163,13 @@ const de = {
     'Top 10 nur nach aktuellem Beitrag + Ex-Gilde, nach Support Work.',
   edenX1RewardSupportMeta:
     'Top 4 nach gewichtetem Score unter Spielern mit Support Work: Beitrag, Ex-Gilde, Banner, Wege, Schildmauern und Teamleistungs-Bonuspunkte.',
-  edenX1RewardManagementMeta: 'Temporäre Verwaltungszuweisung während die finale Prüfung läuft.',
+  edenX1RewardManagementMeta:
+    'Drei berechtigte Verwaltungsnamen; Gewinner höherer Priorität werden übersprungen.',
   edenX1RewardTeamMeta: 'Belohnungsplätze der Gildenabstimmung stehen noch aus.',
   edenX1RewardSlotGroup: 'Belohnungsgruppe',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Zugewiesen',
   edenX1RewardAssignedReasonTitle: 'Begründung der Zuweisung',
-  edenX1RewardWickedAssignedReason:
-    'Grund: Wicked Russian war Ex-R5 in NM5. Er half bei der Verwaltung von VTS und NM5.',
   edenX1RewardManagementVotePending: 'Abstimmung des Verwaltungsteams',
   edenX1RewardVotePending: 'Noch offen - Gildenabstimmung ausstehend',
   edenX1Tba: 'Noch offen',

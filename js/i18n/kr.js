@@ -1138,7 +1138,7 @@ const kr = {
   edenX1RewardSupportTitle: '지원 작업',
   edenX1RewardSupportCopy: '배너, 경로, 실드 월 및 기타 기록된 시즌 지원입니다.',
   edenX1RewardManagementTitle: 'R4 / 관리',
-  edenX1RewardManagementCopy: '고정 관리 보상 1개와 익명 길드 투표 보상 2개입니다.',
+  edenX1RewardManagementCopy: '익명 관리 투표의 상위 3명 적격 이름입니다.',
   edenX1RewardTeamTitle: '팀 플레이어',
   edenX1RewardTeamCopy: '뛰어난 팀워크와 신뢰도를 위한 익명 길드 투표 보상 3개입니다.',
   edenX1RewardTeamVoteTag: '최고의 팀 플레이어는 여기서 투표',
@@ -1148,14 +1148,13 @@ const kr = {
     '지원 작업 이후 현재 기여도 + 이전 길드 기여만 기준으로 한 상위 10명입니다.',
   edenX1RewardSupportMeta:
     '지원 작업 기록이 있는 플레이어 중 가중 점수 상위 4명: 기여도, 이전 길드, 배너, 경로, 방벽, 팀 노력 보너스 점수.',
-  edenX1RewardManagementMeta: '최종 검토가 진행되는 동안의 임시 관리 배정입니다.',
+  edenX1RewardManagementMeta:
+    '적격 관리 이름 3명; 더 높은 우선순위 보상자는 건너뜁니다.',
   edenX1RewardTeamMeta: '길드 투표 보상 슬롯은 대기 중입니다.',
   edenX1RewardSlotGroup: '보상 그룹',
   edenX1RewardSlotStatus: '상태',
   edenX1RewardAssigned: '배정됨',
   edenX1RewardAssignedReasonTitle: '배정 사유',
-  edenX1RewardWickedAssignedReason:
-    '사유: Wicked Russian은 NM5의 전 R5였습니다. VTS와 NM5 관리에 도움을 주었습니다.',
   edenX1RewardManagementVotePending: '관리팀 투표',
   edenX1RewardVotePending: '추후 공개 - 길드 투표 대기',
   edenX1Tba: '추후 공개',

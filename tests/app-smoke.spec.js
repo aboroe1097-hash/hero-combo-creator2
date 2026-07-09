@@ -2505,10 +2505,16 @@ test.describe('app smoke tabs', () => {
     });
 
     const managementCard = page.locator('[data-reward-view="management"]');
+    await expect(managementCard).toContainText('Top three eligible names');
+    await expect(managementCard).not.toContainText('One fixed management');
     await managementCard.click();
     await expect(managementCard).toHaveAttribute('aria-pressed', 'true');
     await expect(topNamesOverview).toBeVisible();
     await expect(panel.locator('h2')).toContainText('R4 / Management');
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
+      'Top three eligible management vote names'
+    );
+    await expect(panel).not.toContainText('Assigned');
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     const managementRows = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map((row) => ({

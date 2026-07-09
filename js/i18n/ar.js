@@ -1141,7 +1141,7 @@ const ar = {
   edenX1RewardSupportTitle: 'عمل الدعم',
   edenX1RewardSupportCopy: 'الرايات والطرق وجدران الدرع وأعمال دعم الموسم المسجلة الأخرى.',
   edenX1RewardManagementTitle: 'R4 / الإدارة',
-  edenX1RewardManagementCopy: 'مكافأة إدارية ثابتة واحدة ومكافأتان بتصويت مجهول من النقابة.',
+  edenX1RewardManagementCopy: 'أفضل ثلاثة أسماء مؤهلة من تصويت الإدارة المجهول.',
   edenX1RewardTeamTitle: 'لاعبو الفريق',
   edenX1RewardTeamCopy: 'ثلاث مكافآت بتصويت مجهول من النقابة لأفضل تعاون وموثوقية.',
   edenX1RewardTeamVoteTag: 'صوّت هنا لأفضل لاعبي الفريق',
@@ -1151,14 +1151,13 @@ const ar = {
     'أفضل 10 حسب المساهمة الحالية + مساهمة النقابة السابقة فقط، بعد أعمال الدعم.',
   edenX1RewardSupportMeta:
     'أفضل 4 حسب النقاط الموزونة بين اللاعبين أصحاب أعمال الدعم: المساهمة، النقابة السابقة، اللافتات، الطرق، جدران الحماية ونقاط جهد الفريق.',
-  edenX1RewardManagementMeta: 'تعيين إداري مؤقت أثناء تقدم المراجعة النهائية.',
+  edenX1RewardManagementMeta:
+    'ثلاثة أسماء إدارة مؤهلة؛ يتم تخطي الفائزين ذوي الأولوية الأعلى.',
   edenX1RewardTeamMeta: 'خانات مكافآت تصويت النقابة قيد الانتظار.',
   edenX1RewardSlotGroup: 'مجموعة المكافأة',
   edenX1RewardSlotStatus: 'الحالة',
   edenX1RewardAssigned: 'معين',
   edenX1RewardAssignedReasonTitle: 'سبب التعيين',
-  edenX1RewardWickedAssignedReason:
-    'السبب: كان Wicked Russian عضو R5 سابقًا في NM5. ساعد في إدارة VTS و NM5.',
   edenX1RewardManagementVotePending: 'تصويت فريق الإدارة',
   edenX1RewardVotePending: 'لاحقا - تصويت النقابة قيد الانتظار',
   edenX1Tba: 'لاحقا',
