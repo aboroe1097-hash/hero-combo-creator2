@@ -1,5 +1,12 @@
 # Changelog
 
+## 13.1.3 - 2026-07-10
+
+- Replaced the Eden X1 loading card's static 72% / `...` placeholder with real progress tied to Firebase imports, anonymous sign-in, Firestore reads, and the public conduct-adjustment load. The progress caps below completion until the dashboard is actually ready, and stale retries cannot update a newer attempt.
+- Hardened admin refreshes so a delayed or failed request cannot replace a newer cloud snapshot with its older local fallback. Firestore now requires a timestamp on every dashboard write and rejects timestamp regressions, blocking older cached clients after the first stamped update.
+- Added regression coverage for the Eden loader's real initial progress plus the dashboard timestamp and refresh-ordering contracts.
+- Synced public version labels, README, changelog, and app constants to 13.1.3.
+
 ## 13.1.2 - 2026-07-09
 
 - Fixed dashboard data loss where a stale client could silently overwrite newer cloud data (this erased the Tuesday/Thursday structure uploads, reverting the dashboard to Sunday's snapshot): every full-document cloud write now carries an `updatedAtMs` stamp and is checked against the cloud document's timestamp first.

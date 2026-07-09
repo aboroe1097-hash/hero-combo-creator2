@@ -2104,6 +2104,8 @@ test.describe('app smoke tabs', () => {
     const preLoadContributionCard = page.locator('[data-reward-view="contribution"]');
     const preLoadPanel = page.locator('#dashWeightedContributionPanel');
     await expect(page.locator('.dash-connecting')).toBeVisible();
+    await expect(page.locator('.dash-connecting-bar-fill')).toHaveAttribute('style', /width:\s*4%/);
+    await expect(page.locator('.dash-connecting-bar-pct')).toHaveText('4%');
     await expect(page.locator('.eden-x1-notice')).toBeHidden();
     await expect(page.locator('.eden-x1-quicknav')).toBeHidden();
     await expect(page.locator('.eden-x1-reward-panel')).toBeHidden();
