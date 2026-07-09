@@ -48,7 +48,9 @@ GitHub Actions builds and deploys roc-vts.com on every push to it.
 
 ## Never include
 
-Passwords, private API keys, or private alliance data — in code, commits, or
-PR descriptions.
+- Passwords, private API keys, or private alliance data — in code, commits,
+  or PR descriptions.
+- AI attribution footers or session links in PR titles/descriptions
+  ("Generated with…", session URLs). The owner prefers clean PR bodies.
 
 See also `AGENTS.md` (shared agent policy) if present at the repo root.
