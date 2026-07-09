@@ -2592,6 +2592,59 @@ function getSupportRewardRows() {
     }));
 }
 
+function contributionRewardContextForRow(row, numberValue) {
+  if (row.edenX1RewardSkipped) {
+    return {
+      rank: row.finalRank,
+      rankLabel: t('adminContributionFinalRank'),
+      baseReward: row.baseReward || 'core',
+      finalReward: 'none',
+      finalRewardLabel: t('edenX1RewardSkippedPremium'),
+      reason: t('edenX1RewardSkippedPremiumReason', { rank: row.finalRank }),
+    };
+  }
+  const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
+  const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
+  const label = contributionRewardLabel(finalReward);
+  return {
+    rank: numberValue,
+    rankLabel: t('edenX1RewardLeaderboardTitle'),
+    baseReward: reward,
+    finalReward,
+    reason: `${t('edenX1RewardLeaderboardTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
+  };
+}
+
+function supportRewardContextForRow(row, numberValue) {
+  const reward = row.edenX1SupportReward || 'core';
+  const label = contributionRewardLabel(reward);
+  return {
+    rank: numberValue,
+    rankLabel: t('edenX1RewardSupportTitle'),
+    baseReward: reward,
+    finalReward: reward,
+    reason: `${t('edenX1RewardSupportTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
+  };
+}
+
+function plannedRewardContextKey(row) {
+  return row?.playerKey || publicPlayerKey(row?.playerName || row?.sourceName || '');
+}
+
+function createPlannedRewardContextMap() {
+  const contexts = new Map();
+  getSupportRewardRows().forEach((row, index) => {
+    contexts.set(plannedRewardContextKey(row), supportRewardContextForRow(row, index + 1));
+  });
+  getContributionRewardRows().forEach((row, index) => {
+    const key = plannedRewardContextKey(row);
+    if (!contexts.has(key)) {
+      contexts.set(key, contributionRewardContextForRow(row, index + 1));
+    }
+  });
+  return contexts;
+}
+
 function rowContributionRewardScore(row) {
   return valueOf(row.weightedScore);
 }
@@ -2627,8 +2680,14 @@ function filterWeightedRows(rows) {
   });
 }
 
-function sortWeightedRowsBy(rows, sort, numberMode) {
+function sortWeightedRowsBy(rows, sort, numberMode, options = {}) {
   if (!sort || !sort.col) return rows;
+  const rewardContextForRow =
+    typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
+  const finalRewardLabelForRow = (row, index) => {
+    const context = rewardContextForRow(row, index) || {};
+    return context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
+  };
   const accessors = {
     number: (row) => rowNumberValue(row, numberMode),
     player: (row) => row.playerName,
@@ -2643,7 +2702,7 @@ function sortWeightedRowsBy(rows, sort, numberMode) {
     total: rowBonusTotal,
     weighted: (row) => valueOf(row.weightedScore),
     finalRank: (row) => row.finalRank || 999999,
-    finalReward: (row) => contributionRewardLabel(row.finalReward),
+    finalReward: finalRewardLabelForRow,
   };
   const get = accessors[sort.col];
   if (!get) return rows;
@@ -3572,13 +3631,16 @@ function renderPublicCard(title, hint, body, className = '', attrs = '') {
   </section>`;
 }
 
-function publicWeightedRowSearchText(row) {
+function publicWeightedRowSearchText(row, rewardContext = {}) {
   return [
     row.playerName,
     row.sourceName,
     row.playerKey,
     row.currentRank ? `#${row.currentRank}` : '',
     row.finalRank ? `#${row.finalRank}` : '',
+    contributionRewardLabel(row.currentReward),
+    rewardContext.finalRewardLabel ||
+      contributionRewardLabel(rewardContext.finalReward || row.finalReward),
   ]
     .filter(Boolean)
     .join(' ')
@@ -3586,14 +3648,20 @@ function publicWeightedRowSearchText(row) {
 }
 
 function renderPublicWeightedContributionTable() {
+  const plannedRewardContexts = createPlannedRewardContextMap();
+  const rewardContextForRow = (row) =>
+    plannedRewardContexts.get(plannedRewardContextKey(row)) || {};
   const allRows = sortWeightedRowsBy(
     currentRows.slice(),
     currentPublicTableSort || { col: 'finalRank', dir: 'asc' },
-    'final'
+    'final',
+    { rewardContextForRow }
   );
   const searchQuery = currentPublicTableSearch.trim().toLowerCase();
   const rows = searchQuery
-    ? allRows.filter((row) => publicWeightedRowSearchText(row).includes(searchQuery))
+    ? allRows.filter((row) =>
+        publicWeightedRowSearchText(row, rewardContextForRow(row)).includes(searchQuery)
+      )
     : allRows;
   const clickableCount = allRows.filter((row) =>
     publicPlayerRows.some((player) => player.key === row.playerKey)
@@ -3640,7 +3708,8 @@ function renderPublicWeightedContributionTable() {
             const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
             const total = rowBonusTotal(row);
             const tooltipIndex = `public-${index}`;
-            const rewardClass = rewardThemeClass(row.finalReward);
+            const rewardContext = rewardContextForRow(row);
+            const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
             return `<tr class="${rewardClass}"${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
               <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
                 <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
@@ -3661,7 +3730,7 @@ function renderPublicWeightedContributionTable() {
               <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
               <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex)}</td>
               <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex)}</td>
+              <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex, rewardContext)}</td>
             </tr>`;
           })
           .join('')}</tbody>
@@ -4612,28 +4681,8 @@ function renderCurrentTable(renderOptions = {}) {
       meta: t('edenX1RewardContributionMeta'),
       rewardView: 'contribution',
       numberMode: 'index',
-      rewardContextForRow: (row, _index, numberValue) => {
-        if (row.edenX1RewardSkipped) {
-          return {
-            rank: row.finalRank,
-            rankLabel: t('adminContributionFinalRank'),
-            baseReward: row.baseReward || 'core',
-            finalReward: 'none',
-            finalRewardLabel: t('edenX1RewardSkippedPremium'),
-            reason: t('edenX1RewardSkippedPremiumReason', { rank: row.finalRank }),
-          };
-        }
-        const reward = row.rewardReason === 'grant_premium' ? row.finalReward || 'core' : 'core';
-        const finalReward = row.rewardReason === 'forfeit_premium' ? row.finalReward : reward;
-        const label = contributionRewardLabel(finalReward);
-        return {
-          rank: numberValue,
-          rankLabel: t('edenX1RewardLeaderboardTitle'),
-          baseReward: reward,
-          finalReward,
-          reason: `${t('edenX1RewardLeaderboardTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
-        };
-      },
+      rewardContextForRow: (row, _index, numberValue) =>
+        contributionRewardContextForRow(row, numberValue),
     };
   } else if (currentRewardView === 'support') {
     rows = getSupportRewardRows();
@@ -4642,17 +4691,8 @@ function renderCurrentTable(renderOptions = {}) {
       meta: t('edenX1RewardSupportMeta'),
       rewardView: 'support',
       numberMode: 'index',
-      rewardContextForRow: (row, _index, numberValue) => {
-        const reward = row.edenX1SupportReward || 'core';
-        const label = contributionRewardLabel(reward);
-        return {
-          rank: numberValue,
-          rankLabel: t('edenX1RewardSupportTitle'),
-          baseReward: reward,
-          finalReward: reward,
-          reason: `${t('edenX1RewardSupportTitle')} #${numberValue}. ${t('adminContributionFinalReward')}: ${label}.`,
-        };
-      },
+      rewardContextForRow: (row, _index, numberValue) =>
+        supportRewardContextForRow(row, numberValue),
     };
   }
   panel.innerHTML = renderTable(rows, currentRecordLabel, tableOptions);

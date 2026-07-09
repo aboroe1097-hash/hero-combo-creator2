@@ -2174,6 +2174,10 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('thead')).toContainText('Bonus Team Effort Points');
     await expect(publicWeightedTable.locator('thead')).toContainText('Total');
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(22);
+    const publicAlphaWeightedRow = publicWeightedTable.locator('tbody tr', { hasText: 'Alpha' });
+    await expect(
+      publicAlphaWeightedRow.locator('.dash-weighted-final-reward-cell .dash-weighted-reward-value')
+    ).toHaveText('Guild Master Reward');
     const publicExGuildSortHeader = publicWeightedTable.locator(
       'th[data-public-weighted-sort="exGuild"]'
     );
