@@ -15,7 +15,7 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260709_100508';
+import { initWhatsNewBanner } from './app-whats-new.js?v=20260709_181512';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
@@ -145,7 +145,7 @@ let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260709_100508').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260709_181512').catch((err) => {
       researchModulePromise = null;
       throw err;
     });
@@ -155,7 +155,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260709_100508').catch((err) => {
+    materialModulePromise = import('./material-calculator.js?v=20260709_181512').catch((err) => {
       materialModulePromise = null;
       throw err;
     });
@@ -920,8 +920,14 @@ tabs.forEach(tab => {
     return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message);
   }
 
+  let _staleAssetRecoveryAttempted = false;
+
   async function recoverFromStaleAssetGraph(reason) {
     const storageKey = 'vts_stale_asset_recovery_v1';
+    // In-memory guard first: if sessionStorage is unavailable (e.g. blocked
+    // storage), the storage guard below can never engage and reloads would loop.
+    if (_staleAssetRecoveryAttempted) return false;
+    _staleAssetRecoveryAttempted = true;
     try {
       if (sessionStorage.getItem(storageKey) === '1') return false;
       sessionStorage.setItem(storageKey, '1');
@@ -951,7 +957,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260709_100508')
+        import('./eden-map.js?v=20260709_181512')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -1036,7 +1042,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260709_100508')
+      import('./app-strife.js?v=20260709_181512')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;

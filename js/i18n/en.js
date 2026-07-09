@@ -1171,6 +1171,8 @@ const en = {
   edenX1NoData: 'No contribution data found.',
   edenX1NoRows: 'No weighted contribution rows to display.',
   edenX1LoadFailed: 'Failed to load data: {error}',
+  edenX1Retry: 'Retry',
+  edenX1LoadTimeout: 'The connection is taking too long. Check your signal and retry.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Contribution',
   edenX1ThExGuild: 'Ex-Guild',

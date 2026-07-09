@@ -1174,6 +1174,8 @@ const ru = {
   edenX1NoData: 'Данные вклада не найдены.',
   edenX1NoRows: 'Нет строк взвешенного вклада для отображения.',
   edenX1LoadFailed: 'Не удалось загрузить данные: {error}',
+  edenX1Retry: 'Повторить',
+  edenX1LoadTimeout: 'Подключение занимает слишком много времени. Проверьте сигнал и повторите попытку.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Вклад',
   edenX1ThExGuild: 'Вне гильдии',

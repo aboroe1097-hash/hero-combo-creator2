@@ -1179,6 +1179,8 @@ const fr = {
   edenX1NoData: 'Aucune donnée de contribution trouvée.',
   edenX1NoRows: 'Aucune ligne de contribution pondérée à afficher.',
   edenX1LoadFailed: 'Échec du chargement des données: {error}',
+  edenX1Retry: 'Réessayer',
+  edenX1LoadTimeout: 'La connexion prend trop de temps. Vérifiez votre signal et réessayez.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Contribution',
   edenX1ThExGuild: 'Hors guilde',

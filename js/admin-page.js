@@ -3,7 +3,7 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 
-const APP_VERSION = '13.1.0';
+const APP_VERSION = '13.1.1';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
@@ -16,8 +16,15 @@ function isDynamicImportLoadFailure(err) {
   );
 }
 
+let staleAssetRecoveryAttempted = false;
+
 async function recoverFromStaleAssetGraph(reason) {
   if (!isDynamicImportLoadFailure(reason)) return false;
+
+  // In-memory guard first: if sessionStorage is unavailable (e.g. blocked
+  // storage), the storage guard below can never engage and reloads would loop.
+  if (staleAssetRecoveryAttempted) return false;
+  staleAssetRecoveryAttempted = true;
 
   try {
     if (sessionStorage.getItem(STALE_ASSET_RECOVERY_KEY) === '1') return false;
@@ -129,7 +136,7 @@ function updateTextContent(lang) {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260709_100508');
+  const res = await fetch('tabs/admin.html?v=20260709_181512');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -151,7 +158,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260709_100508');
+  const mod = await import('./ocr-dashboard.js?v=20260709_181512');
   await mod.bootOcrDashboard();
 }
 

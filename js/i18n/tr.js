@@ -1172,6 +1172,8 @@ const tr = {
   edenX1NoData: 'Katkı verisi bulunamadı.',
   edenX1NoRows: 'Gösterilecek ağırlıklı katkı satırı yok.',
   edenX1LoadFailed: 'Veriler yüklenemedi: {error}',
+  edenX1Retry: 'Tekrar dene',
+  edenX1LoadTimeout: 'Bağlantı çok uzun sürüyor. Sinyalinizi kontrol edip tekrar deneyin.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Katkı',
   edenX1ThExGuild: 'Eski lonca',

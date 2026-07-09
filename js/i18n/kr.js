@@ -1167,6 +1167,8 @@ const kr = {
   edenX1NoData: '기여도 데이터를 찾을 수 없습니다.',
   edenX1NoRows: '표시할 가중 기여도 행이 없습니다.',
   edenX1LoadFailed: '데이터를 불러오지 못했습니다: {error}',
+  edenX1Retry: '다시 시도',
+  edenX1LoadTimeout: '연결이 너무 오래 걸립니다. 신호를 확인한 후 다시 시도하세요.',
   edenX1ThNumber: '#',
   edenX1ThContribution: '기여도',
   edenX1ThExGuild: '길드 외',

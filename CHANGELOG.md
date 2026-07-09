@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.1.1 - 2026-07-09
+
+- Fixed the Eden X1 page getting stuck on the loading panel forever on flaky mobile connections: Firebase CDN imports now retry with backoff, the data load has a 20s timeout, and failures show a translated error with a Retry button instead of an endless spinner.
+- Overhauled the service worker: the precache manifest is rebuilt from the actual deploy output (including hashed chunks), HTML/CSS/JS precaching is atomic per version, cache keys keep their `?v=` stamps so old and new assets can never mix, the previous deploy's cache is retained for already-open pages, gstatic Firebase modules are cached for offline use, and forced full re-downloads (`cache: 'reload'`) were removed.
+- Fixed service worker registration silently never happening when app startup finished after the window load event.
+- Removed the fragile mobile `font-size: 0` + `::after` hack on the seasonal VTS Admin tab that rendered the button blank when cached CSS versions mixed.
+- Hardened stale-asset recovery reloads with an in-memory guard so blocked sessionStorage can no longer cause reload loops.
+- Synced public version labels, README, changelog, and app constants to 13.1.1.
+
 ## 13.1.0 - 2026-07-09
 
 - Aligned version strings to 13.1.0 across package config, HTML pages, README, and JS state modules.

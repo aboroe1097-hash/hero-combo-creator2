@@ -1179,6 +1179,8 @@ const es = {
   edenX1NoData: 'No se encontraron datos de contribución.',
   edenX1NoRows: 'No hay filas de contribución ponderada para mostrar.',
   edenX1LoadFailed: 'No se pudieron cargar los datos: {error}',
+  edenX1Retry: 'Reintentar',
+  edenX1LoadTimeout: 'La conexión está tardando demasiado. Comprueba tu señal y reintenta.',
   edenX1ThNumber: '#',
   edenX1ThContribution: 'Contribución',
   edenX1ThExGuild: 'Ex-gremio',

@@ -416,20 +416,38 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
   assert.match(dashboard, /setEdenX1VotesForTest/);
 });
 
-test('service worker precaches only the lightweight app shell', () => {
+test('service worker precaches a complete, version-stamped app shell', () => {
   const source = readFileSync('public/sw.js', 'utf8');
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
+  const stamp = /\?v=\d{8}_\d{6}$/;
 
-  assert.ok(urls.length <= 28, `expected lean app shell, found ${urls.length} URLs`);
+  assert.ok(urls.length <= 40, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
-  assert.ok(urls.includes('/js/app.js'));
-  assert.ok(urls.includes('/js/theme-prepaint.js'));
-  assert.ok(urls.includes('/js/index-page-enhancements.js'));
+  assert.ok(urls.includes('/admin.html'));
+  assert.ok(urls.includes('/eden-x1.html'));
   assert.ok(urls.includes('/images/logo.png'));
-  assert.ok(!urls.includes('/admin.html'));
-  assert.ok(!urls.includes('/js/ocr-dashboard.js'));
-  assert.ok(!urls.includes('/js/tech-db.js'));
+  // css/js entries must carry the ?v= stamp so cache keys can never mix
+  // assets from different deploys.
+  for (const url of urls) {
+    if (/\.(?:css|js)(?:\?|$)/.test(url)) {
+      assert.match(url, stamp, `unstamped css/js precache entry: ${url}`);
+    }
+  }
+  assert.ok(urls.some((url) => url.startsWith('/js/app.js?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/js/theme-prepaint.js?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/tabs/admin.html?v=')));
+  // Dynamically imported modules are added from the built output by
+  // scripts/post-build.mjs, not the source manifest.
+  assert.ok(!urls.some((url) => url.startsWith('/js/ocr-dashboard.js')));
+  assert.ok(!urls.some((url) => url.startsWith('/js/tech-db.js')));
   assert.ok(!urls.includes('/images/strife/roc-strife-reference.png'));
+
+  // Caching mechanics: atomic critical precache, no forced full re-downloads,
+  // and the previous deploy's cache retained for already-open pages.
+  assert.match(source, /batchAddAll\(cache, critical/);
+  assert.doesNotMatch(source, /cache:\s*'reload'/);
+  assert.match(source, /CRITICAL_PRECACHE_PATTERN/);
+  assert.match(source, /older\[older\.length - 1\]/);
 });
 
 test('qwen worker rejects requests without an Origin header', () => {

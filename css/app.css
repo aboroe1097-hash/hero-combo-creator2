@@ -13992,20 +13992,17 @@ body.admin-standalone-page > .app-shell {
 }
 
 @media (max-width: 768px) {
+  /* Keep the label a real (small) font size: hiding it with font-size: 0 and
+     re-adding text via ::after broke down whenever cached CSS versions mixed,
+     leaving the button blank. */
   #tabOcrDashboard.seasonal-admin-tab {
     min-width: 72px;
     max-width: 100%;
-    padding-inline: 0 !important;
+    padding-inline: 4px !important;
     gap: 3px !important;
-    font-size: 0 !important;
-    overflow: hidden;
-  }
-
-  #tabOcrDashboard.seasonal-admin-tab::after {
-    content: "Admin";
-    color: var(--text-dim);
-    font-size: 0.66rem;
+    font-size: 0.66rem !important;
     font-weight: 900;
+    overflow: hidden;
   }
 
   #tabOcrDashboard.seasonal-admin-tab svg {
