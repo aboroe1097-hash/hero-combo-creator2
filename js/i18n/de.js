@@ -12,6 +12,9 @@ const de = {
   adminCloudSyncError: 'Cloud-Synchronisationsproblem - Klicken Sie auf Aktualisieren',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'Die Cloud enthält neuere Dashboard-Daten von einem anderen Gerät - dieses Speichern wurde NICHT hochgeladen. Erst aktualisieren, um die neuesten Daten zu laden.',
+  adminCloudStaleQueueDropped: 'Alter Schreibauftrag verworfen, da die Cloud bereits neuere Daten enthält.',
+  adminLocalNewerRestorePrompt: 'Dieses Gerät hat NEUERE Dashboard-Daten als die Cloud.\n\nDieses Gerät: {localAttacks} Angriffe ({localDate})\nCloud: {cloudAttacks} Angriffe ({cloudDate})\n\nDaten dieses Geräts in die Cloud zurückspielen? (Abbrechen behält die Cloud-Version; ein lokales Backup bleibt in jedem Fall erhalten.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'VTS Admin',

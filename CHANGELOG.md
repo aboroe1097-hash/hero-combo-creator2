@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.1.2 - 2026-07-09
+
+- Fixed dashboard data loss where a stale client could silently overwrite newer cloud data (this erased the Tuesday/Thursday structure uploads, reverting the dashboard to Sunday's snapshot): every full-document cloud write now carries an `updatedAtMs` stamp and is checked against the cloud document's timestamp first.
+- Queued offline cloud writes are discarded (with a translated warning) instead of replayed when the cloud already has newer data — a days-old queued snapshot can no longer erase newer uploads at the next admin sign-in.
+- Live saves from a session whose cloud view is behind (e.g. it booted from the local fallback while the cloud read stalled) are blocked with a "refresh first" warning instead of overwriting newer data.
+- When a device holds newer local dashboard data than the cloud, the admin boot now keeps a local backup snapshot (`vts_ocr_dashboard_backup_v1`) and offers to restore the newer data to the cloud instead of silently discarding it.
+- Fixed the Eden X1 public Weighted Total Contribution table so Support Work winners show the same planned final reward as the reward-flow support table.
+- Synced public version labels, README, changelog, and app constants to 13.1.2.
+
 ## 13.1.1 - 2026-07-09
 
 - Fixed the Eden X1 page getting stuck on the loading panel forever on flaky mobile connections: Firebase CDN imports now retry with backoff, the data load has a 20s timeout, and failures show a translated error with a Retry button instead of an endless spinner.

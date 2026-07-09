@@ -10,6 +10,9 @@ const kr = {
   adminCloudSyncError: '클라우드 동기화 문제 - 새로고침을 클릭하세요',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: '클라우드에 다른 기기의 더 새로운 데이터가 있습니다 - 이번 저장은 업로드되지 않았습니다. 먼저 새로고침하여 최신 데이터를 불러오세요.',
+  adminCloudStaleQueueDropped: '클라우드에 이미 더 새로운 데이터가 있어 오래된 대기 저장을 폐기했습니다.',
+  adminLocalNewerRestorePrompt: '이 기기에 클라우드보다 더 새로운 데이터가 있습니다.\n\n이 기기: {localAttacks}회 공격 ({localDate})\n클라우드: {cloudAttacks}회 공격 ({cloudDate})\n\n이 기기의 데이터를 클라우드로 복원할까요? (취소하면 클라우드 버전이 유지되며, 로컬 백업은 어느 쪽이든 보관됩니다.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminEdit: '수정',

@@ -10,6 +10,9 @@ const id = {
   adminCloudSyncError: 'Masalah sinkronisasi cloud - klik Segarkan',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'Cloud memiliki data lebih baru dari perangkat lain - penyimpanan ini TIDAK diunggah. Muat ulang dulu untuk mengambil data terbaru.',
+  adminCloudStaleQueueDropped: 'Antrean tulis lama dibuang karena cloud sudah memiliki data lebih baru.',
+  adminLocalNewerRestorePrompt: 'Perangkat ini memiliki data LEBIH BARU daripada cloud.\n\nPerangkat ini: {localAttacks} serangan ({localDate})\nCloud: {cloudAttacks} serangan ({cloudDate})\n\nPulihkan data perangkat ini ke cloud? (Batal mempertahankan versi cloud; cadangan lokal tetap disimpan.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'Admin VTS',

@@ -11,6 +11,9 @@ const en = {
   adminCloudSyncError: 'Cloud sync problem - click Refresh',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'Cloud has newer dashboard data from another device - this save was NOT uploaded. Refresh to load the latest data first.',
+  adminCloudStaleQueueDropped: 'Discarded an old queued cloud write because the cloud already has newer data.',
+  adminLocalNewerRestorePrompt: 'This device has NEWER dashboard data than the cloud.\n\nThis device: {localAttacks} attacks ({localDate})\nCloud: {cloudAttacks} attacks ({cloudDate})\n\nRestore this device\'s data to the cloud? (Cancel keeps the cloud version; a backup of this device\'s data is kept either way.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'VTS Admin',

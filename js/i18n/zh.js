@@ -10,6 +10,9 @@ const zh = {
   adminCloudSyncError: '云同步问题 - 点击刷新',
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: '云端有来自其他设备的更新数据 - 本次保存未上传。请先刷新以加载最新数据。',
+  adminCloudStaleQueueDropped: '云端已有更新数据，已丢弃一条过期的排队写入。',
+  adminLocalNewerRestorePrompt: '此设备的数据比云端更新。\n\n此设备：{localAttacks} 次攻击（{localDate}）\n云端：{cloudAttacks} 次攻击（{cloudDate}）\n\n将此设备的数据恢复到云端？（取消将保留云端版本；无论如何都会保留本地备份。）',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'VTS 管理员',

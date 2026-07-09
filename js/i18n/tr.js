@@ -10,6 +10,9 @@ const tr = {
   adminCloudSyncError: "Bulut senkronizasyon sorunu - Yenile'ye tıklayın",
   adminCloudAdminRequired: 'Not signed in as admin; this upload was not synced.',
   adminCloudRetryPending: 'Local changes waiting - click Refresh after signing in',
+  adminCloudStaleWriteSkipped: 'Bulutta başka bir cihazdan daha yeni veriler var - bu kayıt YÜKLENMEDİ. Önce en son verileri yüklemek için yenileyin.',
+  adminCloudStaleQueueDropped: 'Bulut zaten daha yeni veriler içerdiğinden eski bir kuyruk yazımı atıldı.',
+  adminLocalNewerRestorePrompt: 'Bu cihazda buluttan DAHA YENİ veriler var.\n\nBu cihaz: {localAttacks} saldırı ({localDate})\nBulut: {cloudAttacks} saldırı ({cloudDate})\n\nBu cihazın verileri buluta geri yüklensin mi? (İptal bulut sürümünü korur; yerel yedek her durumda saklanır.)',
   adminSpecialListSavedLocalOnly:
     '{label} saved on this device only. Cloud sync did not confirm, so other admins may not see it yet.',
   adminLoginTitle: 'VTS Yönetici',
