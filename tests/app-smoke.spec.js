@@ -1000,13 +1000,17 @@ test.describe('app smoke tabs', () => {
         rootTheme: document.documentElement.getAttribute('data-theme') || 'dark',
         noDocumentOverflow: document.documentElement.scrollWidth <= window.innerWidth + 2,
         navScrollsInside: nav.scrollWidth >= nav.clientWidth,
-        adminMobileLabel: window.getComputedStyle(adminTab, '::after').content,
+        // The mobile label is real text (13.1.1 removed the font-size:0 +
+        // ::after hack that blanked the button when cached CSS versions mixed).
+        adminMobileLabel: (adminTab.textContent || '').trim(),
+        adminLabelFontSize: Number.parseFloat(window.getComputedStyle(adminTab).fontSize),
       };
     });
     expect(darkLayout.rootTheme).toBe('dark');
     expect(darkLayout.noDocumentOverflow).toBe(true);
     expect(darkLayout.navScrollsInside).toBe(true);
     expect(darkLayout.adminMobileLabel).toContain('Admin');
+    expect(darkLayout.adminLabelFontSize).toBeGreaterThan(0);
 
     await page.evaluate(() => {
       localStorage.setItem('vts_theme', 'light');
