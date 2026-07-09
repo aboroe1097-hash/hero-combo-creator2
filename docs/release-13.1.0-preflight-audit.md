@@ -16,9 +16,11 @@
 **Local quality gates re-run in this workspace:** ESLint ✅ · Prettier ✅ · unit tests 151/151 ✅ ·
 i18n ✅ (858 template keys, 1302 runtime keys, 11 languages) · production Vite build ✅ ·
 size check ✅ (index 48.3 kB, total JS 1915.4 kB, total CSS 637.2 kB — all under budget) ·
-Playwright smoke suite re-run in progress at time of writing (first run failed only because the
-container lacked the pinned Playwright `chromium_headless_shell-1228` binary — an environment
-issue, not a code regression; re-run uses the pre-installed Chromium).
+Playwright smoke suite ✅ **green** — 26 passed, 0 failed (exit 0); the remaining tests are the
+platform-specific visual-baseline snapshots that intentionally auto-skip in CI environments
+(`tests/app-smoke.spec.js:302,329`). An initial all-fail run was purely environmental (the
+container lacked the pinned Playwright `chromium_headless_shell-1228` binary; re-run used the
+pre-installed Chromium). The mobile-overflow smoke tests passed.
 
 ---
 
@@ -260,6 +262,129 @@ if (request.mode === 'navigate') {
 
 ---
 
+## 5. Multi-Agent Edit Range Audit — `b2afe20..a1117ec` (14 commits, Jul 7–9)
+
+Scope: all edits made after the 13.0.3 release commit by the multi-agent sessions
+(codex 5.5 / qwen 3.7 / glm 5.2 / deepseek), +6,162/−716 lines across 72 files.
+**State note:** these edits ARE committed (14 commits) and ARE on `origin/gh-pages`
+(the remote tip was force-updated to `a1117ec`). What is missing is the 13.1.0 version
+bump/changelog on top of them (§1).
+
+All quality gates pass on this exact tree (see Executive Verdict), including the mobile
+overflow smoke tests, so functional regressions are covered. Findings below are from
+manual review of the diff.
+
+### 5.1 ⚠️ Client-side PIN gate is cosmetic — and the PIN is published in the repo
+
+- 📂 `js/admin-pin-gate.js:19` (fallback `'232323'`), `js/admin-auth-config.js:5`
+  (`adminPin: '232323'` shipped to every visitor), used at `js/ocr-dashboard.js:1665`
+- ⚠️ **Issue:** the new Eden X1 votes admin subtab is "protected" by a PIN that is
+  hardcoded in public client source and bypassable via
+  `localStorage.setItem('vts_eden_votes_pin_ok','1')`. It sits *inside* the
+  claim-gated admin dashboard, so the real security boundary (Firebase admin custom
+  claim + Firestore rules) is intact — but this gate must never be treated as
+  security, and publishing the PIN in a public repo means it offers no secrecy even
+  as a speed bump.
+- 🛠️ **Fix:** either accept it as a UI convenience (document that), or derive it per
+  deploy: remove the hardcoded fallback in `admin-pin-gate.js` and leave
+  `adminPin: ''` in the committed config (empty PIN ⇒ gate disabled), setting the
+  real value only in the deployed copy:
+
+```js
+// js/admin-pin-gate.js
+function configuredPin() {
+  return String(window.VTS_ADMIN_AUTH?.adminPin || '');
+}
+export function requireEdenVotesPin() {
+  if (!configuredPin()) return Promise.resolve(true); // no PIN configured = no gate
+  ...
+}
+```
+
+### 5.2 ⚠️ Management votes load via JSONP on a page with no CSP
+
+- 📂 `js/eden-x1-management-votes.js:352-392` (`loadManagementVotesViaJsonp` injects a
+  `<script src="https://docs.google.com/...">`), consumed by `js/eden-x1.js:403`
+- ⚠️ **Issue:** JSONP executes third-party-served JavaScript. It works only because
+  `eden-x1.html` — unlike `index.html` and `admin.html` — has **no
+  Content-Security-Policy meta at all** (a pre-existing gap this feature now leans on).
+  The Sheet endpoint is Google's gviz API (Google-generated response, not raw sheet
+  content) and all sheet-derived names are escaped through `esc()` at render
+  (verified at `js/eden-x1.js:4467-4484` and the winner/status paths), so the
+  practical XSS risk is low — but the page that renders community data is the one
+  page without CSP defense-in-depth.
+- 🛠️ **Fix:** add a CSP meta to `eden-x1.html` mirroring `index.html`'s policy plus
+  the one extra origin the JSONP loader needs:
+
+```html
+<!-- eden-x1.html <head>, mirroring index.html:7 with one addition -->
+script-src 'self' https://docs.google.com https://www.gstatic.com ...;
+connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com ...;
+```
+
+### 5.3 ⚠️ Hardcoded module cache-buster stamps in `js/app.js` will go stale
+
+- 📂 `js/app.js:18` and `js/app.js:147` — `'./app-whats-new.js?v=20260708_101500'`,
+  `import('./app-research.js?v=20260708_101500')`
+- ⚠️ **Issue:** `scripts/update-build-metadata.mjs` rewrites `?v=` stamps only in the
+  three HTML files and the `ocr-dashboard.js` import inside `js/admin-page.js`
+  (lines 48–65). These two new stamps inside `js/app.js` are invisible to it and are
+  frozen at `20260708_101500` forever. Impact is bounded (the service worker fetches
+  `/js/*` network-first), but the stamp stops doing its job on the next release and
+  silently reintroduces HTTP-cache staleness for What's New and Research.
+- 🛠️ **Fix — extend the stamper to cover app.js:**
+
+```js
+// scripts/update-build-metadata.mjs — alongside the admin-page.js block
+const appJsPath = path.join(root, 'js', 'app.js');
+if (fs.existsSync(appJsPath)) {
+  const appJs = fs
+    .readFileSync(appJsPath, 'utf8')
+    .replace(
+      /((?:app-whats-new|app-research)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+      `$1?v=${buildVersion}`
+    );
+  fs.writeFileSync(appJsPath, appJs);
+}
+```
+
+### 5.4 ⚠️ Confirm intended: grant_premium now downgrades a Guild Master reward
+
+- 📂 `js/contribution-weighting.js:474-481`
+- ⚠️ **Issue:** before this range, a `grant_premium` conduct flag never touched a
+  player already at `guild_master`; now it unconditionally sets them to `core`, and
+  the forfeit branch no longer applies to `guild_master` at all. Unit tests were
+  updated to match, so it appears deliberate (commit 9df904a "Assign guild master
+  reward to top Eden X1 contributor") — but this changes real reward outcomes, so
+  confirm the new semantics are what R5 wants before shipping.
+- 🛠️ If unintended, restore the `finalReward !== 'guild_master'` guard.
+
+### 5.5 ℹ️ Reviewed and OK
+
+- **Stale-asset recovery** (`js/admin-page.js:12-48`, mirrored on `vite:preloadError`):
+  clears caches + unregisters the SW + reloads once per session on dynamic-import
+  failure. Session-guarded against reload loops. Sound.
+- **What's New suppression** on local/preview hosts and `?qa`/`?visual` params
+  (`js/app-whats-new.js:42-51`): correct private-range regexes; no production impact.
+- **Escaping discipline maintained:** the ~1,000 new render lines in `js/eden-x1.js`
+  consistently route dynamic values through `esc()` (219 call sites); Google-Sheet
+  names, voter names, and Cyrillic aliases are escaped at every sink I checked.
+- **`public/sw.js` APP_SHELL** dropped `firebase.js`/`firebase-sdk.js` — consistent
+  with their lazy-load usage; regenerated by the build.
+- **Size budget raises** in `scripts/check-size.mjs` are documented in-line and match
+  the measured output of the responsive CSS pass (build + size gate pass).
+- **Data-only changes** (R4 management key list in `js/player-tags.js`, OCR name
+  aliases in `js/ocr-shared.js`, GoodnesGraycious family key) are covered by updated
+  unit tests.
+- **Fragment stamp:** `tabs/loyalty.html` gained its `?v=` stamp in this range —
+  but `tabs/eden-map.html` (§4.1) and the `tabs/admin.html` fetch (§4.2) were missed.
+- **No secrets introduced** anywhere in the range (scanned for keys/tokens/passwords;
+  the only hit is the deliberate-but-weak admin PIN, §5.1).
+- **Fixed slot-1 assignment** of "Wicked Russian" in the management reward table
+  (`js/eden-x1.js:3008`) is data-in-code consistent with prior releases; fine.
+
+---
+
 ## Recommended pre-push checklist for 13.1.0
 
 1. Bump all seven version surfaces (§1) + prepend the `## 13.1.0` CHANGELOG entry.
@@ -267,6 +392,8 @@ if (request.mode === 'navigate') {
 3. Apply fix 4.3 to `scripts/update-build-metadata.mjs` (sw.js regenerates on build).
 4. Optionally apply fix 2.1 (vote owner-read) — if applied, `firebase deploy --only
    firestore:rules --project abocombo` **must** ship with the release (§2.2).
-5. Run the full gate: `npm run check` (lint → format → unit → i18n → build → size → smoke).
-6. Commit the build-stamped files (`index.html`, `admin.html`, `eden-x1.html`,
+5. Decide on §5.1 (PIN in public repo), §5.2 (CSP for eden-x1.html), §5.3 (app.js
+   stamp coverage), and confirm the §5.4 reward-semantics change with R5.
+6. Run the full gate: `npm run check` (lint → format → unit → i18n → build → size → smoke).
+7. Commit the build-stamped files (`index.html`, `admin.html`, `eden-x1.html`,
    `js/admin-page.js`, `public/sw.js`, `js/eden-datasets.payload.json`) and push to `gh-pages`.
