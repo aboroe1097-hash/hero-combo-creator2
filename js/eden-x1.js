@@ -4983,7 +4983,6 @@ async function main() {
   await loadEdenX1Dashboard();
 }
 
-<<<<<<< Updated upstream
 // Lets the browser paint and handle input between heavy render stages so one
 // giant synchronous DOM build doesn't lock the main thread.
 function yieldToBrowser() {
@@ -4994,8 +4993,6 @@ function yieldToBrowser() {
   });
 }
 
-=======
->>>>>>> Stashed changes
 async function applyDashboardData(data = {}) {
   setRewardFlowReady(false);
   const contributionRecords = Array.isArray(data.contributionRecords)
@@ -5036,22 +5033,12 @@ async function applyDashboardData(data = {}) {
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
-<<<<<<< Updated upstream
   // Stage 1: the weighted table users came for. Reveal it, then yield so the
   // browser can paint before the heavy public dashboard renders.
   renderCurrentTable();
   setEdenPanelLoading(false);
   await yieldToBrowser();
   // Stage 2: public dashboard (analytics, charts, history) in its own frame.
-=======
-
-  // Stage 1: Render the critical weighted table immediately
-  renderCurrentTable();
-  setEdenPanelLoading(false);
-
-  // Stage 2: Yield before heavy public dashboard rendering
-  await yieldToBrowser();
->>>>>>> Stashed changes
   renderPublicDashboard(data);
   if (!EDEN_X1_TEST_MODE) {
     await yieldToBrowser();
@@ -5059,13 +5046,8 @@ async function applyDashboardData(data = {}) {
   }
 }
 
-<<<<<<< Updated upstream
-window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
-  return applyDashboardData(data);
-=======
 window.setEdenX1DataForTest = async function setEdenX1DataForTest(data) {
   await applyDashboardData(data);
->>>>>>> Stashed changes
 };
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {

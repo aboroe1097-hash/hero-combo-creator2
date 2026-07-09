@@ -15,11 +15,7 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-<<<<<<< Updated upstream
 import { initWhatsNewBanner } from './app-whats-new.js?v=20260709_232847';
-=======
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260709_232305';
->>>>>>> Stashed changes
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { initUserDataPortability } from './user-data-portability.js';
 import { initBugReportWidget } from './bug-widget.js';
@@ -149,11 +145,7 @@ let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-<<<<<<< Updated upstream
     researchModulePromise = import('./app-research.js?v=20260709_232847').catch((err) => {
-=======
-    researchModulePromise = import('./app-research.js?v=20260709_232305').catch((err) => {
->>>>>>> Stashed changes
       researchModulePromise = null;
       throw err;
     });
@@ -163,11 +155,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-<<<<<<< Updated upstream
     materialModulePromise = import('./material-calculator.js?v=20260709_232847').catch((err) => {
-=======
-    materialModulePromise = import('./material-calculator.js?v=20260709_232305').catch((err) => {
->>>>>>> Stashed changes
       materialModulePromise = null;
       throw err;
     });
@@ -969,11 +957,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-<<<<<<< Updated upstream
         import('./eden-map.js?v=20260709_232847')
-=======
-        import('./eden-map.js?v=20260709_232305')
->>>>>>> Stashed changes
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -1058,11 +1042,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-<<<<<<< Updated upstream
       import('./app-strife.js?v=20260709_232847')
-=======
-      import('./app-strife.js?v=20260709_232305')
->>>>>>> Stashed changes
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
