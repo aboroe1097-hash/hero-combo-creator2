@@ -778,14 +778,13 @@ function renderEdenX1VoteResults() {
   if (!host) return;
   const season = currentEdenVoteSeason();
   const votes = Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [];
-  const dedupedVotes = dedupeEdenX1Votes(votes)
-    .filter(
-      (vote) =>
-        vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
-        (!season || vote.season === season) &&
-        vote.voterName &&
-        vote.candidates.length
-    );
+  const dedupedVotes = dedupeEdenX1Votes(votes).filter(
+    (vote) =>
+      vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
+      (!season || vote.season === season) &&
+      vote.voterName &&
+      vote.candidates.length
+  );
   if (!dedupedVotes.length) {
     host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
     return;
