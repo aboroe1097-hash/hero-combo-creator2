@@ -24,13 +24,7 @@ const [
     getIdTokenResult,
   },
   { getFirestore },
-  { getAnalytics },
-] = await Promise.all([
-  importFirebaseApp(),
-  importFirebaseAuth(),
-  importFirestore(),
-  importFirebaseAnalytics(),
-]);
+] = await Promise.all([importFirebaseApp(), importFirebaseAuth(), importFirestore()]);
 
 let appCheckApiPromise = null;
 
@@ -209,12 +203,16 @@ export function initFirebase() {
   auth = getAuth(app);
   db = getFirestore(app);
 
-  // Analytics automatically logs page_view and tracks active users for free without quotas
-  try {
-    analytics = getAnalytics(app);
-  } catch (e) {
-    console.warn('Analytics blocked or failed to initialize', e);
-  }
+  // Analytics automatically logs page_view and tracks active users for free
+  // without quotas. Loaded in the background so gtag never blocks app boot;
+  // nothing reads the analytics instance synchronously.
+  importFirebaseAnalytics()
+    .then(({ getAnalytics }) => {
+      analytics = getAnalytics(app);
+    })
+    .catch((e) => {
+      console.warn('Analytics blocked or failed to initialize', e);
+    });
 
   return { app, db, auth, analytics, configured: true };
 }
