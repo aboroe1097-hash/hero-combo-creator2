@@ -3271,6 +3271,7 @@
   }
 }
 
+<<<<<<< Updated upstream
 /* Perf: skip rendering work for off-screen public-dashboard sections until the
    user scrolls near them (Lighthouse TBT fix). contain-intrinsic-size reserves
    an estimated height so scrollbars stay stable while skipped. */
@@ -3285,4 +3286,18 @@
    loading sigil -> table swap does not shift the content below the panel. */
 .eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel {
   min-height: 100vh;
+=======
+/* Content-visibility: defer rendering of off-screen sections to reduce TBT */
+#ocrDashboardRoot .dash-analytics-grid {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+#ocrDashboardRoot .dash-analytics-grid > .dash-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+#ocrDashboardRoot .eden-x1-public-history-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+>>>>>>> Stashed changes
 }
