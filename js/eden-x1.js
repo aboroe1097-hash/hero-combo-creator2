@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.4';
+const APP_VERSION = '13.1.5';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -4958,7 +4958,7 @@ async function loadEdenX1Dashboard() {
       return;
     }
 
-    applyDashboardData(result.data);
+    await applyDashboardData(result.data);
     stopEdenLoadingProgress(generation, 100);
   } catch (err) {
     if (generation !== edenBootGeneration) return;
@@ -4977,7 +4977,17 @@ async function main() {
   await loadEdenX1Dashboard();
 }
 
-function applyDashboardData(data = {}) {
+// Lets the browser paint and handle input between heavy render stages so one
+// giant synchronous DOM build doesn't lock the main thread.
+function yieldToBrowser() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 0);
+    });
+  });
+}
+
+async function applyDashboardData(data = {}) {
   setRewardFlowReady(false);
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
@@ -5017,16 +5027,21 @@ function applyDashboardData(data = {}) {
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
+  // Stage 1: the weighted table users came for. Reveal it, then yield so the
+  // browser can paint before the heavy public dashboard renders.
   renderCurrentTable();
+  setEdenPanelLoading(false);
+  await yieldToBrowser();
+  // Stage 2: public dashboard (analytics, charts, history) in its own frame.
   renderPublicDashboard(data);
   if (!EDEN_X1_TEST_MODE) {
+    await yieldToBrowser();
     loadEdenManagementVoteResults();
   }
-  setEdenPanelLoading(false);
 }
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
-  applyDashboardData(data);
+  return applyDashboardData(data);
 };
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {

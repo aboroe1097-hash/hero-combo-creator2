@@ -1,5 +1,15 @@
 # Changelog
 
+## 13.1.5 - 2026-07-10
+
+- Eden X1 page performance overhaul (Lighthouse mobile score was 25). Stylesheets no longer block first paint: critical loading-state CSS is inlined, the seven CSS files are preloaded in `<head>` and applied at the end of `<body>`, and `maintenance-config.js` moved to a deferred body-end script.
+- Split the Eden X1 dashboard render into stages: the weighted table paints first, then the browser gets a frame before the heavy public dashboard (analytics, charts, attack history) renders, cutting the main-thread block that froze phones. Off-screen public sections now use `content-visibility: auto` so they render only when scrolled near.
+- Fixed layout shift (CLS 0.389) by reserving the weighted-table area while data loads.
+- Firebase Analytics now loads in the background instead of blocking every page's Firebase boot on the gtag CDN chain.
+- Fixed a Content-Security-Policy error: the Firebase auth helper iframe (`abocombo.firebaseapp.com`) was blocked by `frame-src` on the Eden X1 page, spamming console errors during sign-in.
+- Added a `preconnect` hint for `www.gstatic.com` so Firebase SDK downloads start their connection earlier.
+- Synced public version labels, README, changelog, and app constants to 13.1.5.
+
 ## 13.1.4 - 2026-07-10
 
 - Replaced timestamp-based local restore prompts with revision-guarded cloud sync. A reachable cloud dashboard is now authoritative on every device; a conflicting local snapshot is backed up instead of being offered as an automatic overwrite.

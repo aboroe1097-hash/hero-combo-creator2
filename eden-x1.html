@@ -4,29 +4,55 @@
   <meta charset="UTF-8" />
   <title>Eden X1 - Weighted Contribution View | Hero Combo Creator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com; manifest-src 'self'; worker-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com; manifest-src 'self'; worker-src 'self'" />
   <meta name="description" content="View-only weighted contribution dashboard for Eden X1 season. See player rankings, duty counts, bonus team effort points, and weighted scores." />
   <meta name="robots" content="noindex, nofollow" />
   <meta id="themeColorMeta" name="theme-color" content="#0f172a" />
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
   <link id="manifestLink" rel="manifest" href="site.webmanifest" />
-  <script src="js/theme-prepaint.js?v=20260709_222724"></script>
+  <script src="js/theme-prepaint.js?v=20260709_232238"></script>
+  <!-- Critical CSS: enough to paint the loading state immediately. Full
+       stylesheets are preloaded here and applied at the end of <body> so they
+       never block first paint. -->
+  <style>
+    :root{color-scheme:dark;--bg-solid:#060b13;--text-primary:#f7fbff;--text-muted:#aebbd0}
+    [data-theme='light']{color-scheme:light;--bg-solid:#f7fafc;--text-primary:#101827;--text-muted:#4b5c73}
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;background:var(--bg-solid);color:var(--text-primary);font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh}
+    [hidden],.hidden{display:none!important}
+    img{max-width:100%}
+    .app-shell{max-width:1240px;margin:0 auto;padding:16px}
+    .dash-connecting{display:flex;align-items:center;justify-content:center;min-height:420px;padding:32px 16px;text-align:center}
+    .dash-connecting-stage{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:520px}
+    .dash-connecting-kicker{margin:0;font-size:11px;letter-spacing:.18em;color:var(--text-muted)}
+    .dash-connecting-title{margin:0;font-size:20px}
+    .dash-connecting-status{margin:0;font-size:13px;color:var(--text-muted)}
+    .dash-connecting-bar-wrap{display:flex;align-items:center;gap:10px;width:min(320px,100%)}
+    .dash-connecting-bar{display:block;flex:1;height:6px;border-radius:999px;background:rgba(148,163,184,.25);overflow:hidden}
+    .dash-connecting-bar-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#34d399);transition:width .4s ease}
+    .dash-connecting-bar-pct{font-size:12px;color:var(--text-muted)}
+    .dash-connecting-sigil{position:relative;width:96px;height:96px;color:#7dd3fc}
+    .dash-sigil-aura,.dash-sigil-grid,.dash-sigil-sweep,.dash-sigil-routes,.dash-sigil-ring{position:absolute;inset:0;border-radius:50%}
+    .dash-sigil-body{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(125,211,252,.4);animation:edenSigilPulse 1.6s ease-in-out infinite}
+    @keyframes edenSigilPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.05);opacity:1}}
+    /* CLS guard: reserve space for the weighted table while data loads so the
+       sigil -> table swap does not shift everything below it. */
+    .eden-x1-panel--loading #dashWeightedContributionPanel{min-height:100vh}
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  <link rel="preload" as="style" href="css/_tokens.css?v=20260709_232238" />
+  <link rel="preload" as="style" href="css/app.css?v=20260709_232238" />
+  <link rel="preload" as="style" href="css/ocr-dashboard.css?v=20260709_232238" />
+  <link rel="preload" as="style" href="css/components.css?v=20260709_232238" />
+  <link rel="preload" as="style" href="css/atmosphere.css?v=20260709_232238" />
+  <link rel="preload" as="style" href="css/eden-x1.css?v=20260709_232238" />
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
   </noscript>
-  <link rel="stylesheet" href="css/_tokens.css?v=20260709_222724" />
-  <link rel="stylesheet" href="css/app.css?v=20260709_222724" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260709_222724" />
-  <link rel="stylesheet" href="css/components.css?v=20260709_222724" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=20260709_222724" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260709_222724" media="(max-width: 768px)" />
-  <link rel="stylesheet" href="css/eden-x1.css?v=20260709_222724" />
-  <script src="js/maintenance-config.js?v=20260709_222724"></script>
 </head>
 <body class="admin-standalone-page eden-x1-page eden-x1-loading">
   <div class="app-shell">
@@ -227,12 +253,23 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; <span id="edenX1FooterYear">2026</span> VTS 1097 &middot; v13.1.4</p>
+        <p>&copy; <span id="edenX1FooterYear">2026</span> VTS 1097 &middot; v13.1.5</p>
       </div>
     </footer>
   </div>
 
   <div id="toastContainer"></div>
-  <script type="module" src="js/eden-x1.js?v=20260709_222724"></script>
+  <!-- Full stylesheets applied here (fetched via head preloads) so they do not
+       block first paint; the inline critical CSS covers the loading state. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+  <link rel="stylesheet" href="css/_tokens.css?v=20260709_232238" />
+  <link rel="stylesheet" href="css/app.css?v=20260709_232238" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260709_232238" />
+  <link rel="stylesheet" href="css/components.css?v=20260709_232238" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=20260709_232238" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260709_232238" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/eden-x1.css?v=20260709_232238" />
+  <script src="js/maintenance-config.js?v=20260709_232238" defer></script>
+  <script type="module" src="js/eden-x1.js?v=20260709_232238"></script>
 </body>
 </html>

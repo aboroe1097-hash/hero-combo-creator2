@@ -3270,3 +3270,19 @@
     margin-left: 0 !important;
   }
 }
+
+/* Perf: skip rendering work for off-screen public-dashboard sections until the
+   user scrolls near them (Lighthouse TBT fix). contain-intrinsic-size reserves
+   an estimated height so scrollbars stay stable while skipped. */
+.eden-x1-page .dash-analytics-grid,
+.eden-x1-page .eden-x1-public-history-card,
+.eden-x1-page .dash-analytics-grid .dash-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+
+/* CLS guard: reserve space for the weighted table while data loads so the
+   loading sigil -> table swap does not shift the content below the panel. */
+.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel {
+  min-height: 100vh;
+}
