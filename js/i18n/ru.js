@@ -1386,6 +1386,10 @@ const ru = {
   edenX1VoteContributionTotal: 'Всего вклада',
   edenX1VoteConductBonus: 'Бонусные очки R5',
   edenX1VoteStructureConsistency: 'Стабильность и движение по структурам',
+  edenX1SpecializationPoints: 'Specialization points',
+  edenX1SpecializationPointsBeforeSeason: 'Before season start',
+  edenX1SpecializationPointsHint:
+    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'Движение относительно ранних ударов',
   edenX1InfoButtonLabel: 'Как рассчитывается',
   edenX1InfoWeightedScore:

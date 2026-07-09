@@ -1383,6 +1383,10 @@ const id = {
   edenX1VoteContributionTotal: 'Total kontribusi',
   edenX1VoteConductBonus: 'Poin bonus R5',
   edenX1VoteStructureConsistency: 'Konsistensi & pergerakan struktur',
+  edenX1SpecializationPoints: 'Specialization points',
+  edenX1SpecializationPointsBeforeSeason: 'Before season start',
+  edenX1SpecializationPointsHint:
+    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'Pergerakan vs hit awal',
   edenX1InfoButtonLabel: 'Cara dihitung',
   edenX1InfoWeightedScore:

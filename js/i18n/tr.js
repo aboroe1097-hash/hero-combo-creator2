@@ -1384,6 +1384,10 @@ const tr = {
   edenX1VoteContributionTotal: 'Toplam katkı',
   edenX1VoteConductBonus: 'R5 bonus puanları',
   edenX1VoteStructureConsistency: 'Yapı tutarlılığı ve hareket',
+  edenX1SpecializationPoints: 'Specialization points',
+  edenX1SpecializationPointsBeforeSeason: 'Before season start',
+  edenX1SpecializationPointsHint:
+    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'İlk vuruşlara göre hareket',
   edenX1InfoButtonLabel: 'Nasıl hesaplanır',
   edenX1InfoWeightedScore:

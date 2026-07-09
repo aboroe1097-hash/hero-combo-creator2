@@ -1397,6 +1397,10 @@ const de = {
   edenX1VoteContributionTotal: 'Beitrag gesamt',
   edenX1VoteConductBonus: 'R5-Bonuspunkte',
   edenX1VoteStructureConsistency: 'Struktur-Konstanz & Bewegung',
+  edenX1SpecializationPoints: 'Specialization points',
+  edenX1SpecializationPointsBeforeSeason: 'Before season start',
+  edenX1SpecializationPointsHint:
+    'Specialization points recorded before the Eden X1 season started.',
   edenX1VoteMovementDelta: 'Bewegung vs frühe Treffer',
   edenX1InfoButtonLabel: 'So wird es berechnet',
   edenX1InfoWeightedScore:
