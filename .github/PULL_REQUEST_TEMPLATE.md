@@ -13,11 +13,17 @@
 
 ## Checks
 
+- [ ] PR targets `gh-pages` from a separate branch, not a direct `gh-pages` commit
 - [ ] `npm run i18n:check`
 - [ ] `npm run data:check`
 - [ ] `npm run build`
 - [ ] `npm run size:check`
 - [ ] `npm run smoke`
+
+## Versioning
+
+- [ ] Version labels and `CHANGELOG.md` are updated, or this PR is docs-only/internal
+- [ ] Release version follows the `.0` through `.20`, then next minor cadence
 
 ## Evidence
 
