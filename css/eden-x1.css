@@ -3176,10 +3176,12 @@
   }
 }
 
-/* M5: Centering absolute popovers to prevent right-edge silent clipping */
-#ocrDashboardRoot .eden-x1-vote-info-popover,
-#ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  margin-left: 0 !important;
+/* M5: Centering absolute popovers to prevent right-edge silent clipping. */
+@media (min-width: 769px) {
+  #ocrDashboardRoot .eden-x1-vote-info-popover,
+  #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin-left: 0 !important;
+  }
 }

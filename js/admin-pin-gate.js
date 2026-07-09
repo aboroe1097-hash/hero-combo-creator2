@@ -16,7 +16,7 @@ function getPinCopy(key, fallback) {
 }
 
 function configuredPin() {
-  return String(window.VTS_ADMIN_AUTH?.adminPin || '232323');
+  return String(window.VTS_ADMIN_AUTH?.adminPin || '');
 }
 
 export function edenVotesUnlocked() {
@@ -25,6 +25,7 @@ export function edenVotesUnlocked() {
 
 export function requireEdenVotesPin() {
   if (edenVotesUnlocked()) return Promise.resolve(true);
+  if (!configuredPin()) return Promise.resolve(true);
   if (pendingPrompt) return pendingPrompt;
 
   pendingPrompt = new Promise((resolve) => {

@@ -1009,7 +1009,6 @@ button:not([disabled]):active,
   .hero-card span.text-xs, .generator-card span.text-xs { font-size: 0.58rem !important; }
 
   .tab-pill { font-size: 0.63rem !important; padding: 0.38rem 0.48rem !important; }
-  .research-grid { grid-template-columns: repeat(3, 1fr) !important; }
   .eden-tool-btn { padding: 7px 8px !important; font-size: 0.57rem !important; }
   .eden-minimap { width: 78px !important; height: 78px !important; }
   .eden-canvas-wrap, #edenMapCanvas { min-height: 44vh !important; }
@@ -2297,7 +2296,10 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   .hero-card, .generator-card { min-height: 118px !important; padding: 6px !important; }
   .hero-card img, .generator-card img { width: 46px !important; height: 46px !important; }
   .eden-x1-reward-flow { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-  .research-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+  .research-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .eden-tool-btn { padding: 6px 7px !important; font-size: 0.54rem !important; }
+  .eden-minimap { width: 70px !important; height: 70px !important; }
+  .eden-canvas-wrap, #edenMapCanvas { min-height: 40vh !important; }
 }
 
 .heroes-season-tabs,

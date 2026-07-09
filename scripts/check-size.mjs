@@ -11,7 +11,10 @@ const LIMITS = {
   indexLines: 800,
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
-  totalJsBytes: 2000 * 1024,
+  // 13.1.0 adds the DM Materials flow plus Eden X1/Strife release fixes.
+  // The measured production build is 2021.6 kB JS, so this cap keeps a small
+  // guard band while preserving a meaningful alarm for accidental growth.
+  totalJsBytes: 2050 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
@@ -24,9 +27,11 @@ const LIMITS = {
     // Eden X1 now includes the rewards flow, My Stats suggestions, and the
     // mobile quicknav in the route CSS. Keep the cap close to the measured
     // minified output so future growth still trips this check.
-    'eden-x1': 62 * 1024,
+    'eden-x1': 66 * 1024,
     mobile: 84 * 1024,
-    'ocr-dashboard': 150 * 1024,
+    // 13.1.0 dashboard mobile overflow fixes add small route CSS. The measured
+    // minified chunk is 150.1 kB, so keep this cap close to the production build.
+    'ocr-dashboard': 152 * 1024,
   },
 };
 

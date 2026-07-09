@@ -16,6 +16,7 @@ async function openApp(page, path = '/') {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_intro_v1_seen', '1');
     localStorage.setItem('vts_quick_tour_done', '1');
+    localStorage.setItem('vts_eden_dataset', 'season5');
   });
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await waitForAppReady(page);
@@ -823,17 +824,18 @@ test.describe('app smoke tabs', () => {
     await expectTab(page, '#tabResearch', '#researchSection', '#techListContainer');
   });
 
-  test('dragon master materials tab shows coming soon message', async ({ page }) => {
+  test('dragon master materials tab renders interactive calculator', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot');
     const materialsTabItem = page.locator('.tab-item', { has: page.locator('#tabMaterials') });
-    await expect(materialsTabItem.locator('.tab-badge-soon')).toHaveText('SOON');
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('Coming Soon');
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('DM Materials');
+    await expect(materialsTabItem.locator('.tab-badge-beta')).toHaveText('BETA');
     await expect(page.locator('#materialCalculatorRoot')).toContainText(
-      'Dragon Master set material planning is being prepared'
+      'Dragon Master Material Calculator'
     );
-    await expect(page.locator('#materialCalculatorRoot .dm-slot-table')).toHaveCount(0);
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('Setup wizard');
+    await expect(page.locator('#materialCalculatorRoot')).toContainText('Your materials');
+    await expect(page.locator('#materialCalculatorRoot .dm-inventory-card')).toHaveCount(4);
+    await expect(page.locator('#materialCalculatorRoot .dm-slot-table')).toHaveCount(1);
   });
 
   test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {
@@ -844,15 +846,18 @@ test.describe('app smoke tabs', () => {
       '#strifeSection',
       '#strifeToolRoot .strife-monster-card:first-child'
     );
-    await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(10);
+    await expect(page.locator('#strifeToolRoot .strife-monster-card')).toHaveCount(11);
     await page.locator('[data-strife-monster="pivana"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Pilvana');
-    await expect(page.locator('.strife-source-link')).toContainText('Sourced from Celso Kayran');
+    await expect(page.locator('.strife-guide-notes')).toContainText('normal-attack pressure');
     await expect(page.locator('.strife-results-band--f2p')).toContainText('Free Combos');
     await expect(page.locator('.strife-results-band--p2w')).toContainText('Paid Combos');
     await expect(page.locator('.strife-skill-card')).toHaveCount(3);
     await expect(page.locator('.strife-skill-answer').first()).toContainText('Counter');
-    await expect(page.locator('.strife-results-band--f2p')).toContainText('Sky Breaker');
+    await expect(page.locator('.strife-results-band--f2p')).toContainText(
+      'Filtered combo DB fallback'
+    );
+    await expect(page.locator('.strife-results-band--f2p')).toContainText('Hunk');
 
     await page.locator('[data-strife-monster="noisy-noel"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Noisy Noel');
@@ -860,11 +865,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.strife-results-band--f2p')).toContainText('Witch Hunter');
     await expect(page.locator('.strife-results-band--p2w')).toContainText('Ramses II');
 
-    await page.locator('[data-strife-stage="X8"]').click();
+    await page.locator('[data-strife-stage="X2"]').click();
     await page.locator('[data-strife-monster="gambosate"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Gambosate');
     await expect(page.locator('.strife-skill-card')).toHaveCount(4);
-    await expect(page.locator('.strife-results-band--p2w')).toContainText('Rainforest Ranger');
+    await expect(page.locator('.strife-results-band--p2w')).toContainText('Beowulf');
   });
 
   test('lazy-loaded eden map, loyalty, and admin tabs render', async ({ page }) => {
@@ -875,9 +880,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('[data-eden-layer="reference"]')).not.toHaveClass(/active/);
     await expect(page.locator('#edenMapCanvas')).toBeVisible();
     await expectEdenTerrainPainted(page);
+    await page.evaluate(() => document.getElementById('edenSeasonModal')?.classList.add('hidden'));
     await page.locator('#edenCoordSearch').fill('800:800');
     await page.locator('#edenCoordGo').click();
-    await expect(page.locator('.eden-struct-row.active')).toContainText('800:800');
+    await expect(page.locator('#edenSectorSelect')).toHaveValue('C');
+    await expect(page.locator('#edenZoomLevel')).toContainText('120%');
+    await expect(page.locator('.eden-struct-row', { hasText: '800:800' })).toBeVisible();
     await expectEdenTerrainPainted(page);
     await expectTab(page, '#tabLoyalty', '#loyaltySection', '#loyaltyPresets');
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
@@ -2825,6 +2833,7 @@ test.describe('app smoke tabs', () => {
         typeof window.switchDashSubtab === 'function'
     );
     await page.evaluate(() => {
+      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), adminPin: '232323' };
       window.setEdenX1VotesForTest(
         [
           {

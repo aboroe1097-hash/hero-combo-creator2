@@ -663,6 +663,11 @@
   #ocrDashboardRoot .dash-sigil-ember--d {
     --orbit: rotate(270deg) translateY(-42px);
   }
+  #ocrDashboardRoot .dash-analytics-summary,
+  #ocrDashboardRoot .dash-roster-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   #ocrDashboardRoot :is(

@@ -6,9 +6,18 @@ test('public admin auth config only keeps destructive action override hashes', (
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
   assert.match(source, /clearHash:\s*''/);
   assert.match(source, /deleteHashes:\s*\[\s*\]/);
+  assert.match(source, /adminPin:\s*''/);
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
+  assert.doesNotMatch(source, /232323/);
   assert.doesNotMatch(source, /5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5/);
+});
+
+test('Eden votes PIN gate has no committed fallback secret', () => {
+  const source = readFileSync('js/admin-pin-gate.js', 'utf8');
+  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
+  assert.match(source, /if \(!configuredPin\(\)\) return Promise\.resolve\(true\);/);
+  assert.doesNotMatch(source, /232323/);
 });
 
 test('frontend CSP and markup avoid executable inline script bypasses', () => {
@@ -22,18 +31,31 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
     assert.doesNotMatch(source, inlineExecutableScript, `${page} should not use executable inline scripts`);
   }
 
-  for (const page of ['index.html', 'admin.html']) {
+  for (const page of ['index.html', 'admin.html', 'eden-x1.html']) {
     const source = readFileSync(page, 'utf8');
     const csp = source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
     const scriptSrc = csp.match(/script-src\s+([^;]+)/)?.[1] || '';
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
+    if (page === 'eden-x1.html') assert.match(scriptSrc, /https:\/\/docs\.google\.com/);
   }
 
   const index = readFileSync('index.html', 'utf8');
   assert.match(index, /js\/theme-prepaint\.js/);
   assert.match(index, /js\/index-page-enhancements\.js/);
   assert.match(index, /data-footer-tab="manual"/);
+});
+
+test('build metadata refreshes lazy app module cache busters', () => {
+  const script = readFileSync('scripts/update-build-metadata.mjs', 'utf8');
+  const app = readFileSync('js/app.js', 'utf8');
+  assert.match(script, /app-whats-new\|app-research\|material-calculator\|eden-map\|app-strife/);
+  assert.doesNotMatch(app, /20260708_101500/);
+  assert.match(app, /app-whats-new\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /app-research\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /material-calculator\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /eden-map\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /app-strife\.js\?v=\d{8}_\d{6}/);
 });
 
 test('theme manifests include dark and light install colors', () => {

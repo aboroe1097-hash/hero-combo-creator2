@@ -64,6 +64,15 @@ function updateCacheBusters() {
       .replace(/tabs\/admin\.html(?:\?v=[0-9A-Za-z_-]+)?/g, `tabs/admin.html?v=${buildVersion}`);
     fs.writeFileSync(adminPagePath, adminPage);
   }
+
+  const appJsPath = path.join(root, 'js', 'app.js');
+  if (fs.existsSync(appJsPath)) {
+    const appJs = fs.readFileSync(appJsPath, 'utf8').replace(
+      /((?:app-whats-new|app-research|material-calculator|eden-map|app-strife)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+      `$1?v=${buildVersion}`
+    );
+    fs.writeFileSync(appJsPath, appJs);
+  }
 }
 
 function publicUrlExists(url) {
