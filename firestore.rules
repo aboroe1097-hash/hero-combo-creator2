@@ -268,17 +268,18 @@ service cloud.firestore {
 
     function validEdenX1VotePath(voteId) {
       return request.resource.data.id == voteId
-        && voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
+        && voteId == request.resource.data.season + '__team_players__' + request.resource.data.voterKey;
     }
 
     function canGetOwnEdenX1Vote(voteId) {
       return signedIn()
-        && voteId.matches('^[A-Za-z0-9_-]{1,40}__team_players__' + request.auth.uid + '$');
+        && resource.data.id == voteId
+        && resource.data.voterAuthUid == request.auth.uid;
     }
 
     function validEdenX1VoteHistoryPath(historyId) {
       return request.resource.data.id == historyId
-        && request.resource.data.voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
+        && request.resource.data.voteId == request.resource.data.season + '__team_players__' + request.resource.data.voterKey;
     }
 
     function validEdenX1VoteStringList(values, minSize) {
@@ -440,7 +441,7 @@ service cloud.firestore {
       allow update: if signedIn()
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId)
-        && resource.data.voterAuthUid == request.auth.uid;
+        && (isAdmin() || resource.data.voterAuthUid == request.auth.uid);
     }
 
     match /vts_admin/eden_x1_vote_history/records/{historyId} {

@@ -2806,6 +2806,7 @@ test.describe('app smoke tabs', () => {
       JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
     );
     expect(savedVote).toMatchObject({
+      id: 'season-2026__team_players__malakabo',
       season: 'season-2026',
       category: 'team_players',
       voterName: 'MalakAbo',
@@ -2860,6 +2861,19 @@ test.describe('app smoke tabs', () => {
       window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: hash };
       window.setEdenX1VotesForTest(
         [
+          {
+            id: 'season-2026__team_players__legacy-auth-delta',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'delta',
+            voterName: 'Delta',
+            candidateKey: 'bravo',
+            candidateName: 'Bravo',
+            candidateKeys: ['bravo'],
+            candidateNames: ['Bravo'],
+            voterAuthUid: 'legacy-admin',
+            updatedAt: '2026-06-24T19:00:00.000Z',
+          },
           {
             id: 'season-2026__team_players__delta',
             season: 'season-2026',

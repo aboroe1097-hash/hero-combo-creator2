@@ -315,7 +315,7 @@ test('R5 conduct adjustments are stored separately and use the admin claim', () 
   assert.match(rules, /keepsConductMetadata\(\) \|\| repairsHistoricalConductMetadata\(\)/);
 });
 
-test('Eden X1 votes are public-write with admin list and owner get', () => {
+test('Eden X1 votes are member-keyed with admin list and owner get', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const eden = readFileSync('js/eden-x1.js', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
@@ -326,19 +326,16 @@ test('Eden X1 votes are public-write with admin list and owner get', () => {
   assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
   assert.match(rules, /allow get: if isAdmin\(\) \|\| canGetOwnEdenX1Vote\(voteId\);/);
   assert.match(rules, /allow list, delete: if isAdmin\(\);/);
-  assert.match(
-    rules,
-    /voteId\.matches\('\^\[A-Za-z0-9_-\]\{1,40\}__team_players__' \+ request\.auth\.uid \+ '\$'\)/
-  );
+  assert.match(rules, /resource\.data\.id == voteId/);
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)/);
   assert.match(
     rules,
-    /allow update: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)[\s\S]*resource\.data\.voterAuthUid == request\.auth\.uid/
+    /allow update: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)[\s\S]*\(isAdmin\(\) \|\| resource\.data\.voterAuthUid == request\.auth\.uid\)/
   );
   assert.match(
     rules,
-    /voteId == request\.resource\.data\.season \+ '__team_players__' \+ request\.auth\.uid/
+    /voteId == request\.resource\.data\.season \+ '__team_players__' \+ request\.resource\.data\.voterKey/
   );
   assert.match(rules, /request\.resource\.data\.category == 'team_players'/);
   assert.match(rules, /request\.resource\.data\.candidateKeys is list/);
@@ -407,12 +404,13 @@ test('Eden X1 votes are public-write with admin list and owner get', () => {
   );
   assert.match(
     eden,
-    /const voterAuthUid = edenVoteWriteContext\?\.user\?\.uid \|\| 'local-test';[\s\S]*const id = edenVoteDocId\(season, voterAuthUid\);/
+    /const voterAuthUid = edenVoteWriteContext\?\.user\?\.uid \|\| 'local-test';[\s\S]*const id = edenVoteDocId\(season, voter\.playerKey\);/
   );
-  assert.doesNotMatch(eden, /edenVoteDocId\(season, voter\.playerKey\)/);
+  assert.doesNotMatch(eden, /edenVoteDocId\(season, voterAuthUid\)/);
   assert.match(eden, /voterAuthUid/);
+  assert.match(dashboard, /function dedupeEdenX1Votes/);
   assert.match(eden, /previousVoteKnown/);
-  assert.match(eden, /saving vote without a history row/);
+  assert.match(eden, /saving vote with create-only history fallback/);
   assert.match(eden, /serverTimestamp\(\)/);
   assert.match(dashboard, /loadEdenX1VoteAdminData/);
   assert.match(dashboard, /setEdenX1VotesForTest/);

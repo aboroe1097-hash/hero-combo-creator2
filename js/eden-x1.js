@@ -161,9 +161,9 @@ function edenVoteLocalKey(season = edenVoteSeason()) {
   return `${EDEN_X1_VOTE_LOCAL_PREFIX}_${season}_${EDEN_X1_TEAM_VOTE_CATEGORY}`;
 }
 
-function edenVoteDocId(season, voterAuthUid) {
-  return `${String(season || '').trim()}__${EDEN_X1_TEAM_VOTE_CATEGORY}__${String(voterAuthUid || '').trim()}`
-    .replace(/[^a-z0-9_-]+/gi, '_')
+function edenVoteDocId(season, voterKey) {
+  return `${String(season || '').trim()}__${EDEN_X1_TEAM_VOTE_CATEGORY}__${String(voterKey || '').trim()}`
+    .replace(/\//g, '_')
     .slice(0, 180);
 }
 
@@ -1863,7 +1863,7 @@ async function submitEdenTeamVoteForm(form) {
 
   const season = edenVoteSeason();
   const voterAuthUid = edenVoteWriteContext?.user?.uid || 'local-test';
-  const id = edenVoteDocId(season, voterAuthUid);
+  const id = edenVoteDocId(season, voter.playerKey);
   const localVote = {
     id,
     season,
@@ -1900,7 +1900,7 @@ async function submitEdenTeamVoteForm(form) {
         previousVote = existingSnap?.exists?.() ? existingSnap.data() || {} : null;
       } catch (err) {
         previousVoteKnown = false;
-        console.warn('Eden X1 vote pre-read failed; saving vote without a history row.', err);
+        console.warn('Eden X1 vote pre-read failed; saving vote with create-only history fallback.', err);
       }
       const previousCandidateNames = Array.isArray(previousVote?.candidateNames)
         ? previousVote.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
@@ -1909,10 +1909,10 @@ async function submitEdenTeamVoteForm(form) {
         ? previousVote.candidateKeys.map((key) => String(key || '').trim()).filter(Boolean)
         : [previousVote?.candidateKey].map((key) => String(key || '').trim()).filter(Boolean);
       const changed =
-        previousVoteKnown &&
-        (!previousVote ||
-          String(previousVote.voterKey || '') !== voter.playerKey ||
-          previousCandidateKeys.join('|') !== candidateKeys.join('|'));
+        !previousVoteKnown ||
+        !previousVote ||
+        String(previousVote.voterKey || '') !== voter.playerKey ||
+        previousCandidateKeys.join('|') !== candidateKeys.join('|');
       const batch = writeBatch(db);
       batch.set(voteRef, {
         ...localVote,

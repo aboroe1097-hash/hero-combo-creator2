@@ -250,7 +250,7 @@ GitHub Pages deployment publishes the static app only; it does not deploy `fires
 npx firebase-tools deploy --only firestore:rules --project abocombo
 ```
 
-For Eden X1 Team Players voting, `vts_admin/eden_x1_votes/records` now accepts one to four unique teammate votes per authenticated anonymous user. If live voting shows `Missing or insufficient permissions`, first confirm the latest `firestore.rules` are deployed.
+For Eden X1 Team Players voting, `vts_admin/eden_x1_votes/records` now accepts one to four unique teammate votes per selected voter/member. If live voting shows `Missing or insufficient permissions`, first confirm the latest `firestore.rules` are deployed.
 
 ### OCR Worker and App Check
 The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.

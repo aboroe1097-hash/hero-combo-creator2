@@ -601,6 +601,28 @@ function edenVoteUpdatedAtMs(record) {
   return Date.parse(raw || '') || 0;
 }
 
+function edenX1VoteCanonicalId(vote) {
+  return `${vote?.season || ''}__${vote?.category || EDEN_X1_TEAM_VOTE_CATEGORY}__${vote?.voterKey || ''}`;
+}
+
+function shouldReplaceEdenX1Vote(current, next) {
+  const currentTime = edenVoteUpdatedAtMs(current);
+  const nextTime = edenVoteUpdatedAtMs(next);
+  if (nextTime !== currentTime) return nextTime > currentTime;
+  return next.id === edenX1VoteCanonicalId(next) && current.id !== edenX1VoteCanonicalId(current);
+}
+
+function dedupeEdenX1Votes(votes = []) {
+  const latestByVoter = new Map();
+  votes.map(normalizeEdenX1VoteRecord).forEach((vote) => {
+    const key = `${vote.season}|${vote.category}|${vote.voterKey}`;
+    if (!vote.season || !vote.category || !vote.voterKey) return;
+    const current = latestByVoter.get(key);
+    if (!current || shouldReplaceEdenX1Vote(current, vote)) latestByVoter.set(key, vote);
+  });
+  return [...latestByVoter.values()];
+}
+
 function edenVoteUpdatedAtLabel(record) {
   const raw = record?.updatedAt || record?.createdAt;
   const date =
@@ -755,8 +777,8 @@ function renderEdenX1VoteResults() {
   const host = $id('dashEdenVoteResults');
   if (!host) return;
   const season = currentEdenVoteSeason();
-  const votes = (Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [])
-    .map(normalizeEdenX1VoteRecord)
+  const votes = Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [];
+  const dedupedVotes = dedupeEdenX1Votes(votes)
     .filter(
       (vote) =>
         vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
@@ -764,13 +786,13 @@ function renderEdenX1VoteResults() {
         vote.voterName &&
         vote.candidates.length
     );
-  if (!votes.length) {
+  if (!dedupedVotes.length) {
     host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
     return;
   }
 
   const totals = new Map();
-  votes.forEach((vote) => {
+  dedupedVotes.forEach((vote) => {
     vote.candidates.forEach((candidate) => {
       const key = candidate.candidateKey || compactPlayerIdentity(candidate.candidateName);
       if (!totals.has(key)) {
@@ -787,12 +809,12 @@ function renderEdenX1VoteResults() {
       row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
     });
   });
-  const totalSelections = votes.reduce((sum, vote) => sum + vote.candidates.length, 0);
+  const totalSelections = dedupedVotes.reduce((sum, vote) => sum + vote.candidates.length, 0);
   const totalRows = [...totals.values()].sort(
     (a, b) =>
       b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
   );
-  const ballotRows = votes
+  const ballotRows = dedupedVotes
     .slice()
     .sort(
       (a, b) =>
@@ -858,8 +880,10 @@ async function loadEdenX1Votes() {
     const ref = collection(db, EDEN_X1_VOTES_COLLECTION_PATH);
     const snapshot = await getDocs(season ? query(ref, where('season', '==', season)) : ref);
     const votes = [];
-    snapshot.forEach((docSnap) => votes.push(normalizeEdenX1VoteRecord(docSnap.data())));
-    state.edenX1Votes = votes;
+    snapshot.forEach((docSnap) =>
+      votes.push(normalizeEdenX1VoteRecord({ id: docSnap.id, ...docSnap.data() }))
+    );
+    state.edenX1Votes = dedupeEdenX1Votes(votes);
     renderEdenX1VoteAdmin();
     return true;
   } catch (err) {
@@ -1824,7 +1848,7 @@ window.setEdenX1VotesForTest = function setEdenX1VotesForTest(
   history = [],
   settings = null
 ) {
-  state.edenX1Votes = (Array.isArray(votes) ? votes : []).map(normalizeEdenX1VoteRecord);
+  state.edenX1Votes = dedupeEdenX1Votes(Array.isArray(votes) ? votes : []);
   state.edenX1VoteHistory = (Array.isArray(history) ? history : []).map(
     normalizeEdenX1VoteHistoryRecord
   );
