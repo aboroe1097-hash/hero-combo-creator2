@@ -1516,12 +1516,13 @@ test.describe('app smoke tabs', () => {
         typeof window.switchDashSubtab === 'function'
     );
     await page.evaluate(
-      ({ seededDash, seededRoster }) => {
+      ({ seededDash, seededRoster, pinHash }) => {
         localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
+        window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: pinHash };
         window.setOcrDashboardDataForTest(seededDash, seededRoster);
         window.switchDashSubtab('conduct');
       },
-      { seededDash, seededRoster }
+      { seededDash, seededRoster, pinHash: TEST_SENSITIVE_ADMIN_PIN_HASH }
     );
 
     await page.locator('#dashConductPlayerSearchBtn').click();
@@ -2947,6 +2948,27 @@ test.describe('app smoke tabs', () => {
     await expect(history).toContainText('Delta');
     await expect(history).toContainText('Alpha, Bravo');
     await expect(history).toContainText('Alpha, Bravo, Charlie, Delta');
+  });
+
+  test('admin sensitive tabs show setup dialog when owner PIN is missing', async ({ page }) => {
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await page.waitForFunction(() => typeof window.switchDashSubtab === 'function');
+    await page.evaluate(() => {
+      localStorage.removeItem('vts_sensitive_admin_pin_ok');
+      localStorage.removeItem('vts_eden_votes_pin_ok');
+      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), adminPin: '', edenVotesPinHash: '' };
+      window.switchDashSubtab('edenVotes');
+    });
+
+    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
+    await expect(page.locator('.pin-gate-kicker')).toContainText('Eden X1 Votes');
+    await expect(page.locator('.pin-gate-dialog')).toContainText('Owner PIN not configured');
+    await expect(page.locator('.pin-gate-input')).toHaveCount(0);
+    await expect(page.locator('.pin-gate-btn-primary')).toHaveCount(0);
+    await expect(page.locator('#dashSubtabEdenVotes')).toBeHidden();
+    await page.locator('[data-pin-cancel]').click();
+    await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
   });
 
   test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({ page }) => {

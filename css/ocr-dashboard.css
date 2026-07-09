@@ -3279,13 +3279,18 @@ body[style*='overflow: hidden'] .tab-panel {
 #ocrDashboardRoot .dash-subtab-btn[data-subtab='analytics'] {
   position: relative;
   border: 1px solid rgba(45, 212, 191, 0.22);
+  overflow: visible;
 }
 #ocrDashboardRoot .dash-subtab-btn[data-subtab='analytics']::after {
   content: 'New';
-  margin-left: 0.15rem;
+  position: absolute;
+  top: -0.48rem;
+  right: 0.42rem;
+  z-index: 1;
   padding: 0.05rem 0.35rem;
   border-radius: 999px;
   background: linear-gradient(135deg, #facc15, #2dd4bf);
+  box-shadow: 0 0 0 2px var(--surface-2);
   color: #06111f;
   font-size: 0.56rem;
   font-weight: 950;
@@ -3355,7 +3360,8 @@ body[style*='overflow: hidden'] .tab-panel {
     flex: 1 1 auto;
   }
   #ocrDashboardRoot .dash-subtab-btn[data-subtab='analytics']::after {
-    margin-left: auto;
+    top: 0.18rem;
+    right: 0.35rem;
   }
 }
 @media (min-width: 641px) and (max-width: 768px) {

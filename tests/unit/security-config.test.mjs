@@ -18,9 +18,20 @@ test('Eden votes PIN gate has no committed fallback secret', () => {
   const source = readFileSync('js/admin-pin-gate.js', 'utf8');
   assert.match(source, /window\.VTS_ADMIN_AUTH\?\.edenVotesPinHash/);
   assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
-  assert.match(source, /if \(!hasConfiguredPinGate\(\)\) return Promise\.resolve\(true\);/);
+  assert.match(source, /if \(!hasConfiguredPinGate\(\)\) return false;/);
+  assert.doesNotMatch(source, /if \(!hasConfiguredPinGate\(\)\) return Promise\.resolve\(true\);/);
+  assert.match(source, /Owner PIN not configured/);
   assert.match(source, /subtle\.digest\('SHA-256'/);
   assert.doesNotMatch(source, /232323/);
+});
+
+test('admin boot does not preload gated Eden vote records', () => {
+  const source = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const bootBlock = source.match(
+    /async function openAdminDashboardAfterAuth[\s\S]*?\/\/ --- Persistence ---/
+  )?.[0];
+  assert.ok(bootBlock, 'openAdminDashboardAfterAuth block should be present');
+  assert.doesNotMatch(bootBlock, /loadEdenX1VoteAdminData/);
 });
 
 test('deploy can inject sensitive admin PIN hash without committing raw PIN', () => {

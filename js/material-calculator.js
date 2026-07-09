@@ -24,11 +24,6 @@ const QUICK_ADD_AMOUNTS = {
   orange: 25,
   gold: 1,
 };
-const TROOP_HERO_HINTS = {
-  footmen: 'Arthur',
-  archers: 'Sakuya',
-  cavalry: 'Lawman',
-};
 const TIER_VALUES = {
   blue: 0.25,
   purple: 1,
@@ -174,12 +169,7 @@ const TEXT = {
     precisionTitle: 'Precision slot editor',
     emptyTarget: 'No active target',
     inventoryTitle: 'Your materials',
-    scanOcr: 'Scan OCR',
     quickAdd: 'Quick Add',
-    ocrScan: 'OCR Scan',
-    importInventory: 'Import',
-    importSuccess: 'Material import updated.',
-    importFailed: 'Copy JSON or text with blue, purple, orange, and gold counts first.',
     quickAddSuccess: 'Quick materials added.',
     timelineTitle: 'Crafting timeline',
     weekLabel: 'Week {n}',
@@ -199,13 +189,6 @@ const TEXT = {
     defStat: 'DEF',
     hpStat: 'HP',
     completeLabel: '{n}% Complete',
-    integrationsTitle: 'Integration opportunities',
-    researchIntegration: "Research 'Advanced Metallurgy' first - reduces purple cost by 15%",
-    heroIntegration: 'This DM set boosts {hero} ({troop}) by +24% ATK',
-    edenIntegration: 'Eden rewards this week: 2.4k purple - save for {slot}',
-    openResearch: 'Open Research',
-    openHeroAtlas: 'Open Hero Atlas',
-    openEdenMap: 'Open Eden Map',
   },
   de: {
     title: 'Dragon Master Materialrechner',
@@ -292,12 +275,7 @@ const TEXT = {
     precisionTitle: 'Slot-Editor',
     emptyTarget: 'Kein aktives Ziel',
     inventoryTitle: 'Deine Materialien',
-    scanOcr: 'OCR scannen',
     quickAdd: 'Schnell addieren',
-    ocrScan: 'OCR Scan',
-    importInventory: 'Import',
-    importSuccess: 'Materialimport aktualisiert.',
-    importFailed: 'Kopiere zuerst JSON oder Text mit blue, purple, orange und gold Werten.',
     quickAddSuccess: 'Schnellmaterialien addiert.',
     timelineTitle: 'Crafting-Zeitplan',
     weekLabel: 'Woche {n}',
@@ -317,13 +295,6 @@ const TEXT = {
     defStat: 'DEF',
     hpStat: 'HP',
     completeLabel: '{n}% komplett',
-    integrationsTitle: 'Integrationsmoeglichkeiten',
-    researchIntegration: "Erforsche 'Advanced Metallurgy' zuerst - reduziert lila Kosten um 15%",
-    heroIntegration: 'Dieses DM-Set boostet {hero} ({troop}) mit +24% ATK',
-    edenIntegration: 'Eden-Belohnungen diese Woche: 2.4k lila - fuer {slot} sparen',
-    openResearch: 'Research oeffnen',
-    openHeroAtlas: 'Hero Atlas oeffnen',
-    openEdenMap: 'Eden Map oeffnen',
   },
 };
 
@@ -344,7 +315,7 @@ function ensureStyles() {
     .dm-control-label,.dm-summary-card span,.dm-reference-grid span,.dm-resource-grid span,.dm-flow-label,.dm-progress-meta span,.dm-field-label{color:var(--dm-label);font-size:.72rem;font-weight:900;text-transform:uppercase}.dm-troop-grid,.dm-preset-grid{display:grid;gap:.55rem}.dm-troop-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dm-preset-grid{grid-template-columns:1fr}.dm-segment-btn{width:100%;padding:.6rem .7rem}.dm-troop-btn{display:grid;gap:.35rem;justify-items:center;min-height:5.8rem}.dm-troop-icon{display:inline-flex;align-items:center;justify-content:center;width:2.15rem;height:2.15rem;border-radius:8px;background:rgba(15,23,42,.92);color:#67e8f9}.dm-troop-icon svg{width:1.25rem;height:1.25rem}.dm-segment-btn.active{border-color:rgba(45,212,191,.75);background:rgba(20,184,166,.28);color:var(--dm-heading)}
     .dm-progress-list{display:grid;gap:.55rem}.dm-progress-row{display:grid;grid-template-columns:minmax(6.2rem,.7fr) minmax(0,1fr) auto;gap:.55rem;align-items:center}.dm-progress-name{color:var(--dm-heading);font-weight:900}.dm-progress-track{height:.58rem;overflow:hidden;border-radius:999px;background:rgba(15,23,42,.92);border:1px solid rgba(148,163,184,.16)}.dm-progress-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,#22d3ee,#34d399,#facc15)}.dm-progress-count{color:#dbeafe;font-size:.78rem;font-weight:900;white-space:nowrap}
     .dm-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem}.dm-summary-card{display:grid;gap:.25rem;min-height:6.6rem;padding:1rem}.dm-summary-card strong{color:var(--dm-heading);font-size:clamp(1.55rem,3vw,2.25rem);line-height:1}.dm-summary-card small,.dm-reference-grid small{color:#b6c8d4;font-size:.78rem}
-    .dm-inventory-panel,.dm-timeline-panel,.dm-conversion-panel,.dm-comparison-panel,.dm-integrations-panel{display:grid;gap:.85rem;padding:1rem;border:1px solid var(--dm-border);background:var(--dm-bg);box-shadow:0 14px 34px rgba(0,0,0,.24);border-radius:8px}.dm-action-row{display:flex;flex-wrap:wrap;gap:.5rem}.dm-action-btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:2.25rem;padding:.5rem .75rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;background:rgba(15,23,42,.72);color:#dbeafe;font-size:.76rem;font-weight:900;cursor:pointer;text-decoration:none}.dm-action-btn:hover,.dm-action-btn:focus-visible{border-color:rgba(45,212,191,.58);color:#f8fafc}.dm-inventory-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem}.dm-inventory-card{display:grid;gap:.45rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-inventory-card strong{color:var(--dm-heading);font-size:1.05rem}.dm-inventory-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem}.dm-material-dot{width:.85rem;height:.85rem;border-radius:999px;box-shadow:0 0 0 3px rgba(255,255,255,.07)}.dm-material-dot--blue{background:#38bdf8}.dm-material-dot--purple{background:#a78bfa}.dm-material-dot--orange{background:#fb923c}.dm-material-dot--gold{background:#facc15}.dm-inventory-card .dm-number-input{width:100%}.dm-timeline-scroll{overflow-x:auto;padding-bottom:.15rem}.dm-timeline-axis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(8.5rem,1fr);gap:.65rem;min-width:min-content;align-items:stretch}.dm-timeline-item{position:relative;display:grid;gap:.45rem;min-height:7.2rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-timeline-week{color:var(--dm-label);font-size:.72rem;font-weight:900;text-transform:uppercase}.dm-timeline-slot{color:var(--dm-heading);font-weight:900}.dm-timeline-cost{color:var(--dm-gold);font-size:.8rem;font-weight:900}.dm-timeline-item::after{content:"";position:absolute;top:2.05rem;right:-.65rem;width:.65rem;height:2px;background:rgba(147,197,253,.42)}.dm-timeline-item:last-child::after{display:none}.dm-conversion-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:.85rem;align-items:stretch}.dm-conversion-flow{display:grid;gap:.6rem}.dm-slider-row{display:grid;grid-template-columns:minmax(0,1fr) 7rem;gap:.65rem;align-items:center}.dm-range-input{width:100%;accent-color:#22d3ee}.dm-conversion-result{display:grid;gap:.35rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-conversion-result strong{color:var(--dm-heading);font-size:1.35rem}.dm-conversion-arrow{color:var(--dm-label);font-weight:900;text-align:center}.dm-comparison-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.85rem}.dm-stat-column{display:grid;gap:.55rem;padding:.8rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-stat-column h4{margin:0;color:var(--dm-heading);font-size:1rem}.dm-stat-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;color:#dbeafe;font-weight:850}.dm-comparison-progress{display:grid;gap:.35rem}.dm-integration-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}.dm-integration-card{display:grid;gap:.65rem;align-content:space-between;padding:.8rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-integration-card p{margin:0;color:var(--dm-muted);line-height:1.45}.dm-integration-card strong{color:var(--dm-heading)}
+    .dm-inventory-panel,.dm-timeline-panel,.dm-conversion-panel,.dm-comparison-panel{display:grid;gap:.85rem;padding:1rem;border:1px solid var(--dm-border);background:var(--dm-bg);box-shadow:0 14px 34px rgba(0,0,0,.24);border-radius:8px}.dm-action-row{display:flex;flex-wrap:wrap;gap:.5rem}.dm-action-btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:2.25rem;padding:.5rem .75rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;background:rgba(15,23,42,.72);color:#dbeafe;font-size:.76rem;font-weight:900;cursor:pointer;text-decoration:none}.dm-action-btn:hover,.dm-action-btn:focus-visible{border-color:rgba(45,212,191,.58);color:#f8fafc}.dm-inventory-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem}.dm-inventory-card{display:grid;gap:.45rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-inventory-card strong{color:var(--dm-heading);font-size:1.05rem}.dm-inventory-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem}.dm-material-dot{width:.85rem;height:.85rem;border-radius:999px;box-shadow:0 0 0 3px rgba(255,255,255,.07)}.dm-material-dot--blue{background:#38bdf8}.dm-material-dot--purple{background:#a78bfa}.dm-material-dot--orange{background:#fb923c}.dm-material-dot--gold{background:#facc15}.dm-inventory-card .dm-number-input{width:100%}.dm-timeline-scroll{overflow-x:auto;padding-bottom:.15rem}.dm-timeline-axis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(8.5rem,1fr);gap:.65rem;min-width:min-content;align-items:stretch}.dm-timeline-item{position:relative;display:grid;gap:.45rem;min-height:7.2rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-timeline-week{color:var(--dm-label);font-size:.72rem;font-weight:900;text-transform:uppercase}.dm-timeline-slot{color:var(--dm-heading);font-weight:900}.dm-timeline-cost{color:var(--dm-gold);font-size:.8rem;font-weight:900}.dm-timeline-item::after{content:"";position:absolute;top:2.05rem;right:-.65rem;width:.65rem;height:2px;background:rgba(147,197,253,.42)}.dm-timeline-item:last-child::after{display:none}.dm-conversion-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:.85rem;align-items:stretch}.dm-conversion-flow{display:grid;gap:.6rem}.dm-slider-row{display:grid;grid-template-columns:minmax(0,1fr) 7rem;gap:.65rem;align-items:center}.dm-range-input{width:100%;accent-color:#22d3ee}.dm-conversion-result{display:grid;gap:.35rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-conversion-result strong{color:var(--dm-heading);font-size:1.35rem}.dm-conversion-arrow{color:var(--dm-label);font-weight:900;text-align:center}.dm-comparison-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.85rem}.dm-stat-column{display:grid;gap:.55rem;padding:.8rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-stat-column h4{margin:0;color:var(--dm-heading);font-size:1rem}.dm-stat-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;color:#dbeafe;font-weight:850}.dm-comparison-progress{display:grid;gap:.35rem}
     .dm-flow-map{display:grid;gap:.85rem;padding:1rem}.dm-map-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(15rem,.95fr) minmax(0,1fr);gap:.85rem;align-items:stretch}.dm-map-column{display:grid;gap:.6rem;align-content:start}.dm-map-node{display:grid;gap:.45rem;min-height:5.2rem;padding:.75rem;border:1px solid rgba(148,163,184,.16);border-radius:8px;background:var(--dm-panel)}.dm-map-node strong{color:var(--dm-heading);font-size:1.05rem}.dm-map-node small{color:var(--dm-muted);font-size:.78rem;line-height:1.35}.dm-map-node--source{border-color:rgba(96,165,250,.28)}.dm-map-node--convert{border-color:rgba(196,181,253,.28)}.dm-map-node--sink{border-color:rgba(250,204,21,.32)}.dm-flow-line{position:relative;min-height:1.35rem;border-radius:999px;background:linear-gradient(90deg,rgba(96,165,250,.18),rgba(45,212,191,.2),rgba(250,204,21,.18));overflow:hidden}.dm-flow-line::after{content:"";position:absolute;inset:0;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);animation:dm-flow-spark 2.8s ease-in-out infinite}.dm-map-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.dm-map-stat{display:grid;gap:.2rem;padding:.65rem;border-radius:8px;background:rgba(2,6,23,.38);border:1px solid rgba(148,163,184,.12)}
     .dm-precision-section{display:grid;gap:.8rem;padding:1rem}.dm-section-head{display:flex;align-items:end;justify-content:space-between;gap:.85rem}.dm-table-wrap{max-width:100%;overflow-x:auto;border:1px solid rgba(148,163,184,.14);border-radius:8px}.dm-slot-table{width:100%;min-width:760px;border-collapse:collapse}.dm-slot-table th,.dm-slot-table td{padding:.7rem .78rem;border-bottom:1px solid rgba(148,163,184,.14);text-align:left}.dm-slot-table thead th{background:var(--dm-panel-strong);color:var(--dm-label);font-size:.7rem;font-weight:900;text-transform:uppercase}.dm-slot-table tbody th{color:var(--dm-heading);font-weight:900}.dm-slot-table tbody tr.is-ready{background:rgba(20,184,166,.09)}.dm-slot-table tbody tr:last-child th,.dm-slot-table tbody tr:last-child td{border-bottom:0}
     .dm-field-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}.dm-number-input{width:5.4rem;min-height:2.2rem;border:1px solid rgba(148,163,184,.28);border-radius:8px;background:rgba(15,23,42,.86);color:var(--dm-heading);font-weight:850;text-align:center}.dm-needed-pill,.dm-remaining-pill{display:inline-flex;min-height:1.8rem;align-items:center;padding:.28rem .55rem;border:1px solid rgba(148,163,184,.22);border-radius:8px;color:#dbeafe;white-space:nowrap}.dm-remaining-pill{border-color:rgba(250,204,21,.36);color:var(--dm-gold)}.dm-remaining-pill.is-complete{border-color:rgba(45,212,191,.44);color:var(--dm-green)}
@@ -353,8 +324,8 @@ function ensureStyles() {
     [data-theme="light"] .dm-material-root{--dm-bg:rgba(255,255,255,.9);--dm-panel:rgba(248,250,252,.82);--dm-panel-strong:rgba(241,245,249,.96);--dm-border:rgba(15,23,42,.14);--dm-border-strong:rgba(14,116,144,.35);--dm-text:#0f172a;--dm-heading:#0f172a;--dm-muted:#475569;--dm-label:#0369a1;--dm-gold:#92400e;--dm-green:#047857;--dm-violet:#6d28d9}.dm-material-root [hidden]{display:none!important}
     @keyframes dm-flow-spark{0%{transform:translateX(-120%)}55%,100%{transform:translateX(240%)}}
     @media(prefers-reduced-motion:reduce){.dm-flow-line::after{animation:none}}
-    @media(max-width:980px){.dm-material-header,.dm-resource-panel,.dm-summary-grid,.dm-resource-grid,.dm-reference-grid,.dm-converter-row,.dm-wizard-grid,.dm-map-grid,.dm-conversion-grid,.dm-comparison-grid,.dm-integration-grid{display:grid;grid-template-columns:1fr}.dm-wizard-rail{grid-template-columns:1fr}.dm-troop-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dm-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:560px){.dm-material-root{gap:.8rem}.dm-material-header,.dm-wizard-step,.dm-flow-map,.dm-resource-panel,.dm-reference-panel,.dm-precision-section,.dm-summary-card,.dm-inventory-panel,.dm-timeline-panel,.dm-conversion-panel,.dm-comparison-panel,.dm-integrations-panel{padding:.85rem}.dm-troop-grid,.dm-map-stat-grid,.dm-field-stack,.dm-inventory-grid,.dm-slider-row{grid-template-columns:1fr}.dm-progress-row{grid-template-columns:1fr}.dm-progress-count{white-space:normal}.dm-section-head{display:grid}}
+    @media(max-width:980px){.dm-material-header,.dm-resource-panel,.dm-summary-grid,.dm-resource-grid,.dm-reference-grid,.dm-converter-row,.dm-wizard-grid,.dm-map-grid,.dm-conversion-grid,.dm-comparison-grid{display:grid;grid-template-columns:1fr}.dm-wizard-rail{grid-template-columns:1fr}.dm-troop-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dm-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.dm-material-root{gap:.8rem}.dm-material-header,.dm-wizard-step,.dm-flow-map,.dm-resource-panel,.dm-reference-panel,.dm-precision-section,.dm-summary-card,.dm-inventory-panel,.dm-timeline-panel,.dm-conversion-panel,.dm-comparison-panel{padding:.85rem}.dm-troop-grid,.dm-map-stat-grid,.dm-field-stack,.dm-inventory-grid,.dm-slider-row{grid-template-columns:1fr}.dm-progress-row{grid-template-columns:1fr}.dm-progress-count{white-space:normal}.dm-section-head{display:grid}}
   `;
   document.head.appendChild(style);
 }
@@ -690,10 +661,7 @@ function renderInventoryGrid(calc) {
       <div class="dm-section-head">
         <h3 id="dmInventoryTitle" class="dm-section-heading">${escapeHtml(t.inventoryTitle)}</h3>
         <div class="dm-action-row">
-          <button type="button" class="dm-action-btn" data-dm-open-tab="admin">${escapeHtml(t.scanOcr)}</button>
           <button type="button" class="dm-action-btn" data-dm-quick-add>${escapeHtml(t.quickAdd)}</button>
-          <button type="button" class="dm-action-btn" data-dm-open-tab="admin">${escapeHtml(t.ocrScan)}</button>
-          <button type="button" class="dm-action-btn" data-dm-import-inventory>${escapeHtml(t.importInventory)}</button>
         </div>
       </div>
       <div class="dm-inventory-grid">
@@ -878,42 +846,6 @@ function renderComparisonView(calc) {
     </section>`;
 }
 
-function firstMissingSlot(calc) {
-  return calc.rows.find((row) => row.remainingPurple > 0)?.slot || calc.rows.find((row) => row.targetGold > 0)?.slot || SLOTS[0];
-}
-
-function renderIntegrations(calc) {
-  const t = getText();
-  const troop = TROOPS.find((item) => item.id === state.troop) || TROOPS[0];
-  const hero = TROOP_HERO_HINTS[troop.id] || TROOP_HERO_HINTS.footmen;
-  const slot = firstMissingSlot(calc);
-  const heroCopy = t.heroIntegration
-    .replace('{hero}', hero)
-    .replace('{troop}', troopName(troop));
-  const edenCopy = t.edenIntegration.replace('{slot}', slotName(slot));
-  return `
-    <section class="dm-integrations-panel" aria-labelledby="dmIntegrationsTitle">
-      <h3 id="dmIntegrationsTitle" class="dm-section-heading">${escapeHtml(t.integrationsTitle)}</h3>
-      <div class="dm-integration-grid">
-        <article class="dm-integration-card">
-          <strong>Research</strong>
-          <p>${escapeHtml(t.researchIntegration)}</p>
-          <button type="button" class="dm-action-btn" data-dm-open-tab="research">${escapeHtml(t.openResearch)}</button>
-        </article>
-        <article class="dm-integration-card">
-          <strong>Hero Atlas</strong>
-          <p>${escapeHtml(heroCopy)}</p>
-          <button type="button" class="dm-action-btn" data-dm-open-tab="heroes">${escapeHtml(t.openHeroAtlas)}</button>
-        </article>
-        <article class="dm-integration-card">
-          <strong>Eden Map</strong>
-          <p>${escapeHtml(edenCopy)}</p>
-          <button type="button" class="dm-action-btn" data-dm-open-tab="edenMap">${escapeHtml(t.openEdenMap)}</button>
-        </article>
-      </div>
-    </section>`;
-}
-
 function renderSlotRows(calc) {
   const t = getText();
   return calc.rows
@@ -1082,7 +1014,6 @@ function render() {
       ${renderComparisonView(calc)}
       ${renderPrecisionTable(calc)}
       ${renderResources(calc)}
-      ${renderIntegrations(calc)}
       ${renderReference()}
 
       <p class="dm-material-note">${escapeHtml(t.note)}</p>
@@ -1110,58 +1041,6 @@ function showMaterialToast(message, type = 'info') {
   }
 }
 
-function parseHumanCount(value) {
-  if (typeof value === 'number') return cleanCount(value, 999999);
-  const raw = String(value || '').trim().toLowerCase().replace(/,/g, '');
-  const match = raw.match(/^(\d+(?:\.\d+)?)([km])?$/);
-  if (!match) return null;
-  const multiplier = match[2] === 'm' ? 1000000 : match[2] === 'k' ? 1000 : 1;
-  return cleanCount(Number(match[1]) * multiplier, 999999);
-}
-
-function extractInventoryCounts(text) {
-  const counts = {};
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === 'object') {
-      for (const tier of INVENTORY_TIERS) {
-        const value = parseHumanCount(parsed[tier.id]);
-        if (value !== null) counts[tier.id] = value;
-      }
-    }
-  } catch {}
-
-  for (const tier of INVENTORY_TIERS) {
-    if (counts[tier.id] !== undefined) continue;
-    const pattern = new RegExp(`${tier.id}\\D{0,24}(\\d+(?:[\\.,]\\d+)?\\s*[km]?)`, 'i');
-    const match = text.match(pattern);
-    if (match) {
-      const value = parseHumanCount(match[1].replace(/\s+/g, ''));
-      if (value !== null) counts[tier.id] = value;
-    }
-  }
-  return counts;
-}
-
-async function importInventoryFromClipboard() {
-  const t = getText();
-  try {
-    const text = await navigator.clipboard?.readText?.();
-    if (!text) throw new Error('empty clipboard');
-    const counts = extractInventoryCounts(text);
-    if (!Object.keys(counts).length) throw new Error('no material counts');
-    state.inventory = {
-      ...state.inventory,
-      ...counts,
-    };
-    saveState();
-    render();
-    showMaterialToast(t.importSuccess, 'success');
-  } catch {
-    showMaterialToast(t.importFailed, 'warning');
-  }
-}
-
 function setConverterFromSlot(slotId) {
   const slot = SLOTS.find((item) => item.id === slotId);
   if (!slot) return;
@@ -1172,18 +1051,6 @@ function setConverterFromSlot(slotId) {
   saveState();
   render();
   restoreFocus('converter-purple-materials');
-}
-
-function openMaterialIntegration(target) {
-  if (target === 'admin') {
-    window.location.href = 'admin.html';
-    return;
-  }
-  if (typeof window.vtsSwitchTab === 'function') {
-    window.vtsSwitchTab(target, true, { scrollToSection: true });
-    return;
-  }
-  window.location.hash = `#${target}`;
 }
 
 function handleInput(event) {
@@ -1230,7 +1097,7 @@ function handleInput(event) {
   );
 }
 
-async function handleClick(event) {
+function handleClick(event) {
   const troopBtn = event.target.closest?.('[data-dm-troop]');
   if (troopBtn) {
     state.troop = troopBtn.dataset.dmTroop;
@@ -1264,11 +1131,6 @@ async function handleClick(event) {
     return;
   }
 
-  if (event.target.closest?.('[data-dm-import-inventory]')) {
-    await importInventoryFromClipboard();
-    return;
-  }
-
   const maxSlotBtn = event.target.closest?.('[data-dm-max-slot]');
   if (maxSlotBtn) {
     setConverterFromSlot(maxSlotBtn.dataset.dmMaxSlot);
@@ -1278,11 +1140,6 @@ async function handleClick(event) {
   if (event.target.closest?.('[data-dm-custom-target]')) {
     restoreFocus('converter-purple-materials');
     return;
-  }
-
-  const openTabBtn = event.target.closest?.('[data-dm-open-tab]');
-  if (openTabBtn) {
-    openMaterialIntegration(openTabBtn.dataset.dmOpenTab);
   }
 }
 

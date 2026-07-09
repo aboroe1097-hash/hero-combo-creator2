@@ -2453,7 +2453,6 @@ async function openAdminDashboardAfterAuth(options = {}) {
           'Bonus team effort points cloud load',
           loadConductAdjustmentsForSeason
         ),
-        runDashboardCloudTaskWithTimeout('Eden X1 vote admin load', loadEdenX1VoteAdminData),
       ]);
       await runDashboardCloudTaskWithTimeout(
         'Queued cloud sync',

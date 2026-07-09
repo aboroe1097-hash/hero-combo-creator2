@@ -56,6 +56,7 @@ async function verifyPinAttempt(value) {
 }
 
 export function sensitiveAdminUnlocked() {
+  if (!hasConfiguredPinGate()) return false;
   return (
     localStorage.getItem(SENSITIVE_ADMIN_PIN_KEY) === '1' ||
     localStorage.getItem(LEGACY_EDEN_VOTES_PIN_KEY) === '1'
@@ -73,24 +74,28 @@ export function edenVotesUnlocked() {
 
 export function requireSensitiveAdminPin(options = {}) {
   if (sensitiveAdminUnlocked()) return Promise.resolve(true);
-  if (!hasConfiguredPinGate()) return Promise.resolve(true);
   if (pendingPrompt) return pendingPrompt;
 
+  const configured = hasConfiguredPinGate();
   const copy = {
     kicker: options.kicker || 'Admin Protected',
-    title: options.titleKey
-      ? getPinCopy(options.titleKey, options.title || 'Enter admin PIN')
-      : options.title || getPinCopy('adminEdenVotesPinTitle', 'Enter admin PIN'),
-    prompt: options.promptKey
-      ? getPinCopy(
-          options.promptKey,
-          options.prompt || 'This admin view is protected. Enter the owner PIN to continue.'
-        )
-      : options.prompt ||
-        getPinCopy(
-          'adminEdenVotesPinPrompt',
-          'This admin view is protected. Enter the owner PIN to continue.'
-        ),
+    title: configured
+      ? options.titleKey
+        ? getPinCopy(options.titleKey, options.title || 'Enter admin PIN')
+        : options.title || getPinCopy('adminEdenVotesPinTitle', 'Enter admin PIN')
+      : 'Owner PIN not configured',
+    prompt: configured
+      ? options.promptKey
+        ? getPinCopy(
+            options.promptKey,
+            options.prompt || 'This admin view is protected. Enter the owner PIN to continue.'
+          )
+        : options.prompt ||
+          getPinCopy(
+            'adminEdenVotesPinPrompt',
+            'This admin view is protected. Enter the owner PIN to continue.'
+          )
+      : 'Set VTS_EDEN_VOTES_PIN or VTS_EDEN_VOTES_PIN_HASH in GitHub Pages secrets before opening this protected panel.',
     label: options.labelKey
       ? getPinCopy(options.labelKey, options.label || 'PIN')
       : options.label || getPinCopy('adminEdenVotesPinLabel', 'PIN'),
@@ -115,10 +120,14 @@ export function requireSensitiveAdminPin(options = {}) {
           <p class="pin-gate-kicker">${esc(copy.kicker)}</p>
           <h2 id="sensitiveAdminPinTitle">${esc(copy.title)}</h2>
           <p class="pin-gate-copy">${esc(copy.prompt)}</p>
-          <label class="pin-gate-field">
-            <span>${esc(copy.label)}</span>
-            <input class="pin-gate-input" type="password" autocomplete="one-time-code" maxlength="64" aria-describedby="sensitiveAdminPinError" />
-          </label>
+          ${
+            configured
+              ? `<label class="pin-gate-field">
+                  <span>${esc(copy.label)}</span>
+                  <input class="pin-gate-input" type="password" autocomplete="one-time-code" maxlength="64" aria-describedby="sensitiveAdminPinError" />
+                </label>`
+              : ''
+          }
           <p id="sensitiveAdminPinError" class="pin-gate-error" role="alert" hidden>${esc(
             copy.error
           )}</p>
@@ -126,9 +135,13 @@ export function requireSensitiveAdminPin(options = {}) {
             <button class="pin-gate-btn pin-gate-btn-ghost" type="button" data-pin-cancel>${esc(
               copy.cancel
             )}</button>
-            <button class="pin-gate-btn pin-gate-btn-primary" type="submit">${esc(
-              copy.unlock
-            )}</button>
+            ${
+              configured
+                ? `<button class="pin-gate-btn pin-gate-btn-primary" type="submit">${esc(
+                    copy.unlock
+                  )}</button>`
+                : ''
+            }
           </div>
         </form>
       </section>`;
@@ -150,6 +163,7 @@ export function requireSensitiveAdminPin(options = {}) {
     let checking = false;
     form?.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!configured) return;
       if (checking) return;
       checking = true;
       if (submit) submit.disabled = true;
