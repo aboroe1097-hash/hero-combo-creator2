@@ -2405,7 +2405,7 @@ test.describe('app smoke tabs', () => {
     await expect(topNamesOverview).toBeVisible();
     await expect(panel.locator('h2')).toContainText('Total Contribution');
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
-      'current contribution + ex-guild only'
+      'weighted total contribution'
     );
     await expect(panel.locator('tbody tr')).toHaveCount(11);
     const contributionDisplayNumbers = await panel.locator('tbody tr').evaluateAll((rows) =>
@@ -2432,7 +2432,7 @@ test.describe('app smoke tabs', () => {
     ).toHaveText('1');
     await expect(panel.locator('tbody tr').first()).toContainText('Skipped premium tier');
     await expect(panel.locator('tbody tr').nth(1)).toContainText('Echo');
-    await expect(panel.locator('tbody tr').nth(1)).toContainText('#5');
+    await expect(panel.locator('tbody tr').nth(1)).toContainText('#6');
     const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
       rows.map(
         (row) =>
@@ -2445,13 +2445,13 @@ test.describe('app smoke tabs', () => {
       'Echo',
       'Foxtrot',
       'Golf',
-      'November',
       'Hotel',
+      'November',
       'India',
       'Juliet',
-      'Kilo',
-      'Lima',
       'Mike',
+      'Kilo',
+      'Oscar',
     ]);
     expect(contributionNames.filter((name) => supportNames.includes(name))).toEqual([]);
     expect(contributionNames).not.toContain('Alpha');
@@ -2469,7 +2469,7 @@ test.describe('app smoke tabs', () => {
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
     await expect(contributionPlayerSort).toHaveAttribute('aria-sort', 'descending');
-    await expect(panel.locator('tbody tr').first()).toContainText('November');
+    await expect(panel.locator('tbody tr').first()).toContainText('Oscar');
     const noForfeitDash = {
       ...seededDash,
       publicConductAdjustments: seededDash.publicConductAdjustments.filter(
@@ -2497,6 +2497,7 @@ test.describe('app smoke tabs', () => {
             { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
             { c: [{ v: 'Dr Thunder 293' }, { v: 3 }] },
             { c: [{ v: 'Goodness' }, { v: 2 }] },
+            { c: [{ v: 'Yankee' }, { v: 2 }] },
             { c: [{ v: 'Quebec' }, { v: 1 }] },
           ],
         },
@@ -2521,16 +2522,10 @@ test.describe('app smoke tabs', () => {
       }))
     );
     expect(managementRows).toEqual([
-      { name: 'Wicked Russian', tag: 'R4', status: 'Assigned' },
       { name: '\ua9c1\u0f3a Kika \u0f3b\ua9c2', tag: 'R4', status: 'Voted By Management' },
+      { name: 'Yankee', tag: '', status: 'Voted By Management' },
       { name: 'Quebec', tag: '', status: 'Voted By Management' },
     ]);
-    const assignedStatus = panel.locator('.eden-x1-slot-status-trigger', { hasText: 'Assigned' });
-    await assignedStatus.click();
-    await expect(assignedStatus.locator('.dash-weighted-score-popover')).toBeVisible();
-    await expect(assignedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'Wicked Russian was ex-R5 in NM5'
-    );
     const votedStatus = panel
       .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted By Management' })
       .first();

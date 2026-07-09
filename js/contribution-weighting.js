@@ -457,6 +457,7 @@ export function buildWeightedContributionRows(options = {}) {
     })
     .sort(
       (a, b) =>
+        b.weightedScore - a.weightedScore ||
         b.contributionRewardScore - a.contributionRewardScore ||
         b.contributionScore - a.contributionScore ||
         String(a.playerName).localeCompare(String(b.playerName))

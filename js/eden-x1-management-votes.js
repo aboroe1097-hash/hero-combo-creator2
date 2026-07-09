@@ -9,11 +9,6 @@ const JSONP_CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const KIKA_ALT_DISPLAY_NAME = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
 const GOODNESS_CANONICAL_NAME = 'GoodnesGraycious';
 
-export const EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS = Object.freeze([
-  'wickedrussian',
-  'vickedrussian',
-]);
-
 function compactVoteKey(value) {
   return String(value || '')
     .normalize('NFKD')

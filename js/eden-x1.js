@@ -24,7 +24,6 @@ import {
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
 import {
-  EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS,
   loadManagementVotesPayloadWithFallback,
   managementVoteCandidateVariants,
   summarizeManagementVotePayload,
@@ -49,7 +48,7 @@ const EDEN_X1_VOTE_CANDIDATE_LIMIT = 4;
 const EDEN_X1_VOTE_HELPER_MOBILE_VISIBLE_LIMIT = 3;
 const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
 const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
-const EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT = 2;
+const EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT = 3;
 const EDEN_X1_MANAGEMENT_VOTE_STATUS = 'Voted By Management';
 const EDEN_X1_ATTACK_WINDOW_DAYS = new Set([0, 2, 4]);
 const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
@@ -383,7 +382,6 @@ function resolveEdenManagementVoteCandidate(rawName) {
 function summarizeEdenManagementVotes(payloadOrRows) {
   return summarizeManagementVotePayload(payloadOrRows, {
     limit: EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT,
-    excludeKeys: EDEN_X1_MANAGEMENT_VOTE_FIXED_KEYS,
     resolveCandidate: resolveEdenManagementVoteCandidate,
   });
 }
@@ -1900,7 +1898,10 @@ async function submitEdenTeamVoteForm(form) {
         previousVote = existingSnap?.exists?.() ? existingSnap.data() || {} : null;
       } catch (err) {
         previousVoteKnown = false;
-        console.warn('Eden X1 vote pre-read failed; saving vote with create-only history fallback.', err);
+        console.warn(
+          'Eden X1 vote pre-read failed; saving vote with create-only history fallback.',
+          err
+        );
       }
       const previousCandidateNames = Array.isArray(previousVote?.candidateNames)
         ? previousVote.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
@@ -2542,7 +2543,7 @@ function getContributionRewardRows() {
     .slice()
     .sort(
       (a, b) =>
-        rowContributionRewardScore(b) - rowContributionRewardScore(a) ||
+        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
         valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
         Number(a.currentRank) - Number(b.currentRank) ||
         String(a.playerName || '').localeCompare(String(b.playerName || ''))
@@ -2592,10 +2593,7 @@ function getSupportRewardRows() {
 }
 
 function rowContributionRewardScore(row) {
-  const explicit = Number(row?.contributionRewardScore);
-  return Number.isFinite(explicit)
-    ? explicit
-    : valueOf(row.contributionScore) + valueOf(row.contributionExGuild);
+  return valueOf(row.weightedScore);
 }
 
 function rowBonusTotal(row) {
@@ -3092,27 +3090,17 @@ function rewardSlotRows(view) {
     const winners = getEligibleManagementVoteWinners();
     return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
-      ...(index === 0
-        ? { playerName: 'Wicked Russian', playerKey: 'wickedrussian' }
-        : winners[index - 1]
-          ? {
-              playerName: winners[index - 1].playerName,
-              playerKey: winners[index - 1].playerKey,
-            }
-          : { playerName: t('edenX1Tba') }),
+      ...(winners[index]
+        ? {
+            playerName: winners[index].playerName,
+            playerKey: winners[index].playerKey,
+          }
+        : { playerName: t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
-      status:
-        index === 0 || winners[index - 1]
-          ? index === 0
-            ? t('edenX1RewardAssigned')
-            : EDEN_X1_MANAGEMENT_VOTE_STATUS
-          : t('edenX1RewardManagementVotePending'),
-      statusReason:
-        index === 0
-          ? t('edenX1RewardWickedAssignedReason')
-          : winners[index - 1]
-            ? managementVoteWinnerReason(winners[index - 1])
-            : '',
+      status: winners[index]
+        ? EDEN_X1_MANAGEMENT_VOTE_STATUS
+        : t('edenX1RewardManagementVotePending'),
+      statusReason: winners[index] ? managementVoteWinnerReason(winners[index]) : '',
     }));
   }
   if (view === 'team') {

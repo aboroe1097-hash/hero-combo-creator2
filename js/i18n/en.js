@@ -1139,27 +1139,26 @@ const en = {
   edenX1MyStatsEmpty: "Start typing a player name to show matches and open their data.",
   edenX1MyStatsNoMatch: "No matching player found yet.",
   edenX1RewardLeaderboardTitle: 'Total Contribution',
-  edenX1RewardLeaderboardCopy: 'Contribution plus ex-guild rewards after support slots.',
+  edenX1RewardLeaderboardCopy: 'Weighted total contribution after support slots.',
   edenX1RewardSupportTitle: 'Support Work',
   edenX1RewardSupportCopy: 'Banners, pathing, shield walls, and other recorded season support.',
   edenX1RewardManagementTitle: 'R4 / Management',
-  edenX1RewardManagementCopy:
-    'One fixed management reward plus two anonymous guild vote rewards.',
+  edenX1RewardManagementCopy: 'Top three eligible names from anonymous management voting.',
   edenX1RewardTeamTitle: 'Team Players',
   edenX1RewardTeamCopy: 'Three anonymous guild vote rewards for standout teamwork and reliability.',
   edenX1RewardTeamVoteTag: 'Vote here for Best TeamPlayers',
   edenX1RewardCardAction: 'View table',
   edenX1RewardViewAria: 'Show {title} reward slots',
-  edenX1RewardContributionMeta:
-    'Top 10 by current contribution + ex-guild only, after Support Work.',
+  edenX1RewardContributionMeta: 'Top 10 by weighted total contribution, after Support Work.',
   edenX1RewardSupportMeta:
     'Top 4 by weighted score among players with support work: contribution, ex-guild, banners, pathing, shield walls, and bonus team effort points.',
-  edenX1RewardManagementMeta: 'Temporary management assignment while final review is in progress.',
+  edenX1RewardManagementMeta:
+    'Top three eligible management vote names; higher-priority reward winners are skipped.',
   edenX1RewardTeamMeta: 'Guild vote reward slots are pending.',
   edenX1RewardSlotGroup: 'Reward group',
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Assigned',
-  edenX1RewardAssignedReasonTitle: 'Assignment reasoning',
+  edenX1RewardAssignedReasonTitle: 'Status detail',
   edenX1RewardWickedAssignedReason:
     'Reason: Wicked Russian was ex-R5 in NM5. He helped manage VTS and NM5.',
   edenX1RewardManagementVotePending: 'Management team voting',

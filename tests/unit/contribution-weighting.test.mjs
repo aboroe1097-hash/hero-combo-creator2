@@ -90,7 +90,7 @@ test('weighted contribution rows join contribution, duty counts, and signed R5 c
   });
 });
 
-test('weighted contribution final rank uses contribution plus ex-guild, not R5 conduct points', () => {
+test('weighted contribution final rank uses weighted total points', () => {
   const season = 'eden-x1-2026';
   const model = buildWeightedContributionRows({
     season,
@@ -124,21 +124,23 @@ test('weighted contribution final rank uses contribution plus ex-guild, not R5 c
     ],
   });
 
-  const [bravo, alpha, charlie] = model.rows;
-
-  assert.equal(bravo.playerName, 'Bravo');
-  assert.equal(bravo.contributionRewardScore, 105000);
-  assert.equal(bravo.finalRank, 1);
-
-  assert.equal(alpha.playerName, 'Alpha');
-  assert.equal(alpha.contributionRewardScore, 100000);
-  assert.equal(alpha.finalRank, 2);
+  const [charlie, bravo, alpha] = model.rows;
 
   assert.equal(charlie.playerName, 'Charlie');
   assert.equal(charlie.contributionRewardScore, 99000);
   assert.equal(charlie.conductPoints, 30000);
   assert.equal(charlie.weightedScore, 129000);
-  assert.equal(charlie.finalRank, 3);
+  assert.equal(charlie.finalRank, 1);
+
+  assert.equal(bravo.playerName, 'Bravo');
+  assert.equal(bravo.contributionRewardScore, 105000);
+  assert.equal(bravo.weightedScore, 105000);
+  assert.equal(bravo.finalRank, 2);
+
+  assert.equal(alpha.playerName, 'Alpha');
+  assert.equal(alpha.contributionRewardScore, 100000);
+  assert.equal(alpha.weightedScore, 100000);
+  assert.equal(alpha.finalRank, 3);
 });
 
 test('public R5 conduct mirror keeps scores and premium flags without private notes', () => {
