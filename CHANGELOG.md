@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.1.2 - 2026-07-09
+
+- Fixed the Eden X1 public Weighted Total Contribution table so Support Work winners show the same planned final reward as the reward-flow support table.
+- Synced public version labels, README, changelog, and app constants to 13.1.2.
+
 ## 13.1.1 - 2026-07-09
 
 - Fixed the Eden X1 page getting stuck on the loading panel forever on flaky mobile connections: Firebase CDN imports now retry with backoff, the data load has a 20s timeout, and failures show a translated error with a Retry button instead of an endless spinner.
