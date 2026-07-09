@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.1.6 - 2026-07-10
+
+- Allowed the Firebase auth helper iframe (`abocombo.firebaseapp.com`) in the `frame-src` Content-Security-Policy of `index.html` and `admin.html`, matching the Eden X1 fix from 13.1.5 — admin sign-in no longer logs CSP violations.
+- Synced public version labels, README, changelog, and app constants to 13.1.6.
+
 ## 13.1.5 - 2026-07-10
 
 - Eden X1 page performance overhaul (Lighthouse mobile score was 25). Stylesheets no longer block first paint: critical loading-state CSS is inlined, the seven CSS files are preloaded in `<head>` and applied at the end of `<body>`, and `maintenance-config.js` moved to a deferred body-end script.
