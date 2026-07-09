@@ -71,10 +71,14 @@ If the built CSS total grows intentionally, either trim CSS in the same change o
 - Call out any skipped checks and why.
 - Do not commit secrets, private API keys, admin credentials, or private alliance data.
 
-## `gh-pages` Writer Rule
+## `gh-pages` Pull Request Rule
 
-The live site is served directly from the `gh-pages` branch, so only one person or agent should write to that branch at a time. Before making broad CSS, dashboard, auth, or build changes, confirm who owns the active editing lane; do not commit, push, reset, stash, or reformat unrelated files while another lane is active.
+The live site is served directly from the `gh-pages` branch, so treat `gh-pages` as production. Do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, keep the change focused, run the relevant checks, and open a pull request back into `gh-pages` for owner review and merge.
+
+Use direct `gh-pages` commits only when the owner explicitly asks for an emergency direct deploy.
 
 ## Release Notes
 
 Every user-visible change should update `CHANGELOG.md`. Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.
+
+Patch releases run through `.20` before the next minor. For example: `13.1.0` through `13.1.20`, then `13.2.0`; `13.2.1` through `13.2.20`, then `13.3.0`.

@@ -74,7 +74,7 @@ npm run check
 
 That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 13.1.1 release should pass the full local gate before shipping.
 
-Version cadence: after the 11.3.0 baseline, every pushed release increments the patch slot through `11.3.19`; the next release after that becomes `11.4.0`. The same 20-release cycle repeats for future minor versions.
+Version cadence: patch releases run through `.20` before the next minor. For the current train, ship `13.1.0`, `13.1.1`, ... `13.1.20`; the next release after that is `13.2.0`. The same cycle repeats for future minors (`13.2.1` through `13.2.20`, then `13.3.0`, and so on).
 
 ## Tech Stack
 
@@ -334,11 +334,9 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 
 ## Deploy
 
-```bash
-git push origin gh-pages
-```
+The site auto-deploys at **https://roc-vts.com/** when a pull request is merged into `gh-pages` (custom domain configured in repo Settings > Pages).
 
-The site auto-deploys at **https://roc-vts.com/** (custom domain configured in repo Settings > Pages).
+Because `gh-pages` is production, do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, open a pull request into `gh-pages`, wait for checks/review, and let the owner merge. See [AGENTS.md](AGENTS.md) for the required agent workflow.
 
 ## Contributing
 
