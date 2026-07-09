@@ -537,6 +537,7 @@ section.tab-panel:not(.hidden) {
   font-size: 0.76rem; font-weight: 700;
   white-space: nowrap;
   display: flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 2.25rem;
   transition: background var(--t-fast), color var(--t-fast),
               transform var(--t-fast), box-shadow var(--t-fast);
   letter-spacing: 0.01em;
@@ -826,7 +827,7 @@ section.tab-panel:not(.hidden) {
   cursor: grab;
   transition: transform var(--t-fast), box-shadow var(--t-fast),
               border-color var(--t-fast), background var(--t-fast);
-  min-width: 110px; min-height: 130px;
+  min-height: 130px;
   position: relative; will-change: transform; overflow: hidden;
   animation: card-pop 0.22s ease both;
 }
@@ -1103,7 +1104,7 @@ section.tab-panel:not(.hidden) {
 /* â”€â”€ Hero grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 #availableHeroes, #generatorHeroes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
   gap: 10px; justify-items: center;
 }
 
@@ -1273,6 +1274,7 @@ input[type=number] { -moz-appearance: textfield; }
 }
 .research-tree-scroll--lanes {
   overflow-x: auto;
+  max-width: 100%;
 }
 .research-tree-scroll--lanes .research-tree-root {
   min-width: 940px;
@@ -2824,18 +2826,26 @@ input[type=number] { -moz-appearance: textfield; }
 
 .footer-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: 2rem;
   padding: 3rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .footer-content {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .footer-section {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 .brand-section {
   text-align: left;
+  align-items: flex-start;
 }
 
 .footer-logo {
@@ -3486,8 +3496,8 @@ input[type=number] { -moz-appearance: textfield; }
   background: rgba(15,23,42,0.65); border: 1px solid rgba(51,65,85,0.6);
   border-radius: 14px; padding: 10px 12px; margin-bottom: 8px;
 }
-.heroes-search-field { flex: 1; min-width: 160px; margin-bottom: 0 !important; }
-.heroes-toolbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.heroes-search-field { flex: 1 1 160px; min-width: 120px; margin-bottom: 0 !important; }
+.heroes-toolbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 1; flex-wrap: wrap; }
 .heroes-count-badge {
   font-size: 0.68rem; font-weight: 800; color: #94a3b8;
   background: rgba(30,41,59,0.8); border: 1px solid rgba(51,65,85,0.7);
@@ -8302,7 +8312,7 @@ body {
 .youtube-card-head {
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 .youtube-title {
@@ -8449,7 +8459,7 @@ body {
 }
 .comment-identity-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.35fr);
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
 }
 .comment-name-wrap {
@@ -8523,6 +8533,7 @@ body {
   background: #2563eb;
   color: #fff;
   font-size: 0.875rem;
+  min-height: 2.25rem;
   box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3);
 }
 .comment-submit-btn:hover {
@@ -8625,6 +8636,7 @@ body {
   border-radius: var(--radius-pill);
   color: #fff;
   font-weight: 700;
+  min-height: 2.25rem;
   transition: background-color var(--t-fast), color var(--t-fast);
 }
 .modal-btn--ok {
@@ -12234,7 +12246,7 @@ body.hide-hero-info #heroTooltip {
 }
 
 .hero-card:has(.generator-skin-badge) .paid-badge {
-  right: 50px;
+  right: 42px;
 }
 
 .hero-card:has(.generator-skin-badge) .paid-badge-text {
@@ -12391,13 +12403,13 @@ body.hide-hero-info #heroTooltip {
 
 .tool-filter-panel {
   display: grid;
-  grid-template-columns: minmax(280px, 1.25fr) minmax(165px, 0.62fr) minmax(380px, 1.18fr) minmax(220px, 0.8fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: clamp(0.7rem, 1.25vw, 1rem);
   align-items: start;
 }
 
 .manual-filter-panel {
-  grid-template-columns: minmax(280px, 1.25fr) minmax(160px, 0.62fr) minmax(360px, 1.12fr) minmax(220px, 0.8fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
 
 .tool-filter-block {
@@ -12426,7 +12438,7 @@ body.hide-hero-info #heroTooltip {
 }
 
 .tool-filter-block .filter-pill {
-  min-height: 2.1rem;
+  min-height: 2.25rem;
 }
 
 .tool-filter-block--season {
@@ -12434,7 +12446,7 @@ body.hide-hero-info #heroTooltip {
 }
 
 .tool-filter-block--troops {
-  min-width: 380px;
+  min-width: min(380px, 100%);
 }
 
 .tool-filter-block--troops .pill-group {
@@ -12586,7 +12598,7 @@ body.hide-hero-info #heroTooltip {
   }
 
   .tab-pill {
-    min-height: 2.08rem;
+    min-height: 2.25rem;
     padding: 0.38rem 0.48rem;
     font-size: 0.66rem;
     gap: 0.28rem;
@@ -13227,14 +13239,15 @@ body.admin-standalone-page .admin-control-row {
 /* 11.4.3 hero card polish: organized badges, cleaner skin switch, stable copy. */
 #availableHeroes,
 #generatorHeroes {
-  grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
   gap: clamp(0.7rem, 1.15vw, 0.95rem);
   align-items: stretch;
 }
 
 .hero-card,
 .generator-card {
-  width: min(100%, 146px);
+  width: 100%;
+  max-width: 146px;
   min-height: 176px;
   justify-content: flex-start;
   gap: 0;
@@ -13621,7 +13634,7 @@ body.admin-standalone-page > .app-shell {
 }
 
 .command-header {
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr) !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(min(300px, 100%), 0.75fr) !important;
   gap: clamp(12px, 1.6vw, 22px) !important;
   margin-bottom: clamp(12px, 1.5vw, 20px) !important;
 }
@@ -13980,9 +13993,8 @@ body.admin-standalone-page > .app-shell {
 
 @media (max-width: 768px) {
   #tabOcrDashboard.seasonal-admin-tab {
-    width: 72px;
     min-width: 72px;
-    max-width: 72px;
+    max-width: 100%;
     padding-inline: 0 !important;
     gap: 3px !important;
     font-size: 0 !important;
@@ -14985,6 +14997,74 @@ body.admin-standalone-page > .app-shell {
 }
 
 /* =============================================================
+   Light-theme contrast fixes — high-risk hardcoded color gaps
+   ============================================================= */
+[data-theme='light'] .generator-skin-badge {
+  background: linear-gradient(135deg, #fbbf24, #fde68a) !important;
+  color: #78350f !important;
+}
+[data-theme='light'] .saved-combo-number {
+  background: linear-gradient(135deg, #fdba74, #f97316) !important;
+  color: #7c2d12 !important;
+}
+[data-theme='light'] .remove-combo-btn:hover {
+  background: rgba(239,68,68,0.22) !important;
+  color: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+[data-theme='light'] .skill-help-chip:hover,
+[data-theme='light'] .skill-help-chip:focus-visible {
+  color: #075985 !important;
+  background: rgba(56,189,248,0.22) !important;
+  box-shadow: 0 0 0 2px rgba(56,189,248,0.22) !important;
+}
+[data-theme='light'] .loyalty-step-card-site {
+  color: #92400e !important;
+  background: rgba(245,158,11,0.28) !important;
+}
+[data-theme='light'] .detail-skin-count {
+  color: #7e22ce !important;
+  background: rgba(168,85,247,0.28) !important;
+}
+[data-theme='light'] .feedback-mail-btn {
+  color: #92400e !important;
+  background: rgba(245,158,11,0.22) !important;
+}
+[data-theme='light'] .feedback-mail-btn:hover {
+  color: #78350f !important;
+  background: rgba(245,158,11,0.32) !important;
+}
+[data-theme='light'] .skin-status-chip--maxed {
+  color: #92400e !important;
+  background: rgba(251,191,36,0.25) !important;
+}
+[data-theme='light'] .research-card-max {
+  color: #155e75 !important;
+  background: rgba(34,211,238,0.24) !important;
+}
+[data-theme='light'] .eden-layer-btn.eden-layer-floor.active {
+  color: #0e7490 !important;
+  background: rgba(34,211,238,0.34) !important;
+}
+[data-theme='light'] .hero-card-badges .generator-skin-toggle.is-on .generator-skin-toggle-icon {
+  color: #f5f5f4 !important;
+  background: rgba(245,158,11,0.28) !important;
+}
+[data-theme='light'] .eden-map-legend {
+  color: #334155 !important;
+  background: rgba(248, 250, 252, 0.92) !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme='light'] .eden-team-board-count {
+  color: #475569 !important;
+  background: rgba(248, 250, 252, 0.88) !important;
+}
+[data-theme='light'] .quick-tour-next {
+  color: #082f49 !important;
+  background: #67e8f9 !important;
+}
+
+/* =============================================================
    RTL overrides for Arabic
    ============================================================= */
 html[dir="rtl"] .lang-select-icon { margin-right: 0; margin-left: 0.5rem; }
@@ -14995,7 +15075,7 @@ html[dir="rtl"] .research-search-icon { left: auto; right: 0.625rem; }
 html[dir="rtl"] .research-search-input { padding-left: 0.75rem; padding-right: 2rem; }
 html[dir="rtl"] .tab-scroll-btn:first-child svg { transform: scaleX(-1); }
 html[dir="rtl"] .tab-scroll-btn:last-child svg { transform: scaleX(-1); }
-html[dir="rtl"] .combo-slot { margin-right: 0; margin-left: 0.5rem; }
+html[dir="rtl"] .combo-slot { margin: 0.5rem; }
 html[dir="rtl"] .comment-field-icon { left: auto; right: 0.75rem; }
 html[dir="rtl"] .comment-input { padding-left: 0.75rem; padding-right: 2.5rem; }
 html[dir="rtl"] .footer-url { text-align: right; }

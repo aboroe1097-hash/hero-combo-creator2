@@ -1,0 +1,344 @@
+[
+  {
+    "title": "BOUDICA/RAMSES/EDWARD",
+    "boss": "Fordogreen",
+    "heroes": [
+      "Boudica",
+      "Ramses II",
+      "Edward the Confessor"
+    ]
+  },
+  {
+    "title": "EDWARD/CAOCAO/ISABELLA",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Edward the Confessor",
+      "Cao Cao",
+      "Isabella I"
+    ]
+  },
+  {
+    "title": "WARDE/DEFENDER/RAINFOREST",
+    "boss": "Gambosatte",
+    "heroes": [
+      "Warden",
+      "Defender",
+      "Rainforest Ranger"
+    ]
+  },
+  {
+    "title": "SAKURA/INQUISITOR/WITCHHUNTER",
+    "boss": "Sasha",
+    "heroes": [
+      "Sakura",
+      "Inquisitor",
+      "Witch Hunter"
+    ]
+  },
+  {
+    "title": "CHARLES/WARDEN/CAESAR",
+    "boss": "Savage Swordsman",
+    "heroes": [
+      "Charles the Great",
+      "Warden",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "BOUDICA/RAMSES/SAKURA",
+    "boss": "Spring Rabbit",
+    "heroes": [
+      "Boudica",
+      "Ramses II",
+      "Sakura"
+    ]
+  },
+  {
+    "title": "I.GUARDIAN/CHARLES/BOUDICA",
+    "boss": "Fordogreen",
+    "heroes": [
+      "Immortal Guardian",
+      "Charles the Great",
+      "Boudica"
+    ]
+  },
+  {
+    "title": "RAMSES/EDWARDJADEEAGLE",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Ramses II",
+      "Edward the Confessor",
+      "Jade Eagle"
+    ]
+  },
+  {
+    "title": "CHARLES/RAMSES/CAESAR",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Charles the Great",
+      "Ramses II",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "EDWARD/CHARLES/CAOCAO",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Edward the Confessor",
+      "Charles the Great",
+      "Cao Cao"
+    ]
+  },
+  {
+    "title": "SKYBREAKER/EDWARD/ISABELLA",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Sky Breaker",
+      "Edward the Confessor",
+      "Isabella I"
+    ]
+  },
+  {
+    "title": "WITCHHUNTER/ISABELLA/ELK",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Witch Hunter",
+      "Isabella I",
+      "ELK"
+    ]
+  },
+  {
+    "title": "WITCH HUNTER/BOUDICA/SAKURA",
+    "boss": "Sasha",
+    "heroes": [
+      "Witch Hunter",
+      "Boudica",
+      "Sakura"
+    ]
+  },
+  {
+    "title": "WITCHHUNTER/ISABELLA/CAOCAO",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Witch Hunter",
+      "Isabella I",
+      "Cao Cao"
+    ]
+  },
+  {
+    "title": "SAKYBREAKER/EDWARD/CAOCAO",
+    "boss": "Spring Rabbit",
+    "heroes": [
+      "Sky Breaker",
+      "Edward the Confessor",
+      "Cao Cao"
+    ]
+  },
+  {
+    "title": "OCTAVIUS/CLEOPATRA/CAESAR",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Octavius",
+      "Cleopatra VII",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "EDWARD/WARDEN/CAESAR",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Edward the Confessor",
+      "Warden",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "OCTAVIUS/WARDEN/CAESAR",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Octavius",
+      "Warden",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "SKYBREAKER/SAKURA/ISABELLA",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Sky Breaker",
+      "Sakura",
+      "Isabella I"
+    ]
+  },
+  {
+    "title": "EDWARD/WARDEN/RAINFOREST",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Edward the Confessor",
+      "Warden",
+      "Rainforest Ranger"
+    ]
+  },
+  {
+    "title": "SKYBREAKER/BOUDICA/SAKURA",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Sky Breaker",
+      "Boudica",
+      "Sakura"
+    ]
+  },
+  {
+    "title": "WITCHHUNTER/EDWARD/ISABELLA",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Witch Hunter",
+      "Edward the Confessor",
+      "Isabella I"
+    ]
+  },
+  {
+    "title": "SAKURA/EDWARD/WILLIAMCONQUEROR",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Sakura",
+      "Edward the Confessor",
+      "William the Conqueror"
+    ]
+  },
+  {
+    "title": "ALEXANDER/STEED/I.GUARDIAN",
+    "boss": "Trident of the North Sea",
+    "heroes": [
+      "Alexander",
+      "Bleeding Steed",
+      "Immortal Guardian"
+    ]
+  },
+  {
+    "title": "SAKURA/EDWARD/JADEEAGLE",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Sakura",
+      "Edward the Confessor",
+      "Jade Eagle"
+    ]
+  },
+  {
+    "title": "I.GUARDIAN/RAMSES/ALFATIH",
+    "boss": "Fordogreen",
+    "heroes": [
+      "Immortal Guardian",
+      "Ramses II",
+      "Al Fatih"
+    ]
+  },
+  {
+    "title": "SKYBREAKER/WITCHHUNTER/CAOCAO",
+    "boss": "Sasha",
+    "heroes": [
+      "Sky Breaker",
+      "Witch Hunter",
+      "Cao Cao"
+    ]
+  },
+  {
+    "title": "EDWAR/CAOCAO/WILLIAMCONQUEROR",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Edward the Confessor",
+      "Cao Cao",
+      "William the Conqueror"
+    ]
+  },
+  {
+    "title": "SAKURA/WARDEN/RAINFOREST",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Sakura",
+      "Warden",
+      "Rainforest Ranger"
+    ]
+  },
+  {
+    "title": "WITCHHUNTER/ISABELLA/WILLIAMCONQUEROR",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Witch Hunter",
+      "Isabella I",
+      "William the Conqueror"
+    ]
+  },
+  {
+    "title": "BOUDICA/RAMSES/SAKURA",
+    "boss": "Frost Queen",
+    "heroes": [
+      "Boudica",
+      "Ramses II",
+      "Sakura"
+    ]
+  },
+  {
+    "title": "LAWMAN/CHARLES/CAESAR",
+    "boss": "Savage Swordsman",
+    "heroes": [
+      "Lawman",
+      "Charles the Great",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "BOUDICA/SAKURA/JADEEAGLE",
+    "boss": "Black Annis",
+    "heroes": [
+      "Boudica",
+      "Sakura",
+      "Jade Eagle"
+    ]
+  },
+  {
+    "title": "CHARLES/EDWARD/CAESAR",
+    "boss": "Noisy Noel",
+    "heroes": [
+      "Charles the Great",
+      "Edward the Confessor",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "ALEXANDER/CHARLES/CAESAR",
+    "boss": "Savage Swordsman",
+    "heroes": [
+      "Alexander",
+      "Charles the Great",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "ARTHUR/EDWARD/CAOCAO",
+    "boss": "Frost Queen",
+    "heroes": [
+      "King Arthur",
+      "Edward the Confessor",
+      "Cao Cao"
+    ]
+  },
+  {
+    "title": "OCTAVIUS/EDWARD/CAESAR",
+    "boss": "Spring Rabbit",
+    "heroes": [
+      "Octavius",
+      "Edward the Confessor",
+      "Caesar"
+    ]
+  },
+  {
+    "title": "ARTHUR/EDWARD/JADEEAGLE",
+    "boss": "Frost Queen",
+    "heroes": [
+      "King Arthur",
+      "Edward the Confessor",
+      "Jade Eagle"
+    ]
+  }
+]

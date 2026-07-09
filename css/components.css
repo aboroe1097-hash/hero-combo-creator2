@@ -509,6 +509,7 @@
   color: #fff;
   font-weight: 800;
   border-radius: 9999px;
+  min-height: 2.25rem;
   box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -4px rgba(0, 0, 0, 0.1);
@@ -1817,4 +1818,17 @@ textarea.comment-reply-field {
 
 [data-theme='light'] .loyalty-result-label {
   color: var(--text-muted);
+}
+
+/* =============================================================
+   Light-theme contrast fixes — high-risk hardcoded color gaps
+   ============================================================= */
+[data-theme='light'] .comment-delete-btn {
+  color: #64748b !important;
+  background: transparent !important;
+}
+[data-theme='light'] .comment-delete-btn:hover {
+  color: #b91c1c !important;
+  background: rgba(239,68,68,0.12) !important;
+  border-color: rgba(239,68,68,0.3) !important;
 }

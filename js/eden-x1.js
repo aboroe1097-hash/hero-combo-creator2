@@ -26,7 +26,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.0.3';
+const APP_VERSION = '13.1.0';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -1819,8 +1819,15 @@ async function submitEdenTeamVoteForm(form) {
       const { db, firestore, user } = edenVoteWriteContext;
       const { collection, doc, getDoc, serverTimestamp, writeBatch } = firestore;
       const voteRef = doc(db, EDEN_X1_VOTES_COLLECTION_PATH, id);
-      const existingSnap = await getDoc(voteRef).catch(() => null);
-      const previousVote = existingSnap?.exists?.() ? existingSnap.data() || {} : null;
+      let previousVote = null;
+      let previousVoteKnown = true;
+      try {
+        const existingSnap = await getDoc(voteRef);
+        previousVote = existingSnap?.exists?.() ? existingSnap.data() || {} : null;
+      } catch (err) {
+        previousVoteKnown = false;
+        console.warn('Eden X1 vote pre-read failed; saving vote without a history row.', err);
+      }
       const previousCandidateNames = Array.isArray(previousVote?.candidateNames)
         ? previousVote.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
         : [previousVote?.candidateName]
@@ -1830,9 +1837,10 @@ async function submitEdenTeamVoteForm(form) {
         ? previousVote.candidateKeys.map((key) => String(key || '').trim()).filter(Boolean)
         : [previousVote?.candidateKey].map((key) => String(key || '').trim()).filter(Boolean);
       const changed =
-        !previousVote ||
-        String(previousVote.voterKey || '') !== voter.playerKey ||
-        previousCandidateKeys.join('|') !== candidateKeys.join('|');
+        previousVoteKnown &&
+        (!previousVote ||
+          String(previousVote.voterKey || '') !== voter.playerKey ||
+          previousCandidateKeys.join('|') !== candidateKeys.join('|'));
       const batch = writeBatch(db);
       batch.set(voteRef, {
         ...localVote,

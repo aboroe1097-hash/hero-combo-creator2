@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.1.0 - 2026-07-09
+
+- Aligned version strings to 13.1.0 across package config, HTML pages, README, and JS state modules.
+- Performed pre-flight security and layout audit for the roc-vts.com release.
+- Verified that Firestore security rules are fully synchronized with all active v13.1.0 schemas and collections.
+- Audited responsive utility styles and flex elements for viewport widths down to 360px to prevent overflow or text clipping.
+- Confirmed navigation tab switching, hashchange events, and popstate handling prevent CLS and dead ends.
+
 ## 13.0.3 - 2026-07-07
 
 - Merged the Eden X1 voting helper's separate banner and pathing cards into one wider "Most Banners & Paths" helper ranked by combined banner/path support.

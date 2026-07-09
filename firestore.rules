@@ -271,6 +271,11 @@ service cloud.firestore {
         && voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
     }
 
+    function canGetOwnEdenX1Vote(voteId) {
+      return signedIn()
+        && voteId.matches('^[A-Za-z0-9_-]{1,40}__team_players__' + request.auth.uid + '$');
+    }
+
     function validEdenX1VoteHistoryPath(historyId) {
       return request.resource.data.id == historyId
         && request.resource.data.voteId == request.resource.data.season + '__team_players__' + request.auth.uid;
@@ -353,7 +358,7 @@ service cloud.firestore {
         && ('createdBy' in resource.data)
         && resource.data.createdBy is string
         && resource.data.createdBy.size() > 0
-        && resource.data.createdBy != 'release-12.4.1';
+        && resource.data.createdBy != 'release-13.1.0';
     }
 
     function keepsConductMetadata() {
@@ -427,7 +432,8 @@ service cloud.firestore {
     }
 
     match /vts_admin/eden_x1_votes/records/{voteId} {
-      allow read, delete: if isAdmin();
+      allow get: if isAdmin() || canGetOwnEdenX1Vote(voteId);
+      allow list, delete: if isAdmin();
       allow create: if signedIn()
         && validEdenX1Vote()
         && validEdenX1VotePath(voteId);

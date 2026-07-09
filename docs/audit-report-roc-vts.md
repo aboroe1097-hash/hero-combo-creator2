@@ -1,8 +1,8 @@
 # Comprehensive Audit Report — roc-vts.com (Hero Combo Creator - VTS 1097)
 
 **Repository:** `github.com/aboroe1097-hash/hero-combo-creator2`
-**Version:** v12.4.1 (latest commit `dc5cb7b2`)
-**Generated:** 2026-07-06
+**Version:** v13.1.0
+**Generated:** 2026-07-09
 **Scope:** Firebase Security Rules, GitHub Repository, Frontend Code (HTML/JS/CSS), Tools & Sub-tools, Theme System, Translations
 
 ---

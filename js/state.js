@@ -6,7 +6,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '13.0.3';
+export const APP_VERSION = '13.1.0';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -171,8 +171,6 @@ export const tabStrifeBtn = document.getElementById('tabStrife');
 export const heroesSection = document.getElementById('heroesSection');
 export const edenMapSection = document.getElementById('edenMapSection');
 export const strifeSection = document.getElementById('strifeSection');
-export const ocrDashboardSection = document.getElementById('ocrDashboardSection');
-export const tabOcrDashboardBtn = document.getElementById('tabOcrDashboard');
 export const globalToggleRow = document.getElementById('globalToggleRow');
 
 export const comboFooterBar = document.getElementById('comboFooterBar');

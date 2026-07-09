@@ -38,7 +38,6 @@ function focusVisibleSearch() {
     '#researchSection:not(.hidden) #techSearchInput',
     '#materialsSection:not(.hidden) input[type="number"]',
     '#edenMapSection:not(.hidden) #edenStructSearch',
-    '#ocrDashboardSection:not(.hidden) input[type="search"]',
   ];
   const input = selectors.map((s) => document.querySelector(s)).find(Boolean);
   if (input) {

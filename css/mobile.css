@@ -1028,11 +1028,6 @@ button:not([disabled]):active,
   /* Extreme small — Galaxy S22 Ultra min width */
   #appTitle { font-size: 1.35rem !important; }
   .tab-pill { font-size: 0.58rem !important; padding: 0.35rem 0.42rem !important; }
-  #generatorHeroes, #availableHeroes {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 4px !important;
-  }
-  .research-grid { grid-template-columns: repeat(3, 1fr) !important; }
   .combo-slot { width: 58px !important; height: 58px !important; }
 }
 
@@ -1387,6 +1382,13 @@ button:not([disabled]):active,
   .generator-card img {
     width: 52px !important;
     height: 52px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  #availableHeroes,
+  #generatorHeroes {
+    gap: 4px !important;
   }
 }
 
@@ -1854,7 +1856,7 @@ button:not([disabled]):active,
 .boot-splash .perspective-container {
   position: absolute !important;
   inset: 0 !important;
-  width: 100vw !important;
+  width: 100% !important;
   height: 100vh !important;
   height: 100svh !important;
   min-height: 0 !important;
@@ -2287,6 +2289,15 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
   .tab-pill {
     min-height: var(--tap-min) !important;
   }
+
+  #generatorHeroes, #availableHeroes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+  .hero-card, .generator-card { min-height: 118px !important; padding: 6px !important; }
+  .hero-card img, .generator-card img { width: 46px !important; height: 46px !important; }
+  .eden-x1-reward-flow { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .research-grid  { grid-template-columns: repeat(3, 1fr) !important; }
 }
 
 .heroes-season-tabs,
@@ -2558,11 +2569,6 @@ body.admin-standalone-page #ocrDashboardRoot .dash-container {
 }
 
 @media (max-width: 480px) {
-  #availableHeroes,
-  #generatorHeroes {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
   .hero-card,
   .generator-card {
     min-height: 142px !important;
@@ -3953,4 +3959,39 @@ body[data-active-tab="loyalty"] .bug-report-fab {
 
 [data-theme="light"] .research-card-max:hover {
   color: #052e2b !important;
+}
+
+/* M4: Clamp tech calculator height to prevent negative notch offsets */
+#techCalculatorContainer.research-calculator:not(.hidden) {
+  height: max(240px, calc(100dvh - 16px - var(--safe-top) - var(--safe-bottom))) !important;
+  max-height: max(240px, calc(100svh - 16px - var(--safe-top) - var(--safe-bottom))) !important;
+}
+
+/* M6: Eden flow-card step badge padding offset */
+.eden-x1-flow-card {
+  padding-right: 2.5rem !important;
+}
+
+/* M7: comboButtonsRow two-column grid extension for small tablets */
+@media (min-width: 641px) and (max-width: 768px) {
+  #comboButtonsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  #comboButtonsRow button {
+    white-space: normal !important;
+  }
+}
+
+/* M8: Bump touch targets to WCAG 2.5.5 minimum 44px */
+.research-card-cta, .research-page-tab, .quick-set-btn,
+.tech-season-btn, .research-branch-btn, .loyalty-preset-btn,
+.eden-x1-quicknav-chip {
+  min-height: var(--tap-min) !important;
+}
+.quick-set-btn {
+  min-width: 44px !important;
+}
+.eden-sidebar-close {
+  width: 44px !important;
+  height: 44px !important;
 }

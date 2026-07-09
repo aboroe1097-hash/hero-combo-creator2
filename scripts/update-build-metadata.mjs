@@ -60,7 +60,8 @@ function updateCacheBusters() {
   if (fs.existsSync(adminPagePath)) {
     const adminPage = fs
       .readFileSync(adminPagePath, 'utf8')
-      .replace(/ocr-dashboard\.js(?:\?v=[0-9A-Za-z_-]+)?/g, `ocr-dashboard.js?v=${buildVersion}`);
+      .replace(/ocr-dashboard\.js(?:\?v=[0-9A-Za-z_-]+)?/g, `ocr-dashboard.js?v=${buildVersion}`)
+      .replace(/tabs\/admin\.html(?:\?v=[0-9A-Za-z_-]+)?/g, `tabs/admin.html?v=${buildVersion}`);
     fs.writeFileSync(adminPagePath, adminPage);
   }
 }
@@ -167,13 +168,18 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(new Request(request, { cache: 'reload' }))
         .then(async (response) => {
-          const copy = response.clone();
-          const cache = await caches.open(CACHE_VERSION);
-          await cache.put('/index.html', copy);
-          await trimCache(cache, MAX_CACHE_ENTRIES);
+          if (response.ok) {
+            const copy = response.clone();
+            const cache = await caches.open(CACHE_VERSION);
+            await cache.put(cacheKey, copy);
+            await trimCache(cache, MAX_CACHE_ENTRIES);
+          }
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(async () => {
+          const cached = await caches.match(cacheKey);
+          return cached || caches.match('/index.html');
+        })
     );
     return;
   }

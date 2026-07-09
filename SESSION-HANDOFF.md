@@ -1,23 +1,18 @@
-# Session Handoff - v13.0.3 Eden X1 Helper Layout
+# Session Handoff - v13.1.0 Pre-Flight Audit & Release Alignment
 
-Date: 2026-07-07
+Date: 2026-07-09
 Branch: gh-pages
 Repo: D:\Project\hero-combo-creator2
-Release: 13.0.3
+Release: 13.1.0
 
-## 13.0.3 Notes
+## 13.1.0 Release Notes
 
-- Eden X1 voting guidance now merges the separate banner and pathing helper cards into a single translated "Most Banners & Paths" card.
-- The combined helper ranks by `banners + pathers`, then by banners, pathers, weighted score, and name.
-- Helper cards use a wider grid and smaller value-column reservation so long player names get more room on PC.
-- Smoke coverage now expects five helper cards and verifies the old separate banner/path cards are not shown.
-
-## 13.0.2 Hotfix Notes
-
-- Fixed the Eden X1 vote settings Firestore document path from the invalid three-segment `vts_admin/eden_x1_vote_settings/config` reference to the valid document path `vts_admin/eden_x1_vote_settings` in public/admin code, rules, and tests.
-- DM Materials is back to a Coming Soon tab with a visible `SOON` nav badge. The staged `js/material-calculator.js` module remains in the repo but is no longer loaded by the tab.
-- Manual Builder now has a skin-mode toggle that uses the existing translated generator skin label, localized skin-count badges, skin portraits, and visible skin badges.
-- Firebase rules still need a separate deploy for the vote settings/history permissions to match the static Pages release.
+- Version strings aligned to 13.1.0 across package config, HTML footers, README, JS state modules, and admin constants.
+- Pre-flight audit verified Firebase security rules, mobile responsiveness at viewport widths 360-430px, and navigation flow with zero CLS or dead ends.
+- Fixed `eden-x1.html` footer missing version string.
+- Updated stale `release-12.4.1` migration guard in `firestore.rules` to `release-13.1.0`.
+- Synced `docs/audit-report-roc-vts.md` version metadata from v12.4.1 to v13.1.0.
+- Confirmed that all Firestore collections match active schemas and no `allow read, write: if true` rules exist.
 
 ## What Changed
 

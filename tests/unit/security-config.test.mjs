@@ -262,15 +262,21 @@ test('R5 conduct adjustments are stored separately and use the admin claim', () 
   assert.match(rules, /keepsConductMetadata\(\) \|\| repairsHistoricalConductMetadata\(\)/);
 });
 
-test('Eden X1 votes are public-write but admin-read only', () => {
+test('Eden X1 votes are public-write with admin list and owner get', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const eden = readFileSync('js/eden-x1.js', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
 
   assert.match(rules, /function validEdenX1Vote\(\)/);
   assert.match(rules, /function validEdenX1VotePath\(voteId\)/);
+  assert.match(rules, /function canGetOwnEdenX1Vote\(voteId\)/);
   assert.match(rules, /match \/vts_admin\/eden_x1_votes\/records\/\{voteId\}/);
-  assert.match(rules, /allow read, delete: if isAdmin\(\);/);
+  assert.match(rules, /allow get: if isAdmin\(\) \|\| canGetOwnEdenX1Vote\(voteId\);/);
+  assert.match(rules, /allow list, delete: if isAdmin\(\);/);
+  assert.match(
+    rules,
+    /voteId\.matches\('\^\[A-Za-z0-9_-\]\{1,40\}__team_players__' \+ request\.auth\.uid \+ '\$'\)/
+  );
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1Vote\(\)/);
   assert.match(rules, /allow create: if signedIn\(\)[\s\S]*validEdenX1VotePath\(voteId\)/);
   assert.match(
@@ -352,6 +358,8 @@ test('Eden X1 votes are public-write but admin-read only', () => {
   );
   assert.doesNotMatch(eden, /edenVoteDocId\(season, voter\.playerKey\)/);
   assert.match(eden, /voterAuthUid/);
+  assert.match(eden, /previousVoteKnown/);
+  assert.match(eden, /saving vote without a history row/);
   assert.match(eden, /serverTimestamp\(\)/);
   assert.match(dashboard, /loadEdenX1VoteAdminData/);
   assert.match(dashboard, /setEdenX1VotesForTest/);

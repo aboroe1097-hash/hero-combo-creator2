@@ -42,6 +42,7 @@ function getStageSeasons(stage) {
 }
 
 function stageIsAllowed(entry, selectedStage) {
+  if (!STRIFE_SEASONS.includes(entry.stage || 'S0')) return false;
   const selectedIndex = getStageIndex(selectedStage);
   const startIndex = getStageIndex(entry.stage || 'S0');
   const endIndex = entry.maxStage ? getStageIndex(entry.maxStage) : STRIFE_SEASONS.length - 1;
@@ -363,6 +364,7 @@ function keepActiveMonsterInView() {
 
 function renderStrifeTool() {
   if (!strifeRoot) return;
+  document.querySelector('#strifeSection .strife-loading')?.remove();
   const model = getStrifeRecommendations();
 
   strifeRoot.innerHTML = `

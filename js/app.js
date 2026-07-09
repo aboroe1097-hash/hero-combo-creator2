@@ -141,6 +141,7 @@ const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
 const MATERIAL_TAB_LABELS = { de: 'DM Material', en: 'DM Materials' };
 let researchModulePromise = null;
+let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
@@ -150,6 +151,16 @@ function loadResearchModule() {
     });
   }
   return researchModulePromise;
+}
+
+function loadMaterialModule() {
+  if (!materialModulePromise) {
+    materialModulePromise = import('./material-calculator.js?v=20260709_131000').catch((err) => {
+      materialModulePromise = null;
+      throw err;
+    });
+  }
+  return materialModulePromise;
 }
 
 function resolveDroppedHeroName(dataTransfer) {
@@ -863,6 +874,8 @@ tabs.forEach(tab => {
   let _heroesTabBooting = false;
   let _researchReady = false;
   let _researchBooting = false;
+  let _materialsReady = false;
+  let _materialsBooting = false;
   let _strifeReady = false;
   let _strifeBooting = false;
 
@@ -991,6 +1004,33 @@ tabs.forEach(tab => {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(t.moduleLoadFailed?.replace('{name}', 'Research') || 'Research failed to load.', 'error', 4000);
           }
+        });
+    }
+    if (tabName === 'materials' && !_materialsReady) {
+      if (_materialsBooting) return;
+      _materialsBooting = true;
+      loadMaterialModule()
+        .then((mod) => {
+          mod.initMaterialCalculator();
+          _materialsReady = true;
+        })
+        .catch((err) => {
+          console.error('DM Materials failed to load', err);
+          if (isDynamicImportLoadFailure(err)) {
+            recoverFromStaleAssetGraph(err);
+            return;
+          }
+          const root = document.getElementById('materialCalculatorRoot');
+          if (root) {
+            root.innerHTML = '<div class="tab-load-error">Failed to load DM Materials. <button onclick="location.reload()" class="tab-load-error-link">Reload</button></div>';
+          }
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(t.moduleLoadFailed?.replace('{name}', 'DM Materials') || 'DM Materials failed to load.', 'error', 4000);
+          }
+        })
+        .finally(() => {
+          _materialsBooting = false;
         });
     }
     if (tabName === 'strife' && !_strifeReady) {
@@ -1379,7 +1419,7 @@ function initQuickTour() {
     { selector: '#tabGenerator', title: 'Combo Generator', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
     { selector: '#tabHeroes', title: 'Hero Atlas', body: 'Browse hero ratings, skills, skins, counters, and top ranked pairings.' },
     { selector: '#tabResearch', title: 'Research', body: 'Plan tech upgrades, compare costs, and keep your research path organized.' },
-    { selector: '#tabMaterials', title: 'DM Materials', body: 'Dragon Master material planning is reserved here and will open after the calculator is ready.' },
+    { selector: '#tabMaterials', title: 'DM Materials', body: 'Plan Dragon Master materials with inventory, crafting timeline, and conversion flow tools.' },
     { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
     { selector: '#tabStrife', title: 'Strife over Dragon', body: 'Pick a monster and stage to see matchup formations.' },
     { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
