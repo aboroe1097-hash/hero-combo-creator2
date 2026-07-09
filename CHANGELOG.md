@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.1.4 - 2026-07-10
+
+- Replaced timestamp-based local restore prompts with revision-guarded cloud sync. A reachable cloud dashboard is now authoritative on every device; a conflicting local snapshot is backed up instead of being offered as an automatic overwrite.
+- Full dashboard writes and queued retries now run through Firestore transactions tied to the exact cloud revision they started from. A second device can no longer use a stale cache to replace a newer cloud snapshot.
+- Added a required `syncRevision` field to dashboard rules. The first 13.1.4 write safely migrates the existing document; older cached clients are rejected rather than allowed to overwrite current cloud data.
+- Made Eden X1 roster, vote-settings, and bonus-team-effort reads optional after a short timeout, so a stalled secondary query no longer leaves public voters frozen at 80% once the main dashboard snapshot has loaded.
+- Synced public version labels, README, changelog, and app constants to 13.1.4.
+
 ## 13.1.3 - 2026-07-10
 
 - Replaced the Eden X1 loading card's static 72% / `...` placeholder with real progress tied to Firebase imports, anonymous sign-in, Firestore reads, and the public conduct-adjustment load. The progress caps below completion until the dashboard is actually ready, and stale retries cannot update a newer attempt.

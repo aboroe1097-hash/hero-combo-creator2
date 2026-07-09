@@ -187,8 +187,9 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(dashboard, /const DASHBOARD_CLOUD_FIELD_KEYS = new Set/);
   assert.match(dashboard, /function writeAuxiliaryPayloadToCloud/);
   assert.match(dashboard, /const payload = withDashboardTimestamp\(auxiliaryPayload\);/);
-  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), payload, \{ merge: true \}\)/);
-  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), repairPayload\)/);
+  assert.match(dashboard, /runTransaction\(db, async \(transaction\)/);
+  assert.match(dashboard, /transaction\.set\(ref, nextPayload, \{ merge: true \}\)/);
+  assert.match(dashboard, /writeDashboardSnapshotToCloud\(/);
   assert.match(dashboard, /bannerRecords/);
   assert.match(dashboard, /dutyRecords/);
   assert.match(dashboard, /contributionRecords/);
@@ -247,7 +248,7 @@ test('shared admin dashboard reads stay available while writes require the admin
   assert.match(dashboard, /isAdminAuthUser/);
   assert.match(
     rules,
-    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create: if isAdmin\(\) && validDashboardData\(\);[\s\S]*allow update: if isAdmin\(\)[\s\S]*validDashboardData\(\)[\s\S]*request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/
+    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create: if isAdmin\(\)[\s\S]*request\.resource\.data\.syncRevision == 1;[\s\S]*allow update: if isAdmin\(\)[\s\S]*validDashboardData\(\)[\s\S]*request\.resource\.data\.syncRevision == resource\.data\.syncRevision \+ 1[\s\S]*request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/
   );
   assert.match(
     rules,
@@ -257,18 +258,33 @@ test('shared admin dashboard reads stay available while writes require the admin
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
 });
 
-test('dashboard freshness timestamps are accepted by the Firestore schema', () => {
+test('dashboard cloud revisions prevent stale local snapshots from overwriting cloud data', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   const dashboardValidator = rules.match(/function validDashboardData\(\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
 
   assert.match(dashboard, /DASHBOARD_CLOUD_FIELD_KEYS = new Set\(\[\s*'updatedAtMs'/);
+  assert.match(dashboard, /'syncRevision'/);
   assert.match(dashboard, /persistedData\.updatedAtMs = Date\.now\(\);/);
-  assert.match(dashboard, /const queuedPayload = withDashboardTimestamp\(/);
   assert.match(dashboard, /const seedPayload = withDashboardTimestamp\(/);
   assert.match(dashboard, /const clearedPayload = \{\s*updatedAtMs: Date\.now\(\),/);
+  assert.match(dashboard, /function writeDashboardSnapshotToCloud/);
+  assert.match(dashboard, /transaction\.get\(ref\)/);
+  assert.match(dashboard, /syncRevision: cloudRevision \+ 1/);
+  assert.match(dashboard, /dashboardCloudSavePendingBaseRevision/);
+  assert.match(
+    dashboard,
+    /dashboardCloudSavePendingBaseRevision = result \? dashboardCloudBaseRevision : null/
+  );
+  assert.match(dashboard, /dashboardCloudSavePendingBaseRevision = dashboardCloudSaveInFlight/);
+  assert.doesNotMatch(dashboard, /dashboardCloudSaveInFlightTargetRevision/);
+  assert.match(dashboard, /function preserveLocalDashboardConflict/);
+  assert.doesNotMatch(dashboard, /adminLocalNewerRestorePrompt/);
+  assert.doesNotMatch(dashboard, /Ignored an older dashboard snapshot returned by cloud sync/);
   assert.match(dashboardValidator, /'updatedAtMs'/);
+  assert.match(dashboardValidator, /'syncRevision'/);
   assert.match(dashboardValidator, /request\.resource\.data\.updatedAtMs is number/);
+  assert.match(dashboardValidator, /request\.resource\.data\.syncRevision is int/);
   assert.doesNotMatch(dashboardValidator, /!\('updatedAtMs' in request\.resource\.data\)/);
   assert.match(
     rules,
@@ -276,7 +292,18 @@ test('dashboard freshness timestamps are accepted by the Firestore schema', () =
   );
   assert.match(dashboard, /const loadGeneration = \+\+dashboardLoadGeneration;/);
   assert.match(dashboard, /if \(!isCurrentLoad\(\)\) return;/);
-  assert.match(dashboard, /Cloud sync failed; kept newer dashboard data already in memory\./);
+  assert.match(dashboard, /Cloud sync failed; kept dashboard data already in memory\./);
+});
+
+test('Eden X1 does not block voting on optional Firestore reads', () => {
+  const eden = readFileSync('js/eden-x1.js', 'utf8');
+
+  assert.match(eden, /const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;/);
+  assert.match(eden, /async function loadEdenOptionalData/);
+  assert.match(eden, /'roster data'/);
+  assert.match(eden, /'vote settings'/);
+  assert.match(eden, /'bonus team effort points'/);
+  assert.match(eden, /liveConductAdjustments\?\.length/);
 });
 
 test('admin gate uses a password sign-in check and sign-out cannot auto re-login', () => {

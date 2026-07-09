@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.3';
+const APP_VERSION = '13.1.4';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -2686,7 +2686,9 @@ function sortWeightedRowsBy(rows, sort, numberMode, options = {}) {
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   const finalRewardLabelForRow = (row, index) => {
     const context = rewardContextForRow(row, index) || {};
-    return context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
+    return (
+      context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward)
+    );
   };
   const accessors = {
     number: (row) => rowNumberValue(row, numberMode),
@@ -4747,6 +4749,7 @@ async function bootShell() {
 }
 
 const EDEN_X1_BOOT_TIMEOUT_MS = 20000;
+const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;
 const EDEN_X1_LOADING_PROGRESS_CAP = 90;
 let edenBootGeneration = 0;
 let lastEdenBootError = null;
@@ -4823,6 +4826,27 @@ function withEdenBootTimeout(promise) {
   });
 }
 
+async function loadEdenOptionalData(promise, label) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          const err = new Error(`${label} timed out`);
+          err.code = 'eden-x1/optional-read-timeout';
+          reject(err);
+        }, EDEN_X1_OPTIONAL_READ_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (err) {
+    console.warn(`Eden X1 ${label} unavailable; continuing without it.`, err);
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function showEdenBootError(err) {
   const errorEl = $('edenX1Error');
   if (!errorEl) return;
@@ -4879,8 +4903,8 @@ async function loadEdenX1Dashboard() {
         const { doc, getDoc } = firestore;
         const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
-          getDoc(doc(db, FS_ROSTER_PATH)).catch(() => null),
-          getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)).catch(() => null),
+          loadEdenOptionalData(getDoc(doc(db, FS_ROSTER_PATH)), 'roster data'),
+          loadEdenOptionalData(getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)), 'vote settings'),
         ]);
         setEdenLoadingProgress(generation, 80);
 
@@ -4893,13 +4917,12 @@ async function loadEdenX1Dashboard() {
           const rosterData = rosterSnap.data() || {};
           if (Array.isArray(rosterData.snapshots)) data.rosterSnapshots = rosterData.snapshots;
         }
-        const liveConductAdjustments = await loadPublicConductAdjustments(
-          db,
-          firestore,
-          data.r5Season || ''
+        const liveConductAdjustments = await loadEdenOptionalData(
+          loadPublicConductAdjustments(db, firestore, data.r5Season || ''),
+          'bonus team effort points'
         );
         setEdenLoadingProgress(generation, 92);
-        if (liveConductAdjustments.length) {
+        if (liveConductAdjustments?.length) {
           data.publicConductAdjustments = liveConductAdjustments;
         }
         return { kind: 'ok', db, firestore, voteUser, voteSettingsSnap, data };
