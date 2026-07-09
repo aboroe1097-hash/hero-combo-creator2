@@ -89,6 +89,8 @@ The supported variable names and placeholders live in [.env.example](.env.exampl
 | npm run towers:test   | Focused Towers model and browser tests                                         |
 | npm run velo:lab      | Start the isolated local Velo/Ollama workshop                                  |
 
+Before preparing a release PR, update the locations in the [app version checklist](AGENTS.md#app-version-bump-checklist) and run `npm run version:check`.
+
 Install Chromium once for browser checks with npx playwright install chromium. On Linux, CI uses npx playwright install --with-deps chromium. Some screenshot baselines are Windows-specific and explicitly skipped in CI; a passing CI run does not claim those snapshots were compared.
 
 For a quick Towers loop, use npm run towers:dev, npm run towers:test:unit, and npm run towers:test:ui. For another tool, select its existing unit/browser tests. The [contribution guide](CONTRIBUTING.md#choose-the-right-checks) explains when focused checks are sufficient and when the full gate is required.

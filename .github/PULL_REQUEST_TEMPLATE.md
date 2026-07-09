@@ -23,6 +23,7 @@ Commands/results and limitations:
 
 - [ ] Version surfaces and CHANGELOG.md updated for user-visible changes, or explain docs/internal scope
 - [ ] npm run version:check passed
+- [ ] Release PR checked the app version map in AGENTS.md
 
 ## Evidence
 

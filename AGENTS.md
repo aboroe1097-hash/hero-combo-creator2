@@ -67,13 +67,29 @@ Repository protection for `gh-pages` should require a pull request, owner approv
 
 The active release train uses 20 patch releases per minor version.
 
-- Current pattern: `16.0.0`, `16.0.1`, ... `16.0.20`, then `16.1.0`.
-- Next train continues the same way: `16.1.1`, ... `16.1.20`, then `16.2.0`.
-- For release PRs, update `package.json`, the lockfile root/package versions, app constants, public HTML footers, the README release heading, and `CHANGELOG.md`.
-- Run `npm run version:check` to verify every public version surface and the 20-patch cadence.
-- Let `npm run build` refresh service-worker and cache metadata; include intentional generated changes instead of hand-editing build stamps.
-- **16.5.0 release-transition exception:** the owner requested the motion release ahead of the normal train; its real predecessor is 16.0.19 (production when the release branch integrated origin/gh-pages), and no 16.1-16.4 releases exist. `scripts/check-version-consistency.mjs` allows exactly that predecessor -> target pair via `APPROVED_RELEASE_TRANSITIONS`; never fabricate 16.1-16.4 changelog entries to satisfy cadence. Normal cadence resumes at 16.5.1, and the exception is covered by `tests/unit/version-transition.test.mjs`.
+- Current train: `16.5.0` through `16.5.20`, then `16.6.0`.
+- Next train: `16.6.1` through `16.6.20`, then `16.7.0`.
+- For a release, update every source in the [app version checklist](#app-version-bump-checklist), then run `npm run version:check`.
+- Run `npm run build` to refresh service-worker and cache metadata; include intentional generated changes instead of hand-editing build stamps.
+- **16.5.0 release-transition exception:** the owner requested the motion release ahead of the normal train; its real predecessor is 16.0.19 (production when the release branch integrated origin/gh-pages), and no 16.1-16.4 releases exist. `scripts/check-version-consistency.mjs` allows exactly that predecessor-to-target pair via `APPROVED_RELEASE_TRANSITIONS`; never fabricate 16.1-16.4 changelog entries to satisfy cadence. Normal cadence resumes at 16.5.1, and the exception is covered by `tests/unit/version-transition.test.mjs`.
 - Documentation-only policy PRs do not need to bump the app version unless the owner explicitly asks for a release bump.
+
+## App Version Bump Checklist
+
+Keep the public semantic app version consistent across these source locations:
+
+| Location | What to update |
+|---|---|
+| `package.json` | Top-level `version`; source of truth. |
+| `package-lock.json` | Both top-level `version` and `packages[""]` `version`. |
+| `CHANGELOG.md` | Newest entry `## X.Y.Z - YYYY-MM-DD`; its predecessor must match the release cadence or an approved transition. |
+| `README.md` | Version in the title. |
+| App version constants | `APP_VERSION` in `js/state.js`, `js/admin-page.js`, `js/eden-x1.js`, `js/arcade.js`, `js/battle-simulator-app.js`, and `js/specialization-towers-v2-app.js`; `DEFAULT_APP_VERSION` in `js/ai/tool-envelope.js`. |
+| HTML version metadata | `battle-simulator.html` and `specialization-towers.html` application-version meta tags; `profile.html`, `vtsscore.html`, `downloads.html`, and `eden-siege.html` app-version meta tags. |
+| Maintenance page | Version label in `maintenance.html`. |
+| Public page footers | Literal version in `index.html`, `admin.html`, `eden-x1.html`, `eden-x2.html`, and `arcade.html`. |
+
+`npm run version:check` verifies these locations, the latest changelog entry, and release cadence. Run `npm run build` for generated cache-buster and service-worker metadata. Values such as `?v=...`, `CACHE_VERSION`, and `APP_SHELL` identify a build; they are not semantic app versions. Do not hand-edit them to the release number. Translated `{version}` placeholders and unrelated dependency, schema, and storage versions are not release labels.
 
 ## External Deploys
 
