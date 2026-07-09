@@ -186,7 +186,8 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(dashboard, /function pruneDashboardCloudData/);
   assert.match(dashboard, /const DASHBOARD_CLOUD_FIELD_KEYS = new Set/);
   assert.match(dashboard, /function writeAuxiliaryPayloadToCloud/);
-  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), auxiliaryPayload, \{ merge: true \}\)/);
+  assert.match(dashboard, /const payload = withDashboardTimestamp\(auxiliaryPayload\);/);
+  assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), payload, \{ merge: true \}\)/);
   assert.match(dashboard, /setDoc\(doc\(db, FS_PATH\), repairPayload\)/);
   assert.match(dashboard, /bannerRecords/);
   assert.match(dashboard, /dutyRecords/);
@@ -246,7 +247,7 @@ test('shared admin dashboard reads stay available while writes require the admin
   assert.match(dashboard, /isAdminAuthUser/);
   assert.match(
     rules,
-    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create, update: if isAdmin\(\) && validDashboardData\(\);/
+    /match \/vts_admin\/dashboard_data\s*\{[\s\S]*allow read: if signedIn\(\);[\s\S]*allow create: if isAdmin\(\) && validDashboardData\(\);[\s\S]*allow update: if isAdmin\(\)[\s\S]*validDashboardData\(\)[\s\S]*request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/
   );
   assert.match(
     rules,
@@ -254,6 +255,28 @@ test('shared admin dashboard reads stay available while writes require the admin
   );
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validDashboardData\(\);/);
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
+});
+
+test('dashboard freshness timestamps are accepted by the Firestore schema', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const dashboardValidator = rules.match(/function validDashboardData\(\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
+
+  assert.match(dashboard, /DASHBOARD_CLOUD_FIELD_KEYS = new Set\(\[\s*'updatedAtMs'/);
+  assert.match(dashboard, /persistedData\.updatedAtMs = Date\.now\(\);/);
+  assert.match(dashboard, /const queuedPayload = withDashboardTimestamp\(/);
+  assert.match(dashboard, /const seedPayload = withDashboardTimestamp\(/);
+  assert.match(dashboard, /const clearedPayload = \{\s*updatedAtMs: Date\.now\(\),/);
+  assert.match(dashboardValidator, /'updatedAtMs'/);
+  assert.match(dashboardValidator, /request\.resource\.data\.updatedAtMs is number/);
+  assert.doesNotMatch(dashboardValidator, /!\('updatedAtMs' in request\.resource\.data\)/);
+  assert.match(
+    rules,
+    /request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/
+  );
+  assert.match(dashboard, /const loadGeneration = \+\+dashboardLoadGeneration;/);
+  assert.match(dashboard, /if \(!isCurrentLoad\(\)\) return;/);
+  assert.match(dashboard, /Cloud sync failed; kept newer dashboard data already in memory\./);
 });
 
 test('admin gate uses a password sign-in check and sign-out cannot auto re-login', () => {

@@ -2580,6 +2580,7 @@ function sanitizeDashboardDataForPersistence(data) {
 const DASHBOARD_FRESHNESS_SKEW_MS = 60 * 1000;
 const DASHBOARD_LOCAL_BACKUP_KEY = 'vts_ocr_dashboard_backup_v1';
 let dashboardCloudBaseTs = 0;
+let dashboardLoadGeneration = 0;
 
 function parseDashboardLastUpdatedMs(value) {
   // fmtDate format: "dd/mm/yyyy, DayName, HH:MM GT" (local clock).
@@ -2602,6 +2603,26 @@ function dashboardDataTimestampMs(data) {
   const stamped = Number(data.updatedAtMs);
   if (Number.isFinite(stamped) && stamped > 0) return stamped;
   return parseDashboardLastUpdatedMs(data.last_updated);
+}
+
+function dashboardSnapshotIsOlder(candidate, baseline) {
+  const candidateTs = dashboardDataTimestampMs(candidate);
+  const baselineTs = dashboardDataTimestampMs(baseline);
+  return baselineTs > 0 && (!candidateTs || baselineTs > candidateTs + DASHBOARD_FRESHNESS_SKEW_MS);
+}
+
+function newerDashboardSnapshot(first, second) {
+  if (!first) return second;
+  if (!second) return first;
+  return dashboardSnapshotIsOlder(first, second) ? second : first;
+}
+
+function withDashboardTimestamp(data, fallbackTimestamp = Date.now()) {
+  if (!data || typeof data !== 'object') return data;
+  return {
+    ...data,
+    updatedAtMs: dashboardDataTimestampMs(data) || fallbackTimestamp,
+  };
 }
 
 function noteDashboardCloudBase(data) {
@@ -2629,6 +2650,34 @@ function backupDashboardSnapshot(data) {
   } catch (err) {
     console.warn('Could not store dashboard backup snapshot', err);
   }
+}
+
+function applyDashboardCloudSnapshot(cloudData, { schedule = false } = {}) {
+  if (dashboardSnapshotIsOlder(cloudData, state.dashData)) {
+    if (state.dashData) backupDashboardSnapshot(state.dashData);
+    log('Ignored an older dashboard snapshot returned by cloud sync.', 'warn');
+    return false;
+  }
+  state.dashData = normalizeDashboardDataForCache(cloudData);
+  hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
+  if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+  writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
+  if (schedule) scheduleDashboardRender();
+  else render();
+  return true;
+}
+
+function restoreDashboardLocalFallback(localData) {
+  if (!localData || (state.dashData && !dashboardSnapshotIsOlder(state.dashData, localData))) {
+    if (state.dashData)
+      log('Cloud sync failed; kept newer dashboard data already in memory.', 'warn');
+    return false;
+  }
+  state.dashData = normalizeDashboardDataForCache(localData);
+  hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
+  if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
+  render();
+  return true;
 }
 
 // Returns true when the cloud document is meaningfully newer than the payload
@@ -2665,17 +2714,19 @@ function buildDashboardCloudRepairPayload(auxiliaryPayload = null) {
     state.dashData && typeof state.dashData === 'object'
       ? { ...state.dashData }
       : { last_updated: fmtDate(new Date()), total_attacks: 0, attacks: [], players_summary: [] };
-  return sanitizeDashboardDataForPersistence(
+  const payload = sanitizeDashboardDataForPersistence(
     auxiliaryPayload && typeof auxiliaryPayload === 'object'
       ? { ...base, ...auxiliaryPayload }
       : base
   );
+  return withDashboardTimestamp(payload, dashboardDataTimestampMs(base) || 1);
 }
 
 async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
   const { doc, setDoc } = firestore;
+  const payload = withDashboardTimestamp(auxiliaryPayload);
   try {
-    await setDoc(doc(db, FS_PATH), auxiliaryPayload, { merge: true });
+    await setDoc(doc(db, FS_PATH), payload, { merge: true });
     return { repaired: false };
   } catch (err) {
     if (!isFirestorePermissionDenied(err) && !isFirestoreDocumentTooLarge(err)) throw err;
@@ -2691,7 +2742,7 @@ async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
     ) {
       throw err;
     }
-    const repairPayload = buildDashboardCloudRepairPayload(auxiliaryPayload);
+    const repairPayload = buildDashboardCloudRepairPayload(payload);
     await setDoc(doc(db, FS_PATH), repairPayload);
     state.dashData = normalizeDashboardDataForCache(repairPayload);
     writeDashboardLocalCache(repairPayload);
@@ -2761,6 +2812,10 @@ async function flushDashboardCloudRetryQueue() {
         // once). The entry is dropped, not retried: it can only get staler.
         const entryTs =
           dashboardDataTimestampMs(entry.payload) || Date.parse(entry.queuedAt || '') || 1;
+        const queuedPayload = withDashboardTimestamp(
+          sanitizeDashboardDataForPersistence(entry.payload),
+          entryTs
+        );
         if (await cloudDashboardNewerThan(db, firestore, entryTs, 'Queued write freshness check')) {
           backupDashboardSnapshot(entry.payload);
           log(dashT('adminCloudStaleQueueDropped'), 'warn');
@@ -2768,15 +2823,12 @@ async function flushDashboardCloudRetryQueue() {
         }
         if (entry.kind === 'auxiliary') {
           await awaitCloud(
-            writeAuxiliaryPayloadToCloud(db, firestore, entry.payload),
+            writeAuxiliaryPayloadToCloud(db, firestore, queuedPayload),
             'Queued auxiliary cloud write'
           );
         } else {
-          await awaitCloud(
-            setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(entry.payload)),
-            'Queued dashboard cloud write'
-          );
-          noteDashboardCloudBase(entry.payload);
+          await awaitCloud(setDoc(doc(db, FS_PATH), queuedPayload), 'Queued dashboard cloud write');
+          noteDashboardCloudBase(queuedPayload);
         }
       } catch (err) {
         remaining.push(entry);
@@ -2972,6 +3024,8 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
 window.syncDashboardAuxiliaryRecordsToCloud = saveDashboardAuxiliaryRecords;
 
 async function loadData(options = {}) {
+  const loadGeneration = ++dashboardLoadGeneration;
+  const isCurrentLoad = () => loadGeneration === dashboardLoadGeneration;
   const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
   const cloudTimeoutMs = Number.isFinite(options.cloudTimeoutMs)
     ? options.cloudTimeoutMs
@@ -2988,8 +3042,8 @@ async function loadData(options = {}) {
       hadLocalData = true;
       dashboardLocalCacheJson = saved;
       localData = normalizeDashboardDataForCache(JSON.parse(saved));
-      hydrateAuxiliaryRecordsFromDashboardData(localData);
       if (!preferCloudFirst) {
+        hydrateAuxiliaryRecordsFromDashboardData(localData);
         state.dashData = localData;
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
@@ -3004,12 +3058,10 @@ async function loadData(options = {}) {
   }
   try {
     const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
+    if (!isCurrentLoad()) return;
     if (!db) {
       if (preferCloudFirst && localData) {
-        state.dashData = localData;
-        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
-        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        render();
+        restoreDashboardLocalFallback(localData);
       }
       setCloudSyncStatus('local');
       log('Firestore not available Ã¢â‚¬â€ using local storage only.', 'warn');
@@ -3019,29 +3071,31 @@ async function loadData(options = {}) {
       loadFirestoreApi(),
       'Firestore module load'
     );
-    if (state._fsUnsub) state._fsUnsub();
+    if (!isCurrentLoad()) return;
     const snap = await awaitCloud(getDoc(doc(db, FS_PATH)), 'Dashboard cloud read');
+    if (!isCurrentLoad()) return;
     if (snap.exists()) {
       const cloudData = normalizeDashboardDataForCache(snap.data());
       noteDashboardCloudBase(cloudData);
       // If this device holds NEWER data than the cloud (e.g. the cloud doc
       // was clobbered by another stale client), don't silently erase it —
       // keep a backup and offer to push it back to the cloud.
-      const localTs = dashboardDataTimestampMs(localData);
+      const localCandidate = newerDashboardSnapshot(localData, state.dashData);
+      const localTs = dashboardDataTimestampMs(localCandidate);
       const cloudTs = dashboardDataTimestampMs(cloudData);
       let restoredLocal = false;
-      if (localData && localTs > cloudTs + DASHBOARD_FRESHNESS_SKEW_MS) {
-        backupDashboardSnapshot(localData);
+      if (localCandidate && localTs > cloudTs + DASHBOARD_FRESHNESS_SKEW_MS) {
+        backupDashboardSnapshot(localCandidate);
         restoredLocal = window.confirm(
           dashT('adminLocalNewerRestorePrompt', {
-            localAttacks: dashboardAttackCount(localData),
-            localDate: localData.last_updated || '?',
+            localAttacks: dashboardAttackCount(localCandidate),
+            localDate: localCandidate.last_updated || '?',
             cloudAttacks: dashboardAttackCount(cloudData),
             cloudDate: cloudData.last_updated || '?',
           })
         );
         if (restoredLocal) {
-          state.dashData = localData;
+          state.dashData = localCandidate;
           hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
           if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
           render();
@@ -3050,24 +3104,23 @@ async function loadData(options = {}) {
         }
       }
       if (!restoredLocal) {
-        state.dashData = cloudData;
-        hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
-        if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-        writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
-        render();
-        setCloudSyncStatus('live');
+        if (applyDashboardCloudSnapshot(cloudData)) setCloudSyncStatus('live');
+        else setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
       }
     } else {
       if (hadLocalData && localData) {
-        state.dashData = localData;
+        const seedData = newerDashboardSnapshot(localData, state.dashData);
+        state.dashData = seedData;
         hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
         if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
         render();
-        await awaitCloud(
-          setDoc(doc(db, FS_PATH), sanitizeDashboardDataForPersistence(localData)),
-          'Dashboard cloud seed'
+        const seedPayload = withDashboardTimestamp(
+          sanitizeDashboardDataForPersistence(seedData),
+          Date.now()
         );
-        noteDashboardCloudBase(localData);
+        await awaitCloud(setDoc(doc(db, FS_PATH), seedPayload), 'Dashboard cloud seed');
+        if (!isCurrentLoad()) return;
+        noteDashboardCloudBase(seedPayload);
         setCloudSyncStatus('live');
         log('Uploaded local dashboard cache to cloud.', 'success');
       } else {
@@ -3080,16 +3133,18 @@ async function loadData(options = {}) {
         setCloudSyncStatus('live');
       }
     }
+    if (!isCurrentLoad()) return;
+    if (state._fsUnsub) state._fsUnsub();
     state._fsUnsub = onSnapshot(
       doc(db, FS_PATH),
       (snap) => {
         if (snap.exists()) {
-          state.dashData = normalizeDashboardDataForCache(snap.data());
-          noteDashboardCloudBase(state.dashData);
-          hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
-          if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-          writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
-          scheduleDashboardRender();
+          const cloudData = normalizeDashboardDataForCache(snap.data());
+          if (!applyDashboardCloudSnapshot(cloudData, { schedule: true })) {
+            setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
+            return;
+          }
+          noteDashboardCloudBase(cloudData);
           updateLastSynced();
           setCloudSyncStatus('live');
           const ind = $id('dashSyncIndicator');
@@ -3109,12 +3164,10 @@ async function loadData(options = {}) {
     updateLastSynced();
   } catch (e) {
     if (state._signingOut) return;
+    if (!isCurrentLoad()) return;
     console.error('FIREBASE AUTH ERROR:', e);
     if (preferCloudFirst && localData) {
-      state.dashData = localData;
-      hydrateAuxiliaryRecordsFromDashboardData(state.dashData);
-      if (state.dashData && typeof state.dashData === 'object') delete state.dashData.logs;
-      render();
+      restoreDashboardLocalFallback(localData);
       setCloudSyncStatus('local', e.message || e.code || '');
       if (isDashboardCloudTimeout(e)) {
         state._cloudInitPromise = null;
@@ -3142,7 +3195,15 @@ async function clearData() {
     const db = await ensureCloudSyncReady();
     if (db) {
       const { doc, setDoc } = await loadFirestoreApi();
-      await setDoc(doc(db, FS_PATH), {});
+      const clearedPayload = {
+        updatedAtMs: Date.now(),
+        last_updated: fmtDate(new Date()),
+        total_attacks: 0,
+        attacks: [],
+        players_summary: [],
+      };
+      await setDoc(doc(db, FS_PATH), clearedPayload);
+      noteDashboardCloudBase(clearedPayload);
       setCloudSyncStatus('live');
     } else {
       setCloudSyncStatus('local');

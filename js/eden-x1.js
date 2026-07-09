@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.2';
+const APP_VERSION = '13.1.3';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -4747,8 +4747,54 @@ async function bootShell() {
 }
 
 const EDEN_X1_BOOT_TIMEOUT_MS = 20000;
+const EDEN_X1_LOADING_PROGRESS_CAP = 90;
 let edenBootGeneration = 0;
 let lastEdenBootError = null;
+let edenLoadingProgress = 0;
+let edenLoadingProgressTimer = null;
+let edenLoadingProgressGeneration = 0;
+
+function setEdenLoadingProgress(generation, percent) {
+  if (generation !== edenLoadingProgressGeneration) return;
+  const requested = Number(percent);
+  if (!Number.isFinite(requested)) return;
+
+  edenLoadingProgress = Math.max(edenLoadingProgress, Math.min(100, Math.max(0, requested)));
+  const loadingRoot = $('ocrDashboardSection');
+  const fill = loadingRoot?.querySelector('.dash-connecting-bar-fill');
+  const label = loadingRoot?.querySelector('.dash-connecting-bar-pct');
+  if (fill) fill.style.width = `${edenLoadingProgress}%`;
+  if (label) label.textContent = `${Math.round(edenLoadingProgress)}%`;
+}
+
+function startEdenLoadingProgress(generation) {
+  if (edenLoadingProgressTimer) clearInterval(edenLoadingProgressTimer);
+  edenLoadingProgressGeneration = generation;
+  edenLoadingProgress = 0;
+  setEdenLoadingProgress(generation, 4);
+
+  edenLoadingProgressTimer = window.setInterval(() => {
+    if (
+      generation !== edenLoadingProgressGeneration ||
+      edenLoadingProgress >= EDEN_X1_LOADING_PROGRESS_CAP
+    ) {
+      clearInterval(edenLoadingProgressTimer);
+      edenLoadingProgressTimer = null;
+      return;
+    }
+    const step = edenLoadingProgress < 40 ? 3 : edenLoadingProgress < 70 ? 1.4 : 0.5;
+    setEdenLoadingProgress(generation, edenLoadingProgress + step);
+  }, 200);
+}
+
+function stopEdenLoadingProgress(generation, finalPercent = null) {
+  if (generation !== edenLoadingProgressGeneration) return;
+  if (edenLoadingProgressTimer) {
+    clearInterval(edenLoadingProgressTimer);
+    edenLoadingProgressTimer = null;
+  }
+  if (finalPercent !== null) setEdenLoadingProgress(generation, finalPercent);
+}
 
 function isEdenDynamicImportLoadFailure(err) {
   const message = String(err?.message || err?.reason?.message || err || '');
@@ -4813,6 +4859,7 @@ async function loadEdenX1Dashboard() {
     errorEl.replaceChildren();
   }
   setEdenPanelLoading(true);
+  startEdenLoadingProgress(generation);
 
   try {
     const result = await withEdenBootTimeout(
@@ -4821,17 +4868,21 @@ async function loadEdenX1Dashboard() {
           import('./firebase.js'),
           import('./firebase-sdk.js'),
         ]);
+        setEdenLoadingProgress(generation, 35);
         const { configured, db } = initFirebase();
         if (!configured || !db) return { kind: 'unconfigured' };
 
         const voteUser = await ensureAnonymousAuth();
+        setEdenLoadingProgress(generation, 55);
         const firestore = await importFirestore();
+        setEdenLoadingProgress(generation, 65);
         const { doc, getDoc } = firestore;
         const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
           getDoc(doc(db, FS_ROSTER_PATH)).catch(() => null),
           getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)).catch(() => null),
         ]);
+        setEdenLoadingProgress(generation, 80);
 
         if (!snap.exists()) {
           return { kind: 'no-data', db, firestore, voteUser, voteSettingsSnap };
@@ -4847,6 +4898,7 @@ async function loadEdenX1Dashboard() {
           firestore,
           data.r5Season || ''
         );
+        setEdenLoadingProgress(generation, 92);
         if (liveConductAdjustments.length) {
           data.publicConductAdjustments = liveConductAdjustments;
         }
@@ -4857,6 +4909,7 @@ async function loadEdenX1Dashboard() {
     if (generation !== edenBootGeneration) return;
 
     if (result.kind === 'unconfigured') {
+      stopEdenLoadingProgress(generation, 100);
       if (errorEl) {
         errorEl.classList.remove('hidden');
         errorEl.textContent = t('edenX1NoFirebase');
@@ -4875,6 +4928,7 @@ async function loadEdenX1Dashboard() {
     }
 
     if (result.kind === 'no-data') {
+      stopEdenLoadingProgress(generation, 100);
       setRewardFlowReady(false);
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
       setEdenPanelLoading(false);
@@ -4882,8 +4936,10 @@ async function loadEdenX1Dashboard() {
     }
 
     applyDashboardData(result.data);
+    stopEdenLoadingProgress(generation, 100);
   } catch (err) {
     if (generation !== edenBootGeneration) return;
+    stopEdenLoadingProgress(generation);
     lastEdenBootError = err;
     console.error('Eden X1 view failed:', err);
     showEdenBootError(err);
