@@ -4511,15 +4511,24 @@ function renderTable(rows, recordLabel, options = {}) {
                     const rewardClass = rewardThemeClass(
                       rewardContext.finalReward || row.finalReward
                     );
-                    return `<tr class="${rewardClass}">
+                    const isSupportHonor =
+                      options.rewardView === 'support' && Number(numberValue) === 1;
+                    const supportHonorClass = isSupportHonor ? ' eden-x1-support-honor-row' : '';
+                    const supportHonorNameClass = isSupportHonor
+                      ? ' eden-x1-support-honor-name'
+                      : '';
+                    const supportHonorNameAttr = isSupportHonor
+                      ? ' class="eden-x1-support-honor-name"'
+                      : '';
+                    return `<tr class="${rewardClass}${supportHonorClass}">
                 <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
                   <span class="dash-weighted-desktop-number">${numberValue}</span>
                   <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
                     <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${numberValue}`)}" aria-hidden="true"></span>
-                    <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
+                    <strong class="dash-weighted-mobile-player-name${supportHonorNameClass}" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
                   </span>
                 </td>
-                <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${renderTaggedPlayerName(row)}</strong></td>
+                <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong${supportHonorNameAttr}>${renderTaggedPlayerName(row)}</strong></td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
                 <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>

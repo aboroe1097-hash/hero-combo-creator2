@@ -185,6 +185,61 @@
   --eden-flow-rgb-2: 34, 197, 94;
 }
 
+#ocrDashboardRoot .eden-x1-reward-table--support .eden-x1-support-honor-row {
+  background:
+    linear-gradient(90deg, rgba(250, 204, 21, 0.16), rgba(34, 211, 238, 0.08) 48%, transparent),
+    rgba(15, 23, 42, 0.34);
+  box-shadow:
+    inset 3px 0 0 rgba(250, 204, 21, 0.95),
+    inset 0 1px 0 rgba(250, 204, 21, 0.24),
+    inset 0 -1px 0 rgba(34, 211, 238, 0.18);
+}
+
+#ocrDashboardRoot .eden-x1-reward-table--support .eden-x1-support-honor-row td {
+  border-color: rgba(250, 204, 21, 0.16);
+}
+
+#ocrDashboardRoot .eden-x1-support-honor-name {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 0.36rem;
+  padding: 0.18rem 0.52rem;
+  border: 1px solid rgba(250, 204, 21, 0.68);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.22), rgba(34, 211, 238, 0.12));
+  box-shadow:
+    0 0 0 1px rgba(250, 204, 21, 0.1),
+    0 0 22px rgba(250, 204, 21, 0.22);
+  color: #fff7cc;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.58);
+}
+
+#ocrDashboardRoot .eden-x1-support-honor-name::before {
+  content: 'R5';
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.42rem;
+  min-height: 1.05rem;
+  padding: 0.08rem 0.3rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #facc15, #67e8f9);
+  color: #06111f;
+  font-size: 0.62rem;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: none;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-support-honor-name {
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.26), rgba(14, 165, 233, 0.12));
+  color: #713f12;
+}
+
 .eden-x1-page [data-reward-view='contribution'],
 #ocrDashboardRoot .eden-x1-reward-table--contribution {
   --eden-flow-rgb: 250, 204, 21;

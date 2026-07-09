@@ -2319,6 +2319,11 @@ test.describe('app smoke tabs', () => {
     );
     await expect(panel).toContainText('Alpha');
     await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
+    const supportHonorRow = panel.locator('tbody tr.eden-x1-support-honor-row');
+    await expect(supportHonorRow).toHaveCount(1);
+    await expect(supportHonorRow.locator('.dash-weighted-player-cell .eden-x1-support-honor-name')).toContainText(
+      'Alpha'
+    );
     await expect(panel).toContainText('Delta');
     const supportPlayerNames = await panel
       .locator('tbody tr .dash-weighted-player-cell strong')
