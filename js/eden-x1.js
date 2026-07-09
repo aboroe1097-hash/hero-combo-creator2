@@ -4,7 +4,11 @@ import {
   normalizeWeightedR5Adjustments,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
-import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
+import {
+  translations,
+  loadTranslationsForLanguage,
+  applyLanguageDirection,
+} from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import {
   formatDatasetStructureLabel,
@@ -298,7 +302,9 @@ function getPublicStatsMatches(value, limit = 6) {
   const merged = new Map();
   const addOption = (option, source = '') => {
     const playerName = String(option?.playerName || option?.name || '').trim();
-    const playerKey = String(option?.playerKey || option?.key || compactPlayerIdentity(playerName)).trim();
+    const playerKey = String(
+      option?.playerKey || option?.key || compactPlayerIdentity(playerName)
+    ).trim();
     if (!playerName || !playerKey || merged.has(playerKey)) return;
     const score = scoreEdenMemberOption(raw, { playerKey, playerName });
     if (score <= 0) return;
@@ -535,8 +541,8 @@ function edenVoteCandidateSignature(voter, candidateKeys) {
 function currentEdenPartialVoteSignature(host) {
   const voter = findEdenMemberOption(host?.querySelector('#edenX1VoterName')?.value);
   if (!voter) return '';
-  const candidateKeys = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) =>
-    findEdenMemberOption(host?.querySelector(`#${id}`)?.value)?.playerKey
+  const candidateKeys = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map(
+    (id) => findEdenMemberOption(host?.querySelector(`#${id}`)?.value)?.playerKey
   ).filter(Boolean);
   if (!candidateKeys.length || candidateKeys.length >= EDEN_X1_VOTE_CANDIDATE_LIMIT) return '';
   return edenVoteCandidateSignature(voter, candidateKeys);
@@ -684,7 +690,11 @@ function normalizeEdenVoteSettings(settings = {}) {
 
 function hasLocalEdenVoteForCurrentSeason() {
   const saved = readLocalEdenVote();
-  return Boolean(saved && saved.season === edenVoteSeason() && getEdenVoteSavedSummary(saved).candidateNames.length);
+  return Boolean(
+    saved &&
+    saved.season === edenVoteSeason() &&
+    getEdenVoteSavedSummary(saved).candidateNames.length
+  );
 }
 
 function getEdenVoteDetailInput(host) {
@@ -844,29 +854,49 @@ function rankedEdenBuildingMvpRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
     }));
 }
 
-function rankedEdenConsistentRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
-  return publicPlayerRows
-    .map((player) => {
-      const values = player.attacks
-        .slice()
-        .sort((a, b) => publicAttackMs(a.attack) - publicAttackMs(b.attack))
-        .map((attack) => valueOf(attack.demo));
-      const consistency = scoreConsistencyValues(values);
-      if (!consistency) return null;
-      return {
-        key: player.key,
-        name: player.name,
-        consistency,
-        value: `${consistency.percent}% steady`,
-      };
-    })
-    .filter(Boolean)
+function buildEdenCurrentStreakRows(attacks, players) {
+  const ordered = sortPublicAttacks(attacks).slice().reverse();
+  if (!ordered.length) return [];
+  const attackSets = ordered.map((attack) => {
+    const entries = publicAttackPlayers(attack);
+    return new Set(
+      entries.map((player) => publicPlayerKey(publicPlayerName(player, entries))).filter(Boolean)
+    );
+  });
+  return (Array.isArray(players) ? players : []).map((player) => {
+    let streak = 0;
+    for (let index = attackSets.length - 1; index >= 0; index -= 1) {
+      if (!attackSets[index].has(player.key)) break;
+      streak += 1;
+    }
+    const missedLatest =
+      attackSets.length > 1 &&
+      !attackSets[attackSets.length - 1].has(player.key) &&
+      attackSets.slice(0, -1).some((set) => set.has(player.key));
+    return { ...player, streak, missedLatest };
+  });
+}
+
+function sortEdenStreakRows(rows) {
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row.streak > 0)
     .sort(
       (a, b) =>
-        compareConsistencyScores(a.consistency, b.consistency) ||
+        valueOf(b.streak) - valueOf(a.streak) ||
+        valueOf(b.participation_count) - valueOf(a.participation_count) ||
+        valueOf(b.total_demolition) - valueOf(a.total_demolition) ||
         String(a.name || '').localeCompare(String(b.name || ''))
-    )
-    .slice(0, limit);
+    );
+}
+
+function rankedEdenStreakRows(limit = EDEN_X1_VOTE_HELPER_FULL_LIMIT) {
+  return sortEdenStreakRows(buildEdenCurrentStreakRows(publicAttackRows, publicPlayerRows))
+    .slice(0, limit)
+    .map((row) => ({
+      key: row.key,
+      name: row.name,
+      value: t('edenX1StreakCount', { count: row.streak }),
+    }));
 }
 
 function shortEdenVoteHelperName(row) {
@@ -949,7 +979,9 @@ function toggleEdenVoteHelperRows(helperToggle) {
   const card = helperToggle.closest('.eden-x1-vote-helper-card');
   if (!card) return;
   const rows = Array.from(card.querySelectorAll('.eden-x1-vote-helper-row'));
-  const currentLimit = Number(card.dataset.helperVisibleLimit || helperToggle.dataset.edenVoteHelperLimit);
+  const currentLimit = Number(
+    card.dataset.helperVisibleLimit || helperToggle.dataset.edenVoteHelperLimit
+  );
   const nextLimit = edenVoteHelperNextLimit(currentLimit, rows.length);
   card.dataset.helperVisibleLimit = String(nextLimit);
   rows.forEach((row, index) => {
@@ -991,15 +1023,11 @@ function renderEdenVoteGuidance(options = {}) {
   const guidanceId = options.id || 'edenX1VoteGuidance';
   const extraClass = options.className ? ` ${options.className}` : '';
   const groups = [
-    [
-      t('edenX1VoteTopBannerPath'),
-      t('edenX1VoteTopBannerPathHint'),
-      rankedEdenBannerPathRows(),
-    ],
+    [t('edenX1VoteTopBannerPath'), t('edenX1VoteTopBannerPathHint'), rankedEdenBannerPathRows()],
     [t('edenX1VoteTopStructure'), t('edenX1VoteTopStructureHint'), rankedEdenStructureHelpRows()],
     [t('edenX1VoteTopBuildingMvp'), t('edenX1VoteTopBuildingMvpHint'), rankedEdenBuildingMvpRows()],
     [t('edenX1VoteTopR5Bonus'), t('edenX1VoteTopR5BonusHint'), rankedEdenR5BonusRows()],
-    [t('edenX1VoteTopConsistent'), t('edenX1VoteTopConsistentHint'), rankedEdenConsistentRows()],
+    [t('adminAnalyticsStreaks'), t('edenX1StreaksCardHint'), rankedEdenStreakRows()],
   ];
   return `<div id="${esc(guidanceId)}" class="eden-x1-vote-guidance${extraClass}" tabindex="-1">
     <div class="eden-x1-vote-guidance-head">
@@ -1105,10 +1133,7 @@ function positionEdenVoteInfoPopover(infoButton) {
   );
   const above = buttonRect.top - height - 10;
   const below = buttonRect.bottom + 10;
-  const top =
-    above >= margin
-      ? above
-      : Math.min(below, globalThis.innerHeight - margin - height);
+  const top = above >= margin ? above : Math.min(below, globalThis.innerHeight - margin - height);
 
   popover.style.width = `${Math.round(width)}px`;
   popover.style.left = `${Math.round(center)}px`;
@@ -1460,7 +1485,10 @@ function renderEdenTrendXAxis(ticks, xForTime, padX, plotWidth, domain) {
         let align = 'center';
         if (index === 0) align = 'start';
         if (index === ticks.length - 1) align = 'end';
-        const extraClass = index > 0 && index < ticks.length - 1 && index % 2 === 0 ? ' eden-x1-structure-x-tick--extra' : '';
+        const extraClass =
+          index > 0 && index < ticks.length - 1 && index % 2 === 0
+            ? ' eden-x1-structure-x-tick--extra'
+            : '';
         return `<span class="eden-x1-structure-x-tick eden-x1-structure-x-tick--${align}${extraClass}" style="--tick-x:${position.toFixed(2)}%" title="${esc(formatEdenTrendTickDate(tick))}">
           <b>${esc(formatEdenTrendTickDate(tick))}</b>
         </span>`;
@@ -1472,23 +1500,45 @@ function renderEdenTrendXAxis(ticks, xForTime, padX, plotWidth, domain) {
 function edenTrendTimeTicks(domain, count = 6) {
   if (!domain?.isTime) return [];
   const total = Math.max(1, count - 1);
-  return Array.from({ length: count }, (_, index) => domain.start + ((domain.end - domain.start) * index) / total);
+  return Array.from(
+    { length: count },
+    (_, index) => domain.start + ((domain.end - domain.start) * index) / total
+  );
 }
 
-function edenTrendPointLabel(value, point, tone, anchor = 'middle') {
-  const y = Math.max(14, point.y - 12);
+function edenTrendPointLabel(value, point, tone, anchor = 'middle', offsetY = -12) {
+  const y = Math.max(14, point.y + offsetY);
   return `<text class="eden-x1-trend-point-label eden-x1-trend-point-label--${tone}" x="${point.x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}">${esc(compactValue(value))}</text>`;
 }
 
-function renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIndex) {
+function shortenEdenTrendTooltip(value) {
+  const text = String(value || '').trim();
+  return text.length > 24 ? `${text.slice(0, 21)}...` : text;
+}
+
+function edenTrendTooltipMetric(value) {
+  const label = t('adminModalThDemolition');
+  return `${compactValue(value)} ${label}`;
+}
+
+function renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIndex, width) {
   return values
     .map((value, index) => {
       const row = rows[index];
       const x = xFor(index);
       const y = yFor(value);
-      const tooltipY = y > 64 ? y - 48 : y + 16;
-      const tooltipAnchor = x > 560 ? 'end' : x < 120 ? 'start' : 'middle';
+      const tooltipWidth = 128;
+      const tooltipHeight = row.structure ? 50 : 36;
+      const tooltipY = y > 74 ? y - tooltipHeight - 10 : y + 16;
+      const tooltipAnchor = x > width - 150 ? 'end' : x < 132 ? 'start' : 'middle';
       const tooltipX = tooltipAnchor === 'end' ? x - 8 : tooltipAnchor === 'start' ? x + 8 : x;
+      const tooltipLeft =
+        tooltipAnchor === 'end'
+          ? -tooltipWidth
+          : tooltipAnchor === 'middle'
+            ? -tooltipWidth / 2
+            : 0;
+      const tooltipTextX = tooltipLeft + 10;
       const label = [
         formatEdenTrendAxisTime(row),
         row.structure || '',
@@ -1501,9 +1551,10 @@ function renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIn
         <circle class="eden-x1-trend-hit-target" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10"></circle>
         ${index !== bestIndex && index !== latestIndex ? `<circle class="eden-x1-trend-point eden-x1-trend-point--hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.8"></circle>` : ''}
         <g class="eden-x1-trend-tooltip" transform="translate(${tooltipX.toFixed(1)} ${tooltipY.toFixed(1)})">
-          <rect x="${tooltipAnchor === 'end' ? -146 : tooltipAnchor === 'middle' ? -73 : 0}" y="0" width="146" height="40" rx="6"></rect>
-          <text x="${tooltipAnchor === 'end' ? -136 : tooltipAnchor === 'middle' ? -63 : 10}" y="15">${esc(formatEdenTrendAxisTime(row))}</text>
-          <text x="${tooltipAnchor === 'end' ? -136 : tooltipAnchor === 'middle' ? -63 : 10}" y="30">${esc(compactValue(value))} ${esc(t('adminModalThDemolition'))}${row.structure ? ` - ${esc(row.structure)}` : ''}</text>
+          <rect x="${tooltipLeft}" y="0" width="${tooltipWidth}" height="${tooltipHeight}" rx="6"></rect>
+          <text x="${tooltipTextX}" y="14">${esc(formatEdenTrendAxisTime(row))}</text>
+          <text x="${tooltipTextX}" y="28">${esc(edenTrendTooltipMetric(value))}</text>
+          ${row.structure ? `<text x="${tooltipTextX}" y="42">${esc(shortenEdenTrendTooltip(row.structure))}</text>` : ''}
         </g>
       </g>`;
     })
@@ -1530,18 +1581,22 @@ function renderEdenVoteStructureTrend(attacks) {
   const structureCount = new Set(structureKeys).size;
   const bestIndex = values.indexOf(max);
   const latestIndex = values.length - 1;
-  const width = 680;
-  const height = 178;
-  const padX = 34;
-  const padTop = 20;
-  const padBottom = 38;
+  const width = 760;
+  const height = 156;
+  const padX = 42;
+  const padTop = 18;
+  const padBottom = 32;
   const plotWidth = width - padX * 2;
   const plotHeight = height - padTop - padBottom;
   const bottom = height - padBottom;
   const domain = edenSharedTrendTimeDomain(rows);
-  const rowTimes = rows.map((row, index) => publicAttackMs(row.attack || row) || domain.start + index);
+  const rowTimes = rows.map(
+    (row, index) => publicAttackMs(row.attack || row) || domain.start + index
+  );
   const xForTime = (ms) =>
-    domain.isTime ? padX + ((ms - domain.start) / (domain.end - domain.start)) * plotWidth : width / 2;
+    domain.isTime
+      ? padX + ((ms - domain.start) / (domain.end - domain.start)) * plotWidth
+      : width / 2;
   const xFor = (index) => (domain.isTime ? xForTime(rowTimes[index]) : width / 2);
   const yFor = (value) => bottom - ((value - min) / span) * plotHeight;
   const points = values.map(
@@ -1561,11 +1616,27 @@ function renderEdenVoteStructureTrend(attacks) {
   const deltaClass = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : 'is-flat';
   const deltaText = values.length > 1 ? `${delta >= 0 ? '+' : ''}${compactValue(delta)}` : '--';
   const xAxis = renderEdenTrendXAxis(edenTrendTimeTicks(domain), xForTime, padX, plotWidth, domain);
+  const closeHeroLabels =
+    bestIndex !== latestIndex &&
+    Math.abs(bestPoint.x - latestPoint.x) < 92 &&
+    Math.abs(bestPoint.y - latestPoint.y) < 34;
+  const bestAnchor = bestPoint.x > width - 98 ? 'end' : bestPoint.x < 98 ? 'start' : 'middle';
+  const latestAnchor = latestPoint.x > width - 98 ? 'end' : latestPoint.x < 98 ? 'start' : 'middle';
   const pointLabels = [
-    bestIndex !== latestIndex ? edenTrendPointLabel(max, bestPoint, 'best') : '',
-    edenTrendPointLabel(latest, latestPoint, 'latest', latestPoint.x > width - 78 ? 'end' : 'middle'),
+    bestIndex !== latestIndex
+      ? edenTrendPointLabel(max, bestPoint, 'best', bestAnchor, closeHeroLabels ? -20 : -12)
+      : '',
+    edenTrendPointLabel(latest, latestPoint, 'latest', latestAnchor, closeHeroLabels ? 20 : -12),
   ].join('');
-  const hitTargets = renderEdenTrendHitTargets(rows, values, xFor, yFor, bestIndex, latestIndex);
+  const hitTargets = renderEdenTrendHitTargets(
+    rows,
+    values,
+    xFor,
+    yFor,
+    bestIndex,
+    latestIndex,
+    width
+  );
 
   return `<div class="eden-x1-structure-trend-card" role="img" aria-label="${esc(`${t('edenX1VoteTrendLabel')}: ${values.length} ${t('edenX1ModalHits')}, ${formatScore(total)} ${t('edenX1ModalTotalDemo')}`)}">
     <div class="eden-x1-structure-trend-head">
@@ -1697,7 +1768,10 @@ function updateEdenVoteCandidateDetail(host) {
       clearStats.hidden = false;
       clearStats.disabled = false;
       clearStats.textContent = t('edenX1VoteClearStats', { player: option.playerName });
-      clearStats.setAttribute('aria-label', t('edenX1VoteClearStats', { player: option.playerName }));
+      clearStats.setAttribute(
+        'aria-label',
+        t('edenX1VoteClearStats', { player: option.playerName })
+      );
       clearStats.setAttribute('data-eden-vote-clear-stats', option.playerKey);
     }
   } else {
@@ -1830,9 +1904,7 @@ async function submitEdenTeamVoteForm(form) {
       }
       const previousCandidateNames = Array.isArray(previousVote?.candidateNames)
         ? previousVote.candidateNames.map((name) => String(name || '').trim()).filter(Boolean)
-        : [previousVote?.candidateName]
-            .map((name) => String(name || '').trim())
-            .filter(Boolean);
+        : [previousVote?.candidateName].map((name) => String(name || '').trim()).filter(Boolean);
       const previousCandidateKeys = Array.isArray(previousVote?.candidateKeys)
         ? previousVote.candidateKeys.map((key) => String(key || '').trim()).filter(Boolean)
         : [previousVote?.candidateKey].map((key) => String(key || '').trim()).filter(Boolean);
@@ -1870,8 +1942,7 @@ async function submitEdenTeamVoteForm(form) {
     }
     writeLocalEdenVote(localVote);
     setEdenVoteStatus(
-      edenVoteSavedStatusText(localVote) ||
-        `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
+      edenVoteSavedStatusText(localVote) || `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
       'success'
     );
   } catch (err) {
@@ -1918,9 +1989,10 @@ function bindEdenVoteControls(host) {
   }
   if (!host.dataset.edenVoteControlsBound) {
     host.dataset.edenVoteControlsBound = '1';
-    const voteInputSelector = ['#edenX1VoterName', ...EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) => `#${id}`)].join(
-      ', '
-    );
+    const voteInputSelector = [
+      '#edenX1VoterName',
+      ...EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.map((id) => `#${id}`),
+    ].join(', ');
     host.addEventListener('input', (event) => {
       const input = event.target.closest(voteInputSelector);
       if (!input) return;
@@ -2309,7 +2381,8 @@ function scrollEdenTargetIntoView(target, options = {}) {
   });
   if (options.focusSelector) {
     const focusTarget =
-      target.querySelector?.(options.focusSelector) || document.querySelector(options.focusSelector);
+      target.querySelector?.(options.focusSelector) ||
+      document.querySelector(options.focusSelector);
     if (focusTarget && typeof focusTarget.focus === 'function') {
       window.setTimeout(() => {
         focusTarget.focus({ preventScroll: true });
@@ -2370,7 +2443,9 @@ function bindEdenQuickNav() {
     }
     if (target === 'vote') {
       activateEdenRewardView('team');
-      queueEdenQuickNavScroll('#edenX1TeamVotePanel, #dashWeightedContributionPanel .eden-x1-vote-panel');
+      queueEdenQuickNavScroll(
+        '#edenX1TeamVotePanel, #dashWeightedContributionPanel .eden-x1-vote-panel'
+      );
       return;
     }
     if (target === 'my-stats') {
@@ -2380,15 +2455,21 @@ function bindEdenQuickNav() {
       return;
     }
     if (target === 'guild-contribution') {
-      queueEdenQuickNavScroll('#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card', {
-        focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
-      });
+      queueEdenQuickNavScroll(
+        '#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card',
+        {
+          focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
+        }
+      );
       return;
     }
     if (target === 'team') {
-      queueEdenQuickNavScroll('#edenX1TopNamesOverview, #edenX1RewardTopNamesOverview, #edenX1VoteGuidance', {
-        focusTarget: true,
-      });
+      queueEdenQuickNavScroll(
+        '#edenX1TopNamesOverview, #edenX1RewardTopNamesOverview, #edenX1VoteGuidance',
+        {
+          focusTarget: true,
+        }
+      );
       return;
     }
     if (target === 'public') {
@@ -2457,11 +2538,7 @@ function bindRewardFlowControls() {
 function getContributionRewardRows() {
   const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
   const sorted = currentRows
-    .filter(
-      (row) =>
-        Number(row.currentRank) > 0 &&
-        !supportPlayerKeys.has(row.playerKey)
-    )
+    .filter((row) => Number(row.currentRank) > 0 && !supportPlayerKeys.has(row.playerKey))
     .slice()
     .sort(
       (a, b) =>
@@ -2719,7 +2796,10 @@ function renderPublicMyStatsCard() {
   const suggestionList = suggestions.length
     ? suggestions
         .map(
-          (row, index) => `<button class="eden-x1-vote-suggestion eden-x1-my-stats-suggestion" type="button" data-eden-my-stats-pick="${esc(row.playerName)}" data-eden-my-stats-key="${esc(row.playerKey)}">
+          (
+            row,
+            index
+          ) => `<button class="eden-x1-vote-suggestion eden-x1-my-stats-suggestion" type="button" data-eden-my-stats-pick="${esc(row.playerName)}" data-eden-my-stats-key="${esc(row.playerKey)}">
             <span>${renderTaggedPlayerName(row)}</span>
             <em>${esc(index === 0 ? t('edenX1VoteMatchBest') : t('edenX1VoteMatchSimilar'))}</em>
           </button>`
@@ -3126,7 +3206,8 @@ function renderFinalRewardPopover(row, index, context = {}) {
   const tooltipId = `edenX1FinalRewardTip-${index}`;
   const rewardClass = rewardThemeClass(context.finalReward || row.finalReward);
   const baseReward = contributionRewardLabel(context.baseReward || row.baseReward);
-  const finalReward = context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
+  const finalReward =
+    context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
   const rankLabel = context.rankLabel || t('adminContributionFinalRank');
   const rankValue = context.rank || row.finalRank;
   const rankScore = rowContributionRewardScore(row);
@@ -3722,7 +3803,12 @@ function renderPublicAttackHistory(attacks) {
         .join('')}`;
     })
     .join('')}</div>`;
-  return renderPublicCard(t('adminHistoryTitle'), t('edenX1AttackHistoryHint'), body, 'eden-x1-public-history-card');
+  return renderPublicCard(
+    t('adminHistoryTitle'),
+    t('edenX1AttackHistoryHint'),
+    body,
+    'eden-x1-public-history-card'
+  );
 }
 
 function renderPublicInsights(attacks, players, structures) {

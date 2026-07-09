@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs/promises';
 
+const TEST_SENSITIVE_ADMIN_PIN = '232323';
+const TEST_SENSITIVE_ADMIN_PIN_HASH =
+  'c81ce2684a7b8d8738cd9a978e5e1acc846eca4b92686420bc1e641d287c4e80';
+
 async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
@@ -1410,7 +1414,21 @@ test.describe('app smoke tabs', () => {
       );
     expect(visibleLeaderRows).toBe(20);
     await expect(page.locator('#dashLeaderBody .dash-load-more-btn')).toContainText('Show More');
-    await page.evaluate(() => window.switchDashSubtab('conduct'));
+    await page.evaluate((hash) => {
+      localStorage.removeItem('vts_sensitive_admin_pin_ok');
+      localStorage.removeItem('vts_eden_votes_pin_ok');
+      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: hash };
+      window.switchDashSubtab('conduct');
+    }, TEST_SENSITIVE_ADMIN_PIN_HASH);
+    await expect(page.locator('.pin-gate-dialog')).toBeVisible();
+    await expect(page.locator('.pin-gate-kicker')).toContainText('Bonus Team Effort Points');
+    await expect(page.locator('#dashSubtabConduct')).toBeHidden();
+    await page.locator('.pin-gate-input').fill('111111');
+    await page.locator('.pin-gate-btn-primary').click();
+    await expect(page.locator('.pin-gate-error')).toBeVisible();
+    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
+    await page.locator('.pin-gate-btn-primary').click();
+    await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
     await expect(page.locator('#dashSubtabConduct')).toBeVisible();
     await expect(page.locator('#dashConductList')).toContainText('Bravo');
     await expect(page.locator('#dashConductList')).toContainText('Connected the road');
@@ -1499,6 +1517,7 @@ test.describe('app smoke tabs', () => {
     );
     await page.evaluate(
       ({ seededDash, seededRoster }) => {
+        localStorage.setItem('vts_sensitive_admin_pin_ok', '1');
         window.setOcrDashboardDataForTest(seededDash, seededRoster);
         window.switchDashSubtab('conduct');
       },
@@ -2131,7 +2150,9 @@ test.describe('app smoke tabs', () => {
     await expect(topNamesOverview).toContainText('Most Structures Hit');
     await expect(topNamesOverview).toContainText('Best on Buildings');
     await expect(topNamesOverview).toContainText('Most R5 Bonus Team Effort Points');
-    await expect(topNamesOverview).toContainText('Steadiest Damage');
+    await expect(topNamesOverview).toContainText('Attendance Streaks');
+    await expect(topNamesOverview).toContainText('in a row');
+    await expect(topNamesOverview).not.toContainText('Steadiest Damage');
     await topNamesOverview.locator('[data-eden-vote-pick]').first().click();
     await expect(publicDashboard.locator('#edenX1PublicModal')).toHaveClass(/active/);
     await expect(publicDashboard.locator('#edenX1PublicModalTitle')).not.toHaveText('');
@@ -2832,8 +2853,10 @@ test.describe('app smoke tabs', () => {
         typeof window.setEdenX1VotesForTest === 'function' &&
         typeof window.switchDashSubtab === 'function'
     );
-    await page.evaluate(() => {
-      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), adminPin: '232323' };
+    await page.evaluate((hash) => {
+      localStorage.removeItem('vts_sensitive_admin_pin_ok');
+      localStorage.removeItem('vts_eden_votes_pin_ok');
+      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), edenVotesPinHash: hash };
       window.setEdenX1VotesForTest(
         [
           {
@@ -2891,7 +2914,7 @@ test.describe('app smoke tabs', () => {
         { votingOpen: true, allowEditing: false, showPublicResults: true, showVoterNames: false }
       );
       window.switchDashSubtab('edenVotes');
-    });
+    }, TEST_SENSITIVE_ADMIN_PIN_HASH);
 
     const results = page.locator('#dashEdenVoteResults');
     await expect(page.locator('.pin-gate-dialog')).toBeVisible();
@@ -2900,11 +2923,11 @@ test.describe('app smoke tabs', () => {
     await page.locator('.pin-gate-btn-primary').click();
     await expect(page.locator('.pin-gate-error')).toBeVisible();
     await expect(page.locator('#dashSubtabEdenVotes')).toBeHidden();
-    await page.locator('.pin-gate-input').fill('232323');
+    await page.locator('.pin-gate-input').fill(TEST_SENSITIVE_ADMIN_PIN);
     await page.locator('.pin-gate-btn-primary').click();
     await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
     await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('vts_eden_votes_pin_ok')))
+      .poll(() => page.evaluate(() => localStorage.getItem('vts_sensitive_admin_pin_ok')))
       .toBe('1');
     await expect(page.locator('#dashSubtabEdenVotes')).toContainText('Eden X1 Team Players Vote');
     await expect(page.locator('#dashEdenVoteOpenToggle')).toBeChecked();

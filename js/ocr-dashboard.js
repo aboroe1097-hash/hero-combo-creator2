@@ -98,7 +98,7 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
-import { edenVotesUnlocked, requireEdenVotesPin } from './admin-pin-gate.js';
+import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -1661,10 +1661,28 @@ window.getVtsAdminFirestoreContext = async function () {
 // --- Roster ---
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Sub-tab Switching Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const PIN_GATED_DASH_SUBTABS = new Set(['edenVotes', 'conduct']);
+
+function dashSubtabPinOptions(name) {
+  if (name === 'conduct') {
+    return {
+      kicker: 'Bonus Team Effort Points',
+      title: 'Enter owner PIN',
+      prompt:
+        'This points panel shows member-level admin decisions. Enter the owner PIN to continue.',
+    };
+  }
+  return {
+    kicker: 'Eden X1 Votes',
+    title: 'Enter owner PIN',
+    prompt: 'This voting panel shows member ballots. Enter the owner PIN to continue.',
+  };
+}
+
 function switchDashSubtab(name) {
-  if (name === 'edenVotes' && !edenVotesUnlocked()) {
-    requireEdenVotesPin().then((ok) => {
-      if (ok) switchDashSubtab('edenVotes');
+  if (PIN_GATED_DASH_SUBTABS.has(name) && !sensitiveAdminUnlocked()) {
+    requireSensitiveAdminPin(dashSubtabPinOptions(name)).then((ok) => {
+      if (ok) switchDashSubtab(name);
     });
     return;
   }

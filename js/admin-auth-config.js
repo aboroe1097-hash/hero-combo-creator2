@@ -3,4 +3,5 @@ window.VTS_ADMIN_AUTH = window.VTS_ADMIN_AUTH || {
   deleteHashes: [],
   rosterPassHashes: {},
   adminPin: '',
+  edenVotesPinHash: '',
 };

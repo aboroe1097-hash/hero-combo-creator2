@@ -7,6 +7,7 @@ test('public admin auth config only keeps destructive action override hashes', (
   assert.match(source, /clearHash:\s*''/);
   assert.match(source, /deleteHashes:\s*\[\s*\]/);
   assert.match(source, /adminPin:\s*''/);
+  assert.match(source, /edenVotesPinHash:\s*''/);
   assert.doesNotMatch(source, /adminHash/);
   assert.doesNotMatch(source, /12345/);
   assert.doesNotMatch(source, /232323/);
@@ -15,9 +16,22 @@ test('public admin auth config only keeps destructive action override hashes', (
 
 test('Eden votes PIN gate has no committed fallback secret', () => {
   const source = readFileSync('js/admin-pin-gate.js', 'utf8');
+  assert.match(source, /window\.VTS_ADMIN_AUTH\?\.edenVotesPinHash/);
   assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
-  assert.match(source, /if \(!configuredPin\(\)\) return Promise\.resolve\(true\);/);
+  assert.match(source, /if \(!hasConfiguredPinGate\(\)\) return Promise\.resolve\(true\);/);
+  assert.match(source, /subtle\.digest\('SHA-256'/);
   assert.doesNotMatch(source, /232323/);
+});
+
+test('deploy can inject sensitive admin PIN hash without committing raw PIN', () => {
+  const workflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
+  const script = readFileSync('scripts/inject-admin-auth-config.mjs', 'utf8');
+  assert.match(workflow, /VTS_EDEN_VOTES_PIN:/);
+  assert.match(workflow, /VTS_EDEN_VOTES_PIN_HASH:/);
+  assert.match(workflow, /node scripts\/inject-admin-auth-config\.mjs/);
+  assert.match(script, /createHash\('sha256'\)/);
+  assert.match(script, /edenVotesPinHash:\s*'\$\{nextHash\}'/);
+  assert.doesNotMatch(script, /232323/);
 });
 
 test('frontend CSP and markup avoid executable inline script bypasses', () => {
