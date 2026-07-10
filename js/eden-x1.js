@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.9';
+const APP_VERSION = '13.1.10';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -2978,12 +2978,48 @@ function closeWeightedPopovers(except = null) {
   });
 }
 
+function closeWeightedPopoverTrigger(trigger) {
+  if (!trigger) return;
+  trigger.classList.remove('is-open');
+  trigger.setAttribute('aria-expanded', 'false');
+  hideWeightedPopover(trigger);
+}
+
+// Injects an explicit X close control into a popover (in addition to the
+// click-outside / Escape dismissal) so touch users have an obvious way to
+// close it. One helper covers every popover type since they all render a
+// `.dash-weighted-score-popover`.
+function ensureWeightedPopoverCloseButton(popover) {
+  if (!popover || popover.querySelector('.eden-x1-popover-close')) return;
+  const close = document.createElement('span');
+  close.className = 'eden-x1-popover-close';
+  close.setAttribute('role', 'button');
+  close.setAttribute('tabindex', '0');
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '×';
+  popover.insertBefore(close, popover.firstChild);
+}
+
 function bindWeightedPopoverDismissal() {
   if (weightedPopoverDismissalBound) return;
   weightedPopoverDismissalBound = true;
   document.addEventListener('click', (event) => {
+    const closeControl = event.target.closest('.eden-x1-popover-close');
+    if (closeControl) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeWeightedPopoverTrigger(closeControl.closest('.eden-x1-popover-trigger'));
+      return;
+    }
     if (event.target.closest('.eden-x1-popover-trigger')) return;
     closeWeightedPopovers();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const closeControl = event.target.closest?.('.eden-x1-popover-close');
+    if (!closeControl) return;
+    event.preventDefault();
+    closeWeightedPopoverTrigger(closeControl.closest('.eden-x1-popover-trigger'));
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeWeightedPopovers();
@@ -3063,6 +3099,7 @@ function bindWeightedPopovers(host) {
     if (button.dataset.popoverBound) return;
     button.dataset.popoverBound = '1';
     button.setAttribute('aria-expanded', 'false');
+    ensureWeightedPopoverCloseButton(button.querySelector('.dash-weighted-score-popover'));
     hideWeightedPopover(button);
     button.addEventListener('pointerenter', () => positionWeightedPopover(button));
     button.addEventListener('pointerleave', () => {

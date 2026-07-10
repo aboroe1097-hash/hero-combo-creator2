@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.1.10 - 2026-07-10
+
+- Eden X1 score/reward/rank/conduct popovers now have an explicit X close button (in addition to click-outside and Escape), so touch users can dismiss them reliably. The mobile bottom-sheet reserves space so the X and drag handle don't overlap the content.
+- Fixed Eden X1 reward-flow card titles clipping/overlapping the step badge on mobile — long titles ("Total Contribution", "R4 / Management") now wrap instead of being cut off.
+
 ## 13.1.9 - 2026-07-10
 
 - Added an "Export CSV" button (and `window.exportEdenX1Votes()` console helper) to the VTS Admin → Eden X1 Votes panel. It exports the currently loaded Team-Player ballots as one row per candidate selection (season, voter name/key/uid, choice rank, candidate name, candidate key, normalized-name key, updated time, vote id) so names can be audited for typos and near-duplicates in a spreadsheet.

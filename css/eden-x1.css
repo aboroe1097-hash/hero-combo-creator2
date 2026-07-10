@@ -2438,6 +2438,10 @@
     min-width: 0;
     margin-top: 0;
     align-self: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .eden-x1-flow-copy,
@@ -3326,5 +3330,53 @@
   }
   [data-theme='light'] .eden-x1-quicknav {
     background: rgba(241, 245, 249, 0.9) !important;
+  }
+}
+
+/* Explicit X close control for the weighted/reward/rank/conduct popovers, in
+   addition to click-outside and Escape (touch users need an obvious close). */
+#ocrDashboardRoot .dash-weighted-score-popover {
+  position: relative;
+}
+#ocrDashboardRoot .eden-x1-popover-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 9px;
+  font-size: 1.4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.16);
+  cursor: pointer;
+  z-index: 6;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+#ocrDashboardRoot .eden-x1-popover-close:hover,
+#ocrDashboardRoot .eden-x1-popover-close:focus-visible {
+  color: var(--text-primary);
+  background: rgba(148, 163, 184, 0.3);
+  outline: none;
+}
+
+/* On the mobile bottom-sheet popover, clear space at the top so the X and the
+   drag handle don't overlap the first line of content. */
+@media (max-width: 768px) {
+  #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
+    padding-top: 1.95rem !important;
+  }
+  #ocrDashboardRoot .eden-x1-popover-close {
+    top: 8px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
   }
 }
