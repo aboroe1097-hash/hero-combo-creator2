@@ -22,17 +22,45 @@ if (nextHash && !SHA_256_HEX_RE.test(nextHash)) {
   process.exit(1);
 }
 
+// Destructive-action override (Clear All + per-record delete). Accept either a
+// raw code (hashed here) or a pre-computed SHA-256 hash. Never commit either.
+const overrideHashEnv = String(process.env.VTS_ADMIN_OVERRIDE_HASH || '')
+  .trim()
+  .toLowerCase();
+const overrideCode = String(process.env.VTS_ADMIN_OVERRIDE_CODE || '');
+const overrideHash = overrideHashEnv || (overrideCode ? sha256Hex(overrideCode) : '');
+
+if (overrideHash && !SHA_256_HEX_RE.test(overrideHash)) {
+  console.error('VTS_ADMIN_OVERRIDE_HASH must be a 64-character SHA-256 hex digest.');
+  process.exit(1);
+}
+
 const source = readFileSync(configPath, 'utf8');
 if (!/edenVotesPinHash:\s*'[^']*'/.test(source)) {
   console.error('Missing edenVotesPinHash field in js/admin-auth-config.js.');
   process.exit(1);
 }
+if (!/clearHash:\s*'[^']*'/.test(source) || !/deleteHashes:\s*\[[^\]]*\]/.test(source)) {
+  console.error('Missing clearHash/deleteHashes fields in js/admin-auth-config.js.');
+  process.exit(1);
+}
 
-const updated = source.replace(/edenVotesPinHash:\s*'[^']*'/, `edenVotesPinHash: '${nextHash}'`);
+const updated = source
+  .replace(/edenVotesPinHash:\s*'[^']*'/, `edenVotesPinHash: '${nextHash}'`)
+  .replace(/clearHash:\s*'[^']*'/, `clearHash: '${overrideHash}'`)
+  .replace(
+    /deleteHashes:\s*\[[^\]]*\]/,
+    `deleteHashes: [${overrideHash ? `'${overrideHash}'` : ''}]`
+  );
 writeFileSync(configPath, updated);
 
 console.log(
-  nextHash
-    ? 'Injected Eden votes and Bonus Team Effort PIN hash.'
-    : 'No Eden votes PIN configured; sensitive admin PIN gate remains disabled.'
+  [
+    nextHash
+      ? 'Injected Eden votes and Bonus Team Effort PIN hash.'
+      : 'No Eden votes PIN configured; sensitive admin PIN gate remains disabled.',
+    overrideHash
+      ? 'Injected destructive-action override hash (Clear All + delete).'
+      : 'No admin override configured; Clear All / delete overrides stay disabled.',
+  ].join('\n')
 );

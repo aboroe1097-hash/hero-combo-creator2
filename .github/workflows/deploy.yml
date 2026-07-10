@@ -30,6 +30,8 @@ jobs:
       VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY || vars.VITE_RECAPTCHA_SITE_KEY }}
       VTS_EDEN_VOTES_PIN: ${{ secrets.VTS_EDEN_VOTES_PIN || vars.VTS_EDEN_VOTES_PIN }}
       VTS_EDEN_VOTES_PIN_HASH: ${{ secrets.VTS_EDEN_VOTES_PIN_HASH || vars.VTS_EDEN_VOTES_PIN_HASH }}
+      VTS_ADMIN_OVERRIDE_CODE: ${{ secrets.VTS_ADMIN_OVERRIDE_CODE || vars.VTS_ADMIN_OVERRIDE_CODE }}
+      VTS_ADMIN_OVERRIDE_HASH: ${{ secrets.VTS_ADMIN_OVERRIDE_HASH || vars.VTS_ADMIN_OVERRIDE_HASH }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

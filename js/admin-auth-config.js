@@ -1,8 +1,10 @@
 window.VTS_ADMIN_AUTH = window.VTS_ADMIN_AUTH || {
-  // SHA-256 of the destructive-action override code. Only the hash is stored;
-  // the plaintext code is entered at the "Clear All" / delete prompts.
-  clearHash: 'c81ce2684a7b8d8738cd9a978e5e1acc846eca4b92686420bc1e641d287c4e80',
-  deleteHashes: ['c81ce2684a7b8d8738cd9a978e5e1acc846eca4b92686420bc1e641d287c4e80'],
+  // Destructive-action override hashes are injected at build time from the
+  // VTS_ADMIN_OVERRIDE_CODE / VTS_ADMIN_OVERRIDE_HASH secrets (see
+  // scripts/inject-admin-auth-config.mjs). They are intentionally empty here so
+  // no override hash is ever committed to the public repo.
+  clearHash: '',
+  deleteHashes: [],
   rosterPassHashes: {},
   adminPin: '',
   edenVotesPinHash: '',
