@@ -27,7 +27,9 @@ const LIMITS = {
     // Eden X1 now includes the rewards flow, My Stats suggestions, and the
     // mobile quicknav in the route CSS. Keep the cap close to the measured
     // minified output so future growth still trips this check.
-    'eden-x1': 66 * 1024,
+    // 13.1.7 mobile polish (language picker width, weighted overflow, step badge,
+    // quicknav backdrop) raised the measured chunk to 66.2 kB.
+    'eden-x1': 68 * 1024,
     mobile: 84 * 1024,
     // 13.1.0 dashboard mobile overflow fixes add small route CSS. The measured
     // minified chunk is 150.1 kB, so keep this cap close to the production build.

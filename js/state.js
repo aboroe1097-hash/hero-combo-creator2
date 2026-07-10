@@ -13,7 +13,22 @@ const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
 globalThis.__vtsHeroComboRuntimeState = runtimeState;
 
 // --- STATE ---
-export let currentLanguage = localStorage.getItem('vts_hero_lang') || 'en';
+function detectInitialLanguage() {
+  try {
+    const stored = localStorage.getItem('vts_hero_lang');
+    if (stored) return stored;
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const primary = String(globalThis.navigator?.language || '')
+      .toLowerCase()
+      .split('-')[0];
+    const mapped = primary === 'ko' ? 'kr' : primary;
+    return supported.includes(mapped) ? mapped : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
+export let currentLanguage = detectInitialLanguage();
 export let heroInfoEnabled = true;
 export let activeTechSeasons = new Set(['S0', 'S1', 'S2', 'S3', 'S4', 'X1']);
 export let techSearchQuery = '';

@@ -3270,19 +3270,61 @@
     margin-left: 0 !important;
   }
 }
+/* 13.1.7 mobile polish */
 
-/* Perf: skip rendering work for off-screen public-dashboard sections until the
-   user scrolls near them (Lighthouse TBT fix). contain-intrinsic-size reserves
-   an estimated height so scrollbars stay stable while skipped. */
-.eden-x1-page .dash-analytics-grid,
-.eden-x1-page .eden-x1-public-history-card,
-.eden-x1-page .dash-analytics-grid .dash-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 480px;
+/* Give the language picker enough width to read the selection on mobile. */
+@media (max-width: 768px) {
+  .eden-x1-page .admin-control-row {
+    grid-template-columns: minmax(4.2rem, 0.55fr) minmax(8.4rem, 1.3fr) 40px !important;
+  }
+  .eden-x1-page .admin-control-row .admin-language-select {
+    font-size: 0.82rem !important;
+    text-overflow: ellipsis;
+  }
 }
 
-/* CLS guard: reserve space for the weighted table while data loads so the
-   loading sigil -> table swap does not shift the content below the panel. */
-.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel {
-  min-height: 100vh;
+/* Mobile polish 13.1.7 — weighted stacked card overflow.
+   Long decorated player names and reward labels were right-aligned in a
+   fixed grid column and spilled past the card's right edge, and the last
+   row ("Final reward") was clipped by the card. */
+@media (max-width: 768px) {
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack td {
+    min-width: 0;
+  }
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table.dash-table--stack td > *,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-weighted-table.dash-table--stack td > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-player-cell strong,
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-final-reward-cell,
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .eden-x1-page #ocrDashboardRoot .eden-x1-weighted-card,
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-card {
+    overflow: visible;
+  }
+}
+
+/* Mobile polish 13.1.7 — reward step badge overlap + quicknav backdrop.
+   The absolute step-number badge sat on top of the card title; reserve
+   space. The fixed bottom quicknav gets an opaque blurred backdrop so
+   content scrolling under it stays readable. */
+@media (max-width: 768px) {
+  .eden-x1-page .eden-x1-flow-card {
+    padding-right: 2.6rem;
+  }
+  .eden-x1-quicknav {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    background: rgba(8, 13, 23, 0.88) !important;
+  }
+  [data-theme='light'] .eden-x1-quicknav {
+    background: rgba(241, 245, 249, 0.9) !important;
+  }
 }

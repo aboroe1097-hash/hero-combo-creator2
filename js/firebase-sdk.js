@@ -10,6 +10,7 @@ export const FIREBASE_MODULE_URLS = Object.freeze({
   app: `${FIREBASE_CDN_BASE}/firebase-app.js`,
   auth: `${FIREBASE_CDN_BASE}/firebase-auth.js`,
   firestore: `${FIREBASE_CDN_BASE}/firebase-firestore.js`,
+  firestoreLite: `${FIREBASE_CDN_BASE}/firebase-firestore-lite.js`,
   analytics: `${FIREBASE_CDN_BASE}/firebase-analytics.js`,
   appCheck: `${FIREBASE_CDN_BASE}/firebase-app-check.js`,
 });
@@ -51,6 +52,10 @@ export function importFirebaseAuth() {
 
 export function importFirestore() {
   return importWithRetry(FIREBASE_MODULE_URLS.firestore);
+}
+
+export function importFirestoreLite() {
+  return importWithRetry(FIREBASE_MODULE_URLS.firestoreLite);
 }
 
 export function importFirebaseAnalytics() {

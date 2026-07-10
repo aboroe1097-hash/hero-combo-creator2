@@ -71,11 +71,36 @@ async function processFiles(files) {
   $id('dashProgressFill').style.width = '0%';
   log(`Preparing to scan ${valid.length} screenshots...`, 'info');
 
+  // Per-image trickle: creep the bar through the current image's segment so a
+  // slow scan never looks frozen (the bar previously only moved between
+  // images, which read as "stuck" during long Qwen requests).
+  let segTrickleTimer = null;
+  const stopSegTrickle = () => {
+    if (segTrickleTimer) {
+      clearInterval(segTrickleTimer);
+      segTrickleTimer = null;
+    }
+  };
+  const startSegTrickle = (index, total) => {
+    stopSegTrickle();
+    const segStart = (index / total) * 100;
+    const segEnd = ((index + 1) / total) * 100;
+    const segStartedAt = performance.now();
+    segTrickleTimer = setInterval(() => {
+      const elapsedSec = (performance.now() - segStartedAt) / 1000;
+      // Asymptotic: reaches ~50% of the segment after 25s, never quite 100%.
+      const frac = Math.min(0.96, elapsedSec / (elapsedSec + 25));
+      const fill = $id('dashProgressFill');
+      if (fill) fill.style.width = `${segStart + (segEnd - segStart) * frac}%`;
+    }, 400);
+  };
+
   const allJson = [];
   for (let i = 0; i < valid.length; i++) {
     if (state._ocrCancelRequested) break;
     const f = valid[i];
     const startedAt = performance.now();
+    startSegTrickle(i, valid.length);
     const preparingMsg = `Scanning image ${i+1}/${valid.length} - preparing...`;
     $id('dashProgressText').textContent = preparingMsg;
     log(preparingMsg, 'info', f.name);
@@ -162,12 +187,14 @@ EXPECTED JSON SCHEMA:
       }
       log(`OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
     }
+    stopSegTrickle();
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
     const finishedMsg = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
     $id('dashProgressText').textContent = finishedMsg;
     log(finishedMsg, 'info', f.name);
     $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
   }
+  stopSegTrickle();
 
   if (state._ocrCancelRequested) {
     state._ocrProcessing = false;

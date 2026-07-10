@@ -1,5 +1,14 @@
 # Changelog
 
+## 13.1.7 - 2026-07-10
+
+- Mobile polish: reward-flow step badges no longer overlap card titles and long titles wrap instead of clipping; the fixed bottom quicknav got an opaque blurred backdrop; busy admin buttons show a visible spinner instead of an invisible one; long tab labels and stacked-table labels ("Contributions", "CONTRIBUTION") no longer break mid-word; top-performer names are no longer clipped; the language picker is wide enough to read; the disabled Ex-Guild upload button keeps readable text; long decorated player names in the weighted table no longer spill past the card edge.
+- Admin refresh now paints its busy spinner before the heavy dashboard render, and the OCR progress bar moves within each image scan instead of freezing between images.
+- OCR screenshots are re-encoded as JPEG (capped at 2200px longest side) before upload — multi-MB PNG scans that took 100s+ on mobile now upload a fraction of the bytes; falls back to original bytes on any error.
+- First-time visitors now start in their browser's language when one of the 11 supported translations matches, instead of English.
+- Fixed Eden X1 main-thread startup stalls: deferred blocking SDK init and staged the dashboard boot so the page is interactive sooner.
+- Synced public version labels, README, changelog, and app constants to 13.1.7.
+
 ## 13.1.6 - 2026-07-10
 
 - Allowed the Firebase auth helper iframe (`abocombo.firebaseapp.com`) in the `frame-src` Content-Security-Policy of `index.html` and `admin.html`, matching the Eden X1 fix from 13.1.5 — admin sign-in no longer logs CSP violations.

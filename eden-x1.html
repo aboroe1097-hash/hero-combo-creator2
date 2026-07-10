@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <title>Eden X1 - Weighted Contribution View | Hero Combo Creator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com; manifest-src 'self'; worker-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'" />
   <meta name="description" content="View-only weighted contribution dashboard for Eden X1 season. See player rankings, duty counts, bonus team effort points, and weighted scores." />
   <meta name="robots" content="noindex, nofollow" />
   <meta id="themeColorMeta" name="theme-color" content="#0f172a" />
   <link rel="icon" type="image/png" href="images/logo.png">
   <link rel="apple-touch-icon" href="images/logo.png">
   <link id="manifestLink" rel="manifest" href="site.webmanifest" />
-  <script src="js/theme-prepaint.js?v=20260709_232847"></script>
+  <script src="js/theme-prepaint.js?v=20260710_100410"></script>
   <!-- Critical CSS: enough to paint the loading state immediately. Full
        stylesheets are preloaded here and applied at the end of <body> so they
        never block first paint. -->
@@ -36,22 +36,29 @@
     .dash-sigil-aura,.dash-sigil-grid,.dash-sigil-sweep,.dash-sigil-routes,.dash-sigil-ring{position:absolute;inset:0;border-radius:50%}
     .dash-sigil-body{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(125,211,252,.4);animation:edenSigilPulse 1.6s ease-in-out infinite}
     @keyframes edenSigilPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.05);opacity:1}}
-    /* CLS guard: reserve space for the weighted table while data loads so the
-       sigil -> table swap does not shift everything below it. */
-    .eden-x1-panel--loading #dashWeightedContributionPanel{min-height:100vh}
+    .dash-connecting{display:flex;align-items:center;justify-content:center;min-height:420px;padding:2rem 1rem;background:radial-gradient(ellipse at 35% 30%,rgba(34,211,238,.1),transparent 55%),radial-gradient(ellipse at 65% 70%,rgba(251,191,36,.09),transparent 55%),#070b12}.dash-connecting-stage{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:460px;width:100%}.dash-connecting-sigil{position:relative;width:220px;height:220px;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center}.dash-sigil-aura{position:absolute;inset:-28px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.18) 0%,transparent 70%);animation:dash-sigil-aura 3s ease-in-out infinite}@keyframes dash-sigil-aura{0%,to{opacity:.6;background:radial-gradient(circle,rgba(34,211,238,.18) 0%,transparent 70%)}50%{opacity:1;background:radial-gradient(circle,rgba(251,191,36,.22) 0%,transparent 70%)}}.dash-sigil-body{position:relative;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(34,211,238,.06),transparent 50%),radial-gradient(circle at 65% 65%,rgba(251,191,36,.05),transparent 48%),rgba(4,8,18,.82);box-shadow:0 0 70px rgba(34,211,238,.14),0 0 0 1px rgba(103,232,249,.15);overflow:hidden;isolation:isolate;animation:dash-sigil-body-breathe 5.5s ease-in-out infinite}@keyframes dash-sigil-body-breathe{0%,to{transform:scale(1);filter:saturate(1)}50%{transform:scale(1.015);filter:saturate(1.18)}}.dash-sigil-body::before{content:'';position:absolute;inset:0;border-radius:50%;background:repeating-conic-gradient(rgba(103,232,249,.06) 0% 1%,transparent 1% 3%);opacity:.5;z-index:1;animation:dash-sigil-tick-turn 18s linear infinite}@keyframes dash-sigil-tick-turn{to{transform:rotate(360deg)}}.dash-sigil-grid,.dash-sigil-sweep,.dash-sigil-routes{position:absolute;inset:0;border-radius:50%;pointer-events:none}.dash-sigil-grid{z-index:0;background:repeating-radial-gradient(circle,transparent 0 22px,rgba(103,232,249,.1) 23px 24px),linear-gradient(90deg,transparent 49.4%,rgba(103,232,249,.08) 49.8% 50.2%,transparent 50.6%),linear-gradient(0deg,transparent 49.4%,rgba(251,191,36,.055) 49.8% 50.2%,transparent 50.6%);opacity:.7;animation:dash-sigil-grid-drift 11s ease-in-out infinite}@keyframes dash-sigil-grid-drift{0%,to{transform:rotate(0deg) scale(1);opacity:.55}50%{transform:rotate(8deg) scale(1.04);opacity:.82}}.dash-sigil-sweep{z-index:2;background:conic-gradient(from -28deg,transparent 0deg,rgba(103,232,249,.02) 18deg,rgba(103,232,249,.22) 30deg,rgba(251,191,36,.12) 42deg,transparent 58deg,transparent 360deg);mix-blend-mode:screen;opacity:.9;animation:dash-sigil-sweep 3.8s linear infinite}@keyframes dash-sigil-sweep{to{transform:rotate(360deg)}}.dash-sigil-routes{z-index:3}.dash-sigil-route{position:absolute;left:50%;top:50%;height:2px;width:74px;border-radius:999px;transform-origin:0 50%;background:linear-gradient(90deg,transparent,rgba(103,232,249,.72),transparent);opacity:0;animation:dash-sigil-route-flow 2.8s ease-in-out infinite}.dash-sigil-route--a{transform:rotate(24deg) translateX(6px);animation-delay:.2s}.dash-sigil-route--b{width:58px;transform:rotate(148deg) translateX(10px);animation-delay:1.05s}.dash-sigil-route--c{width:68px;transform:rotate(258deg) translateX(8px);animation-delay:1.85s;background:linear-gradient(90deg,transparent,rgba(251,191,36,.7),transparent)}@keyframes dash-sigil-route-flow{0%,18%{opacity:0;filter:blur(2px)}36%,64%{opacity:.9;filter:blur(0)}to{opacity:0;filter:blur(2px)}}.dash-sigil-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid;transform:translate(-50%,-50%);z-index:4}.dash-sigil-ring--ice{width:64%;height:64%;border-color:rgba(103,232,249,.25);animation:dash-sigil-ice-spin 8s linear infinite}.dash-sigil-ring--fire{width:84%;height:84%;border-color:rgba(251,191,36,.22);animation:dash-sigil-fire-spin 6s linear infinite}@keyframes dash-sigil-ice-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes dash-sigil-fire-spin{to{transform:translate(-50%,-50%) rotate(-360deg)}}.dash-sigil-crystal{position:absolute;top:50%;left:50%;width:10px;height:14px;margin:-7px 0 0 -5px;background:#67e8f9;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);box-shadow:0 0 14px rgba(103,232,249,.8),0 0 4px rgba(103,232,249,.6);animation:dash-sigil-crystal-spark 2.6s ease-in-out infinite}.dash-sigil-crystal--a{--orbit:rotate(0deg) translateY(-40px);transform:var(--orbit);animation-delay:0s}.dash-sigil-crystal--b{--orbit:rotate(120deg) translateY(-40px);transform:var(--orbit);animation-delay:.7s}.dash-sigil-crystal--c{--orbit:rotate(240deg) translateY(-40px);transform:var(--orbit);animation-delay:1.4s}@keyframes dash-sigil-crystal-spark{0%,to{opacity:.68;transform:var(--orbit) scale(.86)}45%,60%{opacity:1;transform:var(--orbit) scale(1.12)}}.dash-sigil-ember{position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fbbf24;box-shadow:0 0 12px rgba(251,191,36,.9),0 0 3px rgba(251,191,36,.5);animation:dash-sigil-ember-pulse 1.5s ease-in-out infinite}.dash-sigil-ember--a{--orbit:rotate(0deg) translateY(-52px);transform:var(--orbit);animation-delay:0s}.dash-sigil-ember--b{--orbit:rotate(90deg) translateY(-52px);transform:var(--orbit);animation-delay:.4s}.dash-sigil-ember--c{--orbit:rotate(180deg) translateY(-52px);transform:var(--orbit);animation-delay:.8s}.dash-sigil-ember--d{--orbit:rotate(270deg) translateY(-52px);transform:var(--orbit);animation-delay:1.2s}@keyframes dash-sigil-ember-pulse{0%,to{opacity:.5;transform:var(--orbit) scale(.72)}50%{opacity:1;transform:var(--orbit) scale(1.28)}}.dash-sigil-emblem{position:absolute;top:50%;left:50%;z-index:6;transform:translate(-50%,-50%);width:74px;height:74px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#67e8f9;background:linear-gradient(135deg,rgba(5,14,28,.95),rgba(10,18,32,.92));border:1.5px solid rgba(103,232,249,.35);box-shadow:0 0 28px rgba(34,211,238,.35),inset 0 0 16px rgba(34,211,238,.13),0 0 0 3px rgba(251,191,36,.14);animation:dash-sigil-emblem 2.4s ease-in-out infinite}@keyframes dash-sigil-emblem{0%,to{box-shadow:0 0 28px rgba(34,211,238,.35),inset 0 0 16px rgba(34,211,238,.13),0 0 0 3px rgba(251,191,36,.14);color:#67e8f9}50%{box-shadow:0 0 42px rgba(251,191,36,.42),inset 0 0 22px rgba(251,191,36,.16),0 0 0 4px rgba(34,211,238,.18);color:#fde68a}}.dash-connecting-kicker{display:inline-block;margin:0 0 .5rem;padding:6px 12px;color:#06121d;background:linear-gradient(90deg,#67e8f9,#fbbf24);font-size:.62rem;font-weight:950;letter-spacing:.16em;text-transform:uppercase;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}.dash-connecting-title{font-size:1.35rem;font-weight:800;margin:0 0 .35rem;font-family:Outfit,Inter,sans-serif;color:#f8fdff;text-shadow:0 0 22px rgba(34,211,238,.22)}.dash-connecting-sub{color:var(--text-muted);font-size:.85rem;margin:0 0 .5rem}.dash-connecting-bar-wrap{display:flex;align-items:center;gap:10px;width:100%;max-width:280px;margin:0 auto .5rem}.dash-connecting-bar{flex:1;height:5px;overflow:hidden;border-radius:999px;background:rgba(148,163,184,.15)}.dash-connecting-bar-fill{display:block;height:100%;width:0%;position:relative;overflow:hidden;border-radius:inherit;background:linear-gradient(90deg,#67e8f9,#fbbf24);box-shadow:0 0 10px rgba(34,211,238,.45);transition:width .4s cubic-bezier(.22,1,.36,1)}.dash-connecting-bar-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.58),transparent);transform:translateX(-120%);animation:dash-progress-scan 1.4s ease-in-out infinite}@keyframes dash-progress-scan{to{transform:translateX(120%)}}.dash-connecting-bar-pct{color:#a8b3c7;font-size:.68rem;font-weight:800;font-variant-numeric:tabular-nums;min-width:28px;text-align:right}.dash-connecting-status{color:var(--text-dim);font-size:.72rem;margin:0;min-height:1rem;font-weight:600;display:inline-flex;align-items:center;gap:6px}.dash-connecting-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#22d3ee;box-shadow:0 0 8px #22d3ee;animation:dash-status-blink 1s ease-in-out infinite}@keyframes dash-status-blink{0%,to{opacity:1}50%{opacity:.25}}
+    .eden-x1-panel--loading #edenX1PublicDashboard{display:none!important}.eden-x1-page.eden-x1-loading .roc-footer,.eden-x1-page .eden-x1-panel--loading .eden-x1-notice,.eden-x1-page .eden-x1-panel--loading .eden-x1-quicknav,.eden-x1-page .eden-x1-panel--loading .eden-x1-reward-panel,.eden-x1-page .eden-x1-panel--loading .eden-x1-error{display:none!important}.eden-x1-page .eden-x1-panel{display:flex;flex-direction:column}.eden-x1-page .eden-x1-panel,.eden-x1-page .eden-x1-notice,.eden-x1-page .eden-x1-reward-panel,.eden-x1-page #dashWeightedContributionPanel,.eden-x1-page #edenX1PublicDashboard{min-width:0;max-width:100%;box-sizing:border-box}.eden-x1-page #dashWeightedContributionPanel{width:100%;margin-top:.95rem}.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel{order:-1;margin-top:0;margin-bottom:1rem}.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel #ocrDashboardRoot{width:100%;max-width:100%;min-width:0}.eden-x1-page .dash-connecting-sigil,.eden-x1-page .dash-sigil-body{overflow:clip;overflow-clip-margin:18px}.eden-x1-page .admin-page-panel{display:grid;gap:1.25rem}
+    @media(prefers-reduced-motion:reduce){.dash-sigil-body,.dash-sigil-aura,.dash-sigil-grid,.dash-sigil-sweep,.dash-sigil-route,.dash-sigil-ring--ice,.dash-sigil-ring--fire,.dash-sigil-crystal,.dash-sigil-emblem,.dash-sigil-ember,.dash-sigil-body::before,.dash-connecting-status::before,.dash-connecting-bar-fill::after{animation:none!important}}
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
-  <link rel="preload" as="style" href="css/_tokens.css?v=20260709_232847" />
-  <link rel="preload" as="style" href="css/app.css?v=20260709_232847" />
-  <link rel="preload" as="style" href="css/ocr-dashboard.css?v=20260709_232847" />
-  <link rel="preload" as="style" href="css/components.css?v=20260709_232847" />
-  <link rel="preload" as="style" href="css/atmosphere.css?v=20260709_232847" />
-  <link rel="preload" as="style" href="css/eden-x1.css?v=20260709_232847" />
+  <link rel="preload" as="style" href="css/_tokens.css?v=20260710_100410" />
+  <link rel="preload" as="style" href="css/app.css?v=20260710_100410" />
+  <link rel="preload" as="style" href="css/ocr-dashboard.css?v=20260710_100410" />
+  <link rel="preload" as="style" href="css/components.css?v=20260710_100410" />
+  <link rel="preload" as="style" href="css/atmosphere.css?v=20260710_100410" />
+  <link rel="preload" as="style" href="css/eden-x1.css?v=20260710_100410" />
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260710_100410" />
+    <link rel="stylesheet" href="css/app.css?v=20260710_100410" />
+    <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260710_100410" />
+    <link rel="stylesheet" href="css/components.css?v=20260710_100410" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260710_100410" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260710_100410" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/eden-x1.css?v=20260710_100410" />
   </noscript>
 </head>
 <body class="admin-standalone-page eden-x1-page eden-x1-loading">
@@ -253,7 +260,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; <span id="edenX1FooterYear">2026</span> VTS 1097 &middot; v13.1.6</p>
+        <p>&copy; <span id="edenX1FooterYear">2026</span> VTS 1097 &middot; v13.1.7</p>
       </div>
     </footer>
   </div>
@@ -262,14 +269,14 @@
   <!-- Full stylesheets applied here (fetched via head preloads) so they do not
        block first paint; the inline critical CSS covers the loading state. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Cinzel:wght@700;900&display=swap" />
-  <link rel="stylesheet" href="css/_tokens.css?v=20260709_232847" />
-  <link rel="stylesheet" href="css/app.css?v=20260709_232847" />
-  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260709_232847" />
-  <link rel="stylesheet" href="css/components.css?v=20260709_232847" />
-  <link rel="stylesheet" href="css/atmosphere.css?v=20260709_232847" />
-  <link rel="stylesheet" href="css/mobile.css?v=20260709_232847" media="(max-width: 768px)" />
-  <link rel="stylesheet" href="css/eden-x1.css?v=20260709_232847" />
-  <script src="js/maintenance-config.js?v=20260709_232847" defer></script>
-  <script type="module" src="js/eden-x1.js?v=20260709_232847"></script>
+  <link rel="stylesheet" href="css/_tokens.css?v=20260710_100410" />
+  <link rel="stylesheet" href="css/app.css?v=20260710_100410" />
+  <link rel="stylesheet" href="css/ocr-dashboard.css?v=20260710_100410" />
+  <link rel="stylesheet" href="css/components.css?v=20260710_100410" />
+  <link rel="stylesheet" href="css/atmosphere.css?v=20260710_100410" />
+  <link rel="stylesheet" href="css/mobile.css?v=20260710_100410" media="(max-width: 768px)" />
+  <link rel="stylesheet" href="css/eden-x1.css?v=20260710_100410" />
+  <script src="js/maintenance-config.js?v=20260710_100410" defer></script>
+  <script type="module" src="js/eden-x1.js?v=20260710_100410"></script>
 </body>
 </html>
