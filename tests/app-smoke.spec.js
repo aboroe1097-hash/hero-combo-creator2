@@ -2571,16 +2571,23 @@ test.describe('app smoke tabs', () => {
           season: 'season-2026',
           published: true,
           rankings: [
-            { playerName: 'Yankee', playerKey: 'yankee', familyKey: 'yankee', votes: 10 },
-            { playerName: 'Vote One', playerKey: 'voteone', familyKey: 'voteone', votes: 9 },
-            { playerName: 'Vote Two', playerKey: 'votetwo', familyKey: 'votetwo', votes: 8 },
-            { playerName: 'Vote Three', playerKey: 'votethree', familyKey: 'votethree', votes: 7 },
+            { playerName: 'Yankee', playerKey: 'yankee', familyKey: 'yankee', votes: 10, voters: 10 },
+            { playerName: 'Vote One', playerKey: 'voteone', familyKey: 'voteone', votes: 9, voters: 8 },
+            { playerName: 'Vote Two', playerKey: 'votetwo', familyKey: 'votetwo', votes: 8, voters: 7 },
+            { playerName: 'Vote Three', playerKey: 'votethree', familyKey: 'votethree', votes: 7, voters: 6 },
           ],
         },
       });
     }, seededDash);
     await expect(panel.locator('tbody tr')).toContainText(['Vote One', 'Vote Two', 'Vote Three']);
     await expect(panel.locator('tbody tr').filter({ hasText: 'Yankee' })).toHaveCount(0);
+    const teamVotedStatus = panel
+      .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted' })
+      .first();
+    await teamVotedStatus.click();
+    await expect(teamVotedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Voting rank #2 · 8 members voted'
+    );
     await expect(panel).toContainText('Team Players Vote');
     await expect(panel).toContainText('Need Help With Voting? - View Top Names');
     await panel.locator('[data-eden-vote-help-link]').click();

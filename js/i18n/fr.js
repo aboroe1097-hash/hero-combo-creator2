@@ -1171,6 +1171,8 @@ const fr = {
   edenX1RewardSlotStatus: 'Statut',
   edenX1RewardAssigned: 'Attribué',
   edenX1RewardAssignedReasonTitle: "Motif de l'affectation",
+  edenX1RewardVoted: 'Voté',
+  edenX1RewardVoteDetails: 'Classement du vote #{rank} · {voters} membres ont voté',
   edenX1RewardManagementVotePending: 'Vote de l’équipe de gestion',
   edenX1RewardVotePending: 'À venir - vote de guilde en attente',
   edenX1Tba: 'À venir',

@@ -1174,6 +1174,8 @@ const de = {
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Zugewiesen',
   edenX1RewardAssignedReasonTitle: 'Begründung der Zuweisung',
+  edenX1RewardVoted: 'Gewählt',
+  edenX1RewardVoteDetails: 'Abstimmungsrang #{rank} · {voters} Mitglieder haben abgestimmt',
   edenX1RewardManagementVotePending: 'Abstimmung des Verwaltungsteams',
   edenX1RewardVotePending: 'Noch offen - Gildenabstimmung ausstehend',
   edenX1Tba: 'Noch offen',

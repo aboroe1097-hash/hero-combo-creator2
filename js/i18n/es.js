@@ -1171,6 +1171,8 @@ const es = {
   edenX1RewardSlotStatus: 'Estado',
   edenX1RewardAssigned: 'Asignado',
   edenX1RewardAssignedReasonTitle: 'Motivo de la asignación',
+  edenX1RewardVoted: 'Votado',
+  edenX1RewardVoteDetails: 'Puesto de votación #{rank} · {voters} miembros votaron',
   edenX1RewardManagementVotePending: 'Votación del equipo de gestión',
   edenX1RewardVotePending: 'Pendiente - voto del gremio',
   edenX1Tba: 'Pendiente',

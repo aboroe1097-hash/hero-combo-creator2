@@ -1159,6 +1159,8 @@ const kr = {
   edenX1RewardSlotStatus: '상태',
   edenX1RewardAssigned: '배정됨',
   edenX1RewardAssignedReasonTitle: '배정 사유',
+  edenX1RewardVoted: '투표됨',
+  edenX1RewardVoteDetails: '투표 순위 #{rank} · {voters}명이 투표함',
   edenX1RewardManagementVotePending: '관리팀 투표',
   edenX1RewardVotePending: '추후 공개 - 길드 투표 대기',
   edenX1Tba: '추후 공개',

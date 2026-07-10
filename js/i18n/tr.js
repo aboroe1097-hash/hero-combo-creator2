@@ -1164,6 +1164,8 @@ const tr = {
   edenX1RewardSlotStatus: 'Durum',
   edenX1RewardAssigned: 'Atandı',
   edenX1RewardAssignedReasonTitle: 'Atama gerekçesi',
+  edenX1RewardVoted: 'Oylamayla seçildi',
+  edenX1RewardVoteDetails: 'Oylama sırası #{rank} · {voters} üye oy verdi',
   edenX1RewardManagementVotePending: 'Yönetim ekibi oylaması',
   edenX1RewardVotePending: 'Belirlenecek - lonca oylaması beklemede',
   edenX1Tba: 'Belirlenecek',

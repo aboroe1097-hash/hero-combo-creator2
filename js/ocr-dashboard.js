@@ -854,6 +854,7 @@ function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
           playerKey: row.playerKey,
           familyKey: row.familyKey,
           votes: row.count,
+          voters: row.voters.size,
         }))
       : [],
   };

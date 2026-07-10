@@ -1146,6 +1146,8 @@ const zh = {
   edenX1RewardSlotStatus: '状态',
   edenX1RewardAssigned: '已分配',
   edenX1RewardAssignedReasonTitle: '分配原因',
+  edenX1RewardVoted: '已投票',
+  edenX1RewardVoteDetails: '投票排名 #{rank} · {voters} 名成员已投票',
   edenX1RewardManagementVotePending: '管理团队投票',
   edenX1RewardVotePending: '待定 - 公会投票待处理',
   edenX1Tba: '待定',

@@ -699,6 +699,7 @@ function normalizePublicEdenVoteResults(results = {}) {
         playerKey: String(row?.playerKey || compactPlayerIdentity(row?.playerName)).trim(),
         familyKey: String(row?.familyKey || '').trim(),
         votes: Math.max(0, Math.floor(Number(row?.votes) || 0)),
+        voters: Math.max(0, Math.floor(Number(row?.voters) || 0)),
       }))
       .filter((row) => row.playerName && row.playerKey),
   };
@@ -3173,6 +3174,7 @@ function getEligibleTeamVoteWinners() {
     addRewardPriorityIdentity(reserved, winner.playerKey)
   );
   return results.rankings
+    .map((winner, index) => ({ ...winner, voteRank: index + 1 }))
     .filter((winner) => {
       if (managementVoteCandidateIsReserved(winner, reserved)) return false;
       const familyKey = winner.familyKey || getWeightedPlayerFamilyKey(winner.playerKey);
@@ -3190,6 +3192,8 @@ function rewardSlotRows(view) {
         ? {
             playerName: winners[index].playerName,
             playerKey: winners[index].playerKey,
+            voteRank: winners[index].voteRank,
+            voters: winners[index].voters || winners[index].votes,
           }
         : { playerName: t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
@@ -3210,7 +3214,13 @@ function rewardSlotRows(view) {
           }
         : { playerName: t('edenX1Tba') }),
       group: t('edenX1RewardTeamTitle'),
-      status: winners[index] ? t('edenX1RewardAssigned') : t('edenX1RewardVotePending'),
+      status: winners[index] ? t('edenX1RewardVoted') : t('edenX1RewardVotePending'),
+      statusReason: winners[index]
+        ? t('edenX1RewardVoteDetails', {
+            rank: winners[index].voteRank,
+            voters: winners[index].voters || winners[index].votes,
+          })
+        : '',
     }));
   }
   return [];

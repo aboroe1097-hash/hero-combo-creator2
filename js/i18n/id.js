@@ -1163,6 +1163,8 @@ const id = {
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Ditugaskan',
   edenX1RewardAssignedReasonTitle: 'Alasan penugasan',
+  edenX1RewardVoted: 'Terpilih lewat vote',
+  edenX1RewardVoteDetails: 'Peringkat vote #{rank} · {voters} anggota memilih',
   edenX1RewardManagementVotePending: 'Vote tim manajemen',
   edenX1RewardVotePending: 'Akan diumumkan - vote guild menunggu',
   edenX1Tba: 'Akan diumumkan',
