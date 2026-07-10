@@ -2962,7 +2962,10 @@ async function writeDashboardAttackMutationToCloud(db, firestore, mutation) {
       throw createDashboardAttackMutationError(mutationResult.reason);
     }
 
-    const preparedPayload = sanitizeForFirestore({
+    // A mutation rebuilds the rich in-memory player summary, including each
+    // player's hit list. Persist through the compact serializer so a one-field
+    // structure edit never duplicates the complete attack history in Firestore.
+    const preparedPayload = sanitizeDashboardDataForPersistence({
       ...cloudData,
       ...mutationResult.data,
     });
