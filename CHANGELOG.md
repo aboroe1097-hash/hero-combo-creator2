@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.1.9 - 2026-07-10
+
+- Added an "Export CSV" button (and `window.exportEdenX1Votes()` console helper) to the VTS Admin → Eden X1 Votes panel. It exports the currently loaded Team-Player ballots as one row per candidate selection (season, voter name/key/uid, choice rank, candidate name, candidate key, normalized-name key, updated time, vote id) so names can be audited for typos and near-duplicates in a spreadsheet.
+- Moved the destructive-action admin override (Clear All + per-record delete) to build-time secret injection: `scripts/inject-admin-auth-config.mjs` now fills `clearHash`/`deleteHashes` from the `VTS_ADMIN_OVERRIDE_CODE` (raw code, hashed at build) or `VTS_ADMIN_OVERRIDE_HASH` secret, so no override hash is ever committed to the public repo.
+
 ## 13.1.8 - 2026-07-10
 
 - Hotfix: Eden X1 showed "Firebase is not configured. Cannot load data." and rendered nothing but the static reward boxes. The 13.1.7 lightweight Firebase split changed `initFirebase()` to return `{ app, auth, configured }` without a Firestore `db`, but the Eden boot code still destructured `db` from it and bailed as unconfigured. The page now creates the Firestore Lite instance from `getFirestore(app)` after auth, as intended. Anonymous auth and voting were untouched.

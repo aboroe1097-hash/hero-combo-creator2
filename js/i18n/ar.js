@@ -113,6 +113,7 @@ const ar = {
   adminEdenVotesPinError: "رمز PIN غير صحيح.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
+  adminEdenVotesExport: "تصدير CSV",
   adminEdenVotesSettings: "Voting controls",
   adminEdenVotesOpen: "Voting open",
   adminEdenVotesOpenHint: "Allow public vote submissions.",

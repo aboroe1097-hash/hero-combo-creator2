@@ -115,6 +115,7 @@ const fr = {
   adminEdenVotesPinError: "PIN incorrect.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
+  adminEdenVotesExport: "Exporter CSV",
   adminEdenVotesSettings: "Voting controls",
   adminEdenVotesOpen: "Voting open",
   adminEdenVotesOpenHint: "Allow public vote submissions.",

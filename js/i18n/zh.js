@@ -112,6 +112,7 @@ const zh = {
   adminEdenVotesPinError: "PIN 不正确。",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
+  adminEdenVotesExport: "导出 CSV",
   adminEdenVotesSettings: "Voting controls",
   adminEdenVotesOpen: "Voting open",
   adminEdenVotesOpenHint: "Allow public vote submissions.",

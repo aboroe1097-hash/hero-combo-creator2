@@ -875,6 +875,75 @@ function renderEdenX1VoteResults() {
   hydrateConductSummaryTableLabels(host);
 }
 
+// Debug/audit export of the currently loaded Eden X1 Team-Player ballots.
+// One row per candidate selection so the sheet can be sorted by candidate to
+// spot typos/near-duplicates; candidateKey is the system's compact identity, so
+// two spellings that share a key are treated as the same player, while
+// differing keys flag genuine mismatches that need manual cleaning.
+function exportEdenX1VotesCsv() {
+  const season = currentEdenVoteSeason();
+  const votes = dedupeEdenX1Votes(Array.isArray(state.edenX1Votes) ? state.edenX1Votes : []).filter(
+    (vote) =>
+      vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
+      (!season || vote.season === season) &&
+      vote.voterName &&
+      vote.candidates.length
+  );
+  if (!votes.length) {
+    alert('No Eden X1 votes loaded to export. Open the Eden X1 Votes tab and refresh first.');
+    return 0;
+  }
+  const csvCell = (value) => {
+    const text = String(value ?? '');
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+  const header = [
+    'season',
+    'voterName',
+    'voterKey',
+    'voterAuthUid',
+    'choiceRank',
+    'candidateName',
+    'candidateKey',
+    'candidateNameNormalized',
+    'updatedAt',
+    'voteId',
+  ];
+  const rows = [header.join(',')];
+  votes
+    .slice()
+    .sort(
+      (a, b) =>
+        a.voterName.localeCompare(b.voterName) || edenVoteUpdatedAtMs(b) - edenVoteUpdatedAtMs(a)
+    )
+    .forEach((vote) => {
+      vote.candidates.forEach((candidate, index) => {
+        rows.push(
+          [
+            vote.season,
+            vote.voterName,
+            vote.voterKey,
+            vote.voterAuthUid,
+            index + 1,
+            candidate.candidateName,
+            candidate.candidateKey,
+            compactPlayerIdentity(candidate.candidateName),
+            edenVoteUpdatedAtLabel(vote),
+            vote.id,
+          ]
+            .map(csvCell)
+            .join(',')
+        );
+      });
+    });
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadCsv(rows.join('\n'), `eden-x1-votes-${safeCsvFilename(season) || 'season'}-${stamp}.csv`);
+  return votes.length;
+}
+
+// Console/debug helper: dumps the raw deduped vote records for name matching.
+window.exportEdenX1Votes = exportEdenX1VotesCsv;
+
 async function loadEdenX1Votes() {
   const host = $id('dashEdenVoteResults');
   if (!host) return false;
@@ -998,6 +1067,7 @@ function bindEdenX1VoteAdminControls() {
   if (bindEdenX1VoteAdminControls.bound) return;
   bindEdenX1VoteAdminControls.bound = true;
   $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => loadEdenX1VoteAdminData());
+  $id('dashEdenVoteExportBtn')?.addEventListener('click', () => exportEdenX1VotesCsv());
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
     ['dashEdenVoteEditingToggle', 'allowEditing'],

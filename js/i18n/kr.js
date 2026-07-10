@@ -30,6 +30,7 @@ const kr = {
   adminEdenVotesPinError: "PIN이 올바르지 않습니다.",
   adminEdenVotesSubtitle: "Control the public voting window, review current ballots, and audit edits.",
   adminEdenVotesRefresh: "Refresh Votes",
+  adminEdenVotesExport: "CSV 내보내기",
   adminEdenVotesSettings: "Voting controls",
   adminEdenVotesOpen: "Voting open",
   adminEdenVotesOpenHint: "Allow public vote submissions.",
