@@ -2564,6 +2564,23 @@ test.describe('app smoke tabs', () => {
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA', 'TBA']);
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest({
+        ...dash,
+        publicEdenX1VoteResults: {
+          season: 'season-2026',
+          published: true,
+          rankings: [
+            { playerName: 'Yankee', playerKey: 'yankee', familyKey: 'yankee', votes: 10 },
+            { playerName: 'Vote One', playerKey: 'voteone', familyKey: 'voteone', votes: 9 },
+            { playerName: 'Vote Two', playerKey: 'votetwo', familyKey: 'votetwo', votes: 8 },
+            { playerName: 'Vote Three', playerKey: 'votethree', familyKey: 'votethree', votes: 7 },
+          ],
+        },
+      });
+    }, seededDash);
+    await expect(panel.locator('tbody tr')).toContainText(['Vote One', 'Vote Two', 'Vote Three']);
+    await expect(panel.locator('tbody tr').filter({ hasText: 'Yankee' })).toHaveCount(0);
     await expect(panel).toContainText('Team Players Vote');
     await expect(panel).toContainText('Need Help With Voting? - View Top Names');
     await panel.locator('[data-eden-vote-help-link]').click();
@@ -2998,10 +3015,15 @@ test.describe('app smoke tabs', () => {
     await expect(kikaRow).toContainText('2');
     await expect(kikaRow).toContainText('Kika (1)');
     await expect(kikaRow).toContainText('\uA9C1\u0F3A Kika \u0F3B\uA9C2 (1)');
-    await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('3');
-    await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('2');
-    await expect(results.locator('tbody tr', { hasText: 'Charlie' }).first()).toContainText('2');
-    await expect(results.locator('tbody tr', { hasText: 'Delta' }).first()).toContainText('2');
+    const kikaVoters = totalsTable.locator('[data-eden-vote-voters="kika"]');
+    await expect(kikaVoters).toHaveCount(1);
+    await kikaVoters.locator('summary').click();
+    await expect(kikaVoters).toContainText('Golf');
+    await expect(kikaVoters).toContainText('Hotel');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="alpha"]')).toContainText('3');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="bravo"]')).toContainText('2');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="charlie"]')).toContainText('2');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="delta"]')).toContainText('2');
     await expect(results).toContainText('Alpha, Bravo, Charlie, Delta');
     await expect(results).toContainText('Delta');
     await expect(results).toContainText('Echo');

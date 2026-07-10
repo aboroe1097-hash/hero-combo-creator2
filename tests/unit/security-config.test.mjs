@@ -122,7 +122,7 @@ test('admin dashboard uses Firebase auth instead of local password markers', () 
   const source = readFileSync('js/ocr-dashboard.js', 'utf8');
   const firebase = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /signInWithUsername/);
-  assert.match(source, /isPasswordAuthUser/);
+  assert.match(source, /isAdminAuthUser/);
   assert.match(source, /adminIsAdmin/);
   assert.doesNotMatch(source, /localStorage\.getItem\(AUTH_KEY\)\s*===\s*AUTH_HASH/);
   assert.doesNotMatch(source, /localStorage\.setItem\(AUTH_KEY,\s*AUTH_HASH\)/);
@@ -326,7 +326,7 @@ test('Eden X1 does not block voting on optional Firestore reads', () => {
   assert.match(eden, /liveConductAdjustments\?\.length/);
 });
 
-test('admin gate uses a password sign-in check and sign-out cannot auto re-login', () => {
+test('admin gate uses the Firebase admin claim and sign-out cannot auto re-login', () => {
   const firebase = readFileSync('js/firebase.js', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   const adjustments = readFileSync('js/ocr-adjustments.js', 'utf8');
@@ -336,20 +336,22 @@ test('admin gate uses a password sign-in check and sign-out cannot auto re-login
   assert.match(firebase, /providerId === 'password'|signInProvider === 'password'/);
   assert.match(firebase, /catch\s*\{[\s\S]*return false;[\s\S]*\}/);
   assert.doesNotMatch(firebase, /token read failed[\s\S]*return true;/i);
-  // Both the dashboard gates and the conduct-write context use it.
-  assert.match(dashboard, /isPasswordAuthUser/);
+  // The dashboard gate mirrors the Firestore admin-claim requirement. The
+  // adjustment fallback still recognizes password-auth users when it is used
+  // outside the dashboard context.
+  assert.match(dashboard, /isAdminAuthUser/);
   assert.match(adjustments, /isPasswordAuthUser/);
   // Auth-state changes must validate a candidate before replacing the stored
   // admin session; anonymous/public auth events can arrive while the admin UI
   // is still open and should not poison later conduct writes.
-  assert.match(dashboard, /const candidateIsAdmin = await isPasswordAuthUser\(user\)/);
+  assert.match(dashboard, /const candidateIsAdmin = await isAdminAuthUser\(user\)/);
   assert.doesNotMatch(
     dashboard,
-    /state\.adminUser = user;\s*state\.adminIsAdmin = await isPasswordAuthUser\(user\);/
+    /state\.adminUser = user;\s*state\.adminIsAdmin = await isAdminAuthUser\(user\);/
   );
   assert.match(
     dashboard,
-    /if \(await isPasswordAuthUser\(state\.adminUser, options\)\) return state\.adminUser;/
+    /if \(await isAdminAuthUser\(state\.adminUser, options\)\) return state\.adminUser;/
   );
   // Explicit sign-out sets a guard so the auth-state listener cannot restore
   // the session or reopen the dashboard (the auto re-login bug).

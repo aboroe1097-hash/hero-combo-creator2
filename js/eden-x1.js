@@ -36,6 +36,7 @@ const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
 const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
+const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 const EDEN_X1_VOTE_LOCAL_PREFIX = 'vts_eden_x1_vote';
 const EDEN_X1_VOTE_CANDIDATE_INPUT_IDS = [
@@ -396,7 +397,7 @@ function applyEdenManagementVoteResults(nextResults, status = 'loaded') {
     rankings: Array.isArray(nextResults?.rankings) ? nextResults.rankings : [],
     error: nextResults?.error || '',
   };
-  if (rewardFlowReady && currentRewardView === 'management') {
+  if (rewardFlowReady && (currentRewardView === 'management' || currentRewardView === 'team')) {
     renderCurrentTable({ fromSchedule: true });
   }
 }
@@ -684,6 +685,22 @@ function normalizeEdenVoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
     showVoterNames: settings.showVoterNames === true,
+  };
+}
+
+function normalizePublicEdenVoteResults(results = {}) {
+  const rankings = Array.isArray(results.rankings) ? results.rankings : [];
+  return {
+    season: String(results.season || '').trim(),
+    published: results.published === true,
+    rankings: rankings
+      .map((row) => ({
+        playerName: String(row?.playerName || '').trim(),
+        playerKey: String(row?.playerKey || compactPlayerIdentity(row?.playerName)).trim(),
+        familyKey: String(row?.familyKey || '').trim(),
+        votes: Math.max(0, Math.floor(Number(row?.votes) || 0)),
+      }))
+      .filter((row) => row.playerName && row.playerKey),
   };
 }
 
@@ -3147,6 +3164,23 @@ function getEligibleManagementVoteWinners() {
     .slice(0, EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT);
 }
 
+function getEligibleTeamVoteWinners() {
+  const results = normalizePublicEdenVoteResults(publicDashboardData?.publicEdenX1VoteResults);
+  if (!results.published || results.season !== edenVoteSeason()) return [];
+
+  const reserved = getReservedRewardPriorityIdentities();
+  getEligibleManagementVoteWinners().forEach((winner) =>
+    addRewardPriorityIdentity(reserved, winner.playerKey)
+  );
+  return results.rankings
+    .filter((winner) => {
+      if (managementVoteCandidateIsReserved(winner, reserved)) return false;
+      const familyKey = winner.familyKey || getWeightedPlayerFamilyKey(winner.playerKey);
+      return !familyKey || !reserved.familyKeys.has(familyKey);
+    })
+    .slice(0, 3);
+}
+
 function rewardSlotRows(view) {
   if (view === 'management') {
     const winners = getEligibleManagementVoteWinners();
@@ -3166,11 +3200,17 @@ function rewardSlotRows(view) {
     }));
   }
   if (view === 'team') {
+    const winners = getEligibleTeamVoteWinners();
     return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
-      player: t('edenX1Tba'),
+      ...(winners[index]
+        ? {
+            playerName: winners[index].playerName,
+            playerKey: winners[index].playerKey,
+          }
+        : { playerName: t('edenX1Tba') }),
       group: t('edenX1RewardTeamTitle'),
-      status: t('edenX1RewardVotePending'),
+      status: winners[index] ? t('edenX1RewardAssigned') : t('edenX1RewardVotePending'),
     }));
   }
   return [];
@@ -4528,9 +4568,8 @@ async function renderPublicDashboard(data = publicDashboardData) {
 
   await yieldToBrowser();
   if (token !== publicDashboardRenderToken || !host.isConnected) return;
-  host.querySelector('#edenX1PublicTopPerformersSlot').innerHTML = renderPublicTopPerformers(
-    publicPlayerRows
-  );
+  host.querySelector('#edenX1PublicTopPerformersSlot').innerHTML =
+    renderPublicTopPerformers(publicPlayerRows);
 
   await yieldToBrowser();
   if (token !== publicDashboardRenderToken || !host.isConnected) return;
@@ -4559,14 +4598,12 @@ async function renderPublicDashboard(data = publicDashboardData) {
     </div>`;
     await yieldToBrowser();
     if (token !== publicDashboardRenderToken || !host.isConnected) return;
-    historySlot.querySelector('#edenX1PublicAttackHistorySlot').innerHTML = renderPublicAttackHistory(
-      publicAttackRows
-    );
+    historySlot.querySelector('#edenX1PublicAttackHistorySlot').innerHTML =
+      renderPublicAttackHistory(publicAttackRows);
     await yieldToBrowser();
     if (token !== publicDashboardRenderToken || !host.isConnected) return;
-    historySlot.querySelector('#edenX1PublicStructuresSlot').innerHTML = renderPublicStructures(
-      publicStructureRows
-    );
+    historySlot.querySelector('#edenX1PublicStructuresSlot').innerHTML =
+      renderPublicStructures(publicStructureRows);
   }
   bindWeightedPopovers(host);
 }
@@ -5030,10 +5067,14 @@ async function loadEdenX1Dashboard() {
         setEdenLoadingProgress(generation, 65);
         const { getFirestore, doc, getDoc } = firestore;
         const db = getFirestore(app);
-        const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
+        const [snap, rosterSnap, voteSettingsSnap, publicVoteResultsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
           loadEdenOptionalData(getDoc(doc(db, FS_ROSTER_PATH)), 'roster data'),
           loadEdenOptionalData(getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)), 'vote settings'),
+          loadEdenOptionalData(
+            getDoc(doc(db, EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH)),
+            'public vote results'
+          ),
         ]);
         setEdenLoadingProgress(generation, 80);
 
@@ -5045,6 +5086,11 @@ async function loadEdenX1Dashboard() {
         if (rosterSnap?.exists?.()) {
           const rosterData = rosterSnap.data() || {};
           if (Array.isArray(rosterData.snapshots)) data.rosterSnapshots = rosterData.snapshots;
+        }
+        if (publicVoteResultsSnap?.exists?.()) {
+          data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(
+            publicVoteResultsSnap.data()
+          );
         }
         const liveConductAdjustments = await loadEdenOptionalData(
           loadPublicConductAdjustments(db, firestore, data.r5Season || ''),
