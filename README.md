@@ -76,6 +76,8 @@ That runs lint, Prettier check, unit tests, i18n validation, production build, b
 
 Version cadence: patch releases run through `.20` before the next minor. For the current train, ship `13.1.0`, `13.1.1`, ... `13.1.20`; the next release after that is `13.2.0`. The same cycle repeats for future minors (`13.2.1` through `13.2.20`, then `13.3.0`, and so on).
 
+Release version bumps must update the shared app version map: `package.json`, top `CHANGELOG.md` entry, README title/check text, `APP_VERSION` in `js/state.js`, `js/admin-page.js`, and `js/eden-x1.js`, plus the literal footer versions in `index.html`, `admin.html`, and `eden-x1.html`. See [AGENTS.md](AGENTS.md#app-version-bump-checklist) before opening a release PR.
+
 ## Tech Stack
 
 | Layer | Choice |

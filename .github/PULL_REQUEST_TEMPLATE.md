@@ -23,6 +23,7 @@
 ## Versioning
 
 - [ ] Version labels and `CHANGELOG.md` are updated, or this PR is docs-only/internal
+- [ ] Release PR checked the app version map in `AGENTS.md`
 - [ ] Release version follows the `.0` through `.20`, then next minor cadence
 
 ## Evidence
