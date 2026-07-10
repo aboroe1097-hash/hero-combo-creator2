@@ -11,10 +11,10 @@ const LIMITS = {
   indexLines: 800,
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
-  // The admin cloud mutation fencing and Eden X1 vote-family audit add a
-  // measured 1.1 kB to the production bundle. Keep a small guard band above
-  // the new 2051.1 kB build while preserving a meaningful growth alarm.
-  totalJsBytes: 2052 * 1024,
+  // Admin claim recovery, privacy-safe public vote rankings, and the voter
+  // drilldown add a measured 3.0 kB. Keep a small guard band above the new
+  // 2054.1 kB build while preserving a meaningful growth alarm.
+  totalJsBytes: 2055 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
@@ -33,7 +33,8 @@ const LIMITS = {
     mobile: 84 * 1024,
     // 13.1.0 dashboard mobile overflow fixes add small route CSS. The measured
     // minified chunk is 150.1 kB, so keep this cap close to the production build.
-    'ocr-dashboard': 152 * 1024,
+    // Vote-result drilldowns add a compact details list in the lazy admin CSS.
+    'ocr-dashboard': 153 * 1024,
   },
 };
 

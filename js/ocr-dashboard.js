@@ -241,6 +241,7 @@ state.r5Season = '';
 state.edenX1Votes = [];
 state.edenX1VoteHistory = [];
 state.edenX1VoteSettings = null;
+let edenX1VoteSettingsVersion = 0;
 state.r5EditingId = '';
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
@@ -284,6 +285,7 @@ const DASHBOARD_CLOUD_RETRY_FLUSH_DELAY_MS = 2500;
 const EDEN_X1_VOTES_COLLECTION_PATH = 'vts_admin/eden_x1_votes/records';
 const EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin/eden_x1_vote_history/records';
 const EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin/eden_x1_vote_settings';
+const EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH = 'vts_admin/eden_x1_public_vote_results';
 const EDEN_X1_VOTE_SETTINGS_LOCAL_KEY = 'vts_eden_x1_vote_admin_settings';
 const EDEN_X1_TEAM_VOTE_CATEGORY = 'team_players';
 let dashboardCloudSaveTimer = null;
@@ -444,11 +446,18 @@ function showDashboardCloudFallback(err, label = 'Cloud sync') {
 async function runDashboardCloudTaskWithTimeout(
   label,
   task,
-  timeoutMs = DASHBOARD_CLOUD_BOOT_TIMEOUT_MS
+  timeoutMs = DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+  options = {}
 ) {
+  const operation = Promise.resolve().then(task);
   try {
-    return await withDashboardCloudTimeout(Promise.resolve().then(task), timeoutMs, label);
+    return await withDashboardCloudTimeout(operation, timeoutMs, label);
   } catch (err) {
+    if (options.optional === true && isRecoverableDashboardCloudError(err)) {
+      operation.then(() => log(`${label} loaded after the initial delay.`, 'info')).catch(() => {});
+      log(`${label} is still loading; dashboard cloud sync remains active.`, 'warn');
+      return null;
+    }
     showDashboardCloudFallback(err, label);
     return null;
   }
@@ -789,11 +798,7 @@ function renderEdenX1VoteAdmin() {
   renderEdenX1VoteHistory();
 }
 
-function renderEdenX1VoteResults() {
-  const host = $id('dashEdenVoteResults');
-  if (!host) return;
-  const season = currentEdenVoteSeason();
-  const votes = Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [];
+function collectEdenX1VoteTotals(votes, season) {
   const dedupedVotes = dedupeEdenX1Votes(votes).filter(
     (vote) =>
       vote.category === EDEN_X1_TEAM_VOTE_CATEGORY &&
@@ -801,39 +806,82 @@ function renderEdenX1VoteResults() {
       vote.voterName &&
       vote.candidates.length
   );
-  if (!dedupedVotes.length) {
-    host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
-    return;
-  }
-
   const totals = new Map();
   dedupedVotes.forEach((vote) => {
     vote.candidates.forEach((candidate) => {
       const resolved = resolveEdenVoteCandidate(candidate);
-      const key =
+      const familyKey =
         resolved.familyKey || resolved.playerKey || compactPlayerIdentity(resolved.rawName);
-      if (!totals.has(key)) {
-        totals.set(key, {
+      if (!totals.has(familyKey)) {
+        totals.set(familyKey, {
           candidateName: resolved.canonicalName || resolved.rawName,
+          playerKey: resolved.playerKey || familyKey,
+          familyKey,
           count: 0,
-          voters: new Set(),
+          voters: new Map(),
           latest: 0,
           variants: new Map(),
         });
       }
-      const row = totals.get(key);
+      const row = totals.get(familyKey);
       row.count += 1;
-      row.voters.add(vote.voterKey || vote.voterName);
+      row.voters.set(vote.voterKey || vote.voterName, vote.voterName);
       row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
       const rawName = resolved.rawName || candidate.candidateKey || 'Unknown';
       row.variants.set(rawName, (row.variants.get(rawName) || 0) + 1);
     });
   });
-  const totalSelections = dedupedVotes.reduce((sum, vote) => sum + vote.candidates.length, 0);
-  const totalRows = [...totals.values()].sort(
-    (a, b) =>
-      b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
-  );
+  return {
+    dedupedVotes,
+    totalSelections: dedupedVotes.reduce((sum, vote) => sum + vote.candidates.length, 0),
+    totalRows: [...totals.values()].sort(
+      (a, b) =>
+        b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
+    ),
+  };
+}
+
+function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+  const normalizedSettings = normalizeEdenX1VoteSettings(settings || {});
+  const season = normalizedSettings.season || currentEdenVoteSeason();
+  const { totalRows } = collectEdenX1VoteTotals(state.edenX1Votes || [], season);
+  return {
+    season,
+    published: normalizedSettings.showPublicResults === true,
+    rankings: normalizedSettings.showPublicResults
+      ? totalRows.slice(0, 100).map((row) => ({
+          playerName: row.candidateName,
+          playerKey: row.playerKey,
+          familyKey: row.familyKey,
+          votes: row.count,
+        }))
+      : [],
+  };
+}
+
+async function publishEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+  if (state.adminIsAdmin !== true) return false;
+  const db = await ensureCloudSyncReady();
+  if (!db) return false;
+  const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+  await setDoc(doc(db, EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH), {
+    ...buildEdenX1PublicVoteResults(settings),
+    updatedAt: serverTimestamp(),
+    updatedBy: state.adminUser?.uid || '',
+  });
+  return true;
+}
+
+function renderEdenX1VoteResults() {
+  const host = $id('dashEdenVoteResults');
+  if (!host) return;
+  const season = currentEdenVoteSeason();
+  const votes = Array.isArray(state.edenX1Votes) ? state.edenX1Votes : [];
+  const { dedupedVotes, totalSelections, totalRows } = collectEdenX1VoteTotals(votes, season);
+  if (!dedupedVotes.length) {
+    host.innerHTML = '<div class="dash-empty">No votes yet.</div>';
+    return;
+  }
   const ballotRows = dedupedVotes
     .slice()
     .sort(
@@ -842,22 +890,30 @@ function renderEdenX1VoteResults() {
     );
 
   host.innerHTML = `<div class="dash-duty-upload-summary">
-    <div class="dash-duty-summary-kpis">
+    <div class="dash-duty-summary-kpis dash-vote-summary-kpis">
       <div class="dash-duty-summary-kpi"><strong>${totalSelections}</strong><span>votes</span></div>
       <div class="dash-duty-summary-kpi"><strong>${totalRows.length}</strong><span>candidates</span></div>
       <div class="dash-duty-summary-kpi"><strong>${esc(season)}</strong><span>season</span></div>
     </div>
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteCandidateTotals'))}</h3>
-      <table class="dash-duty-summary-table">
+      <table class="dash-duty-summary-table dash-vote-summary-table">
         <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th><th>Matched From</th></tr></thead>
         <tbody>${totalRows
           .map(
-            (row, index) => `<tr>
+            (row, index) => `<tr data-eden-vote-candidate="${esc(row.familyKey)}">
               <td>${index + 1}</td>
               <td><strong class="dash-duty-cell-value">${esc(row.candidateName)}</strong></td>
               <td><span class="dash-duty-cell-value dash-positive">${row.count}</span></td>
-              <td><span class="dash-duty-cell-value dash-duty-times">${row.voters.size}</span></td>
+              <td>
+                <details class="dash-vote-voters" data-eden-vote-voters="${esc(row.familyKey)}">
+                  <summary aria-label="Show ${row.voters.size} voters">${row.voters.size}</summary>
+                  <ul>${[...row.voters.values()]
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((name) => `<li>${esc(name)}</li>`)
+                    .join('')}</ul>
+                </details>
+              </td>
               <td><span class="dash-duty-cell-value">${esc(
                 [...row.variants.entries()]
                   .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
@@ -1029,12 +1085,13 @@ async function loadEdenX1VoteSettings() {
   state.edenX1VoteSettings = readLocalEdenX1VoteSettings();
   renderEdenX1VoteSettings();
   if (state.adminIsAdmin !== true) return false;
+  const loadVersion = edenX1VoteSettingsVersion;
   try {
     const db = await ensureCloudSyncReady();
     if (!db) return false;
     const { doc, getDoc } = await loadFirestoreApi();
     const snap = await getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH));
-    if (snap.exists()) {
+    if (snap.exists() && loadVersion === edenX1VoteSettingsVersion) {
       state.edenX1VoteSettings = normalizeEdenX1VoteSettings(snap.data());
       writeLocalEdenX1VoteSettings(state.edenX1VoteSettings);
       renderEdenX1VoteSettings();
@@ -1047,6 +1104,7 @@ async function loadEdenX1VoteSettings() {
 }
 
 async function saveEdenX1VoteSettings(nextSettings) {
+  edenX1VoteSettingsVersion += 1;
   const settings = normalizeEdenX1VoteSettings(nextSettings);
   state.edenX1VoteSettings = settings;
   writeLocalEdenX1VoteSettings(settings);
@@ -1061,6 +1119,8 @@ async function saveEdenX1VoteSettings(nextSettings) {
       updatedAt: serverTimestamp(),
       updatedBy: state.adminUser?.uid || '',
     });
+    if (settings.showPublicResults) await loadEdenX1Votes();
+    await publishEdenX1PublicVoteResults(settings);
     const status = $id('dashEdenVoteSettingsStatus');
     if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
     return true;
@@ -1080,10 +1140,17 @@ async function loadEdenX1VoteAdminData() {
   renderEdenX1VoteAdmin();
 }
 
+async function refreshEdenX1VoteAdminData() {
+  await loadEdenX1VoteAdminData();
+  if (state.edenX1VoteSettings?.showPublicResults === true) {
+    await publishEdenX1PublicVoteResults(state.edenX1VoteSettings);
+  }
+}
+
 function bindEdenX1VoteAdminControls() {
   if (bindEdenX1VoteAdminControls.bound) return;
   bindEdenX1VoteAdminControls.bound = true;
-  $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => loadEdenX1VoteAdminData());
+  $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => refreshEdenX1VoteAdminData());
   $id('dashEdenVoteExportBtn')?.addEventListener('click', () => exportEdenX1VotesCsv());
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
@@ -1706,10 +1773,10 @@ async function ensureDashboardCloudInitialized() {
 }
 
 async function waitForAdminAuthUser(timeoutMs = 4000, options = {}) {
-  const { getCurrentUser, isPasswordAuthUser, onUserChanged } = await loadFirebaseApi();
-  if (await isPasswordAuthUser(state.adminUser, options)) return state.adminUser;
+  const { getCurrentUser, isAdminAuthUser, onUserChanged } = await loadFirebaseApi();
+  if (await isAdminAuthUser(state.adminUser, options)) return state.adminUser;
   const currentUser = getCurrentUser();
-  if (await isPasswordAuthUser(currentUser, options)) return currentUser;
+  if (await isAdminAuthUser(currentUser, options)) return currentUser;
 
   return new Promise((resolve) => {
     let done = false;
@@ -1725,7 +1792,7 @@ async function waitForAdminAuthUser(timeoutMs = 4000, options = {}) {
     };
     const timeout = setTimeout(() => finish(null), timeoutMs);
     unsubscribe = onUserChanged((user) => {
-      Promise.resolve(isPasswordAuthUser(user, options))
+      Promise.resolve(isAdminAuthUser(user, options))
         .then((isAdmin) => {
           if (isAdmin) finish(user);
         })
@@ -1737,24 +1804,22 @@ async function waitForAdminAuthUser(timeoutMs = 4000, options = {}) {
 async function ensureCloudSyncReady() {
   await ensureDashboardCloudInitialized();
   if (!state.cloudSyncConfigured) return null;
-  const { getCurrentUser, getDb, isPasswordAuthUser } = await loadFirebaseApi();
+  const { getCurrentUser, getDb, isAdminAuthUser } = await loadFirebaseApi();
   const db = getDb();
   if (!db) return null;
-  // Validate the SAME account we hand back to callers. state.adminUser is the
-  // session whose token Firestore actually uses; prefer it because a token
-  // refresh can transiently blank getCurrentUser()'s providerData, which sends
-  // the password check down a flaky network path (getIdTokenResult) that can
-  // wrongly report "not password" on a slow/cold connection.
+  // Validate the same custom claim Firestore enforces. Keeping the session
+  // object avoids a transient auth-state callback from downgrading an active
+  // admin before its persisted token is visible through getCurrentUser().
   let currentUser = null;
-  if (await isPasswordAuthUser(state.adminUser)) {
+  if (await isAdminAuthUser(state.adminUser)) {
     currentUser = state.adminUser;
   } else {
     const liveUser = getCurrentUser();
-    if (await isPasswordAuthUser(liveUser)) currentUser = liveUser;
+    if (await isAdminAuthUser(liveUser)) currentUser = liveUser;
   }
   if (!currentUser && state.adminIsAdmin === true) {
     const waited = await waitForAdminAuthUser(4000);
-    if (await isPasswordAuthUser(waited)) currentUser = waited;
+    if (await isAdminAuthUser(waited)) currentUser = waited;
   }
   if (!currentUser) {
     // Transient probe miss: mark cloud not-ready but do NOT tear down the admin
@@ -2237,9 +2302,12 @@ function startConnectingProgressLoop() {
 
 async function completeConnectingProgress(statusMsg = '') {
   connectingProgressCap = 100;
-  setConnectingProgress(98, statusMsg || dashT('adminConnectingData'), { cap: 100 });
-  await new Promise((resolve) => setTimeout(resolve, 180));
-  setConnectingProgress(100, '', { cap: 100, force: true });
+  setConnectingProgress(98, statusMsg || dashT('adminConnectingData'), {
+    cap: 100,
+    immediate: true,
+  });
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  setConnectingProgress(100, '', { cap: 100, force: true, immediate: true });
 }
 
 function showConnecting(statusMsg = '') {
@@ -2289,7 +2357,14 @@ function setConnectingProgress(pct, statusMsg, options = {}) {
   if (Number.isFinite(options.cap)) connectingProgressCap = options.cap;
   const clamped = Math.max(0, Math.min(100, pct));
   connectingProgressValue = options.force ? clamped : Math.max(connectingProgressValue, clamped);
-  if (fill) fill.style.width = `${connectingProgressValue}%`;
+  if (fill) {
+    if (options.immediate === true) fill.style.transition = 'none';
+    fill.style.width = `${connectingProgressValue}%`;
+    if (options.immediate === true) {
+      void fill.offsetWidth;
+      fill.style.removeProperty('transition');
+    }
+  }
   if (pctEl) pctEl.textContent = `${Math.floor(connectingProgressValue)}%`;
   if (statusMsg) setConnectingStatus(statusMsg);
 }
@@ -2575,7 +2650,9 @@ async function openAdminDashboardAfterAuth(options = {}) {
         }),
         runDashboardCloudTaskWithTimeout(
           'Bonus team effort points cloud load',
-          loadConductAdjustmentsForSeason
+          loadConductAdjustmentsForSeason,
+          DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+          { optional: true }
         ),
       ]);
       await runDashboardCloudTaskWithTimeout(
@@ -4406,7 +4483,9 @@ export async function bootOcrDashboard() {
         state.adminIsAdmin === true
           ? runDashboardCloudTaskWithTimeout(
               'Bonus team effort points cloud load',
-              loadConductAdjustmentsForSeason
+              loadConductAdjustmentsForSeason,
+              DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+              { optional: true }
             )
           : loadConductAdjustmentsForSeason(),
       ]);
@@ -4441,7 +4520,7 @@ export async function bootOcrDashboard() {
     try {
       const configured = await ensureDashboardCloudInitialized();
       if (configured) {
-        const { onUserChanged, getCurrentUser, isPasswordAuthUser, waitForAuthReady } =
+        const { onUserChanged, getCurrentUser, isAdminAuthUser, waitForAuthReady } =
           await loadFirebaseApi();
         await waitForAuthReady();
         if (!state._adminAuthUnsub) {
@@ -4469,7 +4548,7 @@ export async function bootOcrDashboard() {
             }
             try {
               const wasAdmin = state.adminIsAdmin === true;
-              const candidateIsAdmin = await isPasswordAuthUser(user);
+              const candidateIsAdmin = await isAdminAuthUser(user);
               if (!candidateIsAdmin) {
                 const restoredUser = wasAdmin ? await waitForAdminAuthUser(1500) : null;
                 if (restoredUser) {
@@ -4496,7 +4575,7 @@ export async function bootOcrDashboard() {
         }
         const restoredUser = await waitForAdminAuthUser(1500);
         const currentUser = restoredUser || getCurrentUser();
-        if (currentUser && (await isPasswordAuthUser(currentUser))) {
+        if (currentUser && (await isAdminAuthUser(currentUser))) {
           state.adminUser = currentUser;
           state.adminIsAdmin = true;
           await openAdminDashboardAfterAuth({ preferCloudFirst: true });

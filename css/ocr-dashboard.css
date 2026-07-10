@@ -670,22 +670,23 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  #ocrDashboardRoot :is(
-    .dash-sigil-body,
-    .dash-sigil-aura,
-    .dash-sigil-grid,
-    .dash-sigil-sweep,
-    .dash-sigil-route,
-    .dash-sigil-ring--ice,
-    .dash-sigil-ring--fire,
-    .dash-sigil-crystal,
-    .dash-sigil-emblem,
-    .dash-sigil-ember,
-    .dash-analytics-card.dash-analytics-in,
-    .dash-dist-fill,
-    .dash-cloud-status[data-state='syncing'] .dash-cloud-status-dot,
-    .dash-roster-progress .spinner
-  ),
+  #ocrDashboardRoot
+    :is(
+      .dash-sigil-body,
+      .dash-sigil-aura,
+      .dash-sigil-grid,
+      .dash-sigil-sweep,
+      .dash-sigil-route,
+      .dash-sigil-ring--ice,
+      .dash-sigil-ring--fire,
+      .dash-sigil-crystal,
+      .dash-sigil-emblem,
+      .dash-sigil-ember,
+      .dash-analytics-card.dash-analytics-in,
+      .dash-dist-fill,
+      .dash-cloud-status[data-state='syncing'] .dash-cloud-status-dot,
+      .dash-roster-progress .spinner
+    ),
   #ocrDashboardRoot .dash-sigil-body::before,
   #ocrDashboardRoot .dash-connecting-status::before,
   #ocrDashboardRoot .dash-connecting-bar-fill::after {
@@ -1981,7 +1982,6 @@
   #dashAttackHistoryCard .dash-card-hdr {
     flex: 0 0 auto;
   }
-
 }
 #ocrDashboardRoot .dash-attack-day-header {
   margin-bottom: 6px;
@@ -2942,7 +2942,16 @@
     padding: 0.75rem;
     gap: 0.85rem;
   }
-  #ocrDashboardRoot :is(.dash-header, .dash-header > div:first-child, .dash-subtitle, .dash-cloud-status, .dash-api-key, .dash-api-key-actions, .dash-actions) {
+  #ocrDashboardRoot
+    :is(
+      .dash-header,
+      .dash-header > div:first-child,
+      .dash-subtitle,
+      .dash-cloud-status,
+      .dash-api-key,
+      .dash-api-key-actions,
+      .dash-actions
+    ) {
     width: 100%;
   }
   #ocrDashboardRoot .dash-header {
@@ -3218,7 +3227,6 @@
     justify-content: center;
     min-height: var(--tap-min);
   }
-
 }
 
 /* Fix for modal positioning when body is locked */
@@ -4223,7 +4231,8 @@ body[style*='overflow: hidden'] .tab-panel {
   color: var(--text-muted);
   font-weight: 600;
 }
-#ocrDashboardRoot :is(.dash-banner-date, .dash-banner-event, .dash-banner-count, .dash-duty-cell-value) {
+#ocrDashboardRoot
+  :is(.dash-banner-date, .dash-banner-event, .dash-banner-count, .dash-duty-cell-value) {
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
@@ -4271,6 +4280,9 @@ body[style*='overflow: hidden'] .tab-panel {
   gap: 1px;
   background: rgba(51, 65, 85, 0.45);
   border-bottom: 1px solid var(--border);
+}
+#ocrDashboardRoot .dash-vote-summary-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 #ocrDashboardRoot .dash-duty-summary-kpi {
   display: grid;
@@ -4351,6 +4363,59 @@ body[style*='overflow: hidden'] .tab-panel {
   display: block;
   color: var(--text-primary);
   font-weight: 900;
+}
+#ocrDashboardRoot .dash-vote-summary-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+#ocrDashboardRoot .dash-vote-summary-table th:first-child,
+#ocrDashboardRoot .dash-vote-summary-table td:first-child {
+  width: 3.25rem;
+  min-width: 3.25rem;
+}
+#ocrDashboardRoot .dash-vote-summary-table th:nth-child(2),
+#ocrDashboardRoot .dash-vote-summary-table td:nth-child(2) {
+  width: 19%;
+  min-width: 9rem;
+}
+#ocrDashboardRoot .dash-vote-summary-table th:nth-child(3),
+#ocrDashboardRoot .dash-vote-summary-table td:nth-child(3),
+#ocrDashboardRoot .dash-vote-summary-table th:nth-child(4),
+#ocrDashboardRoot .dash-vote-summary-table td:nth-child(4) {
+  width: 5.5rem;
+  min-width: 5.5rem;
+}
+#ocrDashboardRoot .dash-vote-summary-table th:nth-child(5),
+#ocrDashboardRoot .dash-vote-summary-table td:nth-child(5) {
+  text-align: left;
+  white-space: normal;
+}
+#ocrDashboardRoot .dash-vote-voters {
+  position: relative;
+  display: inline-block;
+}
+#ocrDashboardRoot .dash-vote-voters summary {
+  cursor: pointer;
+  color: var(--accent-cyan);
+  font-weight: 900;
+  list-style: none;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.22em;
+}
+#ocrDashboardRoot .dash-vote-voters summary::-webkit-details-marker {
+  display: none;
+}
+#ocrDashboardRoot .dash-vote-voters ul {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 10rem;
+  margin: 0.45rem 0 0;
+  padding: 0.55rem 0.7rem 0.55rem 1.45rem;
+  text-align: left;
+  color: var(--text-primary);
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: 0.55rem;
+  background: rgba(2, 6, 23, 0.94);
 }
 #ocrDashboardRoot .dash-duty-player-stack {
   display: grid;
@@ -5009,7 +5074,9 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:hover,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-weighted-sort]:focus-visible,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:hover,
-#ocrDashboardRoot .dash-contribution-weighted-table th[data-contribution-weighted-sort]:focus-visible,
+#ocrDashboardRoot
+  .dash-contribution-weighted-table
+  th[data-contribution-weighted-sort]:focus-visible,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-public-weighted-sort]:hover,
 #ocrDashboardRoot .dash-contribution-weighted-table th[data-public-weighted-sort]:focus-visible {
   color: var(--brand);
@@ -5892,7 +5959,6 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   overflow-wrap: anywhere;
 }
 
-
 @media (max-width: 768px) {
   #ocrDashboardRoot .dash-table {
     min-width: 0;
@@ -5938,6 +6004,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 @media (max-width: 768px) {
   #ocrDashboardRoot .dash-duty-summary-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #ocrDashboardRoot .dash-vote-summary-table {
+    min-width: 0;
+    table-layout: auto;
   }
   #ocrDashboardRoot .dash-duty-summary-kpi:last-child {
     grid-column: 1 / -1;
@@ -6237,7 +6307,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     display: none;
   }
 
-  .eden-x1-page #ocrDashboardRoot .eden-x1-popover-trigger:not(.is-open) .dash-weighted-score-popover {
+  .eden-x1-page
+    #ocrDashboardRoot
+    .eden-x1-popover-trigger:not(.is-open)
+    .dash-weighted-score-popover {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
@@ -6641,7 +6714,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     width: 100%;
   }
 
-  #ocrDashboardRoot #dashSubtabDashboard .dash-leader-controls :is(.dash-select-sm, .dash-select-lg, .dash-search-leader) {
+  #ocrDashboardRoot
+    #dashSubtabDashboard
+    .dash-leader-controls
+    :is(.dash-select-sm, .dash-select-lg, .dash-search-leader) {
     width: 100%;
     max-width: none;
   }
@@ -6783,10 +6859,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      "structure structure"
-      "trends heatmap"
-      "distribution consistency"
-      "streaks streaks";
+      'structure structure'
+      'trends heatmap'
+      'distribution consistency'
+      'streaks streaks';
   }
 
   #ocrDashboardRoot #dashSubtabAnalytics .dash-analytics-card:nth-child(1) {
@@ -6942,7 +7018,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   -webkit-overflow-scrolling: touch;
 }
 
-#ocrDashboardRoot #dashSubtabContributions .dash-contribution-weighted-card .dash-contribution-compare-table-wrap {
+#ocrDashboardRoot
+  #dashSubtabContributions
+  .dash-contribution-weighted-card
+  .dash-contribution-compare-table-wrap {
   max-height: min(58vh, 580px);
 }
 
@@ -6999,7 +7078,10 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     overflow-x: hidden;
   }
 
-  #ocrDashboardRoot #dashSubtabContributions .dash-contribution-weighted-card .dash-contribution-compare-table-wrap {
+  #ocrDashboardRoot
+    #dashSubtabContributions
+    .dash-contribution-weighted-card
+    .dash-contribution-compare-table-wrap {
     max-height: min(46svh, 410px);
   }
 
