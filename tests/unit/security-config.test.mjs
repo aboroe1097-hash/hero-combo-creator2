@@ -257,6 +257,14 @@ test('admin cloud boot and saves have bounded local-cache fallback', () => {
   assert.match(dashboard, /withDashboardCloudTimeout\(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
 });
 
+test('attack mutations use the compact dashboard serializer before Firestore writes', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.match(
+    dashboard,
+    /writeDashboardAttackMutationToCloud[\s\S]*?const preparedPayload = sanitizeDashboardDataForPersistence\(\{[\s\S]*?\.\.\.mutationResult\.data/
+  );
+});
+
 test('shared admin dashboard reads stay available while writes require the admin custom claim', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
