@@ -12,9 +12,11 @@ const LIMITS = {
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
   // Admin claim recovery, privacy-safe public vote rankings, voter drilldown,
-  // and localized Team Player vote details now measure 2055.8 kB. Keep a
-  // minimal guard band while preserving a meaningful growth alarm.
-  totalJsBytes: 2056 * 1024,
+  // and localized Team Player vote details measured 2055.8 kB. 13.1.11 added the
+  // Eden X1 render-perf work (public/reward-flow row caps, debounced search,
+  // popover X close control), measuring 2057.5 kB. Keep a minimal guard band
+  // while preserving a meaningful growth alarm.
+  totalJsBytes: 2059 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
