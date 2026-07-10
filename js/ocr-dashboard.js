@@ -99,6 +99,8 @@ import {
   writeStoredPlayerRegistry,
 } from './player-registry.js';
 import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
+import { applyDashboardAttackMutation } from './dashboard-attack-mutations.js';
+import { resolveEdenVoteCandidate } from './eden-vote-candidates.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -807,19 +809,24 @@ function renderEdenX1VoteResults() {
   const totals = new Map();
   dedupedVotes.forEach((vote) => {
     vote.candidates.forEach((candidate) => {
-      const key = candidate.candidateKey || compactPlayerIdentity(candidate.candidateName);
+      const resolved = resolveEdenVoteCandidate(candidate);
+      const key =
+        resolved.familyKey || resolved.playerKey || compactPlayerIdentity(resolved.rawName);
       if (!totals.has(key)) {
         totals.set(key, {
-          candidateName: candidate.candidateName,
+          candidateName: resolved.canonicalName || resolved.rawName,
           count: 0,
           voters: new Set(),
           latest: 0,
+          variants: new Map(),
         });
       }
       const row = totals.get(key);
       row.count += 1;
       row.voters.add(vote.voterKey || vote.voterName);
       row.latest = Math.max(row.latest, edenVoteUpdatedAtMs(vote));
+      const rawName = resolved.rawName || candidate.candidateKey || 'Unknown';
+      row.variants.set(rawName, (row.variants.get(rawName) || 0) + 1);
     });
   });
   const totalSelections = dedupedVotes.reduce((sum, vote) => sum + vote.candidates.length, 0);
@@ -843,7 +850,7 @@ function renderEdenX1VoteResults() {
     <div class="dash-duty-summary-table-wrap">
       <h3 class="dash-modal-section-label">${esc(dashT('adminVoteCandidateTotals'))}</h3>
       <table class="dash-duty-summary-table">
-        <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th></tr></thead>
+        <thead><tr><th>#</th><th>Candidate</th><th>Votes</th><th>Voters</th><th>Matched From</th></tr></thead>
         <tbody>${totalRows
           .map(
             (row, index) => `<tr>
@@ -851,6 +858,12 @@ function renderEdenX1VoteResults() {
               <td><strong class="dash-duty-cell-value">${esc(row.candidateName)}</strong></td>
               <td><span class="dash-duty-cell-value dash-positive">${row.count}</span></td>
               <td><span class="dash-duty-cell-value dash-duty-times">${row.voters.size}</span></td>
+              <td><span class="dash-duty-cell-value">${esc(
+                [...row.variants.entries()]
+                  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                  .map(([name, count]) => `${name} (${count})`)
+                  .join(', ')
+              )}</span></td>
             </tr>`
           )
           .join('')}</tbody>
@@ -877,9 +890,8 @@ function renderEdenX1VoteResults() {
 
 // Debug/audit export of the currently loaded Eden X1 Team-Player ballots.
 // One row per candidate selection so the sheet can be sorted by candidate to
-// spot typos/near-duplicates; candidateKey is the system's compact identity, so
-// two spellings that share a key are treated as the same player, while
-// differing keys flag genuine mismatches that need manual cleaning.
+// spot typos/near-duplicates. The canonical and family columns are display-only
+// audit fields; stored candidate names and keys remain unchanged in Firestore.
 function exportEdenX1VotesCsv() {
   const season = currentEdenVoteSeason();
   const votes = dedupeEdenX1Votes(Array.isArray(state.edenX1Votes) ? state.edenX1Votes : []).filter(
@@ -906,6 +918,8 @@ function exportEdenX1VotesCsv() {
     'candidateName',
     'candidateKey',
     'candidateNameNormalized',
+    'candidateCanonicalName',
+    'candidateFamilyKey',
     'updatedAt',
     'voteId',
   ];
@@ -918,6 +932,7 @@ function exportEdenX1VotesCsv() {
     )
     .forEach((vote) => {
       vote.candidates.forEach((candidate, index) => {
+        const resolved = resolveEdenVoteCandidate(candidate);
         rows.push(
           [
             vote.season,
@@ -928,6 +943,8 @@ function exportEdenX1VotesCsv() {
             candidate.candidateName,
             candidate.candidateKey,
             compactPlayerIdentity(candidate.candidateName),
+            resolved.canonicalName,
+            resolved.familyKey,
             edenVoteUpdatedAtLabel(vote),
             vote.id,
           ]
@@ -2814,6 +2831,117 @@ async function writeDashboardSnapshotToCloud(db, firestore, payload, baseRevisio
 
   noteDashboardCloudBase(writtenPayload);
   return writtenPayload;
+}
+
+function createDashboardAttackMutationError(reason) {
+  const messages = {
+    'missing-dashboard': 'The cloud dashboard is not available. Refresh and try again.',
+    missing: 'This structure was changed or removed on another device. Refresh and try again.',
+    'id-collision':
+      'This structure edit conflicts with another cloud record. Refresh and try again.',
+    'invalid-mutation': 'Invalid dashboard change. Refresh and try again.',
+  };
+  const error = new Error(messages[reason] || 'The dashboard change could not be saved.');
+  error.name = 'DashboardAttackMutationError';
+  error.code = `dashboard-attack-${reason}`;
+  return error;
+}
+
+function buildDashboardAttackMutationSnapshot(sourceData, mutation) {
+  const source =
+    sourceData && typeof sourceData === 'object'
+      ? sourceData
+      : { last_updated: fmtDate(new Date()), total_attacks: 0, attacks: [], players_summary: [] };
+  const mutationResult = applyDashboardAttackMutation(source.attacks, mutation);
+  return {
+    ...mutationResult,
+    data: {
+      ...source,
+      attacks: mutationResult.attacks,
+      total_attacks: mutationResult.attacks.length,
+      players_summary: buildSerializablePlayerSummary(mutationResult.attacks),
+    },
+  };
+}
+
+async function writeDashboardAttackMutationToCloud(db, firestore, mutation) {
+  const { doc, runTransaction } = firestore;
+  let writtenPayload = null;
+  let mutationResult = null;
+
+  await runTransaction(db, async (transaction) => {
+    const ref = doc(db, FS_PATH);
+    const snap = await transaction.get(ref);
+    const cloudData = snap.exists() ? normalizeDashboardDataForCache(snap.data()) : null;
+    if (!cloudData) throw createDashboardAttackMutationError('missing-dashboard');
+
+    mutationResult = buildDashboardAttackMutationSnapshot(cloudData, mutation);
+    if (!mutationResult.applied) {
+      if (mutation.type === 'delete' && mutationResult.reason === 'missing') {
+        writtenPayload = cloudData;
+        return;
+      }
+      throw createDashboardAttackMutationError(mutationResult.reason);
+    }
+
+    const preparedPayload = sanitizeForFirestore({
+      ...cloudData,
+      ...mutationResult.data,
+    });
+    const cloudRevision = dashboardSyncRevision(cloudData);
+    writtenPayload = {
+      ...preparedPayload,
+      updatedAtMs: Math.max(Date.now(), dashboardDataTimestampMs(cloudData) + 1),
+      syncRevision: cloudRevision + 1,
+    };
+    transaction.set(ref, writtenPayload);
+  });
+
+  if (writtenPayload) noteDashboardCloudBase(writtenPayload);
+  return {
+    data: writtenPayload,
+    applied: Boolean(mutationResult?.applied),
+    reason: mutationResult?.reason || '',
+  };
+}
+
+async function saveDashboardAttackMutation(mutation) {
+  if (state.cloudSyncConfigured === false) {
+    const localResult = buildDashboardAttackMutationSnapshot(state.dashData, mutation);
+    if (!localResult.applied) {
+      const error = createDashboardAttackMutationError(localResult.reason);
+      showCloudSyncFailure(error, 'Dashboard change failed');
+      return { ok: false, error };
+    }
+    state.dashData = normalizeDashboardDataForCache(localResult.data);
+    await saveData(state.dashData, { cloud: false });
+    return { ok: true, applied: true };
+  }
+
+  try {
+    setCloudSyncStatus('syncing');
+    const awaitCloud = (promise, label) =>
+      withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
+    const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
+    if (!db) {
+      const error = new Error(dashT('adminCloudAdminRequired'));
+      showCloudSyncFailure(error, 'Dashboard change blocked');
+      return { ok: false, error };
+    }
+    const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
+    const result = await awaitCloud(
+      writeDashboardAttackMutationToCloud(db, firestore, mutation),
+      'Dashboard change'
+    );
+    applyDashboardCloudSnapshot(result.data, { schedule: true });
+    setCloudSyncStatus('live');
+    updateLastSynced();
+    return { ok: true, applied: result.applied };
+  } catch (error) {
+    console.error('FIREBASE ATTACK MUTATION ERROR:', error);
+    showCloudSyncFailure(error, 'Dashboard change failed');
+    return { ok: false, error };
+  }
 }
 
 function isFirestorePermissionDenied(err) {
@@ -4902,20 +5030,18 @@ window.deleteAttack = async function (attId) {
     return;
   }
   if (!attId || !state._booted || !state.dashData) return;
-  const idx = state.dashData.attacks.findIndex((a) => a.id === attId);
-  if (idx !== -1) {
-    const removed = state.dashData.attacks[idx];
-    state.dashData.attacks.splice(idx, 1);
-    refreshDashboardPlayerSummary();
-    state.dashData.total_attacks = state.dashData.attacks.length;
-    await saveData(state.dashData);
-    render();
-    closeModal();
-    log(
-      `Deleted attack: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`,
-      'warn'
-    );
-  }
+  const removed = state.dashData.attacks.find((attack) => attack.id === attId);
+  if (!removed) return;
+  const result = await saveDashboardAttackMutation({ type: 'delete', attackId: attId });
+  if (!result.ok) return;
+  render();
+  closeModal();
+  log(
+    result.applied
+      ? `Deleted attack: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`
+      : `Attack was already deleted elsewhere: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`,
+    'warn'
+  );
 };
 
 window.markAttackComplete = async function (attId) {
@@ -4954,25 +5080,33 @@ window.editAttack = async function (attId) {
     att.start_time || ''
   );
   if (newStartTime === null) return;
-  att.structure_name = normalizedTarget.structure_name;
-  att.structure_level = normalizedTarget.structure_level;
-  att.raw_structure_name = normalizedTarget.structure_name;
-  att.raw_structure_level = normalizedTarget.structure_level;
-  att.display_structure_name = normalizedTarget.structure_name;
-  att.display_structure_level = normalizedTarget.structure_level;
-  const timestamp = String(att.id || '').match(/_(\d{10,})$/)?.[1];
-  if (timestamp) {
-    att.id = `${normalizedTarget.structure_name.replace(/\s+/g, '_')}_${normalizedTarget.structure_level}_${timestamp}`;
-  }
-  att.game_time = newTime.trim();
-  att.start_time = newStartTime.trim();
-  delete att._validation;
-  refreshDashboardPlayerSummary();
-  await saveData(state.dashData);
+  const originalId = att.id;
+  const timestamp = String(originalId || '').match(/_(\d{10,})$/)?.[1];
+  const nextId = timestamp
+    ? `${normalizedTarget.structure_name.replace(/\s+/g, '_')}_${normalizedTarget.structure_level}_${timestamp}`
+    : originalId;
+  const patch = {
+    id: nextId,
+    structure_name: normalizedTarget.structure_name,
+    structure_level: normalizedTarget.structure_level,
+    raw_structure_name: normalizedTarget.structure_name,
+    raw_structure_level: normalizedTarget.structure_level,
+    display_structure_name: normalizedTarget.structure_name,
+    display_structure_level: normalizedTarget.structure_level,
+    game_time: newTime.trim(),
+    start_time: newStartTime.trim(),
+  };
+  const result = await saveDashboardAttackMutation({
+    type: 'edit',
+    attackId: originalId,
+    patch,
+  });
+  if (!result.ok) return;
+  const savedAttack = state.dashData.attacks.find((attack) => attack.id === nextId);
   render();
-  showModal('attack', att);
+  if (savedAttack) showModal('attack', savedAttack);
   log(
-    `Updated attack to: ${formatStructureLabel(att.structure_name, att.structure_level)}`,
+    `Updated attack to: ${formatStructureLabel(patch.structure_name, patch.structure_level)}`,
     'info'
   );
 };

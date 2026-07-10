@@ -2927,6 +2927,32 @@ test.describe('app smoke tabs', () => {
             voterAuthUid: 'test-foxtrot',
             updatedAt: '2026-06-24T20:10:00.000Z',
           },
+          {
+            id: 'season-2026__team_players__golf',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'golf',
+            voterName: 'Golf',
+            candidateKey: 'kika',
+            candidateName: 'Kika',
+            candidateKeys: ['kika'],
+            candidateNames: ['Kika'],
+            voterAuthUid: 'test-golf',
+            updatedAt: '2026-06-24T20:15:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__hotel',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'hotel',
+            voterName: 'Hotel',
+            candidateKey: 'decorated-kika',
+            candidateName: '\uA9C1\u0F3A Kika \u0F3B\uA9C2',
+            candidateKeys: ['decorated-kika'],
+            candidateNames: ['\uA9C1\u0F3A Kika \u0F3B\uA9C2'],
+            voterAuthUid: 'test-hotel',
+            updatedAt: '2026-06-24T20:20:00.000Z',
+          },
         ],
         [
           {
@@ -2966,6 +2992,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashEdenVotePublicResultsToggle')).toBeChecked();
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
+    const totalsTable = results.locator('table').first();
+    await expect(totalsTable).toContainText('Matched From');
+    const kikaRow = totalsTable.locator('tbody tr').filter({ hasText: 'Kika' }).first();
+    await expect(kikaRow).toContainText('2');
+    await expect(kikaRow).toContainText('Kika (1)');
+    await expect(kikaRow).toContainText('\uA9C1\u0F3A Kika \u0F3B\uA9C2 (1)');
     await expect(results.locator('tbody tr', { hasText: 'Alpha' }).first()).toContainText('3');
     await expect(results.locator('tbody tr', { hasText: 'Bravo' }).first()).toContainText('2');
     await expect(results.locator('tbody tr', { hasText: 'Charlie' }).first()).toContainText('2');

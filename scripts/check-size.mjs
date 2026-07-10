@@ -11,10 +11,10 @@ const LIMITS = {
   indexLines: 800,
   entryJsBytes: 300 * 1024,
   entryCssBytes: 300 * 1024,
-  // 13.1.0 adds the DM Materials flow plus Eden X1/Strife release fixes.
-  // The measured production build is 2021.6 kB JS, so this cap keeps a small
-  // guard band while preserving a meaningful alarm for accidental growth.
-  totalJsBytes: 2050 * 1024,
+  // The admin cloud mutation fencing and Eden X1 vote-family audit add a
+  // measured 1.1 kB to the production bundle. Keep a small guard band above
+  // the new 2051.1 kB build while preserving a meaningful growth alarm.
+  totalJsBytes: 2052 * 1024,
   // Keep close to the fresh production build total. CSS edits must run
   // `npm run build` plus `npm run size:check`; raise only with measured output.
   // Total CSS includes route-split chunks such as Eden X1; per-chunk caps below
