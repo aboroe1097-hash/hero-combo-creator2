@@ -1162,6 +1162,8 @@ const ar = {
   edenX1RewardSlotStatus: 'الحالة',
   edenX1RewardAssigned: 'معين',
   edenX1RewardAssignedReasonTitle: 'سبب التعيين',
+  edenX1RewardVoted: 'تم التصويت عليه',
+  edenX1RewardVoteDetails: 'ترتيبه في التصويت #{rank} · صوّت {voters} أعضاء',
   edenX1RewardManagementVotePending: 'تصويت فريق الإدارة',
   edenX1RewardVotePending: 'لاحقا - تصويت النقابة قيد الانتظار',
   edenX1Tba: 'لاحقا',

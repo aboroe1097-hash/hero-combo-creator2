@@ -1152,6 +1152,8 @@ const pt = {
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Atribuído',
   edenX1RewardAssignedReasonTitle: 'Motivo da atribuição',
+  edenX1RewardVoted: 'Votado',
+  edenX1RewardVoteDetails: 'Posição na votação #{rank} · {voters} membros votaram',
   edenX1RewardManagementVotePending: 'Votação da equipe de gestão',
   edenX1RewardVotePending: 'Pendente - voto da guilda',
   edenX1Tba: 'Pendente',

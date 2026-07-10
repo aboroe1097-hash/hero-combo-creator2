@@ -1163,6 +1163,8 @@ const en = {
   edenX1RewardSlotStatus: 'Status',
   edenX1RewardAssigned: 'Assigned',
   edenX1RewardAssignedReasonTitle: 'Status detail',
+  edenX1RewardVoted: 'Voted',
+  edenX1RewardVoteDetails: 'Voting rank #{rank} · {voters} members voted',
   edenX1RewardManagementVotePending: 'Management team voting',
   edenX1RewardVotePending: 'TBA - guild vote pending',
   edenX1Tba: 'TBA',

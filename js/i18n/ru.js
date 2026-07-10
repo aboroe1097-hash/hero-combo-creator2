@@ -1166,6 +1166,8 @@ const ru = {
   edenX1RewardSlotStatus: 'Статус',
   edenX1RewardAssigned: 'Назначено',
   edenX1RewardAssignedReasonTitle: 'Причина назначения',
+  edenX1RewardVoted: 'Выбрано голосованием',
+  edenX1RewardVoteDetails: 'Место в голосовании #{rank} · проголосовало участников: {voters}',
   edenX1RewardManagementVotePending: 'Голосование команды управления',
   edenX1RewardVotePending: 'Позже - голосование гильдии ожидается',
   edenX1Tba: 'Позже',
