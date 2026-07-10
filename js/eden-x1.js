@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.10';
+const APP_VERSION = '13.1.11';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -68,6 +68,13 @@ let currentRewardView = 'team';
 let currentTableSearch = '';
 let currentTableSort = null;
 let rewardTableRenderToken = 0;
+// Cap the rows rendered on first paint / view-switch. Each row builds four
+// popovers, so rendering the full roster synchronously froze phones on every
+// reward-view tap. A "Show all" button reveals the rest on demand; a search
+// always scans the full roster.
+const EDEN_X1_TABLE_ROW_LIMIT = 50;
+let weightedTableShowAll = false;
+let edenTableSearchDebounce = null;
 let rewardFlowReady = false;
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
@@ -81,6 +88,11 @@ let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let currentPublicStatsSearch = '';
+// The public weighted table can hold the whole roster (200+ rows, each with
+// four popovers). Cap the initial render and debounce its search so the public
+// dashboard doesn't lock the main thread on load or on every keystroke.
+let publicWeightedShowAll = false;
+let publicTableSearchDebounce = null;
 let edenVoteWriteContext = null;
 let edenVoteSettings = { votingOpen: true, allowEditing: true };
 let edenVotePointerSubmitUntil = 0;
@@ -2945,7 +2957,20 @@ function bindWeightedTableControls(host) {
     search.dataset.bound = '1';
     search.addEventListener('input', (event) => {
       currentTableSearch = event.target.value || '';
-      renderCurrentTable({ focusSearch: true });
+      // Debounced: rebuilding the whole table on every keystroke froze typing.
+      if (edenTableSearchDebounce) clearTimeout(edenTableSearchDebounce);
+      edenTableSearchDebounce = setTimeout(() => {
+        edenTableSearchDebounce = null;
+        renderCurrentTable({ focusSearch: true });
+      }, 150);
+    });
+  }
+  const showAllBtn = $('edenX1ShowAllRows');
+  if (showAllBtn && !showAllBtn.dataset.bound) {
+    showAllBtn.dataset.bound = '1';
+    showAllBtn.addEventListener('click', () => {
+      weightedTableShowAll = true;
+      renderCurrentTable();
     });
   }
   const mobileSort = $('edenX1MobileSort');
@@ -3755,11 +3780,22 @@ function renderPublicWeightedContributionTable() {
     { rewardContextForRow }
   );
   const searchQuery = currentPublicTableSearch.trim().toLowerCase();
-  const rows = searchQuery
+  const filteredRows = searchQuery
     ? allRows.filter((row) =>
         publicWeightedRowSearchText(row, rewardContextForRow(row)).includes(searchQuery)
       )
     : allRows;
+  // Cap the full (unsearched) list; a search already narrows it.
+  const publicRowLimitActive =
+    !publicWeightedShowAll && !searchQuery && filteredRows.length > EDEN_X1_TABLE_ROW_LIMIT;
+  const rows = publicRowLimitActive
+    ? filteredRows.slice(0, EDEN_X1_TABLE_ROW_LIMIT)
+    : filteredRows;
+  const publicShowAllButton = publicRowLimitActive
+    ? `<div class="eden-x1-show-all-wrap"><button id="edenX1PublicShowAllRows" type="button" class="dash-btn eden-x1-show-all-btn">${esc(
+        t('edenX1ShowAllRows', { count: filteredRows.length })
+      )}</button></div>`
+    : '';
   const clickableCount = allRows.filter((row) =>
     publicPlayerRows.some((player) => player.key === row.playerKey)
   ).length;
@@ -3837,7 +3873,7 @@ function renderPublicWeightedContributionTable() {
         searchQuery ? t('edenX1NoPublicSearchRows') : t('edenX1NoPublicWeightedRows')
       );
   const body = allRows.length
-    ? `${searchControl}${tableBody}`
+    ? `${searchControl}${tableBody}${publicShowAllButton}`
     : renderPublicEmpty(t('edenX1NoPublicWeightedRows'));
   const hint = allRows.length ? metaParts.join(' - ') : t('edenX1WeightedPublicMeta');
   return renderPublicCard(
@@ -4474,7 +4510,12 @@ function bindPublicDashboardControls(host) {
     if (!input) return;
     currentPublicTableSearch = input.value || '';
     const selectionStart = input.selectionStart ?? currentPublicTableSearch.length;
-    rerenderPublicWeightedContributionCard(host, { focusSearch: true, selectionStart });
+    // Debounced: rebuilding a 200-row table on every keystroke froze typing.
+    if (publicTableSearchDebounce) clearTimeout(publicTableSearchDebounce);
+    publicTableSearchDebounce = setTimeout(() => {
+      publicTableSearchDebounce = null;
+      rerenderPublicWeightedContributionCard(host, { focusSearch: true, selectionStart });
+    }, 150);
   });
   host.addEventListener('keydown', (event) => {
     const sortHeader = event.target.closest('th[data-public-weighted-sort]');
@@ -4484,6 +4525,11 @@ function bindPublicDashboardControls(host) {
     setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
   });
   host.addEventListener('click', (event) => {
+    if (event.target.closest('#edenX1PublicShowAllRows')) {
+      publicWeightedShowAll = true;
+      rerenderPublicWeightedContributionCard(host);
+      return;
+    }
     if (
       event.target.closest('#edenX1PublicModalClose') ||
       event.target === $('edenX1PublicModal')
@@ -4718,7 +4764,18 @@ function renderTable(rows, recordLabel, options = {}) {
   const numberMode = options.numberMode || 'final';
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
-  const visibleRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
+  const allRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
+  // The cap only applies to the unfiltered full view; a search already narrows.
+  const rowLimitActive =
+    !weightedTableShowAll &&
+    !currentTableSearch.trim() &&
+    allRows.length > EDEN_X1_TABLE_ROW_LIMIT;
+  const visibleRows = rowLimitActive ? allRows.slice(0, EDEN_X1_TABLE_ROW_LIMIT) : allRows;
+  const showAllButton = rowLimitActive
+    ? `<div class="eden-x1-show-all-wrap"><button id="edenX1ShowAllRows" type="button" class="dash-btn eden-x1-show-all-btn">${esc(
+        t('edenX1ShowAllRows', { count: allRows.length })
+      )}</button></div>`
+    : '';
   const emptyRow = `<tr><td colspan="14" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
   return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card${rewardViewClass} ${compactView ? 'dash-weighted-compact' : ''}">
@@ -4816,6 +4873,7 @@ function renderTable(rows, recordLabel, options = {}) {
           }</tbody>
         </table>
       </div>
+      ${showAllButton}
     </div>
   </div>`;
 }
@@ -5211,6 +5269,8 @@ function yieldToBrowser() {
 
 async function applyDashboardData(data = {}) {
   setRewardFlowReady(false);
+  weightedTableShowAll = false;
+  publicWeightedShowAll = false;
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];

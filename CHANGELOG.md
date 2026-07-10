@@ -1,5 +1,11 @@
 # Changelog
 
+## 13.1.11 - 2026-07-10
+
+- Eden X1 startup/tap freeze fix: the public Weighted Total Contribution table (200+ players, each with four popovers) now renders the first 50 rows with a "Show all N players" button, and its search is debounced (150ms). This removes the long main-thread block on load and while typing. The reward-flow view tables are capped the same way.
+- Combo Generator: on very narrow phones (≤340px) the hero avatars shrink so a 3-hero combo fits without the third avatar clipping.
+- Updated a smoke test to allow the new popover X close control in the conduct popover's text (the 13.1.10 popover X button had broken this exact-text assertion, which blocked that deploy). The 13.1.10 Eden X1 popover X button and reward-flow card fixes ship together here.
+
 ## 13.1.10 - 2026-07-10
 
 - Eden X1 score/reward/rank/conduct popovers now have an explicit X close button (in addition to click-outside and Escape), so touch users can dismiss them reliably. The mobile bottom-sheet reserves space so the X and drag handle don't overlap the content.

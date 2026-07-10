@@ -1172,6 +1172,7 @@ const kr = {
   edenX1NoFirebase: 'Firebase가 설정되지 않았습니다. 데이터를 불러올 수 없습니다.',
   edenX1NoData: '기여도 데이터를 찾을 수 없습니다.',
   edenX1NoRows: '표시할 가중 기여도 행이 없습니다.',
+  edenX1ShowAllRows: '전체 {count}명 표시',
   edenX1LoadFailed: '데이터를 불러오지 못했습니다: {error}',
   edenX1Retry: '다시 시도',
   edenX1LoadTimeout: '연결이 너무 오래 걸립니다. 신호를 확인한 후 다시 시도하세요.',

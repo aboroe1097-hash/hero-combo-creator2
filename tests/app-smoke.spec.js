@@ -2378,7 +2378,9 @@ test.describe('app smoke tabs', () => {
     await alphaConductTrigger.hover();
     const conductPopover = alphaConductTrigger.locator('.dash-weighted-score-popover');
     await expect(conductPopover).toBeVisible();
-    await expect(conductPopover).toHaveText(
+    // The popover carries an X close control (a leading "×"), so match on the
+    // message text rather than the exact full text content.
+    await expect(conductPopover).toContainText(
       'These bonus team effort points are assigned by R5 MalakAbo. Details cannot be viewed publicly; reach out to appeal.'
     );
     await expect(conductPopover).not.toContainText('20,000');

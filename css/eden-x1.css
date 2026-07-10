@@ -3380,3 +3380,15 @@
     height: 34px;
   }
 }
+
+/* Perf: "Show all" reveal for the row-capped weighted table (keeps the initial
+   reward-view render light so tapping between views doesn't freeze phones). */
+.eden-x1-page .eden-x1-show-all-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 14px 12px 6px;
+}
+.eden-x1-page .eden-x1-show-all-btn {
+  min-width: min(320px, 100%);
+  font-weight: 800;
+}

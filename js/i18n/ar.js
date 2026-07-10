@@ -1175,6 +1175,7 @@ const ar = {
   edenX1NoFirebase: 'لم يتم إعداد Firebase. لا يمكن تحميل البيانات.',
   edenX1NoData: 'لم يتم العثور على بيانات مساهمة.',
   edenX1NoRows: 'لا توجد صفوف مساهمة موزونة للعرض.',
+  edenX1ShowAllRows: 'عرض جميع اللاعبين ({count})',
   edenX1LoadFailed: 'فشل تحميل البيانات: {error}',
   edenX1Retry: 'إعادة المحاولة',
   edenX1LoadTimeout: 'يستغرق الاتصال وقتًا طويلاً. تحقق من الإشارة وأعد المحاولة.',

@@ -1159,6 +1159,7 @@ const zh = {
   edenX1NoFirebase: 'Firebase 未配置。无法加载数据。',
   edenX1NoData: '未找到贡献数据。',
   edenX1NoRows: '没有可显示的加权贡献行。',
+  edenX1ShowAllRows: '显示全部 {count} 名玩家',
   edenX1LoadFailed: '加载数据失败：{error}',
   edenX1Retry: '重试',
   edenX1LoadTimeout: '连接时间过长。请检查信号后重试。',

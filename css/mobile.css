@@ -312,6 +312,23 @@ input, textarea, select {
   width: 72px !important;
   height: 72px !important;
 }
+/* Very narrow phones (<=340px): shrink hero avatars so a 3-hero combo fits the
+   card without the third avatar clipping. */
+@media (max-width: 340px) {
+  .saved-combo-display .saved-combo-slot-item,
+  .generated-combo-card .saved-combo-slot-item {
+    width: 62px !important;
+    min-width: 62px !important;
+  }
+  .saved-combo-display .saved-combo-slot-item img,
+  .generated-combo-card .saved-combo-slot-item img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  .generated-combo-card .saved-combo-slot-item span {
+    max-width: 62px !important;
+  }
+}
 .generated-combo-card .saved-combo-slot-item span {
   max-width: 74px !important;
 }

@@ -1165,6 +1165,7 @@ const pt = {
   edenX1NoFirebase: 'Firebase não está configurado. Não é possível carregar dados.',
   edenX1NoData: 'Nenhum dado de contribuição encontrado.',
   edenX1NoRows: 'Não há linhas de contribuição ponderada para exibir.',
+  edenX1ShowAllRows: 'Mostrar todos os {count} jogadores',
   edenX1LoadFailed: 'Falha ao carregar dados: {error}',
   edenX1Retry: 'Tentar novamente',
   edenX1LoadTimeout: 'A conexão está demorando demais. Verifique seu sinal e tente novamente.',

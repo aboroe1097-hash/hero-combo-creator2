@@ -1176,6 +1176,7 @@ const id = {
   edenX1NoFirebase: 'Firebase belum dikonfigurasi. Data tidak dapat dimuat.',
   edenX1NoData: 'Data kontribusi tidak ditemukan.',
   edenX1NoRows: 'Tidak ada baris kontribusi berbobot untuk ditampilkan.',
+  edenX1ShowAllRows: 'Tampilkan semua {count} pemain',
   edenX1LoadFailed: 'Gagal memuat data: {error}',
   edenX1Retry: 'Coba lagi',
   edenX1LoadTimeout: 'Koneksi terlalu lama. Periksa sinyal Anda dan coba lagi.',

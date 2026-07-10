@@ -1187,6 +1187,7 @@ const de = {
   edenX1NoFirebase: 'Firebase ist nicht konfiguriert. Daten können nicht geladen werden.',
   edenX1NoData: 'Keine Beitragsdaten gefunden.',
   edenX1NoRows: 'Keine gewichteten Beitragszeilen zum Anzeigen.',
+  edenX1ShowAllRows: 'Alle {count} Spieler anzeigen',
   edenX1LoadFailed: 'Daten konnten nicht geladen werden: {error}',
   edenX1Retry: 'Erneut versuchen',
   edenX1LoadTimeout: 'Die Verbindung dauert zu lange. Prüfe dein Signal und versuche es erneut.',

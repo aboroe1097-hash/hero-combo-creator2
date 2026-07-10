@@ -1177,6 +1177,7 @@ const tr = {
   edenX1NoFirebase: 'Firebase yapılandırılmamış. Veriler yüklenemiyor.',
   edenX1NoData: 'Katkı verisi bulunamadı.',
   edenX1NoRows: 'Gösterilecek ağırlıklı katkı satırı yok.',
+  edenX1ShowAllRows: 'Tüm {count} oyuncuyu göster',
   edenX1LoadFailed: 'Veriler yüklenemedi: {error}',
   edenX1Retry: 'Tekrar dene',
   edenX1LoadTimeout: 'Bağlantı çok uzun sürüyor. Sinyalinizi kontrol edip tekrar deneyin.',
