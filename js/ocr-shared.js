@@ -83,6 +83,37 @@ export function describeRejectedOcrImageFiles(files) {
     .filter(Boolean);
 }
 
+// Screenshots upload much faster re-encoded as JPEG (multi-MB PNGs were taking
+// 100s+ per scan on mobile). The dimension cap is conservative so report text
+// stays crisp for OCR; any failure falls back to the original bytes.
+const OCR_IMAGE_MAX_DIMENSION = 2200;
+const OCR_IMAGE_JPEG_QUALITY = 0.88;
+
+async function compressOcrImageDataUrl(file, originalDataUrl) {
+  try {
+    if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return null;
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    if (!longest) return null;
+    const scale = Math.min(1, OCR_IMAGE_MAX_DIMENSION / longest);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const jpeg = canvas.toDataURL('image/jpeg', OCR_IMAGE_JPEG_QUALITY);
+    // Only use the re-encode when it meaningfully shrinks the upload.
+    if (jpeg.startsWith('data:image/jpeg') && jpeg.length < originalDataUrl.length * 0.9) {
+      return jpeg;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function readOcrImageDataUrl(file) {
   const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -90,11 +121,15 @@ export async function readOcrImageDataUrl(file) {
     reader.onerror = () => reject(reader.error || new Error('Could not read selected image.'));
     reader.readAsDataURL(file);
   });
-  if (/^data:image\//i.test(dataUrl)) return dataUrl;
-  const base64 = dataUrl.split(',')[1] || '';
-  const type = String(file?.type || '').toLowerCase();
-  const mime = SUPPORTED_OCR_IMAGE_MIME.has(type) ? type : 'image/jpeg';
-  return `data:${mime};base64,${base64}`;
+  let normalized = dataUrl;
+  if (!/^data:image\//i.test(dataUrl)) {
+    const base64 = dataUrl.split(',')[1] || '';
+    const type = String(file?.type || '').toLowerCase();
+    const mime = SUPPORTED_OCR_IMAGE_MIME.has(type) ? type : 'image/jpeg';
+    normalized = `data:${mime};base64,${base64}`;
+  }
+  const compressed = await compressOcrImageDataUrl(file, normalized);
+  return compressed || normalized;
 }
 
 export async function checkOcrService(options = {}) {

@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.6';
+const APP_VERSION = '13.1.7';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -3332,7 +3332,14 @@ function initTheme() {
 
 function getLanguage() {
   try {
-    return localStorage.getItem('vts_hero_lang') || 'en';
+    const stored = localStorage.getItem('vts_hero_lang');
+    if (stored) return stored;
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const primary = String(navigator.language || '')
+      .toLowerCase()
+      .split('-')[0];
+    const mapped = primary === 'ko' ? 'kr' : primary;
+    return supported.includes(mapped) ? mapped : 'en';
   } catch {
     return 'en';
   }

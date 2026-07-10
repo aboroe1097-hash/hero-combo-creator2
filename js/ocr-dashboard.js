@@ -4219,6 +4219,9 @@ export async function bootOcrDashboard() {
           Math.min(DASHBOARD_CLOUD_BOOT_TIMEOUT_MS, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
         );
       }
+      // Let the busy state paint before the heavy synchronous dashboard
+      // render; without this the page appears frozen with no feedback.
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
       render();
     } catch (e) {
       console.error('Refresh failed:', e);

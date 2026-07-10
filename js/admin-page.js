@@ -3,7 +3,7 @@ import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { installShowToast } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 
-const APP_VERSION = '13.1.6';
+const APP_VERSION = '13.1.7';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
@@ -101,7 +101,14 @@ function initTheme() {
 
 function getLanguage() {
   try {
-    return localStorage.getItem('vts_hero_lang') || 'en';
+    const stored = localStorage.getItem('vts_hero_lang');
+    if (stored) return stored;
+    const supported = ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr'];
+    const primary = String(navigator.language || '')
+      .toLowerCase()
+      .split('-')[0];
+    const mapped = primary === 'ko' ? 'kr' : primary;
+    return supported.includes(mapped) ? mapped : 'en';
   } catch {
     return 'en';
   }
@@ -136,7 +143,7 @@ function updateTextContent(lang) {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260710_005038');
+  const res = await fetch('tabs/admin.html?v=20260710_093859');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -158,7 +165,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260710_005038');
+  const mod = await import('./ocr-dashboard.js?v=20260710_093859');
   await mod.bootOcrDashboard();
 }
 

@@ -7245,3 +7245,47 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
     grid-template-columns: 1fr;
   }
 }
+/* Mobile polish 13.1.7 */
+@media (max-width: 768px) {
+  /* Top-performer names: undo the decorative -2px lift — combined with
+     overflow:hidden it clipped the top of wrapped player names. */
+  #ocrDashboardRoot .dash-top-name {
+    transform: none;
+    overflow: visible;
+  }
+  #ocrDashboardRoot .dash-top-main {
+    row-gap: 4px;
+  }
+  /* Stacked-table labels must not break mid-word ("CONTRIBUTI / ON"). */
+  #ocrDashboardRoot .dash-table--stack td::before {
+    overflow-wrap: normal;
+    word-break: keep-all;
+    hyphens: none;
+    letter-spacing: 0.05em;
+  }
+  /* Long subtab labels must not break mid-word. */
+  #ocrDashboardRoot .dash-subtab-btn span {
+    word-break: keep-all;
+    hyphens: none;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Ex-guild primary button: keep readable dark text when disabled — the default
+   disabled fade washed the label out against the teal background. */
+html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn-primary:disabled {
+  color: #06202a !important;
+  opacity: 0.72;
+}
+
+/* Busy button spinner: the parent .dash-btn-busy sets color:transparent to
+   hide the label, but border-top-color:currentColor inherited that, making
+   the spinner invisible. Use an explicit visible color instead. */
+#ocrDashboardRoot .dash-btn-busy::after {
+  border-top-color: var(--text-primary, #f7fbff);
+}
+html:not([data-theme='light']) #ocrDashboardRoot .dash-btn-primary.dash-btn-busy::after {
+  border-top-color: #06202a;
+  border-color: rgba(6, 32, 42, 0.25);
+  border-top-color: #06202a;
+}
