@@ -29,7 +29,7 @@ import {
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
 
-const APP_VERSION = '13.1.7';
+const APP_VERSION = '13.1.8';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -5018,14 +5018,18 @@ async function loadEdenX1Dashboard() {
           import('./firebase-sdk.js'),
         ]);
         setEdenLoadingProgress(generation, 35);
-        const { configured, db } = initFirebase();
-        if (!configured || !db) return { kind: 'unconfigured' };
+        // firebase-eden's initFirebase() returns only { app, auth, configured }
+        // — Firestore is loaded separately (Lite) after auth, so the db is
+        // created here from getFirestore(app), not returned by initFirebase().
+        const { configured, app } = initFirebase();
+        if (!configured || !app) return { kind: 'unconfigured' };
 
         const voteUser = await ensureAnonymousAuth();
         setEdenLoadingProgress(generation, 55);
         const firestore = await importFirestoreLite();
         setEdenLoadingProgress(generation, 65);
-        const { doc, getDoc } = firestore;
+        const { getFirestore, doc, getDoc } = firestore;
+        const db = getFirestore(app);
         const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
           loadEdenOptionalData(getDoc(doc(db, FS_ROSTER_PATH)), 'roster data'),

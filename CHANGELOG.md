@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.1.8 - 2026-07-10
+
+- Hotfix: Eden X1 showed "Firebase is not configured. Cannot load data." and rendered nothing but the static reward boxes. The 13.1.7 lightweight Firebase split changed `initFirebase()` to return `{ app, auth, configured }` without a Firestore `db`, but the Eden boot code still destructured `db` from it and bailed as unconfigured. The page now creates the Firestore Lite instance from `getFirestore(app)` after auth, as intended. Anonymous auth and voting were untouched.
+- Corrected `js/state.js` `APP_VERSION`, which was left at 13.1.6.
+
 ## 13.1.7 - 2026-07-10
 
 - Mobile polish: reward-flow step badges no longer overlap card titles and long titles wrap instead of clipping; the fixed bottom quicknav got an opaque blurred backdrop; busy admin buttons show a visible spinner instead of an invisible one; long tab labels and stacked-table labels ("Contributions", "CONTRIBUTION") no longer break mid-word; top-performer names are no longer clipped; the language picker is wide enough to read; the disabled Ex-Guild upload button keeps readable text; long decorated player names in the weighted table no longer spill past the card edge.
