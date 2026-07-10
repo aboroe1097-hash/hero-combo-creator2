@@ -2506,12 +2506,6 @@ function showRewardTablePending() {
   updateRewardFlowControls();
 }
 
-function yieldToBrowser() {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => window.setTimeout(resolve, 0));
-  });
-}
-
 function afterNextPaint(callback) {
   requestAnimationFrame(() => {
     window.setTimeout(callback, 0);
@@ -5108,6 +5102,16 @@ async function main() {
   await loadEdenX1Dashboard();
 }
 
+// Lets the browser paint and handle input between heavy render stages so one
+// giant synchronous DOM build doesn't lock the main thread.
+function yieldToBrowser() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 0);
+    });
+  });
+}
+
 async function applyDashboardData(data = {}) {
   setRewardFlowReady(false);
   const contributionRecords = Array.isArray(data.contributionRecords)
@@ -5161,8 +5165,8 @@ async function applyDashboardData(data = {}) {
   }
 }
 
-window.setEdenX1DataForTest = async function setEdenX1DataForTest(data) {
-  await applyDashboardData(data);
+window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
+  return applyDashboardData(data);
 };
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {
