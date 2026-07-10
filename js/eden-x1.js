@@ -75,6 +75,7 @@ let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
 let publicStructureRows = [];
+let publicDashboardRenderToken = 0;
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
@@ -4126,14 +4127,79 @@ function renderPublicStreaks(attacks, players) {
   </div>`;
 }
 
-function renderPublicAdvancedAnalytics(attacks, players) {
+function renderPublicAdvancedAnalytics() {
   return `<div class="dash-analytics-grid eden-x1-public-wide eden-x1-public-analytics" style="grid-column:1/-1">
-    ${renderPublicCard(t('adminAnalyticsTrends'), t('edenX1AdvancedPublicHint'), `<div class="dash-analytics-body">${renderPublicPlayerTrends(attacks, players)}</div>`, 'dash-analytics-card')}
-    ${renderPublicCard(t('adminAnalyticsHeatmap'), t('edenX1HeatmapCardHint'), `<div class="dash-analytics-body">${renderPublicHeatmap(attacks)}</div>`, 'dash-analytics-card')}
-    ${renderPublicCard(t('adminAnalyticsDistribution'), t('edenX1DistributionCardHint'), `<div class="dash-analytics-body">${renderPublicDistribution(attacks)}</div>`, 'dash-analytics-card')}
-    ${renderPublicCard(t('adminAnalyticsConsistency'), t('edenX1ConsistencyCardHint'), `<div class="dash-analytics-body">${renderPublicConsistency(players)}</div>`, 'dash-analytics-card')}
-    ${renderPublicCard(t('adminAnalyticsStreaks'), t('edenX1StreaksCardHint'), `<div class="dash-analytics-body">${renderPublicStreaks(attacks, players)}</div>`, 'dash-analytics-card dash-analytics-card-wide')}
+    <div id="edenX1PublicTrendsSlot"></div>
+    <div id="edenX1PublicHeatmapSlot"></div>
+    <div id="edenX1PublicDistributionSlot"></div>
+    <div id="edenX1PublicConsistencySlot"></div>
+    <div id="edenX1PublicStreaksSlot"></div>
   </div>`;
+}
+
+async function renderPublicAdvancedAnalyticsSections(host, token) {
+  const sections = [
+    [
+      'edenX1PublicTrendsSlot',
+      () =>
+        renderPublicCard(
+          t('adminAnalyticsTrends'),
+          t('edenX1AdvancedPublicHint'),
+          `<div class="dash-analytics-body">${renderPublicPlayerTrends(publicAttackRows, publicPlayerRows)}</div>`,
+          'dash-analytics-card'
+        ),
+    ],
+    [
+      'edenX1PublicHeatmapSlot',
+      () =>
+        renderPublicCard(
+          t('adminAnalyticsHeatmap'),
+          t('edenX1HeatmapCardHint'),
+          `<div class="dash-analytics-body">${renderPublicHeatmap(publicAttackRows)}</div>`,
+          'dash-analytics-card'
+        ),
+    ],
+    [
+      'edenX1PublicDistributionSlot',
+      () =>
+        renderPublicCard(
+          t('adminAnalyticsDistribution'),
+          t('edenX1DistributionCardHint'),
+          `<div class="dash-analytics-body">${renderPublicDistribution(publicAttackRows)}</div>`,
+          'dash-analytics-card'
+        ),
+    ],
+    [
+      'edenX1PublicConsistencySlot',
+      () =>
+        renderPublicCard(
+          t('adminAnalyticsConsistency'),
+          t('edenX1ConsistencyCardHint'),
+          `<div class="dash-analytics-body">${renderPublicConsistency(publicPlayerRows)}</div>`,
+          'dash-analytics-card'
+        ),
+    ],
+    [
+      'edenX1PublicStreaksSlot',
+      () =>
+        renderPublicCard(
+          t('adminAnalyticsStreaks'),
+          t('edenX1StreaksCardHint'),
+          `<div class="dash-analytics-body">${renderPublicStreaks(publicAttackRows, publicPlayerRows)}</div>`,
+          'dash-analytics-card dash-analytics-card-wide'
+        ),
+    ],
+  ];
+
+  for (const [slotId, render] of sections) {
+    if (token !== publicDashboardRenderToken || !host.isConnected) return false;
+    const slot = host.querySelector(`#${slotId}`);
+    if (!slot) continue;
+    slot.innerHTML = render();
+    bindWeightedPopovers(host);
+    await yieldToBrowser();
+  }
+  return true;
 }
 
 function renderPublicPlayerDetail(player) {
@@ -4406,10 +4472,11 @@ function preparePublicDashboardRows(data = publicDashboardData) {
   return publicDashboardData;
 }
 
-function renderPublicDashboard(data = publicDashboardData) {
+async function renderPublicDashboard(data = publicDashboardData) {
   const host = $('edenX1PublicDashboard');
   if (!host) return;
-  publicDashboardData = preparePublicDashboardRows(data);
+  if (data !== publicDashboardData) preparePublicDashboardRows(data);
+  const token = ++publicDashboardRenderToken;
   const hasContribution = Array.isArray(publicDashboardData.contributionRecords)
     ? publicDashboardData.contributionRecords.some(
         (record) => Array.isArray(record?.entries) && record.entries.length
@@ -4429,27 +4496,78 @@ function renderPublicDashboard(data = publicDashboardData) {
       <p>${esc(t('edenX1PublicSubtitle'))}</p>
     </div>
     <div class="eden-x1-public-grid" style="display:grid;gap:.85rem;align-items:start">
-      ${renderPublicMyStatsCard()}
-      ${renderPublicWeightedContributionTable()}
+      <div id="edenX1PublicPrimarySlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
       ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
       <div class="eden-x1-public-columns" style="grid-column:1/-1">
-        <div class="eden-x1-public-column eden-x1-public-column-main">
-          ${renderPublicTopPerformers(publicPlayerRows)}
-        </div>
-        <div class="eden-x1-public-column eden-x1-public-column-side">
-          ${renderPublicInsights(publicAttackRows, publicPlayerRows, publicStructureRows)}
-        </div>
+        <div class="eden-x1-public-column eden-x1-public-column-main" id="edenX1PublicTopPerformersSlot"></div>
+        <div class="eden-x1-public-column eden-x1-public-column-side" id="edenX1PublicInsightsSlot"></div>
       </div>
-      ${renderPublicAdvancedAnalytics(publicAttackRows, publicPlayerRows)}
-      <div class="dash-main-grid dash-history-leader-grid eden-x1-public-wide" style="grid-column:1/-1;grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);align-items:stretch">
-        ${renderPublicAttackHistory(publicAttackRows)}
-        ${renderPublicStructures(publicStructureRows)}
-      </div>
+      <div id="edenX1PublicAnalyticsSlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
+      <div id="edenX1PublicHistorySlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
     </div>
     ${renderPublicModal()}
   </div>`;
   bindPublicDashboardControls(host);
   bindEdenQuickNav();
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  const primarySlot = host.querySelector('#edenX1PublicPrimarySlot');
+  if (primarySlot) {
+    primarySlot.innerHTML = renderPublicMyStatsCard();
+    bindWeightedPopovers(host);
+  }
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  if (primarySlot) {
+    primarySlot.insertAdjacentHTML('beforeend', renderPublicWeightedContributionTable());
+    bindWeightedPopovers(host);
+  }
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  host.querySelector('#edenX1PublicTopPerformersSlot').innerHTML = renderPublicTopPerformers(
+    publicPlayerRows
+  );
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  host.querySelector('#edenX1PublicInsightsSlot').innerHTML = renderPublicInsights(
+    publicAttackRows,
+    publicPlayerRows,
+    publicStructureRows
+  );
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  const analyticsSlot = host.querySelector('#edenX1PublicAnalyticsSlot');
+  if (analyticsSlot) {
+    analyticsSlot.innerHTML = renderPublicAdvancedAnalytics();
+    bindWeightedPopovers(host);
+    await renderPublicAdvancedAnalyticsSections(host, token);
+  }
+
+  await yieldToBrowser();
+  if (token !== publicDashboardRenderToken || !host.isConnected) return;
+  const historySlot = host.querySelector('#edenX1PublicHistorySlot');
+  if (historySlot) {
+    historySlot.innerHTML = `<div class="dash-main-grid dash-history-leader-grid" style="grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);align-items:stretch">
+      <div id="edenX1PublicAttackHistorySlot"></div>
+      <div id="edenX1PublicStructuresSlot"></div>
+    </div>`;
+    await yieldToBrowser();
+    if (token !== publicDashboardRenderToken || !host.isConnected) return;
+    historySlot.querySelector('#edenX1PublicAttackHistorySlot').innerHTML = renderPublicAttackHistory(
+      publicAttackRows
+    );
+    await yieldToBrowser();
+    if (token !== publicDashboardRenderToken || !host.isConnected) return;
+    historySlot.querySelector('#edenX1PublicStructuresSlot').innerHTML = renderPublicStructures(
+      publicStructureRows
+    );
+  }
+  bindWeightedPopovers(host);
 }
 
 function scheduleLocalizedRerender() {
@@ -4894,8 +5012,8 @@ async function loadEdenX1Dashboard() {
   try {
     const result = await withEdenBootTimeout(
       (async () => {
-        const [{ initFirebase, ensureAnonymousAuth }, { importFirestore }] = await Promise.all([
-          import('./firebase.js'),
+        const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
+          import('./firebase-eden.js'),
           import('./firebase-sdk.js'),
         ]);
         setEdenLoadingProgress(generation, 35);
@@ -4904,7 +5022,7 @@ async function loadEdenX1Dashboard() {
 
         const voteUser = await ensureAnonymousAuth();
         setEdenLoadingProgress(generation, 55);
-        const firestore = await importFirestore();
+        const firestore = await importFirestoreLite();
         setEdenLoadingProgress(generation, 65);
         const { doc, getDoc } = firestore;
         const [snap, rosterSnap, voteSettingsSnap] = await Promise.all([
@@ -5013,7 +5131,7 @@ async function applyDashboardData(data = {}) {
   if (!model.rows || !model.rows.length) {
     if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
     setEdenPanelLoading(false);
-    renderPublicDashboard(data);
+    await renderPublicDashboard(data);
     return;
   }
 
@@ -5029,7 +5147,7 @@ async function applyDashboardData(data = {}) {
   setEdenPanelLoading(false);
   await yieldToBrowser();
   // Stage 2: public dashboard (analytics, charts, history) in its own frame.
-  renderPublicDashboard(data);
+  await renderPublicDashboard(data);
   if (!EDEN_X1_TEST_MODE) {
     await yieldToBrowser();
     loadEdenManagementVoteResults();

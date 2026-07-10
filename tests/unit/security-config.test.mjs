@@ -113,7 +113,7 @@ test('admin dashboard uses Firebase auth instead of local password markers', () 
 });
 
 test('firebase config reads public web config without committed Google API keys', () => {
-  const source = readFileSync('js/firebase.js', 'utf8');
+  const source = readFileSync('js/firebase-config.js', 'utf8');
   assert.match(source, /VITE_FIREBASE_API_KEY/);
   assert.match(source, /import\.meta\.env/);
   assert.match(source, /VTS_FIREBASE_CONFIG/);
