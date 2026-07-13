@@ -135,12 +135,13 @@ test('standalone lobby and footer have explicit light surfaces', () => {
   assert.match(eden, /id="edenZoomIn"[^>]*data-i18n-aria="edenZoomInTitle"/);
 });
 
-test('aggregate CSS budget records the measured accessibility baseline', () => {
+test('aggregate CSS budget records the accessibility and contribution-control baseline', () => {
   const sizeCheck = read('scripts/check-size.mjs');
 
   assert.match(sizeCheck, /cross-tool light-theme\/touch-target pass/);
   assert.match(sizeCheck, /measure 1076\.1 KiB/);
+  assert.match(sizeCheck, /aggregate to 1079\.4 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1079 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1082 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 426 \* 1024, mobile: 519 \* 1024 \}/);
 });

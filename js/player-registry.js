@@ -41,6 +41,24 @@ function normalizeAccountList(values) {
     .filter((account) => account.name);
 }
 
+function normalizeContributionMatches(values) {
+  const byNewName = new Map();
+  (Array.isArray(values) ? values : []).forEach((match) => {
+    const canonical = asText(match?.canonical || match?.oldName);
+    const oldName = asText(match?.oldName || canonical);
+    const newName = asText(match?.newName);
+    const newKey = compactRegistryName(newName);
+    if (!canonical || !oldName || !newKey) return;
+    byNewName.set(newKey, {
+      canonical,
+      oldName,
+      newName,
+      createdAt: asText(match?.createdAt),
+    });
+  });
+  return Array.from(byNewName.values());
+}
+
 export function normalizePlayerRegistry(input) {
   let source = input;
   if (typeof input === 'string') {
@@ -76,6 +94,7 @@ export function normalizePlayerRegistry(input) {
     version: Number(source?.version) || 1,
     updatedAt: asText(source?.updatedAt),
     players,
+    contributionMatches: normalizeContributionMatches(source?.contributionMatches),
   };
 }
 

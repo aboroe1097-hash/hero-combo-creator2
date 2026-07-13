@@ -5253,6 +5253,112 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
 #ocrDashboardRoot .dash-contribution-compare-table {
   min-width: 920px;
 }
+#ocrDashboardRoot .dash-contribution-filter-tools {
+  display: flex;
+  gap: 0.6rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+#ocrDashboardRoot .dash-contribution-filter-tools label {
+  display: grid;
+  gap: 0.22rem;
+  flex: 1 1 190px;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .dash-contribution-filter-tools > span {
+  padding-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .dash-contribution-filter-tools input,
+#ocrDashboardRoot .dash-contribution-filter-tools select,
+#ocrDashboardRoot .dash-contribution-filter-row input,
+#ocrDashboardRoot .dash-contribution-filter-row select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.72rem;
+}
+#ocrDashboardRoot .dash-contribution-filter-row th {
+  padding: 0.35rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+#ocrDashboardRoot .dash-contribution-alias-batch {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.42);
+}
+#ocrDashboardRoot .dash-contribution-alias-batch > span {
+  flex: 1 1 180px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .dash-contribution-alias-undo {
+  display: block;
+  margin-top: 0.4rem;
+}
+#ocrDashboardRoot .dash-contribution-match-source {
+  display: block;
+  width: max-content;
+  margin-top: 0.35rem;
+  padding: 0.16rem 0.38rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  font-size: 0.61rem;
+  font-weight: 900;
+}
+#ocrDashboardRoot .dash-contribution-match-source-manual {
+  color: #67e8f9;
+  border-color: rgba(103, 232, 249, 0.35);
+}
+#ocrDashboardRoot .dash-contribution-match-source-auto {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+#ocrDashboardRoot .dash-contribution-alias-match {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  gap: 0.4rem;
+  align-items: end;
+  min-width: 260px;
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+#ocrDashboardRoot .dash-contribution-alias-match label {
+  display: grid;
+  gap: 0.22rem;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+#ocrDashboardRoot .dash-contribution-alias-match input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.72rem;
+}
 #ocrDashboardRoot .dash-weighted-contribution-panel {
   margin: 0 0 1rem;
 }
@@ -5838,6 +5944,21 @@ html:not([data-theme='light']) #ocrDashboardRoot .dash-exguild-actions .dash-btn
   }
   #ocrDashboardRoot .dash-contribution-compare-stats span {
     flex: 1 1 calc(50% - 0.5rem);
+  }
+  #ocrDashboardRoot .dash-contribution-alias-match {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+  #ocrDashboardRoot .dash-contribution-alias-match .dash-btn {
+    width: 100%;
+    min-height: var(--tap-min);
+  }
+  #ocrDashboardRoot .dash-contribution-filter-row {
+    display: none;
+  }
+  #ocrDashboardRoot .dash-contribution-alias-batch .dash-btn {
+    flex: 1 1 140px;
+    min-height: var(--tap-min);
   }
 }
 

@@ -22,13 +22,14 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The translated AI Strategy Assistant adds deferred client/tool modules;
-  // keep a narrow guard above the measured 2693.8 KiB v14 release artifact.
-  totalJsBytes: 2700 * 1024,
-  // The assistant drawer plus the cross-tool light-theme/touch-target pass
-  // measure 1076.1 KiB. Per-page initial budgets below still catch route
-  // leakage; retain less than 3 KiB of aggregate headroom.
-  totalCssBytes: 1079 * 1024,
+  // The translated AI assistant, deferred VTS guides, and Admin contribution
+  // batch reconciliation/undo controls measure 2751.4 KiB in v14. Keep a
+  // narrow guard while preserving an aggregate-growth alarm.
+  totalJsBytes: 2759 * 1024,
+  // The cross-tool light-theme/touch-target pass used to measure 1076.1 KiB.
+  // Contribution filters, batch controls, and source badges bring the current
+  // aggregate to 1079.4 KiB; per-page budgets still catch route leakage.
+  totalCssBytes: 1082 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
@@ -41,7 +42,7 @@ const LIMITS = {
   deployFileCount: 450,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
-    'admin.html': { desktop: 600 * 1024, mobile: 695 * 1024 },
+    'admin.html': { desktop: 602 * 1024, mobile: 695 * 1024 },
     'eden-x1.html': { desktop: 715 * 1024, mobile: 810 * 1024 },
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.

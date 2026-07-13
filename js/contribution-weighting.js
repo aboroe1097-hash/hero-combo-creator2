@@ -6,6 +6,7 @@ import {
   stripExGuildGuildTag,
 } from './ocr-name-normalizer.js';
 import { resolvePlayerRegistryFamilyKey } from './player-registry.js';
+import { collapseContributionOcrDuplicates } from './contribution-identity.js';
 
 export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   contribution: 0.5,
@@ -341,7 +342,7 @@ export function buildWeightedContributionRows(options = {}) {
     ? options.contributionRecords
     : [];
   const record = options.contributionRecord || getPrimaryContributionRecord(contributionRecords);
-  const entries = Array.isArray(record?.entries) ? record.entries : [];
+  const entries = collapseContributionOcrDuplicates(record?.entries);
   const dutyCounts = buildWeightedDutyCounts(options.dutyRecords);
   const conductMap = buildConductMap(options.r5Adjustments, options.season || options.r5Season);
   const weights = normalizeWeights(options.weights);

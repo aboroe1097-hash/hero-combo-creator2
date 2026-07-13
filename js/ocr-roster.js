@@ -52,6 +52,14 @@ import {
   readStoredPlayerRegistry,
   writeStoredPlayerRegistry,
 } from './player-registry.js';
+import {
+  addContributionAliasMatch,
+  collapseContributionOcrDuplicates,
+  getContributionAliasMatch,
+  getContributionCanonicalName,
+  getContributionSnapshotIdentity,
+  removeContributionAliasMatch,
+} from './contribution-identity.js';
 
 function adminT(key, vars = {}) {
   let lang = 'en';
@@ -419,10 +427,7 @@ function syncRosterSnapshotsToFirestore(snapshots, baseUpdated) {
       );
     })
     .finally(() => {
-      state._rosterCloudSaveQueued = Math.max(
-        0,
-        Number(state._rosterCloudSaveQueued || 0) - 1
-      );
+      state._rosterCloudSaveQueued = Math.max(0, Number(state._rosterCloudSaveQueued || 0) - 1);
     });
 }
 
@@ -1793,12 +1798,7 @@ async function processDutyImages(type, files) {
         { localOnly: true }
       );
     } else {
-      logRosterEvent(
-        'adminDutyNoImageSelectedLog',
-        'warn',
-        { label },
-        { localOnly: true }
-      );
+      logRosterEvent('adminDutyNoImageSelectedLog', 'warn', { label }, { localOnly: true });
     }
     return;
   }
@@ -1885,12 +1885,7 @@ Rules:
   state._dutyProcessing = false;
   const unique = normalizeDutyEntries(allEntries);
   if (!unique.length) {
-    logRosterEvent(
-      'adminDutyNoNamesInImagesLog',
-      'warn',
-      { label },
-      { localOnly: true }
-    );
+    logRosterEvent('adminDutyNoNamesInImagesLog', 'warn', { label }, { localOnly: true });
     alert(adminT('adminDutyExtractFailedAlert', { label }));
     return;
   }
@@ -2322,7 +2317,11 @@ function backupExGuildContributions(reason = 'edit') {
 }
 
 function normalizeRecoverableExGuildCandidate(source, label, createdAt = '') {
-  const entries = Array.isArray(source?.entries) ? source.entries : Array.isArray(source) ? source : [];
+  const entries = Array.isArray(source?.entries)
+    ? source.entries
+    : Array.isArray(source)
+      ? source
+      : [];
   const cleanEntries = cloneExGuildEntries(entries).filter(
     (entry) => entry && typeof entry === 'object' && (entry.playerName || entry.name)
   );
@@ -2367,8 +2366,8 @@ function getRecoverableExGuildCandidate() {
     });
   }
 
-  return candidates.sort(
-    (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+  return candidates.sort((a, b) =>
+    String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
   )[0];
 }
 
@@ -2497,7 +2496,8 @@ function resolveExGuildMatch(entry, context = {}) {
   const targets = Array.isArray(context.targets) ? context.targets : [];
   const primaryKeys = context.primaryKeys instanceof Set ? context.primaryKeys : new Set();
   const autoMatch = targets.find((target) => target.compact && target.compact === autoKey);
-  const matchedName = manualMatch || (primaryKeys.has(autoKey) ? autoMatch?.value || cleanName : '');
+  const matchedName =
+    manualMatch || (primaryKeys.has(autoKey) ? autoMatch?.value || cleanName : '');
   return {
     cleanName,
     manualMatch,
@@ -2567,7 +2567,9 @@ function showExGuildMatchResults(input) {
   results.hidden = false;
   results.innerHTML = matches
     .map(
-      (target) => `<button type="button" class="dash-xg-option" data-exguild-match-option data-value="${esc(target.value)}">
+      (
+        target
+      ) => `<button type="button" class="dash-xg-option" data-exguild-match-option data-value="${esc(target.value)}">
         <strong>${esc(target.value)}</strong>
         <span>${target.rank ? `#${esc(target.rank)} · ` : ''}${esc(target.guild || target.source)}${target.recordLabel ? ` · ${esc(target.recordLabel)}` : ''}</span>
       </button>`
@@ -2809,7 +2811,7 @@ function getContributionRewardLabel(tier) {
 function normalizeContributionEntries(input) {
   const rows = Array.isArray(input) ? input : [];
   const seen = new Set();
-  return rows
+  const normalized = rows
     .map((item) => {
       if (!item || typeof item !== 'object') return null;
       const rank = Number(
@@ -2841,10 +2843,10 @@ function normalizeContributionEntries(input) {
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    })
-    .sort(
-      (a, b) => Number(a.rank || 9999) - Number(b.rank || 9999) || b.contribution - a.contribution
-    );
+    });
+  return collapseContributionOcrDuplicates(normalized).sort(
+    (a, b) => Number(a.rank || 9999) - Number(b.rank || 9999) || b.contribution - a.contribution
+  );
 }
 
 function parseContributionEntriesFromText(text) {
@@ -2935,7 +2937,11 @@ function showContributionConfirmModal(
     ? state.contributionRecords.find((record) => record.id === existingRecordId)
     : null;
   beginAdminEditSurface(
-    isExGuild ? 'ex-guild-contribution-create' : existingRecord ? 'contribution-edit' : 'contribution-create'
+    isExGuild
+      ? 'ex-guild-contribution-create'
+      : existingRecord
+        ? 'contribution-edit'
+        : 'contribution-create'
   );
   const m = $id('dashModal'),
     body = $id('dashModalBody');
@@ -2990,9 +2996,9 @@ function showContributionConfirmModal(
     modalError?.classList.add('hidden');
     if (modalError) modalError.textContent = '';
     rowElements.forEach((row) => {
-      row.querySelectorAll('input, select').forEach((control) =>
-        control.setAttribute('aria-invalid', 'false')
-      );
+      row
+        .querySelectorAll('input, select')
+        .forEach((control) => control.setAttribute('aria-invalid', 'false'));
     });
     const rows = rowElements.map((row) => {
       const base = {
@@ -3064,6 +3070,7 @@ function showContributionConfirmModal(
       note: $id('dashContributionNote')?.value.trim() || '',
       premiumCutoff: Math.max(1, Number($id('dashContributionPremiumCutoff')?.value || 20)),
       entries: normalized,
+      isPrimary: existingRecord ? existingRecord.isPrimary === true : true,
       createdAt: existingRecord?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -3071,7 +3078,9 @@ function showContributionConfirmModal(
       const index = state.contributionRecords.findIndex((item) => item.id === existingRecord.id);
       if (index >= 0) state.contributionRecords[index] = record;
     } else {
-      if (!state.contributionRecords.length) record.isPrimary = true;
+      state.contributionRecords.forEach((item) => {
+        item.isPrimary = false;
+      });
       state.contributionRecords.push(record);
     }
     const saveBtn = $id('dashContributionSaveBtn');
@@ -3310,7 +3319,7 @@ function buildContributionCsv(recordId = '') {
     ],
   ];
   records.forEach((record) => {
-    (record.entries || []).forEach((entry) => {
+    normalizeContributionEntries(record.entries || []).forEach((entry) => {
       const reward = getContributionReward(entry, record);
       lines.push([
         record.date || '',
@@ -3366,31 +3375,82 @@ function getContributionDisplayNote(note, rowCount = 0) {
 
 function getContributionRecordLabel(record, fallbackIndex = 0) {
   const date = record?.date || `Snapshot ${fallbackIndex + 1}`;
-  const count = Array.isArray(record?.entries) ? record.entries.length : 0;
+  const count = normalizeContributionEntries(record?.entries || []).length;
   const note = getContributionDisplayNote(record?.note, count);
   return `${date}${note ? ` - ${note}` : ''} (${count} rows)`;
 }
 
+function getContributionCanonicalDisplayName(name) {
+  try {
+    return resolveCanonicalPlayerIdentity(name).playerName;
+  } catch {
+    return getContributionCanonicalName(name, state.playerRegistry || readStoredPlayerRegistry());
+  }
+}
+
 function getContributionIdentity(entry) {
-  const name = String(entry?.name || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-  const guild = String(entry?.guild || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-  return `${name}|${guild}`;
+  const canonicalName = getContributionCanonicalDisplayName(entry?.name);
+  return getContributionSnapshotIdentity(
+    { ...entry, name: canonicalName },
+    state.playerRegistry || readStoredPlayerRegistry()
+  );
+}
+
+const contributionComparisonFilters = {
+  member: '',
+  rank: '',
+  baseline: '',
+  final: '',
+  gain: '',
+  reward: '',
+  status: 'all',
+};
+let contributionComparisonFilterTimer = 0;
+const contributionAliasMatchQueue = new Map();
+
+function contributionComparisonRowsMatchingFilters(rows) {
+  const textMatches = (value, query) =>
+    !query ||
+    String(value || '')
+      .toLocaleLowerCase()
+      .includes(String(query).trim().toLocaleLowerCase());
+  const minimumMatches = (value, minimum) =>
+    minimum === '' || !Number.isFinite(Number(minimum)) || Number(value) >= Number(minimum);
+
+  return rows.filter((row) => {
+    const memberText = `${row.canonicalName} ${row.name} ${row.baseName} ${row.finalName} ${row.guild}`;
+    const rankText = `${row.baseRank || ''} ${row.finalRank || ''} ${row.rankDelta || ''}`;
+    const rewardText = `${getContributionRewardLabel(row.rewardBefore)} ${getContributionRewardLabel(row.rewardAfter)}`;
+    const statusMatches =
+      contributionComparisonFilters.status === 'all' ||
+      (contributionComparisonFilters.status === 'needs-match'
+        ? row.status === 'new' || row.status === 'missing'
+        : contributionComparisonFilters.status === 'manual'
+          ? row.matchSource === 'manual'
+          : contributionComparisonFilters.status === 'auto'
+            ? row.matchSource === 'auto'
+            : row.status === contributionComparisonFilters.status);
+    return (
+      textMatches(memberText, contributionComparisonFilters.member) &&
+      textMatches(rankText, contributionComparisonFilters.rank) &&
+      minimumMatches(row.baseValue, contributionComparisonFilters.baseline) &&
+      minimumMatches(row.finalValue, contributionComparisonFilters.final) &&
+      minimumMatches(row.delta, contributionComparisonFilters.gain) &&
+      textMatches(rewardText, contributionComparisonFilters.reward) &&
+      statusMatches
+    );
+  });
 }
 
 function buildContributionComparison(baseRecord, finalRecord) {
+  const registry = state.playerRegistry || readStoredPlayerRegistry();
   const baseMap = new Map();
   const finalMap = new Map();
-  (baseRecord?.entries || []).forEach((entry) => {
+  normalizeContributionEntries(baseRecord?.entries || []).forEach((entry) => {
     const key = getContributionIdentity(entry);
     if (key !== '|') baseMap.set(key, entry);
   });
-  (finalRecord?.entries || []).forEach((entry) => {
+  normalizeContributionEntries(finalRecord?.entries || []).forEach((entry) => {
     const key = getContributionIdentity(entry);
     if (key !== '|') finalMap.set(key, entry);
   });
@@ -3405,9 +3465,16 @@ function buildContributionComparison(baseRecord, finalRecord) {
       const finalRank = Number(final?.rank || 0);
       const rewardBefore = base ? getContributionReward(base, baseRecord) : '';
       const rewardAfter = final ? getContributionReward(final, finalRecord) : '';
+      const displayName = final?.name || base?.name || '';
+      const manualMatch = final ? getContributionAliasMatch(registry, final.name) : null;
+      const matchSource =
+        base && final ? (manualMatch ? 'manual' : base.name !== final.name ? 'auto' : 'exact') : '';
       return {
         key,
-        name: final?.name || base?.name || '',
+        name: displayName,
+        canonicalName: getContributionCanonicalDisplayName(displayName),
+        baseName: base?.name || '',
+        finalName: final?.name || '',
         guild: final?.guild || base?.guild || '',
         baseRank,
         finalRank,
@@ -3417,6 +3484,7 @@ function buildContributionComparison(baseRecord, finalRecord) {
         delta: finalValue - baseValue,
         rewardBefore,
         rewardAfter,
+        matchSource,
         status: base && final ? 'tracked' : final ? 'new' : 'missing',
       };
     })
@@ -3464,7 +3532,7 @@ function buildContributionComparisonCsv(baseRecord, finalRecord) {
       row.delta || 0,
       row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '',
       row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '',
-      adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`),
+      `${adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`)}${row.matchSource === 'manual' ? ` - ${adminT('adminContributionManualMatch')}` : row.matchSource === 'auto' ? ` - ${adminT('adminContributionAutoMatch')}` : ''}`,
     ]);
   });
   return lines
@@ -3483,12 +3551,7 @@ function exportContributionComparison() {
   a.download = `vts_contribution_delta_${safeContributionFilenamePart(baseRecord.date || 'baseline')}_to_${safeContributionFilenamePart(finalRecord.date || 'final')}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  logRosterEvent(
-    'adminContributionComparisonExportedLog',
-    'success',
-    {},
-    { source: 'export' }
-  );
+  logRosterEvent('adminContributionComparisonExportedLog', 'success', {}, { source: 'export' });
 }
 
 function renderContributionComparison() {
@@ -3549,39 +3612,215 @@ function renderContributionComparison() {
       return;
     }
     const rows = buildContributionComparison(baseRecord, finalRecord);
+    const filteredRows = contributionComparisonRowsMatchingFilters(rows);
     const totalDelta = rows.reduce((sum, row) => sum + row.delta, 0);
     const newCount = rows.filter((row) => row.status === 'new').length;
     const missingCount = rows.filter((row) => row.status === 'missing').length;
     const premiumMoved = rows.filter((row) => row.rewardBefore !== row.rewardAfter).length;
+    const missingRows = rows.filter((row) => row.status === 'missing');
+    const missingCandidates = Array.from(
+      new Map(missingRows.map((row) => [row.canonicalName.toLocaleLowerCase(), row])).values()
+    );
+    const matchControl = (row, index) => {
+      if (row.status !== 'new' || !missingCandidates.length) return '';
+      const listId = `dashContributionAliasList${index}`;
+      const queued = contributionAliasMatchQueue.get(row.key);
+      const options = missingCandidates
+        .map(
+          (candidate) =>
+            `<option value="${esc(candidate.canonicalName)}" label="${esc(candidate.name !== candidate.canonicalName ? candidate.name : candidate.guild || '')}"></option>`
+        )
+        .join('');
+      return `<div class="dash-contribution-alias-match">
+        <label><span>${esc(adminT('adminContributionMatchOldName'))}</span>
+          <input type="search" list="${listId}" data-contribution-alias-old value="${esc(queued?.oldName || '')}" placeholder="${esc(adminT('adminContributionSearchOldName'))}" autocomplete="off" />
+          <datalist id="${listId}">${options}</datalist>
+        </label>
+        <button type="button" class="dash-btn dash-btn-xs${queued ? ' dash-btn-primary' : ''}" data-contribution-alias-queue data-contribution-alias-key="${esc(row.key)}" data-contribution-alias-new="${esc(row.name)}" data-contribution-alias-guild="${esc(row.guild)}">${esc(adminT(queued ? 'adminContributionMatchQueued' : 'adminContributionMatchQueue'))}</button>
+      </div>`;
+    };
+    const undoControl = (row) => {
+      if (row.status !== 'tracked' || !row.finalName) return '';
+      const match = getContributionAliasMatch(
+        state.playerRegistry || readStoredPlayerRegistry(),
+        row.finalName
+      );
+      if (!match) return '';
+      return `<button type="button" class="dash-btn dash-btn-xs dash-contribution-alias-undo" data-contribution-alias-undo="${esc(row.finalName)}">${esc(adminT('adminContributionMatchUndo'))}</button>`;
+    };
     body.innerHTML = `<div class="dash-contribution-compare-stats">
       <span>${esc(adminT('adminContributionDelta'))} <strong class="${totalDelta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(totalDelta)}</strong></span>
       <span>${esc(adminT('adminContributionNew'))} <strong>${newCount}</strong></span>
       <span>${esc(adminT('adminContributionMissing'))} <strong>${missingCount}</strong></span>
       <span>${esc(adminT('adminContributionRewardChanges'))} <strong>${premiumMoved}</strong></span>
     </div>
+    <div class="dash-contribution-alias-batch">
+      <span>${esc(adminT('adminContributionMatchesQueued', { count: contributionAliasMatchQueue.size }))}</span>
+      <button type="button" class="dash-btn dash-btn-primary" data-contribution-alias-save${contributionAliasMatchQueue.size ? '' : ' disabled'}>${esc(adminT('adminContributionSaveMatches', { count: contributionAliasMatchQueue.size }))}</button>
+      <button type="button" class="dash-btn" data-contribution-alias-clear${contributionAliasMatchQueue.size ? '' : ' disabled'}>${esc(adminT('adminContributionClearMatches'))}</button>
+    </div>
+    <div class="dash-contribution-filter-tools">
+      <label><span>${esc(adminT('adminContributionMember'))}</span><input type="search" data-contribution-filter="member" value="${esc(contributionComparisonFilters.member)}" placeholder="${esc(adminT('adminSearchPh'))}" /></label>
+      <label><span>${esc(adminT('adminContributionStatus'))}</span><select data-contribution-filter="status"><option value="all"${contributionComparisonFilters.status === 'all' ? ' selected' : ''}>${esc(adminT('adminContributionFilterAll'))}</option><option value="needs-match"${contributionComparisonFilters.status === 'needs-match' ? ' selected' : ''}>${esc(adminT('adminContributionNeedsMatching'))}</option><option value="manual"${contributionComparisonFilters.status === 'manual' ? ' selected' : ''}>${esc(adminT('adminContributionManualMatch'))}</option><option value="auto"${contributionComparisonFilters.status === 'auto' ? ' selected' : ''}>${esc(adminT('adminContributionAutoMatch'))}</option><option value="new"${contributionComparisonFilters.status === 'new' ? ' selected' : ''}>${esc(adminT('adminContributionStatusNew'))}</option><option value="missing"${contributionComparisonFilters.status === 'missing' ? ' selected' : ''}>${esc(adminT('adminContributionStatusMissing'))}</option><option value="tracked"${contributionComparisonFilters.status === 'tracked' ? ' selected' : ''}>${esc(adminT('adminContributionStatusTracked'))}</option></select></label>
+      <span>${filteredRows.length}/${rows.length}</span>
+    </div>
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table">
-        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionRank'))}</th><th style="text-align:right">${esc(adminT('adminContributionBaseline'))}</th><th style="text-align:right">${esc(adminT('adminContributionFinal'))}</th><th style="text-align:right">${esc(adminT('adminContributionGain'))}</th><th>${esc(adminT('adminContributionReward'))}</th><th>${esc(adminT('adminContributionStatus'))}</th></tr></thead>
-        <tbody>${rows
+        <thead><tr><th>${esc(adminT('adminContributionMember'))}</th><th>${esc(adminT('adminContributionRank'))}</th><th style="text-align:right">${esc(adminT('adminContributionBaseline'))}</th><th style="text-align:right">${esc(adminT('adminContributionFinal'))}</th><th style="text-align:right">${esc(adminT('adminContributionGain'))}</th><th>${esc(adminT('adminContributionReward'))}</th><th>${esc(adminT('adminContributionStatus'))}</th></tr>
+        <tr class="dash-contribution-filter-row"><th><input type="search" data-contribution-filter="member" value="${esc(contributionComparisonFilters.member)}" aria-label="${esc(adminT('adminContributionMember'))}" /></th><th><input type="search" data-contribution-filter="rank" value="${esc(contributionComparisonFilters.rank)}" aria-label="${esc(adminT('adminContributionRank'))}" /></th><th><input type="number" data-contribution-filter="baseline" value="${esc(contributionComparisonFilters.baseline)}" placeholder="≥" aria-label="${esc(adminT('adminContributionBaseline'))}" /></th><th><input type="number" data-contribution-filter="final" value="${esc(contributionComparisonFilters.final)}" placeholder="≥" aria-label="${esc(adminT('adminContributionFinal'))}" /></th><th><input type="number" data-contribution-filter="gain" value="${esc(contributionComparisonFilters.gain)}" placeholder="≥" aria-label="${esc(adminT('adminContributionGain'))}" /></th><th><input type="search" data-contribution-filter="reward" value="${esc(contributionComparisonFilters.reward)}" aria-label="${esc(adminT('adminContributionReward'))}" /></th><th><select data-contribution-filter="status" aria-label="${esc(adminT('adminContributionStatus'))}"><option value="all"${contributionComparisonFilters.status === 'all' ? ' selected' : ''}>${esc(adminT('adminContributionFilterAll'))}</option><option value="needs-match"${contributionComparisonFilters.status === 'needs-match' ? ' selected' : ''}>${esc(adminT('adminContributionNeedsMatching'))}</option><option value="manual"${contributionComparisonFilters.status === 'manual' ? ' selected' : ''}>${esc(adminT('adminContributionManualMatch'))}</option><option value="auto"${contributionComparisonFilters.status === 'auto' ? ' selected' : ''}>${esc(adminT('adminContributionAutoMatch'))}</option><option value="new"${contributionComparisonFilters.status === 'new' ? ' selected' : ''}>${esc(adminT('adminContributionStatusNew'))}</option><option value="missing"${contributionComparisonFilters.status === 'missing' ? ' selected' : ''}>${esc(adminT('adminContributionStatusMissing'))}</option><option value="tracked"${contributionComparisonFilters.status === 'tracked' ? ' selected' : ''}>${esc(adminT('adminContributionStatusTracked'))}</option></select></th></tr></thead>
+        <tbody>${filteredRows
           .slice(0, 30)
           .map(
-            (row) => `<tr>
-          <td><strong>${esc(row.name)}</strong>${row.guild ? `<small>${esc(row.guild)}</small>` : ''}</td>
+            (row, index) => `<tr>
+          <td><strong>${esc(row.canonicalName || row.name)}</strong>${row.finalName && row.finalName !== row.canonicalName ? `<small>${esc(adminT('adminContributionCurrentName', { name: row.finalName }))}</small>` : ''}${row.baseName && row.finalName && row.baseName !== row.finalName ? `<small>${esc(adminT('adminContributionPreviouslyName', { name: row.baseName }))}</small>` : ''}${row.guild ? `<small>${esc(row.guild)}</small>` : ''}${undoControl(row)}${matchControl(row, index)}</td>
           <td>${row.baseRank || '--'} -> ${row.finalRank || '--'}${row.rankDelta ? `<em class="${row.rankDelta > 0 ? 'up' : 'down'}">${row.rankDelta > 0 ? '+' : ''}${row.rankDelta}</em>` : ''}</td>
           <td style="text-align:right">${formatContributionValue(row.baseValue)}</td>
           <td style="text-align:right">${formatContributionValue(row.finalValue)}</td>
           <td style="text-align:right" class="${row.delta >= 0 ? 'dash-positive' : 'dash-negative'}">${formatSignedContributionValue(row.delta)}</td>
           <td>${row.rewardBefore ? getContributionRewardLabel(row.rewardBefore) : '--'} -> ${row.rewardAfter ? getContributionRewardLabel(row.rewardAfter) : '--'}</td>
-          <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`))}</span></td>
+          <td><span class="dash-contribution-status dash-contribution-status-${row.status}">${esc(adminT(`adminContributionStatus${row.status.charAt(0).toUpperCase()}${row.status.slice(1)}`))}</span>${row.matchSource === 'manual' ? `<small class="dash-contribution-match-source dash-contribution-match-source-manual">${esc(adminT('adminContributionManualMatch'))}</small>` : row.matchSource === 'auto' ? `<small class="dash-contribution-match-source dash-contribution-match-source-auto">${esc(adminT('adminContributionAutoMatch'))}</small>` : ''}</td>
         </tr>`
           )
           .join('')}</tbody>
       </table>
     </div>`;
     hydrateDashboardTableLabels(body);
+    body.querySelectorAll('[data-contribution-filter]').forEach((control) => {
+      const applyFilter = () => {
+        const key = control.dataset.contributionFilter;
+        if (!Object.prototype.hasOwnProperty.call(contributionComparisonFilters, key)) return;
+        contributionComparisonFilters[key] = control.value || (key === 'status' ? 'all' : '');
+        clearTimeout(contributionComparisonFilterTimer);
+        const selectionStart = control.selectionStart;
+        contributionComparisonFilterTimer = window.setTimeout(
+          () => {
+            renderSelected();
+            const next = body.querySelector(`[data-contribution-filter="${key}"]`);
+            next?.focus();
+            if (typeof next?.setSelectionRange === 'function' && Number.isInteger(selectionStart)) {
+              next.setSelectionRange(selectionStart, selectionStart);
+            }
+          },
+          control.tagName === 'SELECT' ? 0 : 160
+        );
+      };
+      control.addEventListener('input', applyFilter);
+      control.addEventListener('change', applyFilter);
+    });
+    body.querySelectorAll('[data-contribution-alias-queue]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const container = button.closest('.dash-contribution-alias-match');
+        const oldInput = container?.querySelector('[data-contribution-alias-old]');
+        const requestedOldName = oldInput?.value || '';
+        const queueKey = button.dataset.contributionAliasKey || '';
+        const newName = button.dataset.contributionAliasNew || '';
+        const newGuild = button.dataset.contributionAliasGuild || '';
+        const oldRow = missingCandidates.find(
+          (row) =>
+            row.canonicalName.toLocaleLowerCase() === requestedOldName.trim().toLocaleLowerCase()
+        );
+        const oldName = oldRow?.canonicalName || '';
+        if (!queueKey || !oldName || !newName) {
+          oldInput?.setCustomValidity(adminT('adminContributionChooseOldName'));
+          oldInput?.reportValidity();
+          return;
+        }
+        oldInput?.setCustomValidity('');
+        contributionAliasMatchQueue.set(queueKey, { oldName, newName, newGuild });
+        renderSelected();
+      });
+    });
+    body.querySelector('[data-contribution-alias-clear]')?.addEventListener('click', () => {
+      contributionAliasMatchQueue.clear();
+      renderSelected();
+    });
+    body
+      .querySelector('[data-contribution-alias-save]')
+      ?.addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        if (!contributionAliasMatchQueue.size) return;
+        button.disabled = true;
+        try {
+          let registry = state.playerRegistry || readStoredPlayerRegistry();
+          contributionAliasMatchQueue.forEach((match) => {
+            registry = addContributionAliasMatch(registry, match.oldName, match.newName);
+          });
+          const count = contributionAliasMatchQueue.size;
+          await savePlayerRegistry(registry);
+          logRosterEvent(
+            'adminContributionAliasBatchMatchedLog',
+            'success',
+            { count },
+            { source: 'contribution-compare' }
+          );
+          contributionAliasMatchQueue.clear();
+          if (typeof window.showToast === 'function') {
+            window.showToast(
+              adminT('adminContributionAliasBatchMatchedToast', { count }),
+              'success',
+              3200
+            );
+          }
+          renderSelected();
+        } catch (error) {
+          button.disabled = false;
+          if (typeof window.showToast === 'function') {
+            window.showToast(
+              adminT('adminContributionAliasMatchFailedToast', {
+                reason: error?.message || 'Unknown error',
+              }),
+              'error',
+              5000
+            );
+          }
+        }
+      });
+    body.querySelectorAll('[data-contribution-alias-undo]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const newName = button.dataset.contributionAliasUndo || '';
+        if (!newName) return;
+        button.disabled = true;
+        try {
+          const registry = removeContributionAliasMatch(
+            state.playerRegistry || readStoredPlayerRegistry(),
+            newName
+          );
+          await savePlayerRegistry(registry);
+          logRosterEvent(
+            'adminContributionAliasRemovedLog',
+            'success',
+            { newName },
+            { source: 'contribution-compare' }
+          );
+          if (typeof window.showToast === 'function') {
+            window.showToast(
+              adminT('adminContributionAliasRemovedToast', { newName }),
+              'success',
+              3200
+            );
+          }
+          renderSelected();
+        } catch (error) {
+          button.disabled = false;
+          if (typeof window.showToast === 'function') {
+            window.showToast(
+              adminT('adminContributionAliasMatchFailedToast', {
+                reason: error?.message || 'Unknown error',
+              }),
+              'error',
+              5000
+            );
+          }
+        }
+      });
+    });
   };
-  baseSelect?.addEventListener('change', renderSelected);
-  finalSelect?.addEventListener('change', renderSelected);
+  const changeComparedSnapshots = () => {
+    contributionAliasMatchQueue.clear();
+    renderSelected();
+  };
+  baseSelect?.addEventListener('change', changeComparedSnapshots);
+  finalSelect?.addEventListener('change', changeComparedSnapshots);
   $id('dashContributionCompareExportBtn').onclick = exportContributionComparison;
   renderSelected();
 }
@@ -3728,7 +3967,9 @@ function contributionWeightedSearchText(row) {
 }
 
 function filterContributionWeightedRows(rows) {
-  const query = String(state._contributionWeightedSearchQ || '').trim().toLowerCase();
+  const query = String(state._contributionWeightedSearchQ || '')
+    .trim()
+    .toLowerCase();
   if (!query) return rows;
   return rows.filter((row) => contributionWeightedSearchText(row).includes(query));
 }
@@ -3760,7 +4001,9 @@ function updateContributionWeightedSortGlyphs(host) {
 
 function bindContributionWeightedSort(host) {
   host.querySelectorAll('th[data-contribution-weighted-sort]').forEach((th) => {
-    th.addEventListener('click', () => setContributionWeightedSort(th.dataset.contributionWeightedSort));
+    th.addEventListener('click', () =>
+      setContributionWeightedSort(th.dataset.contributionWeightedSort)
+    );
     th.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
@@ -3811,9 +4054,11 @@ function renderWeightedContributionTable() {
     <div class="dash-contribution-compare-table-wrap">
       <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
         <thead><tr><th data-contribution-weighted-sort="player" tabindex="0">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="currentRank" tabindex="0">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-contribution-weighted-sort="reward" tabindex="0">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="contribution" tabindex="0">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="exGuild" tabindex="0">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="shieldWalls" tabindex="0">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="pathers" tabindex="0">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="banners" tabindex="0">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="conduct" tabindex="0">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-contribution-weighted-sort="total" tabindex="0">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-contribution-weighted-sort="weighted" tabindex="0">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-contribution-weighted-sort="finalRank" tabindex="0">${esc(adminT('adminContributionFinalRank'))}</th><th data-contribution-weighted-sort="finalReward" tabindex="0">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
-        <tbody>${visibleRows.length ? visibleRows
-          .map(
-            (row, index) => `<tr>
+        <tbody>${
+          visibleRows.length
+            ? visibleRows
+                .map(
+                  (row, index) => `<tr>
           <td><strong>${esc(row.playerName)}</strong></td>
           <td class="dash-weighted-detail-col">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
           <td class="dash-weighted-detail-col">${esc(getContributionRewardLabel(row.currentReward))}</td>
@@ -3828,8 +4073,10 @@ function renderWeightedContributionTable() {
           <td>#${row.finalRank}</td>
           <td>${esc(getContributionRewardLabel(row.finalReward))}</td>
         </tr>`
-          )
-          .join('') : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`}</tbody>
+                )
+                .join('')
+            : `<tr><td colspan="13" class="dash-empty">${esc(adminT('edenX1NoRows'))}</td></tr>`
+        }</tbody>
       </table>
     </div>
   </div>`;
@@ -3865,7 +4112,7 @@ function renderContributions() {
   }
   body.innerHTML = records
     .map((record) => {
-      const entries = Array.isArray(record.entries) ? record.entries.slice() : [];
+      const entries = normalizeContributionEntries(record.entries || []);
       const total = entries.reduce(
         (sum, entry) => sum + parseContributionValue(entry.contribution),
         0

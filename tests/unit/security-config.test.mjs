@@ -427,7 +427,7 @@ test('admin edit sessions begin on open and queued writes keep their own committ
   assert.match(dashboard, /adminEditGuard\.begin\('conduct-form', dashboardCloudBaseRevision\)/);
   assert.match(roster, /beginAdminEditSurface\(edit \? 'banner-edit' : 'banner-create'\)/);
   assert.match(roster, /beginAdminEditSurface\(existingRecord \? 'duty-edit' : 'duty-create'\)/);
-  assert.match(roster, /'contribution-edit' : 'contribution-create'/);
+  assert.match(roster, /'contribution-edit'\s*:\s*'contribution-create'/);
   assert.match(dashboard, /committedRevision = dashboardSyncRevision\(writtenPayload\)/);
   assert.match(
     dashboard,
