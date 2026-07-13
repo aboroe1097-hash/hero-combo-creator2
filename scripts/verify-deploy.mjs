@@ -37,6 +37,10 @@ try {
       delete sanitizedEnvironment[key];
       delete process.env[key];
     }
+    // Let security checks distinguish this temporary, build-time-injected
+    // config from a hash accidentally committed to the public source. This
+    // marker contains no secret material.
+    sanitizedEnvironment.VTS_ADMIN_AUTH_INJECTED = '1';
     runNpmScript('check', sanitizedEnvironment);
   }
 } finally {

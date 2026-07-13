@@ -9,12 +9,13 @@ const INLINE_EVENT_HANDLER_ATTRIBUTE = /\son[a-z][a-z0-9:_-]*\s*=/i;
 test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
   assert.match(source, /adminPin:\s*''/);
+  const hasBuildTimeInjection = process.env.VTS_ADMIN_AUTH_INJECTED === '1';
 
   // clearHash / deleteHashes are empty in the committed source, but the deploy
   // step (scripts/inject-admin-auth-config.mjs) fills them from the
   // VTS_ADMIN_OVERRIDE_CODE / VTS_ADMIN_OVERRIDE_HASH secrets before checks run.
-  // Mirror the edenVotesPinHash handling: allow a populated 64-hex digest only
-  // when the override secret is configured, require empty otherwise.
+  // verify-deploy removes those secrets before launching the checks and leaves
+  // only a non-sensitive marker indicating that injection already occurred.
   const clearHash = source.match(/clearHash:\s*'([^']*)'/)?.[1];
   const deleteHashesBody = source.match(/deleteHashes:\s*\[([^\]]*)\]/)?.[1] ?? undefined;
   assert.notEqual(clearHash, undefined);
@@ -23,7 +24,7 @@ test('public admin auth config only keeps destructive action override hashes', (
     .split(',')
     .map((entry) => entry.trim().replace(/^'|'$/g, ''))
     .filter(Boolean);
-  if (process.env.VTS_ADMIN_OVERRIDE_CODE || process.env.VTS_ADMIN_OVERRIDE_HASH) {
+  if (hasBuildTimeInjection) {
     assert.match(clearHash, /^(?:|[a-f0-9]{64})$/);
     for (const hash of deleteHashes) assert.match(hash, /^[a-f0-9]{64}$/);
   } else {
@@ -33,7 +34,7 @@ test('public admin auth config only keeps destructive action override hashes', (
 
   const edenVotesPinHash = source.match(/edenVotesPinHash:\s*'([^']*)'/)?.[1];
   assert.notEqual(edenVotesPinHash, undefined);
-  if (process.env.VTS_EDEN_VOTES_PIN || process.env.VTS_EDEN_VOTES_PIN_HASH) {
+  if (hasBuildTimeInjection) {
     assert.match(edenVotesPinHash, /^(?:|[a-f0-9]{64})$/);
   } else {
     assert.equal(edenVotesPinHash, '');

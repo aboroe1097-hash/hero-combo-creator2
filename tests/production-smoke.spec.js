@@ -8,6 +8,8 @@ const targetOrigin = new URL(
 const localIndex = readFileSync('dist/index.html', 'utf8');
 const localServiceWorker = readFileSync('dist/sw.js', 'utf8');
 const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+const usesDeterministicCiFirebaseConfig =
+  !isRemotePreview && process.env.VITE_FIREBASE_API_KEY === 'dummy';
 
 function observeTargetFailures(page) {
   const failures = [];
@@ -47,6 +49,17 @@ function observeTargetFailures(page) {
     // after repeated local/preview smoke runs. Keep validating the rendered shell,
     // lazy chunks, service worker, and same-origin requests when that happens.
     if (/Firebase: Error \(auth\/too-many-requests\)\.?/iu.test(error.message)) return;
+    // Pull-request verification intentionally builds with a deterministic,
+    // non-secret Firebase placeholder. Ignore only the exact Auth rejection
+    // caused by that placeholder; previews and production remain strict.
+    if (
+      usesDeterministicCiFirebaseConfig &&
+      /^Firebase: Error \(auth\/api-key-not-valid\.-please-pass-a-valid-api-key\.\)\.?$/iu.test(
+        error.message
+      )
+    ) {
+      return;
+    }
     failures.push(`${page.url()}: pageerror: ${error.message}`);
   });
   return failures;
