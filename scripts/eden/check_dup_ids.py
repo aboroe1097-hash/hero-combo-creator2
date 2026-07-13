@@ -2,17 +2,16 @@
 import base64
 import gzip
 import json
-import re
 from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-payload_path = ROOT / "js" / "eden-datasets.payload.js"
-text = payload_path.read_text(encoding="utf-8")
-b64 = re.search(r'EDEN_DATASETS_PAYLOAD="([^"]+)"', text)
-if not b64:
-    raise SystemExit(f"Could not parse payload from {payload_path}")
-data = json.loads(gzip.decompress(base64.b64decode(b64.group(1))))
+payload_path = ROOT / "js" / "eden-datasets.payload.json"
+wrapper = json.loads(payload_path.read_text(encoding="utf-8"))
+b64 = wrapper.get("payload")
+if wrapper.get("encoding") != "gzip-base64" or not isinstance(b64, str):
+    raise SystemExit(f"Could not parse gzip-base64 payload from {payload_path}")
+data = json.loads(gzip.decompress(base64.b64decode(b64)))
 sectors = data.get("sectors", {})
 failed = False
 for ds_id, ds_sectors in sectors.items():

@@ -6,64 +6,230 @@
 
 :root {
   color-scheme: dark;
-  --brand: #2dd4bf;
-  --brand-light: #67e8f9;
-  --brand-glow: rgba(45, 212, 191, 0.24);
-  --accent: #f7b955;
-  --accent-2: #36d399;
-  --danger: #fb5d61;
-  --panel: rgba(11, 18, 30, 0.84);
-  --panel-strong: rgba(8, 13, 23, 0.96);
-  --surface: #101827;
-  --surface-2: #0d1422;
-  --surface-3: #162236;
-  --border: rgba(143, 164, 187, 0.22);
-  --border-hover: rgba(103, 232, 249, 0.5);
-  --text-primary: #f7fbff;
-  --text-muted: #aebbd0;
-  --text-secondary: #cbd5e1;
-  --text-dim: #78869c;
-  --green: #10b981;
-  --red: #ef4444;
-  --blue-400: #60a5fa;
-  --yellow: #facc15;
+  /* V14 Frost & Flame contract. --ff-* is the canonical public namespace;
+     the compatibility aliases below keep every legacy tool consumer intact. */
+  --ff-void: #070b16;
+  --ff-deep: #0a0f1e;
+  --ff-cyan: #7dd3fc;
+  --ff-fire: #fb923c;
+  --ff-gold: #f5c451;
+  --ff-violet: #a78bfa;
+  --ff-rose: #fb7185;
+  --ff-mint: #34d399;
 
-  --space-0: 0;
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --tap-min: 44px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ff-bg: var(--ff-void);
+  --ff-bg-deep: var(--ff-deep);
+  --ff-surface: #101827;
+  --ff-surface-subtle: #0d1422;
+  --ff-surface-raised: #162236;
+  --ff-panel: rgba(11, 18, 30, 0.84);
+  --ff-panel-strong: rgba(8, 13, 23, 0.96);
+  --ff-panel-translucent: rgba(10, 18, 31, 0.78);
+  --ff-panel-translucent-strong: rgba(7, 13, 24, 0.94);
+  --ff-glass: rgba(255, 255, 255, 0.06);
+  --ff-glass-raised: rgba(255, 255, 255, 0.11);
+  --ff-hairline: rgba(255, 255, 255, 0.13);
+  --ff-surface-soft: rgba(159, 176, 204, 0.075);
+  --ff-surface-hover: rgba(125, 211, 252, 0.085);
+  --ff-surface-selected: rgba(125, 211, 252, 0.14);
+  --ff-control: rgba(15, 24, 39, 0.86);
+  --ff-control-hover: rgba(27, 41, 60, 0.94);
+  --ff-border: rgba(159, 176, 204, 0.22);
+  --ff-border-subtle: rgba(159, 176, 204, 0.14);
+  --ff-border-strong: rgba(159, 176, 204, 0.34);
+  --ff-border-hover: rgba(125, 211, 252, 0.5);
+
+  --ff-text: #eef4ff;
+  --ff-text-dim: #9fb0cc;
+  --ff-text-supporting: #c8d4e8;
+  --ff-text-tertiary: #6b7c96;
+  --ff-text-muted: #41527a;
+  --ff-text-mute: var(--ff-text-muted);
+  --ff-action: var(--ff-cyan);
+  --ff-action-hover: #a9e4ff;
+  --ff-urgency: var(--ff-fire);
+  --ff-warning: var(--ff-gold);
+  --ff-seasonal: var(--ff-violet);
+  --ff-danger: var(--ff-rose);
+  --ff-success: var(--ff-mint);
+  --ff-on-accent: #081020;
+  --ff-gradient-primary: linear-gradient(90deg, var(--ff-action), var(--ff-urgency));
+  --ff-gradient-celestial: linear-gradient(90deg, var(--ff-action), var(--ff-seasonal), var(--ff-urgency));
+  --ff-grad-primary: var(--ff-gradient-primary);
+  --ff-grad-celestial: var(--ff-gradient-celestial);
+
+  --ff-font-ui: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ff-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --ff-font-data: var(--ff-font-mono);
+
+  /* Compatibility aliases. Keep these additive until all tool lanes migrate. */
+  --brand: var(--ff-action);
+  --brand-light: var(--ff-action-hover);
+  --brand-glow: rgba(125, 211, 252, 0.24);
+  --accent: var(--ff-urgency);
+  --accent-2: var(--ff-success);
+  --accent-cyan: var(--ff-cyan);
+  --accent-fire: var(--ff-fire);
+  --accent-gold: var(--ff-gold);
+  --accent-violet: var(--ff-violet);
+  --danger: var(--ff-danger);
+  --panel: var(--ff-panel);
+  --panel-strong: var(--ff-panel-strong);
+  --surface: var(--ff-surface);
+  --surface-0: var(--ff-bg-deep);
+  --surface-1: var(--ff-surface);
+  --surface-2: var(--ff-surface-subtle);
+  --surface-3: var(--ff-surface-raised);
+  --canvas: var(--ff-bg);
+  --surface-glass: var(--ff-panel-translucent);
+  --surface-glass-strong: var(--ff-panel-translucent-strong);
+  --surface-soft: var(--ff-surface-soft);
+  --surface-hover: var(--ff-surface-hover);
+  --surface-selected: var(--ff-surface-selected);
+  --control-bg: var(--ff-control);
+  --control-hover: var(--ff-control-hover);
+  --border: var(--ff-border);
+  --border-subtle: var(--ff-border-subtle);
+  --border-strong: var(--ff-border-strong);
+  --border-hover: var(--ff-border-hover);
+  --text-primary: var(--ff-text);
+  --text-muted: var(--ff-text-dim);
+  --text-secondary: var(--ff-text-supporting);
+  --text-dim: var(--ff-text-tertiary);
+  --text-mute: var(--ff-text-muted);
+  --text-on-accent: var(--ff-on-accent);
+  --void: var(--ff-void);
+  --deep: var(--ff-deep);
+  --cyan: var(--ff-cyan);
+  --fire: var(--ff-fire);
+  --gold: var(--ff-gold);
+  --violet: var(--ff-violet);
+  --rose: var(--ff-rose);
+  --mint: var(--ff-mint);
+  --glass: var(--ff-glass);
+  --glass-raised: var(--ff-glass-raised);
+  --hairline: var(--ff-hairline);
+  --grad-primary: var(--ff-gradient-primary);
+  --grad-celestial: var(--ff-gradient-celestial);
+  --font-ui: var(--ff-font-ui);
+  --font-mono: var(--ff-font-data);
+  --green: var(--ff-success);
+  --red: var(--ff-danger);
+  --blue-400: var(--ff-cyan);
+  --yellow: var(--ff-gold);
+  --status-success: var(--ff-success);
+  --status-warning: var(--ff-warning);
+  --status-danger: var(--ff-danger);
+  --status-info: var(--ff-action);
+
+  /* Frozen 4px spacing scale: 4 · 8 · 12 · 16 · 24 · 32 · 48. */
+  --ff-space-0: 0;
+  --ff-space-1: 4px;
+  --ff-space-2: 8px;
+  --ff-space-3: 12px;
+  --ff-space-4: 16px;
+  --ff-space-5: 24px;
+  --ff-space-6: 32px;
+  --ff-space-7: 48px;
+  --ff-content-gutter: clamp(12px, 1.5vw, 24px);
+  --ff-section-gap: clamp(16px, 2vw, 32px);
+  --ff-panel-gap: clamp(8px, 1.2vw, 16px);
+  --ff-card-gap: clamp(8px, 1vw, 12px);
+  --ff-card-padding: clamp(16px, 1.25vw, 24px);
+  --ff-container-narrative: 1120px;
+  --ff-container-workspace: 1680px;
+  --ff-tap-min: 44px;
+  --ff-safe-top: env(safe-area-inset-top, 0px);
+  --ff-safe-right: env(safe-area-inset-right, 0px);
+  --ff-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ff-safe-left: env(safe-area-inset-left, 0px);
+  --space-0: var(--ff-space-0);
+  --space-1: var(--ff-space-1);
+  --space-2: var(--ff-space-2);
+  --space-3: var(--ff-space-3);
+  --space-4: var(--ff-space-4);
+  --space-5: var(--ff-space-5);
+  --space-6: var(--ff-space-6);
+  --space-7: var(--ff-space-7);
+  --content-gutter: var(--ff-content-gutter);
+  --section-gap: var(--ff-section-gap);
+  --panel-gap: var(--ff-panel-gap);
+  --card-gap: var(--ff-card-gap);
+  --card-padding: var(--ff-card-padding);
+  --shell-narrow: var(--ff-container-narrative);
+  --layout-max: var(--ff-container-workspace);
+  --tap-min: var(--ff-tap-min);
+  --safe-top: var(--ff-safe-top);
+  --safe-right: var(--ff-safe-right);
+  --safe-bottom: var(--ff-safe-bottom);
+  --safe-left: var(--ff-safe-left);
   --nav-h: 4.5rem;
   --footer-h: 4rem;
 
-  --radius-sm: 6px;
-  --radius-md: 0.875rem;
-  --radius-card: 8px;
-  --radius-xl: 8px;
-  --radius-pill: 9999px;
+  --ff-radius-control: 10px;
+  --ff-radius-card: 16px;
+  --ff-radius-sheet: 24px;
+  --ff-radius-pill: 9999px;
+  --ff-r-chip: var(--ff-radius-control);
+  --ff-r-card: var(--ff-radius-card);
+  --ff-r-hero: var(--ff-radius-sheet);
+  --ff-r-pill: var(--ff-radius-pill);
+  --radius-sm: 8px;
+  --radius-control: var(--ff-radius-control);
+  --radius-md: var(--ff-radius-card);
+  --radius-card: var(--ff-radius-card);
+  --radius-panel: 20px;
+  --radius-xl: var(--ff-radius-sheet);
+  --radius-pill: var(--ff-radius-pill);
+  --r-chip: var(--ff-radius-control);
+  /* v14 design-spec glass card maps to the 20px panel tier; inner cards remain 16px. */
+  --r-card: var(--radius-panel);
+  --r-hero: var(--ff-radius-sheet);
+  --r-pill: var(--ff-radius-pill);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ff-ease-expand: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-expand: var(--ff-ease-expand);
   --t-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --t-med: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --t-slow: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  --ff-duration-tap: 120ms;
+  --ff-duration-hover: 180ms;
+  --ff-duration-expand: 260ms;
+  --ff-t-tap: var(--ff-duration-tap) ease-out;
+  --ff-t-hover: var(--ff-duration-hover);
+  --ff-t-expand: var(--ff-duration-expand) var(--ff-ease-expand);
+  --dur-tap: var(--ff-duration-tap);
+  --dur-hover: var(--ff-duration-hover);
+  --dur-expand: var(--ff-duration-expand);
 
-  --shadow-card: 0 18px 42px rgba(0, 0, 0, 0.28);
-  --shadow-glow: 0 0 0 1px rgba(103, 232, 249, 0.1), 0 0 28px rgba(45, 212, 191, 0.12);
-  --shadow-lift: 0 22px 48px rgba(0, 0, 0, 0.34);
+  --ff-shadow-low: 0 8px 22px rgba(0, 0, 0, 0.18);
+  --ff-shadow-card: 0 18px 42px rgba(0, 0, 0, 0.28);
+  --ff-shadow-lift: 0 22px 48px rgba(0, 0, 0, 0.34);
+  --ff-shadow-glow: 0 0 26px rgba(125, 211, 252, 0.32);
+  --ff-focus-ring: 0 0 0 2px var(--ff-action), 0 0 0 5px rgba(125, 211, 252, 0.28);
+  --shadow-card: var(--ff-shadow-card);
+  --shadow-low: var(--ff-shadow-low);
+  --shadow-medium: var(--ff-shadow-card);
+  --shadow-glow: var(--ff-shadow-glow);
+  --shadow-lift: var(--ff-shadow-lift);
+  --focus-ring: var(--ff-focus-ring);
+  --disabled-opacity: 0.5; /* disabled state (FND-017) */
+  --panel-fill:
+    linear-gradient(145deg, color-mix(in srgb, var(--ff-action) 6%, transparent), transparent 36%),
+    linear-gradient(315deg, color-mix(in srgb, var(--ff-urgency) 5%, transparent), transparent 34%),
+    var(--surface-glass);
+  --panel-fill-quiet:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 9rem),
+    var(--surface-glass);
 
-  /* Atmosphere (Phase 2.1) — glow/surface/noise tokens for the .u-* layer */
-  --glow-brand: 0 0 24px rgba(45, 212, 191, 0.35);
-  --glow-accent: 0 0 20px rgba(247, 185, 85, 0.3);
-  --glow-danger: 0 0 16px rgba(239, 68, 68, 0.3);
-  --surface-deep: #04070d;
-  --text-on-deep: #e8eef6;
+  /* Compatibility atmosphere tokens stay on the canonical palette. */
+  --glow-brand: 0 0 24px rgba(125, 211, 252, 0.35);
+  --glow-accent: 0 0 20px rgba(251, 146, 60, 0.3);
+  --glow-danger: 0 0 16px rgba(251, 113, 133, 0.3);
+  --surface-deep: var(--ff-bg-deep);
+  --text-on-deep: var(--ff-text);
   --noise-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
 
   --z-base: 0;
@@ -74,60 +240,104 @@
   --z-modal: 10000;
   --z-boot: 20000;
 
-  /* Canonical breakpoint documentation. CSS custom properties cannot be
-     used directly in @media queries, so queries keep literal values.
-     Literal map: 360/430/480 -> sm, 640 -> md, 768 -> lg/mobile cutover,
-     980/1024/1080 -> xl/tablet-desktop, 1500 -> 2xl/wide. */
+  /* Frost & Flame breakpoint contract:
+       mobile   <= 640   single column, floating dock
+       tablet   641-1024 two-up, sheets -> modals
+       desktop  >= 1025  content + rail
+     CSS custom properties cannot be used in @media, so queries keep literals. */
+  --ff-bp-mobile-max: 640px;
+  --ff-bp-tablet-max: 1024px;
+  --ff-bp-desktop-min: 1025px;
   --bp-sm: 480px;
-  --bp-md: 640px;
-  --bp-lg: 768px;
-  --bp-xl: 1024px;
+  --bp-md: var(--ff-bp-mobile-max);
+  --bp-lg: var(--ff-bp-tablet-max);
+  --bp-xl: var(--ff-bp-desktop-min);
   --bp-2xl: 1500px;
 
   --body-bg:
-    linear-gradient(90deg, rgba(103, 232, 249, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(247, 185, 85, 0.04) 1px, transparent 1px),
-    linear-gradient(135deg, #060b13 0%, #0a101a 46%, #08120f 100%);
-  --bg-solid: #060b13;
-  --app-bg: rgba(8, 13, 23, 0.88);
+    linear-gradient(90deg, rgba(125, 211, 252, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(251, 146, 60, 0.035) 1px, transparent 1px),
+    linear-gradient(135deg, var(--ff-bg) 0%, var(--ff-bg-deep) 100%);
+  --bg-solid: var(--ff-bg);
+  --app-bg: var(--ff-panel-strong);
   --dot-grid: transparent;
-  --glass-blur: blur(20px);
-  --v12-line: linear-gradient(90deg, rgba(103, 232, 249, 0.85), rgba(247, 185, 85, 0.76), rgba(54, 211, 153, 0.74));
-  --v12-control: rgba(16, 24, 39, 0.88);
+  --ff-blur-surface: 14px;
+  --ff-blur-raised: 18px;
+  --ff-blur: var(--ff-blur-surface);
+  --ff-pad-card: var(--ff-space-4);
+  --ff-gutter: var(--ff-space-4);
+  --glass-blur: blur(var(--ff-blur-raised));
+  --blur: var(--ff-blur-surface);
+  --blur-raised: var(--ff-blur-raised);
+  --v12-line: var(--ff-gradient-celestial);
+  --v12-control: var(--ff-control);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --brand: #0e9488;
-  --brand-light: #0b86a0;
-  --brand-glow: rgba(14, 148, 136, 0.16);
-  --accent: #b66b12;
-  --accent-2: #0f8f61;
-  --danger: #c93136;
-  --panel: rgba(255, 255, 255, 0.9);
-  --panel-strong: rgba(255, 255, 255, 0.98);
-  --surface: #ffffff;
-  --surface-2: #f7fafc;
-  --surface-3: #eef4f7;
-  --border: rgba(32, 52, 71, 0.14);
-  --border-hover: rgba(14, 148, 136, 0.34);
-  --text-primary: #101827;
-  --text-muted: #4b5c73;
-  --text-secondary: #334155;
-  --text-dim: #65768c;
-  --shadow-card: 0 14px 36px rgba(16, 24, 39, 0.08);
-  --shadow-glow: 0 0 24px rgba(8, 145, 178, 0.14);
-  --shadow-lift: 0 18px 42px rgba(16, 24, 39, 0.11);
+  /* Semantic accents darken for readable light surfaces; the six raw
+     --ff-{cyan,fire,gold,violet,rose,mint} palette tokens remain unchanged. */
+  --ff-bg: #f5f8fa;
+  --ff-bg-deep: #eef4f7;
+  --ff-surface: #ffffff;
+  --ff-surface-subtle: #f7fafc;
+  --ff-surface-raised: #eef4f7;
+  --ff-panel: rgba(255, 255, 255, 0.9);
+  --ff-panel-strong: rgba(255, 255, 255, 0.98);
+  --ff-panel-translucent: rgba(255, 255, 255, 0.82);
+  --ff-panel-translucent-strong: rgba(255, 255, 255, 0.96);
+  --ff-glass: rgba(16, 24, 39, 0.04);
+  --ff-glass-raised: rgba(16, 24, 39, 0.06);
+  --ff-hairline: rgba(16, 24, 39, 0.12);
+  --ff-surface-soft: rgba(14, 116, 144, 0.055);
+  --ff-surface-hover: rgba(14, 116, 144, 0.085);
+  --ff-surface-selected: rgba(14, 116, 144, 0.12);
+  --ff-control: rgba(255, 255, 255, 0.9);
+  --ff-control-hover: #ffffff;
+  --ff-border: rgba(32, 52, 71, 0.14);
+  --ff-border-subtle: rgba(32, 52, 71, 0.09);
+  --ff-border-strong: rgba(32, 52, 71, 0.24);
+  --ff-border-hover: rgba(14, 116, 144, 0.34);
+  --ff-text: #101827;
+  --ff-text-dim: #4b5c73;
+  --ff-text-supporting: #334155;
+  --ff-text-tertiary: #65768c;
+  --ff-text-muted: #8090a8;
+  --ff-action: #0e7490;
+  --ff-action-hover: #0891b2;
+  --ff-urgency: #c2410c;
+  --ff-warning: #8a6300;
+  --ff-seasonal: #6d4dd6;
+  --ff-success: #0f7a55;
+  --ff-danger: #be123c;
+  --ff-on-accent: #ffffff;
+  --ff-gradient-primary: linear-gradient(90deg, var(--ff-action), var(--ff-urgency));
+  --ff-gradient-celestial: linear-gradient(90deg, var(--ff-action), var(--ff-seasonal), var(--ff-urgency));
+  --ff-shadow-low: 0 7px 20px rgba(16, 24, 39, 0.07);
+  --ff-shadow-card: 0 16px 38px rgba(16, 24, 39, 0.1);
+  --ff-shadow-lift: 0 18px 42px rgba(16, 24, 39, 0.11);
+  --ff-shadow-glow: 0 0 24px rgba(8, 145, 178, 0.14);
+  --ff-focus-ring: 0 0 0 2px var(--ff-action), 0 0 0 5px rgba(14, 116, 144, 0.22);
+
+  /* Theme-sensitive compatibility values. Aliases declared in :root keep
+     resolving through the semantic --ff-* overrides above. */
+  --brand-glow: rgba(14, 116, 144, 0.16);
+  --panel-fill:
+    linear-gradient(145deg, color-mix(in srgb, var(--ff-action) 6%, transparent), transparent 36%),
+    linear-gradient(315deg, color-mix(in srgb, var(--ff-urgency) 4%, transparent), transparent 34%),
+    var(--surface-glass);
+  --panel-fill-quiet:
+    linear-gradient(180deg, color-mix(in srgb, var(--ff-action) 4%, transparent), transparent 9rem),
+    var(--surface-glass);
 
   --body-bg:
-    linear-gradient(90deg, rgba(14, 148, 136, 0.055) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(182, 107, 18, 0.045) 1px, transparent 1px),
-    linear-gradient(135deg, #f7fafc 0%, #eef6f8 46%, #f5f8f0 100%);
-  --bg-solid: #f7fafc;
-  --app-bg: rgba(255, 255, 255, 0.88);
+    linear-gradient(90deg, rgba(14, 116, 144, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(194, 65, 12, 0.035) 1px, transparent 1px),
+    linear-gradient(135deg, var(--ff-bg) 0%, var(--ff-bg-deep) 100%);
+  --bg-solid: var(--ff-bg);
+  --app-bg: var(--ff-panel-strong);
   --dot-grid: rgba(8, 145, 178, 0.04);
-  --glass-blur: blur(20px);
-  --v12-control: rgba(255, 255, 255, 0.92);
+  --v12-control: var(--ff-control);
 }
 
 @media (prefers-reduced-motion: reduce) {

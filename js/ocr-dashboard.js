@@ -70,6 +70,13 @@ import {
   displayGameTime,
 } from './ocr-engine.js';
 import { translations } from './translations.js';
+import { formatLocaleDate, formatLocaleNumber } from './locale-format.js';
+import {
+  fromEdenVoteDatetimeLocal,
+  isEdenVoteDeadlineExpired,
+  normalizeEdenVoteClosesAt,
+  toEdenVoteDatetimeLocal,
+} from './eden-vote-deadline.js';
 import {
   R5_ADJUSTMENT_CATEGORIES,
   R5_ADJUSTMENT_CATEGORY_KEYS,
@@ -99,8 +106,29 @@ import {
   writeStoredPlayerRegistry,
 } from './player-registry.js';
 import { requireSensitiveAdminPin, sensitiveAdminUnlocked } from './admin-pin-gate.js';
-import { applyDashboardAttackMutation } from './dashboard-attack-mutations.js';
+import {
+  applyDashboardAttackMutation,
+  dashboardAttackFingerprint,
+  mergeDashboardOcrAttacks,
+} from './dashboard-attack-mutations.js';
 import { resolveEdenVoteCandidate } from './eden-vote-candidates.js';
+import {
+  classifyRemoteSnapshot,
+  conductAdjustmentFingerprint,
+  createAdminEditGuard,
+  createRevisionWriteQueue,
+  normalizeSyncRevision,
+} from './admin-sync-guard.js';
+import {
+  clearAdminLogView,
+  flushAdminLogPersistence,
+  formatAdminLogMessage,
+  getAdminLogViewCutoff,
+  listAdminLogEntries,
+  resetAdminLogView,
+  subscribeAdminLogStore,
+} from './admin-log-store.js';
+import { createAdminLogSync } from './admin-log-sync.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
@@ -196,7 +224,6 @@ import {
   esc,
   log,
   appendLogEntry,
-  persistLog,
   restoreLogs,
   tryRepairJson,
   getSimilarity,
@@ -242,6 +269,7 @@ state.edenX1Votes = [];
 state.edenX1VoteHistory = [];
 state.edenX1VoteSettings = null;
 let edenX1VoteSettingsVersion = 0;
+let edenX1VoteSettingsSaveQueue = Promise.resolve();
 state.r5EditingId = '';
 state.sortCol = 'adjustedTotal';
 state.sortDir = 'desc';
@@ -437,7 +465,7 @@ function showDashboardCloudFallback(err, label = 'Cloud sync') {
     state._cloudInitPromise = null;
     const message = dashT('adminCloudLocalCache');
     setCloudSyncStatus('local', message);
-    log(`${label} unavailable; showing local dashboard cache.`, 'warn');
+    logDashboardEvent('adminCloudLocalCache', 'warn', {}, { source: 'cloud' });
     return message;
   }
   return showCloudSyncFailure(err, `${label} failed`);
@@ -454,8 +482,10 @@ async function runDashboardCloudTaskWithTimeout(
     return await withDashboardCloudTimeout(operation, timeoutMs, label);
   } catch (err) {
     if (options.optional === true && isRecoverableDashboardCloudError(err)) {
-      operation.then(() => log(`${label} loaded after the initial delay.`, 'info')).catch(() => {});
-      log(`${label} is still loading; dashboard cloud sync remains active.`, 'warn');
+      operation
+        .then(() => logDashboardEvent('adminCloudSynced', 'info', {}, { source: 'cloud' }))
+        .catch(() => {});
+      logDashboardEvent('adminCloudSyncing', 'warn', {}, { source: 'cloud' });
       return null;
     }
     showDashboardCloudFallback(err, label);
@@ -487,7 +517,6 @@ const DASHBOARD_CLOUD_FIELD_KEYS = new Set([
   'total_attacks',
   'attacks',
   'players_summary',
-  'logs',
   'bannerRecords',
   'dutyRecords',
   'contributionRecords',
@@ -549,12 +578,26 @@ function pruneDashboardCloudData(data) {
   );
 }
 
-function renderAuxiliaryRecords() {
-  renderBanners();
-  renderDutyRecords();
-  renderContributions();
-  renderConductAdjustments();
-  renderEdenX1VoteAdmin();
+function activeDashboardSubtabName() {
+  return (
+    document.querySelector('#ocrDashboardRoot .dash-subtab-btn.dash-subtab-active')?.dataset
+      ?.subtab || 'dashboard'
+  );
+}
+
+function renderDashboardSubtab(name = activeDashboardSubtabName()) {
+  if (name === 'dashboard' || name === 'analytics') {
+    render();
+    if (name === 'analytics') animateAnalyticsCards();
+    return;
+  }
+  if (name === 'roster') renderRoster();
+  if (name === 'banners') renderBanners();
+  if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
+    renderDutyRecords();
+  if (name === 'contributions') renderContributions();
+  if (name === 'edenVotes') renderEdenX1VoteAdmin();
+  if (name === 'conduct') renderConductAdjustments();
 }
 
 const CONDUCT_CATEGORY_I18N_KEYS = {
@@ -657,7 +700,7 @@ function edenVoteUpdatedAtLabel(record) {
         ? new Date(raw)
         : null;
   if (!date || Number.isNaN(date.getTime())) return 'pending';
-  return date.toLocaleString(localStorage.getItem('vts_hero_lang') || 'en', {
+  return formatLocaleDate(date, getDashboardLang(), {
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
@@ -676,6 +719,7 @@ function defaultEdenX1VoteSettings() {
     allowEditing: true,
     showPublicResults: false,
     showVoterNames: false,
+    closesAt: '',
   };
 }
 
@@ -688,7 +732,17 @@ function normalizeEdenX1VoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
     showVoterNames: settings.showVoterNames === true,
+    closesAt: normalizeEdenVoteClosesAt(settings.closesAt),
   };
+}
+
+function formatEdenX1VoteDeadlineDate(closesAt) {
+  const normalized = normalizeEdenVoteClosesAt(closesAt);
+  if (!normalized) return '';
+  return formatLocaleDate(normalized, getDashboardLang(), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 function readLocalEdenX1VoteSettings() {
@@ -748,11 +802,36 @@ function renderEdenX1VoteSettings() {
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
   setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
+  const deadlineInput = $id('dashEdenVoteClosesAtInput');
+  if (deadlineInput) {
+    deadlineInput.value = toEdenVoteDatetimeLocal(settings.closesAt);
+    deadlineInput.setCustomValidity('');
+  }
+  const clearDeadline = $id('dashEdenVoteClearDeadlineBtn');
+  if (clearDeadline) clearDeadline.disabled = !settings.closesAt;
+  const deadlinePreview = $id('dashEdenVoteDeadlinePreview');
+  const deadlineDate = formatEdenX1VoteDeadlineDate(settings.closesAt);
+  const deadlineExpired = isEdenVoteDeadlineExpired(settings.closesAt);
+  if (deadlinePreview) {
+    deadlinePreview.textContent = !deadlineDate
+      ? dashT('adminEdenVotesDeadlineNone')
+      : dashT(
+          deadlineExpired ? 'adminEdenVotesDeadlineExpired' : 'adminEdenVotesDeadlineScheduled',
+          { date: deadlineDate }
+        );
+    deadlinePreview.dataset.state = deadlineExpired
+      ? 'expired'
+      : settings.closesAt
+        ? 'active'
+        : 'none';
+  }
   const status = $id('dashEdenVoteSettingsStatus');
   if (status) {
-    status.textContent = settings.votingOpen
-      ? dashT('adminEdenVotesSettingsOpen')
-      : dashT('adminEdenVotesSettingsClosed');
+    status.textContent = deadlineExpired
+      ? dashT('adminEdenVotesDeadlineExpired', { date: deadlineDate })
+      : settings.votingOpen
+        ? dashT('adminEdenVotesSettingsOpen')
+        : dashT('adminEdenVotesSettingsClosed');
   }
 }
 
@@ -1111,28 +1190,36 @@ async function saveEdenX1VoteSettings(nextSettings) {
   writeLocalEdenX1VoteSettings(settings);
   renderEdenX1VoteSettings();
   if (state.adminIsAdmin !== true) return false;
-  try {
-    const db = await ensureCloudSyncReady();
-    if (!db) return false;
-    const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
-    await setDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH), {
-      ...settings,
-      updatedAt: serverTimestamp(),
-      updatedBy: state.adminUser?.uid || '',
-    });
-    if (settings.showPublicResults) await loadEdenX1Votes();
-    await publishEdenX1PublicVoteResults(settings);
-    const status = $id('dashEdenVoteSettingsStatus');
-    if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
-    return true;
-  } catch (err) {
-    console.error('EDEN X1 VOTE SETTINGS SAVE ERROR:', err);
-    const status = $id('dashEdenVoteSettingsStatus');
-    if (status)
-      status.textContent = `${dashT('adminEdenVotesSettingsSaveFailed')}: ${err?.message || err}`;
-    showCloudSyncFailure(err, 'Eden X1 vote settings save failed');
-    return false;
-  }
+  const persistLatestSettings = async () => {
+    try {
+      const db = await ensureCloudSyncReady();
+      if (!db) return false;
+      const latestSettings = normalizeEdenX1VoteSettings(state.edenX1VoteSettings || settings);
+      const { doc, serverTimestamp, setDoc } = await loadFirestoreApi();
+      await setDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH), {
+        ...latestSettings,
+        updatedAt: serverTimestamp(),
+        updatedBy: state.adminUser?.uid || '',
+      });
+      if (latestSettings.showPublicResults) await loadEdenX1Votes();
+      await publishEdenX1PublicVoteResults(latestSettings);
+      const status = $id('dashEdenVoteSettingsStatus');
+      if (status) status.textContent = dashT('adminEdenVotesSettingsSaved');
+      return true;
+    } catch (err) {
+      console.error('EDEN X1 VOTE SETTINGS SAVE ERROR:', err);
+      const status = $id('dashEdenVoteSettingsStatus');
+      if (status)
+        status.textContent = `${dashT('adminEdenVotesSettingsSaveFailed')}: ${err?.message || err}`;
+      showCloudSyncFailure(err, 'Eden X1 vote settings save failed');
+      return false;
+    }
+  };
+  edenX1VoteSettingsSaveQueue = edenX1VoteSettingsSaveQueue.then(
+    persistLatestSettings,
+    persistLatestSettings
+  );
+  return edenX1VoteSettingsSaveQueue;
 }
 
 async function loadEdenX1VoteAdminData() {
@@ -1166,12 +1253,39 @@ function bindEdenX1VoteAdminControls() {
       });
     });
   });
+  const deadlineInput = $id('dashEdenVoteClosesAtInput');
+  const persistDeadline = () => {
+    if (!deadlineInput) return;
+    deadlineInput.setCustomValidity('');
+    const closesAt = fromEdenVoteDatetimeLocal(deadlineInput.value);
+    if (deadlineInput.value && !closesAt) {
+      deadlineInput.setCustomValidity(dashT('adminEdenVotesDeadlineInvalid'));
+      deadlineInput.reportValidity();
+      return;
+    }
+    const currentSettings = normalizeEdenX1VoteSettings(
+      state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
+    );
+    if (currentSettings.closesAt === closesAt) {
+      renderEdenX1VoteSettings();
+      return;
+    }
+    saveEdenX1VoteSettings({ ...currentSettings, closesAt });
+  };
+  deadlineInput?.addEventListener('input', () => deadlineInput.setCustomValidity(''));
+  deadlineInput?.addEventListener('change', persistDeadline);
+  $id('dashEdenVoteSaveDeadlineBtn')?.addEventListener('click', persistDeadline);
+  $id('dashEdenVoteClearDeadlineBtn')?.addEventListener('click', () => {
+    if (!deadlineInput) return;
+    deadlineInput.value = '';
+    persistDeadline();
+  });
 }
 
 function formatSignedPoints(points) {
   const n = Number(points || 0);
   if (!n) return '0';
-  return `${n > 0 ? '+' : '-'}${Math.abs(n).toLocaleString()}`;
+  return `${n > 0 ? '+' : '-'}${formatLocaleNumber(Math.abs(n), getDashboardLang())}`;
 }
 
 function conductCategoryLabel(categoryKey) {
@@ -1190,7 +1304,7 @@ function conductCreatedAtLabel(record) {
         ? new Date(raw)
         : null;
   if (!date || Number.isNaN(date.getTime())) return dashT('adminConductDatePending');
-  return date.toLocaleString(localStorage.getItem('vts_hero_lang') || 'en', {
+  return formatLocaleDate(date, getDashboardLang(), {
     month: 'short',
     day: '2-digit',
     hour: '2-digit',
@@ -1406,6 +1520,7 @@ function syncConductManualPlayerInput(options = {}) {
   input.classList.toggle('hidden', !manual);
   if (!manual) {
     input.value = '';
+    input.setAttribute('aria-invalid', 'false');
     return;
   }
   if (options.prefill && !input.value.trim()) input.value = options.prefill;
@@ -1476,6 +1591,7 @@ function renderConductCategoryPicker() {
 
 function resetConductForm() {
   state.r5EditingId = '';
+  state._r5EditingFingerprint = '';
   const form = $id('dashConductForm');
   if (form) form.reset();
   setConductPlayerSearchExpanded(false);
@@ -1487,12 +1603,15 @@ function resetConductForm() {
   $id('dashConductCancelEditBtn')?.classList.add('hidden');
   const saveLabel = $id('dashConductSaveBtn')?.querySelector('span');
   if (saveLabel) saveLabel.textContent = dashT('adminConductSave');
+  finishAdminEditSession();
 }
 
 function startConductEdit(id) {
   const record = (state.r5Adjustments || []).find((item) => item.id === id);
   if (!record) return;
+  adminEditGuard.begin('conduct-form', dashboardCloudBaseRevision);
   state.r5EditingId = id;
+  state._r5EditingFingerprint = conductAdjustmentFingerprint(record);
   setConductPlayerSearchExpanded(false);
   renderConductPlayerPicker();
   renderConductCategoryPicker();
@@ -1577,7 +1696,10 @@ function renderConductAdjustments() {
         if (state.cloudSyncConfigured === false) {
           deleteLocalR5Adjustment(id);
         } else {
-          await deleteR5Adjustment(id);
+          const current = (state.r5Adjustments || []).find((record) => record.id === id);
+          await deleteR5Adjustment(id, {
+            expectedFingerprint: conductAdjustmentFingerprint(current),
+          });
         }
         state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
         renderConductAdjustments();
@@ -1662,6 +1784,9 @@ function bindConductControls() {
   $id('dashConductPlayer')?.addEventListener('change', () =>
     syncConductManualPlayerInput({ focus: true })
   );
+  $id('dashConductManualPlayerInput')?.addEventListener('input', (event) => {
+    event.target.setAttribute('aria-invalid', 'false');
+  });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const player = $id('dashConductPlayer');
@@ -1669,12 +1794,17 @@ function bindConductControls() {
     const categoryKey = $id('dashConductCategory')?.value || 'merit_other';
     const points = $id('dashConductPoints')?.value;
     const note = $id('dashConductNote')?.value || '';
+    const manualPlayerInput = $id('dashConductManualPlayerInput');
+    player?.setAttribute('aria-invalid', 'false');
+    manualPlayerInput?.setAttribute('aria-invalid', 'false');
     let playerKey = player?.value || '';
     let playerName = selected?.dataset.playerName || selected?.textContent || '';
     if (playerKey === CONDUCT_MANUAL_PLAYER_VALUE) {
       const manualName = ($id('dashConductManualPlayerInput')?.value || '').trim();
       if (!manualName) {
         setConductStatus(dashT('adminConductNoPlayers'), 'warn');
+        manualPlayerInput?.setAttribute('aria-invalid', 'true');
+        manualPlayerInput?.focus();
         return;
       }
       try {
@@ -1688,6 +1818,8 @@ function bindConductControls() {
     }
     if (!playerKey || !playerName) {
       setConductStatus(dashT('adminConductNoPlayers'), 'warn');
+      player?.setAttribute('aria-invalid', 'true');
+      player?.focus();
       return;
     }
     try {
@@ -1703,7 +1835,9 @@ function bindConductControls() {
         if (state.cloudSyncConfigured === false) {
           updateLocalR5Adjustment(state.r5EditingId, patch);
         } else {
-          await updateR5Adjustment(state.r5EditingId, patch);
+          await updateR5Adjustment(state.r5EditingId, patch, {
+            expectedFingerprint: state._r5EditingFingerprint,
+          });
         }
         setConductStatus(dashT('adminConductUpdated'), 'success');
       } else {
@@ -1736,8 +1870,7 @@ export function scheduleDashboardRender() {
   if (dashboardRenderFrame) return;
   const run = () => {
     dashboardRenderFrame = 0;
-    render();
-    renderAuxiliaryRecords();
+    renderDashboardSubtab();
   };
   if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
     dashboardRenderFrame = window.requestAnimationFrame(run);
@@ -1753,7 +1886,7 @@ async function initDashboardFirebase() {
   const firebase = initFirebase();
   state.cloudSyncConfigured = Boolean(firebase?.configured && firebase.db && firebase.auth);
   if (!state.cloudSyncConfigured) {
-    log(dashT('adminCloudLocalCache'), 'warn');
+    logDashboardEvent('adminCloudLocalCache', 'warn', {}, { source: 'cloud' });
   }
   return state.cloudSyncConfigured;
 }
@@ -1892,24 +2025,13 @@ function switchDashSubtab(name) {
     btn.setAttribute('aria-selected', 'true');
     btn.tabIndex = 0;
   }
-  if (name === 'analytics') {
-    render();
-    animateAnalyticsCards();
-  } else {
-    state._analyticsAnimated = false;
-  }
-  if (name === 'roster') renderRoster();
-  if (name === 'banners') renderBanners();
-  if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
-    renderDutyRecords();
-  if (name === 'contributions') {
-    renderContributions();
-  }
+  if (name !== 'analytics') state._analyticsAnimated = false;
+  // Let the newly selected panel paint before any data-heavy table/chart work.
+  // Previously every hidden admin panel rendered synchronously inside the click.
+  requestAnimationFrame(() => requestAnimationFrame(() => renderDashboardSubtab(name)));
   if (name === 'edenVotes') {
-    renderEdenX1VoteAdmin();
     if (state.adminIsAdmin === true) loadEdenX1VoteAdminData();
   }
-  if (name === 'conduct') renderConductAdjustments();
 }
 window.switchDashSubtab = switchDashSubtab;
 window.seedDashboardForSmokeTest = function (dashData, rosterSnapshots = []) {
@@ -2023,25 +2145,144 @@ window.setEdenX1VotesForTest = function setEdenX1VotesForTest(
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-export async function saveRosterSnapshotsToFirestore() {
+const ROSTER_SNAPSHOTS_BACKUP_KEY = 'vts_roster_snapshots_backup_v1';
+
+function rosterCloudUpdated(data) {
+  return String(data?.updated || '');
+}
+
+function backupRosterSnapshots(snapshots, reason) {
+  if (!Array.isArray(snapshots) || !snapshots.length) return;
+  try {
+    localStorage.setItem(
+      ROSTER_SNAPSHOTS_BACKUP_KEY,
+      JSON.stringify({ savedAt: new Date().toISOString(), reason, snapshots })
+    );
+  } catch (e) {}
+}
+
+function applyRosterCloudData(data) {
+  if (!Array.isArray(data?.snapshots)) return false;
+  state.rosterSnapshots = trimRosterSnapshots(data.snapshots);
+  state._rosterCloudBaseUpdated = rosterCloudUpdated(data);
+  state._rosterDeferredCloudData = null;
+  state._rosterCloudConflict = false;
+  localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
+  renderRoster();
+  return true;
+}
+
+function createRosterCloudConflictError(cloudData) {
+  const error = new Error('Roster history changed in cloud. Refresh and retry your edit.');
+  error.name = 'RosterCloudConflictError';
+  error.code = 'roster-cloud-conflict';
+  error.cloudData = cloudData;
+  return error;
+}
+
+const ROSTER_CLOUD_CONFLICT_MESSAGE =
+  'Roster history changed in cloud. Refresh and retry your edit.';
+
+function cloneRosterSnapshots(snapshots) {
+  try {
+    if (typeof structuredClone === 'function') return structuredClone(snapshots);
+    return JSON.parse(JSON.stringify(snapshots));
+  } catch {
+    return snapshots.slice();
+  }
+}
+
+function nextRosterCloudUpdated(cloudUpdated) {
+  const cloudMs = Date.parse(cloudUpdated);
+  return new Date(Math.max(Date.now(), Number.isFinite(cloudMs) ? cloudMs + 1 : 0)).toISOString();
+}
+
+async function writeRosterSnapshotsToFirestore({ snapshots, sourceLength }, baseUpdated) {
   try {
     const db = await ensureCloudSyncReady();
-    if (!db) return;
-    const { doc, setDoc } = await loadFirestoreApi();
-    const snapshots = trimRosterSnapshots(state.rosterSnapshots);
-    if (snapshots.length !== state.rosterSnapshots.length) {
-      state.rosterSnapshots = snapshots;
-      localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
-      log(`Roster snapshot history trimmed to ${snapshots.length} cloud-safe snapshots.`, 'warn');
+    if (!db) return { ok: false };
+    const { doc, runTransaction } = await loadFirestoreApi();
+    if (snapshots.length !== sourceLength) {
+      logDashboardEvent(
+        'adminLogRosterTrimmed',
+        'warn',
+        { count: snapshots.length },
+        { source: 'roster' }
+      );
     }
-    await setDoc(
-      doc(db, FS_ROSTER_PATH),
-      sanitizeForFirestore({ snapshots, updated: new Date().toISOString() })
-    );
+    const ref = doc(db, FS_ROSTER_PATH);
+    let writtenData = null;
+    await runTransaction(db, async (transaction) => {
+      const current = await transaction.get(ref);
+      const cloudData = current.exists() ? current.data() : null;
+      const cloudUpdated = rosterCloudUpdated(cloudData);
+      const expectedUpdated = baseUpdated === null ? null : String(baseUpdated);
+      if (
+        (cloudData && (expectedUpdated === null || expectedUpdated !== cloudUpdated)) ||
+        (!cloudData && expectedUpdated !== null && expectedUpdated !== '')
+      ) {
+        throw createRosterCloudConflictError(cloudData);
+      }
+      writtenData = sanitizeForFirestore({
+        snapshots,
+        updated: nextRosterCloudUpdated(cloudUpdated),
+      });
+      transaction.set(ref, writtenData);
+    });
+    state._rosterCloudBaseUpdated = rosterCloudUpdated(writtenData);
+    return { ok: true, revision: state._rosterCloudBaseUpdated };
   } catch (e) {
     console.error('ROSTER FIRESTORE SAVE ERROR:', e);
+    if (e?.code === 'roster-cloud-conflict') {
+      backupRosterSnapshots(snapshots, 'cloud-conflict');
+      state._rosterCloudConflict = true;
+      if (e.cloudData) state._rosterDeferredCloudData = e.cloudData;
+      setCloudSyncStatus('error', e.message);
+      logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'roster' });
+      if (typeof window.showToast === 'function') window.showToast(e.message, 'warn', 9000);
+      return { ok: false };
+    }
     showCloudSyncFailure(e, 'Roster cloud save failed');
+    return { ok: false };
   }
+}
+
+function reconcileDeferredRosterCloudData() {
+  const deferred = state._rosterDeferredCloudData;
+  if (!deferred) return;
+  const incomingUpdated = rosterCloudUpdated(deferred);
+  const currentUpdated = String(state._rosterCloudBaseUpdated || '');
+  if (!incomingUpdated || incomingUpdated <= currentUpdated) {
+    state._rosterDeferredCloudData = null;
+    return;
+  }
+  if (state._rosterCloudConflict) return;
+  state._rosterCloudConflict = true;
+  backupRosterSnapshots(state.rosterSnapshots, 'cloud-conflict');
+  setCloudSyncStatus('error', ROSTER_CLOUD_CONFLICT_MESSAGE);
+  logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'roster' });
+  if (typeof window.showToast === 'function') {
+    window.showToast(ROSTER_CLOUD_CONFLICT_MESSAGE, 'warn', 9000);
+  }
+}
+
+const rosterCloudWriteQueue = createRevisionWriteQueue(writeRosterSnapshotsToFirestore, {
+  onIdle() {
+    state._rosterCloudSaveInFlight = false;
+    reconcileDeferredRosterCloudData();
+  },
+});
+
+export function saveRosterSnapshotsToFirestore(
+  snapshotInput = state.rosterSnapshots,
+  baseUpdated = state._rosterCloudBaseUpdated ?? null
+) {
+  const sourceSnapshots = cloneRosterSnapshots(Array.isArray(snapshotInput) ? snapshotInput : []);
+  const snapshots = trimRosterSnapshots(sourceSnapshots);
+  state._rosterCloudSaveInFlight = true;
+  return rosterCloudWriteQueue
+    .enqueue({ snapshots, sourceLength: sourceSnapshots.length }, baseUpdated)
+    .then((result) => result?.ok === true);
 }
 async function loadRosterSnapshotsFromFirestore() {
   if (state._fsRosterUnsub) {
@@ -2056,8 +2297,10 @@ async function loadRosterSnapshotsFromFirestore() {
     if (snap.exists()) {
       const data = snap.data();
       if (Array.isArray(data.snapshots)) {
-        state.rosterSnapshots = trimRosterSnapshots(data.snapshots);
-        localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
+        if (JSON.stringify(state.rosterSnapshots) !== JSON.stringify(data.snapshots)) {
+          backupRosterSnapshots(state.rosterSnapshots, 'cloud-refresh');
+        }
+        applyRosterCloudData(data);
       }
     }
     state._fsRosterUnsub = onSnapshot(
@@ -2066,9 +2309,16 @@ async function loadRosterSnapshotsFromFirestore() {
         if (s.exists()) {
           const d = s.data();
           if (Array.isArray(d.snapshots)) {
-            state.rosterSnapshots = trimRosterSnapshots(d.snapshots);
-            localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
-            renderRoster();
+            if (
+              state._rosterCloudSaveInFlight ||
+              Number(state._rosterCloudSaveQueued || 0) > 0 ||
+              rosterCloudWriteQueue.state().pending > 0
+            ) {
+              state._rosterDeferredCloudData = d;
+              return;
+            }
+            if (rosterCloudUpdated(d) === state._rosterCloudBaseUpdated) return;
+            applyRosterCloudData(d);
           }
         }
       },
@@ -2088,21 +2338,22 @@ async function loadRosterSnapshotsFromFirestore() {
 // Ã¢â€â‚¬Ã¢â€â‚¬ Roster Image OCR Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function processRosterImages(files) {
   if (state._rosterProcessing) {
-    log('Roster OCR already running...', 'warn');
+    logDashboardEvent('adminLogRosterAlreadyRunning', 'warn', {}, { source: 'roster' });
     return;
   }
   state._rosterProcessing = true;
   const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
-    log(
-      rejected.length
-        ? dashT('adminRosterUnsupportedImageStatus', {
-            files: rejected.slice(0, 3).join(', '),
-          })
-        : dashT('adminRosterNoImageSelectedStatus'),
-      'warn'
-    );
+    const params = rejected.length ? { files: rejected.slice(0, 3).join(', ') } : {};
+    if (rejected.length) {
+      logDashboardEvent('adminRosterUnsupportedImageStatus', 'warn', params, {
+        source: 'roster',
+        localOnly: true,
+      });
+    } else {
+      logDashboardEvent('adminRosterNoImageSelectedStatus', 'warn', {}, { source: 'roster' });
+    }
     state._rosterProcessing = false;
     return;
   }
@@ -2111,7 +2362,12 @@ async function processRosterImages(files) {
   const progText = $id('dashRosterProgressText');
   if (prog) prog.classList.remove('hidden');
 
-  log(dashT('adminRosterScanningImagesLog', { count: valid.length }), 'info');
+  logDashboardEvent(
+    'adminRosterScanningImagesLog',
+    'info',
+    { count: valid.length },
+    { source: 'roster' }
+  );
 
   let allNames = [];
 
@@ -2152,15 +2408,16 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
           if (attempt === 3 || !isRetryableOcrRequestError(e)) throw e;
           const delayMs = getOcrRetryDelayMs(e, attempt);
           const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
-          log(
-            dashT('adminRosterOcrRetryLog', {
+          logDashboardEvent(
+            'adminRosterOcrRetryLog',
+            'warn',
+            {
               error: describeOcrRequestError(e, dashT),
               seconds: delaySeconds,
               attempt,
               total: 3,
-            }),
-            'warn',
-            f.name
+            },
+            { file: f.name, source: 'ocr', localOnly: true }
           );
           await new Promise((r) => setTimeout(r, delayMs));
         }
@@ -2186,10 +2443,11 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
         .map((n) => n.trim());
       allNames.push(...names);
     } catch (e) {
-      log(
-        dashT('adminRosterOcrErrorLog', { error: describeOcrRequestError(e, dashT) }),
+      logDashboardEvent(
+        'adminRosterOcrErrorLog',
         'error',
-        f.name
+        { error: describeOcrRequestError(e, dashT) },
+        { file: f.name, source: 'ocr', localOnly: true }
       );
     }
   }
@@ -2203,12 +2461,17 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
     .sort();
 
   if (!unique.length) {
-    log('No member names found in the screenshot(s).', 'warn');
+    logDashboardEvent('adminLogRosterNoNames', 'warn', {}, { source: 'roster' });
     alert('Could not extract any member names from the image. Check the log panel for details.');
     return;
   }
 
-  log(`Extracted ${unique.length} unique member names from roster image(s).`, 'info');
+  logDashboardEvent(
+    'adminLogRosterExtracted',
+    'info',
+    { count: unique.length },
+    { source: 'roster' }
+  );
 
   const prevText = state.rosterSnapshots.length
     ? state.rosterSnapshots[state.rosterSnapshots.length - 1].members.join('\n')
@@ -2220,7 +2483,7 @@ JSON SCHEMA: ["Player One", "Player Two", "Player Three"]`;
   if (input !== null && input.trim()) {
     takeRosterSnapshot(input);
   } else {
-    log('Roster snapshot cancelled.', 'warn');
+    logDashboardEvent('adminLogRosterCancelled', 'warn', {}, { source: 'roster' });
   }
 }
 
@@ -2253,13 +2516,17 @@ function setLoginError(message = '') {
   if (!err) return;
   err.textContent = message;
   err.classList.toggle('hidden', !message);
+  ['dashLoginUser', 'dashLoginPass'].forEach((id) => {
+    $id(id)?.setAttribute('aria-invalid', message ? 'true' : 'false');
+  });
 }
 
 function setLoginBusy(busy) {
   const loginBtn = $id('dashLoginBtn');
   if (!loginBtn) return;
   loginBtn.disabled = busy;
-  loginBtn.textContent = busy ? '...' : dashT('adminLoginBtn');
+  loginBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
+  loginBtn.textContent = busy ? dashT('adminConnectingAuth') : dashT('adminLoginBtn');
 }
 
 function describeAdminAuthError(err) {
@@ -2277,38 +2544,13 @@ function describeAdminAuthError(err) {
 }
 
 let connectingTimer = null;
-let connectingProgressTimer = null;
 let connectingProgressValue = 0;
-let connectingProgressCap = 92;
 let _isConnecting = false;
 
-function stopConnectingProgressLoop() {
-  if (connectingProgressTimer) {
-    clearInterval(connectingProgressTimer);
-    connectingProgressTimer = null;
-  }
-}
-
-function startConnectingProgressLoop() {
-  stopConnectingProgressLoop();
-  connectingProgressTimer = setInterval(() => {
-    const overlay = $id('dashConnecting');
-    if (!overlay || overlay.classList.contains('hidden')) return;
-    if (connectingProgressValue >= connectingProgressCap) return;
-    const remaining = connectingProgressCap - connectingProgressValue;
-    const step = Math.max(0.25, Math.min(1.6, remaining * 0.08));
-    setConnectingProgress(connectingProgressValue + step);
-  }, 260);
-}
-
 async function completeConnectingProgress(statusMsg = '') {
-  connectingProgressCap = 100;
-  setConnectingProgress(98, statusMsg || dashT('adminConnectingData'), {
-    cap: 100,
-    immediate: true,
-  });
+  setConnectingProgress(96, statusMsg || dashT('adminConnectingData'), { immediate: true });
   await new Promise((resolve) => requestAnimationFrame(resolve));
-  setConnectingProgress(100, '', { cap: 100, force: true, immediate: true });
+  setConnectingProgress(100, '', { force: true, immediate: true });
 }
 
 function showConnecting(statusMsg = '') {
@@ -2323,9 +2565,7 @@ function showConnecting(statusMsg = '') {
   const status = $id('dashConnectingStatus');
   if (status) status.textContent = statusMsg;
   connectingProgressValue = 4;
-  connectingProgressCap = 88;
   setConnectingProgress(connectingProgressValue);
-  startConnectingProgressLoop();
   if (connectingTimer) clearTimeout(connectingTimer);
   connectingTimer = setTimeout(() => {
     console.warn('Connecting overlay exceeded 12s - forcing dashboard open.');
@@ -2338,7 +2578,6 @@ function showConnecting(statusMsg = '') {
 }
 function hideConnecting() {
   _isConnecting = false;
-  stopConnectingProgressLoop();
   if (connectingTimer) {
     clearTimeout(connectingTimer);
     connectingTimer = null;
@@ -2355,7 +2594,6 @@ function setConnectingStatus(msg) {
 function setConnectingProgress(pct, statusMsg, options = {}) {
   const fill = $id('dashConnectingBarFill');
   const pctEl = $id('dashConnectingBarPct');
-  if (Number.isFinite(options.cap)) connectingProgressCap = options.cap;
   const clamped = Math.max(0, Math.min(100, pct));
   connectingProgressValue = options.force ? clamped : Math.max(connectingProgressValue, clamped);
   if (fill) {
@@ -2372,12 +2610,11 @@ function setConnectingProgress(pct, statusMsg, options = {}) {
 function updateLastSynced() {
   const el = $id('dashUpdated');
   if (!el) return;
-  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
-  const time = new Intl.DateTimeFormat(lang, {
+  const time = formatLocaleDate(new Date(), getDashboardLang(), {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-  }).format(new Date());
+  });
   el.textContent = ' - ' + dashT('adminLastSynced', { time });
 }
 function setRefreshNeedsCloud(needsCloud) {
@@ -2468,13 +2705,16 @@ function describeCloudSyncError(err) {
   }
   return err?.message || err?.code || String(err || dashT('adminCloudSyncError'));
 }
-function showCloudSyncFailure(err, prefix = 'Cloud sync failed') {
+function showCloudSyncFailure(err) {
   const message = describeCloudSyncError(err);
   const recoverable = isRecoverableDashboardCloudError(err);
   if (recoverable) state._cloudInitPromise = null;
   setCloudSyncStatus(recoverable ? 'local' : 'error', message);
-  const lang = getDashboardLang();
-  log(lang === 'en' ? `${prefix}: ${message}` : message, recoverable ? 'warn' : 'error');
+  if (recoverable) {
+    logDashboardEvent('adminCloudLocalCache', 'warn', {}, { source: 'cloud' });
+  } else {
+    logDashboardEvent('adminCloudSyncError', 'error', {}, { source: 'cloud' });
+  }
   if (!_isConnecting && typeof window.showToast === 'function')
     window.showToast(message, recoverable ? 'info' : 'error', 7000);
   return message;
@@ -2506,12 +2746,248 @@ function dashT(key, vars = {}) {
   return text;
 }
 
+function logDashboardEvent(key, type = 'info', params = {}, options = {}) {
+  return log(dashT(key, params), type, options.file || null, {
+    messageKey: key,
+    params,
+    source: options.source || 'dashboard',
+    localOnly: options.localOnly === true,
+  });
+}
+
+let adminLogSyncController = null;
+let adminLogControlsBound = false;
+let adminLogSyncState = 'local';
+let adminLogRenderFrame = null;
+
+function formatAdminLogTime(entry) {
+  if (entry?.legacyTime) return entry.legacyTime;
+  const millis = Number(entry?.createdAtMs) || Number(entry?.clientCreatedAtMs) || 0;
+  if (!millis) return '--:--:--';
+  try {
+    return formatLocaleDate(millis, getDashboardLang(), {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return new Date(millis).toISOString().slice(11, 19);
+  }
+}
+
+function getFilteredAdminLogEntries() {
+  return listAdminLogEntries({
+    query: $id('dashLogSearch')?.value || '',
+    severity: $id('dashLogSeverity')?.value || 'all',
+    limit: 200,
+  });
+}
+
+function adminLogSourceLabel(entry) {
+  const labels = [];
+  if (entry?.source && entry.source !== 'system') labels.push(entry.source);
+  if (entry?.file) labels.push(entry.file);
+  return labels.join(' · ');
+}
+
+function renderAdminActivityTerminal() {
+  const out = $id('dashLogOutput');
+  if (!out) return;
+  const entries = getFilteredAdminLogEntries();
+  if (!$id('dashTerminalBody')?.hidden) {
+    const wasNearBottom = out.scrollHeight - out.scrollTop - out.clientHeight < 36;
+    const fragment = document.createDocumentFragment();
+    [...entries].reverse().forEach((entry) => {
+      appendLogEntry(fragment, {
+        ...entry,
+        time: formatAdminLogTime(entry),
+        file: adminLogSourceLabel(entry),
+        msg: formatAdminLogMessage(entry, dashT),
+      });
+    });
+    out.replaceChildren(fragment);
+    if (wasNearBottom) out.scrollTop = out.scrollHeight;
+  }
+
+  const totalVisible = listAdminLogEntries({ limit: 200 }).length;
+  const severeCount = listAdminLogEntries({ limit: 200 }).filter(
+    (entry) => entry.severity === 'warn' || entry.severity === 'error'
+  ).length;
+  const summary = $id('dashTerminalSummary');
+  const count = $id('dashTerminalCount');
+  const severe = $id('dashTerminalSevereCount');
+  const empty = $id('dashTerminalEmpty');
+  const restore = $id('dashRestoreLogViewBtn');
+  if (summary)
+    summary.textContent = dashT('adminTerminalSummary', {
+      count: formatLocaleNumber(totalVisible, getDashboardLang()),
+    });
+  if (count) {
+    count.textContent = dashT('adminTerminalCount', {
+      count: formatLocaleNumber(entries.length, getDashboardLang()),
+      limit: formatLocaleNumber(200, getDashboardLang()),
+    });
+  }
+  if (severe) {
+    severe.textContent = dashT('adminTerminalWarnings', {
+      count: formatLocaleNumber(severeCount, getDashboardLang()),
+    });
+    severe.hidden = severeCount === 0;
+  }
+  if (empty) empty.hidden = entries.length > 0;
+  if (restore) restore.hidden = getAdminLogViewCutoff() === 0;
+}
+
+function scheduleAdminActivityTerminalRender() {
+  if (adminLogRenderFrame !== null) return;
+  adminLogRenderFrame = requestAnimationFrame(() => {
+    adminLogRenderFrame = null;
+    renderAdminActivityTerminal();
+  });
+}
+
+function setAdminLogActionStatus(message) {
+  const status = $id('dashTerminalActionStatus');
+  if (status) status.textContent = message || '';
+}
+
+function setAdminLogSyncStatus(status, detail = '') {
+  adminLogSyncState = status || 'local';
+  const el = $id('dashTerminalSyncStatus');
+  if (!el) return;
+  const labels = {
+    connecting: 'adminTerminalStatusConnecting',
+    syncing: 'adminTerminalStatusSyncing',
+    live: 'adminTerminalStatusLive',
+    offline: 'adminTerminalStatusOffline',
+    error: 'adminTerminalStatusError',
+    local: 'adminTerminalStatusLocal',
+  };
+  el.dataset.state = adminLogSyncState;
+  el.textContent = dashT(labels[adminLogSyncState] || labels.local);
+  if (detail) el.title = detail;
+  else el.removeAttribute('title');
+}
+
+function adminLogEntriesAsText(entries) {
+  return [...entries]
+    .reverse()
+    .map((entry) => {
+      const source = adminLogSourceLabel(entry);
+      return `[${formatAdminLogTime(entry)}] [${entry.severity.toUpperCase()}]${source ? ` [${source}]` : ''} ${formatAdminLogMessage(entry, dashT)}`;
+    })
+    .join('\n');
+}
+
+async function copyAdminLogView() {
+  const text = adminLogEntriesAsText(getFilteredAdminLogEntries());
+  if (!text) {
+    setAdminLogActionStatus(dashT('adminTerminalNothingToCopy'));
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+  }
+  setAdminLogActionStatus(dashT('adminTerminalCopied'));
+}
+
+function exportAdminLogView() {
+  const events = getFilteredAdminLogEntries();
+  downloadJson(
+    {
+      schema: 'vts-admin-activity-v1',
+      exportedAt: new Date().toISOString(),
+      syncState: adminLogSyncState,
+      events,
+    },
+    `vts-admin-activity-${exportTimestampForFilename()}.json`
+  );
+  setAdminLogActionStatus(
+    dashT('adminTerminalExported', {
+      count: formatLocaleNumber(events.length, getDashboardLang()),
+    })
+  );
+}
+
+function bindAdminLogControls() {
+  if (adminLogControlsBound) return;
+  adminLogControlsBound = true;
+  const body = $id('dashTerminalBody');
+  const toggle = $id('dashTerminalToggle');
+  toggle?.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    if (body) body.hidden = expanded;
+    if (!expanded) renderAdminActivityTerminal();
+  });
+  $id('dashLogSearch')?.addEventListener('input', renderAdminActivityTerminal);
+  $id('dashLogSeverity')?.addEventListener('change', renderAdminActivityTerminal);
+  $id('dashCopyLogBtn')?.addEventListener('click', () => void copyAdminLogView());
+  $id('dashExportLogBtn')?.addEventListener('click', exportAdminLogView);
+
+  const clearLogBtn = $id('dashClearLogBtn');
+  if (clearLogBtn)
+    clearLogBtn.onclick = () => {
+      if (!window.confirm(dashT('adminTerminalClearConfirm'))) return;
+      clearAdminLogView();
+      setAdminLogActionStatus(dashT('adminTerminalCleared'));
+      renderAdminActivityTerminal();
+    };
+  $id('dashRestoreLogViewBtn')?.addEventListener('click', () => {
+    resetAdminLogView();
+    setAdminLogActionStatus(dashT('adminTerminalRestored'));
+    renderAdminActivityTerminal();
+  });
+
+  subscribeAdminLogStore(scheduleAdminActivityTerminalRender);
+  window.addEventListener('pagehide', flushAdminLogPersistence);
+  renderAdminActivityTerminal();
+}
+
+function stopAdminLogCloudSync() {
+  adminLogSyncController?.stop();
+  adminLogSyncController = null;
+  setAdminLogSyncStatus('local');
+}
+
+async function startAdminLogCloudSync() {
+  stopAdminLogCloudSync();
+  if (state.adminIsAdmin !== true || !state.adminUser?.uid) return;
+  setAdminLogSyncStatus('connecting');
+  try {
+    const db = await ensureCloudSyncReady();
+    if (!db || state.adminIsAdmin !== true || !state.adminUser?.uid) {
+      setAdminLogSyncStatus('local');
+      return;
+    }
+    const firestore = await loadFirestoreApi();
+    adminLogSyncController = createAdminLogSync({
+      db,
+      firestore,
+      uid: state.adminUser.uid,
+      onStatus: ({ status, detail }) => setAdminLogSyncStatus(status, detail),
+    });
+    adminLogSyncController.start();
+  } catch (error) {
+    setAdminLogSyncStatus('error', error?.message || error);
+  }
+}
+
 function refreshRosterSnapshotLabel() {
   const btn = $id('dashRosterSnapshotBtn');
   const label = btn?.querySelector('span');
   if (!label) return;
-  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
-  const dayName = new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(new Date());
+  const dayName = formatLocaleDate(new Date(), getDashboardLang(), { weekday: 'long' });
   label.textContent = dashT('adminRosterNewSnapshotDated', { day: dayName });
 }
 
@@ -2534,6 +3010,7 @@ function showApp() {
   restoreAdminControls();
 }
 function showLogin() {
+  stopAdminLogCloudSync();
   hideConnecting();
   restoreAdminControls();
   $id('dashLogin')?.classList.remove('hidden');
@@ -2566,26 +3043,33 @@ function mountStructureUploadPanel() {
 }
 
 async function doLogin() {
+  const usernameInput = $id('dashLoginUser');
+  const passwordInput = $id('dashLoginPass');
   const username = getAdminLoginUsername();
   const password = getAdminLoginPassword();
+  setLoginError('');
   if (!username) {
-    setLoginError('Enter the admin username.');
+    usernameInput?.focus();
+    usernameInput?.reportValidity?.();
     return;
   }
   if (!password) {
-    setLoginError('Enter the admin password.');
+    passwordInput?.focus();
+    passwordInput?.reportValidity?.();
     return;
   }
-  setLoginError('');
   setLoginBusy(true);
   state._signingOut = false;
   showConnecting(dashT('adminConnectingAuth'));
-  setConnectingProgress(30, dashT('adminConnectingAuth'));
+  setConnectingProgress(10, dashT('adminConnectingAuth'));
   try {
     const { signInWithUsername, isAdminAuthUser } = await loadFirebaseApi();
+    setConnectingProgress(18, dashT('adminConnectingAuth'));
     const credential = await signInWithUsername(username, password);
+    setConnectingProgress(32, dashT('adminConnectingAuth'));
     state.adminUser = credential.user;
     state.adminIsAdmin = await isAdminAuthUser(credential.user, { forceRefresh: true });
+    setConnectingProgress(42, dashT('adminConnectingData'));
     if (!state.adminIsAdmin) {
       const { signOutUser } = await loadFirebaseApi();
       await signOutUser();
@@ -2609,6 +3093,7 @@ async function doSignOut() {
   // the session or reopen the dashboard when the user flips to null. Cleared on
   // the next sign-in (doLogin).
   state._signingOut = true;
+  stopAdminLogCloudSync();
   if (state._fsUnsub) {
     try {
       state._fsUnsub();
@@ -2638,10 +3123,11 @@ async function doSignOut() {
 async function openAdminDashboardAfterAuth(options = {}) {
   if (state._adminDashboardOpening) return;
   state._adminDashboardOpening = true;
+  document.body.classList.add('admin-has-subtool-dock');
   const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
   try {
     showConnecting(dashT('adminConnectingData'));
-    setConnectingProgress(45, dashT('adminConnectingData'), { cap: 92 });
+    setConnectingProgress(45, dashT('adminConnectingData'));
     if (preferCloudFirst) {
       await Promise.allSettled([
         runDashboardCloudTaskWithTimeout('Roster cloud load', loadRosterSnapshotsFromFirestore),
@@ -2656,14 +3142,18 @@ async function openAdminDashboardAfterAuth(options = {}) {
           { optional: true }
         ),
       ]);
+      setConnectingProgress(78, dashT('adminConnectingData'));
       await runDashboardCloudTaskWithTimeout(
         'Queued cloud sync',
         flushDashboardCloudRetryQueue,
         Math.min(DASHBOARD_CLOUD_BOOT_TIMEOUT_MS, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
       );
+      setConnectingProgress(88, dashT('adminConnectingData'));
     } else {
       hydrateDashboardStateFromLocalStorage();
+      setConnectingProgress(64, dashT('adminConnectingData'));
       await loadData({ preferCloudFirst: false });
+      setConnectingProgress(88, dashT('adminConnectingData'));
       if (readDashboardCloudRetryQueue().length) {
         setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
       }
@@ -2671,6 +3161,7 @@ async function openAdminDashboardAfterAuth(options = {}) {
     await completeConnectingProgress(dashT('adminConnectingData'));
     showApp();
     render();
+    void startAdminLogCloudSync();
   } finally {
     state._adminDashboardOpening = false;
   }
@@ -2748,6 +3239,121 @@ function sanitizeDashboardDataForPersistence(data) {
 const DASHBOARD_LOCAL_BACKUP_KEY = 'vts_ocr_dashboard_backup_v1';
 let dashboardCloudBaseRevision = null;
 let dashboardLoadGeneration = 0;
+let dashboardAuxiliarySaveInFlight = false;
+let dashboardDeferredConflictRevision = 0;
+const adminEditGuard = createAdminEditGuard();
+
+const DASHBOARD_EDIT_CONFLICT_MESSAGE =
+  'Cloud data changed while this form has unsaved edits. Refresh to load it, then retry your edit.';
+
+function getProtectedAdminEditControl(target) {
+  const control = target?.closest?.('input, textarea, select, [contenteditable="true"]');
+  if (!control || control.disabled) return null;
+  if (control.matches('input[type="file"], input[type="button"], input[type="submit"]'))
+    return null;
+  if (!control.closest('#dashModalBody, #dashConductForm')) return null;
+  return control;
+}
+
+function adminEditScope(control) {
+  if (control?.closest('#dashConductForm')) return 'conduct-form';
+  return $id('dashModalTitle')?.textContent?.trim() || 'admin-modal';
+}
+
+function surfaceDeferredDashboardConflict(cloudData) {
+  const revision = dashboardSyncRevision(cloudData);
+  state._dashboardLastSaveConflict = true;
+  setCloudSyncStatus('error', DASHBOARD_EDIT_CONFLICT_MESSAGE);
+  if (revision !== dashboardDeferredConflictRevision) {
+    dashboardDeferredConflictRevision = revision;
+    logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'cloud' });
+    if (typeof window.showToast === 'function') {
+      window.showToast(DASHBOARD_EDIT_CONFLICT_MESSAGE, 'warn', 9000);
+    }
+  }
+}
+
+function finishAdminEditSession({ applyDeferred = true } = {}) {
+  const deferred = adminEditGuard.finish();
+  dashboardDeferredConflictRevision = 0;
+  if (applyDeferred && deferred) {
+    applyDashboardCloudSnapshot(deferred, { schedule: true });
+    setCloudSyncStatus('live');
+    updateLastSynced();
+  }
+  return deferred;
+}
+
+function bindAdminEditGuard() {
+  if (state._adminEditGuardBound || typeof document === 'undefined') return;
+  state._adminEditGuardBound = true;
+  document.addEventListener(
+    'focusin',
+    (event) => {
+      const control = getProtectedAdminEditControl(event.target);
+      if (!control) return;
+      adminEditGuard.focus(adminEditScope(control), dashboardCloudBaseRevision);
+    },
+    true
+  );
+  const markDirty = (event) => {
+    const control = getProtectedAdminEditControl(event.target);
+    if (!control) return;
+    adminEditGuard.markDirty(adminEditScope(control), dashboardCloudBaseRevision);
+  };
+  document.addEventListener('input', markDirty, true);
+  document.addEventListener('change', markDirty, true);
+  document.addEventListener(
+    'focusout',
+    () => {
+      queueMicrotask(() => {
+        if (getProtectedAdminEditControl(document.activeElement)) return;
+        if ($id('dashModal')?.classList.contains('active')) return;
+        if (adminEditGuard.state().scope === 'conduct-form' && state.r5EditingId) return;
+        adminEditGuard.blur();
+        if (!adminEditGuard.state().dirty) finishAdminEditSession();
+      });
+    },
+    true
+  );
+  window.addEventListener('vts:admin-edit-surface-opened', (event) => {
+    adminEditGuard.begin(event.detail?.scope || 'admin-modal', dashboardCloudBaseRevision);
+  });
+  window.addEventListener('vts:admin-edit-surface-closed', () => finishAdminEditSession());
+}
+
+function applyDashboardRemoteSnapshot(cloudData, { schedule = true } = {}) {
+  const incomingRevision = dashboardSyncRevision(cloudData);
+  const decision = classifyRemoteSnapshot({
+    currentRevision: dashboardCloudBaseRevision,
+    incomingRevision,
+    editing: adminEditGuard.shouldDeferRemoteSnapshot(),
+  });
+  if (decision === 'stale' || decision === 'duplicate') return false;
+  if (decision === 'defer') {
+    adminEditGuard.defer(cloudData, incomingRevision);
+    if (!dashboardCloudSaveInFlight && !dashboardAuxiliarySaveInFlight) {
+      surfaceDeferredDashboardConflict(cloudData);
+    }
+    return false;
+  }
+  return applyDashboardCloudSnapshot(cloudData, { schedule });
+}
+
+function prepareForManualDashboardRefresh() {
+  const editState = adminEditGuard.state();
+  if (!editState.active && !editState.hasDeferredSnapshot) return true;
+  if (editState.dirty || editState.hasDeferredSnapshot) {
+    const confirmed = window.confirm(
+      'This form has unsaved edits and newer cloud data is available. Refresh will discard the open form. Continue?'
+    );
+    if (!confirmed) return false;
+    backupDashboardSnapshot(attachAuxiliaryRecords(state.dashData));
+  }
+  finishAdminEditSession({ applyDeferred: false });
+  state._dashboardLastSaveConflict = false;
+  return true;
+}
 
 function parseDashboardLastUpdatedMs(value) {
   // fmtDate format: "dd/mm/yyyy, DayName, HH:MM GT" (local clock).
@@ -2781,12 +3387,15 @@ function withDashboardTimestamp(data, fallbackTimestamp = Date.now()) {
 }
 
 function dashboardSyncRevision(data) {
-  const revision = Number(data?.syncRevision);
-  return Number.isInteger(revision) && revision >= 0 ? revision : 0;
+  return normalizeSyncRevision(data?.syncRevision);
 }
 
 function noteDashboardCloudBase(data) {
-  dashboardCloudBaseRevision = dashboardSyncRevision(data);
+  const revision = dashboardSyncRevision(data);
+  if (dashboardCloudBaseRevision === null || revision >= dashboardCloudBaseRevision) {
+    dashboardCloudBaseRevision = revision;
+  }
+  return revision;
 }
 
 function dashboardAttackCount(data) {
@@ -2842,7 +3451,7 @@ function applyDashboardCloudSnapshot(cloudData, { schedule = false } = {}) {
 
 function restoreDashboardLocalFallback(localData) {
   if (!localData || state.dashData) {
-    if (state.dashData) log('Cloud sync failed; kept dashboard data already in memory.', 'warn');
+    if (state.dashData) logDashboardEvent('adminCloudLocalCache', 'warn', {}, { source: 'cloud' });
     return false;
   }
   state.dashData = normalizeDashboardDataForCache(localData);
@@ -2865,13 +3474,22 @@ function isDashboardCloudConflict(err) {
   return err?.code === 'dashboard-cloud-conflict' || err?.name === 'DashboardCloudConflictError';
 }
 
-function handleDashboardCloudConflict(localData, err, label = 'Dashboard save') {
+function handleDashboardCloudConflict(localData, err) {
   backupDashboardSnapshot(localData);
-  if (err?.cloudData) applyDashboardCloudSnapshot(err.cloudData, { schedule: true });
-  setCloudSyncStatus('live');
-  log(`${label} skipped because cloud data changed. A local backup was kept.`, 'warn');
+  state._dashboardLastSaveConflict = true;
+  if (err?.cloudData && adminEditGuard.shouldDeferRemoteSnapshot()) {
+    adminEditGuard.defer(err.cloudData, dashboardSyncRevision(err.cloudData));
+  } else if (err?.cloudData) {
+    applyDashboardCloudSnapshot(err.cloudData, { schedule: true });
+  }
+  setCloudSyncStatus('error', DASHBOARD_EDIT_CONFLICT_MESSAGE);
+  logDashboardEvent('adminCloudStaleWriteSkipped', 'warn', {}, { source: 'cloud' });
   if (typeof window.showToast === 'function') {
-    window.showToast('Cloud data changed first. This device kept a local backup.', 'warn', 8000);
+    window.showToast(
+      'Cloud data changed first. Your edit was not uploaded; refresh and retry.',
+      'warn',
+      9000
+    );
   }
 }
 
@@ -2915,6 +3533,7 @@ function createDashboardAttackMutationError(reason) {
   const messages = {
     'missing-dashboard': 'The cloud dashboard is not available. Refresh and try again.',
     missing: 'This structure was changed or removed on another device. Refresh and try again.',
+    changed: 'This structure changed on another device. Refresh before editing or deleting it.',
     'id-collision':
       'This structure edit conflicts with another cloud record. Refresh and try again.',
     'invalid-mutation': 'Invalid dashboard change. Refresh and try again.',
@@ -2986,6 +3605,75 @@ async function writeDashboardAttackMutationToCloud(db, firestore, mutation) {
   };
 }
 
+async function writeDashboardOcrUploadToCloud(db, firestore, incomingAttacks) {
+  const { doc, runTransaction } = firestore;
+  let writtenPayload = null;
+
+  await runTransaction(db, async (transaction) => {
+    const ref = doc(db, FS_PATH);
+    const snap = await transaction.get(ref);
+    const cloudData = snap.exists()
+      ? normalizeDashboardDataForCache(snap.data())
+      : { last_updated: fmtDate(new Date()), attacks: [], players_summary: [] };
+    const attacks = mergeDashboardOcrAttacks(cloudData.attacks, incomingAttacks);
+    const preparedPayload = sanitizeDashboardDataForPersistence({
+      ...cloudData,
+      last_updated: fmtDate(new Date()),
+      attacks,
+      total_attacks: attacks.length,
+      players_summary: buildSerializablePlayerSummary(attacks),
+    });
+    const cloudRevision = dashboardSyncRevision(cloudData);
+    writtenPayload = {
+      ...preparedPayload,
+      updatedAtMs: Math.max(Date.now(), dashboardDataTimestampMs(cloudData) + 1),
+      syncRevision: cloudRevision + 1,
+    };
+    transaction.set(ref, writtenPayload);
+  });
+
+  noteDashboardCloudBase(writtenPayload);
+  return writtenPayload;
+}
+
+export async function saveDashboardOcrUpload(localData, incomingAttacks = []) {
+  state.dashData = normalizeDashboardDataForCache(localData);
+  const persistedData = sanitizeDashboardDataForPersistence(state.dashData);
+  state.dashData = normalizeDashboardDataForCache(persistedData);
+  writeDashboardLocalCache(persistedData);
+  writeAuxiliaryLocalCaches();
+
+  if (!state.adminIsAdmin) {
+    showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'OCR upload blocked');
+    return false;
+  }
+
+  try {
+    setCloudSyncStatus('syncing');
+    const awaitCloud = (promise, label) =>
+      withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
+    const db = await awaitCloud(ensureCloudSyncReady(), 'OCR cloud connection');
+    if (!db) {
+      showCloudSyncFailure(new Error(dashT('adminCloudAdminRequired')), 'OCR upload blocked');
+      return false;
+    }
+    const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
+    const writtenPayload = await awaitCloud(
+      writeDashboardOcrUploadToCloud(db, firestore, incomingAttacks),
+      'OCR cloud merge'
+    );
+    applyDashboardCloudSnapshot(writtenPayload, { schedule: true });
+    setCloudSyncStatus('live');
+    logDashboardEvent('adminLogCloudSaved', 'info', {}, { source: 'ocr' });
+    updateLastSynced();
+    return true;
+  } catch (error) {
+    console.error('FIREBASE OCR MERGE ERROR:', error);
+    showCloudSyncFailure(error, 'OCR cloud merge failed');
+    return false;
+  }
+}
+
 async function saveDashboardAttackMutation(mutation) {
   if (state.cloudSyncConfigured === false) {
     const localResult = buildDashboardAttackMutationSnapshot(state.dashData, mutation);
@@ -3048,9 +3736,11 @@ function buildDashboardCloudRepairPayload(auxiliaryPayload = null) {
   return withDashboardTimestamp(payload, dashboardDataTimestampMs(base) || 1);
 }
 
-async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
+async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload, baseRevision) {
   const { doc, runTransaction } = firestore;
   const payload = withDashboardTimestamp(auxiliaryPayload);
+  const expectedBaseRevision =
+    Number.isInteger(baseRevision) && baseRevision >= 0 ? baseRevision : null;
   try {
     let mergedCloudPayload = null;
     await runTransaction(db, async (transaction) => {
@@ -3058,6 +3748,12 @@ async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
       const snap = await transaction.get(ref);
       const cloudData = snap.exists() ? normalizeDashboardDataForCache(snap.data()) : null;
       const cloudRevision = cloudData ? dashboardSyncRevision(cloudData) : 0;
+      if (
+        (cloudData && (expectedBaseRevision === null || expectedBaseRevision !== cloudRevision)) ||
+        (!cloudData && expectedBaseRevision !== null && expectedBaseRevision !== 0)
+      ) {
+        throw createDashboardCloudConflictError(cloudData);
+      }
       const sourcePayload = cloudData ? payload : buildDashboardCloudRepairPayload(payload);
       const nextPayload = {
         ...sourcePayload,
@@ -3073,7 +3769,7 @@ async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
       mergedCloudPayload = { ...(cloudData || {}), ...nextPayload };
     });
     noteDashboardCloudBase(mergedCloudPayload);
-    return { repaired: false };
+    return { repaired: false, data: mergedCloudPayload };
   } catch (err) {
     if (!isFirestorePermissionDenied(err) && !isFirestoreDocumentTooLarge(err)) throw err;
     // Repair the complete snapshot through the same revision fence.
@@ -3082,12 +3778,12 @@ async function writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload) {
       db,
       firestore,
       repairPayload,
-      dashboardCloudBaseRevision
+      expectedBaseRevision
     );
     state.dashData = normalizeDashboardDataForCache(writtenPayload);
     writeDashboardLocalCache(writtenPayload);
     writeAuxiliaryLocalCaches();
-    return { repaired: true };
+    return { repaired: true, data: writtenPayload };
   }
 }
 
@@ -3151,7 +3847,7 @@ async function flushDashboardCloudRetryQueue() {
         // once). The entry is dropped, not retried: it can only get staler.
         if (entry.kind === 'auxiliary') {
           await awaitCloud(
-            writeAuxiliaryPayloadToCloud(db, firestore, entry.payload),
+            writeAuxiliaryPayloadToCloud(db, firestore, entry.payload, entry.baseRevision),
             'Queued auxiliary cloud write'
           );
         } else {
@@ -3161,9 +3857,13 @@ async function flushDashboardCloudRetryQueue() {
           );
         }
       } catch (err) {
-        if (entry.kind === 'dashboard' && isDashboardCloudConflict(err)) {
-          handleDashboardCloudConflict(entry.payload, err, 'Queued dashboard save');
-          log(dashT('adminCloudStaleQueueDropped'), 'warn');
+        if (isDashboardCloudConflict(err)) {
+          const localData =
+            entry.kind === 'auxiliary'
+              ? sanitizeDashboardDataForPersistence({ ...(state.dashData || {}), ...entry.payload })
+              : entry.payload;
+          handleDashboardCloudConflict(localData, err, `Queued ${entry.kind || 'dashboard'} save`);
+          logDashboardEvent('adminCloudStaleQueueDropped', 'warn', {}, { source: 'cloud' });
           continue;
         }
         remaining.push(entry);
@@ -3176,7 +3876,7 @@ async function flushDashboardCloudRetryQueue() {
       return false;
     }
     setCloudSyncStatus('live');
-    log('Queued cloud writes synced.', 'success');
+    logDashboardEvent('adminLogQueuedSynced', 'success', {}, { source: 'cloud' });
     updateLastSynced();
     return true;
   } catch (err) {
@@ -3200,6 +3900,7 @@ async function flushDashboardCloudSave() {
   const awaitCloud = (promise, label) =>
     withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
   let result = false;
+  let committedRevision = null;
   try {
     setCloudSyncStatus('syncing');
     const db = await awaitCloud(ensureCloudSyncReady(), 'Dashboard cloud connection');
@@ -3219,10 +3920,11 @@ async function flushDashboardCloudSave() {
       writeDashboardSnapshotToCloud(db, firestore, persistedData, baseRevision),
       'Dashboard cloud save'
     );
+    committedRevision = dashboardSyncRevision(writtenPayload);
     state.dashData = normalizeDashboardDataForCache(writtenPayload);
     writeDashboardLocalCache(writtenPayload);
     setCloudSyncStatus('live');
-    log('Synced to cloud.', 'info');
+    logDashboardEvent('adminLogCloudSaved', 'info', {}, { source: 'cloud' });
     result = true;
     return true;
   } catch (e) {
@@ -3245,7 +3947,7 @@ async function flushDashboardCloudSave() {
     if (dashboardCloudSavePendingData) {
       // A coalesced follow-up can advance only after this transaction really
       // succeeded. A failure forces it through the conflict path instead.
-      dashboardCloudSavePendingBaseRevision = result ? dashboardCloudBaseRevision : null;
+      dashboardCloudSavePendingBaseRevision = result ? committedRevision : null;
       queueDashboardCloudSaveFlush();
     }
   }
@@ -3318,6 +4020,8 @@ export async function saveData(data, options = {}) {
 }
 
 export async function saveDashboardAuxiliaryRecords(options = {}) {
+  state._dashboardLastSaveConflict = false;
+  const baseRevision = adminEditGuard.expectedBaseRevision(dashboardCloudBaseRevision);
   const sourceData =
     state.dashData && typeof state.dashData === 'object'
       ? state.dashData
@@ -3327,6 +4031,7 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
   writeDashboardLocalCache(localData);
   writeAuxiliaryLocalCaches();
   if (options.cloud === false) return false;
+  dashboardAuxiliarySaveInFlight = true;
   try {
     const awaitCloud = (promise, label) =>
       withDashboardCloudTimeout(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS, label);
@@ -3337,7 +4042,8 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
       queueDashboardCloudRetry(
         'auxiliary',
         getAuxiliaryRecordPayload(),
-        dashT('adminCloudAdminRequired')
+        dashT('adminCloudAdminRequired'),
+        baseRevision
       );
       showCloudSyncFailure(
         new Error(dashT('adminCloudAdminRequired')),
@@ -3348,26 +4054,36 @@ export async function saveDashboardAuxiliaryRecords(options = {}) {
     const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
     const auxiliaryPayload = getAuxiliaryRecordPayload();
     const result = await awaitCloud(
-      writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload),
+      writeAuxiliaryPayloadToCloud(db, firestore, auxiliaryPayload, baseRevision),
       'Special list cloud save'
     );
+    adminEditGuard.dropDeferredThrough(dashboardSyncRevision(result.data));
     setCloudSyncStatus('live');
-    if (result.repaired) log('Cloud dashboard document repaired and special lists synced.', 'warn');
+    if (result.repaired)
+      logDashboardEvent('adminLogCloudDocumentRepaired', 'warn', {}, { source: 'cloud' });
     updateLastSynced();
     return true;
   } catch (e) {
     console.error('FIREBASE AUXILIARY SAVE ERROR:', e);
+    if (isDashboardCloudConflict(e)) {
+      handleDashboardCloudConflict(localData, e, 'Special list cloud save');
+      return false;
+    }
     queueDashboardCloudRetry(
       'auxiliary',
       getAuxiliaryRecordPayload(),
-      e?.message || e?.code || 'auxiliary save failed'
+      e?.message || e?.code || 'auxiliary save failed',
+      baseRevision
     );
     showCloudSyncFailure(e, 'Special list cloud save failed');
     return false;
+  } finally {
+    dashboardAuxiliarySaveInFlight = false;
   }
 }
 
 window.syncDashboardAuxiliaryRecordsToCloud = saveDashboardAuxiliaryRecords;
+window.didDashboardAuxiliarySaveConflict = () => state._dashboardLastSaveConflict === true;
 
 async function loadData(options = {}) {
   const loadGeneration = ++dashboardLoadGeneration;
@@ -3399,7 +4115,7 @@ async function loadData(options = {}) {
   } catch (e) {}
   if (!preferCloudFirst && state.adminIsAdmin !== true) {
     setCloudSyncStatus('local');
-    log(dashT('adminCloudAdminRequired'), 'warn');
+    logDashboardEvent('adminCloudAdminRequired', 'warn', {}, { source: 'cloud' });
     return;
   }
   try {
@@ -3410,7 +4126,7 @@ async function loadData(options = {}) {
         restoreDashboardLocalFallback(localData);
       }
       setCloudSyncStatus('local');
-      log('Firestore not available Ã¢â‚¬â€ using local storage only.', 'warn');
+      logDashboardEvent('adminLogFirestoreLocalOnly', 'warn', {}, { source: 'cloud' });
       return;
     }
     const firestore = await awaitCloud(loadFirestoreApi(), 'Firestore module load');
@@ -3425,7 +4141,7 @@ async function loadData(options = {}) {
       // is kept as a backup, never offered as an automatic overwrite.
       const localCandidate = state.dashData || localData;
       if (preserveLocalDashboardConflict(localCandidate, cloudData)) {
-        log('Cloud snapshot replaced a different local cache; a local backup was kept.', 'warn');
+        logDashboardEvent('adminLogCloudCacheReplaced', 'warn', {}, { source: 'cloud' });
       }
       applyDashboardCloudSnapshot(cloudData);
       setCloudSyncStatus('live');
@@ -3449,7 +4165,7 @@ async function loadData(options = {}) {
           state.dashData = normalizeDashboardDataForCache(writtenPayload);
           writeDashboardLocalCache(writtenPayload);
           setCloudSyncStatus('live');
-          log('Uploaded local dashboard cache to cloud.', 'success');
+          logDashboardEvent('adminLogCloudCacheUploaded', 'success', {}, { source: 'cloud' });
         } catch (err) {
           if (!isDashboardCloudConflict(err)) throw err;
           handleDashboardCloudConflict(seedData, err, 'Dashboard cloud seed');
@@ -3471,9 +4187,9 @@ async function loadData(options = {}) {
       (snap) => {
         if (snap.exists()) {
           const cloudData = normalizeDashboardDataForCache(snap.data());
-          applyDashboardCloudSnapshot(cloudData, { schedule: true });
+          applyDashboardRemoteSnapshot(cloudData, { schedule: true });
           updateLastSynced();
-          setCloudSyncStatus('live');
+          if (!adminEditGuard.state().hasDeferredSnapshot) setCloudSyncStatus('live');
           const ind = $id('dashSyncIndicator');
           if (ind) {
             ind.classList.remove('hidden');
@@ -3487,7 +4203,7 @@ async function loadData(options = {}) {
         showCloudSyncFailure(err, 'Sync listener error');
       }
     );
-    log(dashT('adminCloudSynced'), 'info');
+    logDashboardEvent('adminCloudSynced', 'info', {}, { source: 'cloud' });
     updateLastSynced();
   } catch (e) {
     if (state._signingOut) return;
@@ -3498,9 +4214,9 @@ async function loadData(options = {}) {
       setCloudSyncStatus('local', e.message || e.code || '');
       if (isDashboardCloudTimeout(e)) {
         state._cloudInitPromise = null;
-        log('Cloud load timed out; showing local dashboard cache.', 'warn');
+        logDashboardEvent('adminLogCloudLoadTimeout', 'warn', {}, { source: 'cloud' });
       } else {
-        log('Cloud load failed; showing local dashboard cache.', 'warn');
+        logDashboardEvent('adminLogCloudLoadFailed', 'warn', {}, { source: 'cloud' });
       }
       return;
     }
@@ -3514,9 +4230,7 @@ async function clearData() {
     localStorage.removeItem(STORAGE_KEY);
     dashboardLocalCacheJson = '';
   } catch (e) {}
-  try {
-    localStorage.removeItem(LOG_KEY);
-  } catch (e) {}
+  clearAdminLogView();
   try {
     setCloudSyncStatus('syncing');
     const db = await ensureCloudSyncReady();
@@ -3544,10 +4258,9 @@ async function clearData() {
   } catch (e) {
     showCloudSyncFailure(e, 'Clear cloud data failed');
   }
-  const out = $id('dashLogOutput');
-  if (out) out.innerHTML = '';
+  renderAdminActivityTerminal();
   render();
-  log('Database wiped.', 'warn');
+  logDashboardEvent('adminLogDatabaseCleared', 'warn', {}, { source: 'dashboard' });
 }
 
 // --- Exports ---
@@ -3733,7 +4446,7 @@ function buildAdminFullBackup() {
     conductAdjustments: Array.isArray(state.r5Adjustments) ? state.r5Adjustments : [],
     r5Season: state.r5Season || getDashboardR5SeasonKey(),
     alliances: Array.isArray(state.allianceList) ? state.allianceList : [],
-    logs: parseStorageJson(localStorage.getItem(LOG_KEY)) || [],
+    logs: listAdminLogEntries({ includeCleared: true, limit: 500 }),
   };
 }
 
@@ -4418,9 +5131,9 @@ function importData(file) {
         players_summary: buildSerializablePlayerSummary(sorted),
       });
       render();
-      log('Import successful.', 'success');
+      logDashboardEvent('adminLogImportSuccessful', 'success', {}, { source: 'import' });
     } catch (err) {
-      alert('Import failed');
+      alert(dashT('adminImportFailed'));
     }
   };
   r.readAsText(file);
@@ -4433,6 +5146,9 @@ function scheduleAdminLanguageRefresh() {
   state._adminLanguageRefreshToken = token;
   refreshRosterSnapshotLabel();
   renderCloudSyncStatus();
+  renderAdminActivityTerminal();
+  setAdminLogSyncStatus(adminLogSyncState);
+  renderEdenX1VoteSettings();
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;
     if ($id('dashChart')) render();
@@ -4452,12 +5168,21 @@ function scheduleAdminLanguageRefresh() {
 export async function bootOcrDashboard() {
   if (state._booted) return;
   state._booted = true;
+  bindAdminEditGuard();
   loadRoster();
   if (!state._adminLanguageRefreshBound) {
     state._adminLanguageRefreshBound = true;
     window.addEventListener('vts:admin-language-change', scheduleAdminLanguageRefresh);
   }
-  $id('dashLoginBtn').onclick = doLogin;
+  const loginForm = $id('dashLoginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      doLogin();
+    });
+  } else {
+    $id('dashLoginBtn').onclick = doLogin;
+  }
   $id('dashSignOutBtn')?.addEventListener('click', doSignOut);
   const loginUser = $id('dashLoginUser');
   if (loginUser && !loginUser.value) loginUser.value = '1097';
@@ -4477,9 +5202,11 @@ export async function bootOcrDashboard() {
   const logArea = $id('dashLogArea');
   if (logArea) logArea.classList.remove('hidden');
   restoreLogs();
+  bindAdminLogControls();
   bindSubtabNavigation();
   bindConductControls();
   $id('dashRefreshBtn').onclick = async () => {
+    if (!prepareForManualDashboardRefresh()) return;
     setRefreshBusy(true);
     try {
       await Promise.allSettled([
@@ -4492,6 +5219,14 @@ export async function bootOcrDashboard() {
               { optional: true }
             )
           : loadConductAdjustmentsForSeason(),
+        state.adminIsAdmin === true
+          ? runDashboardCloudTaskWithTimeout(
+              'Roster snapshot cloud load',
+              loadRosterSnapshotsFromFirestore,
+              DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+              { optional: true }
+            )
+          : Promise.resolve(null),
       ]);
       if (state.adminIsAdmin === true) {
         await runDashboardCloudTaskWithTimeout(
@@ -4510,7 +5245,7 @@ export async function bootOcrDashboard() {
       setRefreshBusy(false);
     }
   };
-  log('VTS Admin Dashboard loaded.', 'info');
+  logDashboardEvent('adminLogDashboardLoaded', 'info', {}, { source: 'system' });
   if (isLocalAdminTestBypass()) {
     state.adminUser = { uid: 'local-test-admin' };
     state.adminIsAdmin = false;
@@ -4720,15 +5455,21 @@ export async function bootOcrDashboard() {
       }
     });
     const reason = result.error || dashT('adminOcrConfigureWorker');
-    const summary = summarizeOcrStatusReason(reason);
     const statusKey = ocrReady ? 'ready' : `unavailable:${reason}`;
     if (options.forceLog === true || statusKey !== lastLoggedOcrStatusKey) {
       lastLoggedOcrStatusKey = statusKey;
       if (ocrReady) {
-        log(dashT('adminOcrServiceReady'), 'success');
+        logDashboardEvent('adminOcrServiceReady', 'success', {}, { source: 'ocr' });
       } else {
-        const detail = summary && summary !== reason ? `${summary} - ${reason}` : summary;
-        log(`${dashT('adminOcrUnavailable')} - ${detail}`, 'warn');
+        logDashboardEvent(
+          'adminOcrUnavailable',
+          'warn',
+          {},
+          {
+            source: 'ocr',
+            localOnly: true,
+          }
+        );
       }
     }
     return ocrReady;
@@ -4813,18 +5554,22 @@ export async function bootOcrDashboard() {
     const drop = dropId ? $id(dropId) : null;
     const input = inputId ? $id(inputId) : null;
     if (pasteBtn) pasteBtn.onclick = () => showDutyPasteForm(type);
-    if (uploadBtn && input)
-      uploadBtn.onclick = () => {
-        if (!canUseOcr()) return;
-        input.value = '';
-        input.click();
-      };
+    const openDutyImagePicker = () => {
+      if (!input) return;
+      if (!canUseOcr()) return;
+      input.value = '';
+      input.click();
+    };
+    if (uploadBtn && input) uploadBtn.onclick = openDutyImagePicker;
     if (drop && input) {
       drop.onclick = (event) => {
         if (event.target?.tagName === 'INPUT') return;
-        if (!canUseOcr()) return;
-        input.value = '';
-        input.click();
+        openDutyImagePicker();
+      };
+      drop.onkeydown = (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openDutyImagePicker();
       };
       drop.ondragover = (event) => {
         event.preventDefault();
@@ -4891,7 +5636,7 @@ export async function bootOcrDashboard() {
       dashT('adminContributionNoImageSelectedStatus'),
       'warn'
     );
-    log(dashT('adminContributionNoImageSelectedStatus'), 'warn');
+    logDashboardEvent('adminContributionNoImageSelectedStatus', 'warn', {}, { source: 'ocr' });
   }
   function scheduleContributionNoSelectionStatus() {
     clearContributionNoSelectionTimer();
@@ -4911,7 +5656,7 @@ export async function bootOcrDashboard() {
       dashT('adminContributionOpeningPickerStatus'),
       'info'
     );
-    log(dashT('adminContributionOpeningPickerStatus'), 'info');
+    logDashboardEvent('adminContributionOpeningPickerStatus', 'info', {}, { source: 'ocr' });
     if (options.programmatic === true) contributionInput.click();
     return true;
   }
@@ -4931,6 +5676,11 @@ export async function bootOcrDashboard() {
   if (contributionDrop && contributionInput) {
     contributionDrop.onclick = (event) => {
       if (event.target?.tagName === 'INPUT') return;
+      startContributionImagePicker(event, { programmatic: true });
+    };
+    contributionDrop.onkeydown = (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
       startContributionImagePicker(event, { programmatic: true });
     };
     contributionDrop.ondragover = (event) => {
@@ -4971,15 +5721,6 @@ export async function bootOcrDashboard() {
   renderContributions();
   renderEdenX1VoteAdmin();
   bindEdenX1VoteAdminControls();
-  const clearLogBtn = $id('dashClearLogBtn');
-  if (clearLogBtn)
-    clearLogBtn.onclick = () => {
-      $id('dashLogOutput').innerHTML = '';
-      try {
-        localStorage.removeItem(LOG_KEY);
-      } catch (e) {}
-    };
-
   $id('dashExportMenuBtn').onclick = (e) => {
     e.stopPropagation();
     $id('dashExportMenu').classList.toggle('active');
@@ -5077,13 +5818,19 @@ export async function bootOcrDashboard() {
     cancelBtn.onclick = () => {
       state._ocrCancelRequested = true;
       state._ocrAbortController?.abort?.();
-      log('Cancelling OCR scan...', 'warn');
+      logDashboardEvent('adminLogOcrCancelling', 'warn', {}, { source: 'ocr' });
     };
   }
-  drop.onclick = () => {
+  const openStructureImagePicker = () => {
     if (!canUseOcr()) return;
     inp.value = '';
     inp.click();
+  };
+  drop.onclick = openStructureImagePicker;
+  drop.onkeydown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openStructureImagePicker();
   };
   drop.ondragover = (e) => {
     e.preventDefault();
@@ -5115,16 +5862,16 @@ window.deleteAttack = async function (attId) {
   if (!attId || !state._booted || !state.dashData) return;
   const removed = state.dashData.attacks.find((attack) => attack.id === attId);
   if (!removed) return;
-  const result = await saveDashboardAttackMutation({ type: 'delete', attackId: attId });
+  const result = await saveDashboardAttackMutation({
+    type: 'delete',
+    attackId: attId,
+    expectedFingerprint: dashboardAttackFingerprint(removed),
+  });
   if (!result.ok) return;
   render();
   closeModal();
-  log(
-    result.applied
-      ? `Deleted attack: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`
-      : `Attack was already deleted elsewhere: ${formatStructureLabel(removed.structure_name, removed.structure_level)}`,
-    'warn'
-  );
+  if (result.applied) logDashboardEvent('adminLogAttackDeleted', 'warn');
+  else logDashboardEvent('adminLogAttackAlreadyDeleted', 'warn');
 };
 
 window.markAttackComplete = async function (attId) {
@@ -5138,16 +5885,14 @@ window.markAttackComplete = async function (attId) {
   render();
   window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
   showModal('attack', att);
-  log(
-    `Marked complete by override: ${formatStructureLabel(att.structure_name, att.structure_level)}`,
-    'warn'
-  );
+  logDashboardEvent('adminLogAttackMarkedComplete', 'warn');
 };
 
 window.editAttack = async function (attId) {
   if (!attId || !state._booted || !state.dashData) return;
   const att = state.dashData.attacks.find((a) => a.id === attId);
   if (!att) return;
+  const expectedFingerprint = dashboardAttackFingerprint(att);
   const newName = prompt('Edit Structure Name (e.g. Capital, Gates, City):', att.structure_name);
   if (newName === null) return;
   let normalizedTarget = normalizeStructureTarget(newName.trim(), '');
@@ -5182,16 +5927,14 @@ window.editAttack = async function (attId) {
   const result = await saveDashboardAttackMutation({
     type: 'edit',
     attackId: originalId,
+    expectedFingerprint,
     patch,
   });
   if (!result.ok) return;
   const savedAttack = state.dashData.attacks.find((attack) => attack.id === nextId);
   render();
   if (savedAttack) showModal('attack', savedAttack);
-  log(
-    `Updated attack to: ${formatStructureLabel(patch.structure_name, patch.structure_level)}`,
-    'info'
-  );
+  logDashboardEvent('adminLogAttackUpdated', 'info');
 };
 
 window.addPlayer = async function (attId) {
@@ -5214,7 +5957,7 @@ window.addPlayer = async function (attId) {
   await saveData(state.dashData);
   render();
   showModal('attack', att);
-  log(`Added player ${pName} to ${att.structure_name}`, 'info');
+  logDashboardEvent('adminLogPlayerAdded', 'info');
 };
 
 window.editPlayer = async function (attId, encName) {
@@ -5254,7 +5997,7 @@ window.editPlayer = async function (attId, encName) {
   await saveData(state.dashData);
   render();
   showModal('attack', att);
-  log(`Edited player ${pName} in ${att.structure_name}`, 'info');
+  logDashboardEvent('adminLogPlayerEdited', 'info');
 };
 
 window.showPlayer = function (pNameEncoded) {
@@ -5312,7 +6055,7 @@ window.exportPlayerReport = function (pNameEncoded) {
       : playerSummary.find((x) => x.name === pName) ||
         playerSummary.find((x) => x.name === findBestMatch(pName));
   if (!p) {
-    log(`No rows found for player export: ${pName}`, 'warn');
+    logDashboardEvent('adminLogPlayerExportEmpty', 'warn', {}, { source: 'export' });
     return;
   }
   let csv = 'Time,Target,Value,Rank\n';

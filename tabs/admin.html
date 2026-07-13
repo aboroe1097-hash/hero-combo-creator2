@@ -18,27 +18,50 @@
       </div>
       <h2 class="dash-login-title" data-i18n="adminLoginTitle">VTS Admin</h2>
       <p class="dash-login-sub" data-i18n="adminLoginSub">Alliance Structure Attack Analytics</p>
-      <div id="dashLoginErr" class="dash-login-err hidden"></div>
-      <input
-        type="text"
-        id="dashLoginUser"
-        class="dash-input"
-        placeholder="Username"
-        data-i18n-ph="adminLoginUser"
-        autocomplete="username"
-      />
-      <input
-        type="password"
-        id="dashLoginPass"
-        class="dash-input"
-        placeholder="Password"
-        data-i18n-ph="adminLoginPass"
-        autocomplete="current-password"
-      />
-      <button id="dashLoginBtn" class="dash-btn dash-btn-primary" data-i18n="adminLoginBtn">
-        Sign In as Admin
-      </button>
-      <p id="dashServerStatus" class="dash-server-status"></p>
+      <form id="dashLoginForm">
+        <div
+          id="dashLoginErr"
+          class="dash-login-err hidden"
+          role="alert"
+          aria-live="assertive"
+        ></div>
+        <label class="sr-only" for="dashLoginUser" data-i18n="adminLoginUser">Username</label>
+        <input
+          type="text"
+          id="dashLoginUser"
+          name="username"
+          class="dash-input"
+          placeholder="Username"
+          data-i18n-ph="adminLoginUser"
+          autocomplete="username"
+          spellcheck="false"
+          aria-describedby="dashLoginErr"
+          aria-invalid="false"
+          required
+        />
+        <label class="sr-only" for="dashLoginPass" data-i18n="adminLoginPass">Password</label>
+        <input
+          type="password"
+          id="dashLoginPass"
+          name="password"
+          class="dash-input"
+          placeholder="Password"
+          data-i18n-ph="adminLoginPass"
+          autocomplete="current-password"
+          aria-describedby="dashLoginErr"
+          aria-invalid="false"
+          required
+        />
+        <button
+          id="dashLoginBtn"
+          type="submit"
+          class="dash-btn dash-btn-primary"
+          data-i18n="adminLoginBtn"
+        >
+          Sign In as Admin
+        </button>
+      </form>
+      <p id="dashServerStatus" class="dash-server-status" role="status" aria-live="polite"></p>
     </div>
   </div>
 
@@ -136,7 +159,12 @@
           <div id="dashApiKeyContainer" class="dash-api-key">
             <span class="dash-api-key-note">OCR uploads use the secured Worker key.</span>
             <div class="dash-api-key-actions">
-              <span id="dashOcrServiceStatus" class="dash-roster-api-status"></span>
+              <span
+                id="dashOcrServiceStatus"
+                class="dash-roster-api-status"
+                role="status"
+                aria-live="polite"
+              ></span>
               <button id="dashSaveApiBtn" class="dash-btn dash-save-api-btn">
                 <svg
                   width="12"
@@ -554,19 +582,144 @@
       </div>
 
       <!-- Analysis Terminal — global log across all admin subtabs -->
-      <div id="dashLogArea" class="dash-log-area dash-terminal-shared">
-        <div class="dash-log-hdr">
-          <span data-i18n="adminTerminal">Analysis Terminal</span
-          ><button
-            id="dashClearLogBtn"
-            class="dash-btn-xs dash-muted-action"
-            data-i18n="adminTerminalClear"
+      <section
+        id="dashLogArea"
+        class="dash-log-area dash-terminal-shared"
+        aria-labelledby="dashTerminalTitle"
+      >
+        <header class="dash-log-hdr">
+          <button
+            id="dashTerminalToggle"
+            class="dash-terminal-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="dashTerminalBody"
           >
-            Clear
+            <span class="dash-terminal-title-wrap">
+              <span id="dashTerminalTitle" data-i18n="adminTerminal">Admin Activity</span>
+              <span
+                id="dashTerminalSummary"
+                class="dash-terminal-summary"
+                data-i18n="adminTerminalSummary"
+                >0 recent events</span
+              >
+            </span>
+            <span class="dash-terminal-chevron" aria-hidden="true">⌄</span>
           </button>
+          <div class="dash-terminal-meta">
+            <span
+              id="dashTerminalSevereCount"
+              class="dash-terminal-alert"
+              data-i18n="adminTerminalWarnings"
+              hidden
+              >0 warnings</span
+            >
+            <span
+              id="dashTerminalSyncStatus"
+              class="dash-terminal-sync"
+              data-state="local"
+              role="status"
+              aria-live="polite"
+              data-i18n="adminTerminalStatusLocal"
+              >Local activity only</span
+            >
+          </div>
+        </header>
+
+        <div id="dashTerminalBody" class="dash-terminal-body" hidden>
+          <div
+            class="dash-terminal-toolbar"
+            role="group"
+            aria-label="Activity filters and actions"
+            data-i18n-aria="adminTerminalToolbar"
+          >
+            <label class="dash-terminal-field dash-terminal-search">
+              <span data-i18n="adminTerminalSearch">Search activity</span>
+              <input
+                id="dashLogSearch"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                placeholder="Search messages, sources, or files"
+                data-i18n-ph="adminTerminalSearchPh"
+                data-i18n-aria="adminTerminalSearchPh"
+              />
+            </label>
+            <label class="dash-terminal-field">
+              <span data-i18n="adminTerminalSeverity">Severity</span>
+              <select id="dashLogSeverity">
+                <option value="all" data-i18n="adminTerminalAllLevels">All levels</option>
+                <option value="info" data-i18n="adminTerminalInfo">Information</option>
+                <option value="success" data-i18n="adminTerminalSuccess">Success</option>
+                <option value="warn" data-i18n="adminTerminalWarn">Warnings</option>
+                <option value="error" data-i18n="adminTerminalError">Errors</option>
+              </select>
+            </label>
+            <div class="dash-terminal-actions">
+              <button
+                id="dashCopyLogBtn"
+                class="dash-btn-xs dash-muted-action"
+                type="button"
+                data-i18n="adminTerminalCopyView"
+              >
+                Copy view
+              </button>
+              <button
+                id="dashExportLogBtn"
+                class="dash-btn-xs dash-muted-action"
+                type="button"
+                data-i18n="adminTerminalExportJson"
+              >
+                Export JSON
+              </button>
+              <button
+                id="dashClearLogBtn"
+                class="dash-btn-xs dash-muted-action"
+                type="button"
+                data-i18n="adminTerminalClearView"
+                data-i18n-title="adminTerminalClearHint"
+                title="Hide visible activity on this device; shared history is not deleted"
+              >
+                Clear view
+              </button>
+              <button
+                id="dashRestoreLogViewBtn"
+                class="dash-btn-xs dash-muted-action"
+                type="button"
+                data-i18n="adminTerminalRestore"
+                hidden
+              >
+                Restore earlier
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="dashLogOutput"
+            class="dash-log-output"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            aria-label="Admin activity events"
+            data-i18n-aria="adminTerminalEventsAria"
+            tabindex="0"
+          ></div>
+          <p
+            id="dashTerminalEmpty"
+            class="dash-terminal-empty"
+            data-i18n="adminTerminalEmpty"
+            hidden
+          >
+            No activity matches this view.
+          </p>
+          <footer class="dash-terminal-footer">
+            <span id="dashTerminalCount" data-i18n="adminTerminalCount"
+              >0 shown · newest 200 retained for this terminal view</span
+            >
+            <span id="dashTerminalActionStatus" role="status" aria-live="polite"></span>
+          </footer>
         </div>
-        <div id="dashLogOutput" class="dash-log-output"></div>
-      </div>
+      </section>
 
       <!-- Sub-tab: Upload Structures -->
       <div class="dash-subtab-panel hidden" id="dashSubtabUploadStructures">
@@ -576,8 +729,20 @@
       <!-- Sub-tab: Dashboard -->
       <div class="dash-subtab-panel" id="dashSubtabDashboard">
         <div id="dashUploadZone" class="dash-upload-zone hidden">
-          <div id="dashApiUploadStatus" class="dash-roster-api-status"></div>
-          <div id="dashDropZone" class="dash-dropzone">
+          <div
+            id="dashApiUploadStatus"
+            class="dash-roster-api-status"
+            role="status"
+            aria-live="polite"
+          ></div>
+          <div
+            id="dashDropZone"
+            class="dash-dropzone"
+            role="button"
+            tabindex="0"
+            data-i18n-aria="adminUploadDrop"
+            aria-label="Drop screenshots here or click to browse"
+          >
             <svg
               width="48"
               height="48"
@@ -599,13 +764,22 @@
             <input
               type="file"
               id="dashFileInput"
+              name="structureScreenshots"
               class="dash-file-input"
               accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
               multiple
             />
           </div>
-          <div id="dashProgress" class="dash-progress hidden">
-            <div class="dash-progress-bar">
+          <div id="dashProgress" class="dash-progress hidden" role="status" aria-live="polite">
+            <div
+              id="dashProgressBar"
+              class="dash-progress-bar"
+              role="progressbar"
+              aria-label="OCR and upload progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
               <span id="dashProgressFill" class="dash-progress-fill"></span>
             </div>
             <span id="dashProgressText" class="dash-progress-text" data-i18n="adminUploading"
@@ -619,7 +793,21 @@
               Cancel
             </button>
           </div>
-          <div id="dashUploadStatus" class="dash-upload-status hidden"></div>
+          <div
+            id="dashUploadStatus"
+            class="dash-upload-status hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
+          <section class="dash-ocr-live-log" aria-labelledby="dashOcrLiveLogTitle">
+            <div class="dash-ocr-live-log__head">
+              <strong id="dashOcrLiveLogTitle" data-i18n="adminOcrActivity">OCR activity</strong>
+              <span data-i18n="adminOcrActivityHint"
+                >Latest reading, validation, and upload stages</span
+              >
+            </div>
+            <ol id="dashOcrLiveLog" aria-live="polite" aria-relevant="additions"></ol>
+          </section>
         </div>
 
         <!-- KPIs -->
@@ -745,13 +933,7 @@
         ></div>
 
         <!-- Visuals Row -->
-        <div
-          class="dash-main-grid dash-visuals-grid"
-          style="
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-            align-items: start;
-          "
-        >
+        <div class="dash-main-grid dash-visuals-grid">
           <div class="dash-card dash-chart-card">
             <div class="dash-card-hdr">
               <h2 class="dash-card-title">
@@ -863,13 +1045,7 @@
         </div>
 
         <!-- Main Grid -->
-        <div
-          class="dash-main-grid dash-history-leader-grid"
-          style="
-            grid-template-columns: minmax(280px, 0.78fr) minmax(520px, 1.22fr);
-            align-items: start;
-          "
-        >
+        <div class="dash-main-grid dash-history-leader-grid">
           <div id="dashAttackHistoryCard" class="dash-card">
             <div class="dash-card-hdr dash-card-hdr-wrap">
               <h2 class="dash-card-title">
@@ -901,9 +1077,14 @@
                 <input
                   type="text"
                   id="dashAttackSearch"
+                  name="attackSearch"
                   class="dash-search-input"
                   placeholder="Filter by structure, level, day..."
                   data-i18n-ph="adminHistoryPh"
+                  data-i18n-aria="adminHistoryPh"
+                  aria-label="Filter by structure, level, day"
+                  autocomplete="off"
+                  spellcheck="false"
                 />
               </div>
             </div>
@@ -951,9 +1132,14 @@
                   ><input
                     type="text"
                     id="dashSearch"
+                    name="memberSearch"
                     class="dash-search-input"
                     placeholder="Search member name..."
                     data-i18n-ph="adminSearchPh"
+                    data-i18n-aria="adminSearchPh"
+                    aria-label="Search member name"
+                    autocomplete="off"
+                    spellcheck="false"
                   />
                 </div>
               </div>
@@ -1231,12 +1417,20 @@
               >
             </div>
           </div>
-          <div id="dashContributionDropZone" class="dash-roster-dropzone">
+          <div
+            id="dashContributionDropZone"
+            class="dash-roster-dropzone"
+            role="button"
+            tabindex="0"
+            data-i18n-aria="adminContributionDropZone"
+            aria-label="Drop Total Contribution screenshots here, or click Upload Image"
+          >
             <span data-i18n="adminContributionDropZone"
               >Drop Total Contribution screenshots here, or click Upload Image</span
             >
             <input
               id="dashContributionFileInput"
+              name="contributionScreenshots"
               class="dash-native-file-input"
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
@@ -1245,13 +1439,23 @@
               tabindex="-1"
             />
           </div>
-          <div id="dashContributionProgress" class="dash-roster-progress hidden">
+          <div
+            id="dashContributionProgress"
+            class="dash-roster-progress hidden"
+            role="status"
+            aria-live="polite"
+          >
             <span class="spinner"></span
             ><span id="dashContributionProgressText" data-i18n="adminContributionScanning"
               >Scanning contribution list...</span
             >
           </div>
-          <div id="dashContributionStatus" class="dash-upload-status hidden"></div>
+          <div
+            id="dashContributionStatus"
+            class="dash-upload-status hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
           <div id="dashContributionComparePanel" class="dash-contribution-compare-panel"></div>
           <div id="dashContributionWeightedPanel" class="dash-contribution-weighted-panel"></div>
           <div id="dashContributionBody">
@@ -1335,7 +1539,12 @@
               <strong id="dashEdenVoteSettingsTitle" data-i18n="adminEdenVotesSettings"
                 >Voting controls</strong
               >
-              <span id="dashEdenVoteSettingsStatus" class="dash-muted"></span>
+              <span
+                id="dashEdenVoteSettingsStatus"
+                class="dash-muted"
+                role="status"
+                aria-live="polite"
+              ></span>
             </div>
             <div class="dash-eden-vote-toggle-grid">
               <label class="dash-eden-vote-toggle">
@@ -1372,6 +1581,38 @@
                   >
                 </span>
               </label>
+            </div>
+            <div class="dash-eden-vote-deadline-control">
+              <div>
+                <label for="dashEdenVoteClosesAtInput" data-i18n="adminEdenVotesDeadline"
+                  >Voting deadline</label
+                >
+                <small id="dashEdenVoteDeadlineHint" data-i18n="adminEdenVotesDeadlineHint"
+                  >Choose the local date and time when voting should close automatically.</small
+                >
+              </div>
+              <div class="dash-eden-vote-deadline-row">
+                <input
+                  id="dashEdenVoteClosesAtInput"
+                  class="dash-input"
+                  name="edenVoteClosesAt"
+                  type="datetime-local"
+                  step="60"
+                  aria-describedby="dashEdenVoteDeadlineHint dashEdenVoteDeadlinePreview"
+                />
+                <button id="dashEdenVoteSaveDeadlineBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminEdenVotesSaveDeadline">Save deadline</span>
+                </button>
+                <button id="dashEdenVoteClearDeadlineBtn" class="dash-btn" type="button">
+                  <span data-i18n="adminEdenVotesClearDeadline">Clear deadline</span>
+                </button>
+              </div>
+              <output
+                id="dashEdenVoteDeadlinePreview"
+                class="dash-muted dash-eden-vote-deadline-preview"
+                for="dashEdenVoteClosesAtInput"
+                aria-live="polite"
+              ></output>
             </div>
           </section>
           <section class="dash-contribution-compare-card dash-eden-votes-panel">
@@ -1426,7 +1667,12 @@
             <label class="dash-conduct-player-field">
               <span data-i18n="adminConductPlayer">Player</span>
               <div class="dash-conduct-player-picker">
-                <select id="dashConductPlayer" class="dash-input"></select>
+                <select
+                  id="dashConductPlayer"
+                  name="player"
+                  class="dash-input"
+                  aria-describedby="dashConductStatus"
+                ></select>
                 <button
                   id="dashConductPlayerSearchBtn"
                   class="dash-btn dash-conduct-player-search-btn"
@@ -1452,44 +1698,55 @@
               </div>
               <input
                 id="dashConductPlayerSearchInput"
+                name="playerSearch"
                 class="dash-input dash-conduct-player-search-input hidden"
                 type="search"
                 data-i18n-ph="adminConductSearchPh"
                 placeholder="Search by player name..."
                 autocomplete="off"
+                spellcheck="false"
               />
               <input
                 id="dashConductManualPlayerInput"
+                name="manualPlayer"
                 class="dash-input dash-conduct-manual-player-input hidden"
                 type="text"
                 data-i18n-ph="adminConductManualPlayerPh"
                 placeholder="Type external R5 name"
                 autocomplete="off"
+                spellcheck="false"
+                aria-describedby="dashConductStatus"
+                aria-invalid="false"
               />
             </label>
             <label>
               <span data-i18n="adminConductCategory">Category</span>
-              <select id="dashConductCategory" class="dash-input"></select>
+              <select id="dashConductCategory" name="category" class="dash-input"></select>
             </label>
             <label>
               <span data-i18n="adminConductPoints">Points</span>
               <input
                 id="dashConductPoints"
+                name="points"
                 class="dash-input"
                 type="number"
                 step="1"
                 inputmode="numeric"
+                aria-describedby="dashConductStatus"
+                required
               />
             </label>
             <label class="dash-conduct-note">
               <span data-i18n="adminConductNote">Note</span>
               <input
                 id="dashConductNote"
+                name="note"
                 class="dash-input"
                 type="text"
                 maxlength="500"
                 data-i18n-ph="adminConductNotePh"
                 placeholder="Optional reason"
+                autocomplete="off"
               />
             </label>
             <div class="dash-conduct-actions">
@@ -1501,17 +1758,24 @@
               </button>
             </div>
           </form>
-          <div id="dashConductStatus" class="dash-upload-status hidden"></div>
+          <div
+            id="dashConductStatus"
+            class="dash-upload-status hidden"
+            role="status"
+            aria-live="polite"
+          ></div>
           <div id="dashConductSummary"></div>
           <div class="dash-conduct-list-head">
             <h3 data-i18n="adminConductRecent">Recent adjustments</h3>
             <input
               id="dashConductSearch"
+              name="conductSearch"
               class="dash-input"
               type="search"
               data-i18n-ph="adminConductSearchPh"
               placeholder="Search by player name…"
               autocomplete="off"
+              spellcheck="false"
             />
           </div>
           <div id="dashConductList" class="dash-conduct-list">
@@ -1548,19 +1812,32 @@
               </button>
             </div>
           </div>
-          <div id="dashBannerListDropZone" class="dash-roster-dropzone">
+          <div
+            id="dashBannerListDropZone"
+            class="dash-roster-dropzone"
+            role="button"
+            tabindex="0"
+            data-i18n-aria="adminBannerDropZone"
+            aria-label="Drop banner list screenshot here, or click Upload Image"
+          >
             <span data-i18n="adminBannerDropZone"
               >Drop banner list screenshot here, or click Upload Image</span
             >
             <input
               id="dashBannerListFileInput"
+              name="bannerScreenshots"
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
               multiple
               hidden
             />
           </div>
-          <div id="dashBannerListProgress" class="dash-roster-progress hidden">
+          <div
+            id="dashBannerListProgress"
+            class="dash-roster-progress hidden"
+            role="status"
+            aria-live="polite"
+          >
             <span class="spinner"></span
             ><span id="dashBannerListProgressText" data-i18n="adminBannerScanning"
               >Scanning banner list...</span
@@ -1600,19 +1877,32 @@
               </button>
             </div>
           </div>
-          <div id="dashPatherListDropZone" class="dash-roster-dropzone">
+          <div
+            id="dashPatherListDropZone"
+            class="dash-roster-dropzone"
+            role="button"
+            tabindex="0"
+            data-i18n-aria="adminPatherDropZone"
+            aria-label="Drop pather or speed tile plan screenshot here, or click Upload Image"
+          >
             <span data-i18n="adminPatherDropZone"
               >Drop pather or speed tile plan screenshot here, or click Upload Image</span
             >
             <input
               id="dashPatherListFileInput"
+              name="patherScreenshots"
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp,.png,.jpg,.jpeg,.webp"
               multiple
               hidden
             />
           </div>
-          <div id="dashPatherListProgress" class="dash-roster-progress hidden">
+          <div
+            id="dashPatherListProgress"
+            class="dash-roster-progress hidden"
+            role="status"
+            aria-live="polite"
+          >
             <span class="spinner"></span
             ><span id="dashPatherListProgressText" data-i18n="adminPatherScanning"
               >Scanning plan...</span
@@ -1653,6 +1943,59 @@
               No shield wall records yet.
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Sub-tab: VTS Games -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabVtsGames">
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <h2 class="dash-card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M6 12h4" />
+                <path d="M14 12h4" />
+                <path d="M12 14V10" />
+                <rect x="2" y="6" width="20" height="12" rx="2" /></svg
+              ><span data-i18n="adminVtsGamesTitle">VTS Boot Games</span>
+            </h2>
+          </div>
+          <div class="dash-vts-games-grid">
+            <a class="dash-game-card" href="/previews/boot-games/b-merge-rush.html" target="_blank" rel="noopener">
+              <span class="dash-game-tag">Mode A</span>
+              <strong>Merge Rush</strong>
+              <p>Tap two matching type+color to merge up the rarity ladder. Gold pair = jackpot.</p>
+            </a>
+            <a class="dash-game-card" href="/previews/boot-games/c-sort-hoard.html" target="_blank" rel="noopener">
+              <span class="dash-game-tag">Mode B</span>
+              <strong>Sort the Hoard</strong>
+              <p>Pieces fall from the gate. Flick/tap left (blue) or right (gold) bins before they hit the floor.</p>
+            </a>
+            <a class="dash-game-card" href="/previews/boot-games/e-crystal-relay.html" target="_blank" rel="noopener">
+              <span class="dash-game-tag">Mode C</span>
+              <strong>Crystal Relay</strong>
+              <p>One piece on a bar. Tap when the spark is in the green zone — chain alternating sides for combos.</p>
+            </a>
+            <a class="dash-game-card" href="/previews/boot-games/f-set-assembly.html" target="_blank" rel="noopener">
+              <span class="dash-game-tag">Mode D</span>
+              <strong>Set Assembly</strong>
+              <p>Complete a mini set (e.g. all three feathers). Tap only matching types; junk distracts you.</p>
+            </a>
+            <a class="dash-game-card" href="/previews/boot-games/h-hero-rumble.html" target="_blank" rel="noopener">
+              <span class="dash-game-tag">Mode E</span>
+              <strong>Hero Rumble</strong>
+              <p>Real hero icons fight! Catch blue weapons to attack, dodge gold ones. Purple = SUPER!</p>
+            </a>
+          </div>
+          <p class="dash-game-note">
+            <span data-i18n="adminVtsGamesNote">Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.</span>
+          </p>
         </div>
       </div>
 

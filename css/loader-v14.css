@@ -1,0 +1,385 @@
+/* =============================================================
+   Dragon Trail loader
+   Shared, non-blocking loading presentation for the main toolkit,
+   VTS Admin, and Eden X1. Every illustrated element is an existing
+   in-game/VTS image; CSS only provides layout, state, and motion.
+   ============================================================= */
+
+.vts-loader {
+  --vts-loader-progress: 0;
+  --vts-loader-scale: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  color: var(--text-primary, #f7fbff);
+}
+
+.vts-loader--page {
+  min-height: clamp(13rem, 30vh, 19rem);
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  border: 1px solid var(--border, rgba(143, 164, 187, 0.22));
+  border-radius: var(--radius-panel, 18px);
+  background: var(--panel-fill, var(--surface-glass, rgba(10, 18, 31, 0.78)));
+  box-shadow: var(--shadow-card, 0 18px 42px rgba(0, 0, 0, 0.28));
+}
+
+.vts-loader--compact {
+  min-height: 8.25rem;
+  padding: 1rem;
+}
+
+.vts-loader__stage {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  width: min(100%, 48rem);
+  text-align: center;
+}
+
+.vts-loader__identity {
+  display: block;
+  width: clamp(4.5rem, 10vw, 7rem);
+  max-width: 7rem;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.vts-loader__identity.vts-loader__visual--velo {
+  position: relative;
+  width: clamp(7rem, 18vw, 9.5rem);
+  max-width: 9.5rem;
+  filter: drop-shadow(0 0.75rem 1rem rgba(3, 14, 30, 0.36));
+}
+
+.vts-loader__identity.vts-loader__visual--velo::after {
+  content: '';
+  position: absolute;
+  right: 5%;
+  bottom: 11%;
+  width: 18%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 34%,
+    #fff3a6 0 9%,
+    #ff9d3c 26%,
+    #ef4d2f 58%,
+    transparent 72%
+  );
+  filter: drop-shadow(0 0 0.45rem rgba(255, 128, 46, 0.72));
+  animation: vts-loader-velo-spark 0.9s ease-in-out infinite alternate;
+}
+
+.vts-loader__velo-figure {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+}
+
+.vts-loader__crest {
+  width: clamp(3.25rem, 6vw, 4.75rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 22%;
+  box-shadow:
+    0 0 0 1px rgba(103, 232, 249, 0.22),
+    0 0 1.75rem rgba(45, 212, 191, 0.18);
+  animation: none;
+}
+
+.vts-loader .vts-loader__crest,
+.vts-loader svg.vts-loader__crest {
+  width: clamp(3.25rem, 6vw, 4.75rem) !important;
+  height: clamp(3.25rem, 6vw, 4.75rem) !important;
+  max-width: 4.75rem !important;
+  max-height: 4.75rem !important;
+  object-fit: contain !important;
+}
+
+.vts-loader--compact .vts-loader__crest {
+  width: 2.65rem;
+}
+
+.vts-loader__kicker,
+.vts-loader .dash-connecting-kicker {
+  max-width: 100%;
+  margin: 0;
+  color: var(--accent, #f7b955);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.vts-loader__title,
+.vts-loader .dash-connecting-title {
+  margin: 0;
+  color: var(--text-primary, #f7fbff);
+  font-family: inherit;
+  font-size: clamp(1.05rem, 4vw, 1.5rem);
+  font-weight: 900;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.vts-loader--compact .vts-loader__title,
+.vts-loader--compact .dash-connecting-title {
+  font-size: 0.94rem;
+}
+
+.vts-loader__trail-wrap,
+.vts-loader .dash-connecting-bar-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(100%, 25rem);
+  margin: 0;
+}
+
+.vts-loader__trail,
+.vts-loader .dash-connecting-bar {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 4.2rem;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.vts-loader--compact .vts-loader__trail,
+.vts-loader--compact .dash-connecting-bar {
+  height: 2.6rem;
+}
+
+/* Dashboard legacy rules use an ID selector and otherwise collapse the shared loader
+   trail to a clipped 5px bar. Keep the full Velo runner visible on Admin and Eden X1. */
+#ocrDashboardRoot .vts-loader .vts-loader__trail.dash-connecting-bar {
+  position: relative;
+  display: block;
+  min-width: 0;
+  height: 4.2rem;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#ocrDashboardRoot .vts-loader--compact .vts-loader__trail.dash-connecting-bar {
+  height: 2.6rem;
+}
+
+.vts-loader__trail-rail {
+  position: absolute;
+  inset-inline: 1rem;
+  top: 50%;
+  height: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong, rgba(143, 164, 187, 0.34));
+  border-radius: var(--radius-pill, 9999px);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-strong, rgba(143, 164, 187, 0.34)),
+    transparent
+  );
+  transform: translateY(-50%);
+}
+
+.vts-loader__trail-fill,
+.vts-loader .dash-connecting-bar-fill {
+  display: block;
+  width: 100% !important;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--v12-line, linear-gradient(90deg, #67e8f9, #f7b955, #36d399));
+  box-shadow: 0 0 0.75rem var(--brand-glow, rgba(45, 212, 191, 0.24));
+  transform: scaleX(var(--vts-loader-scale));
+  transform-origin: left center;
+  transition: transform 320ms var(--ease-out, ease-out);
+}
+
+[dir='rtl'] .vts-loader__trail-fill,
+[dir='rtl'] .vts-loader .dash-connecting-bar-fill {
+  transform-origin: right center;
+}
+
+.vts-loader.is-indeterminate .vts-loader__trail-fill,
+.vts-loader.is-indeterminate .dash-connecting-bar-fill {
+  transform: scaleX(0.34);
+  transform-origin: center;
+  animation: vts-loader-indeterminate 1.45s ease-in-out infinite alternate;
+}
+
+.vts-loader__runner {
+  display: block;
+  position: absolute;
+  top: 50%;
+  inset-inline-start: clamp(1rem, calc(var(--vts-loader-progress) * 1%), calc(100% - 1rem));
+  z-index: 3;
+  width: 3.35rem;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0.35rem 0.55rem rgba(4, 12, 28, 0.32));
+  transform: translate(-50%, -50%);
+  transition: inset-inline-start 320ms var(--ease-out, ease-out);
+}
+
+.vts-loader--compact .vts-loader__runner {
+  width: 2.7rem;
+}
+
+[dir='rtl'] .vts-loader__runner {
+  transform: translate(50%, -50%);
+}
+
+.vts-loader__runner img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  pointer-events: none;
+}
+
+.vts-loader__identity.vts-loader__visual--velo img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  pointer-events: none;
+}
+
+.vts-loader__velo-body {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vts-loader__velo-helmet {
+  width: 78%;
+  height: auto;
+  inset-block-start: -22%;
+  inset-inline-start: 11%;
+}
+
+.vts-loader.is-complete .vts-loader__runner {
+  animation: none;
+  inset-inline-start: calc(100% - 1rem);
+}
+
+.vts-loader__percent,
+.vts-loader .dash-connecting-bar-pct {
+  min-width: 3ch;
+  color: var(--text-muted, #aebbd0);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: end;
+}
+
+.vts-loader.is-indeterminate .vts-loader__percent,
+.vts-loader.is-indeterminate .dash-connecting-bar-pct {
+  display: none;
+}
+
+.vts-loader__status,
+.vts-loader .dash-connecting-status {
+  min-height: 1.15rem;
+  margin: 0;
+  color: var(--text-muted, #aebbd0);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.vts-loader .dash-connecting-status::before,
+.vts-loader .dash-connecting-bar-fill::after {
+  content: none;
+}
+
+.vts-loader--compact .vts-loader__status,
+.vts-loader--compact .dash-connecting-status {
+  font-size: 0.72rem;
+}
+
+[data-theme='light'] .vts-loader--page {
+  background: var(--panel-fill, rgba(255, 255, 255, 0.9));
+}
+
+[data-theme='light'] .vts-loader__trail-rail {
+  background: var(--surface-3, #eef4f7);
+}
+
+@keyframes vts-loader-indeterminate {
+  from {
+    opacity: 0.5;
+    transform: scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(0.58);
+  }
+}
+
+@keyframes vts-loader-velo-spark {
+  from {
+    opacity: 0.48;
+    transform: translateY(8%) rotate(-8deg) scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-7%) rotate(8deg) scale(1.08);
+  }
+}
+
+@media (max-width: 480px) {
+  .vts-loader--page {
+    min-height: 17rem;
+    padding: 1.1rem 0.8rem;
+    border-radius: var(--radius-card, 14px);
+  }
+
+  .vts-loader__stage {
+    gap: 0.62rem;
+  }
+
+  .vts-loader__trail-wrap,
+  .vts-loader .dash-connecting-bar-wrap {
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vts-loader__crest,
+  .vts-loader__identity,
+  .vts-loader__runner,
+  .vts-loader__velo-body,
+  .vts-loader__velo-helmet,
+  .vts-loader__trail-fill,
+  .vts-loader .dash-connecting-bar-fill {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .vts-loader__identity.vts-loader__visual--velo::after {
+    animation: none;
+  }
+
+  .vts-loader__crest {
+    opacity: 1;
+    transform: none;
+  }
+
+  .vts-loader__runner {
+    opacity: 0.88;
+    transform: translate(-50%, -50%);
+  }
+
+  [dir='rtl'] .vts-loader__runner {
+    transform: translate(50%, -50%);
+  }
+}

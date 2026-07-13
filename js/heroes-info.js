@@ -749,7 +749,7 @@ export const heroesExtendedData = {
         skills: [
             { id: 2, type: "Combat Skill", range: 5, target: "2 Random Enemy", desc: "1 round prep. 65% chance to deal 325% damage to 2 random enemy squads, preventing them from restoring troop power for 1 round. This skill has an 80% chance to bypass the prep stage and be cast directly." },
             { id: 5, type: "Status Skill", range: 2, target: "1 Random Ally", desc: "All friendly Cavalry squads gain the Storm Cavalry effect: when casting an active skill, deal 40% more damage; when casting a pursuit skill, damage taken is reduced by 40%, lasting 2 rounds. When any of your squads triggers the Storm Cavalry effect, Cyrus gains 50% of its effect, stackable for up to 5 layers, lasting until the end of battle." },
-            { id: 8, type: "Status Skill", range: 2, target: "1 Random Ally", desc: "Cyrus' squad has a 10% chance to Dodge. After each successful Dodge, randomly gain one of the following effects from the captured screenshot: First to Attack, Sober, or a third effect that needs confirmation. If Dodge fails, all your squads immediately become Sober for 1 round and gain a skill reducing damage taken by 50% for the next incoming attack, effective once per round. The final screenshot line needs confirmation." }
+            { id: 8, type: "Status Skill", range: 2, target: "1 Random Ally", desc: "Cyrus's squad has a 10% chance to Dodge. After each successful Dodge, Cyrus randomly gains one of several effects, including First to Attack and Sober. If Dodge fails, all your squads immediately become Sober for 1 round and gain an effect that reduces damage taken by 50% for the next incoming attack, effective once per round." }
         ]
     }
 };

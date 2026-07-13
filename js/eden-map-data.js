@@ -8,13 +8,25 @@ const LEGACY_DATASET_IDS = { classic: 'season3', wonders: 'season5' };
 let datasetStore = null;
 let datasetLoadPromise = null;
 
+function dispatchDatasetEvent(type, detail) {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+  window.dispatchEvent(new CustomEvent(type, { detail }));
+}
+
 export async function ensureEdenDatasetsLoaded() {
   if (datasetStore) return datasetStore;
   if (!datasetLoadPromise) {
-    datasetLoadPromise = loadEdenDatasetStore().then((store) => {
-      datasetStore = store;
-      return store;
-    });
+    datasetLoadPromise = loadEdenDatasetStore()
+      .then((store) => {
+        datasetStore = store;
+        dispatchDatasetEvent('edenDatasetsLoaded', { store });
+        return store;
+      })
+      .catch((error) => {
+        datasetLoadPromise = null;
+        dispatchDatasetEvent('edenDatasetsLoadFailed', { error });
+        throw error;
+      });
   }
   return datasetLoadPromise;
 }
@@ -912,7 +924,9 @@ export function getEdenDatasetId() {
 }
 
 export function hasEdenDatasetChoice() {
-  const id = getEdenDatasetId();
+  const id = migrateDatasetId(
+    activeDatasetId || localStorage.getItem(EDEN_DATASET_STORAGE_KEY) || ''
+  );
   return !!id && getCatalog().some(d => d.id === id);
 }
 

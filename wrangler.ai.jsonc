@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vts-ai-strategy-assistant",
+  "main": "workers/ai-worker.js",
+  "compatibility_date": "2026-07-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "AI_USER_QUOTA", "class_name": "AiQuotaDurableObject" },
+      { "name": "AI_GLOBAL_QUOTA", "class_name": "AiQuotaDurableObject" },
+    ],
+  },
+  "migrations": [{ "tag": "ai-quota-v1", "new_sqlite_classes": ["AiQuotaDurableObject"] }],
+  "ratelimits": [
+    {
+      "name": "AI_ABUSE_LIMITER",
+      "namespace_id": "109701",
+      "simple": { "limit": 30, "period": 60 },
+    },
+  ],
+  "vars": {
+    "AI_ENABLED": "true",
+    "AI_MODEL": "gemini-3.1-flash-lite",
+    "ENVIRONMENT": "production",
+    "FIREBASE_PROJECT_ID": "abocombo",
+    "FIREBASE_PROJECT_NUMBER": "103195597389",
+    "FIREBASE_APP_ID": "1:103195597389:web:97788d99356b4e59839a04",
+    "ALLOWED_ORIGINS": "https://roc-vts.com,https://www.roc-vts.com,https://abocombo.web.app,https://abocombo.firebaseapp.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
+  },
+}

@@ -1,0 +1,1731 @@
+/* =============================================================
+   V14 shared app shell — Frost & Flame / celestial glass.
+   Loaded last so this file owns only the global index shell.
+   Feature surfaces continue to use their existing component CSS.
+   ============================================================= */
+
+#app.app-shell {
+  --shell-ice: var(--ff-action);
+  --shell-fire: var(--ff-urgency);
+  --shell-glass: var(--ff-panel-translucent);
+  --shell-glass-strong: var(--ff-panel-translucent-strong);
+  --shell-glass-soft: var(--ff-glass);
+  --shell-line: var(--ff-border);
+  --shell-line-strong: var(--ff-border-hover);
+  --shell-aurora: var(--ff-gradient-celestial);
+  width: min(100%, var(--ff-container-workspace)) !important;
+  max-width: min(100%, var(--ff-container-workspace)) !important;
+  min-width: 0;
+  margin-inline: auto !important;
+  padding-block: max(clamp(8px, 1vw, 16px), var(--ff-safe-top)) clamp(8px, 1vw, 16px) !important;
+  padding-inline: max(clamp(8px, 1vw, 16px), var(--ff-safe-left))
+    max(clamp(8px, 1vw, 16px), var(--ff-safe-right)) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* The legacy reveal animation keeps an identity transform after it finishes.
+   That turns the whole app into a containing block and breaks viewport-fixed
+   mobile navigation, so the v14 shell keeps only the opacity reveal. */
+body #app.app-shell,
+body.app-ready #app.app-shell {
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+[data-theme='light'] #app.app-shell {
+  --shell-ice: var(--ff-action);
+  --shell-fire: var(--ff-urgency);
+  --shell-glass: var(--ff-panel-translucent);
+  --shell-glass-strong: var(--ff-panel-translucent-strong);
+  --shell-glass-soft: var(--ff-glass);
+  --shell-line: var(--ff-border);
+  --shell-line-strong: var(--ff-border-hover);
+}
+
+#mainContent {
+  min-width: 0;
+}
+
+/* ---- V14 base typography ----------------------------------- */
+/* Typography is intentionally scoped to shared chrome. Tool lanes keep their
+   established typography until their own V14 migrations land. */
+#app .command-header,
+#app .tool-nav-shell,
+#app .shell-more-panel,
+#app .shell-language-menu,
+#app .site-footer {
+  font-family: var(--font-ui);
+}
+
+/* Data-only surfaces use the mono face per the Frost & Flame spec. */
+#app #globalGameClock {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em !important;
+}
+
+/* ---- Compact command bar ----------------------------------- */
+
+#app .command-header {
+  position: relative !important;
+  isolation: isolate;
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-content: space-between;
+  gap: clamp(12px, 2vw, 28px) !important;
+  min-height: 68px !important;
+  width: min(100%, var(--ff-container-workspace));
+  margin: 0 auto 12px !important;
+  padding: 9px 10px 9px 12px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 20px !important;
+  background:
+    radial-gradient(420px 120px at 0% 0%, var(--brand-glow), transparent 72%),
+    radial-gradient(
+      320px 120px at 100% 100%,
+      color-mix(in srgb, var(--shell-fire) 13%, transparent),
+      transparent 72%
+    ),
+    var(--shell-glass) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 36px rgba(0, 0, 0, 0.18) !important;
+  backdrop-filter: blur(var(--ff-blur-raised)) saturate(135%);
+  -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(135%);
+}
+
+#app .command-header::before {
+  content: '' !important;
+  position: absolute !important;
+  z-index: -1;
+  inset: 0 !important;
+  border: 0 !important;
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--ff-action) 6%, transparent), transparent 34%),
+    linear-gradient(285deg, color-mix(in srgb, var(--ff-urgency) 6%, transparent), transparent 30%) !important;
+  animation: shell-aurora-drift 22s ease-in-out infinite;
+  pointer-events: none;
+}
+
+#app .command-header::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: auto 20px 0 !important;
+  width: auto !important;
+  height: 1px !important;
+  background: var(--shell-aurora) !important;
+  opacity: 0.62 !important;
+  pointer-events: none;
+}
+
+#app .command-brand {
+  display: flex !important;
+  flex: 1 1 auto;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+#app .command-brand::after,
+#app .command-actions::after {
+  display: none !important;
+}
+
+#app .command-logo {
+  display: grid !important;
+  grid-template-columns: 46px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  flex: 0 1 auto;
+  align-items: center !important;
+  column-gap: 10px !important;
+  row-gap: 1px !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+#app .command-logo picture {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: block;
+  width: 46px;
+  height: 46px;
+}
+
+#app .command-logo .main-logo {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 46px !important;
+  height: 46px !important;
+  border: 1px solid var(--shell-line-strong) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--brand) 9%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.25) !important;
+  animation: none !important;
+}
+
+#app .command-logo .shell-brand-title {
+  grid-column: 2;
+  grid-row: 1;
+  display: block;
+  min-width: 0;
+  margin: 0 !important;
+  overflow: hidden;
+  color: var(--text-primary) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-family: var(--font-ui) !important;
+  font-size: clamp(0.98rem, 1.5vw, 1.2rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.025em !important;
+  text-align: start !important;
+  text-overflow: ellipsis;
+  text-shadow: none !important;
+  white-space: nowrap;
+}
+
+#app .command-logo #appTitle {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+#app .command-logo .command-logo-copy {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex !important;
+  flex-flow: row wrap !important;
+  align-items: center !important;
+  gap: 4px 8px !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+#app .command-logo .command-logo-copy p {
+  margin: 0 !important;
+  overflow: hidden;
+  color: var(--text-muted) !important;
+  font-size: 0.58rem !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.08em !important;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#app .command-logo .command-team-line {
+  color: var(--shell-ice) !important;
+}
+
+#app .version-ribbon {
+  display: block !important;
+  flex: 0 1 auto;
+  width: auto !important;
+  max-width: min(26vw, 250px);
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  overflow: hidden;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 999px !important;
+  color: var(--text-muted) !important;
+  background: var(--shell-glass-soft) !important;
+  box-shadow: none !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.57rem !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.06em !important;
+  text-overflow: ellipsis;
+  text-shadow: none !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#app .command-copy.seo-intro {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+#app .command-actions {
+  display: flex !important;
+  flex: 0 0 auto;
+  align-items: center !important;
+  gap: 0 !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+#app .command-kicker {
+  display: none !important;
+}
+
+#app .app-control-row {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  width: auto !important;
+  min-width: 0;
+}
+
+#app #globalGameClock,
+#app .lang-select-shell,
+#app #themeToggle,
+#app #installAppBtn {
+  min-height: 44px !important;
+  height: 44px !important;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 14px !important;
+  color: var(--text-primary) !important;
+  background: var(--shell-glass-soft) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
+}
+
+#app #globalGameClock {
+  position: relative;
+  min-width: 104px !important;
+  padding: 0 12px 0 27px !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+}
+
+#app #globalGameClock::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--green) 68%, transparent);
+  transform: translateY(-50%);
+}
+
+[dir='rtl'] #app #globalGameClock {
+  padding: 0 27px 0 12px !important;
+}
+
+[dir='rtl'] #app #globalGameClock::before {
+  right: 12px;
+  left: auto;
+}
+
+#app .lang-select-wrapper,
+#app .lang-select-wrapper > div {
+  width: auto !important;
+  min-width: 0 !important;
+  height: 44px !important;
+}
+
+#app .lang-select-shell {
+  position: relative;
+  width: 142px !important;
+}
+
+#app .shell-native-language {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+#app .language-menu-button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 0 10px;
+  border: 0;
+  border-radius: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  min-height: 44px !important;
+  font-family: var(--font-ui) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-align: start;
+  cursor: pointer;
+}
+
+#app .language-menu-button:focus-visible {
+  outline: 2px solid var(--shell-ice);
+  outline-offset: 2px;
+}
+
+#app .language-menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#app .lang-select-icon,
+#app .lang-select-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#app .lang-select-icon svg,
+#app .lang-select-caret svg {
+  width: 100%;
+  height: 100%;
+}
+
+#app .lang-select-caret {
+  position: static !important;
+  width: 14px !important;
+  height: 14px;
+  transition: transform var(--ff-t-hover);
+}
+
+#app .lang-select-caret svg {
+  fill: currentColor;
+}
+
+#app .lang-select-shell.is-open .lang-select-caret {
+  transform: rotate(180deg);
+}
+
+#app .shell-language-menu {
+  position: fixed;
+  z-index: 1420;
+  top: 0;
+  right: auto;
+  left: 0;
+  display: grid;
+  gap: 3px;
+  width: min(238px, calc(100vw - 24px));
+  max-height: min(450px, calc(100dvh - 86px));
+  padding: 7px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 17px;
+  background:
+    radial-gradient(
+      180px 90px at 0 0,
+      color-mix(in srgb, var(--shell-ice) 12%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      170px 90px at 100% 100%,
+      color-mix(in srgb, var(--shell-fire) 9%, transparent),
+      transparent 74%
+    ),
+    var(--shell-glass-strong);
+  box-shadow:
+    0 22px 55px rgba(0, 0, 0, 0.38),
+    inset 0 1px rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(var(--ff-blur-raised)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(150%);
+  overscroll-behavior: contain;
+}
+
+#app .shell-language-menu[hidden] {
+  display: none !important;
+}
+
+#app .shell-language-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--ff-tap-min);
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  font: 700 0.83rem/1.2 var(--font-ui);
+  text-align: start;
+  cursor: pointer;
+}
+
+#app .shell-language-option:hover,
+#app .shell-language-option:focus-visible {
+  border-color: var(--shell-line);
+  color: var(--text-primary);
+  background: var(--shell-glass-soft);
+}
+
+#app .shell-language-option:focus-visible {
+  outline: 2px solid var(--ff-action);
+  outline-offset: 2px;
+}
+
+#app .shell-language-option.is-selected {
+  border-color: var(--shell-line-strong);
+  color: var(--text-primary);
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--shell-ice) 15%, transparent),
+    color-mix(in srgb, var(--shell-fire) 8%, transparent)
+  );
+  box-shadow: inset 3px 0 var(--shell-ice);
+}
+
+[dir='rtl'] #app .shell-language-option.is-selected {
+  box-shadow: inset -3px 0 var(--shell-ice);
+}
+
+#app .shell-language-option-name {
+  overflow-wrap: normal;
+  unicode-bidi: plaintext;
+}
+
+#app .shell-language-option-code {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+#app #themeToggle,
+#app #installAppBtn {
+  flex: 0 0 44px;
+  width: 44px !important;
+  min-width: 44px !important;
+  padding: 0 !important;
+}
+
+#app #themeToggle:hover,
+#app #installAppBtn:hover,
+#app .lang-select-shell:hover,
+#app #globalGameClock:hover {
+  border-color: var(--shell-line-strong) !important;
+  background: color-mix(in srgb, var(--shell-ice) 8%, var(--shell-glass-soft)) !important;
+}
+
+/* ---- One-line desktop tool rail ---------------------------- */
+
+#app .tool-nav-shell {
+  position: relative !important;
+  top: auto !important;
+  z-index: 70 !important;
+  width: min(100%, var(--ff-container-workspace));
+  margin: 0 auto 14px !important;
+  padding: 0 !important;
+}
+
+#app .tool-nav-inner {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0;
+  min-height: 58px;
+  padding: 5px !important;
+  overflow: visible !important;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 18px !important;
+  background: var(--shell-glass) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 30px rgba(0, 0, 0, 0.14) !important;
+  backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
+  -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
+  clip-path: none !important;
+}
+
+#app .tool-nav-inner::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 18px auto !important;
+  width: auto !important;
+  height: 1px !important;
+  border-radius: 999px;
+  background: var(--shell-aurora) !important;
+  opacity: 0.72 !important;
+  pointer-events: none;
+}
+
+#app #tabNavScroll {
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+#app #tabNavScroll::-webkit-scrollbar {
+  display: none;
+}
+
+#app #tabNavScroll > .tab-item:not([data-shell-desktop-primary]) {
+  display: none !important;
+}
+
+@media (min-width: 1440px) {
+  #app #tabNavScroll > .tab-item[data-shell-wide-primary] {
+    display: flex !important;
+  }
+}
+
+#app .shell-more-button.shell-tour-hidden {
+  display: none !important;
+}
+
+body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
+  display: flex !important;
+}
+
+#app #tabNavScroll > .tab-item {
+  position: relative;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: stretch !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+#app #tabNavScroll .tab-pill,
+#app .shell-more-button {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  margin: 0 !important;
+  padding: 0 clamp(10px, 1.1vw, 17px) !important;
+  overflow: hidden;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+  font-family: var(--font-ui) !important;
+  font-size: clamp(0.66rem, 0.78vw, 0.78rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.012em !important;
+  text-align: center;
+  text-decoration: none !important;
+  text-overflow: ellipsis;
+  text-transform: none !important;
+  transform: translateZ(0) !important;
+  transition:
+    border-color var(--ff-t-hover),
+    background-color var(--ff-t-hover),
+    color var(--ff-t-hover),
+    transform var(--ff-t-tap) !important;
+  white-space: nowrap !important;
+  touch-action: manipulation;
+}
+
+#app #tabNavScroll .tab-pill svg,
+#app .shell-more-button svg {
+  flex: 0 0 18px;
+  width: 18px !important;
+  height: 18px !important;
+  opacity: 0.86 !important;
+}
+
+#app #tabNavScroll .tab-pill:hover,
+#app #tabNavScroll .tab-pill:focus-visible,
+#app .shell-more-button:hover,
+#app .shell-more-button:focus-visible {
+  border-color: var(--shell-line) !important;
+  color: var(--text-primary) !important;
+  background: var(--shell-glass-soft) !important;
+}
+
+#app #tabNavScroll .tab-pill:focus-visible,
+#app .shell-more-button:focus-visible,
+#app #installAppBtn:focus-visible,
+#app #themeToggle:focus-visible,
+#app .shell-more-close:focus-visible,
+#app .shell-more-tool:focus-visible,
+#app .footer-tool-links a:focus-visible,
+#app .footer-community-links a:focus-visible {
+  outline: 2px solid var(--shell-ice) !important;
+  outline-offset: 2px;
+}
+
+#app #tabNavScroll .tab-pill:active,
+#app .shell-more-button:active,
+#app .language-menu-button:active,
+#app #themeToggle:active,
+#app #installAppBtn:active,
+#app .shell-more-close:active,
+#app .shell-more-tool:active {
+  transform: scale(0.97) !important;
+}
+
+#app #tabNavScroll .tab-pill.tab-pill-active,
+#app .shell-more-button.is-active {
+  border-color: var(--shell-line-strong) !important;
+  color: var(--shell-ice) !important;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--shell-ice) 13%, transparent),
+      color-mix(in srgb, var(--shell-fire) 7%, transparent)
+    ),
+    var(--shell-glass-soft) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 8px 20px color-mix(in srgb, var(--brand) 10%, transparent) !important;
+}
+
+#app #tabNavScroll .tab-pill.tab-pill-active::after,
+#app .shell-more-button.is-active::after {
+  content: '';
+  position: absolute;
+  right: 18%;
+  bottom: 3px;
+  left: 18%;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--shell-aurora);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--shell-ice) 45%, transparent);
+}
+
+#app #tabNavScroll .tab-badge {
+  position: absolute !important;
+  z-index: 2;
+  top: 3px !important;
+  right: 5px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 58px;
+  padding: 2px 4px !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  font-size: 0.42rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0.03em !important;
+  text-overflow: ellipsis;
+  transform: none !important;
+  white-space: nowrap;
+}
+
+[dir='rtl'] #app #tabNavScroll .tab-badge {
+  right: auto !important;
+  left: 5px !important;
+}
+
+#app #tabScrollLeft,
+#app #tabScrollRight {
+  display: none !important;
+}
+
+#app .shell-more-button {
+  flex: 0 0 auto;
+  min-width: 76px !important;
+  padding-inline: 12px !important;
+  cursor: pointer;
+}
+
+/* ---- More menu / mobile bottom sheet ----------------------- */
+
+#app .shell-more-backdrop {
+  position: fixed;
+  z-index: 1090;
+  inset: 0;
+  background: rgba(2, 6, 15, 0.38);
+  animation: shell-backdrop-in var(--ff-duration-hover) var(--ease-out) both;
+}
+
+#app .shell-more-panel {
+  position: absolute;
+  z-index: 1100;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(620px, calc(100dvh - 112px));
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 20px;
+  color: var(--text-primary);
+  background:
+    radial-gradient(360px 180px at 0% 0%, var(--brand-glow), transparent 72%),
+    var(--shell-glass-strong);
+  box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(var(--ff-blur-raised)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(140%);
+  overscroll-behavior: contain;
+  animation: shell-panel-in var(--ff-duration-expand) var(--ff-ease-expand) both;
+}
+
+[dir='rtl'] #app .shell-more-panel {
+  right: auto;
+  left: 0;
+}
+
+#app .shell-more-backdrop[hidden],
+#app .shell-more-panel[hidden] {
+  display: none !important;
+}
+
+#app .shell-more-handle {
+  display: none;
+}
+
+#app .shell-more-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+#app .shell-more-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--shell-ice);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+#app .shell-more-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+#app .shell-more-close {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: 13px;
+  color: var(--text-muted);
+  background: var(--shell-glass-soft);
+  cursor: pointer;
+}
+
+#app .shell-more-close:hover,
+#app .shell-more-close:focus-visible {
+  border-color: var(--shell-line-strong);
+  color: var(--text-primary);
+}
+
+#app .shell-more-close svg {
+  width: 19px;
+  height: 19px;
+}
+
+#app .shell-more-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#app .shell-more-tools > .tab-item {
+  position: relative;
+  display: flex !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#app .shell-more-tools > .tab-item > .shell-more-tool {
+  width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+#app .shell-more-tools > .tab-badge-wrap > .shell-more-tool {
+  padding-block-start: 18px;
+}
+
+#app .shell-more-tool {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 62px;
+  padding: 9px 11px;
+  overflow: hidden;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 15px;
+  color: var(--text-primary) !important;
+  background: var(--shell-glass-soft) !important;
+  box-shadow: none !important;
+  font-family: var(--font-ui) !important;
+  font-size: 0.76rem !important;
+  font-weight: 800 !important;
+  line-height: 1.15;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#app .shell-more-tool:hover,
+#app .shell-more-tool:focus-visible,
+#app .shell-more-tool.is-active,
+#app .shell-more-tool.tab-pill-active {
+  border-color: var(--shell-line-strong) !important;
+  color: var(--shell-ice) !important;
+  background: color-mix(in srgb, var(--shell-ice) 8%, var(--shell-glass-soft)) !important;
+}
+
+#app .shell-more-tool.tab-pill-active {
+  box-shadow: inset 3px 0 var(--shell-ice) !important;
+}
+
+[dir='rtl'] #app .shell-more-tool.tab-pill-active {
+  box-shadow: inset -3px 0 var(--shell-ice) !important;
+}
+
+#app .shell-more-tool svg {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+}
+
+[data-theme='light'] #app #tabNavScroll .tab-pill.tab-pill-active,
+[data-theme='light'] #app .shell-more-button.is-active {
+  color: #075985 !important;
+}
+
+#app .shell-more-tools .tab-badge {
+  position: absolute !important;
+  z-index: 2;
+  top: 6px !important;
+  right: 7px !important;
+  max-width: 66px;
+  min-height: 0 !important;
+  padding: 2px 5px !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: var(--ff-radius-pill) !important;
+  color: var(--text-primary) !important;
+  background: color-mix(in srgb, var(--shell-fire) 26%, var(--shell-glass-strong)) !important;
+  box-shadow: none !important;
+  font-family: var(--font-mono);
+  font-size: 0.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.03em !important;
+  text-overflow: ellipsis;
+  transform: none !important;
+  white-space: nowrap;
+}
+
+[dir='rtl'] #app .shell-more-tools .tab-badge {
+  right: auto !important;
+  left: 7px !important;
+}
+
+#app .shell-more-tool-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#app .shell-more-tool-badge {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  max-width: 54px;
+  padding: 2px 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--shell-fire) 26%, var(--shell-glass-strong));
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[dir='rtl'] #app .shell-more-tool-badge {
+  right: auto;
+  left: 7px;
+}
+
+/* ---- Compact community strip ------------------------------- */
+
+#app .site-footer.roc-footer {
+  width: min(calc(100% - 32px), 1800px);
+  margin: clamp(24px, 3vw, 38px) auto 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid var(--shell-line) !important;
+  border-radius: 18px !important;
+  color: var(--text-muted);
+  background:
+    radial-gradient(380px 120px at 0% 0%, var(--brand-glow), transparent 75%), var(--shell-glass) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 36px rgba(0, 0, 0, 0.16) !important;
+  backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
+  -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(130%);
+}
+
+@media (min-width: 1025px) {
+  #app .site-footer .footer-content {
+    min-height: 92px;
+    padding-block: 18px !important;
+    padding-inline: clamp(24px, 3vw, 52px) 86px !important;
+  }
+
+  #app .site-footer .footer-brand-logo {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 14px !important;
+  }
+
+  #app .site-footer .footer-logo {
+    font-size: 1.05rem !important;
+  }
+
+  #app .site-footer .footer-url,
+  #app .footer-tool-links a,
+  #app .footer-community-links a {
+    font-size: 0.75rem;
+  }
+
+  #app .site-footer .footer-disclaimer {
+    padding-block: 11px 13px;
+    padding-inline: clamp(24px, 3vw, 52px) 86px;
+  }
+}
+
+#app .site-footer .footer-divider {
+  height: 1px !important;
+  background: var(--shell-aurora) !important;
+  opacity: 0.76;
+}
+
+#app .site-footer .footer-content {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center;
+  gap: clamp(14px, 2vw, 26px) !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-block: 12px !important;
+  padding-inline: 14px 70px !important;
+}
+
+#app .site-footer .footer-section,
+#app .site-footer .brand-section {
+  display: block !important;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#app .site-footer .footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 !important;
+}
+
+#app .site-footer .footer-brand-logo {
+  width: 36px !important;
+  height: 36px !important;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 12px !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
+}
+
+#app .site-footer .footer-logo {
+  margin: 0 !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 0.9rem !important;
+  font-weight: 800 !important;
+  line-height: 1.1;
+  letter-spacing: -0.02em !important;
+}
+
+#app .site-footer .footer-url {
+  margin: 2px 0 0 !important;
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+#app .site-footer .footer-url a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ff-tap-min);
+  color: var(--shell-ice) !important;
+  text-decoration: none;
+}
+
+#app .footer-tool-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#app .footer-tool-links::-webkit-scrollbar {
+  display: none;
+}
+
+#app .footer-tool-links a,
+#app .footer-community-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 12px;
+  color: var(--text-muted) !important;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-decoration: none !important;
+  white-space: nowrap;
+}
+
+#app .footer-tool-links a:hover,
+#app .footer-tool-links a:focus-visible,
+#app .footer-community-links a:hover,
+#app .footer-community-links a:focus-visible {
+  color: var(--text-primary) !important;
+  background: var(--shell-glass-soft);
+}
+
+#app .footer-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
+#app .footer-community-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+#app .footer-community-links a {
+  min-height: var(--ff-tap-min);
+  padding-inline: 7px;
+}
+
+#app .footer-meta p {
+  margin: 0;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+#app .site-footer .footer-disclaimer {
+  margin: 0 !important;
+  padding-block: 8px 10px;
+  padding-inline: 14px 70px;
+  border-top: 1px solid var(--shell-line);
+  color: var(--text-dim) !important;
+  font-size: 0.6875rem !important;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* ---- Mobile app navigation --------------------------------- */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  #app .command-header {
+    gap: 10px !important;
+    padding-inline: 9px !important;
+  }
+
+  #app .version-ribbon,
+  #app .command-game-title {
+    display: none !important;
+  }
+
+  #app .command-logo .shell-brand-title {
+    max-width: 132px;
+  }
+
+  #app #globalGameClock {
+    min-width: 96px !important;
+  }
+
+  #app .lang-select-shell {
+    width: 124px !important;
+  }
+
+  #app #tabNavScroll .tab-pill {
+    padding-inline: 8px !important;
+    font-size: 0.6875rem !important;
+  }
+
+  #app .shell-more-button {
+    min-width: 70px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #app.app-shell {
+    --shell-mobile-nav-clearance: calc(96px + var(--ff-safe-bottom));
+    --shell-mobile-utility-step: 52px;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-block: max(7px, var(--ff-safe-top)) var(--shell-mobile-nav-clearance) !important;
+    padding-inline: max(9px, var(--ff-safe-left)) max(9px, var(--ff-safe-right)) !important;
+  }
+
+  #app .command-header {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center !important;
+    gap: 5px !important;
+    min-height: 58px !important;
+    margin-bottom: 9px !important;
+    padding: 5px !important;
+    border-radius: 17px !important;
+  }
+
+  #app .command-brand {
+    flex: 0 0 36px;
+    gap: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  #app .command-logo {
+    display: block !important;
+    width: 36px !important;
+    min-width: 0;
+  }
+
+  #app .command-logo picture,
+  #app .command-logo .main-logo {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+  }
+
+  #app .command-logo > :not(picture) {
+    display: none !important;
+  }
+
+  #app .command-header .command-logo .shell-brand-title,
+  #app .command-header .command-logo .command-logo-copy {
+    display: none !important;
+  }
+
+  #app .version-ribbon,
+  #app .command-kicker {
+    display: none !important;
+  }
+
+  #app .command-actions {
+    flex: 0 0 auto;
+    width: auto !important;
+    padding: 0 !important;
+  }
+
+  #app .app-control-row {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 3px !important;
+  }
+
+  #app #globalGameClock,
+  #app .lang-select-wrapper,
+  #app .lang-select-wrapper > div,
+  #app .lang-select-shell,
+  #app #themeToggle,
+  #app #installAppBtn,
+  #app #commandPaletteTrigger {
+    min-height: 44px !important;
+    height: 44px !important;
+  }
+
+  #app #globalGameClock {
+    flex: 0 0 84px;
+    min-width: 84px !important;
+    max-width: none;
+    padding: 0 8px !important;
+    overflow: visible;
+    font-size: 0.75rem !important;
+    text-align: center;
+  }
+
+  #app #globalGameClock::before {
+    display: none;
+  }
+
+  [dir='rtl'] #app #globalGameClock {
+    padding: 0 8px !important;
+  }
+
+  #app .lang-select-wrapper,
+  #app .lang-select-wrapper > div,
+  #app .lang-select-shell {
+    position: relative;
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  #app .lang-select-icon {
+    display: none !important;
+  }
+
+  #app .language-menu-button {
+    grid-template-columns: minmax(0, 1fr) 10px;
+    gap: 2px;
+    padding: 0 4px 0 6px;
+    text-align: center;
+  }
+
+  [dir='rtl'] #app .language-menu-button {
+    padding: 0 6px 0 4px;
+  }
+
+  #app .language-menu-label {
+    font-size: 0 !important;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+  }
+
+  #app .language-menu-label::after {
+    content: attr(data-short);
+    font-size: 0.68rem;
+  }
+
+  #app .lang-select-caret {
+    width: 10px !important;
+    height: 10px;
+  }
+
+  #app .shell-language-menu {
+    width: min(232px, calc(100vw - 18px));
+    max-height: min(440px, calc(100dvh - 78px));
+    border-radius: 16px;
+  }
+
+  #app .shell-language-option {
+    min-height: 44px;
+    font-size: 0.84rem;
+  }
+
+  #app #themeToggle,
+  #app #installAppBtn,
+  #app #commandPaletteTrigger {
+    flex-basis: 44px;
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  #app .tool-nav-shell {
+    position: fixed !important;
+    z-index: 1080 !important;
+    top: auto !important;
+    right: max(8px, var(--ff-safe-right));
+    bottom: 0;
+    left: max(8px, var(--ff-safe-left));
+    width: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0;
+    background: transparent !important;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  #app .tool-nav-inner {
+    display: grid !important;
+    grid-template-columns: minmax(0, 4fr) minmax(62px, 1fr) !important;
+    gap: 2px !important;
+    width: min(100%, 560px);
+    min-height: 68px;
+    margin-inline: auto;
+    padding: 3px !important;
+    border: 1px solid var(--ff-hairline) !important;
+    border-radius: 22px !important;
+    background: color-mix(in srgb, var(--shell-glass-strong) 94%, transparent) !important;
+    box-shadow:
+      0 14px 38px rgba(0, 0, 0, 0.28),
+      inset 0 1px rgba(255, 255, 255, 0.07) !important;
+    backdrop-filter: blur(var(--ff-blur-raised)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--ff-blur-raised)) saturate(140%);
+  }
+
+  #app .tool-nav-inner::after {
+    display: none !important;
+  }
+
+  #app #tabNavScroll {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  #app #tabNavScroll > .tab-item,
+  #app #tabNavScroll > .tab-item[data-shell-desktop-primary] {
+    display: none !important;
+  }
+
+  #app #tabNavScroll > .tab-item[data-shell-mobile-primary] {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  #app #tabNavScroll .tab-pill,
+  #app .shell-more-button {
+    flex-direction: column;
+    gap: 3px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 62px !important;
+    height: 62px !important;
+    padding: 7px 3px 5px !important;
+    border-radius: 14px !important;
+    font-size: clamp(0.62rem, 2.6vw, 0.7rem) !important;
+    line-height: 1.03 !important;
+    white-space: normal !important;
+  }
+
+  #app #tabNavScroll .tab-pill svg,
+  #app .shell-more-button svg {
+    flex-basis: 20px;
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  #app #tabNavScroll .tab-pill.tab-pill-active::after,
+  #app .shell-more-button.is-active::after {
+    right: 23%;
+    bottom: 2px;
+    left: 23%;
+  }
+
+  #app #tabNavScroll .tab-badge {
+    top: 6px !important;
+    right: 9px !important;
+    width: 6px !important;
+    height: 6px !important;
+    min-width: 6px !important;
+    max-width: 6px !important;
+    min-height: 6px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    color: transparent !important;
+    font-size: 0 !important;
+  }
+
+  [dir='rtl'] #app #tabNavScroll .tab-badge {
+    right: auto !important;
+    left: 9px !important;
+  }
+
+  #app .shell-more-button {
+    display: inline-flex !important;
+  }
+
+  #app .shell-more-panel {
+    position: fixed;
+    top: auto;
+    right: var(--ff-safe-right);
+    bottom: 0;
+    left: var(--ff-safe-left);
+    width: min(calc(100% - var(--ff-safe-left) - var(--ff-safe-right)), 560px);
+    max-height: min(78dvh, 680px);
+    margin-inline: auto;
+    padding: 8px 12px calc(14px + var(--safe-bottom));
+    border-width: 1px 1px 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  [dir='rtl'] #app .shell-more-panel {
+    right: var(--ff-safe-right);
+    left: var(--ff-safe-left);
+  }
+
+  #app .shell-more-handle {
+    display: block;
+    width: 42px;
+    height: 4px;
+    margin: 0 auto 8px;
+    border-radius: 999px;
+    background: var(--shell-line-strong);
+  }
+
+  #app .shell-more-heading {
+    margin-bottom: 9px;
+    padding-bottom: 9px;
+  }
+
+  #app .shell-more-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  #app .shell-more-tool {
+    min-height: 64px;
+    padding: 9px 10px;
+    border-radius: 15px;
+    font-size: 0.72rem;
+  }
+
+  body .floating-tool-btn,
+  body .bug-report-fab,
+  body #scrollTopBtn {
+    z-index: 1050 !important;
+    width: var(--ff-tap-min) !important;
+    min-width: var(--ff-tap-min) !important;
+    height: var(--ff-tap-min) !important;
+  }
+
+  body .floating-tool-btn--data {
+    bottom: var(--shell-mobile-nav-clearance) !important;
+  }
+
+  body .bug-report-fab {
+    bottom: calc(var(--shell-mobile-nav-clearance) + var(--shell-mobile-utility-step)) !important;
+  }
+
+  body:not(.tab-strife-active) #scrollTopBtn {
+    bottom: calc(
+      var(--shell-mobile-nav-clearance) + (2 * var(--shell-mobile-utility-step))
+    ) !important;
+  }
+
+  body.tab-strife-active #scrollTopBtn {
+    bottom: calc(96px + var(--ff-safe-bottom)) !important;
+  }
+
+  body #comboFooterBar:not(.hidden),
+  body #generatorSection:has(#genSelectedCount:not(.hidden)) .gen-buttons-row {
+    z-index: 1060 !important;
+    bottom: var(--shell-mobile-nav-clearance) !important;
+  }
+
+  /* Fixed utilities use the end edge as a dedicated rail. Keep comment copy
+     and reply controls out from underneath it while preserving full-width
+     cards everywhere else in the app. */
+  #app #commentsSection .comments-list {
+    margin-inline-end: calc(var(--ff-tap-min) + 8px);
+  }
+
+  body.keyboard-open .floating-tool-btn,
+  body.keyboard-open .bug-report-fab {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body #manualSection:has(#comboFooterBar:not(.hidden)),
+  body #generatorSection:has(#genSelectedCount:not(.hidden)) {
+    padding-bottom: calc(180px + var(--ff-safe-bottom)) !important;
+  }
+
+  body .eden-sidebar {
+    bottom: calc(96px + var(--ff-safe-bottom)) !important;
+  }
+
+  body .eden-map-root:is(.eden-map-fullscreen, .eden-map-fullscreen-fallback) .eden-sidebar,
+  body .eden-map-root:fullscreen .eden-sidebar {
+    bottom: 0 !important;
+  }
+
+  #app .site-footer.roc-footer {
+    margin-top: 22px !important;
+    margin-bottom: 4px !important;
+    border-radius: 16px !important;
+  }
+
+  #app .site-footer .footer-content {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px 12px !important;
+    padding-block: 10px !important;
+    padding-inline: 10px 54px !important;
+  }
+
+  #app .footer-tool-links {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    order: 3;
+    padding-top: 4px;
+    border-top: 1px solid var(--shell-line);
+  }
+
+  #app .footer-meta {
+    align-items: flex-end;
+  }
+
+  #app .footer-community-links a {
+    min-height: var(--ff-tap-min);
+    font-size: 0.62rem;
+  }
+
+  #app .site-footer .footer-disclaimer {
+    padding-block: 7px 9px;
+    padding-inline: 10px 54px;
+    text-align: start;
+  }
+
+  /* The guided tour can temporarily reveal every source tab in one
+     horizontal row. Normal navigation remains four items plus More. */
+  body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 88px !important;
+  }
+
+  body:has(.quick-tour-overlay:not(.hidden)) #app .shell-more-button {
+    display: none !important;
+  }
+}
+
+@media (max-width: 370px) {
+  #app #globalGameClock {
+    flex-basis: 80px;
+    min-width: 80px !important;
+    max-width: none;
+    font-size: 0.75rem !important;
+  }
+
+  #app .lang-select-wrapper,
+  #app .lang-select-wrapper > div,
+  #app .lang-select-shell {
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  #app #themeToggle,
+  #app #installAppBtn,
+  #app #commandPaletteTrigger {
+    flex-basis: var(--ff-tap-min);
+    width: var(--ff-tap-min) !important;
+    min-width: var(--ff-tap-min) !important;
+  }
+}
+
+@keyframes shell-aurora-drift {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(3%, 2%, 0) scale(1.08);
+  }
+}
+
+@keyframes shell-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shell-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app .command-header::before,
+  #app .shell-more-panel,
+  #app .shell-more-backdrop {
+    animation: none !important;
+  }
+}

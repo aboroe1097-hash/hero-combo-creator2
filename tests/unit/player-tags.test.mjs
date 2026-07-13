@@ -18,6 +18,7 @@ const { getSpecialPlayerTag, renderSpecialPlayerTag } = await import('../../js/p
 
 test('special player tags identify R5 and R4 management names', () => {
   assert.equal(getSpecialPlayerTag('MalakAbo')?.label, 'R5');
+  assert.equal(getSpecialPlayerTag('Abo')?.label, 'R5');
   assert.equal(getSpecialPlayerTag('MalakAdo'), null);
 
   for (const player of [

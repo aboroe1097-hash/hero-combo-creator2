@@ -8,8 +8,9 @@ import {
   translations,
   loadTranslationsForLanguage,
   applyLanguageDirection,
-} from './translations.js?v=20260709_191406';
+} from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
+import { setCurrentLanguage } from './state.js';
 import {
   formatDatasetStructureLabel,
   getDatasetStructureTarget,
@@ -28,8 +29,16 @@ import {
   managementVoteCandidateVariants,
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
+import { formatLocaleDate } from './locale-format.js';
+import {
+  edenVoteDeadlineMs,
+  getEdenVoteCountdownParts,
+  isEdenVoteDeadlineExpired,
+  normalizeEdenVoteClosesAt,
+} from './eden-vote-deadline.js';
+import { resolveIntlLocale } from './utils.js';
 
-const APP_VERSION = '13.1.11';
+const APP_VERSION = '14.0.0';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -68,17 +77,24 @@ let currentRewardView = 'team';
 let currentTableSearch = '';
 let currentTableSort = null;
 let rewardTableRenderToken = 0;
-// Cap the rows rendered on first paint / view-switch. Each row builds four
-// popovers, so rendering the full roster synchronously froze phones on every
-// reward-view tap. A "Show all" button reveals the rest on demand; a search
-// always scans the full roster.
-const EDEN_X1_TABLE_ROW_LIMIT = 50;
-let weightedTableShowAll = false;
+// Keep long weighted rosters manageable on every viewport. The first view is
+// intentionally short; members can reveal 25 more at a time, reveal all, or
+// collapse back to the first ten without changing the underlying data order.
+const EDEN_X1_TABLE_INITIAL_ROWS = 10;
+const EDEN_X1_TABLE_PAGE_STEP = 25;
+const EDEN_X1_TABLE_RENDER_CHUNK_SIZE = 24;
+const weightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
 let edenTableSearchDebounce = null;
+let weightedTableProgressivePlan = null;
+let publicWeightedTableProgressivePlan = null;
+let weightedTableProgressiveSerial = 0;
+let weightedPopoverScopeSerial = 0;
+const deferredWeightedPopoverFactories = new Map();
 let rewardFlowReady = false;
 let weightedContributionCompactOverride = null;
 let weightedPopoverDismissalBound = false;
 let weightedPopoverOpenedAt = 0;
+const WEIGHTED_POPOVER_SCROLL_GRACE_MS = 650;
 let publicDashboardData = null;
 let publicAttackRows = [];
 let publicPlayerRows = [];
@@ -88,16 +104,17 @@ let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let currentPublicStatsSearch = '';
-// The public weighted table can hold the whole roster (200+ rows, each with
-// four popovers). Cap the initial render and debounce its search so the public
-// dashboard doesn't lock the main thread on load or on every keystroke.
-let publicWeightedShowAll = false;
+// The public weighted table can hold the whole roster (200+ rows). Cap the
+// initial view and debounce search; progressive rendering handles the rest.
+const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
 let publicTableSearchDebounce = null;
 let edenVoteWriteContext = null;
-let edenVoteSettings = { votingOpen: true, allowEditing: true };
+let edenVoteSettings = { votingOpen: true, allowEditing: true, closesAt: '' };
 let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
 let edenVoteInfoDismissalBound = false;
+let edenVoteCountdownTimer = null;
+let edenX1BlockingLayer = null;
 let currentManagementVoteResults = {
   status: 'idle',
   totalBallots: 0,
@@ -110,6 +127,163 @@ let managementVoteLoadToken = 0;
 
 function $(id) {
   return document.getElementById(id);
+}
+
+const EDEN_X1_FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[role="button"][tabindex]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function edenX1FocusableElements(layer) {
+  if (!layer) return [];
+  return Array.from(layer.querySelectorAll(EDEN_X1_FOCUSABLE_SELECTOR)).filter((element) => {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element.hidden || element.closest('[hidden], [inert]')) return false;
+    return globalThis.getComputedStyle?.(element).visibility !== 'hidden';
+  });
+}
+
+function focusEdenX1BlockingLayer(layer) {
+  if (!layer || edenX1BlockingLayer?.layer !== layer) return;
+  const target = edenX1FocusableElements(layer)[0] || layer;
+  target.focus({ preventScroll: true });
+}
+
+function trapEdenX1BlockingFocus(event) {
+  const state = edenX1BlockingLayer;
+  if (!state) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    state.close?.();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+
+  const focusable = edenX1FocusableElements(state.layer);
+  if (!focusable.length) {
+    event.preventDefault();
+    state.layer.focus({ preventScroll: true });
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  if (event.shiftKey && (active === first || !state.layer.contains(active))) {
+    event.preventDefault();
+    last.focus({ preventScroll: true });
+  } else if (!event.shiftKey && (active === last || !state.layer.contains(active))) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  }
+}
+
+function keepEdenX1BlockingFocusInside(event) {
+  const state = edenX1BlockingLayer;
+  if (!state || state.layer.contains(event.target)) return;
+  focusEdenX1BlockingLayer(state.layer);
+}
+
+function collectEdenX1BackgroundSiblings(layer) {
+  const snapshots = [];
+  let branch = layer;
+  while (branch?.parentElement) {
+    const parent = branch.parentElement;
+    Array.from(parent.children).forEach((sibling) => {
+      if (sibling === branch || !(sibling instanceof HTMLElement)) return;
+      if (['LINK', 'SCRIPT', 'STYLE'].includes(sibling.tagName)) return;
+      snapshots.push({
+        element: sibling,
+        inert: sibling.inert,
+        ariaHidden: sibling.getAttribute('aria-hidden'),
+      });
+      sibling.inert = true;
+      sibling.setAttribute('aria-hidden', 'true');
+    });
+    if (parent === document.body) break;
+    branch = parent;
+  }
+  return snapshots;
+}
+
+function activateEdenX1BlockingLayer(layer, options = {}) {
+  if (!layer) return;
+  if (edenX1BlockingLayer?.layer === layer) return;
+  if (edenX1BlockingLayer) edenX1BlockingLayer.close?.();
+
+  const restoreTarget =
+    options.restoreTarget instanceof HTMLElement
+      ? options.restoreTarget
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+  const previousRole = layer.getAttribute('role');
+  const previousTabIndex = layer.getAttribute('tabindex');
+  const previousAriaModal = layer.getAttribute('aria-modal');
+  const background = collectEdenX1BackgroundSiblings(layer);
+  const bodyOverflow = document.body.style.overflow;
+  const bodyOverflowY = document.body.style.overflowY;
+
+  layer.inert = false;
+  layer.setAttribute('aria-hidden', 'false');
+  layer.setAttribute('role', 'dialog');
+  layer.setAttribute('aria-modal', 'true');
+  if (!layer.hasAttribute('tabindex')) layer.setAttribute('tabindex', '-1');
+  document.body.classList.add('eden-x1-overlay-open');
+  document.body.style.overflow = 'hidden';
+  document.body.style.overflowY = 'hidden';
+  window._overlayStack = (window._overlayStack || 0) + 1;
+
+  edenX1BlockingLayer = {
+    layer,
+    restoreTarget,
+    background,
+    bodyOverflow,
+    bodyOverflowY,
+    previousRole,
+    previousTabIndex,
+    previousAriaModal,
+    close: options.close,
+  };
+  document.addEventListener('keydown', trapEdenX1BlockingFocus, true);
+  document.addEventListener('focusin', keepEdenX1BlockingFocusInside, true);
+  globalThis.requestAnimationFrame?.(() => focusEdenX1BlockingLayer(layer));
+}
+
+function releaseEdenX1BlockingLayer(layer, options = {}) {
+  const state = edenX1BlockingLayer;
+  if (!state || (layer && state.layer !== layer)) return;
+  edenX1BlockingLayer = null;
+  document.removeEventListener('keydown', trapEdenX1BlockingFocus, true);
+  document.removeEventListener('focusin', keepEdenX1BlockingFocusInside, true);
+
+  state.background.forEach(({ element, inert, ariaHidden }) => {
+    element.inert = inert;
+    if (ariaHidden === null) element.removeAttribute('aria-hidden');
+    else element.setAttribute('aria-hidden', ariaHidden);
+  });
+  state.layer.setAttribute('aria-hidden', 'true');
+  if (state.previousRole === null) state.layer.removeAttribute('role');
+  else state.layer.setAttribute('role', state.previousRole);
+  if (state.previousAriaModal === null) state.layer.removeAttribute('aria-modal');
+  else state.layer.setAttribute('aria-modal', state.previousAriaModal);
+  if (state.previousTabIndex === null) state.layer.removeAttribute('tabindex');
+  else state.layer.setAttribute('tabindex', state.previousTabIndex);
+
+  window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
+  if (window._overlayStack === 0) {
+    document.body.classList.remove('eden-x1-overlay-open');
+    document.body.style.overflow = state.bodyOverflow;
+    document.body.style.overflowY = state.bodyOverflowY;
+  }
+  if (options.restoreFocus !== false && state.restoreTarget?.isConnected) {
+    state.restoreTarget.focus({ preventScroll: true });
+  }
 }
 
 function esc(str) {
@@ -673,6 +847,7 @@ function getEdenVoteCandidateInputs(host) {
 
 function applyEdenVotePickToForm(host, pick) {
   if (!host || !pick) return false;
+  if (isEdenVoteSubmissionClosed()) return false;
   const input =
     getEdenVoteCandidateInputs(host).find((candidateInput) => !candidateInput.value.trim()) ||
     host.querySelector('#edenX1CandidateName');
@@ -697,7 +872,104 @@ function normalizeEdenVoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
     showVoterNames: settings.showVoterNames === true,
+    closesAt: normalizeEdenVoteClosesAt(settings.closesAt),
   };
+}
+
+function isEdenVoteSubmissionClosed(settings = edenVoteSettings, nowMs = Date.now()) {
+  return settings.votingOpen === false || isEdenVoteDeadlineExpired(settings.closesAt, nowMs);
+}
+
+function formatEdenVoteDeadlineDate(closesAt) {
+  const normalized = normalizeEdenVoteClosesAt(closesAt);
+  if (!normalized) return '';
+  return formatLocaleDate(normalized, currentLang, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
+function formatEdenVoteCountdown(closesAt, nowMs = Date.now()) {
+  const { days, hours, minutes, seconds } = getEdenVoteCountdownParts(closesAt, nowMs);
+  const pad = (value) => String(value).padStart(2, '0');
+  const vars = {
+    days,
+    hours: pad(hours),
+    minutes: pad(minutes),
+    seconds: pad(seconds),
+  };
+  const time = t(days ? 'edenX1VoteCountdownDays' : 'edenX1VoteCountdownClock', vars);
+  return t('edenX1VoteCountdown', { time });
+}
+
+function updateEdenVoteCountdownState(host, nowMs = Date.now()) {
+  const timer = host?.querySelector('#edenX1VoteCountdown');
+  const form = host?.querySelector('#edenX1TeamVoteForm');
+  if (!timer || !form) return false;
+  const closesAt = normalizeEdenVoteClosesAt(edenVoteSettings.closesAt);
+  const deadlineMs = edenVoteDeadlineMs(closesAt);
+  const expired = isEdenVoteDeadlineExpired(closesAt, nowMs);
+  const manuallyClosed = edenVoteSettings.votingOpen === false;
+  const closed = manuallyClosed || expired;
+  const previousState = timer.dataset.state || 'idle';
+  const nextState = expired ? 'expired' : manuallyClosed ? 'closed' : closesAt ? 'active' : 'none';
+  const deadlineDate = formatEdenVoteDeadlineDate(closesAt);
+  const text = expired
+    ? t('edenX1VoteExpired')
+    : manuallyClosed
+      ? t('edenX1VoteClosedShort')
+      : closesAt
+        ? formatEdenVoteCountdown(closesAt, nowMs)
+        : '';
+
+  timer.hidden = !text;
+  timer.dataset.state = nextState;
+  timer.setAttribute(
+    'aria-live',
+    nextState === 'expired' && previousState !== 'expired' ? 'polite' : 'off'
+  );
+  timer.textContent = text;
+  const deadlineTitle = deadlineDate ? t('edenX1VoteDeadlineTitle', { date: deadlineDate }) : text;
+  timer.title = deadlineTitle;
+  timer.setAttribute(
+    'aria-label',
+    deadlineTitle && deadlineTitle !== text ? `${text}. ${deadlineTitle}` : text
+  );
+
+  form.classList.toggle('is-closed', closed);
+  form.setAttribute('aria-disabled', closed ? 'true' : 'false');
+  if (closed) {
+    form.querySelectorAll('input[type="text"]').forEach((input) => {
+      input.readOnly = true;
+      input.setAttribute('aria-disabled', 'true');
+    });
+    form
+      .querySelectorAll(
+        'button[type="submit"], [data-eden-vote-self-pick], [data-eden-vote-clear], [data-eden-vote-start]'
+      )
+      .forEach((button) => {
+        button.disabled = true;
+      });
+    clearEdenVoteInputSuggestions(form, 'edenX1VoterName');
+    EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => clearEdenVoteInputSuggestions(form, id));
+    if (previousState !== nextState) {
+      setEdenVoteStatus(expired ? t('edenX1VoteExpired') : t('edenX1VoteClosed'), 'error');
+    }
+  }
+  return Boolean(deadlineMs && nowMs < deadlineMs && !manuallyClosed);
+}
+
+function startEdenVoteCountdown(host) {
+  if (edenVoteCountdownTimer) {
+    window.clearInterval(edenVoteCountdownTimer);
+    edenVoteCountdownTimer = null;
+  }
+  if (!updateEdenVoteCountdownState(host)) return;
+  edenVoteCountdownTimer = window.setInterval(() => {
+    if (updateEdenVoteCountdownState(host)) return;
+    window.clearInterval(edenVoteCountdownTimer);
+    edenVoteCountdownTimer = null;
+  }, 1000);
 }
 
 function normalizePublicEdenVoteResults(results = {}) {
@@ -1101,8 +1373,10 @@ function renderEdenVoteBreakdownRows(rows) {
 function closeEdenVoteInfoPopovers(except = null) {
   document.querySelectorAll('.eden-x1-vote-info.is-open').forEach((button) => {
     if (button === except) return;
+    const popover = button.querySelector('.eden-x1-vote-info-popover');
     button.classList.remove('is-open');
     button.setAttribute('aria-expanded', 'false');
+    releaseEdenX1BlockingLayer(popover);
     resetEdenVoteInfoPopover(button);
   });
 }
@@ -1127,13 +1401,18 @@ function resetEdenVoteInfoPopover(infoButton) {
   const popover = infoButton?.querySelector('.eden-x1-vote-info-popover');
   if (!popover) return;
   popover.removeAttribute('style');
+  popover.setAttribute('aria-hidden', 'true');
+  popover.setAttribute('role', 'tooltip');
+  popover.removeAttribute('aria-modal');
+  popover.removeAttribute('tabindex');
 }
 
 function positionEdenVoteInfoPopover(infoButton) {
   const popover = infoButton?.querySelector('.eden-x1-vote-info-popover');
   if (!popover) return;
+  popover.setAttribute('aria-hidden', 'false');
   if (isEdenVoteInfoSheetViewport()) {
-    resetEdenVoteInfoPopover(infoButton);
+    popover.removeAttribute('style');
     return;
   }
   const margin = 10;
@@ -1176,12 +1455,26 @@ function positionEdenVoteInfoPopover(infoButton) {
 
 function toggleEdenVoteInfoPopover(infoButton) {
   if (!infoButton) return;
+  const popover = infoButton.querySelector('.eden-x1-vote-info-popover');
   const shouldOpen = !infoButton.classList.contains('is-open');
   closeEdenVoteInfoPopovers(infoButton);
   if (shouldOpen) positionEdenVoteInfoPopover(infoButton);
   infoButton.classList.toggle('is-open', shouldOpen);
   infoButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-  if (!shouldOpen) resetEdenVoteInfoPopover(infoButton);
+  if (shouldOpen && isEdenVoteInfoSheetViewport()) {
+    activateEdenX1BlockingLayer(popover, {
+      restoreTarget: infoButton,
+      close: () => {
+        infoButton.classList.remove('is-open');
+        infoButton.setAttribute('aria-expanded', 'false');
+        releaseEdenX1BlockingLayer(popover);
+        resetEdenVoteInfoPopover(infoButton);
+      },
+    });
+  } else if (!shouldOpen) {
+    releaseEdenX1BlockingLayer(popover);
+    resetEdenVoteInfoPopover(infoButton);
+  }
 }
 
 function renderEdenVoteInfoBadge(info) {
@@ -1189,7 +1482,7 @@ function renderEdenVoteInfoBadge(info) {
   const label = `${t('edenX1InfoButtonLabel')}: ${info}`;
   return `<span class="eden-x1-vote-info" role="button" tabindex="0" aria-expanded="false" aria-label="${esc(label)}">
     <span aria-hidden="true">i</span>
-    <span class="eden-x1-vote-info-popover" role="tooltip">${esc(info)}</span>
+    <span class="eden-x1-vote-info-popover" role="tooltip" aria-hidden="true">${esc(info)}</span>
   </span>`;
 }
 
@@ -1816,8 +2109,13 @@ function updateEdenVoteCandidateDetail(host) {
 async function submitEdenTeamVoteForm(form) {
   if (!form) return;
   const submit = form.querySelector('button[type="submit"]');
-  if (edenVoteSettings.votingOpen === false) {
-    setEdenVoteStatus(t('edenX1VoteClosed'), 'error');
+  if (isEdenVoteSubmissionClosed()) {
+    setEdenVoteStatus(
+      isEdenVoteDeadlineExpired(edenVoteSettings.closesAt)
+        ? t('edenX1VoteExpired')
+        : t('edenX1VoteClosed'),
+      'error'
+    );
     return;
   }
   if (edenVoteSettings.allowEditing === false && hasLocalEdenVoteForCurrentSeason()) {
@@ -1945,6 +2243,10 @@ async function submitEdenTeamVoteForm(form) {
         !previousVote ||
         String(previousVote.voterKey || '') !== voter.playerKey ||
         previousCandidateKeys.join('|') !== candidateKeys.join('|');
+      if (isEdenVoteSubmissionClosed()) {
+        setEdenVoteStatus(t('edenX1VoteExpired'), 'error');
+        return;
+      }
       const batch = writeBatch(db);
       batch.set(voteRef, {
         ...localVote,
@@ -1972,6 +2274,10 @@ async function submitEdenTeamVoteForm(form) {
       await batch.commit();
       localVote.voterAuthUid = user.uid;
     }
+    if (!edenVoteWriteContext && isEdenVoteSubmissionClosed()) {
+      setEdenVoteStatus(t('edenX1VoteExpired'), 'error');
+      return;
+    }
     writeLocalEdenVote(localVote);
     setEdenVoteStatus(
       edenVoteSavedStatusText(localVote) || `${t('edenX1VoteSaved')} ${t('edenX1VoteResultsNote')}`,
@@ -1985,9 +2291,10 @@ async function submitEdenTeamVoteForm(form) {
     );
   } finally {
     if (submit) {
-      submit.disabled = false;
+      submit.disabled = isEdenVoteSubmissionClosed();
       submit.textContent = t('edenX1VoteCast');
     }
+    updateEdenVoteCountdownState(form.closest('#edenX1TeamVotePanel') || form);
   }
 }
 
@@ -2037,6 +2344,9 @@ function bindEdenVoteControls(host) {
         if (detail) detail.dataset.open = '0';
         updateEdenVoteCandidateDetail(host);
       }
+      if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
+        updateEdenVoteSelectionCount(host);
+      }
     });
     host.addEventListener('change', (event) => {
       const input = event.target.closest(voteInputSelector);
@@ -2045,6 +2355,7 @@ function bindEdenVoteControls(host) {
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
         updateEdenVoteCandidateDetail(host);
+        updateEdenVoteSelectionCount(host);
       }
       resetPendingPartialEdenVoteSignatureIfChanged(host);
     });
@@ -2092,6 +2403,17 @@ function bindEdenVoteControls(host) {
         event.preventDefault();
         event.stopPropagation();
         toggleEdenVoteInfoPopover(infoButton);
+        return;
+      }
+      const voteStart = event.target.closest('[data-eden-vote-start]');
+      if (voteStart) {
+        event.preventDefault();
+        const voterInput = host.querySelector('#edenX1VoterName');
+        voterInput?.scrollIntoView({
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+          block: 'center',
+        });
+        window.setTimeout(() => voterInput?.focus({ preventScroll: true }), 180);
         return;
       }
       const clear = event.target.closest('[data-eden-vote-clear]');
@@ -2196,6 +2518,7 @@ function bindEdenVoteControls(host) {
     updateEdenVoteInputConfirmation(host, id);
   });
   updateEdenVoteCandidateDetail(host);
+  startEdenVoteCountdown(host);
 }
 
 function renderEdenTeamVotePanel() {
@@ -2213,8 +2536,18 @@ function renderEdenTeamVotePanel() {
         <p class="dash-card-subtitle">${esc(t('edenX1VoteSubtitle'))}</p>
         <a class="eden-x1-vote-help-link" href="#edenX1TopNamesOverview" data-eden-vote-help-link>${esc(t('edenX1VoteHelpJump'))}</a>
       </div>
+      <div class="eden-x1-vote-hdr-meta">
+        <span id="edenX1VoteCount" class="eden-x1-vote-count" data-full="false" data-over="false" aria-live="polite">${esc(tf('edenX1VoteSelectionCount', { n: '0', count: '0' }))}</span>
+        <span id="edenX1VoteCountdown" class="eden-x1-vote-countdown" role="timer" aria-live="off" aria-atomic="true" data-state="idle" hidden></span>
+      </div>
     </div>
     <form id="edenX1TeamVoteForm" class="eden-x1-vote-form">
+      <div id="edenX1VoteEligibility" class="eden-x1-vote-eligibility" data-state="open">
+        <span>${esc(tf('edenX1VoteRule'))}</span>
+        <span class="eden-x1-vote-eligibility-deadline" aria-hidden="true"></span>
+        <span class="eden-x1-vote-friday" data-eden-vote-friday>${esc(t('edenX1VoteDeadlineFriday'))}</span>
+        <button class="eden-x1-vote-start" type="button" data-eden-vote-start>${esc(t('edenX1VoteCta'))}</button>
+      </div>
       ${renderEdenVoteMemberOptions()}
       <div class="eden-x1-vote-name-stack">
         <label class="eden-x1-vote-field" for="edenX1VoterName">
@@ -2296,15 +2629,6 @@ function setWeightedContributionCompactView(enabled) {
 
 function renderWeightedContributionViewToggle(compact) {
   return `<button class="dash-btn dash-btn-xs dash-weighted-view-toggle" type="button" data-weighted-compact-toggle aria-pressed="${compact ? 'true' : 'false'}">${esc(compact ? t('edenX1FullView') : t('edenX1CompactView'))}</button>`;
-}
-
-function weightedTableWrapStyle(rowCount) {
-  if (isWeightedContributionMobileViewport()) {
-    return '';
-  }
-  const rows = Math.max(1, Number(rowCount) || 0);
-  const maxHeight = Math.min(620, Math.max(170, rows * 48 + 104));
-  return `max-height:${maxHeight}px;overflow:auto`;
 }
 
 function bindWeightedContributionViewToggle(host) {
@@ -2446,6 +2770,37 @@ function queueEdenQuickNavScroll(selector, options = {}) {
   });
 }
 
+let edenNavigationTransitionToken = 0;
+
+function runEdenNavigationTransition(action) {
+  const loader = $('edenX1NavLoader');
+  if (!loader || typeof action !== 'function') {
+    action?.();
+    return;
+  }
+  const token = ++edenNavigationTransitionToken;
+  const minimumMs = 900;
+  const startedAt = performance.now();
+  loader.hidden = false;
+  loader.setAttribute('aria-hidden', 'false');
+  globalThis.VTSLoaderV14?.enhance?.(loader);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (token !== edenNavigationTransitionToken) return;
+      action();
+      const remaining = Math.max(0, minimumMs - (performance.now() - startedAt));
+      window.setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (token !== edenNavigationTransitionToken) return;
+          loader.hidden = true;
+          loader.setAttribute('aria-hidden', 'true');
+        });
+      }, remaining);
+    });
+  });
+}
+
 function activateEdenRewardView(view) {
   if (!rewardFlowReady || !view) return false;
   if (currentRewardView === view) {
@@ -2453,6 +2808,7 @@ function activateEdenRewardView(view) {
     return false;
   }
   currentTableSort = null;
+  resetWeightedTablePagination(weightedTablePagination);
   currentRewardView = view;
   scheduleCurrentTableRender({ scrollIntoView: false });
   return true;
@@ -2468,60 +2824,82 @@ function bindEdenQuickNav() {
     event.preventDefault();
     const target = button.getAttribute('data-quicknav') || '';
     if (target === 'rewards') {
-      queueEdenQuickNavScroll('#edenX1RewardFlowPanel, #edenX1RewardFlowTitle', {
-        focusTarget: true,
+      runEdenNavigationTransition(() => {
+        queueEdenQuickNavScroll('#edenX1RewardFlowPanel, #edenX1RewardFlowTitle', {
+          focusTarget: true,
+        });
       });
       return;
     }
     if (target === 'vote') {
-      activateEdenRewardView('team');
-      queueEdenQuickNavScroll(
-        '#edenX1TeamVotePanel, #dashWeightedContributionPanel .eden-x1-vote-panel'
-      );
+      runEdenNavigationTransition(() => {
+        activateEdenRewardView('team');
+        queueEdenQuickNavScroll(
+          '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel'
+        );
+      });
       return;
     }
     if (target === 'my-stats') {
-      queueEdenQuickNavScroll('#edenX1MyStatsCard, #edenX1TeamVotePanel', {
-        focusSelector: '#edenX1MyStatsSearch, #edenX1VoterName',
+      runEdenNavigationTransition(() => {
+        queueEdenQuickNavScroll('#edenX1MyStatsCard, #edenX1TeamVotePanel', {
+          focusSelector: '#edenX1MyStatsSearch, #edenX1VoterName',
+        });
       });
       return;
     }
     if (target === 'guild-contribution') {
-      queueEdenQuickNavScroll(
-        '#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card',
-        {
-          focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
-        }
-      );
+      runEdenNavigationTransition(() => {
+        queueEdenQuickNavScroll(
+          '#edenX1PublicWeightedCard, #dashWeightedContributionPanel .eden-x1-weighted-card',
+          {
+            focusSelector: '#edenX1PublicWeightedSearch, #edenX1TableSearch',
+          }
+        );
+      });
       return;
     }
     if (target === 'team') {
-      queueEdenQuickNavScroll(
-        '#edenX1TopNamesOverview, #edenX1RewardTopNamesOverview, #edenX1VoteGuidance',
-        {
-          focusTarget: true,
-        }
-      );
+      runEdenNavigationTransition(() => {
+        queueEdenQuickNavScroll(
+          '#edenX1TopNamesOverview, #edenX1RewardTopNamesOverview, #edenX1VoteGuidance',
+          {
+            focusTarget: true,
+          }
+        );
+      });
       return;
     }
     if (target === 'public') {
-      queueEdenQuickNavScroll('#edenX1TopPerformersCard, #edenX1PublicDashboard', {
-        focusTarget: true,
+      runEdenNavigationTransition(() => {
+        queueEdenQuickNavScroll('#edenX1TopPerformersCard, #edenX1PublicDashboard', {
+          focusTarget: true,
+        });
       });
     }
   });
 }
 
 function renderRewardTablePending() {
-  return `<div id="ocrDashboardRoot" class="eden-x1-table-loading" aria-busy="true" role="status">
-    <div class="dash-connecting eden-x1-table-loading-card" style="min-height:260px;border-radius:16px">
-      <div class="dash-connecting-grid" aria-hidden="true"></div>
+  return `<div class="eden-x1-table-loading" aria-busy="true" role="status">
+    <div class="dash-connecting eden-x1-table-loading-card">
       <div class="dash-connecting-stage">
-        <span class="dash-connecting-kicker">${esc(t('edenX1LoadingKicker'))}</span>
+        <h2 class="dash-connecting-title">${esc(t('edenX1Loading'))}</h2>
+        <span class="dash-connecting-bar dash-connecting-bar--indeterminate" aria-hidden="true"><span class="dash-connecting-bar-fill"></span></span>
+        <p class="dash-connecting-status">${esc(t('edenX1LoadingStatus'))}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderEdenBootPending() {
+  return `<div class="eden-x1-initial-loader" aria-busy="true">
+    <div class="dash-connecting" role="status" aria-live="polite">
+      <div class="dash-connecting-stage">
         <h2 class="dash-connecting-title">${esc(t('edenX1Loading'))}</h2>
         <div class="dash-connecting-bar-wrap">
-          <span class="dash-connecting-bar"><span class="dash-connecting-bar-fill" style="width:58%"></span></span>
-          <span class="dash-connecting-bar-pct">...</span>
+          <span class="dash-connecting-bar"><span class="dash-connecting-bar-fill" style="width:4%"></span></span>
+          <span class="dash-connecting-bar-pct">4%</span>
         </div>
         <p class="dash-connecting-status">${esc(t('edenX1LoadingStatus'))}</p>
       </div>
@@ -2559,9 +2937,12 @@ function bindRewardFlowControls() {
       if (!rewardFlowReady) return;
       const view = button.dataset.rewardView || 'all';
       if (view === currentRewardView) return;
-      currentTableSort = null;
-      currentRewardView = view;
-      scheduleCurrentTableRender({ scrollIntoView: shouldScrollRewardTableOnClick() });
+      runEdenNavigationTransition(() => {
+        currentTableSort = null;
+        resetWeightedTablePagination(weightedTablePagination);
+        currentRewardView = view;
+        scheduleCurrentTableRender({ scrollIntoView: shouldScrollRewardTableOnClick() });
+      });
     });
   });
   updateRewardFlowControls();
@@ -2756,6 +3137,69 @@ function sortedWeightedRows(rows, numberMode) {
   return sortWeightedRowsBy(rows, currentTableSort, numberMode);
 }
 
+function resetWeightedTablePagination(pagination) {
+  pagination.limit = EDEN_X1_TABLE_INITIAL_ROWS;
+  pagination.showAll = false;
+}
+
+function resolveWeightedTablePage(totalRows, pagination) {
+  const total = Math.max(0, Number(totalRows) || 0);
+  const requestedLimit = Math.max(
+    EDEN_X1_TABLE_INITIAL_ROWS,
+    Number(pagination?.limit) || EDEN_X1_TABLE_INITIAL_ROWS
+  );
+  const visible = pagination?.showAll ? total : Math.min(total, requestedLimit);
+  const remaining = Math.max(0, total - visible);
+  return {
+    total,
+    visible,
+    remaining,
+    nextCount: Math.min(EDEN_X1_TABLE_PAGE_STEP, remaining),
+  };
+}
+
+function advanceWeightedTablePagination(pagination, totalRows) {
+  const page = resolveWeightedTablePage(totalRows, pagination);
+  pagination.showAll = false;
+  pagination.limit = Math.min(page.total, page.visible + EDEN_X1_TABLE_PAGE_STEP);
+}
+
+function expandWeightedTablePagination(pagination, totalRows) {
+  pagination.limit = Math.max(EDEN_X1_TABLE_INITIAL_ROWS, Number(totalRows) || 0);
+  pagination.showAll = true;
+}
+
+function renderWeightedTablePagination(scope, totalRows, pagination, tableId) {
+  const page = resolveWeightedTablePage(totalRows, pagination);
+  if (page.total <= EDEN_X1_TABLE_INITIAL_ROWS) return '';
+  const idPrefix = scope === 'public' ? 'edenX1Public' : 'edenX1';
+  const loadButton = page.remaining
+    ? `<button id="${idPrefix}LoadMoreRows" type="button" class="dash-btn dash-btn-xs eden-x1-table-page-btn" data-eden-table-page-action="load" aria-controls="${tableId}">${esc(
+        t('edenX1LoadMoreRows', {
+          count: page.nextCount,
+          remaining: page.remaining,
+        })
+      )}</button>`
+    : '';
+  const showAllButton = page.remaining
+    ? `<button id="${idPrefix}ShowAllRows" type="button" class="dash-btn dash-btn-xs eden-x1-table-page-btn" data-eden-table-page-action="all" aria-controls="${tableId}">${esc(
+        t('edenX1ShowAllRows', { count: page.total })
+      )}</button>`
+    : '';
+  const collapseButton =
+    page.visible > EDEN_X1_TABLE_INITIAL_ROWS
+      ? `<button id="${idPrefix}CollapseRows" type="button" class="dash-btn dash-btn-xs eden-x1-table-page-btn" data-eden-table-page-action="collapse" aria-controls="${tableId}">${esc(
+          t('edenX1CollapseRows', { count: EDEN_X1_TABLE_INITIAL_ROWS })
+        )}</button>`
+      : '';
+  return `<div class="eden-x1-table-pagination" data-eden-table-pagination-total="${page.total}" role="group" aria-label="${esc(t('edenX1PaginationLabel'))}">
+    <span class="eden-x1-table-pagination-status" role="status" aria-live="polite" aria-atomic="true">${esc(
+      t('edenX1RowsShowing', { visible: page.visible, total: page.total })
+    )}</span>
+    <div class="eden-x1-table-pagination-actions">${loadButton}${showAllButton}${collapseButton}</div>
+  </div>`;
+}
+
 function defaultWeightedSortDir(col) {
   return ['number', 'player', 'reward', 'currentRank', 'finalRank', 'finalReward'].includes(col)
     ? 'asc'
@@ -2763,6 +3207,7 @@ function defaultWeightedSortDir(col) {
 }
 
 function setWeightedSort(col, options = {}) {
+  resetWeightedTablePagination(weightedTablePagination);
   if (!col) {
     currentTableSort = null;
     renderCurrentTable();
@@ -2841,6 +3286,7 @@ function rerenderPublicWeightedContributionCard(host, options = {}) {
   if (!card) return;
   card.outerHTML = renderPublicWeightedContributionTable();
   bindWeightedPopovers(host);
+  hydrateProgressiveWeightedTable(host, 'public');
   if (!options.focusSearch) return;
   const nextInput = host.querySelector('#edenX1PublicWeightedSearch');
   if (!nextInput) return;
@@ -2941,6 +3387,7 @@ function rerenderPublicMyStatsCard(host, options = {}) {
 
 function setPublicWeightedSort(col, host) {
   if (!col) return;
+  resetWeightedTablePagination(publicWeightedTablePagination);
   const cur = currentPublicTableSort || {};
   if (cur.col === col) {
     currentPublicTableSort = { col, dir: cur.dir === 'asc' ? 'desc' : 'asc' };
@@ -2957,22 +3404,30 @@ function bindWeightedTableControls(host) {
     search.dataset.bound = '1';
     search.addEventListener('input', (event) => {
       currentTableSearch = event.target.value || '';
+      resetWeightedTablePagination(weightedTablePagination);
       // Debounced: rebuilding the whole table on every keystroke froze typing.
       if (edenTableSearchDebounce) clearTimeout(edenTableSearchDebounce);
       edenTableSearchDebounce = setTimeout(() => {
         edenTableSearchDebounce = null;
+        resetWeightedTablePagination(weightedTablePagination);
         renderCurrentTable({ focusSearch: true });
       }, 150);
     });
   }
-  const showAllBtn = $('edenX1ShowAllRows');
-  if (showAllBtn && !showAllBtn.dataset.bound) {
-    showAllBtn.dataset.bound = '1';
-    showAllBtn.addEventListener('click', () => {
-      weightedTableShowAll = true;
+  host.querySelectorAll('[data-eden-table-page-action]').forEach((button) => {
+    if (button.dataset.bound) return;
+    button.dataset.bound = '1';
+    button.addEventListener('click', () => {
+      const action = button.dataset.edenTablePageAction;
+      const totalRows = Number(
+        button.closest('[data-eden-table-pagination-total]')?.dataset.edenTablePaginationTotal
+      );
+      if (action === 'load') advanceWeightedTablePagination(weightedTablePagination, totalRows);
+      if (action === 'all') expandWeightedTablePagination(weightedTablePagination, totalRows);
+      if (action === 'collapse') resetWeightedTablePagination(weightedTablePagination);
       renderCurrentTable();
     });
-  }
+  });
   const mobileSort = $('edenX1MobileSort');
   if (mobileSort && !mobileSort.dataset.bound) {
     mobileSort.dataset.bound = '1';
@@ -2997,16 +3452,20 @@ function bindWeightedTableControls(host) {
 function closeWeightedPopovers(except = null) {
   document.querySelectorAll('.eden-x1-popover-trigger.is-open').forEach((button) => {
     if (button === except) return;
+    const popover = button.querySelector('.dash-weighted-score-popover');
     button.classList.remove('is-open');
     button.setAttribute('aria-expanded', 'false');
+    releaseEdenX1BlockingLayer(popover);
     hideWeightedPopover(button);
   });
 }
 
 function closeWeightedPopoverTrigger(trigger) {
   if (!trigger) return;
+  const popover = trigger.querySelector('.dash-weighted-score-popover');
   trigger.classList.remove('is-open');
   trigger.setAttribute('aria-expanded', 'false');
+  releaseEdenX1BlockingLayer(popover);
   hideWeightedPopover(trigger);
 }
 
@@ -3020,7 +3479,7 @@ function ensureWeightedPopoverCloseButton(popover) {
   close.className = 'eden-x1-popover-close';
   close.setAttribute('role', 'button');
   close.setAttribute('tabindex', '0');
-  close.setAttribute('aria-label', 'Close');
+  close.setAttribute('aria-label', t('edenX1ModalClose'));
   close.textContent = '×';
   popover.insertBefore(close, popover.firstChild);
 }
@@ -3052,7 +3511,10 @@ function bindWeightedPopoverDismissal() {
   globalThis.addEventListener(
     'scroll',
     (event) => {
-      if (Date.now() - weightedPopoverOpenedAt < 180) return;
+      // Opening/positioning a fixed popover can trigger a delayed browser scroll
+      // (especially after programmatic table navigation). Do not let that same
+      // interaction immediately dismiss the popover the user just opened.
+      if (Date.now() - weightedPopoverOpenedAt < WEIGHTED_POPOVER_SCROLL_GRACE_MS) return;
       if (event.target?.closest?.('.dash-weighted-score-popover')) return;
       closeWeightedPopovers();
     },
@@ -3063,9 +3525,29 @@ function bindWeightedPopoverDismissal() {
   );
 }
 
+function materializeWeightedPopover(button) {
+  if (!button) return null;
+  const existing = button.querySelector('.dash-weighted-score-popover');
+  if (existing) return existing;
+  const scopeId = button.dataset.edenPopoverScope || '';
+  const popoverKey = button.dataset.edenPopoverKey || '';
+  const factories = deferredWeightedPopoverFactories.get(scopeId);
+  const factory = factories?.get(popoverKey);
+  if (typeof factory !== 'function') return null;
+  button.insertAdjacentHTML('beforeend', factory());
+  factories.delete(popoverKey);
+  const popover = button.querySelector('.dash-weighted-score-popover');
+  if (!popover) return null;
+  ensureWeightedPopoverCloseButton(popover);
+  popover.setAttribute('aria-hidden', 'true');
+  if (popover.id) button.setAttribute('aria-describedby', popover.id);
+  return popover;
+}
+
 function positionWeightedPopover(button) {
-  const popover = button?.querySelector('.dash-weighted-score-popover');
+  const popover = materializeWeightedPopover(button);
   if (!popover) return;
+  popover.setAttribute('aria-hidden', 'false');
   if (isWeightedContributionMobileViewport()) {
     popover.style.display = '';
     return;
@@ -3114,8 +3596,9 @@ function positionWeightedPopover(button) {
 
 function hideWeightedPopover(button) {
   const popover = button?.querySelector('.dash-weighted-score-popover');
-  if (!popover || isWeightedContributionMobileViewport()) return;
-  popover.style.display = 'none';
+  if (!popover) return;
+  popover.setAttribute('aria-hidden', 'true');
+  if (!isWeightedContributionMobileViewport()) popover.style.display = 'none';
 }
 
 function bindWeightedPopovers(host) {
@@ -3124,7 +3607,9 @@ function bindWeightedPopovers(host) {
     if (button.dataset.popoverBound) return;
     button.dataset.popoverBound = '1';
     button.setAttribute('aria-expanded', 'false');
-    ensureWeightedPopoverCloseButton(button.querySelector('.dash-weighted-score-popover'));
+    const initialPopover = button.querySelector('.dash-weighted-score-popover');
+    ensureWeightedPopoverCloseButton(initialPopover);
+    initialPopover?.setAttribute('aria-hidden', 'true');
     hideWeightedPopover(button);
     button.addEventListener('pointerenter', () => positionWeightedPopover(button));
     button.addEventListener('pointerleave', () => {
@@ -3148,9 +3633,107 @@ function bindWeightedPopovers(host) {
       if (shouldOpen) weightedPopoverOpenedAt = Date.now();
       button.classList.toggle('is-open', shouldOpen);
       button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-      if (!shouldOpen) hideWeightedPopover(button);
+      const popover = button.querySelector('.dash-weighted-score-popover');
+      if (shouldOpen && isWeightedContributionMobileViewport()) {
+        activateEdenX1BlockingLayer(popover, {
+          restoreTarget: button,
+          close: () => closeWeightedPopoverTrigger(button),
+        });
+      } else if (!shouldOpen) {
+        releaseEdenX1BlockingLayer(popover);
+        hideWeightedPopover(button);
+      }
     });
   });
+}
+
+function activeProgressiveWeightedTablePlan(channel) {
+  return channel === 'public' ? publicWeightedTableProgressivePlan : weightedTableProgressivePlan;
+}
+
+function setProgressiveWeightedTablePlan(channel, rows, renderRow) {
+  const previous = activeProgressiveWeightedTablePlan(channel);
+  releaseDeferredWeightedPopoverScope(previous?.popoverScope);
+  const popoverScope = createDeferredWeightedPopoverScope(channel);
+  const plan = {
+    channel,
+    token: ++weightedTableProgressiveSerial,
+    rows,
+    popoverScope,
+    initialCount: Math.min(rows.length, EDEN_X1_TABLE_RENDER_CHUNK_SIZE),
+    renderRow: (row, index) => renderRow(row, index, popoverScope),
+  };
+  if (channel === 'public') publicWeightedTableProgressivePlan = plan;
+  else weightedTableProgressivePlan = plan;
+  return plan;
+}
+
+function cancelProgressiveWeightedTablePlan(channel) {
+  const current = activeProgressiveWeightedTablePlan(channel);
+  releaseDeferredWeightedPopoverScope(current?.popoverScope);
+  if (channel === 'public') publicWeightedTableProgressivePlan = null;
+  else weightedTableProgressivePlan = null;
+}
+
+function renderProgressiveWeightedRows(plan, start = 0, end = plan.initialCount) {
+  return plan.rows
+    .slice(start, end)
+    .map((row, offset) => plan.renderRow(row, start + offset))
+    .join('');
+}
+
+function renderProgressiveWeightedStatus(plan) {
+  if (plan.initialCount >= plan.rows.length) return '';
+  return `<div class="eden-x1-progressive-status" data-eden-progressive-status="${plan.channel}" role="status" aria-live="polite" aria-atomic="true">
+    <span aria-hidden="true"></span>
+    <span>${esc(t('edenX1LoadingStatus'))} ${plan.initialCount}/${plan.rows.length}</span>
+  </div>`;
+}
+
+function hydrateProgressiveWeightedTable(host, channel) {
+  const plan = activeProgressiveWeightedTablePlan(channel);
+  if (!host || !plan) return;
+  const table = host.querySelector(
+    `[data-eden-progressive-table="${channel}"][data-eden-progressive-token="${plan.token}"]`
+  );
+  const body = table?.querySelector(
+    `tbody[data-eden-progressive-body="${channel}"][data-eden-progressive-token="${plan.token}"]`
+  );
+  if (!table || !body) return;
+  let cursor = plan.initialCount;
+  if (cursor >= plan.rows.length) {
+    table.setAttribute('aria-busy', 'false');
+    return;
+  }
+
+  const status = host.querySelector(`[data-eden-progressive-status="${channel}"]`);
+  const appendChunk = () => {
+    if (activeProgressiveWeightedTablePlan(channel) !== plan || !body.isConnected) return;
+    const end = Math.min(cursor + EDEN_X1_TABLE_RENDER_CHUNK_SIZE, plan.rows.length);
+    const template = document.createElement('template');
+    template.innerHTML = renderProgressiveWeightedRows(plan, cursor, end);
+    bindWeightedPopovers(template.content);
+    body.appendChild(template.content);
+    cursor = end;
+    if (status) {
+      status.lastElementChild.textContent = `${t('edenX1LoadingStatus')} ${cursor}/${plan.rows.length}`;
+    }
+    if (cursor < plan.rows.length) {
+      afterNextPaint(appendChunk);
+      return;
+    }
+    table.setAttribute('aria-busy', 'false');
+    if (status) {
+      status.lastElementChild.textContent = t('edenX1PlayersCount', { count: plan.rows.length });
+      status.classList.add('is-complete');
+      window.setTimeout(() => {
+        if (activeProgressiveWeightedTablePlan(channel) === plan && status.isConnected) {
+          status.hidden = true;
+        }
+      }, 800);
+    }
+  };
+  afterNextPaint(appendChunk);
 }
 
 function managementVoteWinnerReason(winner) {
@@ -3300,67 +3883,103 @@ function renderRewardSlotStatus(row, view) {
   </button>`;
 }
 
-function renderWeightedScorePopover(row, index) {
+function createDeferredWeightedPopoverScope(channel) {
+  const scopeId = `${channel}-${++weightedPopoverScopeSerial}`;
+  deferredWeightedPopoverFactories.set(scopeId, new Map());
+  return scopeId;
+}
+
+function releaseDeferredWeightedPopoverScope(scopeId) {
+  if (scopeId) deferredWeightedPopoverFactories.delete(scopeId);
+}
+
+function deferredWeightedPopoverParts(scopeId, tooltipId, factory) {
+  if (!scopeId) {
+    return {
+      attributes: `aria-describedby="${tooltipId}"`,
+      body: factory(),
+    };
+  }
+  const factories = deferredWeightedPopoverFactories.get(scopeId);
+  if (factories) factories.set(tooltipId, factory);
+  return {
+    attributes: `data-eden-popover-scope="${esc(scopeId)}" data-eden-popover-key="${esc(tooltipId)}"`,
+    body: '',
+  };
+}
+
+function renderWeightedScorePopover(row, index, options = {}) {
   const tooltipId = `edenX1WeightedScoreTip-${index}`;
-  const dutyCount = row.banners + row.pathers + row.shieldWalls;
-  const conductBonus = conductBonusValue(row);
-  const conductPoints = Number.isFinite(Number(row.conductPoints))
-    ? Number(row.conductPoints)
-    : conductBonus * 10000;
-  const dutyNote = t('edenX1DutyFormula', {
-    banners: row.banners,
-    pathers: row.pathers,
-    shieldWalls: row.shieldWalls,
-    count: dutyCount,
+  const popover = deferredWeightedPopoverParts(options.deferredScope, tooltipId, () => {
+    const dutyCount = row.banners + row.pathers + row.shieldWalls;
+    const conductBonus = conductBonusValue(row);
+    const conductPoints = Number.isFinite(Number(row.conductPoints))
+      ? Number(row.conductPoints)
+      : conductBonus * 10000;
+    const dutyNote = t('edenX1DutyFormula', {
+      banners: row.banners,
+      pathers: row.pathers,
+      shieldWalls: row.shieldWalls,
+      count: dutyCount,
+    });
+    const conductNote = t('edenX1ConductPrivateNotice');
+    return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+        <strong>${esc(t('edenX1WeightedBreakdownTitle'))}</strong>
+        <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
+        <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
+        <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
+        <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
+        <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
+      </span>`;
   });
-  const conductNote = t('edenX1ConductPrivateNotice');
-  return `<button class="dash-weighted-score-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
+  return `<button class="dash-weighted-score-trigger eden-x1-popover-trigger" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1WeightedBreakdownAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${formatWeightedScore(row.weightedScore)}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>${esc(t('edenX1WeightedBreakdownTitle'))}</strong>
-      <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
-      <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
-    </span>
+    ${popover.body}
   </button>`;
 }
 
-function renderConductScorePopover(row, index) {
+function renderConductScorePopover(row, index, options = {}) {
   const tooltipId = `edenX1ConductTip-${index}`;
   const conductBonus = conductBonusValue(row);
-  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
+  const popover = deferredWeightedPopoverParts(
+    options.deferredScope,
+    tooltipId,
+    () => `<span id="${tooltipId}" class="dash-weighted-score-popover dash-weighted-conduct-popover" role="tooltip">
+        <small class="dash-weighted-conduct-note">${esc(t('edenX1ConductPrivateNotice'))}</small>
+      </span>`
+  );
+  return `<button class="dash-weighted-score-trigger dash-weighted-conduct-trigger eden-x1-popover-trigger ${conductBonus >= 0 ? 'dash-positive' : 'dash-negative'}" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1ConductAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">${formatSignedNumber(conductBonus)}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover dash-weighted-conduct-popover" role="tooltip">
-      <small class="dash-weighted-conduct-note">${esc(t('edenX1ConductPrivateNotice'))}</small>
-    </span>
+    ${popover.body}
   </button>`;
 }
 
-function renderFinalRankPopover(row, index) {
+function renderFinalRankPopover(row, index, options = {}) {
   const tooltipId = `edenX1FinalRankTip-${index}`;
-  const cur = Number(row.currentRank);
-  const hasCur = Number.isFinite(cur) && cur > 0;
-  const delta = hasCur ? cur - row.finalRank : 0;
-  const rankScore = rowContributionRewardScore(row);
-  const movement = !hasCur
-    ? '--'
-    : delta > 0
-      ? t('edenX1RankUp', { count: delta })
-      : delta < 0
-        ? t('edenX1RankDown', { count: Math.abs(delta) })
-        : t('edenX1RankSame');
-  return `<button class="dash-weighted-rank-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RankReasonAria', { player: row.playerName }))}">
+  const popover = deferredWeightedPopoverParts(options.deferredScope, tooltipId, () => {
+    const cur = Number(row.currentRank);
+    const hasCur = Number.isFinite(cur) && cur > 0;
+    const delta = hasCur ? cur - row.finalRank : 0;
+    const rankScore = rowContributionRewardScore(row);
+    const movement = !hasCur
+      ? '--'
+      : delta > 0
+        ? t('edenX1RankUp', { count: delta })
+        : delta < 0
+          ? t('edenX1RankDown', { count: Math.abs(delta) })
+          : t('edenX1RankSame');
+    return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+        <strong>${esc(t('edenX1RankReasonTitle'))}</strong>
+        <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
+        <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
+        <span><span>${esc(t('adminContributionRank'))}</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
+        <span><span>${esc(t('edenX1RankMovement'))}</span><b>${esc(movement)}</b></span>
+        <span class="dash-weighted-score-popover-total"><span>${esc(t('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
+      </span>`;
+  });
+  return `<button class="dash-weighted-rank-trigger eden-x1-popover-trigger" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1RankReasonAria', { player: row.playerName }))}">
     <span class="dash-weighted-score-value">#${row.finalRank}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>${esc(t('edenX1RankReasonTitle'))}</strong>
-      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
-      <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
-      <span><span>${esc(t('adminContributionRank'))}</span><b>${hasCur ? `#${cur}` : '--'}</b></span>
-      <span><span>${esc(t('edenX1RankMovement'))}</span><b>${esc(movement)}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>${esc(t('adminContributionFinalRank'))}</span><b>#${row.finalRank}</b></span>
-    </span>
+    ${popover.body}
   </button>`;
 }
 
@@ -3372,25 +3991,28 @@ function renderFinalRewardPopover(row, index, context = {}) {
     context.finalRewardLabel || contributionRewardLabel(context.finalReward || row.finalReward);
   const rankLabel = context.rankLabel || t('adminContributionFinalRank');
   const rankValue = context.rank || row.finalRank;
-  const rankScore = rowContributionRewardScore(row);
-  const hasPrivateR5Decision =
-    row.rewardReason === 'grant_premium' || row.rewardReason === 'forfeit_premium';
-  const reason = context.reason
-    ? context.reason
-    : hasPrivateR5Decision
-      ? t('edenX1ConductPrivateNotice')
-      : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
-  return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger ${rewardClass}" type="button" aria-describedby="${tooltipId}" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
+  const popover = deferredWeightedPopoverParts(context.deferredScope, tooltipId, () => {
+    const rankScore = rowContributionRewardScore(row);
+    const hasPrivateR5Decision =
+      row.rewardReason === 'grant_premium' || row.rewardReason === 'forfeit_premium';
+    const reason = context.reason
+      ? context.reason
+      : hasPrivateR5Decision
+        ? t('edenX1ConductPrivateNotice')
+        : t('edenX1RewardReasonRank', { rank: row.finalRank, reward: baseReward });
+    return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
+        <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
+        <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
+        <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
+        <span><span>${esc(rankLabel)}</span><b>#${rankValue}</b></span>
+        <span><span>${esc(t('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
+        <span><span>${esc(t('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
+        <small>${esc(reason)}</small>
+      </span>`;
+  });
+  return `<button class="dash-weighted-reward-trigger eden-x1-popover-trigger ${rewardClass}" type="button" ${popover.attributes} aria-expanded="false" aria-label="${esc(t('edenX1RewardReasonAria', { player: row.playerName, reward: finalReward }))}">
     <span class="dash-weighted-reward-value">${esc(finalReward)}</span>
-    <span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-      <strong>${esc(t('edenX1RewardReasonTitle'))}</strong>
-      <span><span>${esc(t('edenX1RankedBy'))}</span><b>${esc(t('edenX1RewardLeaderboardTitle'))}</b></span>
-      <span><span>${esc(t('edenX1RewardLeaderboardTitle'))}</span><b>${formatScore(rankScore)}</b></span>
-      <span><span>${esc(rankLabel)}</span><b>#${rankValue}</b></span>
-      <span><span>${esc(t('adminContributionReward'))}</span><b>${esc(baseReward)}</b></span>
-      <span><span>${esc(t('adminContributionFinalReward'))}</span><b>${esc(finalReward)}</b></span>
-      <small>${esc(reason)}</small>
-    </span>
+    ${popover.body}
   </button>`;
 }
 
@@ -3769,6 +4391,38 @@ function publicWeightedRowSearchText(row, rewardContext = {}) {
     .toLowerCase();
 }
 
+function renderPublicWeightedContributionRow(row, index, options = {}) {
+  const playerKey = row.playerKey || publicPlayerKey(row.playerName);
+  const canOpenPlayer = options.clickablePlayerKeys?.has(playerKey);
+  const total = rowBonusTotal(row);
+  const tooltipIndex = `public-${index}`;
+  const rewardContext = options.rewardContextForRow(row);
+  const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
+  const popoverOptions = { deferredScope: options.deferredScope };
+  return `<tr class="${rewardClass}"${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
+    <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
+      <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
+      <span class="dash-weighted-mobile-header" aria-label="${esc(`#${row.finalRank || '--'} ${row.playerName}`)}">
+        <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${row.finalRank || '--'}`)}" aria-hidden="true"></span>
+        <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
+      </span>
+    </td>
+    <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${canOpenPlayer ? publicPlayerButton(row.playerName, playerKey, 'eden-x1-table-name') : renderTaggedPlayerName(row)}</strong></td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex, popoverOptions)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
+    <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex, popoverOptions)}</td>
+    <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex, popoverOptions)}</td>
+    <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex, { ...rewardContext, deferredScope: options.deferredScope })}</td>
+  </tr>`;
+}
+
 function renderPublicWeightedContributionTable() {
   const plannedRewardContexts = createPlannedRewardContextMap();
   const rewardContextForRow = (row) =>
@@ -3785,17 +4439,25 @@ function renderPublicWeightedContributionTable() {
         publicWeightedRowSearchText(row, rewardContextForRow(row)).includes(searchQuery)
       )
     : allRows;
-  // Cap the full (unsearched) list; a search already narrows it.
-  const publicRowLimitActive =
-    !publicWeightedShowAll && !searchQuery && filteredRows.length > EDEN_X1_TABLE_ROW_LIMIT;
-  const rows = publicRowLimitActive
-    ? filteredRows.slice(0, EDEN_X1_TABLE_ROW_LIMIT)
-    : filteredRows;
-  const publicShowAllButton = publicRowLimitActive
-    ? `<div class="eden-x1-show-all-wrap"><button id="edenX1PublicShowAllRows" type="button" class="dash-btn eden-x1-show-all-btn">${esc(
-        t('edenX1ShowAllRows', { count: filteredRows.length })
-      )}</button></div>`
-    : '';
+  const page = resolveWeightedTablePage(filteredRows.length, publicWeightedTablePagination);
+  const rows = filteredRows.slice(0, page.visible);
+  const clickablePlayerKeys = new Set(publicPlayerRows.map((player) => player.key));
+  const progressivePlan = rows.length
+    ? setProgressiveWeightedTablePlan('public', rows, (row, index, deferredScope) =>
+        renderPublicWeightedContributionRow(row, index, {
+          clickablePlayerKeys,
+          rewardContextForRow,
+          deferredScope,
+        })
+      )
+    : null;
+  if (!progressivePlan) cancelProgressiveWeightedTablePlan('public');
+  const paginationControls = renderWeightedTablePagination(
+    'public',
+    filteredRows.length,
+    publicWeightedTablePagination,
+    'edenX1PublicWeightedTable'
+  );
   const clickableCount = allRows.filter((row) =>
     publicPlayerRows.some((player) => player.key === row.playerKey)
   ).length;
@@ -3817,8 +4479,8 @@ function renderPublicWeightedContributionTable() {
     </div>`
     : '';
   const tableBody = rows.length
-    ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
-      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-public-weighted-table">
+    ? `<div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap eden-x1-public-table-wrap">
+      <table id="edenX1PublicWeightedTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-public-weighted-table eden-x1-progressive-table" data-eden-progressive-table="public" data-eden-progressive-token="${progressivePlan.token}" aria-rowcount="${filteredRows.length}" aria-busy="${progressivePlan.initialCount < rows.length ? 'true' : 'false'}">
         <thead><tr>
           ${renderPublicSortableHeader('number', t('edenX1ThNumber'))}
           ${renderPublicSortableHeader('player', t('adminContributionMember'))}
@@ -3835,45 +4497,15 @@ function renderPublicWeightedContributionTable() {
           ${renderPublicSortableHeader('finalRank', t('adminContributionFinalRank'))}
           ${renderPublicSortableHeader('finalReward', t('adminContributionFinalReward'))}
         </tr></thead>
-        <tbody>${rows
-          .map((row, index) => {
-            const playerKey = row.playerKey || publicPlayerKey(row.playerName);
-            const canOpenPlayer = publicPlayerRows.some((player) => player.key === playerKey);
-            const total = rowBonusTotal(row);
-            const tooltipIndex = `public-${index}`;
-            const rewardContext = rewardContextForRow(row);
-            const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
-            return `<tr class="${rewardClass}"${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
-              <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
-                <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
-                <span class="dash-weighted-mobile-header" aria-label="${esc(`#${row.finalRank || '--'} ${row.playerName}`)}">
-                  <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${row.finalRank || '--'}`)}" aria-hidden="true"></span>
-                  <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
-                </span>
-              </td>
-              <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong>${canOpenPlayer ? publicPlayerButton(row.playerName, playerKey, 'eden-x1-table-name') : renderTaggedPlayerName(row)}</strong></td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(row.currentReward))}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
-              <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
-              <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, tooltipIndex)}</td>
-              <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, tooltipIndex, rewardContext)}</td>
-            </tr>`;
-          })
-          .join('')}</tbody>
+        <tbody data-eden-progressive-body="public" data-eden-progressive-token="${progressivePlan.token}">${renderProgressiveWeightedRows(progressivePlan)}</tbody>
       </table>
-    </div>`
+    </div>
+    ${renderProgressiveWeightedStatus(progressivePlan)}`
     : renderPublicEmpty(
         searchQuery ? t('edenX1NoPublicSearchRows') : t('edenX1NoPublicWeightedRows')
       );
   const body = allRows.length
-    ? `${searchControl}${tableBody}${publicShowAllButton}`
+    ? `${searchControl}${tableBody}${paginationControls}`
     : renderPublicEmpty(t('edenX1NoPublicWeightedRows'));
   const hint = allRows.length ? metaParts.join(' - ') : t('edenX1WeightedPublicMeta');
   return renderPublicCard(
@@ -4011,7 +4643,7 @@ function renderPublicInsights(attacks, players, structures) {
   const bestHit = players.slice().sort((a, b) => valueOf(b.best_hit) - valueOf(a.best_hit))[0];
   const avgHit = attacks.length ? Math.round(totalDemo / attacks.length) : 0;
   const movementRows = players.slice(0, 5);
-  const body = `<div class="dash-ops-grid eden-x1-public-insights-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+  const body = `<div class="dash-ops-grid eden-x1-public-insights-grid">
     <div class="dash-ops-card"><span class="dash-ops-label">${esc(t('edenX1InsightTargetMix'))}</span><strong>${largeTarget ? publicStructureButton(largeTarget.label, largeTarget.key, 'eden-x1-card-link') : '--'}</strong><p>${largeTarget ? esc(t('edenX1TargetMixCopy', { hits: largeTarget.attack_count, demo: formatScore(largeTarget.total_demolition) })) : esc(t('edenX1NoTargetsYet'))}</p></div>
     <div class="dash-ops-card"><span class="dash-ops-label">${esc(t('edenX1InsightAttendanceRisk'))}</span><strong>${esc(t('edenX1PlayersCount', { count: attendanceRisk }))}</strong><p>${esc(t('edenX1AttendanceRiskCopy'))}</p></div>
     <div class="dash-ops-card"><span class="dash-ops-label">${esc(t('edenX1InsightBestPerHit'))}</span><strong>${bestHit ? publicPlayerButton(bestHit.name, bestHit.key, 'eden-x1-card-link') : '--'}</strong><p>${bestHit ? esc(t('edenX1BestHitCopy', { value: formatScore(bestHit.best_hit) })) : esc(t('edenX1NoHitData'))}</p></div>
@@ -4252,7 +4884,7 @@ function renderPublicStreaks(attacks, players) {
 }
 
 function renderPublicAdvancedAnalytics() {
-  return `<div class="dash-analytics-grid eden-x1-public-wide eden-x1-public-analytics" style="grid-column:1/-1">
+  return `<div class="dash-analytics-grid eden-x1-public-wide eden-x1-public-analytics">
     <div id="edenX1PublicTrendsSlot"></div>
     <div id="edenX1PublicHeatmapSlot"></div>
     <div id="edenX1PublicDistributionSlot"></div>
@@ -4372,7 +5004,7 @@ function renderPublicStructureDetail(structure) {
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalPlayers'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--amber">${formatScore(structure.unique_players)}</div></div>
       <div class="dash-modal-stat"><div>${esc(t('edenX1ModalAverageHit'))}</div><div class="dash-modal-stat-value dash-modal-stat-value--purple">${formatScore(structure.average_demo)}</div></div>
     </div>
-    <div class="dash-main-grid eden-x1-public-detail-grid" style="grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:start">
+    <div class="dash-main-grid eden-x1-public-detail-grid">
       <div class="dash-card-align-start">
         <div class="dash-modal-section-label">${esc(t('edenX1ModalTopPlayers'))}</div>
         <div class="dash-chart">${players
@@ -4409,7 +5041,7 @@ function renderPublicStructureDetail(structure) {
 }
 
 function renderPublicModal() {
-  return `<div id="edenX1PublicModal" class="dash-modal eden-x1-public-modal" role="dialog" aria-modal="true" aria-labelledby="edenX1PublicModalTitle">
+  return `<div id="edenX1PublicModal" class="dash-modal eden-x1-public-modal" role="dialog" aria-modal="true" aria-hidden="true" inert aria-labelledby="edenX1PublicModalTitle" tabindex="-1">
     <div class="dash-modal-content" style="max-width:min(920px,calc(100vw - 2rem))">
       <button id="edenX1PublicModalClose" class="dash-modal-close" type="button" aria-label="${esc(t('edenX1ModalClose'))}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -4427,12 +5059,11 @@ function renderPublicModal() {
 }
 
 function closePublicModal() {
-  $('edenX1PublicModal')?.classList.remove('active');
-  window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
-  if (window._overlayStack === 0) {
-    document.body.style.overflow = '';
-    document.body.style.overflowY = '';
-  }
+  const modal = $('edenX1PublicModal');
+  if (!modal?.classList.contains('active')) return;
+  modal.classList.remove('active');
+  modal.inert = true;
+  releaseEdenX1BlockingLayer(modal);
 }
 
 function openPublicModal(title, subtitle, body) {
@@ -4445,11 +5076,14 @@ function openPublicModal(title, subtitle, body) {
   titleEl.textContent = title;
   subEl.textContent = subtitle || '';
   bodyEl.innerHTML = body;
-  if (!wasActive) {
-    window._overlayStack = (window._overlayStack || 0) + 1;
-    document.body.style.overflow = 'hidden';
-  }
+  modal.inert = false;
   modal.classList.add('active');
+  if (!wasActive) {
+    activateEdenX1BlockingLayer(modal, {
+      restoreTarget: document.activeElement,
+      close: closePublicModal,
+    });
+  }
 }
 
 function showPublicDetail(type, key) {
@@ -4509,11 +5143,13 @@ function bindPublicDashboardControls(host) {
     const input = event.target.closest('#edenX1PublicWeightedSearch');
     if (!input) return;
     currentPublicTableSearch = input.value || '';
+    resetWeightedTablePagination(publicWeightedTablePagination);
     const selectionStart = input.selectionStart ?? currentPublicTableSearch.length;
     // Debounced: rebuilding a 200-row table on every keystroke froze typing.
     if (publicTableSearchDebounce) clearTimeout(publicTableSearchDebounce);
     publicTableSearchDebounce = setTimeout(() => {
       publicTableSearchDebounce = null;
+      resetWeightedTablePagination(publicWeightedTablePagination);
       rerenderPublicWeightedContributionCard(host, { focusSearch: true, selectionStart });
     }, 150);
   });
@@ -4525,8 +5161,22 @@ function bindPublicDashboardControls(host) {
     setPublicWeightedSort(sortHeader.dataset.publicWeightedSort, host);
   });
   host.addEventListener('click', (event) => {
-    if (event.target.closest('#edenX1PublicShowAllRows')) {
-      publicWeightedShowAll = true;
+    const paginationButton = event.target.closest('[data-eden-table-page-action]');
+    if (paginationButton?.closest('#edenX1PublicWeightedCard')) {
+      const totalRows = Number(
+        paginationButton.closest('[data-eden-table-pagination-total]')?.dataset
+          .edenTablePaginationTotal
+      );
+      const action = paginationButton.dataset.edenTablePageAction;
+      if (action === 'load') {
+        advanceWeightedTablePagination(publicWeightedTablePagination, totalRows);
+      }
+      if (action === 'all') {
+        expandWeightedTablePagination(publicWeightedTablePagination, totalRows);
+      }
+      if (action === 'collapse') {
+        resetWeightedTablePagination(publicWeightedTablePagination);
+      }
       rerenderPublicWeightedContributionCard(host);
       return;
     }
@@ -4559,7 +5209,7 @@ function bindPublicDashboardControls(host) {
       event.preventDefault();
       if (
         currentRewardView === 'team' &&
-        applyEdenVotePickToForm($('dashWeightedContributionPanel'), helperPick)
+        applyEdenVotePickToForm($('edenX1VoteRail'), helperPick)
       ) {
         return;
       }
@@ -4590,12 +5240,6 @@ function bindPublicDashboardControls(host) {
   $('edenX1PublicModal')?.addEventListener('click', (event) => {
     if (event.target === event.currentTarget) closePublicModal();
   });
-  if (!window._edenX1PublicModalEsc) {
-    window._edenX1PublicModalEsc = (event) => {
-      if (event.key === 'Escape') closePublicModal();
-    };
-    document.addEventListener('keydown', window._edenX1PublicModalEsc);
-  }
 }
 
 function preparePublicDashboardRows(data = publicDashboardData) {
@@ -4617,27 +5261,28 @@ async function renderPublicDashboard(data = publicDashboardData) {
       )
     : false;
   if (!publicAttackRows.length && !hasContribution) {
+    cancelProgressiveWeightedTablePlan('public');
     host.classList.add('hidden');
     host.innerHTML = '';
     return;
   }
   host.classList.remove('hidden');
-  host.innerHTML = `<div id="ocrDashboardRoot" class="eden-x1-public-root" style="display:grid;gap:1rem">
+  host.innerHTML = `<div class="eden-x1-public-root">
     ${renderEdenTopNamesOverview()}
     <div class="eden-x1-reward-heading">
       <span class="eden-x1-reward-eyebrow">${esc(t('edenX1PublicEyebrow'))}</span>
       <h2>${esc(t('edenX1PublicTitle'))}</h2>
       <p>${esc(t('edenX1PublicSubtitle'))}</p>
     </div>
-    <div class="eden-x1-public-grid" style="display:grid;gap:.85rem;align-items:start">
-      <div id="edenX1PublicPrimarySlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
+    <div class="eden-x1-public-grid">
+      <div id="edenX1PublicPrimarySlot" class="eden-x1-public-wide"></div>
       ${renderPublicKpis(publicAttackRows, publicPlayerRows, publicStructureRows)}
-      <div class="eden-x1-public-columns" style="grid-column:1/-1">
+      <div class="eden-x1-public-columns">
         <div class="eden-x1-public-column eden-x1-public-column-main" id="edenX1PublicTopPerformersSlot"></div>
         <div class="eden-x1-public-column eden-x1-public-column-side" id="edenX1PublicInsightsSlot"></div>
       </div>
-      <div id="edenX1PublicAnalyticsSlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
-      <div id="edenX1PublicHistorySlot" class="eden-x1-public-wide" style="grid-column:1/-1"></div>
+      <div id="edenX1PublicAnalyticsSlot" class="eden-x1-public-wide"></div>
+      <div id="edenX1PublicHistorySlot" class="eden-x1-public-wide"></div>
     </div>
     ${renderPublicModal()}
   </div>`;
@@ -4649,6 +5294,24 @@ async function renderPublicDashboard(data = publicDashboardData) {
   const primarySlot = host.querySelector('#edenX1PublicPrimarySlot');
   if (primarySlot) {
     primarySlot.innerHTML = renderPublicMyStatsCard();
+    host.querySelectorAll('.eden-x1-row-expand-toggle').forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
+      const activate = () => {
+        const tr = btn.closest('tr');
+        if (!tr) return;
+        const expanded = tr.getAttribute('data-expanded') === 'true';
+        const next = !expanded;
+        tr.setAttribute('data-expanded', String(next));
+        btn.setAttribute('aria-expanded', String(next));
+      };
+      btn.addEventListener('click', activate);
+      btn.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        activate();
+      });
+    });
     bindWeightedPopovers(host);
   }
 
@@ -4657,6 +5320,7 @@ async function renderPublicDashboard(data = publicDashboardData) {
   if (primarySlot) {
     primarySlot.insertAdjacentHTML('beforeend', renderPublicWeightedContributionTable());
     bindWeightedPopovers(host);
+    hydrateProgressiveWeightedTable(host, 'public');
   }
 
   await yieldToBrowser();
@@ -4685,7 +5349,7 @@ async function renderPublicDashboard(data = publicDashboardData) {
   if (token !== publicDashboardRenderToken || !host.isConnected) return;
   const historySlot = host.querySelector('#edenX1PublicHistorySlot');
   if (historySlot) {
-    historySlot.innerHTML = `<div class="dash-main-grid dash-history-leader-grid" style="grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);align-items:stretch">
+    historySlot.innerHTML = `<div class="dash-main-grid dash-history-leader-grid">
       <div id="edenX1PublicAttackHistorySlot"></div>
       <div id="edenX1PublicStructuresSlot"></div>
     </div>`;
@@ -4709,6 +5373,10 @@ function scheduleLocalizedRerender() {
       : (callback) => setTimeout(callback, 0);
   scheduleIdle(() => {
     if (token !== localizedRenderToken) return;
+    renderEdenMarquee(publicDashboardData);
+    renderEdenPodium();
+    renderEdenProgression(publicDashboardData);
+    renderEdenVoteRail();
     renderCurrentTable({ fromSchedule: true });
     const renderPublic = () => {
       if (token !== localizedRenderToken || !publicDashboardData) return;
@@ -4720,10 +5388,11 @@ function scheduleLocalizedRerender() {
 
 function updateTextContent(lang) {
   currentLang = lang;
+  setCurrentLanguage(lang);
   const dict = translations[lang] || translations.en;
   window.VTS_TRANSLATIONS = translations;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = lang;
+  document.documentElement.lang = resolveIntlLocale(lang);
   const languageSelect = $('languageSelect');
   if (languageSelect) languageSelect.value = lang;
 
@@ -4754,6 +5423,51 @@ function updateTextContent(lang) {
 
   syncGameClockTitles();
   scheduleLocalizedRerender();
+  window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
+}
+
+function renderWeightedContributionRow(row, index, options = {}) {
+  const total = rowBonusTotal(row);
+  const numberValue =
+    options.numberMode === 'current'
+      ? row.currentRank || index + 1
+      : options.numberMode === 'index'
+        ? index + 1
+        : row.finalRank;
+  const rewardContext = options.rewardContextForRow(row, index, numberValue);
+  const rowReward = rewardContext.baseReward || rewardContext.currentReward || row.currentReward;
+  const rewardClass = rewardThemeClass(rewardContext.finalReward || row.finalReward);
+  const isSupportHonor = options.rewardView === 'support' && Number(numberValue) === 1;
+  const supportHonorClass = isSupportHonor ? ' eden-x1-support-honor-row' : '';
+  const supportHonorNameClass = isSupportHonor ? ' eden-x1-support-honor-name' : '';
+  const supportHonorNameAttr = isSupportHonor ? ' class="eden-x1-support-honor-name"' : '';
+  const popoverOptions = { deferredScope: options.deferredScope };
+  const rowId = `eden-row-${index}`;
+  return `<tr class="${rewardClass}${supportHonorClass}" data-expanded="false" data-row-id="${rowId}">
+    <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
+      <span class="dash-weighted-desktop-number">${numberValue}</span>
+      <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
+        <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${numberValue}`)}" aria-hidden="true"></span>
+        <strong class="dash-weighted-mobile-player-name${supportHonorNameClass}" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
+      </span>
+      <button class="eden-x1-row-expand-toggle" type="button" aria-expanded="false" aria-controls="${rowId}-details" aria-label="${esc(row.playerName)}" tabindex="0">
+        <svg class="eden-x1-row-expand-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </td>
+    <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong${supportHonorNameAttr}>${renderTaggedPlayerName(row)}</strong></td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
+    <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
+    <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
+    <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
+    <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index, popoverOptions)}</td>
+    <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, { ...rewardContext, deferredScope: options.deferredScope })}</td>
+  </tr>`;
 }
 
 function renderTable(rows, recordLabel, options = {}) {
@@ -4765,19 +5479,27 @@ function renderTable(rows, recordLabel, options = {}) {
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   const allRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
-  // The cap only applies to the unfiltered full view; a search already narrows.
-  const rowLimitActive =
-    !weightedTableShowAll &&
-    !currentTableSearch.trim() &&
-    allRows.length > EDEN_X1_TABLE_ROW_LIMIT;
-  const visibleRows = rowLimitActive ? allRows.slice(0, EDEN_X1_TABLE_ROW_LIMIT) : allRows;
-  const showAllButton = rowLimitActive
-    ? `<div class="eden-x1-show-all-wrap"><button id="edenX1ShowAllRows" type="button" class="dash-btn eden-x1-show-all-btn">${esc(
-        t('edenX1ShowAllRows', { count: allRows.length })
-      )}</button></div>`
-    : '';
+  const page = resolveWeightedTablePage(allRows.length, weightedTablePagination);
+  const visibleRows = allRows.slice(0, page.visible);
+  const progressivePlan = visibleRows.length
+    ? setProgressiveWeightedTablePlan('reward', visibleRows, (row, index, deferredScope) =>
+        renderWeightedContributionRow(row, index, {
+          numberMode,
+          rewardView: options.rewardView,
+          rewardContextForRow,
+          deferredScope,
+        })
+      )
+    : null;
+  if (!progressivePlan) cancelProgressiveWeightedTablePlan('reward');
+  const paginationControls = renderWeightedTablePagination(
+    'reward',
+    allRows.length,
+    weightedTablePagination,
+    'edenX1WeightedTable'
+  );
   const emptyRow = `<tr><td colspan="14" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
-  return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
+  return `<div class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card${rewardViewClass} ${compactView ? 'dash-weighted-compact' : ''}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
@@ -4801,8 +5523,8 @@ function renderTable(rows, recordLabel, options = {}) {
           ${renderWeightedContributionViewToggle(compactView)}
         </div>
       </div>
-      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(visibleRows.length)}">
-        <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack">
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
+        <table id="edenX1WeightedTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-progressive-table"${progressivePlan ? ` data-eden-progressive-table="reward" data-eden-progressive-token="${progressivePlan.token}" aria-rowcount="${allRows.length}" aria-busy="${progressivePlan.initialCount < visibleRows.length ? 'true' : 'false'}"` : ''}>
           <thead><tr>
             ${renderSortableHeader('number', t('edenX1ThNumber'))}
             ${renderSortableHeader('player', t('adminContributionMember'))}
@@ -4819,61 +5541,11 @@ function renderTable(rows, recordLabel, options = {}) {
             ${renderSortableHeader('finalRank', t('adminContributionFinalRank'))}
             ${renderSortableHeader('finalReward', t('adminContributionFinalReward'))}
           </tr></thead>
-          <tbody>${
-            visibleRows.length
-              ? visibleRows
-                  .map((row, index) => {
-                    const total = rowBonusTotal(row);
-                    const numberValue =
-                      numberMode === 'current'
-                        ? row.currentRank || index + 1
-                        : numberMode === 'index'
-                          ? index + 1
-                          : row.finalRank;
-                    const rewardContext = rewardContextForRow(row, index, numberValue);
-                    const rowReward =
-                      rewardContext.baseReward || rewardContext.currentReward || row.currentReward;
-                    const rewardClass = rewardThemeClass(
-                      rewardContext.finalReward || row.finalReward
-                    );
-                    const isSupportHonor =
-                      options.rewardView === 'support' && Number(numberValue) === 1;
-                    const supportHonorClass = isSupportHonor ? ' eden-x1-support-honor-row' : '';
-                    const supportHonorNameClass = isSupportHonor
-                      ? ' eden-x1-support-honor-name'
-                      : '';
-                    const supportHonorNameAttr = isSupportHonor
-                      ? ' class="eden-x1-support-honor-name"'
-                      : '';
-                    return `<tr class="${rewardClass}${supportHonorClass}">
-                <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
-                  <span class="dash-weighted-desktop-number">${numberValue}</span>
-                  <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
-                    <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${numberValue}`)}" aria-hidden="true"></span>
-                    <strong class="dash-weighted-mobile-player-name${supportHonorNameClass}" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
-                  </span>
-                </td>
-                <td class="dash-weighted-player-cell" data-label="${esc(t('adminContributionMember'))}"><strong${supportHonorNameAttr}>${renderTaggedPlayerName(row)}</strong></td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionRank'))}">${row.currentRank ? `#${esc(row.currentRank)}` : '--'}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('adminContributionReward'))}">${esc(contributionRewardLabel(rowReward))}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThContribution'))}" style="text-align:right">${formatScore(row.contributionScore)}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThExGuild'))}" style="text-align:right">${formatScore(row.contributionExGuild || 0)}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThShieldWalls'))}" style="text-align:right">${row.shieldWalls}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThPathers'))}" style="text-align:right">${row.pathers}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
-                <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index)}</td>
-                <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
-                <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index)}</td>
-                <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index)}</td>
-                <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, rewardContext)}</td>
-              </tr>`;
-                  })
-                  .join('')
-              : emptyRow
-          }</tbody>
+          <tbody${progressivePlan ? ` data-eden-progressive-body="reward" data-eden-progressive-token="${progressivePlan.token}"` : ''}>${progressivePlan ? renderProgressiveWeightedRows(progressivePlan) : emptyRow}</tbody>
         </table>
       </div>
-      ${showAllButton}
+      ${progressivePlan ? renderProgressiveWeightedStatus(progressivePlan) : ''}
+      ${paginationControls}
     </div>
   </div>`;
 }
@@ -4882,9 +5554,8 @@ function renderRewardSlotTable(view) {
   const title = t(rewardViewTitleKey(view));
   const metaKey = rewardViewMetaKey(view);
   const rows = rewardSlotRows(view);
-  const votePanel = view === 'team' ? renderEdenTeamVotePanel() : '';
   const rewardViewClass = rewardViewAccentClass(view);
-  return `<div id="ocrDashboardRoot" class="dash-weighted-contribution-panel">
+  return `<div class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card${rewardViewClass}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
         <h2 class="dash-card-title">
@@ -4899,7 +5570,7 @@ function renderRewardSlotTable(view) {
           <span class="dash-weighted-contribution-meta">${esc(metaKey ? t(metaKey) : t('edenX1ViewOnly'))}</span>
         </div>
       </div>
-      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap" style="${weightedTableWrapStyle(rows.length)}">
+      <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-slots-table">
           <thead><tr>
             <th>${esc(t('edenX1ThNumber'))}</th>
@@ -4920,8 +5591,287 @@ function renderRewardSlotTable(view) {
         </table>
       </div>
     </div>
-    ${votePanel}
   </div>`;
+}
+
+function renderEdenVoteRail() {
+  const rail = $('edenX1VoteRail');
+  if (!rail) return;
+  if (!rewardFlowReady || !currentMemberOptions.length) {
+    rail.hidden = true;
+    rail.innerHTML = '';
+    return;
+  }
+  rail.hidden = false;
+  rail.innerHTML = renderEdenTeamVotePanel();
+  bindEdenVoteControls(rail);
+  bindWeightedPopovers(rail);
+  updateEdenVoteCountdownState(rail, Date.now());
+  updateEdenVoteSelectionCount(rail);
+  updateEdenVoteEligibility(rail);
+  if (edenVoteCountdownTimer) {
+    clearInterval(edenVoteCountdownTimer);
+  }
+  edenVoteCountdownTimer = setInterval(() => {
+    updateEdenVoteCountdownState(rail, Date.now());
+  }, 1000);
+}
+
+function updateEdenVoteSelectionCount(host) {
+  if (!host) return;
+  const countEl = host.querySelector('#edenX1VoteCount');
+  if (!countEl) return;
+  const filled = EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.filter((id) => {
+    const input = host.querySelector(`#${id}`);
+    return input && String(input.value || '').trim().length > 0;
+  }).length;
+  const clamped = Math.min(filled, EDEN_X1_VOTE_CANDIDATE_LIMIT);
+  countEl.textContent = tf('edenX1VoteSelectionCount', {
+    n: String(clamped),
+    count: String(clamped),
+  });
+  countEl.setAttribute('data-full', String(clamped >= EDEN_X1_VOTE_CANDIDATE_LIMIT));
+  countEl.setAttribute('data-over', String(filled > EDEN_X1_VOTE_CANDIDATE_LIMIT));
+}
+
+function updateEdenVoteEligibility(host) {
+  if (!host) return;
+  const el = host.querySelector('#edenX1VoteEligibility');
+  if (!el) return;
+  const status = edenMarqueeStatusState();
+  const closed = status.state === 'closed';
+  el.setAttribute('data-state', closed ? 'closed' : 'open');
+  const friday = el.querySelector('[data-eden-vote-friday]');
+  const voteStart = el.querySelector('[data-eden-vote-start]');
+  if (friday) friday.hidden = closed;
+  if (voteStart) voteStart.hidden = closed;
+  const deadlineSpan = el.querySelector('.eden-x1-vote-eligibility-deadline');
+  if (deadlineSpan) {
+    deadlineSpan.textContent = status.countdown
+      ? `\u00b7 ${status.label} \u00b7 ${status.countdown}`
+      : `\u00b7 ${status.label}`;
+  }
+}
+
+/* =============================================================
+   v14 Frost & Flame — Season marquee, podium, progression.
+   All values derive from real runtime data (currentRows, attack
+   records, vote settings). No mock names, scores, dates, or counts.
+   ============================================================= */
+
+// Local English fallbacks for new Frost & Flame keys. The i18n hook
+// (t()) is preserved: when Parent Codex adds these keys to the 11
+// locale catalogs, the translated strings take over automatically.
+const EDEN_FROST_TEXT = {
+  edenX1VoteOpen: 'Vote open',
+  edenX1VoteClosingSoon: 'Closing soon',
+  edenX1VoteStatus: 'Vote status',
+  edenX1VoteTimeRemaining: 'Time remaining',
+  edenX1VoteRule: 'Pick 1 to 4 unique teammates',
+  edenX1VoteDeadlineFriday: 'Only until Friday 23:59 game time.',
+  edenX1VoteCta: 'Click here to vote',
+  edenX1VoteSelectionCount: '{count}/4 selected',
+  edenX1MarqueeKicker: 'EDEN X1 SEASON',
+  edenX1MarqueeMembers: 'Members',
+  edenX1MarqueeDuties: 'Duties',
+  edenX1MarqueeWeighted: 'Total weighted',
+  edenX1MarqueeTopPerformer: 'Top performer',
+  edenX1ProgressionStart: 'Start',
+  edenX1ProgressionNow: 'Now',
+  edenX1ProgressionVoteDeadline: 'Vote deadline',
+};
+
+function tf(key, vars = {}) {
+  const dict = translations[currentLang] || {};
+  const enDict = translations.en || {};
+  const raw = dict[key] || enDict[key] || EDEN_FROST_TEXT[key] || key;
+  return raw
+    .replaceAll('{version}', APP_VERSION)
+    .replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`));
+}
+
+function edenMarqueeStatusState() {
+  if (edenVoteSettings?.votingOpen === false) {
+    return { state: 'closed', label: t('edenX1VoteClosedShort'), countdown: '', urgent: false };
+  }
+  const closesAt = edenVoteSettings?.closesAt || '';
+  const deadlineMs = edenVoteDeadlineMs(closesAt);
+  if (!deadlineMs) {
+    return { state: 'open', label: tf('edenX1VoteOpen'), countdown: '', urgent: false };
+  }
+  const now = Date.now();
+  if (now >= deadlineMs) {
+    return { state: 'closed', label: t('edenX1VoteClosedShort'), countdown: '', urgent: false };
+  }
+  const parts = getEdenVoteCountdownParts(closesAt, now);
+  const countdown = `${parts.days}d ${parts.hours}h ${pad2(parts.minutes)}m`;
+  const urgent = parts.remainingSeconds <= 86_400;
+  return {
+    state: urgent ? 'urgent' : 'open',
+    label: urgent ? tf('edenX1VoteClosingSoon') : tf('edenX1VoteOpen'),
+    countdown,
+    urgent,
+  };
+}
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function renderEdenMarquee(data = {}) {
+  const host = $('edenX1Marquee');
+  if (!host) return;
+  const rows = currentRows || [];
+  if (!rows.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const seasonLabel = currentRecordLabel || t('edenX1PageTitle');
+  const totalMembers = rows.length;
+  const totalDuties = rows.reduce((sum, row) => sum + valueOf(row.dutyCount || 0), 0);
+  const totalWeighted = rows.reduce((sum, row) => sum + valueOf(row.weightedScore || 0), 0);
+  const topRow = rows
+    .slice()
+    .sort((a, b) => valueOf(b.weightedScore) - valueOf(a.weightedScore))[0];
+  const status = edenMarqueeStatusState();
+
+  const stats = [
+    { label: tf('edenX1MarqueeMembers'), value: String(totalMembers), tone: 'cyan' },
+    { label: tf('edenX1MarqueeDuties'), value: String(totalDuties), tone: 'fire' },
+    { label: tf('edenX1MarqueeWeighted'), value: formatEdenNumber(totalWeighted), tone: 'gold' },
+  ];
+
+  const countdownHtml = status.countdown
+    ? `<span class="eden-x1-marquee-countdown" aria-label="${esc(tf('edenX1VoteTimeRemaining'))}">${esc(status.countdown)}</span>`
+    : '';
+
+  const topPerformerHtml = topRow?.playerName
+    ? `<div class="eden-x1-marquee-top">
+        <span class="eden-x1-marquee-top-label">${esc(tf('edenX1MarqueeTopPerformer'))}</span>
+        <span class="eden-x1-marquee-top-name">${esc(stripGuildTagsFromPlayerName(topRow.playerName))}</span>
+        <span class="eden-x1-marquee-top-score">${esc(formatEdenNumber(valueOf(topRow.weightedScore || 0)))}</span>
+      </div>`
+    : '';
+
+  host.hidden = false;
+  host.innerHTML = `<div class="eden-x1-marquee-head">
+      <div>
+        <span class="eden-x1-marquee-kicker">${esc(tf('edenX1MarqueeKicker'))}</span>
+        <h2 class="eden-x1-marquee-title">${esc(seasonLabel)}</h2>
+      </div>
+      <div class="eden-x1-marquee-status" data-state="${esc(status.state)}" aria-label="${esc(tf('edenX1VoteStatus'))}">${esc(status.label)}${countdownHtml}</div>
+    </div>
+    <div class="eden-x1-marquee-stats">
+      ${stats
+        .map(
+          (s) => `<div class="eden-x1-marquee-stat">
+        <span class="eden-x1-marquee-stat-label">${esc(s.label)}</span>
+        <span class="eden-x1-marquee-stat-value" data-tone="${esc(s.tone)}">${esc(s.value)}</span>
+      </div>`
+        )
+        .join('')}
+    </div>
+    ${topPerformerHtml}`;
+}
+
+function renderEdenPodium() {
+  const host = $('edenX1Podium');
+  if (!host) return;
+  const rows = currentRows || [];
+  if (!rows.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const top3 = rows
+    .slice()
+    .sort((a, b) => valueOf(b.weightedScore) - valueOf(a.weightedScore))
+    .slice(0, 3);
+  if (!top3.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const displayOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+  const cards = displayOrder.map((row) => {
+    const rank = top3.indexOf(row) + 1;
+    const name = stripGuildTagsFromPlayerName(row.playerName || '');
+    const score = formatEdenNumber(valueOf(row.weightedScore || 0));
+    return `<div class="eden-x1-podium-card" data-rank="${rank}">
+      <span class="eden-x1-podium-avatar" aria-label="${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v1a4 4 0 0 0 4 4M16 6h3v1a4 4 0 0 1-4 4M12 12v4M9 20h6M10 16h4v4h-4z"/></svg></span>
+      <span class="eden-x1-podium-name">${esc(name)}</span>
+      <span class="eden-x1-podium-score">${esc(score)}</span>
+      <div class="eden-x1-podium-bar"><span class="eden-x1-podium-rank-num">${rank}</span></div>
+    </div>`;
+  });
+  host.hidden = false;
+  host.innerHTML = cards.join('');
+}
+
+function renderEdenProgression(data = {}) {
+  const host = $('edenX1Progression');
+  if (!host) return;
+  const attacks = Array.isArray(data?.attacks) ? data.attacks : [];
+  const closesAt = edenVoteSettings?.closesAt || '';
+  const deadlineMs = edenVoteDeadlineMs(closesAt);
+  const now = Date.now();
+  let startMs = 0;
+  let endMs = 0;
+  for (const atk of attacks) {
+    const ms = parseGameTimeDateMs(atk?.time || atk?.timestamp || atk?.date || '');
+    if (!ms) continue;
+    if (!startMs || ms < startMs) startMs = ms;
+    if (ms > endMs) endMs = ms;
+  }
+  if (deadlineMs && (!endMs || deadlineMs > endMs)) endMs = deadlineMs;
+  if (!startMs || !endMs || endMs <= startMs) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  const span = endMs - startMs;
+  const elapsed = Math.max(0, Math.min(span, now - startMs));
+  const pct = Math.round((elapsed / span) * 100);
+  const milestones = [{ state: 'done', label: tf('edenX1ProgressionStart') }];
+  const nowMilestone = { state: 'now', label: tf('edenX1ProgressionNow') };
+  const deadlineMilestone = deadlineMs
+    ? { state: deadlineMs <= now ? 'done' : 'future', label: tf('edenX1ProgressionVoteDeadline') }
+    : null;
+  if (deadlineMilestone) {
+    milestones.push(nowMilestone, deadlineMilestone);
+  } else {
+    milestones.push(nowMilestone);
+  }
+  const nodes = milestones
+    .map(
+      (m) => `<div class="eden-x1-progression-milestone" data-state="${esc(m.state)}">
+      <span class="eden-x1-progression-node"></span>
+      <span class="eden-x1-progression-label">${esc(m.label)}</span>
+    </div>`
+    )
+    .join('');
+  host.hidden = false;
+  host.innerHTML = `<div class="eden-x1-progression-track" aria-hidden="true">
+      <span class="eden-x1-progression-line"></span>
+      <span class="eden-x1-progression-fill" style="width:calc(${pct}% - 1.7rem)"></span>
+    </div>
+    <div class="eden-x1-progression-milestones">${nodes}</div>
+    <div class="eden-x1-progression-foot">
+      <span class="eden-x1-progression-now">${esc(tf('edenX1ProgressionNow'))}</span>
+      <span class="eden-x1-progression-pct">${pct}%</span>
+    </div>`;
+}
+
+function formatEdenNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '0';
+  const lang = currentLang || 'en';
+  try {
+    return new Intl.NumberFormat(resolveIntlLocale(lang)).format(Math.round(num));
+  } catch {
+    return String(Math.round(num));
+  }
 }
 
 function renderCurrentTable(renderOptions = {}) {
@@ -4930,16 +5880,20 @@ function renderCurrentTable(renderOptions = {}) {
   if (!panel) return;
   if (!rewardFlowReady) return;
   if (currentRewardView === 'management' || currentRewardView === 'team') {
+    cancelProgressiveWeightedTablePlan('reward');
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
-    bindEdenVoteControls(panel);
     bindWeightedPopovers(panel);
+    renderEdenVoteRail();
     updateRewardFlowControls();
     if (renderOptions.scrollIntoView) {
       queueRewardTableScroll();
     }
     return;
   }
-  if (!currentRows.length) return;
+  if (!currentRows.length) {
+    cancelProgressiveWeightedTablePlan('reward');
+    return;
+  }
 
   let rows = currentRows;
   let tableOptions = {};
@@ -4966,7 +5920,8 @@ function renderCurrentTable(renderOptions = {}) {
   }
   panel.innerHTML = renderTable(rows, currentRecordLabel, tableOptions);
   bindWeightedTableControls(panel);
-  bindEdenVoteControls(panel);
+  hydrateProgressiveWeightedTable(panel, 'reward');
+  renderEdenVoteRail();
   updateRewardFlowControls();
   if (renderOptions.focusSearch) {
     const search = $('edenX1TableSearch');
@@ -5017,11 +5972,9 @@ async function bootShell() {
 
 const EDEN_X1_BOOT_TIMEOUT_MS = 20000;
 const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;
-const EDEN_X1_LOADING_PROGRESS_CAP = 90;
 let edenBootGeneration = 0;
 let lastEdenBootError = null;
 let edenLoadingProgress = 0;
-let edenLoadingProgressTimer = null;
 let edenLoadingProgressGeneration = 0;
 
 function setEdenLoadingProgress(generation, percent) {
@@ -5038,31 +5991,13 @@ function setEdenLoadingProgress(generation, percent) {
 }
 
 function startEdenLoadingProgress(generation) {
-  if (edenLoadingProgressTimer) clearInterval(edenLoadingProgressTimer);
   edenLoadingProgressGeneration = generation;
   edenLoadingProgress = 0;
   setEdenLoadingProgress(generation, 4);
-
-  edenLoadingProgressTimer = window.setInterval(() => {
-    if (
-      generation !== edenLoadingProgressGeneration ||
-      edenLoadingProgress >= EDEN_X1_LOADING_PROGRESS_CAP
-    ) {
-      clearInterval(edenLoadingProgressTimer);
-      edenLoadingProgressTimer = null;
-      return;
-    }
-    const step = edenLoadingProgress < 40 ? 3 : edenLoadingProgress < 70 ? 1.4 : 0.5;
-    setEdenLoadingProgress(generation, edenLoadingProgress + step);
-  }, 200);
 }
 
 function stopEdenLoadingProgress(generation, finalPercent = null) {
   if (generation !== edenLoadingProgressGeneration) return;
-  if (edenLoadingProgressTimer) {
-    clearInterval(edenLoadingProgressTimer);
-    edenLoadingProgressTimer = null;
-  }
   if (finalPercent !== null) setEdenLoadingProgress(generation, finalPercent);
 }
 
@@ -5122,7 +6057,7 @@ function showEdenBootError(err) {
   const message = document.createElement('p');
   message.className = 'eden-x1-error-message';
   message.textContent = t('edenX1LoadFailed', {
-    error: err?.message || err || 'Unknown error',
+    error: err?.message || err || t('edenX1UnknownError'),
   });
   const retryBtn = document.createElement('button');
   retryBtn.type = 'button';
@@ -5150,6 +6085,9 @@ async function loadEdenX1Dashboard() {
     errorEl.replaceChildren();
   }
   setEdenPanelLoading(true);
+  if (panel && !panel.querySelector('.dash-connecting-bar-fill')) {
+    panel.innerHTML = renderEdenBootPending();
+  }
   startEdenLoadingProgress(generation);
 
   try {
@@ -5159,17 +6097,18 @@ async function loadEdenX1Dashboard() {
           import('./firebase-eden.js'),
           import('./firebase-sdk.js'),
         ]);
-        setEdenLoadingProgress(generation, 35);
+        setEdenLoadingProgress(generation, 18);
         // firebase-eden's initFirebase() returns only { app, auth, configured }
         // — Firestore is loaded separately (Lite) after auth, so the db is
         // created here from getFirestore(app), not returned by initFirebase().
         const { configured, app } = initFirebase();
         if (!configured || !app) return { kind: 'unconfigured' };
+        setEdenLoadingProgress(generation, 32);
 
         const voteUser = await ensureAnonymousAuth();
-        setEdenLoadingProgress(generation, 55);
+        setEdenLoadingProgress(generation, 48);
         const firestore = await importFirestoreLite();
-        setEdenLoadingProgress(generation, 65);
+        setEdenLoadingProgress(generation, 58);
         const { getFirestore, doc, getDoc } = firestore;
         const db = getFirestore(app);
         const [snap, rosterSnap, voteSettingsSnap, publicVoteResultsSnap] = await Promise.all([
@@ -5181,7 +6120,7 @@ async function loadEdenX1Dashboard() {
             'public vote results'
           ),
         ]);
-        setEdenLoadingProgress(generation, 80);
+        setEdenLoadingProgress(generation, 76);
 
         if (!snap.exists()) {
           return { kind: 'no-data', db, firestore, voteUser, voteSettingsSnap };
@@ -5201,7 +6140,7 @@ async function loadEdenX1Dashboard() {
           loadPublicConductAdjustments(db, firestore, data.r5Season || ''),
           'bonus team effort points'
         );
-        setEdenLoadingProgress(generation, 92);
+        setEdenLoadingProgress(generation, 88);
         if (liveConductAdjustments?.length) {
           data.publicConductAdjustments = liveConductAdjustments;
         }
@@ -5238,7 +6177,7 @@ async function loadEdenX1Dashboard() {
       return;
     }
 
-    await applyDashboardData(result.data);
+    await applyDashboardData(result.data, generation);
     stopEdenLoadingProgress(generation, 100);
   } catch (err) {
     if (generation !== edenBootGeneration) return;
@@ -5267,10 +6206,10 @@ function yieldToBrowser() {
   });
 }
 
-async function applyDashboardData(data = {}) {
+async function applyDashboardData(data = {}, progressGeneration = null) {
   setRewardFlowReady(false);
-  weightedTableShowAll = false;
-  publicWeightedShowAll = false;
+  resetWeightedTablePagination(weightedTablePagination);
+  resetWeightedTablePagination(publicWeightedTablePagination);
   const contributionRecords = Array.isArray(data.contributionRecords)
     ? data.contributionRecords
     : [];
@@ -5294,12 +6233,14 @@ async function applyDashboardData(data = {}) {
   currentSeason = String(season || defaultEdenSeason()).trim();
   currentMemberOptions = collectEdenMemberOptions(data, model.rows || []);
   preparePublicDashboardRows(data);
+  if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 94);
 
   const panel = $('dashWeightedContributionPanel');
   if (!model.rows || !model.rows.length) {
     if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
     setEdenPanelLoading(false);
     await renderPublicDashboard(data);
+    if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 100);
     return;
   }
 
@@ -5309,13 +6250,21 @@ async function applyDashboardData(data = {}) {
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
+  // Frost & Flame marquee, podium, and progression — all from real runtime
+  // data, hydrated before the heavy table so the season summary paints first.
+  renderEdenMarquee(data);
+  renderEdenPodium();
+  renderEdenProgression(data);
+  renderEdenVoteRail();
   // Stage 1: the weighted table users came for. Reveal it, then yield so the
   // browser can paint before the heavy public dashboard renders.
   renderCurrentTable();
+  if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 97);
   setEdenPanelLoading(false);
   await yieldToBrowser();
   // Stage 2: public dashboard (analytics, charts, history) in its own frame.
   await renderPublicDashboard(data);
+  if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 100);
   if (!EDEN_X1_TEST_MODE) {
     await yieldToBrowser();
     loadEdenManagementVoteResults();

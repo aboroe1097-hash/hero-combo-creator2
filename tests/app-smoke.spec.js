@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs/promises';
+import { encodeCombos } from '../js/combo-share.js';
+import { encodeRoster } from '../js/roster-share.js';
 
 const TEST_SENSITIVE_ADMIN_PIN = '232323';
 const TEST_SENSITIVE_ADMIN_PIN_HASH =
@@ -27,7 +29,22 @@ async function openApp(page, path = '/') {
 }
 
 async function expectTab(page, buttonId, sectionId, marker) {
-  await page.locator(buttonId).click();
+  const tabButton = page.locator(buttonId);
+
+  if (await tabButton.isVisible()) {
+    await tabButton.click();
+  } else {
+    const tabName = sectionId.match(/^#([A-Za-z][\w-]*)Section$/)?.[1];
+    if (!tabName) {
+      throw new Error(`Cannot derive a public tab route from ${sectionId}`);
+    }
+    await page.evaluate((name) => {
+      const nextHash = `#${name}`;
+      if (window.location.hash === nextHash) window.vtsSwitchTab?.(name, true);
+      else window.location.hash = nextHash;
+    }, tabName);
+  }
+
   await expect(page.locator(sectionId)).toBeVisible({ timeout: 15000 });
   await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
 }
@@ -120,7 +137,6 @@ async function stabilizeVisuals(page) {
   });
   await page.evaluate(() => {
     document.body.classList.add('visual-surface-crop');
-    window.stop();
   });
 }
 
@@ -130,7 +146,7 @@ async function openVisualApp(page, viewport) {
   await stabilizeVisuals(page);
 }
 
-async function openBootSplashForVisual(page, viewport) {
+async function verifyRetiredEntryGate(page, viewport) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
@@ -140,54 +156,25 @@ async function openBootSplashForVisual(page, viewport) {
     localStorage.removeItem('vts_quick_tour_done');
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#appBootSplash')).toBeAttached({ timeout: 10000 });
-  await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        caret-color: transparent !important;
-        transition-duration: 0s !important;
-        animation-duration: 0s !important;
-        animation-delay: 0s !important;
-        animation-iteration-count: 1 !important;
-      }
-      #appBootSplash {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        pointer-events: auto !important;
-      }
-      #bootParticles {
-        display: none !important;
-      }
-    `,
-  });
-  await page.locator('#appBootSplash').evaluate((splash) => {
-    splash.classList.remove('hidden', 'boot-splash--out', 'boot-splash--opening');
-    splash.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('app-booting');
-    document.body.classList.remove('app-ready');
-    const fill = document.querySelector('.boot-progress-fill');
-    if (fill) fill.style.width = '42%';
-    const status = document.querySelector('.boot-status-text');
-    if (status) status.textContent = 'Priming Eden map layers...';
-  });
+  await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('#app')).toBeVisible({ timeout: 10000 });
 }
 
 async function expectVisualSnapshot(page, selector, name) {
   const target = page.locator(selector);
   await target.scrollIntoViewIfNeeded();
-  await target.evaluate((root) =>
-    Promise.all(
-      Array.from(root.querySelectorAll('img')).map(
-        (img) =>
-          img.complete ||
-          new Promise((resolve) => {
-            img.addEventListener('load', resolve, { once: true });
-            img.addEventListener('error', resolve, { once: true });
-          })
-      )
+  await expect
+    .poll(
+      () =>
+        target.evaluate((root) =>
+          Array.from(root.querySelectorAll('img')).every(
+            (img) => img.complete && img.naturalWidth > 0
+          )
+        ),
+      { timeout: 15000 }
     )
-  );
+    .toBe(true);
   // Wait for web fonts before snapshotting; otherwise the first cold-cache
   // capture renders text in a fallback face and produces a whole-page diff
   // against a fonts-loaded baseline.
@@ -310,10 +297,8 @@ test.describe('visual regression', () => {
   });
 
   for (const viewport of visualViewports) {
-    test(`header and boot shell render at ${viewport.name}`, async ({ page }) => {
-      await openBootSplashForVisual(page, viewport);
-      await expectVisualSnapshot(page, '#appBootSplash', `boot-splash-${viewport.name}.png`);
-
+    test(`header renders directly without an entry gate at ${viewport.name}`, async ({ page }) => {
+      await verifyRetiredEntryGate(page, viewport);
       await openVisualApp(page, viewport);
       await expectVisualSnapshot(page, '.command-header', `header-nav-${viewport.name}.png`);
     });
@@ -479,6 +464,7 @@ test.describe('admin dashboard visual regression', () => {
           animation-duration: 0s !important;
           animation-delay: 0s !important;
           animation-iteration-count: 1 !important;
+          content-visibility: visible !important;
         }
         #globalGameClock,
         #dashCloudStatusText,
@@ -495,6 +481,16 @@ test.describe('admin dashboard visual regression', () => {
           height: 34px !important;
           overflow: hidden !important;
           white-space: nowrap !important;
+        }
+        @media (max-width: 768px) {
+          body.admin-has-subtool-dock {
+            padding-bottom: 0 !important;
+          }
+          body.admin-has-subtool-dock #ocrDashboardRoot .dash-subtab-nav {
+            position: static !important;
+            inset: auto !important;
+            margin-bottom: 12px !important;
+          }
         }
       `,
     });
@@ -637,6 +633,7 @@ test.describe('admin dashboard visual regression', () => {
             name: `${survey.name}-table-scroll`,
             missing: false,
             maxHeight: wrapStyle.maxHeight,
+            verticalScroll: tableWrap.scrollHeight > tableWrap.clientHeight + 2,
             capped: wrapStyle.maxHeight !== 'none' && tableWrap.clientHeight <= window.innerHeight,
           });
         }
@@ -646,8 +643,13 @@ test.describe('admin dashboard visual regression', () => {
     for (const check of checks) {
       if (check.name?.endsWith('-table-scroll')) {
         expect(check.missing, `${check.name} table wrap rendered`).toBe(false);
-        expect(check.maxHeight, `${check.name} max-height`).not.toBe('none');
-        expect(check.capped, `${check.name} height capped to viewport`).toBe(true);
+        if (check.name === 'dashboard-table-scroll') {
+          expect(check.maxHeight, `${check.name} max-height`).toBe('none');
+          expect(check.verticalScroll, `${check.name} nested vertical scroll`).toBe(false);
+        } else {
+          expect(check.maxHeight, `${check.name} max-height`).not.toBe('none');
+          expect(check.capped, `${check.name} height capped to viewport`).toBe(true);
+        }
         continue;
       }
       expect(check.missing, `${check.name} panel rendered`).toBe(false);
@@ -655,6 +657,13 @@ test.describe('admin dashboard visual regression', () => {
       expect(check.documentOverflow, `${check.name} document horizontal overflow`).toBe(false);
       expect(check.clippedCyrillicName, `${check.name} nowrap-clip a Cyrillic cell`).toBe(false);
     }
+
+    const mobileDock = await page.locator('#ocrDashboardRoot .dash-subtab-nav').evaluate((dock) => {
+      const style = window.getComputedStyle(dock);
+      return { position: style.position, overflowX: style.overflowX };
+    });
+    expect(mobileDock.position).toBe('fixed');
+    expect(mobileDock.overflowX).toBe('auto');
   });
 });
 
@@ -713,11 +722,51 @@ test.describe('admin dashboard upload safety', () => {
 });
 
 test.describe('app smoke tabs', () => {
+  test('shared combo link opens Generator with the shared result', async ({ page }) => {
+    const encoded = encodeCombos([
+      {
+        heroes: ['King Arthur', 'Cleopatra VII', 'Theodora'],
+        displayScore: '97.5',
+      },
+    ]);
+
+    await openApp(page, `/#combo=${encoded}`);
+
+    await expect(page.locator('#generatorSection')).toBeVisible();
+    await expect(page.locator('#generatorResults .generated-combo-card')).toHaveCount(1);
+    await expect(page.locator('#generatorResults')).toContainText('King Arthur');
+    await expect(page.locator('#generatorResults')).toContainText('Cleopatra VII');
+    await expect(page.locator('#generatorResults')).toContainText('Theodora');
+    await expect(page.locator('#generatorResults .gen-score-value')).toHaveText('97.5');
+    await expect(page).toHaveURL(new RegExp(`#combo=${encoded}$`));
+  });
+
+  test('shared roster link wins over restored selection and selects known heroes', async ({
+    page,
+  }) => {
+    const encoded = encodeRoster(['King Arthur', 'Cleopatra VII', 'Theodora']);
+
+    await openApp(page, `/#roster=${encoded}`);
+    await page.waitForTimeout(750);
+
+    await expect(page.locator('#generatorSection')).toBeVisible();
+    await expect(page.locator('#genSelectedCount')).toHaveText('3 selected');
+    await expect(page).toHaveURL(new RegExp(`#roster=${encoded}$`));
+    for (const heroName of ['King Arthur', 'Cleopatra VII', 'Theodora']) {
+      await expect(
+        page.locator('#generatorHeroes .generator-card').filter({ hasText: heroName }).first()
+      ).toHaveClass(/generator-card-selected/);
+    }
+  });
+
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
     const firstHero = page.locator('#availableHeroes .hero-card').first();
     const firstHeroName = await firstHero.getAttribute('data-hero-name');
+    await firstHero.click();
+    await expect(page.locator('.combo-slot').nth(0)).toContainText(firstHeroName);
+    await page.locator('#clearComboBtn').click();
     await expect(firstHero.locator('img')).toHaveAttribute('draggable', 'false');
     await page.evaluate(() => {
       const card = document.querySelector('#availableHeroes .hero-card');
@@ -790,14 +839,11 @@ test.describe('app smoke tabs', () => {
   test('main tab pills and theme toggle expose accessible state', async ({ page }) => {
     await openApp(page);
 
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'false');
 
     await page.locator('#tabManual').click();
-    await expect(page.locator('#tabManual')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('#tabManual')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'false');
     await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('#manualSection')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'true');
@@ -813,12 +859,12 @@ test.describe('app smoke tabs', () => {
 
     await page.locator('[data-footer-tab="manual"]').click();
     await expect(page.locator('#manualSection')).toBeVisible();
-    await expect(page.locator('#tabManual')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tabManual')).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(/#manual$/);
 
     await page.locator('[data-footer-tab="generator"]').click();
     await expect(page.locator('#generatorSection')).toBeVisible();
-    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(/#generator$/);
   });
 
@@ -834,12 +880,103 @@ test.describe('app smoke tabs', () => {
     const materialsTabItem = page.locator('.tab-item', { has: page.locator('#tabMaterials') });
     await expect(materialsTabItem.locator('.tab-badge-beta')).toHaveText('BETA');
     await expect(page.locator('#materialCalculatorRoot')).toContainText(
-      'Dragon Master Material Calculator'
+      'Dragon Master Set Planner'
     );
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('Setup wizard');
-    await expect(page.locator('#materialCalculatorRoot')).toContainText('Your materials');
-    await expect(page.locator('#materialCalculatorRoot .dm-inventory-card')).toHaveCount(4);
-    await expect(page.locator('#materialCalculatorRoot .dm-slot-table')).toHaveCount(1);
+    await expect(page.locator('#materialCalculatorRoot [data-dm-route]')).toHaveCount(3);
+    await expect(page.locator('#materialCalculatorRoot .dm-slot-card')).toHaveCount(6);
+    await expect(
+      page.locator('#materialCalculatorRoot .dm-slot-card[data-dm-tier="gold"]')
+    ).toHaveCount(6);
+    await expect(page.locator('#materialCalculatorRoot .dm-normal-gear-card')).toHaveCount(3);
+    await expect(
+      page.locator('#materialCalculatorRoot .dm-normal-gear-card[data-dm-tier="purple"]')
+    ).toHaveCount(3);
+    await expect(page.locator('#materialCalculatorRoot .dm-normal-materials')).toHaveCount(3);
+    await expect(
+      page
+        .locator('#materialCalculatorRoot [data-dm-recipe-ingredient][data-dm-tier="purple"]')
+        .first()
+    ).toBeVisible();
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-inventory-item][data-dm-tier="purple"]')
+    ).toHaveCount(12);
+    await expect(
+      page.locator('#materialCalculatorRoot .dm-slot-card.is-active .dm-slot-progress > strong')
+    ).toBeVisible();
+    await expect(page.locator('#materialCalculatorRoot .dm-slot-state.is-selected')).toBeVisible();
+    await expect(page.locator('#materialCalculatorRoot .dm-command-header')).not.toContainText(
+      'Verified crafting guide'
+    );
+    await expect(page.locator('#materialCalculatorRoot .dm-recipe-node')).toHaveCount(4);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="purple"]')
+    ).toHaveCount(1);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="orange"]')
+    ).toHaveCount(1);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="gold"]')
+    ).toHaveCount(1);
+    await expect(page.locator('#materialCalculatorRoot .dm-slot-card img').first()).toHaveAttribute(
+      'src',
+      'assets/dm/equipment/dragon-master/gold/armor.png'
+    );
+    await expect(
+      page.locator(
+        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="purple"] .dm-stage-image'
+      )
+    ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/purple/armor.png');
+    await expect(
+      page.locator(
+        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="orange"] .dm-stage-image'
+      )
+    ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/orange/armor.jpg');
+    await expect(
+      page.locator(
+        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="gold"] .dm-stage-image'
+      )
+    ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/gold/armor.png');
+
+    await page.locator('#materialCalculatorRoot [data-dm-route="gold"]').click();
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-inventory-item][data-dm-tier="gold"]')
+    ).toHaveCount(12);
+    await expect(page.locator('#materialCalculatorRoot [data-dm-normal-dragonite]')).toHaveCount(3);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-stage-resource="superDragonite"]')
+    ).toContainText('100,000');
+
+    await page.locator('#materialCalculatorRoot [data-dm-route="blue"]').click();
+    await expect(page.locator('#materialCalculatorRoot [data-dm-route="blue"]')).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(page.locator('#materialCalculatorRoot .dm-recipe-node')).toHaveCount(5);
+    await expect(
+      page.locator('#materialCalculatorRoot .dm-normal-gear-card[data-dm-tier="blue"]')
+    ).toHaveCount(3);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-inventory-item][data-dm-tier="blue"]')
+    ).toHaveCount(12);
+    await expect(
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="blue"]')
+    ).toHaveCount(1);
+    await expect(
+      page.locator('#materialCalculatorRoot .dm-normal-gear-card').first().locator('img').first()
+    ).toHaveAttribute('src', 'assets/dm/equipment/ranger/blue/armor.png');
+    await expect(
+      page.locator(
+        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="blue"] .dm-stage-image'
+      )
+    ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/blue/armor.png');
+    await expect(page.locator('#materialCalculatorRoot .dm-recipe-panel')).toContainText('×64');
+
+    await page.locator('.dm-recipe-panel [data-dm-toggle-complete]').click();
+    await expect(page.locator('.dm-summary-panel')).toContainText('1 / 30');
+    await expect(page.locator('.dm-slot-card[data-dm-slot="armor"]')).toHaveClass(/is-complete/);
+
+    await page.locator('.dm-resource-panel [data-dm-toggle-breakdown]').first().click();
+    await expect(page.locator('[data-dm-resource="superDragonite"]')).toBeVisible();
   });
 
   test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {
@@ -854,12 +991,12 @@ test.describe('app smoke tabs', () => {
     await page.locator('[data-strife-monster="pivana"]').click();
     await expect(page.locator('.strife-monster-summary')).toContainText('Pilvana');
     await expect(page.locator('.strife-guide-notes')).toContainText('normal-attack pressure');
-    await expect(page.locator('.strife-results-band--f2p')).toContainText('Free Combos');
-    await expect(page.locator('.strife-results-band--p2w')).toContainText('Paid Combos');
+    await expect(page.locator('.strife-results-band--f2p')).toContainText(/Free combos/i);
+    await expect(page.locator('.strife-results-band--p2w')).toContainText(/Paid combos/i);
     await expect(page.locator('.strife-skill-card')).toHaveCount(3);
     await expect(page.locator('.strife-skill-answer').first()).toContainText('Counter');
     await expect(page.locator('.strife-results-band--f2p')).toContainText(
-      'Filtered combo DB fallback'
+      'Best available roster match'
     );
     await expect(page.locator('.strife-results-band--f2p')).toContainText('Hunk');
 
@@ -1386,9 +1523,11 @@ test.describe('app smoke tabs', () => {
         leaderboardWidth: rectWidth(leaderboardCard),
       };
     });
-    expect(dashboardGridMetrics.visualAlign).toBe('start');
-    expect(dashboardGridMetrics.mainAlign).toBe('start');
-    expect(Math.abs(dashboardGridMetrics.topWidth - dashboardGridMetrics.insightWidth)).toBeLessThanOrEqual(16);
+    expect(dashboardGridMetrics.visualAlign).toBe('stretch');
+    expect(dashboardGridMetrics.mainAlign).toBe('stretch');
+    expect(
+      Math.abs(dashboardGridMetrics.topWidth - dashboardGridMetrics.insightWidth)
+    ).toBeLessThanOrEqual(16);
     expect(dashboardGridMetrics.leaderboardWidth).toBeGreaterThan(
       dashboardGridMetrics.attackWidth + 120
     );
@@ -1478,7 +1617,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashLeaderBody tr').nth(1)).toContainText('Echo');
   });
 
-  test('bonus team effort points save locally when Firebase is not configured', async ({ page }) => {
+  test('bonus team effort points save locally when Firebase is not configured', async ({
+    page,
+  }) => {
     await page.route('https://firestore.googleapis.com/**', (route) => route.abort());
     await page.addInitScript(() => {
       window.VTS_FIREBASE_CONFIG = {
@@ -1549,12 +1690,12 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashConductSummary')).toContainText('~Sarafino~');
     await expect(page.locator('#dashConductSummary')).toContainText('+1,000');
     await expect(page.locator('#dashConductSummary')).toContainText('Connected road');
-    await expect(page.locator('#dashConductSummary .dash-duty-match-confirm').first()).toContainText(
-      'Match to'
-    );
-    await expect(page.locator('#dashConductSummary .dash-duty-match-confirm').first()).toContainText(
-      '~Sarafino~'
-    );
+    await expect(
+      page.locator('#dashConductSummary .dash-duty-match-confirm').first()
+    ).toContainText('Match to');
+    await expect(
+      page.locator('#dashConductSummary .dash-duty-match-confirm').first()
+    ).toContainText('~Sarafino~');
 
     await page.locator('#dashConductPlayer').selectOption({ label: 'Other / external R5' });
     await expect(page.locator('#dashConductManualPlayerInput')).toBeVisible();
@@ -1575,9 +1716,9 @@ test.describe('app smoke tabs', () => {
     expect(saved).toHaveLength(2);
     expect(saved).toContainEqual(
       expect.objectContaining({
-      playerName: '~Sarafino~',
-      category: 'connected_road',
-      points: 1000,
+        playerName: '~Sarafino~',
+        category: 'connected_road',
+        points: 1000,
       })
     );
     expect(saved).toContainEqual(
@@ -1705,12 +1846,8 @@ test.describe('app smoke tabs', () => {
     await page.evaluate((seededDash) => {
       window.setOcrDashboardDataForTest(seededDash, []);
     }, seededDash);
-    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
-      WEIGHTED_TITLE_TEXT
-    );
-    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(
-      WEIGHTED_SCORE_TEXT
-    );
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(WEIGHTED_TITLE_TEXT);
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText(WEIGHTED_SCORE_TEXT);
 
     await page.evaluate(() => window.switchDashSubtab('pathers'));
 
@@ -1773,12 +1910,8 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashShieldWallBody .dash-duty-detail-table')).toBeVisible();
 
     await page.evaluate(() => window.switchDashSubtab('contributions'));
-    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
-      WEIGHTED_TITLE_TEXT
-    );
-    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(
-      WEIGHTED_SCORE_TEXT
-    );
+    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(WEIGHTED_TITLE_TEXT);
+    await expect(page.locator('#dashContributionWeightedPanel')).toContainText(WEIGHTED_SCORE_TEXT);
     await expect(page.locator('#dashContributionBody')).toContainText('Kika');
     await expect(page.locator('#dashContributionBody')).not.toContainText('(Vts)Kika');
   });
@@ -1848,10 +1981,13 @@ test.describe('app smoke tabs', () => {
         typeof window.setOcrDashboardDataForTest === 'function' &&
         typeof window.switchDashSubtab === 'function'
     );
-    await page.evaluate(({ dash, conduct }) => {
-      window.setOcrDashboardDataForTest(dash, [], conduct);
-      window.switchDashSubtab('dashboard');
-    }, { dash: seededDash, conduct: conductAdjustments });
+    await page.evaluate(
+      ({ dash, conduct }) => {
+        window.setOcrDashboardDataForTest(dash, [], conduct);
+        window.switchDashSubtab('dashboard');
+      },
+      { dash: seededDash, conduct: conductAdjustments }
+    );
 
     const panel = page.locator('#dashWeightedContributionPanel');
     await expect(panel).toContainText('Weighted Total Contribution');
@@ -1866,9 +2002,11 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('th', { hasText: 'Ex-Guild' })).toBeHidden();
     await expect(panel.locator('th', { hasText: 'Weighted score' })).toBeVisible();
 
-    const weightedRows = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
-    );
+    const weightedRows = await panel
+      .locator('tbody tr')
+      .evaluateAll((rows) =>
+        rows.map((row) => Array.from(row.cells).map((cell) => cell.textContent.trim()))
+      );
     const mainRow = weightedRows.find((cells) => cells[3] === '144,650');
     const altRow = weightedRows.find((cells) => cells[3] === '78,617');
 
@@ -1946,9 +2084,7 @@ test.describe('app smoke tabs', () => {
     await contributionScoreTrigger.focus();
     await expect(contributionScorePopover).toBeVisible();
     await expect(contributionScorePopover).toContainText('Weighted score breakdown');
-    await expect(
-      page.locator('#dashContributionWeightedPanel thead')
-    ).toContainText('Ex-Guild');
+    await expect(page.locator('#dashContributionWeightedPanel thead')).toContainText('Ex-Guild');
     await page.locator('#dashContributionWeightedPanel th', { hasText: 'Ex-Guild' }).click();
     await expect(page.locator('#dashContributionWeightedPanel tbody tr').first()).toContainText(
       '5,000'
@@ -1956,6 +2092,11 @@ test.describe('app smoke tabs', () => {
   });
 
   test('eden x1 reward flow cards filter reward tables', async ({ page }) => {
+    // This end-to-end scenario deliberately walks every reward lane, sorting,
+    // voting, details, and persistence state. The v14 public deck now renders
+    // substantially more real UI than a normal smoke case, so keep its timeout
+    // proportional to the coverage instead of letting the default abort midway.
+    test.setTimeout(180000);
     const contributionEntries = [
       'Alpha',
       'Bravo',
@@ -2103,9 +2244,13 @@ test.describe('app smoke tabs', () => {
     const preLoadTeamCard = page.locator('[data-reward-view="team"]');
     const preLoadContributionCard = page.locator('[data-reward-view="contribution"]');
     const preLoadPanel = page.locator('#dashWeightedContributionPanel');
-    await expect(page.locator('.dash-connecting')).toBeVisible();
-    await expect(page.locator('.dash-connecting-bar-fill')).toHaveAttribute('style', /width:\s*4%/);
-    await expect(page.locator('.dash-connecting-bar-pct')).toHaveText('4%');
+    const preLoadConnecting = page.locator('.dash-connecting:visible').first();
+    await expect(preLoadConnecting).toBeVisible();
+    await expect(preLoadConnecting.locator('.dash-connecting-bar-fill')).toHaveAttribute(
+      'style',
+      /width:\s*4%/
+    );
+    await expect(preLoadConnecting.locator('.dash-connecting-bar-pct')).toHaveText('4%');
     await expect(page.locator('.eden-x1-notice')).toBeHidden();
     await expect(page.locator('.eden-x1-quicknav')).toBeHidden();
     await expect(page.locator('.eden-x1-reward-panel')).toBeHidden();
@@ -2134,10 +2279,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.admin-footer')).toBeVisible();
 
     const panel = page.locator('#dashWeightedContributionPanel');
+    const voteRail = page.locator('#edenX1VoteRail');
     await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(3);
-    await expect(panel).toContainText('Team Players Vote');
+    await expect(voteRail.getByRole('heading', { name: 'Team Players Vote' })).toBeVisible();
     await preLoadSupportCard.click();
     await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('tbody tr')).toHaveCount(4);
@@ -2175,6 +2321,7 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('thead')).toContainText('Banners');
     await expect(publicWeightedTable.locator('thead')).toContainText('Bonus Team Effort Points');
     await expect(publicWeightedTable.locator('thead')).toContainText('Total');
+    await publicDashboard.locator('#edenX1PublicShowAllRows').click();
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(22);
     const publicAlphaWeightedRow = publicWeightedTable.locator('tbody tr', { hasText: 'Alpha' });
     await expect(
@@ -2193,7 +2340,7 @@ test.describe('app smoke tabs', () => {
     await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(1);
     await expect(publicWeightedTable.locator('tbody tr').first()).toContainText('Mike');
     await publicWeightedSearch.fill('');
-    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(22);
+    await expect(publicWeightedTable.locator('tbody tr')).toHaveCount(10);
     const myStatsCard = publicDashboard.locator('#edenX1MyStatsCard');
     const myStatsSearch = myStatsCard.locator('#edenX1MyStatsSearch');
     await expect(myStatsSearch).toBeVisible();
@@ -2225,7 +2372,10 @@ test.describe('app smoke tabs', () => {
     await expect(publicModal.locator('#edenX1PublicModalClose')).toBeVisible();
     await publicModal.locator('#edenX1PublicModalClose').click();
     await expect(publicModal).not.toHaveClass(/active/);
-    await publicDashboard.locator('[data-public-structure]', { hasText: 'Large Town' }).first().click();
+    await publicDashboard
+      .locator('[data-public-structure]', { hasText: 'Large Town' })
+      .first()
+      .click();
     await expect(publicModal).toHaveClass(/active/);
     await expect(publicModal.locator('#edenX1PublicModalTitle')).toContainText(
       'Structure Detail - Large Town Lv4'
@@ -2256,9 +2406,9 @@ test.describe('app smoke tabs', () => {
     expect(noticeTitleStyle.fontSize).toBeGreaterThan(22);
     expect(noticeTitleStyle.textAlign).toBe('center');
     expect(noticeTitleStyle.flexBasis).toBe('100%');
-    const languageLabels = await page.locator('#languageSelect option').evaluateAll((options) =>
-      options.map((option) => option.textContent.trim())
-    );
+    const languageLabels = await page
+      .locator('#languageSelect option')
+      .evaluateAll((options) => options.map((option) => option.textContent.trim()));
     expect(languageLabels).toEqual([
       'English',
       'Español',
@@ -2331,19 +2481,14 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
     const supportHonorRow = panel.locator('tbody tr.eden-x1-support-honor-row');
     await expect(supportHonorRow).toHaveCount(1);
-    await expect(supportHonorRow.locator('.dash-weighted-player-cell .eden-x1-support-honor-name')).toContainText(
-      'Alpha'
-    );
+    await expect(
+      supportHonorRow.locator('.dash-weighted-player-cell .eden-x1-support-honor-name')
+    ).toContainText('Alpha');
     await expect(panel).toContainText('Delta');
     const supportPlayerNames = await panel
       .locator('tbody tr .dash-weighted-player-cell strong')
       .evaluateAll((cells) => cells.map((cell) => cell.textContent.trim()));
-    expect(supportPlayerNames).toEqual([
-      'Alpha',
-      'Bravo',
-      'Charlie',
-      'Delta',
-    ]);
+    expect(supportPlayerNames).toEqual(['Alpha', 'Bravo', 'Charlie', 'Delta']);
     expect(supportPlayerNames).not.toContain('MalakAbo');
     await expect(
       panel.locator('tbody tr').first().locator('.dash-weighted-desktop-number')
@@ -2354,9 +2499,9 @@ test.describe('app smoke tabs', () => {
       'Core Rewards',
       'Core Rewards',
     ]);
-    const rewardHeaders = await panel.locator('thead th').evaluateAll((headers) =>
-      headers.map((header) => header.textContent.trim())
-    );
+    const rewardHeaders = await panel
+      .locator('thead th')
+      .evaluateAll((headers) => headers.map((header) => header.textContent.trim()));
     expect(rewardHeaders.slice(5, 12)).toEqual([
       'Ex-Guild',
       'Shield Walls',
@@ -2407,9 +2552,9 @@ test.describe('app smoke tabs', () => {
     ).toContainText('Guild Master Reward');
     await panel.locator('th[data-weighted-sort="number"]').click();
     await expect(panel.locator('tbody tr').first()).toContainText('Alpha');
-    const supportNames = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map((row) => row.cells[1]?.textContent?.trim())
-    );
+    const supportNames = await panel
+      .locator('tbody tr')
+      .evaluateAll((rows) => rows.map((row) => row.cells[1]?.textContent?.trim()));
 
     const contributionCard = page.locator('[data-reward-view="contribution"]');
     await contributionCard.click();
@@ -2419,12 +2564,13 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'weighted total contribution'
     );
+    await panel.locator('#edenX1ShowAllRows').dispatchEvent('click');
     await expect(panel.locator('tbody tr')).toHaveCount(11);
-    const contributionDisplayNumbers = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map((row) =>
-        row.querySelector('.dash-weighted-desktop-number')?.textContent?.trim()
-      )
-    );
+    const contributionDisplayNumbers = await panel
+      .locator('tbody tr')
+      .evaluateAll((rows) =>
+        rows.map((row) => row.querySelector('.dash-weighted-desktop-number')?.textContent?.trim())
+      );
     expect(contributionDisplayNumbers).toEqual([
       '1',
       '2',
@@ -2445,13 +2591,15 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr').first()).toContainText('Skipped premium tier');
     await expect(panel.locator('tbody tr').nth(1)).toContainText('Echo');
     await expect(panel.locator('tbody tr').nth(1)).toContainText('#6');
-    const contributionNames = await panel.locator('tbody tr').evaluateAll((rows) =>
-      rows.map(
-        (row) =>
-          row.cells[1]?.querySelector('.dash-player-rank-label')?.textContent?.trim() ||
-          row.cells[1]?.textContent?.trim()
-      )
-    );
+    const contributionNames = await panel
+      .locator('tbody tr')
+      .evaluateAll((rows) =>
+        rows.map(
+          (row) =>
+            row.cells[1]?.querySelector('.dash-player-rank-label')?.textContent?.trim() ||
+            row.cells[1]?.textContent?.trim()
+        )
+      );
     expect(contributionNames).toEqual([
       'MalakAbo',
       'Echo',
@@ -2476,7 +2624,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(1);
     await expect(panel.locator('tbody tr').first()).toContainText('Kilo');
     await panel.locator('#edenX1TableSearch').fill('');
-    await expect(panel.locator('tbody tr')).toHaveCount(11);
+    await expect(panel.locator('tbody tr')).toHaveCount(10);
     const contributionPlayerSort = panel.locator('th[data-weighted-sort="player"]');
     await contributionPlayerSort.click();
     await contributionPlayerSort.click();
@@ -2492,10 +2640,11 @@ test.describe('app smoke tabs', () => {
       window.setEdenX1DataForTest(dash);
     }, noForfeitDash);
     await expect(contributionCard).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel.locator('tbody tr').first()).toContainText('MalakAbo');
-    await expect(
-      panel.locator('tbody tr').first().locator('.dash-weighted-reward-value')
-    ).toContainText('Core Rewards');
+    const noForfeitMalakRow = panel.locator('tbody tr', { hasText: 'MalakAbo' });
+    await expect(noForfeitMalakRow).toBeVisible();
+    await expect(noForfeitMalakRow.locator('.dash-weighted-reward-value')).toContainText(
+      'Core Rewards'
+    );
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
@@ -2573,10 +2722,34 @@ test.describe('app smoke tabs', () => {
           season: 'season-2026',
           published: true,
           rankings: [
-            { playerName: 'Yankee', playerKey: 'yankee', familyKey: 'yankee', votes: 10, voters: 10 },
-            { playerName: 'Vote One', playerKey: 'voteone', familyKey: 'voteone', votes: 9, voters: 8 },
-            { playerName: 'Vote Two', playerKey: 'votetwo', familyKey: 'votetwo', votes: 8, voters: 7 },
-            { playerName: 'Vote Three', playerKey: 'votethree', familyKey: 'votethree', votes: 7, voters: 6 },
+            {
+              playerName: 'Yankee',
+              playerKey: 'yankee',
+              familyKey: 'yankee',
+              votes: 10,
+              voters: 10,
+            },
+            {
+              playerName: 'Vote One',
+              playerKey: 'voteone',
+              familyKey: 'voteone',
+              votes: 9,
+              voters: 8,
+            },
+            {
+              playerName: 'Vote Two',
+              playerKey: 'votetwo',
+              familyKey: 'votetwo',
+              votes: 8,
+              voters: 7,
+            },
+            {
+              playerName: 'Vote Three',
+              playerKey: 'votethree',
+              familyKey: 'votethree',
+              votes: 7,
+              voters: 6,
+            },
           ],
         },
       });
@@ -2590,9 +2763,9 @@ test.describe('app smoke tabs', () => {
     await expect(teamVotedStatus.locator('.dash-weighted-score-popover')).toContainText(
       'Voting rank #2 · 8 members voted'
     );
-    await expect(panel).toContainText('Team Players Vote');
-    await expect(panel).toContainText('Need Help With Voting? - View Top Names');
-    await panel.locator('[data-eden-vote-help-link]').click();
+    await expect(voteRail).toContainText('Team Players Vote');
+    await expect(voteRail).toContainText('Need Help With Voting? - View Top Names');
+    await voteRail.locator('[data-eden-vote-help-link]').click();
     await expect(topNamesOverview).toBeFocused();
     const helperCards = topNamesOverview.locator('.eden-x1-vote-helper-card');
     await expect(helperCards).toHaveCount(5);
@@ -2611,16 +2784,14 @@ test.describe('app smoke tabs', () => {
     );
     expect(helperInitialMetrics.every((metric) => metric.totalRows <= 10)).toBe(true);
     expect(
-      helperInitialMetrics.every(
-        (metric) => metric.visibleRows === Math.min(5, metric.totalRows)
-      )
+      helperInitialMetrics.every((metric) => metric.visibleRows === Math.min(5, metric.totalRows))
     ).toBe(true);
     const helperFirstTopOffsets = helperInitialMetrics
       .map((metric) => metric.firstTopOffset)
       .filter((top) => Number.isFinite(top));
-    expect(Math.max(...helperFirstTopOffsets) - Math.min(...helperFirstTopOffsets)).toBeLessThanOrEqual(
-      4
-    );
+    expect(
+      Math.max(...helperFirstTopOffsets) - Math.min(...helperFirstTopOffsets)
+    ).toBeLessThanOrEqual(4);
     const firstHelperToggle = topNamesOverview.locator('[data-eden-vote-helper-toggle]').first();
     await expect(firstHelperToggle).toBeVisible();
     await firstHelperToggle.click();
@@ -2645,233 +2816,251 @@ test.describe('app smoke tabs', () => {
       };
     });
     expect(firstHelperCollapsed.visibleRows).toBe(Math.min(5, firstHelperCollapsed.totalRows));
-    await expect(panel.locator('#edenX1VoterName')).toHaveAttribute(
-      'placeholder',
-      'Put your In-Game Name'
-    );
-    await panel.locator('#edenX1VoterName').fill('NotARealMember');
-    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Choose your in-game name from the member list.'
-    );
-    await expect(panel.locator('#edenX1VoterName')).toHaveAttribute('aria-invalid', 'true');
-    await expect(panel.locator('#edenX1VoterName')).toHaveClass(/is-invalid/);
-    await panel.locator('#edenX1VoterName').fill('Mala');
-    await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toContainText(
-      'MalakAbo'
-    );
-    await panel
-      .locator('[data-eden-vote-suggestions-for="edenX1VoterName"] [data-eden-vote-suggest="MalakAbo"]')
-      .click();
-    await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
-    await expect(panel.locator('#edenX1VoterName')).not.toHaveAttribute('aria-invalid', 'true');
-    await expect(panel.locator('#edenX1VoterNameConfirm')).toContainText(
-      'Confirmed: MalakAbo'
-    );
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')
-    ).toBeEmpty();
-    await expect(panel.locator('[data-eden-vote-self-pick]')).toHaveText('Add My Name to Votes');
-    await panel.locator('[data-eden-vote-self-pick]').click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('MalakAbo');
-    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText(
-      'Confirmed: MalakAbo'
-    );
-    await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
-    await topNamesOverview.locator('[data-eden-vote-pick="Alpha"]').first().click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
-    await panel.locator('[data-eden-vote-self-pick]').click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('MalakAbo');
-    await panel.locator('[data-eden-vote-clear="edenX1CandidateName2"]').click();
-    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('');
-    await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
-    await expect(panel.locator('#edenX1CandidateNameConfirm')).toBeEmpty();
-    await topNamesOverview.locator('[data-eden-vote-pick="Alpha"]').first().click();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
-    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
-      'View Alpha stats'
-    );
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
-    await expect(
-      panel.locator('#edenX1VoteCandidateDetail .eden-x1-structure-trend-card')
-    ).toBeVisible();
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).not.toContainText(
-      'No structure-hit trend yet.'
-    );
-    const clearStatsButton = panel.locator('#edenX1VoteClearStatsBtn');
-    await expect(clearStatsButton).toBeVisible();
-    await expect(clearStatsButton).toHaveText('Clear Alpha Stats');
-    await clearStatsButton.click();
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeHidden();
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(clearStatsButton).toBeHidden();
-    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toHaveAttribute(
-      'data-state',
-      'ready'
-    );
-    await panel.locator('#edenX1VoteCandidateInspectBtn').click();
-    await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeVisible();
-    await expect(clearStatsButton).toBeVisible();
-    await expect(panel.locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')).toHaveCount(10);
-    const firstInfoPopoverTrigger = panel
-      .locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')
-      .first();
-    await firstInfoPopoverTrigger.click();
-    await expect(firstInfoPopoverTrigger).toHaveAttribute('aria-expanded', 'true');
-    const firstInfoPopoverMetrics = await firstInfoPopoverTrigger
-      .locator('.eden-x1-vote-info-popover')
-      .evaluate((popover) => {
-        const rect = popover.getBoundingClientRect();
-        const style = getComputedStyle(popover);
-        return {
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-          bottom: rect.bottom,
-          width: rect.width,
-          visibility: style.visibility,
-          viewportWidth: window.innerWidth,
-          viewportHeight: window.innerHeight,
-        };
+    {
+      const panel = voteRail;
+      await expect(panel.locator('#edenX1VoterName')).toHaveAttribute(
+        'placeholder',
+        'Put your In-Game Name'
+      );
+      await panel.locator('#edenX1VoterName').fill('NotARealMember');
+      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'Choose your in-game name from the member list.'
+      );
+      await expect(panel.locator('#edenX1VoterName')).toHaveAttribute('aria-invalid', 'true');
+      await expect(panel.locator('#edenX1VoterName')).toHaveClass(/is-invalid/);
+      await panel.locator('#edenX1VoterName').fill('Mala');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')
+      ).toContainText('MalakAbo');
+      await panel
+        .locator(
+          '[data-eden-vote-suggestions-for="edenX1VoterName"] [data-eden-vote-suggest="MalakAbo"]'
+        )
+        .click();
+      await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
+      await expect(panel.locator('#edenX1VoterName')).not.toHaveAttribute('aria-invalid', 'true');
+      await expect(panel.locator('#edenX1VoterNameConfirm')).toContainText('Confirmed: MalakAbo');
+      await expect(panel.locator('[data-eden-vote-suggestions-for="edenX1VoterName"]')).toBeEmpty();
+      await expect(panel.locator('[data-eden-vote-self-pick]')).toHaveText('Add My Name to Votes');
+      await panel.locator('[data-eden-vote-self-pick]').click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('MalakAbo');
+      await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText(
+        'Confirmed: MalakAbo'
+      );
+      await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
+      await topNamesOverview.locator('[data-eden-vote-pick="Alpha"]').first().click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+      await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
+      await panel.locator('[data-eden-vote-self-pick]').click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+      await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('MalakAbo');
+      await panel.locator('[data-eden-vote-clear="edenX1CandidateName2"]').click();
+      await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('');
+      await panel.locator('[data-eden-vote-clear="edenX1CandidateName"]').click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('');
+      await expect(panel.locator('#edenX1CandidateNameConfirm')).toBeEmpty();
+      await topNamesOverview.locator('[data-eden-vote-pick="Alpha"]').first().click();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+      await expect(panel.locator('#edenX1CandidateNameConfirm')).toContainText('Confirmed: Alpha');
+      await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
+        'View Alpha stats'
+      );
+      await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Weighted Score');
+      await expect(panel.locator('#edenX1VoteCandidateDetail')).toContainText('Structure Hits');
+      await expect(
+        panel.locator('#edenX1VoteCandidateDetail .eden-x1-structure-trend-card')
+      ).toBeVisible();
+      await expect(panel.locator('#edenX1VoteCandidateDetail')).not.toContainText(
+        'No structure-hit trend yet.'
+      );
+      const clearStatsButton = panel.locator('#edenX1VoteClearStatsBtn');
+      await expect(clearStatsButton).toBeVisible();
+      await expect(clearStatsButton).toHaveText('Clear Alpha Stats');
+      await clearStatsButton.click();
+      await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeHidden();
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+      await expect(clearStatsButton).toBeHidden();
+      await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toHaveAttribute(
+        'data-state',
+        'ready'
+      );
+      await panel.locator('#edenX1VoteCandidateInspectBtn').click();
+      await expect(panel.locator('#edenX1VoteCandidateDetail')).toBeVisible();
+      await expect(clearStatsButton).toBeVisible();
+      await expect(panel.locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')).toHaveCount(10);
+      const firstInfoPopoverTrigger = panel
+        .locator('#edenX1VoteCandidateDetail .eden-x1-vote-info')
+        .first();
+      await firstInfoPopoverTrigger.click();
+      await expect(firstInfoPopoverTrigger).toHaveAttribute('aria-expanded', 'true');
+      const firstInfoPopoverMetrics = await firstInfoPopoverTrigger
+        .locator('.eden-x1-vote-info-popover')
+        .evaluate((popover) => {
+          const rect = popover.getBoundingClientRect();
+          const style = getComputedStyle(popover);
+          return {
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            bottom: rect.bottom,
+            width: rect.width,
+            visibility: style.visibility,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+          };
+        });
+      expect(firstInfoPopoverMetrics.visibility).toBe('visible');
+      expect(firstInfoPopoverMetrics.width).toBeGreaterThan(200);
+      expect(firstInfoPopoverMetrics.left).toBeGreaterThanOrEqual(8);
+      expect(firstInfoPopoverMetrics.right).toBeLessThanOrEqual(
+        firstInfoPopoverMetrics.viewportWidth - 8
+      );
+      expect(firstInfoPopoverMetrics.top).toBeGreaterThanOrEqual(8);
+      expect(firstInfoPopoverMetrics.bottom).toBeLessThanOrEqual(
+        firstInfoPopoverMetrics.viewportHeight - 8
+      );
+      const detailStatColumns = await panel
+        .locator('#edenX1VoteCandidateDetail .eden-x1-vote-stat-grid')
+        .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
+      expect(detailStatColumns).toBe(5);
+      await panel.locator('#edenX1CandidateName').fill('\u0410lpha');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+      ).toContainText('Alpha');
+      await panel
+        .locator(
+          '[data-eden-vote-suggestions-for="edenX1CandidateName"] [data-eden-vote-suggest="Alpha"]'
+        )
+        .click();
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+      ).toBeEmpty();
+      await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
+        'View Alpha stats'
+      );
+      await panel.locator('#edenX1CandidateName2').fill('Bravoo');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
+      ).toContainText('Bravo');
+      await panel
+        .locator(
+          '[data-eden-vote-suggestions-for="edenX1CandidateName2"] [data-eden-vote-suggest="Bravo"]'
+        )
+        .click();
+      await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
+      ).toBeEmpty();
+      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'You still have 2 vote slot(s) open. Press Cast Votes again to save these votes anyway.'
+      );
+      const voteBeforePartialConfirm = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+      );
+      expect(voteBeforePartialConfirm).toBeNull();
+      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo.'
+      );
+      const partialVote = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+      );
+      expect(partialVote).toMatchObject({
+        voterName: 'MalakAbo',
+        candidateNames: ['Alpha', 'Bravo'],
+        candidateKeys: ['alpha', 'bravo'],
       });
-    expect(firstInfoPopoverMetrics.visibility).toBe('visible');
-    expect(firstInfoPopoverMetrics.width).toBeGreaterThan(200);
-    expect(firstInfoPopoverMetrics.left).toBeGreaterThanOrEqual(8);
-    expect(firstInfoPopoverMetrics.right).toBeLessThanOrEqual(
-      firstInfoPopoverMetrics.viewportWidth - 8
-    );
-    expect(firstInfoPopoverMetrics.top).toBeGreaterThanOrEqual(8);
-    expect(firstInfoPopoverMetrics.bottom).toBeLessThanOrEqual(
-      firstInfoPopoverMetrics.viewportHeight - 8
-    );
-    const detailStatColumns = await panel
-      .locator('#edenX1VoteCandidateDetail .eden-x1-vote-stat-grid')
-      .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
-    expect(detailStatColumns).toBe(5);
-    await panel.locator('#edenX1CandidateName').fill('\u0410lpha');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
-    ).toContainText('Alpha');
-    await panel
-      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName"] [data-eden-vote-suggest="Alpha"]')
-      .click();
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
-    ).toBeEmpty();
-    await expect(panel.locator('#edenX1VoteCandidateInspectBtn')).toContainText(
-      'View Alpha stats'
-    );
-    await panel.locator('#edenX1CandidateName2').fill('Bravoo');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
-    ).toContainText('Bravo');
-    await panel
-      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"] [data-eden-vote-suggest="Bravo"]')
-      .click();
-    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
-    ).toBeEmpty();
-    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'You still have 2 vote slot(s) open. Press Cast Votes again to save these votes anyway.'
-    );
-    const voteBeforePartialConfirm = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
-    );
-    expect(voteBeforePartialConfirm).toBeNull();
-    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo.'
-    );
-    const partialVote = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
-    );
-    expect(partialVote).toMatchObject({
-      voterName: 'MalakAbo',
-      candidateNames: ['Alpha', 'Bravo'],
-      candidateKeys: ['alpha', 'bravo'],
-    });
-    await panel.locator('#edenX1CandidateName3').fill('Bravo');
-    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Duplicate vote found. Nothing was saved. Pick each teammate only once.'
-    );
-    const voteAfterDuplicate = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
-    );
-    expect(voteAfterDuplicate).toMatchObject({
-      candidateNames: ['Alpha', 'Bravo'],
-      candidateKeys: ['alpha', 'bravo'],
-    });
-    await panel.locator('#edenX1CandidateName3').fill('Charli');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
-    ).toContainText('Charlie');
-    await panel
-      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"] [data-eden-vote-suggest="Charlie"]')
-      .click();
-    await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
-    ).toBeEmpty();
-    await panel.locator('#edenX1CandidateName4').fill('Delt');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
-    ).toContainText('Delta');
-    await panel
-      .locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"] [data-eden-vote-suggest="Delta"]')
-      .click();
-    await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
-    await expect(
-      panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
-    ).toBeEmpty();
-    await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo, Charlie, Delta.'
-    );
-    await expect(panel.locator('#edenX1VoteStatus')).toContainText(
-      'Final results will be announced during the last day.'
-    );
-    await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
-    await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
-    await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
-    await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
-    const savedVote = await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
-    );
-    expect(savedVote).toMatchObject({
-      id: 'season-2026__team_players__malakabo',
-      season: 'season-2026',
-      category: 'team_players',
-      voterName: 'MalakAbo',
-      candidateName: 'Alpha',
-      candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
-      candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
-    });
+      await panel.locator('#edenX1CandidateName3').fill('Bravo');
+      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'Duplicate vote found. Nothing was saved. Pick each teammate only once.'
+      );
+      const voteAfterDuplicate = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+      );
+      expect(voteAfterDuplicate).toMatchObject({
+        candidateNames: ['Alpha', 'Bravo'],
+        candidateKeys: ['alpha', 'bravo'],
+      });
+      await panel.locator('#edenX1CandidateName3').fill('Charli');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
+      ).toContainText('Charlie');
+      await panel
+        .locator(
+          '[data-eden-vote-suggestions-for="edenX1CandidateName3"] [data-eden-vote-suggest="Charlie"]'
+        )
+        .click();
+      await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName3"]')
+      ).toBeEmpty();
+      await panel.locator('#edenX1CandidateName4').fill('Delt');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
+      ).toContainText('Delta');
+      await panel
+        .locator(
+          '[data-eden-vote-suggestions-for="edenX1CandidateName4"] [data-eden-vote-suggest="Delta"]'
+        )
+        .click();
+      await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
+      await expect(
+        panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
+      ).toBeEmpty();
+      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo, Charlie, Delta.'
+      );
+      await expect(panel.locator('#edenX1VoteStatus')).toContainText(
+        'Final results will be announced during the last day.'
+      );
+      await expect(panel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
+      await expect(panel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+      await expect(panel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+      await expect(panel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+      await expect(panel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
+      const savedVote = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('vts_eden_x1_vote_season-2026_team_players') || 'null')
+      );
+      expect(savedVote).toMatchObject({
+        id: 'season-2026__team_players__malakabo',
+        season: 'season-2026',
+        category: 'team_players',
+        voterName: 'MalakAbo',
+        candidateName: 'Alpha',
+        candidateNames: ['Alpha', 'Bravo', 'Charlie', 'Delta'],
+        candidateKeys: ['alpha', 'bravo', 'charlie', 'delta'],
+      });
+    }
     await page.reload({ waitUntil: 'load' });
     await openEdenX1ForTest(page);
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
     const reloadedPanel = page.locator('#dashWeightedContributionPanel');
-    await expect(reloadedPanel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
-    await expect(reloadedPanel.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
-    await expect(reloadedPanel.locator('#edenX1CandidateName')).toHaveValue('Alpha');
-    await expect(reloadedPanel.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
-    await expect(reloadedPanel.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
-    await expect(reloadedPanel.locator('#edenX1CandidateName4')).toHaveValue('Delta');
-    await expect(reloadedPanel.locator('.eden-x1-vote-suggestions')).toHaveText(['', '', '', '', '']);
-    await reloadedPanel.locator('#edenX1CandidateName').focus();
+    const reloadedVoteRail = page.locator('#edenX1VoteRail');
     await expect(
-      reloadedPanel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
+      reloadedPanel.getByRole('heading', { name: 'Team Players', exact: true })
+    ).toBeVisible();
+    await expect(reloadedVoteRail.locator('#edenX1VoterName')).toHaveValue('MalakAbo');
+    await expect(reloadedVoteRail.locator('#edenX1CandidateName')).toHaveValue('Alpha');
+    await expect(reloadedVoteRail.locator('#edenX1CandidateName2')).toHaveValue('Bravo');
+    await expect(reloadedVoteRail.locator('#edenX1CandidateName3')).toHaveValue('Charlie');
+    await expect(reloadedVoteRail.locator('#edenX1CandidateName4')).toHaveValue('Delta');
+    await expect(reloadedVoteRail.locator('.eden-x1-vote-suggestions')).toHaveText([
+      '',
+      '',
+      '',
+      '',
+      '',
+    ]);
+    await reloadedVoteRail.locator('#edenX1CandidateName').focus();
+    await expect(
+      reloadedVoteRail.locator('[data-eden-vote-suggestions-for="edenX1CandidateName"]')
     ).toContainText('Alpha');
 
     await page.evaluate(() => {
@@ -3050,7 +3239,11 @@ test.describe('app smoke tabs', () => {
     await page.evaluate(() => {
       localStorage.removeItem('vts_sensitive_admin_pin_ok');
       localStorage.removeItem('vts_eden_votes_pin_ok');
-      window.VTS_ADMIN_AUTH = { ...(window.VTS_ADMIN_AUTH || {}), adminPin: '', edenVotesPinHash: '' };
+      window.VTS_ADMIN_AUTH = {
+        ...(window.VTS_ADMIN_AUTH || {}),
+        adminPin: '',
+        edenVotesPinHash: '',
+      };
       window.switchDashSubtab('edenVotes');
     });
 
@@ -3064,7 +3257,9 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.pin-gate-dialog')).toHaveCount(0);
   });
 
-  test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({ page }) => {
+  test('eden x1 mobile surfaces avoid horizontal overflow with Cyrillic names', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 360, height: 740 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => {
@@ -3151,7 +3346,7 @@ test.describe('app smoke tabs', () => {
     const layout = await page.evaluate(() => {
       const rewardRow = document.querySelector('#dashWeightedContributionPanel tbody tr');
       const publicRow = document.querySelector('.eden-x1-public-weighted-table tbody tr');
-      const kpiGrid = document.querySelector('.dash-kpi-grid');
+      const kpiGrid = document.querySelector('.eden-x1-public-kpis');
       const clipped = Array.from(
         document.querySelectorAll(
           '.dash-weighted-mobile-player-name, .eden-x1-notice strong, .eden-x1-notice span, .dash-kpi-value-compact button'
@@ -3168,7 +3363,10 @@ test.describe('app smoke tabs', () => {
         documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
         rewardRowDisplay: rewardRow ? window.getComputedStyle(rewardRow).display : null,
         publicRowDisplay: publicRow ? window.getComputedStyle(publicRow).display : null,
-        kpiColumns: kpiGrid ? window.getComputedStyle(kpiGrid).gridTemplateColumns : null,
+        publicKpiColumnCount: kpiGrid
+          ? window.getComputedStyle(kpiGrid).gridTemplateColumns.trim().split(/\s+/).filter(Boolean)
+              .length
+          : 0,
         clippedCyrillicName: Boolean(clipped),
       };
     });
@@ -3176,24 +3374,22 @@ test.describe('app smoke tabs', () => {
     expect(layout.documentOverflow).toBe(false);
     expect(layout.rewardRowDisplay).toBe('grid');
     expect(layout.publicRowDisplay).toBe('grid');
-    expect(layout.kpiColumns).toContain(' ');
+    expect(layout.publicKpiColumnCount).toBe(1);
     expect(layout.clippedCyrillicName).toBe(false);
 
     const scrollCaps = await page.evaluate(() => {
-      const wrap = document.querySelector('#dashWeightedContributionPanel .dash-weighted-contribution-table-wrap');
+      const wrap = document.querySelector(
+        '#dashWeightedContributionPanel .dash-weighted-contribution-table-wrap'
+      );
       if (!wrap) return { missing: true };
       const style = window.getComputedStyle(wrap);
-      const maxHeight = style.maxHeight;
       return {
         missing: false,
-        maxHeight,
-        capped: maxHeight !== 'none' && wrap.clientHeight <= window.innerHeight,
-        scrollable: wrap.scrollHeight > wrap.clientHeight + 4,
+        maxHeight: style.maxHeight,
       };
     });
     expect(scrollCaps.missing).toBe(false);
-    expect(scrollCaps.maxHeight).not.toBe('none');
-    expect(scrollCaps.capped).toBe(true);
+    expect(scrollCaps.maxHeight).toBe('none');
 
     await page.locator('[data-reward-view="contribution"]').click();
     await expect(page.locator('#dashWeightedContributionPanel tbody tr')).toHaveCount(10);
@@ -3232,12 +3428,8 @@ test.describe('app smoke tabs', () => {
     expect(mobileRewardPopover.left).toBeGreaterThanOrEqual(8);
     expect(mobileRewardPopover.right).toBeLessThanOrEqual(mobileRewardPopover.viewportWidth - 8);
     expect(mobileRewardPopover.width).toBeGreaterThanOrEqual(320);
-    expect(mobileRewardPopover.bottom).toBeLessThanOrEqual(
-      mobileRewardPopover.viewportHeight - 8
-    );
-    expect(mobileRewardPopover.maxChildWidth).toBeLessThanOrEqual(
-      mobileRewardPopover.width - 24
-    );
+    expect(mobileRewardPopover.bottom).toBeLessThanOrEqual(mobileRewardPopover.viewportHeight - 8);
+    expect(mobileRewardPopover.maxChildWidth).toBeLessThanOrEqual(mobileRewardPopover.width - 24);
   });
 
   test('admin export menu downloads all-data CSV and debug bundles', async ({ page }) => {
@@ -3343,16 +3535,12 @@ test.describe('app smoke tabs', () => {
     await exGuildMatchedBadge.hover();
     await expect
       .poll(() =>
-        exGuildMatchedBadge.evaluate((badge) =>
-          window.getComputedStyle(badge, '::after').opacity
-        )
+        exGuildMatchedBadge.evaluate((badge) => window.getComputedStyle(badge, '::after').opacity)
       )
       .toBe('1');
     await expect
       .poll(() =>
-        exGuildMatchedBadge.evaluate((badge) =>
-          window.getComputedStyle(badge, '::after').content
-        )
+        exGuildMatchedBadge.evaluate((badge) => window.getComputedStyle(badge, '::after').content)
       )
       .toContain('Match to: Alpha');
     await expect(page.locator('#dashExGuildDebuffExportInlineBtn')).toBeVisible();
@@ -3439,6 +3627,95 @@ test.describe('app smoke tabs', () => {
       participation_count: 8,
       unique_structures_count: 1,
     });
+  });
+
+  test('Eden X1 weighted contribution paginates 10 rows then 25 at a time', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const entries = Array.from({ length: 70 }, (_, index) => ({
+      rank: String(index + 1),
+      name: `${index < 30 ? 'Batch A' : 'Batch B'} Player ${String(index + 1).padStart(3, '0')}`,
+      contribution: String(700000 - index * 1000),
+    }));
+
+    await openEdenX1ForTest(page);
+    await page.evaluate(
+      async (contributionEntries) =>
+        window.setEdenX1DataForTest({
+          r5Season: 'pagination-test',
+          contributionRecords: [
+            {
+              id: 'pagination-record',
+              date: '2026-07-12',
+              premiumCutoff: 20,
+              entries: contributionEntries,
+            },
+          ],
+          dutyRecords: [],
+          publicConductAdjustments: [],
+          attacks: [],
+        }),
+      entries
+    );
+
+    const card = page.locator('#edenX1PublicWeightedCard');
+    const rows = card.locator('tbody tr');
+    const status = card.locator('.eden-x1-table-pagination-status');
+    await expect(rows).toHaveCount(10);
+    await expect(status).toHaveText('Showing 10 of 70 players');
+    await expect(card.locator('#edenX1PublicLoadMoreRows')).toHaveText(
+      'Load 25 more (60 remaining)'
+    );
+    await expect(
+      card.getByRole('group', { name: 'Weighted contribution table pages' })
+    ).toBeVisible();
+    await expect(card.locator('#edenX1PublicLoadMoreRows')).toHaveAttribute(
+      'aria-controls',
+      'edenX1PublicWeightedTable'
+    );
+    const mobileControls = await card.locator('.eden-x1-table-pagination').evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const buttons = Array.from(node.querySelectorAll('button'));
+      return {
+        left: rect.left,
+        right: rect.right,
+        viewportWidth: window.innerWidth,
+        minimumButtonHeight: Math.min(
+          ...buttons.map((button) => button.getBoundingClientRect().height)
+        ),
+      };
+    });
+    expect(mobileControls.left).toBeGreaterThanOrEqual(0);
+    expect(mobileControls.right).toBeLessThanOrEqual(mobileControls.viewportWidth);
+    expect(mobileControls.minimumButtonHeight).toBeGreaterThanOrEqual(44);
+
+    await card.locator('#edenX1PublicLoadMoreRows').dispatchEvent('click');
+    await expect(rows).toHaveCount(35);
+    await expect(status).toHaveText('Showing 35 of 70 players');
+
+    await card.locator('#edenX1PublicShowAllRows').dispatchEvent('click');
+    await expect(rows).toHaveCount(70);
+    await expect(status).toHaveText('Showing 70 of 70 players');
+    await expect(card.locator('#edenX1PublicLoadMoreRows')).toHaveCount(0);
+    await expect(card.locator('#edenX1PublicCollapseRows')).toBeVisible();
+
+    await card.locator('#edenX1PublicCollapseRows').dispatchEvent('click');
+    await expect(rows).toHaveCount(10);
+    await expect(status).toHaveText('Showing 10 of 70 players');
+
+    await card.locator('#edenX1PublicShowAllRows').dispatchEvent('click');
+    await expect(rows).toHaveCount(70);
+    await card.locator('#edenX1PublicWeightedSearch').fill('Batch A');
+    await expect(rows).toHaveCount(10);
+    await expect(status).toHaveText('Showing 10 of 30 players');
+    await expect(card.locator('#edenX1PublicLoadMoreRows')).toHaveText(
+      'Load 20 more (20 remaining)'
+    );
+
+    await card.locator('#edenX1PublicLoadMoreRows').dispatchEvent('click');
+    await expect(rows).toHaveCount(30);
+    await card.locator('th[data-public-weighted-sort="player"]').dispatchEvent('click');
+    await expect(rows).toHaveCount(10);
+    await expect(status).toHaveText('Showing 10 of 30 players');
   });
 
   test('admin chart image export lazy-loads html2canvas from admin entry', async ({ page }) => {

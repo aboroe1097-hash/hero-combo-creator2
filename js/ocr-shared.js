@@ -1,6 +1,14 @@
 // Shared constants, state, and helpers for OCR dashboard modules
 import { isLocalDevHost } from './utils.js';
 import { resolvePlayerRegistryAlias } from './player-registry.js';
+import {
+  ADMIN_LOG_STORAGE_KEY,
+  formatAdminLogMessage,
+  listAdminLogEntries,
+  normalizeAdminLogSeverity,
+  recordAdminLogEntry,
+  restoreAdminLogStore,
+} from './admin-log-store.js';
 
 // --- Storage Keys ---
 export const STORAGE_KEY = 'vts_ocr_dashboard';
@@ -12,7 +20,7 @@ export const CONTRIBUTION_KEY = 'vts_ocr_contribution_lists';
 export const EX_GUILD_CONTRIBUTION_KEY = 'vts_ocr_ex_guild_contributions';
 export const FS_PATH = 'vts_admin/dashboard_data';
 export const FS_ROSTER_PATH = 'vts_admin/roster_data';
-export const LOG_KEY = 'vts_ocr_log';
+export const LOG_KEY = ADMIN_LOG_STORAGE_KEY;
 export const MAX_ROSTER_SNAPSHOTS = 50;
 
 // --- Roster Auth ---
@@ -669,34 +677,29 @@ function normalizeLogType(type) {
   return LOG_TYPES.has(normalized) ? normalized : 'info';
 }
 
-export function log(msg, type = 'info', file = null) {
-  const out = $id('dashLogOutput');
-  const area = $id('dashLogArea');
-  if (!out || !area) return;
-  area.classList.remove('hidden');
-  const entry = {
-    time: new Date().toLocaleTimeString([], {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }),
-    msg,
-    type: normalizeLogType(type),
+export function log(msg, type = 'info', file = null, options = {}) {
+  return recordAdminLogEntry({
+    fallback: msg,
+    severity: normalizeLogType(type),
     file,
-  };
-  appendLogEntry(out, entry);
-  persistLog(entry);
-  out.scrollTop = out.scrollHeight;
+    source: options.source || (file ? 'ocr' : 'dashboard'),
+    messageKey: options.messageKey || '',
+    params: options.params || {},
+    localOnly: options.localOnly === true,
+  });
 }
 
 export function appendLogEntry(out, entry) {
   const div = document.createElement('div');
   div.className = 'log-entry';
-  const type = normalizeLogType(entry.type);
+  const type = normalizeAdminLogSeverity(entry.severity ?? entry.type);
+  const displayTime = entry.time || entry.legacyTime || '';
+  div.setAttribute?.('data-severity', type);
+  div.setAttribute?.('data-severity-label', type.toUpperCase());
+  div.setAttribute?.('aria-label', `${type}: ${entry.msg ?? formatAdminLogMessage(entry)}`);
   const time = document.createElement('span');
   time.className = 'log-time';
-  time.textContent = `[${entry.time}]`;
+  time.textContent = `[${displayTime}]`;
   div.appendChild(time);
   if (entry.file) {
     const file = document.createElement('span');
@@ -706,36 +709,28 @@ export function appendLogEntry(out, entry) {
   }
   const msg = document.createElement('span');
   msg.className = `log-msg log-${type}`;
-  msg.textContent = String(entry.msg ?? '');
+  msg.textContent = String(entry.msg ?? formatAdminLogMessage(entry));
   div.appendChild(msg);
   out.appendChild(div);
 }
 
 export function persistLog(entry) {
-  try {
-    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    logs.push(entry);
-    if (logs.length > 500) logs.splice(0, logs.length - 500);
-    localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-  } catch {
-    // localStorage can be unavailable in restricted browser contexts.
-  }
+  return recordAdminLogEntry(entry);
 }
 
 export function restoreLogs() {
-  try {
-    const logs = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
-    if (!logs.length) return;
-    const out = $id('dashLogOutput');
-    const area = $id('dashLogArea');
-    if (!out || !area) return;
-    out.innerHTML = '';
-    area.classList.remove('hidden');
-    logs.forEach((e) => appendLogEntry(out, e));
-    out.scrollTop = out.scrollHeight;
-  } catch {
-    // Ignore corrupt or unavailable saved logs; the live dashboard can continue.
-  }
+  const logs = restoreAdminLogStore();
+  const out = $id('dashLogOutput');
+  const area = $id('dashLogArea');
+  if (!out || !area) return logs;
+  out.replaceChildren?.();
+  if (!out.replaceChildren) out.textContent = '';
+  area.classList.remove('hidden');
+  listAdminLogEntries({ limit: 200 })
+    .reverse()
+    .forEach((entry) => appendLogEntry(out, entry));
+  out.scrollTop = out.scrollHeight;
+  return logs;
 }
 
 // --- JSON Repair ---
@@ -816,7 +811,8 @@ export function editDistance(s1, s2) {
 
 export function getProtectedPlayerIdentity(name) {
   const text = String(name || '').trim();
-  if (!/kika/i.test(text)) return '';
+  const identityKey = compactPlayerIdentity(text);
+  if (!['kika', 'kikabanner', 'kikabanner2'].includes(identityKey)) return '';
   if (/banner\s*2/i.test(text)) return '꧁Kika-banner2꧂';
   if (/banner/i.test(text)) return '꧁ Kika-banner ꧂';
   if (/[༺༻≪≫≼≽⪡⪢✨]/.test(text)) return '꧁༺ Kika ༻꧂';
@@ -1208,7 +1204,7 @@ export function findBestMatch(name, minConfidence = 100) {
       ÅñdëR$: 'A n d e R $',
       AndërS: 'A n d e R $',
       AndëRS: 'A n d e R $',
-      'AnděR$': 'A n d e R $',
+      AnděR$: 'A n d e R $',
       Àñdëř$: 'A n d e R $',
       ÀñäëèR$: 'A n d e R $',
       '— L7 —': '- L7 -',
@@ -1230,7 +1226,7 @@ export function findBestMatch(name, minConfidence = 100) {
       'IDN/Dragon.Gold': 'IDN Dragon.Gold',
       MasterVje: 'MasterVj',
       MasterVjce: 'MasterVj',
-      'I N d \'/Made3110': 'Made3110',
+      "I N d '/Made3110": 'Made3110',
       'I N d \\/Made3110': 'Made3110',
       'iN d°/Made3110': 'Made3110',
       '«I N d ø»Made3110': 'Made3110',
@@ -1269,43 +1265,43 @@ export function findBestMatch(name, minConfidence = 100) {
       Teresita: 'REDBULLS',
       // --- 2026-07 structure leaderboard OCR-typo dedup ---
       'АК Чанай': 'AK Чапай',
-      'СоБоP': 'CoBoP',
-      'СоBobР': 'CoBoP',
+      СоБоP: 'CoBoP',
+      СоBobР: 'CoBoP',
       MasterVjpe: 'MasterVj',
       '¢ øMasterVjø¢': 'MasterVj',
       MasterVise: 'MasterVj',
       yli90: 'ylli90',
-      'БратХраբрец': 'БратХрабрец',
+      БратХраբрец: 'БратХрабрец',
       'EightBall_/\\_': 'EightBall _V/_',
       mohmmedsaf: 'mohmmedsaif',
       Obliterat3d: 'Obliterated',
       Surtiiiiiii: 'Surtiiiii',
       Younggy96: 'Youngy96',
       UncensorePlayer: 'UncensoredPlayer',
-      'ПсихонаТ': 'ПсихопаТ',
-      'AñdërS': 'A n d e R $',
-      'АηdέR$': 'A n d e R $',
-      'AηdɛR$': 'A n d e R $',
+      ПсихонаТ: 'ПсихопаТ',
+      AñdërS: 'A n d e R $',
+      АηdέR$: 'A n d e R $',
+      AηdɛR$: 'A n d e R $',
       'A η d ě R S': 'A n d e R $',
-      'түнгэзхурп': 'түнгзахурп',
-      'тynгзахурп': 'түнгзахурп',
-      'түнгәахур': 'түнгзахурп',
-      'түнгзахуp': 'түнгзахурп',
-      'тynгзахурp': 'түнгзахурп',
-      'тyn3axyp': 'түнгзахурп',
+      түнгэзхурп: 'түнгзахурп',
+      тynгзахурп: 'түнгзахурп',
+      түнгәахур: 'түнгзахурп',
+      түнгзахуp: 'түнгзахурп',
+      тynгзахурp: 'түнгзахурп',
+      тyn3axyp: 'түнгзахурп',
       tyHr3axyp: 'түнгзахурп',
       'Ħæŋter killer.': 'Hunter killer.',
       'Һηλter Killer.': 'Hunter killer.',
       '*r@nze$$$*': '★r@mze$$$★',
-      '乃ㄥロ毛': '乃ㄥ口毛',
-      '乃ㄥロモ': '乃ㄥ口毛',
+      乃ㄥロ毛: '乃ㄥ口毛',
+      乃ㄥロモ: '乃ㄥ口毛',
       'МяТНЯ Лапкá': 'Мятная Лапка',
       'Φεύωκα))': 'Феечка))',
       'Φειώσκα))': 'Феечка))',
       "INd'/Made3110": 'Made3110',
       '~I~d~o~/Made3110': 'Made3110',
       '~I N d ó~/Made3110': 'Made3110',
-      'NDÓMade3110': 'Made3110',
+      NDÓMade3110: 'Made3110',
       '↣I N d áḾade3110': 'Made3110',
       'I nd d/Made3110': 'Made3110',
       '¢ I N d ´|Made3110': 'Made3110',
@@ -1313,19 +1309,84 @@ export function findBestMatch(name, minConfidence = 100) {
       '★★★ 3ВЕРь ★★★': '3BEPb',
       '★★★ 3BEPь ★★★': '3BEPb',
       '★★★ ЗВЕРЬ ★★★': '3BEPb',
-      'DarkPrince$$t': 'tDarkPrinceSS$t',
+      DarkPrince$$t: 'tDarkPrinceSS$t',
       '†DarkPrince§§†': 'tDarkPrinceSS$t',
       '+DarkPrince§§t': 'tDarkPrinceSS$t',
       Сепрей: 'Сергей',
       Серрей: 'Сергей',
       Ceppeй: 'Сергей',
-      'Cepreñ': 'Сергей',
+      Cepreñ: 'Сергей',
       Ceprey: 'Сергей',
       'Dragon.Gold': 'IDN Dragon.Gold',
       '⧗ I D N´/Dragon.Gold': 'IDN Dragon.Gold',
       'Northern fox,': 'Northerner.',
       'Ar Ran Dil+62': 'Ar Ran ★_YG+62',
       'Ar Ran Dil★+62': 'Ar Ran ★_YG+62',
+      // --- 2026-07-13 vote export + latest-three-structures reconciliation ---
+      АηδεR$: 'A n d e R $',
+      '~MasterV~': 'MasterVj',
+      VindMade3110: 'Made3110',
+      'Vind?Made3110': 'Made3110',
+      '.WAEL..': '..WAEL..',
+      '[..WAEL..]': '..WAEL..',
+      '|..WAEL...|': '..WAEL..',
+      '~Nosferatu~': 'Nosferatu',
+      түнгзазурп: 'түнгзахурп',
+      '✨Anne✨': 'Anne',
+      'Lisavetka*': '•Lisavetka•',
+      'AK Чanaй': 'AK Чапай',
+      CoБoП: 'CoBoP',
+      СоBoР: 'CoBoP',
+      'Immortal & Pete': 'Immortal Pete',
+      // --- 2026-07-13 total-contribution snapshots reconciliation ---
+      // Only map variants corroborated across snapshots. Short generic fragments such as
+      // "Banner" and "anner" are intentionally not global aliases because they can belong
+      // to several different secondary accounts.
+      RuCCak: '~RuCCaK~',
+      ')★★★ 3BEPb ★★': '3BEPb',
+      'IDN? Dragon.Gold': 'IDN Dragon.Gold',
+      'IDN?Dragon.Gold': 'IDN Dragon.Gold',
+      'WAEL...]': '..WAEL..',
+      'Pemöö ,': 'Pemöö',
+      '•Lisa vetka•': '•Lisavetka•',
+      'Isaan°': '°Isaan°',
+      'Indomie.telor...': 'Indomie.telor....',
+      '.CAMBO': 'CAMBO',
+      'Aleks......': 'Aleks',
+      '.Raell.': 'Raell.',
+      'نسر !! z': '!! نسر !! z',
+      'zeta.TV_banner': 'Ezeta.TV_banner',
+      'ISASTER ENVOY': 'DISASTER ENVOY',
+      GrannyLavadal: 'GrannyLavada!',
+      EviltwinIIl: 'EviltwinII',
+      'REDBULL..3': 'REDBULL-#',
+      ONEfastBANNER: 'iBONEfastBANNER',
+      'ICKED WOMEN': 'WICKED WOMEN☆',
+      ':KED RUSSIAN': 'WICKED RUSSIAN',
+      'WICKED b': 'WICKED banner',
+      '/ICKED banner': 'WICKED banner',
+      'D off f y.': 'D offy.',
+      'hater killer.': 'Hunter killer.',
+      '†DarkPrinceSS†': 'tDarkPrinceSS$t',
+      '+DarkPrince§§+': 'tDarkPrinceSS$t',
+      tyHR3axyp: 'түнгзахурп',
+      tyHraaxyp: 'түнгзахурп',
+      乃乙口毛: '乃ㄥ口毛',
+      БратХраώрец: 'БратХрабрец',
+      БратХраϐрец: 'БратХрабрец',
+      'зшений-ЕНОТ~': 'Бешенный-Енот~',
+      'ешенный-ЕНОТ~': 'Бешенный-Енот~',
+      sterVja: 'MasterVj',
+      jdnesGraycious: 'GoodnesGraycious',
+      'xiDoe Banner': 'PixiDoe Banner',
+      'ßPixiDoe Banner': 'PixiDoe Banner',
+      'rimu$$s banner': 'Maximu$$s banner',
+      'laximu$$s banner': 'Maximu$$s banner',
+      alikaZenaBanner: 'MalikaZenaBanner',
+      ikaZenaBanner: 'MalikaZenaBanner',
+      kaZenaBanner: 'MalikaZenaBanner',
+      likaZenaBanner: 'MalikaZenaBanner',
+      'Ar Ran Dil': 'Ar Ran ★_YG+62',
     };
     if (aliasMap[name]) return aliasMap[name];
     if (/pixel/i.test(name)) return '༄Pixel';

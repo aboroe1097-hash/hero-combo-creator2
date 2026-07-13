@@ -1,16 +1,21 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import vm from 'node:vm';
+
+const INLINE_EVENT_HANDLER_ATTRIBUTE = /\son[a-z][a-z0-9:_-]*\s*=/i;
 
 test('public admin auth config only keeps destructive action override hashes', () => {
   const source = readFileSync('js/admin-auth-config.js', 'utf8');
   assert.match(source, /adminPin:\s*''/);
+  const hasBuildTimeInjection = process.env.VTS_ADMIN_AUTH_INJECTED === '1';
 
   // clearHash / deleteHashes are empty in the committed source, but the deploy
   // step (scripts/inject-admin-auth-config.mjs) fills them from the
   // VTS_ADMIN_OVERRIDE_CODE / VTS_ADMIN_OVERRIDE_HASH secrets before checks run.
-  // Mirror the edenVotesPinHash handling: allow a populated 64-hex digest only
-  // when the override secret is configured, require empty otherwise.
+  // verify-deploy removes those secrets before launching the checks and leaves
+  // only a non-sensitive marker indicating that injection already occurred.
   const clearHash = source.match(/clearHash:\s*'([^']*)'/)?.[1];
   const deleteHashesBody = source.match(/deleteHashes:\s*\[([^\]]*)\]/)?.[1] ?? undefined;
   assert.notEqual(clearHash, undefined);
@@ -19,7 +24,7 @@ test('public admin auth config only keeps destructive action override hashes', (
     .split(',')
     .map((entry) => entry.trim().replace(/^'|'$/g, ''))
     .filter(Boolean);
-  if (process.env.VTS_ADMIN_OVERRIDE_CODE || process.env.VTS_ADMIN_OVERRIDE_HASH) {
+  if (hasBuildTimeInjection) {
     assert.match(clearHash, /^(?:|[a-f0-9]{64})$/);
     for (const hash of deleteHashes) assert.match(hash, /^[a-f0-9]{64}$/);
   } else {
@@ -29,7 +34,7 @@ test('public admin auth config only keeps destructive action override hashes', (
 
   const edenVotesPinHash = source.match(/edenVotesPinHash:\s*'([^']*)'/)?.[1];
   assert.notEqual(edenVotesPinHash, undefined);
-  if (process.env.VTS_EDEN_VOTES_PIN || process.env.VTS_EDEN_VOTES_PIN_HASH) {
+  if (hasBuildTimeInjection) {
     assert.match(edenVotesPinHash, /^(?:|[a-f0-9]{64})$/);
   } else {
     assert.equal(edenVotesPinHash, '');
@@ -62,36 +67,146 @@ test('admin boot does not preload gated Eden vote records', () => {
 
 test('deploy can inject sensitive admin PIN hash without committing raw PIN', () => {
   const workflow = readFileSync('.github/workflows/deploy.yml', 'utf8');
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
   const script = readFileSync('scripts/inject-admin-auth-config.mjs', 'utf8');
+  const verifyScript = readFileSync('scripts/verify-deploy.mjs', 'utf8');
   assert.match(workflow, /VTS_EDEN_VOTES_PIN:/);
   assert.match(workflow, /VTS_EDEN_VOTES_PIN_HASH:/);
-  assert.match(workflow, /node scripts\/inject-admin-auth-config\.mjs/);
+  assert.match(workflow, /npm run verify:deploy/);
+  assert.equal(
+    packageJson.scripts['admin-auth:inject'],
+    'node scripts/inject-admin-auth-config.mjs'
+  );
+  assert.equal(packageJson.scripts['verify:deploy'], 'node scripts/verify-deploy.mjs');
+  assert.match(verifyScript, /runNpmScript\('admin-auth:inject'\)/);
+  assert.match(verifyScript, /delete sanitizedEnvironment\[key\]/);
+  assert.match(verifyScript, /writeFileSync\(adminConfigPath, originalAdminConfig\)/);
   assert.match(script, /createHash\('sha256'\)/);
   assert.match(script, /edenVotesPinHash:\s*'\$\{nextHash\}'/);
   assert.doesNotMatch(script, /232323/);
 });
 
+test('PR CI runs the deploy-equivalent gate without production secrets', () => {
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const deploy = readFileSync('.github/workflows/deploy.yml', 'utf8');
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+  const verifyScript = readFileSync('scripts/verify-deploy.mjs', 'utf8');
+
+  assert.match(ci, /pull_request:/);
+  assert.match(ci, /deploy-verification:/);
+  assert.match(ci, /name: deploy-verification/);
+  assert.match(ci, /VITE_FIREBASE_API_KEY: dummy/);
+  assert.match(ci, /VTS_EDEN_VOTES_PIN: ci-only-not-a-secret/);
+  assert.match(ci, /VTS_ADMIN_OVERRIDE_CODE: ci-only-not-a-secret/);
+  assert.match(ci, /actions\/setup-python@v6/);
+  assert.match(ci, /npx playwright install --with-deps chromium/);
+  assert.match(ci, /npm run verify:deploy/);
+  assert.doesNotMatch(ci, /\$\{\{\s*secrets\./);
+  assert.match(deploy, /npm run verify:deploy/);
+  assert.equal(packageJson.scripts['verify:deploy'], 'node scripts/verify-deploy.mjs');
+  assert.match(verifyScript, /runNpmScript\('build-env:check'\)/);
+  assert.match(verifyScript, /runNpmScript\('admin-auth:inject'\)/);
+  assert.match(verifyScript, /runNpmScript\('check', sanitizedEnvironment\)/);
+});
+
+test('production deploy is gh-pages-only and uses least-privilege secret scope', () => {
+  const deploy = readFileSync('.github/workflows/deploy.yml', 'utf8');
+
+  assert.match(deploy, /build:\s*\n\s*if: github\.ref == 'refs\/heads\/gh-pages'/);
+  assert.match(deploy, /deploy:[\s\S]*permissions:\s*\n\s*pages: write\s*\n\s*id-token: write/);
+  assert.doesNotMatch(deploy, /permissions:\s*\n\s*contents: read\s*\n\s*pages: write/);
+  assert.match(deploy, /name: Verify deploy artifact[\s\S]*env:[\s\S]*VTS_EDEN_VOTES_PIN:/);
+  assert.doesNotMatch(deploy, /VTS_EDEN_VOTES_PIN:\s*\$\{\{[^\n]*vars\.VTS_EDEN_VOTES_PIN/);
+  assert.doesNotMatch(
+    deploy,
+    /VTS_ADMIN_OVERRIDE_CODE:\s*\$\{\{[^\n]*vars\.VTS_ADMIN_OVERRIDE_CODE/
+  );
+});
+
+test('browser smoke serves the built Pages artifact', () => {
+  const developmentConfig = readFileSync('playwright.config.js', 'utf8');
+  const productionConfig = readFileSync('playwright.production.config.js', 'utf8');
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+
+  assert.match(developmentConfig, /PLAYWRIGHT_DEV_PORT \|\| 5173/);
+  assert.match(developmentConfig, /requestedDevPort >= 1024/);
+  assert.match(
+    developmentConfig,
+    /npm run dev -- --host 127\.0\.0\.1 --port \$\{devPort\} --strictPort/
+  );
+  assert.match(developmentConfig, /reuseExistingServer: false/);
+  assert.match(productionConfig, /PLAYWRIGHT_LOCAL_PORT \|\| 4173/);
+  assert.match(productionConfig, /requestedLocalPort >= 1024/);
+  assert.match(
+    productionConfig,
+    /npm run preview -- --host 127\.0\.0\.1 --port \$\{localPort\} --strictPort/
+  );
+  assert.match(packageJson.scripts['smoke:prod'], /playwright\.production\.config\.js/);
+  assert.match(packageJson.scripts.check, /npm run size:check && npm run smoke:prod/);
+});
+
+test('workflow requires owner-configured Code Owner branch protection', () => {
+  const workflow = readFileSync('docs/version-control-workflow.md', 'utf8');
+  const codeowners = readFileSync('.github/CODEOWNERS', 'utf8');
+
+  assert.match(workflow, /An owner must configure and periodically verify/);
+  assert.match(workflow, /Require review from Code Owners/);
+  assert.doesNotMatch(workflow, /has the following protection rules configured/);
+  assert.match(codeowners, /^\* @aboroe1097-hash$/m);
+});
+
 test('frontend CSP and markup avoid executable inline script bypasses', () => {
-  const pages = ['index.html', 'admin.html', 'eden-x1.html'];
+  const pages = ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html'];
   const inlineExecutableScript =
     /<script(?![^>]*\bsrc=)(?![^>]*type="(?:application\/ld\+json|importmap)")/i;
 
   for (const page of pages) {
     const source = readFileSync(page, 'utf8');
-    assert.doesNotMatch(source, /\son(?:click|load)\s*=/i, `${page} should not use inline handlers`);
-    assert.doesNotMatch(source, inlineExecutableScript, `${page} should not use executable inline scripts`);
+    assert.doesNotMatch(
+      source,
+      INLINE_EVENT_HANDLER_ATTRIBUTE,
+      `${page} should not use inline handlers`
+    );
+    assert.doesNotMatch(
+      source,
+      inlineExecutableScript,
+      `${page} should not use executable inline scripts`
+    );
   }
 
-  for (const page of ['index.html', 'admin.html', 'eden-x1.html']) {
+  for (const attribute of ['onload', 'onerror', 'onpointerdown', 'ontouchstart']) {
+    assert.match(`<img ${attribute}="run()">`, INLINE_EVENT_HANDLER_ATTRIBUTE);
+  }
+
+  for (const page of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html']) {
     const source = readFileSync(page, 'utf8');
-    const csp = source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
+    const csp =
+      source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
     const scriptSrc = csp.match(/script-src\s+([^;]+)/)?.[1] || '';
+    const declaredHashes = [...scriptSrc.matchAll(/'sha256-[A-Za-z0-9+/]+={0,2}'/g)].map(
+      ([hash]) => hash
+    );
+    const inlineScriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+    const expectedHashes = [...source.matchAll(inlineScriptPattern)]
+      .filter(([, attributes]) => !/(?:^|\s)src\s*=/i.test(attributes))
+      .map(([, , body]) => {
+        const browserSource = body.replace(/\r\n?/g, '\n');
+        return `'sha256-${createHash('sha256').update(browserSource).digest('base64')}'`;
+      });
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
+    assert.deepEqual(
+      declaredHashes.sort(),
+      expectedHashes.sort(),
+      `${page} CSP hashes should match its exact inline script contents`
+    );
     if (page === 'eden-x1.html') assert.match(scriptSrc, /https:\/\/docs\.google\.com/);
   }
 
   const index = readFileSync('index.html', 'utf8');
+  const indexCsp =
+    index.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
+  assert.match(indexCsp, /frame-src\s+'self'/, 'Arcade games must be embeddable same-origin');
   assert.match(index, /js\/theme-prepaint\.js/);
   assert.match(index, /js\/index-page-enhancements\.js/);
   assert.match(index, /data-footer-tab="manual"/);
@@ -100,6 +215,8 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
 test('build metadata refreshes lazy app module cache busters', () => {
   const script = readFileSync('scripts/update-build-metadata.mjs', 'utf8');
   const app = readFileSync('js/app.js', 'utf8');
+  assert.match(script, /createHash\('sha256'\)/);
+  assert.match(script, /updateCspHashes\(\)/);
   assert.match(script, /app-whats-new\|app-research\|material-calculator\|eden-map\|app-strife/);
   assert.doesNotMatch(app, /20260708_101500/);
   assert.match(app, /app-whats-new\.js\?v=\d{8}_\d{6}/);
@@ -194,7 +311,18 @@ test('admin dashboard cloud saves are coalesced before Firestore writes', () => 
   assert.match(dashboard, /dashboardCloudSavePendingData/);
   assert.match(dashboard, /if \(options\.cloud === false\) return false;/);
   assert.match(engine, /saveParsedData\(progressiveParsed, \{ cloud: false \}\)/);
-  assert.match(engine, /saveParsedData\(parsed, \{ immediate: true, awaitCloud: true \}\)/);
+  assert.match(engine, /saveParsedData\(parsed, \{ ocrAttacks: changedAttacks \}\)/);
+});
+
+test('admin tab navigation paints first and renders only the visible panel', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  assert.match(dashboard, /function activeDashboardSubtabName\(\)/);
+  assert.match(dashboard, /function renderDashboardSubtab\(name = activeDashboardSubtabName\(\)\)/);
+  assert.match(
+    dashboard,
+    /requestAnimationFrame\(\(\) => requestAnimationFrame\(\(\) => renderDashboardSubtab\(name\)\)\)/
+  );
+  assert.doesNotMatch(dashboard, /function renderAuxiliaryRecords\(\)/);
 });
 
 test('admin auxiliary records are included in dashboard cloud sync', () => {
@@ -222,6 +350,40 @@ test('admin auxiliary records are included in dashboard cloud sync', () => {
   assert.match(rules, /'bannerRecords', 'dutyRecords', 'contributionRecords'/);
   assert.match(rules, /'playerRegistry'/);
   assert.match(rules, /request\.resource\.data\.playerRegistry is map/);
+});
+
+test('admin activity history uses an isolated immutable admin-only collection', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const sync = readFileSync('js/admin-log-sync.js', 'utf8');
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const dashboardValidator = rules.match(
+    /function validDashboardData\(\)[\s\S]*?function validAdminLogEvent/
+  )?.[0];
+  const logMatch = rules.match(
+    /match \/vts_admin\/log_store\/admin_log_events\/\{logId\}[\s\S]*?\n\s*}/
+  )?.[0];
+
+  assert.ok(dashboardValidator, 'dashboard and log validators should remain separate');
+  assert.doesNotMatch(dashboardValidator, /'logs'/);
+  assert.doesNotMatch(dashboard, /DASHBOARD_CLOUD_FIELD_KEYS[\s\S]{0,400}'logs'/);
+  assert.match(sync, /vts_admin\/log_store\/admin_log_events/);
+  assert.match(sync, /orderBy\('createdAt', 'desc'\)/);
+  assert.match(sync, /limit\(ADMIN_LOG_REMOTE_LIMIT\)/);
+  assert.ok(logMatch, 'admin log collection match should exist');
+  assert.match(logMatch, /allow read: if isAdmin\(\)/);
+  assert.match(logMatch, /allow create: if isAdmin\(\) && validAdminLogEvent\(logId\)/);
+  assert.match(logMatch, /allow update, delete: if false/);
+  assert.match(rules, /request\.resource\.data\.createdAt == request\.time/);
+  assert.match(rules, /request\.resource\.data\.createdBy == request\.auth\.uid/);
+  assert.match(rules, /request\.resource\.data\.params is string/);
+  assert.match(rules, /request\.resource\.data\.file == ''/);
+  assert.match(rules, /\(system\|dashboard\|ocr\|roster\|cloud\|sync\|import\|export\)/);
+  assert.match(
+    rules,
+    /request\.resource\.data\.severity in \['info', 'warn', 'error', 'success'\]/
+  );
+  assert.match(rules, /request\.resource\.data\.source in \[/);
+  assert.match(rules, /duration\.value\(31, 'd'\)/);
 });
 
 test('admin cloud boot and saves have bounded local-cache fallback', () => {
@@ -257,6 +419,32 @@ test('admin cloud boot and saves have bounded local-cache fallback', () => {
   assert.match(dashboard, /withDashboardCloudTimeout\(promise, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS/);
 });
 
+test('admin edit sessions begin on open and queued writes keep their own committed revision', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const roster = readFileSync('js/ocr-roster.js', 'utf8');
+
+  assert.match(dashboard, /vts:admin-edit-surface-opened/);
+  assert.match(dashboard, /adminEditGuard\.begin\('conduct-form', dashboardCloudBaseRevision\)/);
+  assert.match(roster, /beginAdminEditSurface\(edit \? 'banner-edit' : 'banner-create'\)/);
+  assert.match(roster, /beginAdminEditSurface\(existingRecord \? 'duty-edit' : 'duty-create'\)/);
+  assert.match(roster, /'contribution-edit'\s*:\s*'contribution-create'/);
+  assert.match(dashboard, /committedRevision = dashboardSyncRevision\(writtenPayload\)/);
+  assert.match(
+    dashboard,
+    /dashboardCloudSavePendingBaseRevision = result \? committedRevision : null/
+  );
+});
+
+test('attack edits and deletes carry record fingerprints into the cloud transaction', () => {
+  const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
+  const mutations = readFileSync('js/dashboard-attack-mutations.js', 'utf8');
+
+  assert.match(mutations, /export function dashboardAttackFingerprint/);
+  assert.match(mutations, /dashboardAttackFingerprint\(nextAttacks\[index\]\)/);
+  assert.match(dashboard, /expectedFingerprint: dashboardAttackFingerprint\(removed\)/);
+  assert.match(dashboard, /const expectedFingerprint = dashboardAttackFingerprint\(att\)/);
+});
+
 test('attack mutations use the compact dashboard serializer before Firestore writes', () => {
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
   assert.match(
@@ -289,7 +477,8 @@ test('shared admin dashboard reads stay available while writes require the admin
 test('dashboard cloud revisions prevent stale local snapshots from overwriting cloud data', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');
-  const dashboardValidator = rules.match(/function validDashboardData\(\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
+  const dashboardValidator =
+    rules.match(/function validDashboardData\(\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
 
   assert.match(dashboard, /DASHBOARD_CLOUD_FIELD_KEYS = new Set\(\[\s*'updatedAtMs'/);
   assert.match(dashboard, /'syncRevision'/);
@@ -301,6 +490,10 @@ test('dashboard cloud revisions prevent stale local snapshots from overwriting c
   assert.match(dashboard, /syncRevision: cloudRevision \+ 1/);
   assert.match(dashboard, /dashboardCloudSavePendingBaseRevision/);
   assert.match(
+    dashboard,
+    /dashboardCloudSavePendingBaseRevision = result \? committedRevision : null/
+  );
+  assert.doesNotMatch(
     dashboard,
     /dashboardCloudSavePendingBaseRevision = result \? dashboardCloudBaseRevision : null/
   );
@@ -314,13 +507,20 @@ test('dashboard cloud revisions prevent stale local snapshots from overwriting c
   assert.match(dashboardValidator, /request\.resource\.data\.updatedAtMs is number/);
   assert.match(dashboardValidator, /request\.resource\.data\.syncRevision is int/);
   assert.doesNotMatch(dashboardValidator, /!\('updatedAtMs' in request\.resource\.data\)/);
-  assert.match(
-    rules,
-    /request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/
-  );
+  assert.match(rules, /request\.resource\.data\.updatedAtMs >= resource\.data\.updatedAtMs/);
   assert.match(dashboard, /const loadGeneration = \+\+dashboardLoadGeneration;/);
   assert.match(dashboard, /if \(!isCurrentLoad\(\)\) return;/);
-  assert.match(dashboard, /Cloud sync failed; kept dashboard data already in memory\./);
+  assert.match(
+    dashboard,
+    /if \(preferCloudFirst && localData\) \{\s*restoreDashboardLocalFallback\(localData\);/
+  );
+  assert.match(
+    dashboard,
+    /if \(state\.dashData\) logDashboardEvent\('adminCloudLocalCache', 'warn', \{\}, \{ source: 'cloud' \}\);/
+  );
+  assert.match(dashboard, /function writeDashboardOcrUploadToCloud/);
+  assert.match(dashboard, /mergeDashboardOcrAttacks\(cloudData\.attacks, incomingAttacks\)/);
+  assert.match(dashboard, /export async function saveDashboardOcrUpload/);
 });
 
 test('Eden X1 does not block voting on optional Firestore reads', () => {
@@ -478,10 +678,7 @@ test('Eden X1 votes are member-keyed with admin list and owner get', () => {
     eden,
     /EDEN_X1_VOTE_HISTORY_COLLECTION_PATH = 'vts_admin\/eden_x1_vote_history\/records'/
   );
-  assert.match(
-    eden,
-    /EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin\/eden_x1_vote_settings'/
-  );
+  assert.match(eden, /EDEN_X1_VOTE_SETTINGS_DOC_PATH = 'vts_admin\/eden_x1_vote_settings'/);
   assert.match(
     eden,
     /const voterAuthUid = edenVoteWriteContext\?\.user\?\.uid \|\| 'local-test';[\s\S]*const id = edenVoteDocId\(season, voter\.playerKey\);/
@@ -501,10 +698,15 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  assert.ok(urls.length <= 40, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade entry plus its CSS/JS and the global command
+  // palette. Keep a small measured margin without allowing the shell to grow unbounded.
+  assert.ok(urls.length <= 44, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
+  assert.ok(urls.includes('/arcade.html'));
+  assert.ok(urls.some((url) => url.startsWith('/css/command-palette.css?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/js/command-palette.js?v=')));
   assert.ok(urls.includes('/images/logo.png'));
   // css/js entries must carry the ?v= stamp so cache keys can never mix
   // assets from different deploys.
@@ -527,7 +729,177 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   assert.match(source, /batchAddAll\(cache, critical/);
   assert.doesNotMatch(source, /cache:\s*'reload'/);
   assert.match(source, /CRITICAL_PRECACHE_PATTERN/);
+  assert.match(source, /const VTS_CACHE_PREFIX = 'vts-'/);
   assert.match(source, /older\[older\.length - 1\]/);
+  assert.match(source, /async function matchCurrentThenAny/);
+  assert.match(source, /key\.startsWith\(VTS_CACHE_PREFIX\)/);
+  assert.match(
+    source,
+    /const owned = keys\.filter\(\(key\) => key\.startsWith\(VTS_CACHE_PREFIX\)\)/
+  );
+  assert.match(source, /request\.headers\.has\('Authorization'\)/);
+  assert.match(source, /request\.credentials !== 'include'/);
+  assert.match(source, /private\|no-store/);
+  assert.match(source, /response\.headers\.has\('Set-Cookie'\)/);
+  assert.match(source, /credentials: 'omit'/);
+  assert.doesNotMatch(source, /FIREBASE_CDN_PREFIX/);
+  assert.match(source, /return \(await matchCurrentThenAny\(key\)\) \|\| response/);
+  assert.match(source, /event\.respondWith\(networkFirst\(request\)\)/);
+  assert.match(source, /navigationFallback\(url\.pathname\)/);
+  assert.match(source, /isImmutableAssetUrl/);
+  assert.doesNotMatch(source, /url\.pathname\.startsWith\('\/assets\/'\)\) return true/);
+});
+
+test('service worker cache policy rejects private traffic and preserves foreign caches', async () => {
+  const source = readFileSync('public/sw.js', 'utf8');
+  const currentVersion = source.match(/const CACHE_VERSION = '([^']+)'/)?.[1];
+  assert.ok(currentVersion, 'service worker cache version should be discoverable');
+
+  const listeners = {};
+  const deleted = [];
+  let activationPromise;
+  const context = vm.createContext({
+    Request,
+    Response,
+    URL,
+    fetch: async () => new Response('ok'),
+    caches: {
+      async open() {
+        return {
+          async match() {
+            return null;
+          },
+          async put() {},
+          async keys() {
+            return [];
+          },
+          async delete() {
+            return true;
+          },
+        };
+      },
+      async keys() {
+        return [currentVersion, 'vts-20260101-000000', 'vts-20250101-000000', 'foreign-cache'];
+      },
+      async delete(key) {
+        deleted.push(key);
+        return true;
+      },
+    },
+    self: {
+      location: { origin: 'https://vts.test' },
+      clients: { async claim() {} },
+      skipWaiting() {},
+      addEventListener(type, handler) {
+        listeners[type] = handler;
+      },
+    },
+  });
+  vm.runInContext(source, context);
+
+  const isSafePublicRequest = vm.runInContext('isSafePublicRequest', context);
+  const responseAllowsPublicCaching = vm.runInContext('responseAllowsPublicCaching', context);
+  assert.equal(
+    isSafePublicRequest(
+      new Request('https://vts.test/assets/index-12345678.js', { credentials: 'omit' })
+    ),
+    true
+  );
+  assert.equal(
+    isSafePublicRequest(
+      new Request('https://vts.test/private', {
+        credentials: 'omit',
+        headers: { Authorization: 'Bearer test-only' },
+      })
+    ),
+    false
+  );
+  assert.equal(
+    isSafePublicRequest(new Request('https://vts.test/private', { credentials: 'include' })),
+    false
+  );
+  assert.equal(
+    isSafePublicRequest(new Request('https://cdn.example.test/public.js', { credentials: 'omit' })),
+    false
+  );
+  assert.equal(
+    responseAllowsPublicCaching(
+      new Response('private', { headers: { 'Cache-Control': 'private, max-age=60' } })
+    ),
+    false
+  );
+  assert.equal(
+    responseAllowsPublicCaching(
+      new Response('private', { headers: { 'Cache-Control': 'no-store' } })
+    ),
+    false
+  );
+  assert.equal(
+    responseAllowsPublicCaching(new Response('private', { headers: { 'Set-Cookie': 'sid=test' } })),
+    false
+  );
+
+  listeners.activate({
+    waitUntil(promise) {
+      activationPromise = promise;
+    },
+  });
+  await activationPromise;
+  assert.deepEqual(deleted, ['vts-20250101-000000']);
+  assert.ok(!deleted.includes('foreign-cache'));
+});
+
+test('deployment size checks cover the full artifact and source-only map files stay out', () => {
+  const sizeCheck = readFileSync('scripts/check-size.mjs', 'utf8');
+  const postBuild = readFileSync('scripts/post-build.mjs', 'utf8');
+  const edenAssets = readFileSync('js/eden-map-assets.js', 'utf8');
+  const heroesData = readFileSync('js/heroes-data.js', 'utf8');
+
+  assert.match(sizeCheck, /const deployFiles = walkFiles\(deployDir\)/);
+  assert.match(sizeCheck, /totalDeployBytes/);
+  assert.match(sizeCheck, /totalMediaBytes/);
+  assert.match(sizeCheck, /maxMediaFileBytes/);
+  assert.match(sizeCheck, /deployFileCount/);
+  assert.match(sizeCheck, /indexGzipBytes: 16 \* 1024/);
+  assert.match(sizeCheck, /routeCssBytes/);
+  assert.match(sizeCheck, /function resolveBuiltRouteCssAssets\(/);
+  assert.match(sizeCheck, /function mediaMatchesWidth\(/);
+  assert.doesNotMatch(sizeCheck, /\['source index\.html lines'/);
+  assert.doesNotMatch(sizeCheck, /cssChunks/);
+  assert.match(sizeCheck, /builtIndexPath/);
+  assert.match(sizeCheck, /const entryJs = resolveBuiltIndexAssets\(\{/);
+  assert.match(sizeCheck, /tagName: 'script'/);
+  assert.match(sizeCheck, /const entryCss = resolveBuiltIndexAssets\(\{/);
+  assert.match(sizeCheck, /tagName: 'link'/);
+  assert.match(sizeCheck, /rel: 'stylesheet'/);
+  assert.doesNotMatch(sizeCheck, /index-\[\^\\\/\]\+\\\.js/);
+  assert.match(sizeCheck, /missingBuildOutputs/);
+  assert.match(postBuild, /sourceOnlyDeployPaths/);
+  assert.match(postBuild, /assets\/faction-division2\.png/);
+  assert.match(postBuild, /assets\/eden-reference\/eden-map-reference\.png/);
+  assert.match(postBuild, /images\/strife\/roc-strife-reference\.png/);
+  assert.match(postBuild, /assets\/eden-reference\/sector-parchments/);
+  for (const sourceOnlyPath of [
+    'assets/admin-D1Gvfu0q.js',
+    'assets/eden-reference/icons/cp1.png',
+    'assets/eden-reference/icons/st3.png',
+    'images/heroes/catchup/cyrus.png',
+    'images/heroes/catchup/reinforced-ragnar-placeholder.svg',
+    'images/heroes/catchup/warhammer.png',
+    'images/logo.webp',
+  ]) {
+    assert.ok(postBuild.includes(`'${sourceOnlyPath}'`), `${sourceOnlyPath} must stay source-only`);
+  }
+  assert.doesNotMatch(postBuild, /const copyDirs = \[[^\]]*'css'/);
+  assert.doesNotMatch(postBuild, /const copyDirs = \[[^\]]*'workers'/);
+  assert.doesNotMatch(edenAssets, /rawFallbackUrl: 'assets\/faction-division2\.png'/);
+  assert.doesNotMatch(edenAssets, /legacyFallbackUrl: `\$\{ASSET_ROOT\}eden-map-reference\.png`/);
+  assert.match(edenAssets, /user-gate-marker\.webp/);
+  assert.match(edenAssets, /user-town-marker\.webp/);
+  assert.match(edenAssets, /user-capital-marker\.webp/);
+  for (const hero of ['cyrus', 'warhammer', 'warden']) {
+    assert.match(heroesData, new RegExp(`images/heroes/catchup/${hero}\\.avif`));
+  }
 });
 
 test('qwen worker rejects requests without an Origin header', () => {
@@ -553,7 +925,10 @@ test('comments no longer store email or allow public reads', () => {
   assert.match(rules, /approved == false/);
   assert.match(rules, /request\.resource\.data\.parentId == null/);
   assert.match(rules, /request\.resource\.data\.parentId is string/);
-  assert.match(rules, /request\.resource\.data\.parentId\.matches\('\^\[A-Za-z0-9_-\]\{1,150\}\$'\)/);
+  assert.match(
+    rules,
+    /request\.resource\.data\.parentId\.matches\('\^\[A-Za-z0-9_-\]\{1,150\}\$'\)/
+  );
   assert.doesNotMatch(comments, /email:/);
   assert.doesNotMatch(comments, /commentEmail/);
   assert.match(comments, /where\('approved', '==', true\)/);

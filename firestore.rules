@@ -75,6 +75,37 @@ service cloud.firestore {
       && request.resource.data.timestamp is timestamp;
     }
 
+    // Arcade leaderboard rows: one doc per (game, auth user, local player profile) at
+    // `{gameId}__{uid}__{playerId}`. This keeps multiple players on a shared device distinct.
+    // Ownership is bound to the *server* auth uid (the client-supplied uid is only trusted
+    // when it equals request.auth.uid), the doc id must encode that same (game, uid) pair,
+    // and score is a plain non-negative int. Updates are gated separately so bests can only
+    // increase.
+    function validArcadeScore(scoreId) {
+      return request.resource.data.keys().hasOnly([
+        'gameId', 'uid', 'playerId', 'name', 'state', 'score', 'updatedAt'
+      ])
+      && request.resource.data.gameId is string
+      && request.resource.data.gameId in [
+        'merge_rush', 'sort_hoard', 'crystal_relay', 'set_assembly', 'hero_rumble'
+      ]
+      && request.resource.data.uid is string
+      && request.resource.data.uid == request.auth.uid
+      && request.resource.data.playerId is string
+      && request.resource.data.playerId.size() >= 12
+      && request.resource.data.playerId.size() <= 40
+      && scoreId == request.resource.data.gameId + '__' + request.auth.uid + '__' + request.resource.data.playerId
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.name.size() <= 24
+      && request.resource.data.state is string
+      && request.resource.data.state.size() <= 12
+      && request.resource.data.score is int
+      && request.resource.data.score >= 0
+      && request.resource.data.score <= 100000000
+      && request.resource.data.updatedAt == request.time;
+    }
+
     function validClientError() {
       return request.resource.data.keys().hasOnly([
         'source', 'error', 'extra', 'path', 'userAgent', 'createdAt', 'authorId', 'receivedAt'
@@ -112,7 +143,7 @@ service cloud.firestore {
 
     function validDashboardData() {
       return request.resource.data.keys().hasOnly([
-        'updatedAtMs', 'syncRevision', 'last_updated', 'total_attacks', 'attacks', 'players_summary', 'logs',
+        'updatedAtMs', 'syncRevision', 'last_updated', 'total_attacks', 'attacks', 'players_summary',
         'bannerRecords', 'dutyRecords', 'contributionRecords', 'exGuildContributions',
         'playerRegistry', 'r5Season', 'publicConductAdjustments'
       ])
@@ -123,7 +154,6 @@ service cloud.firestore {
       && (!('total_attacks' in request.resource.data) || request.resource.data.total_attacks is int)
       && (!('attacks' in request.resource.data) || request.resource.data.attacks is list)
       && (!('players_summary' in request.resource.data) || request.resource.data.players_summary is list)
-      && (!('logs' in request.resource.data) || request.resource.data.logs is list)
       && (!('bannerRecords' in request.resource.data) || request.resource.data.bannerRecords is list)
       && (!('dutyRecords' in request.resource.data) || request.resource.data.dutyRecords is list)
       && (!('contributionRecords' in request.resource.data) || request.resource.data.contributionRecords is list)
@@ -131,6 +161,43 @@ service cloud.firestore {
       && (!('playerRegistry' in request.resource.data) || request.resource.data.playerRegistry is map)
       && (!('r5Season' in request.resource.data) || request.resource.data.r5Season is string)
       && (!('publicConductAdjustments' in request.resource.data) || request.resource.data.publicConductAdjustments is list);
+    }
+
+    function validAdminLogEvent(logId) {
+      return request.resource.data.keys().hasOnly([
+        'id', 'severity', 'source', 'messageKey', 'params', 'fallback', 'file',
+        'clientCreatedAtMs', 'createdAt', 'expiresAt', 'createdBy', 'sessionId', 'sequence'
+      ])
+      && request.resource.data.id is string
+      && request.resource.data.id == logId
+      && request.resource.data.id.matches('^[A-Za-z0-9_-]{1,160}$')
+      && request.resource.data.severity in ['info', 'warn', 'error', 'success']
+      && request.resource.data.source in [
+        'system', 'dashboard', 'ocr', 'roster', 'cloud', 'sync', 'import', 'export'
+      ]
+      && request.resource.data.messageKey is string
+      && request.resource.data.messageKey.size() <= 120
+      && (request.resource.data.messageKey == ''
+        || request.resource.data.messageKey.matches('^[A-Za-z][A-Za-z0-9_.-]{0,119}$'))
+      && request.resource.data.params is string
+      && request.resource.data.params.size() <= 1500
+      && request.resource.data.fallback is string
+      && request.resource.data.fallback.matches(
+        '^(system|dashboard|ocr|roster|cloud|sync|import|export) (info|warn|error|success) activity$'
+      )
+      && request.resource.data.file is string
+      && request.resource.data.file == ''
+      && request.resource.data.clientCreatedAtMs is int
+      && request.resource.data.clientCreatedAtMs > 0
+      && request.resource.data.createdAt == request.time
+      && request.resource.data.expiresAt is timestamp
+      && request.resource.data.expiresAt > request.time
+      && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
+      && request.resource.data.createdBy == request.auth.uid
+      && request.resource.data.sessionId is string
+      && request.resource.data.sessionId.matches('^[A-Za-z0-9_-]{1,80}$')
+      && request.resource.data.sequence is int
+      && request.resource.data.sequence >= 0;
     }
 
     function validRosterData() {
@@ -343,7 +410,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
-        'showVoterNames', 'updatedAt', 'updatedBy'
+        'showVoterNames', 'closesAt', 'updatedAt', 'updatedBy'
       ])
       && request.resource.data.season is string
       && request.resource.data.season.size() > 0
@@ -352,6 +419,16 @@ service cloud.firestore {
       && request.resource.data.allowEditing is bool
       && request.resource.data.showPublicResults is bool
       && request.resource.data.showVoterNames is bool
+      && (
+        !('closesAt' in request.resource.data)
+        || (
+          request.resource.data.closesAt is string
+          && request.resource.data.closesAt.size() <= 24
+          && request.resource.data.closesAt.matches(
+            '^$|^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[0-1])T([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9][.][0-9]{3}Z$'
+          )
+        )
+      )
       && request.resource.data.updatedAt == request.time
       && request.resource.data.updatedBy == request.auth.uid;
     }
@@ -448,6 +525,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /vts_admin/log_store/admin_log_events/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && validAdminLogEvent(logId);
+      allow update, delete: if false;
+    }
+
     match /vts_admin/conduct_adjustments/records/{adjustmentId} {
       allow read: if signedIn();
       allow create: if isAdmin()
@@ -490,6 +573,20 @@ service cloud.firestore {
     match /vts_admin/eden_x1_public_vote_results {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validEdenX1PublicVoteResults();
+      allow delete: if false;
+    }
+
+    match /arcade_scores/{scoreId} {
+      // Any signed-in (incl. anonymous) visitor can read the leaderboard.
+      allow read: if signedIn();
+      // Owner creates their own row; the doc id + uid field are pinned to their auth uid.
+      allow create: if signedIn() && validArcadeScore(scoreId);
+      // Owner updates their own row, and only to a higher-or-equal best (monotonic).
+      allow update: if signedIn()
+        && validArcadeScore(scoreId)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.playerId == resource.data.playerId
+        && request.resource.data.score >= resource.data.score;
       allow delete: if false;
     }
 

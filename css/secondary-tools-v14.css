@@ -1,0 +1,1868 @@
+/* V14 secondary-tool polish. This sheet intentionally relies on the existing
+   feature CSS and only owns hierarchy, containment, responsive flow, and the
+   shared aurora/glass finish for Strife, Loyalty, and Eden Map. */
+
+#strifeSection,
+#loyaltySection,
+#edenMapSection {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+#strifeSection {
+  font-family: var(
+    --font-ui,
+    var(--ff-font-ui, 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif)
+  );
+}
+
+#strifeSection :is(button, a):focus-visible,
+#loyaltySection :is(button, a, input, select):focus-visible,
+#edenMapSection :is(button, a, input, select, summary):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+#strifeSection .tab-loading,
+#loyaltySection .tab-loading,
+#edenMapSection .tab-loading {
+  width: min(100%, 34rem);
+  min-height: 9rem;
+  margin: 2rem auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--panel-fill-quiet);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-low);
+}
+
+/* --- Strife over Dragon ------------------------------------------------ */
+
+.strife-tool-root {
+  display: grid;
+  gap: var(--panel-gap);
+  width: min(100%, 92rem);
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.strife-header,
+.loyalty-header,
+.eden-map-header {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(circle at 7% 4%, rgba(45, 212, 191, 0.13), transparent 39%),
+    radial-gradient(circle at 93% 94%, rgba(247, 185, 85, 0.09), transparent 37%),
+    var(--panel-fill-quiet);
+  box-shadow: var(--shadow-card);
+}
+
+.strife-header::before,
+.loyalty-header::before,
+.eden-map-header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--v12-line);
+}
+
+.strife-header {
+  padding: clamp(1rem, 2vw, 1.55rem);
+}
+.strife-header > div {
+  max-width: 65rem;
+}
+.strife-eyebrow {
+  margin: 0 0 0.3rem;
+  color: var(--brand-light);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+.strife-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+.strife-header p:not(.strife-eyebrow) {
+  max-width: 58rem;
+  margin: 0.6rem 0 0;
+  color: var(--text-muted);
+  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+  line-height: 1.55;
+}
+
+.strife-control-deck,
+.strife-results-band,
+.strife-monster-summary {
+  min-width: 0;
+  border-color: var(--border-subtle);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-low);
+}
+
+.strife-control-deck,
+.strife-results-band {
+  padding: clamp(0.75rem, 1.25vw, 1.05rem);
+  border-radius: var(--radius-card);
+}
+.strife-section-title {
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+.strife-section-title h3 {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+.strife-section-title > span {
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
+.strife-monster-grid {
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--card-gap);
+  min-width: 0;
+}
+.strife-monster-card {
+  position: relative;
+  min-width: 0;
+  min-height: 8.4rem;
+  padding: 0.7rem 0.42rem 0.6rem;
+  overflow: hidden;
+  border-color: var(--border);
+  border-radius: var(--radius-control);
+  background: var(--control-bg);
+  transition:
+    transform var(--t-fast),
+    border-color var(--t-fast),
+    background var(--t-fast),
+    box-shadow var(--t-fast);
+}
+.strife-monster-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+  background: var(--control-hover);
+}
+.strife-monster-card.active {
+  border-color: var(--monster-accent);
+  background:
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--monster-accent) 16%, transparent),
+      transparent 60%
+    ),
+    var(--control-bg);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--monster-accent) 30%, transparent),
+    var(--shadow-glow);
+}
+.strife-monster-art {
+  border-color: color-mix(in srgb, var(--monster-accent) 58%, var(--border));
+  background: var(--surface-2);
+}
+.strife-monster-art--card {
+  width: 4rem;
+  height: 4rem;
+}
+.strife-monster-name {
+  max-width: 100%;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.strife-monster-formation {
+  color: var(--text-dim);
+  font-size: 0.57rem;
+}
+
+.strife-control-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  min-width: 0;
+}
+.strife-control-label {
+  color: var(--text-muted);
+}
+.strife-stage-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.strife-stage-btn {
+  min-width: 3.25rem;
+  min-height: var(--tap-min);
+  border-color: var(--border);
+  border-radius: var(--radius-control);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  font-family: var(--font-mono, var(--ff-font-data, 'JetBrains Mono', ui-monospace, monospace));
+  font-variant-numeric: tabular-nums;
+}
+.strife-stage-btn:hover {
+  border-color: var(--stage-color);
+  color: var(--text-primary);
+}
+.strife-stage-btn.active {
+  border-color: var(--stage-color);
+  background: color-mix(in srgb, var(--stage-color) 17%, var(--control-bg));
+  color: var(--text-primary);
+  box-shadow: inset 0 -2px 0 var(--stage-color);
+}
+
+.strife-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+.strife-metrics > span {
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  overflow-wrap: anywhere;
+}
+.strife-metrics strong {
+  color: var(--text-primary);
+}
+
+.strife-monster-summary {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  padding: clamp(0.8rem, 1.4vw, 1.15rem);
+  border-radius: var(--radius-card);
+}
+.strife-monster-art--hero {
+  width: clamp(4.75rem, 7vw, 6.1rem);
+  height: clamp(4.75rem, 7vw, 6.1rem);
+}
+.strife-monster-summary h3 {
+  color: var(--text-primary);
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+}
+.strife-monster-summary > div > span {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.strife-guide-notes {
+  padding: 0.7rem 0.8rem;
+  border-inline-start: 3px solid var(--brand);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: var(--surface-soft);
+}
+[dir='rtl'] .strife-guide-notes {
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+}
+.strife-guide-notes p {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+.strife-skill-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--card-gap);
+  min-width: 0;
+}
+.strife-skill-card {
+  min-width: 0;
+  padding: 0.75rem;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.strife-skill-head h4 {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.77rem;
+  overflow-wrap: anywhere;
+}
+.strife-skill-meta span,
+.strife-tags span,
+.strife-troop-chip {
+  max-width: 100%;
+  border-color: var(--border-subtle);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.strife-skill-body {
+  color: var(--text-secondary);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+.strife-skill-answer {
+  border-top-color: var(--border-subtle);
+}
+.strife-skill-answer strong {
+  color: var(--status-success);
+}
+
+.strife-lane-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.strife-ranked-list {
+  gap: var(--card-gap);
+  min-width: 0;
+}
+.strife-combo-card {
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+}
+.strife-combo-card--f2p {
+  --lane-accent: var(--brand);
+}
+.strife-combo-card--p2w {
+  --lane-accent: var(--accent);
+}
+.strife-card-rank {
+  min-width: 0;
+  border-inline-end-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--lane-accent) 8%, var(--control-bg));
+  box-shadow: inset 3px 0 0 var(--lane-accent);
+}
+[dir='rtl'] .strife-card-rank {
+  box-shadow: inset -3px 0 0 var(--lane-accent);
+}
+.strife-card-rank strong,
+.strife-hero-name {
+  color: var(--text-primary);
+}
+.strife-card-rank span,
+.strife-metrics strong,
+.strife-slot-role,
+.strife-hero-meta,
+.strife-hero-paid {
+  font-family: var(--font-mono, var(--ff-font-data, 'JetBrains Mono', ui-monospace, monospace));
+  font-variant-numeric: tabular-nums;
+}
+.strife-card-main,
+.strife-card-heroes,
+.strife-hero-slot {
+  min-width: 0;
+}
+.strife-card-heroes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.strife-hero-frame {
+  width: clamp(3.4rem, 5vw, 4.2rem);
+  height: clamp(3.4rem, 5vw, 4.2rem);
+  border-color: color-mix(in srgb, var(--lane-accent) 60%, var(--border));
+  border-radius: 32% 32% 38% 38%;
+  background: var(--surface-2);
+}
+.strife-hero-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.strife-hero-name {
+  max-width: 100%;
+  font-size: 0.62rem;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.strife-hero-meta {
+  max-width: 100%;
+  color: var(--text-dim);
+  font-size: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.strife-combo-note {
+  border-top-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+.strife-empty,
+.strife-skill-empty {
+  min-height: 7rem;
+  border-color: var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+.strife-empty strong,
+.strife-skill-empty strong {
+  color: var(--text-primary);
+}
+
+/* --- Eden Loyalty ----------------------------------------------------- */
+
+#loyaltySection {
+  padding: clamp(0.75rem, 1.7vw, 1.5rem);
+}
+.loyalty-root {
+  width: min(100%, 88rem);
+  max-width: 88rem;
+  min-width: 0;
+  margin-inline: auto;
+}
+.loyalty-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: var(--panel-gap);
+  padding: clamp(1rem, 2vw, 1.45rem);
+}
+.loyalty-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.loyalty-desc {
+  max-width: 54rem;
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.loyalty-eden-link-btn,
+.loyalty-calc-btn,
+.loyalty-preset-btn {
+  min-height: var(--tap-min);
+  border-radius: var(--radius-control);
+}
+.loyalty-eden-link-btn {
+  border-color: var(--border-hover);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+}
+
+.loyalty-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 20rem);
+  align-items: start;
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.loyalty-main,
+.loyalty-aside {
+  min-width: 0;
+}
+.loyalty-presets {
+  min-width: 0;
+  margin-bottom: var(--panel-gap);
+  padding: 0.5rem;
+  overflow-x: auto;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--panel-fill-quiet);
+  scrollbar-width: thin;
+}
+.loyalty-presets-label {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+}
+.loyalty-preset-btn {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.75rem;
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.loyalty-preset-btn:hover {
+  border-color: var(--border-hover);
+  background: var(--control-hover);
+  color: var(--text-primary);
+}
+.loyalty-preset-btn.active {
+  border-color: var(--brand);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+
+.loyalty-inputs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.loyalty-panel {
+  min-width: 0;
+  padding: clamp(0.8rem, 1.3vw, 1rem);
+  overflow: hidden;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-low);
+}
+.loyalty-panel-title {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom-color: var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+.loyalty-media-row {
+  display: grid;
+  grid-template-columns: minmax(6.25rem, 0.36fr) minmax(0, 1fr);
+  gap: 0.7rem;
+  min-width: 0;
+}
+.loyalty-camp-media,
+.loyalty-source-media,
+.loyalty-camp-fields,
+.loyalty-source-grid {
+  width: auto;
+  min-width: 0;
+}
+.loyalty-panel-image {
+  width: 100%;
+  height: 100%;
+  min-height: 7rem;
+  max-height: 10rem;
+  object-fit: cover;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+}
+.loyalty-level-row,
+.loyalty-source-tile {
+  min-width: 0;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.loyalty-level-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem;
+  min-height: var(--tap-min);
+}
+.loyalty-level-label,
+.loyalty-field-label,
+.loyalty-source-label {
+  min-width: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.loyalty-source-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.loyalty-source-tile {
+  padding: 0.45rem;
+}
+.loyalty-divider {
+  background: var(--border-subtle);
+}
+
+.loyalty-feature-card {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.34fr) minmax(0, 1fr);
+  min-width: 0;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.loyalty-feature-media {
+  min-width: 0;
+  padding: 0.55rem;
+  border-inline-end: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--loyalty-card-accent) 8%, var(--surface-2));
+}
+.loyalty-feature-image {
+  width: 100%;
+  height: 5.25rem;
+  object-fit: contain;
+}
+.loyalty-feature-body {
+  min-width: 0;
+  padding: 0.7rem;
+  text-align: start;
+}
+.loyalty-field-sub {
+  color: var(--text-dim);
+}
+.loyalty-time-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  min-width: 0;
+}
+.loyalty-time-field {
+  min-width: 0;
+}
+
+#loyaltySection .loyalty-input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--tap-min);
+  border-color: var(--border);
+  border-radius: 0.65rem;
+  background: var(--control-bg);
+  color: var(--text-primary);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#loyaltySection .loyalty-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.loyalty-sticky {
+  position: sticky;
+  top: 0.75rem;
+  min-width: 0;
+  padding: 0.85rem;
+  overflow: hidden;
+  border-color: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--panel-fill);
+  box-shadow: var(--shadow-card);
+}
+.loyalty-sticky-title {
+  color: var(--text-primary);
+}
+.loyalty-sticky-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.loyalty-stat {
+  min-width: 0;
+  min-height: 4.8rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.loyalty-stat-label {
+  color: var(--text-dim);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.loyalty-stat-value {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+.loyalty-stat-sub {
+  color: var(--text-muted);
+}
+.loyalty-calc-btn {
+  width: 100%;
+  border-color: color-mix(in srgb, var(--brand) 70%, transparent);
+  background: linear-gradient(135deg, var(--brand-light), var(--accent-2) 64%, var(--accent));
+  color: var(--text-on-accent);
+  box-shadow: 0 10px 24px var(--brand-glow);
+}
+
+.loyalty-results {
+  min-width: 0;
+  margin-top: var(--panel-gap);
+  scroll-margin-top: 0.75rem;
+}
+.loyalty-error {
+  padding: 0.8rem 1rem;
+  border-color: color-mix(in srgb, var(--status-danger) 42%, transparent);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--status-danger) 9%, var(--panel-strong));
+  color: var(--status-danger);
+}
+.loyalty-result-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.loyalty-result-card,
+.loyalty-step-card {
+  min-width: 0;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-low);
+}
+.loyalty-result-label {
+  color: var(--text-dim);
+}
+.loyalty-result-value {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.loyalty-result-hint {
+  color: var(--text-muted);
+}
+.loyalty-results-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-low);
+}
+.loyalty-results-table {
+  min-width: 58rem;
+}
+.loyalty-results-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel-strong);
+  color: var(--text-muted);
+}
+.loyalty-results-table th,
+.loyalty-results-table td {
+  border-bottom-color: var(--border-subtle);
+  text-align: start;
+}
+
+/* --- Eden Map --------------------------------------------------------- */
+
+#edenMapSection {
+  padding: clamp(0.5rem, 1vw, 0.85rem);
+}
+.eden-map-root {
+  gap: var(--panel-gap);
+  width: 100%;
+  min-width: 0;
+}
+.eden-map-header {
+  gap: 0.7rem;
+  padding: clamp(0.8rem, 1.4vw, 1.05rem);
+}
+.eden-map-header > div:first-child {
+  min-width: 0;
+  margin: 0;
+}
+.eden-page-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.35rem, 2.3vw, 2rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+.eden-page-desc {
+  max-width: 70rem;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+.eden-dataset-badge {
+  border-color: var(--border-hover);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+}
+
+.eden-control-deck {
+  grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+  gap: 0.45rem;
+  min-width: 0;
+}
+.eden-control-deck > .eden-deck-nav,
+.eden-control-deck > .eden-mission-panel,
+.eden-control-deck > .eden-deck-tools {
+  grid-column: 1 / -1;
+}
+.eden-control-deck > .eden-deck-meta,
+.eden-control-deck > .eden-deck-layers {
+  grid-column: 1;
+}
+.eden-control-deck > .eden-plans-panel,
+.eden-control-deck > .eden-deck-jump {
+  grid-column: 2;
+}
+.eden-deck-row,
+.eden-plans-panel,
+.eden-mission-panel {
+  min-width: 0;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.eden-deck-row {
+  gap: 0.45rem;
+  padding: 0.4rem 0.5rem;
+}
+.eden-deck-label,
+.eden-layer-label,
+.eden-quick-label {
+  min-width: auto;
+  color: var(--text-dim);
+}
+.eden-deck-cluster,
+.eden-tool-segment,
+.eden-layer-scroll,
+.eden-quick-scroll,
+.eden-plans-body {
+  min-width: 0;
+}
+.eden-deck-cluster-end {
+  margin-inline-start: auto;
+}
+
+.eden-tool-btn,
+.eden-layer-btn,
+.eden-quick-btn,
+.eden-mission-team-btn,
+.eden-coord-go-btn,
+.eden-action-btn {
+  min-height: var(--tap-min);
+  border-radius: var(--radius-control);
+  font-family: inherit;
+}
+.eden-tool-btn {
+  padding: 0.45rem 0.65rem;
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  font-size: 0.67rem;
+}
+.eden-tool-btn:hover {
+  border-color: var(--border-hover);
+  background: var(--control-hover);
+  color: var(--text-primary);
+}
+.eden-tool-btn.active,
+.eden-tool-segment .eden-tool-btn.active {
+  border-color: var(--brand);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+.eden-tool-accent {
+  border-color: color-mix(in srgb, var(--brand) 62%, transparent);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+}
+.eden-tool-danger {
+  border-color: color-mix(in srgb, var(--status-danger) 38%, transparent);
+  background: color-mix(in srgb, var(--status-danger) 8%, var(--control-bg));
+  color: var(--status-danger);
+}
+.eden-tool-icon {
+  min-width: var(--tap-min);
+}
+.eden-tool-segment {
+  border-color: var(--border-subtle);
+  background: var(--control-bg);
+}
+
+.eden-mission-panel {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+.eden-mission-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  min-height: var(--tap-min);
+  padding: 0.45rem 0.65rem;
+  list-style: none;
+  cursor: pointer;
+}
+.eden-mission-head::-webkit-details-marker {
+  display: none;
+}
+.eden-mission-head::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-inline-end: 2px solid var(--brand-light);
+  border-bottom: 2px solid var(--brand-light);
+  transform: rotate(-45deg);
+  transition: transform var(--t-fast);
+}
+[dir='rtl'] .eden-mission-head::before {
+  transform: rotate(135deg);
+}
+.eden-mission-panel[open] .eden-mission-head::before {
+  transform: rotate(45deg);
+}
+.eden-mission-title {
+  margin-inline-end: auto;
+  color: var(--text-muted);
+}
+.eden-mission-preview {
+  min-height: 2rem;
+  border-color: color-mix(in srgb, var(--mission-color, var(--brand)) 55%, transparent);
+  background: color-mix(in srgb, var(--mission-color, var(--brand)) 13%, transparent);
+  color: var(--text-primary);
+}
+.eden-mission-panel:not([open]) > .eden-mission-grid {
+  display: none;
+}
+.eden-mission-grid {
+  grid-template-columns: minmax(9rem, 1.05fr) minmax(8rem, 0.9fr) minmax(5.5rem, 0.55fr) minmax(
+      13rem,
+      1.25fr
+    ) minmax(17rem, 1.6fr);
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.5rem 0.6rem 0.6rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.eden-mission-field,
+.eden-mode-label,
+.eden-ref-opacity {
+  min-width: 0;
+}
+
+.eden-mission-select,
+.eden-mission-input,
+.eden-dataset-select,
+.eden-sector-select,
+.eden-plan-select,
+.eden-view-select,
+.eden-path-color-select,
+.eden-path-label-input,
+.eden-filter-select,
+.eden-coord-input,
+.eden-guild-input,
+.eden-guild-label input {
+  min-width: 0;
+  min-height: var(--tap-min);
+  border-color: var(--border);
+  border-radius: var(--radius-control);
+  background: var(--control-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+.eden-mission-team-btn {
+  min-width: var(--tap-min);
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-muted);
+}
+.eden-mission-team-btn.active {
+  border-color: var(--brand);
+  background: linear-gradient(135deg, var(--brand-light), var(--accent-2));
+  color: var(--text-on-accent);
+}
+
+.eden-plans-panel {
+  overflow: hidden;
+}
+.eden-plans-panel summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  color: var(--text-muted);
+}
+.eden-plans-body {
+  border-top-color: var(--border-subtle);
+}
+.eden-layer-bar,
+.eden-quick-jump {
+  padding: 0.4rem 0.5rem;
+}
+.eden-layer-scroll,
+.eden-quick-scroll {
+  gap: 0.3rem;
+}
+.eden-layer-btn,
+.eden-quick-btn {
+  flex: 0 0 auto;
+  min-height: 2.2rem;
+  border-color: var(--border-subtle);
+  background: var(--control-bg);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.eden-layer-btn.active,
+.eden-quick-btn.active {
+  border-color: var(--brand);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+}
+
+[data-theme='light'] :is(.eden-layer-btn, .eden-quick-btn).active,
+[data-theme='light'] .eden-layer-btn.eden-layer-floor.active {
+  border-color: #0e7490 !important;
+  background: linear-gradient(135deg, #0e7490, #0f766e 58%, #9a3412) !important;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .eden-help-link {
+  color: #4338ca;
+}
+
+:is(
+    .eden-quick-btn,
+    .eden-guide-meta-btn,
+    .eden-guide-sec-btn,
+    .eden-guide-step-pill,
+    .eden-guide-done-btn,
+    .eden-guide-nav-btn
+  ) {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.eden-help-link {
+  display: inline-flex;
+  align-items: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+@media (max-width: 768px) {
+  #loyaltySection .loyalty-calc-btn,
+  #edenMapSection .eden-tool-btn,
+  #edenMapSection .eden-mission-team-btn,
+  #edenMapSection .eden-mission-actions .eden-tool-btn,
+  #edenMapSection :is(
+      .eden-guide-meta-btn,
+      .eden-guide-sec-btn,
+      .eden-guide-step-pill,
+      .eden-guide-done-btn,
+      .eden-guide-nav-btn,
+      .eden-help-link
+    ) {
+    height: auto !important;
+    min-height: 44px !important;
+  }
+
+  #edenMapSection :is(.eden-layer-btn, .eden-quick-btn) {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  #edenMapSection .eden-deck-nav .eden-zoom-cluster {
+    grid-template-columns: 44px minmax(44px, 1fr) 44px !important;
+  }
+
+  #edenMapSection .eden-deck-nav .eden-tool-icon {
+    min-width: 44px !important;
+  }
+
+  [data-theme='light'] :is(.eden-mode-label, .eden-ref-opacity) {
+    color: #52657b;
+  }
+}
+
+.eden-map-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(18rem, 23vw, 21rem);
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.eden-canvas-wrap {
+  min-width: 0;
+  min-height: clamp(31rem, 66vh, 47rem);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-card);
+}
+#edenMapCanvas {
+  min-height: clamp(31rem, 66vh, 47rem);
+}
+.eden-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  min-width: 0;
+  max-height: clamp(31rem, 66vh, 47rem);
+  padding: 0.7rem;
+  overflow: hidden;
+  border-color: var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-card);
+}
+.eden-stats,
+.eden-hover-info,
+.eden-selected-panel,
+.eden-filter-row,
+.eden-coord-search,
+.eden-sidebar-list-section,
+.eden-team-panel {
+  min-width: 0;
+}
+.eden-stats {
+  padding-inline-end: 2.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.eden-filter-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.eden-team-filter-wrap {
+  min-width: 0;
+}
+.eden-coord-search {
+  margin-top: 0.5rem;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.eden-coord-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+}
+.eden-coord-go-btn {
+  min-width: var(--tap-min);
+  border-color: var(--border-hover);
+  background: var(--surface-selected);
+  color: var(--brand-light);
+}
+.eden-sidebar-list-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0.5rem;
+}
+.eden-struct-list {
+  flex: 1 1 auto;
+  min-height: 7rem;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.eden-struct-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+  min-width: 0;
+  min-height: var(--tap-min);
+  border-color: transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  text-align: start;
+}
+.eden-struct-row:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+.eden-struct-row.active {
+  border-color: var(--brand);
+  background: var(--surface-selected);
+}
+.eden-struct-info {
+  min-width: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.eden-struct-info strong {
+  color: var(--text-primary);
+}
+.eden-struct-pts {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.eden-sidebar-close {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-primary);
+}
+.eden-map-legend,
+.eden-coord-hud,
+.eden-minimap {
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+  color: var(--text-secondary);
+  backdrop-filter: blur(10px);
+}
+
+.eden-help-panel {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--panel-fill-quiet);
+  box-shadow: var(--shadow-low);
+}
+.eden-help-summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  color: var(--text-primary);
+}
+.eden-guide-root {
+  min-width: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.eden-season-modal {
+  padding: max(1rem, var(--safe-top)) 1rem max(1rem, var(--safe-bottom));
+  background: rgba(2, 6, 13, 0.76);
+  backdrop-filter: blur(14px);
+}
+.eden-season-card {
+  width: min(100%, 34rem);
+  max-height: min(86dvh, 44rem);
+  overflow-y: auto;
+  border-color: var(--border-hover);
+  border-radius: var(--radius-panel);
+  background: var(--panel-strong);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lift);
+}
+.eden-season-title,
+.eden-season-choice-title {
+  color: var(--text-primary);
+}
+.eden-season-intro,
+.eden-season-choice-desc,
+.eden-season-choice-meta {
+  color: var(--text-muted);
+}
+.eden-season-choice {
+  min-height: var(--tap-min);
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-primary);
+}
+.eden-season-choice:hover {
+  border-color: var(--border-hover);
+  background: var(--control-hover);
+}
+.eden-map-root.eden-map-loading::after {
+  content: 'Loading Eden Map\2026';
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(45, 212, 191, 0.12), transparent 52%),
+    color-mix(in srgb, var(--panel-strong) 92%, transparent);
+  color: var(--text-muted);
+  backdrop-filter: blur(12px);
+  animation: secondary-status-pulse 1.5s ease-in-out infinite;
+}
+@keyframes secondary-status-pulse {
+  50% {
+    color: var(--text-primary);
+  }
+}
+
+/* Token-based light parity. Canvas tiles remain dark because they are in-game
+   map art; all surrounding chrome follows the active theme. */
+[data-theme='light']
+  :is(
+    .strife-header h2,
+    .strife-section-title h3,
+    .strife-monster-name,
+    .strife-monster-summary h3,
+    .strife-skill-head h4,
+    .strife-hero-name,
+    .loyalty-title,
+    .loyalty-panel-title,
+    .loyalty-sticky-title,
+    .eden-page-title,
+    .eden-season-title
+  ) {
+  color: var(--text-primary);
+}
+[data-theme='light']
+  :is(
+    .eden-mission-select,
+    .eden-mission-input,
+    .eden-dataset-select,
+    .eden-sector-select,
+    .eden-plan-select,
+    .eden-view-select,
+    .eden-path-color-select,
+    .eden-path-label-input,
+    .eden-filter-select,
+    .eden-coord-input,
+    #loyaltySection .loyalty-input
+  ) {
+  border-color: var(--border);
+  background: var(--control-bg);
+  color: var(--text-primary);
+}
+
+@media (max-width: 1080px) {
+  .strife-skill-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .strife-lane-grid {
+    grid-template-columns: 1fr;
+  }
+  .loyalty-layout {
+    grid-template-columns: minmax(0, 1fr) 17.5rem;
+  }
+  .eden-control-deck {
+    grid-template-columns: 1fr;
+  }
+  .eden-control-deck > * {
+    grid-column: 1 !important;
+  }
+  .eden-mission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .eden-mission-teams,
+  .eden-mission-actions {
+    grid-column: 1 / -1;
+  }
+  .eden-map-body {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+  }
+}
+
+@media (max-width: 768px) {
+  #strifeSection,
+  #loyaltySection,
+  #edenMapSection {
+    padding: 0.65rem !important;
+  }
+
+  .strife-tool-root {
+    gap: 0.55rem !important;
+  }
+  .strife-header {
+    padding: 0.9rem !important;
+    border-radius: 1rem !important;
+  }
+  .strife-header h2 {
+    font-size: clamp(1.45rem, 8vw, 1.85rem) !important;
+  }
+  .strife-header p:not(.strife-eyebrow) {
+    margin-top: 0.45rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.45 !important;
+  }
+  .strife-control-deck,
+  .strife-results-band {
+    padding: 0.7rem !important;
+    border-radius: 0.9rem !important;
+  }
+  .strife-section-title {
+    margin-bottom: 0.5rem !important;
+  }
+  .strife-section-title h3 {
+    font-size: 0.82rem !important;
+  }
+  .strife-section-title > span {
+    font-size: 0.59rem !important;
+  }
+  .strife-monster-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 0.4rem !important;
+    margin-inline: -0.7rem;
+    padding: 0 0.7rem 0.3rem !important;
+    overflow-x: auto !important;
+    scroll-padding-inline: 0.7rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .strife-monster-grid::-webkit-scrollbar,
+  .strife-stage-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .strife-monster-card {
+    flex: 0 0 5.5rem !important;
+    min-height: 7.2rem !important;
+    padding: 0.5rem 0.32rem !important;
+    scroll-snap-align: center;
+  }
+  .strife-monster-art--card {
+    width: 3.2rem !important;
+    height: 3.2rem !important;
+  }
+  .strife-monster-name {
+    font-size: 0.61rem !important;
+  }
+  .strife-control-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem !important;
+  }
+  .strife-stage-grid {
+    flex-wrap: nowrap !important;
+    margin-inline: -0.7rem;
+    padding: 0 0.7rem 0.3rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .strife-stage-btn {
+    flex: 0 0 3.25rem;
+    min-height: var(--tap-min) !important;
+  }
+  .strife-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+    margin-top: 0.5rem !important;
+  }
+  .strife-metrics > span {
+    min-height: 2.65rem !important;
+    padding: 0.45rem !important;
+    font-size: 0.59rem !important;
+  }
+  .strife-monster-summary {
+    grid-template-columns: 4.2rem minmax(0, 1fr) !important;
+    gap: 0.65rem !important;
+    padding: 0.65rem !important;
+  }
+  .strife-monster-art--hero {
+    width: 4.2rem !important;
+    height: 4.2rem !important;
+  }
+  .strife-monster-summary h3 {
+    font-size: 1rem !important;
+  }
+  .strife-monster-summary > div > span,
+  .strife-guide-notes p,
+  .strife-skill-body {
+    font-size: 0.65rem !important;
+  }
+  .strife-skill-list,
+  .strife-lane-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.45rem !important;
+  }
+  .strife-combo-card {
+    grid-template-columns: 1fr !important;
+  }
+  .strife-card-rank {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.45rem !important;
+    padding: 0.5rem 0.6rem !important;
+    border-inline-end: 0 !important;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: inset 0 2px 0 var(--lane-accent) !important;
+  }
+  .strife-card-main {
+    padding: 0.6rem !important;
+  }
+  .strife-card-heroes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.3rem !important;
+  }
+  .strife-hero-frame {
+    width: clamp(3.2rem, 16vw, 4rem) !important;
+    height: clamp(3.2rem, 16vw, 4rem) !important;
+  }
+  .strife-hero-name {
+    font-size: 0.59rem !important;
+  }
+
+  .loyalty-header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.6rem !important;
+    margin-bottom: 0.55rem !important;
+    padding: 0.85rem !important;
+    border-radius: 1rem !important;
+  }
+  .loyalty-title {
+    font-size: clamp(1.25rem, 6vw, 1.55rem) !important;
+  }
+  .loyalty-desc {
+    font-size: 0.69rem !important;
+    line-height: 1.4 !important;
+  }
+  .loyalty-eden-link-btn {
+    width: auto !important;
+    min-height: var(--tap-min) !important;
+    padding: 0.5rem 0.6rem !important;
+    font-size: 0.62rem !important;
+  }
+  .loyalty-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  .loyalty-aside {
+    order: -1 !important;
+    width: 100% !important;
+  }
+  .loyalty-sticky {
+    position: static !important;
+    padding: 0.6rem !important;
+    border-radius: 0.9rem !important;
+  }
+  .loyalty-sticky-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.3rem !important;
+  }
+  .loyalty-stat {
+    min-height: 4.25rem !important;
+    padding: 0.4rem !important;
+  }
+  .loyalty-stat-label {
+    font-size: 0.48rem !important;
+    letter-spacing: 0 !important;
+  }
+  .loyalty-stat-value {
+    font-size: 0.72rem !important;
+  }
+  .loyalty-presets {
+    margin-bottom: 0.5rem !important;
+    padding: 0.35rem !important;
+    gap: 0.3rem !important;
+  }
+  .loyalty-preset-btn {
+    min-height: var(--tap-min) !important;
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.6rem !important;
+  }
+  .loyalty-inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+  .loyalty-inputs > .loyalty-panel {
+    padding: 0.65rem !important;
+    border-radius: 0.9rem !important;
+  }
+  .loyalty-panel-title {
+    margin-bottom: 0.6rem !important;
+    font-size: 0.66rem !important;
+  }
+  .loyalty-media-row,
+  .loyalty-media-row--compact {
+    grid-template-columns: 5.35rem minmax(0, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  .loyalty-panel-image {
+    min-height: 5.75rem !important;
+    max-height: 7.75rem !important;
+  }
+  .loyalty-level-row {
+    min-height: var(--tap-min) !important;
+  }
+  .loyalty-feature-card {
+    grid-template-columns: 5.1rem minmax(0, 1fr) !important;
+  }
+  .loyalty-feature-media,
+  .loyalty-feature-media--wide,
+  .loyalty-feature-media--narrow {
+    padding: 0.4rem !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    border-inline-end: 1px solid var(--border-subtle) !important;
+  }
+  .loyalty-feature-image {
+    height: 4.6rem !important;
+    max-height: 4.6rem !important;
+  }
+  .loyalty-feature-body,
+  .loyalty-feature-body--wide,
+  .loyalty-feature-body--narrow {
+    padding: 0.55rem !important;
+    text-align: start !important;
+  }
+  #loyaltySection input,
+  #loyaltySection select,
+  #loyaltySection .loyalty-input {
+    min-height: var(--tap-min) !important;
+    font-size: 1rem !important;
+  }
+  .loyalty-result-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+  .loyalty-results-table-wrap {
+    display: none !important;
+  }
+  .loyalty-results-cards {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .eden-map-root {
+    gap: 0.45rem !important;
+  }
+  .eden-map-header {
+    gap: 0.45rem !important;
+    padding: 0.65rem !important;
+    border-radius: 1rem !important;
+  }
+  .eden-map-header > div:first-child {
+    margin: 0 !important;
+  }
+  .eden-page-title,
+  .eden-map-header > div:first-child h2 {
+    font-size: 1.22rem !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
+    text-transform: none !important;
+  }
+  .eden-page-desc,
+  .eden-map-header > div:first-child p {
+    display: -webkit-box;
+    margin-top: 0.25rem !important;
+    overflow: hidden;
+    font-size: 0.67rem !important;
+    line-height: 1.35 !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .eden-control-deck {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem !important;
+  }
+  .eden-deck-row,
+  .eden-toolbar-primary,
+  .eden-toolbar-tools,
+  .eden-toolbar-modes,
+  .eden-deck-nav,
+  .eden-deck-tools,
+  .eden-deck-meta,
+  .eden-layer-bar,
+  .eden-quick-jump {
+    min-height: var(--tap-min);
+    padding: 0.3rem 0.35rem !important;
+    gap: 0.3rem !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border: 1px solid var(--border-subtle) !important;
+    background: var(--surface-soft) !important;
+    scrollbar-width: none;
+  }
+  .eden-deck-row::-webkit-scrollbar,
+  .eden-toolbar-primary::-webkit-scrollbar,
+  .eden-toolbar-tools::-webkit-scrollbar,
+  .eden-toolbar-modes::-webkit-scrollbar,
+  .eden-layer-bar::-webkit-scrollbar,
+  .eden-quick-jump::-webkit-scrollbar {
+    display: none;
+  }
+  .eden-deck-cluster,
+  .eden-tool-segment,
+  .eden-layer-scroll,
+  .eden-quick-scroll {
+    flex: 0 0 auto;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+  }
+  .eden-deck-cluster-end {
+    margin-inline-start: 0;
+  }
+  .eden-tool-btn {
+    flex: 0 0 auto;
+    min-width: var(--tap-min) !important;
+    min-height: var(--tap-min) !important;
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.62rem !important;
+  }
+  .eden-layer-btn,
+  .eden-quick-btn {
+    min-height: var(--tap-min) !important;
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.59rem !important;
+  }
+  .eden-mission-panel {
+    display: block !important;
+    padding: 0 !important;
+    border-radius: var(--radius-control) !important;
+  }
+  .eden-mission-head {
+    min-height: var(--tap-min) !important;
+    padding: 0.4rem 0.55rem !important;
+  }
+  .eden-mission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+    padding: 0.5rem !important;
+  }
+  .eden-mission-select,
+  .eden-mission-input,
+  .eden-dataset-select,
+  .eden-sector-select,
+  .eden-plan-select,
+  .eden-view-select,
+  .eden-path-color-select,
+  .eden-path-label-input {
+    min-height: var(--tap-min) !important;
+    font-size: 1rem !important;
+  }
+  .eden-mission-team-row,
+  .eden-mission-actions,
+  .eden-plans-body,
+  .eden-path-tools.eden-path-tools--visible {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+  .eden-map-body {
+    display: block !important;
+    min-width: 0 !important;
+  }
+  .eden-canvas-wrap,
+  #edenMapCanvas {
+    min-height: clamp(25rem, 58svh, 36rem) !important;
+  }
+  .eden-canvas-wrap {
+    border-radius: 1rem !important;
+  }
+  .eden-sidebar {
+    position: fixed !important;
+    z-index: 1050 !important;
+    inset: auto 0 calc(72px + var(--safe-bottom)) !important;
+    display: flex !important;
+    width: 100% !important;
+    max-height: min(72dvh, calc(100dvh - 88px)) !important;
+    padding: 0.7rem !important;
+    transform: translateY(calc(100% + 1rem));
+    border-radius: 1.15rem 1.15rem 0 0 !important;
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.42);
+  }
+  .eden-sidebar.eden-sidebar-open {
+    transform: translateY(0);
+  }
+  .eden-map-root:is(.eden-map-fullscreen, .eden-map-fullscreen-fallback) .eden-sidebar,
+  .eden-map-root:fullscreen .eden-sidebar {
+    bottom: 0 !important;
+  }
+  .eden-sidebar-close {
+    display: grid !important;
+    place-items: center;
+    top: 0.4rem !important;
+    inset-inline-end: 0.5rem !important;
+    right: auto !important;
+    width: var(--tap-min) !important;
+    height: var(--tap-min) !important;
+  }
+  .eden-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+  }
+  .eden-filter-select,
+  .eden-coord-input,
+  .eden-coord-go-btn,
+  .eden-action-btn {
+    min-height: var(--tap-min) !important;
+    font-size: 1rem !important;
+  }
+  .eden-struct-row {
+    min-height: 3rem !important;
+    padding: 0.45rem !important;
+  }
+  .eden-map-legend {
+    max-width: calc(100% - 0.8rem);
+    overflow-x: auto !important;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .eden-minimap {
+    width: 5.25rem !important;
+    height: 5.25rem !important;
+  }
+  .eden-help-panel {
+    margin-top: 0 !important;
+    padding: 0 !important;
+    border-radius: 0.9rem !important;
+  }
+  .eden-help-summary {
+    min-height: var(--tap-min) !important;
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.69rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .loyalty-header {
+    grid-template-columns: 1fr !important;
+  }
+  .loyalty-eden-link-btn {
+    width: 100% !important;
+  }
+  .loyalty-sticky-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .loyalty-inputs,
+  .loyalty-result-summary,
+  .loyalty-results-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 390px) {
+  #strifeSection,
+  #loyaltySection,
+  #edenMapSection {
+    padding-inline: 0.5rem !important;
+  }
+  .strife-metrics {
+    grid-template-columns: 1fr !important;
+  }
+  .strife-hero-frame {
+    width: 3.1rem !important;
+    height: 3.1rem !important;
+  }
+  .loyalty-media-row,
+  .loyalty-media-row--compact {
+    grid-template-columns: 4.7rem minmax(0, 1fr) !important;
+  }
+  .loyalty-source-grid {
+    gap: 0.25rem !important;
+  }
+  .loyalty-feature-card {
+    grid-template-columns: 4.7rem minmax(0, 1fr) !important;
+  }
+  .eden-page-desc,
+  .eden-map-header > div:first-child p {
+    -webkit-line-clamp: 1;
+  }
+  .eden-deck-label,
+  .eden-layer-label,
+  .eden-quick-label {
+    display: none;
+  }
+  .eden-mission-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .eden-mission-teams,
+  .eden-mission-actions {
+    grid-column: 1 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #strifeSection *,
+  #strifeSection *::before,
+  #strifeSection *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .strife-monster-card:hover {
+    transform: none;
+  }
+
+  .eden-map-root.eden-map-loading::after {
+    animation: none;
+  }
+}

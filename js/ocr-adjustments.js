@@ -1,4 +1,5 @@
 import { compactPlayerIdentity, resolveCanonicalPlayerIdentity } from './ocr-name-normalizer.js';
+import { conductAdjustmentFingerprint } from './admin-sync-guard.js';
 
 export const R5_ADJUSTMENTS_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
 export const R5_ADJUSTMENTS_LOCAL_KEY = 'vts_r5_conduct_adjustments';
@@ -326,6 +327,16 @@ function isR5PersistenceUnavailable(err) {
   );
 }
 
+function createConductAdjustmentConflict(cloudData) {
+  const conflict = new Error(
+    'This bonus team effort entry changed in cloud. Refresh and retry your edit.'
+  );
+  conflict.name = 'ConductAdjustmentConflictError';
+  conflict.code = 'conduct-adjustment-conflict';
+  conflict.cloudData = cloudData;
+  return conflict;
+}
+
 export function loadLocalR5Adjustments(season) {
   const seasonKey = normalizeR5Season(season);
   return sortR5Adjustments(
@@ -459,10 +470,10 @@ export async function createR5Adjustment(input) {
   }
 }
 
-export async function updateR5Adjustment(adjustmentId, patch) {
+export async function updateR5Adjustment(adjustmentId, patch, options = {}) {
   try {
     const { db, user, firestore } = await ensureR5AdjustmentAdminContext();
-    const { doc, getDoc, serverTimestamp, setDoc } = firestore;
+    const { doc, getDoc, runTransaction, serverTimestamp, setDoc } = firestore;
     const id = requireString(adjustmentId, 'R5 adjustment id', 80);
     const updates = {};
 
@@ -503,29 +514,46 @@ export async function updateR5Adjustment(adjustmentId, patch) {
     //  - missing or historical doc -> use uid + serverTimestamp(), mirroring
     //    createR5Adjustment so the create/metadata-repair rules pass.
     const ref = doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, id);
-    const existing = await getDoc(ref);
-    const cloudData = existing.exists() ? existing.data() : null;
-    const hasStableCloudMetadata =
-      cloudData &&
-      typeof cloudData.createdAt?.toMillis === 'function' &&
-      typeof cloudData.createdBy === 'string' &&
-      cloudData.createdBy.trim() &&
-      cloudData.createdBy !== 'release-12.4.1';
-    const base = cloudData
-      ? { id, ...cloudData }
-      : readLocalR5AdjustmentRecords().find((entry) => entry?.id === id) || {};
-    const record = normalizeR5Adjustment(
-      {
-        ...base,
-        ...updates,
-        id,
-        createdAt: hasStableCloudMetadata ? cloudData.createdAt : serverTimestamp(),
-        createdBy: hasStableCloudMetadata ? cloudData.createdBy : user.uid,
-      },
-      { season: base.season }
-    );
+    const expectedFingerprint = String(options.expectedFingerprint || '');
+    let record = null;
+    const buildRecord = (existing) => {
+      const cloudData = existing?.exists() ? existing.data() : null;
+      if (
+        expectedFingerprint &&
+        (!cloudData || conductAdjustmentFingerprint({ id, ...cloudData }) !== expectedFingerprint)
+      ) {
+        throw createConductAdjustmentConflict(cloudData);
+      }
+      const hasStableCloudMetadata =
+        cloudData &&
+        typeof cloudData.createdAt?.toMillis === 'function' &&
+        typeof cloudData.createdBy === 'string' &&
+        cloudData.createdBy.trim() &&
+        cloudData.createdBy !== 'release-12.4.1';
+      const base = cloudData
+        ? { id, ...cloudData }
+        : readLocalR5AdjustmentRecords().find((entry) => entry?.id === id) || {};
+      return normalizeR5Adjustment(
+        {
+          ...base,
+          ...updates,
+          id,
+          createdAt: hasStableCloudMetadata ? cloudData.createdAt : serverTimestamp(),
+          createdBy: hasStableCloudMetadata ? cloudData.createdBy : user.uid,
+        },
+        { season: base.season }
+      );
+    };
 
-    await setDoc(ref, record);
+    if (typeof runTransaction === 'function') {
+      await runTransaction(db, async (transaction) => {
+        record = buildRecord(await transaction.get(ref));
+        transaction.set(ref, record);
+      });
+    } else {
+      record = buildRecord(await getDoc(ref));
+      await setDoc(ref, record);
+    }
     return record;
   } catch (err) {
     if (isR5PersistenceUnavailable(err)) return updateLocalR5Adjustment(adjustmentId, patch);
@@ -533,13 +561,28 @@ export async function updateR5Adjustment(adjustmentId, patch) {
   }
 }
 
-export async function deleteR5Adjustment(adjustmentId) {
+export async function deleteR5Adjustment(adjustmentId, options = {}) {
   try {
     const { db, firestore } = await ensureR5AdjustmentAdminContext();
-    const { deleteDoc, doc } = firestore;
-    await deleteDoc(
-      doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, requireString(adjustmentId, 'R5 adjustment id', 80))
-    );
+    const { deleteDoc, doc, runTransaction } = firestore;
+    const id = requireString(adjustmentId, 'R5 adjustment id', 80);
+    const ref = doc(db, R5_ADJUSTMENTS_COLLECTION_PATH, id);
+    const expectedFingerprint = String(options.expectedFingerprint || '');
+    if (expectedFingerprint && typeof runTransaction === 'function') {
+      await runTransaction(db, async (transaction) => {
+        const existing = await transaction.get(ref);
+        const cloudData = existing.exists() ? existing.data() : null;
+        if (
+          !cloudData ||
+          conductAdjustmentFingerprint({ id, ...cloudData }) !== expectedFingerprint
+        ) {
+          throw createConductAdjustmentConflict(cloudData);
+        }
+        transaction.delete(ref);
+      });
+    } else {
+      await deleteDoc(ref);
+    }
     return true;
   } catch (err) {
     if (isR5PersistenceUnavailable(err)) return deleteLocalR5Adjustment(adjustmentId);

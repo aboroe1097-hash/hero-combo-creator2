@@ -37,28 +37,40 @@ Avoid sending private alliance plans, personal API keys, or player information t
 - Mention the expected structure name, durability, alliance, player name, and attack value.
 - Note whether the image came from mobile, emulator, or a compressed chat upload.
 
+## Shipping Flow
+
+Every change follows the same path, regardless of whether it was authored by a person or an agent:
+
+1. Fetch the latest `origin/gh-pages` and create a separate branch. Codex-authored branches use the `codex/` prefix by default.
+2. Make a focused change and use `npm run check:fast` for quick feedback while working.
+3. For a user-visible release, update every version surface and `CHANGELOG.md`, then run `npm run version:check`.
+4. For a user-visible release, run `npm run firebase:preview` before committing or pushing. It runs
+   the full local gate, deploys the verified artifact to an expiring Firebase Hosting preview
+   channel, and smoke-tests the returned online URL. For non-release work, run `npm run check`.
+5. Fix every local or Firebase-preview failure and record the green preview URL in the PR evidence.
+6. Open a pull request targeting `gh-pages`; never push the change directly to the production branch.
+7. Wait for the required `deploy-verification` check and owner review. The owner merges only after both pass.
+
+The repository owner should protect `gh-pages` by requiring pull requests, owner approval, and the `deploy-verification` status check.
+
 ## Local Checks
 
 Before opening a pull request:
 
 ```bash
-npm install
+npm ci
 npm run check
 ```
 
-For data-only changes, still run at least:
+`npm run check` is the authoritative local gate. It covers version consistency, lint and format checks, unit/data/i18n validation, a production build, file-size budgets, and browser smoke tests. `npm run check:fast` is intentionally narrower and must not be the only pre-PR check.
 
-```bash
-npm run i18n:check
-npm run build
-```
+CI and the GitHub Pages build both use `npm run verify:deploy`. That wrapper first validates required build configuration and injects the admin-auth hashes, then runs the same full check suite. Pull-request CI uses deterministic values marked as non-secrets; production deploys use protected repository environment values. Never copy production secrets into a branch, workflow, test, log, or pull-request description.
 
-For CSS, theme, layout, or responsive changes, run a fresh production build before committing or pushing:
-
-```bash
-npm run build
-npm run size:check
-```
+The Firebase preview channel is Hosting-only and does not replace the GitHub Pages production flow.
+It uses the real `abocombo` backend; automated smoke initializes anonymous Auth and Analytics but
+performs no intentional Firestore writes. Keep additional preview QA read-only unless a production
+write has been explicitly reviewed. See `docs/firebase-preview-workflow.md` for the command, target,
+expiry, and Auth/App Check boundaries.
 
 If the built CSS total grows intentionally, either trim CSS in the same change or update `scripts/check-size.mjs` with the measured build output and a short reason. Do this before pushing so GitHub Actions does not become the first size-budget signal.
 
@@ -69,16 +81,19 @@ If the built CSS total grows intentionally, either trim CSS in the same change o
 - Include screenshots for visual changes.
 - Include source evidence for hero, combo, skin, OCR, research, or Eden data changes.
 - Call out any skipped checks and why.
+- Confirm the `deploy-verification` check passes before merge.
 - Do not commit secrets, private API keys, admin credentials, or private alliance data.
 
 ## `gh-pages` Pull Request Rule
 
-The live site is served directly from the `gh-pages` branch, so treat `gh-pages` as production. Do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, keep the change focused, run the relevant checks, and open a pull request back into `gh-pages` for owner review and merge.
+The live site is deployed from the `gh-pages` production source branch through a verified `dist/` artifact. Do not commit or push directly to it. Create a branch from the latest `origin/gh-pages`, keep the change focused, run the full check suite, and open a pull request back into `gh-pages` for owner review and merge.
 
 Use direct `gh-pages` commits only when the owner explicitly asks for an emergency direct deploy.
 
 ## Release Notes
 
-Every user-visible change should update `CHANGELOG.md`. Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.
+Every user-visible change should update `CHANGELOG.md`. Keep the version in sync across `package.json`, the lockfile, the app constants, public HTML footers, the README release heading, and the latest changelog heading. Run `npm run version:check` before the full suite. The normal build refreshes cache and service-worker timestamps; do not hand-edit those stamps.
 
-Patch releases run through `.20` before the next minor. For example: `13.1.0` through `13.1.20`, then `13.2.0`; `13.2.1` through `13.2.20`, then `13.3.0`.
+Use SemVer-style judgment: major for broad redesigns or data model changes, minor for new features or datasets, and patch for fixes, copy, cache, or low-risk polish.
+
+Patch releases run through `.20` before the next minor. For the current train: `14.0.0` through `14.0.20`, then `14.1.0`; `14.1.1` through `14.1.20`, then `14.2.0`.

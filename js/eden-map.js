@@ -2005,7 +2005,7 @@ export function initEdenMapPlanner() {
       const text = btn?.dataset.coords || '';
       navigator.clipboard?.writeText(text).then(() => {
         if (typeof window.showToast === 'function') window.showToast(edenT('edenCopiedToast').replace('{text}', text), 'success');
-      });
+      }).catch(() => {});
     }
   });
 
@@ -2529,7 +2529,11 @@ export async function bootEdenMapPlanner() {
     return;
   }
 
-  await ensureEdenDatasetsLoaded();
+  try {
+    await ensureEdenDatasetsLoaded();
+  } catch (error) {
+    console.warn('[eden] Starting with the embedded base map while datasets retry:', error);
+  }
   preloadStructureIcons(EDEN_ICON_PRELOAD);
 
   if (EDEN_MAP_CONFIG.liveMapEnabled) {

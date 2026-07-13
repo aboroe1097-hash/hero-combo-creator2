@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
   buildUpgradeSequence,
+  calculateAllianceCenterUpgradeMaterials,
+  calculateLoyaltyTargetMaterials,
   calculatePoisonPercentage,
   formatDuration,
   getExtractionSite,
+  getLoyaltyRequirementForSite,
 } from '../../js/loyalty-calculator.js';
 
 test('loyalty thresholds resolve the highest unlocked extraction site', () => {
@@ -25,6 +28,36 @@ test('poison percentage caps at max loyalty and computes next tiers', () => {
   assert.deepEqual(calculatePoisonPercentage(8000), { next: '0.0', afterNext: '0.0' });
   assert.deepEqual(calculatePoisonPercentage(190), { next: '0.7', afterNext: '0.7' });
   assert.deepEqual(calculatePoisonPercentage(700), { next: '19.6', afterNext: '45.6' });
+});
+
+test('exact Eden tables expose tile loyalty and per-building material requirements', () => {
+  assert.deepEqual(getLoyaltyRequirementForSite('t12'), { site: 'T12', loyalty: 4800 });
+  assert.equal(getLoyaltyRequirementForSite('T17'), null);
+
+  const building = calculateAllianceCenterUpgradeMaterials('AC1', 17, 20);
+  assert.equal(building.totalMaterialUnits, 3_540_000);
+  assert.deepEqual(
+    building.steps.map((step) => step.materialUnits),
+    [972_000, 1_167_000, 1_401_000]
+  );
+});
+
+test('target-tile material plan chooses the cheapest available camp upgrades', () => {
+  const plan = calculateLoyaltyTargetMaterials({
+    acLevels: [10, 10, 10, 10],
+    targetSite: 'T12',
+    savedUnits: 100_000,
+  });
+  assert.equal(plan.targetLoyalty, 4800);
+  assert.equal(plan.additionalLoyaltyNeeded, 800);
+  assert.equal(plan.steps.length, 8);
+  assert.equal(plan.finalLoyalty, 4800);
+  assert.equal(plan.savedUnitsApplied, 100_000);
+  assert.equal(plan.remainingMaterialUnits, plan.totalMaterialUnits - 100_000);
+  assert.equal(
+    plan.totalMaterialUnits,
+    plan.steps.reduce((sum, step) => sum + step.materialUnits, 0)
+  );
 });
 
 test('upgrade sequence spends saved units before processing time', () => {

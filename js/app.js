@@ -4,7 +4,7 @@ import { initComments } from './comments.js';
 import { allHeroesData } from './heroes-data.js';
 import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { escapeHtml, debounce, installShowToast } from './utils.js';
+import { escapeHtml, debounce, installShowToast, resolveIntlLocale } from './utils.js';
 import { applySeo } from './seo.js';
 import { initAppLoading, notifyAppReady } from './app-loading.js';
 import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
@@ -15,11 +15,11 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260710_231652';
+import { initWhatsNewBanner } from './app-whats-new.js?v=20260713_224450';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
-import { initUserDataPortability } from './user-data-portability.js';
-import { initBugReportWidget } from './bug-widget.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
+import { initArcadeHub } from './arcade-hub.js';
+import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
 
 import {
   renderAvailableHeroes,
@@ -34,11 +34,13 @@ import {
 
 import {
   renderGeneratorHeroes,
+  renderGeneratorResults,
   generateBestCombos,
   generateRandomCombos,
   markGeneratorSelectionChanged,
   restoreGeneratorSelection,
   syncGeneratorSelectedCountBadge,
+  lastGeneratedCombos,
 } from './app-generator.js';
 
 import {
@@ -63,7 +65,6 @@ import {
   getUserId,
   setUserId,
   savedCombosCache,
-  lastGeneratedCombos,
   APP_VERSION,
   ENABLE_RESEARCH_FEATURE,
   seasonColors,
@@ -90,6 +91,7 @@ import {
   youtubeSection,
   researchSection,
   materialsSection,
+  arcadeSection,
   tabManualBtn,
   tabGeneratorBtn,
   tabLoyaltyBtn,
@@ -99,6 +101,7 @@ import {
   tabHeroesBtn,
   tabEdenMapBtn,
   tabStrifeBtn,
+  tabArcadeBtn,
   heroesSection,
   edenMapSection,
   strifeSection,
@@ -145,7 +148,7 @@ let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260710_231652').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260713_224450').catch((err) => {
       researchModulePromise = null;
       throw err;
     });
@@ -155,7 +158,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260710_231652').catch((err) => {
+    materialModulePromise = import('./material-calculator.js?v=20260713_224450').catch((err) => {
       materialModulePromise = null;
       throw err;
     });
@@ -290,6 +293,7 @@ const TAB_BTN_IDS = {
   strife: 'tabStrife',
   loyalty: 'tabLoyalty',
   youtube: 'tabYouTube',
+  arcade: 'tabArcade',
 };
 
 function syncTabA11yState(activeTabName = '') {
@@ -453,6 +457,25 @@ function wireFilterControls(container, onChange) {
   });
 }
 
+function initFilterPillA11y(container) {
+  if (!container || container.dataset.pillA11yWired === '1') return;
+  container.dataset.pillA11yWired = '1';
+  container.querySelectorAll('label.filter-pill').forEach(pill => {
+    pill.setAttribute('tabindex', '0');
+    pill.setAttribute('role', 'checkbox');
+    const input = pill.querySelector('input[type="checkbox"]');
+    pill.setAttribute('aria-checked', input && input.checked ? 'true' : 'false');
+  });
+}
+
+function syncFilterPillAria(container) {
+  if (!container) return;
+  container.querySelectorAll('label.filter-pill').forEach(pill => {
+    const input = pill.querySelector('input[type="checkbox"]');
+    pill.setAttribute('aria-checked', input && input.checked ? 'true' : 'false');
+  });
+}
+
 function wireFilterSets() {
   const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
   const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
@@ -489,6 +512,9 @@ function wireFilterSets() {
   wireFilterControls(generatorTroopFilters, (input) => {
     renderGeneratorHeroes(syncGeneratorControlState(input));
   });
+
+  [manualSeasonFilters, manualStateFilters, manualTroopFilters,
+   generatorSeasonFilters, generatorStateFilters, generatorTroopFilters].forEach(initFilterPillA11y);
 
   updateAllSeasonCatchupHints();
 }
@@ -652,6 +678,7 @@ function selectVisibleGeneratorHeroes() {
 
 function applyFilterSelection(container, input) {
   if (!container) return;
+  syncFilterPillAria(container);
   if (container.id === 'seasonFilters') {
     setSelectedSeasons(readSeasonFilterSelection(container));
     updateSeasonCatchupHint(container);
@@ -730,6 +757,19 @@ function wireGlobalControlDelegates() {
     applyFilterSelection(container, input);
   }, true);
 
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const pill = event.target.closest?.('label.filter-pill');
+    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
+    if (!pill || !container) return;
+    const input = pill.querySelector('input[type="checkbox"]');
+    if (!input || input.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    input.checked = !input.checked;
+    applyFilterSelection(container, input);
+  }, true);
+
   document.addEventListener('click', (event) => {
     const heroInfoLabel = event.target.closest?.('#heroInfoToggleLabel');
     if (heroInfoLabel) {
@@ -777,7 +817,7 @@ function wireGlobalControlDelegates() {
 }
 
 // --- UI WIRING ---
-function wireUIActions() {
+function wireUIActions({ preserveInitialHash = false } = {}) {
   // === TAB BUTTON HANDLERS ===
 const tabs = [
   { btn: tabManualBtn,   name: 'manual' },
@@ -789,6 +829,7 @@ const tabs = [
   { btn: tabStrifeBtn,   name: 'strife' },
   { btn: tabLoyaltyBtn,  name: 'loyalty' },
   { btn: tabYouTubeBtn,  name: 'youtube' },
+  { btn: tabArcadeBtn,   name: 'arcade' },
 ];
 const validTabNames = new Set(tabs.map((tab) => tab.name));
 
@@ -878,24 +919,35 @@ tabs.forEach(tab => {
   let _materialsBooting = false;
   let _strifeReady = false;
   let _strifeBooting = false;
+  let _youtubeReady = false;
+  let _youtubeBooting = false;
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
-    materialsSection, edenMapSection, strifeSection, loyaltySection, youtubeSection,
+    materialsSection, edenMapSection, strifeSection, loyaltySection, youtubeSection, arcadeSection,
   ];
 
-  function loadYouTubeEmbeds() {
-    document.querySelectorAll('#youtubeSection iframe[data-src]').forEach((iframe) => {
-      const srcAttr = iframe.getAttribute('src');
-      if ((!srcAttr || srcAttr === '') && iframe.dataset.src) {
-        iframe.loading = 'eager';
-        iframe.src = iframe.dataset.src;
-        iframe.removeAttribute('data-src');
-      }
-    });
-  }
-
   const _tabTemplatesLoaded = {};
+
+  function renderTabLoadError(root, tabName) {
+    if (!root) return;
+    const t = translations[currentLanguage] || translations.en;
+    const tabLabel = tabs.find((tab) => tab.name === tabName)?.btn?.textContent?.trim() || tabName;
+    const message = (t.moduleLoadFailed || '{name} failed to load').replace('{name}', tabLabel);
+    const error = document.createElement('div');
+    error.className = 'tab-load-error';
+    error.setAttribute('role', 'alert');
+    const messageText = document.createElement('span');
+    messageText.textContent = message;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'tab-load-error-link';
+    retry.textContent = t.edenX1Retry || 'Retry';
+    retry.addEventListener('click', () => window.location.reload());
+    error.append(messageText, document.createTextNode(' '), retry);
+    root.replaceChildren(error);
+    requestAnimationFrame(() => retry.focus({ preventScroll: true }));
+  }
 
   async function loadTabTemplate(tabName) {
     const section = document.getElementById(`${tabName}Section`);
@@ -911,7 +963,7 @@ tabs.forEach(tab => {
       updateTextContent();
     } catch (err) {
       console.warn(`[Tab] Failed to load template for ${tabName}:`, err);
-      section.innerHTML = `<div class="tab-load-error">Failed to load this tab. <button onclick="location.reload()" class="tab-load-error-link">Reload</button></div>`;
+      renderTabLoadError(section, tabName);
     }
   }
 
@@ -957,7 +1009,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260710_231652')
+        import('./eden-map.js?v=20260713_224450')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -981,7 +1033,7 @@ tabs.forEach(tab => {
     if (tabName === 'heroes' && !_heroesTabReady) {
       if (_heroesTabBooting) return;
       _heroesTabBooting = true;
-      import('./app-hero-atlas.js')
+      import('./app-hero-atlas.js?v=20260711_195726')
         .then((mod) => {
           mod.renderHeroesTab();
           _heroesTabReady = true;
@@ -1027,9 +1079,7 @@ tabs.forEach(tab => {
             return;
           }
           const root = document.getElementById('materialCalculatorRoot');
-          if (root) {
-            root.innerHTML = '<div class="tab-load-error">Failed to load DM Materials. <button onclick="location.reload()" class="tab-load-error-link">Reload</button></div>';
-          }
+          renderTabLoadError(root, 'materials');
           if (typeof window.showToast === 'function') {
             const t = translations[currentLanguage] || translations.en;
             window.showToast(t.moduleLoadFailed?.replace('{name}', 'DM Materials') || 'DM Materials failed to load.', 'error', 4000);
@@ -1042,7 +1092,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260710_231652')
+      import('./app-strife.js?v=20260713_224450')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
@@ -1056,8 +1106,23 @@ tabs.forEach(tab => {
           }
         });
     }
-    if (tabName === 'youtube') {
-      loadYouTubeEmbeds();
+    if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
+      _youtubeBooting = true;
+      import('./youtube-v14.js?v=20260711_195726')
+        .then((mod) => {
+          mod.initYouTubeLibrary();
+          _youtubeReady = true;
+        })
+        .catch((err) => {
+          console.error('YouTube guide library failed to load', err);
+          if (typeof window.showToast === 'function') {
+            const t = translations[currentLanguage] || translations.en;
+            window.showToast(t.moduleLoadFailed?.replace('{name}', 'YouTube') || 'YouTube guide library failed to load.', 'error', 4000);
+          }
+        })
+        .finally(() => {
+          _youtubeBooting = false;
+        });
     }
     if (tabName === 'loyalty') {
       loadTabTemplate('loyalty').then(() => {
@@ -1119,7 +1184,7 @@ tabs.forEach(tab => {
       requestAnimationFrame(() => scrollToTabStart(targetSection));
     }
     try {
-      if (window.location.hash !== '#' + tabName) {
+      if (!options.preserveHash && window.location.hash !== '#' + tabName) {
         history.replaceState({ tab: tabName }, '', '#' + tabName);
       }
     } catch {}
@@ -1235,16 +1300,42 @@ tabs.forEach(tab => {
   }
   const hashTab = window.location.hash?.replace('#', '').split('?')[0];
   const startTab = validTabNames.has(hashTab) ? hashTab : 'generator';
-  switchTab(startTab, true, { scrollToSection: startTab !== 'generator' });
+  switchTab(startTab, true, {
+    scrollToSection: startTab !== 'generator',
+    preserveHash: preserveInitialHash,
+  });
 }
 
 // --- TRANSLATIONS / TEXT ---
+function setLocalizedTextPreservingDecorations(el, text) {
+  const normalized = String(text ?? '');
+  const nestedLabel = Array.from(el.children || []).find(
+    (child) => child.matches?.('[data-i18n], [data-shell-label], [data-tab-label]')
+  );
+
+  if (nestedLabel) {
+    nestedLabel.textContent = normalized;
+    return;
+  }
+
+  const directTextNodes = Array.from(el.childNodes || []).filter(
+    (node) => node.nodeType === 3 && node.textContent.trim()
+  );
+  if (directTextNodes.length) {
+    directTextNodes[0].textContent = normalized;
+    directTextNodes.slice(1).forEach((node) => node.remove());
+    return;
+  }
+
+  el.textContent = normalized;
+}
+
 function updateTextContent() {
   const t = translations[currentLanguage] || translations.en;
   
   // RTL support for Arabic
   document.documentElement.dir = (currentLanguage === 'ar') ? 'rtl' : 'ltr';
-  document.documentElement.lang = currentLanguage;
+  document.documentElement.lang = resolveIntlLocale(currentLanguage);
   if (languageSelect) languageSelect.value = currentLanguage;
 
   const idMap = {
@@ -1285,14 +1376,14 @@ function updateTextContent() {
   for (const [id, text] of Object.entries(idMap)) {
     const el = document.getElementById(id);
     if (el && text) {
-      el.textContent = text.replace('{version}', APP_VERSION);
+      setLocalizedTextPreservingDecorations(el, text.replace('{version}', APP_VERSION));
     }
   }
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (t[key]) {
-      el.textContent = t[key].replace('{version}', APP_VERSION);
+      setLocalizedTextPreservingDecorations(el, t[key].replace('{version}', APP_VERSION));
     }
   });
 
@@ -1321,6 +1412,9 @@ function updateTextContent() {
 
   updateAllSeasonCatchupHints();
   window.dispatchEvent(new CustomEvent('edenLanguageUpdate'));
+  window.dispatchEvent(
+    new CustomEvent('vts:language-change', { detail: { lang: currentLanguage } })
+  );
 
   applySeo(currentLanguage);
 
@@ -1420,17 +1514,21 @@ function initQuickTour() {
     return;
   }
 
-  const steps = [
-    { selector: '#tabManual', title: 'Manual Builder', body: 'Pick three heroes and check their ranked score, counters, and save options.' },
-    { selector: '#tabGenerator', title: 'Combo Generator', body: 'Select your owned heroes, then generate your strongest non-overlapping lineups.' },
-    { selector: '#tabHeroes', title: 'Hero Atlas', body: 'Browse hero ratings, skills, skins, counters, and top ranked pairings.' },
-    { selector: '#tabResearch', title: 'Research', body: 'Plan tech upgrades, compare costs, and keep your research path organized.' },
-    { selector: '#tabMaterials', title: 'DM Materials', body: 'Plan Dragon Master materials with inventory, crafting timeline, and conversion flow tools.' },
-    { selector: '#tabEdenMap', title: 'Eden Map', body: 'Plan routes, inspect structures, and prepare Eden season movement.' },
-    { selector: '#tabStrife', title: 'Strife over Dragon', body: 'Pick a monster and stage to see matchup formations.' },
-    { selector: '#tabLoyalty', title: 'Eden Loyalty', body: 'Calculate loyalty upgrades and extraction progress before spending resources.' },
-    { selector: '#tabYouTube', title: 'YouTube', body: 'Jump to community videos and learning resources when you want examples.' }
-  ].filter(step => document.querySelector(step.selector));
+  const getSteps = () => {
+    const t = translations[currentLanguage] || translations.en;
+    return [
+      { selector: '#tabManual', title: t.tabManual, body: t.createComboTitle },
+      { selector: '#tabGenerator', title: t.tabGenerator, body: t.generatorIntro },
+      { selector: '#tabHeroes', title: t.tabHeroes, body: t.heroesTabDesc },
+      { selector: '#tabResearch', title: t.tabResearch, body: t.researchDesc },
+      { selector: '#tabMaterials', title: t.tabMaterials, body: t.materialsIntro || t.tabMaterials },
+      { selector: '#tabEdenMap', title: t.tabEdenMap, body: t.edenMapDesc },
+      { selector: '#tabStrife', title: t.tabStrife, body: t.strifeIntro },
+      { selector: '#tabLoyalty', title: t.tabLoyalty, body: t.loyaltyDesc },
+      { selector: '#tabYouTube', title: t.tabYouTube, body: t.youtubeLibraryIntro }
+    ].filter(step => document.querySelector(step.selector));
+  };
+  let steps = getSteps();
   if (!steps.length) return;
 
   let index = 0;
@@ -1439,7 +1537,7 @@ function initQuickTour() {
   overlay.innerHTML = `
     <div class="quick-tour-backdrop"></div>
     <div class="quick-tour-spotlight"></div>
-    <section class="quick-tour-card" role="dialog" aria-modal="true" aria-live="polite">
+    <section class="quick-tour-card" role="dialog" aria-live="polite">
       <div class="quick-tour-kicker"></div>
       <h3 class="quick-tour-title"></h3>
       <p class="quick-tour-body"></p>
@@ -1458,6 +1556,9 @@ function initQuickTour() {
   const kicker = overlay.querySelector('.quick-tour-kicker');
   const dots = overlay.querySelector('.quick-tour-dots');
   const nextBtn = overlay.querySelector('.quick-tour-next');
+  const skipBtn = overlay.querySelector('.quick-tour-skip');
+  const languageControl = document.querySelector('.lang-select-wrapper');
+  languageControl?.classList.add('quick-tour-language-control');
 
   function clamp(n, min, max) {
     return Math.min(Math.max(n, min), max);
@@ -1530,11 +1631,15 @@ function initQuickTour() {
   function finishTour() {
     overlay.classList.add('hidden');
     popOverlay();
+    languageControl?.classList.remove('quick-tour-language-control');
+    overlay.remove();
     document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
     try { localStorage.setItem(storageKey, '1'); } catch {}
   }
 
   function renderStep() {
+    steps = getSteps();
+    index = Math.min(index, Math.max(steps.length - 1, 0));
     const step = steps[index];
     const target = document.querySelector(step.selector);
     if (!target) {
@@ -1546,9 +1651,18 @@ function initQuickTour() {
     visualTarget.classList.add('quick-tour-target');
     title.textContent = step.title;
     body.textContent = step.body;
-    kicker.textContent = `Step ${index + 1} of ${steps.length}`;
+    const tourUi = {
+      ar: ['الخطوة', 'تخطي الجولة', 'تم'], de: ['Schritt', 'Tour überspringen', 'Fertig'],
+      es: ['Paso', 'Omitir recorrido', 'Listo'], fr: ['Étape', 'Passer la visite', 'Terminé'],
+      id: ['Langkah', 'Lewati tur', 'Selesai'], kr: ['단계', '둘러보기 건너뛰기', '완료'],
+      pt: ['Etapa', 'Pular tour', 'Concluir'], ru: ['Шаг', 'Пропустить тур', 'Готово'],
+      tr: ['Adım', 'Turu atla', 'Bitti'], zh: ['步骤', '跳过导览', '完成'],
+      en: ['Step', 'Skip tour', 'Done']
+    }[currentLanguage] || ['Step', 'Skip tour', 'Done'];
+    kicker.textContent = `${tourUi[0]} ${index + 1} / ${steps.length}`;
+    skipBtn.textContent = tourUi[1];
     dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
-    nextBtn.textContent = index === steps.length - 1 ? 'Done' : 'Next';
+    nextBtn.textContent = index === steps.length - 1 ? tourUi[2] : ((translations[currentLanguage] || translations.en).next || 'Next');
     const isTabTarget = target.closest('#tabNavScroll') || target.classList.contains('tab-pill');
     visualTarget.scrollIntoView({ behavior: 'auto', block: isTabTarget ? 'nearest' : 'center', inline: 'center' });
     requestAnimationFrame(() => placeTourCard(target));
@@ -1570,6 +1684,9 @@ function initQuickTour() {
   window.addEventListener('resize', () => {
     if (!overlay.classList.contains('hidden')) renderStep();
   });
+  window.addEventListener('edenLanguageUpdate', () => {
+    if (!overlay.classList.contains('hidden')) renderStep();
+  });
 
   setTimeout(() => {
     const z = pushOverlay();
@@ -1587,8 +1704,6 @@ async function startApp() {
     safeInit('errorReporting', () => initErrorReporting());
     safeInit('undoToasts', () => initUndoToasts());
     safeInit('whatsNew', () => initWhatsNewBanner(APP_VERSION));
-    safeInit('userDataPortability', () => initUserDataPortability());
-    safeInit('bugReportWidget', () => initBugReportWidget());
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
     await new Promise(r => requestAnimationFrame(r));
     safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
@@ -1596,15 +1711,53 @@ async function startApp() {
     safeInit('restoreGeneratorSelection', () => restoreGeneratorSelection());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
     safeInit('syncGeneratorSelectedCountBadge', () => syncGeneratorSelectedCountBadge());
-    safeInit('wireUIActions', () => wireUIActions());
+    // Decode explicit share intent before the initial tab switch can normalize
+    // the location hash to #generator.
+    const comboShare = safeInit('parseComboShareUrl', () => parseComboShareUrl());
+    const rosterShare = safeInit('parseRosterShareUrl', () => parseRosterShareUrl());
+    safeInit('wireUIActions', () =>
+      wireUIActions({ preserveInitialHash: Boolean(comboShare || rosterShare) })
+    );
     safeInit('initTabScroll', () => initTabScroll());
 
     safeInit('registerServiceWorker', () => registerServiceWorker());
-    safeInit('parseComboShareUrl', () => parseComboShareUrl());
-    const rosterShare = safeInit('parseRosterShareUrl', () => parseRosterShareUrl());
+    if (comboShare) {
+      const validHeroNames = new Set(allHeroesData.map(hero => hero.name));
+      const validSharedCombos = comboShare.filter(combo =>
+        combo.heroes.every(heroName => validHeroNames.has(heroName))
+      );
+      if (validSharedCombos.length) {
+        lastGeneratedCombos.length = 0;
+        lastGeneratedCombos.push(...validSharedCombos);
+        safeInit('renderComboShare', () => renderGeneratorResults(validSharedCombos));
+        downloadGeneratorBtn?.classList.remove('hidden');
+        window.vtsSwitchTab?.('generator', true, {
+          scrollToSection: true,
+          preserveHash: true,
+        });
+      }
+    }
     if (rosterShare) {
-      safeInit('applyRosterShare', () => applyRosterToGenerator(rosterShare, generatorSelectedHeroes));
-      markGeneratorSelectionChanged({ immediate: true });
+      const validHeroNames = new Set(allHeroesData.map(hero => hero.name));
+      const validSharedRoster = rosterShare.filter(heroName => validHeroNames.has(heroName));
+      if (validSharedRoster.length) {
+        safeInit('applyRosterShare', () => applyRosterToGenerator(validSharedRoster, generatorSelectedHeroes));
+        const sharedSeasons = new Set(
+          allHeroesData
+            .filter(hero => validSharedRoster.includes(hero.name))
+            .map(hero => hero.season)
+        );
+        syncCheckboxValues(
+          document.getElementById('generatorSeasonFilters') || genSeasonFiltersEl,
+          [...sharedSeasons]
+        );
+        renderGeneratorHeroes(syncGeneratorControlState());
+        markGeneratorSelectionChanged({ immediate: true });
+        window.vtsSwitchTab?.('generator', true, {
+          scrollToSection: true,
+          preserveHash: true,
+        });
+      }
     }
 
     safeInit('firebase', () => {
@@ -1618,7 +1771,9 @@ async function startApp() {
         }
         setupFirestoreListener();
         const cloudProfile = await loadPlayerProfileFromCloud();
-        if (cloudProfile && cloudProfile.roster) {
+        // An explicit roster share link is the user's current intent. Do not
+        // replace it moments later with an asynchronously loaded cloud roster.
+        if (!rosterShare && cloudProfile && cloudProfile.roster) {
           applyRosterToGenerator(cloudProfile.roster, generatorSelectedHeroes);
           markGeneratorSelectionChanged({ immediate: true });
         }
@@ -1698,6 +1853,8 @@ window.addEventListener('unhandledrejection', (e) => {
 if (window.VTS_MAINTENANCE_ACTIVE) {
   document.body?.classList.remove('app-booting');
 } else if (typeof startApp === 'function') {
+  initArcadeHub();
+  initArcadeLobbyUI();
   initAppLoading();
   setupInstallPrompt();
   window.showAboModal = showAboModal;

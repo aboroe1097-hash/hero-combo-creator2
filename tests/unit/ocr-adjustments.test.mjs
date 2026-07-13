@@ -23,6 +23,7 @@ const {
   applyR5AdjustmentsToPlayerTotals,
   buildAdjustedGiftRanking,
   createLocalR5Adjustment,
+  deleteR5Adjustment,
   deleteLocalR5Adjustment,
   defaultR5PointsForCategory,
   loadLocalR5Adjustments,
@@ -33,6 +34,7 @@ const {
   updateLocalR5Adjustment,
   updateR5Adjustment,
 } = await import('../../js/ocr-adjustments.js');
+const { conductAdjustmentFingerprint } = await import('../../js/admin-sync-guard.js');
 
 test('R5 adjustment categories expose editable merit and penalty defaults', () => {
   assert.equal(R5_ADJUSTMENT_CATEGORIES.banner_help.type, 'merit');
@@ -351,6 +353,98 @@ test('updateR5Adjustment repairs historical cloud metadata on edit', async () =>
       'historical release creators are repaired'
     );
     assert.equal(written.record.points, 2);
+  } finally {
+    delete window.getVtsAdminFirestoreContext;
+  }
+});
+
+test('updateR5Adjustment rejects a concurrent edit against the opened record', async () => {
+  const createdAt = { toMillis: () => 123456789 };
+  const openedRecord = {
+    id: 'cloud-conflict-1',
+    season: 'season-2026',
+    playerKey: 'feechka',
+    playerName: 'Ð¤ÐµÐµÑ‡ÐºÐ°))',
+    points: 1,
+    category: 'connected_road',
+    note: 'opened value',
+    createdAt,
+    createdBy: 'original-admin-uid',
+  };
+  let wroteRecord = false;
+  const firestore = {
+    doc: (_db, path, id) => ({ path, id }),
+    runTransaction: async (_db, callback) =>
+      callback({
+        get: async () => ({
+          exists: () => true,
+          data: () => ({ ...openedRecord, note: 'changed elsewhere' }),
+        }),
+        set: () => {
+          wroteRecord = true;
+        },
+      }),
+    serverTimestamp: () => ({ __ts: 'server' }),
+  };
+  window.getVtsAdminFirestoreContext = () => ({
+    db: {},
+    user: { uid: 'different-uid' },
+    firestore,
+  });
+  try {
+    await assert.rejects(
+      updateR5Adjustment(
+        openedRecord.id,
+        { note: 'my edit' },
+        { expectedFingerprint: conductAdjustmentFingerprint(openedRecord) }
+      ),
+      (error) => error?.code === 'conduct-adjustment-conflict'
+    );
+    assert.equal(wroteRecord, false);
+  } finally {
+    delete window.getVtsAdminFirestoreContext;
+  }
+});
+
+test('deleteR5Adjustment rejects deleting a concurrently changed record', async () => {
+  const openedRecord = {
+    id: 'cloud-conflict-delete',
+    season: 'season-2026',
+    playerKey: 'feechka',
+    playerName: 'Ð¤ÐµÐµÑ‡ÐºÐ°))',
+    points: 1,
+    category: 'connected_road',
+    note: 'opened value',
+    createdAt: { toMillis: () => 123456789 },
+    createdBy: 'original-admin-uid',
+  };
+  let deleted = false;
+  const firestore = {
+    doc: (_db, path, id) => ({ path, id }),
+    runTransaction: async (_db, callback) =>
+      callback({
+        get: async () => ({
+          exists: () => true,
+          data: () => ({ ...openedRecord, points: 9 }),
+        }),
+        delete: () => {
+          deleted = true;
+        },
+      }),
+  };
+  window.getVtsAdminFirestoreContext = () => ({
+    db: {},
+    user: { uid: 'different-uid' },
+    firestore,
+  });
+  try {
+    await assert.rejects(
+      deleteR5Adjustment(openedRecord.id, {
+        expectedFingerprint: conductAdjustmentFingerprint(openedRecord),
+      }),
+      (error) => error?.code === 'conduct-adjustment-conflict'
+    );
+    assert.equal(deleted, false);
   } finally {
     delete window.getVtsAdminFirestoreContext;
   }

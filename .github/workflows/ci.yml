@@ -4,47 +4,36 @@ on:
   push:
   pull_request:
 
-jobs:
-  check-fast:
-    runs-on: ubuntu-latest
-    env:
-      VITE_FIREBASE_API_KEY: dummy
-      VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
-      VITE_FIREBASE_PROJECT_ID: dummy
-      VITE_FIREBASE_STORAGE_BUCKET: dummy.firebasestorage.app
-      VITE_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
-      VITE_FIREBASE_APP_ID: 1:000000000000:web:dummy
-      VITE_FIREBASE_MEASUREMENT_ID: G-DUMMY
-      VITE_RECAPTCHA_SITE_KEY: dummy
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run check:fast
+permissions:
+  contents: read
 
-  # Run the Playwright smoke suite on PRs so UI regressions block the merge
-  # instead of surfacing for the first time in the post-merge deploy run.
-  smoke:
-    if: github.event_name == 'pull_request'
+jobs:
+  deploy-verification:
+    name: deploy-verification
     runs-on: ubuntu-latest
-    env:
-      VITE_FIREBASE_API_KEY: dummy
-      VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
-      VITE_FIREBASE_PROJECT_ID: dummy
-      VITE_FIREBASE_STORAGE_BUCKET: dummy.firebasestorage.app
-      VITE_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
-      VITE_FIREBASE_APP_ID: 1:000000000000:web:dummy
-      VITE_FIREBASE_MEASUREMENT_ID: G-DUMMY
-      VITE_RECAPTCHA_SITE_KEY: dummy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run smoke
+      - name: Verify deploy artifact
+        run: npm run verify:deploy
+        env:
+          VITE_FIREBASE_API_KEY: dummy
+          VITE_FIREBASE_AUTH_DOMAIN: dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dummy
+          VITE_FIREBASE_STORAGE_BUCKET: dummy.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
+          VITE_FIREBASE_APP_ID: 1:000000000000:web:dummy
+          VITE_FIREBASE_MEASUREMENT_ID: G-DUMMY
+          VITE_RECAPTCHA_SITE_KEY: dummy
+          # These deterministic CI-only values exercise the same auth-config
+          # injection path as production without exposing or requiring secrets.
+          VTS_EDEN_VOTES_PIN: ci-only-not-a-secret
+          VTS_ADMIN_OVERRIDE_CODE: ci-only-not-a-secret

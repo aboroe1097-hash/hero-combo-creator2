@@ -7,6 +7,7 @@ import { allHeroesData } from './heroes-data.js';
 import { heroBonusPoints } from './hero-bonuses.js';
 import { escapeHtml } from './utils.js';
 import { hasSkin, getHeroSkins, getSkinCount, getHeroHiddenPower, SKIN_TYPES } from './skins-db.js';
+import '../css/hero-atlas-detail-v14.css';
 
 import {
   getCombosCounteredByHero,
@@ -18,6 +19,15 @@ import {
 function getHeroFinalScore(heroName, autoRating) {
   const bonus = heroBonusPoints[heroName] || 0;
   return Math.min(100, Math.max(0, autoRating + bonus));
+}
+
+function getExactSkinAssetUrl(skin) {
+  const imageUrl = String(skin?.imageUrl || '').trim().replace(/^\.\//, '');
+  return /^assets\/skins\/[a-z0-9-]+\.webp$/i.test(imageUrl) ? imageUrl : null;
+}
+
+function preferredScrollBehavior() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 }
 
 const SKILL_TYPE_TOOLTIPS = {
@@ -138,7 +148,7 @@ function formatSkillText(text) {
     });
   }
 
-  formatted = formatted.replace(/\b(\d+)\b/g, (match) => 
+  formatted = formatted.replace(/(?<!&#)\b(\d+)\b/g, (match) =>
     tokenize(`<span class="skill-value skill-value--number">${match}</span>`)
   );
 
@@ -301,6 +311,8 @@ let _heroesTabState = {
 let _heroesTabEventsWired = false;
 let _heroesSearchTimer = null;
 let _heroesUrlParamsApplied = false;
+let _heroesDetailFocusRequested = false;
+let _heroesReturnFocusName = null;
 
 function normalizeTroopParam(value) {
   const v = String(value || '').trim().toLowerCase();
@@ -458,7 +470,10 @@ function syncHeroSelectionWithFilters() {
 
 function selectHeroInAtlas(name) {
   if (!name) return;
-  _heroesTabState.selected = _heroesTabState.selected === name ? null : name;
+  const isClosing = _heroesTabState.selected === name;
+  _heroesDetailFocusRequested = !isClosing;
+  _heroesReturnFocusName = isClosing ? name : null;
+  _heroesTabState.selected = isClosing ? null : name;
   updateHeroAtlasUrlParams();
   renderHeroesTab();
 }
@@ -525,6 +540,8 @@ function wireHeroesTabEvents(container) {
     const pickHero = e.target.closest('[data-hero-pick]');
     if (pickHero) {
       e.stopPropagation();
+      _heroesDetailFocusRequested = true;
+      _heroesReturnFocusName = null;
       _heroesTabState.selected = pickHero.dataset.heroPick;
       updateHeroAtlasUrlParams();
       renderHeroesTab();
@@ -532,6 +549,8 @@ function wireHeroesTabEvents(container) {
     }
 
     if (e.target.closest('[data-hero-close]')) {
+      _heroesReturnFocusName = _heroesTabState.selected;
+      _heroesDetailFocusRequested = false;
       _heroesTabState.selected = null;
       updateHeroAtlasUrlParams();
       renderHeroesTab();
@@ -541,9 +560,12 @@ function wireHeroesTabEvents(container) {
     const sectionBtn = e.target.closest('[data-detail-section]');
     if (sectionBtn) {
       const target = container.querySelector(`#detail-section-${sectionBtn.dataset.detailSection}`);
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target?.scrollIntoView({ behavior: preferredScrollBehavior(), block: 'start' });
       container.querySelectorAll('[data-detail-section]').forEach(btn => {
-        btn.classList.toggle('active', btn === sectionBtn);
+        const isActive = btn === sectionBtn;
+        btn.classList.toggle('active', isActive);
+        if (isActive) btn.setAttribute('aria-current', 'location');
+        else btn.removeAttribute('aria-current');
       });
       return;
     }
@@ -581,9 +603,30 @@ function wireHeroesTabEvents(container) {
     }, 180);
   });
 
+  container.addEventListener(
+    'error',
+    (event) => {
+      const image = event.target;
+      if (image?.matches?.('img[data-skin-art]')) {
+        image.hidden = true;
+        const artFrame = image.closest('[data-skin-art-frame]');
+        artFrame?.classList.add('is-missing');
+        artFrame?.closest('.detail-skin-showcase')?.classList.add('detail-skin-showcase--text-only');
+        return;
+      }
+      if (!image?.matches?.('img[data-fallback-src]')) return;
+      const fallbackSrc = image.dataset.fallbackSrc;
+      image.removeAttribute('data-fallback-src');
+      if (fallbackSrc) image.src = fallbackSrc;
+    },
+    true
+  );
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !_heroesTabState.selected) return;
     if (document.getElementById('heroesSection')?.classList.contains('hidden')) return;
+    _heroesReturnFocusName = _heroesTabState.selected;
+    _heroesDetailFocusRequested = false;
     _heroesTabState.selected = null;
     updateHeroAtlasUrlParams();
     renderHeroesTab();
@@ -639,30 +682,36 @@ function renderHeroesTab() {
       const s = stats[hero.name] || {};
       const finalPct = Math.min(100, s.finalRating || 0).toFixed(0);
       const tagColor = seasonColors[hero.season] || '#f97316';
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-      const rankNumber = i < 3 ? medal : `${i + 1}`;
-      const rankClass = i < 3 ? 'rank-medal' : 'rank-medal rank-medal--num';
+      const podiumClass = i === 0
+        ? ' rank-medal--gold'
+        : i === 1
+          ? ' rank-medal--silver'
+          : i === 2
+            ? ' rank-medal--bronze'
+            : '';
+      const rankNumber = `${i + 1}`;
+      const rankClass = `rank-medal rank-medal--num${podiumClass}`;
       return `
-        <div class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}">
+        <button type="button" class="hero-rank-row ${selected === hero.name ? 'selected' : ''}" data-hero-name="${escapeHtml(hero.name)}" aria-pressed="${selected === hero.name}">
           <span class="${rankClass}">${rankNumber}</span>
-          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" loading="lazy" decoding="async" onerror="this.src='images/logo.png'">
-          <div class="rank-info">
-            <div class="rank-name">
+          <img class="rank-img" src="${escapeHtml(hero.imageUrl)}" alt="${escapeHtml(hero.name)}" width="36" height="36" loading="lazy" decoding="async" data-fallback-src="images/logo.png">
+          <span class="rank-info">
+            <span class="rank-name">
               ${escapeHtml(hero.name)}
               ${hero.State === 'Paid' ? paidIconHtml() : ''}
-            </div>
-            <div class="rank-meta">
+            </span>
+            <span class="rank-meta">
               <span style="color:${tagColor};font-weight:800;">${hero.season}</span>
               ${hero.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="rank-apps">Original ${escapeHtml(hero.releaseSeason)}</span>` : ''}
               <span class="rank-troop ${getTroopColorClass(hero.Type)}">${getLocalizedTroop(hero.Type)}</span>
               ${s.appearances ? `<span class="rank-apps">${s.appearances} combo${s.appearances!==1?'s':''}</span>` : '<span class="rank-apps rank-apps-zero">Not ranked</span>'}
-            </div>
-            <div class="rank-bar-wrap">
-              <div class="rank-bar" style="width:${finalPct}%;background:${tagColor};"></div>
-            </div>
-          </div>
-          <div class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</div>
-        </div>`;
+            </span>
+            <span class="rank-bar-wrap">
+              <span class="rank-bar" style="width:${finalPct}%;background:${tagColor};"></span>
+            </span>
+          </span>
+          <span class="rank-score ${s.finalRating > 0 ? 'has-score' : 'no-score'}">${s.finalRating > 0 ? finalPct : '—'}</span>
+        </button>`;
     }).join('') : '<p class="hero-atlas-empty">No heroes match your filters.</p>';
 
     const showMoreHtml = ranked.length > _heroesTabState.limit ? `
@@ -687,32 +736,40 @@ function renderHeroesTab() {
       const heroCounterWins = getCombosCounteredByHero(selected);
       const heroCounterLosses = getCountersAgainstHero(selected);
       const hasHeroCounters = heroCounterWins.length > 0 || heroCounterLosses.length > 0;
+      const counterLimit = 6;
+      const renderCounterCount = count => `${Math.min(count, counterLimit)}${count > counterLimit ? ` / ${count}` : ''} path${count === 1 ? '' : 's'}`;
       const heroCountersHtml = hasHeroCounters ? `
         <div class="hero-counter-section-grid">
-          <div class="hero-counter-column">
-            <div class="hero-counter-subhead">This hero counters</div>
+          <section class="hero-counter-column" aria-labelledby="hero-counter-wins-title">
+            <div class="hero-counter-column-head">
+              <h5 id="hero-counter-wins-title" class="hero-counter-subhead">This hero counters</h5>
+              <span class="hero-counter-count">${renderCounterCount(heroCounterWins.length)}</span>
+            </div>
             ${renderCounterMatchupList(heroCounterWins, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
-              limit: 6,
+              limit: counterLimit,
               label: 'Counter path',
               targetLabel: 'Target',
               counterLabel: 'Counter lineup',
               emptyText: 'No known lineups yet'
             })}
-          </div>
-          <div class="hero-counter-column">
-            <div class="hero-counter-subhead">This hero is countered by</div>
+          </section>
+          <section class="hero-counter-column" aria-labelledby="hero-counter-losses-title">
+            <div class="hero-counter-column-head">
+              <h5 id="hero-counter-losses-title" class="hero-counter-subhead">This hero is countered by</h5>
+              <span class="hero-counter-count">${renderCounterCount(heroCounterLosses.length)}</span>
+            </div>
             ${renderCounterMatchupList(heroCounterLosses, getComboRankInfo, getHeroImageUrl, getCounterLabels(), {
-              limit: 6,
+              limit: counterLimit,
               label: 'Threat',
               targetLabel: 'Hero lineup',
               counterLabel: 'Counter lineup',
               emptyText: 'No known counters yet'
             })}
-          </div>
+          </section>
         </div>` : '';
 
       const combosHtml = heroCombos.map(c => `
-        <div class="detail-combo-row">
+        <article class="detail-combo-row" aria-label="Combo rank ${c.rank}, score ${parseFloat(c.score).toFixed(1)}">
           <div class="detail-combo-top">
             <span class="detail-combo-rank">#${c.rank}</span>
             <div class="detail-combo-scorebox">
@@ -723,41 +780,65 @@ function renderHeroesTab() {
           <div class="detail-combo-heroes">
             ${c.heroes.map(hn => `
               <button type="button" class="detail-combo-hero${hn === selected ? ' is-viewed' : ''}" data-hero-pick="${escapeHtml(hn)}" title="${escapeHtml(hn)}">
-                <img src="${getHeroImageUrl(hn)}" alt="${escapeHtml(hn)}" loading="lazy">
+                <img src="${escapeHtml(getHeroImageUrl(hn))}" alt="${escapeHtml(hn)}" width="48" height="48" loading="lazy" decoding="async">
                 <span>${escapeHtml(hn)}</span>
               </button>`).join('')}
           </div>
           ${renderCountersToggle(c.heroes, getComboRankInfo, getHeroImageUrl, getCounterLabels())}
-        </div>`).join('');
+        </article>`).join('');
 
-      const skillsHtml = ext ? ext.skills.map(sk => `
-        <div class="detail-skill">
-          <div class="detail-skill-header">
-            <span class="detail-skill-id">SKILL ${sk.id}</span>
-            ${renderSkillType(sk.type)}
-            ${sk.range && sk.range !== '-' ? `<span class="detail-skill-range">Range ${sk.range}</span>` : ''}
+      const skillsHtml = ext ? ext.skills.map(sk => {
+        const skillTarget = String(sk.target || 'Target not captured');
+        const targetClass = skillTarget.toLowerCase().includes('enemy') ? 'enemy' : 'ally';
+        return `
+        <article class="detail-skill" aria-label="Skill ${escapeHtml(String(sk.id))}">
+          <div class="detail-skill-rail" aria-hidden="true">${escapeHtml(String(sk.id).padStart(2, '0'))}</div>
+          <div class="detail-skill-body">
+            <div class="detail-skill-header">
+              <span class="detail-skill-id">SKILL ${escapeHtml(String(sk.id))}</span>
+              ${renderSkillType(sk.type)}
+              ${sk.range && sk.range !== '-' ? `<span class="detail-skill-range">Range ${escapeHtml(String(sk.range))}</span>` : ''}
+            </div>
+            <p class="detail-skill-target ${targetClass}">${escapeHtml(skillTarget)}</p>
+            <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
           </div>
-          <p class="detail-skill-target ${sk.target.toLowerCase().includes('enemy') ? 'enemy' : 'ally'}">${sk.target}</p>
-          <p class="detail-skill-desc">${formatSkillText(sk.desc)}</p>
-        </div>`).join('') : '<p class="hero-detail-empty">Skill data not yet available.</p>';
+        </article>`;
+      }).join('') : '<p class="hero-detail-empty">Skill data not yet available.</p>';
 
       const heroSkinsList = getHeroSkins(selected);
       const hiddenPower = getHeroHiddenPower(selected);
       const hiddenPowerHtml = renderHiddenPowerCard(hiddenPower);
       const skinsHtml = heroSkinsList.length > 0 ? heroSkinsList.map(skin => {
         const typeInfo = SKIN_TYPES[skin.type] || SKIN_TYPES.Mythic;
-        const ba = skin.bioAttributes;
-        const mba = skin.maxBioAttributes;
+        const ba = skin.bioAttributes || {};
+        const mba = skin.maxBioAttributes || {};
+        const skinAssetUrl = getExactSkinAssetUrl(skin);
+        const skinMeta = [
+          skin.rarity && skin.rarity !== skin.type ? skin.rarity : null,
+          skin.combatStyle,
+          skin.troopType
+        ].filter(Boolean);
         const inheritingSkillRef = skin.inheritingSkill?.replacesSlot ? `Skill ${skin.inheritingSkill.replacesSlot}` : 'Base skill';
         const inheritingFrom = skin.inheritingSkill?.fromSkill || inheritingSkillRef;
         const inheritingName = skin.inheritingSkill?.name || 'Inheriting skill';
         return `
-        <div class="detail-skin-card">
-          <div class="detail-skin-header">
-            <span class="detail-skin-name">${escapeHtml(skin.name)}</span>
-            <span class="detail-skin-type" style="color:${typeInfo.color};border-color:${typeInfo.color}">${escapeHtml(typeInfo.label || skin.type)}</span>
-          </div>
-          ${skin.fullName ? `<div class="detail-skin-subtitle">${escapeHtml(skin.fullName)}</div>` : ''}
+        <article class="detail-skin-card" style="--skin-accent:${escapeHtml(typeInfo.color)}">
+          <div class="detail-skin-showcase${skinAssetUrl ? '' : ' detail-skin-showcase--text-only'}">
+            ${skinAssetUrl ? `
+            <figure class="detail-skin-art" data-skin-art-frame>
+              <span class="detail-skin-art-halo" aria-hidden="true"></span>
+              <img src="${escapeHtml(skinAssetUrl)}" alt="${escapeHtml(`${selected} — ${skin.name} biography skin icon`)}" width="144" height="144" loading="lazy" decoding="async" data-skin-art>
+            </figure>` : ''}
+            <div class="detail-skin-intro">
+              <div class="detail-skin-kicker">${escapeHtml(t.heroesBioSkinsTitle || 'Bio Skins')}</div>
+              <div class="detail-skin-header">
+                <h5 class="detail-skin-name">${escapeHtml(skin.name)}</h5>
+                <span class="detail-skin-type" style="color:${escapeHtml(typeInfo.color)};border-color:${escapeHtml(typeInfo.color)}">${escapeHtml(typeInfo.label || skin.type)}</span>
+              </div>
+              ${skin.title ? `<p class="detail-skin-title">${escapeHtml(skin.title)}</p>` : ''}
+              ${skin.fullName && skin.fullName !== skin.name ? `<p class="detail-skin-subtitle">${escapeHtml(skin.fullName)}</p>` : ''}
+              ${skinMeta.length ? `<div class="detail-skin-meta">${skinMeta.map(item => `<span>${escapeHtml(String(item))}</span>`).join('')}</div>` : ''}
+              ${skin.detailsStatus ? `<span class="detail-skin-status detail-skin-status--${escapeHtml(skin.detailsStatus)}">${escapeHtml(skin.detailsStatus)}</span>` : ''}
           ${skin.starStages ? `<div class="detail-skin-stage-track">
             ${skin.starStages.map(stage => `
               <div class="detail-skin-stage">
@@ -767,7 +848,10 @@ function renderHeroesTab() {
               </div>
             `).join('')}
           </div>` : ''}
-          <div class="detail-skin-attributes">
+            </div>
+          </div>
+          <div class="detail-skin-feature-grid">
+          <section class="detail-skin-feature detail-skin-attributes">
             <div class="detail-skin-attr-title">Star 1 - Biography Attributes</div>
             ${skin.biographyAttributes?.effectiveOn ? `<div class="detail-skin-effect">Effective on: ${escapeHtml(skin.biographyAttributes.effectiveOn)}</div>` : ''}
             ${skin.biographyAttributes?.attributes ? `<div class="detail-skin-attr-grid">
@@ -783,11 +867,16 @@ function renderHeroesTab() {
               <span class="detail-skin-attr">HP: ${ba.hp}% <span class="detail-skin-max">→ ${mba.hp}%</span></span>
               <span class="detail-skin-attr">Damage: ${ba.damage}% <span class="detail-skin-max">→ ${mba.damage}%</span></span>
             </div>
-          </div>
-          <div class="detail-skin-skill">
+            ${skin.biographyAttributes?.status ? `<p class="detail-skin-feature-note">${escapeHtml(skin.biographyAttributes.status)}</p>` : ''}
+          </section>
+          <section class="detail-skin-feature detail-skin-skill">
             <div class="detail-skin-skill-title">Star 2 - Inheriting Skill</div>
             <div class="detail-skin-skill-name">${escapeHtml(inheritingName)}</div>
             <div class="detail-skin-effect">Upgrades ${escapeHtml(inheritingSkillRef)}: ${escapeHtml(inheritingFrom)} -> ${escapeHtml(inheritingName)}</div>
+            <div class="detail-skin-skill-meta">
+              ${skin.inheritingSkill.type ? `<span>${escapeHtml(skin.inheritingSkill.type)}</span>` : ''}
+              ${skin.inheritingSkill.maxLevel ? `<span>Lv.${escapeHtml(String(skin.inheritingSkill.maxLevel))}</span>` : ''}
+            </div>
             ${skin.inheritingSkill.worksOn ? `<div class="detail-skin-effect">Works on: ${escapeHtml(skin.inheritingSkill.worksOn)} | Range ${escapeHtml(String(skin.inheritingSkill.effectiveRange))} | Target: ${escapeHtml(skin.inheritingSkill.target)}</div>` : ''}
             ${skin.inheritingSkill.influencedBy ? `<div class="detail-skin-effect">Influenced by: ${escapeHtml(skin.inheritingSkill.influencedBy)}</div>` : ''}
             <p class="detail-skin-skill-desc">${escapeHtml(skin.inheritingSkill.description)}</p>
@@ -798,34 +887,43 @@ function renderHeroesTab() {
                   <span>${escapeHtml(lv.desc)}</span>
                 </div>`).join('')}
             </div>
-          </div>
-          <div class="detail-skin-skill">
+            ${skin.iconBehavior?.star2 ? `<p class="detail-skin-feature-note">${escapeHtml(skin.iconBehavior.star2)}</p>` : ''}
+          </section>
+          <section class="detail-skin-feature detail-skin-skill">
             <div class="detail-skin-skill-title">Star 3 - Preserving Skill</div>
             <div class="detail-skin-skill-name">${escapeHtml(skin.preservingSkill.name)}</div>
             ${skin.preservingSkill.type ? `<div class="detail-skin-effect">${escapeHtml(skin.preservingSkill.type)} | Range ${escapeHtml(String(skin.preservingSkill.effectiveRange))} | Target: ${escapeHtml(skin.preservingSkill.target)}</div>` : ''}
             <p class="detail-skin-skill-desc">${escapeHtml(skin.preservingSkill.description)}</p>
             ${skin.preservingSkill.dynamicIconNote ? `<p class="detail-skin-skill-desc detail-skin-motion-note">${escapeHtml(skin.preservingSkill.dynamicIconNote)}</p>` : ''}
+            ${skin.iconBehavior?.star3 && skin.iconBehavior.star3 !== skin.preservingSkill.dynamicIconNote ? `<p class="detail-skin-feature-note detail-skin-motion-note">${escapeHtml(skin.iconBehavior.star3)}</p>` : ''}
+          </section>
           </div>
-        </div>`;
+        </article>`;
       }).join('') : '';
 
+      const firstDetailSection = synergies.length > 0
+        ? 'synergies'
+        : heroSkinsList.length > 0
+          ? 'skins'
+          : 'skills';
       const detailNavHtml = `
         <nav class="detail-nav" aria-label="Hero detail sections">
-          ${synergies.length > 0 ? '<button type="button" class="detail-nav-btn active" data-detail-section="synergies">Synergies</button>' : ''}
-          <button type="button" class="detail-nav-btn ${synergies.length === 0 ? 'active' : ''}" data-detail-section="combos">Combos</button>
+          ${synergies.length > 0 ? `<button type="button" class="detail-nav-btn active" data-detail-section="synergies" aria-current="location">Synergies</button>` : ''}
+          ${heroSkinsList.length > 0 ? `<button type="button" class="detail-nav-btn ${firstDetailSection === 'skins' ? 'active' : ''}" data-detail-section="skins"${firstDetailSection === 'skins' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesBioSkinsTitle || 'Bio Skins')}</button>` : ''}
+          <button type="button" class="detail-nav-btn ${firstDetailSection === 'skills' ? 'active' : ''}" data-detail-section="skills"${firstDetailSection === 'skills' ? ' aria-current="location"' : ''}>${escapeHtml(t.heroesSkillsTitle || 'Skills')}</button>
+          <button type="button" class="detail-nav-btn" data-detail-section="combos">${escapeHtml(t.heroesTopCombos || 'Top Combos')}</button>
           ${hasHeroCounters ? '<button type="button" class="detail-nav-btn" data-detail-section="counters">Counters</button>' : ''}
-          ${heroSkinsList.length > 0 ? '<button type="button" class="detail-nav-btn" data-detail-section="skins">Skins</button>' : ''}
-          <button type="button" class="detail-nav-btn" data-detail-section="skills">Skills</button>
         </nav>`;
 
       detailHtml = `
-        <div class="hero-detail-panel">
-          <button type="button" class="heroes-mobile-back" data-hero-close>← Back to ranking</button>
-          <button type="button" class="detail-close" data-hero-close aria-label="Close hero detail">✕</button>
-          <div class="detail-header">
-            <img class="detail-img" src="${hero?.imageUrl}" alt="${escapeHtml(selected)}" decoding="async" onerror="this.src='images/logo.png'">
+        <article class="hero-detail-panel hero-atlas-detail-v14" style="--hero-accent:${escapeHtml(tagColor)}" aria-labelledby="hero-detail-title">
+          <button type="button" class="heroes-mobile-back" data-hero-close>Back to ranking</button>
+          <button type="button" class="detail-close" data-hero-close aria-label="Close hero detail">Close</button>
+          <header class="detail-header">
+            <img class="detail-img" src="${escapeHtml(hero?.imageUrl || '')}" alt="${escapeHtml(selected)}" width="72" height="72" decoding="async" data-fallback-src="images/logo.png">
             <div class="detail-meta">
-              <div class="detail-name">${escapeHtml(selected)}${hero?.State==='Paid' ? paidIconHtml() : ''}</div>
+              <div class="detail-eyebrow">${escapeHtml(t.tabHeroes || 'Hero Atlas')}</div>
+              <h3 id="hero-detail-title" class="detail-name" tabindex="-1">${escapeHtml(selected)}${hero?.State==='Paid' ? paidIconHtml() : ''}</h3>
               <div class="detail-tags">
                 <span class="detail-season-tag" style="background:${tagColor};color:#000">${hero?.season}</span>
                 ${hero?.releaseSeason && hero.releaseSeason !== hero.season ? `<span class="detail-season-tag detail-origin-season-tag">Original ${escapeHtml(hero.releaseSeason)}</span>` : ''}
@@ -839,54 +937,56 @@ function renderHeroesTab() {
                 ${ext ? `<div class="detail-stat"><div class="detail-stat-lbl">Min Copies</div><div class="detail-stat-val">${ext.minCopies||34}</div></div>` : ''}
               </div>
             </div>
-          </div>
+          </header>
           ${detailNavHtml}
 
-          ${synergies.length > 0 ? `
-          <div id="detail-section-synergies" class="detail-section-block">
-            <div class="detail-section-title">Best Synergies</div>
-            <div class="detail-synergies">
-              ${synergies.map(syn => `
-                <button type="button" class="detail-syn-item" data-hero-pick="${escapeHtml(syn)}" title="View ${escapeHtml(syn)}">
-                  <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}" loading="lazy">
-                  <span>${escapeHtml(syn)}</span>
-                </button>`).join('')}
-            </div>
-          </div>` : ''}
-
-          <div id="detail-section-combos" class="detail-section-block">
-            <div class="detail-section-head">
-              <div class="detail-section-title">${t.heroesTopCombos || 'Top Combos'}</div>
-              <div class="heroes-combo-scope" role="group" aria-label="${t.heroesComboScopeLabel || 'Combo season scope'}">
-                <button type="button" class="heroes-combo-scope-btn ${comboScope === 'season-capped' ? 'active' : ''}" data-combo-scope="season-capped">
-                  ${(t.heroesComboScopeCapped || 'Up to {season}').replace('{season}', hero?.season || '')}
-                </button>
-                <button type="button" class="heroes-combo-scope-btn ${comboScope === 'all' ? 'active' : ''}" data-combo-scope="all">
-                  ${t.heroesComboScopeAll || 'All best'}
-                </button>
+          <div class="detail-content">
+            ${synergies.length > 0 ? `
+            <section id="detail-section-synergies" class="detail-section-block detail-section-block--overview" aria-labelledby="detail-title-synergies">
+              <h4 id="detail-title-synergies" class="detail-section-title">Best Synergies</h4>
+              <div class="detail-synergies">
+                ${synergies.map(syn => `
+                  <button type="button" class="detail-syn-item" data-hero-pick="${escapeHtml(syn)}" title="View ${escapeHtml(syn)}">
+                    <img src="${escapeHtml(getHeroImageUrl(syn))}" alt="${escapeHtml(syn)}" width="48" height="48" loading="lazy" decoding="async">
+                    <span>${escapeHtml(syn)}</span>
+                  </button>`).join('')}
               </div>
-            </div>
-            <p class="heroes-combo-scope-hint">${comboScopeHint}</p>
-            <div class="detail-combos">${combosHtml || `<p class="hero-detail-empty">${t.heroesNoCombos || 'No ranked combos yet.'}</p>`}</div>
+            </section>` : ''}
+
+            ${heroSkinsList.length > 0 ? `
+            <section id="detail-section-skins" class="detail-section-block detail-section-block--skins" aria-labelledby="detail-title-skins">
+              <h4 id="detail-title-skins" class="detail-section-title">${escapeHtml(t.heroesBioSkinsTitle || 'Bio Skins')} <span class="detail-skin-count">${heroSkinsList.length}</span></h4>
+              <div class="detail-skins">${skinsHtml}${hiddenPowerHtml}</div>
+            </section>` : ''}
+
+            <section id="detail-section-skills" class="detail-section-block detail-section-block--skills" aria-labelledby="detail-title-skills">
+              <h4 id="detail-title-skills" class="detail-section-title">${escapeHtml(t.heroesSkillsTitle || 'Skills')}</h4>
+              <div class="detail-skills" data-skill-count="${ext?.skills?.length || 0}">${skillsHtml}</div>
+            </section>
+
+            <section id="detail-section-combos" class="detail-section-block detail-section-block--combos" aria-labelledby="detail-title-combos">
+              <div class="detail-section-head">
+                <h4 id="detail-title-combos" class="detail-section-title">${escapeHtml(t.heroesTopCombos || 'Top Combos')}</h4>
+                <div class="heroes-combo-scope" role="group" aria-label="${escapeHtml(t.heroesComboScopeLabel || 'Combo season scope')}">
+                  <button type="button" class="heroes-combo-scope-btn ${comboScope === 'season-capped' ? 'active' : ''}" data-combo-scope="season-capped">
+                    ${escapeHtml((t.heroesComboScopeCapped || 'Up to {season}').replace('{season}', hero?.season || ''))}
+                  </button>
+                  <button type="button" class="heroes-combo-scope-btn ${comboScope === 'all' ? 'active' : ''}" data-combo-scope="all">
+                    ${escapeHtml(t.heroesComboScopeAll || 'All best')}
+                  </button>
+                </div>
+              </div>
+              <p class="heroes-combo-scope-hint">${escapeHtml(comboScopeHint)}</p>
+              <div class="detail-combos">${combosHtml || `<p class="hero-detail-empty">${escapeHtml(t.heroesNoCombos || 'No ranked combos yet.')}</p>`}</div>
+            </section>
+
+            ${hasHeroCounters ? `
+            <section id="detail-section-counters" class="detail-section-block detail-section-block--counters" aria-labelledby="detail-title-counters">
+              <h4 id="detail-title-counters" class="detail-section-title">Counters involving ${escapeHtml(selected)}</h4>
+              ${heroCountersHtml}
+            </section>` : ''}
           </div>
-
-          ${hasHeroCounters ? `
-          <div id="detail-section-counters" class="detail-section-block">
-            <div class="detail-section-title">Counters involving ${escapeHtml(selected)}</div>
-            ${heroCountersHtml}
-          </div>` : ''}
-
-          <div id="detail-section-skills" class="detail-section-block">
-            <div class="detail-section-title">${t.heroesSkillsTitle || 'Skills'}</div>
-            <div class="detail-skills">${skillsHtml}</div>
-          </div>
-
-          ${heroSkinsList.length > 0 ? `
-          <div id="detail-section-skins" class="detail-section-block">
-            <div class="detail-section-title">${t.heroesBioSkinsTitle || 'Bio Skins'} <span class="detail-skin-count">${heroSkinsList.length}</span></div>
-            <div class="detail-skins">${skinsHtml}${hiddenPowerHtml}</div>
-          </div>` : ''}
-        </div>`;
+        </article>`;
     }
 
     const clearFiltersHtml = filtersActive
@@ -900,28 +1000,32 @@ function renderHeroesTab() {
           <div class="heroes-toolbar">
             <div class="hero-search-wrap heroes-search-field">
               <svg class="hero-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/></svg>
-              <input id="heroesTabSearch" class="hero-search-input" type="search" placeholder="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" value="${escapeHtml(search)}" autocomplete="off" />
+              <input id="heroesTabSearch" name="heroesSearch" class="hero-search-input" type="search" placeholder="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" aria-label="${escapeHtml(t.heroSearchPh || 'Search heroes...')}" value="${escapeHtml(search)}" autocomplete="off" spellcheck="false" />
             </div>
-            <span class="heroes-count-badge">${escapeHtml(heroCountLabel.replace('{n}', filtered.length))}</span>
-            <label class="heroes-sort-control" title="Sort visible heroes">
-              <span>Sort</span>
-              <select id="heroesSortSelect">
-                <option value="rating"${sort === 'rating' ? ' selected' : ''}>Rating</option>
-                <option value="appearances"${sort === 'appearances' ? ' selected' : ''}>Appearances</option>
-                <option value="best-rank"${sort === 'best-rank' ? ' selected' : ''}>Best rank</option>
-                <option value="name"${sort === 'name' ? ' selected' : ''}>Name</option>
-              </select>
-            </label>
-            <button type="button" class="heroes-export-btn" data-heroes-export>Export CSV</button>
-            ${clearFiltersHtml}
+            <div class="heroes-toolbar-actions">
+              <span class="heroes-count-badge">${escapeHtml(heroCountLabel.replace('{n}', filtered.length))}</span>
+              <label class="heroes-sort-control" title="Sort visible heroes">
+                <span>Sort</span>
+                <select id="heroesSortSelect">
+                  <option value="rating"${sort === 'rating' ? ' selected' : ''}>Rating</option>
+                  <option value="appearances"${sort === 'appearances' ? ' selected' : ''}>Appearances</option>
+                  <option value="best-rank"${sort === 'best-rank' ? ' selected' : ''}>Best rank</option>
+                  <option value="name"${sort === 'name' ? ' selected' : ''}>Name</option>
+                </select>
+              </label>
+              <button type="button" class="heroes-export-btn" data-heroes-export>Export CSV</button>
+              ${clearFiltersHtml}
+            </div>
           </div>
-          <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>
-          <div class="heroes-filter-pills heroes-filter-pills--state">${statePillsHtml}</div>
-          <p class="heroes-season-hint">${t.heroesSeasonHint || 'Seasons - select multiple'}</p>
-          <div class="heroes-season-tabs" role="group" aria-label="Filter by season (multi-select)">${seasonTabsHtml}</div>
+          <div class="heroes-filter-deck">
+            <div class="heroes-filter-pills heroes-filter-pills--troop">${troopPillsHtml}</div>
+            <div class="heroes-filter-pills heroes-filter-pills--state">${statePillsHtml}</div>
+            <p class="heroes-season-hint">${t.heroesSeasonHint || 'Seasons - select multiple'}</p>
+            <div class="heroes-season-tabs" role="group" aria-label="Filter by season (multi-select)">${seasonTabsHtml}</div>
+          </div>
         </div>
         <div class="heroes-layout ${selected ? 'has-detail' : ''}">
-          <div class="heroes-ranking-list" role="list">
+          <div class="heroes-ranking-list">
             ${rowsHtml}
             ${showMoreHtml}
           </div>
@@ -940,12 +1044,27 @@ function renderHeroesTab() {
     }
 
     requestAnimationFrame(() => {
+      const scrollBehavior = preferredScrollBehavior();
+      if (_heroesReturnFocusName && !selected) {
+        const returnRow = [...container.querySelectorAll('[data-hero-name]')]
+          .find(row => row.dataset.heroName === _heroesReturnFocusName);
+        returnRow?.focus({ preventScroll: true });
+        returnRow?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior });
+        _heroesReturnFocusName = null;
+      }
       const selectedRow = container.querySelector('.hero-rank-row.selected');
       if (selectedRow) {
-        selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        selectedRow.scrollIntoView({ block: 'nearest', behavior: scrollBehavior });
       }
       if (selected && window.innerWidth < 900) {
-        container.querySelector('.hero-detail-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        container.querySelector('.hero-detail-panel')?.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
+      }
+      if (_heroesDetailFocusRequested && selected) {
+        const focusTarget = window.innerWidth < 900
+          ? container.querySelector('.heroes-mobile-back')
+          : container.querySelector('#hero-detail-title');
+        focusTarget?.focus({ preventScroll: true });
+        _heroesDetailFocusRequested = false;
       }
     });
   }

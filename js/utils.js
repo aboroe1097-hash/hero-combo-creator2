@@ -2,6 +2,14 @@
 import { translations } from './translations.js';
 import { currentLanguage } from './state.js';
 
+export {
+  APP_LOCALE_MAP,
+  formatLocaleDate,
+  formatLocaleNumber,
+  formatLocalePercent,
+  resolveIntlLocale,
+} from './locale-format.js';
+
 export function escapeHtml(str) {
   if (str == null) return '';
   return String(str)
@@ -23,7 +31,9 @@ export function cssToken(value, fallback = 'unknown') {
 
 export function appT(key, vars = {}) {
   let s = (translations[currentLanguage] || translations.en)[key] || translations.en[key] || key;
-  Object.entries(vars).forEach(([k, v]) => { s = s.replace(`{${k}}`, String(v)); });
+  Object.entries(vars).forEach(([k, v]) => {
+    s = s.replaceAll(`{${k}}`, String(v));
+  });
   return s;
 }
 

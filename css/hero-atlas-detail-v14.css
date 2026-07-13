@@ -1,0 +1,1431 @@
+/* Hero Atlas v14 expanded-detail presentation. Scoped to .hero-atlas-detail-v14. */
+
+.hero-atlas-detail-v14 {
+  --atlas-panel: rgba(8, 17, 32, 0.98);
+  --atlas-surface: rgba(18, 31, 51, 0.86);
+  --atlas-surface-strong: rgba(22, 37, 59, 0.96);
+  --atlas-line: rgba(125, 211, 252, 0.16);
+  --atlas-line-strong: rgba(125, 211, 252, 0.3);
+  --atlas-text: #eef6ff;
+  --atlas-copy: #c6d4e5;
+  --atlas-muted: #8193aa;
+  --atlas-frost: #7dd3fc;
+  --atlas-flame: #fb923c;
+  container-type: inline-size;
+  color: var(--atlas-text);
+  background:
+    radial-gradient(circle at 4% 1%, rgba(56, 189, 248, 0.11), transparent 27%),
+    radial-gradient(circle at 98% 8%, rgba(249, 115, 22, 0.1), transparent 24%), var(--atlas-panel);
+  border-color: var(--atlas-line-strong);
+  border-radius: 20px;
+  padding: clamp(14px, 1.35vw, 22px);
+  scrollbar-color: rgba(125, 211, 252, 0.38) transparent;
+}
+
+.hero-atlas-detail-v14 *,
+.hero-atlas-detail-v14 *::before,
+.hero-atlas-detail-v14 *::after {
+  box-sizing: border-box;
+}
+
+.hero-atlas-detail-v14 .detail-close,
+.hero-atlas-detail-v14 .heroes-mobile-back,
+.hero-atlas-detail-v14 .detail-nav-btn,
+.hero-atlas-detail-v14 .detail-syn-item,
+.hero-atlas-detail-v14 .detail-combo-hero,
+.hero-atlas-detail-v14 .heroes-combo-scope-btn,
+.hero-atlas-detail-v14 .counter-toggle-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(125, 211, 252, 0.16);
+}
+
+.hero-atlas-detail-v14 .detail-close:focus-visible,
+.hero-atlas-detail-v14 .heroes-mobile-back:focus-visible,
+.hero-atlas-detail-v14 .detail-nav-btn:focus-visible,
+.hero-atlas-detail-v14 .detail-syn-item:focus-visible,
+.hero-atlas-detail-v14 .detail-combo-hero:focus-visible,
+.hero-atlas-detail-v14 .heroes-combo-scope-btn:focus-visible,
+.hero-atlas-detail-v14 .counter-toggle-btn:focus-visible,
+.hero-atlas-detail-v14 .skill-help-chip:focus-visible,
+.hero-atlas-detail-v14 .detail-name:focus-visible {
+  outline: 2px solid var(--atlas-frost);
+  outline-offset: 3px;
+}
+
+.hero-atlas-detail-v14 .detail-close {
+  z-index: 4;
+  top: 18px;
+  right: 18px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-color: rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  background: rgba(8, 17, 32, 0.82);
+  color: #aebed1;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.hero-atlas-detail-v14 .detail-close:hover {
+  background: rgba(127, 29, 29, 0.24);
+  border-color: rgba(248, 113, 113, 0.64);
+  color: #fecaca;
+}
+
+.hero-atlas-detail-v14 .detail-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.8vw, 24px);
+  min-width: 0;
+  margin: 0 0 12px;
+  padding: clamp(14px, 1.5vw, 20px);
+  padding-right: 78px;
+  border: 1px solid var(--atlas-line);
+  border-radius: 16px;
+  background: rgba(13, 25, 43, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.hero-atlas-detail-v14 .detail-img {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  border: 2px solid color-mix(in srgb, var(--hero-accent) 65%, var(--atlas-frost));
+  border-radius: 24px;
+  object-fit: cover;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.34),
+    0 0 0 5px rgba(125, 211, 252, 0.055);
+}
+
+.hero-atlas-detail-v14 .detail-meta,
+.hero-atlas-detail-v14 .detail-skin-intro,
+.hero-atlas-detail-v14 .detail-skill-body {
+  min-width: 0;
+}
+
+.hero-atlas-detail-v14 .detail-eyebrow,
+.hero-atlas-detail-v14 .detail-skin-kicker {
+  margin-bottom: 3px;
+  color: var(--atlas-frost);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.hero-atlas-detail-v14 .detail-name {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 8px;
+  color: var(--atlas-text);
+  font-size: clamp(1.16rem, 1.8vw, 1.55rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.hero-atlas-detail-v14 .detail-tags {
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.hero-atlas-detail-v14 .detail-season-tag,
+.hero-atlas-detail-v14 .detail-origin-season-tag,
+.hero-atlas-detail-v14 .detail-troop-tag,
+.hero-atlas-detail-v14 .detail-state-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 0.61rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.hero-atlas-detail-v14 .detail-stats-row {
+  grid-template-columns: repeat(4, minmax(74px, 1fr));
+  gap: 7px;
+  max-width: 680px;
+}
+
+.hero-atlas-detail-v14 .detail-stat {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  background: rgba(4, 12, 26, 0.46);
+  text-align: left;
+}
+
+.hero-atlas-detail-v14 .detail-stat-lbl {
+  color: var(--atlas-muted);
+  font-size: 0.56rem;
+}
+
+.hero-atlas-detail-v14 .detail-stat-val,
+.hero-atlas-detail-v14 .detail-combo-score,
+.hero-atlas-detail-v14 .counter-matchup-rank {
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-atlas-detail-v14 .detail-stat-val {
+  margin-top: 2px;
+  color: var(--atlas-text);
+  font-size: 0.92rem;
+}
+
+.hero-atlas-detail-v14 .detail-nav {
+  position: sticky;
+  z-index: 5;
+  top: -1px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 5px;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 7px;
+  overflow-x: auto;
+  border: 1px solid var(--atlas-line);
+  border-radius: 13px;
+  background: rgba(7, 16, 31, 0.94);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px);
+  scrollbar-width: thin;
+}
+
+.hero-atlas-detail-v14 .detail-nav-btn {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--atlas-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.hero-atlas-detail-v14 .detail-nav-btn:hover {
+  border-color: rgba(125, 211, 252, 0.18);
+  background: rgba(125, 211, 252, 0.07);
+  color: var(--atlas-text);
+}
+
+.hero-atlas-detail-v14 .detail-nav-btn.active {
+  border-color: color-mix(in srgb, var(--hero-accent) 45%, var(--atlas-frost));
+  background: color-mix(in srgb, var(--hero-accent) 13%, rgba(15, 35, 59, 0.9));
+  color: #f8fbff;
+  box-shadow: inset 0 -2px 0 var(--hero-accent);
+}
+
+.hero-atlas-detail-v14 .detail-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-atlas-detail-v14 .detail-section-block {
+  min-width: 0;
+  padding: clamp(15px, 1.55vw, 22px) 2px;
+  border-top: 1px solid rgba(148, 163, 184, 0.13);
+  scroll-margin-top: 60px;
+}
+
+.hero-atlas-detail-v14 .detail-section-block:first-child {
+  border-top: 0;
+}
+
+.hero-atlas-detail-v14 .detail-section-title {
+  margin: 0 0 11px;
+  padding: 0;
+  border: 0;
+  color: #aabbd0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.115em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.hero-atlas-detail-v14 .detail-section-block--overview {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+  border-radius: 13px;
+  background: rgba(16, 30, 50, 0.54);
+}
+
+.hero-atlas-detail-v14 .detail-section-block--overview .detail-section-title {
+  margin: 0;
+}
+
+.hero-atlas-detail-v14 .detail-synergies {
+  justify-content: flex-end;
+  gap: 7px;
+  margin: 0;
+}
+
+.hero-atlas-detail-v14 .detail-syn-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 118px;
+  max-width: 180px;
+  min-height: 50px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 11px;
+  background: rgba(5, 14, 29, 0.42);
+}
+
+.hero-atlas-detail-v14 .detail-syn-item:hover {
+  border-color: rgba(125, 211, 252, 0.4);
+  background: rgba(14, 75, 104, 0.18);
+  transform: translateY(-1px);
+}
+
+.hero-atlas-detail-v14 .detail-syn-item img {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(125, 211, 252, 0.32);
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.hero-atlas-detail-v14 .detail-syn-item span {
+  max-width: none;
+  color: var(--atlas-copy);
+  font-size: 0.64rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+/* Biography skin showcase */
+.hero-atlas-detail-v14 .detail-skins {
+  gap: 12px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 22px;
+  margin-left: 5px;
+  padding: 2px 7px;
+  background: rgba(192, 132, 252, 0.14);
+  font-size: 0.6rem;
+}
+
+.hero-atlas-detail-v14 .detail-skin-card {
+  gap: 14px;
+  padding: clamp(14px, 1.5vw, 20px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--skin-accent, #c084fc) 36%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--skin-accent, #c084fc) 9%, transparent),
+      transparent 48%
+    ),
+    var(--atlas-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.hero-atlas-detail-v14 .detail-skin-showcase {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr);
+  gap: clamp(14px, 2vw, 24px);
+  align-items: center;
+  min-width: 0;
+}
+
+.hero-atlas-detail-v14 .detail-skin-showcase--text-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hero-atlas-detail-v14 .detail-skin-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  min-height: 166px;
+  margin: 0;
+  isolation: isolate;
+}
+
+.hero-atlas-detail-v14 .detail-skin-art.is-missing {
+  display: none;
+}
+
+.hero-atlas-detail-v14 .detail-skin-art-halo {
+  position: absolute;
+  z-index: -1;
+  width: 132px;
+  height: 132px;
+  border-radius: 34px;
+  background: color-mix(in srgb, var(--skin-accent, #c084fc) 28%, transparent);
+  filter: blur(18px);
+  opacity: 0.64;
+  animation: atlas-skin-halo 5.8s ease-in-out infinite;
+}
+
+.hero-atlas-detail-v14 .detail-skin-art::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 15px;
+  width: 34px;
+  height: 132px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-34px) rotate(14deg);
+  animation: atlas-skin-shine 6.8s ease-in-out infinite;
+}
+
+.hero-atlas-detail-v14 .detail-skin-art img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 144px;
+  height: 144px;
+  border: 2px solid color-mix(in srgb, var(--skin-accent, #c084fc) 64%, #f8fafc 10%);
+  border-radius: 30px;
+  object-fit: cover;
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.36),
+    0 0 0 5px color-mix(in srgb, var(--skin-accent, #c084fc) 9%, transparent);
+  animation: atlas-skin-float 5.8s ease-in-out infinite;
+}
+
+.hero-atlas-detail-v14 .detail-skin-header {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-name {
+  min-width: 0;
+  margin: 0;
+  color: var(--atlas-text);
+  font-size: clamp(0.96rem, 1.35vw, 1.16rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.hero-atlas-detail-v14 .detail-skin-type {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  background: rgba(2, 6, 23, 0.44);
+  font-size: 0.58rem;
+}
+
+.hero-atlas-detail-v14 .detail-skin-title,
+.hero-atlas-detail-v14 .detail-skin-subtitle {
+  margin: 4px 0 0;
+  color: #f8c96d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skin-meta,
+.hero-atlas-detail-v14 .detail-skin-skill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-meta span,
+.hero-atlas-detail-v14 .detail-skin-skill-meta span,
+.hero-atlas-detail-v14 .detail-skin-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 3px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.17);
+  border-radius: 7px;
+  background: rgba(3, 10, 22, 0.35);
+  color: #aebdd0;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero-atlas-detail-v14 .detail-skin-status {
+  width: fit-content;
+  margin-top: 7px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-status--pending {
+  border-color: rgba(251, 191, 36, 0.28);
+  color: #fde68a;
+}
+
+.hero-atlas-detail-v14 .detail-skin-stage-track {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-stage {
+  min-height: 76px;
+  gap: 4px;
+  padding: 9px 10px;
+  border-color: rgba(125, 211, 252, 0.18);
+  border-radius: 10px;
+  background: rgba(4, 15, 30, 0.48);
+}
+
+.hero-atlas-detail-v14 .detail-skin-stage-num {
+  font-size: 0.53rem;
+}
+
+.hero-atlas-detail-v14 .detail-skin-stage-title {
+  font-size: 0.67rem;
+}
+
+.hero-atlas-detail-v14 .detail-skin-stage-detail {
+  color: #8fa1b7;
+  font-size: 0.57rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skin-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-feature {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(4, 13, 27, 0.4);
+}
+
+.hero-atlas-detail-v14 .detail-skin-attr-title,
+.hero-atlas-detail-v14 .detail-skin-skill-title {
+  margin-bottom: 7px;
+  color: var(--atlas-frost);
+  font-size: 0.57rem;
+  letter-spacing: 0.09em;
+}
+
+.hero-atlas-detail-v14 .detail-skin-attr-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-attr {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  color: #aebed1;
+  font-size: 0.63rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skin-max {
+  color: color-mix(in srgb, var(--skin-accent, #c084fc) 78%, #f8fafc);
+  font-weight: 900;
+}
+
+.hero-atlas-detail-v14 .detail-skin-effect {
+  margin-bottom: 6px;
+  color: #9ee9d1;
+  font-size: 0.61rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skin-skill-name {
+  margin-bottom: 5px;
+  color: color-mix(in srgb, var(--skin-accent, #c084fc) 70%, #f8fafc);
+  font-size: 0.78rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skin-skill-meta {
+  margin: 0 0 7px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-skill-desc,
+.hero-atlas-detail-v14 .detail-skin-feature-note {
+  margin: 7px 0 0;
+  color: #a8b8cb;
+  font-size: 0.64rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.hero-atlas-detail-v14 .detail-skin-feature-note {
+  padding: 7px 8px;
+  border-left: 2px solid rgba(125, 211, 252, 0.32);
+  border-radius: 0 7px 7px 0;
+  background: rgba(14, 116, 144, 0.07);
+  color: #bdd5e8;
+}
+
+.hero-atlas-detail-v14 .detail-skin-motion-note {
+  border-left-color: rgba(251, 191, 36, 0.5);
+  background: rgba(120, 53, 15, 0.11);
+  color: #fde68a;
+}
+
+.hero-atlas-detail-v14 .detail-skin-levels {
+  margin-top: 8px;
+}
+
+.hero-atlas-detail-v14 .detail-skin-levels:empty {
+  display: none;
+}
+
+.hero-atlas-detail-v14 .detail-skin-level {
+  color: #b9c7d8;
+  font-size: 0.61rem;
+  line-height: 1.4;
+}
+
+.hero-atlas-detail-v14 .detail-skin-hidden-power-card {
+  padding: 14px;
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+/* Skills */
+.hero-atlas-detail-v14 .detail-skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  gap: 9px;
+}
+
+@media (min-width: 1100px) {
+  .hero-atlas-detail-v14 .detail-skills[data-skill-count='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hero-atlas-detail-v14 .detail-skills[data-skill-count='4'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.hero-atlas-detail-v14 .detail-skill {
+  position: relative;
+  display: block;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(125, 211, 252, 0.14);
+  border-radius: 12px;
+  background: var(--atlas-surface);
+}
+
+.hero-atlas-detail-v14 .detail-skill-rail {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 25px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 7px;
+  background: rgba(14, 116, 144, 0.1);
+  color: var(--atlas-frost);
+  font-size: 0.72rem;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.hero-atlas-detail-v14 .detail-skill-header {
+  gap: 6px;
+  min-height: 25px;
+  margin-bottom: 7px;
+  padding-inline-start: 38px;
+}
+
+.hero-atlas-detail-v14 .detail-skill-id {
+  display: none;
+}
+
+.hero-atlas-detail-v14 .detail-skill-id,
+.hero-atlas-detail-v14 .detail-skill-range,
+.hero-atlas-detail-v14 .detail-skill-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 3px 7px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 7px;
+  background: rgba(3, 10, 22, 0.3);
+  font-size: 0.56rem;
+}
+
+.hero-atlas-detail-v14 .detail-skill-type {
+  color: var(--atlas-frost);
+}
+
+.hero-atlas-detail-v14 .detail-skill-target {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 24px;
+  margin: 0 0 7px;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  border-radius: 7px;
+  background: rgba(3, 10, 22, 0.28);
+  font-size: 0.59rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.hero-atlas-detail-v14 .detail-skill-desc {
+  margin: 0;
+  color: var(--atlas-copy);
+  font-size: 0.74rem;
+  line-height: 1.58;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.hero-atlas-detail-v14 .skill-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Top combos */
+.hero-atlas-detail-v14 .detail-section-head {
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.hero-atlas-detail-v14 .detail-section-head .detail-section-title {
+  margin: 0;
+}
+
+.hero-atlas-detail-v14 .heroes-combo-scope {
+  border-color: rgba(125, 211, 252, 0.16);
+  background: rgba(3, 10, 22, 0.42);
+}
+
+.hero-atlas-detail-v14 .heroes-combo-scope-btn {
+  min-height: 34px;
+  font-size: 0.59rem;
+}
+
+.hero-atlas-detail-v14 .heroes-combo-scope-btn.active {
+  color: #eef8ff;
+  background: rgba(14, 116, 144, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.28);
+}
+
+.hero-atlas-detail-v14 .heroes-combo-scope-hint {
+  margin-bottom: 9px;
+  color: var(--atlas-muted);
+  font-size: 0.63rem;
+}
+
+.hero-atlas-detail-v14 .detail-combos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 9px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 12px;
+  background: var(--atlas-surface);
+}
+
+.hero-atlas-detail-v14 .detail-combo-top {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.hero-atlas-detail-v14 .detail-combo-rank {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  min-height: 32px;
+  padding: 3px;
+  border-radius: 9px;
+  font-size: 0.65rem;
+}
+
+.hero-atlas-detail-v14 .detail-combo-scorebox {
+  align-items: center;
+}
+
+.hero-atlas-detail-v14 .detail-combo-score {
+  font-size: 0.86rem;
+}
+
+.hero-atlas-detail-v14 .detail-combo-heroes {
+  grid-column: 2;
+  gap: 6px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-hero {
+  min-height: 78px;
+  padding: 6px 3px 5px;
+  border-color: rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
+  background: rgba(4, 13, 27, 0.32);
+}
+
+.hero-atlas-detail-v14 .detail-combo-hero:hover,
+.hero-atlas-detail-v14 .detail-combo-hero.is-viewed {
+  border-color: rgba(125, 211, 252, 0.4);
+  background: rgba(14, 116, 144, 0.12);
+}
+
+.hero-atlas-detail-v14 .detail-combo-hero img {
+  width: 42px;
+  height: 42px;
+  border-width: 1px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.hero-atlas-detail-v14 .detail-combo-hero span {
+  color: #aebed1;
+  font-size: 0.56rem;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row > .combo-counters-wrap {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 7px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row .counter-toggle-btn {
+  min-height: 34px;
+  padding: 5px 10px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row .combo-counters-inline {
+  padding: 9px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row .counter-inline-head {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.hero-atlas-detail-v14 .detail-combo-row .counter-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+}
+
+/* Counter paths */
+.hero-atlas-detail-v14 .hero-counter-section-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.hero-atlas-detail-v14 .hero-counter-column {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.hero-atlas-detail-v14 .hero-counter-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.hero-atlas-detail-v14 .hero-counter-subhead {
+  margin: 0;
+  color: var(--atlas-text);
+  font-size: 0.68rem;
+}
+
+.hero-atlas-detail-v14 .hero-counter-count {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  border-radius: 999px;
+  background: rgba(14, 116, 144, 0.08);
+  color: #9fc7dc;
+  font-size: 0.54rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 8px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card {
+  min-width: 0;
+  padding: 9px;
+  border-color: rgba(251, 191, 36, 0.14);
+  border-radius: 11px;
+  background: var(--atlas-surface);
+}
+
+.hero-atlas-detail-v14 .counter-matchup-head {
+  margin-bottom: 6px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-label,
+.hero-atlas-detail-v14 .counter-card-confidence {
+  font-size: 0.53rem;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-grid {
+  gap: 6px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-side {
+  min-width: 0;
+  padding: 7px;
+  border-radius: 9px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-rank {
+  margin: 2px 0 5px;
+  font-size: 0.57rem;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-vs {
+  font-size: 0.49rem;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card .counter-card-heroes {
+  gap: 4px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card .counter-hero-chip {
+  min-width: 0;
+  padding: 4px 2px;
+  border-radius: 8px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card .counter-hero-chip-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card .counter-hero-chip-name {
+  font-size: 0.5rem;
+  line-height: 1.15;
+}
+
+.hero-atlas-detail-v14 .counter-matchup-card .counter-card-reason {
+  margin-top: 6px;
+  padding: 6px 8px;
+  font-size: 0.57rem;
+  line-height: 1.35;
+}
+
+@keyframes atlas-skin-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.012);
+  }
+}
+
+@keyframes atlas-skin-halo {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.76;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes atlas-skin-shine {
+  0%,
+  64% {
+    opacity: 0;
+    transform: translateX(-34px) rotate(14deg);
+  }
+  72% {
+    opacity: 0.5;
+  }
+  84%,
+  100% {
+    opacity: 0;
+    transform: translateX(112px) rotate(14deg);
+  }
+}
+
+/* Light mode retains the same hierarchy without dark-theme forced colors. */
+[data-theme='light'] .hero-atlas-detail-v14 {
+  --atlas-panel: rgba(248, 251, 255, 0.98);
+  --atlas-surface: rgba(241, 247, 253, 0.94);
+  --atlas-surface-strong: #ffffff;
+  --atlas-line: rgba(14, 116, 144, 0.15);
+  --atlas-line-strong: rgba(14, 116, 144, 0.28);
+  --atlas-text: #122033;
+  --atlas-copy: #34465c;
+  --atlas-muted: #66788f;
+  background:
+    radial-gradient(circle at 4% 1%, rgba(14, 165, 233, 0.09), transparent 27%),
+    radial-gradient(circle at 98% 8%, rgba(249, 115, 22, 0.07), transparent 24%), var(--atlas-panel) !important;
+  border-color: var(--atlas-line-strong) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-header,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-section-block--overview,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-combo-row,
+[data-theme='light'] .hero-atlas-detail-v14 .counter-matchup-card,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-card {
+  background: var(--atlas-surface) !important;
+  border-color: rgba(14, 116, 144, 0.16) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-nav {
+  background: rgba(248, 251, 255, 0.95) !important;
+  border-color: rgba(14, 116, 144, 0.18) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-nav-btn {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #52657a !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-nav-btn:hover,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-nav-btn.active {
+  background: rgba(14, 116, 144, 0.08) !important;
+  border-color: rgba(14, 116, 144, 0.22) !important;
+  color: #12475c !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-name,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-section-title,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-name,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-stage-title,
+[data-theme='light'] .hero-atlas-detail-v14 .hero-counter-subhead {
+  color: var(--atlas-text) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-stat {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(14, 116, 144, 0.12) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-stat-lbl,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-stage-detail {
+  color: #52657a !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-origin-season-tag {
+  border-color: #7dd3fc !important;
+  background: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-rail {
+  border-color: #7dd3fc !important;
+  background: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-id,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-type,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-range {
+  border-color: #cbd5e1 !important;
+  background: #e2e8f0 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-id,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-range {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-type,
+[data-theme='light'] .hero-atlas-detail-v14 .skill-help-chip--type {
+  color: #075985 !important;
+  text-decoration-color: rgba(7, 89, 133, 0.55) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .skill-help-chip--term {
+  color: #7e22ce !important;
+  text-decoration-color: rgba(126, 34, 206, 0.5) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .skill-value--percent {
+  background: #dbeafe !important;
+  color: #075985 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .skill-value--duration {
+  color: #9a6700 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .skill-value--number {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-target {
+  background: rgba(255, 255, 255, 0.74) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .heroes-combo-scope-hint,
+[data-theme='light'] .hero-atlas-detail-v14 .hero-detail-empty {
+  color: #52657a !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-stat-val,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skill-desc,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-skill-desc,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-feature-note,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-copy,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-note,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-tier-effect,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-level,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-syn-item span,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-combo-hero span {
+  color: var(--atlas-copy) !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-title,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-tier-name {
+  color: #203247 !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-attr {
+  color: #465a70;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-effect {
+  color: #0f766e;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-tier,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-hidden-stat {
+  background: rgba(255, 255, 255, 0.68);
+  border-color: rgba(100, 116, 139, 0.16);
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-close {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: rgba(100, 116, 139, 0.28) !important;
+  color: #52657a !important;
+}
+
+[data-theme='light'] .hero-atlas-detail-v14 .detail-combo-hero,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-syn-item,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-feature,
+[data-theme='light'] .hero-atlas-detail-v14 .detail-skin-stage,
+[data-theme='light'] .hero-atlas-detail-v14 .counter-matchup-side {
+  background: rgba(255, 255, 255, 0.62) !important;
+  border-color: rgba(100, 116, 139, 0.16) !important;
+}
+
+[dir='rtl'] .hero-atlas-detail-v14 .detail-close {
+  right: auto;
+  left: 18px;
+}
+
+[dir='rtl'] .hero-atlas-detail-v14 .detail-header {
+  padding-right: clamp(14px, 1.5vw, 20px);
+  padding-left: 78px;
+}
+
+[dir='rtl'] .hero-atlas-detail-v14 .detail-syn-item span,
+[dir='rtl'] .hero-atlas-detail-v14 .detail-stat {
+  text-align: right;
+}
+
+@media (max-width: 1380px) and (min-width: 769px) {
+  .hero-atlas-detail-v14 .detail-skin-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-feature:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-atlas-detail-v14 {
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .hero-atlas-detail-v14 .heroes-mobile-back {
+    min-height: 44px;
+    margin-bottom: 9px;
+    padding: 10px 12px;
+    border-color: rgba(125, 211, 252, 0.25);
+    border-radius: 10px;
+    background: rgba(14, 116, 144, 0.09);
+    color: #bcecff;
+  }
+
+  .hero-atlas-detail-v14 .detail-header {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: start;
+    gap: 11px !important;
+    margin-bottom: 9px;
+    padding: 12px;
+  }
+
+  .hero-atlas-detail-v14 .detail-img {
+    width: 64px !important;
+    height: 64px !important;
+    flex-basis: 64px;
+    border-radius: 18px;
+  }
+
+  .hero-atlas-detail-v14 .detail-name {
+    font-size: 1.08rem !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-tags {
+    margin-bottom: 9px;
+  }
+
+  .hero-atlas-detail-v14 .detail-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-stat {
+    padding: 6px 7px !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-nav {
+    margin-bottom: 0;
+    padding: 5px;
+    border-radius: 11px;
+  }
+
+  .hero-atlas-detail-v14 .detail-nav-btn {
+    min-height: 42px;
+    padding: 8px 11px;
+  }
+
+  .hero-atlas-detail-v14 .detail-section-block {
+    padding: 15px 0;
+  }
+
+  .hero-atlas-detail-v14 .detail-section-block--overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .hero-atlas-detail-v14 .detail-synergies {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .hero-atlas-detail-v14 .detail-syn-item {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    min-width: 0;
+    max-width: none;
+    padding: 6px 4px;
+  }
+
+  .hero-atlas-detail-v14 .detail-syn-item span {
+    text-align: center;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-card {
+    padding: 12px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-showcase {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-art {
+    min-height: 132px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-art img {
+    width: 116px;
+    height: 116px;
+    border-radius: 25px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-art-halo {
+    width: 108px;
+    height: 108px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-art::after {
+    top: 6px;
+    left: calc(50% - 56px);
+    height: 112px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-feature:last-child {
+    grid-column: auto;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-stage-track {
+    gap: 5px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-stage {
+    min-height: 82px;
+    padding: 8px 7px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skill {
+    padding: 10px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skill-rail {
+    top: 10px;
+    inset-inline-start: 10px;
+  }
+
+  .hero-atlas-detail-v14 .detail-skill-desc {
+    font-size: 0.72rem;
+  }
+
+  .hero-atlas-detail-v14 .detail-combo-row {
+    padding: 9px !important;
+    gap: 7px !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-combo-hero {
+    min-height: 72px;
+    padding: 5px 3px !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-combo-hero img {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .hero-atlas-detail-v14 .counter-matchup-list {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(282px, 88vw);
+    gap: 8px;
+    padding: 1px 1px 9px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+  }
+
+  .hero-atlas-detail-v14 .counter-matchup-card {
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-atlas-detail-v14 .detail-header {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .hero-atlas-detail-v14 .detail-img {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 16px;
+  }
+
+  .hero-atlas-detail-v14 .detail-season-tag,
+  .hero-atlas-detail-v14 .detail-origin-season-tag,
+  .hero-atlas-detail-v14 .detail-troop-tag,
+  .hero-atlas-detail-v14 .detail-state-tag {
+    min-height: 22px;
+    padding: 3px 7px;
+    font-size: 0.55rem;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-stage-detail {
+    font-size: 0.54rem;
+  }
+
+  .hero-atlas-detail-v14 .counter-matchup-list {
+    grid-auto-columns: minmax(276px, 90vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-atlas-detail-v14,
+  .hero-atlas-detail-v14 * {
+    scroll-behavior: auto !important;
+  }
+
+  .hero-atlas-detail-v14 .detail-skin-art img,
+  .hero-atlas-detail-v14 .detail-skin-art-halo,
+  .hero-atlas-detail-v14 .detail-skin-art::after,
+  .hero-atlas-detail-v14 .counter-matchup-card,
+  .hero-atlas-detail-v14 .detail-syn-item {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
