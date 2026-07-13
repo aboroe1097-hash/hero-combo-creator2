@@ -21,7 +21,7 @@ const htmlFiles = [
     .map((name) => path.join('tabs', name)),
 ];
 
-const NON_FALLBACK_EDEN_X1_KEYS = [
+const NON_FALLBACK_KEYS = [
   'adminContributionRewardGuildMaster',
   'adminContributionRewardCore',
   'adminContributionRewardPowerHouse',
@@ -168,6 +168,71 @@ const NON_FALLBACK_EDEN_X1_KEYS = [
   'edenX1VoteNoSimilarMember',
   'edenX1VoteSavingShort',
   'edenX1VoteSyncFailed',
+  'edenX1VoteOpen',
+  'edenX1VoteClosingSoon',
+  'edenX1VoteStatus',
+  'edenX1VoteTimeRemaining',
+  'edenX1VoteRule',
+  'edenX1VoteSelectionCount',
+  'edenX1MarqueeKicker',
+  'edenX1MarqueeMembers',
+  'edenX1MarqueeDuties',
+  'edenX1MarqueeWeighted',
+  'edenX1MarqueeTopPerformer',
+  'edenX1ProgressionStart',
+  'edenX1ProgressionNow',
+  'edenX1ProgressionVoteDeadline',
+  'researchGameHint',
+  'manualBuilderSelectHeroAria',
+  'manualBuilderHeroInfoAria',
+  'manualBuilderHeroSelectedAnnouncement',
+  'manualBuilderDeleteComboAria',
+  'strifeAvailableHeroesAtStage',
+  'strifeBattleNotesPendingBody',
+  'strifeBattleNotesPendingTitle',
+  'strifeBestRosterMatch',
+  'strifeChooseTarget',
+  'strifeDatabaseRank',
+  'strifeEmptyLineupBody',
+  'strifeEmptyLineupTitle',
+  'strifeEyebrow',
+  'strifeFormationOrder',
+  'strifeFreeCombos',
+  'strifeIntro',
+  'strifeManualScore',
+  'strifeMetricAvailableStages',
+  'strifeMetricRepeat',
+  'strifeMetricSelected',
+  'strifeMetricsAria',
+  'strifeMonsterGroupAria',
+  'strifeMonsterHeading',
+  'strifeMonsterIntel',
+  'strifeMonsterIntelPendingBody',
+  'strifeMonsterIntelPendingTitle',
+  'strifeMonsterSkillFallback',
+  'strifeNotesCount',
+  'strifePaidCombos',
+  'strifePending',
+  'strifeRecommendedFormation',
+  'strifeReusableRank',
+  'strifeSeasonStageGroupAria',
+  'strifeSelectedMonster',
+  'strifeSkillCounter',
+  'strifeSkillNumber',
+  'strifeSourceGuide',
+  'strifeTagArcherCore',
+  'strifeTagComboDb',
+  'strifeTagF2PRow',
+  'strifeTagP2WRow',
+  'strifeTagPressure',
+  'strifeTagRanked',
+  'strifeTagSkillSpam',
+  'strifeTagSustain',
+  'strifeTapToPlan',
+  'strifeTierRank',
+  'strifeTroopMixed',
+  'strifeVerifiedLineup',
+  'tabStrife',
 ];
 
 const I18N_ATTRS = [
@@ -280,9 +345,26 @@ for (const [lang, dict] of Object.entries(translations)) {
 
 for (const [lang, dict] of Object.entries(translations)) {
   if (lang === 'en') continue;
-  for (const key of NON_FALLBACK_EDEN_X1_KEYS) {
+  for (const key of NON_FALLBACK_KEYS) {
     if (key in dict && dict[key] === translations.en[key]) {
-      errors.push(`${lang}.${key} still matches the English Eden X1 text`);
+      const enVal = translations.en[key];
+      // Allow identical values for shared brand terms, proper nouns, and placeholder-heavy text
+      if (
+        key === 'tabStrife' ||
+        key === 'strifeDatabaseRank' ||
+        key === 'strifeTierRank' ||
+        key === 'strifeReusableRank' ||
+        key === 'strifeSkillNumber' ||
+        key === 'strifeNotesCount' ||
+        key === 'strifeMetricAvailableStages' ||
+        key === 'strifeMetricSelected' ||
+        key === 'strifeAvailableHeroesAtStage' ||
+        enVal === 'F2P row' ||
+        enVal === 'P2W row' ||
+        enVal === 'Combo DB' ||
+        enVal === 'Strife over Dragon'
+      ) continue;
+      errors.push(`${lang}.${key} still matches the English text`);
     }
   }
 }

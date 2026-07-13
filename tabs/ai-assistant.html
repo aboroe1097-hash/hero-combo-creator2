@@ -1,0 +1,370 @@
+<div id="aiAssistantRoot" class="ai-assistant" data-disclosure-version="1" data-velo-state="idle">
+  <header class="ai-header">
+    <span data-velo-mascot="header"></span>
+    <div class="ai-header-copy">
+      <div class="ai-kicker-row">
+        <span class="ai-kicker" data-i18n="ai.kicker">VTS Assistant</span>
+        <span class="ai-beta-badge" aria-label="Velo Beta 0.1">Beta 0.1</span>
+      </div>
+      <h2 class="ai-title" data-i18n="ai.title">Talk with Velo</h2>
+      <p class="ai-disclaimer">
+        <span class="ai-brand-mark" aria-hidden="true"></span>
+        <span data-i18n="ai.disclaimer">Velo can make mistakes. Check important advice.</span>
+      </p>
+    </div>
+    <div class="ai-header-actions">
+      <button
+        type="button"
+        id="aiPrivacyBtn"
+        class="ai-button ai-button--quiet"
+        data-i18n="ai.privacySettings"
+      >
+        Privacy
+      </button>
+      <button
+        type="button"
+        id="aiNewChatBtn"
+        class="ai-button ai-button--quiet"
+        data-i18n="ai.newChat"
+      >
+        New Chat
+      </button>
+    </div>
+  </header>
+
+  <div
+    id="aiOfflineBanner"
+    class="ai-banner ai-banner--offline hidden"
+    role="status"
+    aria-live="polite"
+  >
+    <div>
+      <strong data-i18n="ai.offlineTitle">AI is offline</strong>
+      <p data-i18n="ai.offlineBody">
+        AI needs an internet connection. Your other toolkit features still work offline.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="ai-button ai-button--quiet"
+      data-ai-nav="generator"
+      data-i18n="ai.openTools"
+    >
+      Open tools
+    </button>
+  </div>
+
+  <main id="aiConversation" class="ai-conversation">
+    <section id="aiWelcome" class="ai-welcome" aria-labelledby="aiWelcomeTitle">
+      <span data-velo-mascot="hero"></span>
+      <h3 id="aiWelcomeTitle" data-i18n="ai.welcomeTitle">Ready when you are.</h3>
+      <p data-i18n="ai.welcomeBody">
+        I’m Velo, your VTS Assistant. Let’s work through heroes, formations, counters, Strife,
+        research, materials, skins, or Eden.
+      </p>
+      <div
+        id="aiSuggestions"
+        class="ai-suggestions"
+        aria-label="Suggested questions"
+        data-i18n-aria="ai.suggestionsLabel"
+      >
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Explore my best hero combos using the heroes I own."
+          data-ai-key="ai.suggestion.lineups"
+          data-ai-categories="selected_heroes"
+        >
+          Explore my best hero combos using the heroes I own.
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Review my saved research progress and help me choose what to upgrade next."
+          data-ai-key="ai.suggestion.research"
+          data-ai-categories="research_progress"
+        >
+          Review my saved research progress and help me choose what to upgrade next.
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Review my overall account progress using my heroes, research, and DM inventory."
+          data-ai-key="ai.suggestion.account"
+          data-ai-categories="selected_heroes,research_progress,dm_plan"
+        >
+          Review my overall account progress using my heroes, research, and DM inventory.
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Counter Arthur / Cleopatra VII / Theodora."
+          data-ai-key="ai.suggestion.counter"
+        >
+          Counter Arthur / Cleopatra VII / Theodora.
+        </button>
+      </div>
+      <button
+        type="button"
+        id="aiMoreIdeasBtn"
+        class="ai-more-ideas"
+        aria-expanded="false"
+        aria-controls="aiMoreIdeas"
+        data-i18n="ai.moreIdeas"
+      >
+        More ideas
+      </button>
+      <div id="aiMoreIdeas" class="ai-suggestions ai-suggestions--more hidden">
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Compare Cleopatra and Theodora."
+          data-ai-key="ai.suggestion.compare"
+        >
+          Compare Cleopatra and Theodora.
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="What works against Gambosate in Strife?"
+          data-ai-key="ai.suggestion.strife"
+        >
+          What works against Gambosate in Strife?
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-prompt="Show this recommended lineup as JSON."
+          data-ai-key="ai.suggestion.json"
+        >
+          Show this recommended lineup as JSON.
+        </button>
+        <button
+          type="button"
+          class="ai-suggestion"
+          data-ai-nav="arcade"
+          data-i18n="ai.suggestion.arcade"
+        >
+          Think you can beat the Arcade high scores? Let’s find out.
+        </button>
+      </div>
+    </section>
+
+    <ol
+      id="aiTranscript"
+      class="ai-transcript hidden"
+      aria-live="off"
+      aria-label="AI conversation"
+      data-i18n-aria="ai.transcriptLabel"
+    ></ol>
+
+    <button
+      type="button"
+      id="aiJumpLatestBtn"
+      class="ai-jump-latest hidden"
+      data-i18n="ai.jumpLatest"
+    >
+      Jump to latest
+    </button>
+  </main>
+
+  <div id="aiErrorBanner" class="ai-banner ai-banner--error hidden" role="alert">
+    <div>
+      <strong id="aiErrorTitle" data-i18n="ai.error.title">Could not finish that answer</strong>
+      <p id="aiErrorBody"></p>
+    </div>
+    <button
+      type="button"
+      id="aiErrorRetryBtn"
+      class="ai-button ai-button--quiet hidden"
+      data-i18n="ai.retry"
+    >
+      Retry
+    </button>
+  </div>
+
+  <footer class="ai-composer-shell">
+    <div id="aiStatus" class="ai-status" role="status" aria-live="polite" aria-atomic="true"></div>
+    <form id="aiComposerForm" class="ai-composer" novalidate>
+      <label class="sr-only" for="aiComposer" data-i18n="ai.composerLabel">Message Velo</label>
+      <textarea
+        id="aiComposer"
+        name="aiQuestion"
+        rows="1"
+        maxlength="4000"
+        autocomplete="off"
+        enterkeyhint="send"
+        data-i18n-ph="ai.composerPlaceholder"
+        placeholder="Message Velo about a lineup, counter, or plan…"
+      ></textarea>
+      <span id="aiComposerCount" class="ai-character-count" aria-hidden="true">0/4000</span>
+      <button type="submit" id="aiSendBtn" class="ai-send-button" data-i18n="ai.send">Send</button>
+      <button type="button" id="aiStopBtn" class="ai-stop-button hidden" data-i18n="ai.stop">
+        Stop
+      </button>
+    </form>
+    <div class="ai-composer-meta">
+      <span id="aiModeLabel" data-i18n="ai.generalMode">General advice only</span>
+      <span id="aiQuotaLabel" class="ai-quota" aria-live="off"></span>
+    </div>
+  </footer>
+
+  <div id="aiConsentOverlay" class="ai-overlay hidden" role="presentation">
+    <section
+      id="aiConsentDialog"
+      class="ai-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="aiConsentTitle"
+      tabindex="-1"
+    >
+      <div class="ai-dialog-header">
+        <div>
+          <span class="ai-kicker" data-i18n="ai.consent.kicker">Before your first question</span>
+          <h3 id="aiConsentTitle" data-i18n="ai.consent.title">Choose what this chat can use</h3>
+        </div>
+        <button
+          type="button"
+          id="aiConsentCloseBtn"
+          class="ai-icon-button"
+          aria-label="Close"
+          data-i18n-aria="ai.close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="ai-dialog-body">
+        <p data-i18n="ai.consent.recipients">
+          Your question is sent securely through the VTS Worker to an external AI service. Provider
+          storage is disabled.
+        </p>
+        <p data-i18n="ai.consent.history">
+          This chat stays in this browser session. VTS does not save prompts, answers, or tool
+          results to Firestore.
+        </p>
+        <p class="ai-consent-note" data-i18n="ai.consent.general">
+          General advice sends no saved app data. Personal data is read only after you allow a
+          category for this chat.
+        </p>
+
+        <fieldset class="ai-consent-categories">
+          <legend data-i18n="ai.consent.categories">Optional saved data</legend>
+          <label class="ai-consent-option" data-ai-consent-option="selected_heroes">
+            <input type="checkbox" value="selected_heroes" />
+            <span
+              ><strong data-i18n="ai.category.selectedHeroes">Selected heroes</strong
+              ><small data-i18n="ai.category.selectedHeroesHint"
+                >Your current Generator hero selection</small
+              ></span
+            >
+          </label>
+          <label class="ai-consent-option" data-ai-consent-option="explicit_skins">
+            <input type="checkbox" value="explicit_skins" />
+            <span
+              ><strong data-i18n="ai.category.skins">Skin ownership</strong
+              ><small data-i18n="ai.category.skinsHint"
+                >Only skins you explicitly marked owned or not owned</small
+              ></span
+            >
+          </label>
+          <label class="ai-consent-option" data-ai-consent-option="dm_plan">
+            <input type="checkbox" value="dm_plan" />
+            <span
+              ><strong data-i18n="ai.category.materials">DM plan</strong
+              ><small data-i18n="ai.category.materialsHint"
+                >Your saved crafting plan and calculated shortfall</small
+              ></span
+            >
+          </label>
+          <label class="ai-consent-option" data-ai-consent-option="research_progress">
+            <input type="checkbox" value="research_progress" />
+            <span
+              ><strong data-i18n="ai.category.research">Research progress</strong
+              ><small data-i18n="ai.category.researchHint"
+                >Your saved node levels, never an estimated income</small
+              ></span
+            >
+          </label>
+          <label class="ai-consent-option" data-ai-consent-option="admin_dashboard">
+            <input type="checkbox" value="admin_dashboard" />
+            <span
+              ><strong data-i18n="ai.category.adminDashboard">Admin dashboard</strong
+              ><small data-i18n="ai.category.adminDashboardHint"
+                >Requires this chat's consent and a verified signed-in admin account</small
+              ></span
+            >
+          </label>
+        </fieldset>
+        <p id="aiConsentSetupHint" class="ai-setup-hint hidden" data-i18n="ai.consent.notSetUp">
+          This category has no saved data yet.
+        </p>
+      </div>
+      <div class="ai-dialog-actions">
+        <button
+          type="button"
+          id="aiConsentGeneralBtn"
+          class="ai-button ai-button--quiet"
+          data-i18n="ai.consent.continueGeneral"
+        >
+          Continue without saved data
+        </button>
+        <button
+          type="button"
+          id="aiConsentAllowBtn"
+          class="ai-button ai-button--primary"
+          data-i18n="ai.consent.allowSelected"
+        >
+          Allow selected data for this chat
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div id="aiConfirmOverlay" class="ai-overlay hidden" role="presentation">
+    <section
+      id="aiConfirmDialog"
+      class="ai-dialog ai-dialog--compact"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="aiConfirmTitle"
+      tabindex="-1"
+    >
+      <h3 id="aiConfirmTitle" data-i18n="ai.action.useGeneratorTitle">
+        Use this lineup in Generator?
+      </h3>
+      <p id="aiConfirmBody" class="ai-confirm-body hidden"></p>
+      <div id="aiLineupCompare" class="ai-lineup-compare">
+        <div>
+          <span data-i18n="ai.action.currentSelection">Current selection</span
+          ><strong id="aiCurrentLineup" dir="ltr">—</strong>
+        </div>
+        <div aria-hidden="true">→</div>
+        <div>
+          <span data-i18n="ai.action.proposedSelection">Proposed selection</span
+          ><strong id="aiProposedLineup" dir="ltr">—</strong>
+        </div>
+      </div>
+      <p id="aiConfirmLocalNote" data-i18n="ai.action.localOnly">
+        This changes only your local Generator selection.
+      </p>
+      <div class="ai-dialog-actions">
+        <button
+          type="button"
+          id="aiConfirmCancelBtn"
+          class="ai-button ai-button--quiet"
+          data-i18n="ai.cancel"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="aiConfirmApplyBtn"
+          class="ai-button ai-button--primary"
+          data-i18n="ai.action.confirmUse"
+        >
+          Use in Generator
+        </button>
+      </div>
+    </section>
+  </div>
+</div>

@@ -100,6 +100,17 @@ function setupMinimap(canvas, api) {
     api.redraw();
   });
 
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const bounds = api.getMapBounds();
+      const cx = (bounds.minX + bounds.maxX) / 2;
+      const cy = (bounds.minY + bounds.maxY) / 2;
+      api.centerOn(cx, cy);
+      api.redraw();
+    }
+  });
+
   render();
 }
 

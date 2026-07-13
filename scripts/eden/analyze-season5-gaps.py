@@ -3,7 +3,7 @@
 import csv
 from pathlib import Path
 
-DB = Path(__file__).resolve().parent
+DB = Path(__file__).resolve().parents[2] / "database"
 
 
 def load(path):

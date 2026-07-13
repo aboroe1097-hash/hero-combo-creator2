@@ -19,11 +19,95 @@ import {
   normalizeStructureTarget,
   getSupportedOcrImageFiles,
   describeRejectedOcrImageFiles,
-  readOcrImageDataUrl
+  readOcrImageDataUrl,
 } from './ocr-shared.js';
+import { translations } from './translations.js';
+
+const OCR_LOG_FALLBACKS = Object.freeze({
+  adminLogOcrAlreadyRunning: 'A structure OCR upload is already running.',
+  adminLogOcrNoFiles: 'Select at least one supported screenshot.',
+  adminLogOcrUnsupportedFiles: '{count} unsupported file(s) were skipped.',
+  adminLogOcrPreparing: 'Preparing {count} structure screenshot(s).',
+  adminLogOcrScanning: 'Reading screenshot {index} of {total}.',
+  adminLogOcrAttempt: 'Reading screenshot {index}/{total}, attempt {attempt}/{max}.',
+  adminLogOcrRetry: 'OCR request failed: {error}. Retrying in {delay}s ({attempt}/{max}).',
+  adminLogOcrLowPlayerCount: 'Only {count} player rows were detected; review this screenshot.',
+  adminLogOcrImageRead: 'Read {target}: {count} player rows in {seconds}s.',
+  adminLogOcrImageFinished: 'Finished screenshot {index}/{total} in {seconds}s.',
+  adminLogOcrError: 'OCR failed: {error}.',
+  adminLogOcrCancelled: 'OCR cancelled after {count}/{total} screenshots.',
+  adminLogOcrNoData: 'No usable OCR data was returned.',
+  adminLogOcrMerging: 'Validating and merging OCR results.',
+  adminLogOcrUploading: 'Uploading validated structure sessions.',
+  adminLogOcrValidationMismatch:
+    '{target} demolition mismatch: read {actual}, expected {expected}, missing {missing}.',
+  adminLogOcrSessionsUpdated: '{count} structure session(s) uploaded.',
+  adminLogOcrLeaderboardCount: 'Leaderboard rebuilt for {count} players.',
+  adminLogOcrCloudActive: 'Cloud upload confirmed.',
+  adminLogOcrCloudLocal: 'Saved locally; cloud upload is unavailable.',
+  adminLogOcrParseFailed: 'OCR results could not be parsed.',
+  adminLogOcrComplete: 'OCR reading and upload complete.',
+});
+
+function ocrT(key, vars = {}) {
+  let lang = 'en';
+  try {
+    lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  } catch {
+    // Restricted contexts can block storage; English remains the safe fallback.
+  }
+  const dictionaries = window.VTS_TRANSLATIONS || translations;
+  let text =
+    dictionaries[lang]?.[key] ||
+    translations[lang]?.[key] ||
+    dictionaries.en?.[key] ||
+    translations.en?.[key] ||
+    OCR_LOG_FALLBACKS[key] ||
+    key;
+  Object.entries(vars).forEach(([name, value]) => {
+    text = text.replaceAll(`{${name}}`, String(value));
+  });
+  return text;
+}
+
+function logOcrEvent(key, type = 'info', params = {}, options = {}) {
+  const message = ocrT(key, params);
+  const liveLog = $id('dashOcrLiveLog');
+  if (liveLog) {
+    const item = document.createElement('li');
+    item.dataset.type = type;
+    const time = document.createElement('time');
+    time.dateTime = new Date().toISOString();
+    time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const copy = document.createElement('span');
+    copy.textContent = options.file ? `${options.file} · ${message}` : message;
+    item.append(time, copy);
+    liveLog.prepend(item);
+    while (liveLog.children.length > 12) liveLog.lastElementChild?.remove();
+  }
+  return log(message, type, options.file || null, {
+    messageKey: key,
+    params,
+    source: 'ocr',
+    localOnly: options.localOnly === true,
+  });
+}
+
+function setOcrProgress(percent, text = '') {
+  const value = Math.max(0, Math.min(100, Number(percent) || 0));
+  const fill = $id('dashProgressFill');
+  const bar = $id('dashProgressBar');
+  const label = $id('dashProgressText');
+  if (fill) fill.style.width = `${value}%`;
+  if (bar) bar.setAttribute('aria-valuenow', String(Math.round(value)));
+  if (text && label) label.textContent = text;
+}
 
 async function saveParsedData(data, options = {}) {
-  const { saveData } = await import('./ocr-dashboard.js');
+  const { saveData, saveDashboardOcrUpload } = await import('./ocr-dashboard.js');
+  if (Array.isArray(options.ocrAttacks)) {
+    return saveDashboardOcrUpload(data, options.ocrAttacks);
+  }
   return saveData(data, options);
 }
 
@@ -41,35 +125,58 @@ function isSamePlayerForOcrDedup(existing, incoming) {
   const existingProtected = getProtectedPlayerIdentity(existing?.name);
   const incomingProtected = getProtectedPlayerIdentity(incoming?.name);
   if (existingProtected || incomingProtected) {
-    return Boolean(existingProtected && incomingProtected && existingProtected === incomingProtected);
+    return Boolean(
+      existingProtected && incomingProtected && existingProtected === incomingProtected
+    );
   }
-  return getSimilarity(existing.name, incoming.name) > 0.8 || getSimilarityAlphaNum(existing.name, incoming.name) > 0.8;
+  return (
+    getSimilarity(existing.name, incoming.name) > 0.8 ||
+    getSimilarityAlphaNum(existing.name, incoming.name) > 0.8
+  );
 }
 
 async function processFiles(files) {
-  if (state._ocrProcessing) { log('OCR is already running. Please wait...', 'warn'); return; }
+  if (state._ocrProcessing) {
+    logOcrEvent('adminLogOcrAlreadyRunning', 'warn');
+    return;
+  }
   state._ocrProcessing = true;
   state._ocrCancelRequested = false;
   state._ocrAbortController = new AbortController();
+  const uploadBaseline = new Map(
+    (Array.isArray(state.dashData?.attacks) ? state.dashData.attacks : []).map((attack) => [
+      String(attack?.id || ''),
+      JSON.stringify(attack),
+    ])
+  );
   const valid = getSupportedOcrImageFiles(files);
   if (!valid.length) {
     const rejected = describeRejectedOcrImageFiles(files);
-    log(
-      rejected.length
-        ? `No supported screenshots selected. Use PNG, JPG, or WebP images. Rejected: ${rejected.slice(0, 3).join(', ')}`
-        : 'No screenshots selected.',
-      'warn'
-    );
+    if (rejected.length) {
+      logOcrEvent(
+        'adminLogOcrUnsupportedFiles',
+        'warn',
+        { count: rejected.length },
+        { localOnly: true }
+      );
+    } else {
+      logOcrEvent('adminLogOcrNoFiles', 'warn');
+    }
     state._ocrProcessing = false;
     state._ocrAbortController = null;
     return;
   }
 
-  $id('dashProgress').classList.remove('hidden');
+  const progress = $id('dashProgress');
+  progress.classList.remove('hidden');
+  if (window.matchMedia?.('(max-width: 768px)').matches) {
+    requestAnimationFrame(() => progress.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  }
+  $id('dashOcrLiveLog')?.replaceChildren();
   const cancelBtn = $id('dashCancelOcrBtn');
   if (cancelBtn) cancelBtn.classList.remove('hidden');
-  $id('dashProgressFill').style.width = '0%';
-  log(`Preparing to scan ${valid.length} screenshots...`, 'info');
+  setOcrProgress(0);
+  logOcrEvent('adminLogOcrPreparing', 'info', { count: valid.length });
 
   // Per-image trickle: creep the bar through the current image's segment so a
   // slow scan never looks frozen (the bar previously only moved between
@@ -83,15 +190,14 @@ async function processFiles(files) {
   };
   const startSegTrickle = (index, total) => {
     stopSegTrickle();
-    const segStart = (index / total) * 100;
-    const segEnd = ((index + 1) / total) * 100;
+    const segStart = (index / total) * 85;
+    const segEnd = ((index + 1) / total) * 85;
     const segStartedAt = performance.now();
     segTrickleTimer = setInterval(() => {
       const elapsedSec = (performance.now() - segStartedAt) / 1000;
       // Asymptotic: reaches ~50% of the segment after 25s, never quite 100%.
       const frac = Math.min(0.96, elapsedSec / (elapsedSec + 25));
-      const fill = $id('dashProgressFill');
-      if (fill) fill.style.width = `${segStart + (segEnd - segStart) * frac}%`;
+      setOcrProgress(segStart + (segEnd - segStart) * frac);
     }, 400);
   };
 
@@ -101,9 +207,13 @@ async function processFiles(files) {
     const f = valid[i];
     const startedAt = performance.now();
     startSegTrickle(i, valid.length);
-    const preparingMsg = `Scanning image ${i+1}/${valid.length} - preparing...`;
+    const preparingParams = { index: i + 1, total: valid.length };
+    const preparingMsg = ocrT('adminLogOcrScanning', preparingParams);
     $id('dashProgressText').textContent = preparingMsg;
-    log(preparingMsg, 'info', f.name);
+    logOcrEvent('adminLogOcrScanning', 'info', preparingParams, {
+      file: f.name,
+      localOnly: true,
+    });
     const imageUrl = await readOcrImageDataUrl(f);
 
     try {
@@ -144,33 +254,81 @@ EXPECTED JSON SCHEMA:
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         if (state._ocrCancelRequested) throw new DOMException('OCR cancelled', 'AbortError');
         try {
-          $id('dashProgressText').textContent = `Scanning image ${i+1}/${valid.length} - Qwen OCR attempt ${attempt}/${maxRetries}...`;
-          raw = await qwenVisionRequest([{ role: 'user', content: [
-            { type: 'text', text: promptTxt },
-            { type: 'image_url', image_url: { url: imageUrl } }
-          ]}], { signal: state._ocrAbortController?.signal });
+          $id('dashProgressText').textContent = ocrT('adminLogOcrAttempt', {
+            index: i + 1,
+            total: valid.length,
+            attempt,
+            max: maxRetries,
+          });
+          raw = await qwenVisionRequest(
+            [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: promptTxt },
+                  { type: 'image_url', image_url: { url: imageUrl } },
+                ],
+              },
+            ],
+            { signal: state._ocrAbortController?.signal }
+          );
           break;
         } catch (err) {
           if (err?.name === 'AbortError' || state._ocrCancelRequested) throw err;
           if (attempt === maxRetries || !isRetryableOcrRequestError(err)) throw err;
           const delayMs = getOcrRetryDelayMs(err, attempt);
           const delaySeconds = Math.max(1, Math.ceil(delayMs / 1000));
-          log(`Qwen request failed: ${describeOcrRequestError(err)}. Retrying in ${delaySeconds}s (${attempt}/${maxRetries})...`, 'warn', f.name);
-          await new Promise(r => setTimeout(r, delayMs));
+          logOcrEvent(
+            'adminLogOcrRetry',
+            'warn',
+            {
+              error: describeOcrRequestError(err),
+              delay: delaySeconds,
+              attempt,
+              max: maxRetries,
+            },
+            { file: f.name, localOnly: true }
+          );
+          await new Promise((r) => setTimeout(r, delayMs));
         }
       }
 
       let text = raw.choices[0].message.content;
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      text = text
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
       data = tryRepairJson(text);
 
       const elapsed = ((performance.now() - before) / 1000).toFixed(1);
       const pCount = data.players ? data.players.length : 0;
       if (pCount < 10) {
-        log(`Warning: Only ${pCount} players found. Check extraction logic. Snippet: ${text.substring(0, 50)}...`, 'warn', f.name);
+        logOcrEvent(
+          'adminLogOcrLowPlayerCount',
+          'warn',
+          { count: pCount },
+          {
+            file: f.name,
+            localOnly: true,
+          }
+        );
       }
-      const structureLabel = formatStructureLabel(data.structure_name || '?', data.structure_level || '');
-      log(`Successfully read screenshot ${i+1}/${valid.length} — ${structureLabel}, found ${pCount} players in ${elapsed}s.`, 'success', f.name);
+      const structureLabel = formatStructureLabel(
+        data.structure_name || '?',
+        data.structure_level || ''
+      );
+      logOcrEvent(
+        'adminLogOcrImageRead',
+        'success',
+        {
+          index: i + 1,
+          total: valid.length,
+          target: structureLabel,
+          count: pCount,
+          seconds: Number(elapsed),
+        },
+        { file: f.name, localOnly: true }
+      );
       allJson.push({ filename: f.name, json: data });
 
       if (data) {
@@ -182,17 +340,26 @@ EXPECTED JSON SCHEMA:
       }
     } catch (e) {
       if (e?.name === 'AbortError' || state._ocrCancelRequested) {
-        log(`OCR cancelled after ${i}/${valid.length} screenshots.`, 'warn');
+        logOcrEvent('adminLogOcrCancelled', 'warn', { count: i, total: valid.length });
         break;
       }
-      log(`OCR error: ${describeOcrRequestError(e)}`, 'error', f.name);
+      logOcrEvent(
+        'adminLogOcrError',
+        'error',
+        { error: describeOcrRequestError(e) },
+        { file: f.name, localOnly: true }
+      );
     }
     stopSegTrickle();
     const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
-    const finishedMsg = `Finished image ${i+1}/${valid.length} in ${elapsed}s`;
+    const finishedParams = { index: i + 1, total: valid.length, seconds: Number(elapsed) };
+    const finishedMsg = ocrT('adminLogOcrImageFinished', finishedParams);
     $id('dashProgressText').textContent = finishedMsg;
-    log(finishedMsg, 'info', f.name);
-    $id('dashProgressFill').style.width = `${((i+1)/valid.length)*100}%`;
+    logOcrEvent('adminLogOcrImageFinished', 'info', finishedParams, {
+      file: f.name,
+      localOnly: true,
+    });
+    setOcrProgress(((i + 1) / valid.length) * 85);
   }
   stopSegTrickle();
 
@@ -205,34 +372,62 @@ EXPECTED JSON SCHEMA:
   }
 
   if (!allJson.length) {
-    log(`No valid data extracted.`, 'error');
+    logOcrEvent('adminLogOcrNoData', 'error');
     state._ocrProcessing = false;
     state._ocrAbortController = null;
     if (cancelBtn) cancelBtn.classList.add('hidden');
     return;
   }
 
-  log(`Analyzing and merging results...`, 'info');
+  logOcrEvent('adminLogOcrMerging', 'info');
+  setOcrProgress(90, ocrT('adminLogOcrMerging'));
   const parsed = parseOcrResults(allJson);
 
   if (parsed) {
-    const mismatched = parsed.attacks.filter(att => {
-      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+    const mismatched = parsed.attacks.filter((att) => {
+      const val = validateTotalDemolition(
+        att.structure_name,
+        att.structure_level,
+        att.total_demolition
+      );
       return val && !val.match;
     });
     for (const att of mismatched) {
-      const val = validateTotalDemolition(att.structure_name, att.structure_level, att.total_demolition);
+      const val = validateTotalDemolition(
+        att.structure_name,
+        att.structure_level,
+        att.total_demolition
+      );
       if (!val) continue;
       const shortfall = val.expected - att.total_demolition;
-      const msg = `${formatStructureLabel(att.structure_name, att.structure_level)}: got ${(att.total_demolition||0).toLocaleString()} / expected ${val.expected.toLocaleString()} (missing ${shortfall.toLocaleString()}). All screenshots uploaded?`;
-      log(`⚠ ${msg} — auto-saved. Check terminal for details.`, 'warn');
+      logOcrEvent(
+        'adminLogOcrValidationMismatch',
+        'warn',
+        {
+          target: formatStructureLabel(att.structure_name, att.structure_level),
+          actual: att.total_demolition || 0,
+          expected: val.expected,
+          missing: shortfall,
+        },
+        { localOnly: true }
+      );
     }
-    await saveParsedData(parsed, { immediate: true, awaitCloud: true });
+    logOcrEvent('adminLogOcrUploading', 'info');
+    setOcrProgress(94, ocrT('adminLogOcrUploading'));
+    const changedAttacks = parsed.attacks.filter(
+      (attack) => uploadBaseline.get(String(attack?.id || '')) !== JSON.stringify(attack)
+    );
+    const cloudSaved = await saveParsedData(parsed, { ocrAttacks: changedAttacks });
     await renderDashboard();
-    log(`Success! ${parsed.attacks.length} sessions updated`, 'success');
-    log(`Total players in leaderboard: ${parsed.players_summary.length}`, 'info');
-    log(`Cloud sync status: ${(await getCloudDb()) ? 'active' : 'local-only'}`, 'info');
-  } else log(`Failed to parse extracted reports.`, 'error');
+    logOcrEvent('adminLogOcrSessionsUpdated', 'success', { count: changedAttacks.length });
+    logOcrEvent('adminLogOcrLeaderboardCount', 'info', {
+      count: parsed.players_summary.length,
+    });
+    if (cloudSaved) logOcrEvent('adminLogOcrCloudActive', 'success');
+    else logOcrEvent('adminLogOcrCloudLocal', 'warn');
+    setOcrProgress(100, ocrT(cloudSaved ? 'adminLogOcrCloudActive' : 'adminLogOcrCloudLocal'));
+    logOcrEvent('adminLogOcrComplete', 'success');
+  } else logOcrEvent('adminLogOcrParseFailed', 'error');
 
   state._ocrProcessing = false;
   state._ocrAbortController = null;
@@ -240,17 +435,21 @@ EXPECTED JSON SCHEMA:
   setTimeout(() => $id('dashProgress').classList.add('hidden'), 2000);
 }
 
-function fmtDate(d) { const p = n => String(n).padStart(2, '0'); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`; }
+function fmtDate(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}, ${days[d.getDay()]}, ${p(d.getHours())}:${p(d.getMinutes())} GT`;
+}
 
 function displayGameTime(gt) {
   if (!gt) return '';
   const m = gt.match(/^(\d{4})-(\d{2})-(\d{2}),\s*(\d{2}:\d{2})$/);
   if (m) {
-     const dt = new Date(+m[1], m[2]-1, +m[3]);
-     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-     return `${m[3]}/${m[2]}/${m[1]}, ${days[dt.getDay()]}, ${m[4]} GT`;
+    const dt = new Date(+m[1], m[2] - 1, +m[3]);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return `${m[3]}/${m[2]}/${m[1]}, ${days[dt.getDay()]}, ${m[4]} GT`;
   }
-  return gt.includes(',') ? gt : (gt.split(' ').slice(0,2).join(' ').replace(/-/g,'/') + ' GT');
+  return gt.includes(',') ? gt : gt.split(' ').slice(0, 2).join(' ').replace(/-/g, '/') + ' GT';
 }
 
 function parseOcrResults(results) {
@@ -259,8 +458,8 @@ function parseOcrResults(results) {
     const j = item.json;
     let dt = new Date();
     if (j.timestamp) {
-       const m = j.timestamp.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})/);
-       if (m) dt = new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]);
+      const m = j.timestamp.match(/(\d{4})[-./](\d{2})[-./](\d{2})\s+(\d{2})[-.:](\d{2})/);
+      if (m) dt = new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]);
     }
 
     const rawStructureName = j.structure_name || null;
@@ -273,30 +472,39 @@ function parseOcrResults(results) {
 
     let f = false;
     for (const g of groups) {
-      const nameMatch = (!g.sN || !sN || getSimilarity(g.sN, sN) > 0.8);
-      const levelMatch = (!g.sL || !sL || g.sL === sL);
+      const nameMatch = !g.sN || !sN || getSimilarity(g.sN, sN) > 0.8;
+      const levelMatch = !g.sL || !sL || g.sL === sL;
       if (Math.abs(g.dt - dt) < 600000 && nameMatch && levelMatch) {
         if (j.players) g.players.push(...j.players);
         if (!g.sN && sN) g.sN = sN;
         if (!g.sL && sL) g.sL = sL;
-        if ((!g.rawStructureName || /^structure$/i.test(String(g.rawStructureName))) && rawStructureName) g.rawStructureName = rawStructureName;
+        if (
+          (!g.rawStructureName || /^structure$/i.test(String(g.rawStructureName))) &&
+          rawStructureName
+        )
+          g.rawStructureName = rawStructureName;
         if (!g.rawStructureLevel && rawStructureLevel) g.rawStructureLevel = rawStructureLevel;
         if (!g.start_time && start_time) g.start_time = start_time;
-        f = true; break;
+        f = true;
+        break;
       }
     }
-    if (!f) groups.push({
-      dt,
-      sN,
-      sL,
-      rawStructureName,
-      rawStructureLevel,
-      start_time,
-      players: j.players ? [...j.players] : []
-    });
+    if (!f)
+      groups.push({
+        dt,
+        sN,
+        sL,
+        rawStructureName,
+        rawStructureLevel,
+        start_time,
+        players: j.players ? [...j.players] : [],
+      });
   }
 
-  log(`Grouped ${results.length} images into ${groups.length} session(s)`, 'info');
+  logOcrEvent('adminLogOcrGrouped', 'info', {
+    images: results.length,
+    sessions: groups.length,
+  });
 
   const attacks = [];
   groups.forEach((g) => {
@@ -304,25 +512,29 @@ function parseOcrResults(results) {
     let sL = g.sL || '';
 
     const pMap = new Map();
-    g.players.forEach(p => {
+    g.players.forEach((p) => {
       if (!p.name || !p.value) return;
       p.value = Number(p.value);
-      const fuzzyMatch = [...pMap.values()].find(v => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100);
+      const fuzzyMatch = [...pMap.values()].find(
+        (v) => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100
+      );
       if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
       else if (pMap.get(`${fuzzyMatch.name}_${fuzzyMatch.value}`).value < p.value) {
-         pMap.set(`${p.name}_${p.value}`, p);
-         pMap.delete(`${fuzzyMatch.name}_${fuzzyMatch.value}`);
+        pMap.set(`${p.name}_${p.value}`, p);
+        pMap.delete(`${fuzzyMatch.name}_${fuzzyMatch.value}`);
       }
     });
 
-    const deduped = [...pMap.values()].sort((a,b) => b.value - a.value);
-    deduped.forEach((p, rank) => p.rank = rank + 1);
+    const deduped = [...pMap.values()].sort((a, b) => b.value - a.value);
+    deduped.forEach((p, rank) => (p.rank = rank + 1));
 
-    const id = `${sN.replace(/\s+/g,'_')}_${sL}_${g.dt.getTime()}`;
+    const id = `${sN.replace(/\s+/g, '_')}_${sL}_${g.dt.getTime()}`;
     if (deduped.length > 0) {
       attacks.push({
         id,
-        game_time: displayGameTime(fmtDate(new Date(g.dt.getTime() + (g.dt.getTimezoneOffset() - 120) * 60000))),
+        game_time: displayGameTime(
+          fmtDate(new Date(g.dt.getTime() + (g.dt.getTimezoneOffset() - 120) * 60000))
+        ),
         start_time: g.start_time || null,
         structure_name: sN,
         structure_level: sL,
@@ -330,54 +542,77 @@ function parseOcrResults(results) {
         raw_structure_level: g.rawStructureLevel || sL,
         players: deduped,
         players_count: deduped.length,
-        total_demolition: deduped.reduce((sum, p) => sum + p.value, 0)
+        total_demolition: deduped.reduce((sum, p) => sum + p.value, 0),
       });
     }
   });
 
-  const merged = state.dashData?.attacks ? Object.fromEntries(state.dashData.attacks.map(a => [a.id, a])) : {};
-  attacks.forEach(a => {
+  const merged = state.dashData?.attacks
+    ? Object.fromEntries(state.dashData.attacks.map((a) => [a.id, a]))
+    : {};
+  attacks.forEach((a) => {
     const ts = a.id.split('_').pop();
-    const existing = Object.values(merged).find(x => x.id.split('_').pop() === ts);
+    const existing = Object.values(merged).find((x) => x.id.split('_').pop() === ts);
     if (existing) {
-       const pMap = new Map();
-        existing.players.forEach(p => { p.value = Number(p.value); pMap.set(`${p.name}_${p.value}`, p); });
-        a.players.forEach(p => {
-          p.value = Number(p.value);
-          const fuzzyMatch = [...pMap.values()].find(v => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100);
-         if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
-       });
-       existing.players = [...pMap.values()].sort((x,y) => y.value - x.value);
-       existing.players.forEach((p,i) => p.rank = i+1);
-       existing.players_count = existing.players.length;
-       existing.total_demolition = existing.players.reduce((s,p) => s + p.value, 0);
+      const pMap = new Map();
+      existing.players.forEach((p) => {
+        p.value = Number(p.value);
+        pMap.set(`${p.name}_${p.value}`, p);
+      });
+      a.players.forEach((p) => {
+        p.value = Number(p.value);
+        const fuzzyMatch = [...pMap.values()].find(
+          (v) => isSamePlayerForOcrDedup(v, p) && Math.abs(v.value - p.value) <= 100
+        );
+        if (!fuzzyMatch) pMap.set(`${p.name}_${p.value}`, p);
+      });
+      existing.players = [...pMap.values()].sort((x, y) => y.value - x.value);
+      existing.players.forEach((p, i) => (p.rank = i + 1));
+      existing.players_count = existing.players.length;
+      existing.total_demolition = existing.players.reduce((s, p) => s + p.value, 0);
 
-       if (existing.structure_name.includes('Structure') && !a.structure_name.includes('Structure')) {
-         existing.structure_name = a.structure_name;
-         existing.structure_level = a.structure_level;
-         existing.raw_structure_name = a.raw_structure_name || a.structure_name;
-         existing.raw_structure_level = a.raw_structure_level || a.structure_level;
-         const oldId = existing.id;
-         existing.id = a.id;
-         merged[a.id] = existing;
-         delete merged[oldId];
-       }
+      if (
+        existing.structure_name.includes('Structure') &&
+        !a.structure_name.includes('Structure')
+      ) {
+        existing.structure_name = a.structure_name;
+        existing.structure_level = a.structure_level;
+        existing.raw_structure_name = a.raw_structure_name || a.structure_name;
+        existing.raw_structure_level = a.raw_structure_level || a.structure_level;
+        const oldId = existing.id;
+        existing.id = a.id;
+        merged[a.id] = existing;
+        delete merged[oldId];
+      }
     } else {
-       merged[a.id] = { ...a };
+      merged[a.id] = { ...a };
     }
   });
 
-  const sorted = Object.values(merged).sort((a,b) => b.game_time.localeCompare(a.game_time));
-  const sum = {}; sorted.forEach(a => {
+  const sorted = Object.values(merged).sort((a, b) => b.game_time.localeCompare(a.game_time));
+  const sum = {};
+  sorted.forEach((a) => {
     const seen = new Set();
     const players = a.players || [];
-    players.forEach(p => {
+    players.forEach((p) => {
       const displayName = resolvePlayerNameForAttack(p, players);
-      const n = displayName || findBestMatch(p.name) || String(p.name || '').trim() || 'Unknown Player';
-      if (!sum[n]) sum[n] = { name: n, total_demolition: 0, participation_count: 0, attacks: [], unique_structures: new Set() };
+      const n =
+        displayName || findBestMatch(p.name) || String(p.name || '').trim() || 'Unknown Player';
+      if (!sum[n])
+        sum[n] = {
+          name: n,
+          total_demolition: 0,
+          participation_count: 0,
+          attacks: [],
+          unique_structures: new Set(),
+        };
       sum[n].total_demolition += p.value;
       const level = normalizeStructureLevelForName(a.structure_name, a.structure_level);
-      if (!seen.has(n)) { sum[n].participation_count++; seen.add(n); sum[n].unique_structures.add((a.structure_name||'') + '_' + level); }
+      if (!seen.has(n)) {
+        sum[n].participation_count++;
+        seen.add(n);
+        sum[n].unique_structures.add((a.structure_name || '') + '_' + level);
+      }
       sum[n].attacks.push({
         id: a.id,
         name: a.structure_name,
@@ -390,7 +625,7 @@ function parseOcrResults(results) {
         display_player_name: displayName,
         raw_player_name: p.name || '',
         val: p.value,
-        rank: p.rank
+        rank: p.rank,
       });
     });
   });
@@ -399,15 +634,24 @@ function parseOcrResults(results) {
     last_updated: fmtDate(new Date()),
     total_attacks: sorted.length,
     attacks: sorted,
-    players_summary: Object.values(sum).map(p => {
-      const uniqueCount = p.unique_structures.size;
-      return {
-        ...p,
-        unique_structures: uniqueCount,
-        unique_structures_count: uniqueCount,
-      };
-    }).sort((a,b) => b.total_demolition - a.total_demolition)
+    players_summary: Object.values(sum)
+      .map((p) => {
+        const uniqueCount = p.unique_structures.size;
+        return {
+          ...p,
+          unique_structures: uniqueCount,
+          unique_structures_count: uniqueCount,
+        };
+      })
+      .sort((a, b) => b.total_demolition - a.total_demolition),
   };
 }
 
-export { processFiles, normalizeStructureName, normalizeStructureTarget, parseOcrResults, fmtDate, displayGameTime };
+export {
+  processFiles,
+  normalizeStructureName,
+  normalizeStructureTarget,
+  parseOcrResults,
+  fmtDate,
+  displayGameTime,
+};

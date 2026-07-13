@@ -1,0 +1,485 @@
+/* Strife over Dragon v14 recovery layer.
+   Loaded after the shared secondary-tool sheet so this feature can keep its
+   own responsive geometry without leaking into Loyalty or Eden Map. */
+
+#strifeSection .strife-tool-root {
+  width: 100%;
+  max-width: 110rem;
+  gap: clamp(0.72rem, 1.2vw, 1rem);
+}
+
+#strifeSection .strife-control-deck,
+#strifeSection .strife-results-band,
+#strifeSection .strife-monster-summary {
+  border-radius: var(--radius-card);
+}
+
+#strifeSection .strife-control-deck--monsters {
+  display: block;
+}
+
+#strifeSection .strife-control-deck--stage {
+  display: grid;
+  grid-template-columns: minmax(28rem, 1fr) minmax(29rem, auto);
+  align-items: end;
+  gap: 1rem;
+}
+
+#strifeSection .strife-control-row {
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.7rem;
+}
+
+#strifeSection .strife-stage-grid {
+  gap: 0.45rem;
+}
+
+#strifeSection .strife-stage-btn {
+  min-width: 3.5rem;
+  padding-inline: 0.8rem;
+}
+
+#strifeSection .strife-metrics {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(9rem, auto) minmax(17rem, 1fr);
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+}
+
+#strifeSection .strife-metrics > .strife-metric {
+  min-height: var(--tap-min);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+#strifeSection .strife-metric--selected {
+  border-color: color-mix(in srgb, var(--brand) 32%, var(--border-subtle));
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface-soft));
+  color: var(--brand-light);
+}
+
+#strifeSection .strife-metric--heroes strong {
+  margin-inline-end: 0.15rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+#strifeSection .strife-monster-summary {
+  position: relative;
+  isolation: isolate;
+  min-height: 8rem;
+  grid-template-columns: clamp(5.2rem, 7vw, 6.5rem) minmax(0, 1fr);
+  gap: clamp(0.9rem, 1.5vw, 1.3rem);
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--monster-accent) 34%, var(--border-subtle));
+  background:
+    radial-gradient(
+      circle at 7% 50%,
+      color-mix(in srgb, var(--monster-accent) 18%, transparent),
+      transparent 24rem
+    ),
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--monster-accent) 6%, var(--panel-fill-quiet)),
+      var(--panel-fill-quiet) 62%
+    );
+}
+
+#strifeSection .strife-monster-summary::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--monster-accent), transparent 52%);
+  opacity: 0.8;
+}
+
+#strifeSection .strife-monster-art--hero {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 28%;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--monster-accent) 18%, transparent);
+}
+
+#strifeSection .strife-monster-summary-copy {
+  min-width: 0;
+  align-self: center;
+}
+
+#strifeSection .strife-monster-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.18rem;
+}
+
+#strifeSection .strife-monster-kicker .strife-eyebrow {
+  margin: 0;
+}
+
+#strifeSection .strife-monster-stage {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.4rem;
+  min-height: 1.45rem;
+  padding-inline: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--monster-accent) 48%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--monster-accent) 12%, var(--control-bg));
+  color: color-mix(in srgb, var(--monster-accent) 78%, var(--text-primary));
+  font-family: var(--font-mono, var(--ff-font-data, 'JetBrains Mono', ui-monospace, monospace));
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+#strifeSection .strife-monster-summary h3 {
+  margin-bottom: 0.2rem;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+#strifeSection .strife-monster-summary-copy > span {
+  max-width: 74rem;
+  margin-top: 0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+#strifeSection .strife-lane-grid {
+  gap: clamp(0.75rem, 1.2vw, 1rem);
+}
+
+#strifeSection .strife-results-band {
+  --lane-accent: var(--brand);
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--lane-accent) 28%, var(--border-subtle));
+  background:
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--lane-accent) 7%, transparent),
+      transparent 20rem
+    ),
+    var(--panel-fill-quiet);
+}
+
+#strifeSection .strife-results-band--f2p {
+  --lane-accent: var(--status-success);
+}
+
+#strifeSection .strife-results-band--p2w {
+  --lane-accent: var(--accent);
+}
+
+#strifeSection .strife-results-band--f2p::before,
+#strifeSection .strife-results-band--p2w::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--lane-accent), transparent 58%);
+}
+
+#strifeSection .strife-results-band > .strife-section-title {
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#strifeSection .strife-results-band > .strife-section-title h3 {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+}
+
+#strifeSection .strife-results-band > .strife-section-title > span {
+  max-width: 68%;
+  color: var(--text-dim);
+  font-size: 0.62rem;
+}
+
+#strifeSection .strife-ranked-list {
+  gap: 0.72rem;
+}
+
+#strifeSection .strife-combo-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.68rem;
+  padding: 0.75rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--lane-accent) 26%, var(--border-subtle));
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--lane-accent) 4%, var(--surface-soft));
+  box-shadow: inset 3px 0 0 var(--lane-accent);
+}
+
+[dir='rtl'] #strifeSection .strife-combo-card {
+  box-shadow: inset -3px 0 0 var(--lane-accent);
+}
+
+#strifeSection .strife-card-rank {
+  display: flex;
+  min-height: 2.4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.48rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: calc(var(--radius-control) - 2px);
+  background: color-mix(in srgb, var(--lane-accent) 7%, var(--control-bg));
+  box-shadow: none;
+}
+
+#strifeSection .strife-card-rank strong {
+  color: color-mix(in srgb, var(--lane-accent) 80%, var(--text-primary));
+  font-size: 0.73rem;
+}
+
+#strifeSection .strife-card-rank span {
+  color: var(--brand-light);
+  font-size: 0.63rem;
+}
+
+#strifeSection .strife-card-main {
+  gap: 0.62rem;
+  padding: 0;
+}
+
+#strifeSection .strife-card-heroes {
+  gap: 0.45rem;
+}
+
+#strifeSection .strife-hero-slot {
+  align-content: start;
+  min-height: 7.65rem;
+  padding: 0.5rem 0.35rem 0.45rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: calc(var(--radius-control) - 2px);
+  background: color-mix(in srgb, var(--lane-accent) 4%, var(--control-bg));
+}
+
+#strifeSection .strife-slot-role {
+  min-height: 0.8rem;
+  color: var(--text-dim);
+  font-size: 0.51rem;
+}
+
+#strifeSection .strife-hero-frame {
+  width: clamp(3.55rem, 4.6vw, 4.4rem);
+  height: clamp(3.55rem, 4.6vw, 4.4rem);
+  overflow: hidden;
+  border-radius: 28%;
+  border-color: color-mix(in srgb, var(--lane-accent) 58%, var(--border));
+  background: var(--surface-2);
+}
+
+#strifeSection .strife-hero-frame img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+#strifeSection .strife-hero-name {
+  display: -webkit-box;
+  min-height: 1.45rem;
+  overflow: hidden;
+  font-size: 0.64rem;
+  line-height: 1.15;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+#strifeSection .strife-hero-meta {
+  font-size: 0.5rem;
+  line-height: 1.15;
+}
+
+#strifeSection .strife-combo-note {
+  padding: 0.52rem 0.62rem;
+  border-color: var(--border-subtle);
+  background: var(--control-bg);
+  color: var(--text-muted);
+  font-size: 0.67rem;
+}
+
+#strifeSection .strife-card-foot {
+  gap: 0.35rem;
+}
+
+#strifeSection .strife-card-foot :is(.strife-troop-chip, .strife-tags span) {
+  min-height: 1.55rem;
+  padding: 0.2rem 0.5rem;
+  border-color: var(--border-subtle);
+  background: var(--control-bg);
+  font-size: 0.58rem;
+}
+
+#strifeSection .strife-combo-card:hover {
+  border-color: color-mix(in srgb, var(--lane-accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--lane-accent) 7%, var(--surface-soft));
+}
+
+@media (max-width: 1180px) {
+  #strifeSection .strife-control-deck--stage {
+    grid-template-columns: 1fr;
+  }
+
+  #strifeSection .strife-metrics {
+    grid-template-columns: minmax(8rem, auto) minmax(9rem, auto) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  #strifeSection {
+    padding: 0.55rem !important;
+  }
+
+  #strifeSection .strife-tool-root {
+    gap: 0.55rem;
+  }
+
+  #strifeSection .strife-control-deck--stage {
+    gap: 0.55rem;
+  }
+
+  #strifeSection .strife-control-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  #strifeSection .strife-stage-grid {
+    display: flex !important;
+    flex-wrap: nowrap;
+    margin-inline: -0.7rem;
+    padding: 0 0.7rem 0.3rem;
+    overflow-x: auto;
+    scroll-padding-inline: 0.7rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  #strifeSection .strife-stage-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  #strifeSection .strife-stage-btn {
+    flex: 0 0 3.45rem !important;
+    width: auto !important;
+    min-width: 3.45rem !important;
+    scroll-snap-align: start;
+  }
+
+  #strifeSection .strife-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  #strifeSection .strife-metric--stages {
+    grid-column: 1 / -1 !important;
+  }
+
+  #strifeSection .strife-metric--selected,
+  #strifeSection .strife-metric--heroes {
+    grid-column: auto !important;
+  }
+
+  #strifeSection .strife-metrics > .strife-metric {
+    min-height: 2.55rem;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  #strifeSection .strife-monster-summary {
+    min-height: 0;
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.7rem;
+  }
+
+  #strifeSection .strife-monster-summary-copy > span {
+    font-size: 0.65rem;
+    line-height: 1.42;
+  }
+
+  #strifeSection .strife-monster-stage {
+    min-width: 2.2rem;
+  }
+
+  #strifeSection .strife-lane-grid {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  #strifeSection .strife-results-band > .strife-section-title {
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  #strifeSection .strife-results-band > .strife-section-title > span {
+    max-width: 62%;
+    font-size: 0.57rem;
+  }
+
+  #strifeSection .strife-combo-card {
+    grid-template-columns: 1fr;
+    padding: 0.62rem;
+  }
+
+  #strifeSection .strife-card-rank {
+    flex-direction: row;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border-subtle);
+    box-shadow: none !important;
+  }
+
+  #strifeSection .strife-card-main {
+    padding: 0;
+  }
+
+  #strifeSection .strife-card-heroes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.32rem;
+  }
+
+  #strifeSection .strife-hero-slot {
+    min-height: 7.2rem;
+    padding-inline: 0.22rem;
+  }
+
+  #strifeSection .strife-hero-frame {
+    width: clamp(3.05rem, 17vw, 4rem) !important;
+    height: clamp(3.05rem, 17vw, 4rem) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  #strifeSection .strife-metrics {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #strifeSection .strife-hero-name {
+    font-size: 0.58rem;
+  }
+
+  #strifeSection .strife-hero-meta {
+    font-size: 0.47rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #strifeSection .strife-combo-card,
+  #strifeSection .strife-monster-card,
+  #strifeSection .strife-stage-btn {
+    transition: none;
+  }
+}

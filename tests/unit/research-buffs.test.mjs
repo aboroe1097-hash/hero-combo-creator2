@@ -5,8 +5,36 @@ import {
   describeNodeBuffProgress,
   findMissingBuffValueNodes,
   getNodeBuffEffects,
+  getResearchBuffTone,
+  getResearchPriority,
   summarizeTechBuffs,
 } from '../../js/research-buffs.js';
+
+test('classifies buff labels into stable semantic color tones', () => {
+  assert.equal(getResearchBuffTone('Tactical Might'), 'tactical');
+  assert.equal(getResearchBuffTone('Archer Might'), 'might');
+  assert.equal(getResearchBuffTone('Cavalry Resistance'), 'resistance');
+  assert.equal(getResearchBuffTone('All units HP'), 'hp');
+  assert.equal(getResearchBuffTone('Footman deals more Damage'), 'damage');
+  assert.equal(getResearchBuffTone('Archer Training Speed'), 'speed');
+  assert.equal(getResearchBuffTone('Resource Gathering Capacity'), 'economy');
+  assert.equal(getResearchBuffTone('Hero EXP'), 'season');
+});
+
+test('orders research priorities damage, HP, tactical, base combat, then training speed', () => {
+  const labels = [
+    { name: 'Drill', buff: 'Training Speed +5%' },
+    { name: 'Guard', buff: 'Resistance +5%' },
+    { name: 'Tactics', buff: 'Tactical Resistance +5%' },
+    { name: 'Vitality', buff: 'All Units HP +5%' },
+    { name: 'Lethal Blow', buff: 'Damage +5%' },
+  ];
+  assert.deepEqual(
+    labels.map(getResearchPriority).map((priority) => priority.rank),
+    [5, 4, 3, 2, 1]
+  );
+  assert.equal(getResearchPriority({ buff: 'Marching Speed +5%' }).key, 'other');
+});
 
 test('derives per-level percentage buffs from explicit per-level labels', () => {
   const summary = describeNodeBuffProgress(

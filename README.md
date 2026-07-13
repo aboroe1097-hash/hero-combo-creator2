@@ -1,29 +1,30 @@
-# Hero Combo Creator - VTS 1097 (v13.1.11)
+# Hero Combo Creator - VTS 1097 (v14.0.0)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
 ## Features
 
-Ten top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
+Eleven top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
 
 | Tool | Source files | Purpose | Dependencies | Perf notes |
 |---|---|---|---|---|
 | **Manual Builder** | `js/app-builder.js`, `js/app-export.js`, `js/combos-db.js`, `js/combo-share.js` | Drag-drop 3-hero combos; save to `users/{uid}/bestCombos`; export image/text | Firestore, html2canvas | Save = owner-gated Firestore write |
 | **Combo Generator** | `js/app-generator.js`, `js/combos-db.js`, `js/hero-bonuses.js`, `js/combo-counters.js`, `js/skins-db.js`, `js/skin-heroes-data.js` | Select owned heroes -> top-5 ranked combos, no overlap; "Surprise Me" random; skin mode | Hero, combo, counter, and skin datasets | Pure client-side ranking |
 | **Hero Atlas** | `js/app-hero-atlas.js`, `js/heroes-info.js`, `js/heroes-data.js`, `js/skins-db.js`, `js/skin-heroes-data.js`, `js/hero-bonuses.js` | 68+ heroes DB; search/filter; skills, synergies, counters, top combos; seasonal filters; adjustable bonuses | Static hero, combo, counter, and skin data | New badge; dynamically imported |
-| **Tech Research** | `js/app-research.js`, `js/tech-db.js`, `js/research-buffs.js`, `js/research-advanced.js`, `js/research-node-icons.js` | Academy tracker S0-X8; War Badge/Courage Medal summary; game-layout trees; buff progress | Static research data | `tech-db.js` is data-heavy and split into its own build chunk |
-| **DM Materials** | `js/material-calculator.js` | Coming-soon Dragon Master material planner; calculator module is staged but not enabled in the tab yet | Static crafting constants | Tab currently shows a launch placeholder |
+| **Tech Research** | `js/app-research.js`, `js/tech-db.js`, `js/research-buffs.js`, `js/research-advanced.js`, `js/research-node-icons.js` | Responsive academy catalog and dependency-tree planner for S0-X8, with resource summaries, progress, MAX actions, and viewport calculator | Static research data | Dynamically imported; `tech-db.js` stays in its own data chunk |
+| **DM Materials** | `js/material-calculator.js`, `js/material-planner-model.js`, `assets/dm/` | Six-piece Dragon Master Command Center: compare direct Gold, recommended Purple, and Blue routes; track owned materials; build normal troop gear; merge tiers; save/export/share plans | Verified crafting constants and extracted in-game item art | Dynamically imported; mobile-first horizontal route/slot flow |
 | **Eden Map** | `tabs/eden-map.html`, `js/eden-map.js`, `js/eden-map-*.js`, `js/eden-datasets-loader.js`, `database/` | Canvas 1700x1600 tile map; scout mode; route planning; layer toggles; <=4 teams; terrain-aware distance | Static datasets in `database/` | Lazy-loaded tab via `data-tab-src` and dynamic import |
-| **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js`, `js/heroes-data.js` | Monster/stage matchup recommendations using local combo and hero data | Static data | New badge; dynamically imported |
+| **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js`, `js/heroes-data.js` | Monster matchup recommendations intentionally capped to S0-S4 and X1-X2 | Static data | New badge; dynamically imported; X3+ is outside this tool's contract |
 | **Eden Loyalty** | `tabs/loyalty.html`, `js/loyalty-calculator.js` | Poison mitigation, camp presets, deficit/surplus | None | Lazy-loaded tab via `data-tab-src` |
-| **YouTube** | Inline in `index.html` | 3 VTS 1097 playlists | YouTube IFrame | Lazy-loaded with `IntersectionObserver` (`rootMargin: 200px`) |
-| **VTS Admin** | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/ocr-*.js`, `js/contribution-weighting.js` | OCR attack analysis, roster screenshots, contribution lists, leaderboard, CSV/PNG/JSON export, Eden X1 voting, conduct adjustments | Cloudflare Worker (Qwen VL OCR), Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal badge; standalone `noindex,nofollow` page |
+| **YouTube** | `js/youtube-v14.js`, `css/youtube-v14.css` | Featured VTS video plus three selectable playlists with direct YouTube fallbacks | YouTube IFrame | No iframe is created until the member explicitly presses Load/Watch |
+| **Arcade** | `arcade.html`, `js/arcade.js`, `css/arcade.css`, `games/boot/` | Standalone member lobby for Merge Rush, Sort the Hoard, Crystal Relay, Set Assembly, and Hero Rumble | Shared static game shell plus existing DM, wing, logo, and hero-skin art | Separate page; game code loads only after opening a game |
+| **VTS Admin** | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/ocr-*.js`, `js/admin-log-*.js`, `js/contribution-weighting.js` | OCR attack analysis, roster screenshots, contribution lists, leaderboard, CSV/PNG/JSON export, Eden X1 voting, conduct adjustments, and cross-device Admin Activity | Cloudflare Worker (Qwen VL OCR), Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal badge; standalone `noindex,nofollow` page |
 
-**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. It is also `noindex,nofollow`.
+**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. Admins can schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
 
-**Cross-cutting sub-systems:** `comments.js` (Firestore-threaded feedback), `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `app-undo.js` (undo toasts), `app-shortcuts.js`, `app-whats-new.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
+**Cross-cutting sub-systems:** `comments.js` (Firestore-threaded feedback), `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js` (undo toasts), `app-shortcuts.js`, `app-whats-new.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
 
-**Performance posture:** Vite build with hashed production assets, manual chunks for large feature/data modules, dynamic `import()` per heavy tab and language pack, preloaded boot wing images and Google Fonts, Google Fonts print-to-all media swap, lazy YouTube iframes, mobile CSS loaded only at `max-width: 768px`, lazy/async footer imagery, `requestIdleCallback` for error flush, `--tap-min: 44px` touch sizing, and `env(safe-area-inset-*)` support for notches.
+**Performance posture:** Vite build with hashed production assets, manual chunks for large feature/data modules, dynamic `import()` per heavy tab and language pack, preloaded boot wing images and Google Fonts, Google Fonts print-to-all media swap, user-triggered YouTube iframe creation, staged Eden/Admin rendering, lazy exact DM item art, mobile CSS loaded only at `max-width: 768px`, lazy/async footer imagery, `requestIdleCallback` for non-critical work, `--tap-min: 44px` touch sizing, and `env(safe-area-inset-*)` support for notches.
 
 ## Screenshots And Demos
 
@@ -57,11 +58,10 @@ Short GIFs are welcome for workflows that static screenshots cannot show well, e
 ## Quick Start
 
 ```bash
-npm install
+npm ci
 npm run dev      # Vite dev server (hot-reload)
-npm run build    # Production build -> dist/ + docs/
+npm run build    # Production build -> dist/
 npm run preview  # Preview production build
-npx serve .      # Static serve from root (no build)
 ```
 
 ## Release Checks
@@ -72,9 +72,23 @@ Run the full local gate before shipping:
 npm run check
 ```
 
-That runs lint, Prettier check, unit tests, i18n validation, production build, bundle-size check, and Playwright smoke tests. The 13.1.6 release should pass the full local gate before shipping.
+That runs version consistency, lint, Prettier checks, unit tests, i18n validation, a production build, complete-artifact size budgets, and Playwright smoke tests. Every release must pass the full local gate before shipping.
 
-Version cadence: patch releases run through `.20` before the next minor. For the current train, ship `13.1.0`, `13.1.1`, ... `13.1.20`; the next release after that is `13.2.0`. The same cycle repeats for future minors (`13.2.1` through `13.2.20`, then `13.3.0`, and so on).
+Before committing or pushing a user-visible release, deploy and test the same artifact on a
+temporary Firebase Hosting preview URL:
+
+```bash
+npm run firebase:preview
+```
+
+This reruns `npm run check`, deploys Hosting-only to a versioned seven-day preview channel, and runs
+the production smoke suite against the returned URL. The preview uses the real `abocombo` backend,
+and automated smoke initializes anonymous Auth and Analytics without intentional Firestore writes.
+Keep additional QA read-only unless production writes are deliberately in scope. Production still
+ships only through the reviewed `gh-pages` pull request. See
+[`docs/firebase-preview-workflow.md`](docs/firebase-preview-workflow.md) for details.
+
+Version cadence: patch releases run through `.20` before the next minor. For the v14 train, ship `14.0.0`, `14.0.1`, ... `14.0.20`; the next release after that is `14.1.0`.
 
 ## Tech Stack
 
@@ -88,16 +102,16 @@ Version cadence: patch releases run through `.20` before the next minor. For the
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
 | **Maps** | HTML Canvas (Eden Map) |
 | **Export** | html2canvas (image), CSV, JSON |
-| **Hosting** | GitHub Pages (gh-pages branch, root-level serving) |
+| **Hosting** | GitHub Pages (Actions uploads the verified `dist/` artifact from `gh-pages`) |
 
 ## File Structure
 
 ```
-index.html              Main SPA shell (~650 lines, 54KB after tab extraction)
+index.html              Main SPA shell (v14 navigation and primary tool surfaces)
 admin.html              Standalone VTS Admin shell
 eden-x1.html            Separate Eden X1 public contribution/rewards view
 vite.config.js          Vite build config (manual chunking)
-scripts/post-build.mjs  Post-build: copy assets to dist/ + docs/
+scripts/post-build.mjs  Post-build: copy static assets to dist/ and generate the precache manifest
 public/
   sw.js                 Service worker
   404.html              404 fallback page
@@ -122,6 +136,11 @@ css/
   app.css               All styles (~6100 lines)
   atmosphere.css        Utility-first design system (press, lift, tilt, skeleton, morph, burst, aura)
   components.css        Reusable component styles (cards, tabs, pills, modals)
+  shell-v14.css         Compact aurora/glass shell, desktop rail, mobile 4+More navigation
+  materials.css         Dragon Master Command Center
+  research-v14.css      Research catalog and dependency-tree presentation
+  youtube-v14.css       Deferred featured-video and playlist rail
+  secondary-tools-v14.css Scoped Strife, Loyalty, and Eden Map responsive polish
   eden-x1.css           Eden X1 public view styles
   mobile.css            Mobile responsive overrides
   ocr-dashboard.css     Admin dashboard styles
@@ -132,7 +151,10 @@ js/
   app-generator.js      Combo generator: best & random modes
   app-hero-atlas.js     Hero Atlas tab: search, skills, synergies, skins
   app-research.js       Tech Research Calculator tab
-  material-calculator.js Dragon Master material calculator
+  material-calculator.js Dragon Master Command Center renderer
+  material-planner-model.js Dragon Master routes, recipes, plan validation/share model
+  shell-v14.js          Responsive app-shell navigation and More sheet
+  youtube-v14.js        On-demand YouTube playlist/player controller
   app-strife.js         Strife over Dragon recommendations
   app-export.js         Export functions (html2canvas, CSV, text)
   app-error-reporting.js  Client error queue and Firestore flush
@@ -180,6 +202,7 @@ js/
   contribution-weighting.js  Eden contribution scoring helpers
   consistency-score.js  Eden X1 consistency scoring helpers
   eden-x1.js            Eden X1 public dashboard and voting logic
+  eden-vote-deadline.js Shared voting-deadline normalization and countdown model
   ocr-dashboard.js      VTS Admin: main dashboard logic
   ocr-roster.js         Roster: checklist, login, alliances, snapshots
   ocr-render.js         Dashboard UI rendering
@@ -188,6 +211,8 @@ js/
   ocr-shared.js         Shared constants, state, helpers for OCR module
   ocr-time-filter.js    Game-time filtering helpers
   ocr-adjustments.js    R5 Bonus Team Effort Points panel: merit/penalty points, Firestore sync
+  admin-log-store.js    Local bounded Admin Activity ring/outbox/deduplication
+  admin-log-sync.js     Admin-only cross-device Firestore Activity stream
 
   eden-map.js           Eden Map: render, plans, routing
   eden-map-data.js      Static data, sector definitions
@@ -212,7 +237,7 @@ js/
 ## Key Architecture Decisions
 
 ### Deployment Model
-GitHub Pages serves from the **root** of the `gh-pages` branch. Source files (`index.html`, `js/`, `css/`) are served directly. The `dist/` and `docs/` folders are build artifacts for alternative hosting.
+The `gh-pages` branch is the production source branch, but Pages does not serve its files directly. GitHub Actions runs the full deploy verification, uploads `dist/` as the Pages artifact, and deploys only that verified artifact.
 
 ### CSS Architecture
 The app no longer ships the frozen Tailwind compatibility shim. Remaining UI styling lives in semantic stylesheets (`app.css`, `components.css`, `mobile.css`, and `atmosphere.css`), and `cssnano` minifies production CSS after the Vite build.
@@ -251,6 +276,14 @@ npx firebase-tools deploy --only firestore:rules --project abocombo
 ```
 
 For Eden X1 Team Players voting, `vts_admin/eden_x1_votes/records` now accepts one to four unique teammate votes per selected voter/member. If live voting shows `Missing or insufficient permissions`, first confirm the latest `firestore.rules` are deployed.
+
+The synchronized Admin Activity stream writes an absolute `expiresAt` timestamp 30 days ahead. Firestore rules validate that timestamp, but deletion starts only after the collection-group TTL policy is enabled separately:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=admin_log_events --enable-ttl --project=abocombo
+```
+
+This TTL applies only to `vts_admin/log_store/admin_log_events`; it does not expire dashboard, roster, vote, or user-plan data.
 
 ### OCR Worker and App Check
 The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.

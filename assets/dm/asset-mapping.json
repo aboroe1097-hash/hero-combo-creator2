@@ -1,0 +1,2493 @@
+{
+  "schemaVersion": 1,
+  "sourceDirectory": "WhatsApp Unknown 2026-07-13 at 12.46.03",
+  "supplementalSources": [
+    "codex-clipboard-77fb9027-9186-4c04-8986-dd0479b78065.png",
+    "codex-clipboard-b5fa4bca-c5e8-47c5-96f0-c1694b052638.png",
+    "codex-clipboard-5e1e88ed-a29f-4f98-8ee3-fad5681af1e6.png"
+  ],
+  "summary": {
+    "sourceFiles": 72,
+    "equipmentFiles": 72,
+    "materialFiles": 0,
+    "outputsWritten": 72,
+    "normalGearDragonitePerPiece": {
+      "blue": 140,
+      "purple": 696,
+      "gold": 17300
+    },
+    "missingExpectedEquipment": [],
+    "notes": [
+      "All supplied source images are equipment; no standalone material source images were present.",
+      "Existing material, stockpile, enhancement, and flat equipment assets were left unchanged."
+    ]
+  },
+  "assets": [
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.47.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Cowl",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 29377,
+        "purple": 225,
+        "gold": 667
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.48 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Jade Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 33502,
+        "purple": 109,
+        "gold": 1853
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.48.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Golden Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 30128,
+        "purple": 172,
+        "gold": 2719
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.49 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Jade Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 11,
+        "purple": 0,
+        "gold": 39046
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.49.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Greaves",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 34931,
+        "gold": 2979
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.51.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Greaves",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 31336,
+        "purple": 310,
+        "gold": 3047
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.52.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Jade Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 15,
+        "purple": 36940,
+        "gold": 1828
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.53 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Suit",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/ranger/blue/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 29736,
+        "purple": 176,
+        "gold": 808
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.53 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Boots",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/ranger/gold/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 38887
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.53.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Golden Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 36901
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.54 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Greaves",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 38979
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.54.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Golden Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 33619,
+        "gold": 2695
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.55 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Soul",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/ranger/gold/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 154,
+        "purple": 0,
+        "gold": 38571
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.55.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Headband",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/ranger/gold/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 3462,
+        "purple": 7,
+        "gold": 34753
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.57.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Cowl",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 32926,
+        "gold": 598
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.58.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Heart",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/ranger/blue/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 33467,
+        "purple": 285,
+        "gold": 3395
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.59 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Ranseur",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 36527,
+        "purple": 116,
+        "gold": 133
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.59 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Headband",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/ranger/purple/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 3916,
+        "purple": 34854,
+        "gold": 0
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.39.59.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Heart",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/ranger/purple/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 58,
+        "purple": 36881,
+        "gold": 3089
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.00 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Soul",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/ranger/purple/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 218,
+        "purple": 34797,
+        "gold": 2439
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.00.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Suit",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/ranger/purple/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 33269,
+        "gold": 781
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.01.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Cowl",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 33953
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.02.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Ranseur",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 39960,
+        "gold": 127
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.03 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Ranseur",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 40311
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.03.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Boots",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/ranger/blue/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 31579,
+        "purple": 134,
+        "gold": 3413
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.04.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Boots",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/ranger/purple/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 35045,
+        "gold": 3483
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.05 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "purple",
+      "item": "Ranger's Long Bow",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/ranger/purple/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 37491,
+        "gold": 1914
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.05 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Long Bow",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/ranger/blue/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 33798,
+        "purple": 464,
+        "gold": 2154
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.05.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Suit",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/ranger/gold/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 34436
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.06 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Soul",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/ranger/blue/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 31331,
+        "purple": 515,
+        "gold": 2835
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.06.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Ebony Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 29277,
+        "purple": 98,
+        "gold": 243
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.07.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Bulwark",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 34292
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.08.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Long Bow",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/ranger/gold/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 41029
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.09.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "blue",
+      "item": "Ranger's Headband",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/ranger/blue/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 35492,
+        "purple": 107,
+        "gold": 0
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.10 (1).jpeg",
+      "sourceDimensions": [
+        428,
+        487
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dragon-master/gold/helmet.png",
+      "crop": [
+        63,
+        149,
+        377,
+        463
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 76,
+        "purple": 1,
+        "gold": 91742
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.10 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Ebony Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 32692,
+        "gold": 263
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.10 (3).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Calling",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 848,
+        "gold": 34670
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.10.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Ebony Plate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/armor.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 32929
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.11.jpeg",
+      "sourceDimensions": [
+        523,
+        500
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Golden Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dragon-master/gold/amulet.png",
+      "crop": [
+        100,
+        161,
+        413,
+        474
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 1132,
+        "gold": 93795
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.12.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Calling",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 33395,
+        "gold": 1693
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.13 (1).jpeg",
+      "sourceDimensions": [
+        498,
+        496
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Breastplate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dragon-master/blue/armor.png",
+      "crop": [
+        94,
+        162,
+        408,
+        476
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 66780,
+        "purple": 656,
+        "gold": 8624
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.13.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Sabre",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 34548,
+        "purple": 117,
+        "gold": 34
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.14.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "ranger",
+      "tier": "gold",
+      "item": "Ranger's Heart",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/ranger/gold/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 49,
+        "purple": 2,
+        "gold": 40904
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.15 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Sabre",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 37959,
+        "gold": 30
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.15 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Treads",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 35585
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.15.jpeg",
+      "sourceDimensions": [
+        473,
+        477
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Blade",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dragon-master/blue/weapon.png",
+      "crop": [
+        76,
+        144,
+        390,
+        458
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 82524,
+        "purple": 164,
+        "gold": 1510
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.16.jpeg",
+      "sourceDimensions": [
+        567,
+        540
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Breastplate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dragon-master/gold/armor.png",
+      "crop": [
+        118,
+        199,
+        430,
+        511
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 84982
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.17 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Treads",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 35622,
+        "gold": 0
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.17.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Sabre",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/weapon.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 38091
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.18.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 30771,
+        "purple": 103,
+        "gold": 615
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.19.jpeg",
+      "sourceDimensions": [
+        476,
+        480
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dragon-master/purple/helmet.png",
+      "crop": [
+        84,
+        144,
+        398,
+        458
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 574,
+        "purple": 78602,
+        "gold": 11301
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.20 (1).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 479,
+        "purple": 33556,
+        "gold": 581
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.20 (2).jpeg",
+      "sourceDimensions": [
+        530,
+        501
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Sabatons",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dragon-master/blue/boots.png",
+      "crop": [
+        112,
+        164,
+        426,
+        478
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 72939,
+        "purple": 242,
+        "gold": 5166
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.20.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Bulwark",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 24950,
+        "purple": 101,
+        "gold": 5834
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.21 (1).jpeg",
+      "sourceDimensions": [
+        534,
+        498
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Breastplate",
+      "gameSlot": "armor",
+      "filename": "armor.png",
+      "output": "assets/dm/equipment/dragon-master/purple/armor.png",
+      "crop": [
+        108,
+        152,
+        422,
+        466
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 698,
+        "purple": 74514,
+        "gold": 8556
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.21 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Calling",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/amulet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 29050,
+        "purple": 1017,
+        "gold": 1768
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.21.jpeg",
+      "sourceDimensions": [
+        502,
+        495
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Sabatons",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dragon-master/gold/boots.png",
+      "crop": [
+        94,
+        160,
+        407,
+        473
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 115,
+        "purple": 0,
+        "gold": 86919
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.22.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "blue",
+      "item": "Dreadnaught's Treads",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dreadnaught/blue/boots.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 32272,
+        "purple": 98,
+        "gold": 0
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.23.jpeg",
+      "sourceDimensions": [
+        450,
+        484
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Blade",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dragon-master/gold/weapon.png",
+      "crop": [
+        77,
+        147,
+        391,
+        461
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 114,
+        "purple": 0,
+        "gold": 92829
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.24 (1).jpeg",
+      "sourceDimensions": [
+        517,
+        461
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Golden Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dragon-master/purple/amulet.png",
+      "crop": [
+        106,
+        148,
+        419,
+        461
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 559,
+        "purple": 85995,
+        "gold": 6475
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.24 (2).jpeg",
+      "sourceDimensions": [
+        486,
+        475
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Stiletto",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dragon-master/purple/accessory.png",
+      "crop": [
+        87,
+        150,
+        401,
+        464
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 752,
+        "purple": 87667,
+        "gold": 2691
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.24.jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "purple",
+      "item": "Dreadnaught's Bulwark",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dreadnaught/purple/accessory.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 28427,
+        "gold": 5727
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.25.jpeg",
+      "sourceDimensions": [
+        479,
+        471
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Blade",
+      "gameSlot": "weapon",
+      "filename": "weapon.png",
+      "output": "assets/dm/equipment/dragon-master/purple/weapon.png",
+      "crop": [
+        89,
+        136,
+        403,
+        450
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 851,
+        "purple": 90006,
+        "gold": 1370
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.26 (1).jpeg",
+      "sourceDimensions": [
+        530,
+        486
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "purple",
+      "item": "Dragon Master's Sabatons",
+      "gameSlot": "boots",
+      "filename": "boots.png",
+      "output": "assets/dm/equipment/dragon-master/purple/boots.png",
+      "crop": [
+        101,
+        152,
+        415,
+        466
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 725,
+        "purple": 80098,
+        "gold": 4964
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.26 (2).jpeg",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "dreadnaught",
+      "tier": "gold",
+      "item": "Dreadnaught's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dreadnaught/gold/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 485,
+        "purple": 1,
+        "gold": 34196
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.26 (3).jpeg",
+      "sourceDimensions": [
+        462,
+        459
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Crown",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/dragon-master/blue/helmet.png",
+      "crop": [
+        78,
+        138,
+        392,
+        452
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 70751,
+        "purple": 285,
+        "gold": 11444
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.26.jpeg",
+      "sourceDimensions": [
+        466,
+        459
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "gold",
+      "item": "Dragon Master's Stiletto",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dragon-master/gold/accessory.png",
+      "crop": [
+        73,
+        134,
+        387,
+        448
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 20,
+        "purple": 0,
+        "gold": 92153
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.27 (1).jpeg",
+      "sourceDimensions": [
+        559,
+        496
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Golden Belt",
+      "gameSlot": "amulet",
+      "filename": "amulet.png",
+      "output": "assets/dm/equipment/dragon-master/blue/amulet.png",
+      "crop": [
+        145,
+        158,
+        459,
+        472
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 77203,
+        "purple": 1563,
+        "gold": 6886
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "WhatsApp Image 2026-07-13 at 12.40.27.jpeg",
+      "sourceDimensions": [
+        462,
+        458
+      ],
+      "kind": "equipment",
+      "set": "dragon-master",
+      "tier": "blue",
+      "item": "Dragon Master's Stiletto",
+      "gameSlot": "accessory",
+      "filename": "accessory.png",
+      "output": "assets/dm/equipment/dragon-master/blue/accessory.png",
+      "crop": [
+        76,
+        131,
+        390,
+        445
+      ],
+      "sourceFormat": "card-crop",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 80488,
+        "purple": 177,
+        "gold": 2715
+      },
+      "outputDimensions": [
+        128,
+        128
+      ]
+    },
+    {
+      "source": "codex-clipboard-5e1e88ed-a29f-4f98-8ee3-fad5681af1e6.png",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "gold",
+      "item": "Steel Cavalry Feathered Helm",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/steel-cavalry/gold/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "supplemental-craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "gold",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 0,
+        "gold": 38019
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 17300
+      }
+    },
+    {
+      "source": "codex-clipboard-77fb9027-9186-4c04-8986-dd0479b78065.png",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "blue",
+      "item": "Steel Cavalry Feathered Helm",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/steel-cavalry/blue/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "supplemental-craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "blue",
+      "tierPixelCounts": {
+        "blue": 32622,
+        "purple": 132,
+        "gold": 1330
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 140
+      }
+    },
+    {
+      "source": "codex-clipboard-b5fa4bca-c5e8-47c5-96f0-c1694b052638.png",
+      "sourceDimensions": [
+        716,
+        1600
+      ],
+      "kind": "equipment",
+      "set": "steel-cavalry",
+      "tier": "purple",
+      "item": "Steel Cavalry Feathered Helm",
+      "gameSlot": "helmet",
+      "filename": "helmet.png",
+      "output": "assets/dm/equipment/steel-cavalry/purple/helmet.png",
+      "crop": [
+        255,
+        280,
+        461,
+        486
+      ],
+      "sourceFormat": "supplemental-craft-screen",
+      "classificationMethod": "reviewed-visible-name-and-icon; tier-verified-by-hsv",
+      "detectedTier": "purple",
+      "tierPixelCounts": {
+        "blue": 0,
+        "purple": 36137,
+        "gold": 1275
+      },
+      "outputDimensions": [
+        128,
+        128
+      ],
+      "craftingResources": {
+        "dragonite": 696
+      }
+    }
+  ]
+}

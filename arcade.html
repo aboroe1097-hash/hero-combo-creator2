@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en" class="admin-standalone-root">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Arcade — VTS Mini-Games | Hero Combo Creator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://docs.google.com https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://roc-vts.com https://static.wixstatic.com https://i.ibb.co https://www.gstatic.com https://www.google.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net; connect-src 'self' https://delicate-term-725f.aboroe1097.workers.dev https://vts-ai-strategy-assistant.aboroe1097.workers.dev https://*.googleapis.com https://*.gstatic.com https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://stats.g.doubleclick.net; frame-src 'self' https://www.youtube.com https://www.google.com https://abocombo.firebaseapp.com https://abocombo.web.app; manifest-src 'self'; worker-src 'self'"
+    />
+    <meta
+      name="vts-ai-endpoint"
+      content="https://vts-ai-strategy-assistant.aboroe1097.workers.dev"
+    />
+    <meta
+      name="description"
+      content="Play VTS boot mini-games — Merge Rush, Sort the Hoard, Crystal Relay, Set Assembly, and Hero Rumble. Local prototypes for Ice & Fire players."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta id="themeColorMeta" name="theme-color" content="#0f172a" />
+    <link rel="icon" type="image/png" href="images/logo.png" />
+    <link rel="apple-touch-icon" href="images/logo.png" />
+    <link id="manifestLink" rel="manifest" href="site.webmanifest" />
+    <script src="js/theme-prepaint.js?v=20260713_204827"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-solid: #060b13;
+        --text-primary: #f7fbff;
+        --text-muted: #aebbd0;
+      }
+      [data-theme='light'] {
+        color-scheme: light;
+        --bg-solid: #f7fafc;
+        --text-primary: #101827;
+        --text-muted: #4b5c73;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg-solid);
+        color: var(--text-primary);
+        font-family:
+          'Sora',
+          'Inter',
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        min-height: 100vh;
+      }
+      [hidden],
+      .hidden {
+        display: none !important;
+      }
+      img {
+        max-width: 100%;
+      }
+      .app-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .dash-connecting {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 420px;
+        padding: 32px 16px;
+        text-align: center;
+      }
+      .dash-connecting-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        max-width: 520px;
+      }
+      .dash-connecting-kicker {
+        margin: 0;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: var(--text-muted);
+      }
+      .dash-connecting-title {
+        margin: 0;
+        font-size: 20px;
+      }
+      .dash-connecting-status {
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+      .dash-connecting-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: min(320px, 100%);
+      }
+      .dash-connecting-bar {
+        display: block;
+        flex: 1;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.25);
+        overflow: hidden;
+      }
+      .dash-connecting-bar-fill {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #38bdf8, #34d399);
+        transition: width 0.4s ease;
+      }
+      .dash-connecting-bar-pct {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .dash-connecting-sigil {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        color: #7dd3fc;
+      }
+      .arcade-loading .roc-footer {
+        display: none !important;
+      }
+      .arcade-page .admin-page-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+      .dash-connecting {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 420px;
+        padding: 2rem 1rem;
+        background:
+          radial-gradient(ellipse at 35% 30%, rgba(34, 211, 238, 0.1), transparent 55%),
+          radial-gradient(ellipse at 65% 70%, rgba(251, 191, 36, 0.09), transparent 55%), #070b12;
+      }
+      .dash-connecting-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 460px;
+        width: 100%;
+      }
+      .dash-connecting-sigil {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .dash-sigil-aura {
+        position: absolute;
+        inset: -28px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%);
+        animation: dash-sigil-aura 3s ease-in-out infinite;
+      }
+      @keyframes dash-sigil-aura {
+        0%,
+        to {
+          opacity: 0.6;
+          background: radial-gradient(circle, rgba(34, 211, 238, 0.18) 0%, transparent 70%);
+        }
+        50% {
+          opacity: 1;
+          background: radial-gradient(circle, rgba(251, 191, 36, 0.22) 0%, transparent 70%);
+        }
+      }
+      .dash-sigil-body {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 35% 30%, rgba(34, 211, 238, 0.06), transparent 50%),
+          radial-gradient(circle at 65% 65%, rgba(251, 191, 36, 0.05), transparent 48%),
+          rgba(4, 8, 18, 0.82);
+        box-shadow:
+          0 0 70px rgba(34, 211, 238, 0.14),
+          0 0 0 1px rgba(103, 232, 249, 0.15);
+        overflow: hidden;
+        isolation: isolate;
+        animation: dash-sigil-body-breathe 5.5s ease-in-out infinite;
+      }
+      @keyframes dash-sigil-body-breathe {
+        0%,
+        to {
+          transform: scale(1);
+          filter: saturate(1);
+        }
+        50% {
+          transform: scale(1.015);
+          filter: saturate(1.18);
+        }
+      }
+      .dash-sigil-body::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: repeating-conic-gradient(rgba(103, 232, 249, 0.06) 0% 1%, transparent 1% 3%);
+        opacity: 0.5;
+        z-index: 1;
+        animation: dash-sigil-tick-turn 18s linear infinite;
+      }
+      @keyframes dash-sigil-tick-turn {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .dash-sigil-grid,
+      .dash-sigil-sweep,
+      .dash-sigil-routes {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .dash-sigil-grid {
+        z-index: 0;
+        background: repeating-radial-gradient(
+          circle,
+          transparent 0 22px,
+          rgba(103, 232, 249, 0.07) 0 23px,
+          transparent 0 24px
+        );
+        opacity: 0.5;
+      }
+      .dash-sigil-sweep {
+        z-index: 1;
+        background: conic-gradient(
+          from 135deg,
+          rgba(125, 211, 252, 0.25) 0deg,
+          rgba(125, 211, 252, 0.06) 40deg,
+          rgba(52, 211, 153, 0.05) 80deg,
+          rgba(251, 191, 36, 0.02) 120deg,
+          transparent 180deg
+        );
+        animation: dash-sigil-sweep 5.5s ease-in-out infinite;
+      }
+      @keyframes dash-sigil-sweep {
+        0%,
+        to {
+          opacity: 0.6;
+          transform: rotate(0deg);
+        }
+        50% {
+          opacity: 1;
+          transform: rotate(120deg);
+        }
+      }
+      .dash-sigil-routes {
+        z-index: 2;
+        background: repeating-linear-gradient(
+          135deg,
+          transparent 0 5px,
+          rgba(103, 232, 249, 0.04) 5px 6px
+        );
+        mask: radial-gradient(circle at 50% 50%, transparent 30%, #000 55%);
+        -webkit-mask: radial-gradient(circle at 50% 50%, transparent 30%, #000 55%);
+      }
+      .dash-sigil-ring--ice {
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 2px solid rgba(34, 211, 238, 0.12);
+        border-right-color: transparent;
+        border-bottom-color: transparent;
+        border-top-color: transparent;
+        animation: dash-sigil-ring--ice 4s ease-in-out infinite;
+        z-index: 3;
+      }
+      @keyframes dash-sigil-ring--ice {
+        0%,
+        to {
+          transform: rotate(0deg);
+          opacity: 0.6;
+        }
+        50% {
+          transform: rotate(180deg);
+          opacity: 1;
+        }
+      }
+      .dash-sigil-ring--fire {
+        position: absolute;
+        inset: -12px;
+        border-radius: 50%;
+        border: 2px solid rgba(251, 191, 36, 0.12);
+        border-left-color: transparent;
+        border-bottom-color: transparent;
+        border-top-color: transparent;
+        animation: dash-sigil-ring--fire 4s ease-in-out infinite;
+        z-index: 3;
+      }
+      @keyframes dash-sigil-ring--fire {
+        0%,
+        to {
+          transform: rotate(180deg);
+          opacity: 0.6;
+        }
+        50% {
+          transform: rotate(360deg);
+          opacity: 1;
+        }
+      }
+      .dash-sigil-crystal {
+        position: absolute;
+        width: 60%;
+        height: 60%;
+        top: 20%;
+        left: 20%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 40% 35%, rgba(34, 211, 238, 0.15), transparent 60%);
+        z-index: 1;
+      }
+      .dash-sigil-emblem {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 4;
+        color: #7dd3fc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .dash-sigil-emblem svg {
+        width: 100%;
+        height: 100%;
+      }
+      .dash-sigil-emblem img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 50%;
+      }
+      .dash-sigil-ember {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fbbf24;
+        box-shadow: 0 0 12px #fbbf24;
+        z-index: 5;
+        animation: dash-sigil-ember 2.4s ease-in-out infinite;
+      }
+      .dash-sigil-ember:nth-child(1) {
+        top: 12%;
+        left: 38%;
+      }
+      .dash-sigil-ember:nth-child(2) {
+        bottom: 18%;
+        right: 22%;
+        animation-delay: 0.8s;
+      }
+      .dash-sigil-ember:nth-child(3) {
+        top: 55%;
+        left: 10%;
+        animation-delay: 1.6s;
+      }
+      @keyframes dash-sigil-ember {
+        0%,
+        to {
+          opacity: 0;
+          transform: translateY(0);
+        }
+        30% {
+          opacity: 0.9;
+        }
+        70% {
+          opacity: 0.9;
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-16px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dash-sigil-body,
+        .dash-sigil-aura,
+        .dash-sigil-grid,
+        .dash-sigil-sweep,
+        .dash-sigil-route,
+        .dash-sigil-ring--ice,
+        .dash-sigil-ring--fire,
+        .dash-sigil-crystal,
+        .dash-sigil-emblem,
+        .dash-sigil-ember,
+        .dash-sigil-body::before,
+        .dash-connecting-status::before,
+        .dash-connecting-bar-fill::after {
+          animation: none !important;
+        }
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
+    />
+    <link rel="preload" as="style" href="css/_tokens.css?v=20260713_204827" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/app.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/components.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/atmosphere.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/arcade.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/standalone-footer-v14.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/loader-v14.css?v=20260713_204827" />
+    <link rel="preload" as="style" href="css/standalone-language-v14.css?v=20260713_204827" />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
+      />
+      <link rel="stylesheet" href="css/_tokens.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/app.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/components.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/atmosphere.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/mobile.css?v=20260713_204827" media="(max-width: 768px)" />
+      <link rel="stylesheet" href="css/arcade.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/loader-v14.css?v=20260713_204827" />
+      <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260713_204827" />
+    </noscript>
+  </head>
+  <body class="admin-standalone-page arcade-page arcade-loading">
+    <div id="arcadeRoot">
+      <div class="app-shell">
+        <header class="command-header admin-command-header" aria-label="Arcade mini-games">
+          <div class="command-brand admin-command-brand">
+            <div class="version-ribbon" data-i18n="arcadeBetaNote">
+              V{version} - Arcade Prototypes
+            </div>
+            <div class="admin-brand-row">
+              <picture
+                ><source srcset="images/logo-120.webp" type="image/webp" />
+                <img
+                  src="images/logo.png"
+                  alt=""
+                  class="admin-brand-logo dual-glow-logo"
+                  width="84"
+                  height="84"
+              /></picture>
+              <div>
+                <h1 class="admin-shell-title" data-i18n="arcadeTitle">Arcade</h1>
+                <p class="admin-shell-kicker" data-i18n="arcadeKicker">VTS Mini-Games</p>
+                <p class="admin-shell-team">VTS - STATE 1097</p>
+              </div>
+            </div>
+            <p class="seo-intro command-copy admin-shell-copy" data-i18n="arcadeIntro">
+              Boot mini-games using DM material icons, boot wing art, and hero skin icons. Combo
+              tracking and unified keyboard across all 5 modes.
+            </p>
+          </div>
+
+          <div class="command-actions admin-command-actions">
+            <div class="command-kicker" data-i18n="arcadeDeckLabel">S1097 Arcade</div>
+            <div class="app-control-row admin-control-row">
+              <div
+                id="globalGameClock"
+                class="global-game-clock"
+                data-i18n-title="gameClockTitle"
+                title="Game time"
+              ></div>
+              <div class="lang-select-wrapper">
+                <div class="lang-select-shell">
+                  <div class="lang-select-icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A11.954 11.954 0 0112 13.5c-2.998 0-5.74 1.1-7.843 2.918M12 13.5v-3.75"
+                      />
+                    </svg>
+                  </div>
+                  <select
+                    id="languageSelect"
+                    class="admin-language-select"
+                    aria-label="Language"
+                    data-i18n-aria="languageLabel"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="pt">Português</option>
+                    <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="ru">Русский</option>
+                    <option value="id">Bahasa Indonesia</option>
+                    <option value="zh">中文</option>
+                    <option value="ar">العربية</option>
+                    <option value="kr">한국어</option>
+                  </select>
+                  <div class="lang-select-caret">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                id="themeToggle"
+                type="button"
+                aria-label="Toggle light/dark theme"
+                title="Toggle theme"
+              >
+                <span class="theme-icon-dark">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+                    />
+                  </svg>
+                </span>
+                <span class="theme-icon-light hidden">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.25"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
+                    />
+                  </svg>
+                </span>
+              </button>
+
+              <a href="index.html" class="admin-back-tools" data-i18n="arcadeHomeLink"
+                >Back to Tools</a
+              >
+            </div>
+          </div>
+        </header>
+
+        <main id="adminPageRoot" class="admin-page-main">
+          <section id="arcadeSection" class="admin-page-panel arcade-panel">
+            <div
+              class="dash-connecting"
+              role="status"
+              aria-live="polite"
+              data-vts-loader
+              data-vts-loader-variant="page"
+              data-vts-loader-progress="10"
+            >
+              <div class="dash-connecting-stage">
+                <p class="dash-connecting-kicker" data-i18n="arcadeLoadingKicker">
+                  ARCADE - VTS MINI-GAMES
+                </p>
+                <h2 class="dash-connecting-title" data-i18n="arcadeLoading">Loading arcade...</h2>
+                <div class="dash-connecting-bar-wrap">
+                  <span class="dash-connecting-bar"
+                    ><span class="dash-connecting-bar-fill" style="width: 10%"></span
+                  ></span>
+                  <span class="dash-connecting-bar-pct">10%</span>
+                </div>
+                <p class="dash-connecting-status" data-i18n="arcadeLoadingStatus">
+                  Setting up the game lobby...
+                </p>
+              </div>
+            </div>
+
+            <div id="arcadeLobby" class="arcade-lobby hidden">
+              <div class="arcade-intro">
+                <h2 class="arcade-intro-title" data-i18n="arcadeLobbyTitle">Boot Mini-Games</h2>
+                <p class="arcade-intro-copy" data-i18n="arcadeLobbyDesc">
+                  Pick a game, then switch anytime without leaving Arcade.
+                </p>
+              </div>
+              <div class="arcade-grid">
+                <a class="arcade-card" href="/games/boot/b-merge-rush.html">
+                  <span class="arcade-card-tag" data-i18n="arcadeModeA">Mode A</span>
+                  <strong class="arcade-card-title" data-i18n="arcadeMergeRushTitle"
+                    >Merge Rush</strong
+                  >
+                  <p class="arcade-card-desc" data-i18n="arcadeMergeRushDesc">
+                    Tap two matching type+color to merge up the rarity ladder. Gold pair = jackpot.
+                  </p>
+                </a>
+                <a class="arcade-card" href="/games/boot/c-sort-hoard.html">
+                  <span class="arcade-card-tag" data-i18n="arcadeModeB">Mode B</span>
+                  <strong class="arcade-card-title" data-i18n="arcadeSortHoardTitle"
+                    >Sort the Hoard</strong
+                  >
+                  <p class="arcade-card-desc" data-i18n="arcadeSortHoardDesc">
+                    Pieces fall from the gate. Flick/tap left (blue) or right (gold) bins before
+                    they hit the floor.
+                  </p>
+                </a>
+                <a class="arcade-card" href="/games/boot/e-crystal-relay.html">
+                  <span class="arcade-card-tag" data-i18n="arcadeModeC">Mode C</span>
+                  <strong class="arcade-card-title" data-i18n="arcadeCrystalRelayTitle"
+                    >Crystal Relay</strong
+                  >
+                  <p class="arcade-card-desc" data-i18n="arcadeCrystalRelayDesc">
+                    One piece on a bar. Tap when the spark is in the green zone — chain alternating
+                    sides for combos.
+                  </p>
+                </a>
+                <a class="arcade-card" href="/games/boot/f-set-assembly.html">
+                  <span class="arcade-card-tag" data-i18n="arcadeModeD">Mode D</span>
+                  <strong class="arcade-card-title" data-i18n="arcadeSetAssemblyTitle"
+                    >Set Assembly</strong
+                  >
+                  <p class="arcade-card-desc" data-i18n="arcadeSetAssemblyDesc">
+                    Complete a mini set (e.g. all three feathers). Tap only matching types; junk
+                    distracts you.
+                  </p>
+                </a>
+                <a class="arcade-card" href="/games/boot/h-hero-rumble.html">
+                  <span class="arcade-card-tag" data-i18n="arcadeModeE">Mode E</span>
+                  <strong class="arcade-card-title" data-i18n="arcadeHeroRumbleTitle"
+                    >Hero Rumble</strong
+                  >
+                  <p class="arcade-card-desc" data-i18n="arcadeHeroRumbleDesc">
+                    Real hero icons fight! Catch blue weapons to attack, dodge gold ones. Purple =
+                    SUPER!
+                  </p>
+                </a>
+              </div>
+            </div>
+
+            <div id="arcadeError" class="dash-empty arcade-error hidden"></div>
+          </section>
+        </main>
+
+        <footer
+          class="roc-footer admin-footer standalone-footer-v14"
+          aria-label="Community &amp; Info"
+          data-i18n-aria="adminFooterCommunity"
+        >
+          <div class="standalone-footer-main">
+            <a
+              class="standalone-footer-brand"
+              href="index.html"
+              aria-label="Hero Combo Creator"
+              data-i18n-aria="appTitle"
+            >
+              <picture
+                ><source srcset="images/logo-40.webp" type="image/webp" />
+                <img
+                  src="images/logo.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width="40"
+                  height="40"
+              /></picture>
+              <span
+                ><strong>VTS 1097</strong
+                ><small data-i18n="arcadeDeckLabel">S1097 Arcade</small></span
+              >
+            </a>
+            <nav
+              class="standalone-footer-links"
+              aria-label="Command Tools"
+              data-i18n-aria="adminFooterTools"
+            >
+              <a href="index.html#generator" data-i18n="tabGenerator">Combo Generator</a>
+              <a href="index.html#edenMap" data-i18n="tabEdenMap">Eden Map</a>
+              <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
+            </nav>
+            <div class="standalone-footer-actions">
+              <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
+              <a href="https://roc-vts.com/">roc-vts.com</a>
+            </div>
+          </div>
+          <div class="standalone-footer-legal">
+            <p class="disclaimer" data-i18n="adminFooterDisclaimer">
+              Not affiliated with Camel Games or Rise of Castles. Game assets belong to their
+              respective owners. This is a free fan-made community tool.
+            </p>
+            <p>
+              &copy; <span id="arcadeFooterYear">2026</span> VTS 1097
+              <span aria-hidden="true">&middot;</span> v14.0.0
+            </p>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <div id="toastContainer"></div>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;600;700;900&display=swap"
+    />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/app.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/components.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260713_204827" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/arcade.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/standalone-footer-v14.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260713_204827" />
+    <link rel="stylesheet" href="css/standalone-language-v14.css?v=20260713_204827" />
+    <script src="js/loader-v14.js?v=20260713_204827"></script>
+    <script src="js/standalone-language-v14.js?v=20260713_204827"></script>
+    <script type="module" src="js/arcade.js?v=20260713_204827"></script>
+    <script type="module" src="js/ai-drawer.js?v=20260713_204827"></script>
+  </body>
+</html>

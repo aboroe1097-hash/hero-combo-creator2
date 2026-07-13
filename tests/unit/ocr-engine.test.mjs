@@ -302,6 +302,8 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['I nd°/Made3110', 'Made3110'],
     ['gindMade3110', 'Made3110'],
     ['vind?Made3110', 'Made3110'],
+    ['VindMade3110', 'Made3110'],
+    ['Vind?Made3110', 'Made3110'],
     ['x N d o /Made3110', 'Made3110'],
     ['IDNÓ/Dragon.Gold', 'IDN Dragon.Gold'],
     ['IDNÓ|Dragon.Gold', 'IDN Dragon.Gold'],
@@ -310,6 +312,20 @@ test('approved player OCR aliases merge only into explicit canonical names', () 
     ['Серей', 'Сергей'],
     ['Jjamaica pete', 'Jjamaica pete'],
     ['★★★ЗВЕРЬ★★★', '3BEPb'],
+    ['АηδεR$', 'A n d e R $'],
+    ['~MasterV~', 'MasterVj'],
+    ['.WAEL..', '..WAEL..'],
+    ['[..WAEL..]', '..WAEL..'],
+    ['|..WAEL...|', '..WAEL..'],
+    ['~Nosferatu~', 'Nosferatu'],
+    ['түнгзазурп', 'түнгзахурп'],
+    ['✨Anne✨', 'Anne'],
+    ['Lisavetka*', '•Lisavetka•'],
+    ['~Pink~', '~ Pink ~'],
+    ['AK Чanaй', 'AK Чапай'],
+    ['CoБoП', 'CoBoP'],
+    ['СоBoР', 'CoBoP'],
+    ['Immortal & Pete', 'Immortal Pete'],
   ];
 
   for (const [raw, canonical] of aliases) {
@@ -355,6 +371,7 @@ test('player aliases keep known separate accounts apart', () => {
   assert.equal(findBestMatch('~Sarafina~'), '~Sarafina~');
   assert.equal(findBestMatch('Sarafino'), '~Sarafino~');
   assert.equal(findBestMatch('Dragon.Gold'), 'IDN Dragon.Gold');
+  assert.equal(findBestMatch('АЛЕКС & Kika'), 'АЛЕКС & Kika');
 });
 
 test('player registry aliases persist and resolve before roster matching', () => {
@@ -459,6 +476,21 @@ test('player aliases fold decoration and OCR-typo variants into one master', () 
   assert.equal(findBestMatch('БрюНерКаЯ'), 'БрюНетКаЯ');
   assert.equal(findBestMatch('БрЮНеТКаЯ'), 'БрюНетКаЯ');
   assert.equal(findBestMatch('Бешеный-Енот~'), 'Бешенный-Енот~');
+  assert.equal(findBestMatch('RuCCak'), '~RuCCaK~');
+  assert.equal(findBestMatch('IDN?Dragon.Gold'), 'IDN Dragon.Gold');
+  assert.equal(findBestMatch('WAEL...]'), '..WAEL..');
+  assert.equal(findBestMatch('REDBULL..3'), 'REDBULL-#');
+  assert.equal(findBestMatch('D off f y.'), 'D offy.');
+  assert.equal(findBestMatch('hater killer.'), 'Hunter killer.');
+  assert.equal(findBestMatch('tyHraaxyp'), 'түнгзахурп');
+  assert.equal(findBestMatch('乃乙口毛'), '乃ㄥ口毛');
+  assert.equal(findBestMatch('БратХраϐрец'), 'БратХрабрец');
+  assert.equal(findBestMatch('ешенный-ЕНОТ~'), 'Бешенный-Енот~');
+  assert.equal(findBestMatch('jdnesGraycious'), 'GoodnesGraycious');
+  assert.equal(findBestMatch('ßPixiDoe Banner'), 'PixiDoe Banner');
+  assert.equal(findBestMatch('laximu$$s banner'), 'Maximu$$s banner');
+  assert.equal(findBestMatch('alikaZenaBanner'), 'MalikaZenaBanner');
+  assert.equal(findBestMatch('Ar Ran Dil'), 'Ar Ran ★_YG+62');
 });
 
 test('known player aliases stay merged when canonical rows share one attack', () => {

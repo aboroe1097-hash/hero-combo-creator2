@@ -64,8 +64,9 @@ This is the loop that already works today.
    - merges go in *"player aliases fold decoration and OCR-typo variants into one master"*.
    - intentional separations go in *"player aliases keep known separate accounts apart"*.
 5. **Verify**: `npm run test:unit` (must stay green — the "keep separate" test is the guard rail).
-6. **Commit & deploy**: commit `js/ocr-shared.js` + the test, rebase onto `origin/gh-pages`, push to
-   `gh-pages`. (No build step needed for this file — Pages serves `js/` directly.)
+6. **Commit & deploy**: create a branch from `origin/gh-pages`, commit `js/ocr-shared.js` + the test,
+   run `npm run check`, and open a pull request into `gh-pages`. Wait for the required
+   `deploy-verification` check and owner review; never push directly to the production branch.
 7. **Note on existing data:** alias changes apply to data grouped *from now on*. They do **not**
    retroactively rewrite master names already stored in saved dashboard records. Re-process
    (re-upload/re-OCR) to re-group historical rows, or run a one-time migration (not yet built).

@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>E - Hero Rumble</title>
+    <link rel="stylesheet" href="./shared.css" />
+    <style>
+      .hero-hp {
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 3px;
+      }
+      .hero-hp span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .hero-hp span.hp-full {
+        background: #34d399;
+        border-color: #34d399;
+      }
+      .hero-hp span.hp-empty {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .hero-fighter.team-ice .hero-hp span.hp-full {
+        background: #7dd3fc;
+        border-color: #7dd3fc;
+      }
+      .hero-fighter.team-fire .hero-hp span.hp-full {
+        background: #fb923c;
+        border-color: #fb923c;
+      }
+
+      .rumble-score {
+        position: absolute;
+        top: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--gold);
+        pointer-events: none;
+      }
+      .kill-streak {
+        position: absolute;
+        top: 14px;
+        z-index: 12;
+        min-width: 76px;
+        padding: 0.35rem 0.55rem;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        background: rgba(4, 8, 18, 0.86);
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-align: center;
+        text-transform: uppercase;
+        opacity: 0;
+        transform: translateY(-5px) scale(0.92);
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
+        pointer-events: none;
+      }
+      .kill-streak.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      .kill-streak.ice {
+        left: 18px;
+        color: #7dd3fc;
+      }
+      .kill-streak.fire {
+        right: 18px;
+        color: #fb923c;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./shared.js"></script>
+    <script>
+      (() => {
+        const G = BootGame;
+        const SCORE_KEY = 'vts_proto_hero_rumble';
+        const ui = G.mountShell({
+          modeId: 'Mode E',
+          modeKey: 'arcadeModeE',
+          title: 'Hero Rumble',
+          titleKey: 'arcadeHeroRumbleTitle',
+          hint: '60-second rumble: Blue = ATTACK - Gold = DODGE - purple = SUPER!',
+          hintKey: 'arcadeHeroRumbleDesc',
+          scoreKey: SCORE_KEY,
+          controlScheme: 'rumble',
+          showShield: false,
+        });
+        const comboBadge = G.createComboBadge();
+        document.body.appendChild(comboBadge);
+
+        const ring = document.createElement('div');
+        ring.className = 'hero-ring';
+        ring.innerHTML = '<div class="hero-vs">VS</div>';
+        const heroL = document.createElement('div');
+        heroL.className = 'hero-fighter team-ice';
+        heroL.innerHTML = '<div class="rumble-score" id="scoreL">0</div>';
+        const heroR = document.createElement('div');
+        heroR.className = 'hero-fighter team-fire';
+        heroR.innerHTML = '<div class="rumble-score" id="scoreR">0</div>';
+        ring.insertBefore(heroL, ring.firstChild);
+        ring.appendChild(heroR);
+        const streakL = document.createElement('div');
+        streakL.className = 'kill-streak ice';
+        streakL.setAttribute('aria-live', 'polite');
+        const streakR = document.createElement('div');
+        streakR.className = 'kill-streak fire';
+        streakR.setAttribute('aria-live', 'polite');
+        ring.append(streakL, streakR);
+        ui.stage.insertBefore(ring, ui.playfield);
+
+        const MAX_HP = 7;
+        const ROUND_MS = 60_000;
+
+        function setFighter(side, hero, hp) {
+          const el = side === 'left' ? heroL : heroR;
+          const scoreId = side === 'left' ? 'scoreL' : 'scoreR';
+          el.innerHTML = `
+            <div class="rumble-score" id="${scoreId}">0</div>
+            <img class="hero-avatar" src="${hero.src}" alt="${hero.name}" />
+            <span class="fighter-name">${hero.name}</span>
+            <div class="hero-hp">
+              ${Array.from({ length: MAX_HP }, (_, i) => `<span class="${i < hp ? 'hp-full' : 'hp-empty'}"></span>`).join('')}
+            </div>
+          `;
+          el.dataset.hp = String(hp);
+          el.dataset.maxHp = String(MAX_HP);
+          el.dataset.hero = hero.name;
+        }
+
+        function pickHero(exclude) {
+          let h;
+          do {
+            h = G.randomHero();
+          } while (h.name === exclude);
+          return h;
+        }
+
+        let heroA = G.randomHero();
+        let heroB = pickHero(heroA.name);
+        let playerHp = MAX_HP;
+        let aiHp = MAX_HP;
+
+        setFighter('left', heroA, playerHp);
+        setFighter('right', heroB, aiHp);
+
+        const state = {
+          score: 0,
+          paused: false,
+          over: false,
+          pieces: [],
+          spawnAt: 0,
+          last: 0,
+          speed: 0.13,
+          hitsL: 0,
+          hitsR: 0,
+          aiTimer: 0,
+          roundEndsAt: 0,
+        };
+        const STREAK_RESET_MS = 4000;
+        const killStreaks = {
+          left: { count: 0, lastAt: 0, timer: null, el: streakL },
+          right: { count: 0, lastAt: 0, timer: null, el: streakR },
+        };
+
+        function recordElimination(side) {
+          const streak = killStreaks[side];
+          const timestamp = G.now();
+          streak.count = timestamp - streak.lastAt <= STREAK_RESET_MS ? streak.count + 1 : 1;
+          streak.lastAt = timestamp;
+          clearTimeout(streak.timer);
+          streak.el.textContent = streak.count >= 2 ? `${streak.count}×` : '';
+          streak.el.classList.toggle('show', streak.count >= 2);
+          streak.timer = setTimeout(() => {
+            streak.count = 0;
+            streak.lastAt = 0;
+            streak.el.classList.remove('show');
+            streak.el.textContent = '';
+          }, STREAK_RESET_MS);
+        }
+
+        function resetKillStreaks() {
+          Object.values(killStreaks).forEach((streak) => {
+            clearTimeout(streak.timer);
+            streak.count = 0;
+            streak.lastAt = 0;
+            streak.el.classList.remove('show');
+            streak.el.textContent = '';
+          });
+        }
+
+        function setHud() {
+          ui.scoreEl.textContent = String(state.score);
+          ui.bestEl.textContent = String(G.loadHighScore(SCORE_KEY));
+          document.getElementById('hearts').textContent = '';
+          document.getElementById('scoreL').textContent = String(state.hitsL);
+          document.getElementById('scoreR').textContent = String(state.hitsR);
+        }
+
+        function updateHpEl(side, hp) {
+          const el = side === 'left' ? heroL : heroR;
+          el.dataset.hp = String(hp);
+          const dots = el.querySelector('.hero-hp');
+          if (!dots) return;
+          dots.innerHTML = Array.from(
+            { length: MAX_HP },
+            (_, i) => `<span class="${i < hp ? 'hp-full' : 'hp-empty'}"></span>`
+          ).join('');
+        }
+
+        function spawn() {
+          const r = ui.playfield.getBoundingClientRect();
+          const roll = Math.random();
+          const color = roll < 0.1 ? 'purple' : roll < 0.55 ? 'blue' : 'gold';
+          const type = G.randomOf(G.TYPES);
+          const fromLeft = color === 'blue';
+          const x = fromLeft ? r.left + 30 + Math.random() * 40 : r.right - 30 - Math.random() * 40;
+          const y = r.top + 20;
+          const el = G.createPieceEl({ color, type, x, y });
+          el.classList.add('weapon');
+          el.style.width = '48px';
+          el.style.height = '48px';
+          el.style.margin = '-24px 0 0 -24px';
+          el.style.borderRadius = '16px';
+          el.style.boxShadow = '0 0 24px rgba(245,196,81,0.4)';
+          el.querySelector('img').style.width = '36px';
+          el.querySelector('img').style.height = '36px';
+          ui.playfield.appendChild(el);
+          state.pieces.push({
+            el,
+            color,
+            type,
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 0.03,
+            vy: 0.07 + Math.random() * 0.04 + state.score * 0.0004,
+            alive: true,
+          });
+        }
+
+        function heroAnim(side, anim) {
+          const el = side === 'left' ? heroL : heroR;
+          el.classList.remove('punch', 'hurt', 'taunt');
+          void el.offsetWidth;
+          el.classList.add(anim);
+        }
+
+        function replaceHero(side, oldName) {
+          const newHero = pickHero(oldName);
+          if (side === 'left') {
+            heroA = newHero;
+            playerHp = MAX_HP;
+            setFighter('left', heroA, playerHp);
+          } else {
+            heroB = newHero;
+            aiHp = MAX_HP;
+            setFighter('right', heroB, aiHp);
+          }
+          heroAnim(side, 'taunt');
+        }
+
+        function hurt() {
+          const dmg = 1;
+          aiHp -= dmg;
+          if (aiHp <= 0) {
+            const oldName = heroB.name;
+            replaceHero('right', oldName);
+            recordElimination('left');
+            state.hitsR += 1;
+            G.floatText(window.innerWidth / 2 + 40, window.innerHeight * 0.4, 'K.O.!', '#f5c451');
+          }
+          heroAnim('right', 'hurt');
+          G.gateFx('hurt');
+          G.vibrate(15);
+          setHud();
+        }
+
+        function tap(side) {
+          if (state.paused || state.over) return;
+          const bottom = ring.getBoundingClientRect().top;
+          let caught = null;
+          let best = 999;
+          for (const p of state.pieces) {
+            if (!p.alive) continue;
+            const ok =
+              p.color === 'purple' ||
+              (side === 'left' && p.color === 'blue') ||
+              (side === 'right' && p.color === 'gold');
+            if (!ok) continue;
+            const d = Math.abs(p.y - bottom * 0.6);
+            if (d < best) {
+              best = d;
+              caught = p;
+            }
+          }
+          if (!caught) {
+            G.vibrate(8);
+            G.floatText(window.innerWidth / 2 - 20, window.innerHeight * 0.5, ' MISS!', '#fb7185');
+            return;
+          }
+
+          caught.alive = false;
+          caught.el.classList.add('pop');
+          setTimeout(() => caught.el.remove(), 260);
+
+          const isSuper = caught.color === 'purple';
+          const pts = isSuper ? 30 : 15;
+          state.score += pts;
+
+          if (side === 'left') {
+            state.hitsL += 1;
+            heroAnim('left', 'punch');
+            heroAnim('right', 'hurt');
+            const dmg = isSuper ? 2 : 1;
+            aiHp = Math.max(0, aiHp - dmg);
+            updateHpEl('right', aiHp);
+            if (aiHp <= 0) {
+              const oldName = heroB.name;
+              replaceHero('right', oldName);
+              recordElimination('left');
+              G.floatText(window.innerWidth / 2 + 40, window.innerHeight * 0.4, 'K.O.!', '#f5c451');
+            }
+          } else {
+            state.hitsR += 1;
+            heroAnim('right', 'punch');
+            heroAnim('left', 'hurt');
+          }
+
+          G.gateFx('hit');
+          G.vibrate(8);
+          const { count, mult } = G.feedByColor(caught.color);
+          const word = isSuper
+            ? G.fightWord('super')
+            : (side === 'left' && caught.color === 'blue') ||
+                (side === 'right' && caught.color === 'gold')
+              ? G.fightWord('hit')
+              : G.fightWord('dodge');
+          const color = isSuper ? '#c4b5fd' : caught.color === 'gold' ? '#fb923c' : '#7dd3fc';
+          G.floatText(caught.x, caught.y, word, color);
+          G.showComboBadge(comboBadge, count, mult);
+          setHud();
+        }
+
+        function aiTurn() {
+          if (state.paused || state.over) return;
+          const bottom = ring.getBoundingClientRect().top;
+          let caught = null;
+          let best = 999;
+          for (const p of state.pieces) {
+            if (!p.alive) continue;
+            const ok = p.color === 'purple' || p.color === 'gold';
+            if (!ok) continue;
+            const d = Math.abs(p.y - bottom * 0.6);
+            if (d < best) {
+              best = d;
+              caught = p;
+            }
+          }
+          if (!caught) return;
+          if (Math.random() < 0.15) {
+            caught.alive = false;
+            caught.el.classList.add('pop');
+            setTimeout(() => caught.el.remove(), 260);
+            const pts = caught.color === 'purple' ? 2 : 1;
+            playerHp = Math.max(0, playerHp - pts);
+            updateHpEl('left', playerHp);
+            heroAnim('right', 'punch');
+            heroAnim('left', 'hurt');
+            G.floatText(caught.x, caught.y, ' WHIFF!', '#fb923c');
+            G.vibrate(15);
+          } else {
+            caught.alive = false;
+            caught.el.classList.add('pop');
+            setTimeout(() => caught.el.remove(), 260);
+            const pts = caught.color === 'purple' ? 30 : 15;
+            state.score += pts;
+            state.hitsR += 1;
+            heroAnim('right', 'punch');
+            heroAnim('left', 'hurt');
+            const word = caught.color === 'purple' ? G.fightWord('super') : G.fightWord('hit');
+            G.floatText(
+              caught.x,
+              caught.y,
+              word,
+              caught.color === 'purple' ? '#c4b5fd' : '#fb923c'
+            );
+            const dmg = caught.color === 'purple' ? 2 : 1;
+            playerHp = Math.max(0, playerHp - dmg);
+            updateHpEl('left', playerHp);
+            if (playerHp <= 0) {
+              const oldName = heroA.name;
+              replaceHero('left', oldName);
+              recordElimination('right');
+              G.floatText(window.innerWidth / 2 - 40, window.innerHeight * 0.4, 'K.O.!', '#fb923c');
+            }
+            G.gateFx('hit');
+            G.vibrate(8);
+          }
+          setHud();
+        }
+
+        function finishRound() {
+          if (state.over) return;
+          state.over = true;
+          state.paused = false;
+          state.pieces.forEach((piece) => piece.el.remove());
+          state.pieces = [];
+          G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score);
+        }
+
+        function loop(t) {
+          if (!state.last) state.last = t;
+          const dt = Math.min(32, t - state.last);
+          state.last = t;
+          if (!state.paused && !state.over) {
+            if (t >= state.roundEndsAt) {
+              finishRound();
+              requestAnimationFrame(loop);
+              return;
+            }
+            if (t >= state.spawnAt) {
+              spawn();
+              state.spawnAt = t + Math.max(400, 900 - state.score * 2.5);
+            }
+            if (t >= state.aiTimer) {
+              aiTurn();
+              state.aiTimer = t + 800 + Math.random() * 700;
+            }
+            const bottom = ring.getBoundingClientRect().top + 10;
+            for (const p of state.pieces) {
+              if (!p.alive) continue;
+              p.x += p.vx * dt;
+              p.y += p.vy * dt;
+              p.el.style.left = `${p.x}px`;
+              p.el.style.top = `${p.y}px`;
+              if (p.y >= bottom) {
+                p.alive = false;
+                p.el.remove();
+              }
+            }
+            state.pieces = state.pieces.filter((p) => p.alive);
+          }
+          requestAnimationFrame(loop);
+        }
+
+        const left = document.createElement('div');
+        left.className = 'hit-zone left';
+        left.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          tap('left');
+        });
+        const right = document.createElement('div');
+        right.className = 'hit-zone right';
+        right.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          tap('right');
+        });
+        ui.playfield.appendChild(left);
+        ui.playfield.appendChild(right);
+
+        G.setupKeyboard({
+          left: () => tap('left'),
+          right: () => tap('right'),
+          pause: () => {
+            state.paused = !state.paused;
+            G.togglePauseBtn(ui.btnPause, state.paused);
+          },
+          restart: reset,
+        });
+
+        function reset() {
+          state.score = 0;
+          state.paused = false;
+          state.over = false;
+          state.hitsL = 0;
+          state.hitsR = 0;
+          state.speed = 0.13;
+          state.spawnAt = G.now() + 300;
+          state.last = 0;
+          state.aiTimer = G.now() + 1000;
+          state.roundEndsAt = G.now() + ROUND_MS;
+          state.pieces.forEach((p) => p.el.remove());
+          state.pieces = [];
+          heroA = G.randomHero();
+          heroB = pickHero(heroA.name);
+          playerHp = MAX_HP;
+          aiHp = MAX_HP;
+          setFighter('left', heroA, playerHp);
+          setFighter('right', heroB, aiHp);
+          G.resetWings();
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
+          resetKillStreaks();
+          G.hideOverlay();
+          setHud();
+        }
+
+        ui.btnRestart.addEventListener('click', reset);
+        ui.overlayRestart.addEventListener('click', reset);
+        ui.btnPause.addEventListener('click', () => {
+          state.paused = !state.paused;
+          G.togglePauseBtn(ui.btnPause, state.paused);
+        });
+
+        reset();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

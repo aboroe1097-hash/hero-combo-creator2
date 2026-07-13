@@ -12,19 +12,24 @@ export async function loadEdenDatasetStore() {
   if (cachedStore) return cachedStore;
   if (!loadPromise) {
     loadPromise = (async () => {
-      const res = await fetch('js/eden-datasets.payload.json');
-      if (!res.ok) throw new Error(`Eden dataset payload failed: HTTP ${res.status}`);
-      const payload = await res.json();
-      const data = payload?.encoding === 'gzip-base64'
-        ? await decodePayload(payload.payload)
-        : payload;
-      cachedStore = {
-        builtAt: data.builtAt,
-        catalog: data.catalog || [],
-        sectors: data.sectors || {},
-        overlays: data.overlays || {},
-      };
-      return cachedStore;
+      try {
+        const res = await fetch('js/eden-datasets.payload.json');
+        if (!res.ok) throw new Error(`Eden dataset payload failed: HTTP ${res.status}`);
+        const payload = await res.json();
+        const data = payload?.encoding === 'gzip-base64'
+          ? await decodePayload(payload.payload)
+          : payload;
+        cachedStore = {
+          builtAt: data.builtAt,
+          catalog: data.catalog || [],
+          sectors: data.sectors || {},
+          overlays: data.overlays || {},
+        };
+        return cachedStore;
+      } catch (error) {
+        loadPromise = null;
+        throw error;
+      }
     })();
   }
   return loadPromise;

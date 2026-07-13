@@ -1,0 +1,195 @@
+import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+const isRemotePreview = Boolean(String(process.env.PLAYWRIGHT_BASE_URL || '').trim());
+const targetOrigin = new URL(
+  String(process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173').trim()
+).origin;
+const localIndex = readFileSync('dist/index.html', 'utf8');
+const localServiceWorker = readFileSync('dist/sw.js', 'utf8');
+const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
+
+function observeTargetFailures(page) {
+  const failures = [];
+  const isTarget = (url) => {
+    try {
+      return new URL(url).origin === targetOrigin;
+    } catch {
+      return false;
+    }
+  };
+
+  page.on('response', (response) => {
+    if (isTarget(response.url()) && response.status() >= 400) {
+      failures.push(`${response.status()} ${response.url()}`);
+    }
+  });
+  page.on('requestfailed', (request) => {
+    const errorText = request.failure()?.errorText || 'request failed';
+    // Navigating between standalone surfaces intentionally
+    // aborts any late map/image requests from the previous document.
+    if (isTarget(request.url()) && errorText !== 'net::ERR_ABORTED') {
+      failures.push(`${errorText} ${request.url()}`);
+    }
+  });
+  page.on('console', (message) => {
+    if (
+      message.type() === 'error' &&
+      /content security policy|failed to load module|dynamically imported module|\b404\b/iu.test(
+        message.text()
+      )
+    ) {
+      failures.push(`${page.url()}: ${message.text()}`);
+    }
+  });
+  page.on('pageerror', (error) => {
+    // Anonymous Auth is external to the static Pages artifact and can be throttled
+    // after repeated local/preview smoke runs. Keep validating the rendered shell,
+    // lazy chunks, service worker, and same-origin requests when that happens.
+    if (/Firebase: Error \(auth\/too-many-requests\)\.?/iu.test(error.message)) return;
+    failures.push(`${page.url()}: pageerror: ${error.message}`);
+  });
+  return failures;
+}
+
+test('verified Pages artifact loads standalone pages, lazy chunks, and its service worker', async ({
+  page,
+  request,
+}) => {
+  const failures = observeTargetFailures(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
+    localStorage.setItem('vts_intro_v1_seen', '1');
+    localStorage.setItem('vts_quick_tour_done', '1');
+    localStorage.setItem('vts_eden_dataset', 'season5');
+  });
+
+  for (const [url, expectedBody] of [
+    ['/index.html', localIndex],
+    ['/sw.js', localServiceWorker],
+  ]) {
+    const response = await request.get(url, { headers: { 'Cache-Control': 'no-cache' } });
+    expect(response.ok(), `${url} should be present in the deployed artifact`).toBe(true);
+    expect(await response.text(), `${url} should exactly match the verified local artifact`).toBe(
+      expectedBody
+    );
+    if (isRemotePreview) {
+      expect(response.headers()['cache-control'] || '').toMatch(/no-cache/iu);
+    }
+  }
+  expect(localIndex).toContain(`v${packageVersion}`);
+  if (isRemotePreview) {
+    const rootResponse = await request.get('/', { headers: { 'Cache-Control': 'no-cache' } });
+    expect(rootResponse.ok()).toBe(true);
+    expect(rootResponse.headers()['cache-control'] || '').toMatch(/no-cache/iu);
+  }
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
+
+  await page.locator('#commandPaletteTrigger').click();
+  await expect(page.locator('.cmdk-overlay')).toBeVisible();
+  await page.locator('.cmdk-input').fill('Arcade');
+  await expect(page.locator('.cmdk-item-label')).toHaveText('Arcade');
+  await page.locator('.cmdk-input').press('Escape');
+  await expect(page.locator('.cmdk-overlay')).toBeHidden();
+
+  const lazySurfaces = [
+    ['#tabHeroes', '#heroesSection .heroes-layout'],
+    ['#tabResearch', '#techListContainer .research-tech-card'],
+    ['#tabMaterials', '#materialCalculatorRoot .dm-plan-panel'],
+    ['#tabStrife', '#strifeToolRoot .strife-monster-card'],
+    ['#tabEdenMap', '#edenMapRoot'],
+  ];
+  for (const [tab, marker] of lazySurfaces) {
+    const tool = page.locator(tab);
+    let openedMore = false;
+    if (!(await tool.isVisible())) {
+      await page.locator('#shellMoreButton').click();
+      await expect(page.locator('#shellMorePanel')).toBeVisible();
+      await expect(tool).toBeVisible();
+      openedMore = true;
+    }
+    await tool.click();
+    if (openedMore) await expect(page.locator('#shellMorePanel')).toBeHidden();
+    await expect(page.locator(marker).first()).toBeVisible({ timeout: 30000 });
+  }
+
+  const productionState = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    const resourcePaths = performance
+      .getEntriesByType('resource')
+      .map((entry) => new URL(entry.name, window.location.href).pathname);
+    return {
+      activeServiceWorker: registration.active?.scriptURL || '',
+      cacheNames: await caches.keys(),
+      resourcePaths,
+    };
+  });
+  expect(productionState.activeServiceWorker).toMatch(/\/sw\.js$/u);
+  expect(productionState.cacheNames.some((name) => name.startsWith('vts-'))).toBe(true);
+  for (const chunkName of [
+    'hero-atlas',
+    'research',
+    'material-calculator',
+    'app-strife',
+    'eden-map',
+  ]) {
+    expect(
+      productionState.resourcePaths.some((resourcePath) =>
+        new RegExp(`/assets/${chunkName}-[^/]+\\.js$`, 'u').test(resourcePath)
+      ),
+      `${chunkName} production chunk was not requested`
+    ).toBe(true);
+  }
+
+  await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#dashLoginForm')).toBeVisible({ timeout: 30000 });
+
+  await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.admin-shell-title')).toContainText('Eden X1');
+  await expect(page.locator('#ocrDashboardSection')).toBeVisible();
+
+  await page.goto('/arcade.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.admin-shell-title')).toContainText('Arcade');
+  await expect(page.locator('#arcadeLobby')).toBeVisible({ timeout: 30000 });
+  const arcadeHeaderBounds = await page.evaluate(() => {
+    const brand = document.querySelector('.admin-command-brand');
+    const copy = document.querySelector('.admin-shell-copy');
+    if (!brand || !copy) return null;
+    const brandRect = brand.getBoundingClientRect();
+    const copyRect = copy.getBoundingClientRect();
+    return { brandRight: brandRect.right, copyRight: copyRect.right };
+  });
+  expect(arcadeHeaderBounds).not.toBeNull();
+  expect(arcadeHeaderBounds.copyRight).toBeLessThanOrEqual(arcadeHeaderBounds.brandRight + 1);
+
+  const gamePaths = await page
+    .locator('.arcade-card')
+    .evaluateAll((cards) => cards.map((card) => card.getAttribute('href')));
+  const expectedGames = [
+    ['/games/boot/b-merge-rush.html', 'Mode A', 'Merge Rush'],
+    ['/games/boot/c-sort-hoard.html', 'Mode B', 'Sort the Hoard'],
+    ['/games/boot/e-crystal-relay.html', 'Mode C', 'Crystal Relay'],
+    ['/games/boot/f-set-assembly.html', 'Mode D', 'Set Assembly'],
+    ['/games/boot/h-hero-rumble.html', 'Mode E', 'Hero Rumble'],
+  ];
+  expect(gamePaths).toEqual(expectedGames.map(([gamePath]) => gamePath));
+  for (const [gamePath, mode, title] of expectedGames) {
+    await page.goto(gamePath, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#stage')).toBeVisible();
+    await expect(page.locator('.nav-back')).toHaveAttribute('href', '/arcade.html');
+    await expect(page.locator('.mode-tag')).toHaveText(mode);
+    await expect(page.locator('h1')).toHaveText(title);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/arcade.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#arcadeLobby')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.arcade-card')).toHaveCount(5);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)
+  ).toBe(false);
+
+  expect(failures).toEqual([]);
+});

@@ -1,0 +1,666 @@
+/* Eager launcher containment. Keep this separate from the large shared bundle so Velo's
+ * intrinsic raster dimensions can never escape while the assistant animation loads lazily. */
+.ai-drawer-launcher-shell {
+  position: fixed;
+  inset-inline-end: calc(1rem + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 170;
+}
+
+.ai-drawer-launcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 58px;
+  padding: 0.25rem 1rem 0.25rem 0.55rem;
+  border: 1px solid rgba(126, 226, 244, 0.42);
+  border-radius: 999px;
+  color: #f2fbff;
+  background: linear-gradient(135deg, #193653, #0c243c 58%, #132032);
+  box-shadow:
+    0 14px 36px rgba(2, 12, 24, 0.48),
+    0 0 24px rgba(47, 193, 221, 0.18);
+  font: 700 0.84rem/1 var(--font-ui, 'Sora', system-ui, sans-serif);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    width 180ms ease,
+    padding 180ms ease,
+    transform 180ms ease;
+}
+
+.ai-drawer-launcher-shell.is-compact .ai-drawer-launcher {
+  width: 58px;
+  height: 58px;
+  justify-content: center;
+  padding: 0;
+}
+
+.ai-drawer-launcher-shell.is-compact .ai-drawer-launcher__copy {
+  display: none;
+}
+
+.ai-drawer-launcher__compact-toggle {
+  position: absolute;
+  inset-block-start: -0.85rem;
+  inset-inline-end: -0.8rem;
+  z-index: 2;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #dff9ff;
+  background: transparent;
+  font: 800 1.25rem/1 var(--font-ui, 'Sora', system-ui, sans-serif);
+  cursor: pointer;
+}
+
+.ai-drawer-launcher__compact-toggle span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(126, 226, 244, 0.42);
+  border-radius: 50%;
+  background: #102a43;
+  box-shadow: 0 6px 18px rgba(2, 12, 24, 0.34);
+  transform: rotate(180deg);
+}
+
+.ai-drawer-launcher-shell.is-compact .ai-drawer-launcher__compact-toggle span {
+  transform: rotate(0);
+}
+
+[dir='rtl'] .ai-drawer-launcher__compact-toggle span {
+  transform: rotate(0);
+}
+
+[dir='rtl'] .ai-drawer-launcher-shell.is-compact .ai-drawer-launcher__compact-toggle span {
+  transform: rotate(180deg);
+}
+
+.ai-drawer-launcher .velo-mascot {
+  position: relative;
+  display: block;
+  flex: 0 0 3.15rem;
+  width: 3.15rem;
+  height: 3.15rem;
+  margin: -0.22rem 0 -0.18rem -0.28rem;
+  overflow: visible;
+  isolation: isolate;
+}
+
+[dir='rtl'] .ai-drawer-launcher .velo-mascot {
+  margin: -0.22rem -0.28rem -0.18rem 0;
+}
+
+.ai-drawer-launcher .velo-mascot__stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 82%;
+  animation: velo-sky-reset 28s ease-in-out infinite;
+}
+
+.ai-drawer-launcher .velo-mascot img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  pointer-events: none;
+}
+
+.ai-drawer-launcher .velo-mascot__body {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: 50% 82%;
+  animation: velo-body-story 28s ease-in-out infinite;
+}
+
+.ai-drawer-launcher .velo-mascot__body--angry {
+  z-index: 2;
+  opacity: 0;
+  filter: sepia(0.78) saturate(3.3) hue-rotate(312deg);
+  animation:
+    velo-body-story 28s ease-in-out infinite,
+    velo-anger-tint 28s ease-in-out infinite;
+}
+
+.ai-drawer-launcher .velo-mascot__helmet {
+  z-index: 4;
+  inset-block-start: 0;
+  inset-inline-start: 11%;
+  width: 78%;
+  height: auto;
+  transform: translateY(-29%);
+  transform-origin: 50% 18%;
+  animation: velo-helmet-story 28s cubic-bezier(0.22, 0.75, 0.24, 1) infinite;
+}
+
+.ai-drawer-launcher .velo-mascot__burst {
+  z-index: 6;
+  inset: -22%;
+  width: 144%;
+  height: 144%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 0.4rem rgba(255, 165, 52, 0.38));
+  opacity: 0;
+  transform: scale(0.2) rotate(-12deg);
+  animation: velo-rage-burst 28s ease-out infinite;
+}
+
+/* Velo's own horns peek above the oversized helmet while small eye glints show through its
+ * openings. Reusing the body art keeps the interaction visually native to the mascot. */
+.velo-mascot__helmet-reaction {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 28%;
+  animation: velo-helmet-reaction 28s ease-in-out infinite;
+}
+
+.velo-mascot__horn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(1.16) saturate(1.08) drop-shadow(0 1px 1px rgba(2, 8, 18, 0.55));
+}
+
+.velo-mascot__horn--left {
+  clip-path: polygon(18% 0, 42% 0, 39% 34%, 21% 35%);
+}
+
+.velo-mascot__horn--right {
+  clip-path: polygon(58% 0, 82% 0, 79% 35%, 61% 34%);
+}
+
+.velo-mascot__eye {
+  position: absolute;
+  inset-block-start: 18%;
+  width: 9%;
+  aspect-ratio: 1.35;
+  border-radius: 50% 50% 42% 42%;
+  background: radial-gradient(circle at 58% 42%, #ffffff 0 13%, #64e9ff 17% 45%, #0789b5 62%);
+  box-shadow:
+    0 0 0.16em #9af4ff,
+    0 0 0.42em rgba(75, 221, 255, 0.82);
+  animation: velo-helmet-eye-glint 28s ease-in-out infinite;
+}
+
+.velo-mascot__eye--left {
+  inset-inline-start: 27%;
+  transform: rotate(8deg);
+}
+
+.velo-mascot__eye--right {
+  inset-inline-end: 27%;
+  transform: rotate(-8deg);
+}
+
+.ai-drawer-launcher:hover,
+.ai-drawer-launcher:focus-visible {
+  transform: translateY(-2px);
+  outline: 2px solid #7de6f6;
+  outline-offset: 3px;
+}
+
+.ai-drawer-launcher__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.ai-drawer-launcher__eyebrow {
+  color: #8eafc8;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.ai-drawer-launcher__label {
+  font-size: 0.86rem;
+}
+
+[data-theme='light'] .ai-drawer-launcher {
+  color: #17364a;
+  border-color: rgba(12, 126, 157, 0.28);
+  background: linear-gradient(135deg, #ffffff, #ecf8fb 58%, #f7fbfd);
+  box-shadow:
+    0 14px 32px rgba(29, 78, 103, 0.2),
+    0 0 22px rgba(47, 193, 221, 0.1);
+}
+
+[data-theme='light'] .ai-drawer-launcher__eyebrow {
+  color: #557487;
+}
+
+[data-theme='light'] .ai-drawer-launcher__compact-toggle span {
+  color: #17364a;
+  border-color: rgba(12, 126, 157, 0.28);
+  background: #ffffff;
+}
+
+@keyframes velo-header-thinking {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg) scale(1);
+  }
+  45% {
+    transform: translateY(-3%) rotate(1.5deg) scale(1.015);
+  }
+  68% {
+    transform: translateY(-1%) rotate(-0.5deg) scale(0.995, 1.02);
+  }
+}
+
+@keyframes velo-typing-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  48% {
+    transform: translateY(-0.14rem) rotate(1deg);
+  }
+}
+
+@keyframes velo-typing-breathe {
+  0%,
+  20%,
+  100% {
+    transform: translateX(0) scale(1);
+  }
+  34% {
+    transform: translateX(-2%) scale(1.025, 0.98);
+  }
+  48% {
+    transform: translateX(2%) scale(0.985, 1.02);
+  }
+}
+
+@keyframes velo-fire-puff {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translate(0, 0.08rem) scale(0.08) rotate(-14deg);
+  }
+  38% {
+    opacity: 0.94;
+    transform: translate(0.22rem, 0) scale(0.4) rotate(-4deg);
+  }
+  76% {
+    opacity: 0.72;
+    transform: translate(0.72rem, -0.08rem) scale(0.78) rotate(8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(1rem, -0.16rem) scale(1) rotate(14deg);
+  }
+}
+
+/* Shared Velo motion stays eager so page, tab, comment, and Arcade loaders animate immediately. */
+.vts-loader__velo-body {
+  transform-origin: 50% 82%;
+  animation: vts-loader-velo-step 0.76s ease-in-out infinite;
+}
+
+.vts-loader__velo-helmet {
+  transform-origin: 50% 18%;
+  animation: vts-loader-velo-helmet 0.76s ease-in-out infinite;
+}
+
+.vts-loader.is-indeterminate .vts-loader__runner {
+  animation: vts-loader-velo-patrol 1.8s ease-in-out infinite alternate;
+}
+
+.vts-loader.is-complete .vts-loader__velo-body {
+  animation: vts-loader-velo-arrive 0.64s ease-out both;
+}
+
+.vts-loader.is-complete .vts-loader__velo-helmet {
+  animation: vts-loader-velo-helmet-arrive 0.64s ease-out both;
+}
+
+@keyframes vts-loader-velo-patrol {
+  from {
+    inset-inline-start: 1rem;
+  }
+  to {
+    inset-inline-start: calc(100% - 1rem);
+  }
+}
+
+@keyframes vts-loader-velo-step {
+  0%,
+  100% {
+    transform: translateY(1px) rotate(-1.5deg) scale(1.02, 0.98);
+  }
+  45% {
+    transform: translateY(-3px) rotate(2deg) scale(0.99, 1.025);
+  }
+  70% {
+    transform: translateY(-1px) rotate(-0.8deg) scale(1.005);
+  }
+}
+
+@keyframes vts-loader-velo-helmet {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  52% {
+    transform: translateY(-3px) rotate(1.8deg);
+  }
+  76% {
+    transform: translateY(-1px) rotate(-0.7deg);
+  }
+}
+
+@keyframes vts-loader-velo-arrive {
+  0% {
+    transform: translateY(-3px) scale(0.98, 1.03);
+  }
+  55% {
+    transform: translateY(2px) scale(1.05, 0.94);
+  }
+  78% {
+    transform: translateY(-1px) scale(0.99, 1.02);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes vts-loader-velo-helmet-arrive {
+  0% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(2px) rotate(2deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes velo-sky-reset {
+  0%,
+  72% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 0;
+    transform: translateY(-4%) scale(0.72);
+  }
+  76%,
+  87% {
+    opacity: 0;
+    transform: translateY(-160%) scale(0.88);
+  }
+  89% {
+    opacity: 1;
+    transform: translateY(-160%) scale(0.88);
+  }
+  95% {
+    opacity: 1;
+    transform: translateY(7%) scale(1.07, 0.92);
+  }
+  97% {
+    transform: translateY(-2%) scale(0.98, 1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes velo-body-story {
+  0%,
+  13% {
+    transform: rotate(0) scale(1);
+  }
+  14.5% {
+    transform: translateY(1.5%) rotate(-2deg) scale(1.02, 0.98);
+  }
+  15.2% {
+    transform: translateY(-3%) rotate(3deg) scale(0.99, 1.03);
+  }
+  16% {
+    transform: translateY(-1%) rotate(-2deg) scale(1);
+  }
+  17%,
+  38.3% {
+    transform: rotate(0) scale(1);
+  }
+  39.6% {
+    transform: translateY(2%) rotate(2deg) scale(1.02, 0.98);
+  }
+  40.3% {
+    transform: translateY(-3%) rotate(-4deg) scale(0.985, 1.03);
+  }
+  41% {
+    transform: translateY(-1%) rotate(3deg);
+  }
+  41.5% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  43%,
+  60% {
+    transform: rotate(0);
+  }
+  62% {
+    transform: rotate(-1deg);
+  }
+  64% {
+    transform: translateX(-1.2%) rotate(-2deg);
+  }
+  65% {
+    transform: translateX(1.2%) rotate(2deg);
+  }
+  66% {
+    transform: translateX(-1.4%) rotate(-2.3deg);
+  }
+  67% {
+    transform: translateX(1.4%) rotate(2.3deg);
+  }
+  69% {
+    transform: translateX(0) translateY(-2%) scale(1.06);
+  }
+  71% {
+    transform: translateY(2%) scale(1.04, 0.96);
+  }
+  72%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes velo-helmet-story {
+  0%,
+  5% {
+    transform: translateY(-29%) rotate(0);
+  }
+  /* First covered-eyes pause: 7% of 28s = 1.96s. */
+  6%,
+  13% {
+    transform: translateY(-3%) rotate(1deg);
+  }
+  14.5% {
+    transform: translateY(-39%) rotate(-1.6deg);
+  }
+  16%,
+  23% {
+    transform: translateY(-29%) rotate(-0.5deg);
+  }
+  /* Second covered-eyes pause: 14.3% of 28s = 4s. */
+  24%,
+  38.3% {
+    transform: translateY(-2%) rotate(0.8deg);
+  }
+  39.6% {
+    transform: translateY(-41%) rotate(-1.8deg);
+  }
+  41.5%,
+  47% {
+    transform: translateY(-31%) rotate(-0.4deg);
+  }
+  /* Third covered-eyes pause: 21.4% of 28s = 6s, then the burst. */
+  48%,
+  69.4% {
+    transform: translateY(-1%) rotate(1.2deg);
+  }
+  70.5%,
+  100% {
+    transform: translateY(-29%) rotate(0);
+  }
+}
+
+@keyframes velo-helmet-reaction {
+  0%,
+  5%,
+  14%,
+  23%,
+  39%,
+  47%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateY(7%) scale(0.82, 0.96);
+  }
+  6.5%,
+  12.5% {
+    opacity: 0.5;
+    transform: translateY(3%) rotate(-1deg) scale(0.91, 1);
+  }
+  24.5%,
+  37.8% {
+    opacity: 0.76;
+    transform: translateY(0) rotate(1.4deg) scale(0.97, 1.04);
+  }
+  48.5% {
+    opacity: 0.92;
+    transform: translateY(-2%) rotate(-1deg) scale(1.02, 1.07);
+  }
+  61% {
+    opacity: 1;
+    transform: translateY(-4%) rotate(1.5deg) scale(1.06, 1.12);
+  }
+  69.4% {
+    opacity: 1;
+    transform: translateY(-5%) rotate(-1.5deg) scale(1.1, 1.15);
+  }
+}
+
+@keyframes velo-helmet-eye-glint {
+  0%,
+  25%,
+  33%,
+  54%,
+  100% {
+    filter: brightness(0.92);
+    scale: 1 0.72;
+  }
+  29%,
+  58%,
+  68% {
+    filter: brightness(1.35);
+    scale: 1.08 1;
+  }
+}
+
+@keyframes velo-anger-tint {
+  0%,
+  10%,
+  16%,
+  34%,
+  42%,
+  48%,
+  75%,
+  100% {
+    opacity: 0;
+  }
+  12.5% {
+    opacity: 0.28;
+  }
+  38% {
+    opacity: 0.5;
+  }
+  61% {
+    opacity: 0.66;
+  }
+  69.4% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes velo-rage-burst {
+  0%,
+  70% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-12deg);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1.08) rotate(4deg);
+  }
+  75% {
+    opacity: 0;
+    transform: scale(1.3) rotate(9deg);
+  }
+  76%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-12deg);
+  }
+}
+
+@media (max-width: 640px) {
+  body:has(#shellMoreTools) .ai-drawer-launcher-shell {
+    inset-inline-end: max(12px, env(safe-area-inset-right));
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    z-index: 1070;
+  }
+
+  .ai-drawer-launcher__copy {
+    display: none;
+  }
+
+  .ai-drawer-launcher,
+  .ai-drawer-launcher-shell.is-compact .ai-drawer-launcher {
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    justify-content: center;
+  }
+  .ai-drawer-launcher__compact-toggle {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-drawer-launcher,
+  .ai-drawer-launcher__compact-toggle {
+    transition: none;
+  }
+
+  .ai-drawer-launcher .velo-mascot__stage,
+  .ai-drawer-launcher .velo-mascot__body,
+  .ai-drawer-launcher .velo-mascot__helmet,
+  .ai-drawer-launcher .velo-mascot__helmet-reaction,
+  .ai-drawer-launcher .velo-mascot__eye {
+    animation: none;
+  }
+}

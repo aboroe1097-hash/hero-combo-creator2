@@ -47,6 +47,77 @@ function adminT(key, vars = {}) {
   return text;
 }
 
+const ADMIN_TABLE_INITIAL_ROWS = 10;
+const ADMIN_TABLE_PAGE_ROWS = 25;
+
+function resolveAdminTablePage(owner, signature, rows) {
+  const limitKey = `_adminTableLimit_${owner}`;
+  const signatureKey = `_adminTableSignature_${owner}`;
+  if (state[signatureKey] !== signature) {
+    state[signatureKey] = signature;
+    state[limitKey] = ADMIN_TABLE_INITIAL_ROWS;
+  }
+  const requested = Number(state[limitKey]);
+  const limit = Number.isFinite(requested)
+    ? Math.max(ADMIN_TABLE_INITIAL_ROWS, Math.floor(requested))
+    : ADMIN_TABLE_INITIAL_ROWS;
+  state[limitKey] = limit;
+  return {
+    limit,
+    rows: rows.slice(0, limit),
+    total: rows.length,
+    visible: Math.min(limit, rows.length),
+  };
+}
+
+function renderAdminTablePager(owner, page, controlsId, options = {}) {
+  if (page.total <= ADMIN_TABLE_INITIAL_ROWS) return '';
+  const remaining = Math.max(0, page.total - page.visible);
+  const nextCount = Math.min(ADMIN_TABLE_PAGE_ROWS, remaining);
+  const showAllLabel =
+    options.showAll === true ? adminT('edenX1ShowAllRows', { count: page.total }) : '';
+  return `<div class="dash-table-more-wrap" data-admin-table-pager="${esc(owner)}">
+    <span class="dash-table-page-status" role="status" aria-live="polite">${page.visible.toLocaleString()} / ${page.total.toLocaleString()}</span>
+    ${remaining ? `<button type="button" class="dash-btn dash-btn-sm dash-table-page-more" data-admin-table-page="more" aria-controls="${esc(controlsId)}">${esc(adminT('adminShowMore', { count: nextCount }))}</button>` : ''}
+    ${remaining && options.showAll === true ? `<button type="button" class="dash-btn dash-btn-sm dash-table-page-all" data-admin-table-page="all" aria-controls="${esc(controlsId)}">${esc(showAllLabel)}</button>` : ''}
+    ${page.visible > ADMIN_TABLE_INITIAL_ROWS ? `<button type="button" class="dash-btn dash-btn-sm dash-muted-action dash-table-page-reset" data-admin-table-page="reset" aria-controls="${esc(controlsId)}">${esc(adminT('edenResetView'))} &middot; ${ADMIN_TABLE_INITIAL_ROWS}</button>` : ''}
+  </div>`;
+}
+
+function bindAdminTablePager(host, owner, page, renderPage) {
+  const pager = host?.querySelector(`[data-admin-table-pager="${owner}"]`);
+  if (!pager) return;
+  pager.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-admin-table-page]');
+    if (!button || !pager.contains(button)) return;
+    const action = button.dataset.adminTablePage;
+    const limitKey = `_adminTableLimit_${owner}`;
+    if (action === 'more') {
+      state[limitKey] = Math.min(page.total, page.limit + ADMIN_TABLE_PAGE_ROWS);
+    } else if (action === 'all') {
+      state[limitKey] = page.total;
+    } else if (action === 'reset') {
+      state[limitKey] = ADMIN_TABLE_INITIAL_ROWS;
+    } else {
+      return;
+    }
+    renderPage();
+    const nextAction =
+      action === 'all' || state[limitKey] >= page.total
+        ? 'reset'
+        : action === 'reset'
+          ? 'more'
+          : 'more';
+    requestAnimationFrame(() => {
+      document
+        .querySelector(
+          `[data-admin-table-pager="${owner}"] [data-admin-table-page="${nextAction}"]`
+        )
+        ?.focus();
+    });
+  });
+}
+
 function readPlayerDisplayName(player) {
   if (typeof player === 'string') return player;
   return player?.playerName || player?.name || player?.displayName || '';
@@ -1257,7 +1328,13 @@ function renderWeightedContributionDashboard(options = {}) {
 
   const recordLabel = getWeightedContributionRecordLabel(model.record);
   const compactView = isWeightedContributionCompactView();
-  const visibleRows = sortedWeightedRows(filterWeightedRows(rows));
+  const filteredRows = sortedWeightedRows(filterWeightedRows(rows));
+  const weightedPage = resolveAdminTablePage(
+    'weighted',
+    `${recordLabel || ''}|${state._weightedSearchQ || ''}|${rows.length}`,
+    filteredRows
+  );
+  const visibleRows = weightedPage.rows;
   host.classList.remove('hidden');
   host.innerHTML = `<div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card ${compactView ? 'dash-weighted-compact' : ''}">
     <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -1282,7 +1359,7 @@ function renderWeightedContributionDashboard(options = {}) {
       </div>
     </div>
     <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
-      <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
+      <table id="dashWeightedContributionTable" class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table">
         <thead><tr><th data-weighted-sort="player">${esc(adminT('adminContributionMember'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="currentRank">${esc(adminT('adminContributionRank'))}</th><th class="dash-weighted-detail-col" data-weighted-sort="reward">${esc(adminT('adminContributionReward'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="contribution">${esc(adminT('edenX1ThContribution'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="exGuild">${esc(adminT('edenX1ThExGuild'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="shieldWalls">${esc(adminT('edenX1ThShieldWalls'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="pathers">${esc(adminT('edenX1ThPathers'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="banners">${esc(adminT('edenX1ThBanners'))}</th><th class="dash-weighted-detail-col dash-weighted-conduct-col" style="text-align:right" data-weighted-sort="conduct">${esc(adminT('edenX1ThConduct'))}</th><th class="dash-weighted-detail-col" style="text-align:right" data-weighted-sort="total">${esc(adminT('edenX1ThTotal'))}</th><th style="text-align:right" data-weighted-sort="weighted">${esc(adminT('edenX1ThWeightedScore'))}</th><th data-weighted-sort="finalRank">${esc(adminT('adminContributionFinalRank'))}</th><th data-weighted-sort="finalReward">${esc(adminT('adminContributionFinalReward'))}</th></tr></thead>
         <tbody>${
           visibleRows.length
@@ -1309,8 +1386,10 @@ function renderWeightedContributionDashboard(options = {}) {
         }</tbody>
       </table>
     </div>
+    ${renderAdminTablePager('weighted', weightedPage, 'dashWeightedContributionTable', { showAll: true })}
   </div>`;
   bindWeightedContributionViewToggle(host);
+  bindAdminTablePager(host, 'weighted', weightedPage, () => renderWeightedContributionDashboard());
   const search = $id('dashWeightedSearch');
   if (search) {
     search.oninput = (event) => {
@@ -1499,7 +1578,7 @@ function render() {
     return;
   }
   const timeAttacks = getTimeFilteredAttacks(state.dashData.attacks || []);
-  const { activeAttacks, structureFilterLabel, selectedAttackLabel } =
+  const { activeAttacks, structureFilterLabel, selectedAttackId, selectedAttackLabel } =
     buildActiveAttackView(timeAttacks);
   const rankedPsum = buildPlayerSummary(activeAttacks);
   const adjustedRankedPsum = buildAdjustedLeaderboardRows(rankedPsum);
@@ -1591,37 +1670,56 @@ function render() {
     const sortedDays = Object.keys(grouped).sort(
       (a, b) => dayLatestMs(b) - dayLatestMs(a) || String(b).localeCompare(String(a))
     );
-    sortedDays.forEach((day) => {
-      const dayHeader = document.createElement('div');
-      dayHeader.className = 'dash-attack-day-header';
-      dayHeader.textContent = day;
-      al.appendChild(dayHeader);
+    const orderedAttacks = sortedDays.flatMap((day) =>
       sortAttacksChrono(grouped[day])
         .slice()
         .reverse()
-        .forEach((a) => {
-          const val = getAttackValidation(a);
-          let badge = '';
-          if (val) {
-            badge = val.overridden
-              ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
-              : val.match
-                ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
-                : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct * 100).toFixed(1)}% off)">!</span>`;
-          }
-          const d = document.createElement('div');
-          d.className = 'dash-attack-item';
-          let timeStr = displayGameTime(a.game_time);
-          if (a.start_time) {
-            const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
-            if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
-            else timeStr = `${esc(a.start_time)} - ${timeStr}`;
-          }
-          d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${esc(adminT('edenX1PlayersCount', { count: a.players_count }))}</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="${esc(adminT('adminDeleteAttackTitle'))}" onclick="event.stopPropagation(); window.deleteAttack('${a.id}')">✕</button></div>`;
-          d.onclick = () => showModal('attack', a);
-          al.appendChild(d);
-        });
+        .map((attack) => ({ attack, day }))
+    );
+    const attackPage = resolveAdminTablePage(
+      'attacks',
+      `${state.timeFilter || 'all'}|${state.attackSearchQ || ''}|${state.structureFilterKey || ''}|${selectedAttackId || ''}|${orderedAttacks.length}`,
+      orderedAttacks
+    );
+    let renderedDay = '';
+    attackPage.rows.forEach(({ attack: a, day }) => {
+      if (day !== renderedDay) {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'dash-attack-day-header';
+        dayHeader.textContent = day;
+        al.appendChild(dayHeader);
+        renderedDay = day;
+      }
+      const val = getAttackValidation(a);
+      let badge = '';
+      if (val) {
+        badge = val.overridden
+          ? `<span class="dash-val-badge dash-val-override" title="Marked complete by admin override">✓</span>`
+          : val.match
+            ? `<span class="dash-val-badge dash-val-ok" title="✓ ${(a.total_demolition || 0).toLocaleString()} / ${val.expected.toLocaleString()}">✓</span>`
+            : `<span class="dash-val-badge dash-val-warn" title="✗ ${(a.total_demolition || 0).toLocaleString()} vs ${val.expected.toLocaleString()} (${(val.pct * 100).toFixed(1)}% off)">!</span>`;
+      }
+      const d = document.createElement('div');
+      d.className = 'dash-attack-item';
+      let timeStr = displayGameTime(a.game_time);
+      if (a.start_time) {
+        const match = timeStr.match(/(.*(?:,\s*|\s+))(\d{1,2}:\d{2}(?:\s*GT)?)$/i);
+        if (match) timeStr = `${match[1]}${esc(a.start_time)} - ${match[2]}`;
+        else timeStr = `${esc(a.start_time)} - ${timeStr}`;
+      }
+      d.innerHTML = `<div><div class="dash-attack-name">${esc(structureLabel(a))}${badge}</div><div class="dash-attack-time">${timeStr} · ${esc(adminT('edenX1PlayersCount', { count: a.players_count }))}</div></div><div class="dash-attack-actions"><div class="dash-attack-val dash-attack-val--right">${(a.total_demolition || 0).toLocaleString()}</div><button class="dash-del-btn" title="${esc(adminT('adminDeleteAttackTitle'))}">✕</button></div>`;
+      d.querySelector('.dash-del-btn')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        window.deleteAttack?.(a.id);
+      });
+      d.onclick = () => showModal('attack', a);
+      al.appendChild(d);
     });
+    al.insertAdjacentHTML(
+      'beforeend',
+      renderAdminTablePager('attacks', attackPage, 'dashAttackList')
+    );
+    bindAdminTablePager(al, 'attacks', attackPage, render);
   }
 
   const tb = $id('dashLeaderBody');
@@ -1634,7 +1732,10 @@ function render() {
 
   if (structureFilterLabel) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="6" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" onclick="window.clearStructureLeaderboardFilter()">Clear</button></td>`;
+    tr.innerHTML = `<td colspan="6" class="dash-leader-filter-note">Filtered by ${esc(structureFilterLabel)} <button type="button" class="dash-clear-structure-filter">Clear</button></td>`;
+    tr.querySelector('.dash-clear-structure-filter')?.addEventListener('click', () => {
+      window.clearStructureLeaderboardFilter();
+    });
     tb.appendChild(tr);
   }
 
@@ -2052,12 +2153,15 @@ function showModal(type, data) {
 }
 
 function closeModal() {
-  $id('dashModal')?.classList.remove('active');
+  const modal = $id('dashModal');
+  const wasActive = modal?.classList.contains('active');
+  modal?.classList.remove('active');
   window._overlayStack = Math.max(0, (window._overlayStack || 1) - 1);
   if (window._overlayStack === 0) {
     document.body.style.overflow = '';
     document.body.style.overflowY = '';
   }
+  if (wasActive) window.dispatchEvent(new CustomEvent('vts:admin-edit-surface-closed'));
 }
 
 export {

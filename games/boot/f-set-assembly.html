@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>D - Set Assembly</title>
+    <link rel="stylesheet" href="./shared.css" />
+    <style>
+      .recipe {
+        position: absolute;
+        left: 50%;
+        top: calc(42% + 58px);
+        transform: translateX(-50%);
+        z-index: 15;
+        display: flex;
+        gap: 0.45rem;
+        padding: 0.4rem 0.55rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(7, 11, 22, 0.82);
+        pointer-events: none;
+      }
+      .recipe .slot {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        display: grid;
+        place-items: center;
+        opacity: 0.45;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      .recipe .slot.filled {
+        opacity: 1;
+        border-style: solid;
+        border-color: rgba(52, 211, 153, 0.65);
+        box-shadow: 0 0 10px rgba(52, 211, 153, 0.25);
+      }
+      .recipe .slot.filled[data-color="green"] {
+        border-color: rgba(52, 211, 153, 0.85);
+        box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+      }
+      .recipe .slot img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./shared.js"></script>
+    <script>
+      (() => {
+        const G = BootGame;
+        const SCORE_KEY = 'vts_proto_set_assembly';
+        const NEED = ['green', 'blue', 'gold'];
+        const ui = G.mountShell({
+          modeId: 'Mode D',
+          modeKey: 'arcadeModeD',
+          title: 'Set Assembly',
+          titleKey: 'arcadeSetAssemblyTitle',
+          hint: 'Collect green-blue-gold pieces of the target type to complete a set!',
+          hintKey: 'arcadeSetAssemblyDesc',
+          scoreKey: SCORE_KEY,
+          controlScheme: 'set',
+        });
+
+        const recipe = document.createElement('div');
+        recipe.className = 'recipe';
+        recipe.id = 'recipe';
+        recipe.innerHTML = NEED.map(
+          (c) => `<div class="slot" data-color="${c}"><img alt="" /></div>`
+        ).join('');
+        ui.stage.appendChild(recipe);
+
+        const comboBadge = G.createComboBadge();
+        document.body.appendChild(comboBadge);
+
+        // Green pieces use blue material images with green CSS border
+        function materialSrcFor(color, type) {
+          return G.materialSrc(color === 'green' ? 'blue' : color, type);
+        }
+
+        const state = {
+          score: 0, lives: 3, paused: false, over: false,
+          targetType: 'feather',
+          collected: { green: false, blue: false, gold: false },
+          sets: 0, pieces: [], spawnAt: 0, last: 0,
+        };
+
+        function setHud() {
+          ui.scoreEl.textContent = String(state.score);
+          ui.heartsEl.textContent = G.hearts(state.lives);
+          ui.bestEl.textContent = String(G.loadHighScore(SCORE_KEY));
+        }
+
+        function refreshRecipe() {
+          for (const color of NEED) {
+            const slot = recipe.querySelector(`[data-color="${color}"]`);
+            const img = slot.querySelector('img');
+            img.src = materialSrcFor(color, state.targetType);
+            slot.classList.toggle('filled', state.collected[color]);
+          }
+        }
+
+        function newTarget() {
+          state.targetType = G.randomOf(G.TYPES);
+          state.collected = { green: false, blue: false, gold: false };
+          refreshRecipe();
+        }
+
+        function spawn() {
+          const r = ui.playfield.getBoundingClientRect();
+          const type = Math.random() < 0.55 ? state.targetType : G.randomOf(G.TYPES);
+          const color = Math.random() < 0.33 ? 'green' : Math.random() < 0.5 ? 'blue' : 'gold';
+          const fromLeft = Math.random() < 0.5;
+          const x = fromLeft ? r.left + 30 : r.right - 30;
+          const y = r.top + r.height * (0.25 + Math.random() * 0.35);
+          // Create piece manually to support 'green' color (no green asset directory)
+          const el = document.createElement('div');
+          el.className = `piece ${color}`;
+          el.dataset.color = color;
+          el.dataset.type = type;
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.pointerEvents = 'auto';
+          el.style.cursor = 'pointer';
+          const img = document.createElement('img');
+          img.src = materialSrcFor(color, type);
+          img.alt = `${color} ${type}`;
+          img.draggable = false;
+          el.appendChild(img);
+          ui.playfield.appendChild(el);
+          const gate = G.centerOf(document.getElementById('gate'));
+          const dx = gate.x - x; const dy = gate.y - y;
+          const len = Math.hypot(dx, dy) || 1;
+          const speed = 0.14 + state.sets * 0.01;
+          const piece = { el, color, type, x, y, vx: (dx / len) * speed, vy: (dy / len) * speed, alive: true };
+          el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); onTap(piece); });
+          state.pieces.push(piece);
+        }
+
+        function onTap(p) {
+          if (state.paused || state.over || !p.alive) return;
+          if (p.type !== state.targetType) { p.alive = false; p.el.remove(); hurt(); return; }
+          if (state.collected[p.color]) {
+            p.alive = false; p.el.classList.add('pop');
+            setTimeout(() => p.el.remove(), 240);
+            state.score += 4; setHud(); return;
+          }
+          p.alive = false; p.el.classList.add('pop');
+          setTimeout(() => p.el.remove(), 240);
+          state.collected[p.color] = true;
+          state.score += 18;
+          const { count, mult } = G.feedByColor(p.color === 'green' ? 'blue' : p.color);
+          G.gateFx('hit'); G.vibrate(10);
+          G.floatText(p.x, p.y, `+18`, '#34d399');
+          G.showComboBadge(comboBadge, count, mult);
+          refreshRecipe(); setHud();
+
+          if (NEED.every((c) => state.collected[c])) {
+            state.sets += 1; state.score += 50;
+            G.feedWing('ice', 1); G.feedWing('fire', 1);
+            G.vibrate(18); setHud();
+            G.showOverlay('Forge ready!', `Set complete - +50 - Sets ${state.sets}`);
+            setTimeout(() => { G.hideOverlay(); if (!state.over) newTarget(); }, 700);
+          }
+        }
+
+        function hurt() {
+          state.lives -= 1;
+          G.gateFx('hurt'); G.vibrate(22);
+          G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          setHud();
+          if (state.lives <= 0) { state.over = true; G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score); }
+        }
+
+        function loop(t) {
+          if (!state.last) state.last = t;
+          const dt = Math.min(32, t - state.last);
+          state.last = t;
+          if (!state.paused && !state.over) {
+            if (t >= state.spawnAt) { spawn(); state.spawnAt = t + Math.max(500, 950 - state.sets * 40 - state.score); }
+            const gate = G.centerOf(document.getElementById('gate'));
+            for (const p of state.pieces) {
+              if (!p.alive) continue;
+              p.x += p.vx * dt; p.y += p.vy * dt;
+              p.el.style.left = `${p.x}px`; p.el.style.top = `${p.y}px`;
+              if (G.dist(p.x, p.y, gate.x, gate.y) < 26) { p.alive = false; p.el.remove(); }
+            }
+            state.pieces = state.pieces.filter((p) => p.alive);
+          }
+          requestAnimationFrame(loop);
+        }
+
+        G.setupKeyboard({
+          pause: () => { state.paused = !state.paused; G.togglePauseBtn(ui.btnPause, state.paused); },
+          restart: reset,
+        });
+
+        function reset() {
+          state.score = 0; state.lives = 3; state.paused = false; state.over = false;
+          state.sets = 0; state.spawnAt = G.now() + 400; state.last = 0;
+          state.pieces.forEach((p) => p.el.remove()); state.pieces = [];
+          G.resetWings(); G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          G.hideOverlay(); newTarget(); setHud();
+        }
+
+        ui.btnRestart.addEventListener('click', reset);
+        ui.overlayRestart.addEventListener('click', reset);
+        ui.btnPause.addEventListener('click', () => {
+          state.paused = !state.paused;
+          G.togglePauseBtn(ui.btnPause, state.paused);
+        });
+
+        reset();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

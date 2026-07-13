@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>A - Merge Rush</title>
+    <link rel="stylesheet" href="./shared.css" />
+    <style>
+      .tray {
+        position: absolute;
+        left: 50%;
+        top: 58%;
+        transform: translate(-50%, -50%);
+        width: min(92vw, 360px);
+        height: min(42vh, 280px);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.22);
+        z-index: 6;
+      }
+      .overflow-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 6px;
+        border-radius: 0 0 18px 18px;
+        transition:
+          width 0.3s,
+          background 0.3s;
+        z-index: 7;
+      }
+      .overflow-bar.safe {
+        background: #34d399;
+      }
+      .overflow-bar.warn {
+        background: #facc15;
+      }
+      .overflow-bar.danger {
+        background: #ef4444;
+      }
+      .overflow-status {
+        position: absolute;
+        right: 10px;
+        bottom: 12px;
+        z-index: 9;
+        min-height: 24px;
+        padding: 5px 8px;
+        border: 1px solid rgba(250, 204, 21, 0.38);
+        border-radius: 999px;
+        background: rgba(5, 13, 26, 0.86);
+        color: #fde68a;
+        font:
+          800 0.66rem/1 Sora,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.02em;
+        pointer-events: none;
+      }
+      .overflow-status[data-state='safe'] {
+        color: #6ee7b7;
+        border-color: rgba(52, 211, 153, 0.38);
+      }
+      .overflow-status[data-state='critical'] {
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.58);
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./shared.js"></script>
+    <script>
+      (() => {
+        const G = BootGame;
+        const SCORE_KEY = 'vts_proto_merge_rush';
+        const NEXT = { blue: 'purple', purple: 'gold', gold: null };
+        const ui = G.mountShell({
+          modeId: 'Mode A',
+          modeKey: 'arcadeModeA',
+          title: 'Merge Rush',
+          titleKey: 'arcadeMergeRushTitle',
+          hint: 'Match same color+type to merge (bluepurplegold). Gold+Gold = JACKPOT!',
+          hintKey: 'arcadeMergeRushDesc',
+          scoreKey: SCORE_KEY,
+          controlScheme: 'merge',
+          showShield: false,
+        });
+        const comboBadge = G.createComboBadge();
+        document.body.appendChild(comboBadge);
+
+        const tray = document.createElement('div');
+        tray.className = 'tray';
+        tray.id = 'tray';
+        ui.stage.insertBefore(tray, ui.playfield);
+
+        const overflowBar = document.createElement('div');
+        overflowBar.className = 'overflow-bar safe';
+        overflowBar.id = 'overflowBar';
+        overflowBar.setAttribute('role', 'progressbar');
+        overflowBar.setAttribute('aria-valuemin', '0');
+        overflowBar.setAttribute('aria-valuemax', '10');
+        tray.appendChild(overflowBar);
+
+        const overflowStatus = document.createElement('div');
+        overflowStatus.className = 'overflow-status';
+        overflowStatus.id = 'overflowStatus';
+        overflowStatus.setAttribute('role', 'status');
+        tray.appendChild(overflowStatus);
+
+        const state = {
+          score: 0,
+          paused: false,
+          over: false,
+          pieces: [],
+          selected: null,
+          spawnAt: 0,
+          last: 0,
+          maxPieces: 12,
+          overflowTimer: 0,
+          overflowActive: false,
+          overflowWarn: false,
+        };
+
+        function setHud() {
+          ui.scoreEl.textContent = String(state.score);
+          ui.bestEl.textContent = String(G.loadHighScore(SCORE_KEY));
+          document.getElementById('hearts').textContent = '';
+        }
+
+        function trayBox() {
+          return tray.getBoundingClientRect();
+        }
+
+        function updateOverflow() {
+          const n = state.pieces.length;
+          const bar = overflowBar;
+          const risk = n >= 10 ? 10 : n >= 7 ? n : 0;
+          bar.setAttribute('aria-valuenow', String(risk));
+          if (n >= 10) {
+            bar.className = 'overflow-bar danger';
+            bar.style.width = '100%';
+          } else if (n >= 7) {
+            bar.className = 'overflow-bar warn';
+            bar.style.width = `${((n - 6) / 4) * 100}%`;
+          } else {
+            bar.className = 'overflow-bar safe';
+            bar.style.width = '0%';
+          }
+          updateOverflowStatus();
+        }
+
+        function updateOverflowStatus() {
+          const copy = G.getCopy();
+          const n = state.pieces.length;
+          let stateName = 'safe';
+          let text = copy.overloadSafe;
+          if (state.paused) {
+            stateName = n >= 10 ? 'critical' : n >= 7 ? 'building' : 'safe';
+            text = copy.overloadPaused;
+          } else if (n >= 10) {
+            stateName = 'critical';
+            const seconds = Math.max(0, (3000 - state.overflowTimer) / 1000).toFixed(1);
+            text = copy.overloadCritical.replace('{seconds}', seconds);
+          } else if (n >= 7) {
+            stateName = 'building';
+            text = copy.overloadBuilding.replace('{count}', String(n));
+          }
+          overflowStatus.dataset.state = stateName;
+          if (overflowStatus.textContent !== text) overflowStatus.textContent = text;
+          overflowBar.setAttribute('aria-valuetext', text);
+        }
+
+        function spawn() {
+          if (state.pieces.length >= state.maxPieces) {
+            hurt();
+            const old = state.pieces.shift();
+            old?.el.remove();
+            return;
+          }
+          const box = trayBox();
+          const color = Math.random() < 0.15 ? 'purple' : Math.random() < 0.55 ? 'blue' : 'gold';
+          const type = G.randomOf(G.TYPES);
+          const x = box.left + 28 + Math.random() * (box.width - 56);
+          const y = box.top + 28 + Math.random() * (box.height - 56);
+          const el = G.createPieceEl({ color, type, x, y, interactive: true });
+          el.style.pointerEvents = 'auto';
+          ui.playfield.appendChild(el);
+          const piece = { el, color, type, x, y, id: Math.random().toString(36).slice(2) };
+          el.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTap(piece);
+          });
+          state.pieces.push(piece);
+          updateOverflow();
+        }
+
+        function removePiece(p) {
+          p.el.remove();
+          state.pieces = state.pieces.filter((x) => x !== p);
+          if (state.selected === p) state.selected = null;
+          updateOverflow();
+          state.overflowTimer = 0;
+          state.overflowActive = false;
+        }
+
+        function onTap(p) {
+          if (state.paused || state.over) return;
+          if (!state.selected) {
+            state.selected = p;
+            p.el.classList.add('selected');
+            return;
+          }
+          if (state.selected === p) {
+            p.el.classList.remove('selected');
+            state.selected = null;
+            return;
+          }
+          const a = state.selected;
+          a.el.classList.remove('selected');
+          const match = a.type === p.type && a.color === p.color;
+          if (!match) {
+            G.vibrate(15);
+            state.selected = p;
+            p.el.classList.add('selected');
+            state.score = Math.max(0, state.score - 2);
+            setHud();
+            return;
+          }
+
+          const next = NEXT[a.color];
+          const mx = (a.x + p.x) / 2;
+          const my = (a.y + p.y) / 2;
+          removePiece(a);
+          removePiece(p);
+          state.selected = null;
+          G.gateFx('hit');
+          const { count, mult } = G.feedByColor(a.color);
+
+          if (!next) {
+            state.score += 80;
+            G.floatText(mx, my, ` JACKPOT +80 `, '#f5c451');
+            G.vibrate(20);
+          } else {
+            const pts = next === 'purple' ? 15 : 35;
+            state.score += pts;
+            G.floatText(mx, my, `MERGE +${pts}`, '#7dd3fc');
+            const el = G.createPieceEl({
+              color: next,
+              type: a.type,
+              x: mx,
+              y: my,
+              interactive: true,
+            });
+            el.style.pointerEvents = 'auto';
+            ui.playfield.appendChild(el);
+            const np = { el, color: next, type: a.type, x: mx, y: my };
+            el.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onTap(np);
+            });
+            state.pieces.push(np);
+            G.vibrate(10);
+          }
+          G.showComboBadge(comboBadge, count, mult);
+          setHud();
+        }
+
+        function hurt() {
+          G.gateFx('hurt');
+          G.vibrate(25);
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
+        }
+
+        function endGame() {
+          state.over = true;
+          G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score);
+        }
+
+        function loop(t) {
+          if (!state.last) state.last = t;
+          const elapsed = Math.max(0, t - state.last);
+          const dt = Math.min(32, t - state.last);
+          void dt;
+          state.last = t;
+          if (!state.paused && !state.over) {
+            if (t >= state.spawnAt) {
+              spawn();
+              state.spawnAt = t + Math.max(600, 1500 - state.score * 5);
+            }
+            const n = state.pieces.length;
+            if (n >= 10) {
+              state.overflowActive = true;
+              state.overflowTimer += elapsed;
+              if (state.overflowTimer >= 3000) {
+                endGame();
+              }
+            } else {
+              state.overflowTimer = 0;
+              state.overflowActive = false;
+            }
+          }
+          updateOverflowStatus();
+          requestAnimationFrame(loop);
+        }
+
+        G.setupKeyboard({
+          pause: () => {
+            state.paused = !state.paused;
+            G.togglePauseBtn(ui.btnPause, state.paused);
+          },
+          restart: reset,
+        });
+
+        function reset() {
+          state.score = 0;
+          state.paused = false;
+          state.over = false;
+          state.last = 0;
+          state.selected = null;
+          state.spawnAt = G.now() + 300;
+          state.overflowTimer = 0;
+          state.overflowActive = false;
+          state.pieces.forEach((p) => p.el.remove());
+          state.pieces = [];
+          G.resetWings();
+          G.resetCombo();
+          G.showComboBadge(comboBadge, 0, 1);
+          G.hideOverlay();
+          setHud();
+          updateOverflow();
+          for (let i = 0; i < 4; i++) spawn();
+        }
+
+        ui.btnRestart.addEventListener('click', reset);
+        ui.overlayRestart.addEventListener('click', reset);
+        ui.btnPause.addEventListener('click', () => {
+          state.paused = !state.paused;
+          G.togglePauseBtn(ui.btnPause, state.paused);
+        });
+
+        reset();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

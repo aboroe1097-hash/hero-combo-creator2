@@ -1,129 +1,300 @@
 import { escapeHtml } from './utils.js';
-import { ENABLE_RESEARCH_FEATURE, activeTechSeasons, techSearchQuery, db, setActiveTechSeasons, setTechSearchQuery, getSourceCreditText, TechseasonColors, TECH_SEASON_ORDER, researchSection } from './state.js';
+import {
+  ENABLE_RESEARCH_FEATURE,
+  activeTechSeasons,
+  techSearchQuery,
+  db,
+  setActiveTechSeasons,
+  setTechSearchQuery,
+  getSourceCreditText,
+  TechseasonColors,
+  TECH_SEASON_ORDER,
+  researchSection,
+} from './state.js';
 // Extracted Research Calculator Module
 import { techDatabase } from './tech-db.js?v=20260708_101500';
-import { renderTechNodeIconSvg, resolveTechNodeIcon } from './research-node-icons.js';
-import { describeNodeBuffProgress, summarizeTechBuffs } from './research-buffs.js';
+import { RESEARCH_GAME_LAYOUTS } from './research-game-layouts.js';
+import { resolveResearchNodeArt } from './research-game-art.js';
+import {
+  describeNodeBuffProgress,
+  getResearchBuffTone,
+  summarizeTechBuffs,
+} from './research-buffs.js';
 import { appT } from './utils.js';
+import '../css/research-v14.css';
 
 const RESEARCH_PROGRESS_KEY = 'vts_research_v1';
+const RESEARCH_COLLAPSED_SEASONS_KEY = 'vts_research_collapsed_seasons_v1';
+const RESEARCH_EXPANDED_SEASONS_KEY = 'vts_research_expanded_seasons_v1';
 let researchProgressCache = null;
+let collapsedResearchSeasonsCache = null;
+let expandedResearchSeasonsCache = null;
+let researchCalculatorReturnFocus = null;
+let researchCalculatorKeyHandler = null;
+
+function getResearchScrollBehavior() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+}
 
 function getResearchProgress() {
-    if (researchProgressCache) return researchProgressCache;
-    try {
-        const parsed = JSON.parse(localStorage.getItem(RESEARCH_PROGRESS_KEY) || '{}');
-        researchProgressCache = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        researchProgressCache = {};
-    }
-    return researchProgressCache;
+  if (researchProgressCache) return researchProgressCache;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RESEARCH_PROGRESS_KEY) || '{}');
+    researchProgressCache =
+      parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    researchProgressCache = {};
+  }
+  return researchProgressCache;
 }
 
 function researchProgressId(techId, nodeId) {
-    return `${techId}:${nodeId}`;
+  return `${techId}:${nodeId}`;
 }
 
 function getStoredNodeLevel(techId, nodeId) {
-    const progress = getResearchProgress();
-    const stored = Number(progress[researchProgressId(techId, nodeId)]);
-    if (Number.isFinite(stored) && stored > 0) return stored;
+  const progress = getResearchProgress();
+  const stored = Number(progress[researchProgressId(techId, nodeId)]);
+  if (Number.isFinite(stored) && stored > 0) return stored;
 
-    const legacyKey = `tech_${techId}_${nodeId}`;
-    const legacy = parseInt(localStorage.getItem(legacyKey), 10) || 0;
-    if (legacy > 0) setStoredNodeLevel(techId, nodeId, legacy);
-    try { localStorage.removeItem(legacyKey); } catch {}
-    return legacy;
+  const legacyKey = `tech_${techId}_${nodeId}`;
+  const legacy = parseInt(localStorage.getItem(legacyKey), 10) || 0;
+  if (legacy > 0) setStoredNodeLevel(techId, nodeId, legacy);
+  try {
+    localStorage.removeItem(legacyKey);
+  } catch {}
+  return legacy;
 }
 
-function setStoredNodeLevel(techId, nodeId, level) {
-    const progress = getResearchProgress();
+function setStoredNodeLevels(updates) {
+  const progress = getResearchProgress();
+  const legacyKeys = [];
+  for (const { techId, nodeId, level } of updates) {
     const key = researchProgressId(techId, nodeId);
     const safeLevel = Math.max(0, Number(level) || 0);
     if (safeLevel > 0) progress[key] = safeLevel;
     else delete progress[key];
-    try {
-        localStorage.setItem(RESEARCH_PROGRESS_KEY, JSON.stringify(progress));
-        localStorage.removeItem(`tech_${techId}_${nodeId}`);
-    } catch {}
+    legacyKeys.push(`tech_${techId}_${nodeId}`);
+  }
+  try {
+    localStorage.setItem(RESEARCH_PROGRESS_KEY, JSON.stringify(progress));
+    legacyKeys.forEach((key) => localStorage.removeItem(key));
+  } catch {}
+}
+
+function setStoredNodeLevel(techId, nodeId, level) {
+  setStoredNodeLevels([{ techId, nodeId, level }]);
+}
+
+function getCollapsedResearchSeasons() {
+  if (collapsedResearchSeasonsCache) return collapsedResearchSeasonsCache;
+  try {
+    const stored =
+      localStorage.getItem(RESEARCH_COLLAPSED_SEASONS_KEY) ||
+      sessionStorage.getItem(RESEARCH_COLLAPSED_SEASONS_KEY) ||
+      '[]';
+    const parsed = JSON.parse(stored);
+    collapsedResearchSeasonsCache = new Set(
+      Array.isArray(parsed) ? parsed.filter((season) => TECH_SEASON_ORDER.includes(season)) : []
+    );
+  } catch {
+    collapsedResearchSeasonsCache = new Set();
+  }
+  return collapsedResearchSeasonsCache;
+}
+
+function getExpandedResearchSeasons() {
+  if (expandedResearchSeasonsCache) return expandedResearchSeasonsCache;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RESEARCH_EXPANDED_SEASONS_KEY) || '[]');
+    expandedResearchSeasonsCache = new Set(
+      Array.isArray(parsed) ? parsed.filter((season) => TECH_SEASON_ORDER.includes(season)) : []
+    );
+  } catch {
+    expandedResearchSeasonsCache = new Set();
+  }
+  return expandedResearchSeasonsCache;
+}
+
+function persistResearchSeasonVisibility() {
+  try {
+    localStorage.setItem(
+      RESEARCH_COLLAPSED_SEASONS_KEY,
+      JSON.stringify(Array.from(getCollapsedResearchSeasons()))
+    );
+    localStorage.setItem(
+      RESEARCH_EXPANDED_SEASONS_KEY,
+      JSON.stringify(Array.from(getExpandedResearchSeasons()))
+    );
+    sessionStorage.removeItem(RESEARCH_COLLAPSED_SEASONS_KEY);
+  } catch {}
+}
+
+function isResearchSeasonCollapsed(season) {
+  if (getExpandedResearchSeasons().has(season)) return false;
+  if (getCollapsedResearchSeasons().has(season)) return true;
+  return isResearchSeasonComplete(season);
+}
+
+function setResearchSeasonCollapsed(season, collapsed) {
+  const collapsedSeasons = getCollapsedResearchSeasons();
+  const expandedSeasons = getExpandedResearchSeasons();
+  if (collapsed) {
+    collapsedSeasons.add(season);
+    expandedSeasons.delete(season);
+  } else {
+    collapsedSeasons.delete(season);
+    expandedSeasons.add(season);
+  }
+  persistResearchSeasonVisibility();
 }
 
 function getNodeLevelMedals(node, levelIndex) {
-    const genericCost = (node.costs && node.costs[levelIndex]) || 0;
-    const wbCost = (node.warBadgeCosts && node.warBadgeCosts[levelIndex])
-        || (node.wisdomCosts && node.wisdomCosts[levelIndex])
-        || (node.wb_costs && node.wb_costs[levelIndex]) || 0;
-    const cmCost = (node.courageCosts && node.courageCosts[levelIndex])
-        || (node.cm_costs && node.cm_costs[levelIndex]) || 0;
+  const genericCost = (node.costs && node.costs[levelIndex]) || 0;
+  const wbCost =
+    (node.warBadgeCosts && node.warBadgeCosts[levelIndex]) ||
+    (node.wisdomCosts && node.wisdomCosts[levelIndex]) ||
+    (node.wb_costs && node.wb_costs[levelIndex]) ||
+    0;
+  const cmCost =
+    (node.courageCosts && node.courageCosts[levelIndex]) ||
+    (node.cm_costs && node.cm_costs[levelIndex]) ||
+    0;
 
-    let wb = 0;
-    let cm = 0;
-    if (node.costType === 'Dual') {
-        wb = wbCost > 0 ? wbCost : genericCost;
-        cm = cmCost;
-    } else if (node.costType === 'Courage') {
-        cm = genericCost > 0 ? genericCost : cmCost;
-    } else if (node.costType === 'Wisdom' || node.costType === 'War Badge' || node.costType === 'War Badges') {
-        wb = genericCost > 0 ? genericCost : wbCost;
-    }
-    return { wb, cm };
+  let wb = 0;
+  let cm = 0;
+  if (node.costType === 'Dual') {
+    wb = wbCost > 0 ? wbCost : genericCost;
+    cm = cmCost;
+  } else if (node.costType === 'Courage') {
+    cm = genericCost > 0 ? genericCost : cmCost;
+  } else if (
+    node.costType === 'Wisdom' ||
+    node.costType === 'War Badge' ||
+    node.costType === 'War Badges'
+  ) {
+    wb = genericCost > 0 ? genericCost : wbCost;
+  }
+  return { wb, cm };
 }
 
 function getTechMedalTotals(tech) {
-    let wbMax = 0;
-    let wbCurrent = 0;
-    let cmMax = 0;
-    let cmCurrent = 0;
-    let levelsMax = 0;
-    let levelsCurrent = 0;
+  let wbMax = 0;
+  let wbCurrent = 0;
+  let cmMax = 0;
+  let cmCurrent = 0;
+  let levelsMax = 0;
+  let levelsCurrent = 0;
 
-    tech.nodes.forEach((node) => {
-        const savedLevel = getStoredNodeLevel(tech.id, node.id);
-        levelsMax += node.maxLevel;
-        levelsCurrent += savedLevel;
-        for (let i = 0; i < node.maxLevel; i++) {
-            const { wb, cm } = getNodeLevelMedals(node, i);
-            wbMax += wb;
-            cmMax += cm;
-            if (i < savedLevel) {
-                wbCurrent += wb;
-                cmCurrent += cm;
-            }
-        }
-    });
+  tech.nodes.forEach((node) => {
+    const savedLevel = getStoredNodeLevel(tech.id, node.id);
+    levelsMax += node.maxLevel;
+    levelsCurrent += savedLevel;
+    for (let i = 0; i < node.maxLevel; i++) {
+      const { wb, cm } = getNodeLevelMedals(node, i);
+      wbMax += wb;
+      cmMax += cm;
+      if (i < savedLevel) {
+        wbCurrent += wb;
+        cmCurrent += cm;
+      }
+    }
+  });
 
-    const medalMax = wbMax + cmMax;
-    const medalCurrent = wbCurrent + cmCurrent;
-    const pct = medalMax > 0
-        ? (medalCurrent / medalMax) * 100
-        : (levelsMax > 0 ? (levelsCurrent / levelsMax) * 100 : 0);
+  const medalMax = wbMax + cmMax;
+  const medalCurrent = wbCurrent + cmCurrent;
+  const pct =
+    medalMax > 0
+      ? (medalCurrent / medalMax) * 100
+      : levelsMax > 0
+        ? (levelsCurrent / levelsMax) * 100
+        : 0;
 
-    return {
-        wbMax, wbCurrent, cmMax, cmCurrent,
-        medalMax, medalCurrent,
-        pct,
-        remainingWb: wbMax - wbCurrent,
-        remainingCm: cmMax - cmCurrent,
-    };
+  return {
+    wbMax,
+    wbCurrent,
+    cmMax,
+    cmCurrent,
+    medalMax,
+    medalCurrent,
+    pct,
+    remainingWb: wbMax - wbCurrent,
+    remainingCm: cmMax - cmCurrent,
+  };
+}
+
+function isTechComplete(tech) {
+  return (
+    tech.nodes.length > 0 &&
+    tech.nodes.every((node) => getStoredNodeLevel(tech.id, node.id) >= node.maxLevel)
+  );
+}
+
+function getResearchSeasonTechs(season) {
+  return techDatabase.filter((tech) => tech.season === season);
+}
+
+function isResearchSeasonComplete(season) {
+  const seasonTechs = getResearchSeasonTechs(season);
+  return seasonTechs.length > 0 && seasonTechs.every(isTechComplete);
+}
+
+function restoreResearchSeasonActionFocus(season, action, shouldRestore) {
+  if (!shouldRestore) return;
+  const button = Array.from(document.querySelectorAll('[data-research-season-action]')).find(
+    (candidate) =>
+      candidate.dataset.season === season && candidate.dataset.researchSeasonAction === action
+  );
+  button?.focus({ preventScroll: true });
+}
+
+function toggleResearchSeasonCollapse(event, season) {
+  event.stopPropagation();
+  const restoreFocus = document.activeElement === event.currentTarget;
+  const isCollapsed = isResearchSeasonCollapsed(season);
+  setResearchSeasonCollapsed(season, !isCollapsed);
+  renderTechList();
+  restoreResearchSeasonActionFocus(season, 'collapse', restoreFocus);
+}
+
+function toggleResearchSeasonMax(event, season) {
+  event.stopPropagation();
+  const restoreFocus = document.activeElement === event.currentTarget;
+  const seasonTechs = getResearchSeasonTechs(season);
+  const wasComplete = seasonTechs.length > 0 && seasonTechs.every(isTechComplete);
+  const updates = seasonTechs.flatMap((tech) =>
+    tech.nodes.map((node) => ({
+      techId: tech.id,
+      nodeId: node.id,
+      level: wasComplete ? 0 : node.maxLevel,
+    }))
+  );
+  setStoredNodeLevels(updates);
+  setResearchSeasonCollapsed(season, !wasComplete);
+  renderTechList();
+  restoreResearchSeasonActionFocus(season, 'max', restoreFocus);
 }
 
 function renderNodeBuffProgress(summary, compact = false) {
-    const statusClass = `research-buff-chip--${summary.status}`;
-    const detail = escapeHtml(getBuffProgressTitle(summary));
-    if (compact) {
-        const text = summary.status === 'known'
-            ? summary.effects.map((effect) => `${effect.currentLabel}/${effect.maxLabel} ${effect.label}`).join(' + ')
-            : summary.status === 'unlock'
-                ? (summary.currentLabel === 'Unlocked' ? appT('researchBuffUnlocked') : appT('researchBuffUnlockShort'))
-                : appT('researchBuffUnknownShort');
-        return `<span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(text)}</span>`;
-    }
+  const statusClass = `research-buff-chip--${summary.status}`;
+  const detail = escapeHtml(getBuffProgressTitle(summary));
+  if (compact) {
+    const text =
+      summary.status === 'known'
+        ? summary.effects
+            .map((effect) => `${effect.currentLabel}/${effect.maxLabel} ${effect.label}`)
+            .join(' + ')
+        : summary.status === 'unlock'
+          ? summary.currentLabel === 'Unlocked'
+            ? appT('researchBuffUnlocked')
+            : appT('researchBuffUnlockShort')
+          : appT('researchBuffUnknownShort');
+    return `<span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(text)}</span>`;
+  }
 
-    if (summary.status === 'known') {
-        const label = summary.effectLabels.join(' + ');
-        return `
+  if (summary.status === 'known') {
+    const label = summary.effectLabels.join(' + ');
+    return `
             <span class="research-buff-chip ${statusClass}" title="${detail}">
                 <span class="research-buff-chip-value">${escapeHtml(summary.currentLabel)}</span>
                 <span class="research-buff-chip-max">/ ${escapeHtml(summary.maxLabel)}</span>
@@ -131,140 +302,174 @@ function renderNodeBuffProgress(summary, compact = false) {
             </span>
             <span class="research-buff-detail">${escapeHtml(appT('researchBuffNodeDetail', { remaining: summary.remainingLabel, perLevel: summary.perLevelLabel }))}</span>
         `;
-    }
+  }
 
-    const statusLabel = summary.status === 'missing'
-        ? appT('researchBuffValuesNeedData')
-        : summary.currentLabel === 'Unlocked'
-            ? appT('researchBuffUnlocked')
-            : appT('researchBuffLocked');
-    return `
+  const statusLabel =
+    summary.status === 'missing'
+      ? appT('researchBuffValuesNeedData')
+      : summary.currentLabel === 'Unlocked'
+        ? appT('researchBuffUnlocked')
+        : appT('researchBuffLocked');
+  return `
         <span class="research-buff-chip ${statusClass}" title="${detail}">${escapeHtml(statusLabel)}</span>
         <span class="research-buff-detail">${detail}</span>
     `;
 }
 
 function getBuffProgressTitle(summary) {
-    if (summary.status === 'known') {
-        return appT('researchBuffKnownDetailTitle', {
-            current: summary.currentWithLabel,
-            max: summary.maxWithLabel,
-            remaining: summary.remainingLabel,
-            perLevel: summary.perLevelLabel,
-        });
-    }
-    if (summary.status === 'unlock') {
-        return appT('researchBuffUnlockDetailTitle');
-    }
-    return appT('researchBuffMissingDetailTitle');
+  if (summary.status === 'known') {
+    return appT('researchBuffKnownDetailTitle', {
+      current: summary.currentWithLabel,
+      max: summary.maxWithLabel,
+      remaining: summary.remainingLabel,
+      perLevel: summary.perLevelLabel,
+    });
+  }
+  if (summary.status === 'unlock') {
+    return appT('researchBuffUnlockDetailTitle');
+  }
+  return appT('researchBuffMissingDetailTitle');
 }
 
 function getTechBuffSummary(tech) {
-    return summarizeTechBuffs(tech, {
-        getLevel: (node) => getStoredNodeLevel(tech.id, node.id),
-    });
+  return summarizeTechBuffs(tech, {
+    getLevel: (node) => getStoredNodeLevel(tech.id, node.id),
+  });
 }
 
 function formatResearchCount(count, singularKey, pluralKey) {
-    return appT(count === 1 ? singularKey : pluralKey, { n: count });
+  return appT(count === 1 ? singularKey : pluralKey, { n: count });
 }
 
 function renderResearchCardBuffPreview(tech) {
-    const summary = getTechBuffSummary(tech);
-    const topBuffs = summary.known.slice(0, 3);
-    if (!topBuffs.length) {
-        if (summary.missing.length) {
-            return `<div class="research-card-buff-preview research-card-buff-preview--missing">${escapeHtml(appT('researchBuffValuesNeedData'))}</div>`;
-        }
-        if (summary.unlocks.length) {
-            return `<div class="research-card-buff-preview research-card-buff-preview--unlock">${escapeHtml(appT('researchBuffUnlockCount', { n: summary.unlocks.length }))}</div>`;
-        }
-        return '';
+  const summary = getTechBuffSummary(tech);
+  const topBuffs = summary.known.slice(0, 3);
+  if (!topBuffs.length) {
+    if (summary.missing.length) {
+      return `<div class="research-card-buff-preview research-card-buff-preview--missing">${escapeHtml(appT('researchBuffValuesNeedData'))}</div>`;
     }
+    if (summary.unlocks.length) {
+      return `<div class="research-card-buff-preview research-card-buff-preview--unlock">${escapeHtml(appT('researchBuffUnlockCount', { n: summary.unlocks.length }))}</div>`;
+    }
+    return '';
+  }
 
-    const moreCount = Math.max(0, summary.known.length - topBuffs.length);
-    return `
+  const moreCount = Math.max(0, summary.known.length - topBuffs.length);
+  return `
         <div class="research-card-buff-preview" aria-label="${escapeHtml(appT('researchBuffTopBuffsAria'))}">
-            ${topBuffs.map((buff) => `
+            ${topBuffs
+              .map(
+                (buff) => `
                 <span class="research-card-buff-pill" title="${escapeHtml(buff.nodes.slice(0, 4).join(', '))}">
                     <strong>${escapeHtml(buff.maxLabel)}</strong> ${escapeHtml(buff.label)}
                 </span>
-            `).join('')}
+            `
+              )
+              .join('')}
             ${moreCount > 0 ? `<span class="research-card-buff-more">${escapeHtml(appT('researchBuffMore', { n: moreCount }))}</span>` : ''}
         </div>
     `;
 }
 
 let researchBuffSummaryKeyHandler = null;
+let researchBuffSummaryReturnFocus = null;
 
-function closeResearchBuffSummaryModal() {
-    document.getElementById('researchBuffSummaryModal')?.remove();
-    if (researchBuffSummaryKeyHandler) {
-        document.removeEventListener('keydown', researchBuffSummaryKeyHandler);
-        researchBuffSummaryKeyHandler = null;
-    }
+function closeResearchBuffSummaryModal({ restoreFocus = true } = {}) {
+  document.getElementById('researchBuffSummaryModal')?.remove();
+  if (researchBuffSummaryKeyHandler) {
+    document.removeEventListener('keydown', researchBuffSummaryKeyHandler);
+    researchBuffSummaryKeyHandler = null;
+  }
+  const returnFocus = researchBuffSummaryReturnFocus;
+  researchBuffSummaryReturnFocus = null;
+  if (restoreFocus && returnFocus?.isConnected) {
+    window.requestAnimationFrame(() => returnFocus.focus());
+  }
 }
 
-function renderResearchBuffSummaryModal(tech) {
-    closeResearchBuffSummaryModal();
-    const summary = getTechBuffSummary(tech);
-    const sColor = TechseasonColors[tech.season] || '#38bdf8';
-    const knownHtml = summary.known.length
-        ? summary.known.map((buff) => {
-            const pct = buff.maxValue
-                ? Math.min(100, Math.max(0, Math.abs(buff.currentValue / buff.maxValue) * 100))
-                : 0;
-            return `
-                <article class="research-buff-summary-item" title="${escapeHtml(buff.nodes.join(', '))}">
+function renderResearchBuffSummaryModal(tech, trigger = null) {
+  closeResearchBuffSummaryModal({ restoreFocus: false });
+  researchBuffSummaryReturnFocus =
+    trigger instanceof HTMLElement
+      ? trigger
+      : document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+  const summary = getTechBuffSummary(tech);
+  const sColor = TechseasonColors[tech.season] || '#38bdf8';
+  const knownHtml = summary.known.length
+    ? summary.known
+        .map((buff) => {
+          const pct = buff.maxValue
+            ? Math.min(100, Math.max(0, Math.abs(buff.currentValue / buff.maxValue) * 100))
+            : 0;
+          return `
+                <article class="research-buff-summary-item" data-buff-tone="${getResearchBuffTone(buff.label)}" title="${escapeHtml(buff.nodes.join(', '))}">
                     <div class="research-buff-summary-meter" style="--buff-pct: ${pct.toFixed(1)}%"></div>
                     <span class="research-buff-summary-value">${escapeHtml(buff.maxLabel)}</span>
                     <span class="research-buff-summary-label">${escapeHtml(buff.label)}</span>
-                    <span class="research-buff-summary-meta">${escapeHtml(appT('researchBuffSummaryItemMeta', {
+                    <span class="research-buff-summary-meta">${escapeHtml(
+                      appT('researchBuffSummaryItemMeta', {
                         current: buff.currentLabel,
                         remaining: buff.remainingLabel,
                         nodes: buff.nodeCount,
-                        nodeLabel: formatResearchCount(buff.nodeCount, 'researchBuffNodeSingular', 'researchBuffNodePlural'),
-                    }))}</span>
+                        nodeLabel: formatResearchCount(
+                          buff.nodeCount,
+                          'researchBuffNodeSingular',
+                          'researchBuffNodePlural'
+                        ),
+                      })
+                    )}</span>
                 </article>
             `;
-        }).join('')
-        : `<p class="research-buff-summary-empty">${escapeHtml(appT('researchBuffSummaryEmpty'))}</p>`;
-    const unlockHtml = summary.unlocks.length
-        ? `<div class="research-buff-summary-section">
+        })
+        .join('')
+    : `<p class="research-buff-summary-empty">${escapeHtml(appT('researchBuffSummaryEmpty'))}</p>`;
+  const unlockHtml = summary.unlocks.length
+    ? `<div class="research-buff-summary-section">
             <h4>${escapeHtml(appT('researchBuffUnlocksTitle'))}</h4>
             <div class="research-buff-summary-tags">
-                ${summary.unlocks.slice(0, 12).map((item) => `<span>${escapeHtml(item.name)}</span>`).join('')}
+                ${summary.unlocks
+                  .slice(0, 12)
+                  .map((item) => `<span>${escapeHtml(item.name)}</span>`)
+                  .join('')}
                 ${summary.unlocks.length > 12 ? `<span>${escapeHtml(appT('researchBuffMore', { n: summary.unlocks.length - 12 }))}</span>` : ''}
             </div>
         </div>`
-        : '';
-    const missingHtml = summary.missing.length
-        ? `<div class="research-buff-summary-section research-buff-summary-section--missing">
+    : '';
+  const missingHtml = summary.missing.length
+    ? `<div class="research-buff-summary-section research-buff-summary-section--missing">
             <h4>${escapeHtml(appT('researchBuffNeedValuesTitle'))}</h4>
             <div class="research-buff-summary-tags">
-                ${summary.missing.slice(0, 12).map((item) => `<span>${escapeHtml(item.name)}</span>`).join('')}
+                ${summary.missing
+                  .slice(0, 12)
+                  .map((item) => `<span>${escapeHtml(item.name)}</span>`)
+                  .join('')}
                 ${summary.missing.length > 12 ? `<span>${escapeHtml(appT('researchBuffMore', { n: summary.missing.length - 12 }))}</span>` : ''}
             </div>
         </div>`
-        : '';
+    : '';
 
-    const modal = document.createElement('div');
-    modal.id = 'researchBuffSummaryModal';
-    modal.className = 'research-buff-summary-modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', appT('researchBuffSummaryDialogAria', { tech: tech.name }));
-    modal.innerHTML = `
-        <div class="research-buff-summary-card" style="--season-color: ${sColor}">
+  const modal = document.createElement('div');
+  modal.id = 'researchBuffSummaryModal';
+  modal.className = 'research-buff-summary-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'researchBuffSummaryTitle');
+  modal.setAttribute('aria-describedby', 'researchBuffSummaryMeta');
+  modal.innerHTML = `
+        <div class="research-buff-summary-card" role="document" style="--season-color: ${sColor}">
             <div class="research-buff-summary-head">
                 <div>
                     <span class="research-buff-summary-season">${escapeHtml(tech.season)}</span>
-                    <h3>${escapeHtml(appT('researchBuffSummaryTitle', { tech: tech.name }))}</h3>
-                    <p>${escapeHtml(appT('researchBuffSummaryMeta', {
+                    <h3 id="researchBuffSummaryTitle">${escapeHtml(appT('researchBuffSummaryTitle', { tech: tech.name }))}</h3>
+                    <p id="researchBuffSummaryMeta">${escapeHtml(
+                      appT('researchBuffSummaryMeta', {
                         buffs: summary.totals.known,
                         unlocks: summary.totals.unlocks,
                         missing: summary.totals.missing,
-                    }))}</p>
+                      })
+                    )}</p>
                 </div>
                 <button type="button" class="research-buff-summary-close" aria-label="${escapeHtml(appT('researchBuffCloseAria'))}">&times;</button>
             </div>
@@ -273,314 +478,422 @@ function renderResearchBuffSummaryModal(tech) {
             ${missingHtml}
         </div>
     `;
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeResearchBuffSummaryModal();
-    });
-    modal.querySelector('.research-buff-summary-close')?.addEventListener('click', closeResearchBuffSummaryModal);
-    researchBuffSummaryKeyHandler = (e) => {
-        if (e.key === 'Escape') closeResearchBuffSummaryModal();
-    };
-    document.addEventListener('keydown', researchBuffSummaryKeyHandler);
-    document.body.appendChild(modal);
-    modal.querySelector('.research-buff-summary-close')?.focus();
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeResearchBuffSummaryModal();
+  });
+  modal
+    .querySelector('.research-buff-summary-close')
+    ?.addEventListener('click', closeResearchBuffSummaryModal);
+  researchBuffSummaryKeyHandler = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeResearchBuffSummaryModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(
+      modal.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((element) => !element.hidden);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener('keydown', researchBuffSummaryKeyHandler);
+  document.body.appendChild(modal);
+  modal.querySelector('.research-buff-summary-close')?.focus();
 }
 
 function syncTechSeasonButtons() {
-    document.querySelectorAll('.tech-season-btn').forEach((btn) => {
-        const season = btn.dataset.season;
-        const isActive = activeTechSeasons.has(season);
-        btn.classList.toggle('active', isActive);
-        if (isActive) {
-            btn.style.setProperty('--sc', TechseasonColors[season] || '#38bdf8');
-        } else {
-            btn.style.removeProperty('--sc');
-        }
-    });
-    syncResearchQuickButtons();
+  document.querySelectorAll('.tech-season-btn').forEach((btn) => {
+    const season = btn.dataset.season;
+    const isActive = activeTechSeasons.has(season);
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    if (isActive) {
+      btn.style.setProperty('--sc', TechseasonColors[season] || '#38bdf8');
+    } else {
+      btn.style.removeProperty('--sc');
+    }
+  });
+  syncResearchQuickButtons();
 }
 
 function syncResearchQuickButtons() {
-    const allBtn = document.getElementById('techSeasonAllBtn');
-    const currentBtn = document.getElementById('techSeasonX1Btn');
-    const isAll = TECH_SEASON_ORDER.every((s) => activeTechSeasons.has(s));
-    const isX1Only = activeTechSeasons.size === 1 && activeTechSeasons.has('X1');
-    allBtn?.classList.toggle('active', isAll);
-    currentBtn?.classList.toggle('active', isX1Only);
+  const allBtn = document.getElementById('techSeasonAllBtn');
+  const currentBtn = document.getElementById('techSeasonX1Btn');
+  const isAll = TECH_SEASON_ORDER.every((s) => activeTechSeasons.has(s));
+  const isX1Only = activeTechSeasons.size === 1 && activeTechSeasons.has('X1');
+  allBtn?.classList.toggle('active', isAll);
+  currentBtn?.classList.toggle('active', isX1Only);
+  allBtn?.setAttribute('aria-pressed', String(isAll));
+  currentBtn?.setAttribute('aria-pressed', String(isX1Only));
 }
 
 function closeTechCalculator() {
-    const container = document.getElementById('techCalculatorContainer');
-    if (!container || container.classList.contains('hidden')) return;
-    container.classList.add('research-calculator--closing');
-    document.body.classList.remove('research-calculator-open');
-    window.setTimeout(() => {
-        container.classList.add('hidden');
-        container.classList.remove('research-calculator--closing');
-    }, 200);
+  const container = document.getElementById('techCalculatorContainer');
+  if (!container || container.classList.contains('hidden')) return;
+  container.classList.add('research-calculator--closing');
+  document.body.classList.remove('research-calculator-open');
+  if (researchCalculatorKeyHandler) {
+    document.removeEventListener('keydown', researchCalculatorKeyHandler);
+    researchCalculatorKeyHandler = null;
+  }
+  window.setTimeout(() => {
+    container.classList.add('hidden');
+    container.classList.remove('research-calculator--closing');
+    container.removeAttribute('aria-labelledby');
+    container.removeAttribute('aria-modal');
+    const returnFocus = researchCalculatorReturnFocus;
+    researchCalculatorReturnFocus = null;
+    if (returnFocus?.isConnected) returnFocus.focus();
+  }, 200);
+}
+
+function bindResearchCalculatorDialog(container) {
+  if (researchCalculatorKeyHandler) {
+    document.removeEventListener('keydown', researchCalculatorKeyHandler);
+  }
+  researchCalculatorKeyHandler = (event) => {
+    if (document.getElementById('researchBuffSummaryModal')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeTechCalculator();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(
+      container.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((element) => !element.hidden && element.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener('keydown', researchCalculatorKeyHandler);
 }
 
 function updateTechSeasons(seasons) {
-    setActiveTechSeasons(new Set(seasons));
-    syncTechSeasonButtons();
-    renderTechList();
-    closeTechCalculator();
+  setActiveTechSeasons(new Set(seasons));
+  syncTechSeasonButtons();
+  renderTechList();
+  closeTechCalculator();
 }
 
 function getFilteredTechTrees() {
-    const q = techSearchQuery.trim().toLowerCase();
-    return techDatabase
-        .filter((tech) => activeTechSeasons.has(tech.season))
-        .filter((tech) => {
-            if (!q) return true;
-            const hay = `${tech.name} ${tech.season} ${tech.unlockCondition} ${tech.primaryResource}`.toLowerCase();
-            return hay.includes(q);
-        })
-        .sort((a, b) => {
-            const si = TECH_SEASON_ORDER.indexOf(a.season) - TECH_SEASON_ORDER.indexOf(b.season);
-            if (si !== 0) return si;
-            const ar = a.default_pos?.row || 99;
-            const br = b.default_pos?.row || 99;
-            if (ar !== br) return ar - br;
-            return (a.default_pos?.col || 99) - (b.default_pos?.col || 99);
-        });
+  const q = techSearchQuery.trim().toLowerCase();
+  return techDatabase
+    .filter((tech) => activeTechSeasons.has(tech.season))
+    .filter((tech) => {
+      if (!q) return true;
+      const hay =
+        `${tech.name} ${tech.season} ${tech.unlockCondition} ${tech.primaryResource}`.toLowerCase();
+      return hay.includes(q);
+    })
+    .sort((a, b) => {
+      const si = TECH_SEASON_ORDER.indexOf(a.season) - TECH_SEASON_ORDER.indexOf(b.season);
+      if (si !== 0) return si;
+      const ar = a.default_pos?.row || 99;
+      const br = b.default_pos?.row || 99;
+      if (ar !== br) return ar - br;
+      return (a.default_pos?.col || 99) - (b.default_pos?.col || 99);
+    });
 }
 
 function initResearchCalculator() {
-    const researchSection = document.getElementById('researchSection');
-    if (!researchSection) return;
+  const researchSection = document.getElementById('researchSection');
+  if (!researchSection) return;
 
-    if (!ENABLE_RESEARCH_FEATURE) {
-        researchSection.innerHTML = `
+  if (!ENABLE_RESEARCH_FEATURE) {
+    researchSection.innerHTML = `
             <div class="research-construction-card">
                 <h2 class="research-construction-title">Under Construction</h2>
             </div>
         `;
-        return;
-    }
+    return;
+  }
 
-    const seasonBtns = document.querySelectorAll('.tech-season-btn');
-    if (!seasonBtns.length) return;
+  const seasonBtns = document.querySelectorAll('.tech-season-btn');
+  if (!seasonBtns.length) return;
 
-    syncTechSeasonButtons();
+  syncTechSeasonButtons();
 
-    seasonBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const season = btn.dataset.season;
-            if (activeTechSeasons.has(season)) {
-                if (activeTechSeasons.size > 1) activeTechSeasons.delete(season);
-            } else {
-                activeTechSeasons.add(season);
-            }
-            syncTechSeasonButtons();
-            renderTechList();
-            closeTechCalculator();
-        });
+  seasonBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const season = btn.dataset.season;
+      if (activeTechSeasons.has(season)) {
+        if (activeTechSeasons.size > 1) activeTechSeasons.delete(season);
+      } else {
+        activeTechSeasons.add(season);
+      }
+      syncTechSeasonButtons();
+      renderTechList();
+      closeTechCalculator();
     });
+  });
 
-    document.getElementById('techSeasonAllBtn')?.addEventListener('click', () => {
-        updateTechSeasons(TECH_SEASON_ORDER);
+  document.getElementById('techSeasonAllBtn')?.addEventListener('click', () => {
+    updateTechSeasons(TECH_SEASON_ORDER);
+  });
+
+  document.getElementById('techSeasonX1Btn')?.addEventListener('click', () => {
+    updateTechSeasons(['X1']);
+  });
+
+  const searchInput = document.getElementById('techSearchInput');
+  if (searchInput) {
+    let searchTimer;
+    searchInput.addEventListener('input', (e) => {
+      setTechSearchQuery(e.target.value);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => renderTechList(), 180);
     });
+  }
 
-    document.getElementById('techSeasonX1Btn')?.addEventListener('click', () => {
-        updateTechSeasons(['X1']);
-    });
-
-    const searchInput = document.getElementById('techSearchInput');
-    if (searchInput) {
-        let searchTimer;
-        searchInput.addEventListener('input', (e) => {
-            setTechSearchQuery(e.target.value);
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => renderTechList(), 180);
-        });
-    }
-
-    renderTechList();
+  renderTechList();
 }
 
-window.quickMaxTech = function(e, techId) {
-    e.stopPropagation();
-    const tech = techDatabase.find(t => t.id === techId);
-    if (!tech) return;
+function quickMaxTech(e, techId) {
+  e.stopPropagation();
+  const tech = techDatabase.find((t) => t.id === techId);
+  if (!tech) return;
 
-    tech.nodes.forEach(n => {
-        setStoredNodeLevel(tech.id, n.id, n.maxLevel);
-    });
+  const wasComplete = isTechComplete(tech);
+  const restoreFocus = document.activeElement === e.currentTarget;
 
-    updateGlobalSummary();
-    renderTechList();
+  setStoredNodeLevels(
+    tech.nodes.map((node) => ({
+      techId: tech.id,
+      nodeId: node.id,
+      level: wasComplete ? 0 : node.maxLevel,
+    }))
+  );
 
-    const btn = e.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="research-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> MAXED`;
-    btn.classList.add('research-card-max--done');
+  renderTechList();
 
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('research-card-max--done');
-    }, 1000);
+  const calcContainer = document.getElementById('techCalculatorContainer');
+  if (calcContainer && !calcContainer.classList.contains('hidden')) {
+    renderCalculator(tech);
+  }
 
-    const calcContainer = document.getElementById('techCalculatorContainer');
-    if (calcContainer && !calcContainer.classList.contains('hidden')) {
-        renderCalculator(tech);
+  const btn = Array.from(document.querySelectorAll('.research-card-max')).find(
+    (candidate) => candidate.dataset.techId === techId
+  );
+  if (restoreFocus) btn?.focus({ preventScroll: true });
+  if (!wasComplete && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    const card = btn?.closest('.research-tech-card');
+    if (card) {
+      card.classList.remove('research-tech-card--completion-pulse');
+      void card.offsetWidth;
+      card.classList.add('research-tech-card--completion-pulse');
+      window.setTimeout(() => card.classList.remove('research-tech-card--completion-pulse'), 720);
     }
-};
+  }
+}
 
 function renderTechList() {
-    const container = document.getElementById('techListContainer');
-    if (!container) return;
+  const container = document.getElementById('techListContainer');
+  if (!container) return;
 
-    container.classList.add('research-list--updating');
+  container.classList.add('research-list--updating');
 
-    if (!document.getElementById('dynamic-tech-grid-styles')) {
-        const style = document.createElement('style');
-        style.id = 'dynamic-tech-grid-styles';
-        style.innerHTML = `
-            @media (min-width: 1024px) {
-                .tech-card-pos { grid-row: var(--desk-row); grid-column: var(--desk-col); }
-            }
-        `;
-        document.head.appendChild(style);
+  const filteredTechs = getFilteredTechTrees();
+  updateGlobalSummary(filteredTechs);
+
+  const countEl = document.getElementById('techTreeCount');
+  if (countEl) {
+    countEl.textContent = appT('researchTreeCount', { n: filteredTechs.length });
+  }
+
+  container.innerHTML = '<div class="research-grid" id="techGridWrapper"></div>';
+  const wrapper = document.getElementById('techGridWrapper');
+
+  if (filteredTechs.length === 0) {
+    const emptyMsg = techSearchQuery.trim() ? appT('researchNoResults') : appT('researchNoData');
+    wrapper.innerHTML = `<p class="research-empty">${emptyMsg}</p>`;
+    requestAnimationFrame(() => container.classList.remove('research-list--updating'));
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  let lastSeason = null;
+  let currentSeasonGroup = null;
+  let cardIndex = 0;
+  const visibleSeasonCounts = filteredTechs.reduce((counts, tech) => {
+    counts.set(tech.season, (counts.get(tech.season) || 0) + 1);
+    return counts;
+  }, new Map());
+
+  filteredTechs.forEach((tech) => {
+    if (tech.season !== lastSeason) {
+      lastSeason = tech.season;
+      const seasonComplete = isResearchSeasonComplete(tech.season);
+      const isCollapsed = isResearchSeasonCollapsed(tech.season);
+      const seasonGroupId = `researchSeasonCards-${tech.season}`;
+      const seasonTreeCount = visibleSeasonCounts.get(tech.season) || 0;
+      const seasonTreeLabel = appT('researchTreeCount', { n: seasonTreeCount });
+      const collapseLabel = `${tech.season}: ${seasonTreeLabel}`;
+      const maxSeasonLabel = `${seasonComplete ? appT('researchResetAll') : appT('researchMaxAll')} · ${appT('researchSeasonLabel')} ${tech.season}`;
+      const header = document.createElement('div');
+      header.className = `research-season-header${seasonComplete ? ' research-season-header--complete' : ''}`;
+      header.dataset.season = tech.season;
+      header.dataset.complete = String(seasonComplete);
+      header.style.setProperty('--season-color', TechseasonColors[tech.season] || '#3b82f6');
+      header.innerHTML = `
+                <span class="research-season-chip">${escapeHtml(tech.season)}</span>
+                <span class="research-season-line"></span>
+                <span class="research-season-actions">
+                    <button type="button" class="research-season-collapse" data-research-season-action="collapse" data-season="${escapeHtml(tech.season)}" aria-expanded="${!isCollapsed}" aria-controls="${seasonGroupId}" aria-label="${escapeHtml(collapseLabel)}" title="${escapeHtml(collapseLabel)}">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m6 9 6 6 6-6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button type="button" class="research-season-max${seasonComplete ? ' research-season-max--done' : ''}" data-research-season-action="max" data-season="${escapeHtml(tech.season)}" aria-pressed="${seasonComplete}" aria-label="${escapeHtml(maxSeasonLabel)}" title="${escapeHtml(maxSeasonLabel)}">
+                        ${seasonComplete ? '<svg class="research-check-icon" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        <span>${escapeHtml(seasonComplete ? appT('researchResetAll') : appT('researchMaxAll'))}</span>
+                    </button>
+                </span>`;
+      header.querySelector('.research-season-collapse')?.addEventListener('click', (event) => {
+        toggleResearchSeasonCollapse(event, tech.season);
+      });
+      header.querySelector('.research-season-max')?.addEventListener('click', (event) => {
+        toggleResearchSeasonMax(event, tech.season);
+      });
+      fragment.appendChild(header);
+
+      currentSeasonGroup = document.createElement('div');
+      currentSeasonGroup.id = seasonGroupId;
+      currentSeasonGroup.className = 'research-season-card-group';
+      currentSeasonGroup.dataset.season = tech.season;
+      currentSeasonGroup.setAttribute('role', 'group');
+      currentSeasonGroup.setAttribute('aria-label', `${tech.season}: ${seasonTreeLabel}`);
+      currentSeasonGroup.hidden = isCollapsed;
+      fragment.appendChild(currentSeasonGroup);
     }
 
-    const filteredTechs = getFilteredTechTrees();
-    updateGlobalSummary(filteredTechs);
+    const sColor = TechseasonColors[tech.season] || '#3b82f6';
+    const totals = getTechMedalTotals(tech);
+    const isComplete = isTechComplete(tech);
+    const card = document.createElement('article');
+    card.className = `research-tech-card${isComplete ? ' research-tech-card--complete' : ''}`;
+    card.dataset.techId = tech.id;
+    card.dataset.complete = String(isComplete);
+    card.style.setProperty('--season-color', sColor);
+    card.style.setProperty('--hover-color', `${sColor}40`);
+    card.style.setProperty('--border-color', sColor);
+    card.style.setProperty('--card-delay', `${Math.min(cardIndex * 35, 280)}ms`);
+    cardIndex += 1;
 
-    const countEl = document.getElementById('techTreeCount');
-    if (countEl) {
-        countEl.textContent = appT('researchTreeCount', { n: filteredTechs.length });
-    }
+    const resourceLabel = tech.primaryResource || '—';
+    const progressPct = Math.min(100, Math.max(0, totals.pct));
+    const progressLabel = appT('researchProgress', { pct: progressPct.toFixed(0) });
+    const maxActionLabel = `${isComplete ? appT('researchClearLevel') : appT('researchMax')}: ${tech.name}`;
 
-    container.innerHTML = '<div class="research-grid" id="techGridWrapper"></div>';
-    const wrapper = document.getElementById('techGridWrapper');
-
-    if (filteredTechs.length === 0) {
-        const emptyMsg = techSearchQuery.trim()
-            ? appT('researchNoResults')
-            : appT('researchNoData');
-        wrapper.innerHTML = `<p class="research-empty">${emptyMsg}</p>`;
-        requestAnimationFrame(() => container.classList.remove('research-list--updating'));
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    let lastSeason = null;
-    const showSeasonHeaders = activeTechSeasons.size > 1;
-    let cardIndex = 0;
-
-    filteredTechs.forEach((tech) => {
-        if (showSeasonHeaders && tech.season !== lastSeason) {
-            lastSeason = tech.season;
-            const header = document.createElement('div');
-            header.className = 'research-season-header';
-            header.style.setProperty('--season-color', TechseasonColors[tech.season] || '#3b82f6');
-            header.innerHTML = `<span class="research-season-chip">${tech.season}</span><span class="research-season-line"></span>`;
-            fragment.appendChild(header);
-        }
-
-        const sColor = TechseasonColors[tech.season] || '#3b82f6';
-        const totals = getTechMedalTotals(tech);
-        const r = tech.default_pos?.row || 'auto';
-        const c = tech.default_pos?.col || 'auto';
-
-        const card = document.createElement('div');
-        card.className = 'tech-card-pos tech-card-hover research-tech-card';
-        card.setAttribute('role', 'button');
-        card.tabIndex = 0;
-        card.style.setProperty('--desk-row', r);
-        card.style.setProperty('--desk-col', c);
-        card.style.setProperty('--season-color', sColor);
-        card.style.setProperty('--hover-color', `${sColor}40`);
-        card.style.setProperty('--border-color', sColor);
-        card.style.setProperty('--card-delay', `${Math.min(cardIndex * 35, 280)}ms`);
-        cardIndex += 1;
-
-        const resourceLabel = tech.primaryResource || '—';
-        const progressPct = Math.min(100, Math.max(0, totals.pct));
-
-        card.innerHTML = `
-            <button type="button" class="research-card-max" onclick="quickMaxTech(event, '${tech.id}')">MAX</button>
-            <div class="research-card-head">
-                <h3 class="research-card-title">${tech.name}</h3>
-                <span class="research-card-season">${tech.season}</span>
+    card.innerHTML = `
+            <div class="research-card-topline">
+                <span class="research-card-season">${escapeHtml(tech.season)}</span>
+                <span class="research-card-pct">${escapeHtml(progressLabel)}</span>
             </div>
-            <p class="research-card-unlock">${appT('researchUnlock')}: ${tech.unlockCondition}</p>
-            <p class="research-card-resource">${resourceLabel}</p>
+            <div class="research-card-head">
+                <h3 class="research-card-title">${escapeHtml(tech.name)}</h3>
+            </div>
+            <div class="research-card-meta">
+                <p class="research-card-unlock"><span>${escapeHtml(appT('researchUnlock'))}</span>${escapeHtml(tech.unlockCondition)}</p>
+                <p class="research-card-resource">${escapeHtml(resourceLabel)}</p>
+            </div>
             ${renderResearchCardBuffPreview(tech)}
-            <div class="research-card-progress">
+            <div class="research-card-progress" role="progressbar" aria-label="${escapeHtml(progressLabel)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressPct.toFixed(0)}">
                 <div class="research-card-progress-bar"></div>
             </div>
-            <span class="research-card-pct">${appT('researchProgress', { pct: progressPct.toFixed(0) })}</span>
             <div class="research-card-actions">
                 <button type="button" class="research-card-buffs" aria-label="${escapeHtml(appT('researchBuffSummaryOpenAria', { tech: tech.name }))}">${escapeHtml(appT('researchBuffButton'))}</button>
-                <span class="research-card-cta">${appT('researchOpenCalc')}</span>
+                <button type="button" class="research-card-max${isComplete ? ' research-card-max--done' : ''}" data-tech-id="${escapeHtml(tech.id)}" aria-pressed="${isComplete}" aria-label="${escapeHtml(maxActionLabel)}" title="${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchMax'))}">
+                    ${isComplete ? '<svg class="research-check-icon" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                    <span>${escapeHtml(isComplete ? appT('researchClearLevel') : appT('researchMax'))}</span>
+                </button>
+                <button type="button" class="research-card-cta">
+                    <span>${escapeHtml(appT('researchOpenCalc'))}</span>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
             </div>
         `;
-        card
-            .querySelector('.research-card-progress-bar')
-            ?.style.setProperty('--progress-pct', `${progressPct.toFixed(1)}%`);
+    card
+      .querySelector('.research-card-progress-bar')
+      ?.style.setProperty('--progress-pct', `${progressPct.toFixed(1)}%`);
 
-        card.querySelector('.research-card-buffs')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            renderResearchBuffSummaryModal(tech);
-        });
-
-        const openCalc = () => renderCalculator(tech);
-        card.addEventListener('click', openCalc);
-        card.addEventListener('keydown', (e) => {
-            if (e.target.closest('button')) return;
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCalc(); }
-        });
-        fragment.appendChild(card);
+    card.querySelector('.research-card-buffs')?.addEventListener('click', (e) => {
+      renderResearchBuffSummaryModal(tech, e.currentTarget);
+    });
+    card.querySelector('.research-card-max')?.addEventListener('click', (e) => {
+      quickMaxTech(e, tech.id);
     });
 
-    wrapper.replaceChildren(fragment);
+    const openCalc = () => renderCalculator(tech);
+    card.querySelector('.research-card-cta')?.addEventListener('click', openCalc);
+    currentSeasonGroup?.appendChild(card);
+  });
 
-    let sourceNote = document.getElementById('researchSourceNote');
-    if (!sourceNote) {
-        sourceNote = document.createElement('p');
-        sourceNote.id = 'researchSourceNote';
-        sourceNote.className = 'research-source-note';
-        container.appendChild(sourceNote);
-    }
-    sourceNote.textContent = getSourceCreditText();
-    requestAnimationFrame(() => container.classList.remove('research-list--updating'));
+  wrapper.replaceChildren(fragment);
+
+  let sourceNote = document.getElementById('researchSourceNote');
+  if (!sourceNote) {
+    sourceNote = document.createElement('p');
+    sourceNote.id = 'researchSourceNote';
+    sourceNote.className = 'research-source-note';
+    container.appendChild(sourceNote);
+  }
+  sourceNote.textContent = getSourceCreditText();
+  requestAnimationFrame(() => container.classList.remove('research-list--updating'));
 }
 
 function updateGlobalSummary(filteredTechs = null) {
-    if (!filteredTechs) filteredTechs = getFilteredTechTrees();
+  if (!filteredTechs) filteredTechs = getFilteredTechTrees();
 
-    let totalWbMax = 0;
-    let totalWbCurrent = 0;
-    let totalCmMax = 0;
-    let totalCmCurrent = 0;
+  let totalWbMax = 0;
+  let totalWbCurrent = 0;
+  let totalCmMax = 0;
+  let totalCmCurrent = 0;
 
-    filteredTechs.forEach((tech) => {
-        const t = getTechMedalTotals(tech);
-        totalWbMax += t.wbMax;
-        totalWbCurrent += t.wbCurrent;
-        totalCmMax += t.cmMax;
-        totalCmCurrent += t.cmCurrent;
-    });
+  filteredTechs.forEach((tech) => {
+    const t = getTechMedalTotals(tech);
+    totalWbMax += t.wbMax;
+    totalWbCurrent += t.wbCurrent;
+    totalCmMax += t.cmMax;
+    totalCmCurrent += t.cmCurrent;
+  });
 
-    const remainingWb = totalWbMax - totalWbCurrent;
-    const remainingCm = totalCmMax - totalCmCurrent;
-    const totalMedalsMax = totalWbMax + totalCmMax;
-    const totalMedalsCurrent = totalWbCurrent + totalCmCurrent;
-    const progressPercent = totalMedalsMax > 0 ? (totalMedalsCurrent / totalMedalsMax) * 100 : 0;
+  const remainingWb = totalWbMax - totalWbCurrent;
+  const remainingCm = totalCmMax - totalCmCurrent;
+  const totalMedalsMax = totalWbMax + totalCmMax;
+  const totalMedalsCurrent = totalWbCurrent + totalCmCurrent;
+  const progressPercent = totalMedalsMax > 0 ? (totalMedalsCurrent / totalMedalsMax) * 100 : 0;
 
-    const summaryEl = document.getElementById('globalTechSummary');
-    if (!summaryEl) return;
+  const summaryEl = document.getElementById('globalTechSummary');
+  if (!summaryEl) return;
 
-    if (totalMedalsMax === 0 && filteredTechs.length === 0) {
-        summaryEl.innerHTML = '';
-        return;
-    }
+  if (totalMedalsMax === 0 && filteredTechs.length === 0) {
+    summaryEl.innerHTML = '';
+    return;
+  }
 
-    const iconCM = '<img src="images/CM.png" class="research-medal-icon" alt="CM">';
-    const iconWB = '<img src="images/WB.png" class="research-medal-icon" alt="WB">';
+  const iconCM = '<img src="images/CM.png" class="research-medal-icon" alt="CM">';
+  const iconWB = '<img src="images/WB.png" class="research-medal-icon" alt="WB">';
 
-    summaryEl.innerHTML = `
+  summaryEl.innerHTML = `
         <div class="research-summary-card">
             <h3 class="research-summary-title">${appT('researchGlobalSummary')}</h3>
             <div class="research-summary-progress-wrap">
@@ -593,483 +906,842 @@ function updateGlobalSummary(filteredTechs = null) {
                 </div>
             </div>
             <div class="research-summary-stats">
-                ${totalWbMax > 0 ? `
+                ${
+                  totalWbMax > 0
+                    ? `
                 <div class="research-summary-stat research-summary-stat-wb">
                     <span class="research-summary-stat-label">${appT('researchRemainingWb')}</span>
                     <span class="research-summary-stat-value">${iconWB} ${remainingWb.toLocaleString()}</span>
                     <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalWbMax.toLocaleString() })}</span>
-                </div>` : ''}
-                ${totalCmMax > 0 ? `
+                </div>`
+                    : ''
+                }
+                ${
+                  totalCmMax > 0
+                    ? `
                 <div class="research-summary-stat research-summary-stat-cm">
                     <span class="research-summary-stat-label">${appT('researchRemainingCm')}</span>
                     <span class="research-summary-stat-value">${iconCM} ${remainingCm.toLocaleString()}</span>
                     <span class="research-summary-stat-total">${appT('researchOfTotal', { n: totalCmMax.toLocaleString() })}</span>
-                </div>` : ''}
+                </div>`
+                    : ''
+                }
             </div>
         </div>
     `;
-    summaryEl
-        .querySelector('.research-summary-progress-fill')
-        ?.style.setProperty('--progress-pct', `${progressPercent}%`);
+  summaryEl
+    .querySelector('.research-summary-progress-fill')
+    ?.style.setProperty('--progress-pct', `${progressPercent}%`);
 }
 
 function applyAutoGridToGroup(groupNodes) {
-    let r = 1;
-    let lastType = '';
-    let colsInRow = new Set();
+  let r = 1;
+  let lastType = '';
+  let colsInRow = new Set();
 
-    groupNodes.forEach((node, i) => {
-        if (node.row && node.col) {
-            r = node.row;
-            colsInRow.add(node.col);
-            return;
+  groupNodes.forEach((node, i) => {
+    if (node.row && node.col) {
+      r = node.row;
+      colsInRow.add(node.col);
+      return;
+    }
+
+    let t = node.troop ? node.troop.toLowerCase() : '';
+    let type = t === 'all' || t.includes('lofty') || !t ? 'ALL' : 'SPECIFIC';
+
+    let c = 2;
+    if (t.includes('footm')) c = 1;
+    if (t.includes('arch')) c = 3;
+
+    if (type !== lastType && colsInRow.size > 0) {
+      r++;
+      colsInRow.clear();
+    }
+
+    if (colsInRow.has(c)) {
+      if (type === 'ALL') {
+        if (!colsInRow.has(1)) c = 1;
+        else if (!colsInRow.has(3)) c = 3;
+        else {
+          r++;
+          colsInRow.clear();
+          c = 2;
         }
+      } else {
+        r++;
+        colsInRow.clear();
+      }
+    }
 
-        let t = node.troop ? node.troop.toLowerCase() : '';
-        let type = (t === 'all' || t.includes('lofty') || !t) ? 'ALL' : 'SPECIFIC';
-        
-        let c = 2; 
-        if (t.includes('footm')) c = 1; 
-        if (t.includes('arch')) c = 3;  
+    if (type === 'ALL' && colsInRow.size === 0) {
+      let next = groupNodes[i + 1];
+      let nextIsAll =
+        next &&
+        (!next.troop ||
+          next.troop.toLowerCase() === 'all' ||
+          next.troop.toLowerCase().includes('lofty'));
+      let nextNext = groupNodes[i + 2];
+      let nextNextIsAll = nextNext && (!nextNext.troop || nextNext.troop.toLowerCase() === 'all');
 
-        if (type !== lastType && colsInRow.size > 0) {
-            r++;
-            colsInRow.clear();
-        }
+      if (nextIsAll && (!nextNext || !nextNextIsAll)) c = 1;
+    } else if (type === 'ALL' && colsInRow.has(1) && !colsInRow.has(2)) {
+      c = 3;
+    }
 
-        if (colsInRow.has(c)) {
-            if (type === 'ALL') {
-                if (!colsInRow.has(1)) c = 1;
-                else if (!colsInRow.has(3)) c = 3;
-                else { r++; colsInRow.clear(); c = 2; }
-            } else {
-                r++;
-                colsInRow.clear();
-            }
-        }
-
-        if (type === 'ALL' && colsInRow.size === 0) {
-            let next = groupNodes[i + 1];
-            let nextIsAll = next && (!next.troop || next.troop.toLowerCase() === 'all' || next.troop.toLowerCase().includes('lofty'));
-            let nextNext = groupNodes[i + 2];
-            let nextNextIsAll = nextNext && (!nextNext.troop || nextNext.troop.toLowerCase() === 'all');
-            
-            if (nextIsAll && (!nextNext || !nextNextIsAll)) c = 1; 
-        } else if (type === 'ALL' && colsInRow.has(1) && !colsInRow.has(2)) {
-             c = 3; 
-        }
-
-        node.row = r;
-        node.col = c;
-        colsInRow.add(c);
-        lastType = type;
-    });
+    node.row = r;
+    node.col = c;
+    colsInRow.add(c);
+    lastType = type;
+  });
 }
 
 function usesGameTreeLayout(tech) {
-    if (tech.layoutMode === 'branch') return false;
-    if (tech.layoutMode === 'game') return true;
-    const hasTroopBranches = tech.nodes.some(
-        (n) => n.b == 1 || n.b == 2 || n.b == 3 || n.b === '1' || n.b === '2' || n.b === '3'
-    );
-    if (hasTroopBranches) return false;
-    return tech.nodes.every((n) => n.row && n.col);
+  if (tech.layoutMode === 'branch') return false;
+  if (tech.layoutMode === 'game') return true;
+  const hasTroopBranches = tech.nodes.some(
+    (n) => n.b == 1 || n.b == 2 || n.b == 3 || n.b === '1' || n.b === '2' || n.b === '3'
+  );
+  if (hasTroopBranches) return false;
+  return tech.nodes.every((n) => n.row && n.col);
 }
 
 function getGameTroopClass(troop) {
-    const t = (troop || '').toLowerCase();
-    if (t.includes('arch')) return 'archer';
-    if (t.includes('cav')) return 'cavalry';
-    if (t === 'all' || !t) return 'all';
-    return 'footmen';
+  const t = (troop || '').toLowerCase();
+  if (t.includes('arch')) return 'archer';
+  if (t.includes('cav')) return 'cavalry';
+  if (t === 'all' || !t) return 'all';
+  return 'footmen';
 }
 
 function formatGameNodeLevel(node, level) {
-    if (level >= node.maxLevel) return 'MAX';
-    return `${level}/${node.maxLevel}`;
+  if (level >= node.maxLevel) return appT('researchMax');
+  return `${level}/${node.maxLevel}`;
 }
 
-function syncGameNodeVisual(node, level, wrapEl) {
-    const wraps = wrapEl
-        ? [wrapEl]
-        : Array.from(document.querySelectorAll(`.game-tech-node-wrap[data-node-id="${node.id}"]`));
-    wraps.forEach((wrap) => {
-        const pct = node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0;
-        wrap.style.setProperty('--node-pct', `${pct}%`);
-        wrap.style.setProperty('--node-deg', String((pct / 100) * 360));
-        const tap = wrap.querySelector('.game-tech-tap');
-        const lvlEl = wrap.querySelector('.game-tech-level-badge');
-        const input = wrap.querySelector('.tech-node-input');
-        const maxBtn = wrap.querySelector('.game-tech-step--max');
-        if (lvlEl) lvlEl.textContent = formatGameNodeLevel(node, level);
-        if (input) input.value = level;
-        if (tap) {
-            tap.setAttribute('aria-label', `${node.name}: level ${level} of ${node.maxLevel}`);
-            tap.classList.toggle('game-tech-tap--maxed', level >= node.maxLevel);
-            tap.classList.toggle('game-tech-tap--progress', level > 0 && level < node.maxLevel);
-        }
-        if (maxBtn) {
-            const isMaxed = level >= node.maxLevel;
-            maxBtn.textContent = isMaxed ? '↩' : 'MAX';
-            maxBtn.dataset.step = isMaxed ? '0' : 'max';
-            maxBtn.classList.toggle('game-tech-step--undo', isMaxed);
-        }
+function getGameNodeState(node, level) {
+  if (level >= node.maxLevel) return 'complete';
+  if (level > 0) return 'progress';
+  return 'idle';
+}
+
+function getGameNodeArtState() {
+  // Keep one stable sprite crop for every level; CSS communicates progress.
+  return 'idle';
+}
+
+function syncGameTierState(tier) {
+  if (!tier) return;
+  const states = Array.from(tier.querySelectorAll('.game-tech-node-wrap')).map(
+    (node) => node.dataset.nodeState
+  );
+  const state =
+    states.length && states.every((value) => value === 'complete')
+      ? 'complete'
+      : states.some((value) => value === 'progress' || value === 'complete')
+        ? 'progress'
+        : 'idle';
+  tier.dataset.tierState = state;
+  const connector = tier.nextElementSibling;
+  if (connector?.classList.contains('game-tree-connector')) {
+    connector.dataset.pathState = state;
+    connector.querySelectorAll('[data-edge-from]').forEach((edge) => {
+      const sourceNode = tier.querySelector(
+        `.game-tech-node-wrap[data-node-id="${edge.dataset.edgeFrom}"]`
+      );
+      edge.dataset.pathState = sourceNode?.dataset.nodeState || 'idle';
     });
+  }
 }
 
-function syncGameNodeButton(node, level) {
-    syncGameNodeVisual(node, level);
+function syncGameNodeVisual(tech, node, level, wrapEl) {
+  const wraps = wrapEl
+    ? [wrapEl]
+    : Array.from(document.querySelectorAll(`.game-tech-node-wrap[data-node-id="${node.id}"]`));
+  wraps.forEach((wrap) => {
+    const pct = node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0;
+    wrap.style.setProperty('--node-pct', `${pct}%`);
+    wrap.style.setProperty('--node-deg', String((pct / 100) * 360));
+    const tap = wrap.querySelector('.game-tech-tap');
+    const lvlEl = wrap.querySelector('.game-tech-level-badge');
+    const input = wrap.querySelector('.tech-node-input');
+    const maxBtn = wrap.querySelector('.game-tech-step--max');
+    const nodeState = getGameNodeState(node, level);
+    wrap.dataset.nodeState = nodeState;
+    applyGameNodeArt(wrap, tech, node, getGameNodeArtState(node, level));
+    if (lvlEl) lvlEl.textContent = formatGameNodeLevel(node, level);
+    if (input) input.value = level;
+    if (tap) {
+      tap.setAttribute(
+        'aria-label',
+        `${node.name}. ${appT('researchCurrentLevel')}: ${level}/${node.maxLevel}`
+      );
+      tap.classList.toggle('game-tech-tap--maxed', level >= node.maxLevel);
+      tap.classList.toggle('game-tech-tap--progress', level > 0 && level < node.maxLevel);
+    }
+    if (maxBtn) {
+      const isMaxed = level >= node.maxLevel;
+      maxBtn.textContent = isMaxed ? '↩' : 'MAX';
+      maxBtn.dataset.step = isMaxed ? '0' : 'max';
+      maxBtn.classList.toggle('game-tech-step--undo', isMaxed);
+    }
+    syncGameTierState(wrap.closest('.game-tree-tier-block'));
+  });
+}
+
+function syncGameNodeButton(tech, node, level) {
+  syncGameNodeVisual(tech, node, level);
 }
 
 function pulseGameNodeWrap(wrapEl) {
-    if (!wrapEl) return;
-    wrapEl.classList.remove('game-tech-node-wrap--pulse');
-    void wrapEl.offsetWidth;
-    wrapEl.classList.add('game-tech-node-wrap--pulse');
-    window.setTimeout(() => wrapEl.classList.remove('game-tech-node-wrap--pulse'), 320);
+  if (!wrapEl || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  wrapEl.classList.remove('game-tech-node-wrap--pulse');
+  void wrapEl.offsetWidth;
+  wrapEl.classList.add('game-tech-node-wrap--pulse');
+  window.setTimeout(() => wrapEl.classList.remove('game-tech-node-wrap--pulse'), 320);
 }
 
-function buildGameTreeTierHtml(nodesInRow) {
-    const slots = [null, null, null];
-    const displayColumns = nodesInRow.length === 1
-        ? [2]
-        : nodesInRow.length === 2
+function applyGameNodeArt(wrap, tech, node, preferredState) {
+  const artTarget = wrap.querySelector('.game-tech-art');
+  if (!artTarget) return;
+  const resolution = resolveResearchNodeArt(
+    {
+      treeId: tech.id,
+      nodeId: node.id,
+      preferredState,
+      nodeName: node.name,
+      buff: node.buff,
+      troop: node.troop,
+    },
+    techDatabase
+  );
+  const art = resolution.art;
+  wrap.dataset.requestedArtState = preferredState;
+  wrap.dataset.artProvenance = resolution.provenance;
+  wrap.dataset.artRequestedKey = resolution.requestedKey;
+  wrap.dataset.artSourceKey = resolution.sourceKey;
+  wrap.dataset.artMatchedState = resolution.matchedState || '';
+  if (!art) {
+    wrap.dataset.exactArt = 'unavailable';
+    artTarget.hidden = true;
+    artTarget.style.backgroundImage = 'none';
+    delete artTarget.dataset.observedState;
+    delete artTarget.dataset.palette;
+    return;
+  }
+
+  const [sourceWidth, sourceHeight] = art.sourceDimensions;
+  const [x, y, width, height] = art.rect;
+  const cssWidthLimit = Math.min(Number(art.maxCssPx) || 76, 76);
+  const scale = Math.min(cssWidthLimit / width, 58 / height);
+  const cssWidth = width * scale;
+  const cssHeight = height * scale;
+  artTarget.hidden = false;
+  artTarget.style.width = `${cssWidth}px`;
+  artTarget.style.height = `${cssHeight}px`;
+  artTarget.style.backgroundImage = `url("${art.source}")`;
+  artTarget.style.backgroundSize = `${sourceWidth * scale}px ${sourceHeight * scale}px`;
+  artTarget.style.backgroundPosition = `${-x * scale}px ${-y * scale}px`;
+  artTarget.dataset.observedState = art.observedState;
+  artTarget.dataset.palette = art.palette;
+  wrap.dataset.exactArt = resolution.provenance === 'exact-node-state' ? 'available' : 'fallback';
+}
+
+function buildFallbackGameRows(nodes) {
+  const rows = new Map();
+  nodes.forEach((node) => {
+    const row = Number(node.row || node.Row || node.page || 1);
+    if (!rows.has(row)) rows.set(row, []);
+    rows.get(row).push(node);
+  });
+  return Array.from(rows.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, rowNodes]) => {
+      rowNodes.sort((a, b) => Number(a.col || a.column || 2) - Number(b.col || b.column || 2));
+      const columns =
+        rowNodes.length === 1
+          ? [2]
+          : rowNodes.length === 2
             ? [1, 3]
-            : null;
-    nodesInRow.forEach((node, index) => {
-        const displayCol = displayColumns
-            ? displayColumns[index]
-            : Math.min(3, Math.max(1, node.col || 2));
-        const col = displayCol - 1;
-        slots[col] = { ...node, _displayCol: displayCol };
+            : rowNodes.map((node, index) => Number(node.col || node.column || index + 1));
+      return { nodes: rowNodes.map((node) => node.id), columns };
     });
-    const wideConnector = nodesInRow.length >= 3 ? ' game-tree-connector--wide' : '';
-    const tierLayout = nodesInRow.length === 1
-        ? ' game-tree-tier--single'
-        : nodesInRow.length === 2
-            ? ' game-tree-tier--pair'
-            : '';
-    let html = `<div class="game-tree-tier${tierLayout}" data-row-count="${nodesInRow.length}">`;
-    slots.forEach((node, idx) => {
-        if (node) {
-            const level = getStoredNodeLevel(node._techId || node.techId, node.id);
-            const troopClass = getGameTroopClass(node.troop);
-            const shortName = node.name.replace(/\s+(I|II|III|IV)$/i, '').trim();
-            const tapState = level >= node.maxLevel
-                ? ' game-tech-tap--maxed'
-                : level > 0 ? ' game-tech-tap--progress' : '';
-            const maxLabel = level >= node.maxLevel ? '↩' : 'MAX';
-            const maxStep = level >= node.maxLevel ? '0' : 'max';
-            const maxUndo = level >= node.maxLevel ? ' game-tech-step--undo' : '';
-            const iconMeta = resolveTechNodeIcon(node);
-            const buffSummary = describeNodeBuffProgress(node, level);
-            html += `
-              <div class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
-                data-node-id="${node.id}" data-node-col="${node._displayCol || node.col || 2}"
-                data-icon-id="${iconMeta.id}" style="--node-col: ${node._displayCol || node.col || 2};">
-                <button type="button" class="game-tech-tap game-tech-tap--${troopClass}${tapState}"
-                  aria-label="${escapeHtml(node.name)}: level ${level} of ${node.maxLevel}">
-                  <span class="game-tech-medallion" aria-hidden="true">
-                    <span class="game-tech-ring"></span>
-                    <span class="game-tech-core">
-                      <span class="game-tech-icon">${renderTechNodeIconSvg(node)}</span>
-                    </span>
-                    <span class="game-tech-level-badge">${formatGameNodeLevel(node, level)}</span>
-                  </span>
-                </button>
-                <div class="game-tech-stepper" role="group" aria-label="${escapeHtml(node.name)} level controls">
-                  <button type="button" class="game-tech-step" data-step="-1" aria-label="Decrease level">−</button>
-                  <button type="button" class="game-tech-step game-tech-step--max${maxUndo}" data-step="${maxStep}">${maxLabel}</button>
-                  <button type="button" class="game-tech-step" data-step="1" aria-label="Increase level">+</button>
-                </div>
-                <div class="node-cost-display game-tech-cost-pill" aria-live="polite"></div>
-                <div class="node-buff-display game-tech-buff-pill" aria-live="polite">${renderNodeBuffProgress(buffSummary, true)}</div>
-                <span class="game-tech-name" title="${escapeHtml(node.name)}">${escapeHtml(shortName)}</span>
-                <input type="number" class="tech-node-input" min="0" max="${node.maxLevel}" value="${level}" tabindex="-1" aria-hidden="true" hidden>
-              </div>`;
-        } else {
-            html += '<span class="game-tree-slot" aria-hidden="true"></span>';
-        }
-    });
-    html += `</div><div class="game-tree-connector${wideConnector}" aria-hidden="true"></div>`;
-    return html;
 }
 
-function renderGameTreePageHtml(tech, pageNodes) {
-    const rowMap = {};
-    pageNodes.forEach((node) => {
-        const row = node.row || 1;
-        if (!rowMap[row]) rowMap[row] = [];
-        rowMap[row].push({ ...node, _techId: tech.id });
+function resolveResearchGameLayout(tech) {
+  const configured = RESEARCH_GAME_LAYOUTS[tech.id];
+  if (!configured) {
+    const pageGroups = new Map();
+    tech.nodes.forEach((node) => {
+      const page = Number(node.page || 1);
+      if (!pageGroups.has(page)) pageGroups.set(page, []);
+      pageGroups.get(page).push(node);
     });
-    const rowKeys = Object.keys(rowMap).map(Number).sort((a, b) => a - b);
-    let html = '<div class="research-game-tree">';
-    rowKeys.forEach((rk, i) => {
-        rowMap[rk].sort((a, b) => (a.col || 0) - (b.col || 0));
-        html += buildGameTreeTierHtml(rowMap[rk]);
-        if (i === rowKeys.length - 1) {
-            html = html.replace(/<div class="game-tree-connector[^"]*"[^>]*><\/div>$/, '');
-        }
+    return {
+      theme: 'amber',
+      sections: Array.from(pageGroups.entries())
+        .sort(([a], [b]) => a - b)
+        .map(([page, nodes]) => ({
+          id: `part-${page}`,
+          label: tech.treePages?.[page - 1] || appT('researchGamePartShort', { n: page }),
+          rows: buildFallbackGameRows(nodes),
+        })),
+    };
+  }
+
+  const validIds = new Set(tech.nodes.map((node) => node.id));
+  const placed = new Set();
+  const sections = configured.sections
+    .map((section) => ({
+      ...section,
+      rows: section.rows
+        .map((row) => {
+          const entries = row.nodes
+            .map((nodeId, index) => ({ nodeId, column: row.columns?.[index] }))
+            .filter(({ nodeId }) => validIds.has(nodeId));
+          entries.forEach(({ nodeId }) => placed.add(nodeId));
+          return {
+            nodes: entries.map(({ nodeId }) => nodeId),
+            columns: entries.map(({ column }, index) => Number(column) || index + 1),
+          };
+        })
+        .filter((row) => row.nodes.length),
+    }))
+    .filter((section) => section.rows.length);
+
+  const remaining = tech.nodes.filter((node) => !placed.has(node.id));
+  if (remaining.length) {
+    sections.push({
+      id: 'database-continuation-auto',
+      label: appT('researchGameSequenceHint'),
+      rows: buildFallbackGameRows(remaining),
     });
-    html += '</div>';
-    return html;
+  }
+
+  return { ...configured, sections };
+}
+
+function getResearchSectionLabel(section, index) {
+  if (section?.labelKey) {
+    const translated = appT(section.labelKey);
+    if (translated && translated !== section.labelKey) return translated;
+    const source = section.id || section.labelKey.replace(/^researchSection/, '');
+    return source
+      .replace(/[-_]+/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+  return section?.label || appT('researchGamePartShort', { n: index + 1 });
+}
+
+function buildInferredGameConnectorHtml(fromCount, toCount, state, isSectionBoundary = false) {
+  const relation =
+    fromCount === toCount
+      ? fromCount > 1
+        ? 'lanes'
+        : 'single'
+      : fromCount < toCount
+        ? 'fan'
+        : 'merge';
+  return `<div class="game-tree-connector game-tree-connector--${relation}${isSectionBoundary ? ' game-tree-connector--section' : ''}" data-path-state="${state}" data-from-count="${fromCount}" data-to-count="${toCount}" aria-hidden="true"><span></span></div>`;
+}
+
+function getGameRowColumn(row, nodeId) {
+  const index = row.nodes.indexOf(nodeId);
+  return index >= 0 ? Math.min(3, Math.max(1, Number(row.columns?.[index]) || index + 1)) : null;
+}
+
+function buildGameConnectorHtml(tech, fromRow, toRow, edges, state, isSectionBoundary = false) {
+  const authoredEdges = (edges || []).filter(
+    ([fromNodeId, toNodeId]) => fromRow.nodes.includes(fromNodeId) && toRow.nodes.includes(toNodeId)
+  );
+  if (!authoredEdges.length) {
+    return buildInferredGameConnectorHtml(
+      fromRow.nodes.length,
+      toRow.nodes.length,
+      state,
+      isSectionBoundary
+    );
+  }
+
+  const paths = authoredEdges
+    .map(([fromNodeId, toNodeId]) => {
+      const fromColumn = getGameRowColumn(fromRow, fromNodeId);
+      const toColumn = getGameRowColumn(toRow, toNodeId);
+      const fromX = fromColumn * 200 - 100;
+      const toX = toColumn * 200 - 100;
+      const sourceNode = tech.nodes.find((node) => node.id === fromNodeId);
+      const sourceLevel = sourceNode ? getStoredNodeLevel(tech.id, sourceNode.id) : 0;
+      const pathState = sourceNode ? getGameNodeState(sourceNode, sourceLevel) : 'idle';
+      return `<path d="M ${fromX} 0 V 50 H ${toX} V 100" data-edge-from="${escapeHtml(fromNodeId)}" data-edge-to="${escapeHtml(toNodeId)}" data-path-state="${pathState}" vector-effect="non-scaling-stroke"></path>`;
+    })
+    .join('');
+
+  return `<svg class="game-tree-connector game-tree-connector--authored${isSectionBoundary ? ' game-tree-connector--section' : ''}" data-path-state="${state}" viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>`;
+}
+
+function buildGameTreeTierHtml(tech, row, tierIndex, nextRow, edges, isSectionBoundary = false) {
+  const nodesInRow = row.nodes
+    .map((nodeId, index) => {
+      const node = tech.nodes.find((candidate) => candidate.id === nodeId);
+      return node ? { ...node, _displayCol: Number(row.columns?.[index]) || index + 1 } : null;
+    })
+    .filter(Boolean);
+  const tierState = nodesInRow.every(
+    (node) => getStoredNodeLevel(tech.id, node.id) >= node.maxLevel
+  )
+    ? 'complete'
+    : nodesInRow.some((node) => getStoredNodeLevel(tech.id, node.id) > 0)
+      ? 'progress'
+      : 'idle';
+  const slots = [null, null, null];
+  nodesInRow.forEach((node) => {
+    const column = Math.min(3, Math.max(1, node._displayCol || 2));
+    slots[column - 1] = node;
+  });
+
+  let html = `<section class="game-tree-tier-block" data-tier-state="${tierState}" data-tier-index="${tierIndex}"><div class="game-tree-tier" data-row-count="${nodesInRow.length}">`;
+  slots.forEach((node) => {
+    if (!node) {
+      html += '<span class="game-tree-slot" aria-hidden="true"></span>';
+      return;
+    }
+    const level = getStoredNodeLevel(tech.id, node.id);
+    const troopClass = getGameTroopClass(node.troop);
+    const nodeState = getGameNodeState(node, level);
+    html += `
+          <article class="tech-node-container game-tech-node-wrap game-tech-node-wrap--${troopClass}"
+            data-node-id="${escapeHtml(node.id)}" data-node-col="${node._displayCol || 2}" data-node-state="${nodeState}">
+            <button type="button" class="game-tech-tap game-tech-tap--${troopClass}" aria-label="${escapeHtml(node.name)}. ${escapeHtml(appT('researchCurrentLevel'))}: ${level}/${node.maxLevel}">
+              <span class="game-tech-medallion" aria-hidden="true">
+                <span class="game-tech-art"></span>
+                <span class="game-tech-level-badge">${formatGameNodeLevel(node, level)}</span>
+              </span>
+              <span class="game-tech-name" title="${escapeHtml(node.name)}">${escapeHtml(node.name)}</span>
+            </button>
+            <input type="number" class="tech-node-input" min="0" max="${node.maxLevel}" value="${level}" tabindex="-1" aria-hidden="true" hidden>
+            <div class="node-cost-display game-tech-cost-pill" hidden aria-hidden="true"></div>
+            <div class="node-buff-display game-tech-buff-pill" hidden aria-hidden="true"></div>
+          </article>`;
+  });
+  html += '</div></section>';
+  if (nextRow)
+    html += buildGameConnectorHtml(tech, row, nextRow, edges, tierState, isSectionBoundary);
+  return html;
+}
+
+function renderGameTreeLayoutHtml(tech, layout) {
+  const flatRows = layout.sections.flatMap((section, sectionIndex) =>
+    section.rows.map((row, rowIndex) => ({
+      section,
+      sectionIndex,
+      row,
+      rowIndex,
+    }))
+  );
+  let tierIndex = 0;
+  return `<div class="research-game-tree" data-tree-theme="${escapeHtml(layout.theme || 'amber')}">${layout.sections
+    .map((section, sectionIndex) => {
+      const sectionRows = section.rows
+        .map((row, rowIndex) => {
+          const flatIndex = flatRows.findIndex(
+            (entry) => entry.sectionIndex === sectionIndex && entry.rowIndex === rowIndex
+          );
+          const nextEntry = flatRows[flatIndex + 1];
+          tierIndex += 1;
+          return buildGameTreeTierHtml(
+            tech,
+            row,
+            tierIndex,
+            nextEntry?.row || null,
+            layout.edges,
+            Boolean(nextEntry && nextEntry.sectionIndex !== sectionIndex)
+          );
+        })
+        .join('');
+      return `<section id="researchSection-${escapeHtml(section.id)}" class="research-game-section" data-research-section="${escapeHtml(section.id)}">
+          <header class="research-game-section-heading">
+            <span>${escapeHtml(appT('researchGamePartShort', { n: sectionIndex + 1 }))}</span>
+            <h4>${escapeHtml(getResearchSectionLabel(section, sectionIndex))}</h4>
+          </header>
+          ${sectionRows}
+        </section>`;
+    })
+    .join('')}</div>`;
 }
 
 function bindGameNodePress(el, { onTap, onLong, longMs = 480 } = {}) {
-    let timer = null;
-    let longFired = false;
-    const clear = () => {
-        if (timer) {
-            clearTimeout(timer);
-            timer = null;
-        }
-    };
-    el.addEventListener('pointerdown', (e) => {
-        if (e.button !== 0) return;
-        longFired = false;
-        clear();
-        if (onLong) {
-            timer = window.setTimeout(() => {
-                longFired = true;
-                onLong();
-            }, longMs);
-        }
+  let timer = null;
+  let longFired = false;
+  const clear = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    longFired = false;
+    clear();
+    if (onLong) {
+      timer = window.setTimeout(() => {
+        longFired = true;
+        onLong();
+      }, longMs);
+    }
+  });
+  el.addEventListener('pointerup', clear);
+  el.addEventListener('pointerleave', clear);
+  el.addEventListener('pointercancel', clear);
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (longFired) {
+      longFired = false;
+      return;
+    }
+    onTap?.(e);
+  });
+}
+
+function bindResearchTabArrowKeys(tabs) {
+  const orderedTabs = Array.from(tabs);
+  orderedTabs.forEach((tab, index) => {
+    tab.addEventListener('keydown', (event) => {
+      const keyDirection = document.documentElement.dir === 'rtl' ? -1 : 1;
+      let nextIndex = null;
+      if (event.key === 'ArrowRight') nextIndex = index + keyDirection;
+      if (event.key === 'ArrowLeft') nextIndex = index - keyDirection;
+      if (event.key === 'Home') nextIndex = 0;
+      if (event.key === 'End') nextIndex = orderedTabs.length - 1;
+      if (nextIndex === null) return;
+      event.preventDefault();
+      const nextTab = orderedTabs[(nextIndex + orderedTabs.length) % orderedTabs.length];
+      nextTab?.focus();
+      nextTab?.click();
     });
-    el.addEventListener('pointerup', clear);
-    el.addEventListener('pointerleave', clear);
-    el.addEventListener('pointercancel', clear);
-    el.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (longFired) {
-            longFired = false;
-            return;
-        }
-        onTap?.(e);
+  });
+}
+
+function renderGameNodeInspector(rootEl, tech, node) {
+  const inspector = rootEl.querySelector('.research-node-inspector');
+  if (!inspector) return;
+  if (!node) {
+    inspector.dataset.hasSelection = 'false';
+    inspector.innerHTML = `<p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>`;
+    return;
+  }
+
+  const updater = rootEl._researchGameUpdaters?.get(node.id);
+  const level = updater?.getLevel() ?? getStoredNodeLevel(tech.id, node.id);
+  const wrap = rootEl.querySelector(`.game-tech-node-wrap[data-node-id="${node.id}"]`);
+  const remainingHtml = wrap?.querySelector('.node-cost-display')?.innerHTML || '';
+  const buffHtml = renderNodeBuffProgress(describeNodeBuffProgress(node, level));
+  const artResolution = resolveResearchNodeArt(
+    {
+      treeId: tech.id,
+      nodeId: node.id,
+      preferredState: getGameNodeArtState(node, level),
+      nodeName: node.name,
+      buff: node.buff,
+      troop: node.troop,
+    },
+    techDatabase
+  );
+  inspector.dataset.hasSelection = 'true';
+  inspector.dataset.nodeState = getGameNodeState(node, level);
+  inspector.style.setProperty(
+    '--inspector-pct',
+    `${node.maxLevel > 0 ? (level / node.maxLevel) * 100 : 0}%`
+  );
+  inspector.dataset.artProvenance = artResolution.provenance;
+  inspector.dataset.artRequestedKey = artResolution.requestedKey;
+  inspector.dataset.artSourceKey = artResolution.sourceKey;
+  inspector.innerHTML = `
+      <div class="research-node-inspector-head">
+        <div>
+          <span class="research-node-inspector-kicker">${escapeHtml(appT('researchCurrentLevel'))}</span>
+          <h4>${escapeHtml(node.name)}</h4>
+        </div>
+        <button type="button" class="research-node-inspector-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
+          <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="research-node-inspector-level"><strong>${level}</strong><span>/ ${node.maxLevel}</span></div>
+      <div class="research-node-inspector-controls" role="group" aria-label="${escapeHtml(appT('researchNodeLevelControlsAria', { node: node.name }))}">
+        <button type="button" data-inspector-action="decrease" aria-label="${escapeHtml(appT('researchDecreaseLevelAria', { node: node.name }))}"${level <= 0 ? ' disabled' : ''}>−</button>
+        <button type="button" data-inspector-action="clear"${level <= 0 ? ' disabled' : ''}>${escapeHtml(appT('researchClearLevel'))}</button>
+        <button type="button" data-inspector-action="max">${escapeHtml(appT('researchSetMax'))}</button>
+        <button type="button" data-inspector-action="increase" aria-label="${escapeHtml(appT('researchIncreaseLevelAria', { node: node.name }))}"${level >= node.maxLevel ? ' disabled' : ''}>+</button>
+      </div>
+      <div class="research-node-inspector-detail">
+        <div><span>${escapeHtml(appT('researchRemaining'))}</span><div class="research-node-inspector-cost">${remainingHtml}</div></div>
+        <div class="research-node-inspector-buff">${buffHtml}</div>
+      </div>`;
+
+  inspector.querySelector('.research-node-inspector-close')?.addEventListener('click', () => {
+    rootEl.dataset.selectedNodeId = '';
+    rootEl
+      .querySelectorAll('.game-tech-node-wrap.is-selected')
+      .forEach((element) => element.classList.remove('is-selected'));
+    renderGameNodeInspector(rootEl, tech, null);
+  });
+  inspector.querySelectorAll('[data-inspector-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.inspectorAction;
+      const current = updater?.getLevel() ?? level;
+      if (action === 'decrease') updater?.updateLevel(current - 1);
+      if (action === 'increase') updater?.updateLevel(current + 1);
+      if (action === 'clear') updater?.updateLevel(0);
+      if (action === 'max') updater?.updateLevel(node.maxLevel);
     });
+  });
 }
 
 function wireGameTechNodeContainers(rootEl, tech) {
-    const updateFns = [];
-    rootEl.querySelectorAll('.game-tech-node-wrap').forEach((wrap) => {
-        const input = wrap.querySelector('.tech-node-input');
-        const tap = wrap.querySelector('.game-tech-tap');
-        const nodeId = wrap.dataset.nodeId;
-        const node = tech.nodes.find((n) => n.id === nodeId);
-        if (!input || !node) return;
+  const updateFns = [];
+  const updaterMap = new Map();
+  rootEl._researchGameUpdaters = updaterMap;
+  rootEl.querySelectorAll('.game-tech-node-wrap').forEach((wrap) => {
+    const input = wrap.querySelector('.tech-node-input');
+    const tap = wrap.querySelector('.game-tech-tap');
+    const nodeId = wrap.dataset.nodeId;
+    const node = tech.nodes.find((n) => n.id === nodeId);
+    if (!input || !node) return;
 
-        const max = parseInt(input.max, 10);
-        let current = parseInt(input.value, 10) || 0;
-        const iconMeta = resolveTechNodeIcon(node);
-        wrap.style.setProperty('--node-col', wrap.dataset.nodeCol || node.col || 2);
-        wrap.style.setProperty('--node-icon-tint', iconMeta.tint);
-        syncGameNodeVisual(node, current, wrap);
+    const max = parseInt(input.max, 10);
+    let current = parseInt(input.value, 10) || 0;
+    wrap.style.setProperty('--node-col', wrap.dataset.nodeCol || node.col || 2);
+    syncGameNodeVisual(tech, node, current, wrap);
 
-        const updateLevel = (val, { pulse = true } = {}) => {
-            let v = typeof val === 'string' && val === 'max' ? max : parseInt(val, 10);
-            if (isNaN(v) || v < 0) v = 0;
-            if (v > max) v = max;
-            const changed = v !== current;
-            current = v;
-            input.value = v;
-            setStoredNodeLevel(tech.id, nodeId, v);
-            syncGameNodeVisual(node, v, wrap);
-            if (changed && pulse) pulseGameNodeWrap(wrap);
-            calculateTechTotals(tech);
-        };
+    const updateLevel = (val, { pulse = true, recalculate = true } = {}) => {
+      let v = typeof val === 'string' && val === 'max' ? max : parseInt(val, 10);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > max) v = max;
+      const changed = v !== current;
+      current = v;
+      input.value = v;
+      setStoredNodeLevel(tech.id, nodeId, v);
+      syncGameNodeVisual(tech, node, v, wrap);
+      if (changed && pulse) pulseGameNodeWrap(wrap);
+      if (recalculate) {
+        calculateTechTotals(tech);
+        if (rootEl.dataset.selectedNodeId === node.id) renderGameNodeInspector(rootEl, tech, node);
+      }
+    };
 
-        const bump = (delta) => {
-            if (delta > 0 && current >= max) {
-                pulseGameNodeWrap(wrap);
-                return;
-            }
-            updateLevel(current + delta);
-        };
+    const updater = { nodeId, updateLevel, max, getLevel: () => current };
+    updateFns.push(updater);
+    updaterMap.set(nodeId, updater);
 
-        updateFns.push({ nodeId, updateLevel, max });
-
-        if (tap) {
-            bindGameNodePress(tap, {
-                onTap: () => bump(1),
-                onLong: () => updateLevel(max),
-            });
-        }
-
-        wrap.querySelectorAll('.game-tech-step').forEach((btn) => {
-            const step = btn.dataset.step;
-            if (step === '-1') {
-                bindGameNodePress(btn, {
-                    onTap: () => bump(-1),
-                    onLong: () => updateLevel(0),
-                    longMs: 520,
-                });
-                return;
-            }
-            bindGameNodePress(btn, {
-                onTap: () => {
-                    if (step === 'max') updateLevel(max);
-                    else if (step === '0') updateLevel(0);
-                    else bump(parseInt(step, 10) || 0);
-                },
-            });
-        });
-    });
-    return updateFns;
+    if (tap) {
+      bindGameNodePress(tap, {
+        onTap: () => {
+          rootEl.dataset.selectedNodeId = node.id;
+          rootEl
+            .querySelectorAll('.game-tech-node-wrap.is-selected')
+            .forEach((element) => element.classList.remove('is-selected'));
+          wrap.classList.add('is-selected');
+          if (current < max) updateLevel(current + 1);
+          renderGameNodeInspector(rootEl, tech, node);
+        },
+      });
+    }
+  });
+  return updateFns;
 }
 
 function renderGameCalculator(tech, container) {
-    const pages = tech.treePages || null;
-    const pageGroups = {};
-    tech.nodes.forEach((node) => {
-        const p = node.page || 1;
-        if (!pageGroups[p]) pageGroups[p] = [];
-        pageGroups[p].push(node);
-    });
-    const pageIds = Object.keys(pageGroups).map(Number).sort((a, b) => a - b);
+  const layout = resolveResearchGameLayout(tech);
+  const sectionNav =
+    layout.sections.length > 1
+      ? `<nav class="research-game-section-nav" aria-label="${escapeHtml(appT('researchContinuousNavigationAria'))}">${layout.sections
+          .map(
+            (section, index) => `
+            <button type="button" data-research-section-target="${escapeHtml(section.id)}">
+              <span>${escapeHtml(appT('researchGamePartShort', { n: index + 1 }))}</span>
+              <strong>${escapeHtml(getResearchSectionLabel(section, index))}</strong>
+            </button>`
+          )
+          .join('')}</nav>`
+      : '';
 
-    const pageTabsHtml = pages && pageIds.length > 1
-        ? `<div class="research-page-sequence">
-            <div class="research-page-sequence-note">
-                <strong>${escapeHtml(appT('researchGameSequenceTitle'))}:</strong>
-                ${escapeHtml(appT('researchGameSequenceHint'))}
-            </div>
-            <div class="research-page-tabs" role="tablist">${pageIds.map((pid, i) =>
-                `<button type="button" class="research-page-tab${i === 0 ? ' active' : ''}" role="tab" data-game-page="${pid}" aria-selected="${i === 0}" aria-label="${escapeHtml(appT('researchGamePartLabel', { n: i + 1, total: pageIds.length }))}: ${escapeHtml(pages[pid - 1] || `Page ${pid}`)}">
-                    <span class="research-page-tab-step">${escapeHtml(appT('researchGamePartShort', { n: i + 1 }))}</span>
-                    <span class="research-page-tab-name">${escapeHtml(pages[pid - 1] || `Page ${pid}`)}</span>
-                </button>`
-              ).join('')}</div>
-          </div>`
-        : '';
-
-    const pagesHtml = pageIds.map((pid, i) =>
-        `<div class="research-game-page${i === 0 ? ' active' : ''}" data-game-page-panel="${pid}" role="tabpanel">${renderGameTreePageHtml(tech, pageGroups[pid])}</div>`
-    ).join('');
-
-    container.innerHTML = `
+  container.innerHTML = `
       <div class="research-calc-top">
         <div class="research-calc-header">
           <div>
-            <h3 class="research-calc-title">${escapeHtml(tech.name)} <span class="research-calc-season">(${tech.season})</span></h3>
-            <p class="research-calc-sub">Primary Cost: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
+            <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(tech.name)} <span class="research-calc-season">(${tech.season})</span></h3>
+            <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
           </div>
-          <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
+          <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
         <div class="research-calc-actions">
-          <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">Reset All</button>
-          <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">Max All</button>
+          <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">${escapeHtml(appT('researchResetAll'))}</button>
+          <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">${escapeHtml(appT('researchMaxAll'))}</button>
         </div>
       </div>
-      <div class="research-game-shell">
-        <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(tech.name)}</span></div>
-        ${pageTabsHtml}
-        <div class="research-game-tree-viewport">${pagesHtml}</div>
-        <p class="research-game-footer">${appT('researchGameHint')}</p>
+      <div class="research-calc-scrollport custom-scrollbar">
+        <div class="research-game-shell" data-tree-theme="${escapeHtml(layout.theme || 'amber')}">
+          <div class="research-game-titlebar"><span class="research-game-title">${escapeHtml(appT('researchContinuousNavigationAria'))}</span></div>
+          ${sectionNav}
+          <div class="research-game-workspace">
+            <div class="research-game-tree-viewport">${renderGameTreeLayoutHtml(tech, layout)}</div>
+            <aside class="research-node-inspector" aria-label="${escapeHtml(appT('researchInspectorAria'))}" data-has-selection="false">
+              <p class="research-node-inspector-prompt">${escapeHtml(appT('researchSelectNodePrompt'))}</p>
+            </aside>
+          </div>
+          <p class="research-game-footer">${appT('researchGameHint')}</p>
+        </div>
       </div>
       <div class="research-calc-total">
         <div class="research-tree-total-copy">
-          <span class="research-tree-total-label">Tree Total</span>
-          <span class="research-tree-total-hint">Total remaining for this specific tree</span>
+          <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
+          <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
         </div>
         <div id="totalTechCost" class="research-total-costs"></div>
       </div>`;
 
-    requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
+  container.setAttribute('role', 'dialog');
+  container.setAttribute('aria-modal', 'true');
+  container.setAttribute('aria-labelledby', 'researchCalculatorTitle');
+  bindResearchCalculatorDialog(container);
+  requestAnimationFrame(() => {
+    const scrollport = container.querySelector('.research-calc-scrollport');
+    if (scrollport) scrollport.scrollTop = 0;
+    container.querySelector('#researchCalculatorTitle')?.focus({ preventScroll: true });
+  });
+  document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
 
-    const updateFns = wireGameTechNodeContainers(container, tech);
+  const updateFns = wireGameTechNodeContainers(container, tech);
 
-    container.querySelectorAll('.research-page-tab').forEach((tab) => {
-        tab.addEventListener('click', () => {
-            const pid = tab.dataset.gamePage;
-            container.querySelectorAll('.research-page-tab').forEach((t) => {
-                t.classList.toggle('active', t === tab);
-                t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
-            });
-            container.querySelectorAll('.research-game-page').forEach((p) => {
-                p.classList.toggle('active', p.dataset.gamePagePanel === pid);
-            });
-        });
+  container.querySelectorAll('[data-research-section-target]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = container.querySelector(
+        `[data-research-section="${button.dataset.researchSectionTarget}"]`
+      );
+      const scrollport = container.querySelector('.research-calc-scrollport');
+      if (!target || !scrollport) return;
+      const top =
+        target.getBoundingClientRect().top -
+        scrollport.getBoundingClientRect().top +
+        scrollport.scrollTop;
+      scrollport.scrollTo({ top: Math.max(0, top - 8), behavior: getResearchScrollBehavior() });
     });
+  });
 
-    document.getElementById('resetAllTechBtn')?.addEventListener('click', () => updateFns.forEach((o) => o.updateLevel(0)));
-    document.getElementById('maxAllTechBtn')?.addEventListener('click', () => updateFns.forEach((o) => o.updateLevel(o.max)));
+  document.getElementById('resetAllTechBtn')?.addEventListener('click', () => {
+    updateFns.forEach((updater) => updater.updateLevel(0, { pulse: false, recalculate: false }));
     calculateTechTotals(tech);
+    const selected = tech.nodes.find((node) => node.id === container.dataset.selectedNodeId);
+    if (selected) renderGameNodeInspector(container, tech, selected);
+  });
+  document.getElementById('maxAllTechBtn')?.addEventListener('click', () => {
+    updateFns.forEach((updater) =>
+      updater.updateLevel(updater.max, { pulse: false, recalculate: false })
+    );
+    calculateTechTotals(tech);
+    const selected = tech.nodes.find((node) => node.id === container.dataset.selectedNodeId);
+    if (selected) renderGameNodeInspector(container, tech, selected);
+  });
+  calculateTechTotals(tech);
+}
+
+function moveResearchCalculatorToPortal(container) {
+  let portal = document.getElementById('researchWorkspacePortal');
+  if (!portal) {
+    portal = document.createElement('div');
+    portal.id = 'researchWorkspacePortal';
+    portal.className = 'research-v14-workspace';
+    document.body.appendChild(portal);
+  }
+  if (container.parentElement !== portal) portal.appendChild(container);
 }
 
 function renderCalculator(tech) {
-    const container = document.getElementById('techCalculatorContainer');
-    container.classList.remove('hidden', 'research-calculator--closing');
-    document.body.classList.add('research-calculator-open');
+  const container = document.getElementById('techCalculatorContainer');
+  moveResearchCalculatorToPortal(container);
+  const activeElement = document.activeElement;
+  if (activeElement instanceof HTMLElement && !container.contains(activeElement)) {
+    researchCalculatorReturnFocus = activeElement;
+  }
+  container.classList.remove('hidden', 'research-calculator--closing');
+  document.body.classList.add('research-calculator-open');
 
-    // 1. Cleanly normalize the manual Row/Col/Branch tags from the DB. 
-    // ZERO auto-guessing logic here.
-    tech.nodes.forEach((node) => {
-        if (node.Row !== undefined) node.row = node.Row;
-        if (node.column !== undefined) node.col = node.column;
-        if (node.branch !== undefined) node.b = node.branch;
+  // 1. Cleanly normalize the manual Row/Col/Branch tags from the DB.
+  // ZERO auto-guessing logic here.
+  tech.nodes.forEach((node) => {
+    if (node.Row !== undefined) node.row = node.Row;
+    if (node.column !== undefined) node.col = node.column;
+    if (node.branch !== undefined) node.b = node.branch;
+  });
+
+  if (usesGameTreeLayout(tech)) {
+    renderGameCalculator(tech, container);
+    return;
+  }
+
+  const trunkNodes = tech.nodes.filter((n) => !n.b);
+  const b1Nodes = tech.nodes.filter((n) => n.b == 1 || n.b === '1');
+  const b2Nodes = tech.nodes.filter((n) => n.b == 2 || n.b === '2');
+  const b3Nodes = tech.nodes.filter((n) => n.b == 3 || n.b === '3');
+  const branchGroups = [b1Nodes, b2Nodes, b3Nodes];
+
+  [trunkNodes, ...branchGroups].forEach((group) => {
+    if (group.length) applyAutoGridToGroup(group);
+  });
+
+  const canRenderBranchesAsLanes =
+    branchGroups.filter((group) => group.length).length >= 2 &&
+    branchGroups.every((group) => {
+      const seenRows = new Set();
+      return group.every((node) => {
+        const row = Number(node.row);
+        if (!Number.isFinite(row) || seenRows.has(row)) return false;
+        seenRows.add(row);
+        return true;
+      });
     });
 
-    if (usesGameTreeLayout(tech)) {
-        renderGameCalculator(tech, container);
-        return;
-    }
+  const branchLaneNodes = canRenderBranchesAsLanes
+    ? branchGroups.flatMap((group, index) =>
+        group.map((node) => ({
+          ...node,
+          col: index + 1,
+          _displayCol: index + 1,
+        }))
+      )
+    : [];
 
-    const trunkNodes = tech.nodes.filter(n => !n.b);
-    const b1Nodes = tech.nodes.filter(n => n.b == 1 || n.b === '1');
-    const b2Nodes = tech.nodes.filter(n => n.b == 2 || n.b === '2');
-    const b3Nodes = tech.nodes.filter(n => n.b == 3 || n.b === '3');
-    const branchGroups = [b1Nodes, b2Nodes, b3Nodes];
+  const buildNodeHtml = (node) => {
+    const savedLevel = getStoredNodeLevel(tech.id, node.id);
+    const isMaxed = savedLevel === node.maxLevel;
 
-    [trunkNodes, ...branchGroups].forEach(group => {
-        if (group.length) applyAutoGridToGroup(group);
-    });
+    const maxedContainerClass = isMaxed ? ' research-node-card--maxed' : '';
 
-    const canRenderBranchesAsLanes = branchGroups.filter(group => group.length).length >= 2
-        && branchGroups.every(group => {
-            const seenRows = new Set();
-            return group.every(node => {
-                const row = Number(node.row);
-                if (!Number.isFinite(row) || seenRows.has(row)) return false;
-                seenRows.add(row);
-                return true;
-            });
-        });
+    let quickButtonsHtml = `<button class="quick-set-btn research-quick-btn" data-val="0">0</button>`;
+    if (node.maxLevel >= 5)
+      quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="5">5</button>`;
+    if (node.maxLevel >= 10)
+      quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="10">10</button>`;
+    if (node.maxLevel >= 15)
+      quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="15">15</button>`;
+    if (node.maxLevel >= 20)
+      quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="20">20</button>`;
 
-    const branchLaneNodes = canRenderBranchesAsLanes
-        ? branchGroups.flatMap((group, index) => group.map(node => ({
-            ...node,
-            col: index + 1,
-            _displayCol: index + 1,
-        })))
-        : [];
+    // Smart Toggle Button
+    let toggleText = isMaxed ? appT('researchClearLevel') : appT('researchMax');
+    let toggleVal = isMaxed ? 0 : node.maxLevel;
+    const toggleStateClass = isMaxed ? ' research-max-toggle--undo' : '';
 
-    const buildNodeHtml = (node) => {
-        const savedLevel = getStoredNodeLevel(tech.id, node.id);
-        const isMaxed = savedLevel === node.maxLevel;
-        
-        const maxedContainerClass = isMaxed ? ' research-node-card--maxed' : '';
-        
-        let quickButtonsHtml = `<button class="quick-set-btn research-quick-btn" data-val="0">0</button>`;
-        if (node.maxLevel >= 5) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="5">5</button>`;
-        if (node.maxLevel >= 10) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="10">10</button>`;
-        if (node.maxLevel >= 15) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="15">15</button>`;
-        if (node.maxLevel >= 20) quickButtonsHtml += `<button class="quick-set-btn research-quick-btn" data-val="20">20</button>`;
-        
-        // Smart Toggle Button
-        let toggleText = isMaxed ? 'UNDO' : 'MAX';
-        let toggleVal = isMaxed ? 0 : node.maxLevel;
-        const toggleStateClass = isMaxed ? ' research-max-toggle--undo' : '';
-        
-        quickButtonsHtml += `<button class="quick-set-btn max-toggle-btn research-quick-btn research-max-toggle${toggleStateClass}" data-val="${toggleVal}">${toggleText}</button>`;
+    quickButtonsHtml += `<button class="quick-set-btn max-toggle-btn research-quick-btn research-max-toggle${toggleStateClass}" data-val="${toggleVal}">${toggleText}</button>`;
 
-        const colAttr = node._displayCol || node.col ? ` data-node-col="${node._displayCol || node.col}"` : '';
-        const safeName = escapeHtml(node.name);
-        const safeBuff = escapeHtml(node.buff);
-        const buffSummary = describeNodeBuffProgress(node, savedLevel);
+    const colAttr =
+      node._displayCol || node.col ? ` data-node-col="${node._displayCol || node.col}"` : '';
+    const safeName = escapeHtml(node.name);
+    const safeBuff = escapeHtml(node.buff);
+    const buffSummary = describeNodeBuffProgress(node, savedLevel);
 
-        return `
+    return `
             <div class="research-tree-node-cell"${colAttr}>
                 <div class="tech-node-container research-node-card${maxedContainerClass}" data-node-id="${node.id}">
                     <div class="research-node-head">
@@ -1079,7 +1751,7 @@ function renderCalculator(tech) {
                             <span class="node-buff-display research-node-buff-progress" aria-live="polite">${renderNodeBuffProgress(buffSummary)}</span>
                         </div>
                         <div class="research-node-remaining">
-                            <span class="research-node-remaining-label">Remaining</span>
+                            <span class="research-node-remaining-label">${escapeHtml(appT('researchRemaining'))}</span>
                             <div class="node-cost-display research-node-costs"></div>
                         </div>
                     </div>
@@ -1087,12 +1759,12 @@ function renderCalculator(tech) {
                     <div class="research-node-controls">
                         <div class="research-node-slider-row">
                             <div class="research-node-level">
-                                <span class="research-node-mini-label">Lvl</span>
+                                <span class="research-node-mini-label">${escapeHtml(appT('researchLevelShort'))}</span>
                                 <input type="number" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-input research-node-input">
                             </div>
                             <input type="range" min="0" max="${node.maxLevel}" value="${savedLevel}" class="tech-node-slider research-node-slider">
                             <div class="research-node-max">
-                                <span class="research-node-mini-label">Max</span>
+                                <span class="research-node-mini-label">${escapeHtml(appT('researchMax'))}</span>
                                 <span class="research-node-max-value">${node.maxLevel}</span>
                             </div>
                         </div>
@@ -1103,340 +1775,380 @@ function renderCalculator(tech) {
                 </div>
             </div>
         `;
-    };
+  };
 
-    const renderNodeGroup = (nodes, options = {}) => {
-        const { preserveDisplayCols = false } = options;
-        let rowGroups = {};
-        nodes.forEach(node => {
-            if (!rowGroups[node.row]) rowGroups[node.row] = [];
-            rowGroups[node.row].push(node);
-        });
-        const rKeys = Object.keys(rowGroups).map(Number).sort((a,b)=>a-b);
-        
-        let gHtml = '<div class="research-tree-group">';
-        rKeys.forEach((rk, i) => {
-            const rNodes = rowGroups[rk];
-            rNodes.sort((a,b) => (a._displayCol || a.col || 0) - (b._displayCol || b.col || 0));
-            
-            const rowLayoutClass = rNodes.length === 1
-                ? ' research-tree-row--single'
-                : rNodes.length === 2
-                    ? ' research-tree-row--pair'
-                    : '';
-            if (rNodes.length === 1 && !(preserveDisplayCols && rNodes[0]._displayCol)) rNodes[0]._displayCol = 2;
-            if (rNodes.length === 2 && !preserveDisplayCols) {
-                rNodes[0]._displayCol = 1;
-                rNodes[1]._displayCol = 3;
-            }
-            gHtml += `<div class="research-tree-row${rowLayoutClass}" data-row-count="${rNodes.length}">`;
-            rNodes.forEach(n => gHtml += buildNodeHtml(n));
-            gHtml += `</div>`;
-            
-            if (i < rKeys.length - 1) {
-                gHtml += `
+  const renderNodeGroup = (nodes, options = {}) => {
+    const { preserveDisplayCols = false } = options;
+    let rowGroups = {};
+    nodes.forEach((node) => {
+      if (!rowGroups[node.row]) rowGroups[node.row] = [];
+      rowGroups[node.row].push(node);
+    });
+    const rKeys = Object.keys(rowGroups)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    let gHtml = '<div class="research-tree-group">';
+    rKeys.forEach((rk, i) => {
+      const rNodes = rowGroups[rk];
+      rNodes.sort((a, b) => (a._displayCol || a.col || 0) - (b._displayCol || b.col || 0));
+
+      const rowLayoutClass =
+        rNodes.length === 1
+          ? ' research-tree-row--single'
+          : rNodes.length === 2
+            ? ' research-tree-row--pair'
+            : '';
+      if (rNodes.length === 1 && !(preserveDisplayCols && rNodes[0]._displayCol))
+        rNodes[0]._displayCol = 2;
+      if (rNodes.length === 2 && !preserveDisplayCols) {
+        rNodes[0]._displayCol = 1;
+        rNodes[1]._displayCol = 3;
+      }
+      gHtml += `<div class="research-tree-row${rowLayoutClass}" data-row-count="${rNodes.length}">`;
+      rNodes.forEach((n) => (gHtml += buildNodeHtml(n)));
+      gHtml += `</div>`;
+
+      if (i < rKeys.length - 1) {
+        gHtml += `
                     <div class="research-tree-connector">
                         <div class="research-tree-connector-line"></div>
                     </div>`;
-            }
-        });
-        gHtml += '</div>';
-        return gHtml;
-    };
+      }
+    });
+    gHtml += '</div>';
+    return gHtml;
+  };
 
-    let html = `
+  let html = `
         <div class="research-calc-top">
             <div class="research-calc-header">
                 <div>
-                    <h3 class="research-calc-title">${tech.name} <span class="research-calc-season">(${tech.season})</span></h3>
-                    <p class="research-calc-sub">Primary Cost: <span class="research-calc-primary">${tech.primaryResource}</span></p>
+                    <h3 id="researchCalculatorTitle" class="research-calc-title" tabindex="-1">${escapeHtml(tech.name)} <span class="research-calc-season">(${escapeHtml(tech.season)})</span></h3>
+                    <p class="research-calc-sub">${escapeHtml(appT('researchPrimaryCost'))}: <span class="research-calc-primary">${escapeHtml(tech.primaryResource)}</span></p>
                 </div>
-                <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="Close calculator">
+                <button type="button" id="closeCalcBtn" class="research-calc-close" aria-label="${escapeHtml(appT('researchCloseCalculator'))}">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <div class="research-calc-actions">
-                <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">Reset All</button>
-                <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">Max All</button>
+                <button type="button" id="resetAllTechBtn" class="research-calc-btn research-calc-btn--reset">${escapeHtml(appT('researchResetAll'))}</button>
+                <button type="button" id="maxAllTechBtn" class="research-calc-btn research-calc-btn--max">${escapeHtml(appT('researchMaxAll'))}</button>
             </div>
         </div>
         
-        <div class="research-tree-scroll custom-scrollbar${canRenderBranchesAsLanes ? ' research-tree-scroll--lanes' : ''}">
+        <div class="research-calc-scrollport custom-scrollbar">
+          <div class="research-tree-scroll${canRenderBranchesAsLanes ? ' research-tree-scroll--lanes' : ''}">
     `;
 
-    let treeHtml = `<div class="research-tree-root">`;
-    
+  let treeHtml = `<div class="research-tree-root">`;
+
+  if (trunkNodes.length) {
+    treeHtml += renderNodeGroup(trunkNodes);
+  }
+
+  const hasBranches = b1Nodes.length || b2Nodes.length || b3Nodes.length;
+  if (hasBranches) {
     if (trunkNodes.length) {
-        treeHtml += renderNodeGroup(trunkNodes);
-    }
-    
-    const hasBranches = b1Nodes.length || b2Nodes.length || b3Nodes.length;
-    if (hasBranches) {
-        if (trunkNodes.length) {
-            treeHtml += `
+      treeHtml += `
                 <div class="research-tree-connector research-tree-connector--short">
                     <div class="research-tree-connector-line"></div>
                 </div>
             `;
-        }
+    }
 
-        if (canRenderBranchesAsLanes) {
-            treeHtml += `
-                <div class="research-branch-segment research-branch-segment--lanes" aria-label="Troop branch lanes">
+    if (canRenderBranchesAsLanes) {
+      treeHtml += `
+                <div class="research-branch-segment research-branch-segment--lanes" aria-label="${escapeHtml(appT('researchTroopBranchesAria'))}">
                     <div class="research-branch-btn research-branch-label">
-                        <span>+</span><span>Footmen</span>
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchFootmen'))}</span>
                     </div>
                     <div class="research-branch-btn research-branch-label">
-                        <span>+</span><span>Cavalry</span>
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchCavalry'))}</span>
                     </div>
                     <div class="research-branch-btn research-branch-label">
-                        <span>+</span><span>Archer</span>
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchArchers'))}</span>
                     </div>
                 </div>
                 <div class="branch-content research-branch-content research-branch-content--lanes">
                     ${renderNodeGroup(branchLaneNodes, { preserveDisplayCols: true })}
                 </div>
             `;
-        } else {
-            treeHtml += `
-                <div class="research-branch-segment">
-                    <button type="button" class="research-branch-btn branch-tab-btn active" data-target="branch_1">
-                        <span>+</span><span>Footmen</span>
+    } else {
+      treeHtml += `
+                <div class="research-branch-segment" role="tablist">
+                    <button type="button" id="researchBranchTab1" class="research-branch-btn branch-tab-btn active" role="tab" aria-selected="true" aria-controls="branch_1" data-target="branch_1" aria-label="${escapeHtml(appT('researchBranchTabAria', { branch: appT('researchTroopBranchFootmen') }))}">
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchFootmen'))}</span>
                     </button>
-                    <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_2">
-                        <span>+</span><span>Cavalry</span>
+                    <button type="button" id="researchBranchTab2" class="research-branch-btn branch-tab-btn" role="tab" aria-selected="false" aria-controls="branch_2" tabindex="-1" data-target="branch_2" aria-label="${escapeHtml(appT('researchBranchTabAria', { branch: appT('researchTroopBranchCavalry') }))}">
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchCavalry'))}</span>
                     </button>
-                    <button type="button" class="research-branch-btn branch-tab-btn" data-target="branch_3">
-                        <span>+</span><span>Archer</span>
+                    <button type="button" id="researchBranchTab3" class="research-branch-btn branch-tab-btn" role="tab" aria-selected="false" aria-controls="branch_3" tabindex="-1" data-target="branch_3" aria-label="${escapeHtml(appT('researchBranchTabAria', { branch: appT('researchTroopBranchArchers') }))}">
+                        <span>+</span><span>${escapeHtml(appT('researchTroopBranchArchers'))}</span>
                     </button>
                 </div>
             `;
 
-            treeHtml += `
-                <div id="branch_1" class="branch-content research-branch-content">
-                    ${b1Nodes.length ? renderNodeGroup(b1Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+      treeHtml += `
+                <div id="branch_1" class="branch-content research-branch-content" role="tabpanel" aria-labelledby="researchBranchTab1">
+                    ${b1Nodes.length ? renderNodeGroup(b1Nodes) : `<p class="research-empty-note">${escapeHtml(appT('researchNoNodesInBranch'))}</p>`}
                 </div>
-                <div id="branch_2" class="branch-content research-branch-content hidden">
-                    ${b2Nodes.length ? renderNodeGroup(b2Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+                <div id="branch_2" class="branch-content research-branch-content hidden" role="tabpanel" aria-labelledby="researchBranchTab2" hidden>
+                    ${b2Nodes.length ? renderNodeGroup(b2Nodes) : `<p class="research-empty-note">${escapeHtml(appT('researchNoNodesInBranch'))}</p>`}
                 </div>
-                <div id="branch_3" class="branch-content research-branch-content hidden">
-                    ${b3Nodes.length ? renderNodeGroup(b3Nodes) : '<p class="research-empty-note">No nodes in this branch</p>'}
+                <div id="branch_3" class="branch-content research-branch-content hidden" role="tabpanel" aria-labelledby="researchBranchTab3" hidden>
+                    ${b3Nodes.length ? renderNodeGroup(b3Nodes) : `<p class="research-empty-note">${escapeHtml(appT('researchNoNodesInBranch'))}</p>`}
                 </div>
             `;
-        }
     }
-    
-    treeHtml += `</div></div>`; 
+  }
 
-    html += treeHtml;
+  treeHtml += `</div></div></div>`;
 
-    html += `
+  html += treeHtml;
+
+  html += `
         <div class="research-calc-total">
             <div class="research-tree-total-copy">
-                <span class="research-tree-total-label">Tree Total</span>
-                <span class="research-tree-total-hint">Total remaining for this specific tree</span>
+                <span class="research-tree-total-label">${escapeHtml(appT('researchTreeTotal'))}</span>
+                <span class="research-tree-total-hint">${escapeHtml(appT('researchTreeTotalHint'))}</span>
             </div>
             <div id="totalTechCost" class="research-total-costs"></div>
         </div>
     `;
 
-    container.innerHTML = html;
-    requestAnimationFrame(() => {
-        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  container.innerHTML = html;
+  container.setAttribute('role', 'dialog');
+  container.setAttribute('aria-modal', 'true');
+  container.setAttribute('aria-labelledby', 'researchCalculatorTitle');
+  bindResearchCalculatorDialog(container);
+  requestAnimationFrame(() => {
+    container.scrollIntoView({ behavior: getResearchScrollBehavior(), block: 'start' });
+    container.querySelector('#researchCalculatorTitle')?.focus({ preventScroll: true });
+  });
+  document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
+
+  const branchTabs = container.querySelectorAll('.branch-tab-btn');
+  const branchContents = container.querySelectorAll('.branch-content');
+
+  branchTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      branchTabs.forEach((t) => {
+        const isActive = t === tab;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+        t.tabIndex = isActive ? 0 : -1;
+      });
+      branchContents.forEach((c) => {
+        c.classList.add('hidden');
+        c.hidden = true;
+      });
+      tab.classList.add('active');
+      const activePanel = container.querySelector('#' + tab.dataset.target);
+      activePanel?.classList.remove('hidden');
+      if (activePanel) activePanel.hidden = false;
     });
-    document.getElementById('closeCalcBtn').onclick = closeTechCalculator;
+  });
+  bindResearchTabArrowKeys(branchTabs);
 
-    const branchTabs = container.querySelectorAll('.branch-tab-btn');
-    const branchContents = container.querySelectorAll('.branch-content');
+  const containers = container.querySelectorAll('.tech-node-container');
+  const updateFns = [];
 
-    branchTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            branchTabs.forEach(t => t.classList.remove('active'));
-            branchContents.forEach(c => c.classList.add('hidden'));
-            tab.classList.add('active');
-            container.querySelector('#' + tab.dataset.target)?.classList.remove('hidden');
-        });
+  containers.forEach((cont) => {
+    const slider = cont.querySelector('.tech-node-slider');
+    const input = cont.querySelector('.tech-node-input');
+    const maxBtn = cont.querySelector('.max-toggle-btn');
+    const nodeId = cont.dataset.nodeId;
+
+    const updateLevel = (val, { recalculate = true } = {}) => {
+      let v = parseInt(val);
+      const max = parseInt(input.max);
+      if (isNaN(v) || v < 0) v = 0;
+      if (v > max) v = max;
+
+      slider.value = v;
+      input.value = v;
+      setStoredNodeLevel(tech.id, nodeId, v);
+
+      // Dynamic Gray-out & Button Swap
+      if (v === max) {
+        cont.classList.add('research-node-card--maxed');
+        if (maxBtn) {
+          maxBtn.dataset.val = 0;
+          maxBtn.textContent = appT('researchClearLevel');
+          maxBtn.className =
+            'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle research-max-toggle--undo';
+        }
+      } else {
+        cont.classList.remove('research-node-card--maxed');
+        if (maxBtn) {
+          maxBtn.dataset.val = max;
+          maxBtn.textContent = appT('researchMax');
+          maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle';
+        }
+      }
+
+      if (recalculate) calculateTechTotals(tech);
+    };
+
+    updateFns.push({ nodeId, updateLevel, max: parseInt(input.max) });
+
+    slider.addEventListener('input', (e) => updateLevel(e.target.value));
+    input.addEventListener('input', (e) => updateLevel(e.target.value));
+
+    cont.addEventListener('click', (e) => {
+      const btn = e.target.closest('.quick-set-btn');
+      if (btn) updateLevel(btn.dataset.val);
     });
+  });
 
-    const containers = container.querySelectorAll('.tech-node-container');
-    const updateFns = []; 
-
-    containers.forEach(cont => {
-        const slider = cont.querySelector('.tech-node-slider');
-        const input = cont.querySelector('.tech-node-input');
-        const maxBtn = cont.querySelector('.max-toggle-btn');
-        const nodeId = cont.dataset.nodeId;
-
-        const updateLevel = (val) => {
-            let v = parseInt(val);
-            const max = parseInt(input.max);
-            if (isNaN(v) || v < 0) v = 0;
-            if (v > max) v = max;
-            
-            slider.value = v;
-            input.value = v;
-            setStoredNodeLevel(tech.id, nodeId, v);
-
-            // Dynamic Gray-out & Button Swap
-            if (v === max) {
-                cont.classList.add('research-node-card--maxed');
-                if (maxBtn) {
-                    maxBtn.dataset.val = 0;
-                    maxBtn.innerHTML = 'UNDO';
-                    maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle research-max-toggle--undo';
-                }
-            } else {
-                cont.classList.remove('research-node-card--maxed');
-                if (maxBtn) {
-                    maxBtn.dataset.val = max;
-                    maxBtn.innerHTML = 'MAX';
-                    maxBtn.className = 'quick-set-btn max-toggle-btn research-quick-btn research-max-toggle';
-                }
-            }
-
-            calculateTechTotals(tech);
-        };
-        
-        updateFns.push({ nodeId, updateLevel, max: parseInt(input.max) });
-
-        slider.addEventListener('input', (e) => updateLevel(e.target.value));
-        input.addEventListener('input', (e) => updateLevel(e.target.value));
-        
-        cont.addEventListener('click', (e) => {
-            const btn = e.target.closest('.quick-set-btn');
-            if (btn) updateLevel(btn.dataset.val);
-        });
-    });
-
-    document.getElementById('resetAllTechBtn').addEventListener('click', () => {
-        updateFns.forEach(obj => obj.updateLevel(0));
-    });
-
-    document.getElementById('maxAllTechBtn').addEventListener('click', () => {
-        updateFns.forEach(obj => obj.updateLevel(obj.max));
-    });
-
+  document.getElementById('resetAllTechBtn').addEventListener('click', () => {
+    updateFns.forEach((obj) => obj.updateLevel(0, { recalculate: false }));
     calculateTechTotals(tech);
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('maxAllTechBtn').addEventListener('click', () => {
+    updateFns.forEach((obj) => obj.updateLevel(obj.max, { recalculate: false }));
+    calculateTechTotals(tech);
+  });
+
+  calculateTechTotals(tech);
 }
 
 function calculateTechTotals(tech) {
-    let grandTotalCourage = 0;
-    let grandTotalWisdom = 0;
-    let grandTotalOther = 0;
-    
-    const iconCM = `<img src="images/CM.png" class="research-cost-icon" alt="CM">`;
-    const iconWB = `<img src="images/WB.png" class="research-cost-icon" alt="WB">`;
-    const iconRes = `<svg class="research-cost-icon research-cost-icon--res" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>`;
+  let grandTotalCourage = 0;
+  let grandTotalWisdom = 0;
+  let grandTotalOther = 0;
 
-    tech.nodes.forEach(node => {
-        const container = document.querySelector(`.tech-node-container[data-node-id="${node.id}"]`);
-        const input = container?.querySelector('.tech-node-input');
-        const display = container?.querySelector('.node-cost-display');
-        const buffDisplay = container?.querySelector('.node-buff-display');
-        const currentLevel = input
-            ? (parseInt(input.value, 10) || 0)
-            : getStoredNodeLevel(tech.id, node.id);
+  const iconCM = `<img src="images/CM.png" class="research-cost-icon" alt="CM">`;
+  const iconWB = `<img src="images/WB.png" class="research-cost-icon" alt="WB">`;
+  const iconRes = '';
 
-        let nodeWisdom = 0;
-        let nodeCourage = 0;
-        let nodeOther = 0;
+  tech.nodes.forEach((node) => {
+    const container = document.querySelector(`.tech-node-container[data-node-id="${node.id}"]`);
+    const input = container?.querySelector('.tech-node-input');
+    const display = container?.querySelector('.node-cost-display');
+    const buffDisplay = container?.querySelector('.node-buff-display');
+    const currentLevel = input
+      ? parseInt(input.value, 10) || 0
+      : getStoredNodeLevel(tech.id, node.id);
 
-        for (let i = currentLevel; i < node.maxLevel; i++) {
-            let genericCost = (node.costs && node.costs[i]) || 0;
-            let wbCost = (node.warBadgeCosts && node.warBadgeCosts[i]) || (node.wisdomCosts && node.wisdomCosts[i]) || (node.wb_costs && node.wb_costs[i]) || 0;
-            let cmCost = (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
+    let nodeWisdom = 0;
+    let nodeCourage = 0;
+    let nodeOther = 0;
 
-            if (node.costType === "Dual") {
-                nodeWisdom += wbCost > 0 ? wbCost : genericCost;
-                nodeCourage += cmCost;
-            } else if (node.costType === "Courage") {
-                nodeCourage += genericCost > 0 ? genericCost : cmCost;
-            } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
-                nodeWisdom += genericCost > 0 ? genericCost : wbCost;
-            } else {
-                nodeOther += genericCost;
-            }
-        }
+    for (let i = currentLevel; i < node.maxLevel; i++) {
+      let genericCost = (node.costs && node.costs[i]) || 0;
+      let wbCost =
+        (node.warBadgeCosts && node.warBadgeCosts[i]) ||
+        (node.wisdomCosts && node.wisdomCosts[i]) ||
+        (node.wb_costs && node.wb_costs[i]) ||
+        0;
+      let cmCost =
+        (node.courageCosts && node.courageCosts[i]) || (node.cm_costs && node.cm_costs[i]) || 0;
 
-        if (display) {
-            const isGamePill = display.classList.contains('game-tech-cost-pill');
-            const remainingTotal = nodeWisdom + nodeCourage + nodeOther;
-            if (isGamePill && remainingTotal === 0) {
-                display.innerHTML = '';
-            } else if (node.costType === "Dual") {
-                display.innerHTML = isGamePill
-                    ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-                    : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
-            } else if (node.costType === "Courage") {
-                display.innerHTML = isGamePill
-                    ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
-                    : `<span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
-            } else if (node.costType === "Wisdom" || node.costType === "War Badge" || node.costType === "War Badges") {
-                display.innerHTML = isGamePill
-                    ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`
-                    : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`;
-            } else {
-                display.innerHTML = isGamePill
-                    ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
-                    : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`;
-            }
-        }
+      if (node.costType === 'Dual') {
+        nodeWisdom += wbCost > 0 ? wbCost : genericCost;
+        nodeCourage += cmCost;
+      } else if (node.costType === 'Courage') {
+        nodeCourage += genericCost > 0 ? genericCost : cmCost;
+      } else if (
+        node.costType === 'Wisdom' ||
+        node.costType === 'War Badge' ||
+        node.costType === 'War Badges'
+      ) {
+        nodeWisdom += genericCost > 0 ? genericCost : wbCost;
+      } else {
+        nodeOther += genericCost;
+      }
+    }
 
-        if (buffDisplay) {
-            const compact = buffDisplay.classList.contains('game-tech-buff-pill');
-            buffDisplay.innerHTML = renderNodeBuffProgress(
-                describeNodeBuffProgress(node, currentLevel),
-                compact,
-            );
-        }
+    if (display) {
+      const isGamePill = display.classList.contains('game-tech-cost-pill');
+      const remainingTotal = nodeWisdom + nodeCourage + nodeOther;
+      if (isGamePill && remainingTotal === 0) {
+        display.innerHTML = '';
+      } else if (node.costType === 'Dual') {
+        display.innerHTML = isGamePill
+          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span><span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
+      } else if (node.costType === 'Courage') {
+        display.innerHTML = isGamePill
+          ? `<span class="game-tech-pill game-tech-pill--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--cm">${iconCM}<span>${nodeCourage.toLocaleString()}</span></span>`;
+      } else if (
+        node.costType === 'Wisdom' ||
+        node.costType === 'War Badge' ||
+        node.costType === 'War Badges'
+      ) {
+        display.innerHTML = isGamePill
+          ? `<span class="game-tech-pill game-tech-pill--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--wb">${iconWB}<span>${nodeWisdom.toLocaleString()}</span></span>`;
+      } else {
+        display.innerHTML = isGamePill
+          ? `<span class="game-tech-pill game-tech-pill--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`
+          : `<span class="research-node-cost-row research-node-cost-row--res">${iconRes}<span>${nodeOther.toLocaleString()}</span></span>`;
+      }
+    }
 
-        syncGameNodeButton(node, currentLevel);
+    if (buffDisplay) {
+      const compact = buffDisplay.classList.contains('game-tech-buff-pill');
+      buffDisplay.innerHTML = renderNodeBuffProgress(
+        describeNodeBuffProgress(node, currentLevel),
+        compact
+      );
+    }
 
-        grandTotalWisdom += nodeWisdom;
-        grandTotalCourage += nodeCourage;
-        grandTotalOther += nodeOther;
-    });
+    syncGameNodeButton(tech, node, currentLevel);
 
-    const totalContainer = document.getElementById('totalTechCost');
-    let hasBoth = (grandTotalCourage > 0 && grandTotalWisdom > 0);
-    let isDualString = tech.primaryResource.includes("Dual");
+    grandTotalWisdom += nodeWisdom;
+    grandTotalCourage += nodeCourage;
+    grandTotalOther += nodeOther;
+  });
 
-    if (isDualString || hasBoth) {
-        totalContainer.innerHTML = `
+  const totalContainer = document.getElementById('totalTechCost');
+  let hasBoth = grandTotalCourage > 0 && grandTotalWisdom > 0;
+  let isDualString = tech.primaryResource.includes('Dual');
+
+  if (isDualString || hasBoth) {
+    totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--wb">
-                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">War Badges</span><span class="research-cost-summary-label-short">WB</span></span>
+                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
                 <span>${grandTotalWisdom.toLocaleString()}</span>
             </span>
             <span class="research-cost-summary research-cost-summary--cm">
-                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">Courage Medals</span><span class="research-cost-summary-label-short">CM</span></span>
+                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
                 <span>${grandTotalCourage.toLocaleString()}</span>
             </span>
         `;
-    } else if (grandTotalWisdom > 0 || tech.primaryResource.includes("Wisdom") || tech.primaryResource.includes("War Badge")) {
-        totalContainer.innerHTML = `
+  } else if (
+    grandTotalWisdom > 0 ||
+    tech.primaryResource.includes('Wisdom') ||
+    tech.primaryResource.includes('War Badge')
+  ) {
+    totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--wb">
-                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">War Badges</span><span class="research-cost-summary-label-short">WB</span></span>
+                <span class="research-cost-summary-label">${iconWB}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchWarBadges'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchWarBadgesShort'))}</span></span>
                 <span>${grandTotalWisdom.toLocaleString()}</span>
             </span>
         `;
-    } else if (grandTotalCourage > 0 || tech.primaryResource.includes("Courage")) {
-        totalContainer.innerHTML = `
+  } else if (grandTotalCourage > 0 || tech.primaryResource.includes('Courage')) {
+    totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--cm">
-                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">Courage Medals</span><span class="research-cost-summary-label-short">CM</span></span>
+                <span class="research-cost-summary-label">${iconCM}<span class="research-cost-summary-label-full">${escapeHtml(appT('researchCourageMedals'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchCourageMedalsShort'))}</span></span>
                 <span>${grandTotalCourage.toLocaleString()}</span>
             </span>
         `;
-    } else {
-        totalContainer.innerHTML = `
+  } else {
+    totalContainer.innerHTML = `
             <span class="research-cost-summary research-cost-summary--res">
-                <span class="research-cost-summary-label">${iconRes}<span class="research-cost-summary-label-full">Resources</span><span class="research-cost-summary-label-short">Res</span></span>
+                <span class="research-cost-summary-label"><span class="research-cost-summary-label-full">${escapeHtml(appT('researchResources'))}</span><span class="research-cost-summary-label-short">${escapeHtml(appT('researchResourcesShort'))}</span></span>
                 <span>${grandTotalOther.toLocaleString()}</span>
             </span>
         `;
-    }
-    
-    updateGlobalSummary();
+  }
+
+  updateGlobalSummary();
 }
 
 window.closeTechCalculator = closeTechCalculator;

@@ -6,7 +6,7 @@ import { baseRankedCombos } from './combos-db.js';
 import { seasonColors, TechseasonColors } from './constants.js';
 
 // --- APP CONFIG ---
-export const APP_VERSION = '13.1.11';
+export const APP_VERSION = '14.0.0';
 export const ENABLE_RESEARCH_FEATURE = true;
 
 const runtimeState = globalThis.__vtsHeroComboRuntimeState || {};
@@ -173,6 +173,7 @@ export const loyaltySection = document.getElementById('loyaltySection');
 export const youtubeSection = document.getElementById('youtubeSection');
 export const researchSection = document.getElementById('researchSection');
 export const materialsSection = document.getElementById('materialsSection');
+export const arcadeSection = document.getElementById('arcadeSection');
 
 export const tabManualBtn = document.getElementById('tabManual');
 export const tabGeneratorBtn = document.getElementById('tabGenerator');
@@ -183,6 +184,7 @@ export const tabMaterialsBtn = document.getElementById('tabMaterials');
 export const tabHeroesBtn = document.getElementById('tabHeroes');
 export const tabEdenMapBtn = document.getElementById('tabEdenMap');
 export const tabStrifeBtn = document.getElementById('tabStrife');
+export const tabArcadeBtn = document.getElementById('tabArcade');
 export const heroesSection = document.getElementById('heroesSection');
 export const edenMapSection = document.getElementById('edenMapSection');
 export const strifeSection = document.getElementById('strifeSection');

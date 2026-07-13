@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>C - Crystal Relay</title>
+    <link rel="stylesheet" href="./shared.css" />
+    <style>
+      .relay {
+        position: absolute;
+        left: 50%;
+        top: 58%;
+        transform: translate(-50%, -50%);
+        width: min(88vw, 360px);
+        z-index: 10;
+      }
+      .relay-bar {
+        position: relative;
+        height: 18px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(34, 211, 238, 0.35), rgba(80, 80, 100, 0.25), rgba(251, 146, 60, 0.35));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        overflow: visible;
+      }
+      .zone {
+        position: absolute;
+        top: -6px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(52, 211, 153, 0.35);
+        border: 1px solid rgba(52, 211, 153, 0.7);
+        box-shadow: 0 0 12px rgba(52, 211, 153, 0.35);
+      }
+      .sweet-spot {
+        position: absolute;
+        top: -4px;
+        left: 0;
+        height: 38px;
+        border-radius: 6px;
+        background: rgba(255, 215, 0, 0.2);
+        border: 1.5px dashed rgba(255, 215, 0, 0.75);
+        box-shadow: 0 0 16px rgba(255, 215, 0, 0.45);
+        pointer-events: none;
+      }
+      .spark {
+        position: absolute;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #fff, #f5c451 45%, #fb923c);
+        box-shadow: 0 0 16px rgba(245, 196, 81, 0.8);
+        left: 0%;
+      }
+      .badge {
+        position: absolute;
+        left: 50%;
+        top: -64px;
+        transform: translateX(-50%);
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(8, 12, 22, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .badge img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+      }
+      .badge.blue {
+        border-color: rgba(125, 211, 252, 0.6);
+      }
+      .badge.gold {
+        border-color: rgba(245, 196, 81, 0.6);
+      }
+      .tap-area {
+        position: absolute;
+        inset: 0;
+        z-index: 12;
+        cursor: pointer;
+      }
+      .combo-label {
+        text-align: center;
+        margin-top: 0.75rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .combo-label strong {
+        color: var(--mint);
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./shared.js"></script>
+    <script>
+      (() => {
+        const G = BootGame;
+        const SCORE_KEY = 'vts_proto_crystal_relay';
+        const ui = G.mountShell({
+          modeId: 'Mode C',
+          modeKey: 'arcadeModeC',
+          title: 'Crystal Relay',
+          titleKey: 'arcadeCrystalRelayTitle',
+          hint: 'Tap in the green zone - spark gets faster, zone shrinks  stay focused!',
+          hintKey: 'arcadeCrystalRelayDesc',
+          scoreKey: SCORE_KEY,
+          controlScheme: 'relay',
+        });
+
+        ui.playfield.innerHTML = `
+          <div class="relay" id="relay">
+            <div class="badge blue" id="badge"><img id="badgeImg" alt="" /></div>
+            <div class="relay-bar" id="bar">
+              <div class="zone" id="zone"><div class="sweet-spot" id="sweetSpot"></div></div>
+              <div class="spark" id="spark"></div>
+            </div>
+            <div class="combo-label"><strong id="combo">0</strong>× <span aria-hidden="true">·</span> <strong id="sideLabel">❄</strong></div>
+          </div>
+          <div class="tap-area" id="tap"></div>
+        `;
+
+        const badge = document.getElementById('badge');
+        const badgeImg = document.getElementById('badgeImg');
+        const zone = document.getElementById('zone');
+        const sweetSpot = document.getElementById('sweetSpot');
+        const spark = document.getElementById('spark');
+        const comboEl = document.getElementById('combo');
+        const sideLabel = document.getElementById('sideLabel');
+
+        const comboBadge = G.createComboBadge();
+        document.body.appendChild(comboBadge);
+
+        const state = {
+          score: 0, lives: 3, paused: false, over: false,
+          combo: 0, lastSide: null, t: 0, last: 0,
+          pos: 0, dir: 1, speed: 0.00075,
+          zoneC: 0.5, zoneW: 0.12,
+          color: 'blue', type: 'claw', armed: true,
+        };
+
+        function setHud() {
+          ui.scoreEl.textContent = String(state.score);
+          ui.heartsEl.textContent = G.hearts(state.lives);
+          ui.bestEl.textContent = String(G.loadHighScore(SCORE_KEY));
+          comboEl.textContent = String(state.combo);
+        }
+
+        function placeZone() {
+          const preferLeft = state.lastSide !== 'left';
+          state.zoneC = preferLeft ? 0.18 + Math.random() * 0.18 : 0.64 + Math.random() * 0.18;
+          state.zoneW = Math.max(0.1, 0.18 - state.combo * 0.004);
+          zone.style.left = `${(state.zoneC - state.zoneW / 2) * 100}%`;
+          zone.style.width = `${state.zoneW * 100}%`;
+          const sweetW = state.zoneW * 0.3;
+          sweetSpot.style.left = `${(state.zoneC - sweetW / 2) * 100}%`;
+          sweetSpot.style.width = `${sweetW * 100}%`;
+          const side = state.zoneC < 0.5 ? 'ice' : 'fire';
+          sideLabel.textContent = side === 'ice' ? '❄' : '🔥';
+          state.color = side === 'ice' ? 'blue' : 'gold';
+          if (Math.random() < 0.1) state.color = 'purple';
+          state.type = G.randomOf(G.TYPES);
+          badge.className = `badge ${state.color === 'purple' ? 'blue' : state.color}`;
+          if (state.color === 'purple') badge.style.borderColor = 'rgba(167,139,250,0.7)';
+          badgeImg.src = G.materialSrc(state.color === 'purple' ? 'purple' : state.color, state.type);
+          state.armed = true;
+        }
+
+        function hurt() {
+          state.lives -= 1; state.combo = 0;
+          G.gateFx('hurt'); G.vibrate(22);
+          G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          setHud();
+          if (state.lives <= 0) { state.over = true; G.animateGameOver(ui.scoreEl, ui.bestEl, SCORE_KEY, state.score); }
+        }
+
+        function showSweetText() {
+          const rect = spark.getBoundingClientRect();
+          const el = document.createElement('div');
+          el.textContent = 'x2 SWEET!';
+          Object.assign(el.style, {
+            position: 'fixed',
+            left: `${rect.left + rect.width / 2}px`,
+            top: `${rect.top - 10}px`,
+            transform: 'translateX(-50%)',
+            color: 'gold',
+            fontSize: '1.4rem',
+            fontWeight: '800',
+            pointerEvents: 'none',
+            zIndex: '100',
+            textShadow: '0 0 12px rgba(255,215,0,0.8), 0 2px 4px rgba(0,0,0,0.5)',
+            transition: 'transform 0.8s ease-out, opacity 0.8s ease-out',
+          });
+          document.body.appendChild(el);
+          requestAnimationFrame(() => {
+            el.style.transform = 'translateX(-50%) translateY(-40px)';
+            el.style.opacity = '0';
+          });
+          setTimeout(() => el.remove(), 900);
+        }
+
+        function tap() {
+          if (state.paused || state.over || !state.armed) return;
+          const half = state.zoneW / 2;
+          const inZone = Math.abs(state.pos - state.zoneC) <= half;
+          if (!inZone) { hurt(); placeZone(); return; }
+          const sweetHalf = state.zoneW * 0.15;
+          const inSweet = Math.abs(state.pos - state.zoneC) <= sweetHalf;
+          const side = state.zoneC < 0.5 ? 'left' : 'right';
+          if (state.lastSide && state.lastSide !== side) state.combo += 1;
+          else if (state.lastSide === side) state.combo = Math.max(1, state.combo);
+          else state.combo = 1;
+          state.lastSide = side;
+          const base = state.color === 'purple' ? 25 : 12;
+          let pts = base + state.combo * 3;
+          if (inSweet) { pts *= 2; showSweetText(); }
+          state.score += pts;
+          const { count, mult } = G.feedByColor(state.color);
+          G.gateFx('hit'); G.vibrate(8);
+          G.showComboBadge(comboBadge, count, mult);
+          state.armed = false;
+          setHud();
+          setTimeout(() => { if (!state.over) placeZone(); }, 180);
+        }
+
+        function loop(t) {
+          if (!state.last) state.last = t;
+          const dt = Math.min(32, t - state.last);
+          state.last = t;
+          if (!state.paused && !state.over) {
+            state.pos += state.dir * state.speed * dt * (1 + state.combo * 0.04);
+            if (state.pos >= 1) { state.pos = 1; state.dir = -1; }
+            if (state.pos <= 0) { state.pos = 0; state.dir = 1; }
+            spark.style.left = `${state.pos * 100}%`;
+          }
+          requestAnimationFrame(loop);
+        }
+
+        document.getElementById('tap').addEventListener('pointerdown', (e) => { e.preventDefault(); tap(); });
+        G.setupKeyboard({
+          pause: () => { state.paused = !state.paused; G.togglePauseBtn(ui.btnPause, state.paused); },
+          restart: reset,
+        });
+        window.addEventListener('keydown', (e) => {
+          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tap(); }
+        });
+
+        function reset() {
+          state.score = 0; state.lives = 3; state.paused = false; state.over = false;
+          state.combo = 0; state.lastSide = null; state.pos = 0; state.dir = 1;
+          state.speed = 0.00055; state.last = 0;
+          G.resetWings(); G.resetCombo(); G.showComboBadge(comboBadge, 0, 1);
+          G.hideOverlay(); placeZone(); setHud();
+        }
+
+        ui.btnRestart.addEventListener('click', reset);
+        ui.overlayRestart.addEventListener('click', reset);
+        ui.btnPause.addEventListener('click', () => {
+          state.paused = !state.paused;
+          G.togglePauseBtn(ui.btnPause, state.paused);
+        });
+
+        reset();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

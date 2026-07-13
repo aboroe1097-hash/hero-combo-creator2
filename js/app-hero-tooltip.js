@@ -1,7 +1,12 @@
 import { escapeHtml } from './utils.js';
 // Extracted Hero Tooltip Module
 import { allHeroesData } from './heroes-data.js';
-import { heroInfoEnabled, getTroopColorClass, getLocalizedTroop, getHeroImageUrl } from './state.js';
+import {
+  heroInfoEnabled,
+  getTroopColorClass,
+  getLocalizedTroop,
+  getHeroImageUrl,
+} from './state.js';
 import { baseRankedCombos } from './combos-db.js';
 
 let heroTooltip = null;
@@ -13,15 +18,36 @@ let moveRaf = 0;
 let pendingMoveEvent = null;
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('resize', () => {
-    cachedTooltipW = 0;
-    cachedTooltipH = 0;
-  }, { passive: true });
+  window.addEventListener(
+    'resize',
+    () => {
+      cachedTooltipW = 0;
+      cachedTooltipH = 0;
+      if (!heroTooltip || heroTooltip.classList.contains('hidden')) return;
+
+      const rect = heroTooltip.getBoundingClientRect();
+      cachedTooltipW = rect.width;
+      cachedTooltipH = rect.height;
+      const pointerX = Number(pendingMoveEvent?.clientX);
+      const pointerY = Number(pendingMoveEvent?.clientY);
+      moveHeroTooltip({
+        clientX:
+          Number.isFinite(pointerX) && pointerX >= 0 && pointerX <= window.innerWidth
+            ? pointerX
+            : window.innerWidth / 2,
+        clientY:
+          Number.isFinite(pointerY) && pointerY >= 0 && pointerY <= window.innerHeight
+            ? pointerY
+            : window.innerHeight / 2,
+      });
+    },
+    { passive: true }
+  );
 }
 
 function loadHeroInfoData() {
   if (!heroInfoPromise) {
-    heroInfoPromise = import('./heroes-info.js').then(mod => mod.heroesExtendedData || {});
+    heroInfoPromise = import('./heroes-info.js').then((mod) => mod.heroesExtendedData || {});
   }
   return heroInfoPromise;
 }
@@ -29,7 +55,7 @@ function loadHeroInfoData() {
 function formatSkillText(text = '') {
   let counter = 0;
   const tokens = {};
-  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
   function tokenize(html) {
     const token = `_TK${alpha[counter++]}_`;
@@ -41,8 +67,9 @@ function formatSkillText(text = '') {
   formatted = formatted.replace(/([+-]?\d+(?:\.\d+)?%)/g, (match) =>
     tokenize(`<span class="skill-value skill-value--percent">${match}</span>`)
   );
-  formatted = formatted.replace(/(\d+\s*(?:turns|turn|rounds|round|times|time|layers|layer|roun|min|hr))/gi, (match) =>
-    tokenize(`<span class="skill-value skill-value--duration">${match}</span>`)
+  formatted = formatted.replace(
+    /(\d+\s*(?:turns|turn|rounds|round|times|time|layers|layer|roun|min|hr))/gi,
+    (match) => tokenize(`<span class="skill-value skill-value--duration">${match}</span>`)
   );
   formatted = formatted.replace(/\b(\d+)\b/g, (match) =>
     tokenize(`<span class="skill-value skill-value--number">${match}</span>`)
@@ -55,20 +82,20 @@ function formatSkillText(text = '') {
 }
 
 function getSynergies(heroName) {
-  const containingCombos = baseRankedCombos.filter(c => c?.heroes?.includes(heroName));
+  const containingCombos = baseRankedCombos.filter((c) => c?.heroes?.includes(heroName));
   const top5 = containingCombos.slice(0, 5);
   if (top5.length === 0) return [];
 
   const counts = {};
-  top5.forEach(combo => {
-    combo.heroes.forEach(h => {
+  top5.forEach((combo) => {
+    combo.heroes.forEach((h) => {
       if (h !== heroName) counts[h] = (counts[h] || 0) + 1;
     });
   });
 
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
-    .map(entry => entry[0])
+    .map((entry) => entry[0])
     .slice(0, 3);
 }
 
@@ -79,34 +106,35 @@ function getHeroTooltip() {
 
   heroTooltip = document.createElement('div');
   heroTooltip.id = 'heroTooltip';
-  heroTooltip.className = 'hero-tooltip-shell hero-tooltip-shell--passive hero-tooltip-shell--hidden hidden';
+  heroTooltip.className =
+    'hero-tooltip-shell hero-tooltip-shell--passive hero-tooltip-shell--hidden hidden';
   heroTooltip.style.zIndex = '5000';
   document.body.appendChild(heroTooltip);
   return heroTooltip;
 }
 
-
 async function showHeroTooltip(e, heroName) {
-  if (!heroInfoEnabled) return; 
+  if (!heroInfoEnabled) return;
   if (e?.type?.startsWith('pointer') && window.innerWidth < 1024) return;
   const tooltip = getHeroTooltip();
 
   const heroesExtendedData = await loadHeroInfoData();
   if (!heroInfoEnabled) return;
   const data = heroesExtendedData[heroName];
-  if (!data) return; 
+  if (!data) return;
 
-  const baseData = allHeroesData.find(h => h.name === heroName);
+  const baseData = allHeroesData.find((h) => h.name === heroName);
   const troopType = baseData ? baseData.Type : 'Unknown';
   const troopColorClass = getTroopColorClass(troopType);
   const localizedTroop = getLocalizedTroop(troopType);
 
-  let skillsHtml = data.skills.map(s => {
-    const formattedDesc = formatSkillText(s.desc);
-    const isEnemy = s.target.toLowerCase().includes('enemy');
-    const targetClass = isEnemy ? 'hero-tooltip-target--enemy' : 'hero-tooltip-target--ally';
+  let skillsHtml = data.skills
+    .map((s) => {
+      const formattedDesc = formatSkillText(s.desc);
+      const isEnemy = s.target.toLowerCase().includes('enemy');
+      const targetClass = isEnemy ? 'hero-tooltip-target--enemy' : 'hero-tooltip-target--ally';
 
-    return `
+      return `
       <div class="hero-tooltip-skill">
         <div class="hero-tooltip-skill-head">
           <span class="hero-tooltip-skill-id">SKILL ${s.id}</span>
@@ -122,18 +150,23 @@ async function showHeroTooltip(e, heroName) {
         <p class="hero-tooltip-desc">${formattedDesc}</p>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   let synergyHtml = '';
   const synergies = getSynergies(heroName);
   if (synergies.length > 0) {
-    const synTags = synergies.map(syn => `
+    const synTags = synergies
+      .map(
+        (syn) => `
       <div class="hero-tooltip-synergy-card">
          <img src="${getHeroImageUrl(syn)}" alt="${escapeHtml(syn)}" loading="lazy" decoding="async" crossorigin="anonymous" class="hero-tooltip-synergy-img">
          <span class="hero-tooltip-synergy-name">${escapeHtml(syn)}</span>
       </div>
-    `).join('');
-    
+    `
+      )
+      .join('');
+
     synergyHtml = `
       <div class="hero-tooltip-synergy-block">
         <span class="hero-tooltip-label">Best Synergies</span>
@@ -161,7 +194,7 @@ async function showHeroTooltip(e, heroName) {
         </div>
       </div>
       
-      <button id="closeTooltipBtn" class="hero-tooltip-close">
+      <button id="closeTooltipBtn" class="hero-tooltip-close" type="button" aria-label="Close hero info" title="Close">
         <svg class="hero-tooltip-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
@@ -192,11 +225,15 @@ async function showHeroTooltip(e, heroName) {
       ev.stopPropagation();
       hideHeroTooltip();
     });
-    closeBtn.addEventListener('touchstart', (ev) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-      hideHeroTooltip();
-    }, { passive: false });
+    closeBtn.addEventListener(
+      'touchstart',
+      (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        hideHeroTooltip();
+      },
+      { passive: false }
+    );
   }
 }
 
@@ -245,7 +282,7 @@ function hideHeroTooltip() {
   const tooltip = getHeroTooltip();
   tooltip.classList.add('hero-tooltip-shell--hidden');
   setTimeout(() => {
-    if(tooltip.classList.contains('hero-tooltip-shell--hidden')) tooltip.classList.add('hidden');
+    if (tooltip.classList.contains('hero-tooltip-shell--hidden')) tooltip.classList.add('hidden');
   }, 200);
 }
 

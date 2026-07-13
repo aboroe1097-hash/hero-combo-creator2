@@ -1,7 +1,570 @@
 /* Eden X1 route-only polish. Kept out of the shared app bundle. */
+
+/* =============================================================
+   v14 Frost & Flame — Eden X1 page typography and token mapping.
+   Sora carries all UI/display; JetBrains Mono is data-only
+   (ranks, scores, totals, timers, dates, percentages). Scoped
+   under .eden-x1-page so the main site and Admin are untouched.
+   ============================================================= */
+.eden-x1-page {
+  --frost-void: #070b16;
+  --frost-deep: #0a0f1e;
+  --frost-glass: rgba(255, 255, 255, 0.06);
+  --frost-glass-raised: rgba(255, 255, 255, 0.11);
+  --frost-hairline: rgba(255, 255, 255, 0.13);
+  --frost-text: #eef4ff;
+  --frost-text-dim: #9fb0cc;
+  --frost-text-mute: #41527a;
+  --frost-cyan: #7dd3fc;
+  --frost-fire: #fb923c;
+  --frost-gold: #f5c451;
+  --frost-violet: #a78bfa;
+  --frost-rose: #fb7185;
+  --frost-mint: #34d399;
+  --frost-grad-primary: linear-gradient(90deg, #7dd3fc, #fb923c);
+  --frost-grad-celestial: linear-gradient(90deg, #7dd3fc, #a78bfa, #fb923c);
+  font-family: var(--font-ui);
+}
+
+.eden-x1-page body,
+body.eden-x1-page {
+  font-family: var(--font-ui);
+}
+
+.eden-x1-page
+  :is(
+    .admin-shell-title,
+    .admin-shell-kicker,
+    .admin-shell-team,
+    .admin-shell-copy,
+    .eden-x1-notice,
+    .eden-x1-reward-heading h2,
+    .eden-x1-reward-heading p,
+    .eden-x1-reward-eyebrow,
+    .eden-x1-flow-label,
+    .eden-x1-flow-copy,
+    .eden-x1-flow-action,
+    .eden-x1-quicknav-chip,
+    .dash-card-title,
+    .dash-card-subtitle,
+    .dash-empty,
+    .eden-x1-vote-panel .dash-card-title,
+    .eden-x1-vote-field > span,
+    .eden-x1-vote-saved,
+    .eden-x1-vote-status,
+    .eden-x1-vote-suggestion,
+    .eden-x1-vote-confirm-chip,
+    .eden-x1-vote-countdown,
+    .eden-x1-vote-help-link,
+    .dash-connecting-title,
+    .dash-connecting-status,
+    .dash-connecting-kicker,
+    .eden-x1-public-card .dash-card-title,
+    .eden-x1-marquee-title,
+    .eden-x1-marquee-kicker,
+    .eden-x1-marquee-status,
+    .eden-x1-podium-name,
+    .eden-x1-podium-rank,
+    .eden-x1-podium-label,
+    .eden-x1-progression-label,
+    .eden-x1-progression-now,
+    .eden-x1-reward-slot-num
+  ) {
+  font-family: var(--font-ui);
+}
+
+/* JetBrains Mono for data-only text: ranks, scores, totals,
+   timers, dates, percentages, and compact uppercase eyebrows. */
+.eden-x1-page
+  :is(
+    .eden-x1-flow-count,
+    .eden-x1-marquee-countdown,
+    .eden-x1-marquee-stat-value,
+    .eden-x1-podium-score,
+    .eden-x1-podium-rank-num,
+    .eden-x1-progression-pct,
+    .eden-x1-progression-milestone-pct,
+    .eden-x1-vote-count,
+    .dash-weighted-score-cell,
+    .dash-weighted-detail-col,
+    .eden-x1-progressive-status,
+    .dash-connecting-bar-pct,
+    .global-game-clock
+  ) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .eden-x1-page .eden-x1-website-link {
   background: linear-gradient(135deg, #67e8f9 0%, #34d399 48%, #facc15 100%) !important;
   color: #06111f !important;
+}
+
+/* =============================================================
+   v14 Frost & Flame — Season marquee, top-3 podium, progression.
+   All hydrated from real runtime data; no mock names/scores/dates.
+   ============================================================= */
+
+.eden-x1-page .eden-x1-marquee {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 1rem clamp(0.85rem, 2.5vw, 1.25rem);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(167, 139, 250, 0.1), transparent 38%),
+    radial-gradient(circle at 12% 88%, rgba(251, 146, 60, 0.08), transparent 36%),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px rgba(2, 8, 23, 0.28);
+  overflow: hidden;
+}
+
+.eden-x1-page .eden-x1-marquee[hidden] {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-marquee-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.eden-x1-page .eden-x1-marquee-title {
+  margin: 0;
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--frost-text);
+  line-height: 1.1;
+}
+
+.eden-x1-page .eden-x1-marquee-kicker {
+  display: inline-block;
+  margin: 0 0 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--frost-cyan);
+}
+
+.eden-x1-page .eden-x1-marquee-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.5rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--frost-cyan);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.eden-x1-page .eden-x1-marquee-status[data-state='closed'] {
+  border-color: rgba(251, 113, 133, 0.42);
+  background: rgba(251, 113, 133, 0.12);
+  color: var(--frost-rose);
+}
+
+.eden-x1-page .eden-x1-marquee-status[data-state='urgent'] {
+  border-color: rgba(251, 146, 60, 0.46);
+  background: rgba(251, 146, 60, 0.14);
+  color: var(--frost-fire);
+}
+
+.eden-x1-page .eden-x1-marquee-status::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.eden-x1-page .eden-x1-marquee-countdown {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--frost-text);
+  letter-spacing: 0.04em;
+}
+
+.eden-x1-page .eden-x1-marquee-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  gap: 0.5rem;
+}
+
+.eden-x1-page .eden-x1-marquee-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  min-width: 0;
+}
+
+.eden-x1-page .eden-x1-marquee-stat-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--frost-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eden-x1-page .eden-x1-marquee-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--frost-text);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.eden-x1-page .eden-x1-marquee-stat-value[data-tone='cyan'] {
+  color: var(--frost-cyan);
+}
+.eden-x1-page .eden-x1-marquee-stat-value[data-tone='fire'] {
+  color: var(--frost-fire);
+}
+.eden-x1-page .eden-x1-marquee-stat-value[data-tone='gold'] {
+  color: var(--frost-gold);
+}
+.eden-x1-page .eden-x1-marquee-stat-value[data-tone='violet'] {
+  color: var(--frost-violet);
+}
+.eden-x1-page .eden-x1-marquee-stat-value[data-tone='mint'] {
+  color: var(--frost-mint);
+}
+
+.eden-x1-page .eden-x1-marquee-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.eden-x1-page .eden-x1-marquee-top-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--frost-text-dim);
+  flex: 0 0 auto;
+}
+
+.eden-x1-page .eden-x1-marquee-top-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--frost-gold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.eden-x1-page .eden-x1-marquee-top-score {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--frost-text);
+}
+
+.eden-x1-page .eden-x1-marquee:empty {
+  display: none !important;
+}
+
+/* ---- Top-3 podium ---- */
+.eden-x1-page .eden-x1-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: end;
+  padding: 0.75rem 0.35rem 0.35rem;
+}
+
+.eden-x1-page .eden-x1-podium[hidden] {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-podium:empty {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-podium-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.eden-x1-page .eden-x1-podium-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--frost-text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.eden-x1-page .eden-x1-podium-avatar svg {
+  width: 58%;
+  height: 58%;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.24));
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-color: rgba(245, 196, 81, 0.6);
+  background: linear-gradient(135deg, #f5c451, #fb923c);
+  color: #221200;
+  box-shadow: 0 0 22px rgba(245, 196, 81, 0.4);
+  font-size: 1rem;
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='2'] .eden-x1-podium-avatar {
+  border-color: rgba(167, 139, 250, 0.5);
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.4), rgba(125, 211, 252, 0.3));
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='3'] .eden-x1-podium-avatar {
+  border-color: rgba(251, 146, 60, 0.5);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.35), rgba(245, 196, 81, 0.25));
+}
+
+.eden-x1-page .eden-x1-podium-name {
+  font-size: clamp(0.72rem, 2.8vw, 0.85rem);
+  font-weight: 600;
+  color: var(--frost-text);
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-name {
+  font-weight: 700;
+  color: var(--frost-gold);
+}
+
+.eden-x1-page .eden-x1-podium-score {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--frost-text-dim);
+  line-height: 1.1;
+}
+
+.eden-x1-page .eden-x1-podium-bar {
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-bar {
+  height: 3.5rem;
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.22), rgba(245, 196, 81, 0.04));
+  border-color: rgba(245, 196, 81, 0.4);
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='2'] .eden-x1-podium-bar {
+  height: 2.5rem;
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.18), rgba(167, 139, 250, 0.03));
+  border-color: rgba(167, 139, 250, 0.36);
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='3'] .eden-x1-podium-bar {
+  height: 1.85rem;
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.16), rgba(251, 146, 60, 0.02));
+  border-color: rgba(251, 146, 60, 0.34);
+}
+
+.eden-x1-page .eden-x1-podium-rank-num {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--frost-text-dim);
+  line-height: 1;
+}
+
+.eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-rank-num {
+  color: var(--frost-gold);
+  font-size: 1.15rem;
+}
+
+/* ---- Celestial progression route ---- */
+.eden-x1-page .eden-x1-progression {
+  position: relative;
+  padding: 0.85rem 1rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.eden-x1-page .eden-x1-progression[hidden] {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-progression:empty {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-progression-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.eden-x1-page .eden-x1-progression-line {
+  position: absolute;
+  top: 0.65rem;
+  inset-inline: 0.85rem;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.18) 0 6px,
+    transparent 6px 12px
+  );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.eden-x1-page .eden-x1-progression-fill {
+  position: absolute;
+  top: 0.65rem;
+  inset-inline-start: 0.85rem;
+  height: 2px;
+  background: var(--frost-grad-celestial);
+  border-radius: 999px;
+  z-index: 1;
+  pointer-events: none;
+  transition: width 0.3s ease;
+}
+
+.eden-x1-page .eden-x1-progression-milestones {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  gap: 0.4rem;
+}
+
+.eden-x1-page .eden-x1-progression-milestone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.eden-x1-page .eden-x1-progression-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.eden-x1-page .eden-x1-progression-milestone[data-state='done'] .eden-x1-progression-node {
+  background: var(--frost-cyan);
+  border-color: var(--frost-cyan);
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.6);
+}
+
+.eden-x1-page .eden-x1-progression-milestone[data-state='now'] .eden-x1-progression-node {
+  background: var(--frost-violet);
+  border-color: var(--frost-violet);
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.7);
+  animation: eden-x1-progression-pulse 1.8s ease-in-out infinite;
+}
+
+.eden-x1-page .eden-x1-progression-milestone[data-state='future'] .eden-x1-progression-node {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.eden-x1-page .eden-x1-progression-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--frost-text-dim);
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eden-x1-page .eden-x1-progression-milestone[data-state='now'] .eden-x1-progression-label {
+  color: var(--frost-violet);
+  font-weight: 700;
+}
+
+.eden-x1-page .eden-x1-progression-milestone[data-state='done'] .eden-x1-progression-label {
+  color: var(--frost-cyan);
+}
+
+.eden-x1-page .eden-x1-progression-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.eden-x1-page .eden-x1-progression-pct {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--frost-violet);
+}
+
+.eden-x1-page .eden-x1-progression-now {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--frost-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@keyframes eden-x1-progression-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
 }
 
 .eden-x1-panel--loading #edenX1PublicDashboard {
@@ -12,6 +575,9 @@
 .eden-x1-page .eden-x1-panel--loading .eden-x1-notice,
 .eden-x1-page .eden-x1-panel--loading .eden-x1-quicknav,
 .eden-x1-page .eden-x1-panel--loading .eden-x1-reward-panel,
+.eden-x1-page .eden-x1-panel--loading .eden-x1-marquee,
+.eden-x1-page .eden-x1-panel--loading .eden-x1-podium,
+.eden-x1-page .eden-x1-panel--loading .eden-x1-progression,
 .eden-x1-page .eden-x1-panel--loading .eden-x1-error {
   display: none !important;
 }
@@ -119,11 +685,41 @@
   outline: none;
 }
 
+.eden-x1-nav-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 12020;
+  display: grid;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: rgba(3, 10, 20, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.eden-x1-nav-loader[hidden] {
+  display: none !important;
+}
+
+.eden-x1-nav-loader .vts-loader__stage {
+  width: min(100%, 24rem);
+  padding: 1.1rem;
+  border: 1px solid rgba(103, 232, 249, 0.24);
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(17, 37, 58, 0.98), rgba(5, 15, 28, 0.98));
+  box-shadow: 0 22px 64px rgba(1, 7, 18, 0.5);
+}
+
 .eden-x1-page
   :is(
     #dashWeightedContributionPanel,
     #edenX1RewardFlowPanel,
     #edenX1TeamVotePanel,
+    #edenX1VoteRail,
+    #edenX1Marquee,
+    #edenX1Podium,
+    #edenX1Progression,
     #edenX1TopNamesOverview,
     #edenX1MyStatsCard,
     #edenX1PublicWeightedCard,
@@ -138,7 +734,7 @@
   margin-bottom: 1rem;
 }
 
-.eden-x1-page .eden-x1-panel--loading #dashWeightedContributionPanel #ocrDashboardRoot {
+.eden-x1-page #ocrDashboardRoot .eden-x1-panel--loading #dashWeightedContributionPanel {
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -453,7 +1049,7 @@
   min-height: 2.55rem;
 }
 
-#ocrDashboardRoot.eden-x1-public-root {
+#ocrDashboardRoot .eden-x1-public-root {
   --eden-public-gap: 0.9rem;
   --eden-public-card-pad: 1rem;
   --eden-public-section-radius: 12px;
@@ -464,7 +1060,7 @@
   gap: var(--eden-public-gap) !important;
 }
 
-#ocrDashboardRoot.eden-x1-public-root,
+#ocrDashboardRoot .eden-x1-public-root,
 #ocrDashboardRoot .eden-x1-public-grid,
 #ocrDashboardRoot .eden-x1-public-wide,
 #ocrDashboardRoot .eden-x1-public-columns,
@@ -767,6 +1363,54 @@
   border-color: rgba(94, 234, 212, 0.72);
   background: rgba(20, 184, 166, 0.18);
   outline: none;
+}
+
+#ocrDashboardRoot .eden-x1-vote-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-height: 2.25rem;
+  max-width: 100%;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid rgba(94, 234, 212, 0.42);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(103, 232, 249, 0.15), transparent 45%),
+    rgba(8, 13, 23, 0.68);
+  color: #ccfbf1;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+#ocrDashboardRoot .eden-x1-vote-countdown::before {
+  content: '';
+  width: 0.62rem;
+  height: 0.62rem;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+
+#ocrDashboardRoot .eden-x1-vote-countdown[hidden] {
+  display: none;
+}
+
+#ocrDashboardRoot .eden-x1-vote-countdown[data-state='expired'],
+#ocrDashboardRoot .eden-x1-vote-countdown[data-state='closed'] {
+  border-color: rgba(248, 113, 113, 0.48);
+  background: rgba(127, 29, 29, 0.2);
+  color: #fecaca;
+}
+
+#ocrDashboardRoot .eden-x1-vote-form.is-closed input[readonly] {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 #ocrDashboardRoot .eden-x1-vote-field {
@@ -1953,7 +2597,7 @@
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
-  #ocrDashboardRoot.eden-x1-public-root {
+  #ocrDashboardRoot .eden-x1-public-root {
     --eden-public-gap: 0.78rem;
     --eden-public-card-pad: 0.86rem;
   }
@@ -2348,7 +2992,7 @@
 
   .eden-x1-page .admin-control-row {
     display: grid !important;
-    grid-template-columns: minmax(4.8rem, 0.7fr) minmax(6.6rem, 1fr) 40px !important;
+    grid-template-columns: minmax(7rem, 0.85fr) minmax(7.5rem, 1fr) 40px !important;
     align-items: stretch !important;
     justify-content: stretch !important;
     gap: 0.36rem !important;
@@ -2371,6 +3015,7 @@
     font-size: 0.72rem !important;
     letter-spacing: 0 !important;
     white-space: nowrap !important;
+    overflow: visible !important;
   }
 
   .eden-x1-page .admin-control-row .lang-select-wrapper {
@@ -2489,7 +3134,7 @@
     overflow: visible;
   }
 
-  #ocrDashboardRoot.eden-x1-public-root {
+  #ocrDashboardRoot .eden-x1-public-root {
     --eden-public-gap: 0.75rem;
     --eden-public-card-pad: 0.82rem;
     --eden-public-section-radius: 12px;
@@ -2939,14 +3584,15 @@
 
   #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
     position: fixed !important;
-    inset: auto max(12px, env(safe-area-inset-right, 0px))
-      calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
-    width: auto !important;
+    inset: auto auto calc(12px + env(safe-area-inset-bottom, 0px)) 50% !important;
+    box-sizing: border-box;
+    width: min(330px, calc(100vw - 2rem)) !important;
+    max-width: calc(100vw - 2rem) !important;
     max-height: min(44svh, 350px) !important;
     padding: 1.05rem 0.86rem 0.82rem !important;
     overflow-y: auto !important;
     border-radius: 14px !important;
-    transform: translateY(10px) !important;
+    transform: translate(-50%, 10px) !important;
     z-index: 2200;
   }
 
@@ -2964,7 +3610,7 @@
   }
 
   #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
-    transform: translateY(0) !important;
+    transform: translate(-50%, 0) !important;
   }
 
   #ocrDashboardRoot .dash-weighted-score-popover small,
@@ -3163,6 +3809,68 @@
       ),
       #ffffff;
   }
+
+  /* Expandable ranking rows — mobile */
+  .eden-x1-row-expand-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: 0.2rem 0 0 auto;
+    padding: 0;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--frost-text-dim);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+
+  .eden-x1-row-expand-toggle:focus-visible {
+    outline: 2px solid var(--frost-cyan);
+    outline-offset: 2px;
+  }
+
+  .eden-x1-row-expand-toggle:active {
+    background: rgba(148, 163, 184, 0.15);
+  }
+
+  .eden-x1-page
+    .dash-contribution-weighted-table.dash-table--stack
+    tbody
+    tr
+    td.dash-weighted-detail-col {
+    display: none !important;
+  }
+
+  .eden-x1-page
+    .dash-contribution-weighted-table.dash-table--stack
+    tbody
+    tr[data-expanded='true']
+    td.dash-weighted-detail-col {
+    display: block !important;
+  }
+
+  .eden-x1-page
+    .dash-contribution-weighted-table.dash-table--stack
+    tbody
+    tr[data-expanded='true']
+    .dash-weighted-mobile-header-cell {
+    border-bottom: none;
+  }
+
+  /* Light theme toggle button */
+  [data-theme='light'] .eden-x1-page .eden-x1-row-expand-toggle {
+    background: rgba(241, 245, 249, 0.8);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--frost-text-dim);
+  }
+
+  [data-theme='light'] .eden-x1-page .eden-x1-row-expand-toggle:active {
+    background: rgba(148, 163, 184, 0.2);
+  }
 }
 
 /* =============================================================
@@ -3279,7 +3987,7 @@
 /* Give the language picker enough width to read the selection on mobile. */
 @media (max-width: 768px) {
   .eden-x1-page .admin-control-row {
-    grid-template-columns: minmax(4.2rem, 0.55fr) minmax(8.4rem, 1.3fr) 40px !important;
+    grid-template-columns: minmax(7rem, 0.85fr) minmax(7.5rem, 1fr) 40px !important;
   }
   .eden-x1-page .admin-control-row .admin-language-select {
     font-size: 0.82rem !important;
@@ -3381,14 +4089,1648 @@
   }
 }
 
-/* Perf: "Show all" reveal for the row-capped weighted table (keeps the initial
-   reward-view render light so tapping between views doesn't freeze phones). */
-.eden-x1-page .eden-x1-show-all-wrap {
+/* Weighted rosters open at ten rows and can advance in 25-row steps. */
+.eden-x1-page .eden-x1-table-pagination {
   display: flex;
-  justify-content: center;
-  padding: 14px 12px 6px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem 1rem;
+  padding: 0.75rem 0.8rem 0.4rem;
+  border-top: 1px solid var(--border-subtle);
 }
-.eden-x1-page .eden-x1-show-all-btn {
-  min-width: min(320px, 100%);
+.eden-x1-page .eden-x1-table-pagination-status {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+.eden-x1-page .eden-x1-table-pagination-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.eden-x1-page .eden-x1-table-page-btn {
+  min-height: 44px;
+  padding-inline: 0.9rem;
   font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .eden-x1-page .eden-x1-table-pagination {
+    align-items: stretch;
+    flex-direction: column;
+    padding-inline: 0.25rem;
+  }
+
+  .eden-x1-page .eden-x1-table-pagination-status {
+    text-align: center;
+  }
+
+  .eden-x1-page .eden-x1-table-pagination-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+    width: 100%;
+  }
+
+  .eden-x1-page .eden-x1-table-page-btn {
+    width: 100%;
+  }
+}
+
+/* Large weighted rosters stream in small main-thread batches. This compact
+   status keeps the table honest for sighted and assistive-tech users without
+   reserving a permanent footer once all rows are ready. */
+.eden-x1-page .eden-x1-progressive-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 1.75rem;
+  padding: 0.38rem 0.75rem 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.eden-x1-page .eden-x1-progressive-status[hidden] {
+  display: none;
+}
+
+.eden-x1-page .eden-x1-progressive-status > span[aria-hidden='true'] {
+  width: 0.48rem;
+  height: 0.48rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.32);
+  animation: eden-x1-progressive-pulse 1.1s ease-out infinite;
+}
+
+.eden-x1-page .eden-x1-progressive-status.is-complete > span[aria-hidden='true'] {
+  animation: none;
+  background: #34d399;
+  box-shadow: none;
+}
+
+@keyframes eden-x1-progressive-pulse {
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.42rem rgba(45, 212, 191, 0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .eden-x1-page #ocrDashboardRoot .eden-x1-progressive-table tbody tr {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 390px;
+  }
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-countdown {
+  border-color: rgba(13, 148, 136, 0.38);
+  background: rgba(240, 253, 250, 0.92);
+  color: #0f766e;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-countdown[data-state='expired'],
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-countdown[data-state='closed'] {
+  border-color: rgba(220, 38, 38, 0.32);
+  background: rgba(254, 242, 242, 0.94);
+  color: #b91c1c;
+}
+
+/* =============================================================
+   v14 Eden X1 containment and mobile flow
+   ============================================================= */
+.eden-x1-page,
+.eden-x1-page #ocrDashboardRoot,
+.eden-x1-page .app-shell,
+.eden-x1-page .admin-page-main,
+.eden-x1-page .admin-page-panel,
+.eden-x1-page #dashWeightedContributionPanel,
+.eden-x1-page #edenX1PublicDashboard,
+.eden-x1-page .eden-x1-public-root,
+.eden-x1-page .eden-x1-public-grid,
+.eden-x1-page .eden-x1-public-columns,
+.eden-x1-page .eden-x1-public-wide,
+.eden-x1-page .eden-x1-public-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.eden-x1-page {
+  overflow-x: clip;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-root,
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-grid {
+  display: grid;
+  gap: clamp(0.72rem, 1.2vw, 1rem);
+  align-items: start;
+  width: 100%;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-wide,
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-columns {
+  grid-column: 1 / -1;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-detail-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: start;
+}
+
+.eden-x1-page #ocrDashboardRoot .dash-history-leader-grid {
+  grid-template-columns: minmax(16rem, 0.78fr) minmax(0, 1.22fr);
+  align-items: stretch;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-insights-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-table-loading-card {
+  min-height: clamp(9rem, 24svh, 15rem) !important;
+  border-radius: 14px;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-table-loading-card .dash-connecting-stage {
+  max-width: 30rem;
+}
+
+.eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-chart, .eden-x1-public-attack-list, .eden-x1-public-insights-grid) {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+.eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-table-wrap,
+    .dash-weighted-contribution-table-wrap,
+    .dash-contribution-compare-table-wrap,
+    .eden-x1-public-table-wrap
+  ) {
+  width: 100%;
+  max-width: 100%;
+  max-height: none !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.eden-x1-page #ocrDashboardRoot :is(.eden-x1-public-card, .eden-x1-flow-card) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
+.eden-x1-page #ocrDashboardRoot :is(.dash-top-item, .dash-attack-item, .dash-structure-item) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 58px;
+}
+
+@media (max-width: 768px) {
+  .eden-x1-page #ocrDashboardRoot .eden-x1-weighted-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-table tbody tr {
+    content-visibility: visible !important;
+    contain-intrinsic-size: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-detail-grid,
+  .eden-x1-page #ocrDashboardRoot .dash-history-leader-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 768px) {
+  body.eden-x1-page {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .eden-x1-page .eden-x1-quicknav {
+    display: flex !important;
+    grid-template-columns: none !important;
+    grid-auto-rows: none !important;
+    gap: 0.38rem !important;
+    padding: 0.38rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-inline: 0.38rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .eden-x1-page .eden-x1-quicknav-chip {
+    flex: 0 0 clamp(7.8rem, 38vw, 9.4rem) !important;
+    width: auto !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0.42rem 0.5rem !important;
+    scroll-snap-align: start;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover,
+  .eden-x1-page #ocrDashboardRoot .eden-x1-vote-info-popover {
+    overflow-y: auto;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-insights-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Route light mode: remove remaining embedded dark surfaces while preserving
+   the same hierarchy and reward accents. */
+[data-theme='light'] .eden-x1-page .eden-x1-quicknav,
+[data-theme='light'] .eden-x1-page .eden-x1-quicknav-chip,
+[data-theme='light'] .eden-x1-page .eden-x1-notice,
+[data-theme='light'] .eden-x1-page .eden-x1-reward-panel,
+[data-theme='light'] .eden-x1-page .eden-x1-flow-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .eden-x1-public-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-contribution-weighted-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-ops-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-structure-item,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-attack-item {
+  color: #0f172a;
+  border-color: #dbe5ef;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-quicknav-chip:hover,
+[data-theme='light'] .eden-x1-page .eden-x1-quicknav-chip:focus-visible {
+  border-color: rgba(14, 116, 144, 0.42);
+  background: #ecfeff;
+}
+
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .eden-x1-vote-info-popover,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-modal-content {
+  color: #0f172a;
+  border-color: #dbe5ef;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eden-x1-page .eden-x1-progressive-status > span[aria-hidden='true'],
+  .eden-x1-page #ocrDashboardRoot .dash-connecting-bar--indeterminate .dash-connecting-bar-fill {
+    animation: none;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .dash-connecting-bar--indeterminate .dash-connecting-bar-fill {
+    width: 100%;
+  }
+}
+
+/* =============================================================
+   v14 mobile shell repair
+
+   Eden X1 shares the standalone shell, but its reward flow and fixed section
+   rail need a phone-specific composition. Keep this route override last so
+   the older global mobile two-column rule cannot squeeze translated labels
+   into letter-by-letter wrapping.
+   ============================================================= */
+@media (min-width: 561px) and (max-width: 768px) {
+  html.admin-standalone-root {
+    scroll-padding-bottom: calc(4.9rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.eden-x1-page {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: max(0.35rem, env(safe-area-inset-left, 0px))
+      max(0.35rem, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot,
+  .eden-x1-page #ocrDashboardRoot > .app-shell,
+  .eden-x1-page #adminPageRoot,
+  .eden-x1-page #ocrDashboardSection,
+  .eden-x1-page .command-header,
+  .eden-x1-page .standalone-footer-v14 {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  .eden-x1-page #ocrDashboardRoot > .app-shell {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.35rem !important;
+  }
+
+  .eden-x1-page #adminPageRoot.admin-page-main {
+    padding: 0 0 0.45rem !important;
+  }
+
+  .eden-x1-page .admin-command-header {
+    margin-bottom: 0 !important;
+  }
+
+  .eden-x1-page .admin-shell-title {
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+    font-size: clamp(1.8rem, 8.8vw, 2.65rem) !important;
+    line-height: 0.98 !important;
+  }
+
+  .eden-x1-page .admin-page-panel {
+    gap: 0.72rem;
+  }
+
+  .eden-x1-page .eden-x1-notice,
+  .eden-x1-page .eden-x1-reward-panel,
+  .eden-x1-page #dashWeightedContributionPanel,
+  .eden-x1-page #edenX1PublicDashboard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  .eden-x1-page .eden-x1-reward-heading {
+    padding: 0.8rem 0.8rem 0.3rem;
+  }
+
+  .eden-x1-page .eden-x1-reward-heading h2,
+  .eden-x1-page .eden-x1-reward-heading p,
+  .eden-x1-page .eden-x1-flow-card > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  .eden-x1-page .eden-x1-reward-heading h2,
+  .eden-x1-page .eden-x1-flow-card > .eden-x1-flow-label:not(.eden-x1-flow-action) {
+    text-wrap: balance;
+  }
+
+  .eden-x1-page .eden-x1-reward-flow {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.62rem 0.8rem 0.82rem;
+  }
+
+  .eden-x1-page .eden-x1-flow-card {
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 0.5rem 0.72rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.78rem 2.65rem 0.78rem 0.78rem;
+    overflow: clip;
+  }
+
+  .eden-x1-page .eden-x1-flow-count {
+    grid-column: 1;
+    grid-row: 1;
+    width: 2.8rem;
+    height: 2.8rem;
+    margin: 0;
+  }
+
+  .eden-x1-page .eden-x1-flow-card > .eden-x1-flow-label:not(.eden-x1-flow-action) {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+    line-height: 1.12;
+    white-space: normal;
+  }
+
+  .eden-x1-page .eden-x1-flow-copy,
+  .eden-x1-page .eden-x1-flow-vote-tag,
+  .eden-x1-page .eden-x1-flow-action {
+    grid-column: 1 / -1;
+  }
+
+  .eden-x1-page .eden-x1-flow-copy {
+    display: block;
+    margin: 0.1rem 0 0;
+    overflow: visible;
+    line-height: 1.42;
+    -webkit-line-clamp: unset;
+  }
+
+  .eden-x1-page .eden-x1-flow-vote-tag {
+    justify-self: start;
+    margin: 0.08rem 0 0;
+  }
+
+  .eden-x1-page .eden-x1-flow-action {
+    min-height: 2.5rem;
+    margin: 0.05rem 0 0;
+    padding-block: 0.3rem;
+  }
+
+  .eden-x1-page .eden-x1-quicknav {
+    position: fixed !important;
+    inset-block: auto max(0.45rem, env(safe-area-inset-bottom, 0px)) !important;
+    inset-inline: max(0.45rem, env(safe-area-inset-left, 0px))
+      max(0.45rem, env(safe-area-inset-right, 0px)) !important;
+    display: flex !important;
+    box-sizing: border-box;
+    width: auto !important;
+    max-width: calc(
+      100vw - 0.9rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)
+    ) !important;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0.36rem !important;
+    gap: 0.36rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: 0.36rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .eden-x1-page .eden-x1-quicknav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .eden-x1-page .eden-x1-quicknav-chip {
+    flex: 0 0 clamp(7.6rem, 36vw, 9.25rem) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0.4rem 0.52rem !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+    text-wrap: balance;
+    white-space: normal !important;
+    scroll-snap-align: start;
+  }
+
+  .eden-x1-page .standalone-footer-v14 {
+    margin-block: 0.25rem 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .eden-x1-page .eden-x1-reward-flow {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .eden-x1-page .eden-x1-flow-card:not(:last-child)::after {
+    top: auto;
+    right: 50%;
+    bottom: -0.48rem;
+    transform: translateX(50%) rotate(135deg);
+  }
+}
+
+@media (max-width: 420px) {
+  .eden-x1-page #ocrDashboardRoot > .app-shell {
+    gap: 0.58rem;
+    padding: 0.15rem !important;
+  }
+
+  .eden-x1-page .admin-command-header {
+    padding: 0.62rem !important;
+  }
+
+  .eden-x1-page .admin-shell-title {
+    font-size: clamp(1.7rem, 9.4vw, 2.15rem) !important;
+  }
+
+  .eden-x1-page .eden-x1-notice,
+  .eden-x1-page .eden-x1-reward-panel {
+    border-radius: 13px;
+  }
+
+  .eden-x1-page .eden-x1-reward-heading {
+    padding-inline: 0.68rem;
+  }
+
+  .eden-x1-page .eden-x1-reward-flow {
+    padding: 0.56rem 0.68rem 0.72rem;
+  }
+
+  .eden-x1-page .eden-x1-flow-card {
+    gap: 0.45rem 0.62rem;
+    padding: 0.7rem 2.55rem 0.7rem 0.7rem;
+    border-radius: 13px;
+  }
+}
+
+/* =============================================================
+   v14 Frost & Flame — Expandable ranking rows.
+   Desktop: toggle hidden (all columns visible).
+   Mobile (≤980px): toggle visible, detail cells collapsed by default.
+   ============================================================= */
+
+.eden-x1-row-expand-toggle {
+  display: none;
+}
+
+.eden-x1-row-expand-chevron {
+  transition: transform 0.18s ease;
+}
+
+[data-expanded='true'] > .dash-weighted-mobile-header-cell .eden-x1-row-expand-chevron {
+  transform: rotate(180deg);
+}
+
+/* =============================================================
+   v14 Frost & Flame — Desktop vote rail + ballot module polish.
+   Desktop: main content (1fr) + ~320px sticky vote rail.
+   Mobile/tablet: rail collapses into normal document flow.
+   ============================================================= */
+.eden-x1-page .eden-x1-vote-rail {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.eden-x1-page .eden-x1-vote-rail[hidden] {
+  display: none !important;
+}
+
+.eden-x1-page .eden-x1-vote-rail .eden-x1-vote-panel {
+  margin: 0;
+}
+
+.eden-x1-page #ocrDashboardRoot .eden-x1-vote-panel:has(.eden-x1-vote-info.is-open) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (min-width: 981px) {
+  .eden-x1-page #ocrDashboardSection.eden-x1-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-areas:
+      'notice   notice'
+      'marquee  marquee'
+      'podium   podium'
+      'progress progression'
+      'quicknav quicknav'
+      'reward   reward'
+      'weighted rail'
+      'public   rail'
+      'error    error';
+    column-gap: 1rem;
+    align-items: start;
+  }
+  .eden-x1-page .eden-x1-notice {
+    grid-area: notice;
+  }
+  .eden-x1-page #edenX1Marquee {
+    grid-area: marquee;
+  }
+  .eden-x1-page #edenX1Podium {
+    grid-area: podium;
+  }
+  .eden-x1-page #edenX1Progression {
+    grid-area: progress;
+  }
+  .eden-x1-page .eden-x1-quicknav {
+    grid-area: quicknav;
+  }
+  .eden-x1-page #edenX1RewardFlowPanel {
+    grid-area: reward;
+  }
+  .eden-x1-page #dashWeightedContributionPanel {
+    grid-area: weighted;
+  }
+  .eden-x1-page #edenX1VoteRail {
+    grid-area: rail;
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+  .eden-x1-page #edenX1PublicDashboard {
+    grid-area: public;
+  }
+  .eden-x1-page #edenX1Error {
+    grid-area: error;
+  }
+}
+
+@media (max-width: 980px) {
+  .eden-x1-page #edenX1VoteRail {
+    order: 2;
+  }
+  .eden-x1-page #edenX1PublicDashboard {
+    order: 3;
+  }
+}
+
+/* ---- Ballot module: selection count, eligibility, submit state ---- */
+.eden-x1-page .eden-x1-vote-panel {
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(167, 139, 250, 0.08), transparent 40%),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.72));
+  overflow: hidden;
+}
+
+.eden-x1-page .eden-x1-vote-panel .dash-card-hdr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.eden-x1-page .eden-x1-vote-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(125, 211, 252, 0.38);
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--frost-cyan);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.eden-x1-page .eden-x1-vote-count[data-full='true'] {
+  border-color: rgba(52, 211, 153, 0.46);
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--frost-mint);
+}
+
+.eden-x1-page .eden-x1-vote-count[data-over='true'] {
+  border-color: rgba(251, 113, 133, 0.46);
+  background: rgba(251, 113, 133, 0.14);
+  color: var(--frost-rose);
+}
+
+/* Selected candidate = accent + check (not color alone) */
+.eden-x1-page .eden-x1-vote-confirm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem 0.22rem 0.4rem;
+  border: 1px solid rgba(125, 211, 252, 0.44);
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--frost-cyan);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.eden-x1-page .eden-x1-vote-confirm-chip::before {
+  content: '\2713';
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--frost-cyan);
+  color: #06111f;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.eden-x1-page .eden-x1-vote-confirm-clear {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-inline-start: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--frost-text-dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.eden-x1-page .eden-x1-vote-confirm-clear:hover,
+.eden-x1-page .eden-x1-vote-confirm-clear:focus-visible {
+  background: rgba(251, 113, 133, 0.18);
+  color: var(--frost-rose);
+  border-color: rgba(251, 113, 133, 0.4);
+  outline: none;
+}
+
+/* Eligibility + deadline banner inside the ballot */
+.eden-x1-page .eden-x1-vote-eligibility {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 12px;
+  background: rgba(251, 146, 60, 0.08);
+  color: var(--frost-fire);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.eden-x1-page .eden-x1-vote-eligibility[data-state='closed'] {
+  border-color: rgba(251, 113, 133, 0.36);
+  background: rgba(251, 113, 133, 0.1);
+  color: var(--frost-rose);
+}
+
+.eden-x1-page .eden-x1-vote-eligibility[data-state='open'] {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.08);
+  color: var(--frost-mint);
+}
+
+.eden-x1-page .eden-x1-vote-friday {
+  flex: 1 1 100%;
+  color: var(--text-primary);
+  font-weight: 850;
+}
+
+.eden-x1-page .eden-x1-vote-start {
+  min-height: 44px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid rgba(103, 232, 249, 0.5);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(52, 211, 153, 0.2));
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.eden-x1-page .eden-x1-vote-start:hover,
+.eden-x1-page .eden-x1-vote-start:focus-visible {
+  border-color: rgba(103, 232, 249, 0.88);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.42), rgba(52, 211, 153, 0.3));
+  outline: none;
+}
+
+/* Submit state: loading + error feedback */
+.eden-x1-page .eden-x1-vote-panel .dash-btn-primary[data-state='loading'] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.eden-x1-page .eden-x1-vote-panel .dash-btn-primary[data-state='loading']::after {
+  content: '';
+  display: inline-block;
+  margin-inline-start: 0.45rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: eden-x1-vote-spin 0.7s linear infinite;
+}
+
+@keyframes eden-x1-vote-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.eden-x1-page .eden-x1-vote-status[data-state='error'] {
+  border: 1px solid rgba(251, 113, 133, 0.36);
+  background: rgba(251, 113, 133, 0.1);
+  color: var(--frost-rose);
+  border-radius: 12px;
+  padding: 0.5rem 0.7rem;
+}
+
+.eden-x1-page .eden-x1-vote-status[data-state='success'] {
+  border: 1px solid rgba(52, 211, 153, 0.36);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--frost-mint);
+  border-radius: 12px;
+  padding: 0.5rem 0.7rem;
+}
+
+/* RTL: flip chevrons and connector direction */
+[dir='rtl'] .eden-x1-page .eden-x1-flow-card:not(:last-child)::after {
+  transform: translateX(-50%) rotate(135deg);
+  right: auto;
+  left: 50%;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-progression-line,
+[dir='rtl'] .eden-x1-page .eden-x1-progression-fill {
+  inset-inline-start: auto;
+  inset-inline-end: 0.85rem;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-progression-fill {
+  transform: scaleX(-1);
+  transform-origin: inline-end;
+}
+
+/* Reduced motion: neutralize all Frost & Flame animations */
+@media (prefers-reduced-motion: reduce) {
+  .eden-x1-page .eden-x1-progression-milestone[data-state='now'] .eden-x1-progression-node,
+  .eden-x1-page .eden-x1-vote-panel .dash-btn-primary[data-state='loading']::after,
+  .eden-x1-page .eden-x1-marquee-status::before {
+    animation: none !important;
+  }
+  .eden-x1-page .eden-x1-progression-fill {
+    transition: none !important;
+  }
+}
+
+/* Light theme for Frost & Flame surfaces */
+[data-theme='light'] .eden-x1-page .eden-x1-marquee,
+[data-theme='light'] .eden-x1-page .eden-x1-vote-panel,
+[data-theme='light'] .eden-x1-page .eden-x1-progression {
+  background: #ffffff;
+  border-color: #dbe5ef;
+  color: #0f172a;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-marquee-title,
+[data-theme='light'] .eden-x1-page .eden-x1-marquee-stat-value,
+[data-theme='light'] .eden-x1-page .eden-x1-podium-name,
+[data-theme='light'] .eden-x1-page .eden-x1-progression-label {
+  color: #0f172a;
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-marquee-kicker,
+[data-theme='light'] .eden-x1-page .eden-x1-marquee-stat-label,
+[data-theme='light'] .eden-x1-page .eden-x1-podium-score,
+[data-theme='light'] .eden-x1-page .eden-x1-progression-now {
+  color: #64748b;
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-podium-bar {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-bar {
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.18), rgba(245, 196, 81, 0.03));
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-progression-line {
+  background: repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.2) 0 6px, transparent 6px 12px);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-progression-node {
+  background: rgba(15, 23, 42, 0.1);
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
+/* Mobile: marquee/podium/progression tighten at narrow widths */
+@media (max-width: 420px) {
+  .eden-x1-page .eden-x1-marquee {
+    padding: 0.78rem 0.72rem;
+    gap: 0.6rem;
+    border-radius: 16px;
+  }
+  .eden-x1-page .eden-x1-marquee-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .eden-x1-page .eden-x1-marquee-stat {
+    padding: 0.4rem 0.45rem;
+    border-radius: 10px;
+  }
+  .eden-x1-page .eden-x1-marquee-stat-value {
+    font-size: 0.95rem;
+  }
+  .eden-x1-page .eden-x1-marquee-stat-label {
+    font-size: 0.52rem;
+  }
+  .eden-x1-page .eden-x1-podium {
+    gap: 0.4rem;
+    padding: 0.55rem 0.2rem 0.25rem;
+  }
+  .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-avatar {
+    width: 2.6rem;
+    height: 2.6rem;
+    font-size: 0.82rem;
+  }
+  .eden-x1-page .eden-x1-podium-avatar {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 0.72rem;
+  }
+  .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-bar {
+    height: 2.6rem;
+  }
+  .eden-x1-page .eden-x1-podium-card[data-rank='2'] .eden-x1-podium-bar {
+    height: 1.9rem;
+  }
+  .eden-x1-page .eden-x1-podium-card[data-rank='3'] .eden-x1-podium-bar {
+    height: 1.4rem;
+  }
+  .eden-x1-page .eden-x1-progression {
+    padding: 0.65rem 0.7rem 0.45rem;
+    border-radius: 13px;
+  }
+  .eden-x1-page .eden-x1-progression-milestones {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 4rem), 1fr));
+  }
+  .eden-x1-page #edenX1VoteRail {
+    margin-top: 0.5rem;
+  }
+}
+
+/* =============================================================
+   v14 Eden X1 parity completion
+
+   These route-scoped rules intentionally sit after the historical mobile
+   layers. They complete light-mode hierarchy, mirror the Arabic experience,
+   and make the <=560px two-row quicknav the final narrow-phone contract.
+   ============================================================= */
+
+body.eden-x1-page.eden-x1-overlay-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Light theme keeps three distinct elevations: page, primary panel, and
+   inset/data surface. Reward colors remain accents rather than becoming the
+   whole surface, so scanning hierarchy matches dark mode. */
+[data-theme='light'] .eden-x1-page {
+  --frost-void: #f4f7fb;
+  --frost-deep: #eaf0f6;
+  --frost-glass: rgba(255, 255, 255, 0.82);
+  --frost-glass-raised: rgba(255, 255, 255, 0.96);
+  --frost-hairline: rgba(51, 65, 85, 0.18);
+  --frost-text: #0f172a;
+  --frost-text-dim: #475569;
+  --frost-text-mute: #64748b;
+  --text-primary: #0f172a;
+  --text-muted: #526277;
+  --muted: #526277;
+  --surface-soft: #eef3f8;
+  color: #0f172a;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  :is(
+    .eden-x1-notice,
+    .eden-x1-reward-panel,
+    .eden-x1-marquee,
+    .eden-x1-progression,
+    .eden-x1-vote-panel,
+    #dashWeightedContributionPanel > .dash-card,
+    #edenX1PublicDashboard .eden-x1-public-card
+  ) {
+  border-color: #cbd8e6;
+  background:
+    radial-gradient(circle at 96% 0, rgba(14, 165, 233, 0.08), transparent 34%),
+    linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+  color: #0f172a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-flow-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .eden-x1-weighted-card,
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .eden-x1-slots-card {
+  border-color: rgba(var(--eden-flow-rgb), 0.42);
+  background:
+    radial-gradient(circle at 92% 4%, rgba(var(--eden-flow-rgb), 0.13), transparent 38%),
+    linear-gradient(160deg, #ffffff, #f5f8fc);
+  color: #0f172a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 10px 24px rgba(15, 23, 42, 0.07);
+}
+
+[data-theme='light'] .eden-x1-page .eden-x1-flow-card::before {
+  background: rgba(255, 255, 255, 0.9);
+  color: rgb(var(--eden-flow-rgb));
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-kpi,
+    .dash-ops-card,
+    .dash-modal-stat,
+    .dash-top-item,
+    .dash-attack-item,
+    .dash-structure-item,
+    .eden-x1-vote-player-detail-card,
+    .eden-x1-vote-helper-card,
+    .eden-x1-my-stats-suggestion,
+    .eden-x1-structure-trend-card
+  ) {
+  border-color: #d7e1ec;
+  background: #f7f9fc;
+  color: #172033;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-card-title,
+    .dash-kpi-value,
+    .dash-top-name,
+    .dash-attack-name,
+    .dash-structure-name,
+    .dash-player-rank-name,
+    .eden-x1-flow-label,
+    .eden-x1-reward-heading h2,
+    .eden-x1-vote-player-detail-head strong,
+    .dash-modal-title,
+    .eden-x1-clickable-name
+  ) {
+  color: #0f172a;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-card-subtitle,
+    .dash-kpi-label,
+    .dash-top-meta,
+    .dash-attack-time,
+    .dash-modal-sub,
+    .eden-x1-flow-copy,
+    .eden-x1-reward-heading p,
+    .eden-x1-vote-stat-label,
+    .eden-x1-my-stats-helper,
+    .eden-x1-progressive-status
+  ) {
+  color: #526277;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-input,
+    .dash-search-input,
+    .dash-select,
+    select,
+    input[type='search'],
+    input[type='text']
+  ) {
+  border-color: #cbd8e6;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-input, .dash-search-input, input[type='search'], input[type='text'])::placeholder {
+  color: #718096;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-table-wrap,
+    .dash-weighted-contribution-table-wrap,
+    .dash-contribution-compare-table-wrap,
+    .eden-x1-public-table-wrap
+  ) {
+  border-color: #d7e1ec;
+  background: #ffffff;
+}
+
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-table {
+  color: #172033;
+}
+
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-table thead th {
+  border-color: #cbd8e6;
+  background: #eaf0f6;
+  color: #334155;
+}
+
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-table tbody td {
+  border-color: #e2e8f0;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-weighted-score-popover, .eden-x1-vote-info-popover, .dash-modal-content) {
+  border-color: #cbd8e6;
+  background: #ffffff;
+  color: #172033;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+}
+
+[data-theme='light'] .eden-x1-page #ocrDashboardRoot .dash-modal {
+  background: rgba(15, 23, 42, 0.46);
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-suggestion {
+  border-color: #dbe5ef;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-suggestion:hover,
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-suggestion:focus-visible {
+  border-color: rgba(14, 116, 144, 0.42);
+  background: #ecfeff;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-guidance--dashboard {
+  border-color: #dbe5ef;
+  background: #ffffff;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-helper-row:not([hidden]) {
+  border-color: #dbe5ef;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-helper-row:not([hidden]):hover,
+[data-theme='light'] #ocrDashboardRoot .eden-x1-vote-helper-row:not([hidden]):focus-visible {
+  border-color: rgba(14, 116, 144, 0.42);
+  background: #ecfeff;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  .dash-contribution-weighted-table.dash-table--stack
+  .dash-weighted-final-rank-cell,
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  .dash-contribution-weighted-table.dash-table--stack
+  .dash-weighted-final-reward-cell {
+  background: #f1f5f9;
+}
+
+[data-theme='light'] .eden-x1-row-expand-toggle {
+  border-color: #dbe5ef;
+  background: #eef3f8;
+  color: #475569;
+}
+
+[data-theme='light']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-modal-close, .eden-x1-popover-close, .eden-x1-vote-confirm-clear) {
+  border-color: #cbd8e6;
+  background: #eef3f8;
+  color: #334155;
+}
+
+/* Logical layout for Arabic. Tables mirror as a whole; scores, dates, ranks,
+   percentages, and timers opt back into LTR isolation so digits never reorder. */
+[dir='rtl'] .eden-x1-page,
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot {
+  direction: rtl;
+  text-align: start;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  :is(
+    .eden-x1-notice,
+    .eden-x1-reward-heading,
+    .eden-x1-flow-card,
+    .eden-x1-vote-panel,
+    .eden-x1-vote-field,
+    .eden-x1-vote-guidance,
+    .eden-x1-public-card,
+    .dash-card-hdr,
+    .dash-card-title,
+    .dash-card-subtitle,
+    .dash-modal-title-area,
+    .dash-modal-body,
+    .dash-top-item,
+    .dash-attack-item,
+    .dash-structure-item
+  ) {
+  text-align: start;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-flow-card::before {
+  right: auto;
+  left: auto;
+  inset-inline-end: 0.78rem;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot :is(.dash-search-icon, .lang-select-icon) {
+  right: 0.82rem;
+  left: auto;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot :is(.dash-search-input, input[type='search']) {
+  padding-right: 2.35rem;
+  padding-left: 0.85rem;
+  text-align: start;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot :is(.dash-modal-close, .eden-x1-popover-close) {
+  right: auto;
+  left: 0.6rem;
+  inset-inline-end: 0.6rem;
+  inset-inline-start: auto;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  .eden-x1-vote-inspect-btn.is-ready:not(:disabled)::after {
+  right: auto;
+  left: -0.28rem;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .dash-table :is(th, td) {
+  text-align: start !important;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-weighted-score-cell,
+    .dash-weighted-detail-col,
+    .dash-weighted-final-rank-cell,
+    .dash-weighted-mobile-rank,
+    .dash-kpi-value,
+    .dash-top-val,
+    .dash-attack-val,
+    .dash-modal-stat-value,
+    .eden-x1-flow-count,
+    .eden-x1-marquee-countdown,
+    .eden-x1-marquee-stat-value,
+    .eden-x1-podium-score,
+    .eden-x1-podium-rank-num,
+    .eden-x1-progression-pct,
+    .eden-x1-vote-count,
+    .dash-connecting-bar-pct,
+    .global-game-clock
+  ) {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end !important;
+  font-variant-numeric: tabular-nums;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .eden-x1-vote-confirm,
+    .eden-x1-vote-actions,
+    .eden-x1-public-table-toolbar,
+    .eden-x1-vote-player-detail-head,
+    .eden-x1-marquee-head,
+    .eden-x1-progression-foot
+  ) {
+  direction: rtl;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .dash-table--stack td::before {
+  text-align: start;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .eden-x1-public-modal .dash-table-wrap,
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .dash-weighted-contribution-table-wrap,
+    .dash-contribution-compare-table-wrap,
+    .eden-x1-public-table-wrap
+  ) {
+  direction: rtl;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-flow-card:not(:last-child)::after {
+  border-right-color: transparent;
+  border-left-color: rgba(103, 232, 249, 0.36);
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-vote-confirm-clear {
+  margin-right: 0;
+  margin-left: -0.2rem;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-vote-info-popover {
+  left: auto;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-vote-breakdown-tile b {
+  text-align: left;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-vote-guidance-head span {
+  text-align: left;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-axis-title {
+  left: auto;
+  right: 0;
+  text-align: left;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-axis {
+  left: auto;
+  right: 0;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-x-tick {
+  left: auto;
+  right: var(--tick-x, 0%);
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-x-tick--start {
+  text-align: right;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-x-tick--center {
+  transform: translateX(50%);
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-x-tick--end {
+  transform: translateX(100%);
+  text-align: left;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-structure-chart {
+  padding-left: 0;
+  padding-right: 1.38rem;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-popover-close {
+  right: auto;
+  left: 8px;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-public-top-card .dash-top-name {
+  margin-left: 0;
+  margin-right: 0.55rem;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-public-modal .dash-modal-title,
+[dir='rtl'] #ocrDashboardRoot .eden-x1-public-modal .dash-modal-sub {
+  padding-right: 0;
+  padding-left: 2.4rem;
+}
+
+[dir='rtl'] #ocrDashboardRoot .dash-top-name {
+  padding-right: 0;
+  padding-left: 0.42rem !important;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-notice {
+  text-align: right;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-flow-card {
+  padding-right: 2.6rem;
+  padding-left: 0;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-flow-card:not(:last-child)::after {
+  right: auto;
+  left: 50%;
+}
+
+[dir='rtl'] #ocrDashboardRoot .eden-x1-vote-inspect-btn.is-ready:not(:disabled)::after {
+  right: auto;
+  left: -0.28rem;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .eden-x1-slots-card .dash-weighted-contribution-meta,
+    .dash-weighted-final-rank-cell,
+    .eden-x1-vote-suggestion
+  ) {
+  text-align: right;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .eden-x1-slots-table th:last-child,
+    .eden-x1-slots-table td:last-child,
+    .eden-x1-slots-table td:first-child,
+    .eden-x1-slots-table td:nth-child(2),
+    .eden-x1-slots-table td:nth-child(3)
+  ) {
+  text-align: right !important;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .eden-x1-slot-status-popover {
+  text-align: right;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-weighted-score-popover, .dash-weighted-score-popover::before) {
+  left: auto;
+  right: 50%;
+  transform: translateX(50%);
+  margin-left: 0;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .dash-weighted-score-popover::before {
+  margin-left: 0;
+}
+
+[dir='rtl']
+  .eden-x1-page
+  #ocrDashboardRoot
+  :is(.dash-structure-item, .dash-attack-item, .dash-attack-val) {
+  text-align: right !important;
+}
+
+[dir='rtl'] .eden-x1-page #ocrDashboardRoot .dash-structure-side {
+  text-align: left !important;
+}
+
+[dir='rtl'] .eden-x1-page .eden-x1-podium-card[data-rank='1'] .eden-x1-podium-medal {
+  transform: scaleX(-1);
+}
+
+/* Visible keyboard focus survives both themes. */
+.eden-x1-page
+  #ocrDashboardRoot
+  :is(
+    .eden-x1-popover-close,
+    .dash-modal-close,
+    .eden-x1-vote-info,
+    .eden-x1-quicknav-chip
+  ):focus-visible {
+  outline: 3px solid var(--frost-cyan) !important;
+  outline-offset: 2px;
+}
+
+/* Final narrow-phone cascade. This deliberately follows all <=768px rules so
+   360/390/430px screens keep the intended two-row dock and safe area. */
+@media (max-width: 560px) {
+  html.admin-standalone-root {
+    max-width: 100%;
+    overflow-x: clip;
+    scroll-padding-bottom: calc(6.85rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.eden-x1-page {
+    max-width: 100%;
+    padding-bottom: calc(6.85rem + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-x: clip;
+  }
+
+  .eden-x1-page
+    :is(
+      #ocrDashboardRoot,
+      #ocrDashboardRoot > .app-shell,
+      #adminPageRoot,
+      #ocrDashboardSection,
+      .command-header,
+      .admin-control-row,
+      .eden-x1-notice,
+      .eden-x1-reward-panel,
+      .eden-x1-flow-card,
+      .eden-x1-vote-panel,
+      .eden-x1-public-root,
+      .eden-x1-public-card,
+      .dash-card,
+      .dash-table-wrap,
+      .dash-weighted-contribution-table-wrap,
+      .dash-contribution-compare-table-wrap
+    ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .eden-x1-page .eden-x1-quicknav {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(44px, auto) !important;
+    gap: 0.35rem !important;
+    overflow: hidden !important;
+    scroll-snap-type: none;
+    touch-action: pan-y;
+  }
+
+  .eden-x1-page .eden-x1-quicknav-chip {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 0.34rem 0.26rem !important;
+    font-size: clamp(0.66rem, 3.15vw, 0.76rem) !important;
+  }
+
+  .eden-x1-page .eden-x1-flow-card {
+    padding-inline: 0.7rem 2.55rem;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    :is(
+      .eden-x1-vote-form,
+      .eden-x1-vote-fields,
+      .eden-x1-public-detail-grid,
+      .eden-x1-public-kpis,
+      .dash-history-leader-grid,
+      .eden-x1-public-insights-grid
+    ) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-table-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .eden-x1-page #ocrDashboardRoot .eden-x1-public-search {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    :is(.dash-weighted-score-popover, .eden-x1-vote-info-popover, .dash-modal-content) {
+    max-width: calc(100vw - 1.25rem) !important;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    :is(.dash-weighted-contribution-table-wrap, .eden-x1-public-table-wrap) {
+    width: calc(100% - 0.7rem) !important;
+    margin-inline: auto !important;
+    overflow-x: clip !important;
+    touch-action: pan-y;
+    overscroll-behavior-y: auto;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    :is(.dash-contribution-weighted-table, .eden-x1-public-weighted-table).dash-table--stack
+    tbody
+    tr,
+  .eden-x1-page #ocrDashboardRoot .dash-weighted-mobile-header-cell {
+    touch-action: pan-y;
+  }
+
+  .eden-x1-page
+    #ocrDashboardRoot
+    :is(.dash-contribution-weighted-table, .eden-x1-public-weighted-table).dash-table--stack
+    tbody
+    tr {
+    margin-inline: 0.2rem !important;
+  }
 }

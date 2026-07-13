@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-p = Path(__file__).resolve().parent.parent / "js" / "tech-db.js"
+p = Path(__file__).resolve().parents[2] / "js" / "tech-db.js"
 content = p.read_text(encoding="utf-8")
 trees = re.findall(r'id: "([^"]+)",\s*name: "([^"]+)"', content)
 print("Trees:", len(trees))

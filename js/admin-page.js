@@ -1,12 +1,13 @@
 import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
-import { installShowToast } from './utils.js';
+import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
+import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '13.1.11';
+const APP_VERSION = '14.0.0';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
-const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#0f172a' };
+const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
 const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanifest' };
 
 function isDynamicImportLoadFailure(err) {
@@ -115,10 +116,11 @@ function getLanguage() {
 }
 
 function updateTextContent(lang) {
+  setCurrentLanguage(lang);
   const t = translations[lang] || translations.en;
   window.VTS_TRANSLATIONS = translations;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = lang;
+  document.documentElement.lang = resolveIntlLocale(lang);
   const languageSelect = document.getElementById('languageSelect');
   if (languageSelect) languageSelect.value = lang;
 
@@ -136,14 +138,25 @@ function updateTextContent(lang) {
     const key = el.getAttribute('data-i18n-title');
     if (t[key]) el.title = t[key].replace('{version}', APP_VERSION);
   });
+
+  document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-label');
+    if (t[key]) el.label = t[key].replace('{version}', APP_VERSION);
+  });
+
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-aria');
+    if (t[key]) el.setAttribute('aria-label', t[key].replace('{version}', APP_VERSION));
+  });
   syncGameClockTitles();
   window.dispatchEvent(new CustomEvent('vts:admin-language-change', { detail: { lang } }));
+  window.dispatchEvent(new CustomEvent('vts:language-change', { detail: { lang } }));
 }
 
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260710_231652');
+  const res = await fetch('tabs/admin.html?v=20260713_204827');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -165,7 +178,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260710_231652');
+  const mod = await import('./ocr-dashboard.js?v=20260713_204827');
   await mod.bootOcrDashboard();
 }
 
