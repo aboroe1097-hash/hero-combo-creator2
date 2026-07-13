@@ -156,7 +156,7 @@ function updateTextContent(lang) {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260713_224450');
+  const res = await fetch('tabs/admin.html?v=20260713_234015');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -178,7 +178,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260713_224450');
+  const mod = await import('./ocr-dashboard.js?v=20260713_234015');
   await mod.bootOcrDashboard();
 }
 

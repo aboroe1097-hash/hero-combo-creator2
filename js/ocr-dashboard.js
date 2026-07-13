@@ -119,6 +119,7 @@ import {
   createRevisionWriteQueue,
   normalizeSyncRevision,
 } from './admin-sync-guard.js';
+import { hasUsableDashboardCache } from './dashboard-cache-policy.js';
 import {
   clearAdminLogView,
   flushAdminLogPersistence,
@@ -2098,6 +2099,7 @@ function hydrateDashboardStateFromLocalStorage() {
       if (Array.isArray(cachedRoster)) state.rosterSnapshots = cachedRoster;
     } catch (e) {}
   }
+  return hasUsableDashboardCache(state.dashData);
 }
 
 window.refreshOcrDashboardFromStorage = function refreshOcrDashboardFromStorage() {
@@ -3125,42 +3127,50 @@ async function openAdminDashboardAfterAuth(options = {}) {
   state._adminDashboardOpening = true;
   document.body.classList.add('admin-has-subtool-dock');
   const preferCloudFirst = options.preferCloudFirst === true && state.adminIsAdmin === true;
+  const hasLocalCache = hydrateDashboardStateFromLocalStorage();
   try {
-    showConnecting(dashT('adminConnectingData'));
-    setConnectingProgress(45, dashT('adminConnectingData'));
+    if (hasLocalCache) {
+      showApp();
+      setCloudSyncStatus('syncing');
+      scheduleDashboardRender();
+    } else {
+      showConnecting(dashT('adminConnectingData'));
+      setConnectingProgress(45, dashT('adminConnectingData'));
+    }
     if (preferCloudFirst) {
-      await Promise.allSettled([
+      const secondaryLoads = Promise.allSettled([
         runDashboardCloudTaskWithTimeout('Roster cloud load', loadRosterSnapshotsFromFirestore),
-        loadData({
-          preferCloudFirst: true,
-          cloudTimeoutMs: DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
-        }),
         runDashboardCloudTaskWithTimeout(
           'Bonus team effort points cloud load',
           loadConductAdjustmentsForSeason,
           DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
           { optional: true }
         ),
-      ]);
-      setConnectingProgress(78, dashT('adminConnectingData'));
-      await runDashboardCloudTaskWithTimeout(
+      ]).then(() => scheduleDashboardRender());
+      await loadData({
+        preferCloudFirst: true,
+        cloudTimeoutMs: DASHBOARD_CLOUD_BOOT_TIMEOUT_MS,
+      });
+      void secondaryLoads;
+      void runDashboardCloudTaskWithTimeout(
         'Queued cloud sync',
         flushDashboardCloudRetryQueue,
         Math.min(DASHBOARD_CLOUD_BOOT_TIMEOUT_MS, DASHBOARD_CLOUD_WRITE_TIMEOUT_MS)
       );
-      setConnectingProgress(88, dashT('adminConnectingData'));
+      if (!hasLocalCache) setConnectingProgress(88, dashT('adminConnectingData'));
     } else {
-      hydrateDashboardStateFromLocalStorage();
-      setConnectingProgress(64, dashT('adminConnectingData'));
+      if (!hasLocalCache) setConnectingProgress(64, dashT('adminConnectingData'));
       await loadData({ preferCloudFirst: false });
-      setConnectingProgress(88, dashT('adminConnectingData'));
+      if (!hasLocalCache) setConnectingProgress(88, dashT('adminConnectingData'));
       if (readDashboardCloudRetryQueue().length) {
         setCloudSyncStatus('local', dashT('adminCloudRetryPending'));
       }
     }
-    await completeConnectingProgress(dashT('adminConnectingData'));
-    showApp();
-    render();
+    if (!hasLocalCache) {
+      await completeConnectingProgress(dashT('adminConnectingData'));
+      showApp();
+      scheduleDashboardRender();
+    }
     void startAdminLogCloudSync();
   } finally {
     state._adminDashboardOpening = false;
@@ -4101,9 +4111,9 @@ async function loadData(options = {}) {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      hadLocalData = true;
       dashboardLocalCacheJson = saved;
       localData = normalizeDashboardDataForCache(JSON.parse(saved));
+      hadLocalData = hasUsableDashboardCache(localData);
       if (!preferCloudFirst) {
         hydrateAuxiliaryRecordsFromDashboardData(localData);
         state.dashData = localData;
@@ -4143,7 +4153,7 @@ async function loadData(options = {}) {
       if (preserveLocalDashboardConflict(localCandidate, cloudData)) {
         logDashboardEvent('adminLogCloudCacheReplaced', 'warn', {}, { source: 'cloud' });
       }
-      applyDashboardCloudSnapshot(cloudData);
+      applyDashboardCloudSnapshot(cloudData, { schedule: true });
       setCloudSyncStatus('live');
     } else {
       if (hadLocalData && localData) {
