@@ -4288,9 +4288,18 @@ body.eden-x1-page {
   -webkit-overflow-scrolling: touch;
 }
 
-.eden-x1-page #ocrDashboardRoot :is(.eden-x1-public-card, .eden-x1-flow-card) {
+.eden-x1-page #ocrDashboardRoot .eden-x1-public-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 180px;
+}
+
+/* Reward choices sit above the deferred dashboard. Chromium can preserve only
+   their intrinsic boxes after a cache-first paint until the section is
+   scrolled again, leaving four apparently empty cards. Keep this small,
+   interactive row fully painted. */
+.eden-x1-page #ocrDashboardRoot .eden-x1-flow-card {
+  content-visibility: visible;
+  contain-intrinsic-size: none;
 }
 
 .eden-x1-page #ocrDashboardRoot :is(.dash-top-item, .dash-attack-item, .dash-structure-item) {

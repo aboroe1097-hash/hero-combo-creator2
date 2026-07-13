@@ -2277,6 +2277,8 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('.eden-x1-quicknav')).toBeVisible();
     await expect(page.locator('.eden-x1-reward-panel')).toBeVisible();
     await expect(page.locator('.admin-footer')).toBeVisible();
+    await expect(preLoadSupportCard.locator('.eden-x1-flow-label').first()).toBeVisible();
+    await expect(preLoadSupportCard).toHaveCSS('content-visibility', 'visible');
 
     const panel = page.locator('#dashWeightedContributionPanel');
     const voteRail = page.locator('#edenX1VoteRail');

@@ -37,6 +37,10 @@ import {
   normalizeEdenVoteClosesAt,
 } from './eden-vote-deadline.js';
 import { resolveIntlLocale } from './utils.js';
+import {
+  dashboardCacheVersion,
+  hasUsableDashboardCache,
+} from './dashboard-cache-policy.js';
 
 const APP_VERSION = '14.0.0';
 const FS_PATH = 'vts_admin/dashboard_data';
@@ -65,6 +69,8 @@ const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
 const MS_PER_DAY = 86_400_000;
 const THEME_STORAGE_KEY = 'vts_theme';
 const WEIGHTED_CONTRIBUTION_COMPACT_KEY = 'vts_weighted_contribution_compact';
+const EDEN_X1_PUBLIC_CACHE_KEY = 'vts_eden_x1_public_dashboard_cache_v1';
+const EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const EDEN_X1_TEST_MODE = Boolean(globalThis.VTS_EDEN_X1_TEST_MODE);
 
 let currentLang = 'en';
@@ -6028,6 +6034,37 @@ function withEdenBootTimeout(promise) {
   });
 }
 
+function readEdenPublicDashboardCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(EDEN_X1_PUBLIC_CACHE_KEY) || 'null');
+    const savedAt = Number(cached?.savedAt);
+    if (!Number.isFinite(savedAt) || Date.now() - savedAt > EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS) {
+      return null;
+    }
+    return hasUsableDashboardCache(cached?.data) ? cached.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeEdenPublicDashboardCache(data) {
+  if (!hasUsableDashboardCache(data)) return;
+  try {
+    localStorage.setItem(
+      EDEN_X1_PUBLIC_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), data })
+    );
+  } catch {
+    // A full or restricted storage area must never block the live public view.
+  }
+}
+
+function clearEdenPublicDashboardCache() {
+  try {
+    localStorage.removeItem(EDEN_X1_PUBLIC_CACHE_KEY);
+  } catch {}
+}
+
 async function loadEdenOptionalData(promise, label) {
   let timer = null;
   try {
@@ -6089,9 +6126,12 @@ async function loadEdenX1Dashboard() {
     panel.innerHTML = renderEdenBootPending();
   }
   startEdenLoadingProgress(generation);
+  const cachedData = readEdenPublicDashboardCache();
+  const cachedVersion = dashboardCacheVersion(cachedData);
+  let cacheApplied = false;
 
   try {
-    const result = await withEdenBootTimeout(
+    const liveResultPromise = withEdenBootTimeout(
       (async () => {
         const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
           import('./firebase-eden.js'),
@@ -6148,10 +6188,18 @@ async function loadEdenX1Dashboard() {
       })()
     );
 
+    if (cachedData) {
+      await applyDashboardData(cachedData);
+      cacheApplied = true;
+    }
+
+    const result = await liveResultPromise;
+
     if (generation !== edenBootGeneration) return;
 
     if (result.kind === 'unconfigured') {
       stopEdenLoadingProgress(generation, 100);
+      if (cacheApplied) return;
       if (errorEl) {
         errorEl.classList.remove('hidden');
         errorEl.textContent = t('edenX1NoFirebase');
@@ -6171,19 +6219,29 @@ async function loadEdenX1Dashboard() {
 
     if (result.kind === 'no-data') {
       stopEdenLoadingProgress(generation, 100);
+      clearEdenPublicDashboardCache();
       setRewardFlowReady(false);
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
       setEdenPanelLoading(false);
       return;
     }
 
-    await applyDashboardData(result.data, generation);
+    writeEdenPublicDashboardCache(result.data);
+    if (!cacheApplied || !cachedVersion || dashboardCacheVersion(result.data) !== cachedVersion) {
+      await applyDashboardData(result.data, generation);
+    } else {
+      renderEdenVoteRail();
+    }
     stopEdenLoadingProgress(generation, 100);
   } catch (err) {
     if (generation !== edenBootGeneration) return;
     stopEdenLoadingProgress(generation);
     lastEdenBootError = err;
     console.error('Eden X1 view failed:', err);
+    if (cacheApplied) {
+      setEdenPanelLoading(false);
+      return;
+    }
     showEdenBootError(err);
     if (panel) panel.innerHTML = '';
     setRewardFlowReady(false);
