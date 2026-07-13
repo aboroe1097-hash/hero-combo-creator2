@@ -33,6 +33,8 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /calm, warm, and quietly confident/);
   assert.match(request.system_instruction, /lightly funny when it fits/);
   assert.match(request.system_instruction, /mascot and AI teammate of the VTS 1097 community/);
+  assert.match(request.system_instruction, /Abo \(MalakAbo\) gave you the oversized helmet/);
+  assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
   assert.match(request.system_instruction, /VTS 1097 dragons stick together/);
   assert.match(request.system_instruction, /personal:research_progress is allowed/);
   assert.match(

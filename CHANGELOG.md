@@ -2,6 +2,7 @@
 
 ## 14.0.0 - 2026-07-11
 
+- Added Abo giving Velo his oversized slipping helmet as explicit character lore, preventing Velo from confusing Abo with the current user when joking about the helmet.
 - Labeled Velo as Beta 0.1, kept his complete walking mascot above shared Admin and Eden X1 loading rails instead of clipping him into the legacy 5px progress bar, and reconciled the July 13 contribution snapshots with verified player-name aliases while leaving unsafe generic banner fragments unmerged.
 - Removed the cinematic first-visit entry gate so the toolkit opens directly; protected the game clock across compact Index, Admin, and Eden X1 headers; restored Velo's three-round helmet mishap with 2s, 4s, and 6s waits, escalating horn and eye reactions, and a final annoyed burst on visible launchers and chat headers; upgraded the compact mobile chat layout; and replaced the mobile More-menu entry with an always-visible bottom-right Velo icon while keeping a persistent desktop compact toggle.
 - Made the Arcade overall leaderboard transparent by listing each played game and raw best score and calculating the overall rating as their direct sum.
