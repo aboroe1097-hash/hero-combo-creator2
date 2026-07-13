@@ -12,6 +12,7 @@ import {
 } from './tool-adapters-strategy.js';
 import {
   calculateDmMaterialsAdapter,
+  calculateEdenUpgradeMaterialsAdapter,
   calculateEdenLoyaltyAdapter,
   estimateResearchEtaAdapter,
   getEdenContextAdapter,
@@ -19,6 +20,7 @@ import {
   getResearchContextAdapter,
 } from './tool-adapters-planning.js';
 import { getVtsPlayerContextAdapter } from './tool-adapters-community.js';
+import { getVtsGuideContextAdapter } from './tool-adapters-knowledge.js';
 import { getAdminContextAdapter } from './tool-adapters-admin.js';
 import { createToolError, createToolSuccess } from './tool-envelope.js';
 import { AiToolInputError } from './tool-utils.js';
@@ -30,6 +32,10 @@ const DEFINITIONS = {
   },
   get_vts_player_context: {
     execute: getVtsPlayerContextAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  get_vts_guide_context: {
+    execute: getVtsGuideContextAdapter,
     requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
   },
   get_combo_recommendations: {
@@ -75,6 +81,10 @@ const DEFINITIONS = {
   },
   calculate_eden_loyalty: {
     execute: calculateEdenLoyaltyAdapter,
+    requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
+  },
+  calculate_eden_upgrade_materials: {
+    execute: calculateEdenUpgradeMaterialsAdapter,
     requiredGroups: () => [AI_TOOL_GROUPS.STATIC],
   },
   get_eden_context: {
@@ -131,6 +141,21 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
       required: ['names'],
       properties: {
         names: { type: 'array', minItems: 1, maxItems: 20, items: { type: 'string' } },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'get_vts_guide_context',
+    description:
+      'Search curated public VTS guide knowledge. Results include gameplay phase, target season, source dates, and whether current leadership confirmation is required.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['query'],
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 120 },
+        season: { type: 'string', minLength: 1, maxLength: 20 },
+        limit: { type: 'integer', minimum: 1, maximum: 5 },
       },
       additionalProperties: false,
     }),
@@ -265,6 +290,37 @@ export const AI_TOOL_DECLARATIONS = Object.freeze([
         unitsPerPatch: { type: 'number', minimum: 0 },
         numPatches: { type: 'integer', minimum: 0 },
         includeUpgradePlan: { type: 'boolean' },
+      },
+      additionalProperties: false,
+    }),
+  }),
+  Object.freeze({
+    name: 'calculate_eden_upgrade_materials',
+    description:
+      'Get an exact T1-T16 loyalty requirement, calculate one Alliance Center level range, or find the cheapest Alliance Center material path from four current levels to a target tile.',
+    parameters: Object.freeze({
+      type: 'object',
+      required: ['kind'],
+      properties: {
+        kind: {
+          type: 'string',
+          enum: ['site_requirement', 'site_materials', 'building_materials'],
+        },
+        targetSite: {
+          type: 'string',
+          enum: Array.from({ length: 16 }, (_, index) => `T${index + 1}`),
+        },
+        acLevels: {
+          type: 'array',
+          minItems: 4,
+          maxItems: 4,
+          items: { type: 'integer', minimum: 0, maximum: 20 },
+        },
+        bonusPoints: { type: 'number', minimum: 0 },
+        savedUnits: { type: 'number', minimum: 0 },
+        building: { type: 'string', enum: ['AC1', 'AC2', 'AC3', 'AC4'] },
+        currentLevel: { type: 'integer', minimum: 0, maximum: 20 },
+        targetLevel: { type: 'integer', minimum: 0, maximum: 20 },
       },
       additionalProperties: false,
     }),

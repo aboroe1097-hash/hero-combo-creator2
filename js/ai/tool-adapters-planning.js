@@ -579,6 +579,115 @@ export async function calculateEdenLoyaltyAdapter(rawArguments) {
   );
 }
 
+export async function calculateEdenUpgradeMaterialsAdapter(rawArguments) {
+  const args = requirePlainArguments(rawArguments);
+  rejectUnknownArguments(args, [
+    'kind',
+    'targetSite',
+    'acLevels',
+    'bonusPoints',
+    'savedUnits',
+    'building',
+    'currentLevel',
+    'targetLevel',
+  ]);
+  const kind = boundedString(args.kind, 'kind', { maximum: 30 });
+  if (!['site_requirement', 'site_materials', 'building_materials'].includes(kind)) {
+    throw new AiToolInputError('malformed_arguments', `Unsupported Eden material query: ${kind}.`);
+  }
+
+  const loyalty = await import('../loyalty-calculator.js');
+  const action = { id: 'open_loyalty', label: 'Open Loyalty Calculator', hash: '#loyalty' };
+
+  if (kind === 'site_requirement') {
+    const targetSite = boundedString(args.targetSite, 'targetSite', { maximum: 3 }).toUpperCase();
+    const requirement = loyalty.getLoyaltyRequirementForSite(targetSite);
+    if (!requirement) {
+      throw new AiToolInputError('malformed_arguments', 'targetSite must be T1 through T16.');
+    }
+    return result(
+      { kind, targetSite: requirement.site, requiredLoyalty: requirement.loyalty, action },
+      'eden-loyalty-calculator',
+      { filters: { kind, targetSite } }
+    );
+  }
+
+  if (kind === 'building_materials') {
+    const building = boundedString(args.building, 'building', { maximum: 3 }).toUpperCase();
+    if (!['AC1', 'AC2', 'AC3', 'AC4'].includes(building)) {
+      throw new AiToolInputError('malformed_arguments', 'building must be AC1, AC2, AC3, or AC4.');
+    }
+    const currentLevel = finiteNonNegative(args.currentLevel, 'currentLevel');
+    const targetLevel = finiteNonNegative(args.targetLevel, 'targetLevel');
+    if (
+      !Number.isInteger(currentLevel) ||
+      !Number.isInteger(targetLevel) ||
+      currentLevel > 20 ||
+      targetLevel > 20 ||
+      targetLevel < currentLevel
+    ) {
+      throw new AiToolInputError(
+        'malformed_arguments',
+        'Alliance Center levels must be integers from 0 to 20 and targetLevel cannot be lower than currentLevel.'
+      );
+    }
+    const plan = loyalty.calculateAllianceCenterUpgradeMaterials(
+      building,
+      currentLevel,
+      targetLevel
+    );
+    return result(
+      { kind, ...plan, materialUnit: 'Eden upgrade materials', action },
+      'eden-loyalty-calculator',
+      { filters: { kind, building, currentLevel, targetLevel } }
+    );
+  }
+
+  if (!Array.isArray(args.acLevels) || args.acLevels.length !== 4) {
+    throw new AiToolInputError(
+      'malformed_arguments',
+      'acLevels must contain exactly four Alliance Center levels.'
+    );
+  }
+  const acLevels = args.acLevels.map((value, index) => {
+    const level = finiteNonNegative(value, `acLevels[${index}]`);
+    if (!Number.isInteger(level) || level > 20) {
+      throw new AiToolInputError(
+        'malformed_arguments',
+        `acLevels[${index}] must be an integer from 0 to 20.`
+      );
+    }
+    return level;
+  });
+  const targetSite = boundedString(args.targetSite, 'targetSite', { maximum: 3 }).toUpperCase();
+  const bonusPoints = finiteNonNegative(args.bonusPoints ?? 0, 'bonusPoints');
+  const savedUnits = finiteNonNegative(args.savedUnits ?? 0, 'savedUnits');
+  const plan = loyalty.calculateLoyaltyTargetMaterials({
+    acLevels,
+    targetSite,
+    bonusPoints,
+    savedUnits,
+  });
+  const steps = plan.steps.slice(0, 12);
+  return result(
+    {
+      kind,
+      ...plan,
+      steps,
+      totalSteps: plan.steps.length,
+      materialUnit: 'Eden upgrade materials',
+      action,
+    },
+    'eden-loyalty-calculator',
+    {
+      filters: { kind, targetSite, acLevels, bonusPoints },
+      truncated: plan.steps.length > steps.length,
+      warnings:
+        plan.steps.length > steps.length ? ['Upgrade steps were limited to the next 12.'] : [],
+    }
+  );
+}
+
 function edenRowSummary(row) {
   return {
     playerName: row.playerName,

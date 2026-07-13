@@ -48,6 +48,22 @@ export const TOOL_DECLARATIONS = Object.freeze([
   },
   {
     type: 'function',
+    name: 'get_vts_guide_context',
+    description:
+      'Search curated public VTS guide knowledge for reusable strategy, terminology, and policy context. Results distinguish the gameplay phase from a later target season, are dated, and may require current leadership confirmation. Do not use this tool for private chat history, current war orders, raw ballots, or personal records.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', minLength: 1, maxLength: 120 },
+        season: { type: 'string', minLength: 1, maxLength: 20 },
+        limit: { type: 'integer', minimum: 1, maximum: 5 },
+      },
+      required: ['query'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
     name: 'get_combo_recommendations',
     description:
       'Read ranked Front/Middle/Back combo recommendations. For formations containing a named hero such as Mary Tudor, pass that hero in filters.heroes. Use filters.states for Free/Paid acquisition constraints and spendTier for roster-width guidance. Set useSelectedHeroes=true only when the user asks to analyze heroes selected in the Combo Generator. Rank is app-list order, never a win probability.',
@@ -194,6 +210,55 @@ export const TOOL_DECLARATIONS = Object.freeze([
   },
   {
     type: 'function',
+    name: 'calculate_eden_upgrade_materials',
+    description:
+      'Use exact app tables to return a T1-T16 loyalty requirement, calculate materials for one AC1-AC4 level range, or find the cheapest Alliance Center material path from four current levels to a target tile. This static tool needs no personal-data permission.',
+    parameters: {
+      type: 'object',
+      properties: {
+        kind: {
+          type: 'string',
+          enum: ['site_requirement', 'site_materials', 'building_materials'],
+        },
+        targetSite: {
+          type: 'string',
+          enum: [
+            'T1',
+            'T2',
+            'T3',
+            'T4',
+            'T5',
+            'T6',
+            'T7',
+            'T8',
+            'T9',
+            'T10',
+            'T11',
+            'T12',
+            'T13',
+            'T14',
+            'T15',
+            'T16',
+          ],
+        },
+        acLevels: {
+          type: 'array',
+          items: { type: 'integer', minimum: 0, maximum: 20 },
+          minItems: 4,
+          maxItems: 4,
+        },
+        bonusPoints: { type: 'number', minimum: 0 },
+        savedUnits: { type: 'number', minimum: 0 },
+        building: { type: 'string', enum: ['AC1', 'AC2', 'AC3', 'AC4'] },
+        currentLevel: { type: 'integer', minimum: 0, maximum: 20 },
+        targetLevel: { type: 'integer', minimum: 0, maximum: 20 },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
     name: 'get_eden_context',
     description:
       'Read public Eden X1 guide, scoring logic, current leaderboard, player breakdown, reward flow, voting state, or published aggregate results. Public player names are allowed; never request raw ballots, voter identities, private notes, or the private roster.',
@@ -292,6 +357,18 @@ export function validateToolArguments(name, args) {
   }
   if (name === 'get_vts_player_context') {
     return hasOnlyKeys(args, ['names']) && strings(args.names, 1, 20);
+  }
+  if (name === 'get_vts_guide_context') {
+    return (
+      hasOnlyKeys(args, ['query', 'season', 'limit']) &&
+      typeof args.query === 'string' &&
+      args.query.length > 0 &&
+      args.query.length <= 120 &&
+      (args.season === undefined ||
+        (typeof args.season === 'string' && args.season.length > 0 && args.season.length <= 20)) &&
+      (args.limit === undefined ||
+        (Number.isInteger(args.limit) && args.limit >= 1 && args.limit <= 5))
+    );
   }
   if (name === 'get_combo_recommendations') {
     if (
@@ -404,6 +481,46 @@ export function validateToolArguments(name, args) {
       (args.numPatches === undefined ||
         (Number.isInteger(args.numPatches) && args.numPatches >= 0)) &&
       (args.includeUpgradePlan === undefined || typeof args.includeUpgradePlan === 'boolean')
+    );
+  }
+  if (name === 'calculate_eden_upgrade_materials') {
+    if (
+      !hasOnlyKeys(args, [
+        'kind',
+        'targetSite',
+        'acLevels',
+        'bonusPoints',
+        'savedUnits',
+        'building',
+        'currentLevel',
+        'targetLevel',
+      ]) ||
+      !['site_requirement', 'site_materials', 'building_materials'].includes(args.kind)
+    ) {
+      return false;
+    }
+    const validSite =
+      typeof args.targetSite === 'string' && /^T(?:[1-9]|1[0-6])$/u.test(args.targetSite);
+    if (args.kind === 'site_requirement') return validSite;
+    if (args.kind === 'building_materials') {
+      return (
+        ['AC1', 'AC2', 'AC3', 'AC4'].includes(args.building) &&
+        Number.isInteger(args.currentLevel) &&
+        args.currentLevel >= 0 &&
+        args.currentLevel <= 20 &&
+        Number.isInteger(args.targetLevel) &&
+        args.targetLevel >= args.currentLevel &&
+        args.targetLevel <= 20
+      );
+    }
+    return (
+      validSite &&
+      Array.isArray(args.acLevels) &&
+      args.acLevels.length === 4 &&
+      args.acLevels.every((level) => Number.isInteger(level) && level >= 0 && level <= 20) &&
+      (args.bonusPoints === undefined ||
+        (Number.isFinite(args.bonusPoints) && args.bonusPoints >= 0)) &&
+      (args.savedUnits === undefined || (Number.isFinite(args.savedUnits) && args.savedUnits >= 0))
     );
   }
   if (name === 'get_eden_context') {

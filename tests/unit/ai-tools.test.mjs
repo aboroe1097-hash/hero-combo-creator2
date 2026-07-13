@@ -4,6 +4,10 @@ import test from 'node:test';
 import { AI_TOOL_GROUPS } from '../../js/ai/contracts.js';
 import { AI_SAVED_STATE_KEYS } from '../../js/ai/saved-state.js';
 import {
+  VTS_GUIDE_KNOWLEDGE,
+  VTS_GUIDE_KNOWLEDGE_VERSION,
+} from '../../js/ai/vts-guide-knowledge.js';
+import {
   AI_TOOL_DECLARATIONS,
   AI_TOOL_EXECUTORS,
   AI_TOOL_NAMES,
@@ -25,9 +29,9 @@ class MemoryStorage {
 
 const staticContext = { allowedToolGroups: [AI_TOOL_GROUPS.STATIC], appVersion: '14.0.0' };
 
-test('tool registry exposes exactly twelve frozen, explicitly mapped read-only tools', () => {
-  assert.equal(AI_TOOL_NAMES.length, 12);
-  assert.equal(AI_TOOL_DECLARATIONS.length, 12);
+test('tool registry exposes exactly fourteen frozen, explicitly mapped read-only tools', () => {
+  assert.equal(AI_TOOL_NAMES.length, 14);
+  assert.equal(AI_TOOL_DECLARATIONS.length, 14);
   assert.equal(Object.isFrozen(AI_TOOL_EXECUTORS), true);
   assert.deepEqual(Object.keys(AI_TOOL_EXECUTORS), AI_TOOL_NAMES);
   assert.equal('eval' in AI_TOOL_EXECUTORS, false);
@@ -53,6 +57,199 @@ test('public VTS player context recognizes Abo without reading private roster da
   assert.equal(result.data.privateRosterSearched, false);
   assert.equal(result.data.edenBallotsSearched, false);
   assert.equal(result.meta.sourceId, 'vts-public-player-tags');
+});
+
+test('curated VTS guide search returns dated guidance without retaining private chat records', async () => {
+  const result = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'What does SS 20 mean?', season: 'X1', limit: 2 },
+    },
+    staticContext
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.data.knowledgeVersion, VTS_GUIDE_KNOWLEDGE_VERSION);
+  assert.equal(result.data.entries[0].id, 'eden-x1-stop-stamina');
+  assert.equal(result.data.entries[0].requiresCurrentConfirmation, true);
+  assert.match(result.data.entries[0].summary, /Stop Stamina at 20/);
+  assert.equal(result.meta.sourceId, 'vts-curated-guide-knowledge');
+  assert.match(result.meta.warnings.join(' '), /latest in-game mail or leadership announcement/);
+
+  const rewardResult = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'reward priority and support work', season: 'X1' },
+    },
+    staticContext
+  );
+  assert.equal(rewardResult.data.entries[0].id, 'eden-x1-reward-flow');
+  assert.match(rewardResult.data.entries[0].guidance.join(' '), /Support Work/);
+
+  const serialized = JSON.stringify(VTS_GUIDE_KNOWLEDGE);
+  assert.doesNotMatch(serialized, /forms\.gle|https?:\/\//i);
+  assert.doesNotMatch(serialized, /Jasper|RedBull|DragonMaster|Lord_IKR|UNDEAD/i);
+  assert.equal(
+    VTS_GUIDE_KNOWLEDGE.every((entry) => entry.audience === 'public'),
+    true
+  );
+  assert.equal(
+    VTS_GUIDE_KNOWLEDGE.every((entry) => entry.requiresCurrentConfirmation === true),
+    true
+  );
+});
+
+test('curated VTS guide search is bounded and does not cross season filters', async () => {
+  const noMatch = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'wonder halo', season: 'S4', limit: 5 },
+    },
+    staticContext
+  );
+  assert.equal(noMatch.ok, true);
+  assert.equal(noMatch.data.noMatch, true);
+  assert.deepEqual(noMatch.data.entries, []);
+
+  const malformed = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'stamina', includePrivateChat: true },
+    },
+    staticContext
+  );
+  assert.equal(malformed.ok, false);
+  assert.equal(malformed.error.code, 'malformed_arguments');
+});
+
+test('curated VTS guide search preserves incomplete-source limits for hero XP and ticket saving', async () => {
+  const leveling = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'level 50 hero monster XP gathering equipment', season: 'S1' },
+    },
+    staticContext
+  );
+  assert.equal(leveling.ok, true);
+  assert.equal(leveling.data.entries[0].id, 's1-monster-exp-hero-leveling');
+  assert.equal(leveling.data.entries[0].status, 'incomplete_historical_tip');
+  assert.equal(leveling.data.entries[0].phase, 'Late S1 / preparing for S2');
+  assert.equal(leveling.data.entries[0].targetSeason, 'S2');
+  assert.match(leveling.data.entries[0].summary, /unidentified Blue support hero/);
+  assert.match(leveling.data.entries[0].guidance.join(' '), /must not guess or name that hero/);
+
+  const tickets = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'save red tickets for S2 cavalry', season: 'S2' },
+    },
+    staticContext
+  );
+  assert.equal(tickets.ok, true);
+  assert.equal(tickets.data.entries[0].id, 'pre-s2-super-ticket-saving');
+  assert.equal(tickets.data.entries[0].phase, 'Late S1 / preparing for S2');
+  assert.match(tickets.data.entries[0].guidance.join(' '), /45 days produced 270 tickets/);
+  assert.match(tickets.data.entries[0].guidance.join(' '), /Confirm current event rewards/);
+
+  const ticketsFromSourcePhase = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'save super tickets', season: 'S1' },
+    },
+    staticContext
+  );
+  assert.equal(ticketsFromSourcePhase.data.entries[0].id, 'pre-s2-super-ticket-saving');
+
+  const serialized = JSON.stringify(VTS_GUIDE_KNOWLEDGE);
+  assert.doesNotMatch(serialized, /Power Competition|FREE Castle Skin|ZenaXeya|45-50%/i);
+});
+
+test('curated VTS guide search covers the dated Pre-S4 strategy batch', async () => {
+  const greenGems = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'green gems row 12', season: 'S4' },
+    },
+    staticContext
+  );
+  assert.equal(greenGems.ok, true);
+  assert.equal(greenGems.data.entries[0].id, 'pre-s4-green-gem-milestones');
+  assert.equal(greenGems.data.entries[0].phase, 'Late S3 / preparing for S4');
+  assert.match(greenGems.data.entries[0].guidance.join(' '), /19,125/);
+
+  const dragonMaster = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'purple orange gold Dragon Master crafting', season: 'S4' },
+    },
+    staticContext
+  );
+  assert.equal(dragonMaster.ok, true);
+  assert.equal(dragonMaster.data.entries[0].id, 'pre-s4-dragon-master-purple-path');
+  assert.match(dragonMaster.data.entries[0].guidance.join(' '), /2,577,600/);
+
+  const heroesDay = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'Heroes Day Blue Hero split refund', season: 'S4' },
+    },
+    staticContext
+  );
+  assert.equal(heroesDay.ok, true);
+  assert.equal(heroesDay.data.entries[0].id, 'pre-s4-heroes-day-blue-hero');
+  assert.match(heroesDay.data.entries[0].guidance.join(' '), /80%/);
+
+  const preS4FromSourcePhase = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'green gems row 12', season: 'S3' },
+    },
+    staticContext
+  );
+  assert.equal(preS4FromSourcePhase.data.entries[0].id, 'pre-s4-green-gem-milestones');
+
+  assert.equal(
+    VTS_GUIDE_KNOWLEDGE.every((entry) => /^\d{4}-\d{2}-\d{2}$/u.test(entry.sourceDate)),
+    true
+  );
+  assert.equal(
+    new Set(VTS_GUIDE_KNOWLEDGE.map((entry) => entry.id)).size,
+    VTS_GUIDE_KNOWLEDGE.length
+  );
+});
+
+test('curated VTS guide search covers S2 opening strategy and prefers newer matching guidance', async () => {
+  const reset = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'Super Reset Assault Guardian Fortress', season: 'S2' },
+    },
+    staticContext
+  );
+  assert.equal(reset.ok, true);
+  assert.equal(reset.data.entries[0].id, 's2-roc-opening-blue-tree');
+  assert.match(reset.data.entries[0].guidance.join(' '), /at least 24 points/);
+
+  const decor = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'Decor active structure cap', season: 'S2' },
+    },
+    staticContext
+  );
+  assert.equal(decor.ok, true);
+  assert.equal(decor.data.entries[0].id, 's2-decor-active-buff-cap');
+  assert.match(decor.data.entries[0].guidance.join(' '), /placing a third/);
+
+  const latest = await executeAiToolCall(
+    {
+      name: 'get_vts_guide_context',
+      arguments: { query: 'RoC S2', season: 'S2', limit: 5 },
+    },
+    staticContext
+  );
+  assert.equal(latest.ok, true);
+  assert.equal(latest.data.entries[0].id, 's2-workshop-and-resource-tiles');
+  assert.equal(latest.data.entries[0].sourceDate, '2025-07-16');
 });
 
 test('hero details resolve safe aliases and report missing or incomplete source data', async () => {
@@ -324,19 +521,32 @@ test('material and research tools never synthesize absent personal state', async
   );
 });
 
-test('static DM calculator returns exact third-set diamond cost with purple gear owned', async () => {
-  const calculation = await executeAiToolCall(
+test('static DM calculator distinguishes a full third set from one purple-route piece', async () => {
+  const fullSet = await executeAiToolCall(
     {
       name: 'calculate_dm_materials',
       arguments: { route: 'purple', sets: 1, normalGearOwned: true },
     },
     staticContext
   );
-  assert.equal(calculation.ok, true);
-  assert.equal(calculation.data.pieces, 6);
-  assert.equal(calculation.data.total.gems, 3_273_600);
-  assert.equal(calculation.data.total.superDragonite, 384_000);
-  assert.equal(calculation.data.total.dragonite, 307_200);
+  assert.equal(fullSet.ok, true);
+  assert.equal(fullSet.data.pieces, 6);
+  assert.equal(fullSet.data.total.gems, 3_273_600);
+  assert.equal(fullSet.data.total.superDragonite, 384_000);
+  assert.equal(fullSet.data.total.dragonite, 307_200);
+
+  const armorPiece = await executeAiToolCall(
+    {
+      name: 'calculate_dm_materials',
+      arguments: { route: 'purple', pieces: 1, normalGearOwned: true },
+    },
+    staticContext
+  );
+  assert.equal(armorPiece.ok, true);
+  assert.equal(armorPiece.data.pieces, 1);
+  assert.equal(armorPiece.data.total.gems, 545_600);
+  assert.equal(armorPiece.data.total.superDragonite, 64_000);
+  assert.equal(armorPiece.data.total.dragonite, 51_200);
 });
 
 test('research ETA requires explicit income and labels known-cost limitations', async () => {
@@ -480,6 +690,47 @@ test('Eden loyalty calculations and admin data both enforce their contracts', as
   assert.equal(loyalty.ok, true);
   assert.equal(loyalty.data.currentLoyalty, 7000);
   assert.equal(loyalty.data.extractionSite, 'T14');
+
+  const tileRequirement = await executeAiToolCall(
+    {
+      name: 'calculate_eden_upgrade_materials',
+      arguments: { kind: 'site_requirement', targetSite: 'T12' },
+    },
+    staticContext
+  );
+  assert.equal(tileRequirement.ok, true);
+  assert.equal(tileRequirement.data.requiredLoyalty, 4800);
+
+  const buildingMaterials = await executeAiToolCall(
+    {
+      name: 'calculate_eden_upgrade_materials',
+      arguments: {
+        kind: 'building_materials',
+        building: 'AC1',
+        currentLevel: 17,
+        targetLevel: 20,
+      },
+    },
+    staticContext
+  );
+  assert.equal(buildingMaterials.ok, true);
+  assert.equal(buildingMaterials.data.totalMaterialUnits, 3_540_000);
+
+  const tileMaterials = await executeAiToolCall(
+    {
+      name: 'calculate_eden_upgrade_materials',
+      arguments: {
+        kind: 'site_materials',
+        targetSite: 'T12',
+        acLevels: [10, 10, 10, 10],
+        savedUnits: 100_000,
+      },
+    },
+    staticContext
+  );
+  assert.equal(tileMaterials.ok, true);
+  assert.equal(tileMaterials.data.totalSteps, 8);
+  assert.equal(tileMaterials.data.finalLoyalty, 4800);
 
   const denied = await executeAiToolCall(
     { name: 'get_admin_context', arguments: { kind: 'summary' } },

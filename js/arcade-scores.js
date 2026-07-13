@@ -7,7 +7,9 @@
 //   2. Per-game personal bests: an authoritative local copy (localStorage, reusing each
 //      game's existing `vts_proto_*` key) plus a best-effort cloud copy owned by the
 //      anonymous Firebase uid.
-//   3. Leaderboards: per-game bests and an overall sum of all five personal-best scores.
+//   3. Leaderboards: per-game bests and an overall sum of all five personal-best scores,
+//      grouped by the player's sanitized Name + State so renewed anonymous sessions do not
+//      create duplicate public rows.
 //
 // Security / trust model:
 //   - Every cloud write targets `arcade_scores/{gameId}__{uid}__{playerId}` where uid is the
@@ -72,6 +74,29 @@ function sanitizePlayerId(value) {
     .replace(/[^a-z0-9]/giu, '')
     .slice(0, 40);
   return id.length >= 12 ? id : '';
+}
+
+function canonicalPlayerKey(row) {
+  const name = sanitizeName(row?.name).normalize('NFKC').toLocaleLowerCase('en-US');
+  const state = sanitizeState(row?.state)
+    .normalize('NFKC')
+    .toLocaleLowerCase('en-US')
+    .replace(/^(?:s|#)(?=\d)/u, '');
+  return JSON.stringify([name, state]);
+}
+
+function rowSourceKey(row) {
+  return `${String(row?.uid || '')}|${String(row?.playerId || 'legacy')}`;
+}
+
+function isNewerLabel(row, current) {
+  if (!current) return true;
+  const rowUpdatedAt = Number(row.updatedAtMs) || 0;
+  const currentUpdatedAt = Number(current.updatedAtMs) || 0;
+  return (
+    rowUpdatedAt > currentUpdatedAt ||
+    (rowUpdatedAt === currentUpdatedAt && rowSourceKey(row) < rowSourceKey(current))
+  );
 }
 
 /** Accept either a canonical gameId ('merge_rush') or a raw scoreKey ('vts_proto_merge_rush'). */
@@ -577,28 +602,37 @@ export function buildGameLeaderboard(rows, gameId, topN = 25) {
   if (!id) return [];
 
   const bestByPlayer = new Map();
+  const latestLabelByPlayer = new Map();
   for (const row of rows) {
     if (row.gameId !== id || !row.uid || row.score <= 0) continue;
-    const playerKey = `${row.uid}|${row.playerId || 'legacy'}`;
+    const playerKey = canonicalPlayerKey(row);
+    if (isNewerLabel(row, latestLabelByPlayer.get(playerKey))) {
+      latestLabelByPlayer.set(playerKey, row);
+    }
     const current = bestByPlayer.get(playerKey);
     if (
       !current ||
       row.score > current.score ||
-      (row.score === current.score && row.updatedAtMs < current.updatedAtMs)
+      (row.score === current.score && row.updatedAtMs < current.updatedAtMs) ||
+      (row.score === current.score &&
+        row.updatedAtMs === current.updatedAtMs &&
+        rowSourceKey(row) < rowSourceKey(current))
     ) {
       bestByPlayer.set(playerKey, row);
     }
   }
 
-  return [...bestByPlayer.values()]
+  return [...bestByPlayer.entries()]
+    .map(([playerKey, row]) => {
+      const label = latestLabelByPlayer.get(playerKey) || row;
+      return { ...row, name: label.name, state: label.state, playerKey };
+    })
     .sort(
       (a, b) =>
-        b.score - a.score ||
-        a.updatedAtMs - b.updatedAtMs ||
-        String(a.uid).localeCompare(String(b.uid))
+        b.score - a.score || a.updatedAtMs - b.updatedAtMs || a.playerKey.localeCompare(b.playerKey)
     )
     .slice(0, topN)
-    .map((r, i) => ({ rank: i + 1, ...r }));
+    .map(({ playerKey: _playerKey, ...row }, i) => ({ rank: i + 1, ...row }));
 }
 
 /**
@@ -615,7 +649,7 @@ export function buildOverallLeaderboard(rows, topN = 25) {
   for (const r of rows) {
     if (!r.uid || r.score <= 0 || !GAME_IDS.includes(r.gameId)) continue;
     const playerId = r.playerId || 'legacy';
-    const playerKey = `${r.uid}|${playerId}`;
+    const playerKey = canonicalPlayerKey(r);
     const key = `${playerKey}|${r.gameId}`;
     if (!bestByPlayerGame.has(key) || r.score > bestByPlayerGame.get(key)) {
       bestByPlayerGame.set(key, r.score);
@@ -627,10 +661,13 @@ export function buildOverallLeaderboard(rows, topN = 25) {
       state: r.state,
       latestMs: 0,
     };
-    if (r.updatedAtMs >= info.latestMs) {
+    if (isNewerLabel(r, info.labelRow)) {
+      info.uid = r.uid;
+      info.playerId = playerId;
       info.name = r.name;
       info.state = r.state;
       info.latestMs = r.updatedAtMs;
+      info.labelRow = r;
     }
     playerInfo.set(playerKey, info);
   }
@@ -649,6 +686,7 @@ export function buildOverallLeaderboard(rows, topN = 25) {
     }
     if (gamesPlayed === 0) continue;
     players.push({
+      playerKey,
       uid: info.uid,
       playerId: info.playerId,
       name: info.name,
@@ -665,10 +703,10 @@ export function buildOverallLeaderboard(rows, topN = 25) {
       (a, b) =>
         b.rating - a.rating ||
         b.gamesPlayed - a.gamesPlayed ||
-        `${a.uid}|${a.playerId}`.localeCompare(`${b.uid}|${b.playerId}`)
+        a.playerKey.localeCompare(b.playerKey)
     )
     .slice(0, topN)
-    .map((p, i) => ({ rank: i + 1, ...p }));
+    .map(({ playerKey: _playerKey, ...player }, i) => ({ rank: i + 1, ...player }));
 }
 
 /** Convenience: fetch once and build every board + this user's standing. */

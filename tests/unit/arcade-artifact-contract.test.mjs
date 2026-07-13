@@ -252,7 +252,8 @@ test('switching player names cannot relabel or inherit the previous player score
   assert.match(scores, /if \(playerChanged\) \{[\s\S]*resetLocalPlayerScores\(\)/);
   assert.match(scores, /if \(!playerChanged\) void relabelCloudScores\(profile\)/);
   assert.match(scores, /docIdFor\(gameId, uid, profile\.id\)/);
-  assert.match(scores, /const playerKey = `\$\{r\.uid\}\|\$\{playerId\}`/);
+  assert.match(scores, /function canonicalPlayerKey\(row\)/);
+  assert.match(scores, /const playerKey = canonicalPlayerKey\(r\)/);
 });
 
 test('Arcade cloud verification covers browser sync and the live Firestore rules contract', () => {

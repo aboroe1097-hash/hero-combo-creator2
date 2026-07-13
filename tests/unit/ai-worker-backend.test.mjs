@@ -30,11 +30,27 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /heroes selected in the Combo Generator/);
   assert.match(request.system_instruction, /"yes", "okay please", and "continue"/);
   assert.match(request.system_instruction, /get_vts_player_context/);
+  assert.match(request.system_instruction, /Use get_vts_guide_context/);
+  assert.match(
+    request.system_instruction,
+    /dated plan is historical evidence, never a\ncurrent war order/
+  );
+  assert.match(request.system_instruction, /phase being played from targetSeason/);
+  assert.match(request.system_instruction, /Community guide numbers never override/);
   assert.match(request.system_instruction, /calm, warm, and quietly confident/);
   assert.match(request.system_instruction, /lightly funny when it fits/);
   assert.match(request.system_instruction, /mascot and AI teammate of the VTS 1097 community/);
   assert.match(request.system_instruction, /Abo \(MalakAbo\) gave you the oversized helmet/);
   assert.match(request.system_instruction, /do not confuse\nAbo with the current user/);
+  assert.match(request.system_instruction, /helmet is visibly separate from your scales/);
+  assert.match(request.system_instruction, /Never claim that you do not\nwear a helmet/);
+  assert.match(
+    request.system_instruction,
+    /Never\npromise to stop mentioning or wearing the helmet/
+  );
+  assert.match(request.system_instruction, /Whenever a user directly asks Velo for help/);
+  assert.match(request.system_instruction, /nudge this helmet above my eyes/);
+  assert.match(request.system_instruction, /at most one helmet beat per answer/);
   assert.match(request.system_instruction, /VTS 1097 dragons stick together/);
   assert.match(request.system_instruction, /personal:research_progress is allowed/);
   assert.match(
@@ -45,6 +61,7 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
   assert.match(request.system_instruction, /damage,\nHP, tactical might\/resistance/);
   assert.match(request.system_instruction, /small and medium spenders/);
   assert.match(request.system_instruction, /Use calculate_eden_loyalty/);
+  assert.match(request.system_instruction, /Use calculate_eden_upgrade_materials/);
   assert.match(request.system_instruction, /call calculate_dm_materials/);
   assert.match(request.system_instruction, /never claim that\nyou cannot calculate them/);
   assert.match(request.system_instruction, /server-gated by a verified Firebase admin claim/);
@@ -53,6 +70,27 @@ test('Gemini public API request omits Enterprise-only safety settings', () => {
     request.system_instruction,
     /tool fields, canonical labels, or evidence are in\nEnglish/
   );
+});
+
+test('Velo disambiguates German Dragon Master set and piece requests', () => {
+  const request = buildGeminiRequest({
+    model: 'gemini-3.1-flash-lite',
+    providerInput: [
+      {
+        type: 'user_input',
+        content: [{ type: 'text', text: 'Wie viel kostet die Rüstung für mein drittes DM-Set?' }],
+      },
+    ],
+    allowedToolGroups: ['static'],
+    locale: 'de',
+  });
+
+  assert.match(request.system_instruction, /"Rüstung" and "Ausrüstung" can mean/);
+  assert.match(request.system_instruction, /complete six-piece set or one equipment piece/);
+  assert.match(request.system_instruction, /ask one short set-versus-piece clarification/);
+  assert.match(request.system_instruction, /Owning two complete sets while\nbuilding a third/);
+  assert.match(request.system_instruction, /one final Gold Dragon Master piece/);
+  assert.match(request.system_instruction, /never one Purple DM piece/);
 });
 
 test('Gemini tool contract supports Mary formations and public VTS player lookup', () => {
@@ -65,6 +103,7 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
   const declarations = request.tools;
   const names = declarations.map((tool) => tool.name);
   assert.ok(names.includes('get_vts_player_context'));
+  assert.ok(names.includes('get_vts_guide_context'));
   const combos = declarations.find((tool) => tool.name === 'get_combo_recommendations');
   assert.deepEqual(combos.parameters.properties.mode.enum, ['ranked', 'non_overlap']);
   assert.equal(combos.parameters.required, undefined);
@@ -84,6 +123,21 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
   );
   assert.equal(validateToolArguments('get_vts_player_context', { names: ['Abo'] }), true);
   assert.equal(
+    validateToolArguments('get_vts_guide_context', {
+      query: 'stop stamina',
+      season: 'X1',
+      limit: 3,
+    }),
+    true
+  );
+  assert.equal(
+    validateToolArguments('get_vts_guide_context', {
+      query: 'stop stamina',
+      privateChat: true,
+    }),
+    false
+  );
+  assert.equal(
     validateToolArguments('get_combo_recommendations', {
       filters: { states: ['Free'] },
       spendTier: 'small',
@@ -93,6 +147,29 @@ test('Gemini tool contract supports Mary formations and public VTS player lookup
   assert.equal(
     validateToolArguments('calculate_eden_loyalty', { acLevels: [20, 16, 12, 10] }),
     true
+  );
+  assert.equal(
+    validateToolArguments('calculate_eden_upgrade_materials', {
+      kind: 'site_requirement',
+      targetSite: 'T12',
+    }),
+    true
+  );
+  assert.equal(
+    validateToolArguments('calculate_eden_upgrade_materials', {
+      kind: 'building_materials',
+      building: 'AC1',
+      currentLevel: 17,
+      targetLevel: 20,
+    }),
+    true
+  );
+  assert.equal(
+    validateToolArguments('calculate_eden_upgrade_materials', {
+      kind: 'site_requirement',
+      targetSite: 'T17',
+    }),
+    false
   );
   assert.equal(
     validateToolArguments('calculate_dm_materials', {

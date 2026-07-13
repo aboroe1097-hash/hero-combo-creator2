@@ -86,3 +86,96 @@ test('overall Arcade rating is the sum of each player profile game bests', async
   assert.equal(board[0].rating, 1180);
   assert.equal(board[1].rating, 30);
 });
+
+test('leaderboards merge renewed sessions by player name and state', async () => {
+  const scores = await import(`../../js/arcade-scores.js?sessions=${Date.now()}`);
+  const rows = [
+    {
+      uid: 'abo-old-session',
+      playerId: 'abo-old-profile',
+      name: 'Abo',
+      state: '1097',
+      gameId: 'sort_hoard',
+      score: 35,
+      updatedAtMs: 1,
+    },
+    {
+      uid: 'abo-old-session',
+      playerId: 'abo-old-profile',
+      name: 'Abo',
+      state: '1097',
+      gameId: 'crystal_relay',
+      score: 324,
+      updatedAtMs: 2,
+    },
+    {
+      uid: 'abo-new-session',
+      playerId: 'abo-new-profile',
+      name: 'Abo',
+      state: 'S1097',
+      gameId: 'crystal_relay',
+      score: 1145,
+      updatedAtMs: 3,
+    },
+    {
+      uid: 'roha-session-one',
+      playerId: 'roha-profile-one',
+      name: 'Roha',
+      state: '',
+      gameId: 'sort_hoard',
+      score: 30,
+      updatedAtMs: 4,
+    },
+    {
+      uid: 'roha-session-one',
+      playerId: 'roha-profile-one',
+      name: 'Roha',
+      state: '',
+      gameId: 'crystal_relay',
+      score: 370,
+      updatedAtMs: 5,
+    },
+    {
+      uid: 'roha-session-one',
+      playerId: 'roha-profile-one',
+      name: 'Roha',
+      state: '',
+      gameId: 'set_assembly',
+      score: 44,
+      updatedAtMs: 6,
+    },
+    {
+      uid: 'roha-session-two',
+      playerId: 'roha-profile-two',
+      name: 'roha',
+      state: '',
+      gameId: 'crystal_relay',
+      score: 370,
+      updatedAtMs: 7,
+    },
+  ];
+
+  const overall = scores.buildOverallLeaderboard(rows);
+  assert.deepEqual(
+    overall.map((row) => [row.name.toLocaleLowerCase('en-US'), row.rating]),
+    [
+      ['abo', 1180],
+      ['roha', 444],
+    ]
+  );
+  assert.equal(scores.buildGameLeaderboard(rows, 'crystal_relay').length, 2);
+
+  const sameNameOtherState = scores.buildOverallLeaderboard([
+    ...rows,
+    {
+      uid: 'other-abo',
+      playerId: 'other-abo-profile',
+      name: 'Abo',
+      state: '1098',
+      gameId: 'merge_rush',
+      score: 500,
+      updatedAtMs: 8,
+    },
+  ]);
+  assert.equal(sameNameOtherState.filter((row) => row.name === 'Abo').length, 2);
+});
