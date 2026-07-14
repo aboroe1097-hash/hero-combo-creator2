@@ -4,10 +4,10 @@ import test from 'node:test';
 
 const read = (path) => readFileSync(path, 'utf8');
 
-test('maintenance mode remains enabled and redirects through the shared entry script', () => {
+test('maintenance mode is disabled while retaining the shared entry script', () => {
   const config = read('js/maintenance-config.js');
 
-  assert.match(config, /window\.VTS_MAINTENANCE_MODE\s*=\s*true/);
+  assert.match(config, /window\.VTS_MAINTENANCE_MODE\s*=\s*false/);
   assert.match(config, /new URL\('\.\.\/maintenance\.html', scriptUrl\)/);
   assert.match(config, /window\.location\.replace\(maintenanceUrl\.href\)/);
   assert.match(config, /vts_maintenance_bypass/);
