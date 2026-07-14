@@ -98,7 +98,8 @@ Use Viber for context, discussion, links, images, and confirmation.
 
 Use in-game mail for durable instructions that members may read later.
 
-- Subject: short, specific, and action-oriented.
+- In-game mail has no subject field. Make the first line a short, specific, action-oriented heading
+  or deadline.
 - Body: action and deadline first, then the minimum explanation and contact route.
 - Each mail body must be **500 characters or fewer** and **seven lines or fewer**. Count spaces and
   line breaks during review and keep a safety margin when possible.
@@ -107,6 +108,9 @@ Use in-game mail for durable instructions that members may read later.
 - Images are not supported in game mail.
 - Assume limited formatting and screen space; do not rely on Markdown, complex bullets, or a long
   web link being convenient to copy.
+- Use the verified filter-safer toolkit address `roc-vts.com/eden-x1` on its own line when members
+  need the public Eden X1 review page. Do not add `https://` or `.html` to the in-game form unless a
+  later live test confirms that it passes the game filter.
 - Repeat critical coordinates or game-time values in plain text.
 - Scan for game-filtered words before approval. Known risky examples include `buy`, `bonus`, `free`,
   `Viber`, `WhatsApp`, and names of other chat apps. Rewrite naturally instead of trying to evade a
@@ -148,7 +152,7 @@ This helps us [SHORT REASON]. Please [CONFIRMATION METHOD] if needed.
 ### In-game mail pattern
 
 ```text
-Subject: [PART 1/1] [ACTION] - [DATE OR EVENT]
+[PART 1/1] [ACTION] - [DATE OR EVENT]
 
 Please [ACTION] by [DATE, GAME TIME].
 
@@ -158,7 +162,7 @@ If anything is missing or incorrect, contact me.
 ```
 
 The body above must remain within 500 characters and seven lines. When several mails are needed,
-number every subject and log every exact part.
+number the first line of every part and log every exact part.
 
 ### Short announcement pattern
 
