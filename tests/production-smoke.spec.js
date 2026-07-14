@@ -7,6 +7,8 @@ const targetOrigin = new URL(
 ).origin;
 const localIndex = readFileSync('dist/index.html', 'utf8');
 const localServiceWorker = readFileSync('dist/sw.js', 'utf8');
+const localMaintenanceConfig = readFileSync('dist/js/maintenance-config.js', 'utf8');
+const maintenanceEnabled = /window\.VTS_MAINTENANCE_MODE\s*=\s*true/u.test(localMaintenanceConfig);
 const packageVersion = JSON.parse(readFileSync('package.json', 'utf8')).version;
 const usesDeterministicCiFirebaseConfig =
   !isRemotePreview && process.env.VITE_FIREBASE_API_KEY === 'dummy';
@@ -65,7 +67,7 @@ function observeTargetFailures(page) {
   return failures;
 }
 
-test('maintenance hold redirects public entry pages unless bypassed', async ({ browser }) => {
+test('public entry pages follow the release maintenance flag', async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -77,9 +79,13 @@ test('maintenance hold redirects public entry pages unless bypassed', async ({ b
     '/games/boot/b-merge-rush.html',
   ]) {
     await page.goto(entryPath, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\/maintenance\.html$/u);
-    await expect(page.getByRole('heading', { name: 'Maintenance Mode' })).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('Work in progress');
+    if (maintenanceEnabled) {
+      await expect(page).toHaveURL(/\/maintenance\.html$/u);
+      await expect(page.getByRole('heading', { name: 'Maintenance Mode' })).toBeVisible();
+      await expect(page.getByRole('status')).toContainText('Work in progress');
+    } else {
+      await expect(page).not.toHaveURL(/\/maintenance\.html$/u);
+    }
   }
 
   await context.close();
