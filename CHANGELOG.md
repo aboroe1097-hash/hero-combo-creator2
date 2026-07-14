@@ -1,5 +1,12 @@
 # Changelog
 
+## 14.0.4 - 2026-07-14
+
+- Removed the retired Comments and What's New startup surfaces while preserving their Firestore data protections; made Generator the stable first-paint tool and fixed the touched tour, switch, and filter semantics for keyboard and screen-reader users.
+- Deferred Arcade, Eden Map, Strife, Loyalty, Research, Dragon Master, export, Analytics, and Velo assistant feature code/styles until their first relevant intent; stopped hidden-tab loaders from creating offscreen artwork; and added smaller launcher/maintenance imagery plus one-shot stale hashed-asset recovery.
+- Made Eden management votes start beside dashboard boot, retry the public aggregate sheet once, tolerate late Google JSONP callbacks, wait for the member/reward model before exclusions, preserve cached dashboards on live timeouts, and expose an explicit in-place Retry state after final failure.
+- Kept the site-wide maintenance hold enabled throughout this release.
+
 ## 14.0.3 - 2026-07-14
 
 - Enabled a site-wide maintenance hold that redirects the main toolkit, Admin, Eden X1, Arcade, mini-games, and missing routes to a lightweight status page while preserving an explicit local/session bypass for release verification.

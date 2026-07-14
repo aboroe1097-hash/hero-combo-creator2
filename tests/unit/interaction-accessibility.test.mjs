@@ -81,15 +81,24 @@ test('destructive terminal clearing asks before deleting its local history', () 
   assert.match(dashboard.slice(clearStart, clearEnd), /adminTerminalClear/);
 });
 
-test('primary app searches and comment fields have names and accessible labels', () => {
+test('primary app searches have names and accessible labels after Comments retirement', () => {
   const index = readSource('index.html');
 
   for (const id of ['manualHeroSearch', 'generatorHeroSearch', 'techSearchInput']) {
     assert.match(index, new RegExp(`id="${id}"[^>]*name="[^"]+"[^>]*data-i18n-aria=`));
   }
-  for (const id of ['commentName', 'commentState', 'commentText']) {
-    assert.match(index, new RegExp(`for="${id}"`));
-    assert.match(index, new RegExp(`id="${id}"[^>]*name="[^"]+"`));
-  }
-  assert.match(index, /id="commentState"[^>]*inputmode="numeric"/);
+  assert.doesNotMatch(index, /id="commentsSection"|id="comment(?:Name|State|Text)"/);
+});
+
+test('visible language, hero-card, and install-banner labels remain their accessible names', () => {
+  const index = readSource('index.html');
+  const generator = readSource('js/app-generator.js');
+  const pwa = readSource('js/pwa-register.js');
+
+  assert.match(index, /id="languageMenuButton"[\s\S]*?aria-labelledby="languageMenuLabel"/);
+  assert.doesNotMatch(index, /id="languageMenuButton"[\s\S]*?data-i18n-aria="languageLabel"/);
+  assert.doesNotMatch(generator, /card\.setAttribute\('aria-label'/);
+  assert.match(pwa, /document\.createElement\('div'\)/);
+  assert.doesNotMatch(pwa, /document\.createElement\('aside'\)/);
+  assert.match(pwa, /banner\.setAttribute\('role', 'alert'\)/);
 });

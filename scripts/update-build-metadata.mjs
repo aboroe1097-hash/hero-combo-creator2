@@ -24,9 +24,7 @@ const baseAppShellFiles = [
   '/js/app.js',
   '/js/maintenance-config.js',
   '/js/pwa-register.js',
-  '/images/logo.png',
-  '/images/boot/blazing-wing-right.webp',
-  '/images/boot/dreamy-wing-left.webp',
+  '/images/logo-120.webp',
   '/css/eden-x1.css',
   '/eden-x1.html',
   '/arcade.html',
@@ -80,7 +78,7 @@ function updateCacheBusters() {
     const appJs = fs
       .readFileSync(appJsPath, 'utf8')
       .replace(
-        /((?:app-whats-new|app-research|material-calculator|eden-map|app-strife)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+        /((?:app-research|material-calculator|eden-map|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
         `$1?v=${buildVersion}`
       );
     fs.writeFileSync(appJsPath, appJs);

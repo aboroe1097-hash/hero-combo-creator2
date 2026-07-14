@@ -11,8 +11,10 @@ const readProjectFile = (relativePath) =>
 test('Strife v14 uses an isolated responsive presentation layer', () => {
   const index = readProjectFile('index.html');
   const css = readProjectFile('css/strife-v14.css');
+  const source = readProjectFile('js/app-strife.js');
 
-  assert.match(index, /css\/strife-v14\.css/u);
+  assert.doesNotMatch(index, /css\/strife-v14\.css/u);
+  assert.match(source, /import '\.\.\/css\/strife-v14\.css'/u);
   assert.match(css, /\.strife-control-deck--stage/u);
   assert.match(css, /\.strife-monster-summary-copy/u);
   assert.match(css, /\.strife-results-band--f2p/u);

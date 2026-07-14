@@ -12,8 +12,6 @@ async function openApp(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
-  await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
   await page.evaluate(() => window.stop());
 }

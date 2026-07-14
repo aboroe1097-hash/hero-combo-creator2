@@ -58,7 +58,7 @@ test('admin and Eden mobile headers reserve full-width clocks', () => {
   );
 });
 
-test('mobile bottom layers share one safe dock clearance and comments avoid the utility rail', () => {
+test('mobile bottom layers share one safe dock clearance after Comments retirement', () => {
   assert.match(shellCss, /--shell-mobile-nav-clearance:\s*calc\(96px \+ var\(--ff-safe-bottom\)\)/);
   assert.match(
     shellCss,
@@ -68,10 +68,7 @@ test('mobile bottom layers share one safe dock clearance and comments avoid the 
     shellCss,
     /body \.bug-report-fab \{[\s\S]*?bottom:\s*calc\(var\(--shell-mobile-nav-clearance\) \+ var\(--shell-mobile-utility-step\)\) !important/
   );
-  assert.match(
-    shellCss,
-    /#app #commentsSection \.comments-list \{[\s\S]*?margin-inline-end:\s*calc\(var\(--ff-tap-min\) \+ 8px\)/
-  );
+  assert.doesNotMatch(shellCss, /#commentsSection|\.comments-list/);
   assert.match(
     shellCss,
     /body\.keyboard-open \.floating-tool-btn,[\s\S]*?visibility:\s*hidden !important/

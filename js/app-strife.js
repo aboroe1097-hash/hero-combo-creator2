@@ -546,3 +546,5 @@ export function initStrifeTool() {
   renderStrifeTool();
   window.vtsRenderStrifeTool = scheduleStrifeRender;
 }
+import '../css/secondary-tools-v14.css';
+import '../css/strife-v14.css';

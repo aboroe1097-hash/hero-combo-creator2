@@ -39,7 +39,7 @@ import {
 import { resolveIntlLocale } from './utils.js';
 import { dashboardCacheVersion, hasUsableDashboardCache } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.3';
+const APP_VERSION = '14.0.4';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -128,6 +128,8 @@ let currentManagementVoteResults = {
   error: '',
 };
 let managementVoteLoadToken = 0;
+let managementVoteLoadPromise = null;
+let pendingManagementVotePayload = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -592,25 +594,59 @@ function applyEdenManagementVoteResults(nextResults, status = 'loaded') {
   }
 }
 
-async function loadEdenManagementVoteResults() {
+function applyPendingEdenManagementVotePayload() {
+  if (!pendingManagementVotePayload || !rewardFlowReady || !currentMemberOptions.length) {
+    return false;
+  }
+  const payload = pendingManagementVotePayload;
+  pendingManagementVotePayload = null;
+  applyEdenManagementVoteResults(summarizeEdenManagementVotes(payload), 'loaded');
+  return true;
+}
+
+function loadEdenManagementVoteResults(options = {}) {
+  const force = options.force === true;
+  if (!force && managementVoteLoadPromise) return managementVoteLoadPromise;
+  if (!force && (currentManagementVoteResults.status === 'loaded' || pendingManagementVotePayload)) {
+    return Promise.resolve(currentManagementVoteResults);
+  }
   const token = (managementVoteLoadToken += 1);
   applyEdenManagementVoteResults({ winners: [], rankings: [] }, 'loading');
-  try {
-    const payload = await loadManagementVotesPayloadWithFallback();
-    if (token !== managementVoteLoadToken) return;
-    applyEdenManagementVoteResults(summarizeEdenManagementVotes(payload), 'loaded');
-  } catch (err) {
-    if (token !== managementVoteLoadToken) return;
-    console.warn('Eden X1 management vote Sheet failed:', err);
-    applyEdenManagementVoteResults(
-      {
-        winners: [],
-        rankings: [],
-        error: err?.message || String(err || 'unknown error'),
-      },
-      'error'
-    );
-  }
+  const payloadLoader =
+    EDEN_X1_TEST_MODE && typeof globalThis.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER === 'function'
+      ? globalThis.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER
+      : loadManagementVotesPayloadWithFallback;
+  managementVoteLoadPromise = Promise.resolve()
+    .then(() => payloadLoader({ timeoutMs: 20_000 }))
+    .then((payload) => {
+      if (token !== managementVoteLoadToken) return currentManagementVoteResults;
+      pendingManagementVotePayload = payload;
+      if (!applyPendingEdenManagementVotePayload()) {
+        currentManagementVoteResults = {
+          ...currentManagementVoteResults,
+          status: 'waiting-for-model',
+        };
+      }
+      return currentManagementVoteResults;
+    })
+    .catch((err) => {
+      if (token !== managementVoteLoadToken) return currentManagementVoteResults;
+      console.warn('Eden X1 management vote Sheet failed:', err);
+      pendingManagementVotePayload = null;
+      applyEdenManagementVoteResults(
+        {
+          winners: [],
+          rankings: [],
+          error: err?.message || String(err || 'unknown error'),
+        },
+        'error'
+      );
+      return currentManagementVoteResults;
+    })
+    .finally(() => {
+      if (token === managementVoteLoadToken) managementVoteLoadPromise = null;
+    });
+  return managementVoteLoadPromise;
 }
 
 function renderEdenMemberSuggestionList(value, targetId) {
@@ -3849,6 +3885,7 @@ function getEligibleTeamVoteWinners() {
 function rewardSlotRows(view) {
   if (view === 'management') {
     const winners = getEligibleManagementVoteWinners();
+    const unavailable = currentManagementVoteResults.status === 'error';
     return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
@@ -3858,11 +3895,13 @@ function rewardSlotRows(view) {
             voteRank: winners[index].voteRank,
             voters: winners[index].voters || winners[index].votes,
           }
-        : { playerName: t('edenX1Tba') }),
+        : { playerName: unavailable ? '--' : t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
       status: winners[index]
         ? EDEN_X1_MANAGEMENT_VOTE_STATUS
-        : t('edenX1RewardManagementVotePending'),
+        : unavailable
+          ? 'Management votes temporarily unavailable'
+          : t('edenX1RewardManagementVotePending'),
       statusReason: winners[index] ? managementVoteWinnerReason(winners[index]) : '',
     }));
   }
@@ -5573,6 +5612,13 @@ function renderRewardSlotTable(view) {
   const metaKey = rewardViewMetaKey(view);
   const rows = rewardSlotRows(view);
   const rewardViewClass = rewardViewAccentClass(view);
+  const managementVoteError =
+    view === 'management' && currentManagementVoteResults.status === 'error'
+      ? `<div class="eden-x1-management-vote-error" role="alert">
+          <span>Management votes temporarily unavailable.</span>
+          <button id="edenX1ManagementVotesRetry" class="eden-x1-retry-btn" type="button">${esc(t('edenX1Retry'))}</button>
+        </div>`
+      : '';
   return `<div class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card eden-x1-slots-card${rewardViewClass}">
       <div class="dash-card-hdr dash-card-hdr-wrap">
@@ -5588,6 +5634,7 @@ function renderRewardSlotTable(view) {
           <span class="dash-weighted-contribution-meta">${esc(metaKey ? t(metaKey) : t('edenX1ViewOnly'))}</span>
         </div>
       </div>
+      ${managementVoteError}
       <div class="dash-contribution-compare-table-wrap dash-weighted-contribution-table-wrap">
         <table class="dash-banner-table dash-contribution-compare-table dash-contribution-weighted-table dash-table--stack eden-x1-slots-table">
           <thead><tr>
@@ -5610,6 +5657,14 @@ function renderRewardSlotTable(view) {
       </div>
     </div>
   </div>`;
+}
+
+function bindManagementVoteRetry(host) {
+  host?.querySelector('#edenX1ManagementVotesRetry')?.addEventListener('click', (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    void loadEdenManagementVoteResults({ force: true });
+  });
 }
 
 function renderEdenVoteRail() {
@@ -5900,6 +5955,7 @@ function renderCurrentTable(renderOptions = {}) {
   if (currentRewardView === 'management' || currentRewardView === 'team') {
     cancelProgressiveWeightedTablePlan('reward');
     panel.innerHTML = renderRewardSlotTable(currentRewardView);
+    bindManagementVoteRetry(panel);
     bindWeightedPopovers(panel);
     renderEdenVoteRail();
     updateRewardFlowControls();
@@ -6128,6 +6184,7 @@ function showEdenBootError(err) {
 
 async function loadEdenX1Dashboard() {
   const generation = ++edenBootGeneration;
+  void loadEdenManagementVoteResults();
   const panel = $('dashWeightedContributionPanel');
   const errorEl = $('edenX1Error');
   if (errorEl) {
@@ -6354,6 +6411,7 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
     ? `Eden X1 - ${String(dateStr).split('T')[0] || dateStr}`
     : t('edenX1PageTitle');
   setRewardFlowReady(true);
+  applyPendingEdenManagementVotePayload();
   // Frost & Flame marquee, podium, and progression — all from real runtime
   // data, hydrated before the heavy table so the season summary paints first.
   renderEdenMarquee(data);
@@ -6370,10 +6428,6 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
   else await renderPublicDashboard(data);
   if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 100);
   setEdenPanelLoading(false);
-  if (!EDEN_X1_TEST_MODE) {
-    await yieldToBrowser();
-    loadEdenManagementVoteResults();
-  }
 }
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
@@ -6381,8 +6435,20 @@ window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
 };
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {
-  applyEdenManagementVoteResults(summarizeEdenManagementVotes(payloadOrRows), 'loaded');
+  pendingManagementVotePayload = payloadOrRows;
+  if (!applyPendingEdenManagementVotePayload()) {
+    currentManagementVoteResults = {
+      ...currentManagementVoteResults,
+      status: 'waiting-for-model',
+    };
+  }
 };
+
+if (EDEN_X1_TEST_MODE) {
+  window.loadEdenX1ManagementVotesForTest = function loadEdenX1ManagementVotesForTest(options) {
+    return loadEdenManagementVoteResults(options);
+  };
+}
 
 if (EDEN_X1_TEST_MODE) {
   bootShell().catch((err) => console.error('Eden X1 test shell failed:', err));

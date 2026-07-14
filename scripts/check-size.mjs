@@ -38,10 +38,10 @@ const LIMITS = {
   totalDeployBytes: 20 * 1024 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // DM, Research, Arcade, and the deferred AI drawer intentionally expand
-  // the v14 artifact while source-only originals remain excluded. Keep a
-  // narrow guard above the measured 418-file v14 release artifact.
-  deployFileCount: 450,
+  // Feature-owned CSS/JS now emits separate lazy chunks for AI, Arcade,
+  // Research, DM, Strife, Loyalty, Eden, and export. Keep a narrow guard above
+  // the resulting artifact while source-only originals remain excluded.
+  deployFileCount: 465,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     'admin.html': { desktop: 602 * 1024, mobile: 695 * 1024 },
@@ -74,6 +74,16 @@ const normalizedIndexSource = indexSource.replace(/\r\n/gu, '\n');
 const builtIndexSource = fs.existsSync(builtIndexPath)
   ? fs.readFileSync(builtIndexPath, 'utf8')
   : '';
+const forbiddenInitialFeaturePattern =
+  /(?:app-builder|ocr-dashboard|eden-map|hero-atlas|arcade|ai-drawer|ai-assistant|app-export|(?:^|[-/])export(?:[-.]|$)|research|materials)/iu;
+const initialLinkedFeatureAssets = [...builtIndexSource.matchAll(/<link\b[^>]*>/giu)]
+  .map((match) => readTagAttributes(match[0]))
+  .filter((attributes) => {
+    const rel = (attributes.get('rel') || '').toLowerCase();
+    return /(?:modulepreload|preload|stylesheet)/u.test(rel);
+  })
+  .map((attributes) => attributes.get('href') || '')
+  .filter((href) => forbiddenInitialFeaturePattern.test(href));
 const indexBytes = Buffer.byteLength(normalizedIndexSource);
 const indexGzipBytes = gzipSync(normalizedIndexSource).length;
 const indexLines = normalizedIndexSource.split('\n').length;
@@ -175,6 +185,11 @@ const missingBuildOutputs = [];
 if (!builtIndexSource) missingBuildOutputs.push('dist/index.html');
 if (!entryJs) missingBuildOutputs.push('entry JavaScript linked by dist/index.html');
 if (!entryCss) missingBuildOutputs.push('entry CSS linked by dist/index.html');
+if (initialLinkedFeatureAssets.length) {
+  missingBuildOutputs.push(
+    `dist/index.html unexpectedly preloads optional feature assets: ${initialLinkedFeatureAssets.join(', ')}`
+  );
+}
 
 const routeCssMetrics = new Map();
 for (const htmlFile of Object.keys(LIMITS.routeCssBytes)) {

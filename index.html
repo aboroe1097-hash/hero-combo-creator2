@@ -43,13 +43,13 @@
       content="Free Rise of Castles: Ice &amp; Fire tools for VTS State 1097 — hero combos, Eden map, loyalty calculator, and tech research."
     />
     <meta name="twitter:image" content="https://roc-vts.com/images/logo.png" />
-    <link rel="icon" type="image/png" href="images/logo.png" />
-    <link rel="apple-touch-icon" href="images/logo.png" />
+    <link rel="icon" type="image/webp" href="images/logo-40.webp" />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon-180.png" />
     <link id="manifestLink" rel="manifest" href="site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script src="js/maintenance-config.js?v=20260714_140615"></script>
-    <script src="js/theme-prepaint.js?v=20260714_140615"></script>
+    <script src="js/maintenance-config.js?v=20260714_160221"></script>
+    <script src="js/theme-prepaint.js?v=20260714_160221"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -103,18 +103,15 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       />
     </noscript>
-    <link rel="stylesheet" href="css/_tokens.css?v=20260714_140615" />
-    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/app.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/components.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/arcade.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/atmosphere.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/mobile.css?v=20260714_140615" media="(max-width: 768px)" />
-    <link rel="stylesheet" href="css/shell-v14.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/secondary-tools-v14.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/strife-v14.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/loader-v14.css?v=20260714_140615" />
-    <link rel="stylesheet" href="css/command-palette.css?v=20260714_140615" />
+    <link rel="stylesheet" href="css/_tokens.css?v=20260714_160221" />
+    <link rel="stylesheet" href="ai-launcher-critical.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/app.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/components.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/atmosphere.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/mobile.css?v=20260714_160221" media="(max-width: 768px)" />
+    <link rel="stylesheet" href="css/shell-v14.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/loader-v14.css?v=20260714_160221" />
+    <link rel="stylesheet" href="css/command-palette.css?v=20260714_160221" />
     <script type="importmap">
       {
         "imports": {
@@ -126,131 +123,24 @@
         }
       }
     </script>
-    <script src="js/admin-auth-config.js?v=20260714_140615"></script>
+    <script src="js/admin-auth-config.js?v=20260714_160221"></script>
   </head>
   <body>
     <div class="maintenance-preload" role="status" aria-live="polite">
       <section class="maintenance-card" aria-label="Maintenance status">
-        <img src="images/logo.png" alt="" class="maintenance-logo" width="92" height="92" />
+        <img
+          src="images/logo-120.webp"
+          alt=""
+          class="maintenance-logo"
+          width="92"
+          height="92"
+          decoding="async"
+        />
         <p class="maintenance-kicker">VTS 1097 TOOLKIT</p>
         <h1 class="maintenance-title">Maintenance Mode</h1>
         <p class="maintenance-message">Be back soon.</p>
       </section>
     </div>
-    <div
-      id="appBootSplash"
-      class="boot-splash hidden"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading application"
-    >
-      <div class="boot-atmosphere" aria-hidden="true"></div>
-      <div class="perspective-container" id="perspectiveContainer">
-        <div class="boot-halo" aria-hidden="true"></div>
-        <div id="doorLeft" class="door door-left">
-          <div class="door-panel-lines" aria-hidden="true"></div>
-          <div class="door-wing door-wing-left" aria-hidden="true">
-            <img
-              src="images/boot/dreamy-wing-left.webp"
-              alt=""
-              class="door-wing-art door-wing-art--front"
-              width="400"
-              height="416"
-            />
-          </div>
-          <div class="door-rivet top-left"></div>
-          <div class="door-rivet bottom-left"></div>
-        </div>
-
-        <div id="doorRight" class="door door-right">
-          <div class="door-panel-lines" aria-hidden="true"></div>
-          <div class="door-wing door-wing-right" aria-hidden="true">
-            <img
-              src="images/boot/blazing-wing-right.webp"
-              alt=""
-              class="door-wing-art door-wing-art--front"
-              width="341"
-              height="480"
-            />
-          </div>
-          <div class="door-rivet top-right"></div>
-          <div class="door-rivet bottom-right"></div>
-        </div>
-
-        <!-- Light released between the wings -->
-        <div id="centerLight" class="center-light"></div>
-        <div id="bootParticles" class="boot-particles-layer" aria-hidden="true"></div>
-        <div class="gate-lock" aria-hidden="true">
-          <picture
-            ><source srcset="images/logo-120.webp" type="image/webp" />
-            <img src="images/logo.png" alt="" width="88" height="88"
-          /></picture>
-        </div>
-      </div>
-
-      <!-- Title & Progress Bar Container -->
-      <div id="loadingStatusContainer" class="loading-status-container">
-        <div class="boot-kicker">VTS ICE &amp; FIRE GATE</div>
-        <h1 id="loadingTitle" class="loading-title">HERO COMBO CREATOR</h1>
-        <p class="boot-sub">VTS 1097 • RISE OF CASTLES</p>
-        <p class="boot-status-text">Summoning the wing gate...</p>
-        <div class="boot-progress" aria-hidden="true"><span class="boot-progress-fill"></span></div>
-      </div>
-    </div>
-
-    <div id="firstVisitIntro" class="first-visit-intro hidden" aria-hidden="true">
-      <div class="intro-aurora" aria-hidden="true"></div>
-      <div class="intro-grid" aria-hidden="true"></div>
-      <div class="intro-wing intro-wing--ice" aria-hidden="true">
-        <img src="images/boot/dreamy-wing-left.webp" alt="" width="341" height="480" />
-      </div>
-      <div class="intro-wing intro-wing--fire" aria-hidden="true">
-        <img src="images/boot/blazing-wing-right.webp" alt="" width="341" height="480" />
-      </div>
-      <div class="intro-sparks" aria-hidden="true"></div>
-      <div
-        class="intro-content"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="introTitle"
-        aria-describedby="introTagline"
-      >
-        <p class="intro-kicker">V14 · VTS 1097 COMMUNITY TOOLKIT</p>
-        <div class="intro-brand-lockup">
-          <div class="intro-logo-frame">
-            <picture
-              ><source srcset="images/logo-120.webp" type="image/webp" />
-              <img src="images/logo.png" alt="" class="intro-logo" width="120" height="120"
-            /></picture>
-          </div>
-          <div class="intro-brand-copy">
-            <p class="intro-team">RISE OF CASTLES: ICE &amp; FIRE</p>
-            <h2 id="introTitle" class="intro-title" data-i18n="appTitle">Hero Combo Creator</h2>
-            <p id="introTagline" class="intro-tagline" data-i18n="introTagline">
-              Plan the next move with the VTS 1097 command toolkit.
-            </p>
-          </div>
-        </div>
-        <div
-          class="intro-tool-rail"
-          aria-label="Featured tools"
-          data-i18n-aria="introFeaturedTools"
-        >
-          <span data-i18n="tabGenerator">Combo Generator</span>
-          <span data-i18n="tabResearch">Research</span>
-          <span data-i18n="tabMaterials">DM Materials</span>
-          <span data-i18n="tabEdenMap">Eden Map</span>
-        </div>
-        <button type="button" class="intro-enter-btn">
-          <span data-i18n="introEnterToolkit">Enter toolkit</span>
-          <kbd aria-hidden="true">Enter</kbd>
-        </button>
-        <p class="intro-footnote" data-i18n="introFootnote">
-          Community-built · Mobile ready · No install required
-        </p>
-      </div>
-    </div>
-
     <div id="app" class="app-shell app-shell--revealed">
       <header class="command-header" aria-label="VTS 1097 toolkit">
         <div class="command-brand">
@@ -299,8 +189,7 @@
                   aria-haspopup="listbox"
                   aria-expanded="false"
                   aria-controls="languageMenu"
-                  aria-label="Language"
-                  data-i18n-aria="languageLabel"
+                  aria-labelledby="languageMenuLabel"
                 >
                   <span class="lang-select-icon" aria-hidden="true">
                     <svg
@@ -737,16 +626,19 @@
         </nav>
 
         <div id="globalToggleRow" class="toggle-row">
-          <label
-            id="heroInfoToggleLabel"
-            class="toggle-label"
-            role="switch"
-            aria-checked="true"
-            tabindex="0"
-          >
-            <span class="toggle-text" data-i18n="toggleHeroInfo">Show Hero Info Panels</span>
+          <label id="heroInfoToggleLabel" class="toggle-label" for="heroInfoToggle">
+            <span id="heroInfoToggleText" class="toggle-text" data-i18n="toggleHeroInfo"
+              >Show Hero Info Panels</span
+            >
             <div class="toggle-control-wrap">
-              <input type="checkbox" id="heroInfoToggle" class="sr-only" checked />
+              <input
+                type="checkbox"
+                id="heroInfoToggle"
+                class="sr-only"
+                role="switch"
+                aria-labelledby="heroInfoToggleText"
+                checked
+              />
               <div class="toggle-track"></div>
               <div class="toggle-thumb"></div>
             </div>
@@ -853,10 +745,18 @@
               <h3 class="section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
               <div class="skin-filter-row">
                 <label id="manualSkinToggleLabel" class="toggle-switch" for="manualSkinToggle">
-                  <input type="checkbox" id="manualSkinToggle" />
+                  <input
+                    type="checkbox"
+                    id="manualSkinToggle"
+                    role="switch"
+                    aria-labelledby="manualSkinToggleText"
+                  />
                   <span class="toggle-slider"></span>
                 </label>
-                <span class="generator-skin-label" data-i18n="genSkinsOnly"
+                <span
+                  id="manualSkinToggleText"
+                  class="generator-skin-label"
+                  data-i18n="genSkinsOnly"
                   >Apply skin effects & skin icons</span
                 >
                 <span id="manualSkinCount" class="skin-count-badge hidden"></span>
@@ -928,7 +828,7 @@
 
         <section
           id="generatorSection"
-          class="tab-panel hidden"
+          class="tab-panel"
           data-core-tool="generator"
           aria-labelledby="genToolTitle"
         >
@@ -1033,10 +933,18 @@
               <h3 class="sub-section-heading" data-i18n="skinFilterTitle">Hero Skins</h3>
               <div class="skin-filter-row">
                 <label id="genSkinToggleLabel" class="toggle-switch" for="genSkinToggle">
-                  <input type="checkbox" id="genSkinToggle" />
+                  <input
+                    type="checkbox"
+                    id="genSkinToggle"
+                    role="switch"
+                    aria-labelledby="genSkinToggleText"
+                  />
                   <span class="toggle-slider"></span>
                 </label>
-                <span class="generator-skin-label" data-i18n="genSkinsOnly"
+                <span
+                  id="genSkinToggleText"
+                  class="generator-skin-label"
+                  data-i18n="genSkinsOnly"
                   >Apply skin effects & skin icons</span
                 >
                 <span id="genSkinCount" class="skin-count-badge hidden"></span>
@@ -1263,7 +1171,7 @@
         <section
           id="edenMapSection"
           class="tab-panel hidden animate-fade-in tab-panel-pad-sm"
-          data-tab-src="tabs/eden-map.html?v=20260714_140615"
+          data-tab-src="tabs/eden-map.html?v=20260714_160221"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1282,7 +1190,7 @@
         <section
           id="loyaltySection"
           class="tab-panel hidden"
-          data-tab-src="tabs/loyalty.html?v=20260714_140615"
+          data-tab-src="tabs/loyalty.html?v=20260714_160221"
         >
           <div class="tab-loading">
             <div class="spinner"></div>
@@ -1543,195 +1451,6 @@
           </section>
         </section>
 
-        <section id="commentsSection" class="comments-panel">
-          <div class="comments-head">
-            <div class="comments-title-row">
-              <div class="comments-icon-box">
-                <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
-                  />
-                </svg>
-              </div>
-              <div class="comments-title-copy">
-                <h2 id="commentsHeaderTitle" data-i18n="commentsHeader" class="comments-title">
-                  Comments & Suggestions
-                </h2>
-                <p class="comments-subtitle">Share your thoughts with the VTS 1097 community</p>
-              </div>
-            </div>
-            <a
-              id="feedbackMailBtn"
-              href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Combo%20Tool%20-%20Feedback&body=Hi%20Abo%2C%0A%0A%5BDescribe%20your%20suggestion%20or%20bug%20here%5D%0A%0A----%0APage%3A%20Hero%20Combo%20Creator%0A"
-              class="feedback-mail-btn"
-              title="Send feedback or report a bug to the developer"
-            >
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.047.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152 6.06M12 12.75c-2.883 0-5.647.508-8.208 1.44a23.916 23.916 0 0 0 1.152 6.061M12 12.75c1.955 0 3.838.354 5.574 1.003.012-.018.025-.037.038-.055A6.752 6.752 0 0 0 12 5.25a6.752 6.752 0 0 0-5.613 8.448c.013.018.025.037.038.055A14.904 14.904 0 0 1 12 12.75Z"
-                />
-              </svg>
-              <span class="feedback-label-full">Report / Suggest</span>
-              <span class="feedback-label-short">Report</span>
-            </a>
-          </div>
-
-          <div class="comments-form-wrap">
-            <form id="commentForm" class="comment-form">
-              <div class="comment-identity-row">
-                <div class="comment-name-wrap">
-                  <svg
-                    class="comment-field-icon"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                    />
-                  </svg>
-                  <label class="sr-only" for="commentName" data-i18n="commentNamePh"
-                    >Your name (optional)</label
-                  >
-                  <input
-                    id="commentName"
-                    name="commentName"
-                    data-i18n-ph="commentNamePh"
-                    type="text"
-                    class="comment-input"
-                    placeholder="Your name (optional)"
-                    autocomplete="name"
-                  />
-                </div>
-                <div class="comment-name-wrap">
-                  <svg
-                    class="comment-field-icon"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 21c3.75-3.75 7.5-7.108 7.5-11.25a7.5 7.5 0 0 0-15 0C4.5 13.892 8.25 17.25 12 21Z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 11.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
-                    />
-                  </svg>
-                  <label class="sr-only" for="commentState" data-i18n="commentStatePh"
-                    >Your state (optional)</label
-                  >
-                  <input
-                    id="commentState"
-                    name="commentState"
-                    data-i18n-ph="commentStatePh"
-                    type="text"
-                    class="comment-input"
-                    maxlength="40"
-                    inputmode="numeric"
-                    placeholder="Your state (optional)"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
-                </div>
-              </div>
-              <label class="sr-only" for="commentText" data-i18n="commentBodyPh"
-                >Write a suggestion</label
-              >
-              <textarea
-                id="commentText"
-                name="commentText"
-                data-i18n-ph="commentBodyPh"
-                rows="3"
-                required
-                class="comment-textarea"
-                placeholder="Write a suggestion, report a bug, or share feedback..."
-                autocomplete="off"
-              ></textarea>
-              <div class="comments-actions">
-                <button
-                  type="submit"
-                  id="postCommentBtn"
-                  data-i18n="commentSubmitBtn"
-                  class="comment-submit-btn"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-                    />
-                  </svg>
-                  Submit Comment
-                </button>
-                <a
-                  href="mailto:aboroe1097@gmail.com?subject=VTS%20Hero%20Tool%20-%20Bug%20Report&body=Bug%20or%20issue%3A%0A%0A"
-                  class="direct-bug-link"
-                  title="Email bug report directly to developer"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                    />
-                  </svg>
-                  <span class="bug-label-full">Report Bug</span>
-                </a>
-              </div>
-            </form>
-          </div>
-
-          <div class="comments-count-row">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
-              />
-            </svg>
-            <span class="comments-count-label" id="commentsCountLabel">Community comments</span>
-          </div>
-
-          <div id="commentsList" class="comments-list">
-            <div class="comments-loading">
-              <div class="comments-loading-spinner"></div>
-              <p>Loading comments...</p>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer class="roc-footer site-footer" aria-label="Site information">
@@ -1775,7 +1494,7 @@
               <a href="mailto:aboroe1097@gmail.com" data-i18n="adminFooterContact">Contact Devs</a>
               <a href="admin.html" data-i18n="tabOcrDashboard">VTS Admin</a>
             </div>
-            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.3</p>
+            <p>&copy; <span id="footerYear">2026</span> VTS 1097 &middot; v14.0.4</p>
           </div>
         </div>
         <p class="disclaimer footer-disclaimer">
@@ -1819,11 +1538,11 @@
 
     <div id="toastContainer"></div>
 
-    <script src="js/loader-v14.js?v=20260714_140615"></script>
-    <script type="module" src="js/app.js?v=20260714_140615"></script>
-    <script type="module" src="js/command-palette.js?v=20260714_140615"></script>
-    <script type="module" src="js/ai-drawer.js?v=20260714_140615"></script>
-    <script src="js/index-page-enhancements.js?v=20260714_140615"></script>
-    <script src="js/shell-v14.js?v=20260714_140615"></script>
+    <script src="js/loader-v14.js?v=20260714_160221"></script>
+    <script type="module" src="js/app.js?v=20260714_160221"></script>
+    <script type="module" src="js/command-palette.js?v=20260714_160221"></script>
+    <script type="module" src="js/ai-launcher.js?v=20260714_160221"></script>
+    <script src="js/index-page-enhancements.js?v=20260714_160221"></script>
+    <script src="js/shell-v14.js?v=20260714_160221"></script>
   </body>
 </html>

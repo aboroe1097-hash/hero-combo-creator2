@@ -66,7 +66,7 @@ test('the retired cinematic entry gate cannot block the app shell', () => {
   const index = read('index.html');
   const loading = read('js/app-loading.js');
   assert.match(index, /<body>/);
-  assert.match(index, /id="appBootSplash"[\s\S]*?class="boot-splash hidden"/);
+  assert.doesNotMatch(index, /id="appBootSplash"|id="firstVisitIntro"|dreamy-wing|blazing-wing/);
   assert.match(index, /id="app" class="app-shell app-shell--revealed"/);
   assert.match(loading, /export function initAppLoading\(\) \{\s*revealAppShell\(\);/);
   assert.doesNotMatch(loading, /introPreview|vts_intro_v1_seen|setTimeout/);

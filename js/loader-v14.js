@@ -2,7 +2,7 @@
   'use strict';
 
   const SELECTOR =
-    '[data-vts-loader], .tab-loading, .comments-loading, .youtube-player-loading, .dash-connecting';
+    '[data-vts-loader], .tab-loading, .youtube-player-loading, .dash-connecting';
   const BRIEF_MIN_VISIBLE_MS = 160;
   const DM_MIN_VISIBLE_MS = 820;
   const DEFAULT_CONTEXT = 'vts';
@@ -324,7 +324,7 @@
   function describe(root) {
     const titleSource =
       root.querySelector(
-        '.dash-connecting-title, .loading-title, .youtube-player-loading [data-i18n], .comments-loading p, [data-i18n]'
+        '.dash-connecting-title, .loading-title, .youtube-player-loading [data-i18n], [data-i18n]'
       ) || (root.matches('[data-i18n]') ? root : null);
     const statusSource = root.querySelector('.dash-connecting-status');
     const kickerSource = root.querySelector('.dash-connecting-kicker');
@@ -333,7 +333,6 @@
     const compact =
       root.dataset.vtsLoaderVariant === 'compact' ||
       root.classList.contains('tab-loading') ||
-      root.classList.contains('comments-loading') ||
       root.classList.contains('youtube-player-loading') ||
       root.classList.contains('eden-x1-table-loading-card');
     const explicitProgress = clampProgress(root.dataset.vtsLoaderProgress);
@@ -664,8 +663,12 @@
   function enhance(scope) {
     const root = isElement(scope) || isDocument(scope) ? scope : global.document;
     if (!root) return;
-    if (isElement(root) && root.matches(SELECTOR)) mount(root);
-    root.querySelectorAll?.(SELECTOR).forEach((node) => mount(node));
+    const isDeferredByHiddenTab = (node) =>
+      Boolean(node.closest?.('.tab-panel.hidden, .tab-panel[hidden], [data-tab-panel][hidden]'));
+    if (isElement(root) && root.matches(SELECTOR) && !isDeferredByHiddenTab(root)) mount(root);
+    root
+      .querySelectorAll?.(SELECTOR)
+      .forEach((node) => !isDeferredByHiddenTab(node) && mount(node));
   }
 
   function cleanupTree(node) {
