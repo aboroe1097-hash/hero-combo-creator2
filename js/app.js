@@ -15,7 +15,7 @@ import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260713_234015';
+import { initWhatsNewBanner } from './app-whats-new.js?v=20260714_094026';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
 import { initArcadeHub } from './arcade-hub.js';
@@ -148,7 +148,7 @@ let materialModulePromise = null;
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260713_234015').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260714_094026').catch((err) => {
       researchModulePromise = null;
       throw err;
     });
@@ -158,7 +158,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260713_234015').catch((err) => {
+    materialModulePromise = import('./material-calculator.js?v=20260714_094026').catch((err) => {
       materialModulePromise = null;
       throw err;
     });
@@ -1009,7 +1009,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260713_234015')
+        import('./eden-map.js?v=20260714_094026')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -1092,7 +1092,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260713_234015')
+      import('./app-strife.js?v=20260714_094026')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;

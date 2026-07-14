@@ -418,6 +418,8 @@ const ru = {
   tabHeroes: 'Атлас героев',
   tabEdenMap: 'Карта Эдема',
   tabLoyalty: 'Калькулятор лояльности',
+  tabEdenX1: 'Рейтинг Eden X1',
+  tabEdenX1Badge: 'Публично',
   tabResearch: 'Исследования',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

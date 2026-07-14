@@ -415,6 +415,8 @@ const ar = {
   tabHeroes: 'أطلس الأبطال',
   tabEdenMap: 'خريطة إيدن',
   tabLoyalty: 'حاسبة ولاء إيدن',
+  tabEdenX1: 'تصنيفات Eden X1',
+  tabEdenX1Badge: 'عام',
   tabResearch: 'الأبحاث',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

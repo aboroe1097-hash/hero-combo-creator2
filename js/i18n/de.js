@@ -422,6 +422,8 @@ const de = {
   tabHeroes: 'Helden-Atlas',
   tabEdenMap: 'Eden-Karte',
   tabLoyalty: 'Eden Loyalität',
+  tabEdenX1: 'Eden X1 Rangliste',
+  tabEdenX1Badge: 'Öffentlich',
   tabResearch: 'Forschung',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

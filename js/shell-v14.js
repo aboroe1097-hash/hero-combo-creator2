@@ -28,6 +28,7 @@
     'tabEdenMap',
     'tabStrife',
     'tabLoyalty',
+    'tabEdenX1',
     'tabYouTube',
     'tabOcrDashboard',
   ];

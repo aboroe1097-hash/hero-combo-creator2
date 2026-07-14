@@ -443,6 +443,8 @@ const en = {
   tabEdenMap: 'Eden Map',
   tabEdenMapBadge: 'Soon',
   tabLoyalty: 'Eden Loyalty',
+  tabEdenX1: 'Eden X1 Rankings',
+  tabEdenX1Badge: 'Public',
   tabResearch: 'Research',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

@@ -416,6 +416,8 @@ const tr = {
   tabHeroes: 'Kahraman Atlası',
   tabEdenMap: 'Eden Haritası',
   tabLoyalty: 'Eden Sadakat',
+  tabEdenX1: 'Eden X1 Sıralaması',
+  tabEdenX1Badge: 'Herkese Açık',
   tabResearch: 'Araştırma',
   tabOcrDashboard: 'VTS Yönetici',
   tabArcade: 'Arcade',

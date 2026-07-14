@@ -434,6 +434,8 @@ const pt = {
   tabEdenMap: 'Mapa Eden',
   tabEdenMapBadge: 'Soon',
   tabLoyalty: 'Calculadora de Lealdade',
+  tabEdenX1: 'Ranking Eden X1',
+  tabEdenX1Badge: 'Público',
   tabResearch: 'Pesquisa',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

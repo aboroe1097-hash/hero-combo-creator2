@@ -745,6 +745,16 @@ body.eden-x1-page {
   border-radius: 16px !important;
 }
 
+/* A repeat visit already has enough cached context to show the four stable
+   reward lanes. Paint those controls before the heavier cached tables and
+   analytics, while keeping them disabled until their rows are ready. */
+.eden-x1-page
+  .eden-x1-panel--loading.eden-x1-panel--cache-preview
+  .eden-x1-reward-panel {
+  display: block !important;
+  order: -2;
+}
+
 .eden-x1-page .eden-x1-table-loading {
   width: 100%;
   min-width: 0;
@@ -4699,7 +4709,7 @@ body.eden-x1-page {
 @media (min-width: 981px) {
   .eden-x1-page #ocrDashboardSection.eden-x1-panel {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) clamp(420px, 32vw, 480px);
     grid-template-areas:
       'notice   notice'
       'marquee  marquee'
@@ -4710,7 +4720,7 @@ body.eden-x1-page {
       'weighted rail'
       'public   rail'
       'error    error';
-    column-gap: 1rem;
+    column-gap: clamp(1rem, 1.5vw, 1.5rem);
     align-items: start;
   }
   .eden-x1-page .eden-x1-notice {
@@ -4736,13 +4746,38 @@ body.eden-x1-page {
   }
   .eden-x1-page #edenX1VoteRail {
     grid-area: rail;
-    position: sticky;
-    top: 1rem;
+    position: relative;
+    top: auto;
     align-self: start;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    max-height: none;
+    padding-inline: 0.125rem;
+    overflow: visible;
+  }
+  .eden-x1-page #edenX1TeamVotePanel .dash-card-hdr-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1.05rem 1.1rem 0.95rem;
+  }
+  .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-hdr-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 0.7rem;
+    padding: 0 1.1rem 1.1rem;
+    margin-top: 0.9rem;
+  }
+  .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-eligibility,
+  .eden-x1-page #edenX1TeamVotePanel .eden-x1-vote-name-stack {
+    grid-column: 1 / -1;
+  }
+  .eden-x1-page #edenX1TeamVotePanel .dash-input {
+    width: 100%;
+    min-width: 0;
   }
   .eden-x1-page #edenX1PublicDashboard {
     grid-area: public;

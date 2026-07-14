@@ -13,7 +13,9 @@ const LIMITS = {
   // v14 adds the command shell, accessible More navigation, richer metadata,
   // and the Arcade entry. Raw lines are formatter-dependent, so guard the
   // source by bytes and transfer-relevant gzip size instead.
-  indexBytes: 82 * 1024,
+  // The translated public Eden X1 navigation entry adds 0.9 KiB to the
+  // checked-in shell. Keep less than 0.5 KiB of raw-source headroom.
+  indexBytes: 83 * 1024,
   indexGzipBytes: 16 * 1024,
   entryJsBytes: 300 * 1024,
   // The shared v14 stylesheet measures 390.3 KiB. The previous 300 KiB check
@@ -65,12 +67,16 @@ function walkFiles(dir, out = []) {
 }
 
 const indexSource = fs.readFileSync(indexPath, 'utf8');
+// Git stores text with LF, while Windows checkouts may use CRLF. Measure the
+// checked-in/deployed representation so the same commit has the same budget
+// result on developer machines and in CI.
+const normalizedIndexSource = indexSource.replace(/\r\n/gu, '\n');
 const builtIndexSource = fs.existsSync(builtIndexPath)
   ? fs.readFileSync(builtIndexPath, 'utf8')
   : '';
-const indexBytes = Buffer.byteLength(indexSource);
-const indexGzipBytes = gzipSync(indexSource).length;
-const indexLines = indexSource.split(/\r?\n/).length;
+const indexBytes = Buffer.byteLength(normalizedIndexSource);
+const indexGzipBytes = gzipSync(normalizedIndexSource).length;
+const indexLines = normalizedIndexSource.split('\n').length;
 const assetFiles = fs.existsSync(distDir)
   ? fs
       .readdirSync(distDir, { withFileTypes: true })
