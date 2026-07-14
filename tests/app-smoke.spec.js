@@ -3244,9 +3244,7 @@ test.describe('app smoke tabs', () => {
     }
     await page.reload({ waitUntil: 'load' });
     await openEdenX1ForTest(page);
-    await page.evaluate((dash) => {
-      window.setEdenX1DataForTest(dash);
-    }, seededDash);
+    await page.evaluate((dash) => window.setEdenX1DataForTest(dash), seededDash);
     const reloadedPanel = page.locator('#dashWeightedContributionPanel');
     const reloadedVoteRail = page.locator('#edenX1VoteRail');
     await expect(
