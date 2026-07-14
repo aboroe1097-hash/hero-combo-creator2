@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.0.2)
+# Hero Combo Creator - VTS 1097 (v14.0.3)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
@@ -260,7 +260,7 @@ The app no longer ships the frozen Tailwind compatibility shim. Remaining UI sty
 Eden Map and Loyalty tab templates are fetched on first tab click via `loadTabTemplate()`. Research, Hero Atlas, Strife over Dragon, Eden Map code, OCR dashboard code, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules. VTS Admin and Eden X1 are standalone pages with their own Vite inputs.
 
 ### Release Mode
-`js/maintenance-config.js` remains the explicit release/maintenance toggle and is included in the service-worker precache. It defaults `VTS_MAINTENANCE_MODE` to `false`; turning it on shows the maintenance preload shell unless the local/session bypass is present.
+`js/maintenance-config.js` remains the explicit release/maintenance toggle and is included in the service-worker precache. While `VTS_MAINTENANCE_MODE` is enabled, every public entry page redirects to the lightweight maintenance page unless the local/session bypass is present.
 
 ### Admin Auth
 The public toolkit still uses Firebase anonymous auth for comments and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.

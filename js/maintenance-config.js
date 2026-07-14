@@ -1,7 +1,7 @@
 // Toggle this before pushing:
 // true  = show the maintenance page immediately
 // false = run the normal app
-window.VTS_MAINTENANCE_MODE = false;
+window.VTS_MAINTENANCE_MODE = true;
 
 window.VTS_MAINTENANCE_CONFIG = {
   kicker: 'VTS 1097 TOOLKIT',
@@ -24,5 +24,11 @@ window.VTS_MAINTENANCE_CONFIG = {
 
   if (window.VTS_MAINTENANCE_ACTIVE) {
     document.documentElement.classList.add('maintenance-mode');
+
+    const scriptUrl = document.currentScript?.src || window.location.href;
+    const maintenanceUrl = new URL('../maintenance.html', scriptUrl);
+    if (window.location.href !== maintenanceUrl.href) {
+      window.location.replace(maintenanceUrl.href);
+    }
   }
 })();

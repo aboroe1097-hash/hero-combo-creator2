@@ -34,6 +34,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
+        maintenance: resolve(__dirname, 'maintenance.html'),
         admin: resolve(__dirname, 'admin.html'),
         'eden-x1': resolve(__dirname, 'eden-x1.html'),
         arcade: resolve(__dirname, 'arcade.html'),

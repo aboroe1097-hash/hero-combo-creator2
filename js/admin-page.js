@@ -4,7 +4,7 @@ import { installShowToast, resolveIntlLocale } from './utils.js';
 import { initUndoToasts } from './app-undo.js';
 import { setCurrentLanguage } from './state.js';
 
-const APP_VERSION = '14.0.2';
+const APP_VERSION = '14.0.3';
 const THEME_STORAGE_KEY = 'vts_theme';
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 const THEME_CHROME_COLORS = { light: '#f8fafc', dark: '#070b16' };
@@ -156,7 +156,7 @@ function updateTextContent(lang) {
 async function loadAdminTemplate() {
   const section = document.getElementById('ocrDashboardSection');
   if (!section) return;
-  const res = await fetch('tabs/admin.html?v=20260714_113006');
+  const res = await fetch('tabs/admin.html?v=20260714_134840');
   if (!res.ok) throw new Error(`Admin template failed: HTTP ${res.status}`);
   section.innerHTML = await res.text();
 }
@@ -178,7 +178,7 @@ async function bootAdminPage() {
     applyLanguageDirection(nextLang);
     updateTextContent(nextLang);
   });
-  const mod = await import('./ocr-dashboard.js?v=20260714_113006');
+  const mod = await import('./ocr-dashboard.js?v=20260714_134840');
   await mod.bootOcrDashboard();
 }
 

@@ -5,10 +5,17 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const buildVersion = process.env.BUILD_VERSION || makeBuildVersion();
 const cacheVersion = `vts-${buildVersion.replace(/_/g, '-')}`;
-const entryHtmlFiles = ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html'];
+const entryHtmlFiles = [
+  'index.html',
+  'maintenance.html',
+  'admin.html',
+  'eden-x1.html',
+  'arcade.html',
+];
 const baseAppShellFiles = [
   '/',
   '/index.html',
+  '/maintenance.html',
   '/404.html',
   '/site.webmanifest',
   '/site-light.webmanifest',
