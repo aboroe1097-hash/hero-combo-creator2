@@ -85,7 +85,16 @@ test('the final narrow-phone rule wins the 768px cascade', () => {
 
 test('mobile Eden navigation paints Velo before heavy section work and preserves a scroll lane', () => {
   assert.match(page, /id="edenX1NavLoader"[\s\S]*data-vts-loader-context="eden-x1"/);
+  assert.ok(
+    page.indexOf('id="edenX1NavLoader"') < page.indexOf('id="ocrDashboardRoot"'),
+    'the Eden boot loader must paint before the dashboard shell'
+  );
+  assert.match(page, /id="edenX1NavLoader"[\s\S]*aria-hidden="false"/);
+  assert.match(page, /assets\/velo\/velo-body\.webp/);
+  assert.match(page, /assets\/velo\/velo-helmet\.webp/);
   assert.match(eden, /function runEdenNavigationTransition\(action\)/);
+  assert.match(eden, /const bootLoader = \$\('edenX1NavLoader'\)/);
+  assert.match(eden, /bootLoader\.hidden = !isLoading/);
   assert.match(eden, /requestAnimationFrame\(\(\) => \{[\s\S]*requestAnimationFrame/);
   assert.match(eden, /const minimumMs = 900/);
   assert.match(eden, /data-eden-vote-start/);

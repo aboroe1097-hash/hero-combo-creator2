@@ -698,9 +698,10 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  // v14 adds the standalone Arcade entry plus its CSS/JS and the global command
-  // palette. Keep a small measured margin without allowing the shell to grow unbounded.
-  assert.ok(urls.length <= 44, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade entry, the global command palette, and the
+  // two small Velo layers needed by Eden's first-paint loader. Keep a measured
+  // one-entry margin without allowing the shell to grow unbounded.
+  assert.ok(urls.length <= 46, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));

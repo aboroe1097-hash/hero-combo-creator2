@@ -1,6 +1,6 @@
 {
   "name": "hero-combo-creator",
-  "version": "14.0.1",
+  "version": "14.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -28,6 +28,7 @@
     "worker:check": "npx wrangler deploy --dry-run",
     "worker:deploy": "npx wrangler deploy",
     "worker:tail": "npx wrangler tail delicate-term-725f",
+    "velo:lab": "node scripts/velo-lab-server.mjs",
     "check:fast": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check",
     "check:full": "npm run check",
     "check": "npm run version:check && npm run lint && npm run format:check && npm run test:unit && npm run i18n:check && npm run build && npm run size:check && npm run smoke:prod && npm run smoke",

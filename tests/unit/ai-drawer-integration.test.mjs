@@ -124,17 +124,18 @@ test('Velo branding replaces provider-led assistant chrome with an animated masc
   assert.match(drawerSource, /setLauncherCompact\(compact, \{ persist: true \}\)/);
   assert.match(
     launcherCss,
-    /\.ai-drawer-launcher \.velo-mascot__burst \{[\s\S]*animation: velo-rage-burst 28s/
+    /\.ai-drawer-launcher \.velo-mascot__burst \{[\s\S]*animation: velo-rage-burst 20s/
   );
-  assert.match(launcherCss, /correctly seated for 2s before the first slip/);
-  assert.match(launcherCss, /first recovery, keep it correctly seated for 4s/);
-  assert.match(launcherCss, /second recovery, keep it correctly seated for 6s/);
-  assert.match(launcherCss, /0%,\s*7\.1% \{\s*transform: translateY\(-29%\)/);
-  assert.match(launcherCss, /12%,\s*26\.3% \{\s*transform: translateY\(-29%\)/);
-  assert.match(launcherCss, /31\.5%,\s*52\.9% \{\s*transform: translateY\(-31%\)/);
+  assert.match(launcherCss, /20s helmet story: calm 2s, slip\/fix, calm 3s, slip\/fix/);
+  assert.match(launcherCss, /calm 4s, rage\/burst,[\s\S]*away 4s/);
+  assert.match(launcherCss, /0%,\s*10% \{\s*transform: translateY\(-29%\)/);
+  assert.match(launcherCss, /18%,\s*33% \{\s*transform: translateY\(-29%\)/);
+  assert.match(launcherCss, /41%,\s*61% \{\s*transform: translateY\(-29%\)/);
   assert.match(launcherCss, /\.velo-mascot__horn--left[\s\S]*clip-path/);
   assert.match(launcherCss, /\.velo-mascot__eye[\s\S]*radial-gradient/);
-  assert.match(launcherCss, /53\.4%,\s*69\.4% \{[\s\S]*translateY\(-1%\)/);
+  assert.match(launcherCss, /68%,\s*74% \{[\s\S]*#ff4a3d[\s\S]*#a60000/);
+  assert.match(launcherCss, /75\.1%,\s*95% \{[\s\S]*opacity: 0/);
+  assert.match(launcherCss, /72% \{[\s\S]*opacity: 1;[\s\S]*scale\(1\.04\)/);
   assert.doesNotMatch(
     assistantCss,
     /\.velo-mascot--header \.velo-mascot__burst \{[\s\S]*display: none;/
