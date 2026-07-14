@@ -1573,7 +1573,7 @@ const pt = {
   edenX1VoteSelectionCount: '{n} / 4 selecionados',
   edenX1MarqueeKicker: 'Métricas em destaque',
   edenX1MarqueeMembers: 'Membros da guilda',
-  edenX1MarqueeDuties: 'Atividade de deveres',
+  edenX1MarqueeTop20Cutoff: 'Corte do Top 20',
   edenX1MarqueeWeighted: 'Faixa de pontuação ponderada',
   edenX1MarqueeTopPerformer: 'Melhor desempenho',
   edenX1ProgressionStart: 'Início',

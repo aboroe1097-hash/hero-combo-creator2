@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.0.6 - 2026-07-15
+
+- Replaced Eden X1's empty Duty Activity marquee metric with the current rank-20 weighted-contribution cutoff, including translated labels and a clear fallback when fewer than 20 contributors are ranked.
+- Expanded Complete season activity and the lower Eden X1 dashboard across the full desktop content width after the voting panel ends.
+
 ## 14.0.5 - 2026-07-14
 
 - Restored responsive Admin startup by bundling Firebase core as same-origin hashed assets, bounding Auth readiness, binding controls before cached data is revealed, deferring hidden/secondary panels, and caching per-attack identity resolution instead of repeatedly rescanning every player row.

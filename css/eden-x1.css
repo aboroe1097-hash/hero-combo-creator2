@@ -567,6 +567,7 @@ body.eden-x1-page {
   }
 }
 
+.eden-x1-panel--loading #edenX1PublicOverview,
 .eden-x1-panel--loading #edenX1PublicDashboard {
   display: none !important;
 }
@@ -618,6 +619,7 @@ body.eden-x1-page {
 .eden-x1-page .eden-x1-notice,
 .eden-x1-page .eden-x1-reward-panel,
 .eden-x1-page #dashWeightedContributionPanel,
+.eden-x1-page #edenX1PublicOverview,
 .eden-x1-page #edenX1PublicDashboard {
   min-width: 0;
   max-width: 100%;
@@ -720,6 +722,7 @@ body.eden-x1-page {
     #edenX1Marquee,
     #edenX1Podium,
     #edenX1Progression,
+    #edenX1PublicOverview,
     #edenX1TopNamesOverview,
     #edenX1MyStatsCard,
     #edenX1PublicWeightedCard,
@@ -748,9 +751,7 @@ body.eden-x1-page {
 /* A repeat visit already has enough cached context to show the four stable
    reward lanes. Paint those controls before the heavier cached tables and
    analytics, while keeping them disabled until their rows are ready. */
-.eden-x1-page
-  .eden-x1-panel--loading.eden-x1-panel--cache-preview
-  .eden-x1-reward-panel {
+.eden-x1-page .eden-x1-panel--loading.eden-x1-panel--cache-preview .eden-x1-reward-panel {
   display: block !important;
   order: -2;
 }
@@ -4223,6 +4224,7 @@ body.eden-x1-page {
 .eden-x1-page .admin-page-main,
 .eden-x1-page .admin-page-panel,
 .eden-x1-page #dashWeightedContributionPanel,
+.eden-x1-page #edenX1PublicOverview,
 .eden-x1-page #edenX1PublicDashboard,
 .eden-x1-page .eden-x1-public-root,
 .eden-x1-page .eden-x1-public-grid,
@@ -4718,7 +4720,8 @@ body.eden-x1-page {
       'quicknav quicknav'
       'reward   reward'
       'weighted rail'
-      'public   rail'
+      'overview rail'
+      'public   public'
       'error    error';
     column-gap: clamp(1rem, 1.5vw, 1.5rem);
     align-items: start;
@@ -4782,6 +4785,9 @@ body.eden-x1-page {
   .eden-x1-page #edenX1PublicDashboard {
     grid-area: public;
   }
+  .eden-x1-page #edenX1PublicOverview {
+    grid-area: overview;
+  }
   .eden-x1-page #edenX1Error {
     grid-area: error;
   }
@@ -4791,8 +4797,11 @@ body.eden-x1-page {
   .eden-x1-page #edenX1VoteRail {
     order: 2;
   }
-  .eden-x1-page #edenX1PublicDashboard {
+  .eden-x1-page #edenX1PublicOverview {
     order: 3;
+  }
+  .eden-x1-page #edenX1PublicDashboard {
+    order: 4;
   }
 }
 

@@ -1563,7 +1563,7 @@ const kr = {
   edenX1VoteSelectionCount: '{n} / 4 선택됨',
   edenX1MarqueeKicker: '주요 지표',
   edenX1MarqueeMembers: '길드원',
-  edenX1MarqueeDuties: '임무 활동',
+  edenX1MarqueeTop20Cutoff: '상위 20위 기준',
   edenX1MarqueeWeighted: '가중 점수 범위',
   edenX1MarqueeTopPerformer: '최고 성과자',
   edenX1ProgressionStart: '시작',

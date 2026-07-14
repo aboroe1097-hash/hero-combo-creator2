@@ -1601,7 +1601,7 @@ const de = {
   edenX1VoteSelectionCount: '{n} / 4 ausgewählt',
   edenX1MarqueeKicker: 'Leistungskennzahlen',
   edenX1MarqueeMembers: 'Gildenmitglieder',
-  edenX1MarqueeDuties: 'Aufgabenaktivität',
+  edenX1MarqueeTop20Cutoff: 'Top-20-Grenze',
   edenX1MarqueeWeighted: 'Gewichteter Punktbereich',
   edenX1MarqueeTopPerformer: 'Bester Spieler',
   edenX1ProgressionStart: 'Beginn',

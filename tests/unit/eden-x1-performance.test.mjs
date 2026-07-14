@@ -5,6 +5,7 @@ import test from 'node:test';
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
 const eden = read('js/eden-x1.js');
 const edenCss = read('css/eden-x1.css');
+const edenHtml = read('eden-x1.html');
 const edenFirebase = read('js/firebase-eden.js');
 const sdk = read('js/firebase-sdk.js');
 
@@ -54,6 +55,23 @@ test('Eden keeps first-viewport Velo feedback through blocking boot rendering', 
 test('Eden localized rerender tolerates dashboard data that has not loaded yet', () => {
   assert.match(eden, /renderEdenProgression\(publicDashboardData\)/);
   assert.match(eden, /Array\.isArray\(data\?\.attacks\) \? data\.attacks : \[\]/);
+});
+
+test('Eden marquee reports the weighted contribution cutoff at rank 20', () => {
+  assert.match(eden, /Number\(row\.finalRank\) === DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF/);
+  assert.match(eden, /edenX1MarqueeTop20Cutoff/);
+  assert.doesNotMatch(eden, /edenX1MarqueeDuties/);
+});
+
+test('Eden desktop dashboard spans both columns after the voting guidance row', () => {
+  assert.match(
+    edenHtml,
+    /id="edenX1PublicOverview"[\s\S]*id="edenX1PublicDashboard"[\s\S]*id="edenX1VoteRail"/
+  );
+  assert.match(edenCss, /'overview rail'[\s\S]*'public\s+public'/);
+  assert.match(edenCss, /#edenX1PublicOverview\s*{\s*grid-area: overview;/);
+  assert.match(edenCss, /#edenX1PublicDashboard\s*{\s*grid-area: public;/);
+  assert.match(eden, /overviewHost\.innerHTML = renderEdenTopNamesOverview\(\)/);
 });
 
 test('Eden weighted rosters paginate from 10 in 25-row steps and render in cancellable chunks', () => {

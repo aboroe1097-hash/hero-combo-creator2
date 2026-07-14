@@ -1581,7 +1581,7 @@ const id = {
   edenX1VoteSelectionCount: '{n} / 4 dipilih',
   edenX1MarqueeKicker: 'Metrik utama',
   edenX1MarqueeMembers: 'Anggota guild',
-  edenX1MarqueeDuties: 'Aktivitas tugas',
+  edenX1MarqueeTop20Cutoff: 'Batas 20 besar',
   edenX1MarqueeWeighted: 'Kisaran skor berbobot',
   edenX1MarqueeTopPerformer: 'Pemain terbaik',
   edenX1ProgressionStart: 'Mulai',

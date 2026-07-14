@@ -1539,7 +1539,7 @@ const zh = {
   edenX1VoteSelectionCount: '{n} / 4 已选',
   edenX1MarqueeKicker: '主要指标',
   edenX1MarqueeMembers: '公会成员',
-  edenX1MarqueeDuties: '职责活动',
+  edenX1MarqueeTop20Cutoff: '前20名门槛',
   edenX1MarqueeWeighted: '加权分数范围',
   edenX1MarqueeTopPerformer: '最佳表现者',
   edenX1ProgressionStart: '开始',

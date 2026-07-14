@@ -176,7 +176,7 @@ const NON_FALLBACK_KEYS = [
   'edenX1VoteSelectionCount',
   'edenX1MarqueeKicker',
   'edenX1MarqueeMembers',
-  'edenX1MarqueeDuties',
+  'edenX1MarqueeTop20Cutoff',
   'edenX1MarqueeWeighted',
   'edenX1MarqueeTopPerformer',
   'edenX1ProgressionStart',

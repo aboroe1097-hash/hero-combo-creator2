@@ -1581,7 +1581,7 @@ const tr = {
   edenX1VoteSelectionCount: '{n} / 4 seçildi',
   edenX1MarqueeKicker: 'Öne çıkan metrikler',
   edenX1MarqueeMembers: 'Klan üyeleri',
-  edenX1MarqueeDuties: 'Görev aktivitesi',
+  edenX1MarqueeTop20Cutoff: 'İlk 20 eşiği',
   edenX1MarqueeWeighted: 'Ağırlıklı puan aralığı',
   edenX1MarqueeTopPerformer: 'En iyi performans',
   edenX1ProgressionStart: 'Başlangıç',
