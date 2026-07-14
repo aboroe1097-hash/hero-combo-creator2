@@ -39,7 +39,7 @@ import {
 import { resolveIntlLocale } from './utils.js';
 import { dashboardCacheVersion, hasUsableDashboardCache } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.4';
+const APP_VERSION = '14.0.5';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -607,7 +607,10 @@ function applyPendingEdenManagementVotePayload() {
 function loadEdenManagementVoteResults(options = {}) {
   const force = options.force === true;
   if (!force && managementVoteLoadPromise) return managementVoteLoadPromise;
-  if (!force && (currentManagementVoteResults.status === 'loaded' || pendingManagementVotePayload)) {
+  if (
+    !force &&
+    (currentManagementVoteResults.status === 'loaded' || pendingManagementVotePayload)
+  ) {
     return Promise.resolve(currentManagementVoteResults);
   }
   const token = (managementVoteLoadToken += 1);
@@ -6311,12 +6314,13 @@ async function loadEdenX1Dashboard() {
   } catch (err) {
     if (generation !== edenBootGeneration) return;
     stopEdenLoadingProgress(generation);
-    lastEdenBootError = err;
-    console.error('Eden X1 view failed:', err);
     if (cacheApplied) {
+      console.warn('Eden X1 live refresh unavailable; keeping cached dashboard visible.', err);
       setEdenPanelLoading(false);
       return;
     }
+    lastEdenBootError = err;
+    console.error('Eden X1 view failed:', err);
     showEdenBootError(err);
     if (panel) panel.innerHTML = '';
     setRewardFlowReady(false);

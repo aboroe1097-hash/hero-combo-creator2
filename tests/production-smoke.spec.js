@@ -99,7 +99,6 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_intro_v1_seen', '1');
-    localStorage.setItem('vts_quick_tour_done', '1');
     localStorage.setItem('vts_eden_dataset', 'season5');
   });
 

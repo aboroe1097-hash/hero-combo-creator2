@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.0.5 - 2026-07-14
+
+- Restored responsive Admin startup by bundling Firebase core as same-origin hashed assets, bounding Auth readiness, binding controls before cached data is revealed, deferring hidden/secondary panels, and caching per-attack identity resolution instead of repeatedly rescanning every player row.
+- Added a resilient management-vote transport fallback through the existing allow-listed worker, bounded Eden's complete Auth restore phase, and made cached dashboards treat live refresh timeouts as non-blocking.
+- Removed the Quick Tour and all of its activation, navigation, styling, and legacy-storage paths on every device so it can no longer cover the initial mobile view or become the largest-content paint.
+- Delayed Analytics until the first real interaction or a ten-second post-load fallback and allowed Google's regional collection endpoint in every public page's Content Security Policy.
+- Raised only the Lighthouse-flagged mobile shell, Generator, hero-card, installation, and footer text to a 12 px legibility floor while preserving the existing desktop density and global CSS structure.
+
 ## 14.0.4 - 2026-07-14
 
 - Removed the retired Comments and What's New startup surfaces while preserving their Firestore data protections; made Generator the stable first-paint tool and fixed the touched tour, switch, and filter semantics for keyboard and screen-reader users.

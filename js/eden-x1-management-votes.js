@@ -5,10 +5,13 @@ const DEFAULT_PICK_COLUMN_LABEL = 'Pick 4 Names';
 const DEFAULT_NAME_COLUMN_LABEL = 'Name';
 const DEFAULT_VOTES_COLUMN_LABEL = 'Votes';
 const GOOGLE_VISUALIZATION_BASE = 'https://docs.google.com/spreadsheets/d';
+const DEFAULT_MANAGEMENT_VOTES_PROXY_URL =
+  'https://vts-ai-strategy-assistant.aboroe1097.workers.dev/v1/public/management-votes';
 const JSONP_CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const DEFAULT_JSONP_TIMEOUT_MS = 20_000;
 const DEFAULT_JSONP_RETRY_DELAY_MS = 500;
 const DEFAULT_LATE_CALLBACK_RETENTION_MS = 60_000;
+const DEFAULT_PROXY_TIMEOUT_MS = 8_000;
 const KIKA_ALT_DISPLAY_NAME = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
 const GOODNESS_CANONICAL_NAME = 'GoodnesGraycious';
 let jsonpRequestSerial = 0;
@@ -105,7 +108,10 @@ export function normalizeManagementVoteCandidateName(value) {
 export function managementVoteCandidateVariants(value) {
   const raw = String(value || '').trim();
   const normalized = normalizeManagementVoteCandidateName(raw);
-  const undecorated = normalized.replace(/[~*_`'"]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const undecorated = normalized
+    .replace(/[~*_`'"]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const compactRaw = compactVoteKey(raw);
   const compactNormalized = compactVoteKey(normalized);
   const preferred = [
@@ -257,9 +263,7 @@ export function aggregateManagementVotes(payloadOrRows, options = {}) {
     }))
     .sort(
       (a, b) =>
-        b.votes - a.votes ||
-        a.firstSeen - b.firstSeen ||
-        a.playerName.localeCompare(b.playerName)
+        b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
     );
   const limit = Math.max(0, Number(options.limit || 0));
 
@@ -319,9 +323,7 @@ export function summarizeManagementVoteResults(payloadOrRows, options = {}) {
     }))
     .sort(
       (a, b) =>
-        b.votes - a.votes ||
-        a.firstSeen - b.firstSeen ||
-        a.playerName.localeCompare(b.playerName)
+        b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
     );
   const limit = Math.max(0, Number(options.limit || 0));
 
@@ -423,10 +425,7 @@ function sleep(ms, setTimeoutFn = globalThis.setTimeout.bind(globalThis)) {
 
 async function loadManagementVoteSheetWithRetry(options) {
   const attempts = Math.max(1, Number(options.attempts ?? 2));
-  const retryDelayMs = Math.max(
-    0,
-    Number(options.retryDelayMs ?? DEFAULT_JSONP_RETRY_DELAY_MS)
-  );
+  const retryDelayMs = Math.max(0, Number(options.retryDelayMs ?? DEFAULT_JSONP_RETRY_DELAY_MS));
   let lastError = null;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
@@ -441,13 +440,75 @@ async function loadManagementVoteSheetWithRetry(options) {
   throw lastError;
 }
 
+export async function loadManagementVotesViaProxy(options = {}) {
+  const fetchFn = options.fetchFn || globalThis.fetch?.bind(globalThis);
+  const proxyUrl = String(
+    options.proxyUrl === undefined ? DEFAULT_MANAGEMENT_VOTES_PROXY_URL : options.proxyUrl
+  ).trim();
+  if (!fetchFn || !proxyUrl) {
+    throw new Error('Management vote proxy is unavailable');
+  }
+
+  const url = new URL(proxyUrl);
+  url.searchParams.set('sheet', String(options.sheetName || DEFAULT_RESULTS_SHEET_NAME).trim());
+  const setTimer = options.setTimeoutFn || globalThis.setTimeout.bind(globalThis);
+  const clearTimer = options.clearTimeoutFn || globalThis.clearTimeout.bind(globalThis);
+  const controller = new AbortController();
+  const timeoutMs = Math.max(1, Number(options.proxyTimeoutMs || DEFAULT_PROXY_TIMEOUT_MS));
+  const timer = setTimer(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetchFn(url.toString(), {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!response?.ok) {
+      throw new Error(`Management vote proxy returned ${response?.status || 'an error'}`);
+    }
+    const payload = await response.json();
+    if (!payload || payload.status === 'error' || !payload.table) {
+      throw new Error('Management vote proxy returned an invalid payload');
+    }
+    return payload;
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Management vote proxy timed out');
+    }
+    throw error;
+  } finally {
+    clearTimer(timer);
+  }
+}
+
+async function loadManagementVoteSheet(options) {
+  if (options.proxyUrl === '') return loadManagementVoteSheetWithRetry(options);
+  const requests = [
+    loadManagementVotesViaProxy(options),
+    loadManagementVoteSheetWithRetry(options),
+  ];
+  return new Promise((resolve, reject) => {
+    const failures = [];
+    requests.forEach((request, index) => {
+      request.then(resolve, (error) => {
+        failures[index] = error;
+        if (failures.filter(Boolean).length !== requests.length) return;
+        const combinedError = new Error('Management vote Sheet could not be reached');
+        combinedError.cause = { proxyError: failures[0], jsonpError: failures[1] };
+        reject(combinedError);
+      });
+    });
+  });
+}
+
 export async function loadManagementVotesPayloadWithFallback(options = {}) {
-  const payload = await loadManagementVoteSheetWithRetry({
+  const payload = await loadManagementVoteSheet({
     ...options,
     sheetName: options.sheetName || DEFAULT_RESULTS_SHEET_NAME,
   });
   if (readManagementVoteResultRows(payload, options).length) return payload;
-  return loadManagementVoteSheetWithRetry({
+  return loadManagementVoteSheet({
     ...options,
     sheetName: options.rawSheetName || DEFAULT_RAW_SHEET_NAME,
   });

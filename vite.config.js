@@ -45,6 +45,17 @@ export default defineConfig({
           const normalizedId = id.replace(/\\/g, '/');
           const normalizedPath = normalizedId.split(/[?#]/u, 1)[0];
           if (
+            normalizedId.includes('node_modules/firebase/analytics') ||
+            normalizedId.includes('node_modules/@firebase/analytics') ||
+            normalizedId.includes('node_modules/@firebase/installations')
+          )
+            return 'firebase-analytics';
+          if (
+            normalizedId.includes('node_modules/firebase/app-check') ||
+            normalizedId.includes('node_modules/@firebase/app-check')
+          )
+            return 'firebase-app-check';
+          if (
             normalizedId.includes('node_modules/firebase') ||
             normalizedId.includes('node_modules/@firebase')
           )

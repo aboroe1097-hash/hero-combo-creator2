@@ -40,11 +40,21 @@ async function ensureAuthPersistence() {
 
 export async function waitForAuthReady() {
   if (!auth) throw new Error('Firebase not initialized');
-  await ensureAuthPersistence();
   if (typeof auth.authStateReady === 'function') {
-    await auth.authStateReady();
+    let timeout = null;
+    await Promise.race([
+      (async () => {
+        await ensureAuthPersistence();
+        await auth.authStateReady();
+      })(),
+      new Promise((resolve) => {
+        timeout = setTimeout(resolve, 3000);
+      }),
+    ]);
+    if (timeout) clearTimeout(timeout);
     return auth.currentUser || null;
   }
+  await ensureAuthPersistence();
   return new Promise((resolve) => {
     let settled = false;
     let unsubscribe = () => {};

@@ -621,14 +621,6 @@ body.app-ready #app.app-shell {
   }
 }
 
-#app .shell-more-button.shell-tour-hidden {
-  display: none !important;
-}
-
-body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
-  display: flex !important;
-}
-
 #app #tabNavScroll > .tab-item {
   position: relative;
   display: flex !important;
@@ -1639,24 +1631,6 @@ body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
     text-align: start;
   }
 
-  /* The guided tour can temporarily reveal every source tab in one
-     horizontal row. Normal navigation remains four items plus More. */
-  body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll {
-    display: flex !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-  }
-
-  body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
-    display: flex !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 88px !important;
-  }
-
-  body:has(.quick-tour-overlay:not(.hidden)) #app .shell-more-button {
-    display: none !important;
-  }
 }
 
 @media (max-width: 370px) {
@@ -1720,5 +1694,19 @@ body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
   #app .shell-more-panel,
   #app .shell-more-backdrop {
     animation: none !important;
+  }
+}
+
+/* Final mobile shell legibility floor. The shell loads after mobile.css, so
+   these scoped rules intentionally live at the end of this stylesheet. */
+@media (max-width: 768px) {
+  #app .command-copy.seo-intro,
+  #app #tabNavScroll .tab-pill,
+  #app .shell-more-button,
+  #app .footer-community-links a,
+  #app .footer-tool-links a,
+  #app .footer-meta p,
+  #app .site-footer .footer-disclaimer {
+    font-size: 0.75rem !important;
   }
 }

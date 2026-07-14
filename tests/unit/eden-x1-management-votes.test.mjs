@@ -6,6 +6,7 @@ import {
   buildManagementVotesUrl,
   loadManagementVotesPayloadWithFallback,
   loadManagementVotesViaJsonp,
+  loadManagementVotesViaProxy,
   managementVoteCandidateVariants,
   parseGoogleVisualizationResponse,
   readManagementVoteResultRows,
@@ -303,6 +304,7 @@ test('management vote JSONP retries once and succeeds on the second attempt', as
     timeoutMs: 20,
     retryDelayMs: 5,
     lateCallbackRetentionMs: 60,
+    proxyUrl: '',
   });
 
   harness.scripts[0].onerror();
@@ -319,7 +321,11 @@ test('management vote JSONP retries once and succeeds on the second attempt', as
 
 test('raw form fallback runs only after a successful empty Vote Results response', async () => {
   const harness = createJsonpHarness();
-  const pending = loadManagementVotesPayloadWithFallback({ ...harness, attempts: 1 });
+  const pending = loadManagementVotesPayloadWithFallback({
+    ...harness,
+    attempts: 1,
+    proxyUrl: '',
+  });
   const resultsScript = harness.scripts[0];
   harness.globalTarget[harness.callbackName(resultsScript)]({
     table: { cols: [{ label: 'Name' }, { label: 'Votes' }], rows: [] },
@@ -330,4 +336,19 @@ test('raw form fallback runs only after a successful empty Vote Results response
   harness.globalTarget[harness.callbackName(rawScript)]({ table: formResponseTable() });
 
   assert.equal((await pending).table.rows.length, formResponseTable().rows.length);
+});
+
+test('management vote proxy provides the public table without waiting for JSONP', async () => {
+  let requestedUrl = '';
+  const payload = { status: 'ok', table: voteResultsTable() };
+  const result = await loadManagementVotesViaProxy({
+    proxyUrl: 'https://worker.example/public/management-votes',
+    fetchFn: async (url) => {
+      requestedUrl = url;
+      return { ok: true, status: 200, json: async () => payload };
+    },
+  });
+
+  assert.equal(result, payload);
+  assert.equal(new URL(requestedUrl).searchParams.get('sheet'), 'Vote Results');
 });

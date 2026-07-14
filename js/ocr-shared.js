@@ -905,43 +905,83 @@ export function trimRosterSnapshots(snapshots, limit = MAX_ROSTER_SNAPSHOTS) {
   return snapshots.slice(-limit);
 }
 
+const attackPlayerResolutionCache = new WeakMap();
+
+function attackPlayerResolutionSignature(attackPlayers) {
+  return attackPlayers
+    .map((entry, index) => {
+      const name = String(entry?.name || '').trim();
+      return `${name}\u001f${readGroupedPlayerValue(entry)}\u001f${readGroupedPlayerRank(entry, index + 1)}`;
+    })
+    .join('\u001e');
+}
+
+function buildAttackPlayerResolutionContext(attackPlayers) {
+  const signature = attackPlayerResolutionSignature(attackPlayers);
+  const rosterNames = Array.isArray(state.rosterNames) ? state.rosterNames : [];
+  const playerRegistry = state.playerRegistry;
+  const cached = attackPlayerResolutionCache.get(attackPlayers);
+  if (
+    cached?.signature === signature &&
+    cached.rosterNames === rosterNames &&
+    cached.rosterLength === rosterNames.length &&
+    cached.playerRegistry === playerRegistry
+  ) {
+    return cached;
+  }
+
+  const rows = attackPlayers.map((entry, index) => ({
+    entry,
+    index,
+    rawName: String(entry?.name || '').trim(),
+    baseName: findBestMatch(entry?.name),
+    rawKey: compactPlayerIdentity(entry?.name),
+    value: readGroupedPlayerValue(entry),
+    rank: readGroupedPlayerRank(entry, index + 1),
+  }));
+  const rowsByBaseName = new Map();
+  rows.forEach((row) => {
+    if (!rowsByBaseName.has(row.baseName)) rowsByBaseName.set(row.baseName, []);
+    rowsByBaseName.get(row.baseName).push(row);
+  });
+
+  const resolvedByEntry = new Map();
+  rowsByBaseName.forEach((groupedRows, baseName) => {
+    groupedRows.forEach((row) => resolvedByEntry.set(row.entry, baseName));
+    if (groupedRows.length < 2 || baseName !== '꧁ Kika ꧂') return;
+    const hasDifferentValues = new Set(groupedRows.map((row) => row.value)).size > 1;
+    const hasDifferentRawNames = new Set(groupedRows.map((row) => row.rawKey)).size > 1;
+    if (!hasDifferentValues && !hasDifferentRawNames) return;
+    const byImpact = [...groupedRows].sort(
+      (a, b) => b.value - a.value || a.rank - b.rank || a.index - b.index
+    );
+    byImpact.forEach((row, impactPosition) => {
+      const resolvedName =
+        impactPosition <= 0
+          ? '꧁ Kika ꧂'
+          : impactPosition === 1
+            ? '꧁༺ Kika ༻꧂'
+            : `꧁ Kika ꧂ alt ${impactPosition + 1}`;
+      resolvedByEntry.set(row.entry, resolvedName);
+    });
+  });
+
+  const context = {
+    signature,
+    rosterNames,
+    rosterLength: rosterNames.length,
+    playerRegistry,
+    resolvedByEntry,
+  };
+  attackPlayerResolutionCache.set(attackPlayers, context);
+  return context;
+}
+
 export function resolvePlayerNameForAttack(player, attackPlayers = []) {
   const rawName = typeof player === 'string' ? player : player?.name;
   const baseName = findBestMatch(rawName);
   if (!Array.isArray(attackPlayers) || attackPlayers.length < 2) return baseName;
-
-  const groupedRows = attackPlayers
-    .map((entry, index) => ({
-      entry,
-      index,
-      rawName: String(entry?.name || '').trim(),
-      baseName: findBestMatch(entry?.name),
-      rawKey: compactPlayerIdentity(entry?.name),
-      value: readGroupedPlayerValue(entry),
-      rank: readGroupedPlayerRank(entry, index + 1),
-    }))
-    .filter((row) => row.baseName === baseName);
-
-  if (groupedRows.length < 2) return baseName;
-  const current = groupedRows.find((row) => row.entry === player);
-  if (!current) return baseName;
-
-  const hasDifferentValues = new Set(groupedRows.map((row) => row.value)).size > 1;
-  const hasDifferentRawNames = new Set(groupedRows.map((row) => row.rawKey)).size > 1;
-  if (!hasDifferentValues && !hasDifferentRawNames) return baseName;
-
-  const byImpact = [...groupedRows].sort(
-    (a, b) => b.value - a.value || a.rank - b.rank || a.index - b.index
-  );
-  const impactPosition = byImpact.findIndex((row) => row.entry === player);
-
-  if (baseName === '꧁ Kika ꧂') {
-    if (impactPosition <= 0) return '꧁ Kika ꧂';
-    if (impactPosition === 1) return '꧁༺ Kika ༻꧂';
-    return `꧁ Kika ꧂ alt ${impactPosition + 1}`;
-  }
-
-  return baseName;
+  return buildAttackPlayerResolutionContext(attackPlayers).resolvedByEntry.get(player) || baseName;
 }
 
 export function findBestMatch(name, minConfidence = 100) {

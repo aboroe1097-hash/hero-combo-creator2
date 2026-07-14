@@ -26,7 +26,6 @@ function closeTopModal() {
     document.body.style.overflow = '';
     return true;
   }
-  document.querySelector('.quick-tour-overlay:not(.hidden) .quick-tour-skip')?.click();
   return false;
 }
 

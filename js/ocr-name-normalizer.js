@@ -20,13 +20,55 @@ function cloneWithDisplayName(player, displayName) {
   return { ...player, name: displayName };
 }
 
+const cleanedAttackPlayerCache = new WeakMap();
+
+function attackPlayerListSignature(players) {
+  return players
+    .map((entry, index) => {
+      const name = readName(entry);
+      const value = entry?.value ?? entry?.val ?? '';
+      const rank = entry?.rank ?? index + 1;
+      return `${name}\u001f${value}\u001f${rank}`;
+    })
+    .join('\u001e');
+}
+
+function cleanedAttackPlayerContext(attackPlayers) {
+  if (!Array.isArray(attackPlayers) || !attackPlayers.length) {
+    return { players: [], byOriginal: new Map() };
+  }
+  const signature = attackPlayerListSignature(attackPlayers);
+  const cached = cleanedAttackPlayerCache.get(attackPlayers);
+  if (cached?.signature === signature) return cached;
+
+  const byOriginal = new Map();
+  const players = attackPlayers.map((entry) => {
+    const cleaned = cloneWithCleanName(entry);
+    byOriginal.set(entry, cleaned);
+    return cleaned;
+  });
+  const context = { signature, players, byOriginal };
+  cleanedAttackPlayerCache.set(attackPlayers, context);
+  return context;
+}
+
 function resolveWithExistingAliases(player, attackPlayers = []) {
-  const cleanPlayer = cloneWithCleanName(player);
-  const cleanAttackPlayers = Array.isArray(attackPlayers)
-    ? attackPlayers.map((entry) => (entry === player ? cleanPlayer : cloneWithCleanName(entry)))
-    : [];
+  const attackContext = cleanedAttackPlayerContext(attackPlayers);
+  const fallbackIndex = Array.isArray(attackPlayers)
+    ? attackPlayers.findIndex(
+        (entry, index) =>
+          entry === player ||
+          (readName(entry) === readName(player) &&
+            (entry?.value ?? entry?.val ?? '') === (player?.value ?? player?.val ?? '') &&
+            (entry?.rank ?? index + 1) === (player?.rank ?? index + 1))
+      )
+    : -1;
+  const cleanPlayer =
+    attackContext.byOriginal.get(player) ||
+    attackContext.players[fallbackIndex] ||
+    cloneWithCleanName(player);
   return (
-    resolvePlayerNameForAttack(cleanPlayer, cleanAttackPlayers) ||
+    resolvePlayerNameForAttack(cleanPlayer, attackContext.players) ||
     findBestMatch(cleanPlayer.name) ||
     cleanPlayer.name
   );

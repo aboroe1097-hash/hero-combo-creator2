@@ -4,6 +4,7 @@ import test from 'node:test';
 import { filterAllowedToolGroupsForAuth, handleRequest } from '../../workers/ai-handler.js';
 import { ProviderStreamAssembler, buildGeminiRequest } from '../../workers/ai/gemini.js';
 import { validateToolArguments } from '../../workers/ai/tools.js';
+import { buildManagementVotesSheetUrl } from '../../workers/ai/management-votes.js';
 import {
   FIREBASE_APPCHECK_JWKS_URL,
   FIREBASE_AUTH_JWKS_URL,
@@ -338,6 +339,63 @@ test('health and preflight remain safe while the provider is disabled', async ()
   );
   assert.equal(disabled.status, 503);
   assert.equal((await disabled.json()).code, 'ai_disabled');
+});
+
+test('public management votes proxy is origin-bound and sheet allow-listed', async () => {
+  const originalFetch = globalThis.fetch;
+  let upstreamUrl = '';
+  globalThis.fetch = async (url) => {
+    upstreamUrl = String(url);
+    return new Response(
+      'google.visualization.Query.setResponse({"version":"0.6","status":"ok","table":{"cols":[{"label":"Name"},{"label":"Votes"}],"rows":[{"c":[{"v":"Victoria ~Kika~"},{"v":13}]}]}});',
+      { status: 200 }
+    );
+  };
+  try {
+    const response = await handleRequest(
+      new Request('https://worker.test/v1/public/management-votes?sheet=Vote%20Results', {
+        headers: { Origin: ALLOWED_ORIGIN },
+      }),
+      enabledEnv()
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.table.rows[0].c[0].v, 'Victoria ~Kika~');
+    assert.equal(new URL(upstreamUrl).searchParams.get('sheet'), 'Vote Results');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), ALLOWED_ORIGIN);
+    assert.throws(() => buildManagementVotesSheetUrl('Private Sheet'), /Unsupported/);
+
+    const previewResponse = await handleRequest(
+      new Request('https://worker.test/v1/public/management-votes?sheet=Vote%20Results', {
+        headers: { Origin: 'https://abocombo--v14-0-5-preview.web.app' },
+      }),
+      enabledEnv()
+    );
+    assert.equal(previewResponse.status, 200);
+    assert.equal(
+      previewResponse.headers.get('Access-Control-Allow-Origin'),
+      'https://abocombo--v14-0-5-preview.web.app'
+    );
+
+    const blocked = await handleRequest(
+      new Request('https://worker.test/v1/public/management-votes?sheet=Private', {
+        headers: { Origin: ALLOWED_ORIGIN },
+      }),
+      enabledEnv()
+    );
+    assert.equal(blocked.status, 400);
+
+    const attacker = await handleRequest(
+      new Request('https://worker.test/v1/public/management-votes', {
+        headers: { Origin: 'https://abocombo--evil.example' },
+      }),
+      enabledEnv()
+    );
+    assert.equal(attacker.status, 403);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('current Gemini step streams retain initial text, thought signatures, and tool arguments', () => {
