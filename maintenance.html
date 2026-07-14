@@ -86,24 +86,61 @@
         line-height: 1.65;
       }
 
+      .status-block {
+        position: relative;
+        width: min(100%, 17rem);
+        margin: 22px auto 0;
+        padding-top: 58px;
+      }
+
+      .velo-track {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 52px;
+        border-bottom: 1px solid rgba(165, 141, 255, 0.22);
+      }
+
+      .velo {
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 54px;
+        height: 54px;
+        transform-origin: center bottom;
+        animation: maintenance-velo-patrol 5.6s ease-in-out infinite;
+      }
+
+      .velo img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        pointer-events: none;
+      }
+
+      .velo-body {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        animation: maintenance-velo-step 0.72s ease-in-out infinite;
+      }
+
+      .velo-helmet {
+        top: -22%;
+        left: 11%;
+        width: 78%;
+        height: auto;
+        animation: maintenance-velo-helmet 0.72s ease-in-out infinite;
+      }
+
       .status {
         display: inline-flex;
         align-items: center;
-        gap: 9px;
-        margin-top: 26px;
+        justify-content: center;
+        margin: 0;
         color: #f1edff;
         font-size: 0.84rem;
         font-weight: 700;
-      }
-
-      .status::before {
-        content: "";
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #a58dff;
-        box-shadow: 0 0 0 6px rgba(165, 141, 255, 0.12);
-        animation: pulse 1.8s ease-in-out infinite;
       }
 
       .version {
@@ -112,15 +149,50 @@
         font: 600 0.72rem/1.4 "JetBrains Mono", ui-monospace, monospace;
       }
 
-      @keyframes pulse {
+      @keyframes maintenance-velo-patrol {
+        0%, 4% {
+          left: 0;
+          transform: scaleX(1);
+        }
+        44% {
+          left: calc(100% - 54px);
+          transform: scaleX(1);
+        }
         50% {
-          opacity: 0.45;
-          transform: scale(0.8);
+          left: calc(100% - 54px);
+          transform: scaleX(-1);
+        }
+        94% {
+          left: 0;
+          transform: scaleX(-1);
+        }
+        100% {
+          left: 0;
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes maintenance-velo-step {
+        50% {
+          transform: translateY(-3px) rotate(-1.5deg);
+        }
+      }
+
+      @keyframes maintenance-velo-helmet {
+        50% {
+          transform: translateY(-2px) rotate(2deg);
         }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .status::before {
+        .velo {
+          left: 50%;
+          animation: none;
+          transform: translateX(-50%);
+        }
+
+        .velo-body,
+        .velo-helmet {
           animation: none;
         }
       }
@@ -134,7 +206,27 @@
       <p id="maintenanceMessage" class="message">
         We are making a few improvements. Please check back soon.
       </p>
-      <p class="status" role="status">Work in progress</p>
+      <div class="status-block">
+        <div class="velo-track" aria-hidden="true">
+          <span class="velo">
+            <img
+              class="velo-body"
+              src="assets/velo/velo-body.webp"
+              alt=""
+              width="54"
+              height="54"
+            />
+            <img
+              class="velo-helmet"
+              src="assets/velo/velo-helmet.webp"
+              alt=""
+              width="42"
+              height="42"
+            />
+          </span>
+        </div>
+        <p class="status" role="status">Work in progress</p>
+      </div>
       <p class="version">v14.0.3</p>
     </main>
   </body>
