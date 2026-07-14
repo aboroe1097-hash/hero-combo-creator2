@@ -23,6 +23,12 @@ The public dataset lives in `js/ai/vts-guide-knowledge.js`. Velo searches it thr
 read-only `get_vts_guide_context` tool. Adding future batches should normally require dataset and
 test changes, not prompt growth.
 
+Operational Viber, in-game mail, and alliance announcement drafts belong in the separate
+[`r5-message-log.md`](r5-message-log.md) ledger and follow
+[`r5-communications-guide.md`](r5-communications-guide.md). They must not enter Velo's static
+strategy dataset unless a later review extracts a timeless, public, non-sensitive policy or game
+mechanic under the intake rules above.
+
 ## Chronology and season context
 
 The message flow is part of the evidence. Preserve the original chronological order while curating,

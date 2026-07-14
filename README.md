@@ -26,6 +26,20 @@ Eleven top-level tools are exposed from the main navigation in `index.html`, wit
 
 **Performance posture:** Vite build with hashed production assets, manual chunks for large feature/data modules, dynamic `import()` per heavy tab and language pack, preloaded boot wing images and Google Fonts, Google Fonts print-to-all media swap, user-triggered YouTube iframe creation, staged Eden/Admin rendering, lazy exact DM item art, mobile CSS loaded only at `max-width: 768px`, lazy/async footer imagery, `requestIdleCallback` for non-critical work, `--tap-min: 44px` touch sizing, and `env(safe-area-inset-*)` support for notches.
 
+## Operational Communications
+
+R5 Viber posts, in-game mail, and alliance/guild announcements use a separate operational record
+from Velo's public strategy knowledge:
+
+- [`docs/r5-communications-guide.md`](docs/r5-communications-guide.md) defines MalakAbo's working
+  R5 voice profile, required facts, send criteria, channel formats, approval flow, and translation
+  rules.
+- [`docs/r5-message-log.md`](docs/r5-message-log.md) is the append-only ledger for requested,
+  drafted, approved, sent, corrected, or cancelled message versions.
+
+Time-sensitive orders, private leadership details, player matters, and raw operational chat must not
+be copied into Velo's reusable guide dataset.
+
 ## Screenshots And Demos
 
 Current screenshot captures live in `docs/media/` and should be refreshed when a major UI flow changes. These previews are captured in dark mode from the local app with demo data where needed.
