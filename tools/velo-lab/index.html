@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Velo Lab — Local Prompt Workshop</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="lab-shell">
+      <header class="lab-header">
+        <div class="lab-brand">
+          <span class="velo-mark" aria-hidden="true">
+            <img class="velo-mark__body" src="/assets/velo/velo-body.webp" alt="" />
+            <img class="velo-mark__helmet" src="/assets/velo/velo-helmet.webp" alt="" />
+          </span>
+          <div>
+            <h1>Velo Lab</h1>
+            <p>Local prompt workshop</p>
+          </div>
+        </div>
+        <div class="lab-safety">
+          <strong>LOCAL ONLY</strong>
+          <span><i aria-hidden="true"></i>No cloud writes</span>
+        </div>
+        <div class="lab-header-actions">
+          <button id="exportBtn" class="button button--quiet" type="button">Export lab data</button>
+          <label class="button button--quiet" for="importInput">Import</label>
+          <input id="importInput" class="sr-only" type="file" accept="application/json" />
+        </div>
+      </header>
+
+      <aside class="lab-sidebar" aria-label="Local sessions and evaluations">
+        <button id="newSessionBtn" class="button button--primary button--wide" type="button">
+          <span aria-hidden="true">＋</span> New session
+        </button>
+
+        <section class="sidebar-section">
+          <div class="section-heading">
+            <h2>Sessions</h2>
+            <span id="sessionCount">0</span>
+          </div>
+          <ol id="sessionList" class="session-list"></ol>
+        </section>
+
+        <section class="sidebar-section sidebar-section--tests">
+          <div class="section-heading">
+            <h2>Evaluation cases</h2>
+            <span id="testCount">0</span>
+          </div>
+          <div id="testList" class="test-list"></div>
+        </section>
+
+        <div class="sidebar-footer">
+          <button id="clearDataBtn" class="text-button text-button--danger" type="button">
+            Clear all local lab data
+          </button>
+          <p>Stored only in this browser.</p>
+        </div>
+      </aside>
+
+      <main class="chat-workspace">
+        <header class="workspace-header">
+          <div>
+            <p class="workspace-label">Chat</p>
+            <h2 id="sessionTitle">New Velo session</h2>
+          </div>
+          <div class="workspace-status">
+            <span id="modelBadge">No model</span>
+            <span id="responseMetric">Ready</span>
+          </div>
+        </header>
+
+        <div id="emptyState" class="empty-state">
+          <span class="velo-portrait" aria-hidden="true">
+            <img class="velo-portrait__body" src="/assets/velo/velo-body.webp" alt="" />
+            <img class="velo-portrait__helmet" src="/assets/velo/velo-helmet.webp" alt="" />
+          </span>
+          <h2>Teach Velo safely, then prove the improvement.</h2>
+          <p>
+            Chat against the real production prompt, add temporary experiment instructions, save
+            preferred answers, and replay evaluation cases without touching Firebase.
+          </p>
+          <button id="emptyFocusBtn" class="button button--primary" type="button">
+            Start a conversation
+          </button>
+        </div>
+
+        <ol id="messageList" class="message-list" aria-live="polite"></ol>
+
+        <div id="chatError" class="chat-error hidden" role="alert"></div>
+        <form id="composerForm" class="composer">
+          <label class="sr-only" for="composerInput">Message Velo</label>
+          <textarea
+            id="composerInput"
+            rows="2"
+            maxlength="8000"
+            placeholder="Ask Velo something you want to test…"
+          ></textarea>
+          <div class="composer-footer">
+            <span id="composerCount">0 / 8000</span>
+            <button id="sendBtn" class="button button--primary" type="submit">Send</button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="lab-inspector" aria-label="Velo Lab controls">
+        <section class="inspector-section">
+          <div class="section-heading">
+            <h2>Model &amp; status</h2>
+            <button id="refreshStatusBtn" class="text-button" type="button">Refresh</button>
+          </div>
+          <div id="providerStatus" class="provider-status is-checking">
+            <span class="provider-icon" aria-hidden="true">◉</span>
+            <div>
+              <strong>Ollama</strong>
+              <span>Checking local service…</span>
+            </div>
+          </div>
+          <label class="field" for="modelSelect">
+            <span>Installed model</span>
+            <select id="modelSelect"></select>
+          </label>
+          <p id="installHint" class="install-hint hidden"></p>
+        </section>
+
+        <section class="inspector-section">
+          <div class="section-heading">
+            <h2>Experiment instruction</h2>
+            <button id="resetExperimentBtn" class="text-button" type="button">Reset</button>
+          </div>
+          <p class="section-copy">Temporary behavior layered after Velo’s production prompt.</p>
+          <label class="sr-only" for="experimentInput">Experiment instruction</label>
+          <textarea
+            id="experimentInput"
+            class="inspector-textarea"
+            rows="5"
+            maxlength="4000"
+            placeholder="Example: Ask one concise clarification before calculating when scope is ambiguous."
+          ></textarea>
+        </section>
+
+        <section class="inspector-section inspector-section--settings">
+          <label class="toggle-row" for="knowledgeToggle">
+            <span>
+              <strong>Curated guide retrieval</strong>
+              <small id="knowledgeMeta">Loading production knowledge…</small>
+            </span>
+            <input id="knowledgeToggle" type="checkbox" checked />
+          </label>
+          <label class="toggle-row" for="correctionsToggle">
+            <span>
+              <strong>Use saved corrections</strong>
+              <small id="correctionCount">0 teaching examples</small>
+            </span>
+            <input id="correctionsToggle" type="checkbox" checked />
+          </label>
+          <label class="range-field" for="temperatureInput">
+            <span>Temperature <output id="temperatureOutput">0.3</output></span>
+            <input id="temperatureInput" type="range" min="0" max="2" step="0.1" value="0.3" />
+          </label>
+          <details class="prompt-preview">
+            <summary>Production prompt preview</summary>
+            <div class="prompt-preview__meta">
+              <span id="promptMeta">Loading…</span>
+              <button id="reloadPromptBtn" class="text-button" type="button">Reload source</button>
+            </div>
+            <pre id="promptPreview"></pre>
+          </details>
+        </section>
+
+        <section class="inspector-section teaching-section">
+          <div class="section-heading">
+            <h2>Teach this answer</h2>
+            <span id="selectedTurnLabel">Select an answer</span>
+          </div>
+          <label class="field" for="preferredAnswerInput">
+            <span>Preferred Velo answer</span>
+            <textarea
+              id="preferredAnswerInput"
+              rows="5"
+              maxlength="4000"
+              placeholder="Write the answer Velo should have given…"
+            ></textarea>
+          </label>
+          <label class="field" for="correctionNoteInput">
+            <span>Why this is better</span>
+            <input
+              id="correctionNoteInput"
+              type="text"
+              maxlength="500"
+              placeholder="Tone, reasoning, missing fact, or format"
+            />
+          </label>
+          <button id="saveCorrectionBtn" class="button button--gold button--wide" type="button">
+            Save correction locally
+          </button>
+        </section>
+
+        <section class="inspector-section evaluation-section">
+          <div class="section-heading">
+            <h2>Evaluation case</h2>
+            <span>Uses selected user prompt</span>
+          </div>
+          <label class="field" for="mustIncludeInput">
+            <span>Must include <small>one phrase per line</small></span>
+            <textarea
+              id="mustIncludeInput"
+              rows="2"
+              placeholder="helmet&#10;Front / Middle / Back"
+            ></textarea>
+          </label>
+          <label class="field" for="mustNotIncludeInput">
+            <span>Must not include <small>one phrase per line</small></span>
+            <textarea id="mustNotIncludeInput" rows="2" placeholder="I cannot access"></textarea>
+          </label>
+          <div class="button-row">
+            <button id="saveTestBtn" class="button button--quiet" type="button">Save case</button>
+            <button id="runTestsBtn" class="button button--primary" type="button">
+              Run evaluations
+            </button>
+          </div>
+          <p id="evaluationSummary" class="evaluation-summary">No evaluations run yet.</p>
+        </section>
+      </aside>
+
+      <footer class="lab-footer">
+        <span><i class="status-dot" aria-hidden="true"></i>LOCAL MODE</span>
+        <span id="footerProvider">Provider: Ollama</span>
+        <span id="footerStorage">Local storage: ready</span>
+        <span>Production deploy: excluded</span>
+      </footer>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
