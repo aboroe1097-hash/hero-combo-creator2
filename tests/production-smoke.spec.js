@@ -65,6 +65,26 @@ function observeTargetFailures(page) {
   return failures;
 }
 
+test('maintenance hold redirects public entry pages unless bypassed', async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  for (const entryPath of [
+    '/',
+    '/admin.html',
+    '/eden-x1.html',
+    '/arcade.html',
+    '/games/boot/b-merge-rush.html',
+  ]) {
+    await page.goto(entryPath, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/maintenance\.html$/u);
+    await expect(page.getByRole('heading', { name: 'Maintenance Mode' })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('Work in progress');
+  }
+
+  await context.close();
+});
+
 test('verified Pages artifact loads standalone pages, lazy chunks, and its service worker', async ({
   page,
   request,

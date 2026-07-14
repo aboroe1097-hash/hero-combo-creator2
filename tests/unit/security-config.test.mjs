@@ -699,16 +699,20 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const stamp = /\?v=\d{8}_\d{6}$/;
 
   // v14 adds the standalone Arcade entry, the global command palette, and the
-  // two small Velo layers needed by Eden's first-paint loader. Keep a measured
+  // two small Velo layers needed by Eden's first-paint loader. The maintenance
+  // hold adds its standalone page and two small logo variants. Keep a measured
   // one-entry margin without allowing the shell to grow unbounded.
-  assert.ok(urls.length <= 46, `expected bounded app shell, found ${urls.length} URLs`);
+  assert.ok(urls.length <= 49, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
   assert.ok(urls.includes('/arcade.html'));
+  assert.ok(urls.includes('/maintenance.html'));
   assert.ok(urls.some((url) => url.startsWith('/css/command-palette.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/command-palette.js?v=')));
   assert.ok(urls.includes('/images/logo.png'));
+  assert.ok(urls.includes('/images/logo-120.webp'));
+  assert.ok(urls.includes('/images/logo-40.webp'));
   // css/js entries must carry the ?v= stamp so cache keys can never mix
   // assets from different deploys.
   for (const url of urls) {
