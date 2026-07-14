@@ -174,7 +174,6 @@ function scheduleFirebaseAnalytics() {
   analyticsScheduled = true;
   let started = false;
   let fallbackTimer = 0;
-  let idleHandle = 0;
   const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
 
   const removeInteractionListeners = () => {
@@ -187,7 +186,6 @@ function scheduleFirebaseAnalytics() {
     started = true;
     removeInteractionListeners();
     globalThis.clearTimeout?.(fallbackTimer);
-    globalThis.cancelIdleCallback?.(idleHandle);
     importFirebaseAnalytics()
       .then(({ getAnalytics }) => {
         analytics = getAnalytics(app);
@@ -204,10 +202,7 @@ function scheduleFirebaseAnalytics() {
         passive: true,
       })
     );
-    fallbackTimer = globalThis.setTimeout?.(startAnalytics, 5000) || 0;
-    if (typeof globalThis.requestIdleCallback === 'function') {
-      idleHandle = globalThis.requestIdleCallback(startAnalytics, { timeout: 5000 });
-    }
+    fallbackTimer = globalThis.setTimeout?.(startAnalytics, 10000) || 0;
   };
 
   if (globalThis.document?.readyState === 'complete') armPostLoad();
@@ -266,7 +261,13 @@ export async function waitForAuthReady() {
   if (!auth) throw new Error('Firebase not initialized');
   await ensureAuthPersistence();
   if (typeof auth.authStateReady === 'function') {
-    await auth.authStateReady();
+    let timeout = null;
+    await Promise.race([
+      auth.authStateReady(),
+      new Promise((resolve) => {
+        timeout = setTimeout(resolve, 3000);
+      }),
+    ]).finally(() => clearTimeout(timeout));
     return auth.currentUser || null;
   }
   return new Promise((resolve) => {

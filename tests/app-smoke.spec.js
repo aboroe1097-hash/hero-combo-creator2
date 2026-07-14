@@ -11,7 +11,7 @@ async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
 }
 
 async function openApp(page, path = '/') {
@@ -19,7 +19,6 @@ async function openApp(page, path = '/') {
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.setItem('vts_intro_v1_seen', '1');
-    localStorage.setItem('vts_quick_tour_done', '1');
     localStorage.setItem('vts_eden_dataset', 'season5');
   });
   await page.goto(path, { waitUntil: 'domcontentloaded' });
@@ -30,7 +29,6 @@ async function openDirectTabHash(page, tabName, sectionId, marker) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
-    localStorage.setItem('vts_quick_tour_done', '1');
     localStorage.setItem('vts_eden_dataset', 'season5');
   });
   await page.goto(`/#${tabName}`, { waitUntil: 'domcontentloaded' });
@@ -155,6 +153,16 @@ async function stabilizeVisuals(page) {
 async function openVisualApp(page, viewport) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
   await openApp(page, `/?visual=${viewport.name}`);
+  await page.waitForFunction(() => document.documentElement.dataset.shellNavReady === '1');
+  if (viewport.name === 'mobile') {
+    await page.waitForFunction(() => {
+      const nav = document.getElementById('tabNavScroll');
+      return (
+        nav?.contains(document.getElementById('tabArcade')) &&
+        !nav.contains(document.getElementById('tabOcrDashboard'))
+      );
+    });
+  }
   await stabilizeVisuals(page);
 }
 
@@ -165,15 +173,19 @@ async function verifyRetiredEntryGate(page, viewport) {
   await page.addInitScript(() => {
     localStorage.setItem('vts_maintenance_bypass', '1');
     localStorage.removeItem('vts_intro_v1_seen');
-    localStorage.removeItem('vts_quick_tour_done');
   });
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/?tour=1', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#app')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
+  await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
 }
 
 async function expectVisualSnapshot(page, selector, name) {
   const target = page.locator(selector);
   await target.scrollIntoViewIfNeeded();
+  await page.addStyleTag({
+    content: '#aiDrawerLauncherShell { visibility: hidden !important; }',
+  });
   // Keep hover-only card accents deterministic and wait for decoded pixels,
   // not only image metadata, before capturing remote hero portraits.
   await page.mouse.move(0, 0);
@@ -964,19 +976,13 @@ test.describe('app smoke tabs', () => {
       'assets/dm/equipment/dragon-master/gold/armor.png'
     );
     await expect(
-      page.locator(
-        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="purple"] .dm-stage-image'
-      )
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="purple"] .dm-stage-image')
     ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/purple/armor.png');
     await expect(
-      page.locator(
-        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="orange"] .dm-stage-image'
-      )
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="orange"] .dm-stage-image')
     ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/orange/armor.jpg');
     await expect(
-      page.locator(
-        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="gold"] .dm-stage-image'
-      )
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="gold"] .dm-stage-image')
     ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/gold/armor.png');
 
     await page.locator('#materialCalculatorRoot [data-dm-route="gold"]').click();
@@ -1007,9 +1013,7 @@ test.describe('app smoke tabs', () => {
       page.locator('#materialCalculatorRoot .dm-normal-gear-card').first().locator('img').first()
     ).toHaveAttribute('src', 'assets/dm/equipment/ranger/blue/armor.png');
     await expect(
-      page.locator(
-        '#materialCalculatorRoot [data-dm-stage][data-dm-tier="blue"] .dm-stage-image'
-      )
+      page.locator('#materialCalculatorRoot [data-dm-stage][data-dm-tier="blue"] .dm-stage-image')
     ).toHaveAttribute('src', 'assets/dm/equipment/dragon-master/blue/armor.png');
     await expect(page.locator('#materialCalculatorRoot .dm-recipe-panel')).toContainText('×64');
 
@@ -1371,13 +1375,35 @@ test.describe('app smoke tabs', () => {
           structure_level: 'Lv.5',
           game_time: '24/06/2026, 18:00',
           start_time: '18:00',
-          total_demolition: 1234567,
+          total_demolition: 999999999,
           players_count: 1,
-          players: [{ name: 'Cache Tester', value: 1234567, rank: 1 }],
+          players: [{ name: 'Cache Tester', value: 999999999, rank: 1 }],
         },
       ],
       players_summary: [],
     };
+    const productionScaleNames = Array.from(
+      { length: 220 },
+      (_, index) => `Cached Member ${index + 1}`
+    );
+    for (let attackIndex = 1; attackIndex < 69; attackIndex += 1) {
+      const players = Array.from({ length: 61 }, (_, playerIndex) => ({
+        name: productionScaleNames[(attackIndex * 7 + playerIndex) % productionScaleNames.length],
+        value: 100000 + attackIndex * 100 + playerIndex,
+        rank: playerIndex + 1,
+      }));
+      seededDash.attacks.push({
+        id: `cached-attack-${attackIndex + 1}`,
+        structure_name: attackIndex % 2 ? 'Large Town' : 'City',
+        structure_level: attackIndex % 2 ? 'Lv.4' : 'Lv.5',
+        game_time: `${String((attackIndex % 28) + 1).padStart(2, '0')}/06/2026, 18:00`,
+        start_time: '17:30',
+        total_demolition: players.reduce((sum, player) => sum + player.value, 0),
+        players_count: players.length,
+        players,
+      });
+    }
+    seededDash.total_attacks = seededDash.attacks.length;
 
     await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
     await page.route('https://www.gstatic.com/firebasejs/**', (route) => {
@@ -1390,6 +1416,12 @@ test.describe('app smoke tabs', () => {
       ({ data }) => {
         window.VTS_ADMIN_LOCAL_TEST_AUTH = true;
         window.VTS_DASHBOARD_CLOUD_BOOT_TIMEOUT_MS = 350;
+        window.__adminBootLongTasks = [];
+        new PerformanceObserver((list) => {
+          window.__adminBootLongTasks.push(
+            ...list.getEntries().map((entry) => Math.round(entry.duration))
+          );
+        }).observe({ type: 'longtask', buffered: true });
         localStorage.setItem('vts_maintenance_bypass', '1');
         localStorage.setItem('vts_dashboard_cloud_boot_timeout_ms', '350');
         localStorage.setItem('vts_admin_local_test_auth', '1');
@@ -1405,10 +1437,30 @@ test.describe('app smoke tabs', () => {
     );
 
     await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#dashApp')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.evaluate(() => ({
+        hostname: location.hostname,
+        globalBypass: window.VTS_ADMIN_LOCAL_TEST_AUTH,
+        storedBypass: localStorage.getItem('vts_admin_local_test_auth'),
+      }))
+    ).resolves.toEqual({
+      hostname: '127.0.0.1',
+      globalBypass: true,
+      storedBypass: '1',
+    });
+    await expect(page.locator('#dashApp')).toBeVisible({ timeout: 8000 });
+    const longestBootTask = await page.evaluate(() => Math.max(0, ...window.__adminBootLongTasks));
+    expect(longestBootTask).toBeLessThan(3000);
     await expect(page.locator('#dashConnecting')).toBeHidden();
     await expect(page.locator('#dashLeaderBody')).toContainText('Cache Tester');
     await expect(page.locator('#dashCloudStatusText')).toContainText('Showing local cache');
+
+    const contributionsTab = page.locator(
+      '#ocrDashboardRoot .dash-subtab-btn[data-subtab="contributions"]'
+    );
+    await contributionsTab.click();
+    await expect(page.locator('#dashSubtabContributions')).toBeVisible();
+    await expect(contributionsTab).toHaveAttribute('aria-selected', 'true');
 
     await Promise.all(stalledRoutes.map((route) => route.abort().catch(() => {})));
   });
@@ -2134,7 +2186,9 @@ test.describe('app smoke tabs', () => {
     );
   });
 
-  test('eden x1 cached boot paints reward controls while cloud refresh stalls', async ({ page }) => {
+  test('eden x1 cached boot paints reward controls while cloud refresh stalls', async ({
+    page,
+  }) => {
     const stalledRoutes = [];
     const cachedData = {
       syncRevision: 1,

@@ -9,13 +9,20 @@ const edenFirebase = read('js/firebase-eden.js');
 const sdk = read('js/firebase-sdk.js');
 
 test('Eden boot uses the lightweight Firestore module', () => {
-  assert.match(sdk, /firebase-firestore-lite\.js/);
+  assert.match(sdk, /import\('firebase\/firestore\/lite'\)/);
   assert.match(sdk, /export function importFirestoreLite\(\)/);
+  assert.doesNotMatch(sdk, /gstatic\.com/);
   assert.match(eden, /import\('\.\/firebase-eden\.js'\)/);
   assert.match(eden, /importFirestoreLite/);
   assert.doesNotMatch(eden, /import\('\.\/firebase\.js'\)/);
   assert.match(edenFirebase, /importFirebaseApp\(\), importFirebaseAuth\(\)/);
   assert.doesNotMatch(edenFirebase, /importFirestore/);
+});
+
+test('Eden bounds restored Auth readiness before anonymous sign-in', () => {
+  assert.match(edenFirebase, /Promise\.race\(\[/);
+  assert.match(edenFirebase, /auth\.authStateReady\(\)/);
+  assert.match(edenFirebase, /setTimeout\(resolve, 3000\)/);
 });
 
 test('Eden public dashboard rendering is frame-sliced', () => {

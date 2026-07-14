@@ -24,10 +24,11 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The translated AI assistant, deferred VTS guides, and Admin contribution
-  // batch reconciliation/undo controls measure 2751.4 KiB in v14. Keep a
-  // narrow guard while preserving an aggregate-growth alarm.
-  totalJsBytes: 2759 * 1024,
+  // Firebase core is now a same-origin, lazy Admin/cloud chunk instead of an
+  // unbounded gstatic dependency. The complete JS graph measures 3609.4 KiB;
+  // route preload checks below still prevent this optional SDK from leaking
+  // into Index startup.
+  totalJsBytes: 3620 * 1024,
   // The cross-tool light-theme/touch-target pass used to measure 1076.1 KiB.
   // Contribution filters, batch controls, and source badges bring the current
   // aggregate to 1079.4 KiB; per-page budgets still catch route leakage.
@@ -35,13 +36,14 @@ const LIMITS = {
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  totalDeployBytes: 20 * 1024 * 1024,
+  // Vendored Firebase adds cacheable code, not media or initial-route bytes.
+  // The complete artifact measures 20,517.5 KiB after the change.
+  totalDeployBytes: 20.1 * 1024 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
-  // Feature-owned CSS/JS now emits separate lazy chunks for AI, Arcade,
-  // Research, DM, Strife, Loyalty, Eden, and export. Keep a narrow guard above
-  // the resulting artifact while source-only originals remain excluded.
-  deployFileCount: 465,
+  // Feature-owned CSS/JS and the three explicit Firebase core, Analytics, and
+  // App Check chunks stay lazy. Keep a narrow guard above the resulting graph.
+  deployFileCount: 470,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
     'admin.html': { desktop: 602 * 1024, mobile: 695 * 1024 },

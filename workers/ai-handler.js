@@ -1,10 +1,16 @@
-import { HEALTH_PATH, SAFE_ERROR_CODES, TURN_PATH } from './ai/constants.js';
+import { HEALTH_PATH, MANAGEMENT_VOTES_PATH, SAFE_ERROR_CODES, TURN_PATH } from './ai/constants.js';
 import {
   assertToolResultsMatchClaims,
   hashProviderState,
   verifyContinuationToken,
 } from './ai/continuation.js';
-import { corsHeaders, parseAllowedOrigins, requireAllowedOrigin, withCors } from './ai/cors.js';
+import {
+  corsHeaders,
+  parseAllowedOrigins,
+  requireAllowedOrigin,
+  requirePublicDataOrigin,
+  withCors,
+} from './ai/cors.js';
 import { utf8ByteLength } from './ai/crypto.js';
 import { AiRequestError, asSafeError } from './ai/errors.js';
 import { authenticateFirebaseRequest } from './ai/firebase-jwt.js';
@@ -23,6 +29,7 @@ import {
   uidQuotaHash,
 } from './ai/quota.js';
 import { buildInitialProviderSteps, readBoundedJson, validateTurnPayload } from './ai/schema.js';
+import { proxyManagementVotes } from './ai/management-votes.js';
 
 const JSON_HEADERS = Object.freeze({
   'Cache-Control': 'no-store',
@@ -247,6 +254,21 @@ export async function handleRequest(request, env) {
       return request.method === 'HEAD'
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;
+    }
+
+    if (url.pathname === MANAGEMENT_VOTES_PATH) {
+      origin = requirePublicDataOrigin(request, env.ALLOWED_ORIGINS);
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders(origin) });
+      }
+      if (request.method !== 'GET') {
+        return jsonResponse(
+          { code: 'method_not_allowed', message: 'Only GET is supported.' },
+          405,
+          origin
+        );
+      }
+      return proxyManagementVotes(url, origin);
     }
 
     if (url.pathname !== TURN_PATH) {

@@ -1408,6 +1408,22 @@ function renderWeightedContributionDashboard(options = {}) {
   hydrateDashboardTableLabels(host);
 }
 
+let weightedDashboardRenderToken = 0;
+
+function scheduleWeightedContributionDashboardRender() {
+  const token = ++weightedDashboardRenderToken;
+  const run = () => {
+    if (token !== weightedDashboardRenderToken) return;
+    if (!isDashboardSubtabVisible('dashboard')) return;
+    renderWeightedContributionDashboard();
+  };
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run, { timeout: 750 });
+  } else {
+    setTimeout(run, 0);
+  }
+}
+
 function getContributionSnapshotSummary() {
   const records = Array.isArray(state.contributionRecords) ? state.contributionRecords : [];
   const latest = latestRecord(records);
@@ -1597,7 +1613,7 @@ function render() {
 
   renderAnalyticsWhenVisible(activeAttacks, rankedPsum);
   renderOpsOverview(activeAttacks, rankedPsum);
-  renderWeightedContributionDashboard();
+  scheduleWeightedContributionDashboardRender();
 
   const total = activeAttacks.reduce((s, a) => s + (a.total_demolition || 0), 0);
   $id('dashKpiAttacks').textContent = activeAttacks.length;

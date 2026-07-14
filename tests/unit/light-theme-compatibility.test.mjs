@@ -72,6 +72,17 @@ test('the retired cinematic entry gate cannot block the app shell', () => {
   assert.doesNotMatch(loading, /introPreview|vts_intro_v1_seen|setTimeout/);
 });
 
+test('the retired Quick Tour cannot activate on any device', () => {
+  const runtime = [
+    read('js/app.js'),
+    read('js/app-shortcuts.js'),
+    read('js/shell-v14.js'),
+    read('css/app.css'),
+    read('css/shell-v14.css'),
+  ].join('\n');
+  assert.doesNotMatch(runtime, /quickTour|quick-tour|vts_quick_tour_done/);
+});
+
 test('feature-owned light themes use readable action colors', () => {
   const shell = read('css/shell-v14.css');
   const research = read('css/research-v14.css');

@@ -265,10 +265,6 @@
     }
   }
 
-  function quickTourIsOpen() {
-    return Boolean(document.querySelector('.quick-tour-overlay:not(.hidden)'));
-  }
-
   function setAttributeIfChanged(element, name, value) {
     if (element.getAttribute(name) !== value) element.setAttribute(name, value);
   }
@@ -309,26 +305,20 @@
     syncSourceSemantics(source);
   }
 
-  function layoutNavigation({
-    exposeAll = quickTourIsOpen(),
-    preserveFocus = document.activeElement,
-  } = {}) {
+  function layoutNavigation({ preserveFocus = document.activeElement } = {}) {
     const focusedSource = sourceIds
       .map(sourceFor)
       .find((source) => source?.contains(preserveFocus));
     const focusWasInMore = morePanel.contains(preserveFocus);
-    const primaryIds = exposeAll
-      ? sourceIds
-      : mobileQuery.matches
-        ? mobilePrimaryIds
-        : wideDesktopQuery.matches
-          ? wideDesktopPrimaryIds
-          : desktopPrimaryIds;
+    const primaryIds = mobileQuery.matches
+      ? mobilePrimaryIds
+      : wideDesktopQuery.matches
+        ? wideDesktopPrimaryIds
+        : desktopPrimaryIds;
     const primarySet = new Set(primaryIds);
 
     primaryIds.forEach((id) => moveSourceItem(id, tabNavScroll));
     sourceIds.filter((id) => !primarySet.has(id)).forEach((id) => moveSourceItem(id, moreTools));
-    moreButton.classList.toggle('shell-tour-hidden', exposeAll);
     syncActiveState();
     if (focusedSource) {
       const remainsVisible = primarySet.has(focusedSource.id) || !morePanel.hidden;
@@ -527,6 +517,7 @@
     });
   });
   layoutNavigation();
+  document.documentElement.dataset.shellNavReady = '1';
 
   let sourceSyncQueued = false;
   const sourceObserver = new MutationObserver(() => {
@@ -558,22 +549,6 @@
       const panel = document.getElementById(`${internalHashes.get(id)}Section`);
       if (panel) sourceObserver.observe(panel, { attributes: true, attributeFilter: ['role'] });
     }
-  });
-
-  let tourWasOpen = quickTourIsOpen();
-  const tourObserver = new MutationObserver(() => {
-    const tourIsOpen = quickTourIsOpen();
-    if (tourIsOpen === tourWasOpen) return;
-    tourWasOpen = tourIsOpen;
-    replaceMoreHistoryState();
-    setOpen(false, { restoreFocus: false });
-    layoutNavigation({ exposeAll: tourIsOpen });
-  });
-  tourObserver.observe(document.body, {
-    attributes: true,
-    childList: true,
-    subtree: true,
-    attributeFilter: ['class'],
   });
 
   moreButton.addEventListener('click', () => {

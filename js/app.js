@@ -161,7 +161,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260714_162459').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260714_195031').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -172,7 +172,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260714_162459').catch((err) => {
+    materialModulePromise = import('./material-calculator.js?v=20260714_195031').catch((err) => {
       materialModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -183,7 +183,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260714_162459').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260714_195031').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -194,7 +194,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260714_162459').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260714_195031').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -205,7 +205,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260714_162459').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260714_195031').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -889,7 +889,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260714_162459')
+        import('./eden-map.js?v=20260714_195031')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -972,7 +972,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260714_162459')
+      import('./app-strife.js?v=20260714_195031')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
@@ -988,7 +988,7 @@ tabs.forEach(tab => {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260714_162459')
+      import('./youtube-v14.js?v=20260714_195031')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1396,215 +1396,6 @@ function keepActiveTabInView(activeBtn, behavior = 'smooth') {
   }
 }
 
-function isLocalQaHost(hostname = '') {
-  const host = hostname.toLowerCase();
-  return (
-    host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === '::1' ||
-    host.startsWith('10.') ||
-    host.startsWith('192.168.') ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
-  );
-}
-
-function shouldAutoStartQuickTour() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.has('tour') || params.has('quickTour')) return true;
-  if (params.has('noTour') || params.has('qa') || params.has('visual')) return false;
-  return !isLocalQaHost(window.location.hostname);
-}
-
-function initQuickTour() {
-  if (!shouldAutoStartQuickTour()) return;
-
-  const storageKey = 'vts_quick_tour_done';
-  try {
-    if (localStorage.getItem(storageKey) === '1') return;
-  } catch {}
-
-  const getSteps = () => {
-    const t = translations[currentLanguage] || translations.en;
-    return [
-      { selector: '#tabManual', title: t.tabManual, body: t.createComboTitle },
-      { selector: '#tabGenerator', title: t.tabGenerator, body: t.generatorIntro },
-      { selector: '#tabHeroes', title: t.tabHeroes, body: t.heroesTabDesc },
-      { selector: '#tabResearch', title: t.tabResearch, body: t.researchDesc },
-      { selector: '#tabMaterials', title: t.tabMaterials, body: t.materialsIntro || t.tabMaterials },
-      { selector: '#tabEdenMap', title: t.tabEdenMap, body: t.edenMapDesc },
-      { selector: '#tabStrife', title: t.tabStrife, body: t.strifeIntro },
-      { selector: '#tabLoyalty', title: t.tabLoyalty, body: t.loyaltyDesc },
-      { selector: '#tabYouTube', title: t.tabYouTube, body: t.youtubeLibraryIntro }
-    ].filter(step => document.querySelector(step.selector));
-  };
-  let steps = getSteps();
-  if (!steps.length) return;
-
-  let index = 0;
-  const overlay = document.createElement('div');
-  overlay.className = 'quick-tour-overlay hidden';
-  overlay.innerHTML = `
-    <div class="quick-tour-backdrop"></div>
-    <div class="quick-tour-spotlight"></div>
-    <section class="quick-tour-card" role="dialog" aria-live="polite" aria-labelledby="quickTourTitle" aria-describedby="quickTourBody">
-      <div class="quick-tour-kicker"></div>
-      <h3 id="quickTourTitle" class="quick-tour-title"></h3>
-      <p id="quickTourBody" class="quick-tour-body"></p>
-      <div class="quick-tour-dots"></div>
-      <div class="quick-tour-actions">
-        <button type="button" class="quick-tour-skip">Skip tour</button>
-        <button type="button" class="quick-tour-next">Next</button>
-      </div>
-    </section>`;
-  document.body.appendChild(overlay);
-
-  const card = overlay.querySelector('.quick-tour-card');
-  const spotlight = overlay.querySelector('.quick-tour-spotlight');
-  const title = overlay.querySelector('.quick-tour-title');
-  const body = overlay.querySelector('.quick-tour-body');
-  const kicker = overlay.querySelector('.quick-tour-kicker');
-  const dots = overlay.querySelector('.quick-tour-dots');
-  const nextBtn = overlay.querySelector('.quick-tour-next');
-  const skipBtn = overlay.querySelector('.quick-tour-skip');
-  const languageControl = document.querySelector('.lang-select-wrapper');
-  languageControl?.classList.add('quick-tour-language-control');
-
-  function clamp(n, min, max) {
-    return Math.min(Math.max(n, min), max);
-  }
-
-  function resolveTourVisualTarget(target) {
-    if (!target) return null;
-    if (target.matches?.('.tab-pill')) return target;
-    return target.querySelector?.('.tab-pill, button, a') || target;
-  }
-
-  function placeTourCard(target) {
-    const visualTarget = resolveTourVisualTarget(target) || target;
-    const rect = visualTarget.getBoundingClientRect();
-    const isTabTarget = visualTarget.classList.contains('tab-pill');
-    const padX = isTabTarget ? 6 : 8;
-    const padY = isTabTarget ? 5 : 8;
-    const gap = window.innerWidth >= 1024 ? 10 : 14;
-    const margin = 16;
-    const isWide = window.innerWidth >= 1024;
-    const cardWidth = Math.min(isWide ? 340 : 390, window.innerWidth - margin * 2);
-    const spotlightWidth = Math.max(42, Math.min(rect.width + padX * 2, window.innerWidth - margin * 2));
-    const spotlightHeight = Math.max(34, Math.min(rect.height + padY * 2, window.innerHeight - margin * 2));
-
-    spotlight.classList.toggle('is-tab-target', isTabTarget);
-    spotlight.style.left = `${clamp(rect.left - padX, margin, window.innerWidth - spotlightWidth - margin)}px`;
-    spotlight.style.top = `${clamp(rect.top - padY, margin, window.innerHeight - spotlightHeight - margin)}px`;
-    spotlight.style.width = `${spotlightWidth}px`;
-    spotlight.style.height = `${spotlightHeight}px`;
-    spotlight.style.borderRadius = isTabTarget ? '0px' : `${Math.min(18, Math.max(12, rect.height / 2))}px`;
-
-    if (window.innerWidth <= 768) {
-      card.style.width = '';
-      card.style.left = '';
-      card.style.top = '';
-      return;
-    }
-
-    card.style.width = `${cardWidth}px`;
-    card.style.left = '0px';
-    card.style.top = '0px';
-
-    const cardHeight = Math.min(card.offsetHeight || 190, window.innerHeight - margin * 2);
-    const canPlaceBelow = rect.bottom + gap + cardHeight <= window.innerHeight - margin;
-    const canPlaceAbove = rect.top - gap - cardHeight >= margin;
-    const canPlaceRight = rect.right + gap + cardWidth <= window.innerWidth - margin;
-    const canPlaceLeft = rect.left - gap - cardWidth >= margin;
-
-    let left = rect.left + rect.width / 2 - cardWidth / 2;
-    let top = rect.bottom + gap;
-
-    if (canPlaceBelow) {
-      top = rect.bottom + gap;
-    } else if (canPlaceAbove) {
-      top = rect.top - gap - cardHeight;
-    } else if (canPlaceRight) {
-      left = rect.right + gap;
-      top = rect.top + rect.height / 2 - cardHeight / 2;
-    } else if (canPlaceLeft) {
-      left = rect.left - gap - cardWidth;
-      top = rect.top + rect.height / 2 - cardHeight / 2;
-    } else {
-      top = window.innerHeight - cardHeight - margin;
-    }
-
-    card.style.left = `${clamp(left, margin, window.innerWidth - cardWidth - margin)}px`;
-    card.style.top = `${clamp(top, margin, window.innerHeight - cardHeight - margin)}px`;
-  }
-
-  function finishTour() {
-    overlay.classList.add('hidden');
-    popOverlay();
-    languageControl?.classList.remove('quick-tour-language-control');
-    overlay.remove();
-    document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
-    try { localStorage.setItem(storageKey, '1'); } catch {}
-  }
-
-  function renderStep() {
-    steps = getSteps();
-    index = Math.min(index, Math.max(steps.length - 1, 0));
-    const step = steps[index];
-    const target = document.querySelector(step.selector);
-    if (!target) {
-      finishTour();
-      return;
-    }
-    document.querySelectorAll('.quick-tour-target').forEach(el => el.classList.remove('quick-tour-target'));
-    const visualTarget = resolveTourVisualTarget(target) || target;
-    visualTarget.classList.add('quick-tour-target');
-    title.textContent = step.title;
-    body.textContent = step.body;
-    const tourUi = {
-      ar: ['الخطوة', 'تخطي الجولة', 'تم'], de: ['Schritt', 'Tour überspringen', 'Fertig'],
-      es: ['Paso', 'Omitir recorrido', 'Listo'], fr: ['Étape', 'Passer la visite', 'Terminé'],
-      id: ['Langkah', 'Lewati tur', 'Selesai'], kr: ['단계', '둘러보기 건너뛰기', '완료'],
-      pt: ['Etapa', 'Pular tour', 'Concluir'], ru: ['Шаг', 'Пропустить тур', 'Готово'],
-      tr: ['Adım', 'Turu atla', 'Bitti'], zh: ['步骤', '跳过导览', '完成'],
-      en: ['Step', 'Skip tour', 'Done']
-    }[currentLanguage] || ['Step', 'Skip tour', 'Done'];
-    kicker.textContent = `${tourUi[0]} ${index + 1} / ${steps.length}`;
-    skipBtn.textContent = tourUi[1];
-    dots.innerHTML = steps.map((_, i) => `<span class="${i === index ? 'active' : ''}"></span>`).join('');
-    nextBtn.textContent = index === steps.length - 1 ? tourUi[2] : ((translations[currentLanguage] || translations.en).next || 'Next');
-    const isTabTarget = target.closest('#tabNavScroll') || target.classList.contains('tab-pill');
-    visualTarget.scrollIntoView({ behavior: 'auto', block: isTabTarget ? 'nearest' : 'center', inline: 'center' });
-    requestAnimationFrame(() => placeTourCard(target));
-    window.setTimeout(() => placeTourCard(target), 80);
-  }
-
-  overlay.querySelector('.quick-tour-skip')?.addEventListener('click', finishTour);
-  overlay.querySelector('.quick-tour-backdrop')?.addEventListener('click', finishTour);
-  nextBtn?.addEventListener('click', () => {
-    if (index >= steps.length - 1) finishTour();
-    else {
-      index++;
-      renderStep();
-    }
-  });
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !overlay.classList.contains('hidden')) finishTour();
-  });
-  window.addEventListener('resize', () => {
-    if (!overlay.classList.contains('hidden')) renderStep();
-  });
-  window.addEventListener('edenLanguageUpdate', () => {
-    if (!overlay.classList.contains('hidden')) renderStep();
-  });
-
-  setTimeout(() => {
-    const z = pushOverlay();
-    overlay.style.zIndex = z;
-    overlay.classList.remove('hidden');
-    renderStep();
-  }, 900);
-}
-
 // --- INITIALIZE EVERYTHING ---
 async function startApp() {
     try {
@@ -1706,7 +1497,6 @@ async function startApp() {
     } finally {
         await notifyAppReady();
         window.VTS_ASSET_RECOVERY?.markBootComplete?.();
-        safeInit('quickTour', () => initQuickTour());
     }
 }
 

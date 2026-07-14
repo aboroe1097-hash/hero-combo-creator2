@@ -88,3 +88,14 @@ test('Manual Builder keeps a compact floating drop dock without stealing hero-li
   );
   assert.match(manualBuilder, /if \(suppressTouchClickHero === hero\.name\)/);
 });
+
+test('mobile shell and generator text keep a twelve-pixel legibility floor', () => {
+  assert.match(
+    mobileCss,
+    /@media \(max-width: 768px\)[\s\S]*?\.generator-source-note,[\s\S]*?#genClearAllBtn,[\s\S]*?font-size: 0\.75rem !important;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 768px\)[\s\S]*?#app #tabNavScroll \.tab-pill,[\s\S]*?#app \.site-footer \.footer-disclaimer[\s\S]*?font-size: 0\.75rem !important;/
+  );
+});

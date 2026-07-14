@@ -5293,3 +5293,21 @@ body[data-active-tab='loyalty'] .bug-report-fab {
     min-width: 44px !important;
   }
 }
+
+/* Keep frequently used mobile controls and supporting copy at a readable
+   floor without changing desktop density or widening the global type scale. */
+@media (max-width: 768px) {
+  .tool-filter-block--skin .gen-skin-nudge :is(strong, span),
+  .tool-filter-block--skin .gen-skin-nudge-actions button,
+  .generator-source-note,
+  #genClearAllBtn,
+  #genResetFiltersBtn,
+  #genSelectAllBtn,
+  .selection-action-btn,
+  [data-core-tool] .tool-filter-block :is(h2, h3),
+  [data-core-tool] .skin-filter-row .generator-skin-label,
+  #globalToggleRow .toggle-text,
+  .a2hs-banner-sub {
+    font-size: 0.75rem !important;
+  }
+}

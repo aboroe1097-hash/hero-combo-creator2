@@ -183,6 +183,7 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
     const csp =
       source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
     const scriptSrc = csp.match(/script-src\s+([^;]+)/)?.[1] || '';
+    const connectSrc = csp.match(/connect-src\s+([^;]+)/)?.[1] || '';
     const declaredHashes = [...scriptSrc.matchAll(/'sha256-[A-Za-z0-9+/]+={0,2}'/g)].map(
       ([hash]) => hash
     );
@@ -195,6 +196,11 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
       });
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
+    assert.match(
+      connectSrc,
+      /https:\/\/region1\.google-analytics\.com/,
+      `${page} should allow the regional Analytics collection endpoint`
+    );
     assert.deepEqual(
       declaredHashes.sort(),
       expectedHashes.sort(),
@@ -275,12 +281,12 @@ test('firebase app check stays lazy until a protected token is requested', () =>
   assert.match(source, /export async function getFirebaseAppCheckToken/);
 });
 
-test('firebase analytics waits for post-load idle, interaction, or the five-second fallback', () => {
+test('firebase analytics waits for post-load interaction or the ten-second fallback', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   assert.match(source, /function scheduleFirebaseAnalytics\(\)/);
   assert.match(source, /\['pointerdown', 'keydown', 'touchstart', 'scroll'\]/);
-  assert.match(source, /requestIdleCallback\(startAnalytics, \{ timeout: 5000 \}\)/);
-  assert.match(source, /setTimeout\?\.\(startAnalytics, 5000\)/);
+  assert.doesNotMatch(source, /requestIdleCallback\(startAnalytics/);
+  assert.match(source, /setTimeout\?\.\(startAnalytics, 10000\)/);
   assert.match(source, /addEventListener\?\.\('load', armPostLoad, \{ once: true \}\)/);
 });
 

@@ -4,7 +4,6 @@ async function openApp(page) {
   await page.route('https://www.googletagmanager.com/**', route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem('vts_intro_v1_seen', '1');
-    localStorage.setItem('vts_quick_tour_done', '1');
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -12,7 +11,7 @@ async function openApp(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
+  await expect(page.locator('.quick-tour-overlay')).toHaveCount(0);
   await page.evaluate(() => window.stop());
 }
 

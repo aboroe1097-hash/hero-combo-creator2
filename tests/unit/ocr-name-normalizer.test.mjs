@@ -42,6 +42,20 @@ test('canonical resolver reuses existing aliases after guild-prefix cleanup', ()
   assert.equal(resolveCanonicalPlayerName('s)GoodnesGraycious'), 'GoodnesGraycious');
 });
 
+test('attack-level identity cache invalidates when OCR values change', () => {
+  const main = { name: '꧁ Kika ꧂', value: 200, rank: 1 };
+  const alternate = { name: '꧁ Kika ꧂', value: 100, rank: 2 };
+  const attackPlayers = [main, alternate];
+
+  assert.equal(resolveCanonicalPlayerName(main, { attackPlayers }), '꧁ Kika ꧂');
+  assert.equal(resolveCanonicalPlayerName(alternate, { attackPlayers }), '꧁༺ Kika ༻꧂');
+
+  main.value = 50;
+  alternate.value = 300;
+  assert.equal(resolveCanonicalPlayerName(main, { attackPlayers }), '꧁༺ Kika ༻꧂');
+  assert.equal(resolveCanonicalPlayerName(alternate, { attackPlayers }), '꧁ Kika ꧂');
+});
+
 test('canonical resolver merges special-list alias clusters', () => {
   assert.notEqual(key('Kika-banner'), key('Kika'));
   assert.notEqual(key('Kika-banner2'), key('Kika'));

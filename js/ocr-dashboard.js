@@ -5256,15 +5256,18 @@ export async function bootOcrDashboard() {
     }
   };
   logDashboardEvent('adminLogDashboardLoaded', 'info', {}, { source: 'system' });
-  if (isLocalAdminTestBypass()) {
-    state.adminUser = { uid: 'local-test-admin' };
-    state.adminIsAdmin = false;
-    try {
-      await openAdminDashboardAfterAuth({ preferCloudFirst: false });
-    } catch (e) {
-      console.error('Local admin test dashboard load failed during boot', e);
+  const initializeAdminSession = async () => {
+    if (isLocalAdminTestBypass()) {
+      state.adminUser = { uid: 'local-test-admin' };
+      state.adminIsAdmin = false;
+      try {
+        await openAdminDashboardAfterAuth({ preferCloudFirst: false });
+      } catch (e) {
+        console.error('Local admin test dashboard load failed during boot', e);
+      }
+      return;
     }
-  } else {
+
     showConnecting(dashT('adminConnectingInit'));
     try {
       const configured = await ensureDashboardCloudInitialized();
@@ -5337,7 +5340,7 @@ export async function bootOcrDashboard() {
       setLoginError(describeAdminAuthError(e));
       showLogin();
     }
-  }
+  };
   const rosterBtn = $id('dashRosterBtn');
   if (rosterBtn) rosterBtn.onclick = showRosterModal;
   const expBtn = $id('dashRosterExportBtn');
@@ -5519,8 +5522,8 @@ export async function bootOcrDashboard() {
     }
   }
 
-  // Run on boot and whenever key input changes
-  updateApiStatus();
+  // OCR readiness is checked after the interactive dashboard/session is ready
+  // so App Check and the Worker probe cannot compete with initial controls.
   const apiSaveBtn = $id('dashSaveApiBtn');
   if (apiSaveBtn)
     apiSaveBtn.addEventListener('click', () =>
@@ -5615,7 +5618,6 @@ export async function bootOcrDashboard() {
     'dashPatherListFileInput'
   );
   bindDutyUpload('shield_wall', 'dashShieldWallPasteBtn', null, null, null);
-  renderDutyRecords();
   const contributionPasteBtn = $id('dashContributionPasteBtn');
   const contributionUploadBtn = $id('dashContributionUploadBtn');
   const contributionExportBtn = $id('dashContributionExportBtn');
@@ -5728,8 +5730,6 @@ export async function bootOcrDashboard() {
       scheduleContributionNoSelectionStatus();
     };
   }
-  renderContributions();
-  renderEdenX1VoteAdmin();
   bindEdenX1VoteAdminControls();
   $id('dashExportMenuBtn').onclick = (e) => {
     e.stopPropagation();
@@ -5859,6 +5859,11 @@ export async function bootOcrDashboard() {
     if (files.length) processFiles(files);
   };
   inp.oninput = inp.onchange;
+
+  // Bind every control before auth/cache restoration can reveal the app. Hidden
+  // feature tabs render on first activation through renderDashboardSubtab().
+  await initializeAdminSession();
+  void updateApiStatus();
 }
 
 window.deleteAttack = async function (attId) {

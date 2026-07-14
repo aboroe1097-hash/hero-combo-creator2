@@ -1,6 +1,7 @@
 export const API_VERSION = 1;
 export const TURN_PATH = '/v1/assistant/turn';
 export const HEALTH_PATH = '/healthz';
+export const MANAGEMENT_VOTES_PATH = '/v1/public/management-votes';
 
 export const LIMITS = Object.freeze({
   bodyBytes: 128 * 1024,
