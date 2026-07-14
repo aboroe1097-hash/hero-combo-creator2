@@ -17,6 +17,9 @@ single rushed chat message.
 - **Direct and action-first.** State what members need to do before the supporting explanation.
 - **Collective leadership voice.** Prefer `we`, `our team`, and `VTS` when the action belongs to the
   alliance; use `I` when the decision or responsibility is specifically the R5's.
+- **Authority is implicit.** Members already know MalakAbo and the authority of his management
+  messages. Do not add `MalakAbo, R5`, introduce him, or restate his role unless he explicitly asks
+  for a signature.
 - **Friendly but firm.** Sound human and encouraging without weakening deadlines or requirements.
 - **Transparent about the reason.** Briefly explain how an action helps the team, preserves
   fairness, saves resources, or supports the current plan.
@@ -35,8 +38,7 @@ A normal MalakAbo message flow is:
 2. Required action.
 3. Exact deadline or start time in game time.
 4. One short reason or fairness note.
-5. Where to ask questions or confirm completion.
-6. `- MalakAbo, R5` when a signature is useful.
+5. `Contact me` when members need to report a management, reward, voting, or data issue.
 
 ## Required facts before drafting
 
@@ -108,9 +110,10 @@ Use in-game mail for durable instructions that members may read later.
 - Repeat critical coordinates or game-time values in plain text.
 - Scan for game-filtered words before approval. Known risky examples include `buy`, `bonus`, `free`,
   `Viber`, `WhatsApp`, and names of other chat apps. Rewrite naturally instead of trying to evade a
-  filter: use `get` or `acquire`, `extra` or `reward`, and `contact R4/R5` or `check the latest mail`
+  filter: use `get` or `acquire`, `extra` or `reward`, and `contact me` or `check the latest mail`
   when those phrases preserve the intended meaning.
-- Close with `MalakAbo, R5` when authorship or authority is important.
+- Do not add a signature by default. For management matters, close with `contact me` when a contact
+  instruction is needed.
 
 ### Alliance or guild announcement
 
@@ -122,7 +125,7 @@ Use the short announcement field for the most important current notification, no
 - Lead with a strong label when useful: `ACTION`, `REMINDER`, `VOTING`, `EDEN`, or `CORRECTION`.
 - Its normal role is to point members to recent in-game mail, for example: `Check the last 3
   in-game mails for reward details.`
-- Avoid links and full explanations; direct readers to the relevant recent mail or contact R4/R5.
+- Avoid links and full explanations; direct readers to the relevant recent mail or say `contact me`.
 - Replace or supersede stale announcements promptly so the visible notice never conflicts with the
   latest order.
 - Preview the complete message before saving so it is not truncated.
@@ -140,8 +143,6 @@ Please [ACTION] by [DATE, GAME TIME].
 - [Step or essential fact]
 
 This helps us [SHORT REASON]. Please [CONFIRMATION METHOD] if needed.
-
-- MalakAbo, R5
 ```
 
 ### In-game mail pattern
@@ -153,9 +154,7 @@ Please [ACTION] by [DATE, GAME TIME].
 
 [ONE-SENTENCE REASON OR INSTRUCTION.]
 
-Questions: contact R4/R5.
-
-MalakAbo, R5
+If anything is missing or incorrect, contact me.
 ```
 
 The body above must remain within 500 characters and seven lines. When several mails are needed,
