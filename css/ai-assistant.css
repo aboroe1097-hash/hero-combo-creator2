@@ -945,7 +945,7 @@
   width: 100%;
   height: 100%;
   transform-origin: 50% 80%;
-  animation: velo-sky-reset 28s ease-in-out infinite;
+  animation: velo-sky-reset 20s ease-in-out infinite;
 }
 
 .velo-mascot img {
@@ -963,7 +963,7 @@
   height: 100%;
   object-fit: contain;
   transform-origin: 50% 78%;
-  animation: velo-body-story 28s ease-in-out infinite;
+  animation: velo-body-story 20s ease-in-out infinite;
 }
 
 .velo-mascot__body--angry {
@@ -971,8 +971,8 @@
   opacity: 0;
   filter: sepia(0.78) saturate(3.3) hue-rotate(312deg);
   animation:
-    velo-body-story 28s ease-in-out infinite,
-    velo-anger-tint 28s ease-in-out infinite;
+    velo-body-story 20s ease-in-out infinite,
+    velo-anger-tint 20s ease-in-out infinite;
 }
 
 .velo-mascot__helmet {
@@ -982,7 +982,7 @@
   inset-block-start: 0;
   inset-inline-start: 11%;
   transform-origin: 50% 20%;
-  animation: velo-helmet-story 28s cubic-bezier(0.22, 0.75, 0.24, 1) infinite;
+  animation: velo-helmet-story 20s cubic-bezier(0.22, 0.75, 0.24, 1) infinite;
 }
 
 .velo-mascot__burst {
@@ -993,7 +993,7 @@
   object-fit: contain;
   opacity: 0;
   transform: scale(0.2) rotate(-12deg);
-  animation: velo-rage-burst 28s ease-out infinite;
+  animation: velo-rage-burst 20s ease-out infinite;
 }
 
 .velo-mascot--launcher {
