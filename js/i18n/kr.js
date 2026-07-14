@@ -330,6 +330,8 @@ const kr = {
   tabHeroes: '영웅 도감',
   tabEdenMap: '에덴 맵',
   tabLoyalty: '에덴 충성도 계산기',
+  tabEdenX1: '에덴 X1 랭킹',
+  tabEdenX1Badge: '공개',
   tabResearch: '연구',
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',

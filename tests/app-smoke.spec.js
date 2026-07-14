@@ -840,6 +840,8 @@ test.describe('app smoke tabs', () => {
     await openApp(page);
 
     await expect(page.locator('#tabGenerator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#tabEdenX1')).toHaveAttribute('href', 'eden-x1.html');
+    await expect(page.locator('#tabEdenX1')).toContainText('Eden X1 Rankings');
     await expect(page.locator('#generatorSection')).toHaveAttribute('aria-hidden', 'false');
 
     await page.locator('#tabManual').click();
@@ -1129,6 +1131,7 @@ test.describe('app smoke tabs', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openApp(page, '/?v12qa=mobile');
     await expect(page.locator('#tabOcrDashboard')).toHaveAttribute('href', 'admin.html');
+    await expect(page.locator('#tabEdenX1')).toHaveAttribute('href', 'eden-x1.html');
 
     const darkLayout = await page.evaluate(() => {
       const nav = document.getElementById('tabNavScroll');
@@ -2091,6 +2094,62 @@ test.describe('app smoke tabs', () => {
     );
   });
 
+  test('eden x1 cached boot paints reward controls while cloud refresh stalls', async ({ page }) => {
+    const stalledRoutes = [];
+    const cachedData = {
+      syncRevision: 1,
+      updatedAt: '2026-07-13T20:00:00.000Z',
+      r5Season: 'season-2026',
+      contributionRecords: [
+        {
+          id: 'eden-cached-first-paint',
+          date: '2026-07-13',
+          premiumSlots: 20,
+          entries: [
+            { rank: '1', name: 'Cache Alpha', guild: 'VTS X1', contribution: '300000' },
+            { rank: '2', name: 'Cache Bravo', guild: 'VTS X1', contribution: '250000' },
+            { rank: '3', name: 'Cache Charlie', guild: 'VTS X1', contribution: '200000' },
+          ],
+        },
+      ],
+      dutyRecords: [],
+      attacks: [],
+    };
+
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.route('https://www.gstatic.com/firebasejs/**', (route) => {
+      stalledRoutes.push(route);
+    });
+    await page.route('https://firestore.googleapis.com/**', (route) => {
+      stalledRoutes.push(route);
+    });
+    await page.addInitScript(
+      ({ data }) => {
+        localStorage.setItem('vts_maintenance_bypass', '1');
+        localStorage.setItem('vts_hero_lang', 'en');
+        localStorage.setItem('vts_theme', 'dark');
+        localStorage.setItem(
+          'vts_eden_x1_public_dashboard_cache_v1',
+          JSON.stringify({ savedAt: Date.now(), data })
+        );
+        navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        });
+      },
+      { data: cachedData }
+    );
+
+    await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
+    const supportCard = page.locator('[data-reward-view="support"]');
+    await expect(page.locator('#edenX1RewardFlowPanel')).toBeVisible({ timeout: 5000 });
+    await expect(supportCard.locator('.eden-x1-flow-label').first()).toHaveText('Support Work');
+    await expect(supportCard).toBeEnabled({ timeout: 5000 });
+    await expect(supportCard).toHaveCSS('content-visibility', 'visible');
+    await expect(page.locator('#dashWeightedContributionPanel')).toContainText('Team Players');
+
+    await Promise.all(stalledRoutes.map((route) => route.abort().catch(() => {})));
+  });
+
   test('eden x1 reward flow cards filter reward tables', async ({ page }) => {
     // This end-to-end scenario deliberately walks every reward lane, sorting,
     // voting, details, and persistence state. The v14 public deck now renders
@@ -2286,6 +2345,27 @@ test.describe('app smoke tabs', () => {
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     await expect(voteRail.getByRole('heading', { name: 'Team Players Vote' })).toBeVisible();
+    const desktopVoteLayout = await voteRail.evaluate((rail) => {
+      const form = rail.querySelector('.eden-x1-vote-form');
+      const railStyle = getComputedStyle(rail);
+      const formStyle = form ? getComputedStyle(form) : null;
+      return {
+        width: rail.getBoundingClientRect().width,
+        position: railStyle.position,
+        overflowY: railStyle.overflowY,
+        maxHeight: railStyle.maxHeight,
+        columns: formStyle?.gridTemplateColumns.split(' ').filter(Boolean).length || 0,
+        hasHorizontalOverflow: rail.scrollWidth > rail.clientWidth,
+      };
+    });
+    expect(desktopVoteLayout).toMatchObject({
+      position: 'relative',
+      overflowY: 'visible',
+      maxHeight: 'none',
+      columns: 2,
+      hasHorizontalOverflow: false,
+    });
+    expect(desktopVoteLayout.width).toBeGreaterThanOrEqual(390);
     await preLoadSupportCard.click();
     await expect(preLoadSupportCard).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.locator('tbody tr')).toHaveCount(4);

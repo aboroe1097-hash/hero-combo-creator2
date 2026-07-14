@@ -420,6 +420,8 @@ const fr = {
   tabHeroes: 'Atlas des Héros',
   tabEdenMap: 'Carte Eden',
   tabLoyalty: 'Calc. Fidélité Eden',
+  tabEdenX1: 'Classement Eden X1',
+  tabEdenX1Badge: 'Public',
   tabResearch: 'Recherche',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

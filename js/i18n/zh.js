@@ -407,6 +407,8 @@ const zh = {
   tabHeroes: '英雄图鉴',
   tabEdenMap: '伊甸地图',
   tabLoyalty: '伊甸忠诚度计算',
+  tabEdenX1: '伊甸 X1 排名',
+  tabEdenX1Badge: '公开',
   tabResearch: '科技研究',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

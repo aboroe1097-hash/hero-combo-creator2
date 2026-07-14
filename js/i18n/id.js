@@ -416,6 +416,8 @@ const id = {
   tabHeroes: 'Atlas Hero',
   tabEdenMap: 'Peta Eden',
   tabLoyalty: 'Kalkulator Loyalitas',
+  tabEdenX1: 'Peringkat Eden X1',
+  tabEdenX1Badge: 'Publik',
   tabResearch: 'Penelitian',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',

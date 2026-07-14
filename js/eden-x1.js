@@ -42,7 +42,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.0';
+const APP_VERSION = '14.0.1';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -106,6 +106,7 @@ let publicAttackRows = [];
 let publicPlayerRows = [];
 let publicStructureRows = [];
 let publicDashboardRenderToken = 0;
+let deferredPublicDashboardRenderToken = 0;
 let localizedRenderToken = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
@@ -2695,12 +2696,15 @@ function updateRewardFlowControls() {
 
 function setRewardFlowReady(ready) {
   rewardFlowReady = Boolean(ready);
+  $('edenX1RewardFlowPanel')?.setAttribute('aria-busy', String(!rewardFlowReady));
   updateRewardFlowControls();
 }
 
 function setEdenPanelLoading(loading) {
   const isLoading = Boolean(loading);
-  $('ocrDashboardSection')?.classList.toggle('eden-x1-panel--loading', isLoading);
+  const section = $('ocrDashboardSection');
+  section?.classList.toggle('eden-x1-panel--loading', isLoading);
+  if (!isLoading) section?.classList.remove('eden-x1-panel--cache-preview');
   document.body?.classList.toggle('eden-x1-loading', isLoading);
   const nav = document.querySelector('.eden-x1-quicknav');
   if (nav) {
@@ -6189,7 +6193,12 @@ async function loadEdenX1Dashboard() {
     );
 
     if (cachedData) {
-      await applyDashboardData(cachedData);
+      $('ocrDashboardSection')?.classList.add('eden-x1-panel--cache-preview');
+      await yieldToBrowser();
+      await applyDashboardData(cachedData, null, {
+        deferPublicDashboard: true,
+        renderGeneration: generation,
+      });
       cacheApplied = true;
     }
 
@@ -6264,7 +6273,27 @@ function yieldToBrowser() {
   });
 }
 
-async function applyDashboardData(data = {}, progressGeneration = null) {
+function schedulePublicDashboardRender(data, generation = edenBootGeneration) {
+  const token = ++deferredPublicDashboardRenderToken;
+  const schedule =
+    'requestIdleCallback' in window
+      ? (callback) => window.requestIdleCallback(callback, { timeout: 700 })
+      : (callback) => setTimeout(callback, 32);
+  schedule(async () => {
+    if (token !== deferredPublicDashboardRenderToken || generation !== edenBootGeneration) return;
+    try {
+      await renderPublicDashboard(data);
+    } catch (error) {
+      console.error('Deferred Eden public dashboard render failed:', error);
+    }
+  });
+}
+
+async function applyDashboardData(data = {}, progressGeneration = null, options = {}) {
+  const deferPublicDashboard = options.deferPublicDashboard === true;
+  const renderGeneration = Number.isInteger(options.renderGeneration)
+    ? options.renderGeneration
+    : edenBootGeneration;
   setRewardFlowReady(false);
   resetWeightedTablePagination(weightedTablePagination);
   resetWeightedTablePagination(publicWeightedTablePagination);
@@ -6297,7 +6326,8 @@ async function applyDashboardData(data = {}, progressGeneration = null) {
   if (!model.rows || !model.rows.length) {
     if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoRows'))}</div>`;
     setEdenPanelLoading(false);
-    await renderPublicDashboard(data);
+    if (deferPublicDashboard) schedulePublicDashboardRender(data, renderGeneration);
+    else await renderPublicDashboard(data);
     if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 100);
     return;
   }
@@ -6321,7 +6351,8 @@ async function applyDashboardData(data = {}, progressGeneration = null) {
   setEdenPanelLoading(false);
   await yieldToBrowser();
   // Stage 2: public dashboard (analytics, charts, history) in its own frame.
-  await renderPublicDashboard(data);
+  if (deferPublicDashboard) schedulePublicDashboardRender(data, renderGeneration);
+  else await renderPublicDashboard(data);
   if (progressGeneration !== null) setEdenLoadingProgress(progressGeneration, 100);
   if (!EDEN_X1_TEST_MODE) {
     await yieldToBrowser();

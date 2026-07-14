@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.0.1 - 2026-07-14
+
+- Prioritized Eden's cached reward controls ahead of its heavy analytics render so repeat visits show the four reward lanes before background tables and charts finish hydrating.
+- Added a translated public Eden X1 Rankings entry to the main desktop and mobile More Tools navigation, separate from authenticated VTS Admin operations.
+- Widened and rebalanced the desktop Team Players ballot, placed candidate fields in a compact two-column grid, and replaced the cramped nested rail with normal page scrolling.
+
 ## 14.0.0 - 2026-07-11
 
 - Added a privacy-filtered, dated VTS guide knowledge library for Velo covering Eden coordination, progression, hero leveling, and ticket planning, with bounded topic search, historical-plan warnings, and explicit exclusion of expired links, personal results, raw votes, and current war intelligence.
