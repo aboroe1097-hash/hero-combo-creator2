@@ -1,8 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
-import { initComments } from './comments.js';
 import { allHeroesData } from './heroes-data.js';
-import { initLoyaltyCalculator } from './loyalty-calculator.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce, installShowToast, resolveIntlLocale } from './utils.js';
 import { applySeo } from './seo.js';
@@ -11,26 +9,11 @@ import { registerServiceWorker, setupInstallPrompt } from './pwa-register.js';
 import { loadPlayerProfileFromCloud, applyRosterToGenerator } from './player-profile.js';
 import { parseComboShareUrl } from './combo-share.js';
 import { parseRosterShareUrl } from './roster-share.js';
-import { downloadComboImage } from './app-export.js';
 import { showHeroTooltip, moveHeroTooltip, hideHeroTooltip, forceHideHeroTooltip } from './app-hero-tooltip.js';
 import { initUndoToasts } from './app-undo.js';
 import { initErrorReporting, logClientError, flushClientErrors } from './app-error-reporting.js';
-import { initWhatsNewBanner } from './app-whats-new.js?v=20260714_140615';
 import { initKeyboardShortcuts } from './app-shortcuts.js';
 import { DEBOUNCE_MS, HERO_DRAG_MIME } from './constants.js';
-import { initArcadeHub } from './arcade-hub.js';
-import { initArcadeLobbyUI } from './arcade-lobby-ui.js';
-
-import {
-  renderAvailableHeroes,
-  updateComboSlotDisplay,
-  updateManualComboScore,
-  setupTouchDragForManualBuilder,
-  setupKeyboardComboSlots,
-  placeHeroInSlot,
-  saveCombo,
-  setupFirestoreListener
-} from './app-builder.js';
 
 import {
   renderGeneratorHeroes,
@@ -135,7 +118,30 @@ import {
   registerUiFunctions,
 } from './state.js';
 
-const renderAvailableHeroesDebounced = debounce(() => renderAvailableHeroes(), DEBOUNCE_MS);
+let manualModeReady = false;
+let manualBuilderModule = null;
+let manualBuilderModulePromise = null;
+let savedComboCloudReady = false;
+
+function loadManualBuilderModule() {
+  if (!manualBuilderModulePromise) {
+    manualBuilderModulePromise = import('./app-builder.js')
+      .then((module) => {
+        manualBuilderModule = module;
+        return module;
+      })
+      .catch((error) => {
+        manualBuilderModulePromise = null;
+        reportDynamicImportFailure(error);
+        throw error;
+      });
+  }
+  return manualBuilderModulePromise;
+}
+
+const renderAvailableHeroesDebounced = debounce(() => {
+  if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
+}, DEBOUNCE_MS);
 const renderGeneratorHeroesDebounced = debounce(() => renderGeneratorHeroes(syncGeneratorControlState()), DEBOUNCE_MS);
 const HERO_INFO_ENABLED_KEY = 'vts_hero_info_enabled';
 const GENERATOR_SKIN_NUDGE_KEY = 'vts_generator_skin_nudge_seen';
@@ -145,11 +151,19 @@ const THEME_MANIFESTS = { light: 'site-light.webmanifest', dark: 'site.webmanife
 const MATERIAL_TAB_LABELS = { de: 'DM Material', en: 'DM Materials' };
 let researchModulePromise = null;
 let materialModulePromise = null;
+let exportModulePromise = null;
+let arcadeModulePromise = null;
+let loyaltyModulePromise = null;
+
+function reportDynamicImportFailure(error) {
+  window.VTS_ASSET_RECOVERY?.reportFailure?.(error, '');
+}
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260714_140615').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260714_160221').catch((err) => {
       researchModulePromise = null;
+      reportDynamicImportFailure(err);
       throw err;
     });
   }
@@ -158,12 +172,46 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260714_140615').catch((err) => {
+    materialModulePromise = import('./material-calculator.js?v=20260714_160221').catch((err) => {
       materialModulePromise = null;
+      reportDynamicImportFailure(err);
       throw err;
     });
   }
   return materialModulePromise;
+}
+
+function loadLoyaltyModule() {
+  if (!loyaltyModulePromise) {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260714_160221').catch((error) => {
+      loyaltyModulePromise = null;
+      reportDynamicImportFailure(error);
+      throw error;
+    });
+  }
+  return loyaltyModulePromise;
+}
+
+function loadExportModule() {
+  if (!exportModulePromise) {
+    exportModulePromise = import('./app-export.js?v=20260714_160221').catch((error) => {
+      exportModulePromise = null;
+      reportDynamicImportFailure(error);
+      throw error;
+    });
+  }
+  return exportModulePromise;
+}
+
+function loadArcadeModule() {
+  if (!arcadeModulePromise) {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260714_160221').catch((error) => {
+      arcadeModulePromise = null;
+      reportDynamicImportFailure(error);
+      throw error;
+    });
+  }
+  return arcadeModulePromise;
 }
 
 function resolveDroppedHeroName(dataTransfer) {
@@ -457,25 +505,6 @@ function wireFilterControls(container, onChange) {
   });
 }
 
-function initFilterPillA11y(container) {
-  if (!container || container.dataset.pillA11yWired === '1') return;
-  container.dataset.pillA11yWired = '1';
-  container.querySelectorAll('label.filter-pill').forEach(pill => {
-    pill.setAttribute('tabindex', '0');
-    pill.setAttribute('role', 'checkbox');
-    const input = pill.querySelector('input[type="checkbox"]');
-    pill.setAttribute('aria-checked', input && input.checked ? 'true' : 'false');
-  });
-}
-
-function syncFilterPillAria(container) {
-  if (!container) return;
-  container.querySelectorAll('label.filter-pill').forEach(pill => {
-    const input = pill.querySelector('input[type="checkbox"]');
-    pill.setAttribute('aria-checked', input && input.checked ? 'true' : 'false');
-  });
-}
-
 function wireFilterSets() {
   const manualSeasonFilters = document.getElementById('seasonFilters') || seasonFiltersEl;
   const manualStateFilters = document.getElementById('stateFilters') || stateFiltersEl;
@@ -487,17 +516,17 @@ function wireFilterSets() {
   wireFilterControls(manualSeasonFilters, () => {
     setSelectedSeasons(readSeasonFilterSelection(manualSeasonFilters));
     updateSeasonCatchupHint(manualSeasonFilters);
-    renderAvailableHeroes();
+    if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   });
 
   wireFilterControls(manualStateFilters, () => {
     setSelectedStates(readStateFilterSelection(manualStateFilters));
-    renderAvailableHeroes();
+    if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   });
 
   wireFilterControls(manualTroopFilters, (input) => {
     setSelectedTypes(readTroopFilterSelection(manualTroopFilters, input));
-    renderAvailableHeroes();
+    if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   });
 
   wireFilterControls(generatorSeasonFilters, () => {
@@ -512,9 +541,6 @@ function wireFilterSets() {
   wireFilterControls(generatorTroopFilters, (input) => {
     renderGeneratorHeroes(syncGeneratorControlState(input));
   });
-
-  [manualSeasonFilters, manualStateFilters, manualTroopFilters,
-   generatorSeasonFilters, generatorStateFilters, generatorTroopFilters].forEach(initFilterPillA11y);
 
   updateAllSeasonCatchupHints();
 }
@@ -534,9 +560,9 @@ function wireGeneratorSkinToggle() {
 function syncManualSkinMode() {
   const manualSkinToggle = document.getElementById('manualSkinToggle');
   setManualSkinsOnly(!!manualSkinToggle?.checked);
-  renderAvailableHeroes();
+  if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
   document.querySelectorAll('.combo-slot').forEach((slot, idx) => {
-    updateComboSlotDisplay(slot, currentCombo[idx], idx);
+    manualBuilderModule?.updateComboSlotDisplay(slot, currentCombo[idx], idx);
   });
 }
 
@@ -546,6 +572,65 @@ function wireManualSkinToggle() {
   manualSkinToggle.dataset.skinToggleWired = '1';
   syncManualSkinMode();
   manualSkinToggle.addEventListener('change', syncManualSkinMode);
+}
+
+function renderManualLoadError() {
+  if (!manualSection || manualSection.querySelector('.manual-builder-load-error')) return;
+  const t = translations[currentLanguage] || translations.en;
+  const error = document.createElement('div');
+  error.className = 'tab-load-error manual-builder-load-error';
+  error.setAttribute('role', 'alert');
+  const message = document.createElement('span');
+  message.textContent = (t.moduleLoadFailed || '{name} failed to load').replace(
+    '{name}',
+    t.tabManual || 'Manual'
+  );
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'tab-load-error-link';
+  retry.textContent = t.edenX1Retry || 'Retry';
+  retry.addEventListener('click', () => {
+    error.remove();
+    void initManualMode();
+  });
+  error.append(message, document.createTextNode(' '), retry);
+  manualSection.prepend(error);
+  requestAnimationFrame(() => retry.focus({ preventScroll: true }));
+}
+
+async function initManualMode() {
+  if (manualModeReady) return;
+  try {
+    const builder = await loadManualBuilderModule();
+    if (manualModeReady) return;
+    manualSection?.querySelector('.manual-builder-load-error')?.remove();
+    manualModeReady = true;
+    wireManualSkinToggle();
+    document.querySelectorAll('.combo-slot').forEach((slot, index) => {
+      builder.updateComboSlotDisplay(slot, currentCombo[index], index);
+      slot.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        slot.classList.add('drag-over');
+      });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+      slot.addEventListener('drop', (event) => {
+        event.preventDefault();
+        slot.classList.remove('drag-over');
+        const heroName = resolveDroppedHeroName(event.dataTransfer);
+        if (heroName) builder.placeHeroInSlot(slot, heroName, index);
+      });
+    });
+    builder.setupTouchDragForManualBuilder();
+    builder.setupKeyboardComboSlots();
+    builder.renderAvailableHeroes();
+    builder.updateManualComboScore();
+    if (savedComboCloudReady) await builder.setupFirestoreListener();
+  } catch (error) {
+    console.error('Manual builder failed to load', error);
+    manualModeReady = false;
+    renderManualLoadError();
+  }
 }
 
 function rememberGeneratorSkinNudge() {
@@ -608,9 +693,7 @@ function applyHeroInfoPanelState(enabled) {
   setHeroInfoEnabled(enabled);
   localStorage.setItem(HERO_INFO_ENABLED_KEY, enabled ? '1' : '0');
   const toggle = document.getElementById('heroInfoToggle');
-  const label = document.getElementById('heroInfoToggleLabel');
   if (toggle) toggle.checked = enabled;
-  if (label) label.setAttribute('aria-checked', enabled ? 'true' : 'false');
   document.body.classList.toggle('hide-hero-info', !enabled);
   const track = document.querySelector('#heroInfoToggleLabel .toggle-track');
   const thumb = document.querySelector('#heroInfoToggleLabel .toggle-thumb');
@@ -676,146 +759,6 @@ function selectVisibleGeneratorHeroes() {
   selectAll();
 }
 
-function applyFilterSelection(container, input) {
-  if (!container) return;
-  syncFilterPillAria(container);
-  if (container.id === 'seasonFilters') {
-    setSelectedSeasons(readSeasonFilterSelection(container));
-    updateSeasonCatchupHint(container);
-    renderAvailableHeroes();
-  } else if (container.id === 'stateFilters') {
-    setSelectedStates(readStateFilterSelection(container));
-    renderAvailableHeroes();
-  } else if (container.id === 'troopFilters') {
-    setSelectedTypes(readTroopFilterSelection(container, input));
-    renderAvailableHeroes();
-  } else if (container.id === 'generatorSeasonFilters') {
-    updateSeasonCatchupHint(container);
-    renderGeneratorHeroes(syncGeneratorControlState());
-  } else if (container.id === 'generatorStateFilters') {
-    renderGeneratorHeroes(syncGeneratorControlState());
-  } else if (container.id === 'generatorTroopFilters') {
-    renderGeneratorHeroes(syncGeneratorControlState(input));
-  }
-}
-
-function wireGlobalControlDelegates() {
-  if (document.documentElement.dataset.vtsControlDelegatesWired === '1') return;
-  document.documentElement.dataset.vtsControlDelegatesWired = '1';
-  let suppressClick = false;
-
-  document.addEventListener('pointerdown', (event) => {
-    const heroInfoLabel = event.target.closest?.('#heroInfoToggleLabel');
-    if (heroInfoLabel) {
-      const toggle = document.getElementById('heroInfoToggle');
-      if (!toggle || toggle.disabled) return;
-      event.preventDefault();
-      event.stopPropagation();
-      suppressClick = true;
-      window.setTimeout(() => { suppressClick = false; }, 350);
-      applyHeroInfoPanelState(!toggle.checked);
-      return;
-    }
-
-    const skinLabel = event.target.closest?.('#genSkinToggleLabel');
-    if (skinLabel) {
-      const toggle = document.getElementById('genSkinToggle');
-      if (!toggle || toggle.disabled) return;
-      event.preventDefault();
-      event.stopPropagation();
-      suppressClick = true;
-      window.setTimeout(() => { suppressClick = false; }, 350);
-      toggle.checked = !toggle.checked;
-      hideGeneratorSkinNudge();
-      renderGeneratorHeroes(syncGeneratorControlState());
-      return;
-    }
-
-    const manualSkinLabel = event.target.closest?.('#manualSkinToggleLabel');
-    if (manualSkinLabel) {
-      const toggle = document.getElementById('manualSkinToggle');
-      if (!toggle || toggle.disabled) return;
-      event.preventDefault();
-      event.stopPropagation();
-      suppressClick = true;
-      window.setTimeout(() => { suppressClick = false; }, 350);
-      toggle.checked = !toggle.checked;
-      syncManualSkinMode();
-      return;
-    }
-
-    const pill = event.target.closest?.('label.filter-pill');
-    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
-    if (!pill || !container) return;
-    const input = pill.querySelector('input[type="checkbox"]');
-    if (!input || input.disabled) return;
-    event.preventDefault();
-    event.stopPropagation();
-    suppressClick = true;
-    window.setTimeout(() => { suppressClick = false; }, 350);
-    input.checked = !input.checked;
-    applyFilterSelection(container, input);
-  }, true);
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const pill = event.target.closest?.('label.filter-pill');
-    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
-    if (!pill || !container) return;
-    const input = pill.querySelector('input[type="checkbox"]');
-    if (!input || input.disabled) return;
-    event.preventDefault();
-    event.stopPropagation();
-    input.checked = !input.checked;
-    applyFilterSelection(container, input);
-  }, true);
-
-  document.addEventListener('click', (event) => {
-    const heroInfoLabel = event.target.closest?.('#heroInfoToggleLabel');
-    if (heroInfoLabel) {
-      if (suppressClick) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      return;
-    }
-
-    const skinLabel = event.target.closest?.('#genSkinToggleLabel');
-    if (skinLabel) {
-      const toggle = document.getElementById('genSkinToggle');
-      if (suppressClick) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      window.setTimeout(() => {
-        if (!toggle) return;
-        renderGeneratorHeroes(syncGeneratorControlState());
-      }, 0);
-      return;
-    }
-
-    const manualSkinLabel = event.target.closest?.('#manualSkinToggleLabel');
-    if (manualSkinLabel) {
-      if (suppressClick) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      window.setTimeout(syncManualSkinMode, 0);
-      return;
-    }
-
-    const pill = event.target.closest?.('label.filter-pill');
-    const container = pill?.closest?.('#seasonFilters, #stateFilters, #troopFilters, #generatorSeasonFilters, #generatorStateFilters, #generatorTroopFilters');
-    if (!pill || !container) return;
-    const input = pill.querySelector('input[type="checkbox"]');
-    if (suppressClick) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    window.setTimeout(() => applyFilterSelection(container, input), 0);
-  }, true);
-}
-
 // --- UI WIRING ---
 function wireUIActions({ preserveInitialHash = false } = {}) {
   // === TAB BUTTON HANDLERS ===
@@ -838,44 +781,10 @@ tabs.forEach(tab => {
     tab.btn.addEventListener('click', () => switchTab(tab.name, false, { scrollToSection: true }));
   }
 });
-  wireGlobalControlDelegates();
   wireFilterSets();
   wireGeneratorSkinToggle();
-  wireManualSkinToggle();
   wireGeneratorSkinNudge();
   wireHeroSearchInputs();
-
-  // --- RESTORED: Initialize Combo Slots & Drag-and-Drop ---
-  document.querySelectorAll('.combo-slot').forEach((slot, i) => {
-    // 1. Draw the initial '+' signs
-    updateComboSlotDisplay(slot, null, i);
-
-    // 2. Setup Desktop Drag-and-Drop zones
-    slot.addEventListener('dragover', e => {
-      e.preventDefault(); // Required to allow dropping
-      e.dataTransfer.dropEffect = 'copy';
-      slot.classList.add('drag-over'); // Highlight effect
-    });
-    
-    slot.addEventListener('dragleave', e => {
-      slot.classList.remove('drag-over');
-    });
-
-    slot.addEventListener('drop', e => {
-      e.preventDefault();
-      slot.classList.remove('drag-over');
-      
-      const heroName = resolveDroppedHeroName(e.dataTransfer);
-      if (!heroName) return;
-
-      placeHeroInSlot(slot, heroName, i);
-    });
-  });
-
-  // 3. Turn on Mobile Touch Dragging
-  setupTouchDragForManualBuilder();
-  setupKeyboardComboSlots();
-  // --------------------------------------------------------
 
   if (languageSelect) {
     languageSelect.onchange = async e => {
@@ -884,14 +793,13 @@ tabs.forEach(tab => {
       await loadTranslationsForLanguage(currentLanguage);
       applyLanguageDirection(currentLanguage);
       updateTextContent();
-      renderAvailableHeroes();
+      if (manualModeReady) manualBuilderModule?.renderAvailableHeroes();
       renderGeneratorHeroes(syncGeneratorControlState());
       if (typeof window.vtsRenderStrifeTool === 'function') window.vtsRenderStrifeTool();
     };
   }
 
   const heroInfoToggle = document.getElementById('heroInfoToggle');
-  const heroInfoToggleLabel = document.getElementById('heroInfoToggleLabel');
   if (heroInfoToggle && heroInfoToggle.dataset.heroInfoWired !== '1') {
     heroInfoToggle.dataset.heroInfoWired = '1';
     const storedHeroInfo = localStorage.getItem(HERO_INFO_ENABLED_KEY);
@@ -899,12 +807,6 @@ tabs.forEach(tab => {
 
     heroInfoToggle.addEventListener('change', (e) => {
       applyHeroInfoPanelState(e.target.checked);
-    });
-
-    heroInfoToggleLabel?.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      applyHeroInfoPanelState(!heroInfoToggle.checked);
     });
   }
 
@@ -921,6 +823,8 @@ tabs.forEach(tab => {
   let _strifeBooting = false;
   let _youtubeReady = false;
   let _youtubeBooting = false;
+  let _arcadeReady = false;
+  let _arcadeBooting = false;
 
   const tabPanels = [
     manualSection, generatorSection, heroesSection, researchSection,
@@ -972,44 +876,20 @@ tabs.forEach(tab => {
     return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message);
   }
 
-  let _staleAssetRecoveryAttempted = false;
-
-  async function recoverFromStaleAssetGraph(reason) {
-    const storageKey = 'vts_stale_asset_recovery_v1';
-    // In-memory guard first: if sessionStorage is unavailable (e.g. blocked
-    // storage), the storage guard below can never engage and reloads would loop.
-    if (_staleAssetRecoveryAttempted) return false;
-    _staleAssetRecoveryAttempted = true;
-    try {
-      if (sessionStorage.getItem(storageKey) === '1') return false;
-      sessionStorage.setItem(storageKey, '1');
-    } catch {}
-
-    try {
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      }
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((registration) => registration.update()));
-      }
-    } catch (err) {
-      console.warn('[assets] stale asset recovery cleanup failed:', err);
-    }
-
-    console.warn('[assets] refreshing after stale asset graph:', reason);
-    window.location.reload();
-    return true;
+  function recoverFromStaleAssetGraph(reason) {
+    return window.VTS_ASSET_RECOVERY?.reportFailure?.(reason, '') || false;
   }
 
   function onTabActivated(tabName) {
+    if (tabName === 'manual') {
+      initManualMode();
+    }
     if (tabName === 'edenMap' && !_edenMapReady && !_edenMapBooting) {
       _edenMapBooting = true;
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260714_140615')
+        import('./eden-map.js?v=20260714_160221')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -1092,7 +972,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260714_140615')
+      import('./app-strife.js?v=20260714_160221')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
@@ -1108,7 +988,7 @@ tabs.forEach(tab => {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260711_195726')
+      import('./youtube-v14.js?v=20260714_160221')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1124,10 +1004,28 @@ tabs.forEach(tab => {
           _youtubeBooting = false;
         });
     }
+    if (tabName === 'arcade' && !_arcadeReady && !_arcadeBooting) {
+      _arcadeBooting = true;
+      loadArcadeModule()
+        .then((module) => {
+          module.initArcadeSpa();
+          _arcadeReady = true;
+        })
+        .catch((error) => {
+          console.error('Arcade failed to load', error);
+          renderTabLoadError(arcadeSection, 'arcade');
+        })
+        .finally(() => {
+          _arcadeBooting = false;
+        });
+    }
     if (tabName === 'loyalty') {
-      loadTabTemplate('loyalty').then(() => {
-        if (typeof initLoyaltyCalculator === 'function') initLoyaltyCalculator();
-      });
+      Promise.all([loadTabTemplate('loyalty'), loadLoyaltyModule()])
+        .then(([, module]) => module.initLoyaltyCalculator())
+        .catch((error) => {
+          console.error('Loyalty calculator failed to load', error);
+          renderTabLoadError(loyaltySection, 'loyalty');
+        });
     }
   }
 
@@ -1161,7 +1059,11 @@ tabs.forEach(tab => {
     }
     syncTabA11yState(tabName);
 
-    if (targetSection) targetSection.classList.remove('hidden');
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+      window.VTSLoaderV14?.enhance?.(targetSection);
+    }
+    document.documentElement.removeAttribute('data-initial-tab-pending');
 
     if (tabName === 'manual' || tabName === 'generator') {
       if (globalToggleRow) globalToggleRow.classList.remove('hidden');
@@ -1226,14 +1128,20 @@ tabs.forEach(tab => {
     genResetFiltersBtn.onclick = resetGeneratorFilters;
   }
 
-  if (saveComboBtn) saveComboBtn.onclick = saveCombo;
+  if (saveComboBtn) {
+    saveComboBtn.onclick = async () => {
+      const builder = await loadManualBuilderModule();
+      await builder.saveCombo();
+    };
+  }
   
   if (clearComboBtn) {
-    clearComboBtn.onclick = () => {
+    clearComboBtn.onclick = async () => {
+      const builder = await loadManualBuilderModule();
       setCurrentCombo([null, null, null]);
       document.querySelectorAll('.combo-slot')
-        .forEach((slot, i) => updateComboSlotDisplay(slot, null, i));
-      updateManualComboScore();
+        .forEach((slot, i) => builder.updateComboSlotDisplay(slot, null, i));
+      builder.updateManualComboScore();
     };
   }
   
@@ -1243,7 +1151,7 @@ tabs.forEach(tab => {
   if (generateRandomBtn) generateRandomBtn.onclick = generateRandomCombos;
 
   if (downloadCombosBtn) {
-    downloadCombosBtn.onclick = () => {
+    downloadCombosBtn.onclick = async () => {
       const t = translations[currentLanguage] || translations.en;
       if (!savedCombosCache || !savedCombosCache.length) {
         showAboModal(t.noCombosMessage || 'No combos saved yet!');
@@ -1254,7 +1162,12 @@ tabs.forEach(tab => {
         const info = getComboRankInfo(heroes);
         return { heroes, displayScore: info ? info.score : 'â€”' };
       });
-      downloadComboImage(comboData, t.lastBestCombosTitle || 'Last Best Combos', 'vts-last-best-combos.png');
+      const { downloadComboImage } = await loadExportModule();
+      await downloadComboImage(
+        comboData,
+        t.lastBestCombosTitle || 'Last Best Combos',
+        'vts-last-best-combos.png'
+      );
     };
   }
 
@@ -1289,13 +1202,18 @@ tabs.forEach(tab => {
   }
 
   if (downloadGeneratorBtn) {
-    downloadGeneratorBtn.onclick = () => {
+    downloadGeneratorBtn.onclick = async () => {
       const t = translations[currentLanguage] || translations.en;
       if (!lastGeneratedCombos || !lastGeneratedCombos.length) {
         showAboModal(t.generatorNoCombosAvailable || 'No ranked combos found.');
         return;
       }
-      downloadComboImage(lastGeneratedCombos, t.generatorTitle || 'Best Combos', 'vts-generator-results.png');
+      const { downloadComboImage } = await loadExportModule();
+      await downloadComboImage(
+        lastGeneratedCombos,
+        t.generatorTitle || 'Best Combos',
+        'vts-generator-results.png'
+      );
     };
   }
   const hashTab = window.location.hash?.replace('#', '').split('?')[0];
@@ -1418,7 +1336,7 @@ function updateTextContent() {
 
   applySeo(currentLanguage);
 
-  updateManualComboScore();
+  if (manualModeReady) manualBuilderModule?.updateManualComboScore();
   if (ENABLE_RESEARCH_FEATURE && document.getElementById('techListContainer') && !researchSection?.classList.contains('hidden')) {
     loadResearchModule()
       .then((mod) => mod.renderTechList())
@@ -1505,15 +1423,6 @@ function initQuickTour() {
     if (localStorage.getItem(storageKey) === '1') return;
   } catch {}
 
-  const intro = document.getElementById('firstVisitIntro');
-  if (intro && !intro.classList.contains('hidden')) {
-    const enterBtn = intro.querySelector('.intro-enter-btn');
-    if (enterBtn) {
-      enterBtn.addEventListener('click', () => { setTimeout(initQuickTour, 600); }, { once: true });
-    }
-    return;
-  }
-
   const getSteps = () => {
     const t = translations[currentLanguage] || translations.en;
     return [
@@ -1537,10 +1446,10 @@ function initQuickTour() {
   overlay.innerHTML = `
     <div class="quick-tour-backdrop"></div>
     <div class="quick-tour-spotlight"></div>
-    <section class="quick-tour-card" role="dialog" aria-live="polite">
+    <section class="quick-tour-card" role="dialog" aria-live="polite" aria-labelledby="quickTourTitle" aria-describedby="quickTourBody">
       <div class="quick-tour-kicker"></div>
-      <h3 class="quick-tour-title"></h3>
-      <p class="quick-tour-body"></p>
+      <h3 id="quickTourTitle" class="quick-tour-title"></h3>
+      <p id="quickTourBody" class="quick-tour-body"></p>
       <div class="quick-tour-dots"></div>
       <div class="quick-tour-actions">
         <button type="button" class="quick-tour-skip">Skip tour</button>
@@ -1703,10 +1612,7 @@ async function startApp() {
     await safeInit('updateTextContent', () => updateTextContent());
     safeInit('errorReporting', () => initErrorReporting());
     safeInit('undoToasts', () => initUndoToasts());
-    safeInit('whatsNew', () => initWhatsNewBanner(APP_VERSION));
     safeInit('gameClock', () => mountGameClock(document.getElementById('globalGameClock'), { compact: true, showUae: false }));
-    await new Promise(r => requestAnimationFrame(r));
-    safeInit('renderAvailableHeroes', () => renderAvailableHeroes());
     await new Promise(r => requestAnimationFrame(r));
     safeInit('restoreGeneratorSelection', () => restoreGeneratorSelection());
     safeInit('renderGeneratorHeroes', () => renderGeneratorHeroes(syncGeneratorControlState()));
@@ -1769,7 +1675,11 @@ async function startApp() {
         if (user && user.uid) {
             setUserId(user.uid);
         }
-        setupFirestoreListener();
+        savedComboCloudReady = true;
+        if (manualModeReady) {
+          const builder = await loadManualBuilderModule();
+          await builder.setupFirestoreListener();
+        }
         const cloudProfile = await loadPlayerProfileFromCloud();
         // An explicit roster share link is the user's current intent. Do not
         // replace it moments later with an asynchronously loaded cloud roster.
@@ -1785,13 +1695,6 @@ async function startApp() {
         setTimeout(() => fn(), 0);
       }
     });
-    safeInit('comments', () => {
-      if (typeof requestIdleCallback === 'function') {
-        requestIdleCallback(() => initComments(), { timeout: 3000 });
-      } else {
-        setTimeout(() => initComments(), 0);
-      }
-    });
     safeInit('keyboardAwareLayout', () => initKeyboardAwareLayout());
     window.addEventListener('hashchange', () => {
       const tab = window.location.hash?.replace('#', '').split('?')[0];
@@ -1802,6 +1705,7 @@ async function startApp() {
     });
     } finally {
         await notifyAppReady();
+        window.VTS_ASSET_RECOVERY?.markBootComplete?.();
         safeInit('quickTour', () => initQuickTour());
     }
 }
@@ -1853,8 +1757,6 @@ window.addEventListener('unhandledrejection', (e) => {
 if (window.VTS_MAINTENANCE_ACTIVE) {
   document.body?.classList.remove('app-booting');
 } else if (typeof startApp === 'function') {
-  initArcadeHub();
-  initArcadeLobbyUI();
   initAppLoading();
   setupInstallPrompt();
   window.showAboModal = showAboModal;

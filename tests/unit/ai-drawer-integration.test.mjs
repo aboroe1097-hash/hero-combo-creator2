@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const indexHtml = fs.readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 const appSource = fs.readFileSync(new URL('../../js/app.js', import.meta.url), 'utf8');
+const launcherSource = fs.readFileSync(new URL('../../js/ai-launcher.js', import.meta.url), 'utf8');
 const drawerSource = fs.readFileSync(new URL('../../js/ai-drawer.js', import.meta.url), 'utf8');
 const shellSource = fs.readFileSync(new URL('../../js/shell-v14.js', import.meta.url), 'utf8');
 const assistantSource = fs.readFileSync(
@@ -39,10 +40,13 @@ const localeSources = ['en', 'ar', 'de', 'es', 'fr', 'id', 'kr', 'pt', 'ru', 'tr
   .join('\n');
 
 test('AI assistant is exposed as a floating drawer instead of a main navigation tab', () => {
-  assert.match(drawerSource, /id="aiDrawerLauncher"/);
+  assert.match(launcherSource, /id="aiDrawerLauncher"/);
   assert.match(drawerSource, /id="aiDrawer"[\s\S]*role="dialog"/);
-  assert.match(indexHtml, /src="js\/ai-drawer\.js\?v=/);
+  assert.match(indexHtml, /src="js\/ai-launcher\.js\?v=/);
   assert.doesNotMatch(appSource, /import ['"]\.\/ai-drawer\.js['"]/);
+  assert.match(launcherSource, /import\('\.\/ai-drawer\.js'\)/);
+  assert.match(launcherSource, /drawerModulePromise = null/);
+  assert.match(launcherSource, /\['pointerenter', 'focus', 'pointerdown'\]/);
   assert.doesNotMatch(indexHtml, /id="tabAi"/);
   assert.match(drawerSource, /fetch\('tabs\/ai-assistant\.html'\)/);
   assert.doesNotMatch(drawerSource, /ai-assistant\.css/);
@@ -71,7 +75,7 @@ test('AI assistant is exposed as a floating drawer instead of a main navigation 
     indexHtml,
     /name="vts-ai-endpoint"\s+content="https:\/\/delicate-term-725f\.aboroe1097\.workers\.dev"/
   );
-  assert.equal((standaloneHtml.match(/src="js\/ai-drawer\.js\?v=/g) || []).length, 3);
+  assert.equal((standaloneHtml.match(/src="js\/ai-launcher\.js\?v=/g) || []).length, 3);
   assert.equal((standaloneHtml.match(/name="vts-ai-endpoint"/g) || []).length, 3);
   assert.equal(
     (standaloneHtml.match(/https:\/\/vts-ai-strategy-assistant\.aboroe1097\.workers\.dev/g) || [])
@@ -87,12 +91,15 @@ test('the eager launcher stylesheet is available during local Vite development',
 });
 
 test('Velo branding replaces provider-led assistant chrome with an animated mascot', () => {
-  assert.match(drawerSource, /Talk with Velo/);
-  assert.match(drawerSource, /VTS Assistant/);
+  assert.match(launcherSource, /Talk with Velo/);
+  assert.match(launcherSource, /VTS Assistant/);
   assert.match(assistantTemplate, /data-i18n="ai\.kicker">VTS Assistant<\/span>/);
   assert.match(assistantTemplate, /data-ai-nav="arcade"[\s\S]*?data-i18n="ai\.suggestion\.arcade"/);
   assert.doesNotMatch(localeSources, /VTS Assistant ·/);
-  assert.doesNotMatch(`${drawerSource}\n${assistantTemplate}\n${localeSources}`, /Veteran Losers/i);
+  assert.doesNotMatch(
+    `${launcherSource}\n${drawerSource}\n${assistantTemplate}\n${localeSources}`,
+    /Veteran Losers/i
+  );
   assert.match(mascotSource, /VELO_ASSET_ROOT = 'assets\/velo'/);
   assert.match(mascotSource, /velo-body\.webp/);
   assert.match(mascotSource, /velo-helmet\.webp/);
@@ -119,9 +126,9 @@ test('Velo branding replaces provider-led assistant chrome with an animated masc
   assert.match(launcherCss, /@keyframes velo-helmet-eye-glint/);
   assert.match(launcherCss, /@keyframes velo-fire-puff/);
   assert.match(launcherCss, /@keyframes velo-header-thinking/);
-  assert.match(drawerSource, /LAUNCHER_COMPACT_KEY = 'vts_ai_launcher_compact'/);
-  assert.match(drawerSource, /id="aiDrawerLauncherCompact"/);
-  assert.match(drawerSource, /setLauncherCompact\(compact, \{ persist: true \}\)/);
+  assert.match(launcherSource, /LAUNCHER_COMPACT_KEY = 'vts_ai_launcher_compact'/);
+  assert.match(launcherSource, /id="aiDrawerLauncherCompact"/);
+  assert.match(launcherSource, /setCompact\(!shell\?\.classList\.contains\('is-compact'\), true\)/);
   assert.match(
     launcherCss,
     /\.ai-drawer-launcher \.velo-mascot__burst \{[\s\S]*animation: velo-rage-burst 20s/
@@ -161,7 +168,10 @@ test('Velo branding replaces provider-led assistant chrome with an animated masc
   );
   assert.match(launcherCss, /\.ai-drawer-launcher \.velo-mascot img \{[\s\S]*position: absolute;/);
   assert.doesNotMatch(assistantTemplate, /strategy sidekick/i);
-  assert.doesNotMatch(`${drawerSource}\n${assistantSource}\n${assistantTemplate}`, /gemini/i);
+  assert.doesNotMatch(
+    `${launcherSource}\n${drawerSource}\n${assistantSource}\n${assistantTemplate}`,
+    /gemini/i
+  );
   assert.doesNotMatch(localeSources, /gemini/i);
   assert.equal((localeSources.match(/'ai\.assistantLabel': 'Velo'/g) || []).length, 11);
   assert.equal((localeSources.match(/'ai\.you':/g) || []).length, 11);

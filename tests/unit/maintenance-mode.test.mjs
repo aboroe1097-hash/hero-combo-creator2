@@ -40,8 +40,8 @@ test('maintenance destination is standalone, accessible, and optimized', () => {
   assert.match(page, /aria-describedby="maintenanceMessage"/);
   assert.match(page, /role="status"/);
   assert.match(page, /images\/logo-120\.webp/);
-  assert.match(page, /assets\/velo\/velo-body\.webp/);
-  assert.match(page, /assets\/velo\/velo-helmet\.webp/);
+  assert.match(page, /assets\/velo\/velo-body-160\.webp/);
+  assert.match(page, /assets\/velo\/velo-helmet-160\.webp/);
   assert.match(page, /@keyframes maintenance-velo-patrol/);
   assert.match(page, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(page, /maintenance-config\.js/);

@@ -1,26 +1,13 @@
+import '../css/ai-drawer.css';
 import { loadTranslationsForLanguage, translations } from './translations.js';
 import { currentLanguage } from './state.js';
-import { mountVeloMascots, veloMascotMarkup } from './velo-mascot.js';
+import { mountVeloMascots } from './velo-mascot.js';
 
 await loadTranslationsForLanguage(currentLanguage);
 
-const LAUNCHER_COMPACT_KEY = 'vts_ai_launcher_compact';
-
 document.body.insertAdjacentHTML(
   'beforeend',
-  `<div id="aiDrawerLauncherShell" class="ai-drawer-launcher-shell">
-    <button id="aiDrawerLauncher" class="ai-drawer-launcher" type="button" aria-controls="aiDrawer" aria-expanded="false" aria-label="Talk with Velo" data-i18n-aria="ai.nav">
-      ${veloMascotMarkup('launcher')}
-      <span class="ai-drawer-launcher__copy">
-        <span class="ai-drawer-launcher__eyebrow">VTS Assistant</span>
-        <span class="ai-drawer-launcher__label" data-i18n="ai.nav">Talk with Velo</span>
-      </span>
-    </button>
-    <button id="aiDrawerLauncherCompact" class="ai-drawer-launcher__compact-toggle" type="button" aria-label="Collapse Velo launcher" aria-pressed="false">
-      <span aria-hidden="true">›</span>
-    </button>
-  </div>
-  <div id="aiDrawerBackdrop" class="ai-drawer-backdrop" hidden></div>
+  `<div id="aiDrawerBackdrop" class="ai-drawer-backdrop" hidden></div>
   <aside id="aiDrawer" class="ai-drawer" role="dialog" aria-modal="false" aria-labelledby="aiDrawerTitle" hidden>
     <h2 id="aiDrawerTitle" class="sr-only" data-i18n="ai.title">Talk with Velo</h2>
     <button id="aiDrawerClose" class="ai-drawer__close" type="button" data-i18n-aria="ai.close" aria-label="Close">×</button>
@@ -30,9 +17,7 @@ document.body.insertAdjacentHTML(
   </aside>`
 );
 
-const launcherShell = document.getElementById('aiDrawerLauncherShell');
 const launcher = document.getElementById('aiDrawerLauncher');
-const compactButton = document.getElementById('aiDrawerLauncherCompact');
 const drawer = document.getElementById('aiDrawer');
 const backdrop = document.getElementById('aiDrawerBackdrop');
 const closeButton = document.getElementById('aiDrawerClose');
@@ -42,18 +27,6 @@ const modalDrawerQuery = globalThis.matchMedia?.('(max-width: 620px)');
 let assistantModule = null;
 let loadPromise = null;
 let returnFocus = null;
-
-function isModalDrawer() {
-  return Boolean(modalDrawerQuery?.matches);
-}
-
-function syncDrawerMode() {
-  const open = !drawer.hidden;
-  const modal = isModalDrawer();
-  drawer.setAttribute('aria-modal', String(modal));
-  backdrop.hidden = !open || !modal;
-  document.body.classList.toggle('ai-drawer-modal-open', open && modal);
-}
 
 function translate(key, fallback = key) {
   return translations[currentLanguage]?.[key] || translations.en?.[key] || fallback;
@@ -75,44 +48,39 @@ function localize(root) {
   });
 }
 
-function readLauncherCompactPreference() {
-  try {
-    return localStorage.getItem(LAUNCHER_COMPACT_KEY) === '1';
-  } catch {
-    return false;
-  }
+function isModalDrawer() {
+  return Boolean(modalDrawerQuery?.matches);
 }
 
-function setLauncherCompact(compact, { persist = false } = {}) {
-  launcherShell?.classList.toggle('is-compact', compact);
-  compactButton?.setAttribute('aria-pressed', String(compact));
-  if (compactButton) {
-    const key = compact ? 'ai.launcherExpand' : 'ai.launcherCollapse';
-    const fallback = compact ? 'Expand Velo launcher' : 'Collapse Velo launcher';
-    const label = translate(key, fallback);
-    compactButton.setAttribute('aria-label', label);
-    compactButton.title = label;
-  }
-  if (!persist) return;
-  try {
-    localStorage.setItem(LAUNCHER_COMPACT_KEY, compact ? '1' : '0');
-  } catch {
-    // Storage is optional; the control still works for the current page view.
-  }
+function syncDrawerMode() {
+  const open = !drawer.hidden;
+  const modal = isModalDrawer();
+  drawer.setAttribute('aria-modal', String(modal));
+  backdrop.hidden = !open || !modal;
+  document.body.classList.toggle('ai-drawer-modal-open', open && modal);
 }
 
-async function refreshLanguage() {
-  await loadTranslationsForLanguage(currentLanguage);
-  localize(launcher);
-  localize(drawer);
-  localize(content);
-  setLauncherCompact(launcherShell?.classList.contains('is-compact') || false);
-  assistantModule?.notifyAiLanguageChange?.();
+function renderLoadError() {
+  content.replaceChildren();
+  const message = document.createElement('p');
+  message.className = 'ai-drawer-load-error';
+  message.setAttribute('role', 'alert');
+  message.textContent = translate('ai.error.provider', 'Velo could not load. Please try again.');
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'ai-drawer-retry';
+  retry.textContent = translate('edenX1Retry', 'Retry');
+  retry.addEventListener('click', async () => {
+    retry.disabled = true;
+    try {
+      await loadAssistant();
+      assistantModule?.focusAiComposer?.();
+    } catch {
+      retry.disabled = false;
+    }
+  });
+  content.append(message, retry);
 }
-
-localize(launcher);
-localize(drawer);
-setLauncherCompact(readLauncherCompactPreference());
 
 async function loadAssistant() {
   if (assistantModule) return assistantModule;
@@ -128,7 +96,8 @@ async function loadAssistant() {
     return assistantModule;
   })().catch((error) => {
     loadPromise = null;
-    content.innerHTML = `<p class="ai-drawer-load-error" role="alert">${translate('ai.error.provider', 'Velo could not load. Please try again.')}</p>`;
+    window.VTS_ASSET_RECOVERY?.reportFailure?.(error, '');
+    renderLoadError();
     throw error;
   });
   return loadPromise;
@@ -136,7 +105,7 @@ async function loadAssistant() {
 
 function setOpen(open) {
   drawer.hidden = !open;
-  launcher.setAttribute('aria-expanded', String(open));
+  launcher?.setAttribute('aria-expanded', String(open));
   document.body.classList.toggle('ai-drawer-open', open);
   syncDrawerMode();
   assistantModule?.notifyAiTabVisibility?.(open);
@@ -146,7 +115,7 @@ function setOpen(open) {
   }
 }
 
-async function openDrawer() {
+export async function openAiDrawer() {
   returnFocus = document.activeElement;
   setOpen(true);
   closeButton.focus({ preventScroll: true });
@@ -164,11 +133,13 @@ function closeDrawer() {
   returnFocus?.focus?.({ preventScroll: true });
 }
 
-launcher?.addEventListener('click', openDrawer);
-compactButton?.addEventListener('click', () => {
-  const compact = !launcherShell?.classList.contains('is-compact');
-  setLauncherCompact(compact, { persist: true });
-});
+async function refreshLanguage() {
+  await loadTranslationsForLanguage(currentLanguage);
+  localize(drawer);
+  localize(content);
+  assistantModule?.notifyAiLanguageChange?.();
+}
+
 closeButton?.addEventListener('click', closeDrawer);
 backdrop?.addEventListener('click', closeDrawer);
 drawer?.addEventListener('keydown', (event) => {
@@ -196,9 +167,8 @@ drawer?.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape' || event.defaultPrevented || drawer.hidden) return;
-  closeDrawer();
+  if (event.key === 'Escape' && !event.defaultPrevented && !drawer.hidden) closeDrawer();
 });
-
 window.addEventListener('vts:language-change', refreshLanguage);
 modalDrawerQuery?.addEventListener?.('change', syncDrawerMode);
+localize(drawer);

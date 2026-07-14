@@ -11,8 +11,6 @@ async function waitForAppReady(page) {
   await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
   await expect(page.locator('#tabGenerator')).toBeVisible();
   await expect(page.locator('#generatorSection')).toBeVisible();
-  await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
-  await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('.quick-tour-overlay')).toBeHidden({ timeout: 10000 });
 }
 
@@ -26,6 +24,21 @@ async function openApp(page, path = '/') {
   });
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await waitForAppReady(page);
+}
+
+async function openDirectTabHash(page, tabName, sectionId, marker) {
+  await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    localStorage.setItem('vts_maintenance_bypass', '1');
+    localStorage.setItem('vts_quick_tour_done', '1');
+    localStorage.setItem('vts_eden_dataset', 'season5');
+  });
+  await page.goto(`/#${tabName}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('body')).toHaveClass(/app-ready/, { timeout: 30000 });
+  await expect(page.locator(sectionId)).toBeVisible({ timeout: 20000 });
+  await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#generatorSection')).toBeHidden();
+  await expect(page.locator('html')).not.toHaveAttribute('data-initial-tab-pending', /.*/);
 }
 
 async function expectTab(page, buttonId, sectionId, marker) {
@@ -116,7 +129,6 @@ async function stabilizeVisuals(page) {
         animation-iteration-count: 1 !important;
       }
       .toast,
-      .whats-new-banner,
       .generate-summary,
       .generated-summary,
       #generatorResults > .text-center,
@@ -156,14 +168,15 @@ async function verifyRetiredEntryGate(page, viewport) {
     localStorage.removeItem('vts_quick_tour_done');
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#appBootSplash')).toBeHidden({ timeout: 10000 });
-  await expect(page.locator('#firstVisitIntro')).toBeHidden({ timeout: 10000 });
   await expect(page.locator('#app')).toBeVisible({ timeout: 10000 });
 }
 
 async function expectVisualSnapshot(page, selector, name) {
   const target = page.locator(selector);
   await target.scrollIntoViewIfNeeded();
+  // Keep hover-only card accents deterministic and wait for decoded pixels,
+  // not only image metadata, before capturing remote hero portraits.
+  await page.mouse.move(0, 0);
   await expect
     .poll(
       () =>
@@ -175,6 +188,11 @@ async function expectVisualSnapshot(page, selector, name) {
       { timeout: 15000 }
     )
     .toBe(true);
+  await target.evaluate((root) =>
+    Promise.all(
+      Array.from(root.querySelectorAll('img'), (img) => img.decode?.().catch(() => undefined))
+    )
+  );
   // Wait for web fonts before snapshotting; otherwise the first cold-cache
   // capture renders text in a fallback face and produces a whole-page diff
   // against a fonts-loaded baseline.
@@ -722,6 +740,24 @@ test.describe('admin dashboard upload safety', () => {
 });
 
 test.describe('app smoke tabs', () => {
+  test('direct tab hashes activate without flashing the default Generator panel', async ({
+    page,
+  }) => {
+    const directTabs = [
+      ['manual', '#manualSection', '#availableHeroes'],
+      ['arcade', '#arcadeSection', '#arcadeLobby'],
+      ['edenMap', '#edenMapSection', '#edenMapRoot'],
+      ['materials', '#materialsSection', '#materialCalculatorRoot'],
+      ['research', '#researchSection', '#techListContainer'],
+      ['heroes', '#heroesSection', '#heroesSection .heroes-layout'],
+      ['strife', '#strifeSection', '#strifeToolRoot .strife-monster-card:first-child'],
+    ];
+
+    for (const [tabName, sectionId, marker] of directTabs) {
+      await openDirectTabHash(page, tabName, sectionId, marker);
+    }
+  });
+
   test('shared combo link opens Generator with the shared result', async ({ page }) => {
     const encoded = encodeCombos([
       {
@@ -800,8 +836,12 @@ test.describe('app smoke tabs', () => {
       );
     });
     await expect(page.locator('.combo-slot').nth(0)).toContainText(secondHeroName);
-    await expect(page.locator('.toast.undo-toast')).toContainText('Combo slot 1 changed');
-    await page.locator('.toast.undo-toast button').click();
+    const latestSlotUndo = page
+      .locator('.toast.undo-toast', { hasText: 'Combo slot 1 changed' })
+      .last();
+    await expect(latestSlotUndo).toBeVisible();
+    await latestSlotUndo.locator('button').click();
+    await expect(page.locator('.toast.success', { hasText: 'Undone.' })).toBeVisible();
     await expect(page.locator('.combo-slot').nth(0)).toContainText(firstHeroName);
 
     await page.evaluate(() => {
@@ -2325,6 +2365,24 @@ test.describe('app smoke tabs', () => {
     await expect(preLoadContributionCard).toHaveAttribute('aria-pressed', 'false');
     await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
 
+    await page.evaluate(() => {
+      // The public Sheet can resolve before Firebase and the Eden member model.
+      // Hold the raw payload until canonical member identities and exclusions exist.
+      window.setEdenX1ManagementVotesForTest({
+        table: {
+          cols: [{ label: 'Name' }, { label: 'Votes' }],
+          rows: [
+            { c: [{ v: 'Alpha' }, { v: 8 }] },
+            { c: [{ v: 'November' }, { v: 7 }] },
+            { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
+            { c: [{ v: 'Dr Thunder 293' }, { v: 3 }] },
+            { c: [{ v: 'Goodness' }, { v: 2 }] },
+            { c: [{ v: 'Yankee' }, { v: 2 }] },
+            { c: [{ v: 'Quebec' }, { v: 1 }] },
+          ],
+        },
+      });
+    });
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
@@ -2730,23 +2788,6 @@ test.describe('app smoke tabs', () => {
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest(dash);
     }, seededDash);
-    await page.evaluate(() => {
-      window.setEdenX1ManagementVotesForTest({
-        table: {
-          cols: [{ label: 'Name' }, { label: 'Votes' }],
-          rows: [
-            { c: [{ v: 'Alpha' }, { v: 8 }] },
-            { c: [{ v: 'November' }, { v: 7 }] },
-            { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
-            { c: [{ v: 'Dr Thunder 293' }, { v: 3 }] },
-            { c: [{ v: 'Goodness' }, { v: 2 }] },
-            { c: [{ v: 'Yankee' }, { v: 2 }] },
-            { c: [{ v: 'Quebec' }, { v: 1 }] },
-          ],
-        },
-      });
-    });
-
     const managementCard = page.locator('[data-reward-view="management"]');
     await expect(managementCard).toContainText('Top three eligible names');
     await expect(managementCard).not.toContainText('One fixed management');
@@ -2786,6 +2827,35 @@ test.describe('app smoke tabs', () => {
     await expect(votedStatus.locator('.dash-weighted-score-popover')).not.toContainText(
       '4 management form votes'
     );
+
+    await page.evaluate(async () => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.reject(new Error('simulated management vote outage'));
+      await window.loadEdenX1ManagementVotesForTest({ force: true });
+    });
+    await expect(panel).toContainText('Management votes temporarily unavailable');
+    const managementRetry = panel.locator('#edenX1ManagementVotesRetry');
+    await expect(managementRetry).toBeVisible();
+    await page.evaluate(() => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.resolve({
+          table: {
+            cols: [{ label: 'Name' }, { label: 'Votes' }],
+            rows: [
+              { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
+              { c: [{ v: 'Yankee' }, { v: 2 }] },
+              { c: [{ v: 'Quebec' }, { v: 1 }] },
+            ],
+          },
+        });
+    });
+    await managementRetry.click();
+    await expect(panel.locator('tbody tr')).toHaveCount(3);
+    await expect(panel).toContainText('Yankee');
+    await expect(panel).not.toContainText('temporarily unavailable');
+    await page.evaluate(() => {
+      delete window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER;
+    });
 
     const teamCard = page.locator('[data-reward-view="team"]');
     await expect(teamCard.locator('.eden-x1-flow-vote-tag')).toHaveText(

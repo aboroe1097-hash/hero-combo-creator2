@@ -54,6 +54,7 @@ let appCheckTokenInFlight = null;
 let recaptchaRejectionGuardInstalled = false;
 let appCheckDebugNoticeLogged = false;
 let appCheckDebugRejectedLogged = false;
+let analyticsScheduled = false;
 
 const getAppCheckDebugToken = getFirebaseAppCheckDebugToken;
 const authEmailDomain = firebaseAuthEmailDomain;
@@ -163,18 +164,54 @@ export function initFirebase() {
   auth = getAuth(app);
   db = getFirestore(app);
 
-  // Analytics automatically logs page_view and tracks active users for free
-  // without quotas. Loaded in the background so gtag never blocks app boot;
-  // nothing reads the analytics instance synchronously.
-  importFirebaseAnalytics()
-    .then(({ getAnalytics }) => {
-      analytics = getAnalytics(app);
-    })
-    .catch((e) => {
-      console.warn('Analytics blocked or failed to initialize', e);
-    });
+  scheduleFirebaseAnalytics();
 
   return { app, db, auth, analytics, configured: true };
+}
+
+function scheduleFirebaseAnalytics() {
+  if (analyticsScheduled || typeof globalThis === 'undefined') return;
+  analyticsScheduled = true;
+  let started = false;
+  let fallbackTimer = 0;
+  let idleHandle = 0;
+  const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+
+  const removeInteractionListeners = () => {
+    interactionEvents.forEach((eventName) =>
+      globalThis.removeEventListener?.(eventName, startAnalytics, true)
+    );
+  };
+  const startAnalytics = () => {
+    if (started || !app) return;
+    started = true;
+    removeInteractionListeners();
+    globalThis.clearTimeout?.(fallbackTimer);
+    globalThis.cancelIdleCallback?.(idleHandle);
+    importFirebaseAnalytics()
+      .then(({ getAnalytics }) => {
+        analytics = getAnalytics(app);
+      })
+      .catch((e) => {
+        console.warn('Analytics blocked or failed to initialize', e);
+      });
+  };
+  const armPostLoad = () => {
+    interactionEvents.forEach((eventName) =>
+      globalThis.addEventListener?.(eventName, startAnalytics, {
+        capture: true,
+        once: true,
+        passive: true,
+      })
+    );
+    fallbackTimer = globalThis.setTimeout?.(startAnalytics, 5000) || 0;
+    if (typeof globalThis.requestIdleCallback === 'function') {
+      idleHandle = globalThis.requestIdleCallback(startAnalytics, { timeout: 5000 });
+    }
+  };
+
+  if (globalThis.document?.readyState === 'complete') armPostLoad();
+  else globalThis.addEventListener?.('load', armPostLoad, { once: true });
 }
 
 let authInFlight = null;

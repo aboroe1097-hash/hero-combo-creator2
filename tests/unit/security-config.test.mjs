@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 
@@ -217,9 +217,14 @@ test('build metadata refreshes lazy app module cache busters', () => {
   const app = readFileSync('js/app.js', 'utf8');
   assert.match(script, /createHash\('sha256'\)/);
   assert.match(script, /updateCspHashes\(\)/);
-  assert.match(script, /app-whats-new\|app-research\|material-calculator\|eden-map\|app-strife/);
+  assert.match(
+    script,
+    /app-research\|material-calculator\|eden-map\|app-strife\|app-export\|arcade-spa/
+  );
   assert.doesNotMatch(app, /20260708_101500/);
-  assert.match(app, /app-whats-new\.js\?v=\d{8}_\d{6}/);
+  assert.doesNotMatch(app, /app-whats-new\.js/);
+  assert.match(app, /app-export\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /arcade-spa\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-research\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /material-calculator\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /eden-map\.js\?v=\d{8}_\d{6}/);
@@ -258,7 +263,7 @@ test('firebase config reads public web config without committed Google API keys'
   assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
 });
 
-test('firebase app check is lazy so comments do not trigger recaptcha throttling', () => {
+test('firebase app check stays lazy until a protected token is requested', () => {
   const source = readFileSync('js/firebase.js', 'utf8');
   const initStart = source.indexOf('export function initFirebase()');
   const authStart = source.indexOf('let authInFlight', initStart);
@@ -268,6 +273,15 @@ test('firebase app check is lazy so comments do not trigger recaptcha throttling
   assert.doesNotMatch(initBody, /initializeAppCheck|ReCaptchaEnterpriseProvider|getToken/);
   assert.match(source, /async function ensureFirebaseAppCheck\(\)/);
   assert.match(source, /export async function getFirebaseAppCheckToken/);
+});
+
+test('firebase analytics waits for post-load idle, interaction, or the five-second fallback', () => {
+  const source = readFileSync('js/firebase.js', 'utf8');
+  assert.match(source, /function scheduleFirebaseAnalytics\(\)/);
+  assert.match(source, /\['pointerdown', 'keydown', 'touchstart', 'scroll'\]/);
+  assert.match(source, /requestIdleCallback\(startAnalytics, \{ timeout: 5000 \}\)/);
+  assert.match(source, /setTimeout\?\.\(startAnalytics, 5000\)/);
+  assert.match(source, /addEventListener\?\.\('load', armPostLoad, \{ once: true \}\)/);
 });
 
 test('firebase init preserves configured status after first initialization', () => {
@@ -918,9 +932,8 @@ test('eden dataset payload is copied into the production build', () => {
   assert.match(source, /js\/eden-datasets\.payload\.json/);
 });
 
-test('comments no longer store email or allow public reads', () => {
+test('retired Comments data remains protected and is not publicly readable', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
-  const comments = readFileSync('js/comments.js', 'utf8');
   assert.doesNotMatch(rules, /'email'/);
   assert.match(rules, /function canReadComment\(\)/);
   assert.match(rules, /resource\.data\.approved == true/);
@@ -934,16 +947,7 @@ test('comments no longer store email or allow public reads', () => {
     rules,
     /request\.resource\.data\.parentId\.matches\('\^\[A-Za-z0-9_-\]\{1,150\}\$'\)/
   );
-  assert.doesNotMatch(comments, /email:/);
-  assert.doesNotMatch(comments, /commentEmail/);
-  assert.match(comments, /where\('approved', '==', true\)/);
-  assert.match(comments, /where\('public', '==', true\)/);
-  assert.match(comments, /where\('authorId', '==', currentUserId\)/);
-  assert.match(comments, /where\('approved', '==', false\)/);
-  assert.doesNotMatch(
-    comments,
-    /query\(collection\(db, 'comments'\), orderBy\('createdAt', 'desc'\)\)/
-  );
+  assert.equal(existsSync('js/comments.js'), false);
 });
 
 test('client error reports are bounded and not publicly readable', () => {

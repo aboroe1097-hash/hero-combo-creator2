@@ -1461,35 +1461,6 @@ select {
   padding: 5px 9px !important;
   white-space: nowrap;
 }
-
-/* ── 16. COMMENTS SECTION ─────────────────────────────────── */
-#commentsSection {
-  margin-top: 14px !important;
-  border-radius: 12px !important;
-}
-#commentsSection h2 {
-  font-size: 0.8rem !important;
-}
-#commentForm textarea,
-#commentForm input {
-  font-size: 0.78rem !important;
-  min-height: 38px;
-}
-#commentSubmitBtn {
-  width: 100%;
-  min-height: var(--tap-min);
-}
-.comment-avatar {
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
-  font-size: 0.82rem !important;
-}
-.replies-container {
-  margin-left: 0.75rem !important;
-  padding-left: 0.6rem !important;
-}
-
 /* ── 17. UI UTILITIES ─────────────────────────────────────── */
 /* Scroll-to-top button */
 #scrollTopBtn {
@@ -1661,8 +1632,7 @@ button:not([disabled]):active,
   #generatorSection > .mb-6.p-4,
   .research-control-deck,
   .research-summary-card,
-  .loyalty-sticky,
-  #commentsSection {
+  .loyalty-sticky {
     border-radius: 13px !important;
     padding: 10px !important;
   }
@@ -1991,7 +1961,6 @@ button:not([disabled]):active,
   }
 
   body.research-calculator-open .tool-nav-shell,
-  body.research-calculator-open .whats-new-banner,
   body.research-calculator-open #toastContainer {
     visibility: hidden !important;
     pointer-events: none !important;

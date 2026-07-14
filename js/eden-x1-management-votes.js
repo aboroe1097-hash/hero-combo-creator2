@@ -6,8 +6,12 @@ const DEFAULT_NAME_COLUMN_LABEL = 'Name';
 const DEFAULT_VOTES_COLUMN_LABEL = 'Votes';
 const GOOGLE_VISUALIZATION_BASE = 'https://docs.google.com/spreadsheets/d';
 const JSONP_CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const DEFAULT_JSONP_TIMEOUT_MS = 20_000;
+const DEFAULT_JSONP_RETRY_DELAY_MS = 500;
+const DEFAULT_LATE_CALLBACK_RETENTION_MS = 60_000;
 const KIKA_ALT_DISPLAY_NAME = '\ua9c1\u0f3a Kika \u0f3b\ua9c2';
 const GOODNESS_CANONICAL_NAME = 'GoodnesGraycious';
+let jsonpRequestSerial = 0;
 
 function compactVoteKey(value) {
   return String(value || '')
@@ -345,54 +349,105 @@ export function summarizeManagementVotePayload(payloadOrRows, options = {}) {
 }
 
 export function loadManagementVotesViaJsonp(options = {}) {
-  if (typeof document === 'undefined') {
+  const documentRef = options.document || globalThis.document;
+  if (!documentRef) {
     return Promise.reject(new Error('Google Sheet vote loading requires a browser document'));
   }
 
   return new Promise((resolve, reject) => {
-    const callbackName = `__edenX1ManagementVotes${Date.now()}${Math.floor(Math.random() * 10000)}`;
-    const script = document.createElement('script');
-    const timeoutMs = Math.max(1000, Number(options.timeoutMs || 12000));
+    const globalTarget = options.globalTarget || globalThis;
+    const setTimer = options.setTimeoutFn || globalThis.setTimeout.bind(globalThis);
+    const clearTimer = options.clearTimeoutFn || globalThis.clearTimeout.bind(globalThis);
+    const callbackName = `__edenX1ManagementVotes${Date.now()}${++jsonpRequestSerial}`;
+    const script = documentRef.createElement('script');
+    const timeoutMs = Math.max(1, Number(options.timeoutMs || DEFAULT_JSONP_TIMEOUT_MS));
+    const retentionMs = Math.max(
+      0,
+      Number(options.lateCallbackRetentionMs ?? DEFAULT_LATE_CALLBACK_RETENTION_MS)
+    );
     let settled = false;
     let timeoutId = 0;
+    let retentionId = 0;
 
-    function cleanup() {
-      settled = true;
-      clearTimeout(timeoutId);
-      delete globalThis[callbackName];
+    function removeScript() {
+      script.onerror = null;
       script.remove();
     }
 
-    globalThis[callbackName] = (payload) => {
+    function cleanupSuccess() {
+      settled = true;
+      clearTimer(timeoutId);
+      clearTimer(retentionId);
+      delete globalTarget[callbackName];
+      removeScript();
+    }
+
+    function retainLateCallback() {
+      globalTarget[callbackName] = () => {};
+      retentionId = setTimer(() => {
+        delete globalTarget[callbackName];
+      }, retentionMs);
+    }
+
+    function fail(error) {
       if (settled) return;
-      cleanup();
+      settled = true;
+      clearTimer(timeoutId);
+      removeScript();
+      retainLateCallback();
+      reject(error);
+    }
+
+    globalTarget[callbackName] = (payload) => {
+      if (settled) return;
+      cleanupSuccess();
       resolve(payload);
     };
 
     script.async = true;
     script.src = buildManagementVotesUrl({ ...options, callbackName });
     script.onerror = () => {
-      if (settled) return;
-      cleanup();
-      reject(new Error('Management vote Sheet could not be loaded'));
+      fail(new Error('Management vote Sheet could not be loaded'));
     };
-    timeoutId = globalThis.setTimeout(() => {
-      if (settled) return;
-      cleanup();
-      reject(new Error('Management vote Sheet timed out'));
+    timeoutId = setTimer(() => {
+      fail(new Error('Management vote Sheet timed out'));
     }, timeoutMs);
 
-    document.head.appendChild(script);
+    documentRef.head.appendChild(script);
   });
 }
 
+function sleep(ms, setTimeoutFn = globalThis.setTimeout.bind(globalThis)) {
+  return new Promise((resolve) => setTimeoutFn(resolve, ms));
+}
+
+async function loadManagementVoteSheetWithRetry(options) {
+  const attempts = Math.max(1, Number(options.attempts ?? 2));
+  const retryDelayMs = Math.max(
+    0,
+    Number(options.retryDelayMs ?? DEFAULT_JSONP_RETRY_DELAY_MS)
+  );
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await loadManagementVotesViaJsonp(options);
+    } catch (error) {
+      lastError = error;
+      if (attempt + 1 < attempts) {
+        await sleep(retryDelayMs, options.setTimeoutFn);
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function loadManagementVotesPayloadWithFallback(options = {}) {
-  const payload = await loadManagementVotesViaJsonp({
+  const payload = await loadManagementVoteSheetWithRetry({
     ...options,
     sheetName: options.sheetName || DEFAULT_RESULTS_SHEET_NAME,
   });
   if (readManagementVoteResultRows(payload, options).length) return payload;
-  return loadManagementVotesViaJsonp({
+  return loadManagementVoteSheetWithRetry({
     ...options,
     sheetName: options.rawSheetName || DEFAULT_RAW_SHEET_NAME,
   });

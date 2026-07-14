@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.0.3)
+# Hero Combo Creator - VTS 1097 (v14.0.4)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
@@ -22,7 +22,7 @@ Eleven top-level tools are exposed from the main navigation in `index.html`, wit
 
 **Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. Admins can schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
 
-**Cross-cutting sub-systems:** `comments.js` (Firestore-threaded feedback), `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js` (undo toasts), `app-shortcuts.js`, `app-whats-new.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
+**Cross-cutting sub-systems:** `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js`, `app-shortcuts.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
 
 **Performance posture:** Vite build with hashed production assets, manual chunks for large feature/data modules, dynamic `import()` per heavy tab and language pack, preloaded boot wing images and Google Fonts, Google Fonts print-to-all media swap, user-triggered YouTube iframe creation, staged Eden/Admin rendering, lazy exact DM item art, mobile CSS loaded only at `max-width: 768px`, lazy/async footer imagery, `requestIdleCallback` for non-critical work, `--tap-min: 44px` touch sizing, and `env(safe-area-inset-*)` support for notches.
 
@@ -111,7 +111,7 @@ Version cadence: patch releases run through `.20` before the next minor. For the
 | **Language** | Vanilla JavaScript (ES6 modules), no framework |
 | **Bundler** | Vite 6 (dev server + build) |
 | **CSS** | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), and semantic `components.css` |
-| **Backend** | Firebase Firestore loaded through pinned browser modules (comments, combos, roster sync) |
+| **Backend** | Firebase Firestore loaded through pinned browser modules (saved combos, public data, roster sync) |
 | **Auth** | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes |
 | **OCR** | Qwen VL API via Cloudflare Worker proxy |
 | **Maps** | HTML Canvas (Eden Map) |
@@ -176,7 +176,6 @@ js/
   app-loading.js        Boot splash (3D door animation), loading progress
   app-shortcuts.js      Keyboard shortcuts
   app-undo.js           Undo toast stack
-  app-whats-new.js      Release/update modal
   bug-widget.js         User-facing bug report widget
 
   state.js              Shared state: combo rank info, filters, troop colors
@@ -190,7 +189,6 @@ js/
   combo-counter-lookup.js  Search: which heroes counter which
   combo-share.js        URL share for combos
   roster-share.js       URL share for rosters
-  comments.js           Firestore snapshot comments (threaded)
 
   heroes-data.js        Hero base data (68 heroes: name, season, troop, state)
   heroes-info.js        Hero skills, placement, copies
@@ -257,13 +255,13 @@ The `gh-pages` branch is the production source branch, but Pages does not serve 
 The app no longer ships the frozen Tailwind compatibility shim. Remaining UI styling lives in semantic stylesheets (`app.css`, `components.css`, `mobile.css`, and `atmosphere.css`), and `cssnano` minifies production CSS after the Vite build.
 
 ### Tab Lazy-Loading
-Eden Map and Loyalty tab templates are fetched on first tab click via `loadTabTemplate()`. Research, Hero Atlas, Strife over Dragon, Eden Map code, OCR dashboard code, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules. VTS Admin and Eden X1 are standalone pages with their own Vite inputs.
+Eden Map and Loyalty tab templates are fetched on first tab click via `loadTabTemplate()`. Manual Builder, Arcade, Research, Hero Atlas, Strife over Dragon, Eden Map code, OCR dashboard code, image export, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules. VTS Admin and Eden X1 are standalone pages with their own Vite inputs.
 
 ### Release Mode
 `js/maintenance-config.js` remains the explicit release/maintenance toggle and is included in the service-worker precache. While `VTS_MAINTENANCE_MODE` is enabled, every public entry page redirects to the lightweight maintenance page unless the local/session bypass is present.
 
 ### Admin Auth
-The public toolkit still uses Firebase anonymous auth for comments and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
+The public toolkit still uses Firebase anonymous auth for saved combos and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
 
 Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Bonus Team Effort records.
 
@@ -376,7 +374,7 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
   - `vts_admin/roster_data` -- roster snapshots
   - `vts_admin/conduct_adjustments/records` -- R5 Bonus Team Effort Points (admin write only)
   - `vts_saved_combos` -- community shared combos
-- **Real-time listeners** via `onSnapshot()` for roster and comments
+- **Real-time listeners** via `onSnapshot()` for roster and saved combos
 - **Offline-first:** All saves go to localStorage first, then Firestore
 
 ## Deploy

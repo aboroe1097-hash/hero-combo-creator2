@@ -9,11 +9,14 @@ const motionCss = fs.readFileSync(
   'utf8'
 );
 
-test('Velo walks every shared page, tab, comment, and player loading rail', () => {
+test('Velo walks visible shared loading rails without mounting hidden-tab artwork', () => {
   assert.match(
     loaderSource,
-    /\[data-vts-loader\], \.tab-loading, \.comments-loading, \.youtube-player-loading, \.dash-connecting/
+    /\[data-vts-loader\], \.tab-loading, \.youtube-player-loading, \.dash-connecting/
   );
+  assert.doesNotMatch(loaderSource, /\.comments-loading/);
+  assert.match(loaderSource, /isDeferredByHiddenTab/);
+  assert.match(loaderSource, /\.tab-panel\.hidden, \.tab-panel\[hidden\]/);
   assert.match(loaderSource, /assets\/velo\/velo-body\.webp/);
   assert.match(loaderSource, /assets\/velo\/velo-helmet\.webp/);
   assert.match(loaderSource, /const runner = makeVeloRunner\(\)/);

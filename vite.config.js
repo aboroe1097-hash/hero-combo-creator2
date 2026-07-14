@@ -40,8 +40,10 @@ export default defineConfig({
         arcade: resolve(__dirname, 'arcade.html'),
       },
       output: {
+        onlyExplicitManualChunks: true,
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, '/');
+          const normalizedPath = normalizedId.split(/[?#]/u, 1)[0];
           if (
             normalizedId.includes('node_modules/firebase') ||
             normalizedId.includes('node_modules/@firebase')
@@ -50,11 +52,11 @@ export default defineConfig({
           // Large data files: split into dedicated chunks so feature chunks stay lean
           if (normalizedId.includes('/js/tech-db.js')) return 'tech-db';
           if (normalizedId.includes('/js/heroes-info.js')) return 'heroes-info';
-          if (normalizedId.includes('/js/eden-map')) return 'eden-map';
-          if (normalizedId.includes('/js/ocr-')) return 'ocr-dashboard';
-          if (normalizedId.includes('/js/app-research')) return 'research';
-          if (normalizedId.includes('/js/app-hero-atlas')) return 'hero-atlas';
-          if (normalizedId.includes('/js/app-export') || normalizedId.includes('html2canvas'))
+          if (normalizedPath.endsWith('/js/eden-map.js')) return 'eden-map';
+          if (normalizedPath.endsWith('/js/ocr-dashboard.js')) return 'ocr-dashboard';
+          if (normalizedPath.endsWith('/js/app-research.js')) return 'research';
+          if (normalizedPath.endsWith('/js/app-hero-atlas.js')) return 'hero-atlas';
+          if (normalizedPath.endsWith('/js/app-export.js') || normalizedId.includes('html2canvas'))
             return 'export';
         },
       },

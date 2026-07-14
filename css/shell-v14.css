@@ -1583,13 +1583,6 @@ body:has(.quick-tour-overlay:not(.hidden)) #app #tabNavScroll > .tab-item {
     bottom: var(--shell-mobile-nav-clearance) !important;
   }
 
-  /* Fixed utilities use the end edge as a dedicated rail. Keep comment copy
-     and reply controls out from underneath it while preserving full-width
-     cards everywhere else in the app. */
-  #app #commentsSection .comments-list {
-    margin-inline-end: calc(var(--ff-tap-min) + 8px);
-  }
-
   body.keyboard-open .floating-tool-btn,
   body.keyboard-open .bug-report-fab {
     visibility: hidden !important;

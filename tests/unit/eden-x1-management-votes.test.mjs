@@ -4,12 +4,63 @@ import assert from 'node:assert/strict';
 import {
   aggregateManagementVotes,
   buildManagementVotesUrl,
+  loadManagementVotesPayloadWithFallback,
+  loadManagementVotesViaJsonp,
   managementVoteCandidateVariants,
   parseGoogleVisualizationResponse,
   readManagementVoteResultRows,
   readManagementVoteRows,
   summarizeManagementVotePayload,
 } from '../../js/eden-x1-management-votes.js';
+
+function createJsonpHarness() {
+  const scripts = [];
+  const timers = new Map();
+  const globalTarget = {};
+  let timerSerial = 0;
+  const document = {
+    createElement() {
+      return {
+        async: false,
+        src: '',
+        onerror: null,
+        removed: false,
+        remove() {
+          this.removed = true;
+        },
+      };
+    },
+    head: {
+      appendChild(script) {
+        scripts.push(script);
+      },
+    },
+  };
+  const setTimeoutFn = (callback, delay) => {
+    const id = ++timerSerial;
+    timers.set(id, { callback, delay });
+    return id;
+  };
+  const clearTimeoutFn = (id) => timers.delete(id);
+  const callbackName = (script = scripts.at(-1)) =>
+    new URL(script.src).searchParams.get('tqx').replace('responseHandler:', '');
+  const runTimer = (delay) => {
+    const entry = [...timers.entries()].find(([, timer]) => timer.delay === delay);
+    assert.ok(entry, `expected a ${delay}ms timer`);
+    timers.delete(entry[0]);
+    entry[1].callback();
+  };
+  return {
+    scripts,
+    timers,
+    globalTarget,
+    document,
+    setTimeoutFn,
+    clearTimeoutFn,
+    callbackName,
+    runTimer,
+  };
+}
 
 function compactTestKey(value) {
   return String(value || '')
@@ -212,4 +263,71 @@ test('management votes include listed candidates and skip duplicate picks inside
       ['GoodnesGraycious', 1],
     ]
   );
+});
+
+test('management vote JSONP resolves and cleans up its script and callback', async () => {
+  const harness = createJsonpHarness();
+  const pending = loadManagementVotesViaJsonp({ ...harness, timeoutMs: 20 });
+  const script = harness.scripts[0];
+  const callback = harness.callbackName(script);
+  const payload = { table: voteResultsTable() };
+
+  harness.globalTarget[callback](payload);
+
+  assert.equal(await pending, payload);
+  assert.equal(script.removed, true);
+  assert.equal(harness.globalTarget[callback], undefined);
+  assert.equal(harness.timers.size, 0);
+});
+
+test('management vote JSONP retains a harmless late callback after timeout', async () => {
+  const harness = createJsonpHarness();
+  const pending = loadManagementVotesViaJsonp({
+    ...harness,
+    timeoutMs: 20,
+    lateCallbackRetentionMs: 60,
+  });
+  const callback = harness.callbackName();
+
+  harness.runTimer(20);
+  await assert.rejects(pending, /timed out/);
+  assert.doesNotThrow(() => harness.globalTarget[callback]({ table: voteResultsTable() }));
+  harness.runTimer(60);
+  assert.equal(harness.globalTarget[callback], undefined);
+});
+
+test('management vote JSONP retries once and succeeds on the second attempt', async () => {
+  const harness = createJsonpHarness();
+  const pending = loadManagementVotesPayloadWithFallback({
+    ...harness,
+    timeoutMs: 20,
+    retryDelayMs: 5,
+    lateCallbackRetentionMs: 60,
+  });
+
+  harness.scripts[0].onerror();
+  await Promise.resolve();
+  harness.runTimer(5);
+  await Promise.resolve();
+  const secondScript = harness.scripts[1];
+  assert.ok(secondScript);
+  harness.globalTarget[harness.callbackName(secondScript)]({ table: voteResultsTable() });
+
+  assert.equal((await pending).table.rows.length, voteResultsTable().rows.length);
+  assert.equal(harness.scripts.length, 2);
+});
+
+test('raw form fallback runs only after a successful empty Vote Results response', async () => {
+  const harness = createJsonpHarness();
+  const pending = loadManagementVotesPayloadWithFallback({ ...harness, attempts: 1 });
+  const resultsScript = harness.scripts[0];
+  harness.globalTarget[harness.callbackName(resultsScript)]({
+    table: { cols: [{ label: 'Name' }, { label: 'Votes' }], rows: [] },
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  const rawScript = harness.scripts[1];
+  assert.match(rawScript.src, /sheet=Form\+Responses\+1/);
+  harness.globalTarget[harness.callbackName(rawScript)]({ table: formResponseTable() });
+
+  assert.equal((await pending).table.rows.length, formResponseTable().rows.length);
 });
