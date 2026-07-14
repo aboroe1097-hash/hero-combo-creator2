@@ -20,6 +20,8 @@ single rushed chat message.
 - **Authority is implicit.** Members already know MalakAbo and the authority of his management
   messages. Do not add `MalakAbo, R5`, introduce him, or restate his role unless he explicitly asks
   for a signature.
+- **Recognizable opening.** Start general member messages with `Lads and Gens,` when it fits the
+  available space and tone.
 - **Friendly but firm.** Sound human and encouraging without weakening deadlines or requirements.
 - **Transparent about the reason.** Briefly explain how an action helps the team, preserves
   fairness, saves resources, or supports the current plan.
@@ -31,10 +33,12 @@ single rushed chat message.
   but correct accidental spelling and typing errors in official messages.
 - **Confident without inventing certainty.** Clearly label a plan, estimate, draft, or pending
   decision instead of presenting it as final.
+- **Light visual character.** A small number of relevant emojis is welcome when space permits, but
+  structure and wording carry the message. Do not decorate every line.
 
 A normal MalakAbo message flow is:
 
-1. Short greeting or direct context.
+1. `Lads and Gens,` or direct context when the channel is extremely short.
 2. Required action.
 3. Exact deadline or start time in game time.
 4. One short reason or fairness note.
@@ -103,6 +107,8 @@ Use in-game mail for durable instructions that members may read later.
 - Body: action and deadline first, then the minimum explanation and contact route.
 - Each mail body must be **500 characters or fewer** and **seven lines or fewer**. Count spaces and
   line breaks during review and keep a safety margin when possible.
+- Prefer a numbered or compact bullet flow for schedules and multi-step instructions. It is easier
+  to scan and gives the mail more visual structure than one dense paragraph.
 - A longer message may be split into consecutive numbered mails such as `1/3`, `2/3`, and `3/3`.
   Keep the action and deadline understandable even if a member opens only one part first.
 - Images are not supported in game mail.
@@ -111,6 +117,8 @@ Use in-game mail for durable instructions that members may read later.
 - Use the verified filter-safer toolkit address `roc-vts.com/eden-x1` on its own line when members
   need the public Eden X1 review page. Do not add `https://` or `.html` to the in-game form unless a
   later live test confirms that it passes the game filter.
+- When the main mail already uses most of the seven-line budget, put the address in a short separate
+  follow-up mail and make the first mail explicitly point to it.
 - Repeat critical coordinates or game-time values in plain text.
 - Scan for game-filtered words before approval. Known risky examples include `buy`, `bonus`, `free`,
   `Viber`, `WhatsApp`, and names of other chat apps. Rewrite naturally instead of trying to evade a
@@ -152,17 +160,26 @@ This helps us [SHORT REASON]. Please [CONFIRMATION METHOD] if needed.
 ### In-game mail pattern
 
 ```text
-[PART 1/1] [ACTION] - [DATE OR EVENT]
+Lads and Gens, [OPTIONAL EMOJI]
+1) [ACTION AND DEADLINE]
+2) [REVIEW OR FOLLOW-UP STEP]
+3) [LOCK OR NEXT MILESTONE]
+[POINT TO THE NEXT MAIL WHEN IT CONTAINS THE LINK]
+If anything is missing or incorrect, contact me.
+```
 
-Please [ACTION] by [DATE, GAME TIME].
+Separate link mail when needed:
 
-[ONE-SENTENCE REASON OR INSTRUCTION.]
-
+```text
+[OPTIONAL EMOJI] [SHORT PAGE LABEL]
+Open:
+roc-vts.com/eden-x1
+[SHORT REVIEW INSTRUCTION]
 If anything is missing or incorrect, contact me.
 ```
 
 The body above must remain within 500 characters and seven lines. When several mails are needed,
-number the first line of every part and log every exact part.
+keep their order obvious from the text and log every exact part.
 
 ### Short announcement pattern
 

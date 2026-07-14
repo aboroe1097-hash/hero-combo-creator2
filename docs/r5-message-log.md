@@ -29,7 +29,8 @@ text; append a new version and mark the earlier entry `superseded`.
   are limited to 200 characters. In-game text must avoid known filtered terms.
 - **Drafted as:** `2026-07-14-voting-contribution-close-v1-en`, revised as
   `2026-07-14-voting-contribution-close-v2-en`, then
-  `2026-07-14-voting-contribution-close-v3-en`
+  `2026-07-14-voting-contribution-close-v3-en`, then
+  `2026-07-14-voting-contribution-close-v4-en`
 
 ## Draft messages
 
@@ -188,7 +189,7 @@ DEADLINE: Voting and contribution tracking close Fri 17 Jul, 23:59 game time. Re
 
 ### 2026-07-14-voting-contribution-close-v3-en
 
-- **Status:** `draft`
+- **Status:** `superseded`
 - **Requested by:** MalakAbo
 - **Approved by:** Pending MalakAbo approval
 - **Audience:** All VTS 1097 members
@@ -202,6 +203,8 @@ DEADLINE: Voting and contribution tracking close Fri 17 Jul, 23:59 game time. Re
 - **Source facts:** Owner confirmation in the 2026-07-14 Codex task; live page
   `https://roc-vts.com/eden-x1.html`
 - **Supersedes:** `2026-07-14-voting-contribution-close-v2-en`
+- **Superseded by:** `2026-07-14-voting-contribution-close-v4-en` after the owner clarified his
+  numbered in-game style, preferred opening, light emoji use, and separate link-mail flow
 - **Sent at:** Not sent
 - **In-game mail count:** One
 
@@ -257,6 +260,91 @@ DEADLINE: Voting and contribution tracking close Fri 17 Jul, 23:59 game time. Re
   `WhatsApp`, and other named chat apps
 - Alliance announcement: 166 / 200 characters; filtered-word scan passed
 - Voice review: No signature or R5 self-identification; management issues use `contact me`
+- Fact, privacy, and translation review: No private player, vote, or admin details included; English
+  draft awaiting owner approval
+
+### 2026-07-14-voting-contribution-close-v4-en
+
+- **Status:** `draft`
+- **Requested by:** MalakAbo
+- **Approved by:** Pending MalakAbo approval
+- **Audience:** All VTS 1097 members
+- **Channels:** Viber, two consecutive in-game mails, alliance/guild announcement
+- **Language:** English
+- **Topic:** Voting and contribution tracking deadline and final review
+- **Required action:** Review personal Eden X1 data on Saturday and report any problem before the
+  Sunday lock
+- **Deadline:** Friday, 17 July 2026 at 23:59 game time for voting/tracking; Sunday, 19 July 2026 at
+  00:00 game time for corrections
+- **Source facts:** Owner confirmation in the 2026-07-14 Codex task; live page
+  `https://roc-vts.com/eden-x1.html`
+- **Supersedes:** `2026-07-14-voting-contribution-close-v3-en`
+- **Sent at:** Not sent
+- **In-game mail count:** Two consecutive mails; the second contains the filter-safer link
+
+#### Viber
+
+```text
+"VOTING & CONTRIBUTION DEADLINE" 📌
+
+Lads and Gens,
+
+Voting and contribution tracking will close on Friday, 17 July at 23:59 game time.
+
+"24-HOUR REVIEW WINDOW"
+
+All members will then have Saturday, 18 July (00:00-23:59 game time) to review their data online:
+https://roc-vts.com/eden-x1.html
+
+Please report any missing or incorrect information during this review window so we can correct it before the final lock.
+
+"FINAL LOCK & REWARDS"
+
+The data will be locked on Sunday, 19 July at 00:00 game time. After the lock, the final records will be prepared so rewards can be sent first thing Monday, 20 July after 00:00 game time.
+
+Please review your data early. If anything is missing or incorrect, contact me during Saturday's review window.
+```
+
+#### In-game mail 1/2
+
+```text
+Lads and Gens, 📌
+1) Voting and contribution tracking close Fri, 17 Jul at 23:59 game time.
+2) You have 24 hours on Sat, 18 Jul to review your data and report any issue.
+3) Data locks Sun, 19 Jul at 00:00 game time.
+4) Rewards are planned for Mon, 20 Jul after 00:00 game time.
+The review link is in my next mail.
+If anything is missing or incorrect, contact me.
+```
+
+#### In-game mail 2/2
+
+```text
+📌 EDEN X1 REVIEW
+Open:
+roc-vts.com/eden-x1
+Use Saturday, 18 July to check your data.
+If anything is missing or incorrect, contact me.
+```
+
+#### Alliance/guild announcement
+
+```text
+Lads and Gens: Voting and contribution tracking close Fri 17 Jul, 23:59 game time. Review on Sat and contact me about issues. Check my last 2 in-game mails.
+```
+
+#### Review notes
+
+- Viber formatting/images: One light emoji; quoted headings identify text to format in bold; live
+  production URL used; no image needed
+- In-game mail 1: 362 characters, seven lines; numbered schedule flow
+- In-game mail 2: 134 characters, five lines; filter-safer link isolated in the follow-up mail
+- In-game filtered-word scan: Both mails pass for known risky terms `buy`, `bonus`, `free`, `Viber`,
+  `WhatsApp`, and other named chat apps
+- Alliance announcement: 156 / 200 characters; points to the last two in-game mails and passes the
+  filtered-word scan
+- Voice review: Opens with `Lads and Gens`, uses one light emoji, has no signature or R5
+  self-identification, and says `contact me`
 - Fact, privacy, and translation review: No private player, vote, or admin details included; English
   draft awaiting owner approval
 
