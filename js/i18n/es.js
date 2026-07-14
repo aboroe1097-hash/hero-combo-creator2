@@ -1594,7 +1594,7 @@ const es = {
   edenX1VoteSelectionCount: '{n} / 4 seleccionados',
   edenX1MarqueeKicker: 'Métricas destacadas',
   edenX1MarqueeMembers: 'Miembros del gremio',
-  edenX1MarqueeDuties: 'Actividad de deberes',
+  edenX1MarqueeTop20Cutoff: 'Corte del Top 20',
   edenX1MarqueeWeighted: 'Rango de puntuación ponderada',
   edenX1MarqueeTopPerformer: 'Mejor rendimiento',
   edenX1ProgressionStart: 'Inicio',

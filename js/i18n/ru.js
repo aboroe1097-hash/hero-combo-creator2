@@ -1582,7 +1582,7 @@ const ru = {
   edenX1VoteSelectionCount: '{n} / 4 выбрано',
   edenX1MarqueeKicker: 'Ключевые показатели',
   edenX1MarqueeMembers: 'Члены гильдии',
-  edenX1MarqueeDuties: 'Активность по обязанностям',
+  edenX1MarqueeTop20Cutoff: 'Порог топ-20',
   edenX1MarqueeWeighted: 'Диапазон взвешенных баллов',
   edenX1MarqueeTopPerformer: 'Лучший исполнитель',
   edenX1ProgressionStart: 'Старт',

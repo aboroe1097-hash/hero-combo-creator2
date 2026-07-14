@@ -1575,7 +1575,7 @@ const en = {
   edenX1VoteSelectionCount: '{n} / 4 selected',
   edenX1MarqueeKicker: 'Marquee metrics',
   edenX1MarqueeMembers: 'Guild members',
-  edenX1MarqueeDuties: 'Duty activity',
+  edenX1MarqueeTop20Cutoff: 'Top 20 cutoff',
   edenX1MarqueeWeighted: 'Weighted score range',
   edenX1MarqueeTopPerformer: 'Top performer',
   edenX1ProgressionStart: 'Start',

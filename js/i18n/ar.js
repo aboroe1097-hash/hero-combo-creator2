@@ -1566,7 +1566,7 @@ const ar = {
   edenX1VoteSelectionCount: '{n} / 4 تم الاختيار',
   edenX1MarqueeKicker: 'مؤشرات الأداء',
   edenX1MarqueeMembers: 'أعضاء النقابة',
-  edenX1MarqueeDuties: 'نشاط المهام',
+  edenX1MarqueeTop20Cutoff: 'حد أفضل 20',
   edenX1MarqueeWeighted: 'نطاق النتيجة الموزونة',
   edenX1MarqueeTopPerformer: 'أفضل أداء',
   edenX1ProgressionStart: 'البداية',

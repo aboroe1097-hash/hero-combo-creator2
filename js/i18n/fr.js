@@ -1595,7 +1595,7 @@ const fr = {
   edenX1VoteSelectionCount: '{n} / 4 sélectionné(s)',
   edenX1MarqueeKicker: 'Métriques principales',
   edenX1MarqueeMembers: 'Membres de la guilde',
-  edenX1MarqueeDuties: 'Activité des devoirs',
+  edenX1MarqueeTop20Cutoff: 'Seuil du Top 20',
   edenX1MarqueeWeighted: 'Plage de score pondéré',
   edenX1MarqueeTopPerformer: 'Meilleur performeur',
   edenX1ProgressionStart: 'Début',

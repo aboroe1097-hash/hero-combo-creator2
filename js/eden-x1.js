@@ -1,4 +1,5 @@
 import {
+  DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
   buildWeightedContributionRows,
   getWeightedPlayerFamilyKey,
   normalizeWeightedR5Adjustments,
@@ -39,7 +40,7 @@ import {
 import { resolveIntlLocale } from './utils.js';
 import { dashboardCacheVersion, hasUsableDashboardCache } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.5';
+const APP_VERSION = '14.0.6';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -5296,10 +5297,14 @@ function bindPublicDashboardControls(host) {
       showPublicDetail('structure', structureButton.getAttribute('data-public-structure'));
     }
   });
-  $('edenX1PublicModalClose')?.addEventListener('click', closePublicModal);
-  $('edenX1PublicModal')?.addEventListener('click', (event) => {
-    if (event.target === event.currentTarget) closePublicModal();
-  });
+  const modal = $('edenX1PublicModal');
+  if (modal && !modal.dataset.publicControlsBound) {
+    modal.dataset.publicControlsBound = '1';
+    $('edenX1PublicModalClose')?.addEventListener('click', closePublicModal);
+    modal.addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) closePublicModal();
+    });
+  }
 }
 
 function preparePublicDashboardRows(data = publicDashboardData) {
@@ -5312,7 +5317,8 @@ function preparePublicDashboardRows(data = publicDashboardData) {
 
 async function renderPublicDashboard(data = publicDashboardData) {
   const host = $('edenX1PublicDashboard');
-  if (!host) return;
+  const overviewHost = $('edenX1PublicOverview');
+  if (!host || !overviewHost) return;
   if (data !== publicDashboardData) preparePublicDashboardRows(data);
   const token = ++publicDashboardRenderToken;
   const hasContribution = Array.isArray(publicDashboardData.contributionRecords)
@@ -5322,13 +5328,16 @@ async function renderPublicDashboard(data = publicDashboardData) {
     : false;
   if (!publicAttackRows.length && !hasContribution) {
     cancelProgressiveWeightedTablePlan('public');
+    overviewHost.classList.add('hidden');
+    overviewHost.innerHTML = '';
     host.classList.add('hidden');
     host.innerHTML = '';
     return;
   }
+  overviewHost.classList.remove('hidden');
+  overviewHost.innerHTML = renderEdenTopNamesOverview();
   host.classList.remove('hidden');
   host.innerHTML = `<div class="eden-x1-public-root">
-    ${renderEdenTopNamesOverview()}
     <div class="eden-x1-reward-heading">
       <span class="eden-x1-reward-eyebrow">${esc(t('edenX1PublicEyebrow'))}</span>
       <h2>${esc(t('edenX1PublicTitle'))}</h2>
@@ -5346,6 +5355,7 @@ async function renderPublicDashboard(data = publicDashboardData) {
     </div>
     ${renderPublicModal()}
   </div>`;
+  bindPublicDashboardControls(overviewHost);
   bindPublicDashboardControls(host);
   bindEdenQuickNav();
 
@@ -5749,7 +5759,7 @@ const EDEN_FROST_TEXT = {
   edenX1VoteSelectionCount: '{count}/4 selected',
   edenX1MarqueeKicker: 'EDEN X1 SEASON',
   edenX1MarqueeMembers: 'Members',
-  edenX1MarqueeDuties: 'Duties',
+  edenX1MarqueeTop20Cutoff: 'Top 20 cutoff',
   edenX1MarqueeWeighted: 'Total weighted',
   edenX1MarqueeTopPerformer: 'Top performer',
   edenX1ProgressionStart: 'Start',
@@ -5805,7 +5815,10 @@ function renderEdenMarquee(data = {}) {
   }
   const seasonLabel = currentRecordLabel || t('edenX1PageTitle');
   const totalMembers = rows.length;
-  const totalDuties = rows.reduce((sum, row) => sum + valueOf(row.dutyCount || 0), 0);
+  const top20Row = rows.find(
+    (row) => Number(row.finalRank) === DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF
+  );
+  const top20Cutoff = top20Row ? formatEdenNumber(valueOf(top20Row.weightedScore)) : '—';
   const totalWeighted = rows.reduce((sum, row) => sum + valueOf(row.weightedScore || 0), 0);
   const topRow = rows
     .slice()
@@ -5814,7 +5827,7 @@ function renderEdenMarquee(data = {}) {
 
   const stats = [
     { label: tf('edenX1MarqueeMembers'), value: String(totalMembers), tone: 'cyan' },
-    { label: tf('edenX1MarqueeDuties'), value: String(totalDuties), tone: 'fire' },
+    { label: tf('edenX1MarqueeTop20Cutoff'), value: top20Cutoff, tone: 'fire' },
     { label: tf('edenX1MarqueeWeighted'), value: formatEdenNumber(totalWeighted), tone: 'gold' },
   ];
 

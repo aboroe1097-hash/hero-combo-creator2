@@ -2451,6 +2451,13 @@ test.describe('app smoke tabs', () => {
     await expect(preLoadSupportCard.locator('.eden-x1-flow-label').first()).toBeVisible();
     await expect(preLoadSupportCard).toHaveCSS('content-visibility', 'visible');
 
+    const marquee = page.locator('#edenX1Marquee');
+    const top20CutoffStat = marquee
+      .locator('.eden-x1-marquee-stat')
+      .filter({ hasText: 'Top 20 cutoff' });
+    await expect(top20CutoffStat.locator('.eden-x1-marquee-stat-value')).toHaveText('69,000');
+    await expect(marquee).not.toContainText('Duty activity');
+
     const panel = page.locator('#dashWeightedContributionPanel');
     const voteRail = page.locator('#edenX1VoteRail');
     await expect(preLoadTeamCard).toHaveAttribute('aria-pressed', 'true');
@@ -2483,7 +2490,8 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('tbody tr')).toHaveCount(4);
     await expect(panel).toContainText('Support Work');
     const publicDashboard = page.locator('#edenX1PublicDashboard');
-    const topNamesOverview = publicDashboard.locator('#edenX1TopNamesOverview');
+    const publicOverview = page.locator('#edenX1PublicOverview');
+    const topNamesOverview = publicOverview.locator('#edenX1TopNamesOverview');
     await expect(page.locator('.eden-x1-vote-guidance--dashboard')).toHaveCount(1);
     await expect(topNamesOverview).toBeVisible();
     await expect(topNamesOverview).toContainText('Top names to review');
@@ -2500,6 +2508,28 @@ test.describe('app smoke tabs', () => {
     await expect(topNamesOverview).toContainText('Attendance Streaks');
     await expect(topNamesOverview).toContainText('in a row');
     await expect(topNamesOverview).not.toContainText('Steadiest Damage');
+    const desktopPublicLayout = await page.evaluate(() => {
+      const overview = document.querySelector('#edenX1PublicOverview')?.getBoundingClientRect();
+      const rail = document.querySelector('#edenX1VoteRail')?.getBoundingClientRect();
+      const dashboard = document.querySelector('#edenX1PublicDashboard')?.getBoundingClientRect();
+      if (!overview || !rail || !dashboard) return null;
+      return {
+        overviewRight: overview.right,
+        railLeft: rail.left,
+        railRight: rail.right,
+        dashboardRight: dashboard.right,
+        dashboardWidth: dashboard.width,
+        overviewWidth: overview.width,
+      };
+    });
+    expect(desktopPublicLayout).not.toBeNull();
+    expect(desktopPublicLayout.overviewRight).toBeLessThan(desktopPublicLayout.railLeft);
+    expect(
+      Math.abs(desktopPublicLayout.dashboardRight - desktopPublicLayout.railRight)
+    ).toBeLessThan(3);
+    expect(desktopPublicLayout.dashboardWidth).toBeGreaterThan(
+      desktopPublicLayout.overviewWidth + 300
+    );
     await topNamesOverview.locator('[data-eden-vote-pick]').first().click();
     await expect(publicDashboard.locator('#edenX1PublicModal')).toHaveClass(/active/);
     await expect(publicDashboard.locator('#edenX1PublicModalTitle')).not.toHaveText('');
