@@ -7,27 +7,104 @@ for MalakAbo. Writing and approval rules live in
 Do not mark a message `approved` or `sent` without the owner's confirmation. Do not overwrite sent
 text; append a new version and mark the earlier entry `superseded`.
 
-## Open requests
+## Request intake history
 
 ### 2026-07-14-pending-multichannel-01
 
-- **Status:** `intake_needed`
+- **Status:** `draft`
 - **Requested by:** MalakAbo
 - **Channels:** Viber, in-game mail, alliance/guild announcement
-- **Audience:** Not provided
-- **Language:** Not provided
-- **Topic:** Not provided
-- **Required action:** Not provided
-- **Deadline:** Not provided
-- **Reason/context:** Not provided
+- **Audience:** All VTS 1097 members
+- **Language:** English
+- **Topic:** Voting and contribution tracking closure, review window, final data lock, and reward
+  timing
+- **Required action:** Review personal data online during the Saturday review window and report any
+  missing or incorrect information before the Sunday lock
+- **Deadline:** Voting and contribution tracking close Friday, 17 July 2026 at 23:59 game time;
+  corrections close when data locks Sunday, 19 July 2026 at 00:00 game time
+- **Reason/context:** Give every member 24 hours on Saturday to verify their data before records are
+  locked and rewards are prepared for Monday morning
 - **Confirmed channel constraints:** Viber supports unrestricted length, rich text, and images;
   in-game mail is limited to 500 characters and seven lines with no images; alliance announcements
   are limited to 200 characters. In-game text must avoid known filtered terms.
-- **Note:** The owner requested a new multichannel message and a permanent writing and logging
-  process. No message text has been invented while the operational facts are missing.
+- **Drafted as:** `2026-07-14-voting-contribution-close-v1-en`
 
-Required to continue: topic, audience, required action, and exact deadline or event time. A reason,
-link/contact route, language, and consequence are also needed when applicable.
+## Draft messages
+
+### 2026-07-14-voting-contribution-close-v1-en
+
+- **Status:** `draft`
+- **Requested by:** MalakAbo, R5
+- **Approved by:** Pending MalakAbo approval
+- **Audience:** All VTS 1097 members
+- **Channels:** Viber, in-game mail, alliance/guild announcement
+- **Language:** English
+- **Topic:** Voting and contribution tracking deadline and final review
+- **Required action:** Review personal Eden X1 data on Saturday and report any problem before the
+  Sunday lock
+- **Deadline:** Friday, 17 July 2026 at 23:59 game time for voting/tracking; Sunday, 19 July 2026 at
+  00:00 game time for corrections
+- **Source facts:** Owner confirmation in the 2026-07-14 Codex task
+- **Supersedes:** None; fulfills `2026-07-14-pending-multichannel-01`
+- **Sent at:** Not sent
+- **In-game mail count:** One
+
+#### Viber
+
+```text
+"VOTING & CONTRIBUTION DEADLINE"
+
+Hello everyone,
+
+Voting and contribution tracking will close on Friday, 17 July at 23:59 game time.
+
+"24-HOUR REVIEW WINDOW"
+
+All members will then have Saturday, 18 July (00:00-23:59 game time) to review their data online:
+https://abocombo.web.app/eden-x1.html
+
+Please report any missing or incorrect information during this review window so we can correct it before the final lock.
+
+"FINAL LOCK & REWARDS"
+
+The data will be locked on Sunday, 19 July at 00:00 game time. After the lock, the final records will be prepared so rewards can be sent first thing Monday, 20 July after 00:00 game time.
+
+Please review your data early and do not wait until the end of Saturday.
+
+- MalakAbo, R5
+```
+
+#### In-game mail
+
+**Subject:** Voting & Contribution Deadline
+
+```text
+Voting and contribution tracking close Friday, 17 July at 23:59 game time.
+You then have 24 hours on Saturday, 18 July to review your data and report any missing or incorrect information.
+Open the Eden X1 page in the VTS toolkit to check your record.
+Data locks Sunday, 19 July at 00:00 game time.
+Rewards are planned for Monday, 20 July after 00:00 game time.
+Questions or corrections: contact R4/R5.
+MalakAbo, R5
+```
+
+#### Alliance/guild announcement
+
+```text
+DEADLINE: Voting and contribution tracking close Fri 17 Jul, 23:59 game time. Review your Eden X1 data on Sat and report issues. Check the latest in-game mail.
+```
+
+#### Review notes
+
+- Viber formatting/images: Quoted headings identify the text to format in bold; no image is needed
+  for this message
+- In-game mail: 414 characters, seven lines
+- Additional in-game parts: None
+- In-game filtered-word scan: Pass for known risky terms `buy`, `bonus`, `free`, `Viber`,
+  `WhatsApp`, and other named chat apps
+- Alliance announcement: 159 / 200 characters; filtered-word scan passed
+- Fact, privacy, and translation review: No private player, vote, or admin details included; English
+  draft awaiting owner approval
 
 ## Approved and sent messages
 
