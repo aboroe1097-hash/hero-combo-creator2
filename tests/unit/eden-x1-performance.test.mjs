@@ -25,6 +25,25 @@ test('Eden public dashboard rendering is frame-sliced', () => {
   assert.match(eden, /await yieldToBrowser\(\);[\s\S]*edenX1PublicHistorySlot/);
 });
 
+test('Eden keeps first-viewport Velo feedback through blocking boot rendering', () => {
+  assert.match(
+    eden,
+    /if \(bootLoader && !bootLoader\.hidden\)[\s\S]*globalThis\.VTSLoaderV14\?\.setProgress\?\.\(bootLoader, edenLoadingProgress\)/
+  );
+  assert.match(
+    eden,
+    /if \(deferPublicDashboard\) await schedulePublicDashboardRender\(data, renderGeneration\);[\s\S]*else await renderPublicDashboard\(data\);[\s\S]*setEdenPanelLoading\(false\);/
+  );
+  assert.match(
+    eden,
+    /function schedulePublicDashboardRender[\s\S]*return new Promise\(\(resolve\)/
+  );
+  assert.doesNotMatch(
+    eden,
+    /setEdenPanelLoading\(false\);\s*await yieldToBrowser\(\);\s*\/\/ Stage 2/
+  );
+});
+
 test('Eden localized rerender tolerates dashboard data that has not loaded yet', () => {
   assert.match(eden, /renderEdenProgression\(publicDashboardData\)/);
   assert.match(eden, /Array\.isArray\(data\?\.attacks\) \? data\.attacks : \[\]/);

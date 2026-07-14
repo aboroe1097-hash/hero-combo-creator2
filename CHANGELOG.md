@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.0.2 - 2026-07-14
+
+- Restored Eden X1's immediate full-viewport Velo loader, tied it to real boot progress, and kept it visible until blocking dashboard rendering finishes so Index navigation no longer lands on an apparently frozen page.
+- Refined Velo's three-round helmet mishap into a 20-second story: two seconds calm before the first red dodge, three seconds before the stronger second correction, four seconds before the final red-eye burst, and a four-second disappearance before the loop restarts.
+
 ## 14.0.1 - 2026-07-14
 
 - Prioritized Eden's cached reward controls ahead of its heavy analytics render so repeat visits show the four reward lanes before background tables and charts finish hydrating.
