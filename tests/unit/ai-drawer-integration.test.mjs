@@ -218,4 +218,9 @@ test('saved Research status requests are routed through consented app progress',
     assistantSource,
     /syncConsentUi\(preferredCategory = ''\)[\s\S]*?input\.checked = available;/
   );
+  assert.match(assistantSource, /this\.pendingSetupCategories = new Set\(\)/);
+  assert.match(
+    assistantSource,
+    /isSavedSetupCompletionPrompt\(prompt\)[\s\S]*?Array\.from\(this\.pendingSetupCategories\)/
+  );
 });

@@ -250,9 +250,9 @@ export async function getComboRecommendationsAdapter(rawArguments, context = {})
     'spendTier',
   ]);
   const filters = normalizeComboFilters(args.filters);
-  const mode =
+  const requestedMode =
     args.mode === undefined ? 'ranked' : boundedString(args.mode, 'mode', { maximum: 24 });
-  if (mode !== 'ranked' && mode !== 'non_overlap') {
+  if (requestedMode !== 'ranked' && requestedMode !== 'non_overlap') {
     throw new AiToolInputError('malformed_arguments', 'mode must be ranked or non_overlap.');
   }
   const useSelectedHeroes = boolArgument(args.useSelectedHeroes, false);
@@ -260,6 +260,8 @@ export async function getComboRecommendationsAdapter(rawArguments, context = {})
   const spendTier = normalizeSpendTier(args.spendTier);
   const limit =
     args.limit === undefined ? 5 : boundedInteger(args.limit, 'limit', { minimum: 1, maximum: 10 });
+  const mode =
+    useSelectedHeroes && !filters.heroes?.length && limit > 1 ? 'non_overlap' : requestedMode;
 
   const [{ rankedCombos, filterCombosForSkinMode, getComboSkinRequirements }, { allHeroesData }] =
     await Promise.all([import('../combos-db.js'), import('../heroes-data.js')]);
@@ -309,6 +311,11 @@ export async function getComboRecommendationsAdapter(rawArguments, context = {})
     useExplicitSkins ? ownsSkin : undefined
   );
   const warnings = [];
+  if (mode !== requestedMode) {
+    warnings.push(
+      'Selected-roster recommendations use each hero at most once across the returned formations.'
+    );
+  }
   if (unresolvedHeroFilters.length) {
     warnings.push(
       `No canonical hero data was found for: ${unresolvedHeroFilters.join(', ')}; no formations were inferred.`

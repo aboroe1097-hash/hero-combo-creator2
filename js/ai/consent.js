@@ -71,8 +71,19 @@ export function clearSessionGrants(storage = globalThis.sessionStorage) {
   } catch {}
 }
 
-export function hasRawSavedState(category, storage = globalThis.localStorage) {
+function hasLiveSelectedHeroes(runtimeState = globalThis.__vtsHeroComboRuntimeState) {
+  const selected = runtimeState?.generatorSelectedHeroes;
+  if (selected instanceof Set) return selected.size > 0;
+  return Array.isArray(selected) && selected.length > 0;
+}
+
+export function hasRawSavedState(
+  category,
+  storage = globalThis.localStorage,
+  runtimeState = globalThis.__vtsHeroComboRuntimeState
+) {
   if (category === 'admin_dashboard') return true;
+  if (category === 'selected_heroes' && hasLiveSelectedHeroes(runtimeState)) return true;
   const keys = AI_RAW_STATE_KEYS[category] || [];
   try {
     return keys.some((key) => storage?.getItem(key) !== null);

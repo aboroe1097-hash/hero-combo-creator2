@@ -370,7 +370,7 @@ test('combo recommendations enforce acquisition filters and return spending brea
   assert.equal(result.data.spendingPlan.targetDmSets, 1);
 });
 
-test('selected-hero recommendations require real saved data and support non-overlap mode', async () => {
+test('selected-hero recommendations require saved data and never reuse heroes across results', async () => {
   const missing = await executeAiToolCall(
     {
       name: 'get_combo_recommendations',
@@ -394,7 +394,7 @@ test('selected-hero recommendations require real saved data and support non-over
   const selected = await executeAiToolCall(
     {
       name: 'get_combo_recommendations',
-      arguments: { mode: 'non_overlap', useSelectedHeroes: true, limit: 3 },
+      arguments: { mode: 'ranked', useSelectedHeroes: true, limit: 3 },
     },
     {
       allowedToolGroups: [AI_TOOL_GROUPS.STATIC, AI_TOOL_GROUPS.SELECTED_HEROES],
@@ -403,8 +403,10 @@ test('selected-hero recommendations require real saved data and support non-over
     }
   );
   assert.equal(selected.ok, true);
+  assert.equal(selected.data.mode, 'non_overlap');
   const used = selected.data.combos.flatMap((combo) => combo.heroes);
   assert.equal(new Set(used).size, used.length);
+  assert.ok(selected.meta.warnings.some((warning) => warning.includes('at most once')));
 });
 
 test('counter tool distinguishes exact evidence from general alternatives', async () => {

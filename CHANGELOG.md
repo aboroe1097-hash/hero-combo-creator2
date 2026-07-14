@@ -1,5 +1,10 @@
 # Changelog
 
+## 14.0.7 - 2026-07-15
+
+- Kept Velo's pending saved-hero request across the Generator handoff so a follow-up such as "I saved them" immediately opens the correct explicit consent, including selections made before the debounced local save completes.
+- Made multi-result recommendations from a selected hero roster non-overlapping, matching the Generator by using each hero in at most one returned formation.
+
 ## 14.0.6 - 2026-07-15
 
 - Replaced Eden X1's empty Duty Activity marquee metric with the current rank-20 weighted-contribution cutoff, including translated labels and a clear fallback when fewer than 20 contributors are ranked.

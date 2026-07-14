@@ -21,6 +21,7 @@ import {
   readResearchProgressState,
   readSelectedHeroState,
 } from '../../js/ai/saved-state.js';
+import { hasRawSavedState } from '../../js/ai/consent.js';
 import { toVisibleWireHistory } from '../../js/ai/session-history.js';
 
 class MemoryStorage {
@@ -165,6 +166,20 @@ test('selected hero reader uses non-empty runtime truth then the versioned saved
   });
   assert.equal(fallback.source, 'storage');
   assert.deepEqual(fallback.heroes, ['Theodora', 'King Arthur']);
+});
+
+test('selected hero consent sees live Generator state before debounced storage catches up', () => {
+  const storage = new MemoryStorage();
+  assert.equal(
+    hasRawSavedState('selected_heroes', storage, { generatorSelectedHeroes: new Set() }),
+    false
+  );
+  assert.equal(
+    hasRawSavedState('selected_heroes', storage, {
+      generatorSelectedHeroes: new Set(['Beowulf']),
+    }),
+    true
+  );
 });
 
 test('saved state readers distinguish absent data from malformed data and normalizer defaults', () => {
