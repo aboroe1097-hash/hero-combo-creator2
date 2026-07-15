@@ -29,13 +29,13 @@ test('Eden X1 blocking layers synchronize inert, aria, and body scroll state', (
   assert.match(eden, /document\.body\.style\.overflow = state\.bodyOverflow/);
 });
 
-test('public modal and phone popovers use the blocking-layer contract', () => {
+test('public modal and phone-sheet popovers use the blocking-layer contract', () => {
   assert.match(eden, /id="edenX1PublicModal"[\s\S]*aria-hidden="true" inert[\s\S]*tabindex="-1"/);
   assert.match(eden, /activateEdenX1BlockingLayer\(modal,[\s\S]*close: closePublicModal/);
   assert.match(eden, /releaseEdenX1BlockingLayer\(modal\)/);
   assert.match(
     eden,
-    /shouldOpen && isWeightedContributionMobileViewport\(\)[\s\S]*activateEdenX1BlockingLayer\(popover/
+    /shouldOpen && isWeightedPopoverSheetViewport\(\)[\s\S]*activateEdenX1BlockingLayer\(popover/
   );
   assert.match(
     eden,
@@ -100,4 +100,36 @@ test('mobile Eden navigation paints Velo before heavy section work and preserves
   assert.match(eden, /data-eden-vote-start/);
   assert.match(edenCss, /\.eden-x1-nav-loader \{/);
   assert.match(edenCss, /touch-action:\s*pan-y/);
+});
+
+test('public heatmap is a named, conditionally focusable overflow region', () => {
+  assert.match(
+    eden,
+    /id="edenX1PublicHeatmapScroll"[\s\S]*?role="region"[\s\S]*?aria-label="\$\{esc\(t\('adminAnalyticsHeatmap'\)\)\}"[\s\S]*?aria-describedby="edenX1PublicHeatmapHint"/
+  );
+  assert.match(eden, /id="edenX1PublicHeatmapHint"[\s\S]*?edenX1HeatmapScrollHint/);
+  assert.match(eden, /function syncPublicHeatmapOverflowState\(/);
+  assert.match(eden, /scrollWidth > scrollport\.clientWidth \+ 1/);
+  assert.match(eden, /scrollport\.setAttribute\('tabindex', '0'\)/);
+  assert.match(eden, /scrollport\.removeAttribute\('tabindex'\)/);
+  assert.match(eden, /window\.addEventListener\('resize', schedulePublicHeatmapOverflowSync\)/);
+  assert.match(edenCss, /#edenX1PublicHeatmapScroll\s*{[\s\S]*?overflow-x:\s*auto/);
+  assert.match(
+    edenCss,
+    /#edenX1PublicHeatmapScroll:focus-visible\s*{[\s\S]*?outline:\s*2px solid var\(--frost-cyan\)/
+  );
+});
+
+test('enumerated Eden generic elements expose valid group and text semantics', () => {
+  assert.match(
+    eden,
+    /eden-x1-vote-suggestions eden-x1-my-stats-suggestions" role="group" aria-label=/
+  );
+  assert.doesNotMatch(eden, /dash-weighted-mobile-header" aria-label=/);
+  assert.match(
+    eden,
+    /dash-weighted-mobile-header">\s*<span class="sr-only">\$\{esc\(`#[^`]+`\)\}<\/span>/
+  );
+  assert.match(eden, /eden-x1-podium-avatar" aria-hidden="true"/);
+  assert.doesNotMatch(eden, /eden-x1-podium-avatar" aria-label=/);
 });

@@ -50,6 +50,32 @@ body.app-ready #app.app-shell {
   min-width: 0;
 }
 
+.shell-skip-current-tool {
+  position: fixed;
+  z-index: 10000;
+  inset-block-start: max(8px, var(--ff-safe-top));
+  inset-inline-start: max(8px, var(--ff-safe-left));
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 2px solid var(--ff-action);
+  border-radius: 12px;
+  color: var(--text-primary);
+  background: var(--ff-panel-strong);
+  box-shadow: var(--ff-shadow-lift);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.25;
+  transform: translateY(calc(-100% - 24px));
+}
+
+.shell-skip-current-tool:focus,
+.shell-skip-current-tool:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ff-action) 42%, transparent);
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
 /* ---- V14 base typography ----------------------------------- */
 /* Typography is intentionally scoped to shared chrome. Tool lanes keep their
    established typography until their own V14 migrations land. */
@@ -777,6 +803,13 @@ body.app-ready #app.app-shell {
 
 /* ---- More menu / mobile bottom sheet ----------------------- */
 
+/* A backdrop-filter establishes a containing block for fixed descendants.
+   Release it while More is open so the fixed backdrop covers the viewport. */
+body.shell-more-open #app .tool-nav-inner {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 #app .shell-more-backdrop {
   position: fixed;
   z-index: 1090;
@@ -1274,7 +1307,7 @@ body.app-ready #app.app-shell {
     border-radius: 11px !important;
   }
 
-  #app .command-logo > :not(picture) {
+  #app .command-logo > :not(picture):not(#appTitle) {
     display: none !important;
   }
 
@@ -1630,7 +1663,6 @@ body.app-ready #app.app-shell {
     padding-inline: 10px 54px;
     text-align: start;
   }
-
 }
 
 @media (max-width: 370px) {
@@ -1689,14 +1721,6 @@ body.app-ready #app.app-shell {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  #app .command-header::before,
-  #app .shell-more-panel,
-  #app .shell-more-backdrop {
-    animation: none !important;
-  }
-}
-
 /* Final mobile shell legibility floor. The shell loads after mobile.css, so
    these scoped rules intentionally live at the end of this stylesheet. */
 @media (max-width: 768px) {
@@ -1708,5 +1732,24 @@ body.app-ready #app.app-shell {
   #app .footer-meta p,
   #app .site-footer .footer-disclaimer {
     font-size: 0.75rem !important;
+  }
+}
+
+/* This must remain the final shell block: later !important animation and
+   transition shorthands otherwise override the shared token safeguard. */
+@media (prefers-reduced-motion: reduce) {
+  #app #appTitle {
+    animation: none !important;
+  }
+
+  #app #tabNavScroll .tab-pill,
+  #app .shell-more-button {
+    transition: none !important;
+  }
+
+  #app .command-header::before,
+  #app .shell-more-panel,
+  #app .shell-more-backdrop {
+    animation: none !important;
   }
 }

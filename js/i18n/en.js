@@ -1,7 +1,16 @@
 import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+import { p1Copy } from './p1-copy.js';
 
 const en = {
   ...edenX1ContributionModeCopy,
+  ...p1Copy([
+    'Ownership',
+    'Structure type',
+    'Sort structures',
+    'Skip to tool',
+    'Tie-break applied.',
+    'Scroll with ← and → keys.',
+  ]),
   adminLoginPass: 'Password',
   adminLoginUser: 'Username',
   adminLoginBtn: 'Sign In as Admin',
@@ -1179,8 +1188,8 @@ const en = {
   manualNoDuplicateHero: 'This hero is already used in your current combo.',
   toastComboSaved: 'Combo saved!',
   toastComboSaveFailed: 'Could not save combo',
-  generatorFoundComboOne: 'Found {n} best combo!',
-  generatorFoundComboMany: 'Found {n} best combos!',
+  generatorFoundComboOne: 'Found {n} combo',
+  generatorFoundComboMany: 'Found {n} combos',
   exportBuildingImage: 'Building image...',
   exportImageDownloaded: 'Image downloaded!',
   exportImageFailed: 'Image failed',

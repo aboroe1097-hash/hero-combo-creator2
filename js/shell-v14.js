@@ -12,6 +12,7 @@
   const languageMenuButton = document.getElementById('languageMenuButton');
   const languageMenu = document.getElementById('languageMenu');
   const languageMenuLabel = document.getElementById('languageMenuLabel');
+  const skipCurrentTool = document.getElementById('skipCurrentTool');
 
   if (!moreButton || !morePanel || !moreBackdrop || !moreClose || !moreTools || !tabNavScroll)
     return;
@@ -40,7 +41,7 @@
     'tabResearch',
     'tabMaterials',
   ];
-  const wideDesktopPrimaryIds = desktopPrimaryIds;
+  const wideDesktopPrimaryIds = [...desktopPrimaryIds, 'tabStrife', 'tabLoyalty', 'tabYouTube'];
   const mobilePrimaryIds = ['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade'];
   const internalHashes = new Map([
     ['tabArcade', 'arcade'],
@@ -101,6 +102,26 @@
 
   function sourceFor(id) {
     return document.getElementById(id);
+  }
+
+  function activeTabName() {
+    const validTabNames = new Set(internalHashes.values());
+    const hashTabName = window.location.hash.replace(/^#/, '').split('?')[0];
+    if (validTabNames.has(hashTabName)) return hashTabName;
+
+    const bodyTabName = document.body.dataset.activeTab || '';
+    if (validTabNames.has(bodyTabName)) return bodyTabName;
+
+    const activeSource = sourceIds
+      .map(sourceFor)
+      .find((source) => source?.classList.contains('tab-pill-active'));
+    return internalHashes.get(activeSource?.id) || 'generator';
+  }
+
+  function syncSkipDestination() {
+    if (!skipCurrentTool) return;
+    const tabName = activeTabName();
+    skipCurrentTool.setAttribute('href', `#${tabName}Section`);
   }
 
   function buildLanguageMenu() {
@@ -333,6 +354,7 @@
       return source.classList.contains('tab-pill-active');
     });
     moreButton.classList.toggle('is-active', hiddenActive);
+    syncSkipDestination();
   }
 
   function applyLocale() {
@@ -469,15 +491,25 @@
     else if (!consumeHistory) replaceMoreHistoryState();
   }
 
-  function focusTabDestination(tabName) {
+  function prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  }
+
+  function focusTabDestination(tabName, { scroll = false } = {}) {
     if (!tabName) return;
     window.requestAnimationFrame(() => {
       const section = document.getElementById(`${tabName}Section`);
       if (!section || section.classList.contains('hidden')) return;
-      const target = section.querySelector('h1, h2, h3') || section;
+      const target = scroll ? section : section.querySelector('h1, h2, h3') || section;
       const hadTabIndex = target.hasAttribute('tabindex');
       if (!hadTabIndex) target.setAttribute('tabindex', '-1');
       target.focus({ preventScroll: true });
+      if (scroll) {
+        target.scrollIntoView({
+          block: 'start',
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        });
+      }
       if (!hadTabIndex) {
         target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
       }
@@ -515,6 +547,10 @@
       if (!moreTools.contains(item)) return;
       closeMoreForNavigation(source);
     });
+  });
+  skipCurrentTool?.addEventListener('click', (event) => {
+    event.preventDefault();
+    focusTabDestination(activeTabName(), { scroll: true });
   });
   layoutNavigation();
   document.documentElement.dataset.shellNavReady = '1';

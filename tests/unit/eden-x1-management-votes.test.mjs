@@ -170,6 +170,16 @@ function resolveFromKlist(rawName) {
   return null;
 }
 
+function resolveDrThunderFamily(rawName) {
+  const playerName = String(rawName).includes('293') ? 'Dr Thunder 293' : 'Dr Thunder';
+  return {
+    playerKey: compactTestKey(playerName),
+    familyKey: 'drthunder',
+    playerName,
+    matched: true,
+  };
+}
+
 test('management vote URL uses a Google Visualization JSONP callback', () => {
   const url = buildManagementVotesUrl({ callbackName: '__edenVotes' });
 
@@ -274,6 +284,65 @@ test('management votes include listed candidates and skip duplicate picks inside
     [
       ['Wicked Russian', 1],
       ['GoodnesGraycious', 1],
+    ]
+  );
+});
+
+test('management ballots count aliases once per voter and rank their shared family once', () => {
+  const results = aggregateManagementVotes(
+    [
+      {
+        rowIndex: 0,
+        voterName: 'One',
+        picks: ['Dr Thunder 293', 'Dr Thunder'],
+      },
+      { rowIndex: 1, voterName: 'Two', picks: ['Dr Thunder 293'] },
+      { rowIndex: 2, voterName: 'Three', picks: ['Dr Thunder'] },
+    ],
+    { resolveCandidate: resolveDrThunderFamily }
+  );
+
+  assert.equal(results.totalVotes, 3);
+  assert.equal(results.rankings.length, 1);
+  assert.deepEqual(
+    results.rankings.map((winner) => [
+      winner.playerName,
+      winner.playerKey,
+      winner.familyKey,
+      winner.votes,
+      winner.voteRank,
+    ]),
+    [['Dr Thunder', 'drthunder', 'drthunder', 3, 1]]
+  );
+});
+
+test('pre-aggregated management aliases merge before totals and competition ranks', () => {
+  const results = summarizeManagementVotePayload(
+    [
+      { rowIndex: 0, rawName: 'Other', votes: 4 },
+      { rowIndex: 1, rawName: 'Dr Thunder 293', votes: 2 },
+      { rowIndex: 2, rawName: 'Dr Thunder', votes: 3 },
+    ],
+    {
+      resolveCandidate(rawName) {
+        return rawName === 'Other'
+          ? { playerKey: 'other', familyKey: 'other', playerName: 'Other', matched: true }
+          : resolveDrThunderFamily(rawName);
+      },
+    }
+  );
+
+  assert.equal(results.totalVotes, 9);
+  assert.deepEqual(
+    results.rankings.map((winner) => [
+      winner.playerName,
+      winner.familyKey,
+      winner.votes,
+      winner.voteRank,
+    ]),
+    [
+      ['Dr Thunder', 'drthunder', 5, 1],
+      ['Other', 'other', 4, 2],
     ]
   );
 });

@@ -60,6 +60,40 @@ async function expectTab(page, buttonId, sectionId, marker) {
   await expect(page.locator(marker)).toBeVisible({ timeout: 20000 });
 }
 
+async function readPopoverPaintState(popover) {
+  return popover.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const xSamples = [rect.left + 8, rect.left + rect.width / 2, rect.right - 8];
+    const ySamples = [rect.top + 8, rect.top + rect.height / 2, rect.bottom - 8];
+    const blockers = [];
+    const previousPointerEvents = element.style.pointerEvents;
+    element.style.pointerEvents = 'auto';
+    xSamples.forEach((x) => {
+      ySamples.forEach((y) => {
+        if (x < 0 || x >= window.innerWidth || y < 0 || y >= window.innerHeight) return;
+        const topmost = document.elementFromPoint(x, y);
+        if (topmost && topmost !== element && !element.contains(topmost)) {
+          blockers.push({
+            tag: topmost.tagName,
+            id: topmost.id,
+            className: String(topmost.className || ''),
+          });
+        }
+      });
+    });
+    element.style.pointerEvents = previousPointerEvents;
+    return {
+      blockers,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  });
+}
+
 const visualViewports = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'desktop', width: 1280, height: 800 },
@@ -315,6 +349,158 @@ async function openEdenX1ForTest(page) {
     null,
     { timeout: 20000 }
   );
+}
+
+async function installEdenX1LiveRefreshMock(
+  page,
+  { cachedData, liveDashboard, liveSettings, settingsExists = true, publicResultsReadFails = false }
+) {
+  await page.addInitScript(
+    ({ cache, dashboard, settings, settingsDocumentExists, resultsReadFails }) => {
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const snapshot = (exists, data = {}) => ({
+        exists: () => exists,
+        data: () => clone(data),
+      });
+      let releaseLiveRefresh;
+      const gate = new Promise((resolve) => {
+        releaseLiveRefresh = resolve;
+      });
+      window.VTS_EDEN_X1_TEST_MODE = true;
+      window.VTS_EDEN_X1_FIREBASE_MODULES = [
+        {
+          initFirebase: () => ({ configured: true, app: { name: 'eden-live-refresh-test' } }),
+          ensureAnonymousAuth: async () => ({ uid: 'eden-live-refresh-test-user' }),
+        },
+        {
+          importFirestoreLite: async () => ({
+            getFirestore: (app) => ({ app }),
+            doc: (_db, path) => ({ path }),
+            collection: (_db, path) => ({ path }),
+            where: (...args) => ({ args }),
+            query: (ref) => ref,
+            getDoc: async (ref) => {
+              const state = window.__EDEN_X1_LIVE_REFRESH_TEST__;
+              await state.gate;
+              if (ref.path === 'vts_admin/dashboard_data') {
+                return snapshot(true, state.liveDashboard);
+              }
+              if (ref.path === 'vts_admin/roster_data') return snapshot(false);
+              if (ref.path === 'vts_admin/eden_x1_vote_settings') {
+                state.settingsRead = true;
+                return snapshot(state.settingsExists, state.liveSettings);
+              }
+              if (ref.path === 'vts_admin/eden_x1_public_vote_results') {
+                if (state.publicResultsReadFails) throw new Error('simulated results timeout');
+                return snapshot(true, state.liveVoteResults);
+              }
+              return snapshot(false);
+            },
+            getDocs: async () => {
+              const state = window.__EDEN_X1_LIVE_REFRESH_TEST__;
+              await state.gate;
+              return {
+                forEach: (visit) =>
+                  state.liveConductAdjustments.forEach((row) => visit({ data: () => clone(row) })),
+              };
+            },
+          }),
+        },
+      ];
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.resolve({ table: { cols: [{ label: 'Name' }, { label: 'Votes' }], rows: [] } });
+      window.__EDEN_X1_LIVE_REFRESH_TEST__ = {
+        gate,
+        liveDashboard: dashboard,
+        liveSettings: settings,
+        liveVoteResults: dashboard.publicEdenX1VoteResults || {},
+        liveConductAdjustments: dashboard.publicConductAdjustments || [],
+        settingsExists: settingsDocumentExists,
+        publicResultsReadFails: resultsReadFails,
+        settingsRead: false,
+      };
+      window.__releaseEdenX1LiveRefresh = () => releaseLiveRefresh();
+      localStorage.setItem('vts_maintenance_bypass', '1');
+      localStorage.setItem('vts_hero_lang', 'en');
+      localStorage.setItem('vts_theme', 'dark');
+      localStorage.setItem(
+        'vts_eden_x1_public_dashboard_cache_v1',
+        JSON.stringify({ savedAt: Date.now(), data: cache })
+      );
+      navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+    },
+    {
+      cache: cachedData,
+      dashboard: liveDashboard,
+      settings: liveSettings,
+      settingsDocumentExists: settingsExists,
+      resultsReadFails: publicResultsReadFails,
+    }
+  );
+}
+
+function createEdenX1LiveRefreshFixture() {
+  const dashboard = {
+    syncRevision: 77,
+    updatedAt: '2026-07-15T12:00:00.000Z',
+    r5Season: 'season-2026',
+    contributionRecords: [
+      {
+        id: 'eden-live-refresh-record',
+        date: '2026-07-15',
+        premiumSlots: 20,
+        entries: [
+          { rank: '1', name: 'Cache Alpha', guild: 'VTS X1', contribution: '300000' },
+          { rank: '2', name: 'Cache Bravo', guild: 'VTS X1', contribution: '250000' },
+          { rank: '3', name: 'Cache Charlie', guild: 'VTS X1', contribution: '200000' },
+        ],
+      },
+    ],
+    dutyRecords: [],
+    attacks: [],
+  };
+  const cachedSettings = {
+    season: 'season-2026',
+    votingOpen: true,
+    allowEditing: true,
+    showPublicResults: true,
+    contributionRankingMode: 'default',
+    closesAt: '',
+  };
+  const cachedVoteResults = {
+    season: 'season-2026',
+    published: true,
+    rankings: [
+      {
+        playerName: 'Cached Winner',
+        playerKey: 'cachedwinner',
+        familyKey: 'cachedwinner',
+        votes: 9,
+        voters: 9,
+      },
+    ],
+  };
+  const adjustment = {
+    season: 'season-2026',
+    playerKey: 'cachealpha',
+    playerName: 'Cache Alpha',
+    category: 'extra_effort',
+  };
+  return {
+    cachedData: {
+      ...dashboard,
+      edenX1VoteSettings: cachedSettings,
+      publicEdenX1VoteResults: cachedVoteResults,
+      publicConductAdjustments: [{ ...adjustment, points: 1 }],
+    },
+    liveDashboard: {
+      ...dashboard,
+      publicEdenX1VoteResults: cachedVoteResults,
+      publicConductAdjustments: [{ ...adjustment, points: 5 }],
+    },
+  };
 }
 
 test.describe('visual regression', () => {
@@ -1062,6 +1248,20 @@ test.describe('app smoke tabs', () => {
 
     await page.locator('.dm-resource-panel [data-dm-toggle-breakdown]').first().click();
     await expect(page.locator('[data-dm-resource="superDragonite"]')).toBeVisible();
+  });
+
+  test('dragon master materials preserves the Korean catalog language', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('vts_hero_lang', 'kr'));
+    await openApp(page);
+    await expect(page.locator('html')).toHaveAttribute('lang', /^ko(?:-KR)?$/i);
+    await expect(page.locator('#languageSelect')).toHaveValue('kr');
+
+    await expectTab(page, '#tabMaterials', '#materialsSection', '#materialCalculatorRoot');
+
+    await expect(page.locator('#languageSelect')).toHaveValue('kr');
+    await expect(page.locator('#materialCalculatorRoot .dm-command-header h2')).toHaveText(
+      'DM 재료'
+    );
   });
 
   test('strife planner renders monster art and F2P/P2W lanes', async ({ page }) => {
@@ -2247,6 +2447,13 @@ test.describe('app smoke tabs', () => {
       ],
       dutyRecords: [],
       attacks: [],
+      edenX1VoteSettings: {
+        season: 'season-2026',
+        votingOpen: true,
+        allowEditing: true,
+        contributionRankingMode: 'default',
+        closesAt: '',
+      },
     };
 
     await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
@@ -2279,8 +2486,416 @@ test.describe('app smoke tabs', () => {
     await expect(supportCard).toBeEnabled({ timeout: 5000 });
     await expect(supportCard).toHaveCSS('content-visibility', 'visible');
     await expect(page.locator('#dashWeightedContributionPanel')).toContainText('Team Players');
+    await page.locator('[data-reward-view="contribution"]').click();
+    const baseMode = page.locator('[data-eden-contribution-mode="default"]');
+    const extendedMode = page.locator('[data-eden-contribution-mode="extended"]');
+    await expect(baseMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(baseMode).toContainText('Base');
+    await expect(baseMode).toContainText('Active');
+    await expect(extendedMode).toHaveAttribute('aria-pressed', 'false');
+    await expect(extendedMode).toContainText('Comparison');
 
     await Promise.all(stalledRoutes.map((route) => route.abort().catch(() => {})));
+  });
+
+  test('eden x1 unchanged-core refresh replaces cached vote settings, results, and conduct', async ({
+    page,
+  }) => {
+    const fixture = createEdenX1LiveRefreshFixture();
+    await installEdenX1LiveRefreshMock(page, {
+      ...fixture,
+      liveSettings: {
+        season: 'season-2026',
+        votingOpen: false,
+        allowEditing: false,
+        showPublicResults: false,
+        contributionRankingMode: 'extended',
+        closesAt: '',
+      },
+      publicResultsReadFails: true,
+    });
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
+
+    const panel = page.locator('#dashWeightedContributionPanel');
+    await page.evaluate(() => window.__releaseEdenX1LiveRefresh());
+    await expect(panel).toContainText('TBA', { timeout: 15000 });
+    await expect(panel).not.toContainText('Cached Winner');
+
+    await page.locator('[data-reward-view="contribution"]').click();
+    const extendedMode = page.locator('[data-eden-contribution-mode="extended"]');
+    const baseMode = page.locator('[data-eden-contribution-mode="default"]');
+    await expect(extendedMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(extendedMode).toContainText('Active');
+    await expect(baseMode).toHaveAttribute('aria-pressed', 'false');
+    await expect(
+      page.locator('#edenX1PublicWeightedTable tbody tr', { hasText: 'Cache Alpha' })
+    ).toContainText('350,000');
+  });
+
+  test('eden x1 missing authoritative settings keeps cached Base mode fail-closed', async ({
+    page,
+  }) => {
+    const fixture = createEdenX1LiveRefreshFixture();
+    await installEdenX1LiveRefreshMock(page, {
+      ...fixture,
+      liveSettings: {},
+      settingsExists: false,
+    });
+    await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
+    await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
+
+    const panel = page.locator('#dashWeightedContributionPanel');
+    await page.evaluate(() => window.__releaseEdenX1LiveRefresh());
+    await page.waitForFunction(() => window.__EDEN_X1_LIVE_REFRESH_TEST__.settingsRead);
+    await expect(panel).toContainText('Cached Winner', { timeout: 15000 });
+    await page.locator('[data-reward-view="contribution"]').click();
+    const baseMode = page.locator('[data-eden-contribution-mode="default"]');
+    const extendedMode = page.locator('[data-eden-contribution-mode="extended"]');
+    await expect(baseMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(baseMode).toContainText('Active');
+    await expect(extendedMode).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#edenX1Error')).toBeHidden();
+  });
+
+  test('eden x1 vote uses native exact-once submission and responsive source order', async ({
+    page,
+  }) => {
+    const members = [
+      'MalakAbo',
+      'Alpha',
+      'Bravo',
+      'Charlie',
+      'Delta',
+      'Echo',
+      'Foxtrot',
+      'Golf',
+      'Hotel',
+      'India',
+      'Juliet',
+      'Kilo',
+    ].map((name, index) => ({
+      rank: String(index + 1),
+      name,
+      guild: 'VTS X1',
+      contribution: String(500000 - index * 10000),
+    }));
+
+    await openEdenX1ForTest(page);
+    await page.evaluate(
+      (entries) =>
+        window.setEdenX1DataForTest({
+          date: '2026-07-15',
+          r5Season: 'season-2026',
+          contributionRecords: [
+            {
+              id: 'native-vote-test',
+              date: '2026-07-15',
+              premiumSlots: 20,
+              entries,
+            },
+          ],
+          dutyRecords: [],
+          publicConductAdjustments: [],
+          attacks: [],
+        }),
+      members
+    );
+
+    const voteRail = page.locator('#edenX1VoteRail');
+    await expect(voteRail.getByRole('heading', { name: 'Team Players Vote' })).toBeVisible();
+
+    await page.setViewportSize({ width: 980, height: 900 });
+    const mobileSourceLayout = await page.evaluate(() => {
+      const section = document.querySelector('#ocrDashboardSection');
+      const ids = [
+        'dashWeightedContributionPanel',
+        'edenX1VoteRail',
+        'edenX1PublicOverview',
+        'edenX1PublicDashboard',
+      ];
+      const elements = ids.map((id) => document.getElementById(id));
+      if (!section || elements.some((element) => !element)) return null;
+      return {
+        display: getComputedStyle(section).display,
+        sourceOrder: elements.map((element) => Array.from(section.children).indexOf(element)),
+        topOrder: elements.map((element) => element.getBoundingClientRect().top),
+      };
+    });
+    expect(mobileSourceLayout).not.toBeNull();
+    expect(mobileSourceLayout.display).not.toBe('grid');
+    expect(mobileSourceLayout.sourceOrder).toEqual(
+      [...mobileSourceLayout.sourceOrder].sort((a, b) => a - b)
+    );
+    expect(mobileSourceLayout.topOrder).toEqual(
+      [...mobileSourceLayout.topOrder].sort((a, b) => a - b)
+    );
+
+    await page.setViewportSize({ width: 981, height: 900 });
+    const desktopGridBoundary = await page.evaluate(() => {
+      const section = document.querySelector('#ocrDashboardSection');
+      const progression = document.querySelector('#edenX1Progression');
+      const weighted = document
+        .querySelector('#dashWeightedContributionPanel')
+        ?.getBoundingClientRect();
+      const rail = document.querySelector('#edenX1VoteRail')?.getBoundingClientRect();
+      const overview = document.querySelector('#edenX1PublicOverview')?.getBoundingClientRect();
+      const dashboard = document.querySelector('#edenX1PublicDashboard')?.getBoundingClientRect();
+      if (!section || !progression || !weighted || !rail || !overview || !dashboard) return null;
+      const style = getComputedStyle(section);
+      return {
+        display: style.display,
+        gridTemplateAreas: style.gridTemplateAreas,
+        progressionGridArea: getComputedStyle(progression).gridArea,
+        weightedWidth: weighted.width,
+        weightedRight: weighted.right,
+        railLeft: rail.left,
+        overviewRight: overview.right,
+        dashboardWidth: dashboard.width,
+      };
+    });
+    expect(desktopGridBoundary).not.toBeNull();
+    expect(desktopGridBoundary.display).toBe('grid');
+    expect(desktopGridBoundary.gridTemplateAreas).toContain('"progress progress"');
+    expect(desktopGridBoundary.progressionGridArea).toBe('progress');
+    expect(desktopGridBoundary.weightedRight).toBeLessThan(desktopGridBoundary.railLeft);
+    expect(desktopGridBoundary.overviewRight).toBeLessThan(desktopGridBoundary.railLeft);
+    expect(desktopGridBoundary.dashboardWidth).toBeGreaterThan(desktopGridBoundary.weightedWidth);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await voteRail.locator('#edenX1VoterName').fill('MalakAbo');
+    await voteRail.locator('#edenX1CandidateName').fill('Alpha');
+    await voteRail.locator('#edenX1CandidateName2').fill('Bravo');
+    await voteRail.locator('#edenX1CandidateName3').fill('Charlie');
+    await voteRail.locator('#edenX1CandidateName4').fill('Delta');
+    const voteSubmit = voteRail.locator('#edenX1TeamVoteForm button[type="submit"]');
+    await voteSubmit.evaluate((button) =>
+      button.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' })
+    );
+    await expect(voteSubmit).toBeVisible();
+    await page.evaluate(() => {
+      const originalSetItem = Storage.prototype.setItem;
+      window.__edenVoteWriteCount = 0;
+      window.__edenVoteSubmitEventCount = 0;
+      window.__edenVotePointerGeometry = [];
+      ['pointerdown', 'pointerup'].forEach((type) => {
+        window.addEventListener(
+          type,
+          (event) => {
+            const button = document.querySelector('#edenX1TeamVoteForm button[type="submit"]');
+            const rect = button?.getBoundingClientRect();
+            window.__edenVotePointerGeometry.push({
+              type,
+              targetIsButton: event.target === button,
+              scrollY: window.scrollY,
+              top: rect?.top ?? null,
+            });
+          },
+          { capture: true }
+        );
+      });
+      document.addEventListener(
+        'submit',
+        (event) => {
+          if (event.target?.id !== 'edenX1TeamVoteForm') return;
+          window.__edenVoteSubmitEventCount += 1;
+        },
+        { capture: true }
+      );
+      Storage.prototype.setItem = function countEdenVoteWrites(key, value) {
+        if (String(key).startsWith('vts_eden_x1_vote_season-2026_team_players')) {
+          window.__edenVoteWriteCount += 1;
+        }
+        return originalSetItem.call(this, key, value);
+      };
+    });
+
+    await expect(voteRail.locator('#edenX1TeamVoteForm')).toHaveAttribute(
+      'data-eden-vote-submit-bound',
+      '1'
+    );
+    // Exercise Playwright's real mouse/actionability path for the primary activation.
+    await voteSubmit.click();
+    const pointerGeometry = await page.evaluate(() => window.__edenVotePointerGeometry);
+    expect(pointerGeometry.map(({ type, targetIsButton }) => ({ type, targetIsButton }))).toEqual([
+      { type: 'pointerdown', targetIsButton: true },
+      { type: 'pointerup', targetIsButton: true },
+    ]);
+    expect(Math.abs(pointerGeometry[1].scrollY - pointerGeometry[0].scrollY)).toBeLessThanOrEqual(
+      1
+    );
+    expect(Math.abs(pointerGeometry[1].top - pointerGeometry[0].top)).toBeLessThanOrEqual(1);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteSubmitEventCount)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteWriteCount)).toBe(1);
+    await expect(voteRail.locator('#edenX1VoteStatus')).toContainText(
+      'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo, Charlie, Delta.'
+    );
+
+    await voteSubmit.dispatchEvent('pointerdown', { button: 0, pointerType: 'mouse' });
+    await expect.poll(() => page.evaluate(() => window.__edenVoteWriteCount)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteSubmitEventCount)).toBe(1);
+
+    await voteSubmit.focus();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(() => window.__edenVoteSubmitEventCount)).toBe(2);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteWriteCount)).toBe(2);
+
+    await voteSubmit.focus();
+    await page.keyboard.press('Space');
+    await expect.poll(() => page.evaluate(() => window.__edenVoteSubmitEventCount)).toBe(3);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteWriteCount)).toBe(3);
+
+    await voteSubmit.dispatchEvent('pointerdown', { button: 0, pointerType: 'touch' });
+    await voteSubmit.dispatchEvent('pointerup', { button: 0, pointerType: 'touch' });
+    await voteSubmit.evaluate((button) => button.click());
+    await expect.poll(() => page.evaluate(() => window.__edenVoteSubmitEventCount)).toBe(4);
+    await expect.poll(() => page.evaluate(() => window.__edenVoteWriteCount)).toBe(4);
+
+    const contributionViewButton = page.locator('[data-reward-view="contribution"]');
+    await contributionViewButton.click();
+    const weightedPanel = page.locator('#dashWeightedContributionPanel');
+    await expect(
+      weightedPanel.getByRole('heading', { name: 'Total Contribution', exact: true })
+    ).toBeVisible();
+    const edgeScoreTrigger = weightedPanel
+      .locator('tbody tr')
+      .last()
+      .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
+    const edgeScorePopover = edgeScoreTrigger.locator('.dash-weighted-score-popover');
+    const readPopoverVisibility = () =>
+      edgeScorePopover.evaluate((popover) => {
+        const rect = popover.getBoundingClientRect();
+        const triggerRect = popover.parentElement?.getBoundingClientRect();
+        const card = popover.closest('.eden-x1-weighted-card');
+        const xSamples = [rect.left + 8, rect.left + rect.width / 2, rect.right - 8];
+        const ySamples = [rect.top + 8, rect.top + rect.height / 2, rect.bottom - 8];
+        const blockers = [];
+        const previousPointerEvents = popover.style.pointerEvents;
+        popover.style.pointerEvents = 'auto';
+        xSamples.forEach((x) => {
+          ySamples.forEach((y) => {
+            if (x < 0 || x >= window.innerWidth || y < 0 || y >= window.innerHeight) return;
+            const topmost = document.elementFromPoint(x, y);
+            if (topmost && topmost !== popover && !popover.contains(topmost)) {
+              const blockerRect = topmost.getBoundingClientRect();
+              blockers.push({
+                tag: topmost.tagName,
+                id: topmost.id,
+                className: String(topmost.className || ''),
+                rect: {
+                  left: blockerRect.left,
+                  top: blockerRect.top,
+                  right: blockerRect.right,
+                  bottom: blockerRect.bottom,
+                },
+              });
+            }
+          });
+        });
+        popover.style.pointerEvents = previousPointerEvents;
+        const expectedCenter = triggerRect
+          ? Math.min(
+              Math.max(triggerRect.left + triggerRect.width / 2, 12 + rect.width / 2),
+              window.innerWidth - 12 - rect.width / 2
+            )
+          : null;
+        const containingContextAncestors = [];
+        for (let ancestor = popover.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor);
+          if (
+            style.transform !== 'none' ||
+            style.filter !== 'none' ||
+            style.backdropFilter !== 'none' ||
+            style.contain !== 'none' ||
+            style.contentVisibility !== 'visible' ||
+            style.willChange !== 'auto'
+          ) {
+            containingContextAncestors.push({
+              tag: ancestor.tagName,
+              id: ancestor.id,
+              className: String(ancestor.className || ''),
+              transform: style.transform,
+              filter: style.filter,
+              backdropFilter: style.backdropFilter,
+              contain: style.contain,
+              contentVisibility: style.contentVisibility,
+              willChange: style.willChange,
+            });
+          }
+        }
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+          position: getComputedStyle(popover).position,
+          cardBackdropFilter: card ? getComputedStyle(card).backdropFilter : '',
+          center: rect.left + rect.width / 2,
+          expectedCenter,
+          inlineLeft: popover.style.left,
+          containingContextAncestors,
+          trigger: {
+            label: popover.parentElement?.getAttribute('aria-label') || '',
+            row: popover.closest('tr')?.innerText?.trim() || '',
+            rect: triggerRect
+              ? {
+                  left: triggerRect.left,
+                  top: triggerRect.top,
+                  right: triggerRect.right,
+                  bottom: triggerRect.bottom,
+                }
+              : null,
+          },
+          blockers,
+        };
+      });
+
+    for (const width of [769, 1024, 1700]) {
+      await page.setViewportSize({ width, height: 800 });
+      await contributionViewButton.focus();
+      await expect(edgeScorePopover).toBeHidden();
+      await edgeScoreTrigger.scrollIntoViewIfNeeded();
+
+      await edgeScoreTrigger.hover();
+      await expect(edgeScorePopover).toBeVisible();
+      const hoverPopoverVisibility = await readPopoverVisibility();
+      await page.mouse.move(1, 1);
+      await expect(edgeScorePopover).toBeHidden();
+
+      await edgeScoreTrigger.click();
+      await expect(edgeScorePopover).toBeVisible();
+      const clickPopoverVisibility = await readPopoverVisibility();
+
+      for (const popoverVisibility of [hoverPopoverVisibility, clickPopoverVisibility]) {
+        if (popoverVisibility.blockers.length) {
+          throw new Error(
+            `Weighted popover collision: ${JSON.stringify({ width, popoverVisibility })}`
+          );
+        }
+        if (
+          popoverVisibility.left < 8 ||
+          popoverVisibility.right > popoverVisibility.viewportWidth - 8 ||
+          popoverVisibility.top < 8 ||
+          popoverVisibility.bottom > popoverVisibility.viewportHeight - 8
+        ) {
+          throw new Error(
+            `Weighted popover bounds: ${JSON.stringify({ width, popoverVisibility })}`
+          );
+        }
+        expect(popoverVisibility.viewportWidth).toBe(width);
+        expect(popoverVisibility.position).toBe('fixed');
+        expect(popoverVisibility.cardBackdropFilter).toBe('none');
+        expect(popoverVisibility.left).toBeGreaterThanOrEqual(8);
+        expect(popoverVisibility.right).toBeLessThanOrEqual(popoverVisibility.viewportWidth - 8);
+        expect(popoverVisibility.top).toBeGreaterThanOrEqual(8);
+        expect(popoverVisibility.bottom).toBeLessThanOrEqual(popoverVisibility.viewportHeight - 8);
+        expect(popoverVisibility.blockers).toEqual([]);
+      }
+      await page.keyboard.press('Escape');
+      await expect(edgeScorePopover).toBeHidden();
+    }
   });
 
   test('eden x1 reward flow cards filter reward tables', async ({ page }) => {
@@ -2316,14 +2931,22 @@ test.describe('app smoke tabs', () => {
       rank: String(index + 1),
       name,
       guild: 'VTS X1',
-      contribution: String(name === 'MalakAbo' ? 500000 : 240000 - index * 9000),
+      contribution: String(
+        name === 'MalakAbo'
+          ? 500000
+          : name === 'Tango'
+            ? 59000
+            : name === 'Uniform'
+              ? 50000
+              : 240000 - index * 9000
+      ),
     }));
     const seededDash = {
       date: '2026-06-24',
       r5Season: 'season-2026',
       // Exercise the live alias path: the roster uses the numbered display name,
       // while the forfeiture record below uses the canonical public R4 name.
-      rosterSnapshots: [{ members: ['Dr Thunder 293'] }],
+      rosterSnapshots: [{ members: ['Dr Thunder 293', 'Dr Thunder'] }],
       contributionRecords: [
         {
           id: 'eden-reward-flow-1',
@@ -2345,6 +2968,20 @@ test.describe('app smoke tabs', () => {
           playerName: 'November',
           matchedName: 'November',
           contribution: 65000,
+          status: 'matched',
+        },
+        {
+          id: 'eden-exguild-sierra-team-tie',
+          playerName: 'Sierra',
+          matchedName: 'Sierra',
+          contribution: 20000,
+          status: 'matched',
+        },
+        {
+          id: 'eden-exguild-uniform-team-tie',
+          playerName: 'Uniform',
+          matchedName: 'Uniform',
+          contribution: 9000,
           status: 'matched',
         },
       ],
@@ -2372,6 +3009,18 @@ test.describe('app smoke tabs', () => {
           season: 'season-2026',
           player: 'Mike',
           points: 2,
+          category: 'merit_other',
+        },
+        {
+          season: 'season-2026',
+          player: 'Tango',
+          points: 1,
+          category: 'merit_other',
+        },
+        {
+          season: 'season-2026',
+          player: 'Uniform',
+          points: 1,
           category: 'merit_other',
         },
         {
@@ -2510,6 +3159,7 @@ test.describe('app smoke tabs', () => {
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     await expect(voteRail.getByRole('heading', { name: 'Team Players Vote' })).toBeVisible();
+
     const desktopVoteLayout = await voteRail.evaluate((rail) => {
       const form = rail.querySelector('.eden-x1-vote-form');
       const railStyle = getComputedStyle(rail);
@@ -2628,6 +3278,48 @@ test.describe('app smoke tabs', () => {
     await expect(publicDashboard).toContainText('Insights');
     await expect(publicDashboard).toContainText('Player Trends');
     await expect(publicDashboard).toContainText('Participation Heatmap');
+    const originalRewardFlowViewport = page.viewportSize();
+    const publicHeatmapScroll = publicDashboard.getByRole('region', {
+      name: 'Participation Heatmap',
+    });
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect
+        .poll(() =>
+          publicHeatmapScroll.evaluate((element) => ({
+            overflows: element.scrollWidth > element.clientWidth + 1,
+            tabIndex: element.getAttribute('tabindex'),
+          }))
+        )
+        .toEqual(
+          await publicHeatmapScroll.evaluate((element) => {
+            const overflows = element.scrollWidth > element.clientWidth + 1;
+            return { overflows, tabIndex: overflows ? '0' : null };
+          })
+        );
+      const heatmapState = await publicHeatmapScroll.evaluate((element) => ({
+        overflows: element.scrollWidth > element.clientWidth + 1,
+        documentOverflow:
+          document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }));
+      expect(heatmapState.documentOverflow).toBeLessThanOrEqual(1);
+      if (width === 320) expect(heatmapState.overflows).toBe(true);
+    }
+    await page.keyboard.press('Tab');
+    await publicHeatmapScroll.focus();
+    await expect(publicHeatmapScroll).toBeFocused();
+    const heatmapFocusStyle = await publicHeatmapScroll.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+    });
+    expect(heatmapFocusStyle.outlineStyle).not.toBe('none');
+    expect(heatmapFocusStyle.outlineWidth).toBe('2px');
+    const heatmapScrollStart = await publicHeatmapScroll.evaluate((element) => element.scrollLeft);
+    for (let index = 0; index < 8; index += 1) await page.keyboard.press('ArrowRight');
+    await expect
+      .poll(() => publicHeatmapScroll.evaluate((element) => element.scrollLeft))
+      .not.toBe(heatmapScrollStart);
+    await page.setViewportSize(originalRewardFlowViewport || { width: 1280, height: 800 });
     await expect(publicDashboard).toContainText('Attack History');
     await expect(publicDashboard).toContainText('Structures Leaderboard');
     await expect(publicDashboard).not.toContainText('Lowest Performers');
@@ -2983,43 +3675,83 @@ test.describe('app smoke tabs', () => {
       }))
     );
     expect(managementRows).toEqual([
-      { name: '\ua9c1\u0f3a Kika \u0f3b\ua9c2', tag: 'R4', status: 'Voted By Management' },
-      { name: 'Yankee', tag: '', status: 'Voted By Management' },
-      { name: 'Lima', tag: '', status: 'Voted By Management' },
+      { name: '\ua9c1\u0f3a Kika \u0f3b\ua9c2', tag: 'R4', status: 'Voted · R4 / Management' },
+      { name: 'Yankee', tag: '', status: 'Voted · R4 / Management' },
+      {
+        name: 'Lima',
+        tag: '',
+        status: 'Voted · R4 / Management · Tie-break applied.',
+      },
     ]);
     const votedStatus = panel
-      .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted By Management' })
+      .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted · R4 / Management' })
       .first();
-    await votedStatus.click();
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).toBeVisible();
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      '4 management votes'
+    const votedStatusPopover = votedStatus.locator('.dash-weighted-score-popover');
+    await expect(votedStatus).toHaveAccessibleName('Voted · R4 / Management');
+    await expect(votedStatus).toHaveAccessibleDescription(/R4 \/ Management · Status detail/);
+    const votedStatusAccessibility = await votedStatus.evaluate((button) => {
+      const describedBy = (button.getAttribute('aria-describedby') || '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+      return {
+        ariaLabel: button.getAttribute('aria-label'),
+        describedBy,
+        describedElementCounts: describedBy.map(
+          (id) => document.querySelectorAll(`[id="${CSS.escape(id)}"]`).length
+        ),
+        visibleLabel: button.querySelector('.eden-x1-slot-status-label')?.textContent?.trim(),
+      };
+    });
+    expect(votedStatusAccessibility).toEqual({
+      ariaLabel: null,
+      describedBy: ['edenX1SlotStatusTip-management-1'],
+      describedElementCounts: [1],
+      visibleLabel: 'Voted · R4 / Management',
+    });
+    await votedStatus.focus();
+    await page.keyboard.press('Enter');
+    await expect(votedStatusPopover).toBeVisible();
+    await expect(votedStatusPopover).toContainText('R4 / Management · Status detail');
+    await expect(votedStatusPopover).toContainText('Voted');
+    await expect(votedStatusPopover).toContainText('4');
+    await expect(votedStatusPopover).toContainText('Voting rank #3 · 4 members voted');
+    await expect(votedStatusPopover).toContainText('Bonus Team Effort Points');
+    await expect(votedStatusPopover).toContainText('Bonus team effort points');
+    await expect(votedStatusPopover).toContainText('Weighted Total Contribution');
+    await expect(votedStatusPopover).toContainText(
+      'Top three eligible names from anonymous management voting.'
     );
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'Management vote rank #3'
+    const managementPaintState = await readPopoverPaintState(votedStatusPopover);
+    expect(managementPaintState.blockers).toEqual([]);
+    expect(managementPaintState.left).toBeGreaterThanOrEqual(8);
+    expect(managementPaintState.right).toBeLessThanOrEqual(managementPaintState.viewportWidth - 8);
+    expect(managementPaintState.top).toBeGreaterThanOrEqual(8);
+    expect(managementPaintState.bottom).toBeLessThanOrEqual(
+      managementPaintState.viewportHeight - 8
     );
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      '2 otherwise-ranked names were excluded by reward-priority or forfeiture rules'
+    await page.keyboard.press('Escape');
+    await expect(votedStatusPopover).toBeHidden();
+    await expect(votedStatus).toBeFocused();
+    const tiedStatus = panel.locator('.eden-x1-slot-status-trigger', {
+      hasText: 'Tie-break applied.',
+    });
+    const tiedStatusPopover = tiedStatus.locator('.dash-weighted-score-popover');
+    await expect(tiedStatus).toHaveAccessibleName('Voted · R4 / Management · Tie-break applied.');
+    await tiedStatus.focus();
+    await page.keyboard.press('Space');
+    await expect(tiedStatusPopover).toContainText('R4 / Management · Status detail');
+    await expect(tiedStatusPopover).toContainText('Voted');
+    await expect(tiedStatusPopover).toContainText('2');
+    await expect(tiedStatusPopover).toContainText('Tie-break applied.');
+    await expect(tiedStatusPopover).toContainText('#2 · Weighted Total Contribution');
+    await expect(tiedStatusPopover).toContainText('Lima');
+    await expect(tiedStatusPopover).toContainText('Quebec');
+    await expect(tiedStatusPopover).toContainText('Victor');
+    await expect(tiedStatusPopover).toContainText(
+      'Top three eligible names from anonymous management voting.'
     );
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'Weighted Total Contribution'
-    );
-    const tiedStatus = panel
-      .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted By Management' })
-      .nth(2);
-    await tiedStatus.click();
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      '2 management votes'
-    );
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'Tied on 2 votes with'
-    );
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Oscar');
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Quebec');
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Victor');
-    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'higher active Extended weighted contribution decided the remaining slot'
-    );
+    await page.keyboard.press('Escape');
     await page.evaluate(() => {
       window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'default' });
     });
@@ -3033,6 +3765,55 @@ test.describe('app smoke tabs', () => {
       window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'extended' });
     });
     await expect(panel.locator('tbody tr').nth(2)).toContainText('Lima');
+
+    await page.evaluate(async (dash) => {
+      await window.setEdenX1DataForTest(dash);
+      window.setEdenX1ManagementVotesForTest({
+        table: {
+          cols: [{ label: 'Name' }, { label: 'Votes' }],
+          rows: [
+            { c: [{ v: 'Dr Thunder 293' }, { v: 2 }] },
+            { c: [{ v: 'Dr Thunder' }, { v: 2 }] },
+            { c: [{ v: 'Yankee' }, { v: 1 }] },
+            { c: [{ v: 'Quebec' }, { v: 1 }] },
+          ],
+        },
+      });
+    }, noForfeitDash);
+    const drThunderManagementRow = panel.locator('tbody tr').filter({ hasText: 'Dr Thunder' });
+    await expect(drThunderManagementRow).toHaveCount(1);
+    await expect(drThunderManagementRow).toContainText('Dr Thunder');
+    const drThunderManagementStatus = drThunderManagementRow.locator(
+      '.eden-x1-slot-status-trigger'
+    );
+    await drThunderManagementStatus.focus();
+    await page.keyboard.press('Enter');
+    await expect(drThunderManagementStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Voting rank #1 · 4 members voted'
+    );
+    await page.keyboard.press('Escape');
+
+    await page.evaluate(async (dash) => {
+      await window.setEdenX1DataForTest(dash);
+      window.setEdenX1ManagementVotesForTest({
+        table: {
+          cols: [{ label: 'Name' }, { label: 'Votes' }],
+          rows: [
+            { c: [{ v: 'Alpha' }, { v: 8 }] },
+            { c: [{ v: 'November' }, { v: 7 }] },
+            { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
+            { c: [{ v: 'Dr Thunder 293' }, { v: 3 }] },
+            { c: [{ v: 'Goodness' }, { v: 3 }] },
+            { c: [{ v: 'Yankee' }, { v: 3 }] },
+            { c: [{ v: 'Victor' }, { v: 2 }] },
+            { c: [{ v: 'Quebec' }, { v: 2 }] },
+            { c: [{ v: 'Lima' }, { v: 2 }] },
+            { c: [{ v: 'Oscar' }, { v: 2 }] },
+          ],
+        },
+      });
+    }, seededDash);
+    await expect(panel.locator('tbody tr')).toContainText(['꧁༺ Kika ༻꧂', 'Yankee', 'Lima']);
 
     await page.evaluate(async () => {
       window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
@@ -3073,6 +3854,47 @@ test.describe('app smoke tabs', () => {
     await expect(panel.getByRole('heading', { name: 'Team Players', exact: true })).toBeVisible();
     await expect(panel.locator('tbody tr')).toHaveCount(3);
     await expect(panel.locator('tbody tr')).toContainText(['TBA', 'TBA', 'TBA']);
+    await expect(panel.locator('.eden-x1-slot-status-trigger')).toHaveCount(0);
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest({
+        ...dash,
+        publicEdenX1VoteResults: {
+          season: 'season-2026',
+          published: false,
+          rankings: [
+            {
+              playerName: 'Fake Winner',
+              playerKey: 'fakewinner',
+              familyKey: 'fakewinner',
+              votes: 99,
+              voters: 99,
+            },
+          ],
+        },
+      });
+    }, seededDash);
+    await expect(panel).not.toContainText('Fake Winner');
+    await expect(panel.locator('.eden-x1-slot-status-trigger')).toHaveCount(0);
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest({
+        ...dash,
+        publicEdenX1VoteResults: {
+          season: 'season-2025',
+          published: true,
+          rankings: [
+            {
+              playerName: 'Wrong Season Winner',
+              playerKey: 'wrongseasonwinner',
+              familyKey: 'wrongseasonwinner',
+              votes: 99,
+              voters: 99,
+            },
+          ],
+        },
+      });
+    }, seededDash);
+    await expect(panel).not.toContainText('Wrong Season Winner');
+    await expect(panel.locator('.eden-x1-slot-status-trigger')).toHaveCount(0);
     await page.evaluate((dash) => {
       window.setEdenX1DataForTest({
         ...dash,
@@ -3081,46 +3903,201 @@ test.describe('app smoke tabs', () => {
           published: true,
           rankings: [
             {
-              playerName: 'Yankee',
-              playerKey: 'yankee',
-              familyKey: 'yankee',
-              votes: 10,
-              voters: 10,
-            },
-            {
-              playerName: 'Vote One',
-              playerKey: 'voteone',
-              familyKey: 'voteone',
-              votes: 9,
-              voters: 8,
-            },
-            {
-              playerName: 'Vote Two',
-              playerKey: 'votetwo',
-              familyKey: 'votetwo',
-              votes: 8,
-              voters: 7,
-            },
-            {
-              playerName: 'Vote Three',
-              playerKey: 'votethree',
-              familyKey: 'votethree',
-              votes: 7,
+              playerName: 'Lady Zubbs',
+              playerKey: 'ladyzubbs',
+              familyKey: 'ladyzubbs',
+              votes: 6,
               voters: 6,
+            },
+            {
+              playerName: 'Zubbs',
+              playerKey: 'zubbs',
+              familyKey: 'zubbs',
+              votes: 5,
+              voters: 5,
+            },
+            { playerName: 'Papa', playerKey: 'papa', familyKey: 'papa', votes: 4, voters: 4 },
+            {
+              playerName: 'Romeo',
+              playerKey: 'romeo',
+              familyKey: 'romeo',
+              votes: 3,
+              voters: 3,
             },
           ],
         },
       });
     }, seededDash);
-    await expect(panel.locator('tbody tr')).toContainText(['Vote One', 'Vote Two', 'Vote Three']);
+    const zubbsTeamRow = panel.locator('tbody tr').filter({ hasText: 'Zubbs' });
+    await expect(zubbsTeamRow).toHaveCount(1);
+    await expect(zubbsTeamRow).not.toContainText('Lady Zubbs');
+    const zubbsTeamStatus = zubbsTeamRow.locator('.eden-x1-slot-status-trigger');
+    await zubbsTeamStatus.focus();
+    await page.keyboard.press('Enter');
+    await expect(zubbsTeamStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Voting rank #1 · 11 members voted'
+    );
+    await page.keyboard.press('Escape');
+
+    await page.evaluate((dash) => {
+      window.setEdenX1DataForTest({
+        ...dash,
+        publicEdenX1VoteResults: {
+          season: 'season-2026',
+          published: true,
+          rankings: [
+            {
+              playerName: 'Alpha',
+              playerKey: 'alpha',
+              familyKey: 'alpha',
+              votes: 12,
+              voters: 12,
+            },
+            {
+              playerName: 'Yankee',
+              playerKey: 'yankee',
+              familyKey: 'yankee',
+              votes: 11,
+              voters: 11,
+            },
+            {
+              playerName: 'Papa',
+              playerKey: 'papa',
+              familyKey: 'papa',
+              votes: 10,
+              voters: 9,
+            },
+            {
+              playerName: 'Romeo',
+              playerKey: 'romeo',
+              familyKey: 'romeo',
+              votes: 9,
+              voters: 8,
+            },
+            {
+              playerName: 'Sierra',
+              playerKey: 'sierra',
+              familyKey: 'sierra',
+              votes: 8,
+              voters: 8,
+            },
+            {
+              playerName: 'Uniform',
+              playerKey: 'uniform',
+              familyKey: 'uniform',
+              votes: 8,
+              voters: 8,
+            },
+            {
+              playerName: 'Victor',
+              playerKey: 'victor',
+              familyKey: 'victor',
+              votes: 8,
+              voters: 8,
+            },
+            {
+              playerName: 'Tango',
+              playerKey: 'tango',
+              familyKey: 'tango',
+              votes: 8,
+              voters: 8,
+            },
+          ],
+        },
+      });
+    }, seededDash);
+    await expect(panel.locator('tbody tr')).toContainText(['Papa', 'Romeo', 'Tango']);
+    await expect(panel.locator('tbody tr').filter({ hasText: 'Alpha' })).toHaveCount(0);
     await expect(panel.locator('tbody tr').filter({ hasText: 'Yankee' })).toHaveCount(0);
     const teamVotedStatus = panel
       .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted' })
       .first();
-    await teamVotedStatus.click();
-    await expect(teamVotedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'Voting rank #2 · 8 members voted'
+    const teamVotedPopover = teamVotedStatus.locator('.dash-weighted-score-popover');
+    await expect(teamVotedStatus).toHaveAccessibleName('Voted');
+    await expect(teamVotedStatus).toHaveAccessibleDescription(/Team Players · Status detail/);
+    expect(await teamVotedStatus.getAttribute('aria-label')).toBeNull();
+    await teamVotedStatus.focus();
+    await page.keyboard.press('Enter');
+    await expect(teamVotedPopover).toContainText('Team Players · Status detail');
+    await expect(teamVotedPopover).toContainText('Voted');
+    await expect(teamVotedPopover).toContainText('10');
+    await expect(teamVotedPopover).toContainText('Voting rank #3 · 10 members voted');
+    await expect(teamVotedPopover).toContainText('Bonus Team Effort Points');
+    await expect(teamVotedPopover).toContainText('Contribution');
+    await expect(teamVotedPopover).toContainText('Ex-Guild contribution');
+    await expect(teamVotedPopover).toContainText('Duty points');
+    await expect(teamVotedPopover).toContainText('Bonus team effort points');
+    await expect(teamVotedPopover).toContainText('Weighted Total Contribution');
+    await expect(teamVotedPopover).toContainText(
+      'Three anonymous guild vote rewards for standout teamwork and reliability.'
     );
+    const teamPaintState = await readPopoverPaintState(teamVotedPopover);
+    expect(teamPaintState.blockers).toEqual([]);
+    await page.keyboard.press('Escape');
+    await expect(teamVotedPopover).toBeHidden();
+    await expect(teamVotedStatus).toBeFocused();
+
+    const teamTiedStatus = panel.locator('.eden-x1-slot-status-trigger', {
+      hasText: 'Tie-break applied.',
+    });
+    const teamTiedPopover = teamTiedStatus.locator('.dash-weighted-score-popover');
+    await expect(teamTiedStatus).toHaveAccessibleName('Voted · Tie-break applied.');
+    await expect(teamTiedStatus).toContainText('Tie-break applied.');
+    await teamTiedStatus.focus();
+    await page.keyboard.press('Space');
+    await expect(teamTiedPopover).toBeVisible();
+    await expect(teamTiedPopover).toContainText('Team Players · Status detail');
+    await expect(teamTiedPopover).toContainText('Tie-break applied.');
+    await expect(teamTiedPopover).toContainText('#3 · Member Name');
+    await expect(teamTiedPopover).toContainText('Voting rank #5 · 8 members voted');
+    const teamTieCandidates = teamTiedPopover.locator('small', {
+      hasText: 'Tango · Uniform · Sierra · Victor',
+    });
+    await expect(teamTieCandidates).toHaveText('Tango · Uniform · Sierra · Victor');
+    const teamTiePaintState = await readPopoverPaintState(teamTiedPopover);
+    expect(teamTiePaintState.blockers).toEqual([]);
+    expect(teamTiePaintState.left).toBeGreaterThanOrEqual(8);
+    expect(teamTiePaintState.right).toBeLessThanOrEqual(teamTiePaintState.viewportWidth - 8);
+    expect(teamTiePaintState.top).toBeGreaterThanOrEqual(8);
+    expect(teamTiePaintState.bottom).toBeLessThanOrEqual(teamTiePaintState.viewportHeight - 8);
+    await page.keyboard.press('Escape');
+    await expect(teamTiedPopover).toBeHidden();
+    await expect(teamTiedStatus).toBeFocused();
+
+    await page.evaluate(() => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () => new Promise(() => {});
+      void window.loadEdenX1ManagementVotesForTest({ force: true });
+    });
+    await expect(panel.locator('.eden-x1-slot-status-trigger')).toHaveCount(0);
+    await expect(panel).not.toContainText('Papa');
+    await expect(panel).not.toContainText('Yankee');
+
+    await page.evaluate(async () => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.reject(new Error('simulated downstream management outage'));
+      await window.loadEdenX1ManagementVotesForTest({ force: true });
+    });
+    await expect(panel).toContainText('Management votes temporarily unavailable');
+    await expect(panel.locator('#edenX1ManagementVotesRetry')).toBeVisible();
+    await expect(panel.locator('.eden-x1-slot-status-trigger')).toHaveCount(0);
+
+    await page.evaluate(async () => {
+      window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
+        Promise.resolve({
+          table: {
+            cols: [{ label: 'Name' }, { label: 'Votes' }],
+            rows: [
+              { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
+              { c: [{ v: 'Yankee' }, { v: 2 }] },
+              { c: [{ v: 'Quebec' }, { v: 1 }] },
+            ],
+          },
+        });
+      await window.loadEdenX1ManagementVotesForTest({ force: true });
+      delete window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER;
+    });
+    await expect(panel.locator('tbody tr')).toContainText(['Papa', 'Romeo', 'Tango']);
+    await expect(panel).not.toContainText('temporarily unavailable');
     await expect(voteRail).toContainText('Team Players Vote');
     await expect(voteRail).toContainText('Need Help With Voting? - View Top Names');
     await voteRail.locator('[data-eden-vote-help-link]').click();
@@ -3181,7 +4158,9 @@ test.describe('app smoke tabs', () => {
         'Put your In-Game Name'
       );
       await panel.locator('#edenX1VoterName').fill('NotARealMember');
-      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await panel
+        .locator('#edenX1TeamVoteForm button[type="submit"]')
+        .evaluate((button) => button.click());
       await expect(panel.locator('#edenX1VoteStatus')).toContainText(
         'Choose your in-game name from the member list.'
       );
@@ -3311,7 +4290,9 @@ test.describe('app smoke tabs', () => {
       await expect(
         panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName2"]')
       ).toBeEmpty();
-      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await panel
+        .locator('#edenX1TeamVoteForm button[type="submit"]')
+        .evaluate((button) => button.click());
       await expect(panel.locator('#edenX1VoteStatus')).toContainText(
         'You still have 2 vote slot(s) open. Press Cast Votes again to save these votes anyway.'
       );
@@ -3331,8 +4312,11 @@ test.describe('app smoke tabs', () => {
         candidateNames: ['Alpha', 'Bravo'],
         candidateKeys: ['alpha', 'bravo'],
       });
-      await panel.locator('#edenX1CandidateName3').fill('Bravo');
-      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await panel.locator('#edenX1CandidateName3').fill('Dr Thunder 293');
+      await panel.locator('#edenX1CandidateName4').fill('Dr Thunder');
+      await panel
+        .locator('#edenX1TeamVoteForm button[type="submit"]')
+        .evaluate((button) => button.click());
       await expect(panel.locator('#edenX1VoteStatus')).toContainText(
         'Duplicate vote found. Nothing was saved. Pick each teammate only once.'
       );
@@ -3369,7 +4353,9 @@ test.describe('app smoke tabs', () => {
       await expect(
         panel.locator('[data-eden-vote-suggestions-for="edenX1CandidateName4"]')
       ).toBeEmpty();
-      await panel.locator('#edenX1TeamVoteForm button[type="submit"]').click();
+      await panel
+        .locator('#edenX1TeamVoteForm button[type="submit"]')
+        .evaluate((button) => button.click());
       await expect(panel.locator('#edenX1VoteStatus')).toContainText(
         'Thank you, MalakAbo. Your votes were cast for Alpha, Bravo, Charlie, Delta.'
       );
@@ -3452,8 +4438,8 @@ test.describe('app smoke tabs', () => {
             id: 'season-2026__team_players__legacy-auth-delta',
             season: 'season-2026',
             category: 'team_players',
-            voterKey: 'delta',
-            voterName: 'Delta',
+            voterKey: 'legacy-auth-delta',
+            voterName: '(VTS)Delta',
             candidateKey: 'bravo',
             candidateName: 'Bravo',
             candidateKeys: ['bravo'],
@@ -3499,6 +4485,58 @@ test.describe('app smoke tabs', () => {
             updatedAt: '2026-06-24T20:10:00.000Z',
           },
           {
+            id: 'season-2026__team_players__drthunder293',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'drthunder293',
+            voterName: '(Vts)Dr Thunder 293',
+            candidateKey: 'alpha',
+            candidateName: 'Alpha',
+            candidateKeys: ['alpha'],
+            candidateNames: ['Alpha'],
+            voterAuthUid: 'test-dr-thunder-old',
+            updatedAt: '2026-06-24T20:11:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__drthunder',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'drthunder',
+            voterName: 'Dr Thunder',
+            candidateKey: 'charlie',
+            candidateName: 'Charlie',
+            candidateKeys: ['charlie'],
+            candidateNames: ['Charlie'],
+            voterAuthUid: 'test-dr-thunder-new',
+            updatedAt: '2026-06-24T20:12:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__lisavetka',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'lisavetka',
+            voterName: '(Vts)Lisavetka*',
+            candidateKey: 'bravo',
+            candidateName: 'Bravo',
+            candidateKeys: ['bravo'],
+            candidateNames: ['Bravo'],
+            voterAuthUid: 'test-lisaveta-old',
+            updatedAt: '2026-06-24T20:13:00.000Z',
+          },
+          {
+            id: 'season-2026__team_players__lisaveta',
+            season: 'season-2026',
+            category: 'team_players',
+            voterKey: 'lisaveta',
+            voterName: 'Lisaveta',
+            candidateKey: 'delta',
+            candidateName: 'Delta',
+            candidateKeys: ['delta'],
+            candidateNames: ['Delta'],
+            voterAuthUid: 'test-lisaveta-new',
+            updatedAt: '2026-06-24T20:14:00.000Z',
+          },
+          {
             id: 'season-2026__team_players__golf',
             season: 'season-2026',
             category: 'team_players',
@@ -3519,8 +4557,8 @@ test.describe('app smoke tabs', () => {
             voterName: 'Hotel',
             candidateKey: 'decorated-kika',
             candidateName: '\uA9C1\u0F3A Kika \u0F3B\uA9C2',
-            candidateKeys: ['decorated-kika'],
-            candidateNames: ['\uA9C1\u0F3A Kika \u0F3B\uA9C2'],
+            candidateKeys: ['decorated-kika', 'kika'],
+            candidateNames: ['\uA9C1\u0F3A Kika \u0F3B\uA9C2', 'Kika'],
             voterAuthUid: 'test-hotel',
             updatedAt: '2026-06-24T20:20:00.000Z',
           },
@@ -3570,7 +4608,7 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashEdenContributionModeDefault')).toBeChecked();
     await expect(page.locator('#dashEdenContributionModeExtended')).not.toBeChecked();
     await expect(page.locator('#dashEdenContributionModeStatus')).toContainText(
-      'Active reward chain: Default'
+      'Active reward chain: Base'
     );
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
@@ -3587,8 +4625,14 @@ test.describe('app smoke tabs', () => {
     await expect(kikaVoters).toContainText('Hotel');
     await expect(totalsTable.locator('[data-eden-vote-candidate="alpha"]')).toContainText('3');
     await expect(totalsTable.locator('[data-eden-vote-candidate="bravo"]')).toContainText('2');
-    await expect(totalsTable.locator('[data-eden-vote-candidate="charlie"]')).toContainText('2');
-    await expect(totalsTable.locator('[data-eden-vote-candidate="delta"]')).toContainText('2');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="charlie"]')).toContainText('3');
+    await expect(totalsTable.locator('[data-eden-vote-candidate="delta"]')).toContainText('3');
+    const ballotsTable = results.locator('table').nth(1);
+    await expect(ballotsTable.locator('tbody tr')).toHaveCount(7);
+    await expect(ballotsTable).toContainText('Dr Thunder');
+    await expect(ballotsTable).not.toContainText('(Vts)Dr Thunder 293');
+    await expect(ballotsTable).toContainText('Lisaveta');
+    await expect(ballotsTable).not.toContainText('(Vts)Lisavetka*');
     await expect(results).toContainText('Alpha, Bravo, Charlie, Delta');
     await expect(results).toContainText('Delta');
     await expect(results).toContainText('Echo');

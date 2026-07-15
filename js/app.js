@@ -1,5 +1,6 @@
 // js/app.js - Manual + Generator, scoring, no duplicates, image + text export
 import { translations, loadTranslationsForLanguage, applyLanguageDirection } from './translations.js';
+globalThis.VTS_TRANSLATIONS = translations;
 import { allHeroesData } from './heroes-data.js';
 import { mountGameClock, syncGameClockTitles } from './game-time.js';
 import { escapeHtml, debounce, installShowToast, resolveIntlLocale } from './utils.js';
@@ -161,7 +162,7 @@ function reportDynamicImportFailure(error) {
 
 function loadResearchModule() {
   if (!researchModulePromise) {
-    researchModulePromise = import('./app-research.js?v=20260715_113646').catch((err) => {
+    researchModulePromise = import('./app-research.js?v=20260715_161654').catch((err) => {
       researchModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -172,7 +173,7 @@ function loadResearchModule() {
 
 function loadMaterialModule() {
   if (!materialModulePromise) {
-    materialModulePromise = import('./material-calculator.js?v=20260715_113646').catch((err) => {
+    materialModulePromise = import('./material-calculator.js').catch((err) => {
       materialModulePromise = null;
       reportDynamicImportFailure(err);
       throw err;
@@ -183,7 +184,7 @@ function loadMaterialModule() {
 
 function loadLoyaltyModule() {
   if (!loyaltyModulePromise) {
-    loyaltyModulePromise = import('./loyalty-spa.js?v=20260715_113646').catch((error) => {
+    loyaltyModulePromise = import('./loyalty-spa.js?v=20260715_161654').catch((error) => {
       loyaltyModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -194,7 +195,7 @@ function loadLoyaltyModule() {
 
 function loadExportModule() {
   if (!exportModulePromise) {
-    exportModulePromise = import('./app-export.js?v=20260715_113646').catch((error) => {
+    exportModulePromise = import('./app-export.js?v=20260715_161654').catch((error) => {
       exportModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -205,7 +206,7 @@ function loadExportModule() {
 
 function loadArcadeModule() {
   if (!arcadeModulePromise) {
-    arcadeModulePromise = import('./arcade-spa.js?v=20260715_113646').catch((error) => {
+    arcadeModulePromise = import('./arcade-spa.js?v=20260715_161654').catch((error) => {
       arcadeModulePromise = null;
       reportDynamicImportFailure(error);
       throw error;
@@ -343,6 +344,12 @@ const TAB_BTN_IDS = {
   youtube: 'tabYouTube',
   arcade: 'tabArcade',
 };
+
+function getHomeNavigationScrollBehavior(preferredBehavior = 'smooth') {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ? 'auto'
+    : preferredBehavior;
+}
 
 function syncTabA11yState(activeTabName = '') {
   Object.entries(TAB_BTN_IDS).forEach(([tabName, buttonId]) => {
@@ -889,7 +896,7 @@ tabs.forEach(tab => {
       loadTabTemplate('edenMap').then(() => {
         const root = document.getElementById('edenMapRoot');
         root?.classList.add('eden-map-loading');
-        import('./eden-map.js?v=20260715_113646')
+        import('./eden-map.js?v=20260715_161654')
           .then((mod) => mod.bootEdenMapPlanner())
           .then(() => { _edenMapReady = true; })
           .catch((err) => {
@@ -972,7 +979,7 @@ tabs.forEach(tab => {
     if (tabName === 'strife' && !_strifeReady) {
       if (_strifeBooting) return;
       _strifeBooting = true;
-      import('./app-strife.js?v=20260715_113646')
+      import('./app-strife.js?v=20260715_161654')
         .then((mod) => {
           mod.initStrifeTool();
           _strifeReady = true;
@@ -988,7 +995,7 @@ tabs.forEach(tab => {
     }
     if (tabName === 'youtube' && !_youtubeReady && !_youtubeBooting) {
       _youtubeBooting = true;
-      import('./youtube-v14.js?v=20260715_113646')
+      import('./youtube-v14.js?v=20260715_161654')
         .then((mod) => {
           mod.initYouTubeLibrary();
           _youtubeReady = true;
@@ -1036,7 +1043,7 @@ tabs.forEach(tab => {
     const navIsSticky = navStyle?.position === 'sticky';
     const navOffset = navIsSticky ? nav.getBoundingClientRect().height + 14 : 10;
     const top = Math.max(0, targetSection.getBoundingClientRect().top + window.scrollY - navOffset);
-    window.scrollTo({ top, behavior: 'smooth' });
+    window.scrollTo({ top, behavior: getHomeNavigationScrollBehavior() });
   }
 
   function switchTab(tabName, force = false, options = {}) {
@@ -1358,10 +1365,16 @@ function initTabScroll() {
   };
 
   leftBtn?.addEventListener('click', () => {
-    scrollContainer.scrollBy({ left: -scrollStep(), behavior: 'smooth' });
+    scrollContainer.scrollBy({
+      left: -scrollStep(),
+      behavior: getHomeNavigationScrollBehavior(),
+    });
   });
   rightBtn?.addEventListener('click', () => {
-    scrollContainer.scrollBy({ left: scrollStep(), behavior: 'smooth' });
+    scrollContainer.scrollBy({
+      left: scrollStep(),
+      behavior: getHomeNavigationScrollBehavior(),
+    });
   });
 
   const checkOverflow = () => {
@@ -1392,7 +1405,10 @@ function keepActiveTabInView(activeBtn, behavior = 'smooth') {
   }
 
   if (Math.abs(delta) > 1) {
-    scrollContainer.scrollBy({ left: delta, behavior });
+    scrollContainer.scrollBy({
+      left: delta,
+      behavior: getHomeNavigationScrollBehavior(behavior),
+    });
   }
 }
 

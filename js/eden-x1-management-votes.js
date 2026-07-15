@@ -240,7 +240,28 @@ export function readManagementVoteResultRows(payloadOrTable, options = {}) {
 function defaultResolveCandidate(rawName) {
   const playerName = normalizeManagementVoteCandidateName(rawName) || String(rawName || '').trim();
   const playerKey = compactVoteKey(playerName);
-  return playerKey ? { playerKey, playerName, rawName } : null;
+  return playerKey ? { playerKey, familyKey: playerKey, playerName, rawName } : null;
+}
+
+function normalizeResolvedVoteCandidate(resolved, rawName) {
+  if (!resolved) return null;
+  const playerName = String(resolved.playerName || resolved.name || rawName || '').trim();
+  const playerKey = compactVoteKey(resolved.playerKey || resolved.key || playerName);
+  const familyKey = compactVoteKey(resolved.familyKey || playerKey);
+  return playerKey && familyKey
+    ? { playerKey, familyKey, playerName, matched: resolved.matched === true }
+    : null;
+}
+
+function preferResolvedVoteIdentity(current, candidate) {
+  if (current.matched !== candidate.matched) return candidate.matched;
+  const currentIsCanonical = current.playerKey === current.familyKey;
+  const candidateIsCanonical = candidate.playerKey === candidate.familyKey;
+  if (currentIsCanonical !== candidateIsCanonical) return candidateIsCanonical;
+  return Boolean(
+    candidate.playerName &&
+    (!current.playerName || candidate.playerName.length < current.playerName.length)
+  );
 }
 
 export function aggregateManagementVotes(payloadOrRows, options = {}) {
@@ -260,36 +281,38 @@ export function aggregateManagementVotes(payloadOrRows, options = {}) {
   rows.forEach((row) => {
     const seenInBallot = new Set();
     row.picks.forEach((rawName, pickIndex) => {
-      const resolved = resolveCandidate(rawName, row);
-      if (!resolved) return;
-      const playerName = String(resolved.playerName || resolved.name || rawName || '').trim();
-      const playerKey = compactVoteKey(resolved.playerKey || resolved.key || playerName);
-      if (!playerKey || excluded.has(playerKey) || seenInBallot.has(playerKey)) return;
-      seenInBallot.add(playerKey);
-      totalVotes += 1;
+      const candidate = normalizeResolvedVoteCandidate(resolveCandidate(rawName, row), rawName);
+      if (!candidate || excluded.has(candidate.playerKey) || excluded.has(candidate.familyKey)) {
+        return;
+      }
       const rowOrder = Number.isFinite(row.rowIndex) ? row.rowIndex * 1000 : totals.size * 1000;
       const voteOrder = rowOrder + pickIndex;
 
-      const current = totals.get(playerKey) || {
-        playerKey,
-        playerName,
+      const current = totals.get(candidate.familyKey) || {
+        playerKey: candidate.playerKey,
+        familyKey: candidate.familyKey,
+        playerName: candidate.playerName,
         votes: 0,
         voters: [],
         rawNameCounts: new Map(),
         firstSeen: voteOrder,
         lastSeen: voteOrder,
-        matched: resolved.matched === true,
+        matched: candidate.matched,
       };
+      if (preferResolvedVoteIdentity(current, candidate)) {
+        current.playerKey = candidate.playerKey;
+        current.playerName = candidate.playerName;
+      }
+      current.matched = current.matched || candidate.matched;
+      totals.set(candidate.familyKey, current);
+      if (seenInBallot.has(candidate.familyKey)) return;
+      seenInBallot.add(candidate.familyKey);
+      totalVotes += 1;
       current.votes += 1;
       current.lastSeen = voteOrder;
-      current.matched = current.matched || resolved.matched === true;
-      if (playerName && (!current.playerName || playerName.length < current.playerName.length)) {
-        current.playerName = playerName;
-      }
       const raw = String(rawName || '').trim();
       if (raw) current.rawNameCounts.set(raw, (current.rawNameCounts.get(raw) || 0) + 1);
       if (row.voterName) current.voters.push(row.voterName);
-      totals.set(playerKey, current);
     });
   });
 
@@ -331,28 +354,35 @@ export function summarizeManagementVoteResults(payloadOrRows, options = {}) {
   const totals = new Map();
 
   rows.forEach((row) => {
-    const resolved = resolveCandidate(row.rawName, row);
-    if (!resolved) return;
-    const playerName = String(resolved.playerName || resolved.name || row.rawName || '').trim();
-    const playerKey = compactVoteKey(resolved.playerKey || resolved.key || playerName);
-    if (!playerKey || excluded.has(playerKey)) return;
+    const candidate = normalizeResolvedVoteCandidate(
+      resolveCandidate(row.rawName, row),
+      row.rawName
+    );
+    if (!candidate || excluded.has(candidate.playerKey) || excluded.has(candidate.familyKey)) {
+      return;
+    }
 
-    const current = totals.get(playerKey) || {
-      playerKey,
-      playerName,
+    const current = totals.get(candidate.familyKey) || {
+      playerKey: candidate.playerKey,
+      familyKey: candidate.familyKey,
+      playerName: candidate.playerName,
       votes: 0,
       voters: [],
       rawNameCounts: new Map(),
       firstSeen: Number.isFinite(row.rowIndex) ? row.rowIndex : totals.size,
       lastSeen: Number.isFinite(row.rowIndex) ? row.rowIndex : totals.size,
-      matched: resolved.matched === true,
+      matched: candidate.matched,
     };
+    if (preferResolvedVoteIdentity(current, candidate)) {
+      current.playerKey = candidate.playerKey;
+      current.playerName = candidate.playerName;
+    }
     current.votes += row.votes;
     current.lastSeen = Number.isFinite(row.rowIndex) ? row.rowIndex : current.lastSeen;
-    current.matched = current.matched || resolved.matched === true;
+    current.matched = current.matched || candidate.matched;
     const raw = String(row.rawName || '').trim();
     if (raw) current.rawNameCounts.set(raw, (current.rawNameCounts.get(raw) || 0) + row.votes);
-    totals.set(playerKey, current);
+    totals.set(candidate.familyKey, current);
   });
 
   const rankings = addManagementVoteCompetitionRanks(
@@ -373,7 +403,7 @@ export function summarizeManagementVoteResults(payloadOrRows, options = {}) {
 
   return {
     totalBallots: 0,
-    totalVotes: rows.reduce((sum, row) => sum + row.votes, 0),
+    totalVotes: rankings.reduce((sum, row) => sum + row.votes, 0),
     rankings,
     winners: limit ? rankings.slice(0, limit) : rankings,
   };

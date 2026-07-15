@@ -93,6 +93,55 @@ test('desktop rail is a single non-overlaying row with deterministic overflow', 
   assert.match(shellCss, /grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\) !important/);
 });
 
+test('navigation placement keeps the 640/641 and 1439/1440 contracts distinct', () => {
+  assert.match(shellJs, /matchMedia\('\(max-width: 640px\)'\)/);
+  assert.match(shellJs, /matchMedia\('\(min-width: 1440px\)'\)/);
+  assert.match(
+    shellJs,
+    /const wideDesktopPrimaryIds = \[\.\.\.desktopPrimaryIds, 'tabStrife', 'tabLoyalty', 'tabYouTube'\];/
+  );
+  assert.match(
+    shellJs,
+    /const mobilePrimaryIds = \['tabGenerator', 'tabResearch', 'tabYouTube', 'tabArcade'\];/
+  );
+
+  for (const id of ['tabStrife', 'tabLoyalty', 'tabYouTube']) {
+    assert.match(
+      index,
+      new RegExp(
+        `<div\\b(?=[^>]*\\bdata-shell-wide-primary\\b)[^>]*>\\s*<(?:button|a)\\b[^>]*\\bid="${id}"`
+      )
+    );
+  }
+  assert.match(
+    index,
+    /<div\b(?=[^>]*\bdata-shell-mobile-primary\b)[^>]*>\s*<button\b[^>]*\bid="tabYouTube"/
+  );
+});
+
+test('first-focus skip link follows the active tool and respects reduced motion', () => {
+  assert.match(
+    index,
+    /<body>\s*<a\b(?=[^>]*\bid="skipCurrentTool")(?=[^>]*\bhref="#generatorSection")(?=[^>]*\bdata-i18n="skipToCurrentTool")[^>]*>/
+  );
+  assert.match(shellJs, /skipCurrentTool\.setAttribute\('href', `#\$\{tabName\}Section`\)/);
+  assert.match(shellJs, /function focusTabDestination\(tabName, \{ scroll = false \} = \{\}\)/);
+  assert.match(shellJs, /prefersReducedMotion\(\) \? 'auto' : 'smooth'/);
+  assert.match(shellJs, /skipCurrentTool\?\.addEventListener\('click'/);
+  assert.match(shellJs, /focusTabDestination\(activeTabName\(\), \{ scroll: true \}\)/);
+  assert.match(shellCss, /\.shell-skip-current-tool:focus-visible\s*\{/);
+});
+
+test('mobile branding keeps the single page heading in the accessibility tree', () => {
+  assert.equal(countId('appTitle'), 1);
+  assert.match(shellCss, /#app \.command-logo > :not\(picture\):not\(#appTitle\)\s*\{/);
+  assert.doesNotMatch(shellCss, /#app \.command-logo > :not\(picture\)\s*\{/);
+  assert.match(
+    shellCss,
+    /#app \.command-logo #appTitle\s*\{[\s\S]*?clip-path:\s*inset\(50%\) !important/
+  );
+});
+
 test('More controller localizes all supported languages and preserves keyboard focus', () => {
   for (const language of ['en', 'es', 'pt', 'de', 'fr', 'tr', 'ru', 'id', 'zh', 'ar', 'kr']) {
     assert.match(shellJs, new RegExp(`\\b${language}: \\{ more:`));

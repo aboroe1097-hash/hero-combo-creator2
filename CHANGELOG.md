@@ -1,5 +1,18 @@
 # Changelog
 
+## 14.0.9 - 2026-07-15
+
+- Completed Delivery P1 quick wins: Eden Team Player votes now use the native form-submit path exactly once, and the mobile DOM/focus order matches the visible reward, vote, overview, and dashboard flow while preserving the desktop grid.
+- Applied the same deterministic cutoff tie-break hierarchy to R4 / Management and published Team Player winners: aggregate votes first, then Bonus Team Effort, the admin-selected contribution score, and canonical member name.
+- Made winner detail popovers paint above the voting rail and show localized vote totals, rank, active contribution breakdown, anonymity, and the exact tie-break criterion when one decided a slot; unpublished or wrong-season Team Player results expose nothing.
+- Restored the Home navigation contract at the 640/641 and 1439/1440 boundaries, added a localized first-focus Skip to current tool link with hash/Back synchronization, and retained one meaningful mobile page heading.
+- Prevented Best and Surprise Me from leaving stale Generator results or downloads, added one neutral result-count announcement, and now show a persistent, focus-managed recovery action whenever no ranked combinations match.
+- Added targeted accessible names, contrast, progress text, group semantics, and conditional keyboard access across Admin, Eden Map, Dragon Master, Research, and the public participation heatmap; reduced-motion users no longer receive the known title/shell animations, and the two broad component transitions now list only their intended properties.
+- Stabilized the Total Contribution formula selector so its buttons no longer shift between views, and renamed the user-facing Default formula to Base while preserving the existing stored setting and formula behavior.
+- Reconciled the July 15 vote export with verified public-member and OCR aliases, hardened non-Latin name matching, canonicalized legacy voter keys at read time, and prevented one ballot from counting multiple spellings of the same player family.
+- Consolidated Management and Team winner rankings by verified player family so alias spellings cannot split votes or occupy duplicate reward slots, including recalculated competition ranks for legacy aggregates.
+- Added an explicit fail-closed admin action for activating a new vote season, and made the public cache refresh authoritative settings, published results, and Bonus Team Effort sidecars without retaining or indefinitely renewing obsolete season data.
+
 ## 14.0.8 - 2026-07-15
 
 - Made R4 / Management assignment transparent by publishing each selected name's management-vote total, competition rank, public Bonus Team Effort Points, and weighted-contribution breakdown while keeping individual ballots anonymous.

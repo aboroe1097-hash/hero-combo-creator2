@@ -25,11 +25,11 @@ const LIMITS = {
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
   // Firebase core is now a same-origin, lazy Admin/cloud chunk instead of an
-  // unbounded gstatic dependency. Eden's dual contribution formulas, admin
-  // authority control, and transparent R4 tie-breaks measure 3624.0 KiB after
-  // shared locale copy is deduplicated. Keep about 2 KiB of graph headroom;
-  // route preload checks below still prevent optional code leaking into Index.
-  totalJsBytes: 3626 * 1024,
+  // unbounded gstatic dependency. P1 runtime accessibility plus the vote-family
+  // and ballot-dedupe safeguards measure 3631.4 KiB. Keep about 1.6 KiB of graph
+  // headroom; route preload checks below still prevent optional code leaking
+  // into Index.
+  totalJsBytes: 3633 * 1024,
   // The cross-tool light-theme/touch-target pass used to measure 1076.1 KiB.
   // Contribution filters, batch controls, and source badges bring the current
   // aggregate to 1079.4 KiB; per-page budgets still catch route leakage.

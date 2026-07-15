@@ -1,7 +1,16 @@
 import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+import { p1Copy } from './p1-copy.js';
 
 const pt = {
   ...edenX1ContributionModeCopy,
+  ...p1Copy([
+    'Propriedade',
+    'Tipo de estrutura',
+    'Ordenar estruturas',
+    'Ir à ferramenta',
+    'Desempate aplicado.',
+    'Role com as teclas ← e →.',
+  ]),
   adminLoginPass: 'Senha',
   adminLoginUser: 'Usuário',
   adminLoginBtn: 'Entrar como administrador',
@@ -1111,8 +1120,8 @@ const pt = {
   manualNoDuplicateHero: 'Este herói já está na sua combo atual.',
   toastComboSaved: 'Combo salva!',
   toastComboSaveFailed: 'Não foi possível salvar a combo',
-  generatorFoundComboOne: '{n} melhor combo encontrada!',
-  generatorFoundComboMany: '{n} melhores combos encontradas!',
+  generatorFoundComboOne: '{n} combo encontrado',
+  generatorFoundComboMany: '{n} combos encontrados',
   exportBuildingImage: 'Gerando imagem...',
   exportImageDownloaded: 'Imagem baixada!',
   exportImageFailed: 'Falha na imagem',
@@ -1179,13 +1188,13 @@ const pt = {
   edenToolTargetTitle: 'Pin custom target',
   edenToolDraw: 'Draw',
   edenToolDrawTitle: 'Freehand sketch (D) · drag to draw',
-  edenDrawColorTitle: 'Ink color',
+  edenDrawColorTitle: 'Cor da tinta',
   edenDrawWhite: 'White',
   edenUndoDraw: 'Undo',
   edenUndoDrawTitle: 'Remove last sketch',
   edenClearDraw: 'Clear',
   edenClearDrawTitle: 'Clear all sketches on this plan',
-  edenPathColorTitle: 'Path alliance color',
+  edenPathColorTitle: 'Cor da aliança da rota',
   edenScoutPullTitle: 'Pull guild intel from cloud',
   edenScoutPushTitle: 'Push ownership to cloud',
   edenSidebarClose: 'Close sidebar',

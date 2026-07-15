@@ -54,6 +54,8 @@
             <select
               id="edenDatasetSelect"
               class="eden-dataset-select"
+              aria-label="Season"
+              data-i18n-aria="edenDatasetLabel"
               data-i18n-title="edenDatasetLabelTitle"
               title="Eden season / map data"
             ></select>
@@ -72,6 +74,8 @@
           <select
             id="edenSectorSelect"
             class="eden-sector-select"
+            aria-label="Sector"
+            data-i18n-aria="edenSectorTitle"
             data-i18n-title="edenSectorTitle"
             title="Sector"
           >
@@ -395,6 +399,8 @@
           <select
             id="edenPathColor"
             class="eden-path-color-select"
+            aria-label="Path alliance color"
+            data-i18n-aria="edenPathColorTitle"
             data-i18n-title="edenPathColorTitle"
             title="Path alliance color"
           >
@@ -464,6 +470,8 @@
           <select
             id="edenDrawColor"
             class="eden-path-color-select"
+            aria-label="Ink color"
+            data-i18n-aria="edenDrawColorTitle"
             data-i18n-title="edenDrawColorTitle"
             title="Ink color"
           >
@@ -939,21 +947,43 @@
           <select
             id="edenTeamFilter"
             class="eden-filter-select"
+            aria-label="Filter structure list by team assignment"
+            data-i18n-aria="edenTeamFilterTitle"
             data-i18n-title="edenTeamFilterTitle"
             title="Filter structure list by team assignment"
           ></select>
         </div>
         <span class="eden-ownership-dot" id="edenOwnershipDot" aria-hidden="true"></span>
-        <select id="edenOwnershipFilter" class="eden-filter-select eden-filter-select--with-dot">
+        <select
+          id="edenOwnershipFilter"
+          class="eden-filter-select eden-filter-select--with-dot"
+          aria-label="Ownership filter"
+          data-i18n-aria="edenOwnershipFilterLabel"
+        >
           <option value="all" data-i18n="edenOwnershipAll">All ownership</option>
           <option value="owned" data-i18n="edenOwnershipOwned">Owned</option>
           <option value="contested" data-i18n="edenOwnershipContested">Contested</option>
           <option value="enemy" data-i18n="edenOwnershipEnemy">Enemy</option>
           <option value="neutral" data-i18n="edenOwnershipNeutral">Neutral</option>
         </select>
-        <select id="edenZoneFilter" class="eden-filter-select"></select>
-        <select id="edenTypeFilter" class="eden-filter-select"></select>
-        <select id="edenSortSelect" class="eden-filter-select eden-sort-select">
+        <select
+          id="edenZoneFilter"
+          class="eden-filter-select"
+          aria-label="Zone"
+          data-i18n-aria="edenZoneLabel"
+        ></select>
+        <select
+          id="edenTypeFilter"
+          class="eden-filter-select"
+          aria-label="Structure type filter"
+          data-i18n-aria="edenTypeFilterLabel"
+        ></select>
+        <select
+          id="edenSortSelect"
+          class="eden-filter-select eden-sort-select"
+          aria-label="Sort structure list"
+          data-i18n-aria="edenSortSelectLabel"
+        >
           <option value="points" data-i18n="edenSortPoints">Sort: Points</option>
           <option value="zone" data-i18n="edenSortZone">Sort: Zone</option>
           <option value="type" data-i18n="edenSortType">Sort: Type</option>

@@ -356,7 +356,7 @@ function renderResearchCardBuffPreview(tech) {
 
   const moreCount = Math.max(0, summary.known.length - topBuffs.length);
   return `
-        <div class="research-card-buff-preview" aria-label="${escapeHtml(appT('researchBuffTopBuffsAria'))}">
+        <div class="research-card-buff-preview" role="group" aria-label="${escapeHtml(appT('researchBuffTopBuffsAria'))}">
             ${topBuffs
               .map(
                 (buff) => `

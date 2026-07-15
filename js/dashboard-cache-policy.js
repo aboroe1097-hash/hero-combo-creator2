@@ -17,6 +17,27 @@ export function hasUsableDashboardCache(data) {
   );
 }
 
+export function hasAuthoritativeEdenVoteSettings(settings, expectedSeason) {
+  const mode = settings?.contributionRankingMode;
+  const settingsSeason = String(settings?.season || '').trim();
+  const dashboardSeason = String(expectedSeason || '').trim();
+  return (
+    settings !== null &&
+    typeof settings === 'object' &&
+    !Array.isArray(settings) &&
+    Boolean(settingsSeason) &&
+    Boolean(dashboardSeason) &&
+    settingsSeason === dashboardSeason &&
+    (mode === 'extended' || mode === 'default')
+  );
+}
+
+export function cachedEdenDashboardSeasonIsObsolete(cachedData, liveDashboardSeason) {
+  const cachedSeason = String(cachedData?.r5Season || '').trim();
+  const liveSeason = String(liveDashboardSeason || '').trim();
+  return Boolean(cachedSeason && liveSeason && cachedSeason !== liveSeason);
+}
+
 export function dashboardCacheVersion(data) {
   if (!data || typeof data !== 'object') return '';
   const revision = Number(data.syncRevision);

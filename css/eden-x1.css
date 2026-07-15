@@ -967,11 +967,36 @@ body.eden-x1-page {
   border-bottom-color: rgba(var(--eden-flow-rgb), 0.28);
 }
 
+#ocrDashboardRoot .eden-x1-contribution-mode-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title modes'
+    'tools tools';
+  align-items: center;
+  width: 100%;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-header > .dash-card-title {
+  grid-area: title;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-header > .eden-x1-contribution-mode-switch {
+  grid-area: modes;
+  justify-self: end;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-tools {
+  grid-area: tools;
+  width: 100%;
+}
+
 #ocrDashboardRoot .eden-x1-contribution-mode-switch {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.25rem;
-  min-width: min(100%, 330px);
+  width: 330px;
+  max-width: 100%;
   padding: 0.22rem;
   border: 1px solid rgba(var(--eden-flow-rgb), 0.24);
   border-radius: 10px;
@@ -1281,6 +1306,23 @@ body.eden-x1-page {
 #ocrDashboardRoot .dash-history-leader-grid,
 #ocrDashboardRoot .eden-x1-public-analytics {
   gap: var(--eden-public-gap) !important;
+}
+
+#ocrDashboardRoot #edenX1PublicHeatmapScroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  padding-block-end: 0.35rem;
+  box-sizing: border-box;
+}
+
+#ocrDashboardRoot #edenX1PublicHeatmapScroll:focus-visible {
+  outline: 2px solid var(--frost-cyan);
+  outline-offset: -2px;
+  border-radius: 8px;
 }
 
 @media (min-width: 981px) {
@@ -2885,6 +2927,18 @@ body.eden-x1-page {
     width: 100%;
   }
 
+  #ocrDashboardRoot .eden-x1-contribution-mode-header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'title'
+      'modes'
+      'tools';
+  }
+
+  #ocrDashboardRoot .eden-x1-contribution-mode-header > .eden-x1-contribution-mode-switch {
+    justify-self: stretch;
+  }
+
   #ocrDashboardRoot .eden-x1-slots-card .dash-weighted-contribution-meta {
     text-align: left;
   }
@@ -4043,10 +4097,25 @@ body.eden-x1-page {
   }
 }
 
-/* M5: Centering absolute popovers to prevent right-edge silent clipping. */
+/* Weighted score popovers use viewport coordinates. The glass blur would make
+   their fixed positioning relative to this card and trap them below later grid
+   items such as the vote rail, so release that containing context only while a
+   popover is active. */
+.eden-x1-page
+  #ocrDashboardRoot
+  .eden-x1-weighted-card:has(.dash-weighted-score-popover[aria-hidden='false']) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.eden-x1-page #ocrDashboardRoot tr:has(.dash-weighted-score-popover[aria-hidden='false']) {
+  content-visibility: visible !important;
+}
+
+/* M5: Center the vote-info popover to prevent right-edge silent clipping.
+   Weighted score popovers are positioned and viewport-clamped by JavaScript. */
 @media (min-width: 769px) {
-  #ocrDashboardRoot .eden-x1-vote-info-popover,
-  #ocrDashboardRoot .eden-x1-popover-trigger.is-open .dash-weighted-score-popover {
+  #ocrDashboardRoot .eden-x1-vote-info-popover {
     left: 50% !important;
     transform: translateX(-50%) !important;
     margin-left: 0 !important;
@@ -4114,7 +4183,7 @@ body.eden-x1-page {
 /* Explicit X close control for the weighted/reward/rank/conduct popovers, in
    addition to click-outside and Escape (touch users need an obvious close). */
 #ocrDashboardRoot .dash-weighted-score-popover {
-  position: relative;
+  z-index: 2200;
 }
 #ocrDashboardRoot .eden-x1-popover-close {
   position: absolute;
@@ -4775,7 +4844,7 @@ body.eden-x1-page {
       'notice   notice'
       'marquee  marquee'
       'podium   podium'
-      'progress progression'
+      'progress progress'
       'quicknav quicknav'
       'reward   reward'
       'weighted rail'
@@ -4849,18 +4918,6 @@ body.eden-x1-page {
   }
   .eden-x1-page #edenX1Error {
     grid-area: error;
-  }
-}
-
-@media (max-width: 980px) {
-  .eden-x1-page #edenX1VoteRail {
-    order: 2;
-  }
-  .eden-x1-page #edenX1PublicOverview {
-    order: 3;
-  }
-  .eden-x1-page #edenX1PublicDashboard {
-    order: 4;
   }
 }
 

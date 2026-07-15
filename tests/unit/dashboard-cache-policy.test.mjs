@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { dashboardCacheVersion, hasUsableDashboardCache } from '../../js/dashboard-cache-policy.js';
+import {
+  cachedEdenDashboardSeasonIsObsolete,
+  dashboardCacheVersion,
+  hasAuthoritativeEdenVoteSettings,
+  hasUsableDashboardCache,
+} from '../../js/dashboard-cache-policy.js';
 
 test('dashboard cache is usable only when it contains meaningful records', () => {
   assert.equal(hasUsableDashboardCache(null), false);
@@ -23,4 +28,31 @@ test('dashboard cache version changes with revision, timestamp, or record counts
     dashboardCacheVersion({ ...base, attacks: [...base.attacks, { id: 'two' }] })
   );
   assert.equal(dashboardCacheVersion({ attacks: [{ id: 'one' }] }), '');
+});
+
+test('Eden vote settings authority requires a valid mode for the dashboard season', () => {
+  const current = { season: 'season-2027', contributionRankingMode: 'default' };
+  assert.equal(hasAuthoritativeEdenVoteSettings(current, 'season-2027'), true);
+  assert.equal(hasAuthoritativeEdenVoteSettings(current, 'season-2026'), false);
+  assert.equal(
+    hasAuthoritativeEdenVoteSettings(
+      { season: 'season-2027', contributionRankingMode: 'invalid' },
+      'season-2027'
+    ),
+    false
+  );
+  assert.equal(
+    hasAuthoritativeEdenVoteSettings({ contributionRankingMode: 'default' }, 'season-2027'),
+    false
+  );
+});
+
+test('a live season rollover marks the previously valid Eden cache obsolete', () => {
+  const cachedData = {
+    r5Season: 'season-2026',
+    edenX1VoteSettings: { season: 'season-2026', contributionRankingMode: 'default' },
+  };
+  assert.equal(cachedEdenDashboardSeasonIsObsolete(cachedData, 'season-2027'), true);
+  assert.equal(cachedEdenDashboardSeasonIsObsolete(cachedData, 'season-2026'), false);
+  assert.equal(cachedEdenDashboardSeasonIsObsolete(cachedData, ''), false);
 });
