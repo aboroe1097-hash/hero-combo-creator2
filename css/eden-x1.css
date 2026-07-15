@@ -4115,6 +4115,10 @@ body.eden-x1-page {
 /* M5: Center the vote-info popover to prevent right-edge silent clipping.
    Weighted score popovers are positioned and viewport-clamped by JavaScript. */
 @media (min-width: 769px) {
+  #ocrDashboardRoot .eden-x1-popover-trigger .dash-weighted-score-popover {
+    transition-property: opacity, visibility;
+  }
+
   #ocrDashboardRoot .eden-x1-vote-info-popover {
     left: 50% !important;
     transform: translateX(-50%) !important;
