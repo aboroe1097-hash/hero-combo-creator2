@@ -4,10 +4,12 @@ import assert from 'node:assert/strict';
 import {
   aggregateManagementVotes,
   buildManagementVotesUrl,
+  compareManagementVoteAssignmentCandidates,
   loadManagementVotesPayloadWithFallback,
   loadManagementVotesViaJsonp,
   loadManagementVotesViaProxy,
   managementVoteCandidateVariants,
+  managementVoteTieBreakCriterion,
   parseGoogleVisualizationResponse,
   readManagementVoteResultRows,
   readManagementVoteRows,
@@ -202,10 +204,15 @@ test('management vote payload prefers the pre-aggregated Vote Results tab orderi
     ]
   );
   assert.deepEqual(
-    results.winners.map((winner) => [winner.playerName, winner.votes, winner.matched]),
+    results.winners.map((winner) => [
+      winner.playerName,
+      winner.votes,
+      winner.voteRank,
+      winner.matched,
+    ]),
     [
-      ['GoodnesGraycious', 3, true],
-      ['Uzumaki', 3, true],
+      ['GoodnesGraycious', 3, 1, true],
+      ['Uzumaki', 3, 1, true],
     ]
   );
   assert.equal(results.totalBallots, 0);
@@ -232,10 +239,15 @@ test('management votes aggregate top two players from the form and resolve to kl
 
   assert.equal(results.totalBallots, 5);
   assert.deepEqual(
-    results.winners.map((winner) => [winner.playerName, winner.votes, winner.matched]),
+    results.winners.map((winner) => [
+      winner.playerName,
+      winner.votes,
+      winner.voteRank,
+      winner.matched,
+    ]),
     [
-      ['GoodnesGraycious', 3, true],
-      ['\ua9c1\u0f3a Kika \u0f3b\ua9c2', 3, true],
+      ['GoodnesGraycious', 3, 1, true],
+      ['\ua9c1\u0f3a Kika \u0f3b\ua9c2', 3, 1, true],
     ]
   );
   assert.equal(results.rankings.find((row) => row.playerName === 'ANGEL').votes, 1);
@@ -264,6 +276,31 @@ test('management votes include listed candidates and skip duplicate picks inside
       ['GoodnesGraycious', 1],
     ]
   );
+});
+
+test('management assignment tie-breaks use bonus, then weighted total, then canonical name', () => {
+  const candidates = [
+    { playerName: 'Weighted', votes: 3, bonusTeamEffort: 1, weightedScore: 900000 },
+    { playerName: 'Bonus', votes: 3, bonusTeamEffort: 2, weightedScore: 100000 },
+  ];
+  assert.equal(candidates.sort(compareManagementVoteAssignmentCandidates)[0].playerName, 'Bonus');
+  assert.equal(managementVoteTieBreakCriterion(candidates[0], candidates[1]), 'bonus-team-effort');
+
+  const weightedTie = [
+    { playerName: 'Lower', votes: 3, bonusTeamEffort: 2, weightedScore: 100000 },
+    { playerName: 'Higher', votes: 3, bonusTeamEffort: 2, weightedScore: 200000 },
+  ];
+  weightedTie.sort(compareManagementVoteAssignmentCandidates);
+  assert.equal(weightedTie[0].playerName, 'Higher');
+  assert.equal(managementVoteTieBreakCriterion(weightedTie[0], weightedTie[1]), 'weighted-total');
+
+  const nameTie = [
+    { playerName: 'Zulu', votes: 3, bonusTeamEffort: 2, weightedScore: 200000 },
+    { playerName: 'Alpha', votes: 3, bonusTeamEffort: 2, weightedScore: 200000 },
+  ];
+  nameTie.sort(compareManagementVoteAssignmentCandidates);
+  assert.equal(nameTie[0].playerName, 'Alpha');
+  assert.equal(managementVoteTieBreakCriterion(nameTie[0], nameTie[1]), 'canonical-name');
 });
 
 test('management vote JSONP resolves and cleans up its script and callback', async () => {

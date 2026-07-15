@@ -1,4 +1,7 @@
+import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+
 const tr = {
+  ...edenX1ContributionModeCopy,
   adminLoginPass: 'Şifre',
   adminLoginUser: 'Kullanıcı Adı',
   adminLoginBtn: 'Yönetici olarak oturum aç',

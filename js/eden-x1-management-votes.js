@@ -24,6 +24,46 @@ function compactVoteKey(value) {
     .toLowerCase();
 }
 
+function assignmentMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+export function compareManagementVoteAssignmentCandidates(a, b) {
+  return (
+    assignmentMetric(b?.votes) - assignmentMetric(a?.votes) ||
+    assignmentMetric(b?.bonusTeamEffort) - assignmentMetric(a?.bonusTeamEffort) ||
+    assignmentMetric(b?.weightedScore) - assignmentMetric(a?.weightedScore) ||
+    String(a?.playerName || '').localeCompare(String(b?.playerName || ''), 'en', {
+      sensitivity: 'base',
+    })
+  );
+}
+
+export function managementVoteTieBreakCriterion(winner, runnerUp) {
+  if (!winner || !runnerUp || assignmentMetric(winner.votes) !== assignmentMetric(runnerUp.votes)) {
+    return '';
+  }
+  if (assignmentMetric(winner.bonusTeamEffort) !== assignmentMetric(runnerUp.bonusTeamEffort)) {
+    return 'bonus-team-effort';
+  }
+  if (assignmentMetric(winner.weightedScore) !== assignmentMetric(runnerUp.weightedScore)) {
+    return 'weighted-total';
+  }
+  return 'canonical-name';
+}
+
+function addManagementVoteCompetitionRanks(rows) {
+  let rank = 0;
+  let previousVotes = null;
+  return rows.map((row, index) => {
+    const votes = assignmentMetric(row?.votes);
+    if (previousVotes === null || votes !== previousVotes) rank = index + 1;
+    previousVotes = votes;
+    return { ...row, voteRank: rank };
+  });
+}
+
 function normalizeHeader(value) {
   return String(value || '')
     .trim()
@@ -253,18 +293,20 @@ export function aggregateManagementVotes(payloadOrRows, options = {}) {
     });
   });
 
-  const rankings = [...totals.values()]
-    .map((row) => ({
-      ...row,
-      rawNames: [...row.rawNameCounts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([name]) => name),
-      rawNameCounts: undefined,
-    }))
-    .sort(
-      (a, b) =>
-        b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
-    );
+  const rankings = addManagementVoteCompetitionRanks(
+    [...totals.values()]
+      .map((row) => ({
+        ...row,
+        rawNames: [...row.rawNameCounts.entries()]
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([name]) => name),
+        rawNameCounts: undefined,
+      }))
+      .sort(
+        (a, b) =>
+          b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
+      )
+  );
   const limit = Math.max(0, Number(options.limit || 0));
 
   return {
@@ -313,18 +355,20 @@ export function summarizeManagementVoteResults(payloadOrRows, options = {}) {
     totals.set(playerKey, current);
   });
 
-  const rankings = [...totals.values()]
-    .map((row) => ({
-      ...row,
-      rawNames: [...row.rawNameCounts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([name]) => name),
-      rawNameCounts: undefined,
-    }))
-    .sort(
-      (a, b) =>
-        b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
-    );
+  const rankings = addManagementVoteCompetitionRanks(
+    [...totals.values()]
+      .map((row) => ({
+        ...row,
+        rawNames: [...row.rawNameCounts.entries()]
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([name]) => name),
+        rawNameCounts: undefined,
+      }))
+      .sort(
+        (a, b) =>
+          b.votes - a.votes || a.firstSeen - b.firstSeen || a.playerName.localeCompare(b.playerName)
+      )
+  );
   const limit = Math.max(0, Number(options.limit || 0));
 
   return {

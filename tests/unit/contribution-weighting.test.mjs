@@ -18,10 +18,14 @@ globalThis.document = {
 
 const { compactPlayerIdentity, state } = await import('../../js/ocr-shared.js');
 const {
+  EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
   buildWeightedDutyCounts,
+  compareEdenX1ContributionRankingRows,
+  getEdenX1ContributionRankingScore,
   getLatestContributionRecord,
   getWeightedContributionRecordLabel,
+  normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } = await import('../../js/contribution-weighting.js');
 const { PLAYER_REGISTRY_KEY, writeStoredPlayerRegistry } =
@@ -40,6 +44,49 @@ function withRosterNames(callback) {
     state.rosterNames = previousRosterNames;
   }
 }
+
+test('Eden X1 contribution modes produce distinct authoritative rankings', () => {
+  const extendedWinner = {
+    playerName: 'Extended Winner',
+    currentRank: 2,
+    contributionScore: 100000,
+    contributionExGuild: 0,
+    contributionRewardScore: 100000,
+    weightedScore: 130000,
+  };
+  const defaultWinner = {
+    playerName: 'Default Winner',
+    currentRank: 1,
+    contributionScore: 110000,
+    contributionExGuild: 5000,
+    contributionRewardScore: 115000,
+    weightedScore: 115000,
+  };
+
+  assert.equal(
+    normalizeEdenX1ContributionRankingMode('default'),
+    EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+  );
+  assert.equal(
+    normalizeEdenX1ContributionRankingMode('invalid'),
+    EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED
+  );
+  assert.equal(getEdenX1ContributionRankingScore(extendedWinner, 'extended'), 130000);
+  assert.equal(getEdenX1ContributionRankingScore(extendedWinner, 'default'), 100000);
+
+  assert.deepEqual(
+    [defaultWinner, extendedWinner]
+      .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, 'extended'))
+      .map((row) => row.playerName),
+    ['Extended Winner', 'Default Winner']
+  );
+  assert.deepEqual(
+    [extendedWinner, defaultWinner]
+      .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, 'default'))
+      .map((row) => row.playerName),
+    ['Default Winner', 'Extended Winner']
+  );
+});
 
 test('weighted contribution rows join contribution, duty counts, and signed R5 conduct', () => {
   withRosterNames(() => {

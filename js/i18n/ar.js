@@ -1,4 +1,7 @@
+import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+
 const ar = {
+  ...edenX1ContributionModeCopy,
   adminLoginPass: 'كلمة المرور',
   adminLoginUser: 'اسم المستخدم',
   adminLoginBtn: 'تسجيل الدخول كمسؤول',

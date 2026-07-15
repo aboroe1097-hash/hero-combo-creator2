@@ -410,7 +410,7 @@ service cloud.firestore {
     function validEdenX1VoteSettings() {
       return request.resource.data.keys().hasOnly([
         'season', 'votingOpen', 'allowEditing', 'showPublicResults',
-        'showVoterNames', 'closesAt', 'updatedAt', 'updatedBy'
+        'showVoterNames', 'contributionRankingMode', 'closesAt', 'updatedAt', 'updatedBy'
       ])
       && request.resource.data.season is string
       && request.resource.data.season.size() > 0
@@ -419,6 +419,13 @@ service cloud.firestore {
       && request.resource.data.allowEditing is bool
       && request.resource.data.showPublicResults is bool
       && request.resource.data.showVoterNames is bool
+      && (
+        !('contributionRankingMode' in request.resource.data)
+        || (
+          request.resource.data.contributionRankingMode is string
+          && request.resource.data.contributionRankingMode in ['extended', 'default']
+        )
+      )
       && (
         !('closesAt' in request.resource.data)
         || (

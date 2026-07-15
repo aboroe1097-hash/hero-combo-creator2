@@ -1,4 +1,7 @@
+import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+
 const zh = {
+  ...edenX1ContributionModeCopy,
   adminLoginPass: '密码',
   adminLoginUser: '用户名',
   adminLoginBtn: '以管理员身份登录',

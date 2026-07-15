@@ -2,6 +2,7 @@ import { importFirestore } from '../firebase-sdk.js';
 import {
   buildWeightedContributionRows,
   getWeightedPlayerFamilyKey,
+  normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from '../contribution-weighting.js';
 
@@ -163,6 +164,9 @@ async function readPublicData() {
     premiumCutoff: model.premiumCutoff,
     rows: model.rows.map(publicWeightedRow),
     voting: {
+      contributionRankingMode: normalizeEdenX1ContributionRankingMode(
+        settings.contributionRankingMode
+      ),
       votingOpen: settings.votingOpen !== false,
       allowEditing: settings.allowEditing !== false,
       closesAt:

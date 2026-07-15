@@ -1582,6 +1582,56 @@
                 </span>
               </label>
             </div>
+            <fieldset
+              class="dash-eden-contribution-mode-control"
+              aria-describedby="dashEdenContributionModeHint dashEdenContributionModeStatus"
+            >
+              <legend data-i18n="adminEdenContributionModeTitle">
+                Authoritative Total Contribution formula
+              </legend>
+              <small id="dashEdenContributionModeHint" data-i18n="adminEdenContributionModeHint">
+                This selection controls the actual Top 10, then R4 / Management, then Team Players.
+                Both formulas remain visible publicly for comparison.
+              </small>
+              <div class="dash-eden-contribution-mode-grid">
+                <label class="dash-eden-contribution-mode-option">
+                  <input
+                    id="dashEdenContributionModeExtended"
+                    name="edenContributionRankingMode"
+                    type="radio"
+                    value="extended"
+                    checked
+                  />
+                  <span>
+                    <strong data-i18n="adminEdenContributionModeExtended">Extended</strong>
+                    <small data-i18n="adminEdenContributionModeExtendedHint"
+                      >Contribution + ex-guild + duty points + Bonus Team Effort weighted
+                      value.</small
+                    >
+                  </span>
+                </label>
+                <label class="dash-eden-contribution-mode-option">
+                  <input
+                    id="dashEdenContributionModeDefault"
+                    name="edenContributionRankingMode"
+                    type="radio"
+                    value="default"
+                  />
+                  <span>
+                    <strong data-i18n="adminEdenContributionModeDefault">Default</strong>
+                    <small data-i18n="adminEdenContributionModeDefaultHint"
+                      >Contribution + ex-guild only. Duty and Bonus Team Effort stay visible but do
+                      not affect ranking.</small
+                    >
+                  </span>
+                </label>
+              </div>
+              <output
+                id="dashEdenContributionModeStatus"
+                class="dash-eden-contribution-mode-status"
+                aria-live="polite"
+              ></output>
+            </fieldset>
             <div class="dash-eden-vote-deadline-control">
               <div>
                 <label for="dashEdenVoteClosesAtInput" data-i18n="adminEdenVotesDeadline"

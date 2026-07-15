@@ -967,6 +967,61 @@ body.eden-x1-page {
   border-bottom-color: rgba(var(--eden-flow-rgb), 0.28);
 }
 
+#ocrDashboardRoot .eden-x1-contribution-mode-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  min-width: min(100%, 330px);
+  padding: 0.22rem;
+  border: 1px solid rgba(var(--eden-flow-rgb), 0.24);
+  border-radius: 10px;
+  background: rgba(5, 10, 20, 0.46);
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-btn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.48rem 0.58rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-btn.is-selected {
+  border-color: rgba(var(--eden-flow-rgb), 0.52);
+  color: var(--text-primary);
+  background: rgba(var(--eden-flow-rgb), 0.14);
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-btn:focus-visible {
+  outline: 2px solid rgb(var(--eden-flow-rgb));
+  outline-offset: 2px;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-badge {
+  padding: 0.18rem 0.38rem;
+  border-radius: 999px;
+  color: #061018;
+  background: rgb(var(--eden-flow-rgb));
+  font-size: 0.56rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#ocrDashboardRoot .eden-x1-contribution-mode-badge.is-comparison {
+  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.14);
+}
+
 #ocrDashboardRoot .eden-x1-slots-card,
 #ocrDashboardRoot .eden-x1-slots-card .dash-card-hdr,
 #ocrDashboardRoot .eden-x1-slots-card .dash-weighted-table-controls,
@@ -2824,6 +2879,10 @@ body.eden-x1-page {
     display: grid;
     justify-items: start;
     text-align: left;
+  }
+
+  #ocrDashboardRoot .eden-x1-contribution-mode-switch {
+    width: 100%;
   }
 
   #ocrDashboardRoot .eden-x1-slots-card .dash-weighted-contribution-meta {
