@@ -1,7 +1,11 @@
 import {
   DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF,
+  EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
+  compareEdenX1ContributionRankingRows,
+  getEdenX1ContributionRankingScore,
   getWeightedPlayerFamilyKey,
+  normalizeEdenX1ContributionRankingMode,
   normalizeWeightedR5Adjustments,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
@@ -25,8 +29,11 @@ import {
   stripGuildTagsFromPlayerName,
 } from './ocr-name-normalizer.js';
 import { renderSpecialPlayerTag } from './player-tags.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
+  compareManagementVoteAssignmentCandidates,
   loadManagementVotesPayloadWithFallback,
+  managementVoteTieBreakCriterion,
   managementVoteCandidateVariants,
   summarizeManagementVotePayload,
 } from './eden-x1-management-votes.js';
@@ -40,7 +47,7 @@ import {
 import { resolveIntlLocale } from './utils.js';
 import { dashboardCacheVersion, hasUsableDashboardCache } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.7';
+const APP_VERSION = '14.0.8';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -78,6 +85,8 @@ let currentRecordLabel = '';
 let currentSeason = '';
 let currentMemberOptions = [];
 let currentRewardView = 'team';
+let currentContributionViewMode = EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED;
+let contributionViewModeWasChosen = false;
 let currentTableSearch = '';
 let currentTableSort = null;
 let rewardTableRenderToken = 0;
@@ -114,7 +123,12 @@ let currentPublicStatsSearch = '';
 const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showAll: false };
 let publicTableSearchDebounce = null;
 let edenVoteWriteContext = null;
-let edenVoteSettings = { votingOpen: true, allowEditing: true, closesAt: '' };
+let edenVoteSettings = {
+  votingOpen: true,
+  allowEditing: true,
+  contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
+  closesAt: '',
+};
 let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
 let edenVoteInfoDismissalBound = false;
@@ -916,8 +930,15 @@ function normalizeEdenVoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
     showVoterNames: settings.showVoterNames === true,
+    contributionRankingMode: normalizeEdenX1ContributionRankingMode(
+      settings.contributionRankingMode
+    ),
     closesAt: normalizeEdenVoteClosesAt(settings.closesAt),
   };
+}
+
+function authoritativeContributionRankingMode() {
+  return normalizeEdenX1ContributionRankingMode(edenVoteSettings.contributionRankingMode);
 }
 
 function isEdenVoteSubmissionClosed(settings = edenVoteSettings, nowMs = Date.now()) {
@@ -3006,18 +3027,20 @@ function bindRewardFlowControls() {
   updateRewardFlowControls();
 }
 
-function getContributionRewardRows() {
+function getContributionRewardRows(mode = authoritativeContributionRankingMode()) {
+  const rankingMode = normalizeEdenX1ContributionRankingMode(mode);
+  const rankingRankByPlayerKey = new Map(
+    currentRows
+      .filter((row) => Number(row.currentRank) > 0)
+      .slice()
+      .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode))
+      .map((row, index) => [row.playerKey, index + 1])
+  );
   const supportPlayerKeys = new Set(getSupportRewardRows().map((row) => row.playerKey));
   const sorted = currentRows
     .filter((row) => Number(row.currentRank) > 0 && !supportPlayerKeys.has(row.playerKey))
     .slice()
-    .sort(
-      (a, b) =>
-        valueOf(b.weightedScore) - valueOf(a.weightedScore) ||
-        valueOf(a.finalRank || 999999) - valueOf(b.finalRank || 999999) ||
-        Number(a.currentRank) - Number(b.currentRank) ||
-        String(a.playerName || '').localeCompare(String(b.playerName || ''))
-    );
+    .sort((a, b) => compareEdenX1ContributionRankingRows(a, b, rankingMode));
   const rows = [];
   let rewardSlot = 0;
   for (const row of sorted) {
@@ -3026,6 +3049,9 @@ function getContributionRewardRows() {
       if (rewardSlot < 10) {
         rows.push({
           ...row,
+          edenX1ContributionRankingMode: rankingMode,
+          weightedScore: getEdenX1ContributionRankingScore(row, rankingMode),
+          finalRank: rankingRankByPlayerKey.get(row.playerKey) || row.finalRank,
           edenX1RewardSlot: null,
           edenX1RewardSkipped: true,
         });
@@ -3036,6 +3062,9 @@ function getContributionRewardRows() {
     rewardSlot += 1;
     rows.push({
       ...row,
+      edenX1ContributionRankingMode: rankingMode,
+      weightedScore: getEdenX1ContributionRankingScore(row, rankingMode),
+      finalRank: rankingRankByPlayerKey.get(row.playerKey) || row.finalRank,
       edenX1RewardSlot: rewardSlot,
       edenX1RewardSkipped: false,
     });
@@ -3457,6 +3486,19 @@ function setPublicWeightedSort(col, host) {
 
 function bindWeightedTableControls(host) {
   bindWeightedContributionViewToggle(host);
+  host.querySelectorAll('[data-eden-contribution-mode]').forEach((button) => {
+    if (button.dataset.bound) return;
+    button.dataset.bound = '1';
+    button.addEventListener('click', () => {
+      const nextMode = normalizeEdenX1ContributionRankingMode(button.dataset.edenContributionMode);
+      if (nextMode === currentContributionViewMode) return;
+      currentContributionViewMode = nextMode;
+      contributionViewModeWasChosen = true;
+      currentTableSort = null;
+      resetWeightedTablePagination(weightedTablePagination);
+      renderCurrentTable();
+    });
+  });
   const search = $('edenX1TableSearch');
   if (search && !search.dataset.bound) {
     search.dataset.bound = '1';
@@ -3796,12 +3838,49 @@ function hydrateProgressiveWeightedTable(host, channel) {
 
 function managementVoteWinnerReason(winner) {
   const ballotCount = valueOf(currentManagementVoteResults.totalBallots);
+  const voteCount = Math.max(0, Math.floor(Number(winner?.votes) || 0));
+  const voteRank = Math.max(0, Math.floor(Number(winner?.voteRank) || 0));
+  const skippedReserved = Math.max(0, Math.floor(Number(winner?.skippedReserved) || 0));
   const rawNames = Array.isArray(winner?.rawNames) ? winner.rawNames.filter(Boolean) : [];
   const ballotLabel = ballotCount === 1 ? 'ballot' : 'ballots';
   const sourceNames = rawNames.length ? rawNames.join(', ') : winner?.playerName || '';
+  const tieBreak = winner?.tieBreak || null;
+  const tiedNames = Array.isArray(tieBreak?.candidateNames)
+    ? tieBreak.candidateNames.filter((name) => name && name !== winner?.playerName)
+    : [];
+  const criterionLabels = {
+    'bonus-team-effort': 'higher Bonus Team Effort Points',
+    'weighted-total':
+      winner?.managementDetails?.weighted?.rankingMode ===
+      EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+        ? 'higher active Default contribution total'
+        : 'higher active Extended weighted contribution',
+    'canonical-name': 'canonical player-name order',
+  };
+  const tieReason = tieBreak?.applied
+    ? `Tied on ${voteCount.toLocaleString()} votes with ${tiedNames.join(', ')}; ${
+        criterionLabels[tieBreak.criterion] || 'the published tie-break order'
+      } decided the remaining slot.`
+    : tiedNames.length
+      ? `Tied on ${voteCount.toLocaleString()} votes with ${tiedNames.join(', ')}; no tied eligible name was eliminated at this slot.`
+      : '';
+  const weighted = winner?.managementDetails?.weighted || null;
+  const weightedReason = weighted
+    ? weighted.rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+      ? `Public scoring: ${formatSignedNumber(winner.managementDetails.bonusTeamEffort)} Bonus Team Effort Points; active Default total = ${formatScore(weighted.contributionScore)} contribution + ${formatScore(weighted.contributionExGuild)} ex-guild = ${formatWeightedScore(weighted.weightedScore)}. Duty and bonus weight are visible but excluded from this total.`
+      : `Public scoring: ${formatSignedNumber(winner.managementDetails.bonusTeamEffort)} Bonus Team Effort Points; active Extended total = ${formatScore(weighted.contributionScore)} contribution + ${formatScore(weighted.contributionExGuild)} ex-guild + ${formatScore(weighted.dutyPoints)} duty + ${formatSignedNumber(weighted.conductPoints)} bonus weight = ${formatWeightedScore(weighted.weightedScore)}.`
+    : 'No public weighted row was available; tie-break metrics defaulted to zero.';
   return [
-    'X management form votes',
-    ballotCount ? `from ${ballotCount.toLocaleString()} ${ballotLabel}` : '',
+    `${voteCount.toLocaleString()} management ${voteCount === 1 ? 'vote' : 'votes'}.`,
+    voteRank ? `Management vote rank #${voteRank}.` : '',
+    skippedReserved
+      ? `${skippedReserved.toLocaleString()} otherwise-ranked ${
+          skippedReserved === 1 ? 'name was' : 'names were'
+        } excluded by reward-priority or forfeiture rules before this slot was assigned.`
+      : '',
+    tieReason,
+    weightedReason,
+    ballotCount ? `Counted from ${ballotCount.toLocaleString()} anonymous ${ballotLabel}.` : '',
     sourceNames ? `Source name(s): ${sourceNames}.` : '',
   ]
     .filter(Boolean)
@@ -3812,11 +3891,19 @@ function createRewardPriorityIdentitySet() {
   return { keys: new Set(), familyKeys: new Set() };
 }
 
-function addRewardPriorityIdentity(reserved, playerKey) {
+function rewardPriorityFamilyKey(playerKey, playerName = '') {
+  const key = String(playerKey || '').trim();
+  if (!key) return '';
+  const profile = getPublicVtsPlayerProfile(playerName) || getPublicVtsPlayerProfile(key) || null;
+  const canonicalKey = profile?.name ? compactPlayerIdentity(profile.name) : key;
+  return getWeightedPlayerFamilyKey(canonicalKey);
+}
+
+function addRewardPriorityIdentity(reserved, playerKey, playerName = '') {
   const key = String(playerKey || '').trim();
   if (!key) return;
   reserved.keys.add(key);
-  const familyKey = getWeightedPlayerFamilyKey(key);
+  const familyKey = rewardPriorityFamilyKey(key, playerName);
   if (familyKey) reserved.familyKeys.add(familyKey);
 }
 
@@ -3832,7 +3919,7 @@ function getForfeitedRewardPriorityIdentities(adjustments, season) {
   const reserved = createRewardPriorityIdentitySet();
   normalizeWeightedR5Adjustments(adjustments, season).forEach((adjustment) => {
     if (adjustment?.category !== 'forfeit_premium') return;
-    addRewardPriorityIdentity(reserved, adjustment.playerKey);
+    addRewardPriorityIdentity(reserved, adjustment.playerKey, adjustment.playerName);
   });
   return reserved;
 }
@@ -3841,21 +3928,71 @@ function managementVoteCandidateIsReserved(winner, reserved) {
   const key = String(winner?.playerKey || '').trim();
   if (!key) return false;
   if (reserved.keys.has(key)) return true;
-  const familyKey = getWeightedPlayerFamilyKey(key);
+  const familyKey = rewardPriorityFamilyKey(key, winner?.playerName);
   return Boolean(familyKey && reserved.familyKeys.has(familyKey));
 }
 
 function getReservedRewardPriorityIdentities() {
   const reserved = createRewardPriorityIdentitySet();
-  getSupportRewardRows().forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+  getSupportRewardRows().forEach((row) =>
+    addRewardPriorityIdentity(reserved, row.playerKey, row.playerName)
+  );
   getContributionRewardRows()
     .filter((row) => !row.edenX1RewardSkipped)
-    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey, row.playerName));
   currentRows
     .filter((row) => row.rewardReason === 'forfeit_premium')
-    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey));
+    .forEach((row) => addRewardPriorityIdentity(reserved, row.playerKey, row.playerName));
   mergeRewardPriorityIdentities(reserved, currentForfeitedRewardIdentities);
   return reserved;
+}
+
+function getManagementTieBreakWeightedRow(winner) {
+  const rankingMode = authoritativeContributionRankingMode();
+  const familyKey = rewardPriorityFamilyKey(winner?.playerKey, winner?.playerName);
+  const familyRows = familyKey
+    ? currentRows.filter(
+        (row) => rewardPriorityFamilyKey(row?.playerKey, row?.playerName) === familyKey
+      )
+    : [];
+  if (familyRows.length) {
+    return familyRows
+      .slice()
+      .sort(
+        (a, b) =>
+          Number(b?.isPrimaryAccount === true) - Number(a?.isPrimaryAccount === true) ||
+          getEdenX1ContributionRankingScore(b, rankingMode) -
+            getEdenX1ContributionRankingScore(a, rankingMode) ||
+          String(a?.playerName || '').localeCompare(String(b?.playerName || ''))
+      )[0];
+  }
+  const key = String(winner?.playerKey || '').trim();
+  return currentRows.find((row) => row?.playerKey === key) || null;
+}
+
+function managementVoteCandidateWithMetrics(winner) {
+  const weightedRow = getManagementTieBreakWeightedRow(winner);
+  const rankingMode = authoritativeContributionRankingMode();
+  const bonusTeamEffort = weightedRow ? conductBonusValue(weightedRow) : 0;
+  const weighted = weightedRow
+    ? {
+        contributionScore: valueOf(weightedRow.contributionScore),
+        contributionExGuild: valueOf(weightedRow.contributionExGuild),
+        dutyPoints: valueOf(weightedRow.dutyPoints),
+        conductPoints: valueOf(weightedRow.conductPoints),
+        weightedScore: getEdenX1ContributionRankingScore(weightedRow, rankingMode),
+        rankingMode,
+      }
+    : null;
+  return {
+    ...winner,
+    bonusTeamEffort,
+    weightedScore: weighted?.weightedScore || 0,
+    managementDetails: {
+      bonusTeamEffort,
+      weighted,
+    },
+  };
 }
 
 function getEligibleManagementVoteWinners() {
@@ -3863,9 +4000,55 @@ function getEligibleManagementVoteWinners() {
     ? currentManagementVoteResults.rankings
     : [];
   const reserved = getReservedRewardPriorityIdentities();
-  return rankings
-    .filter((winner) => !managementVoteCandidateIsReserved(winner, reserved))
-    .slice(0, EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT);
+  const winners = [];
+  const groupsByVotes = new Map();
+  rankings.forEach((winner) => {
+    const candidate = managementVoteCandidateWithMetrics(winner);
+    const votes = Math.max(0, Math.floor(Number(candidate.votes) || 0));
+    if (!groupsByVotes.has(votes)) groupsByVotes.set(votes, []);
+    groupsByVotes.get(votes).push(candidate);
+  });
+
+  let rankedCandidates = 0;
+  let skippedReserved = 0;
+  [...groupsByVotes.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .forEach(([, voteGroup]) => {
+      if (winners.length >= EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT) return;
+      const voteRank = rankedCandidates + 1;
+      rankedCandidates += voteGroup.length;
+      const eligible = voteGroup.filter((candidate) => {
+        if (!managementVoteCandidateIsReserved(candidate, reserved)) return true;
+        skippedReserved += 1;
+        return false;
+      });
+      const ordered = eligible.slice().sort(compareManagementVoteAssignmentCandidates);
+      const remainingSlots = EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT - winners.length;
+      const selected = ordered.slice(0, remainingSlots);
+      const firstExcluded = ordered[selected.length] || null;
+      const tieBreakApplied = Boolean(firstExcluded && eligible.length > 1);
+      const cutoffWinner = selected.at(-1) || null;
+      const criterion = tieBreakApplied
+        ? managementVoteTieBreakCriterion(cutoffWinner, firstExcluded)
+        : '';
+      const candidateNames = voteGroup.map((candidate) => candidate.playerName).filter(Boolean);
+      selected.forEach((winner) => {
+        winners.push({
+          ...winner,
+          voteRank,
+          skippedReserved,
+          tieBreak:
+            voteGroup.length > 1
+              ? {
+                  applied: tieBreakApplied,
+                  criterion,
+                  candidateNames,
+                }
+              : null,
+        });
+      });
+    });
+  return winners;
 }
 
 function getEligibleTeamVoteWinners() {
@@ -3897,7 +4080,9 @@ function rewardSlotRows(view) {
             playerName: winners[index].playerName,
             playerKey: winners[index].playerKey,
             voteRank: winners[index].voteRank,
+            votes: winners[index].votes,
             voters: winners[index].voters || winners[index].votes,
+            managementDetails: winners[index].managementDetails,
           }
         : { playerName: unavailable ? '--' : t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
@@ -3935,11 +4120,25 @@ function rewardSlotRows(view) {
 function renderRewardSlotStatus(row, view) {
   if (!row.statusReason) return esc(row.status);
   const tooltipId = `edenX1SlotStatusTip-${view}-${row.slot}`;
+  const managementDetails = view === 'management' ? row.managementDetails : null;
+  const weighted = managementDetails?.weighted || null;
+  const popoverBody = managementDetails
+    ? `<strong>Management assignment details</strong>
+      <span><span>Management votes</span><b>${Math.max(0, Math.floor(Number(row.votes) || 0)).toLocaleString()}</b></span>
+      <span><span>Vote rank</span><b>#${Math.max(1, Math.floor(Number(row.voteRank) || 1)).toLocaleString()}</b></span>
+      <span><span>Bonus Team Effort Points</span><b>${formatSignedNumber(managementDetails.bonusTeamEffort)}</b></span>
+      <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${weighted ? formatScore(weighted.contributionScore) : '--'}</b></span>
+      <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${weighted ? formatScore(weighted.contributionExGuild) : '--'}</b></span>
+      <span><span>${esc(t('edenX1BreakdownDuty'))}</span><b>${weighted ? formatScore(weighted.dutyPoints) : '--'}</b></span>
+      <span><span>Bonus weighted value</span><b>${weighted ? formatSignedNumber(weighted.conductPoints) : '--'}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1WeightedTitle'))}</span><b>${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</b></span>
+      <small>${esc(row.statusReason)}</small>`
+    : `<strong>${esc(t('edenX1RewardAssignedReasonTitle'))}</strong>
+      <small>${esc(row.statusReason)}</small>`;
   return `<button class="eden-x1-slot-status-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(row.statusReason)}">
     <span class="eden-x1-slot-status-label">${esc(row.status)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover eden-x1-slot-status-popover" role="tooltip">
-      <strong>${esc(t('edenX1RewardAssignedReasonTitle'))}</strong>
-      <small>${esc(row.statusReason)}</small>
+      ${popoverBody}
     </span>
   </button>`;
 }
@@ -3972,6 +4171,8 @@ function deferredWeightedPopoverParts(scopeId, tooltipId, factory) {
 function renderWeightedScorePopover(row, index, options = {}) {
   const tooltipId = `edenX1WeightedScoreTip-${index}`;
   const popover = deferredWeightedPopoverParts(options.deferredScope, tooltipId, () => {
+    const rankingMode = normalizeEdenX1ContributionRankingMode(row.edenX1ContributionRankingMode);
+    const defaultMode = rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT;
     const dutyCount = row.banners + row.pathers + row.shieldWalls;
     const conductBonus = conductBonusValue(row);
     const conductPoints = Number.isFinite(Number(row.conductPoints))
@@ -3983,12 +4184,15 @@ function renderWeightedScorePopover(row, index, options = {}) {
       shieldWalls: row.shieldWalls,
       count: dutyCount,
     });
-    const conductNote = t('edenX1ConductPrivateNotice');
+    const excludedNote = defaultMode ? ` ${t('edenX1ContributionModeExcluded')}` : '';
+    const conductNote = `${t('edenX1ConductPrivateNotice')}${excludedNote}`;
     return `<span id="${tooltipId}" class="dash-weighted-score-popover" role="tooltip">
-        <strong>${esc(t('edenX1WeightedBreakdownTitle'))}</strong>
+        <strong>${esc(
+          t(defaultMode ? 'edenX1ContributionModeDefaultScore' : 'edenX1WeightedBreakdownTitle')
+        )}</strong>
         <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${formatScore(row.contributionScore)}</b></span>
         <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${formatScore(row.contributionExGuild || 0)}</b></span>
-        <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(dutyNote)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
+        <span><span>${esc(t('edenX1BreakdownDuty'))}<small>${esc(`${dutyNote}${excludedNote}`)}</small></span><b>${formatScore(row.dutyPoints || 0)}</b></span>
         <span><span>${esc(t('edenX1BreakdownConductPoints'))}<small>${esc(conductNote)}</small></span><b>${formatSignedNumber(conductPoints)}</b></span>
         <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1BreakdownTotal'))}</span><b>${formatWeightedScore(row.weightedScore)}</b></span>
       </span>`;
@@ -5534,10 +5738,52 @@ function renderWeightedContributionRow(row, index, options = {}) {
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThBanners'))}" style="text-align:right">${row.banners}</td>
     <td class="dash-weighted-detail-col dash-weighted-conduct-col" data-label="${esc(t('edenX1ThConduct'))}" style="text-align:right">${renderConductScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-detail-col" data-label="${esc(t('edenX1ThTotal'))}" style="text-align:right">${total.toLocaleString()}</td>
-    <td class="dash-weighted-score-cell" data-label="${esc(t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
+    <td class="dash-weighted-score-cell" data-label="${esc(options.weightedScoreLabel || t('edenX1ThWeightedScore'))}" style="text-align:right">${renderWeightedScorePopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-rank-cell" data-label="${esc(t('adminContributionFinalRank'))}">${renderFinalRankPopover(row, index, popoverOptions)}</td>
     <td class="dash-weighted-score-cell dash-weighted-final-reward-cell" data-label="${esc(t('adminContributionFinalReward'))}">${renderFinalRewardPopover(row, index, { ...rewardContext, deferredScope: options.deferredScope })}</td>
   </tr>`;
+}
+
+function contributionRankingModeLabel(mode) {
+  return t(
+    normalizeEdenX1ContributionRankingMode(mode) === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+      ? 'edenX1ContributionModeDefault'
+      : 'edenX1ContributionModeExtended'
+  );
+}
+
+function contributionRankingModeMeta(mode) {
+  const rankingMode = normalizeEdenX1ContributionRankingMode(mode);
+  const active = rankingMode === authoritativeContributionRankingMode();
+  const formula = t(
+    rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+      ? 'edenX1ContributionModeDefaultMeta'
+      : 'edenX1ContributionModeExtendedMeta'
+  );
+  return `${formula} ${t(
+    active ? 'edenX1ContributionModeActiveNotice' : 'edenX1ContributionModeComparisonNotice'
+  )}`;
+}
+
+function renderContributionRankingModeControls(mode) {
+  const selectedMode = normalizeEdenX1ContributionRankingMode(mode);
+  const activeMode = authoritativeContributionRankingMode();
+  const buttons = [
+    EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
+    EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT,
+  ]
+    .map((rankingMode) => {
+      const selected = rankingMode === selectedMode;
+      const active = rankingMode === activeMode;
+      const badge = active
+        ? `<span class="eden-x1-contribution-mode-badge">${esc(t('edenX1ContributionModeActive'))}</span>`
+        : `<span class="eden-x1-contribution-mode-badge is-comparison">${esc(t('edenX1ContributionModeComparison'))}</span>`;
+      return `<button class="eden-x1-contribution-mode-btn${selected ? ' is-selected' : ''}${active ? ' is-authoritative' : ''}" type="button" data-eden-contribution-mode="${rankingMode}" aria-pressed="${selected}">
+        <span>${esc(contributionRankingModeLabel(rankingMode))}</span>${badge}
+      </button>`;
+    })
+    .join('');
+  return `<div class="eden-x1-contribution-mode-switch" role="group" aria-label="${esc(t('edenX1ContributionModeAria'))}">${buttons}</div>`;
 }
 
 function renderTable(rows, recordLabel, options = {}) {
@@ -5546,6 +5792,7 @@ function renderTable(rows, recordLabel, options = {}) {
   const meta = options.meta || `${recordLabel || t('edenX1PageTitle')} - ${t('edenX1ViewOnly')}`;
   const rewardViewClass = rewardViewAccentClass(options.rewardView || currentRewardView);
   const numberMode = options.numberMode || 'final';
+  const weightedScoreLabel = options.weightedScoreLabel || t('edenX1ThWeightedScore');
   const rewardContextForRow =
     typeof options.rewardContextForRow === 'function' ? options.rewardContextForRow : () => ({});
   const allRows = sortedWeightedRows(filterWeightedRows(rows), numberMode);
@@ -5557,6 +5804,7 @@ function renderTable(rows, recordLabel, options = {}) {
           numberMode,
           rewardView: options.rewardView,
           rewardContextForRow,
+          weightedScoreLabel,
           deferredScope,
         })
       )
@@ -5581,6 +5829,7 @@ function renderTable(rows, recordLabel, options = {}) {
           <span>${esc(title)}</span>
         </h2>
         <div class="dash-weighted-table-controls">
+          ${options.modeControls || ''}
           <span class="dash-weighted-contribution-meta">${esc(meta)}</span>
           <label class="dash-search-wrap dash-weighted-search" for="edenX1TableSearch">
             <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -5607,7 +5856,7 @@ function renderTable(rows, recordLabel, options = {}) {
             ${renderSortableHeader('banners', t('edenX1ThBanners'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
             ${renderSortableHeader('conduct', t('edenX1ThConduct'), { className: 'dash-weighted-detail-col dash-weighted-conduct-col', style: 'text-align:right' })}
             ${renderSortableHeader('total', t('edenX1ThTotal'), { className: 'dash-weighted-detail-col', style: 'text-align:right' })}
-            ${renderSortableHeader('weighted', t('edenX1ThWeightedScore'), { style: 'text-align:right' })}
+            ${renderSortableHeader('weighted', weightedScoreLabel, { style: 'text-align:right' })}
             ${renderSortableHeader('finalRank', t('adminContributionFinalRank'))}
             ${renderSortableHeader('finalReward', t('adminContributionFinalReward'))}
           </tr></thead>
@@ -5988,10 +6237,17 @@ function renderCurrentTable(renderOptions = {}) {
   let rows = currentRows;
   let tableOptions = {};
   if (currentRewardView === 'contribution') {
-    rows = getContributionRewardRows();
+    const contributionMode = normalizeEdenX1ContributionRankingMode(currentContributionViewMode);
+    rows = getContributionRewardRows(contributionMode);
     tableOptions = {
       title: t('edenX1RewardLeaderboardTitle'),
-      meta: t('edenX1RewardContributionMeta'),
+      meta: contributionRankingModeMeta(contributionMode),
+      modeControls: renderContributionRankingModeControls(contributionMode),
+      weightedScoreLabel: t(
+        contributionMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+          ? 'edenX1ContributionModeDefaultScore'
+          : 'edenX1ThWeightedScore'
+      ),
       rewardView: 'contribution',
       numberMode: 'index',
       rewardContextForRow: (row, _index, numberValue) =>
@@ -6302,10 +6558,18 @@ async function loadEdenX1Dashboard() {
     }
 
     edenVoteWriteContext = { db: result.db, firestore: result.firestore, user: result.voteUser };
+    const previousContributionMode = authoritativeContributionRankingMode();
     if (result.voteSettingsSnap?.exists?.()) {
       edenVoteSettings = normalizeEdenVoteSettings(result.voteSettingsSnap.data());
     } else {
       edenVoteSettings = normalizeEdenVoteSettings();
+    }
+    const nextContributionMode = authoritativeContributionRankingMode();
+    if (
+      !contributionViewModeWasChosen ||
+      currentContributionViewMode === previousContributionMode
+    ) {
+      currentContributionViewMode = nextContributionMode;
     }
 
     if (result.kind === 'no-data') {
@@ -6321,6 +6585,9 @@ async function loadEdenX1Dashboard() {
     if (!cacheApplied || !cachedVersion || dashboardCacheVersion(result.data) !== cachedVersion) {
       await applyDashboardData(result.data, generation);
     } else {
+      if (previousContributionMode !== nextContributionMode && rewardFlowReady) {
+        renderCurrentTable({ fromSchedule: true });
+      }
       renderEdenVoteRail();
     }
     stopEdenLoadingProgress(generation, 100);
@@ -6449,6 +6716,13 @@ async function applyDashboardData(data = {}, progressGeneration = null, options 
 
 window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
   return applyDashboardData(data);
+};
+
+window.setEdenX1VoteSettingsForTest = function setEdenX1VoteSettingsForTest(settings = {}) {
+  edenVoteSettings = normalizeEdenVoteSettings(settings);
+  currentContributionViewMode = authoritativeContributionRankingMode();
+  contributionViewModeWasChosen = false;
+  if (rewardFlowReady) renderCurrentTable({ fromSchedule: true });
 };
 
 window.setEdenX1ManagementVotesForTest = function setEdenX1ManagementVotesForTest(payloadOrRows) {

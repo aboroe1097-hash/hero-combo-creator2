@@ -44,7 +44,7 @@ test('countdown parts and expiry use the exact deadline boundary', () => {
   assert.equal(isEdenVoteDeadlineExpired('', Date.parse(deadline)), false);
 });
 
-test('admin, public UI, and Firestore rules share the closesAt contract', () => {
+test('admin, public UI, and Firestore rules share vote settings contracts', () => {
   const admin = readFileSync('js/ocr-dashboard.js', 'utf8');
   const publicPage = readFileSync('js/eden-x1.js', 'utf8');
   const template = readFileSync('tabs/admin.html', 'utf8');
@@ -60,8 +60,24 @@ test('admin, public UI, and Firestore rules share the closesAt contract', () => 
   assert.match(publicPage, /role="timer"/);
   assert.match(publicPage, /window\.setInterval\([\s\S]*?1000\)/);
   assert.match(publicPage, /if \(isEdenVoteSubmissionClosed\(\)\)/);
-  assert.match(rules, /'showVoterNames', 'closesAt', 'updatedAt', 'updatedBy'/);
+  assert.match(
+    rules,
+    /'showVoterNames', 'contributionRankingMode', 'closesAt', 'updatedAt', 'updatedBy'/
+  );
   assert.match(rules, /request\.resource\.data\.closesAt\.matches/);
+  assert.match(admin, /contributionRankingMode: normalizeEdenX1ContributionRankingMode/);
+  assert.match(admin, /input\[name="edenContributionRankingMode"\]/);
+  assert.match(template, /id="dashEdenContributionModeExtended"/);
+  assert.match(template, /id="dashEdenContributionModeDefault"/);
+  assert.match(
+    publicPage,
+    /getContributionRewardRows\(mode = authoritativeContributionRankingMode\(\)\)/
+  );
+  assert.match(publicPage, /data-eden-contribution-mode/);
+  assert.match(
+    rules,
+    /request\.resource\.data\.contributionRankingMode in \['extended', 'default'\]/
+  );
 });
 
 test('all supported locales include deadline controls and countdown copy', async () => {
@@ -82,6 +98,22 @@ test('all supported locales include deadline controls and countdown copy', async
     'edenX1VoteExpired',
     'edenX1VoteClosedShort',
   ];
+  requiredKeys.push(
+    'adminEdenContributionModeTitle',
+    'adminEdenContributionModeHint',
+    'adminEdenContributionModeExtended',
+    'adminEdenContributionModeDefault',
+    'adminEdenContributionModeActive',
+    'edenX1ContributionModeExtended',
+    'edenX1ContributionModeDefault',
+    'edenX1ContributionModeActive',
+    'edenX1ContributionModeComparison',
+    'edenX1ContributionModeExtendedMeta',
+    'edenX1ContributionModeDefaultMeta',
+    'edenX1ContributionModeDefaultScore',
+    'edenX1ContributionModeExcluded',
+    'edenX1ContributionModeAria'
+  );
 
   for (const localeCode of localeCodes) {
     const dictionary = (await import(`../../js/i18n/${localeCode}.js`)).default;

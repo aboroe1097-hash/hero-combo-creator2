@@ -1,4 +1,7 @@
+import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+
 const kr = {
+  ...edenX1ContributionModeCopy,
   adminLoginPass: '비밀번호',
   adminLoginUser: '사용자 이름',
   adminLoginBtn: '관리자로 로그인',

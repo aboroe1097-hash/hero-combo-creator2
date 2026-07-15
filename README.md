@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.0.7)
+# Hero Combo Creator - VTS 1097 (v14.0.8)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
@@ -20,7 +20,7 @@ Eleven top-level tools are exposed from the main navigation in `index.html`, wit
 | **Arcade** | `arcade.html`, `js/arcade.js`, `css/arcade.css`, `games/boot/` | Standalone member lobby for Merge Rush, Sort the Hoard, Crystal Relay, Set Assembly, and Hero Rumble | Shared static game shell plus existing DM, wing, logo, and hero-skin art | Separate page; game code loads only after opening a game |
 | **VTS Admin** | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/ocr-*.js`, `js/admin-log-*.js`, `js/contribution-weighting.js` | OCR attack analysis, roster screenshots, contribution lists, leaderboard, CSV/PNG/JSON export, Eden X1 voting, conduct adjustments, and cross-device Admin Activity | Cloudflare Worker (Qwen VL OCR), Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal badge; standalone `noindex,nofollow` page |
 
-**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. Admins can schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
+**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. In Eden X1 Votes, admins choose whether Extended or Default Total Contribution is authoritative for the Top 10 -> R4 / Management -> Team Players chain; the public table can compare both formulas without changing assignments. Admins can also schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
 
 **Cross-cutting sub-systems:** `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js`, `app-shortcuts.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
 

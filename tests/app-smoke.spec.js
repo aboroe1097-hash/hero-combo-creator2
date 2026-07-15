@@ -2321,6 +2321,9 @@ test.describe('app smoke tabs', () => {
     const seededDash = {
       date: '2026-06-24',
       r5Season: 'season-2026',
+      // Exercise the live alias path: the roster uses the numbered display name,
+      // while the forfeiture record below uses the canonical public R4 name.
+      rosterSnapshots: [{ members: ['Dr Thunder 293'] }],
       contributionRecords: [
         {
           id: 'eden-reward-flow-1',
@@ -2469,14 +2472,18 @@ test.describe('app smoke tabs', () => {
             { c: [{ v: 'November' }, { v: 7 }] },
             { c: [{ v: 'Victoria ~Kika~' }, { v: 4 }] },
             { c: [{ v: 'Dr Thunder 293' }, { v: 3 }] },
-            { c: [{ v: 'Goodness' }, { v: 2 }] },
-            { c: [{ v: 'Yankee' }, { v: 2 }] },
-            { c: [{ v: 'Quebec' }, { v: 1 }] },
+            { c: [{ v: 'Goodness' }, { v: 3 }] },
+            { c: [{ v: 'Yankee' }, { v: 3 }] },
+            { c: [{ v: 'Victor' }, { v: 2 }] },
+            { c: [{ v: 'Quebec' }, { v: 2 }] },
+            { c: [{ v: 'Lima' }, { v: 2 }] },
+            { c: [{ v: 'Oscar' }, { v: 2 }] },
           ],
         },
       });
     });
     await page.evaluate((dash) => {
+      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'extended' });
       window.setEdenX1DataForTest(dash);
     }, seededDash);
     await expect(preLoadTeamCard).toBeEnabled();
@@ -2724,17 +2731,17 @@ test.describe('app smoke tabs', () => {
       .first()
       .locator('.dash-weighted-score-trigger:not(.dash-weighted-conduct-trigger)');
     await supportScoreTrigger.hover();
-    const supportPopoverMetrics = await supportScoreTrigger
-      .locator('.dash-weighted-score-popover')
-      .evaluate((popover) => {
-        const rect = popover.getBoundingClientRect();
-        return {
-          position: window.getComputedStyle(popover).position,
-          top: Math.floor(rect.top),
-          bottom: Math.ceil(rect.bottom),
-          viewportHeight: window.innerHeight,
-        };
-      });
+    const supportScorePopover = supportScoreTrigger.locator('.dash-weighted-score-popover');
+    await expect(supportScorePopover).toBeVisible();
+    const supportPopoverMetrics = await supportScorePopover.evaluate((popover) => {
+      const rect = popover.getBoundingClientRect();
+      return {
+        position: window.getComputedStyle(popover).position,
+        top: Math.floor(rect.top),
+        bottom: Math.ceil(rect.bottom),
+        viewportHeight: window.innerHeight,
+      };
+    });
     expect(supportPopoverMetrics.position).toBe('fixed');
     expect(supportPopoverMetrics.top).toBeGreaterThanOrEqual(8);
     expect(supportPopoverMetrics.bottom).toBeLessThanOrEqual(
@@ -2827,6 +2834,16 @@ test.describe('app smoke tabs', () => {
     await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
       'weighted total contribution'
     );
+    const contributionModeSwitch = panel.locator('.eden-x1-contribution-mode-switch');
+    const extendedModeButton = contributionModeSwitch.locator(
+      '[data-eden-contribution-mode="extended"]'
+    );
+    const defaultModeButton = contributionModeSwitch.locator(
+      '[data-eden-contribution-mode="default"]'
+    );
+    await expect(extendedModeButton).toHaveAttribute('aria-pressed', 'true');
+    await expect(extendedModeButton).toContainText('Active');
+    await expect(defaultModeButton).toContainText('Comparison');
     await panel.locator('#edenX1ShowAllRows').dispatchEvent('click');
     await expect(panel.locator('tbody tr')).toHaveCount(11);
     const contributionDisplayNumbers = await panel
@@ -2881,6 +2898,37 @@ test.describe('app smoke tabs', () => {
     expect(contributionNames).not.toContain('Bravo');
     expect(contributionNames).not.toContain('Charlie');
     expect(contributionNames).not.toContain('Delta');
+    await defaultModeButton.click();
+    await expect(panel.locator('.dash-weighted-contribution-meta')).toContainText(
+      'Comparison only; it does not change downstream reward names.'
+    );
+    await panel.locator('#edenX1ShowAllRows').dispatchEvent('click');
+    const defaultContributionNames = await panel
+      .locator('tbody tr')
+      .evaluateAll((rows) =>
+        rows.map(
+          (row) =>
+            row.cells[1]?.querySelector('.dash-player-rank-label')?.textContent?.trim() ||
+            row.cells[1]?.textContent?.trim()
+        )
+      );
+    expect(defaultContributionNames).toEqual([
+      'MalakAbo',
+      'Echo',
+      'Foxtrot',
+      'Golf',
+      'November',
+      'Hotel',
+      'India',
+      'Juliet',
+      'Kilo',
+      'Lima',
+      'Mike',
+    ]);
+    expect(defaultContributionNames).toContain('Lima');
+    expect(defaultContributionNames).not.toContain('Oscar');
+    await extendedModeButton.click();
+    await panel.locator('#edenX1ShowAllRows').dispatchEvent('click');
     const novemberContributionRow = panel.locator('tbody tr', { hasText: 'November' });
     await expect(novemberContributionRow.locator('td').nth(5)).toHaveText('65,000');
     await panel.locator('#edenX1TableSearch').fill('Kilo');
@@ -2937,7 +2985,7 @@ test.describe('app smoke tabs', () => {
     expect(managementRows).toEqual([
       { name: '\ua9c1\u0f3a Kika \u0f3b\ua9c2', tag: 'R4', status: 'Voted By Management' },
       { name: 'Yankee', tag: '', status: 'Voted By Management' },
-      { name: 'Quebec', tag: '', status: 'Voted By Management' },
+      { name: 'Lima', tag: '', status: 'Voted By Management' },
     ]);
     const votedStatus = panel
       .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted By Management' })
@@ -2945,11 +2993,46 @@ test.describe('app smoke tabs', () => {
     await votedStatus.click();
     await expect(votedStatus.locator('.dash-weighted-score-popover')).toBeVisible();
     await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
-      'X management form votes'
+      '4 management votes'
     );
-    await expect(votedStatus.locator('.dash-weighted-score-popover')).not.toContainText(
-      '4 management form votes'
+    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Management vote rank #3'
     );
+    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      '2 otherwise-ranked names were excluded by reward-priority or forfeiture rules'
+    );
+    await expect(votedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Weighted Total Contribution'
+    );
+    const tiedStatus = panel
+      .locator('.eden-x1-slot-status-trigger', { hasText: 'Voted By Management' })
+      .nth(2);
+    await tiedStatus.click();
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      '2 management votes'
+    );
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'Tied on 2 votes with'
+    );
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Oscar');
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Quebec');
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText('Victor');
+    await expect(tiedStatus.locator('.dash-weighted-score-popover')).toContainText(
+      'higher active Extended weighted contribution decided the remaining slot'
+    );
+    await page.evaluate(() => {
+      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'default' });
+    });
+    await expect(panel.locator('tbody tr').nth(2)).toContainText('Oscar');
+    const defaultManagementNames = await panel
+      .locator('tbody tr td:nth-child(2)')
+      .evaluateAll((cells) => cells.map((cell) => cell.textContent?.trim()));
+    expect(defaultManagementNames).toContain('Oscar');
+    expect(defaultManagementNames).not.toContain('Lima');
+    await page.evaluate(() => {
+      window.setEdenX1VoteSettingsForTest({ contributionRankingMode: 'extended' });
+    });
+    await expect(panel.locator('tbody tr').nth(2)).toContainText('Lima');
 
     await page.evaluate(async () => {
       window.VTS_EDEN_X1_MANAGEMENT_VOTE_LOADER = () =>
@@ -3456,7 +3539,13 @@ test.describe('app smoke tabs', () => {
             createdAt: '2026-06-24T20:01:00.000Z',
           },
         ],
-        { votingOpen: true, allowEditing: false, showPublicResults: true, showVoterNames: false }
+        {
+          votingOpen: true,
+          allowEditing: false,
+          showPublicResults: true,
+          showVoterNames: false,
+          contributionRankingMode: 'default',
+        }
       );
       window.switchDashSubtab('edenVotes');
     }, TEST_SENSITIVE_ADMIN_PIN_HASH);
@@ -3478,6 +3567,11 @@ test.describe('app smoke tabs', () => {
     await expect(page.locator('#dashEdenVoteOpenToggle')).toBeChecked();
     await expect(page.locator('#dashEdenVoteEditingToggle')).not.toBeChecked();
     await expect(page.locator('#dashEdenVotePublicResultsToggle')).toBeChecked();
+    await expect(page.locator('#dashEdenContributionModeDefault')).toBeChecked();
+    await expect(page.locator('#dashEdenContributionModeExtended')).not.toBeChecked();
+    await expect(page.locator('#dashEdenContributionModeStatus')).toContainText(
+      'Active reward chain: Default'
+    );
     await expect(results).toContainText('Candidate totals');
     await expect(results).toContainText('Ballots');
     const totalsTable = results.locator('table').first();

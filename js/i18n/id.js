@@ -1,4 +1,7 @@
+import { edenX1ContributionModeCopy } from './eden-contribution-mode-copy.js';
+
 const id = {
+  ...edenX1ContributionModeCopy,
   adminLoginPass: 'Kata Sandi',
   adminLoginUser: 'Nama Pengguna',
   adminLoginBtn: 'Masuk sebagai Admin',

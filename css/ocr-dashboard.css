@@ -4711,6 +4711,69 @@ body[style*='overflow: hidden'] .tab-panel {
   font-weight: 700;
   line-height: 1.35;
 }
+#ocrDashboardRoot .dash-eden-contribution-mode-control {
+  display: grid;
+  gap: 0.62rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.78rem;
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.12), var(--surface-soft));
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-control legend {
+  padding: 0 0.28rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-control > small,
+#ocrDashboardRoot .dash-eden-contribution-mode-option small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.62rem;
+  padding: 0.76rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(8, 13, 23, 0.3);
+  cursor: pointer;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-option:has(input:checked) {
+  border-color: rgba(192, 132, 252, 0.72);
+  background: rgba(126, 34, 206, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, 0.12);
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-option input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.1rem;
+  accent-color: #c084fc;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-option span {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-option strong {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+}
+#ocrDashboardRoot .dash-eden-contribution-mode-status {
+  color: #d8b4fe;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
 #ocrDashboardRoot .dash-eden-vote-deadline-control {
   display: grid;
   gap: 0.62rem;
@@ -4763,6 +4826,9 @@ body[style*='overflow: hidden'] .tab-panel {
   color-scheme: light;
 }
 @media (max-width: 700px) {
+  #ocrDashboardRoot .dash-eden-contribution-mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   #ocrDashboardRoot .dash-eden-vote-deadline-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

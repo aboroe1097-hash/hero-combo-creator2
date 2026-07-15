@@ -94,8 +94,10 @@ import {
   updateLocalR5Adjustment,
 } from './ocr-adjustments.js';
 import {
+  EDEN_X1_CONTRIBUTION_RANKING_MODES,
   buildWeightedContributionRows,
   getWeightedContributionRecordLabel,
+  normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
 import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
@@ -720,6 +722,7 @@ function defaultEdenX1VoteSettings() {
     allowEditing: true,
     showPublicResults: false,
     showVoterNames: false,
+    contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
     closesAt: '',
   };
 }
@@ -733,6 +736,9 @@ function normalizeEdenX1VoteSettings(settings = {}) {
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
     showVoterNames: settings.showVoterNames === true,
+    contributionRankingMode: normalizeEdenX1ContributionRankingMode(
+      settings.contributionRankingMode
+    ),
     closesAt: normalizeEdenVoteClosesAt(settings.closesAt),
   };
 }
@@ -803,6 +809,25 @@ function renderEdenX1VoteSettings() {
   setChecked('dashEdenVoteEditingToggle', settings.allowEditing);
   setChecked('dashEdenVotePublicResultsToggle', settings.showPublicResults);
   setChecked('dashEdenVoteShowNamesToggle', settings.showVoterNames);
+  setChecked(
+    'dashEdenContributionModeExtended',
+    settings.contributionRankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED
+  );
+  setChecked(
+    'dashEdenContributionModeDefault',
+    settings.contributionRankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+  );
+  const contributionModeStatus = $id('dashEdenContributionModeStatus');
+  if (contributionModeStatus) {
+    const modeLabel = dashT(
+      settings.contributionRankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+        ? 'adminEdenContributionModeDefault'
+        : 'adminEdenContributionModeExtended'
+    );
+    contributionModeStatus.textContent = dashT('adminEdenContributionModeActive', {
+      mode: modeLabel,
+    });
+  }
   const deadlineInput = $id('dashEdenVoteClosesAtInput');
   if (deadlineInput) {
     deadlineInput.value = toEdenVoteDatetimeLocal(settings.closesAt);
@@ -1251,6 +1276,15 @@ function bindEdenX1VoteAdminControls() {
       saveEdenX1VoteSettings({
         ...(state.edenX1VoteSettings || readLocalEdenX1VoteSettings()),
         [key]: Boolean(event.target.checked),
+      });
+    });
+  });
+  document.querySelectorAll('input[name="edenContributionRankingMode"]').forEach((input) => {
+    input.addEventListener('change', (event) => {
+      if (!event.target.checked) return;
+      saveEdenX1VoteSettings({
+        ...(state.edenX1VoteSettings || readLocalEdenX1VoteSettings()),
+        contributionRankingMode: normalizeEdenX1ContributionRankingMode(event.target.value),
       });
     });
   });

@@ -16,6 +16,11 @@ export const WEIGHTED_CONTRIBUTION_WEIGHTS = Object.freeze({
   conduct: 0.05,
 });
 
+export const EDEN_X1_CONTRIBUTION_RANKING_MODES = Object.freeze({
+  EXTENDED: 'extended',
+  DEFAULT: 'default',
+});
+
 export const DEFAULT_WEIGHTED_CONTRIBUTION_PREMIUM_CUTOFF = 20;
 const CONTRIBUTION_FIELDS = ['contribution', 'value', 'points', 'total', 'score'];
 const IMAGE_SOURCE_NOTE_RE =
@@ -25,6 +30,39 @@ function numberValue(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const parsed = Number(String(value || '').replace(/[^\d.-]/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function normalizeEdenX1ContributionRankingMode(value) {
+  return value === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+    ? EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+    : EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED;
+}
+
+export function getEdenX1ContributionRankingScore(
+  row,
+  mode = EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED
+) {
+  if (normalizeEdenX1ContributionRankingMode(mode) === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT) {
+    return numberValue(
+      row?.contributionRewardScore ??
+        numberValue(row?.contributionScore) + numberValue(row?.contributionExGuild)
+    );
+  }
+  return numberValue(row?.weightedScore);
+}
+
+export function compareEdenX1ContributionRankingRows(
+  a,
+  b,
+  mode = EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED
+) {
+  return (
+    getEdenX1ContributionRankingScore(b, mode) - getEdenX1ContributionRankingScore(a, mode) ||
+    numberValue(b?.contributionRewardScore) - numberValue(a?.contributionRewardScore) ||
+    numberValue(b?.contributionScore) - numberValue(a?.contributionScore) ||
+    numberValue(a?.currentRank || 999999) - numberValue(b?.currentRank || 999999) ||
+    String(a?.playerName || '').localeCompare(String(b?.playerName || ''))
+  );
 }
 
 function contributionValue(entry) {

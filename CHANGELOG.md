@@ -1,5 +1,13 @@
 # Changelog
 
+## 14.0.8 - 2026-07-15
+
+- Made R4 / Management assignment transparent by publishing each selected name's management-vote total, competition rank, public Bonus Team Effort Points, and weighted-contribution breakdown while keeping individual ballots anonymous.
+- Added deterministic management-vote tie-breaks using Bonus Team Effort Points, then the admin-selected Total Contribution score, then canonical player-name order; the assignment details now identify ties and the criterion that decided a cutoff slot.
+- Canonicalized public R4 aliases during reward-priority exclusions so variants such as `Dr Thunder` and `Dr Thunder 293` cannot receive overlapping higher-priority and management assignments.
+- Added an admin-only Eden X1 Votes control for choosing the authoritative Total Contribution formula: Extended includes contribution, ex-guild, duty, and Bonus Team Effort weight, while Default ranks contribution plus ex-guild only. Existing settings safely fall back to Extended.
+- Added a public Extended/Default comparison switch with active-chain labels and formula-aware score breakdowns; comparison never changes assignments, while the admin choice drives the actual Top 10, R4 / Management exclusions, and Team Players exclusions.
+
 ## 14.0.7 - 2026-07-15
 
 - Kept Velo's pending saved-hero request across the Generator handoff so a follow-up such as "I saved them" immediately opens the correct explicit consent, including selections made before the debounced local save completes.
