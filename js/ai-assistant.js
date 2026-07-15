@@ -145,6 +145,14 @@ const RESEARCH_TOPIC_PATTERN =
 const PERSONAL_STATUS_PATTERN =
   /\b(?:my|mine|current|saved|progress|status|finished|complete|completed|done|mein(?:e|er|en)?|aktuell|gespeichert|fortschritt|mon|ma|mes|actuel|progr[eè]s|mi|actual|guardad[oa]|meu|minha|atual|progresso|moy|tekush|sohran|benim|mevcut|ilerleme|saya|tersimpan)\b|我的|当前|进度|내|현재|진행|мой|текущ|сохран|لدي|الحالي|التقدم/iu;
 
+const SAVED_SETUP_COMPLETION_PATTERN =
+  /\b(?:i(?:'ve| have)?\s+)?(?:saved|selected|added|finished|completed|set(?:\s+(?:it|them))?\s+up)\b|\b(?:done|ready)\b|guard(?:é|ado)|salvei|gespeichert|fertig|enregistr(?:é|e)|pr[êe]t|kaydet|hazır|сохран|выбрал|готов|simpan|selesai|保存|选好|選好|저장|선택|완료|حفظ|جاهز|تم/iu;
+
+export function isSavedSetupCompletionPrompt(prompt) {
+  const text = String(prompt || '').trim();
+  return text.length > 0 && text.length <= 160 && SAVED_SETUP_COMPLETION_PATTERN.test(text);
+}
+
 export function inferSavedDataCategory(prompt) {
   const text = String(prompt || '').trim();
   if (/\b(?:admin(?:\s+(?:dashboard|data))?|private roster|management data)\b/iu.test(text)) {
@@ -229,6 +237,7 @@ class AiAssistantController {
     this.lastFocused = null;
     this.pendingPrompt = null;
     this.pendingConsentCategory = '';
+    this.pendingSetupCategories = new Set();
     this.confirmMode = '';
     this.confirmLineup = null;
     this.confirmReturnFocus = null;
@@ -476,9 +485,18 @@ class AiAssistantController {
       this.showError('oversized_input');
       return;
     }
-    const requiredCategories = options.requiredCategories?.length
+    let requiredCategories = options.requiredCategories?.length
       ? options.requiredCategories
       : inferRequiredSavedCategories(prompt);
+    if (
+      !requiredCategories.length &&
+      this.pendingSetupCategories.size &&
+      isSavedSetupCompletionPrompt(prompt)
+    ) {
+      requiredCategories = Array.from(this.pendingSetupCategories).filter((category) =>
+        hasRawSavedState(category)
+      );
+    }
     const missingCategories = requiredCategories.filter((category) => !hasRawSavedState(category));
     if (missingCategories.length) {
       this.showSavedSetupGuide(prompt, missingCategories);
@@ -532,6 +550,7 @@ class AiAssistantController {
   }
 
   showSavedSetupGuide(prompt, categories) {
+    categories.forEach((category) => this.pendingSetupCategories.add(category));
     const setupByCategory = {
       selected_heroes: {
         tab: 'generator',
@@ -1016,6 +1035,7 @@ class AiAssistantController {
     acceptProviderDisclosure();
     const removed = Array.from(this.grants).some((category) => !nextGrants.has(category));
     this.grants = setSessionGrants(nextGrants);
+    nextGrants.forEach((category) => this.pendingSetupCategories.delete(category));
     if (removed) {
       this.stopGeneration('interrupted');
       this.activeToolResults = [];
@@ -1090,6 +1110,7 @@ class AiAssistantController {
     clearSessionGrants();
     this.grants = new Set();
     this.activeToolResults = [];
+    this.pendingSetupCategories.clear();
     this.hideError();
     this.clearStatus();
     this.renderTranscript();

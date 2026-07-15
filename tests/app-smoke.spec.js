@@ -807,6 +807,45 @@ test.describe('app smoke tabs', () => {
     }
   });
 
+  test('Velo requests selected-hero consent after the user completes Generator setup', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_ai_provider_disclosure_v1', '1');
+      localStorage.removeItem('vts_generator_selection_v1');
+      sessionStorage.removeItem('vts_ai_session_consent_v1');
+    });
+    await openApp(page);
+
+    await page.locator('#aiDrawerLauncher').click();
+    await expect(page.locator('#aiDrawer')).toBeVisible({ timeout: 15000 });
+    const composer = page.locator('#aiComposer');
+    await expect(composer).toBeVisible({ timeout: 15000 });
+    await composer.fill('Explore my best hero combos using the heroes I own.');
+    await page.locator('#aiSendBtn').click();
+
+    const setupAction = page.getByRole('button', {
+      name: 'Select heroes in the Generator first.',
+    });
+    await expect(setupAction).toBeVisible();
+    await setupAction.click();
+    await expect(page.locator('#generatorSection')).toBeVisible();
+    await page.locator('#generatorHeroes .generator-card').first().click();
+    await expect(page.locator('#genSelectedCount')).toHaveText('1 selected');
+
+    await composer.fill('I saved them');
+    await page.locator('#aiSendBtn').click();
+
+    const consent = page.locator('#aiConsentOverlay');
+    const selectedHeroesConsent = consent.locator('input[value="selected_heroes"]');
+    await expect(consent).toBeVisible();
+    await expect(selectedHeroesConsent).toBeEnabled();
+    await expect(selectedHeroesConsent).toBeChecked();
+    await expect(page.locator('#aiTranscript')).not.toContainText(
+      'requested app data can’t be accessed'
+    );
+  });
+
   test('manual and generator tabs render', async ({ page }) => {
     await openApp(page);
     await expectTab(page, '#tabManual', '#manualSection', '#availableHeroes');
