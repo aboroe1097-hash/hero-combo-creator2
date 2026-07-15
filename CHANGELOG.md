@@ -1,5 +1,9 @@
 # Changelog
 
+## 14.0.10 - 2026-07-15
+
+- Prevented desktop Eden weighted-score popovers from briefly animating outside the viewport at the 769 px breakpoint by snapping the JavaScript-clamped position immediately while retaining opacity and visibility fades.
+
 ## 14.0.9 - 2026-07-15
 
 - Completed Delivery P1 quick wins: Eden Team Player votes now use the native form-submit path exactly once, and the mobile DOM/focus order matches the visible reward, vote, overview, and dashboard flow while preserving the desktop grid.

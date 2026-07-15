@@ -2831,6 +2831,7 @@ test.describe('app smoke tabs', () => {
           viewportWidth: window.innerWidth,
           viewportHeight: window.innerHeight,
           position: getComputedStyle(popover).position,
+          transitionProperty: getComputedStyle(popover).transitionProperty,
           cardBackdropFilter: card ? getComputedStyle(card).backdropFilter : '',
           center: rect.left + rect.width / 2,
           expectedCenter,
@@ -2886,6 +2887,9 @@ test.describe('app smoke tabs', () => {
         }
         expect(popoverVisibility.viewportWidth).toBe(width);
         expect(popoverVisibility.position).toBe('fixed');
+        expect(
+          popoverVisibility.transitionProperty.split(',').map((value) => value.trim())
+        ).not.toContain('transform');
         expect(popoverVisibility.cardBackdropFilter).toBe('none');
         expect(popoverVisibility.left).toBeGreaterThanOrEqual(8);
         expect(popoverVisibility.right).toBeLessThanOrEqual(popoverVisibility.viewportWidth - 8);
