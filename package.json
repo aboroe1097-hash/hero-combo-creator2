@@ -1,6 +1,6 @@
 {
   "name": "hero-combo-creator",
-  "version": "14.0.8",
+  "version": "14.0.9",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,7 +21,7 @@
     "i18n:check": "node scripts/check-i18n.mjs",
     "size:check": "node scripts/check-size.mjs",
     "test:unit": "node --test tests/unit/*.test.mjs",
-    "smoke": "playwright test tests/app-smoke.spec.js --reporter=line",
+    "smoke": "playwright test tests/app-smoke.spec.js tests/p1- --reporter=line",
     "smoke:prod": "playwright test --config=playwright.production.config.js --reporter=line",
     "version:check": "node scripts/check-version-consistency.mjs",
     "verify:deploy": "node scripts/verify-deploy.mjs",

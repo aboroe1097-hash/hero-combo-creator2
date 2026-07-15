@@ -23,6 +23,7 @@ const {
   stripGuildTagsFromPlayerName,
   summarizeCanonicalPlayerRecords,
 } = await import('../../js/ocr-name-normalizer.js');
+const { getWeightedPlayerFamilyKey } = await import('../../js/contribution-weighting.js');
 
 function key(name) {
   return resolveCanonicalPlayerIdentity(name).playerKey;
@@ -40,6 +41,27 @@ test('canonical resolver reuses existing aliases after guild-prefix cleanup', ()
   assert.equal(resolveCanonicalPlayerName('(Vts)AK Чапай'), 'AK Чапай');
   assert.equal(resolveCanonicalPlayerName('(s) ✨ Kika ✨'), '꧁༺ Kika ༻꧂');
   assert.equal(resolveCanonicalPlayerName('s)GoodnesGraycious'), 'GoodnesGraycious');
+});
+
+test('vote-export aliases retain canonical identity and weighted family', () => {
+  const aliases = [
+    ['A н d ě R $', 'A n d e R $', 'ander'],
+    ['EightBall _/\\_",', 'EightBall _V/_', 'eightballv'],
+    ['~Pink ~', '~ Pink ~', 'pink'],
+  ];
+
+  for (const [rawName, canonicalName, familyKey] of aliases) {
+    const rawIdentity = resolveCanonicalPlayerIdentity(rawName);
+    const canonicalIdentity = resolveCanonicalPlayerIdentity(canonicalName);
+
+    assert.equal(rawIdentity.playerName, canonicalName);
+    assert.equal(rawIdentity.playerKey, canonicalIdentity.playerKey);
+    assert.equal(getWeightedPlayerFamilyKey(rawIdentity.playerKey), familyKey);
+    assert.equal(
+      getWeightedPlayerFamilyKey(rawIdentity.playerKey),
+      getWeightedPlayerFamilyKey(canonicalIdentity.playerKey)
+    );
+  }
 });
 
 test('attack-level identity cache invalidates when OCR values change', () => {

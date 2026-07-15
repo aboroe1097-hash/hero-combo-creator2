@@ -1,7 +1,7 @@
 import '../css/materials.css';
 
-import { currentLanguage } from './state.js';
-import { appT, escapeHtml, formatLocaleNumber } from './utils.js';
+import { currentLanguage, setCurrentLanguage } from './state.js';
+import { escapeHtml, formatLocaleNumber } from './utils.js';
 import {
   DM_MATERIAL_STOCKPILES,
   DM_NORMAL_GEAR_DRAGONITE_PER_ITEM,
@@ -187,7 +187,7 @@ const SLOT_ASSETS = Object.freeze(
 );
 
 // English is the readability safety net, not a replacement for locale work.
-// `appT()` returns the key itself while a catalog is converging; every DM label
+// Translation catalogs may return the key itself while a catalog is converging; every DM label
 // therefore has an explicit fallback here so the planner never exposes key soup.
 export const DM_COPY_FALLBACKS = Object.freeze({
   title: 'Dragon Master Set Planner',
@@ -321,7 +321,7 @@ function copy() {
   );
   // Every shipped locale already owns the Materials navigation label. Use it
   // as the heading until that locale receives the more specific DM catalog.
-  if (currentLanguage !== 'en' && appT('dmPlannerTitle') === 'dmPlannerTitle') {
+  if (currentLanguage !== 'en' && materialT('dmPlannerTitle') === 'dmPlannerTitle') {
     localized.title = localizedDmText('tabMaterials', localized.title);
   }
   return localized;
@@ -338,8 +338,16 @@ function interpolate(template, values) {
   );
 }
 
+function materialT(key, values = {}) {
+  const dictionaries = globalThis.VTS_TRANSLATIONS;
+  return interpolate(
+    dictionaries?.[currentLanguage]?.[key] || dictionaries?.en?.[key] || key,
+    values
+  );
+}
+
 function localizedDmText(key, fallback, values = {}) {
-  const translated = appT(key, values);
+  const translated = materialT(key, values);
   if (translated && translated !== key) return translated;
   return interpolate(fallback, values);
 }
@@ -753,6 +761,10 @@ function renderResourceRows(result, t, editable = false) {
 
 function renderSummaryPanel(result, t) {
   const progress = Math.round(result.overallProgress * 100);
+  const progressValueText = `${formatNumber(progress)}%. ${interpolate(t.campaignPiecesComplete, {
+    completed: formatNumber(result.totalCompletedPieces),
+    total: formatNumber(result.totalTargetPieces),
+  })}`;
   const nextText = result.nextSlot
     ? interpolate(t.normalGearHint, { tier: tierLabel(result.route.normalTier, t) })
     : t.allDone;
@@ -766,8 +778,8 @@ function renderSummaryPanel(result, t) {
           <div><dt>${escapeHtml(t.targetSets)}</dt><dd>${formatNumber(result.targetSetCount)}</dd></div>
           <div><dt>${escapeHtml(t.completed)}</dt><dd>${formatNumber(result.totalCompletedPieces)} / ${formatNumber(result.totalTargetPieces)}</dd></div>
         </dl>
-        <div class="dm-progress-copy"><span>${escapeHtml(t.overallProgress)}</span><strong>${formatNumber(progress)}%</strong></div>
-        <div class="dm-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
+        <div class="dm-progress-copy"><span id="dmProgressLabel">${escapeHtml(t.overallProgress)}</span><strong>${formatNumber(progress)}%</strong></div>
+        <div class="dm-progress-track" role="progressbar" aria-labelledby="dmProgressLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}" aria-valuetext="${escapeHtml(progressValueText)}"><span style="width:${progress}%"></span></div>
       </section>
       <section class="dm-panel dm-next-panel">
         <span class="dm-eyebrow">${escapeHtml(t.nextAction)}</span>
@@ -841,7 +853,7 @@ function handleImageError(event) {
 // Graceful i18n: prefer the catalog value, fall back to English until the
 // locale lane adds the dmEnhance* keys (see the reconciliation handoff).
 function enhanceText(key, fallback) {
-  const value = appT(key);
+  const value = materialT(key);
   return value && value !== key ? value : fallback;
 }
 
@@ -1024,6 +1036,21 @@ function rerender({ focusSelector = null } = {}) {
   savePlan();
   render();
   if (focusSelector) rootEl.querySelector(focusSelector)?.focus({ preventScroll: true });
+}
+
+function normalizeMaterialLanguage(language) {
+  const primary = String(language || 'en')
+    .toLowerCase()
+    .split('-')[0];
+  return primary === 'ko' ? 'kr' : primary;
+}
+
+function renderForLanguage({ detail } = {}) {
+  const language = normalizeMaterialLanguage(
+    detail?.lang || document.documentElement.lang || currentLanguage
+  );
+  if (language !== currentLanguage) setCurrentLanguage(language);
+  render();
 }
 
 function handleClick(event) {
@@ -1222,7 +1249,7 @@ export function initMaterialCalculator() {
   rootEl = document.getElementById('materialCalculatorRoot');
   if (!rootEl) return;
   if (rootEl.dataset.dmMaterialWired === '1') {
-    render();
+    renderForLanguage();
     return;
   }
   rootEl.dataset.dmMaterialWired = '1';
@@ -1231,7 +1258,7 @@ export function initMaterialCalculator() {
   rootEl.addEventListener('input', handleInput);
   rootEl.addEventListener('change', handleChange);
   rootEl.addEventListener('error', handleImageError, true);
-  window.addEventListener('edenLanguageUpdate', render);
-  window.addEventListener('vts:language-change', render);
-  render();
+  window.addEventListener('edenLanguageUpdate', renderForLanguage);
+  window.addEventListener('vts:language-change', renderForLanguage);
+  renderForLanguage();
 }

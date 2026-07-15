@@ -1,7 +1,12 @@
 import { cssToken, debounce, escapeHtml } from './utils.js';
 // js/app-generator.js
 import { translations } from './translations.js';
-import { rankedCombos, filterCombosForSkinMode, selectNonOverlappingCombos } from './combos-db.js';
+import {
+  rankedCombos,
+  filterCombosForSkinMode,
+  scoreComboByRank,
+  selectNonOverlappingCombos,
+} from './combos-db.js';
 import { renderCountersToggle, getCounterCount } from './combo-counters.js';
 import { hasSkin, getHeroSkins, getSkinCount, getSkinForHero, SKIN_TYPES } from './skins-db.js';
 import { getSkinHeroByName } from './skin-heroes-data.js';
@@ -34,11 +39,11 @@ import {
   lastGeneratedCombos,
   getSourceCreditText,
   getGeneratorHeroPool,
-  generatorHeroesEl,
-  generatorResultsEl,
+  generatorHeroesEl as heroesEl,
+  generatorResultsEl as resultsEl,
   downloadGeneratorBtn,
 } from './state.js';
-import { callUi, getUiFunction } from './ui-bridge.js';
+import { callUi } from './ui-bridge.js';
 
 export { lastGeneratedCombos };
 
@@ -217,17 +222,6 @@ function applyGeneratorBadgeVars(el, { skinColor, skinGradient } = {}) {
     el.style.setProperty('--skin-badge-bg', `linear-gradient(135deg, ${skinGradient})`);
 }
 
-function showGeneratorMessage(message) {
-  const showAboModal = getUiFunction('showAboModal');
-  if (showAboModal) {
-    showAboModal(message);
-    return;
-  }
-  if (typeof window.showToast === 'function') {
-    window.showToast(message, 'warning');
-  }
-}
-
 function setGeneratorBusy(isBusy) {
   ['generateCombosBtn', 'generateRandomBtn'].forEach((id) => {
     const btn = document.getElementById(id);
@@ -246,7 +240,7 @@ function setGeneratorBusy(isBusy) {
 }
 
 export function renderGeneratorHeroes(options = {}) {
-  if (!generatorHeroesEl) return;
+  if (!heroesEl) return;
   const fragment = document.createDocumentFragment();
   const t = translations[currentLanguage] || translations.en;
 
@@ -474,21 +468,20 @@ export function renderGeneratorHeroes(options = {}) {
     fragment.appendChild(card);
   });
 
-  generatorHeroesEl.replaceChildren(fragment);
+  heroesEl.replaceChildren(fragment);
 
   let sourceNote = document.getElementById('heroesSourceNote2');
   if (!sourceNote) {
     sourceNote = document.createElement('div');
     sourceNote.id = 'heroesSourceNote2';
     sourceNote.className = 'generator-source-note';
-    generatorHeroesEl.parentNode.appendChild(sourceNote);
+    heroesEl.parentNode.appendChild(sourceNote);
   }
   sourceNote.textContent = getSourceCreditText();
 }
 
 export function renderGeneratorResults(bestCombos, meta = {}) {
   const t = translations[currentLanguage] || translations.en;
-  generatorResultsEl.innerHTML = '';
   const topScore = Math.max(
     1,
     ...bestCombos
@@ -496,11 +489,18 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       .filter((score) => Number.isFinite(score))
   );
 
-  if (Number.isFinite(meta.durationMs)) {
-    const summary = document.createElement('div');
-    summary.className = 'generator-run-meta';
-    summary.textContent = `Generated ${bestCombos.length} combo${bestCombos.length === 1 ? '' : 's'} in ${meta.durationMs} ms`;
-    generatorResultsEl.appendChild(summary);
+  const countMessage = meta.countMessage || formatResultCount(bestCombos.length);
+  const duration = Number.isFinite(meta.durationMs) ? `<span> · ${meta.durationMs} ms</span>` : '';
+  const recovery = bestCombos.length
+    ? ''
+    : `<div class="generator-empty-state generator-recovery-state"><strong>${escapeHtml(meta.emptyMessage || t.generatorNoCombosAvailable || 'No ranked combos found.')}</strong><button type="button" class="selection-action-btn selection-action-btn--reset">${escapeHtml(t.genSelectTitle || 'Select Your Heroes')}</button></div>`;
+  resultsEl.innerHTML = `<div class="generator-run-meta" aria-hidden="true">${escapeHtml(countMessage)}${duration}</div>${recovery}`;
+
+  if (!bestCombos.length) {
+    resultsEl
+      .querySelector('.generator-recovery-state button')
+      ?.addEventListener('click', focusHeroSelection);
+    return;
   }
 
   bestCombos.forEach((combo, i) => {
@@ -599,122 +599,107 @@ export function renderGeneratorResults(bestCombos, meta = {}) {
       openCounters();
     });
 
-    generatorResultsEl.appendChild(card);
+    resultsEl.appendChild(card);
+  });
+}
+
+function scrollBehavior() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+}
+
+function focusHeroSelection() {
+  const target =
+    heroesEl?.querySelector('.generator-card-selected') ||
+    document.getElementById('generatorHeroSearch') ||
+    heroesEl;
+  target?.focus({ preventScroll: true });
+  target?.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
+}
+
+function formatResultCount(count) {
+  const t = translations[currentLanguage] || translations.en;
+  const key = count === 1 ? 'generatorFoundComboOne' : 'generatorFoundComboMany';
+  const fallback = count === 1 ? 'Found {n} combo' : 'Found {n} combos';
+  return (t[key] || fallback).replace('{n}', count);
+}
+
+function getSourceCombos() {
+  return filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, isGeneratorSkinOwned);
+}
+
+function selectRandomCombos(selected) {
+  const owned = new Set(selected);
+  const validCombos = getSourceCombos()
+    .filter((combo) => combo.heroes.every((hero) => owned.has(hero)))
+    .map((combo, index, eligible) => ({
+      ...combo,
+      originalIndex: index,
+      displayScore: scoreComboByRank(index, eligible.length),
+    }));
+
+  for (let i = validCombos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
+  }
+
+  const combos = [];
+  const usedHeroes = new Set();
+  for (const combo of validCombos) {
+    if (combos.length >= GENERATOR_MAX_COMBOS) break;
+    if (combo.heroes.some((hero) => usedHeroes.has(hero))) continue;
+    combos.push(combo);
+    combo.heroes.forEach((hero) => usedHeroes.add(hero));
+  }
+  return combos.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
+}
+
+function runGenerator(min, messageKey, fallback, select) {
+  const t = translations[currentLanguage] || translations.en;
+  const selected = [...generatorSelectedHeroes];
+  lastGeneratedCombos.length = 0;
+  resultsEl.replaceChildren();
+  downloadGeneratorBtn?.classList.add('hidden');
+
+  let combos = [];
+  let durationMs;
+  const emptyMessage =
+    selected.length < min
+      ? t[messageKey] || fallback
+      : t.generatorNoCombosAvailable || 'No ranked combos found.';
+  if (selected.length >= min) {
+    setGeneratorBusy(true);
+    const startedAt = performance.now();
+    try {
+      combos = select(selected);
+      durationMs = Math.max(1, Math.round(performance.now() - startedAt));
+    } finally {
+      setGeneratorBusy(false);
+    }
+  }
+
+  const countMessage = formatResultCount(combos.length);
+  lastGeneratedCombos.push(...combos);
+  renderGeneratorResults(combos, { durationMs, emptyMessage, countMessage });
+  const liveStatus = document.getElementById('generatorRunStatus');
+  if (liveStatus) liveStatus.textContent = countMessage;
+  downloadGeneratorBtn?.classList.toggle('hidden', combos.length === 0);
+  resultsEl.setAttribute('tabindex', '-1');
+  resultsEl.focus({ preventScroll: true });
+  resultsEl.scrollIntoView({
+    behavior: scrollBehavior(),
+    block: 'start',
   });
 }
 
 export function generateBestCombos() {
-  const t = translations[currentLanguage] || translations.en;
-  const selected = Array.from(generatorSelectedHeroes);
-
-  if (selected.length < GENERATOR_MIN_HEROES) {
-    showGeneratorMessage(
-      t.generatorMinHeroesMessage ||
-        `Select at least ${GENERATOR_MIN_HEROES} heroes to generate best combos.`
-    );
-    return;
-  }
-
-  setGeneratorBusy(true);
-  const startedAt = performance.now();
-
-  try {
-    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, (heroName) =>
-      isGeneratorSkinOwned(heroName, generatorSelectedSeasons)
-    );
-    const finalSelection = selectNonOverlappingCombos(sourceCombos, selected, GENERATOR_MAX_COMBOS);
-
-    const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
-    lastGeneratedCombos.length = 0;
-    lastGeneratedCombos.push(...finalSelection);
-    renderGeneratorResults(finalSelection, { durationMs });
-
-    if (finalSelection.length > 0) {
-      downloadGeneratorBtn.classList.remove('hidden');
-      if (typeof window.showToast === 'function') {
-        const key =
-          finalSelection.length === 1 ? 'generatorFoundComboOne' : 'generatorFoundComboMany';
-        const message = (t[key] || 'Found {n} best combos!').replace('{n}', finalSelection.length);
-        window.showToast(`${message} Generated in ${durationMs} ms.`, 'success');
-      }
-    } else {
-      downloadGeneratorBtn.classList.add('hidden');
-    }
-  } finally {
-    setGeneratorBusy(false);
-  }
+  runGenerator(
+    GENERATOR_MIN_HEROES,
+    'generatorMinHeroesMessage',
+    `Select at least ${GENERATOR_MIN_HEROES} heroes to generate best combos.`,
+    (selected) => selectNonOverlappingCombos(getSourceCombos(), selected, GENERATOR_MAX_COMBOS)
+  );
 }
 
 export function generateRandomCombos() {
-  const t = translations[currentLanguage] || translations.en;
-  const selected = Array.from(generatorSelectedHeroes);
-  if (selected.length < 3) {
-    showGeneratorMessage(t.messagePleaseDrag3Heroes || 'Select at least 3 heroes!');
-    return;
-  }
-
-  setGeneratorBusy(true);
-  const startedAt = performance.now();
-
-  try {
-    const ownedSet = new Set(selected);
-    const sourceCombos = filterCombosForSkinMode(rankedCombos, generatorSkinsOnly, (heroName) =>
-      isGeneratorSkinOwned(heroName, generatorSelectedSeasons)
-    );
-    const validCombos = sourceCombos
-      .filter((combo) => combo.heroes.every((h) => ownedSet.has(h)))
-      .map((combo, index, eligible) => {
-        let rawScore = 100;
-        if (eligible.length > 1) {
-          rawScore = 100 - (index / (eligible.length - 1)) * 99;
-        }
-        return {
-          ...combo,
-          originalIndex: index,
-          displayScore: rawScore.toFixed(1),
-        };
-      });
-
-    if (validCombos.length === 0) {
-      showGeneratorMessage(t.generatorNoCombosAvailable || 'No ranked combos found.');
-      return;
-    }
-
-    for (let i = validCombos.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [validCombos[i], validCombos[j]] = [validCombos[j], validCombos[i]];
-    }
-
-    const randomSelection = [];
-    const usedHeroesGlobal = new Set();
-
-    for (const combo of validCombos) {
-      if (randomSelection.length >= GENERATOR_MAX_COMBOS) break;
-      const isUnique = !combo.heroes.some((h) => usedHeroesGlobal.has(h));
-      if (isUnique) {
-        randomSelection.push(combo);
-        combo.heroes.forEach((h) => usedHeroesGlobal.add(h));
-      }
-    }
-
-    randomSelection.sort((a, b) => parseFloat(b.displayScore) - parseFloat(a.displayScore));
-
-    if (randomSelection.length === 0) {
-      showGeneratorMessage(t.generatorNoCombosAvailable || 'No ranked combos found.');
-    } else {
-      const durationMs = Math.max(1, Math.round(performance.now() - startedAt));
-      lastGeneratedCombos.length = 0;
-      lastGeneratedCombos.push(...randomSelection);
-      renderGeneratorResults(randomSelection, { durationMs });
-      downloadGeneratorBtn.classList.remove('hidden');
-      if (typeof window.showToast === 'function') {
-        window.showToast(
-          `Generated ${randomSelection.length} random combos in ${durationMs} ms.`,
-          'success'
-        );
-      }
-    }
-  } finally {
-    setGeneratorBusy(false);
-  }
+  runGenerator(3, 'messagePleaseDrag3Heroes', 'Select at least 3 heroes!', selectRandomCombos);
 }

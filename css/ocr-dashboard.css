@@ -998,7 +998,7 @@
   flex-wrap: wrap;
 }
 #ocrDashboardRoot .dash-updated {
-  color: var(--ff-text-mute);
+  color: var(--text-secondary);
   font-family: var(--ff-font-mono);
 }
 #ocrDashboardRoot .dash-cloud-status {
@@ -2449,7 +2449,7 @@
   box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.25);
 }
 #ocrDashboardRoot .dash-search-input::placeholder {
-  color: var(--ff-text-mute);
+  color: var(--text-secondary);
 }
 
 /* Empty state */
@@ -4781,6 +4781,9 @@ body[style*='overflow: hidden'] .tab-panel {
   border: 1px solid rgba(103, 232, 249, 0.2);
   border-radius: 8px;
   background: var(--surface-soft);
+}
+#ocrDashboardRoot .dash-eden-vote-deadline-control[hidden] {
+  display: none;
 }
 #ocrDashboardRoot .dash-eden-vote-deadline-control > div:first-child {
   display: grid;

@@ -54,6 +54,17 @@ test('catalog controls have a stable non-overlapping hierarchy', () => {
   assert.match(styles, /@keyframes research-card-completion-pulse/);
 });
 
+test('Research buff previews use group semantics for their accessible name', () => {
+  assert.match(
+    source,
+    /class="research-card-buff-preview" role="group" aria-label="\$\{escapeHtml\(appT\('researchBuffTopBuffsAria'\)\)\}"/
+  );
+  assert.doesNotMatch(
+    source,
+    /class="research-card-buff-preview" aria-label="\$\{escapeHtml\(appT\('researchBuffTopBuffsAria'\)\)\}"/
+  );
+});
+
 test('season bands persist visibility, default completed seasons closed, and expose reversible MAX controls', () => {
   assert.match(
     source,

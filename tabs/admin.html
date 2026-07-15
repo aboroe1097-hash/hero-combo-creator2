@@ -1546,6 +1546,32 @@
                 aria-live="polite"
               ></span>
             </div>
+            <div
+              id="dashEdenVoteSeasonMismatch"
+              class="dash-eden-vote-deadline-control"
+              role="alert"
+              hidden
+            >
+              <div>
+                <strong data-i18n="adminEdenVotesSeasonMismatchTitle"
+                  >Activate the current vote season</strong
+                >
+                <small id="dashEdenVoteSeasonMismatchHint"
+                  >Saved voting controls belong to an earlier season. Activate the current season
+                  before changing them.</small
+                >
+              </div>
+              <button
+                id="dashEdenVoteActivateSeasonBtn"
+                class="dash-btn dash-btn-primary"
+                type="button"
+                aria-describedby="dashEdenVoteSeasonMismatchHint"
+              >
+                <span data-i18n="adminEdenVotesSeasonMismatchTitle"
+                  >Activate the current vote season</span
+                >
+              </button>
+            </div>
             <div class="dash-eden-vote-toggle-grid">
               <label class="dash-eden-vote-toggle">
                 <input id="dashEdenVoteOpenToggle" type="checkbox" checked />
@@ -1618,7 +1644,7 @@
                     value="default"
                   />
                   <span>
-                    <strong data-i18n="adminEdenContributionModeDefault">Default</strong>
+                    <strong data-i18n="adminEdenContributionModeDefault">Base</strong>
                     <small data-i18n="adminEdenContributionModeDefaultHint"
                       >Contribution + ex-guild only. Duty and Bonus Team Effort stay visible but do
                       not affect ranking.</small
@@ -2017,34 +2043,75 @@
             </h2>
           </div>
           <div class="dash-vts-games-grid">
-            <a class="dash-game-card" href="/previews/boot-games/b-merge-rush.html" target="_blank" rel="noopener">
+            <a
+              class="dash-game-card"
+              href="/previews/boot-games/b-merge-rush.html"
+              target="_blank"
+              rel="noopener"
+            >
               <span class="dash-game-tag">Mode A</span>
               <strong>Merge Rush</strong>
               <p>Tap two matching type+color to merge up the rarity ladder. Gold pair = jackpot.</p>
             </a>
-            <a class="dash-game-card" href="/previews/boot-games/c-sort-hoard.html" target="_blank" rel="noopener">
+            <a
+              class="dash-game-card"
+              href="/previews/boot-games/c-sort-hoard.html"
+              target="_blank"
+              rel="noopener"
+            >
               <span class="dash-game-tag">Mode B</span>
               <strong>Sort the Hoard</strong>
-              <p>Pieces fall from the gate. Flick/tap left (blue) or right (gold) bins before they hit the floor.</p>
+              <p>
+                Pieces fall from the gate. Flick/tap left (blue) or right (gold) bins before they
+                hit the floor.
+              </p>
             </a>
-            <a class="dash-game-card" href="/previews/boot-games/e-crystal-relay.html" target="_blank" rel="noopener">
+            <a
+              class="dash-game-card"
+              href="/previews/boot-games/e-crystal-relay.html"
+              target="_blank"
+              rel="noopener"
+            >
               <span class="dash-game-tag">Mode C</span>
               <strong>Crystal Relay</strong>
-              <p>One piece on a bar. Tap when the spark is in the green zone — chain alternating sides for combos.</p>
+              <p>
+                One piece on a bar. Tap when the spark is in the green zone — chain alternating
+                sides for combos.
+              </p>
             </a>
-            <a class="dash-game-card" href="/previews/boot-games/f-set-assembly.html" target="_blank" rel="noopener">
+            <a
+              class="dash-game-card"
+              href="/previews/boot-games/f-set-assembly.html"
+              target="_blank"
+              rel="noopener"
+            >
               <span class="dash-game-tag">Mode D</span>
               <strong>Set Assembly</strong>
-              <p>Complete a mini set (e.g. all three feathers). Tap only matching types; junk distracts you.</p>
+              <p>
+                Complete a mini set (e.g. all three feathers). Tap only matching types; junk
+                distracts you.
+              </p>
             </a>
-            <a class="dash-game-card" href="/previews/boot-games/h-hero-rumble.html" target="_blank" rel="noopener">
+            <a
+              class="dash-game-card"
+              href="/previews/boot-games/h-hero-rumble.html"
+              target="_blank"
+              rel="noopener"
+            >
               <span class="dash-game-tag">Mode E</span>
               <strong>Hero Rumble</strong>
-              <p>Real hero icons fight! Catch blue weapons to attack, dodge gold ones. Purple = SUPER!</p>
+              <p>
+                Real hero icons fight! Catch blue weapons to attack, dodge gold ones. Purple =
+                SUPER!
+              </p>
             </a>
           </div>
           <p class="dash-game-note">
-            <span data-i18n="adminVtsGamesNote">Open a game in a new tab to play. Boot games are local prototypes using DM material icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across all modes.</span>
+            <span data-i18n="adminVtsGamesNote"
+              >Open a game in a new tab to play. Boot games are local prototypes using DM material
+              icons, boot wing art, and hero skin icons. Combo tracking and unified keyboard across
+              all modes.</span
+            >
           </p>
         </div>
       </div>

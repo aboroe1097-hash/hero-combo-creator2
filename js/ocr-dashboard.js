@@ -100,7 +100,11 @@ import {
   normalizeEdenX1ContributionRankingMode,
   sanitizePublicR5Adjustments,
 } from './contribution-weighting.js';
-import { compactPlayerIdentity, stripGuildTagsFromPlayerName } from './ocr-name-normalizer.js';
+import {
+  compactPlayerIdentity,
+  resolveCanonicalPlayerIdentity,
+  stripGuildTagsFromPlayerName,
+} from './ocr-name-normalizer.js';
 import {
   PLAYER_REGISTRY_KEY,
   normalizePlayerRegistry,
@@ -114,6 +118,7 @@ import {
   mergeDashboardOcrAttacks,
 } from './dashboard-attack-mutations.js';
 import { resolveEdenVoteCandidate } from './eden-vote-candidates.js';
+import { getPublicVtsPlayerProfile } from './vts-public-players.js';
 import {
   classifyRemoteSnapshot,
   conductAdjustmentFingerprint,
@@ -628,9 +633,24 @@ function getDashboardR5SeasonKey() {
 
 state.r5Season = state.r5Season || getDashboardR5SeasonKey();
 
+function canonicalEdenVoterKey(voterName, storedVoterKey = '') {
+  const rawVoterKey = String(storedVoterKey || '').trim();
+  const cleanVoterName = stripGuildTagsFromPlayerName(voterName);
+  const publicProfile =
+    getPublicVtsPlayerProfile(voterName) ||
+    getPublicVtsPlayerProfile(cleanVoterName) ||
+    getPublicVtsPlayerProfile(rawVoterKey);
+  const identitySource = String(publicProfile?.name || cleanVoterName || rawVoterKey).trim();
+  try {
+    return resolveCanonicalPlayerIdentity(identitySource).playerKey || rawVoterKey;
+  } catch {
+    return rawVoterKey || compactPlayerIdentity(voterName);
+  }
+}
+
 function normalizeEdenX1VoteRecord(record = {}) {
   const voterName = String(record.voterName || '').trim();
-  const voterKey = String(record.voterKey || compactPlayerIdentity(voterName)).trim();
+  const voterKey = canonicalEdenVoterKey(voterName, record.voterKey);
   const rawCandidateNames = Array.isArray(record.candidateNames)
     ? record.candidateNames
     : [record.candidateName, record.candidateName2, record.candidateName3, record.candidateName4];
@@ -743,6 +763,12 @@ function normalizeEdenX1VoteSettings(settings = {}) {
   };
 }
 
+function hasEdenX1VoteSeasonMismatch(settings = {}) {
+  const settingsSeason = String(settings?.season || '').trim();
+  const currentSeason = String(currentEdenVoteSeason() || '').trim();
+  return Boolean(settingsSeason && currentSeason && settingsSeason !== currentSeason);
+}
+
 function formatEdenX1VoteDeadlineDate(closesAt) {
   const normalized = normalizeEdenVoteClosesAt(closesAt);
   if (!normalized) return '';
@@ -801,6 +827,8 @@ function renderEdenX1VoteSettings() {
     state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
   );
   state.edenX1VoteSettings = settings;
+  const seasonMismatch = hasEdenX1VoteSeasonMismatch(settings);
+  const currentSeason = currentEdenVoteSeason();
   const setChecked = (id, value) => {
     const input = $id(id);
     if (input) input.checked = Boolean(value);
@@ -828,13 +856,26 @@ function renderEdenX1VoteSettings() {
       mode: modeLabel,
     });
   }
+  const seasonMismatchPanel = $id('dashEdenVoteSeasonMismatch');
+  if (seasonMismatchPanel) seasonMismatchPanel.hidden = !seasonMismatch;
+  const seasonMismatchHint = $id('dashEdenVoteSeasonMismatchHint');
+  if (seasonMismatchHint) {
+    seasonMismatchHint.textContent = dashT('adminEdenVotesSeasonMismatchHint', {
+      storedSeason: settings.season,
+      currentSeason,
+    });
+  }
+  seasonMismatchPanel
+    ?.closest('.dash-eden-vote-admin-options')
+    ?.querySelectorAll('input, button:not(#dashEdenVoteActivateSeasonBtn)')
+    .forEach((control) => (control.disabled = seasonMismatch));
   const deadlineInput = $id('dashEdenVoteClosesAtInput');
   if (deadlineInput) {
     deadlineInput.value = toEdenVoteDatetimeLocal(settings.closesAt);
     deadlineInput.setCustomValidity('');
   }
   const clearDeadline = $id('dashEdenVoteClearDeadlineBtn');
-  if (clearDeadline) clearDeadline.disabled = !settings.closesAt;
+  if (clearDeadline) clearDeadline.disabled = seasonMismatch || !settings.closesAt;
   const deadlinePreview = $id('dashEdenVoteDeadlinePreview');
   const deadlineDate = formatEdenX1VoteDeadlineDate(settings.closesAt);
   const deadlineExpired = isEdenVoteDeadlineExpired(settings.closesAt);
@@ -853,11 +894,13 @@ function renderEdenX1VoteSettings() {
   }
   const status = $id('dashEdenVoteSettingsStatus');
   if (status) {
-    status.textContent = deadlineExpired
-      ? dashT('adminEdenVotesDeadlineExpired', { date: deadlineDate })
-      : settings.votingOpen
-        ? dashT('adminEdenVotesSettingsOpen')
-        : dashT('adminEdenVotesSettingsClosed');
+    status.textContent = seasonMismatch
+      ? dashT('adminEdenVotesSeasonMismatchTitle')
+      : deadlineExpired
+        ? dashT('adminEdenVotesDeadlineExpired', { date: deadlineDate })
+        : settings.votingOpen
+          ? dashT('adminEdenVotesSettingsOpen')
+          : dashT('adminEdenVotesSettingsClosed');
   }
 }
 
@@ -912,11 +955,16 @@ function collectEdenX1VoteTotals(votes, season) {
       vote.candidates.length
   );
   const totals = new Map();
+  let totalSelections = 0;
   dedupedVotes.forEach((vote) => {
+    const countedFamilyKeys = new Set();
     vote.candidates.forEach((candidate) => {
       const resolved = resolveEdenVoteCandidate(candidate);
       const familyKey =
         resolved.familyKey || resolved.playerKey || compactPlayerIdentity(resolved.rawName);
+      if (!familyKey || countedFamilyKeys.has(familyKey)) return;
+      countedFamilyKeys.add(familyKey);
+      totalSelections += 1;
       if (!totals.has(familyKey)) {
         totals.set(familyKey, {
           candidateName: resolved.canonicalName || resolved.rawName,
@@ -938,7 +986,7 @@ function collectEdenX1VoteTotals(votes, season) {
   });
   return {
     dedupedVotes,
-    totalSelections: dedupedVotes.reduce((sum, vote) => sum + vote.candidates.length, 0),
+    totalSelections,
     totalRows: [...totals.values()].sort(
       (a, b) =>
         b.count - a.count || b.latest - a.latest || a.candidateName.localeCompare(b.candidateName)
@@ -966,6 +1014,7 @@ function buildEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
 }
 
 async function publishEdenX1PublicVoteResults(settings = state.edenX1VoteSettings) {
+  if (hasEdenX1VoteSeasonMismatch(settings)) return false;
   if (state.adminIsAdmin !== true) return false;
   const db = await ensureCloudSyncReady();
   if (!db) return false;
@@ -1248,6 +1297,35 @@ async function saveEdenX1VoteSettings(nextSettings) {
   return edenX1VoteSettingsSaveQueue;
 }
 
+async function activateCurrentEdenX1VoteSeason() {
+  const previousSettings = normalizeEdenX1VoteSettings(
+    state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
+  );
+  if (!hasEdenX1VoteSeasonMismatch(previousSettings)) {
+    renderEdenX1VoteSettings();
+    return true;
+  }
+  const saved = await saveEdenX1VoteSettings({
+    ...previousSettings,
+    season: currentEdenVoteSeason(),
+    votingOpen: false,
+    allowEditing: false,
+    showPublicResults: false,
+    showVoterNames: false,
+    closesAt: '',
+  });
+  if (!saved && !isLocalAdminTestBypass()) {
+    // The settings write can succeed before publishing the companion results
+    // document fails. Re-read cloud authority instead of blindly restoring the
+    // stale season locally.
+    await loadEdenX1VoteSettings();
+    const status = $id('dashEdenVoteSettingsStatus');
+    if (status) status.textContent = dashT('adminEdenVotesSettingsSaveFailed');
+    return false;
+  }
+  return true;
+}
+
 async function loadEdenX1VoteAdminData() {
   renderEdenX1VoteAdmin();
   await Promise.all([loadEdenX1VoteSettings(), loadEdenX1Votes(), loadEdenX1VoteHistory()]);
@@ -1266,6 +1344,9 @@ function bindEdenX1VoteAdminControls() {
   bindEdenX1VoteAdminControls.bound = true;
   $id('dashEdenVoteRefreshBtn')?.addEventListener('click', () => refreshEdenX1VoteAdminData());
   $id('dashEdenVoteExportBtn')?.addEventListener('click', () => exportEdenX1VotesCsv());
+  $id('dashEdenVoteActivateSeasonBtn')?.addEventListener('click', () =>
+    activateCurrentEdenX1VoteSeason()
+  );
   [
     ['dashEdenVoteOpenToggle', 'votingOpen'],
     ['dashEdenVoteEditingToggle', 'allowEditing'],
@@ -1301,6 +1382,10 @@ function bindEdenX1VoteAdminControls() {
     const currentSettings = normalizeEdenX1VoteSettings(
       state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
     );
+    if (hasEdenX1VoteSeasonMismatch(currentSettings)) {
+      renderEdenX1VoteSettings();
+      return;
+    }
     if (currentSettings.closesAt === closesAt) {
       renderEdenX1VoteSettings();
       return;

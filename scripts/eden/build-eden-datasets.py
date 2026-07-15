@@ -278,6 +278,7 @@ def main():
             "payload": b64,
         }, separators=(",", ":"), ensure_ascii=True) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     if LEGACY_PAYLOAD_JS.exists():
         LEGACY_PAYLOAD_JS.unlink()

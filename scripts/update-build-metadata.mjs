@@ -78,7 +78,7 @@ function updateCacheBusters() {
     const appJs = fs
       .readFileSync(appJsPath, 'utf8')
       .replace(
-        /((?:app-research|material-calculator|eden-map|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
+        /((?:app-research|eden-map|app-strife|app-export|arcade-spa|loyalty-spa|youtube-v14)\.js)(?:\?v=[0-9A-Za-z_-]+)?/g,
         `$1?v=${buildVersion}`
       );
     fs.writeFileSync(appJsPath, appJs);

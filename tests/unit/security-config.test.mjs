@@ -218,21 +218,24 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
   assert.match(index, /data-footer-tab="manual"/);
 });
 
-test('build metadata refreshes lazy app module cache busters', () => {
+test('build metadata refreshes cache-busted modules while Material shares the main graph', () => {
   const script = readFileSync('scripts/update-build-metadata.mjs', 'utf8');
   const app = readFileSync('js/app.js', 'utf8');
   assert.match(script, /createHash\('sha256'\)/);
   assert.match(script, /updateCspHashes\(\)/);
-  assert.match(
-    script,
-    /app-research\|material-calculator\|eden-map\|app-strife\|app-export\|arcade-spa/
-  );
+  assert.match(script, /app-research\|eden-map\|app-strife\|app-export\|arcade-spa/);
+  assert.doesNotMatch(script, /material-calculator/);
   assert.doesNotMatch(app, /20260708_101500/);
   assert.doesNotMatch(app, /app-whats-new\.js/);
   assert.match(app, /app-export\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /arcade-spa\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-research\.js\?v=\d{8}_\d{6}/);
-  assert.match(app, /material-calculator\.js\?v=\d{8}_\d{6}/);
+  assert.match(app, /import\('\.\/material-calculator\.js'\)/);
+  assert.doesNotMatch(app, /material-calculator\.js\?v=/);
+  assert.match(
+    app,
+    /materialModulePromise = import\('\.\/material-calculator\.js'\)\.catch\(\(err\) => \{\s*materialModulePromise = null;\s*reportDynamicImportFailure\(err\);\s*throw err;/
+  );
   assert.match(app, /eden-map\.js\?v=\d{8}_\d{6}/);
   assert.match(app, /app-strife\.js\?v=\d{8}_\d{6}/);
 });
@@ -543,15 +546,18 @@ test('dashboard cloud revisions prevent stale local snapshots from overwriting c
   assert.match(dashboard, /export async function saveDashboardOcrUpload/);
 });
 
-test('Eden X1 does not block voting on optional Firestore reads', () => {
+test('Eden X1 requires authoritative vote settings while tolerating optional sidecars', () => {
   const eden = readFileSync('js/eden-x1.js', 'utf8');
 
   assert.match(eden, /const EDEN_X1_OPTIONAL_READ_TIMEOUT_MS = 3500;/);
   assert.match(eden, /async function loadEdenOptionalData/);
   assert.match(eden, /'roster data'/);
-  assert.match(eden, /'vote settings'/);
+  assert.match(eden, /getDoc\(doc\(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH\)\)/);
+  assert.match(eden, /requireAuthoritativeEdenVoteSettings/);
+  assert.doesNotMatch(eden, /loadEdenOptionalData\([^)]*vote settings/);
+  assert.match(eden, /'public vote results'/);
   assert.match(eden, /'bonus team effort points'/);
-  assert.match(eden, /liveConductAdjustments\?\.length/);
+  assert.match(eden, /Array\.isArray\(liveConductAdjustments\)/);
 });
 
 test('admin gate uses the Firebase admin claim and sign-out cannot auto re-login', () => {

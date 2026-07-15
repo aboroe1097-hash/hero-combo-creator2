@@ -1,4 +1,4 @@
-# Hero Combo Creator - VTS 1097 (v14.0.8)
+# Hero Combo Creator - VTS 1097 (v14.0.9)
 
 A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for VTS State 1097. Combines hero combo building, Eden map planning, Dragon Master material planning, tech research tracking, loyalty math, OCR attack analysis, and roster management -- all in a single-page web app.
 
@@ -6,21 +6,21 @@ A comprehensive community toolkit for **Rise of Castles: Ice & Fire**, built for
 
 Eleven top-level tools are exposed from the main navigation in `index.html`, with `eden-x1.html` kept as a separate public Eden X1 rewards view. This table should stay 1:1 with the deployed UI.
 
-| Tool | Source files | Purpose | Dependencies | Perf notes |
-|---|---|---|---|---|
-| **Manual Builder** | `js/app-builder.js`, `js/app-export.js`, `js/combos-db.js`, `js/combo-share.js` | Drag-drop 3-hero combos; save to `users/{uid}/bestCombos`; export image/text | Firestore, html2canvas | Save = owner-gated Firestore write |
-| **Combo Generator** | `js/app-generator.js`, `js/combos-db.js`, `js/hero-bonuses.js`, `js/combo-counters.js`, `js/skins-db.js`, `js/skin-heroes-data.js` | Select owned heroes -> top-5 ranked combos, no overlap; "Surprise Me" random; skin mode | Hero, combo, counter, and skin datasets | Pure client-side ranking |
-| **Hero Atlas** | `js/app-hero-atlas.js`, `js/heroes-info.js`, `js/heroes-data.js`, `js/skins-db.js`, `js/skin-heroes-data.js`, `js/hero-bonuses.js` | 68+ heroes DB; search/filter; skills, synergies, counters, top combos; seasonal filters; adjustable bonuses | Static hero, combo, counter, and skin data | New badge; dynamically imported |
-| **Tech Research** | `js/app-research.js`, `js/tech-db.js`, `js/research-buffs.js`, `js/research-advanced.js`, `js/research-node-icons.js` | Responsive academy catalog and dependency-tree planner for S0-X8, with resource summaries, progress, MAX actions, and viewport calculator | Static research data | Dynamically imported; `tech-db.js` stays in its own data chunk |
-| **DM Materials** | `js/material-calculator.js`, `js/material-planner-model.js`, `assets/dm/` | Six-piece Dragon Master Command Center: compare direct Gold, recommended Purple, and Blue routes; track owned materials; build normal troop gear; merge tiers; save/export/share plans | Verified crafting constants and extracted in-game item art | Dynamically imported; mobile-first horizontal route/slot flow |
-| **Eden Map** | `tabs/eden-map.html`, `js/eden-map.js`, `js/eden-map-*.js`, `js/eden-datasets-loader.js`, `database/` | Canvas 1700x1600 tile map; scout mode; route planning; layer toggles; <=4 teams; terrain-aware distance | Static datasets in `database/` | Lazy-loaded tab via `data-tab-src` and dynamic import |
-| **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js`, `js/heroes-data.js` | Monster matchup recommendations intentionally capped to S0-S4 and X1-X2 | Static data | New badge; dynamically imported; X3+ is outside this tool's contract |
-| **Eden Loyalty** | `tabs/loyalty.html`, `js/loyalty-calculator.js` | Poison mitigation, camp presets, deficit/surplus | None | Lazy-loaded tab via `data-tab-src` |
-| **YouTube** | `js/youtube-v14.js`, `css/youtube-v14.css` | Featured VTS video plus three selectable playlists with direct YouTube fallbacks | YouTube IFrame | No iframe is created until the member explicitly presses Load/Watch |
-| **Arcade** | `arcade.html`, `js/arcade.js`, `css/arcade.css`, `games/boot/` | Standalone member lobby for Merge Rush, Sort the Hoard, Crystal Relay, Set Assembly, and Hero Rumble | Shared static game shell plus existing DM, wing, logo, and hero-skin art | Separate page; game code loads only after opening a game |
-| **VTS Admin** | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/ocr-*.js`, `js/admin-log-*.js`, `js/contribution-weighting.js` | OCR attack analysis, roster screenshots, contribution lists, leaderboard, CSV/PNG/JSON export, Eden X1 voting, conduct adjustments, and cross-device Admin Activity | Cloudflare Worker (Qwen VL OCR), Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal badge; standalone `noindex,nofollow` page |
+| Tool                   | Source files                                                                                                                                   | Purpose                                                                                                                                                                                | Dependencies                                                                             | Perf notes                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Manual Builder**     | `js/app-builder.js`, `js/app-export.js`, `js/combos-db.js`, `js/combo-share.js`                                                                | Drag-drop 3-hero combos; save to `users/{uid}/bestCombos`; export image/text                                                                                                           | Firestore, html2canvas                                                                   | Save = owner-gated Firestore write                                   |
+| **Combo Generator**    | `js/app-generator.js`, `js/combos-db.js`, `js/hero-bonuses.js`, `js/combo-counters.js`, `js/skins-db.js`, `js/skin-heroes-data.js`             | Select owned heroes -> top-5 ranked combos, no overlap; "Surprise Me" random; skin mode                                                                                                | Hero, combo, counter, and skin datasets                                                  | Pure client-side ranking                                             |
+| **Hero Atlas**         | `js/app-hero-atlas.js`, `js/heroes-info.js`, `js/heroes-data.js`, `js/skins-db.js`, `js/skin-heroes-data.js`, `js/hero-bonuses.js`             | 68+ heroes DB; search/filter; skills, synergies, counters, top combos; seasonal filters; adjustable bonuses                                                                            | Static hero, combo, counter, and skin data                                               | New badge; dynamically imported                                      |
+| **Tech Research**      | `js/app-research.js`, `js/tech-db.js`, `js/research-buffs.js`, `js/research-advanced.js`, `js/research-node-icons.js`                          | Responsive academy catalog and dependency-tree planner for S0-X8, with resource summaries, progress, MAX actions, and viewport calculator                                              | Static research data                                                                     | Dynamically imported; `tech-db.js` stays in its own data chunk       |
+| **DM Materials**       | `js/material-calculator.js`, `js/material-planner-model.js`, `assets/dm/`                                                                      | Six-piece Dragon Master Command Center: compare direct Gold, recommended Purple, and Blue routes; track owned materials; build normal troop gear; merge tiers; save/export/share plans | Verified crafting constants and extracted in-game item art                               | Dynamically imported; mobile-first horizontal route/slot flow        |
+| **Eden Map**           | `tabs/eden-map.html`, `js/eden-map.js`, `js/eden-map-*.js`, `js/eden-datasets-loader.js`, `database/`                                          | Canvas 1700x1600 tile map; scout mode; route planning; layer toggles; <=4 teams; terrain-aware distance                                                                                | Static datasets in `database/`                                                           | Lazy-loaded tab via `data-tab-src` and dynamic import                |
+| **Strife over Dragon** | `js/app-strife.js`, `js/strife-db.js`, `js/combos-db.js`, `js/heroes-data.js`                                                                  | Monster matchup recommendations intentionally capped to S0-S4 and X1-X2                                                                                                                | Static data                                                                              | New badge; dynamically imported; X3+ is outside this tool's contract |
+| **Eden Loyalty**       | `tabs/loyalty.html`, `js/loyalty-calculator.js`                                                                                                | Poison mitigation, camp presets, deficit/surplus                                                                                                                                       | None                                                                                     | Lazy-loaded tab via `data-tab-src`                                   |
+| **YouTube**            | `js/youtube-v14.js`, `css/youtube-v14.css`                                                                                                     | Featured VTS video plus three selectable playlists with direct YouTube fallbacks                                                                                                       | YouTube IFrame                                                                           | No iframe is created until the member explicitly presses Load/Watch  |
+| **Arcade**             | `arcade.html`, `js/arcade.js`, `css/arcade.css`, `games/boot/`                                                                                 | Standalone member lobby for Merge Rush, Sort the Hoard, Crystal Relay, Set Assembly, and Hero Rumble                                                                                   | Shared static game shell plus existing DM, wing, logo, and hero-skin art                 | Separate page; game code loads only after opening a game             |
+| **VTS Admin**          | `admin.html`, `tabs/admin.html`, `js/admin-page.js`, `js/ocr-dashboard.js`, `js/ocr-*.js`, `js/admin-log-*.js`, `js/contribution-weighting.js` | OCR attack analysis, roster screenshots, contribution lists, leaderboard, CSV/PNG/JSON export, Eden X1 voting, conduct adjustments, and cross-device Admin Activity                    | Cloudflare Worker (Qwen VL OCR), Firebase Auth/Firestore, reCAPTCHA Enterprise App Check | Seasonal badge; standalone `noindex,nofollow` page                   |
 
-**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. In Eden X1 Votes, admins choose whether Extended or Default Total Contribution is authoritative for the Top 10 -> R4 / Management -> Team Players chain; the public table can compare both formulas without changing assignments. Admins can also schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
+**Separate view:** `eden-x1.html` uses `js/eden-x1.js`, `js/eden-vote-deadline.js`, `css/eden-x1.css`, `js/contribution-weighting.js`, and `js/consistency-score.js` for the public Eden X1 weighted contribution dashboard, reward flow, and team-player vote flow. In Eden X1 Votes, admins choose whether Extended or Base Total Contribution is authoritative for the Top 10 -> R4 / Management -> Team Players chain; the public table can compare both formulas without changing assignments. Admins can also schedule an optional voting deadline; the public view exposes an accessible live countdown and blocks expired submissions. It is also `noindex,nofollow`.
 
 **Cross-cutting sub-systems:** `bug-widget.js` + `app-error-reporting.js` (error queue -> `errors` collection), `pwa-register.js` (service worker), `game-time.js` (global game clock), `command-palette.js` (offline Ctrl/Cmd+K tool navigation), `app-undo.js`, `app-shortcuts.js`, `player-tags.js`/`player-registry.js`/`player-profile.js` (roster identity), `roster-share.js`, and `user-data-portability.js` (local data export).
 
@@ -106,17 +106,17 @@ Version cadence: patch releases run through `.20` before the next minor. For the
 
 ## Tech Stack
 
-| Layer | Choice |
-|-------|--------|
-| **Language** | Vanilla JavaScript (ES6 modules), no framework |
-| **Bundler** | Vite 6 (dev server + build) |
-| **CSS** | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), and semantic `components.css` |
-| **Backend** | Firebase Firestore loaded through pinned browser modules (saved combos, public data, roster sync) |
-| **Auth** | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes |
-| **OCR** | Qwen VL API via Cloudflare Worker proxy |
-| **Maps** | HTML Canvas (Eden Map) |
-| **Export** | html2canvas (image), CSV, JSON |
-| **Hosting** | GitHub Pages (Actions uploads the verified `dist/` artifact from `gh-pages`) |
+| Layer        | Choice                                                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Language** | Vanilla JavaScript (ES6 modules), no framework                                                                                              |
+| **Bundler**  | Vite 6 (dev server + build)                                                                                                                 |
+| **CSS**      | Custom `app.css`, responsive `mobile.css`, `atmosphere.css` (press/lift/tilt/skeleton/morph utility classes), and semantic `components.css` |
+| **Backend**  | Firebase Firestore loaded through pinned browser modules (saved combos, public data, roster sync)                                           |
+| **Auth**     | Firebase anonymous auth for public tools; Firebase Email/Password admin login with an admin custom claim for dashboard writes               |
+| **OCR**      | Qwen VL API via Cloudflare Worker proxy                                                                                                     |
+| **Maps**     | HTML Canvas (Eden Map)                                                                                                                      |
+| **Export**   | html2canvas (image), CSV, JSON                                                                                                              |
+| **Hosting**  | GitHub Pages (Actions uploads the verified `dist/` artifact from `gh-pages`)                                                                |
 
 ## File Structure
 
@@ -249,18 +249,23 @@ js/
 ## Key Architecture Decisions
 
 ### Deployment Model
+
 The `gh-pages` branch is the production source branch, but Pages does not serve its files directly. GitHub Actions runs the full deploy verification, uploads `dist/` as the Pages artifact, and deploys only that verified artifact.
 
 ### CSS Architecture
+
 The app no longer ships the frozen Tailwind compatibility shim. Remaining UI styling lives in semantic stylesheets (`app.css`, `components.css`, `mobile.css`, and `atmosphere.css`), and `cssnano` minifies production CSS after the Vite build.
 
 ### Tab Lazy-Loading
+
 Eden Map and Loyalty tab templates are fetched on first tab click via `loadTabTemplate()`. Manual Builder, Arcade, Research, Hero Atlas, Strife over Dragon, Eden Map code, OCR dashboard code, image export, hero-info data, and language packs are loaded with dynamic `import()` so first paint avoids the biggest optional modules. VTS Admin and Eden X1 are standalone pages with their own Vite inputs.
 
 ### Release Mode
+
 `js/maintenance-config.js` remains the explicit release/maintenance toggle and is included in the service-worker precache. While `VTS_MAINTENANCE_MODE` is enabled, every public entry page redirects to the lightweight maintenance page unless the local/session bypass is present.
 
 ### Admin Auth
+
 The public toolkit still uses Firebase anonymous auth for saved combos and public data. The standalone VTS Admin dashboard uses a shared Firebase Email/Password account: username `1097` maps to `1097@abocombo.web.app` via `AUTH_EMAIL_DOMAIN`.
 
 Admin dashboard writes to `vts_admin/dashboard_data`, `vts_admin/roster_data`, and `vts_admin/conduct_adjustments/records` require the signed-in Firebase user to have an `admin: true` custom claim. The shared `1097` Email/Password account can still be the team login, but that account's UID must carry the admin claim before Firestore writes will pass. Anonymous users can read shared admin data where the rules allow it, but they cannot overwrite OCR, roster, banner, pather, contribution, or R5 Bonus Team Effort records.
@@ -279,6 +284,7 @@ npm run firebase:admin-claim
 After setting the claim, reload the site so Firebase refreshes the auth token. If cloud writes still fail, check the visible sync banner and the Analysis Terminal for the exact Firestore/App Check/auth error.
 
 ### Firebase
+
 Firebase browser modules are loaded through `js/firebase-sdk.js` from the pinned `gstatic` module version (`11.6.1`) so GitHub Pages can serve raw ES modules without bare package specifiers. If Firebase config is missing, public UI paths degrade gracefully and skip anonymous auth instead of blocking startup.
 
 GitHub Pages deployment publishes the static app only; it does not deploy `firestore.rules`. After changing public vote validation or any Firestore write contract, deploy the rules to Firebase before expecting live writes to pass:
@@ -298,6 +304,7 @@ gcloud firestore fields ttls update expiresAt --collection-group=admin_log_event
 This TTL applies only to `vts_admin/log_store/admin_log_events`; it does not expire dashboard, roster, vote, or user-plan data.
 
 ### OCR Worker and App Check
+
 The admin OCR flow calls Qwen through `workers/qwen-cors-proxy.js`. The browser must be served by Vite or a built deployment with `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_RECAPTCHA_SITE_KEY`. The reCAPTCHA Enterprise site key is public and is not the App Check token; Firebase uses it in the browser to mint the short-lived token sent as `X-Firebase-AppCheck`.
 
 Worker configuration uses `DASHSCOPE_API_KEY` as the primary Cloudflare secret. Optional fallback configuration is handled entirely in Cloudflare: set `DASHSCOPE_FALLBACK_API_KEY` if the spare quota is on a second Alibaba key, and set `DASHSCOPE_FALLBACK_MODELS` to a comma-separated list of up to five extra compatible model names. Non-secret Worker variables include `DASHSCOPE_BASE_URL` (default: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), `DASHSCOPE_MODEL` (default: `qwen-vl-plus`), `DASHSCOPE_FALLBACK_BASE_URL`, `DASHSCOPE_FALLBACK_MODELS`, `ALLOWED_ORIGINS`, `FIREBASE_APP_CHECK_PROJECT_NUMBER`, and optional `FIREBASE_APP_CHECK_APP_ID`. `FIREBASE_APP_CHECK_APP_ID` is the Firebase Web App ID (`1:...:web:...`), not the reCAPTCHA site key.
@@ -325,12 +332,15 @@ For local OCR testing, `.env` may use `VITE_FIREBASE_APPCHECK_DEBUG_TOKEN=true`.
 If `/status` is ready but uploads fail with `Workers endpoint access denied`, check Cloudflare Worker variables first: `DASHSCOPE_BASE_URL` must be `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`, and `DASHSCOPE_API_KEY` / `DASHSCOPE_FALLBACK_API_KEY` must belong to Alibaba Cloud accounts with DashScope/Qwen VL access. `/status` reports `fallbackModelConfigured` for same-key model fallback, `fallbackKeyConfigured` for a second spare key, plus `primaryModel`, `modelCount`, and `fallbackModelCount` without exposing secret values.
 
 ### Error Boundaries
+
 Each module init is wrapped in `safeInit()` so one failing tab doesn't block others. Global `error` and `unhandledrejection` handlers catch last-resort failures. A 5-second loading screen timeout force-dismisses the splash if `notifyAppReady` never fires.
 
 ### State Management
+
 Shared state variables (`allHeroesData`, `heroesExtendedData`, `rankedCombos`, etc.) are exported from their respective modules. The `state.js` module provides computed helpers (`getComboRankInfo`, troop color maps, filter logic).
 
 ### OCR Module Pattern
+
 The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-render.js`, `ocr-engine.js` with a shared `ocr-shared.js` for constants, state, and utilities (`$id`, `esc`, `log`).
 
 ## Data Flow
@@ -354,17 +364,17 @@ The legacy monolithic `ocr-dashboard.js` was split into `ocr-roster.js`, `ocr-re
 
 ## localStorage Keys
 
-| Key | Purpose |
-|-----|---------|
-| `vts_ocr_dashboard` | Attack data JSON |
-| `vts_ocr_auth` | Admin password hash |
-| `vts_ocr_roster` | Legacy flat roster text |
-| `vts_roster_snapshots` | Roster snapshot array |
-| `vts_roster_alliances` | Alliance name list |
-| `vts_roster_user` | Logged-in roster user |
-| `vts_ocr_banners` | Banner records array |
-| `qwen_api_key` | Legacy browser-stored Qwen key; cleared because OCR now uses the Worker secret |
-| `vts_generator_owned_skins_v1` | Per-hero skin/base ownership toggles in the combo generator |
+| Key                            | Purpose                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `vts_ocr_dashboard`            | Attack data JSON                                                               |
+| `vts_ocr_auth`                 | Admin password hash                                                            |
+| `vts_ocr_roster`               | Legacy flat roster text                                                        |
+| `vts_roster_snapshots`         | Roster snapshot array                                                          |
+| `vts_roster_alliances`         | Alliance name list                                                             |
+| `vts_roster_user`              | Logged-in roster user                                                          |
+| `vts_ocr_banners`              | Banner records array                                                           |
+| `qwen_api_key`                 | Legacy browser-stored Qwen key; cleared because OCR now uses the Worker secret |
+| `vts_generator_owned_skins_v1` | Per-hero skin/base ownership toggles in the combo generator                    |
 
 ## Firebase
 

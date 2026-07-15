@@ -45,9 +45,14 @@ import {
   normalizeEdenVoteClosesAt,
 } from './eden-vote-deadline.js';
 import { resolveIntlLocale } from './utils.js';
-import { dashboardCacheVersion, hasUsableDashboardCache } from './dashboard-cache-policy.js';
+import {
+  cachedEdenDashboardSeasonIsObsolete,
+  dashboardCacheVersion,
+  hasAuthoritativeEdenVoteSettings,
+  hasUsableDashboardCache,
+} from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.8';
+const APP_VERSION = '14.0.9';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -68,7 +73,6 @@ const EDEN_X1_VOTE_HELPER_MOBILE_VISIBLE_LIMIT = 3;
 const EDEN_X1_VOTE_HELPER_VISIBLE_LIMIT = 5;
 const EDEN_X1_VOTE_HELPER_FULL_LIMIT = 10;
 const EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT = 3;
-const EDEN_X1_MANAGEMENT_VOTE_STATUS = 'Voted By Management';
 const EDEN_X1_ATTACK_WINDOW_DAYS = new Set([0, 2, 4]);
 const EDEN_X1_ATTACK_WINDOW_EPOCH_DOW = 4;
 const MS_PER_DAY = 86_400_000;
@@ -115,6 +119,7 @@ let publicStructureRows = [];
 let publicDashboardRenderToken = 0;
 let deferredPublicDashboardRenderToken = 0;
 let localizedRenderToken = 0;
+let publicHeatmapResizeFrame = 0;
 let currentPublicTableSearch = '';
 let currentPublicTableSort = { col: 'finalRank', dir: 'asc' };
 let currentPublicStatsSearch = '';
@@ -124,12 +129,12 @@ const publicWeightedTablePagination = { limit: EDEN_X1_TABLE_INITIAL_ROWS, showA
 let publicTableSearchDebounce = null;
 let edenVoteWriteContext = null;
 let edenVoteSettings = {
+  season: '',
   votingOpen: true,
   allowEditing: true,
   contributionRankingMode: EDEN_X1_CONTRIBUTION_RANKING_MODES.EXTENDED,
   closesAt: '',
 };
-let edenVotePointerSubmitUntil = 0;
 let pendingPartialEdenVoteSignature = '';
 let edenVoteInfoDismissalBound = false;
 let edenVoteCountdownTimer = null;
@@ -565,6 +570,7 @@ function resolveEdenManagementVoteCandidate(rawName) {
     if (!option) continue;
     return {
       playerKey: option.playerKey,
+      familyKey: rewardPriorityFamilyKey(option.playerKey, option.playerName),
       playerName: option.playerName,
       rawName,
       matched: true,
@@ -582,6 +588,7 @@ function resolveEdenManagementVoteCandidate(rawName) {
   if (!fallbackKey) return null;
   return {
     playerKey: fallbackKey,
+    familyKey: rewardPriorityFamilyKey(fallbackKey, fallbackName),
     playerName: fallbackName,
     rawName,
     matched: false,
@@ -700,6 +707,11 @@ function updateEdenVoteInputSuggestions(host, inputId) {
 function clearEdenVoteInputSuggestions(host, inputId) {
   const box = host?.querySelector(`[data-eden-vote-suggestions-for="${inputId}"]`);
   if (box) box.innerHTML = '';
+}
+
+function clearAllEdenVoteInputSuggestions(host) {
+  clearEdenVoteInputSuggestions(host, 'edenX1VoterName');
+  EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => clearEdenVoteInputSuggestions(host, id));
 }
 
 function updateEdenVoteInputConfirmation(host, inputId, option = null) {
@@ -926,6 +938,7 @@ function applyEdenVotePickToForm(host, pick) {
 
 function normalizeEdenVoteSettings(settings = {}) {
   return {
+    season: String(settings.season || '').trim(),
     votingOpen: settings.votingOpen !== false,
     allowEditing: settings.allowEditing !== false,
     showPublicResults: settings.showPublicResults === true,
@@ -937,8 +950,30 @@ function normalizeEdenVoteSettings(settings = {}) {
   };
 }
 
+function requireAuthoritativeEdenVoteSettings(snapshot, expectedSeason = '') {
+  const settings = snapshot?.exists?.() ? snapshot.data() : null;
+  if (!hasAuthoritativeEdenVoteSettings(settings, expectedSeason)) {
+    const error = new Error('Eden X1 contribution ranking authority is unavailable.');
+    error.code = 'eden-x1/vote-settings-unavailable';
+    error.dashboardSeason = String(expectedSeason || '').trim();
+    error.settingsSeason = String(settings?.season || '').trim();
+    throw error;
+  }
+  return normalizeEdenVoteSettings(settings);
+}
+
 function authoritativeContributionRankingMode() {
   return normalizeEdenX1ContributionRankingMode(edenVoteSettings.contributionRankingMode);
+}
+
+function applyEdenVoteSettings(settings = {}) {
+  const previousContributionMode = authoritativeContributionRankingMode();
+  edenVoteSettings = normalizeEdenVoteSettings(settings);
+  const nextContributionMode = authoritativeContributionRankingMode();
+  if (!contributionViewModeWasChosen || currentContributionViewMode === previousContributionMode) {
+    currentContributionViewMode = nextContributionMode;
+  }
+  return { previousContributionMode, nextContributionMode };
 }
 
 function isEdenVoteSubmissionClosed(settings = edenVoteSettings, nowMs = Date.now()) {
@@ -1015,8 +1050,7 @@ function updateEdenVoteCountdownState(host, nowMs = Date.now()) {
       .forEach((button) => {
         button.disabled = true;
       });
-    clearEdenVoteInputSuggestions(form, 'edenX1VoterName');
-    EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => clearEdenVoteInputSuggestions(form, id));
+    clearAllEdenVoteInputSuggestions(form);
     if (previousState !== nextState) {
       setEdenVoteStatus(expired ? t('edenX1VoteExpired') : t('edenX1VoteClosed'), 'error');
     }
@@ -1038,10 +1072,11 @@ function startEdenVoteCountdown(host) {
 }
 
 function normalizePublicEdenVoteResults(results = {}) {
-  const rankings = Array.isArray(results.rankings) ? results.rankings : [];
+  const published = results.published === true;
+  const rankings = published && Array.isArray(results.rankings) ? results.rankings : [];
   return {
     season: String(results.season || '').trim(),
-    published: results.published === true,
+    published,
     rankings: rankings
       .map((row) => ({
         playerName: String(row?.playerName || '').trim(),
@@ -1452,6 +1487,9 @@ function bindEdenVoteInfoDismissal() {
   document.addEventListener('click', (event) => {
     if (event.target.closest('.eden-x1-vote-info')) return;
     closeEdenVoteInfoPopovers();
+    if (!event.target.closest('.eden-x1-vote-name-stack')) {
+      clearAllEdenVoteInputSuggestions(document.querySelector('#edenX1TeamVotePanel'));
+    }
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeEdenVoteInfoPopovers();
@@ -2232,7 +2270,11 @@ async function submitEdenTeamVoteForm(form) {
     return;
   }
   const candidateKeys = candidates.map((candidate) => candidate.playerKey);
-  if (new Set(candidateKeys).size !== candidates.length) {
+  const candidateFamilyKeys = candidates.map(
+    (candidate) =>
+      rewardPriorityFamilyKey(candidate.playerKey, candidate.playerName) || candidate.playerKey
+  );
+  if (new Set(candidateFamilyKeys).size !== candidates.length) {
     pendingPartialEdenVoteSignature = '';
     setEdenVoteStatus(t('edenX1VoteErrDuplicate'), 'error');
     return;
@@ -2365,17 +2407,8 @@ async function submitEdenTeamVoteForm(form) {
 
 async function submitEdenTeamVote(event) {
   event.preventDefault();
-  if (Date.now() < edenVotePointerSubmitUntil) return;
+  clearAllEdenVoteInputSuggestions(event.currentTarget);
   await submitEdenTeamVoteForm(event.currentTarget);
-}
-
-function submitEdenTeamVoteFromPointer(event) {
-  if (typeof event.button === 'number' && event.button !== 0) return;
-  const form = event.currentTarget?.closest?.('#edenX1TeamVoteForm');
-  if (!form) return;
-  event.preventDefault();
-  edenVotePointerSubmitUntil = Date.now() + 750;
-  submitEdenTeamVoteForm(form);
 }
 
 function bindEdenVoteControls(host) {
@@ -2385,11 +2418,6 @@ function bindEdenVoteControls(host) {
   if (form && !form.dataset.edenVoteSubmitBound) {
     form.dataset.edenVoteSubmitBound = '1';
     form.addEventListener('submit', submitEdenTeamVote);
-  }
-  const submit = form?.querySelector('button[type="submit"]');
-  if (submit && !submit.dataset.edenVotePointerSubmitBound) {
-    submit.dataset.edenVotePointerSubmitBound = '1';
-    submit.addEventListener('pointerdown', submitEdenTeamVoteFromPointer);
   }
   if (!host.dataset.edenVoteControlsBound) {
     host.dataset.edenVoteControlsBound = '1';
@@ -2416,7 +2444,13 @@ function bindEdenVoteControls(host) {
     host.addEventListener('change', (event) => {
       const input = event.target.closest(voteInputSelector);
       if (!input) return;
-      resolveEdenVoteInput(host, input.id, { closeSuggestions: true, markInvalid: true });
+      const suggestions = host.querySelector(`[data-eden-vote-suggestions-for="${input.id}"]`);
+      // Keep the in-flow suggestion height stable until the user's click has
+      // landed, but do not reopen a list the user already selected and closed.
+      resolveEdenVoteInput(host, input.id, {
+        closeSuggestions: !suggestions?.childElementCount,
+        markInvalid: true,
+      });
       if (EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.includes(input.id)) {
         host.dataset.edenVoteInspectInputId = input.id;
         updateEdenVoteCandidateDetail(host);
@@ -2576,10 +2610,9 @@ function bindEdenVoteControls(host) {
       toggleEdenVoteInfoPopover(infoButton);
     });
   }
-  clearEdenVoteInputSuggestions(host, 'edenX1VoterName');
+  clearAllEdenVoteInputSuggestions(host);
   updateEdenVoteInputConfirmation(host, 'edenX1VoterName');
   EDEN_X1_VOTE_CANDIDATE_INPUT_IDS.forEach((id) => {
-    clearEdenVoteInputSuggestions(host, id);
     updateEdenVoteInputConfirmation(host, id);
   });
   updateEdenVoteCandidateDetail(host);
@@ -2660,6 +2693,10 @@ function renderEdenTeamVotePanel() {
 
 function isWeightedContributionMobileViewport() {
   return Boolean(globalThis.matchMedia?.('(max-width: 1024px)').matches);
+}
+
+function isWeightedPopoverSheetViewport() {
+  return Boolean(globalThis.matchMedia?.('(max-width: 768px)').matches);
 }
 
 function isWeightedContributionCompactView() {
@@ -2762,7 +2799,10 @@ function setEdenPanelLoading(loading) {
   const isLoading = Boolean(loading);
   const section = $('ocrDashboardSection');
   section?.classList.toggle('eden-x1-panel--loading', isLoading);
-  if (!isLoading) section?.classList.remove('eden-x1-panel--cache-preview');
+  if (!isLoading) {
+    section?.classList.remove('eden-x1-panel--cache-preview');
+    schedulePublicHeatmapOverflowSync();
+  }
   document.body?.classList.toggle('eden-x1-loading', isLoading);
   const bootLoader = $('edenX1NavLoader');
   if (bootLoader) {
@@ -2914,7 +2954,8 @@ function bindEdenQuickNav() {
       runEdenNavigationTransition(() => {
         activateEdenRewardView('team');
         queueEdenQuickNavScroll(
-          '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel'
+          '#edenX1VoteRail, #edenX1TeamVotePanel, #dashWeightedContributionPanel',
+          { focusSelector: '#edenX1VoterName' }
         );
       });
       return;
@@ -3442,7 +3483,7 @@ function renderPublicMyStatsCard() {
       <input id="edenX1MyStatsSearch" class="dash-search-input" type="search" value="${esc(currentPublicStatsSearch)}" placeholder="${esc(t('edenX1MyStatsPlaceholder'))}" autocomplete="off" aria-label="${esc(t('edenX1MyStatsPlaceholder'))}" />
     </label>
     <p class="eden-x1-my-stats-helper">${esc(t('edenX1MyStatsHint'))}</p>
-    <div class="eden-x1-vote-suggestions eden-x1-my-stats-suggestions" aria-label="${esc(t('edenX1MyStatsTitle'))}">
+    <div class="eden-x1-vote-suggestions eden-x1-my-stats-suggestions" role="group" aria-label="${esc(t('edenX1MyStatsTitle'))}">
       ${suggestionList}
     </div>
     <div id="edenX1MyStatsDetail" class="eden-x1-my-stats-detail" aria-live="polite">
@@ -3648,7 +3689,7 @@ function positionWeightedPopover(button) {
   const popover = materializeWeightedPopover(button);
   if (!popover) return;
   popover.setAttribute('aria-hidden', 'false');
-  if (isWeightedContributionMobileViewport()) {
+  if (isWeightedPopoverSheetViewport()) {
     popover.style.display = '';
     return;
   }
@@ -3698,7 +3739,7 @@ function hideWeightedPopover(button) {
   const popover = button?.querySelector('.dash-weighted-score-popover');
   if (!popover) return;
   popover.setAttribute('aria-hidden', 'true');
-  if (!isWeightedContributionMobileViewport()) popover.style.display = 'none';
+  if (!isWeightedPopoverSheetViewport()) popover.style.display = 'none';
 }
 
 function bindWeightedPopovers(host) {
@@ -3734,7 +3775,7 @@ function bindWeightedPopovers(host) {
       button.classList.toggle('is-open', shouldOpen);
       button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
       const popover = button.querySelector('.dash-weighted-score-popover');
-      if (shouldOpen && isWeightedContributionMobileViewport()) {
+      if (shouldOpen && isWeightedPopoverSheetViewport()) {
         activateEdenX1BlockingLayer(popover, {
           restoreTarget: button,
           close: () => closeWeightedPopoverTrigger(button),
@@ -3836,57 +3877,6 @@ function hydrateProgressiveWeightedTable(host, channel) {
   afterNextPaint(appendChunk);
 }
 
-function managementVoteWinnerReason(winner) {
-  const ballotCount = valueOf(currentManagementVoteResults.totalBallots);
-  const voteCount = Math.max(0, Math.floor(Number(winner?.votes) || 0));
-  const voteRank = Math.max(0, Math.floor(Number(winner?.voteRank) || 0));
-  const skippedReserved = Math.max(0, Math.floor(Number(winner?.skippedReserved) || 0));
-  const rawNames = Array.isArray(winner?.rawNames) ? winner.rawNames.filter(Boolean) : [];
-  const ballotLabel = ballotCount === 1 ? 'ballot' : 'ballots';
-  const sourceNames = rawNames.length ? rawNames.join(', ') : winner?.playerName || '';
-  const tieBreak = winner?.tieBreak || null;
-  const tiedNames = Array.isArray(tieBreak?.candidateNames)
-    ? tieBreak.candidateNames.filter((name) => name && name !== winner?.playerName)
-    : [];
-  const criterionLabels = {
-    'bonus-team-effort': 'higher Bonus Team Effort Points',
-    'weighted-total':
-      winner?.managementDetails?.weighted?.rankingMode ===
-      EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
-        ? 'higher active Default contribution total'
-        : 'higher active Extended weighted contribution',
-    'canonical-name': 'canonical player-name order',
-  };
-  const tieReason = tieBreak?.applied
-    ? `Tied on ${voteCount.toLocaleString()} votes with ${tiedNames.join(', ')}; ${
-        criterionLabels[tieBreak.criterion] || 'the published tie-break order'
-      } decided the remaining slot.`
-    : tiedNames.length
-      ? `Tied on ${voteCount.toLocaleString()} votes with ${tiedNames.join(', ')}; no tied eligible name was eliminated at this slot.`
-      : '';
-  const weighted = winner?.managementDetails?.weighted || null;
-  const weightedReason = weighted
-    ? weighted.rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
-      ? `Public scoring: ${formatSignedNumber(winner.managementDetails.bonusTeamEffort)} Bonus Team Effort Points; active Default total = ${formatScore(weighted.contributionScore)} contribution + ${formatScore(weighted.contributionExGuild)} ex-guild = ${formatWeightedScore(weighted.weightedScore)}. Duty and bonus weight are visible but excluded from this total.`
-      : `Public scoring: ${formatSignedNumber(winner.managementDetails.bonusTeamEffort)} Bonus Team Effort Points; active Extended total = ${formatScore(weighted.contributionScore)} contribution + ${formatScore(weighted.contributionExGuild)} ex-guild + ${formatScore(weighted.dutyPoints)} duty + ${formatSignedNumber(weighted.conductPoints)} bonus weight = ${formatWeightedScore(weighted.weightedScore)}.`
-    : 'No public weighted row was available; tie-break metrics defaulted to zero.';
-  return [
-    `${voteCount.toLocaleString()} management ${voteCount === 1 ? 'vote' : 'votes'}.`,
-    voteRank ? `Management vote rank #${voteRank}.` : '',
-    skippedReserved
-      ? `${skippedReserved.toLocaleString()} otherwise-ranked ${
-          skippedReserved === 1 ? 'name was' : 'names were'
-        } excluded by reward-priority or forfeiture rules before this slot was assigned.`
-      : '',
-    tieReason,
-    weightedReason,
-    ballotCount ? `Counted from ${ballotCount.toLocaleString()} anonymous ${ballotLabel}.` : '',
-    sourceNames ? `Source name(s): ${sourceNames}.` : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
-
 function createRewardPriorityIdentitySet() {
   return { keys: new Set(), familyKeys: new Set() };
 }
@@ -3897,6 +3887,11 @@ function rewardPriorityFamilyKey(playerKey, playerName = '') {
   const profile = getPublicVtsPlayerProfile(playerName) || getPublicVtsPlayerProfile(key) || null;
   const canonicalKey = profile?.name ? compactPlayerIdentity(profile.name) : key;
   return getWeightedPlayerFamilyKey(canonicalKey);
+}
+
+function voteWinnerFamilyKey(winner) {
+  const key = compactPlayerIdentity(winner?.playerKey || winner?.playerName);
+  return key ? rewardPriorityFamilyKey(key, winner?.playerName) : '';
 }
 
 function addRewardPriorityIdentity(reserved, playerKey, playerName = '') {
@@ -3928,7 +3923,7 @@ function managementVoteCandidateIsReserved(winner, reserved) {
   const key = String(winner?.playerKey || '').trim();
   if (!key) return false;
   if (reserved.keys.has(key)) return true;
-  const familyKey = rewardPriorityFamilyKey(key, winner?.playerName);
+  const familyKey = voteWinnerFamilyKey(winner);
   return Boolean(familyKey && reserved.familyKeys.has(familyKey));
 }
 
@@ -3947,9 +3942,9 @@ function getReservedRewardPriorityIdentities() {
   return reserved;
 }
 
-function getManagementTieBreakWeightedRow(winner) {
+function getVoteWinnerWeightedRow(winner) {
   const rankingMode = authoritativeContributionRankingMode();
-  const familyKey = rewardPriorityFamilyKey(winner?.playerKey, winner?.playerName);
+  const familyKey = voteWinnerFamilyKey(winner);
   const familyRows = familyKey
     ? currentRows.filter(
         (row) => rewardPriorityFamilyKey(row?.playerKey, row?.playerName) === familyKey
@@ -3970,8 +3965,8 @@ function getManagementTieBreakWeightedRow(winner) {
   return currentRows.find((row) => row?.playerKey === key) || null;
 }
 
-function managementVoteCandidateWithMetrics(winner) {
-  const weightedRow = getManagementTieBreakWeightedRow(winner);
+function voteWinnerWithMetrics(winner) {
+  const weightedRow = getVoteWinnerWeightedRow(winner);
   const rankingMode = authoritativeContributionRankingMode();
   const bonusTeamEffort = weightedRow ? conductBonusValue(weightedRow) : 0;
   const weighted = weightedRow
@@ -3988,60 +3983,82 @@ function managementVoteCandidateWithMetrics(winner) {
     ...winner,
     bonusTeamEffort,
     weightedScore: weighted?.weightedScore || 0,
-    managementDetails: {
+    voteDetails: {
       bonusTeamEffort,
       weighted,
     },
   };
 }
 
-function getEligibleManagementVoteWinners() {
-  const rankings = Array.isArray(currentManagementVoteResults.rankings)
-    ? currentManagementVoteResults.rankings
-    : [];
-  const reserved = getReservedRewardPriorityIdentities();
+function consolidateVoteWinnerRankings(rankings) {
+  const families = new Map();
+  rankings.forEach((winner) => {
+    const candidate = voteWinnerWithMetrics(winner);
+    const familyKey = voteWinnerFamilyKey(candidate);
+    if (!familyKey) return;
+    const current = families.get(familyKey);
+    if (!current) {
+      families.set(familyKey, { ...candidate, familyKey });
+      return;
+    }
+    const currentIsCanonical = compactPlayerIdentity(current.playerKey) === familyKey;
+    const candidateIsCanonical = compactPlayerIdentity(candidate.playerKey) === familyKey;
+    const preferCandidate =
+      candidateIsCanonical !== currentIsCanonical
+        ? candidateIsCanonical
+        : String(candidate.playerName || '').length < String(current.playerName || '').length;
+    const identity = preferCandidate ? candidate : current;
+    families.set(familyKey, {
+      ...current,
+      playerKey: identity.playerKey,
+      playerName: identity.playerName,
+      familyKey,
+      votes: valueOf(current.votes) + valueOf(candidate.votes),
+      rawNames: [
+        ...new Set([...(current.rawNames || []), ...(candidate.rawNames || [])].filter(Boolean)),
+      ],
+      matched: current.matched === true || candidate.matched === true,
+    });
+  });
+  return [...families.values()];
+}
+
+function selectEligibleVoteWinners(rankings, reserved) {
   const winners = [];
   const groupsByVotes = new Map();
-  rankings.forEach((winner) => {
-    const candidate = managementVoteCandidateWithMetrics(winner);
+  consolidateVoteWinnerRankings(rankings).forEach((candidate) => {
     const votes = Math.max(0, Math.floor(Number(candidate.votes) || 0));
     if (!groupsByVotes.has(votes)) groupsByVotes.set(votes, []);
     groupsByVotes.get(votes).push(candidate);
   });
 
   let rankedCandidates = 0;
-  let skippedReserved = 0;
   [...groupsByVotes.entries()]
     .sort((a, b) => b[0] - a[0])
     .forEach(([, voteGroup]) => {
       if (winners.length >= EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT) return;
       const voteRank = rankedCandidates + 1;
       rankedCandidates += voteGroup.length;
-      const eligible = voteGroup.filter((candidate) => {
-        if (!managementVoteCandidateIsReserved(candidate, reserved)) return true;
-        skippedReserved += 1;
-        return false;
-      });
+      const eligible = voteGroup.filter(
+        (candidate) => !managementVoteCandidateIsReserved(candidate, reserved)
+      );
       const ordered = eligible.slice().sort(compareManagementVoteAssignmentCandidates);
       const remainingSlots = EDEN_X1_MANAGEMENT_VOTE_WINNER_LIMIT - winners.length;
       const selected = ordered.slice(0, remainingSlots);
       const firstExcluded = ordered[selected.length] || null;
       const tieBreakApplied = Boolean(firstExcluded && eligible.length > 1);
-      const cutoffWinner = selected.at(-1) || null;
-      const criterion = tieBreakApplied
-        ? managementVoteTieBreakCriterion(cutoffWinner, firstExcluded)
-        : '';
-      const candidateNames = voteGroup.map((candidate) => candidate.playerName).filter(Boolean);
+      const candidateNames = ordered.map((candidate) => candidate.playerName).filter(Boolean);
       selected.forEach((winner) => {
         winners.push({
           ...winner,
           voteRank,
-          skippedReserved,
           tieBreak:
             voteGroup.length > 1
               ? {
                   applied: tieBreakApplied,
-                  criterion,
+                  criterion: tieBreakApplied
+                    ? managementVoteTieBreakCriterion(winner, firstExcluded)
+                    : '',
                   candidateNames,
                 }
               : null,
@@ -4051,22 +4068,25 @@ function getEligibleManagementVoteWinners() {
   return winners;
 }
 
+function getEligibleManagementVoteWinners() {
+  const rankings = Array.isArray(currentManagementVoteResults.rankings)
+    ? currentManagementVoteResults.rankings
+    : [];
+  return selectEligibleVoteWinners(rankings, getReservedRewardPriorityIdentities());
+}
+
 function getEligibleTeamVoteWinners() {
+  if (currentManagementVoteResults.status !== 'loaded') return [];
   const results = normalizePublicEdenVoteResults(publicDashboardData?.publicEdenX1VoteResults);
   if (!results.published || results.season !== edenVoteSeason()) return [];
 
   const reserved = getReservedRewardPriorityIdentities();
-  getEligibleManagementVoteWinners().forEach((winner) =>
-    addRewardPriorityIdentity(reserved, winner.playerKey)
-  );
-  return results.rankings
-    .map((winner, index) => ({ ...winner, voteRank: index + 1 }))
-    .filter((winner) => {
-      if (managementVoteCandidateIsReserved(winner, reserved)) return false;
-      const familyKey = winner.familyKey || getWeightedPlayerFamilyKey(winner.playerKey);
-      return !familyKey || !reserved.familyKeys.has(familyKey);
-    })
-    .slice(0, 3);
+  getEligibleManagementVoteWinners().forEach((winner) => {
+    addRewardPriorityIdentity(reserved, winner.playerKey, winner.playerName);
+    const familyKey = voteWinnerFamilyKey(winner);
+    if (familyKey) reserved.familyKeys.add(familyKey);
+  });
+  return selectEligibleVoteWinners(results.rankings, reserved);
 }
 
 function rewardSlotRows(view) {
@@ -4081,35 +4101,51 @@ function rewardSlotRows(view) {
             playerKey: winners[index].playerKey,
             voteRank: winners[index].voteRank,
             votes: winners[index].votes,
-            voters: winners[index].voters || winners[index].votes,
-            managementDetails: winners[index].managementDetails,
+            voters: winners[index].votes,
+            voteDetails: winners[index].voteDetails,
+            tieBreak: winners[index].tieBreak,
           }
         : { playerName: unavailable ? '--' : t('edenX1Tba') }),
       group: t('edenX1RewardManagementTitle'),
       status: winners[index]
-        ? EDEN_X1_MANAGEMENT_VOTE_STATUS
+        ? `${t('edenX1RewardVoted')} · ${t('edenX1RewardManagementTitle')}`
         : unavailable
           ? 'Management votes temporarily unavailable'
           : t('edenX1RewardManagementVotePending'),
-      statusReason: winners[index] ? managementVoteWinnerReason(winners[index]) : '',
+      statusReason: winners[index]
+        ? t('edenX1RewardVoteDetails', {
+            rank: winners[index].voteRank,
+            voters: winners[index].votes,
+          })
+        : '',
     }));
   }
   if (view === 'team') {
     const winners = getEligibleTeamVoteWinners();
+    const managementUnavailable = currentManagementVoteResults.status === 'error';
     return Array.from({ length: 3 }, (_, index) => ({
       slot: index + 1,
       ...(winners[index]
         ? {
             playerName: winners[index].playerName,
             playerKey: winners[index].playerKey,
+            voteRank: winners[index].voteRank,
+            votes: winners[index].votes,
+            voters: winners[index].votes,
+            voteDetails: winners[index].voteDetails,
+            tieBreak: winners[index].tieBreak,
           }
-        : { playerName: t('edenX1Tba') }),
+        : { playerName: managementUnavailable ? '--' : t('edenX1Tba') }),
       group: t('edenX1RewardTeamTitle'),
-      status: winners[index] ? t('edenX1RewardVoted') : t('edenX1RewardVotePending'),
+      status: winners[index]
+        ? t('edenX1RewardVoted')
+        : managementUnavailable
+          ? 'Management votes temporarily unavailable'
+          : t('edenX1RewardVotePending'),
       statusReason: winners[index]
         ? t('edenX1RewardVoteDetails', {
             rank: winners[index].voteRank,
-            voters: winners[index].voters || winners[index].votes,
+            voters: winners[index].votes,
           })
         : '',
     }));
@@ -4120,23 +4156,51 @@ function rewardSlotRows(view) {
 function renderRewardSlotStatus(row, view) {
   if (!row.statusReason) return esc(row.status);
   const tooltipId = `edenX1SlotStatusTip-${view}-${row.slot}`;
-  const managementDetails = view === 'management' ? row.managementDetails : null;
-  const weighted = managementDetails?.weighted || null;
-  const popoverBody = managementDetails
-    ? `<strong>Management assignment details</strong>
-      <span><span>Management votes</span><b>${Math.max(0, Math.floor(Number(row.votes) || 0)).toLocaleString()}</b></span>
-      <span><span>Vote rank</span><b>#${Math.max(1, Math.floor(Number(row.voteRank) || 1)).toLocaleString()}</b></span>
-      <span><span>Bonus Team Effort Points</span><b>${formatSignedNumber(managementDetails.bonusTeamEffort)}</b></span>
+  const voteDetails = row.voteDetails || null;
+  const weighted = voteDetails?.weighted || null;
+  const defaultMode = weighted?.rankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT;
+  const detailsTitle = `${row.group} · ${t('edenX1RewardAssignedReasonTitle')}`;
+  const scoreTitle = defaultMode
+    ? t('edenX1ContributionModeDefaultScore')
+    : t('edenX1WeightedTitle');
+  const tieBreakCriterion = {
+    'bonus-team-effort': `#1 · ${t('edenX1ThConduct')}`,
+    'weighted-total': `#2 · ${scoreTitle}`,
+    'canonical-name': `#3 · ${t('adminThName')}`,
+  }[row.tieBreak?.criterion];
+  const tieBreakNames = Array.isArray(row.tieBreak?.candidateNames)
+    ? row.tieBreak.candidateNames.filter(Boolean).join(' · ')
+    : '';
+  const tieBreakDetail = row.tieBreak?.applied
+    ? `<span><span>${esc(t('edenX1RewardTieScoreContext'))}</span><b>${esc(tieBreakCriterion || scoreTitle)}</b></span>
+      ${tieBreakNames ? `<small>${esc(tieBreakNames)}</small>` : ''}`
+    : '';
+  const voteContext = t(
+    view === 'management' ? 'edenX1RewardManagementCopy' : 'edenX1RewardTeamCopy'
+  );
+  const defaultExclusion = defaultMode
+    ? `<small>${esc(t('edenX1ContributionModeExcluded'))}</small>`
+    : '';
+  const statusLabel = row.tieBreak?.applied
+    ? `${row.status} · ${t('edenX1RewardTieScoreContext')}`
+    : row.status;
+  const popoverBody = voteDetails
+    ? `<strong>${esc(detailsTitle)}</strong>
+      <span><span>${esc(t('edenX1RewardVoted'))}</span><b>${Math.max(0, Math.floor(Number(row.votes) || 0)).toLocaleString()}</b></span>
+      <span><span>${esc(t('edenX1ThConduct'))}</span><b>${formatSignedNumber(voteDetails.bonusTeamEffort)}</b></span>
       <span><span>${esc(t('edenX1BreakdownContribution'))}</span><b>${weighted ? formatScore(weighted.contributionScore) : '--'}</b></span>
       <span><span>${esc(t('edenX1BreakdownExGuild'))}</span><b>${weighted ? formatScore(weighted.contributionExGuild) : '--'}</b></span>
       <span><span>${esc(t('edenX1BreakdownDuty'))}</span><b>${weighted ? formatScore(weighted.dutyPoints) : '--'}</b></span>
-      <span><span>Bonus weighted value</span><b>${weighted ? formatSignedNumber(weighted.conductPoints) : '--'}</b></span>
-      <span class="dash-weighted-score-popover-total"><span>${esc(t('edenX1WeightedTitle'))}</span><b>${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</b></span>
+      <span><span>${esc(t('edenX1BreakdownConductPoints'))}</span><b>${weighted ? formatSignedNumber(weighted.conductPoints) : '--'}</b></span>
+      <span class="dash-weighted-score-popover-total"><span>${esc(scoreTitle)}</span><b>${weighted ? formatWeightedScore(weighted.weightedScore) : '--'}</b></span>
+      ${defaultExclusion}
+      ${tieBreakDetail}
+      <small>${esc(voteContext)}</small>
       <small>${esc(row.statusReason)}</small>`
     : `<strong>${esc(t('edenX1RewardAssignedReasonTitle'))}</strong>
       <small>${esc(row.statusReason)}</small>`;
-  return `<button class="eden-x1-slot-status-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}" aria-label="${esc(row.statusReason)}">
-    <span class="eden-x1-slot-status-label">${esc(row.status)}</span>
+  return `<button class="eden-x1-slot-status-trigger eden-x1-popover-trigger" type="button" aria-describedby="${tooltipId}">
+    <span class="eden-x1-slot-status-label">${esc(statusLabel)}</span>
     <span id="${tooltipId}" class="dash-weighted-score-popover eden-x1-slot-status-popover" role="tooltip">
       ${popoverBody}
     </span>
@@ -4667,7 +4731,8 @@ function renderPublicWeightedContributionRow(row, index, options = {}) {
   return `<tr class="${rewardClass}"${canOpenPlayer ? ` data-public-player="${esc(playerKey)}"` : ''}>
     <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
       <span class="dash-weighted-desktop-number">${row.finalRank || '--'}</span>
-      <span class="dash-weighted-mobile-header" aria-label="${esc(`#${row.finalRank || '--'} ${row.playerName}`)}">
+      <span class="dash-weighted-mobile-header">
+        <span class="sr-only">${esc(`#${row.finalRank || '--'} ${row.playerName}`)}</span>
         <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${row.finalRank || '--'}`)}" aria-hidden="true"></span>
         <strong class="dash-weighted-mobile-player-name" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
       </span>
@@ -5016,7 +5081,23 @@ function renderPublicHeatmap(attacks) {
       </span>`;
     });
   });
-  return `${html}</div><div class="dash-analytics-hint">${esc(t('edenX1HeatmapHint'))}</div>`;
+  return `${html}</div>`;
+}
+
+function syncPublicHeatmapOverflowState(root = document) {
+  const scrollport = root?.querySelector?.('#edenX1PublicHeatmapScroll');
+  if (!scrollport) return;
+  const overflows = scrollport.scrollWidth > scrollport.clientWidth + 1;
+  if (overflows) scrollport.setAttribute('tabindex', '0');
+  else scrollport.removeAttribute('tabindex');
+}
+
+function schedulePublicHeatmapOverflowSync() {
+  if (publicHeatmapResizeFrame) return;
+  publicHeatmapResizeFrame = window.requestAnimationFrame(() => {
+    publicHeatmapResizeFrame = 0;
+    syncPublicHeatmapOverflowState();
+  });
 }
 
 function renderPublicDistribution(attacks) {
@@ -5176,7 +5257,8 @@ async function renderPublicAdvancedAnalyticsSections(host, token) {
         renderPublicCard(
           t('adminAnalyticsHeatmap'),
           t('edenX1HeatmapCardHint'),
-          `<div class="dash-analytics-body">${renderPublicHeatmap(publicAttackRows)}</div>`,
+          `<div id="edenX1PublicHeatmapScroll" class="dash-analytics-body eden-x1-public-heatmap-scroll" role="region" aria-label="${esc(t('adminAnalyticsHeatmap'))}" aria-describedby="edenX1PublicHeatmapHint">${renderPublicHeatmap(publicAttackRows)}</div>
+          <div id="edenX1PublicHeatmapHint" class="dash-analytics-hint">${esc(t('edenX1HeatmapHint'))} ${esc(t('edenX1HeatmapScrollHint'))}</div>`,
           'dash-analytics-card'
         ),
     ],
@@ -5220,6 +5302,7 @@ async function renderPublicAdvancedAnalyticsSections(host, token) {
     bindWeightedPopovers(host);
     await yieldToBrowser();
   }
+  syncPublicHeatmapOverflowState(host);
   return true;
 }
 
@@ -5720,7 +5803,8 @@ function renderWeightedContributionRow(row, index, options = {}) {
   return `<tr class="${rewardClass}${supportHonorClass}" data-expanded="false" data-row-id="${rowId}">
     <td class="dash-weighted-mobile-header-cell" data-label="${esc(t('edenX1ThNumber'))}">
       <span class="dash-weighted-desktop-number">${numberValue}</span>
-      <span class="dash-weighted-mobile-header" aria-label="${esc(`#${numberValue} ${row.playerName}`)}">
+      <span class="dash-weighted-mobile-header">
+        <span class="sr-only">${esc(`#${numberValue} ${row.playerName}`)}</span>
         <span class="dash-weighted-mobile-rank" data-rank="${esc(`#${numberValue}`)}" aria-hidden="true"></span>
         <strong class="dash-weighted-mobile-player-name${supportHonorNameClass}" data-player="${esc(row.playerName)}" aria-hidden="true">${renderTaggedPlayerName(row)}</strong>
       </span>
@@ -5817,9 +5901,10 @@ function renderTable(rows, recordLabel, options = {}) {
     'edenX1WeightedTable'
   );
   const emptyRow = `<tr><td colspan="14" class="dash-empty">${esc(t('edenX1NoRows'))}</td></tr>`;
+  const hasModeControls = Boolean(options.modeControls);
   return `<div class="dash-weighted-contribution-panel">
     <div class="dash-card dash-weighted-contribution-card dash-contribution-weighted-card eden-x1-weighted-card${rewardViewClass} ${compactView ? 'dash-weighted-compact' : ''}">
-      <div class="dash-card-hdr dash-card-hdr-wrap">
+      <div class="dash-card-hdr dash-card-hdr-wrap${hasModeControls ? ' eden-x1-contribution-mode-header' : ''}">
         <h2 class="dash-card-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 20V10" />
@@ -5828,8 +5913,8 @@ function renderTable(rows, recordLabel, options = {}) {
           </svg>
           <span>${esc(title)}</span>
         </h2>
-        <div class="dash-weighted-table-controls">
-          ${options.modeControls || ''}
+        ${options.modeControls || ''}
+        <div class="dash-weighted-table-controls${hasModeControls ? ' eden-x1-contribution-mode-tools' : ''}">
           <span class="dash-weighted-contribution-meta">${esc(meta)}</span>
           <label class="dash-search-wrap dash-weighted-search" for="edenX1TableSearch">
             <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -5875,7 +5960,7 @@ function renderRewardSlotTable(view) {
   const rows = rewardSlotRows(view);
   const rewardViewClass = rewardViewAccentClass(view);
   const managementVoteError =
-    view === 'management' && currentManagementVoteResults.status === 'error'
+    (view === 'management' || view === 'team') && currentManagementVoteResults.status === 'error'
       ? `<div class="eden-x1-management-vote-error" role="alert">
           <span>Management votes temporarily unavailable.</span>
           <button id="edenX1ManagementVotesRetry" class="eden-x1-retry-btn" type="button">${esc(t('edenX1Retry'))}</button>
@@ -6137,7 +6222,7 @@ function renderEdenPodium() {
     const name = stripGuildTagsFromPlayerName(row.playerName || '');
     const score = formatEdenNumber(valueOf(row.weightedScore || 0));
     return `<div class="eden-x1-podium-card" data-rank="${rank}">
-      <span class="eden-x1-podium-avatar" aria-label="${esc(name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v1a4 4 0 0 0 4 4M16 6h3v1a4 4 0 0 1-4 4M12 12v4M9 20h6M10 16h4v4h-4z"/></svg></span>
+      <span class="eden-x1-podium-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v1a4 4 0 0 0 4 4M16 6h3v1a4 4 0 0 1-4 4M12 12v4M9 20h6M10 16h4v4h-4z"/></svg></span>
       <span class="eden-x1-podium-name">${esc(name)}</span>
       <span class="eden-x1-podium-score">${esc(score)}</span>
       <div class="eden-x1-podium-bar"><span class="eden-x1-podium-rank-num">${rank}</span></div>
@@ -6282,19 +6367,15 @@ function renderCurrentTable(renderOptions = {}) {
 }
 
 async function loadPublicConductAdjustments(db, firestore, season) {
-  try {
-    const { collection, getDocs, query, where } = firestore;
-    const ref = collection(db, R5_COLLECTION_PATH);
-    const seasonKey = String(season || '').trim();
-    const snapshot = await getDocs(seasonKey ? query(ref, where('season', '==', seasonKey)) : ref);
-    const adjustments = [];
-    snapshot.forEach((docSnap) => {
-      adjustments.push(docSnap.data());
-    });
-    return sanitizePublicR5Adjustments(adjustments, seasonKey);
-  } catch {
-    return [];
-  }
+  const { collection, getDocs, query, where } = firestore;
+  const ref = collection(db, R5_COLLECTION_PATH);
+  const seasonKey = String(season || '').trim();
+  const snapshot = await getDocs(seasonKey ? query(ref, where('season', '==', seasonKey)) : ref);
+  const adjustments = [];
+  snapshot.forEach((docSnap) => {
+    adjustments.push(docSnap.data());
+  });
+  return sanitizePublicR5Adjustments(adjustments, seasonKey);
 }
 
 async function bootShell() {
@@ -6306,6 +6387,7 @@ async function bootShell() {
   updateTextContent(currentLang);
   bindRewardFlowControls();
   bindEdenQuickNav();
+  window.addEventListener('resize', schedulePublicHeatmapOverflowSync);
 
   $('languageSelect')?.addEventListener('change', async (e) => {
     const nextLang = e.target.value || 'en';
@@ -6385,10 +6467,26 @@ function readEdenPublicDashboardCache() {
     if (!Number.isFinite(savedAt) || Date.now() - savedAt > EDEN_X1_PUBLIC_CACHE_MAX_AGE_MS) {
       return null;
     }
+    if (
+      !hasAuthoritativeEdenVoteSettings(cached?.data?.edenX1VoteSettings, cached?.data?.r5Season)
+    ) {
+      return null;
+    }
     return hasUsableDashboardCache(cached?.data) ? cached.data : null;
   } catch {
     return null;
   }
+}
+
+function edenDashboardLiveStateVersion(data) {
+  return JSON.stringify({
+    voteSettings: data?.edenX1VoteSettings || null,
+    voteResults: data?.publicEdenX1VoteResults || null,
+    rosterSnapshots: Array.isArray(data?.rosterSnapshots) ? data.rosterSnapshots : null,
+    conductAdjustments: Array.isArray(data?.publicConductAdjustments)
+      ? data.publicConductAdjustments
+      : null,
+  });
 }
 
 function writeEdenPublicDashboardCache(data) {
@@ -6404,6 +6502,27 @@ function clearEdenPublicDashboardCache() {
   try {
     localStorage.removeItem(EDEN_X1_PUBLIC_CACHE_KEY);
   } catch {}
+}
+
+function clearObsoleteEdenDashboardCache() {
+  clearEdenPublicDashboardCache();
+  currentRows = [];
+  currentMemberOptions = [];
+  currentSeason = '';
+  publicDashboardData = null;
+  publicAttackRows = [];
+  publicPlayerRows = [];
+  publicStructureRows = [];
+  setRewardFlowReady(false);
+  renderEdenMarquee({});
+  renderEdenPodium();
+  renderEdenProgression({});
+  renderEdenVoteRail();
+  ['edenX1PublicOverview', 'edenX1PublicDashboard'].forEach((id) => {
+    const host = $(id);
+    host?.classList.add('hidden');
+    host?.replaceChildren();
+  });
 }
 
 async function loadEdenOptionalData(promise, label) {
@@ -6470,15 +6589,17 @@ async function loadEdenX1Dashboard() {
   startEdenLoadingProgress(generation);
   const cachedData = readEdenPublicDashboardCache();
   const cachedVersion = dashboardCacheVersion(cachedData);
+  const cachedLiveStateVersion = edenDashboardLiveStateVersion(cachedData);
   let cacheApplied = false;
 
   try {
     const liveResultPromise = withEdenBootTimeout(
       (async () => {
-        const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = await Promise.all([
-          import('./firebase-eden.js'),
-          import('./firebase-sdk.js'),
-        ]);
+        const firebaseModules =
+          EDEN_X1_TEST_MODE && Array.isArray(globalThis.VTS_EDEN_X1_FIREBASE_MODULES)
+            ? globalThis.VTS_EDEN_X1_FIREBASE_MODULES
+            : await Promise.all([import('./firebase-eden.js'), import('./firebase-sdk.js')]);
+        const [{ initFirebase, ensureAnonymousAuth }, { importFirestoreLite }] = firebaseModules;
         setEdenLoadingProgress(generation, 18);
         // firebase-eden's initFirebase() returns only { app, auth, configured }
         // — Firestore is loaded separately (Lite) after auth, so the db is
@@ -6496,7 +6617,7 @@ async function loadEdenX1Dashboard() {
         const [snap, rosterSnap, voteSettingsSnap, publicVoteResultsSnap] = await Promise.all([
           getDoc(doc(db, FS_PATH)),
           loadEdenOptionalData(getDoc(doc(db, FS_ROSTER_PATH)), 'roster data'),
-          loadEdenOptionalData(getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)), 'vote settings'),
+          getDoc(doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH)),
           loadEdenOptionalData(
             getDoc(doc(db, EDEN_X1_PUBLIC_VOTE_RESULTS_DOC_PATH)),
             'public vote results'
@@ -6505,32 +6626,59 @@ async function loadEdenX1Dashboard() {
         setEdenLoadingProgress(generation, 76);
 
         if (!snap.exists()) {
-          return { kind: 'no-data', db, firestore, voteUser, voteSettingsSnap };
+          return { kind: 'no-data', db, firestore, voteUser };
         }
 
-        const data = { ...snap.data() };
+        const dashboardData = snap.data();
+        const verifiedVoteSettings = requireAuthoritativeEdenVoteSettings(
+          voteSettingsSnap,
+          dashboardData?.r5Season
+        );
+
+        const data = { ...dashboardData, edenX1VoteSettings: verifiedVoteSettings };
         if (rosterSnap?.exists?.()) {
           const rosterData = rosterSnap.data() || {};
           if (Array.isArray(rosterData.snapshots)) data.rosterSnapshots = rosterData.snapshots;
+        } else if (rosterSnap === null && Array.isArray(cachedData?.rosterSnapshots)) {
+          data.rosterSnapshots = cachedData.rosterSnapshots;
         }
-        if (publicVoteResultsSnap?.exists?.()) {
-          data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(
-            publicVoteResultsSnap.data()
-          );
-        }
+        const publicVoteResults =
+          verifiedVoteSettings.showPublicResults !== true
+            ? {}
+            : publicVoteResultsSnap === null
+              ? cachedData?.publicEdenX1VoteResults || {}
+              : publicVoteResultsSnap.exists()
+                ? publicVoteResultsSnap.data()
+                : {};
+        data.publicEdenX1VoteResults = normalizePublicEdenVoteResults(publicVoteResults);
         const liveConductAdjustments = await loadEdenOptionalData(
           loadPublicConductAdjustments(db, firestore, data.r5Season || ''),
           'bonus team effort points'
         );
         setEdenLoadingProgress(generation, 88);
-        if (liveConductAdjustments?.length) {
+        if (Array.isArray(liveConductAdjustments)) {
           data.publicConductAdjustments = liveConductAdjustments;
+        } else if (Array.isArray(cachedData?.publicConductAdjustments)) {
+          data.publicConductAdjustments = cachedData.publicConductAdjustments;
         }
-        return { kind: 'ok', db, firestore, voteUser, voteSettingsSnap, data };
+        const sidecarReadIncomplete =
+          rosterSnap === null ||
+          (verifiedVoteSettings.showPublicResults === true && publicVoteResultsSnap === null) ||
+          liveConductAdjustments === null;
+        return {
+          kind: 'ok',
+          db,
+          firestore,
+          voteUser,
+          verifiedVoteSettings,
+          data,
+          sidecarReadIncomplete,
+        };
       })()
     );
 
     if (cachedData) {
+      applyEdenVoteSettings(cachedData.edenX1VoteSettings);
       $('ocrDashboardSection')?.classList.add('eden-x1-panel--cache-preview');
       await yieldToBrowser();
       await applyDashboardData(cachedData, null, {
@@ -6558,31 +6706,26 @@ async function loadEdenX1Dashboard() {
     }
 
     edenVoteWriteContext = { db: result.db, firestore: result.firestore, user: result.voteUser };
-    const previousContributionMode = authoritativeContributionRankingMode();
-    if (result.voteSettingsSnap?.exists?.()) {
-      edenVoteSettings = normalizeEdenVoteSettings(result.voteSettingsSnap.data());
-    } else {
-      edenVoteSettings = normalizeEdenVoteSettings();
-    }
-    const nextContributionMode = authoritativeContributionRankingMode();
-    if (
-      !contributionViewModeWasChosen ||
-      currentContributionViewMode === previousContributionMode
-    ) {
-      currentContributionViewMode = nextContributionMode;
-    }
 
     if (result.kind === 'no-data') {
       stopEdenLoadingProgress(generation, 100);
-      clearEdenPublicDashboardCache();
-      setRewardFlowReady(false);
+      clearObsoleteEdenDashboardCache();
       if (panel) panel.innerHTML = `<div class="dash-empty">${esc(t('edenX1NoData'))}</div>`;
       setEdenPanelLoading(false);
       return;
     }
 
-    writeEdenPublicDashboardCache(result.data);
-    if (!cacheApplied || !cachedVersion || dashboardCacheVersion(result.data) !== cachedVersion) {
+    const { previousContributionMode, nextContributionMode } = applyEdenVoteSettings(
+      result.verifiedVoteSettings
+    );
+
+    if (!result.sidecarReadIncomplete) writeEdenPublicDashboardCache(result.data);
+    if (
+      !cacheApplied ||
+      !cachedVersion ||
+      dashboardCacheVersion(result.data) !== cachedVersion ||
+      edenDashboardLiveStateVersion(result.data) !== cachedLiveStateVersion
+    ) {
       await applyDashboardData(result.data, generation);
     } else {
       if (previousContributionMode !== nextContributionMode && rewardFlowReady) {
@@ -6594,11 +6737,16 @@ async function loadEdenX1Dashboard() {
   } catch (err) {
     if (generation !== edenBootGeneration) return;
     stopEdenLoadingProgress(generation);
-    if (cacheApplied) {
+    const cachedSeasonIsObsolete = cachedEdenDashboardSeasonIsObsolete(
+      cachedData,
+      err?.dashboardSeason
+    );
+    if (cacheApplied && !cachedSeasonIsObsolete) {
       console.warn('Eden X1 live refresh unavailable; keeping cached dashboard visible.', err);
       setEdenPanelLoading(false);
       return;
     }
+    if (cachedSeasonIsObsolete) clearObsoleteEdenDashboardCache();
     lastEdenBootError = err;
     console.error('Eden X1 view failed:', err);
     showEdenBootError(err);
@@ -6719,7 +6867,7 @@ window.setEdenX1DataForTest = function setEdenX1DataForTest(data) {
 };
 
 window.setEdenX1VoteSettingsForTest = function setEdenX1VoteSettingsForTest(settings = {}) {
-  edenVoteSettings = normalizeEdenVoteSettings(settings);
+  applyEdenVoteSettings(settings);
   currentContributionViewMode = authoritativeContributionRankingMode();
   contributionViewModeWasChosen = false;
   if (rewardFlowReady) renderCurrentTable({ fromSchedule: true });
@@ -6741,7 +6889,7 @@ if (EDEN_X1_TEST_MODE) {
   };
 }
 
-if (EDEN_X1_TEST_MODE) {
+if (EDEN_X1_TEST_MODE && !Array.isArray(globalThis.VTS_EDEN_X1_FIREBASE_MODULES)) {
   bootShell().catch((err) => console.error('Eden X1 test shell failed:', err));
 } else {
   main();

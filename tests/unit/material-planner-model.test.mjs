@@ -581,9 +581,28 @@ test('DM UI exposes target-set and focused-set controls with aggregate summary p
   assert.match(materialCss, /\.dm-set-picker button\[aria-pressed='true'\]/);
 });
 
+test('DM progress exposes a visible name and recalculated current/max value text', () => {
+  assert.match(materialUiSource, /id="dmProgressLabel"/);
+  assert.match(
+    materialUiSource,
+    /role="progressbar"[^>]*aria-labelledby="dmProgressLabel"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"[^>]*aria-valuenow="\$\{progress\}"[^>]*aria-valuetext="\$\{escapeHtml\(progressValueText\)\}"/
+  );
+  assert.match(
+    materialUiSource,
+    /const progressValueText = `[\s\S]*?interpolate\(\s*t\.campaignPiecesComplete,[\s\S]*?result\.totalCompletedPieces[\s\S]*?result\.totalTargetPieces/
+  );
+  assert.match(materialUiSource, /function rerender[\s\S]*?render\(\)/);
+});
+
 test('DM heading reuses the translated Materials label while detailed locale keys converge', () => {
   assert.match(materialUiSource, /localized\.title = localizedDmText\('tabMaterials'/);
-  assert.match(materialUiSource, /window\.addEventListener\('edenLanguageUpdate', render\)/);
+  assert.match(materialUiSource, /globalThis\.VTS_TRANSLATIONS/);
+  assert.match(materialUiSource, /setCurrentLanguage\(language\)/);
+  assert.match(materialUiSource, /return primary === 'ko' \? 'kr' : primary/);
+  assert.match(
+    materialUiSource,
+    /window\.addEventListener\('edenLanguageUpdate', renderForLanguage\)/
+  );
 });
 
 test('enhancement state survives encode/decode and cleans bad owned input', () => {
