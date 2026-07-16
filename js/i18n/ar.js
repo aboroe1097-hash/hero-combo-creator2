@@ -432,6 +432,7 @@ const ar = {
   tabResearch: 'الأبحاث',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'محاكي المعارك',
   cmdkButton: 'البحث في الأدوات',
   cmdkTitle: 'الانتقال إلى أداة',
   cmdkPlaceholder: 'ابحث في الأدوات والصفحات…',

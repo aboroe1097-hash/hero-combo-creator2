@@ -437,6 +437,7 @@ const fr = {
   tabResearch: 'Recherche',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Simulateur de combat',
   cmdkButton: 'Rechercher des outils',
   cmdkTitle: 'Aller à un outil',
   cmdkPlaceholder: 'Rechercher outils et pages…',

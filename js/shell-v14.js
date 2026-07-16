@@ -21,6 +21,7 @@
   const wideDesktopQuery = window.matchMedia('(min-width: 1440px)');
   const sourceIds = [
     'tabArcade',
+    'tabBattleSimulator',
     'tabManual',
     'tabGenerator',
     'tabHeroes',

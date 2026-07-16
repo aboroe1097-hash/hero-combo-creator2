@@ -84,6 +84,13 @@ const DESTS = [
     fallback: 'Arcade',
     kw: 'arcade games mini games play forge merge rumble',
   },
+  {
+    key: 'tabBattleSimulator',
+    href: 'battle-simulator.html',
+    kind: 'link',
+    fallback: 'Battle Simulator',
+    kw: 'battle simulator beta troops combat formation rounds tactical might resistance speed',
+  },
 ];
 
 function currentLang() {

@@ -433,6 +433,7 @@ const tr = {
   tabResearch: 'Araştırma',
   tabOcrDashboard: 'VTS Yönetici',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Savaş Simülatörü',
   cmdkButton: 'Araç ara',
   cmdkTitle: 'Bir araca git',
   cmdkPlaceholder: 'Araç ve sayfa ara…',

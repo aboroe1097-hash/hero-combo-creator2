@@ -460,6 +460,7 @@ const en = {
   tabResearch: 'Research',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Battle Simulator',
   cmdkButton: 'Search tools',
   cmdkTitle: 'Jump to a tool',
   cmdkPlaceholder: 'Search tools and pages…',

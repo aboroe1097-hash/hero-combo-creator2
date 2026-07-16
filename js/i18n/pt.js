@@ -451,6 +451,7 @@ const pt = {
   tabResearch: 'Pesquisa',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Simulador de batalhas',
   cmdkButton: 'Buscar ferramentas',
   cmdkTitle: 'Ir para uma ferramenta',
   cmdkPlaceholder: 'Buscar ferramentas e páginas…',
