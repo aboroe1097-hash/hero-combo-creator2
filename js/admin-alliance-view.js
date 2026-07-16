@@ -3,6 +3,7 @@ import * as AllianceStore from './alliance-view-store.js';
 
 const ALLIANCE_IDS = AllianceStore.ALLIANCE_VIEW_ALLIANCE_IDS || ['v3s', 'vts'];
 const CONTROLLERS = new WeakMap();
+let allianceBriefModulePromise;
 const DEFAULT_COLUMNS = new Set([
   'accountName',
   'alliance',
@@ -618,6 +619,12 @@ function renderShell(state) {
       <div class="dash-alliance-result-bar">
         <p id="dashAllianceViewResultCount"></p>
         <div class="dash-card-actions">
+          <button class="dash-btn" type="button" data-action="export-brief">
+            <span ${keyedText(
+              'adminAllianceViewExportBriefing',
+              tr('adminAllianceViewExportBriefing', 'Export briefing PNG')
+            )}</span>
+          </button>
           <button class="dash-btn" type="button" data-action="export-filtered">
             <span ${keyedText(
               'adminAllianceViewExportFiltered',
@@ -731,9 +738,16 @@ function renderEditorDialog(state) {
           false,
           'datetime-local'
         )}
-        <label class="dash-alliance-control dash-alliance-control-full" for="dashAllianceEditEden">
-          <span>${escapeHtml(tr('adminAllianceViewFieldEdenMatch', 'Eden account match'))}</span>
-          <select id="dashAllianceEditEden" class="dash-select" name="edenSourceId">
+        <div class="dash-alliance-control dash-alliance-control-full">
+          <span id="dashAllianceEditEdenLabel">${escapeHtml(
+            tr('adminAllianceViewFieldEdenMatch', 'Eden account match')
+          )}</span>
+          <input id="dashAllianceEditEdenSearch" class="dash-input" type="search"
+            autocomplete="off" aria-controls="dashAllianceEditEden"
+            aria-label="${escapeHtml(tr('adminAllianceViewSearchLabel', 'Search accounts'))}"
+            placeholder="${escapeHtml(tr('adminAllianceViewSearchLabel', 'Search accounts'))}" />
+          <select id="dashAllianceEditEden" class="dash-select" name="edenSourceId"
+            aria-labelledby="dashAllianceEditEdenLabel">
             <option value="">${escapeHtml(
               tr('adminAllianceViewNoEdenMatch', 'No Eden match — zero contribution')
             )}</option>
@@ -744,7 +758,7 @@ function renderEditorDialog(state) {
               'One Eden source can belong to only one roster account.'
             )
           )}</small>
-        </label>
+        </div>
       </div>
       <div id="dashAllianceEditorError" class="dash-alliance-form-error" role="alert" tabindex="-1"></div>
       <footer>
@@ -809,6 +823,7 @@ function bindEvents(state, options) {
         if (action === 'import') beginImport(state, button.dataset.alliance);
         if (action === 'add') openEditor(state, null, 'v3s');
         if (action === 'clear-filters') clearFilters(state);
+        if (action === 'export-brief') await exportBriefing(state, button);
         if (action === 'export-filtered') exportRows(state, state.visibleRows, 'filtered');
         if (action === 'export-all') exportRows(state, rankRows(state, state.rows), 'complete');
         if (action === 'toggle-row') toggleRow(state, button.dataset.memberId, button);
@@ -835,6 +850,13 @@ function bindEvents(state, options) {
       if (event.target.id === 'dashAllianceSearch') {
         state.filters.search = event.target.value;
         renderResults(state);
+      }
+      if (event.target.id === 'dashAllianceEditEdenSearch') {
+        populateEdenOptions(
+          state,
+          state.root.querySelector('#dashAllianceEditEden')?.value || '',
+          event.target.value
+        );
       }
       if (event.target.matches('[data-filter]')) {
         state.filters[event.target.dataset.filter] = event.target.value;
@@ -956,10 +978,14 @@ function populateDynamicFilters(state) {
   populateEdenOptions(state);
 }
 
-function populateEdenOptions(state, selected) {
+function populateEdenOptions(state, selected, searchQuery) {
   const select = state.root.querySelector('#dashAllianceEditEden');
   if (!select) return;
   const desiredSelection = selected === undefined ? select.value : selected;
+  const search = state.root.querySelector('#dashAllianceEditEdenSearch');
+  const query = cleanText(
+    searchQuery === undefined ? search?.value : searchQuery
+  ).toLocaleLowerCase();
   const edenRows = stableEdenRows(state.contributionModel);
   const first = new Option(
     state.tr('adminAllianceViewNoEdenMatch', 'No Eden match — zero contribution'),
@@ -973,6 +999,12 @@ function populateEdenOptions(state, selected) {
       score: numberValue(row?.weightedScore ?? row?.extended ?? row?.contributionScore),
     }))
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .filter(
+      (row) =>
+        !query ||
+        row.id === desiredSelection ||
+        `${row.name} ${row.id} ${formatNumber(row.score)}`.toLocaleLowerCase().includes(query)
+    )
     .forEach((row) => select.add(new Option(`${row.name} · ${formatNumber(row.score)}`, row.id)));
   select.value = desiredSelection;
 }
@@ -1894,6 +1926,8 @@ function openEditor(state, member, defaultAllianceId = 'v3s', suggestion = null)
     suggestion?.suggestedSourceId ||
     suggestion?.edenSourceId ||
     '';
+  const edenSearch = state.root.querySelector('#dashAllianceEditEdenSearch');
+  if (edenSearch) edenSearch.value = '';
   populateEdenOptions(state, suggestedId || member?.edenAssignment?.sourceId || '');
   state.root.querySelector('#dashAllianceEditorError').textContent = '';
   dialog.showModal();
@@ -2243,6 +2277,50 @@ function exportRows(state, rows, scope) {
     state.tr('adminAllianceViewExported', 'Exported {count} accounts.', { count: rows.length }),
     'success'
   );
+}
+
+async function exportBriefing(state, button) {
+  if (!state.rows.length) {
+    showStatus(
+      state,
+      state.tr('adminAllianceViewNoResults', 'No accounts match this view.'),
+      'error'
+    );
+    return;
+  }
+  const previousDisabled = button.disabled;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  try {
+    allianceBriefModulePromise ||= import('./alliance-view-brief-export.js');
+    const briefing = await allianceBriefModulePromise;
+    await briefing.exportAllianceBriefPng({
+      rows: state.rows,
+      season:
+        state.contributionModel?.season ||
+        state.contributionModel?.record?.season ||
+        state.contributionModel?.seasonId ||
+        '',
+      locale: document.documentElement.lang || 'en',
+      direction: document.documentElement.dir || 'ltr',
+      tr: state.tr,
+    });
+    showStatus(
+      state,
+      state.tr('adminAllianceViewBriefSaved', 'Alliance briefing PNG exported.'),
+      'success'
+    );
+  } catch (error) {
+    console.error('ALLIANCE VIEW BRIEFING EXPORT ERROR:', error);
+    showStatus(
+      state,
+      state.tr('adminAllianceViewBriefExportFailed', 'Could not export the alliance briefing PNG.'),
+      'error'
+    );
+  } finally {
+    button.disabled = previousDisabled;
+    button.removeAttribute('aria-busy');
+  }
 }
 
 function showStatus(state, message, tone = '') {

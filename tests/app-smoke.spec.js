@@ -5541,12 +5541,23 @@ test.describe('app smoke tabs', () => {
     await page.locator('#dashAllianceEditName').fill('Confirmed Account Rename');
     await page.locator('#dashAllianceEditAlliance').selectOption('vts');
     await page.locator('#dashAllianceEditTotalPower').fill('77777777');
-    const reserveOption = page
-      .locator('#dashAllianceEditEden option')
+    const edenMatchSearch = page.locator('#dashAllianceEditEdenSearch');
+    const edenMatchSelect = page.locator('#dashAllianceEditEden');
+    const edenOptionCount = await edenMatchSelect.locator('option').count();
+    const originalEdenSourceId = await edenMatchSelect.inputValue();
+    await expect(edenMatchSearch).toHaveAttribute('type', 'search');
+    await edenMatchSearch.fill('manual reserve');
+    await expect(edenMatchSelect).toHaveValue(originalEdenSourceId);
+    expect(await edenMatchSelect.locator('option').count()).toBeLessThan(edenOptionCount);
+    const reserveOption = edenMatchSelect
+      .locator('option')
       .filter({ hasText: 'Manual Reserve Eden' });
     const reserveSourceId = await reserveOption.getAttribute('value');
     expect(reserveSourceId).toBeTruthy();
-    await page.locator('#dashAllianceEditEden').selectOption(reserveSourceId);
+    await edenMatchSelect.selectOption(reserveSourceId);
+    await edenMatchSearch.fill('no matching account');
+    await expect(edenMatchSelect).toHaveValue(reserveSourceId);
+    await expect(edenMatchSelect.locator('option')).toHaveCount(2);
     await expect(page.locator('#dashAllianceEditorDialog')).toHaveAttribute(
       'aria-labelledby',
       'dashAllianceEditorTitle'
@@ -5581,6 +5592,7 @@ test.describe('app smoke tabs', () => {
     const duplicateTarget = state.rows.find((row) => row.accountName === 'V3S Account 002');
     detail = await expandAllianceRow(page, duplicateTarget.id);
     await detail.locator('[data-action="edit"]').click();
+    await expect(page.locator('#dashAllianceEditEdenSearch')).toHaveValue('');
     await page.locator('#dashAllianceEditEden').selectOption(reserveSourceId);
     await page.locator('#dashAllianceEditorForm button[type="submit"]').click();
     await expect(page.locator('#dashAllianceEditorError')).toContainText(/already assigned/i);
@@ -5604,6 +5616,18 @@ test.describe('app smoke tabs', () => {
     const completeCsv = await fs.readFile(await completeDownload.path(), 'utf8');
     expect(completeCsv.trim().split(/\r?\n/)).toHaveLength(190);
     expect(completeCsv).toContain('"Suggested Eden Source Name"');
+
+    const briefingDownloadPromise = page.waitForEvent('download');
+    await page.locator('[data-action="export-brief"]').click();
+    const briefingDownload = await briefingDownloadPromise;
+    expect(briefingDownload.suggestedFilename()).toMatch(
+      /^alliance-merge-briefing-\d{4}-\d{2}-\d{2}\.png$/
+    );
+    const briefingPng = await fs.readFile(await briefingDownload.path());
+    expect([...briefingPng.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(briefingPng.readUInt32BE(16)).toBe(1600);
+    expect(briefingPng.readUInt32BE(20)).toBe(1200);
+    await expect(page.locator('#dashAllianceViewStatus')).toContainText(/briefing PNG exported/i);
 
     await filterPanel.locator('[data-action="clear-filters"]').click();
     const liveDashboard = structuredClone(fixture.dashboard);

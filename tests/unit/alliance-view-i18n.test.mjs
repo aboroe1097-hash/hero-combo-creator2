@@ -52,6 +52,7 @@ function allianceKeys(source) {
 test('Alliance View runtime copy exactly covers every literal UI and template reference', () => {
   const source = [
     readFileSync('js/admin-alliance-view.js', 'utf8'),
+    readFileSync('js/alliance-view-brief-export.js', 'utf8'),
     readFileSync('tabs/admin.html', 'utf8'),
   ].join('\n');
   const referenced = allianceKeys(source);

@@ -322,8 +322,32 @@ export const ADMIN_RUNTIME_FR = Object.freeze({
   adminAllianceViewEditAccountName: 'Modifier {name}',
   adminAllianceViewEditorKicker: 'FICHE PROPRE AU COMPTE',
   adminAllianceViewExportAll: 'Exporter tout',
+  adminAllianceViewExportBriefing: 'Exporter la synthèse en PNG',
   adminAllianceViewExportFiltered: 'Exporter la vue filtrée',
   adminAllianceViewExported: '{count} comptes exportés.',
+  adminAllianceViewBriefC30Accounts: 'Comptes C30',
+  adminAllianceViewBriefCastleStrength: 'Puissance des châteaux',
+  adminAllianceViewBriefCoverageCaveat:
+    'La couverture du suivi Eden varie selon l’alliance ; les deux scénarios utilisent donc la puissance totale pour une comparaison équitable.',
+  adminAllianceViewBriefEdenCoverage: 'Couverture des contributions Eden',
+  adminAllianceViewBriefExportFailed: 'Impossible d’exporter la synthèse de l’alliance en PNG.',
+  adminAllianceViewBriefFeederNote:
+    'Les comptes hors du scénario de maintien sont des candidats pour l’alliance secondaire, pas des exclusions automatiques.',
+  adminAllianceViewBriefGenerated: 'Généré le {date} · Saison {season}',
+  adminAllianceViewBriefKept: 'conservés',
+  adminAllianceViewBriefPowerBasis: 'Classement par puissance totale',
+  adminAllianceViewBriefPowerCutoff: 'Seuil de puissance',
+  adminAllianceViewBriefRecoveredMatches: 'Correspondances manuelles / récupérées',
+  adminAllianceViewBriefReserved: 'réservées',
+  adminAllianceViewBriefRouteFull: 'Scénario A · Remplir 100 places maintenant',
+  adminAllianceViewBriefRouteReserve:
+    'Scénario B · Conserver 95 comptes + réserver 5 places aux nouveaux arrivants',
+  adminAllianceViewBriefSaved: 'Synthèse de l’alliance exportée en PNG.',
+  adminAllianceViewBriefSubtitle:
+    'Puissance actuelle des effectifs et couverture Eden pour la fusion V3S–VTS',
+  adminAllianceViewBriefTitle:
+    'Synthèse de la fusion des alliances : 100 maintenant ou 95 + 5 réservées',
+  adminAllianceViewBriefWithContribution: '{count} avec contribution',
   adminAllianceViewExtendedScoreLabel: 'Score étendu {score}, palier {band}',
   adminAllianceViewFieldActivityAt: 'Horodatage d’activité',
   adminAllianceViewFieldAlliance: 'Alliance',
