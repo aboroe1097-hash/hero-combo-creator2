@@ -499,6 +499,24 @@
             <path d="M19 4h2v3a3 3 0 0 1-4 2.83" /></svg
           ><span data-i18n="adminContributionsTab">Contributions</span>
         </button>
+        <button class="dash-subtab-btn" data-subtab="allianceView">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="8" cy="8" r="3" />
+            <circle cx="16" cy="8" r="3" />
+            <path d="M2.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6" />
+            <path d="M10.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6" /></svg
+          ><span data-i18n="adminAllianceViewTab" data-admin-i18n="adminAllianceViewTab"
+            >Alliance View</span
+          >
+        </button>
         <button class="dash-subtab-btn" data-subtab="edenVotes">
           <svg
             width="14"
@@ -1501,6 +1519,31 @@
             </div>
           </section>
         </div>
+      </div>
+
+      <!-- Sub-tab: Alliance View (module is lazy-loaded when opened) -->
+      <div class="dash-subtab-panel hidden" id="dashSubtabAllianceView">
+        <section
+          id="dashAllianceViewRoot"
+          class="dash-alliance-view-root"
+          aria-labelledby="dashAllianceViewTitle"
+          aria-busy="true"
+        >
+          <h2
+            id="dashAllianceViewTitle"
+            class="sr-only"
+            data-i18n="adminAllianceViewTitle"
+            data-admin-i18n="adminAllianceViewTitle"
+          >
+            Alliance View
+          </h2>
+          <div class="dash-card dash-alliance-view-loading" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            <span data-i18n="adminAllianceViewLoading" data-admin-i18n="adminAllianceViewLoading"
+              >Loading Alliance View...</span
+            >
+          </div>
+        </section>
       </div>
 
       <!-- Sub-tab: Eden X1 Votes -->

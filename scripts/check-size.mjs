@@ -24,21 +24,21 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The semantic translation audit's 50 locale chunks and the expanded Battle
-  // Simulator app remain lazy while the Index entry stays 57.6 KiB. The
-  // complete combined JS graph measures 6368.5 KiB; keep less than 32 KiB of
-  // aggregate headroom while route preload checks protect startup.
-  totalJsBytes: 6400 * 1024,
-  // The expanded standalone simulator sheet remains route-isolated and brings
-  // aggregate CSS to 1095.7 KiB. Keep less than 2.5 KiB of headroom.
-  totalCssBytes: 1098 * 1024,
+  // Alliance View stays behind an Admin-only dynamic import; its complete
+  // matching/edit/export module and eleven-locale copy bring the combined JS
+  // graph to 6566.5 KiB while the Index entry remains 57.6 KiB. Keep less than
+  // 26 KiB of aggregate headroom while route preload checks protect startup.
+  totalJsBytes: 6592 * 1024,
+  // Alliance View's responsive table/dialog states bring aggregate CSS to
+  // 1118.7 KiB. Keep less than 2.5 KiB of aggregate headroom.
+  totalCssBytes: 1121 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase, authored locale chunks, and the simulator add cacheable
-  // code, not media or initial-route bytes. The complete combined artifact
-  // measures 23,407.3 KiB; keep about 93 KiB of aggregate headroom.
-  totalDeployBytes: 22.95 * 1024 * 1024,
+  // Vendored Firebase, authored locale chunks, the simulator, and Alliance
+  // View add cacheable code, not media. The complete combined artifact measures
+  // 23,635.7 KiB; keep less than 29 KiB of aggregate headroom.
+  totalDeployBytes: 23664 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Forty additional per-domain locale chunks plus shared localization adapters
@@ -46,8 +46,10 @@ const LIMITS = {
   deployFileCount: 526,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
-    'admin.html': { desktop: 602 * 1024, mobile: 695 * 1024 },
-    'eden-x1.html': { desktop: 715 * 1024, mobile: 810 * 1024 },
+    // Alliance View reuses the Admin/Eden design system. These routes measure
+    // 603.7/696.6 KiB and 720.1/813.0 KiB respectively after minification.
+    'admin.html': { desktop: 605 * 1024, mobile: 698 * 1024 },
+    'eden-x1.html': { desktop: 722 * 1024, mobile: 815 * 1024 },
     // Mobile Arcade loads the shared v14 interaction sheet and measures
     // 517.7 KiB; retain less than 1.5 KiB of route-specific headroom.
     'arcade.html': { desktop: 426 * 1024, mobile: 519 * 1024 },

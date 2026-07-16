@@ -523,6 +523,32 @@ test('shared admin dashboard reads stay available while writes require the admin
   assert.doesNotMatch(rules, /allow create, update: if signedIn\(\) && validRosterData\(\);/);
 });
 
+test('Alliance View rosters are admin-only and revision protected', () => {
+  const rules = readFileSync('firestore.rules', 'utf8');
+  const allianceRosterMatch =
+    rules.match(
+      /match \/vts_admin\/alliance_view\/rosters\/\{allianceId\}\s*\{([\s\S]*?)\n\s*\}/
+    )?.[1] || '';
+
+  assert.match(rules, /function validAllianceViewRoster\(allianceId\)/);
+  assert.match(rules, /allianceId in \['v3s', 'vts'\]/);
+  assert.match(rules, /request\.resource\.data\.allianceId == allianceId/);
+  assert.match(rules, /request\.resource\.data\.members\.size\(\) <= 300/);
+  assert.match(rules, /request\.resource\.data\.updatedAt == request\.time/);
+  assert.match(rules, /request\.resource\.data\.updatedBy == request\.auth\.uid/);
+  assert.match(allianceRosterMatch, /allow read: if isAdmin\(\);/);
+  assert.match(
+    allianceRosterMatch,
+    /allow create: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == 1;/
+  );
+  assert.match(
+    allianceRosterMatch,
+    /allow update: if isAdmin\(\)[\s\S]*request\.resource\.data\.revision == resource\.data\.revision \+ 1;/
+  );
+  assert.match(allianceRosterMatch, /allow delete: if false;/);
+  assert.doesNotMatch(allianceRosterMatch, /signedIn\(\)/);
+});
+
 test('dashboard cloud revisions prevent stale local snapshots from overwriting cloud data', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   const dashboard = readFileSync('js/ocr-dashboard.js', 'utf8');

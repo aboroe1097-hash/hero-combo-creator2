@@ -456,8 +456,8 @@ test('Phase 1 copy keeps tactical stats inactive and retains theme, version, and
   assert.match(appSource, /addEventListener\('click', toggleTheme\)/);
   assert.match(appSource, /site-light\.webmanifest/);
 
-  assert.equal(packageJson.version, '14.0.12');
-  assert.match(appSource, /const APP_VERSION = '14\.0\.12'/);
+  assert.equal(packageJson.version, '14.0.13');
+  assert.match(appSource, /const APP_VERSION = '14\.0\.13'/);
   assert.match(indexSource, /id="tabBattleSimulator"[\s\S]*?href="battle-simulator\.html"/);
   assert.match(
     indexSource,

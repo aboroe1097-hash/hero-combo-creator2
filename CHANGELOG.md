@@ -1,5 +1,14 @@
 # Changelog
 
+## 14.0.13 - 2026-07-16
+
+- Added the admin-only Alliance View for the V3S/VTS merge: upload either current roster with a review-before-replace diff, keep every castle/account as its own ranked row, and switch between combined or split All/Top-100 tables.
+- Ranked live season data by Extended Weighted, Base, the Eden Votes active admin mode, raw contribution, ex-guild, duties, individual duty types, Bonus Team Effort, or total power, with searchable sortable tables, score/activity/match filters, configurable columns, breakdowns, accessible status bands, and filtered or complete audit exports.
+- Added strict account-specific Eden matching through exact source names, unique normalized names, and verified cross-dataset registry aliases; saved manual assignments remain authoritative for reassignment or disambiguation, fuzzy suggestions always require review, one Eden source cannot serve multiple roster accounts, and unmatched accounts remain at zero.
+- Added roster import reconciliation and admin editing for additions, removals, updates, possible renames, transfers, confirmed name changes, imported-value resets, and Eden reassignment; relative Last Online values are preserved and converted to absolute timestamps at import.
+- Stored only the current V3S and VTS rosters in admin-claim-protected Firestore documents with revision-checked transactions and live subscriptions, and connected Alliance View directly to existing contribution, ex-guild, duty, Bonus Team Effort, season, registry, and active-mode state without another Eden export.
+- Added complete Alliance View copy for all eleven supported languages plus model, persistence, security-contract, synthetic 91/98-roster, responsive, keyboard, RTL, export, edit, and live-refresh coverage.
+
 ## 14.0.12 - 2026-07-16
 
 - Reworked all ten non-English catalogs with gaming-community wording across the established public tools, Eden X1, Admin, accessibility labels, guidance, and contribution-formula explanations instead of accepting English fallbacks or literal translations as complete; the beta Battle Simulator remains outside this localization pass.
