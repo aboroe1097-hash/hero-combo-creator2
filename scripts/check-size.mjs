@@ -24,22 +24,20 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // The full semantic translation audit adds four deferred domain packs for
-  // each non-English locale (Research, Hero Atlas, Strife, and supporting
-  // runtime copy). The 50 locale chunks remain lazy and the Index entry stays
-  // 57.6 KiB; the complete JS graph measures 6338.3 KiB. Keep less than
-  // 62 KiB of aggregate headroom while route preload checks protect startup.
+  // The semantic translation audit's 50 locale chunks and the expanded Battle
+  // Simulator app remain lazy while the Index entry stays 57.6 KiB. The
+  // complete combined JS graph measures 6368.5 KiB; keep less than 32 KiB of
+  // aggregate headroom while route preload checks protect startup.
   totalJsBytes: 6400 * 1024,
-  // The cross-tool light-theme/touch-target pass remains covered. The standalone
-  // simulator sheet brings aggregate CSS to 1089.4 KiB while remaining isolated
-  // from existing routes. Keep about 2.6 KiB of headroom.
-  totalCssBytes: 1092 * 1024,
+  // The expanded standalone simulator sheet remains route-isolated and brings
+  // aggregate CSS to 1095.7 KiB. Keep less than 2.5 KiB of headroom.
+  totalCssBytes: 1098 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase and authored locale chunks add cacheable code, not media
-  // or initial-route bytes. The complete audited artifact measures 23,374.9
-  // KiB; keep about 126 KiB of aggregate headroom.
+  // Vendored Firebase, authored locale chunks, and the simulator add cacheable
+  // code, not media or initial-route bytes. The complete combined artifact
+  // measures 23,407.3 KiB; keep about 93 KiB of aggregate headroom.
   totalDeployBytes: 22.95 * 1024 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
