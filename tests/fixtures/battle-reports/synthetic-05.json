@@ -1,0 +1,325 @@
+{
+  "fixtureVersion": 1,
+  "battleType": "pvp-field",
+  "battleMode": "pvp-field",
+  "createdAt": "2026-07-16T00:00:00.000Z",
+  "setup": {
+    "battleMode": "pvp-field",
+    "runOptions": {
+      "iterations": 1,
+      "seed": 5,
+      "strikeVariancePct": 0
+    },
+    "savedAt": "2026-07-16T00:00:00.000Z",
+    "setupSchemaVersion": 1,
+    "sides": {
+      "A": {
+        "mode": "add-bonuses",
+        "rows": [
+          {
+            "baseValues": {
+              "hp": 13,
+              "might": 111.18,
+              "resistance": 51.51
+            },
+            "bonuses": {
+              "combatSpeed": 665,
+              "damage": 210,
+              "hp": 45,
+              "might": 448.82,
+              "resistance": 83.49,
+              "tacticalMight": 72,
+              "tacticalResistance": 12
+            },
+            "customized": false,
+            "finals": {
+              "combatSpeed": 665,
+              "damage": 210,
+              "hp": 58,
+              "might": 560,
+              "resistance": 135,
+              "tacticalMight": 72,
+              "tacticalResistance": 12
+            },
+            "id": "front",
+            "open": true,
+            "tier": 10,
+            "troops": 30000,
+            "type": "archers"
+          },
+          {
+            "baseValues": {
+              "hp": 18.36,
+              "might": 92.82,
+              "resistance": 52.02
+            },
+            "bonuses": {
+              "combatSpeed": 865,
+              "damage": 175,
+              "hp": 53.64,
+              "might": 412.18,
+              "resistance": 112.98,
+              "tacticalMight": 61,
+              "tacticalResistance": 16
+            },
+            "customized": true,
+            "finals": {
+              "combatSpeed": 865,
+              "damage": 175,
+              "hp": 72,
+              "might": 505,
+              "resistance": 165,
+              "tacticalMight": 61,
+              "tacticalResistance": 16
+            },
+            "id": "middle",
+            "open": false,
+            "tier": 10,
+            "troops": 27000,
+            "type": "cavalry"
+          },
+          {
+            "baseValues": {
+              "hp": 13,
+              "might": 107.1,
+              "resistance": 49.49
+            },
+            "bonuses": {
+              "combatSpeed": 645,
+              "damage": 198,
+              "hp": 42,
+              "might": 422.9,
+              "resistance": 78.51,
+              "tacticalMight": 68,
+              "tacticalResistance": 11
+            },
+            "customized": true,
+            "finals": {
+              "combatSpeed": 645,
+              "damage": 198,
+              "hp": 55,
+              "might": 530,
+              "resistance": 128,
+              "tacticalMight": 68,
+              "tacticalResistance": 11
+            },
+            "id": "back",
+            "open": false,
+            "tier": 9,
+            "troops": 29000,
+            "type": "archers"
+          }
+        ],
+        "sideDefaults": {
+          "baseValues": {
+            "hp": 13,
+            "might": 111.18,
+            "resistance": 51.51
+          },
+          "bonuses": {
+            "combatSpeed": 665,
+            "damage": 210,
+            "hp": 45,
+            "might": 448.82,
+            "resistance": 83.49,
+            "tacticalMight": 72,
+            "tacticalResistance": 12
+          },
+          "finals": {
+            "combatSpeed": 665,
+            "damage": 210,
+            "hp": 58,
+            "might": 560,
+            "resistance": 135,
+            "tacticalMight": 72,
+            "tacticalResistance": 12
+          },
+          "tier": 10,
+          "troops": 30000,
+          "type": "archers"
+        }
+      },
+      "B": {
+        "mode": "final-totals",
+        "rows": [
+          {
+            "baseValues": {
+              "hp": 21,
+              "might": 74.46,
+              "resistance": 77.52
+            },
+            "bonuses": {
+              "combatSpeed": 560,
+              "damage": 35,
+              "hp": 194,
+              "might": 185.54,
+              "resistance": 392.48,
+              "tacticalMight": 19,
+              "tacticalResistance": 58
+            },
+            "customized": false,
+            "finals": {
+              "combatSpeed": 560,
+              "damage": 35,
+              "hp": 215,
+              "might": 260,
+              "resistance": 470,
+              "tacticalMight": 19,
+              "tacticalResistance": 58
+            },
+            "id": "front",
+            "open": true,
+            "tier": 10,
+            "troops": 42000,
+            "type": "footmen"
+          },
+          {
+            "baseValues": {
+              "hp": 20,
+              "might": 71.4,
+              "resistance": 74.46
+            },
+            "bonuses": {
+              "combatSpeed": 545,
+              "damage": 32,
+              "hp": 185,
+              "might": 173.6,
+              "resistance": 370.54,
+              "tacticalMight": 18,
+              "tacticalResistance": 55
+            },
+            "customized": true,
+            "finals": {
+              "combatSpeed": 545,
+              "damage": 32,
+              "hp": 205,
+              "might": 245,
+              "resistance": 445,
+              "tacticalMight": 18,
+              "tacticalResistance": 55
+            },
+            "id": "middle",
+            "open": false,
+            "tier": 9,
+            "troops": 41000,
+            "type": "footmen"
+          },
+          {
+            "baseValues": {
+              "hp": 18.36,
+              "might": 88.74,
+              "resistance": 49.98
+            },
+            "bonuses": {
+              "combatSpeed": 720,
+              "damage": 66,
+              "hp": 146.64,
+              "might": 236.26,
+              "resistance": 300.02,
+              "tacticalMight": 31,
+              "tacticalResistance": 43
+            },
+            "customized": true,
+            "finals": {
+              "combatSpeed": 720,
+              "damage": 66,
+              "hp": 165,
+              "might": 325,
+              "resistance": 350,
+              "tacticalMight": 31,
+              "tacticalResistance": 43
+            },
+            "id": "back",
+            "open": false,
+            "tier": 9,
+            "troops": 37000,
+            "type": "cavalry"
+          }
+        ],
+        "sideDefaults": {
+          "baseValues": {
+            "hp": 21,
+            "might": 74.46,
+            "resistance": 77.52
+          },
+          "bonuses": {
+            "combatSpeed": 560,
+            "damage": 35,
+            "hp": 194,
+            "might": 185.54,
+            "resistance": 392.48,
+            "tacticalMight": 19,
+            "tacticalResistance": 58
+          },
+          "finals": {
+            "combatSpeed": 560,
+            "damage": 35,
+            "hp": 215,
+            "might": 260,
+            "resistance": 470,
+            "tacticalMight": 19,
+            "tacticalResistance": 58
+          },
+          "tier": 10,
+          "troops": 42000,
+          "type": "footmen"
+        }
+      }
+    }
+  },
+  "simulated": {
+    "coefficients": {
+      "baseCasualtyRate": 0.12,
+      "casualtyRateCap": 0.95,
+      "damageExponent": 0.9,
+      "damageScale": 0.85,
+      "hpExponent": 1.05,
+      "hpScale": 1.1,
+      "mightExponent": 1.15,
+      "mightScale": 1.25,
+      "resistanceExponent": 1.4,
+      "resistanceScale": 1.2
+    },
+    "modelVersion": "phase1-beta-1+custom-coefficients",
+    "perRowCasualties": {
+      "A": [
+        30000,
+        27000,
+        29000
+      ],
+      "B": [
+        19322,
+        0,
+        0
+      ]
+    },
+    "rounds": 7,
+    "seed": 5,
+    "survivors": {
+      "A": 0,
+      "B": 100678
+    },
+    "winner": "B"
+  },
+  "observed": {
+    "winner": "B",
+    "rounds": 7,
+    "perRowCasualties": {
+      "A": [
+        30000,
+        27000,
+        29000
+      ],
+      "B": [
+        19322,
+        0,
+        0
+      ]
+    },
+    "notes": ""
+  },
+  "provenance": {
+    "submitter": "synthetic",
+    "reportDate": "2026-07-16"
+  }
+}
