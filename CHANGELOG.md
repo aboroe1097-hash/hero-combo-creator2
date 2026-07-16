@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.0.15 - 2026-07-16
+
+- Added a simple, case-insensitive search inside the Alliance View Eden account-match editor while preserving the current selection during filtering and live contribution refreshes.
+- Added a localized, one-click Alliance merge briefing PNG generated from the current live admin data, comparing a power-ranked full Top 100 against 95 keeps plus 5 reserved incoming seats with alliance composition, power cutoffs, C30 strength, Eden coverage, and manual-match recovery totals.
+- Kept the leadership brief honest about uneven Eden tracking coverage by using total power for both cross-alliance routes and labeling accounts outside the keep route as feeder candidates rather than automatic removals.
+
 ## 14.0.14 - 2026-07-16
 
 - Fixed Eden X1 weighted-score popovers closing immediately when opened by hover or keyboard focus: the scroll-dismiss grace window now covers every open path, not only click, so the scroll that brings the trigger into view no longer dismisses the popover it just opened.

@@ -24,25 +24,25 @@ const LIMITS = {
   // measure 403.5 KiB after the non-modal Velo drawer fix; retain less than
   // 1.5 KiB of headroom.
   entryCssBytes: 405 * 1024,
-  // Alliance View stays behind an Admin-only dynamic import; its complete
-  // matching/edit/export module and eleven-locale copy bring the combined JS
-  // graph to 6566.5 KiB while the Index entry remains 57.6 KiB. Keep less than
-  // 26 KiB of aggregate headroom while route preload checks protect startup.
-  totalJsBytes: 6592 * 1024,
+  // Alliance View and its briefing renderer stay behind separate Admin-only
+  // dynamic imports. The 1600x1200 Canvas export plus eleven-locale copy bring
+  // the combined graph to 6596.4 KiB while the Index entry remains 57.6 KiB.
+  // Keep less than 12 KiB of aggregate headroom while preload checks protect startup.
+  totalJsBytes: 6608 * 1024,
   // Alliance View's responsive table/dialog states bring aggregate CSS to
   // 1118.7 KiB. Keep less than 2.5 KiB of aggregate headroom.
   totalCssBytes: 1121 * 1024,
   // The complete Pages artifact matters, not only Vite's top-level chunks.
   // Source-only Eden PNGs are intentionally excluded by post-build; these
   // caps prevent them (or similarly large duplicates) from returning unseen.
-  // Vendored Firebase, authored locale chunks, the simulator, and Alliance
-  // View add cacheable code, not media. The complete combined artifact measures
-  // 23,635.7 KiB; keep less than 29 KiB of aggregate headroom.
-  totalDeployBytes: 23664 * 1024,
+  // Vendored Firebase, authored locale chunks, the simulator, Alliance View,
+  // and its lazy briefing renderer add cacheable code, not media. The complete
+  // combined artifact measures 23,666.9 KiB; keep less than 16 KiB of headroom.
+  totalDeployBytes: 23682 * 1024,
   totalMediaBytes: 16 * 1024 * 1024,
   maxMediaFileBytes: 4 * 1024 * 1024,
   // Forty additional per-domain locale chunks plus shared localization adapters
-  // remain lazy. The audited artifact has 523 files; retain a three-file guard.
+  // remain lazy. The audited artifact has 525 files; retain a one-file guard.
   deployFileCount: 526,
   routeCssBytes: {
     'index.html': { desktop: 530 * 1024, mobile: 625 * 1024 },
