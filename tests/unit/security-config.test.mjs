@@ -45,7 +45,7 @@ test('public admin auth config only keeps destructive action override hashes', (
   assert.doesNotMatch(source, /5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5/);
 });
 
-test('Eden votes PIN gate has no committed fallback secret', () => {
+test('sensitive PIN gate has no committed fallback secret', () => {
   const source = readFileSync('js/admin-pin-gate.js', 'utf8');
   assert.match(source, /window\.VTS_ADMIN_AUTH\?\.edenVotesPinHash/);
   assert.match(source, /window\.VTS_ADMIN_AUTH\?\.adminPin \|\| ''/);
@@ -54,6 +54,22 @@ test('Eden votes PIN gate has no committed fallback secret', () => {
   assert.match(source, /Owner PIN not configured/);
   assert.match(source, /subtle\.digest\('SHA-256'/);
   assert.doesNotMatch(source, /232323/);
+});
+
+test('Battle Simulator remains private-indexed and fail-closed before PIN unlock', () => {
+  const page = readFileSync('battle-simulator.html', 'utf8');
+  const bootstrap = readFileSync('js/battle-simulator.js', 'utf8');
+  const gateCall = bootstrap.indexOf('await requireSensitiveAdminPin');
+  const appImport = bootstrap.indexOf("await import('./battle-simulator-app.js')");
+
+  assert.match(page, /<meta name="robots" content="noindex, nofollow" \/>/);
+  assert.match(page, /<body class="battle-simulator-page is-locked">/);
+  assert.match(page, /<div id="battleSimulatorMount" hidden><\/div>/);
+  assert.ok(gateCall >= 0, 'Battle Simulator should request the shared sensitive PIN');
+  assert.ok(appImport > gateCall, 'simulator code must load only after the PIN gate resolves');
+  assert.match(bootstrap, /if \(!unlocked\) \{\s*location\.assign\('index\.html'\);/);
+  assert.match(bootstrap, /title: 'Beta Testers Only'/);
+  assert.match(bootstrap, /Only Beta Testers are allowed to access the Battle Simulator/);
 });
 
 test('admin boot does not preload gated Eden vote records', () => {
@@ -156,7 +172,13 @@ test('workflow requires owner-configured Code Owner branch protection', () => {
 });
 
 test('frontend CSP and markup avoid executable inline script bypasses', () => {
-  const pages = ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html'];
+  const pages = [
+    'index.html',
+    'admin.html',
+    'eden-x1.html',
+    'arcade.html',
+    'battle-simulator.html',
+  ];
   const inlineExecutableScript =
     /<script(?![^>]*\bsrc=)(?![^>]*type="(?:application\/ld\+json|importmap)")/i;
 
@@ -178,7 +200,7 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
     assert.match(`<img ${attribute}="run()">`, INLINE_EVENT_HANDLER_ATTRIBUTE);
   }
 
-  for (const page of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html']) {
+  for (const page of pages) {
     const source = readFileSync(page, 'utf8');
     const csp =
       source.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/i)?.[1] || '';
@@ -196,11 +218,15 @@ test('frontend CSP and markup avoid executable inline script bypasses', () => {
       });
     assert.ok(scriptSrc, `${page} should define script-src`);
     assert.doesNotMatch(scriptSrc, /'unsafe-inline'/);
-    assert.match(
-      connectSrc,
-      /https:\/\/region1\.google-analytics\.com/,
-      `${page} should allow the regional Analytics collection endpoint`
-    );
+    if (page === 'battle-simulator.html') {
+      assert.equal(connectSrc.trim(), "'self'", `${page} should not open external connections`);
+    } else {
+      assert.match(
+        connectSrc,
+        /https:\/\/region1\.google-analytics\.com/,
+        `${page} should allow the regional Analytics collection endpoint`
+      );
+    }
     assert.deepEqual(
       declaredHashes.sort(),
       expectedHashes.sort(),
@@ -724,16 +750,19 @@ test('service worker precaches a complete, version-stamped app shell', () => {
   const urls = [...source.matchAll(/ {2}'([^']+)'/g)].map((match) => match[1]);
   const stamp = /\?v=\d{8}_\d{6}$/;
 
-  // v14 adds the standalone Arcade entry, the global command palette, and the
-  // two small Velo layers needed by Eden's first-paint loader. The maintenance
-  // hold adds its standalone page and two small logo variants. Keep a measured
-  // one-entry margin without allowing the shell to grow unbounded.
-  assert.ok(urls.length <= 49, `expected bounded app shell, found ${urls.length} URLs`);
+  // v14 adds the standalone Arcade and Battle Simulator entries, the global
+  // command palette, and the two small Velo layers needed by Eden's first-paint
+  // loader. Keep a measured one-entry margin without allowing the shell to grow
+  // unbounded.
+  assert.ok(urls.length <= 51, `expected bounded app shell, found ${urls.length} URLs`);
   assert.ok(urls.includes('/index.html'));
   assert.ok(urls.includes('/admin.html'));
   assert.ok(urls.includes('/eden-x1.html'));
   assert.ok(urls.includes('/arcade.html'));
+  assert.ok(urls.includes('/battle-simulator.html'));
   assert.ok(urls.includes('/maintenance.html'));
+  assert.ok(urls.some((url) => url.startsWith('/css/battle-simulator.css?v=')));
+  assert.ok(urls.some((url) => url.startsWith('/js/battle-simulator.js?v=')));
   assert.ok(urls.some((url) => url.startsWith('/css/command-palette.css?v=')));
   assert.ok(urls.some((url) => url.startsWith('/js/command-palette.js?v=')));
   assert.ok(urls.includes('/images/logo.png'));

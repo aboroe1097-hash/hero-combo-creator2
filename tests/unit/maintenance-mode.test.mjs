@@ -14,7 +14,13 @@ test('maintenance mode is disabled while retaining the shared entry script', () 
 });
 
 test('every deployed public HTML entry is covered by the maintenance gate', () => {
-  const rootEntries = ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html'];
+  const rootEntries = [
+    'index.html',
+    'admin.html',
+    'eden-x1.html',
+    'arcade.html',
+    'battle-simulator.html',
+  ];
   const gameEntries = [
     'games/boot/b-merge-rush.html',
     'games/boot/c-sort-hoard.html',

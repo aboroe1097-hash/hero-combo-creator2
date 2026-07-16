@@ -435,6 +435,7 @@ const ru = {
   tabResearch: 'Исследования',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Симулятор битв',
   cmdkButton: 'Поиск инструментов',
   cmdkTitle: 'Перейти к инструменту',
   cmdkPlaceholder: 'Поиск инструментов и страниц…',

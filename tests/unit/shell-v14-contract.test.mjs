@@ -175,6 +175,14 @@ test('footer is one compact community strip and keeps tab-link behavior', () => 
   assert.match(index, /class="footer-tool-links"/);
   assert.match(index, /data-footer-tab="manual"/);
   assert.match(index, /data-footer-tab="generator"/);
+  assert.match(
+    index,
+    /id="tabBattleSimulator"[\s\S]*?data-i18n="tabBattleSimulator">Battle Simulator<\/span>/
+  );
+  assert.match(
+    index,
+    /href="battle-simulator\.html" data-i18n="tabBattleSimulator">Battle Simulator<\/a>/
+  );
   assert.match(index, /id="footerYear"/);
   assert.match(
     shellCss,

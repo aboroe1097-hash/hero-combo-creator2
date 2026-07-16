@@ -12,7 +12,7 @@ function between(start, end) {
   return source.slice(startIndex, endIndex);
 }
 
-test('command palette exposes the eleven deterministic tool destinations', () => {
+test('command palette exposes the twelve deterministic tool destinations', () => {
   const destinations = between('const DESTS = [', '];');
   const keys = Array.from(destinations.matchAll(/\bkey:\s*'([^']+)'/g), (match) => match[1]);
 
@@ -28,10 +28,15 @@ test('command palette exposes the eleven deterministic tool destinations', () =>
     'tabYouTube',
     'tabOcrDashboard',
     'tabArcade',
+    'tabBattleSimulator',
   ]);
   assert.match(destinations, /name:\s*'manual'[\s\S]*?kind:\s*'tab'/);
   assert.match(destinations, /key:\s*'tabOcrDashboard'[\s\S]*?href:\s*'admin\.html'/);
   assert.match(destinations, /key:\s*'tabArcade'[\s\S]*?name:\s*'arcade'[\s\S]*?kind:\s*'tab'/);
+  assert.match(
+    destinations,
+    /key:\s*'tabBattleSimulator'[\s\S]*?href:\s*'battle-simulator\.html'[\s\S]*?kind:\s*'link'/
+  );
 });
 
 test('reopening reads the shared language and refreshes all localized dialog copy', () => {

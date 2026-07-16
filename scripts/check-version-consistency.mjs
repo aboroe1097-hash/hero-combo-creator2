@@ -40,7 +40,13 @@ recordVersion(
   expectedVersion
 );
 
-for (const relativePath of ['js/state.js', 'js/admin-page.js', 'js/eden-x1.js', 'js/arcade.js']) {
+for (const relativePath of [
+  'js/state.js',
+  'js/admin-page.js',
+  'js/eden-x1.js',
+  'js/arcade.js',
+  'js/battle-simulator-app.js',
+]) {
   captureVersion(
     relativePath,
     /\bAPP_VERSION\s*=\s*['"](\d+\.\d+\.\d+)['"]/,
@@ -48,6 +54,20 @@ for (const relativePath of ['js/state.js', 'js/admin-page.js', 'js/eden-x1.js', 
     expectedVersion
   );
 }
+
+captureVersion(
+  'js/ai/tool-envelope.js',
+  /\bDEFAULT_APP_VERSION\s*=\s*['"](\d+\.\d+\.\d+)['"]/,
+  'js/ai/tool-envelope.js DEFAULT_APP_VERSION',
+  expectedVersion
+);
+
+captureVersion(
+  'battle-simulator.html',
+  /<meta\s+name="vts-app-version"\s+content="(\d+\.\d+\.\d+)"\s*\/?>/,
+  'battle-simulator.html application version',
+  expectedVersion
+);
 
 for (const relativePath of ['index.html', 'admin.html', 'eden-x1.html', 'arcade.html']) {
   captureVersion(

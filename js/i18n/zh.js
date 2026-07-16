@@ -424,6 +424,7 @@ const zh = {
   tabResearch: '科技研究',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: '战斗模拟器',
   cmdkButton: '搜索工具',
   cmdkTitle: '跳转到工具',
   cmdkPlaceholder: '搜索工具和页面…',

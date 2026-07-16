@@ -1,5 +1,11 @@
 # Changelog
 
+## 14.0.11 - 2026-07-16
+
+- Added the PIN-gated Battle Simulator Beta foundation with three ordered troop rows per side, verified T9/T10 Cavalry, Archers, and Footmen presets, 31,000 troops per row by default, independently editable base Attack/Might, Defense/Resistance, and HP values for every row, and manual entry as either extra-source bonuses or final totals for all seven combat stats.
+- Added single and seeded batch simulation modes for 1, 10, 50, 100, or 500 iterations with correct aggregate averages/medians; large batches run in an isolated worker, on-screen logs hydrate only when opened, and full JSON, summary CSV, event CSV, and copied diagnostics retain complete reproducible data.
+- Kept Phase 1 intentionally troop-only while exposing round logs and Combat Speed initiative for later calibration before heroes, skills, equipment, dragons, and tactical-skill damage enter the model.
+
 ## 14.0.10 - 2026-07-15
 
 - Prevented desktop Eden weighted-score popovers from briefly animating outside the viewport at the 769 px breakpoint by snapping the JavaScript-clamped position immediately while retaining opacity and visibility fades.

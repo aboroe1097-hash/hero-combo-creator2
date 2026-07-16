@@ -6,6 +6,7 @@ const targetOrigin = new URL(
   String(process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173').trim()
 ).origin;
 const localIndex = readFileSync('dist/index.html', 'utf8');
+const localBattleSimulator = readFileSync('dist/battle-simulator.html', 'utf8');
 const localServiceWorker = readFileSync('dist/sw.js', 'utf8');
 const localMaintenanceConfig = readFileSync('dist/js/maintenance-config.js', 'utf8');
 const maintenanceEnabled = /window\.VTS_MAINTENANCE_MODE\s*=\s*true/u.test(localMaintenanceConfig);
@@ -76,6 +77,7 @@ test('public entry pages follow the release maintenance flag', async ({ browser 
     '/admin.html',
     '/eden-x1.html',
     '/arcade.html',
+    '/battle-simulator.html',
     '/games/boot/b-merge-rush.html',
   ]) {
     await page.goto(entryPath, { waitUntil: 'domcontentloaded' });
@@ -104,6 +106,7 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
 
   for (const [url, expectedBody] of [
     ['/index.html', localIndex],
+    ['/battle-simulator.html', localBattleSimulator],
     ['/sw.js', localServiceWorker],
   ]) {
     const response = await request.get(url, { headers: { 'Cache-Control': 'no-cache' } });
@@ -183,6 +186,29 @@ test('verified Pages artifact loads standalone pages, lazy chunks, and its servi
 
   await page.goto('/admin.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#dashLoginForm')).toBeVisible({ timeout: 30000 });
+
+  await page.goto('/battle-simulator.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('body')).toHaveClass(/\bis-locked\b/u);
+  await expect(page.getByRole('dialog', { name: 'Beta Testers Only' })).toBeVisible();
+  await expect(page.locator('#battleSimulatorMount')).toBeHidden();
+  await expect(page.locator('.battle-app-shell')).toHaveCount(0);
+  const lockedBattleResources = await page.evaluate(() =>
+    performance
+      .getEntriesByType('resource')
+      .map((entry) => new URL(entry.name, window.location.href).pathname)
+  );
+  expect(
+    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.js$/u.test(path)),
+    'Battle Simulator bootstrap asset should load'
+  ).toBe(true);
+  expect(
+    lockedBattleResources.some((path) => /\/assets\/battle-simulator-[^/]+\.css$/u.test(path)),
+    'Battle Simulator stylesheet should load'
+  ).toBe(true);
+  expect(
+    lockedBattleResources.some((path) => /\/assets\/battle-simulator-app-[^/]+\.js$/u.test(path)),
+    'protected simulator app chunk must not load before PIN unlock'
+  ).toBe(false);
 
   await page.goto('/eden-x1.html', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.admin-shell-title')).toContainText('Eden X1');

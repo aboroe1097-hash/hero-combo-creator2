@@ -150,9 +150,8 @@ test('aggregate CSS budget records the accessibility and contribution-control ba
   const sizeCheck = read('scripts/check-size.mjs');
 
   assert.match(sizeCheck, /cross-tool light-theme\/touch-target pass/);
-  assert.match(sizeCheck, /measure 1076\.1 KiB/);
-  assert.match(sizeCheck, /aggregate to 1079\.4 KiB/);
+  assert.match(sizeCheck, /aggregate CSS to 1089\.4 KiB/);
   assert.match(sizeCheck, /entryCssBytes: 405 \* 1024/);
-  assert.match(sizeCheck, /totalCssBytes: 1082 \* 1024/);
+  assert.match(sizeCheck, /totalCssBytes: 1092 \* 1024/);
   assert.match(sizeCheck, /'arcade\.html': \{ desktop: 426 \* 1024, mobile: 519 \* 1024 \}/);
 });

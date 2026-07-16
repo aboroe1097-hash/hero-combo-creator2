@@ -347,6 +347,7 @@ const kr = {
   tabResearch: '연구',
   tabOcrDashboard: 'VTS 관리자',
   tabArcade: 'Arcade',
+  tabBattleSimulator: '전투 시뮬레이터',
   cmdkButton: '도구 검색',
   cmdkTitle: '도구로 이동',
   cmdkPlaceholder: '도구 및 페이지 검색…',

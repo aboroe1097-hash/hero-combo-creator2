@@ -3,10 +3,36 @@ import { translations } from './translations.js';
 const LEGACY_EDEN_VOTES_PIN_KEY = 'vts_eden_votes_pin_ok';
 const SENSITIVE_ADMIN_PIN_KEY = 'vts_sensitive_admin_pin_ok';
 const SHA_256_HEX_RE = /^[a-f0-9]{64}$/i;
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 let pendingPrompt = null;
+let promptSequence = 0;
+let sessionUnlocked = false;
+
+function readStorage(key) {
+  try {
+    return globalThis.localStorage?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, value);
+  } catch {
+    // A verified PIN still unlocks this document when persistence is unavailable.
+  }
+}
 
 function getPinCopy(key, fallback) {
-  const lang = localStorage.getItem('vts_hero_lang') || document.documentElement.lang || 'en';
+  const lang = readStorage('vts_hero_lang') || document.documentElement.lang || 'en';
   const dictionaries = window.VTS_TRANSLATIONS || translations;
   return (
     dictionaries?.[lang]?.[key] ||
@@ -58,14 +84,16 @@ async function verifyPinAttempt(value) {
 export function sensitiveAdminUnlocked() {
   if (!hasConfiguredPinGate()) return false;
   return (
-    localStorage.getItem(SENSITIVE_ADMIN_PIN_KEY) === '1' ||
-    localStorage.getItem(LEGACY_EDEN_VOTES_PIN_KEY) === '1'
+    sessionUnlocked ||
+    readStorage(SENSITIVE_ADMIN_PIN_KEY) === '1' ||
+    readStorage(LEGACY_EDEN_VOTES_PIN_KEY) === '1'
   );
 }
 
 function markSensitiveAdminUnlocked() {
-  localStorage.setItem(SENSITIVE_ADMIN_PIN_KEY, '1');
-  localStorage.setItem(LEGACY_EDEN_VOTES_PIN_KEY, '1');
+  sessionUnlocked = true;
+  writeStorage(SENSITIVE_ADMIN_PIN_KEY, '1');
+  writeStorage(LEGACY_EDEN_VOTES_PIN_KEY, '1');
 }
 
 export function edenVotesUnlocked() {
@@ -83,7 +111,7 @@ export function requireSensitiveAdminPin(options = {}) {
       ? options.titleKey
         ? getPinCopy(options.titleKey, options.title || 'Enter admin PIN')
         : options.title || getPinCopy('adminEdenVotesPinTitle', 'Enter admin PIN')
-      : 'Owner PIN not configured',
+      : options.unconfiguredTitle || 'Owner PIN not configured',
     prompt: configured
       ? options.promptKey
         ? getPinCopy(
@@ -95,7 +123,8 @@ export function requireSensitiveAdminPin(options = {}) {
             'adminEdenVotesPinPrompt',
             'This admin view is protected. Enter the owner PIN to continue.'
           )
-      : 'Set VTS_EDEN_VOTES_PIN or VTS_EDEN_VOTES_PIN_HASH in GitHub Pages secrets before opening this protected panel.',
+      : options.unconfiguredPrompt ||
+        'Set VTS_EDEN_VOTES_PIN or VTS_EDEN_VOTES_PIN_HASH in GitHub Pages secrets before opening this protected panel.',
     label: options.labelKey
       ? getPinCopy(options.labelKey, options.label || 'PIN')
       : options.label || getPinCopy('adminEdenVotesPinLabel', 'PIN'),
@@ -111,26 +140,37 @@ export function requireSensitiveAdminPin(options = {}) {
   };
 
   pendingPrompt = new Promise((resolve) => {
+    const promptId = ++promptSequence;
+    const titleId = `sensitiveAdminPinTitle-${promptId}`;
+    const copyId = `sensitiveAdminPinCopy-${promptId}`;
+    const errorId = `sensitiveAdminPinError-${promptId}`;
+    const restoreTarget = document.activeElement;
+    const inertStates = Array.from(document.body.children, (element) => ({
+      element,
+      inert: element.inert,
+    }));
+    inertStates.forEach(({ element }) => {
+      element.inert = true;
+    });
+
     const overlay = document.createElement('div');
     overlay.className = 'pin-gate-overlay';
     overlay.setAttribute('role', 'presentation');
     overlay.innerHTML = `
-      <section class="pin-gate-dialog" role="dialog" aria-modal="true" aria-labelledby="sensitiveAdminPinTitle">
+      <section class="pin-gate-dialog" role="dialog" aria-modal="true" aria-labelledby="${titleId}" aria-describedby="${copyId}" tabindex="-1">
         <form class="pin-gate-form">
           <p class="pin-gate-kicker">${esc(copy.kicker)}</p>
-          <h2 id="sensitiveAdminPinTitle">${esc(copy.title)}</h2>
-          <p class="pin-gate-copy">${esc(copy.prompt)}</p>
+          <h2 id="${titleId}">${esc(copy.title)}</h2>
+          <p id="${copyId}" class="pin-gate-copy">${esc(copy.prompt)}</p>
           ${
             configured
               ? `<label class="pin-gate-field">
                   <span>${esc(copy.label)}</span>
-                  <input class="pin-gate-input" type="password" autocomplete="one-time-code" maxlength="64" aria-describedby="sensitiveAdminPinError" />
+                  <input class="pin-gate-input" type="password" autocomplete="one-time-code" maxlength="64" aria-describedby="${errorId}" />
                 </label>`
               : ''
           }
-          <p id="sensitiveAdminPinError" class="pin-gate-error" role="alert" hidden>${esc(
-            copy.error
-          )}</p>
+          <p id="${errorId}" class="pin-gate-error" role="alert" hidden>${esc(copy.error)}</p>
           <div class="pin-gate-actions">
             <button class="pin-gate-btn pin-gate-btn-ghost" type="button" data-pin-cancel>${esc(
               copy.cancel
@@ -146,14 +186,49 @@ export function requireSensitiveAdminPin(options = {}) {
         </form>
       </section>`;
 
+    let settled = false;
     const finish = (ok) => {
+      if (settled) return;
+      settled = true;
       document.removeEventListener('keydown', onKeydown);
       overlay.remove();
+      inertStates.forEach(({ element, inert }) => {
+        element.inert = inert;
+      });
       pendingPrompt = null;
+      if (restoreTarget?.isConnected && typeof restoreTarget.focus === 'function') {
+        restoreTarget.focus({ preventScroll: true });
+      }
       resolve(ok);
     };
     const onKeydown = (event) => {
-      if (event.key === 'Escape') finish(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finish(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = Array.from(overlay.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+        (element) =>
+          !element.disabled && !element.hidden && element.getAttribute('aria-hidden') !== 'true'
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        overlay.querySelector('.pin-gate-dialog')?.focus({ preventScroll: true });
+        return;
+      }
+
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !overlay.contains(active))) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && (active === last || !overlay.contains(active))) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
     };
 
     const form = overlay.querySelector('.pin-gate-form');
@@ -168,7 +243,10 @@ export function requireSensitiveAdminPin(options = {}) {
       checking = true;
       if (submit) submit.disabled = true;
       if (error) error.hidden = true;
-      const ok = await verifyPinAttempt(input?.value || '');
+      const attempt = input?.value || '';
+      if (input) input.value = '';
+      const ok = await verifyPinAttempt(attempt);
+      if (settled) return;
       checking = false;
       if (submit) submit.disabled = false;
       if (ok) {
@@ -178,7 +256,6 @@ export function requireSensitiveAdminPin(options = {}) {
       }
       if (error) error.hidden = false;
       if (input) {
-        input.value = '';
         input.focus();
       }
     });
@@ -188,7 +265,13 @@ export function requireSensitiveAdminPin(options = {}) {
     });
     document.addEventListener('keydown', onKeydown);
     document.body.appendChild(overlay);
-    requestAnimationFrame(() => input?.focus());
+    requestAnimationFrame(() => {
+      (
+        input ||
+        overlay.querySelector('[data-pin-cancel]') ||
+        overlay.querySelector('.pin-gate-dialog')
+      )?.focus({ preventScroll: true });
+    });
   });
 
   return pendingPrompt;

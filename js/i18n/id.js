@@ -433,6 +433,7 @@ const id = {
   tabResearch: 'Penelitian',
   tabOcrDashboard: 'VTS Admin',
   tabArcade: 'Arcade',
+  tabBattleSimulator: 'Simulator Pertempuran',
   cmdkButton: 'Cari alat',
   cmdkTitle: 'Lompat ke alat',
   cmdkPlaceholder: 'Cari alat dan halaman…',
