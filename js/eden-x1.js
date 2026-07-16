@@ -54,7 +54,7 @@ import {
   hasUsableDashboardCache,
 } from './dashboard-cache-policy.js';
 
-const APP_VERSION = '14.0.13';
+const APP_VERSION = '14.0.14';
 const FS_PATH = 'vts_admin/dashboard_data';
 const FS_ROSTER_PATH = 'vts_admin/roster_data';
 const R5_COLLECTION_PATH = 'vts_admin/conduct_adjustments/records';
@@ -3701,6 +3701,10 @@ function materializeWeightedPopover(button) {
 function positionWeightedPopover(button) {
   const popover = materializeWeightedPopover(button);
   if (!popover) return;
+  // Every open path (hover, focus, click) needs the scroll-dismiss grace:
+  // hovering scrolls the trigger into view, and that scroll's trailing events
+  // would otherwise close the popover the moment it opens.
+  weightedPopoverOpenedAt = Date.now();
   popover.setAttribute('aria-hidden', 'false');
   if (isWeightedPopoverSheetViewport()) {
     popover.style.display = '';
@@ -3784,7 +3788,6 @@ function bindWeightedPopovers(host) {
       const shouldOpen = !button.classList.contains('is-open');
       closeWeightedPopovers(button);
       if (shouldOpen) positionWeightedPopover(button);
-      if (shouldOpen) weightedPopoverOpenedAt = Date.now();
       button.classList.toggle('is-open', shouldOpen);
       button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
       const popover = button.querySelector('.dash-weighted-score-popover');
