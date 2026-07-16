@@ -207,6 +207,20 @@ service cloud.firestore {
       && request.resource.data.updated is string;
     }
 
+    function validAllianceViewRoster(allianceId) {
+      return allianceId in ['v3s', 'vts']
+      && request.resource.data.keys().hasOnly([
+        'allianceId', 'revision', 'members', 'updatedAt', 'updatedBy'
+      ])
+      && request.resource.data.allianceId == allianceId
+      && request.resource.data.revision is int
+      && request.resource.data.revision > 0
+      && request.resource.data.members is list
+      && request.resource.data.members.size() <= 300
+      && request.resource.data.updatedAt == request.time
+      && request.resource.data.updatedBy == request.auth.uid;
+    }
+
     function validConductAdjustment() {
       return request.resource.data.keys().hasOnly([
         'id', 'season', 'playerKey', 'playerName', 'points', 'category', 'note', 'createdAt', 'createdBy'
@@ -529,6 +543,18 @@ service cloud.firestore {
     match /vts_admin/roster_data {
       allow read: if signedIn();
       allow create, update: if isAdmin() && validRosterData();
+      allow delete: if false;
+    }
+
+    match /vts_admin/alliance_view/rosters/{allianceId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && validAllianceViewRoster(allianceId)
+        && request.resource.data.revision == 1;
+      allow update: if isAdmin()
+        && validAllianceViewRoster(allianceId)
+        && resource.data.allianceId == allianceId
+        && request.resource.data.revision == resource.data.revision + 1;
       allow delete: if false;
     }
 

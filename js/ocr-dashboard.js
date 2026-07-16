@@ -140,6 +140,14 @@ import { createAdminLogSync } from './admin-log-sync.js';
 // --- Serverless OCR Dashboard ---
 let firebaseApiPromise = null;
 let firestoreApiPromise = null;
+let allianceViewModulePromise = null;
+let allianceViewMountPromise = null;
+let allianceViewController = null;
+let allianceViewSettingsLoaded = false;
+let allianceViewVoteSettingsUnsubscribe = null;
+let allianceViewContributionFrame = 0;
+let localAllianceViewFirestoreContext = null;
+const allianceViewContributionSubscribers = new Set();
 const STALE_ASSET_RECOVERY_KEY = 'vts_admin_stale_asset_recovery_v1';
 
 function isDynamicImportLoadFailure(err) {
@@ -273,6 +281,8 @@ state.exGuildContributions = [];
 state.playerRegistry = readStoredPlayerRegistry();
 state.r5Adjustments = [];
 state.r5Season = '';
+state.alliancePublicConductAdjustments = [];
+state.alliancePublicConductSnapshotLoaded = false;
 state.edenX1Votes = [];
 state.edenX1VoteHistory = [];
 state.edenX1VoteSettings = null;
@@ -558,7 +568,18 @@ function hydrateAuxiliaryRecordsFromDashboardData(data) {
     state.playerRegistry = writeStoredPlayerRegistry(data.playerRegistry);
     changed = true;
   }
+  const cloudSeason = String(data.r5Season || '').trim();
+  if (cloudSeason) {
+    state.r5Season = cloudSeason;
+    changed = true;
+  }
+  if (Array.isArray(data.publicConductAdjustments)) {
+    state.alliancePublicConductAdjustments = data.publicConductAdjustments;
+    state.alliancePublicConductSnapshotLoaded = true;
+    changed = true;
+  }
   if (changed) writeAuxiliaryLocalCaches();
+  if (changed) publishAllianceViewContributionModel();
   return changed;
 }
 
@@ -604,6 +625,7 @@ function renderDashboardSubtab(name = activeDashboardSubtabName()) {
   if (name === 'banners' || name === 'pathers' || name === 'speedTiles' || name === 'shieldWall')
     renderDutyRecords();
   if (name === 'contributions') renderContributions();
+  if (name === 'allianceView') void ensureAllianceViewMountedOrUpdated();
   if (name === 'edenVotes') renderEdenX1VoteAdmin();
   if (name === 'conduct') renderConductAdjustments();
 }
@@ -1239,6 +1261,7 @@ async function loadEdenX1VoteHistory() {
 async function loadEdenX1VoteSettings() {
   state.edenX1VoteSettings = readLocalEdenX1VoteSettings();
   renderEdenX1VoteSettings();
+  publishAllianceViewContributionModel();
   if (state.adminIsAdmin !== true) return false;
   const loadVersion = edenX1VoteSettingsVersion;
   try {
@@ -1250,6 +1273,7 @@ async function loadEdenX1VoteSettings() {
       state.edenX1VoteSettings = normalizeEdenX1VoteSettings(snap.data());
       writeLocalEdenX1VoteSettings(state.edenX1VoteSettings);
       renderEdenX1VoteSettings();
+      publishAllianceViewContributionModel();
     }
     return true;
   } catch (err) {
@@ -1264,6 +1288,7 @@ async function saveEdenX1VoteSettings(nextSettings) {
   state.edenX1VoteSettings = settings;
   writeLocalEdenX1VoteSettings(settings);
   renderEdenX1VoteSettings();
+  publishAllianceViewContributionModel();
   if (state.adminIsAdmin !== true) return false;
   const persistLatestSettings = async () => {
     try {
@@ -1822,6 +1847,7 @@ function renderConductAdjustments() {
           });
         }
         state.r5Adjustments = (state.r5Adjustments || []).filter((record) => record.id !== id);
+        refreshAlliancePublicConductAdjustments();
         renderConductAdjustments();
         await savePublicConductSnapshot();
         render();
@@ -1845,16 +1871,27 @@ function hasLocalConductAdjustments() {
   }
 }
 
+function refreshAlliancePublicConductAdjustments() {
+  state.alliancePublicConductAdjustments = sanitizePublicR5Adjustments(
+    state.r5Adjustments,
+    state.r5Season
+  );
+  state.alliancePublicConductSnapshotLoaded = true;
+  publishAllianceViewContributionModel();
+}
+
 async function loadConductAdjustmentsForSeason() {
   state.r5Season = state.r5Season || getDashboardR5SeasonKey();
   if (state.cloudSyncConfigured === false) {
     state.r5Adjustments = loadLocalR5Adjustments(state.r5Season);
+    refreshAlliancePublicConductAdjustments();
     renderConductAdjustments();
     return;
   }
   if (!state.adminIsAdmin && !hasLocalConductAdjustments()) return;
   try {
     state.r5Adjustments = await loadR5Adjustments(state.r5Season);
+    refreshAlliancePublicConductAdjustments();
     renderConductAdjustments();
   } catch (err) {
     showCloudSyncFailure(err, 'Conduct adjustments load failed');
@@ -1987,6 +2024,7 @@ function bindConductControls() {
 }
 
 export function scheduleDashboardRender() {
+  publishAllianceViewContributionModel();
   if (dashboardRenderFrame) return;
   const run = () => {
     dashboardRenderFrame = 0;
@@ -2089,7 +2127,64 @@ async function ensureCloudSyncReady() {
   return db;
 }
 
+function cloneAllianceViewTestValue(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function getLocalAllianceViewFirestoreContext() {
+  if (localAllianceViewFirestoreContext) return localAllianceViewFirestoreContext;
+  const documents = new Map();
+  const listeners = new Map();
+  let transactionQueue = Promise.resolve();
+
+  const snapshotFor = (path) => ({
+    exists: () => documents.has(path),
+    data: () => cloneAllianceViewTestValue(documents.get(path)),
+  });
+  const notifyPath = (path) => {
+    for (const listener of listeners.get(path) || []) listener(snapshotFor(path));
+  };
+  const firestore = {
+    doc: (_db, path) => ({ path: String(path) }),
+    onSnapshot: (reference, onNext) => {
+      const path = reference.path;
+      const pathListeners = listeners.get(path) || new Set();
+      pathListeners.add(onNext);
+      listeners.set(path, pathListeners);
+      queueMicrotask(() => onNext(snapshotFor(path)));
+      return () => {
+        pathListeners.delete(onNext);
+        if (!pathListeners.size) listeners.delete(path);
+      };
+    },
+    runTransaction: (_db, handler) => {
+      const run = async () => {
+        const writes = new Map();
+        const transaction = {
+          get: async (reference) => snapshotFor(reference.path),
+          set: (reference, value) => writes.set(reference.path, cloneAllianceViewTestValue(value)),
+        };
+        const result = await handler(transaction);
+        for (const [path, value] of writes) documents.set(path, value);
+        for (const path of writes.keys()) notifyPath(path);
+        return result;
+      };
+      transactionQueue = transactionQueue.then(run, run);
+      return transactionQueue;
+    },
+    serverTimestamp: () => new Date(),
+  };
+  const user = {
+    uid: 'local-alliance-view-admin',
+    getIdTokenResult: async () => ({ claims: { admin: true } }),
+  };
+  localAllianceViewFirestoreContext = { db: { kind: 'local-alliance-view' }, user, firestore };
+  return localAllianceViewFirestoreContext;
+}
+
 window.getVtsAdminFirestoreContext = async function () {
+  if (isLocalAdminTestBypass()) return getLocalAllianceViewFirestoreContext();
   const db = await ensureCloudSyncReady();
   if (!db) throw new Error(dashT('adminCloudAdminRequired'));
   return {
@@ -2243,6 +2338,7 @@ window.setOcrDashboardDataForTest = function setOcrDashboardDataForTest(
       }
     })
     .filter(Boolean);
+  refreshAlliancePublicConductAdjustments();
   writeDashboardLocalCache(attachAuxiliaryRecords(state.dashData));
   try {
     localStorage.setItem(ROSTER_SNAPSHOTS_KEY, JSON.stringify(state.rosterSnapshots));
@@ -2261,7 +2357,12 @@ window.setEdenX1VotesForTest = function setEdenX1VotesForTest(
     normalizeEdenX1VoteHistoryRecord
   );
   if (settings) state.edenX1VoteSettings = normalizeEdenX1VoteSettings(settings);
+  publishAllianceViewContributionModel();
   renderEdenX1VoteAdmin();
+};
+
+window.getAllianceViewStateForTest = function getAllianceViewStateForTest() {
+  return isLocalAdminTestBypass() ? allianceViewController?.getState?.() || null : null;
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬ Roster Snapshots (local + Firestore) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -3216,6 +3317,16 @@ async function doSignOut() {
   // the session or reopen the dashboard when the user flips to null. Cleared on
   // the next sign-in (doLogin).
   state._signingOut = true;
+  allianceViewController?.destroy?.();
+  allianceViewController = null;
+  allianceViewSettingsLoaded = false;
+  if (typeof allianceViewVoteSettingsUnsubscribe === 'function') {
+    try {
+      allianceViewVoteSettingsUnsubscribe();
+    } catch {}
+  }
+  allianceViewVoteSettingsUnsubscribe = null;
+  allianceViewContributionSubscribers.clear();
   stopAdminLogCloudSync();
   if (state._fsUnsub) {
     try {
@@ -4532,6 +4643,163 @@ function buildWeightedContributionExportModel() {
   });
 }
 
+function stableAllianceViewSourceId(row) {
+  const sourceName = String(row?.sourceName || row?.playerName || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const playerKey = String(row?.playerKey || compactPlayerIdentity(sourceName)).trim();
+  const fingerprint = `${sourceName}\u241f${playerKey}`;
+  return `eden_${(hashCode(fingerprint) >>> 0).toString(36)}`;
+}
+
+function buildAllianceViewContributionModel() {
+  const conductAdjustments = state.alliancePublicConductSnapshotLoaded
+    ? state.alliancePublicConductAdjustments
+    : state.r5Adjustments;
+  const weightedModel = buildWeightedContributionRows({
+    contributionRecords: state.contributionRecords,
+    dutyRecords: state.dutyRecords,
+    r5Adjustments: conductAdjustments,
+    season: state.r5Season,
+    exGuildContributions: state.exGuildContributions,
+  });
+  const settings = normalizeEdenX1VoteSettings(
+    state.edenX1VoteSettings || readLocalEdenX1VoteSettings()
+  );
+  const activeMode =
+    settings.contributionRankingMode === EDEN_X1_CONTRIBUTION_RANKING_MODES.DEFAULT
+      ? 'base'
+      : 'extended';
+  const sourceOccurrences = new Map();
+  const rows = weightedModel.rows.map((row) => {
+    const baseSourceId = stableAllianceViewSourceId(row);
+    const occurrence = (sourceOccurrences.get(baseSourceId) || 0) + 1;
+    sourceOccurrences.set(baseSourceId, occurrence);
+    return {
+      ...row,
+      sourceId: occurrence === 1 ? baseSourceId : `${baseSourceId}_${occurrence}`,
+      activeScore: activeMode === 'base' ? row.contributionRewardScore : row.weightedScore,
+    };
+  });
+  return {
+    season: state.r5Season || getDashboardR5SeasonKey(),
+    activeMode,
+    rankingMode: settings.contributionRankingMode,
+    record: weightedModel.record
+      ? {
+          id: weightedModel.record.id || '',
+          date: weightedModel.record.date || '',
+          label: getWeightedContributionRecordLabel(weightedModel.record),
+        }
+      : null,
+    playerRegistry: normalizePlayerRegistry(state.playerRegistry || readStoredPlayerRegistry()),
+    rows,
+  };
+}
+
+function subscribeAllianceViewContributionModel(listener) {
+  if (typeof listener !== 'function') return () => {};
+  allianceViewContributionSubscribers.add(listener);
+  return () => allianceViewContributionSubscribers.delete(listener);
+}
+
+async function ensureAllianceViewVoteSettingsSubscription() {
+  if (allianceViewVoteSettingsUnsubscribe || isLocalAdminTestBypass()) return true;
+  if (state.adminIsAdmin !== true) return false;
+  const db = await ensureCloudSyncReady();
+  if (!db) return false;
+  const { doc, onSnapshot } = await loadFirestoreApi();
+  const reference = doc(db, EDEN_X1_VOTE_SETTINGS_DOC_PATH);
+  allianceViewVoteSettingsUnsubscribe = onSnapshot(
+    reference,
+    (snapshot) => {
+      allianceViewSettingsLoaded = true;
+      if (!snapshot.exists()) return;
+      edenX1VoteSettingsVersion += 1;
+      state.edenX1VoteSettings = normalizeEdenX1VoteSettings(snapshot.data());
+      writeLocalEdenX1VoteSettings(state.edenX1VoteSettings);
+      renderEdenX1VoteSettings();
+      publishAllianceViewContributionModel();
+    },
+    (error) => {
+      allianceViewVoteSettingsUnsubscribe = null;
+      allianceViewSettingsLoaded = false;
+      console.warn('ALLIANCE VIEW VOTE SETTINGS SUBSCRIPTION ERROR:', error);
+    }
+  );
+  return typeof allianceViewVoteSettingsUnsubscribe === 'function';
+}
+
+function publishAllianceViewContributionModel() {
+  if (!allianceViewContributionSubscribers.size || allianceViewContributionFrame) return;
+  const notify = () => {
+    allianceViewContributionFrame = 0;
+    const model = buildAllianceViewContributionModel();
+    for (const listener of allianceViewContributionSubscribers) {
+      try {
+        listener(model);
+      } catch (error) {
+        console.warn('Alliance View contribution refresh failed', error);
+      }
+    }
+  };
+  allianceViewContributionFrame =
+    typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame(notify)
+      : setTimeout(notify, 0);
+}
+
+async function ensureAllianceViewMountedOrUpdated() {
+  if (allianceViewController) {
+    void ensureAllianceViewVoteSettingsSubscription();
+    allianceViewController.setContributionModel(buildAllianceViewContributionModel());
+    return allianceViewController;
+  }
+  if (allianceViewMountPromise) return allianceViewMountPromise;
+  allianceViewMountPromise = (async () => {
+    if (!allianceViewSettingsLoaded) {
+      if (state.adminIsAdmin === true || !state.edenX1VoteSettings) {
+        allianceViewSettingsLoaded = await loadEdenX1VoteSettings();
+      } else {
+        allianceViewSettingsLoaded = true;
+      }
+    }
+    await ensureAllianceViewVoteSettingsSubscription();
+    if (!allianceViewModulePromise) {
+      allianceViewModulePromise = import('./admin-alliance-view.js').catch((error) => {
+        allianceViewModulePromise = null;
+        void recoverFromStaleAssetGraph(error);
+        throw error;
+      });
+    }
+    const module = await allianceViewModulePromise;
+    allianceViewController = await module.initializeAdminAllianceView({
+      container: $id('dashAllianceViewRoot'),
+      t: dashT,
+      getFirestoreContext: () => window.getVtsAdminFirestoreContext(),
+      getContributionModel: buildAllianceViewContributionModel,
+      subscribeContributionModel: subscribeAllianceViewContributionModel,
+    });
+    allianceViewController.setContributionModel(buildAllianceViewContributionModel());
+    return allianceViewController;
+  })()
+    .catch((error) => {
+      console.error('ALLIANCE VIEW LOAD ERROR:', error);
+      const root = $id('dashAllianceViewRoot');
+      if (root) {
+        root.innerHTML = `<div class="dash-empty" role="alert">${esc(
+          dashT('adminAllianceViewUnavailable')
+        )}</div>`;
+      }
+      return null;
+    })
+    .finally(() => {
+      allianceViewMountPromise = null;
+    });
+  return allianceViewMountPromise;
+}
+
 function contributionRewardExportLabel(tier) {
   return (
     {
@@ -5271,6 +5539,7 @@ function scheduleAdminLanguageRefresh() {
   renderCloudSyncStatus();
   renderAdminActivityTerminal();
   setAdminLogSyncStatus(adminLogSyncState);
+  allianceViewController?.refreshLanguage?.(dashT);
   requestAnimationFrame(() => {
     if (state._adminLanguageRefreshToken !== token) return;
     renderDashboardSubtab();

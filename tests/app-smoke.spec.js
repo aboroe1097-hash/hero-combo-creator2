@@ -329,6 +329,212 @@ async function openLocalAdminDashboard(page) {
   await expect(page.locator('#dashApp')).toBeVisible({ timeout: 20000 });
 }
 
+function allianceViewAccountName(allianceId, index) {
+  if (allianceId === 'v3s' && index === 50) return 'V3S 城堡 050';
+  if (allianceId === 'v3s' && index === 90) return 'Fuzzy Rnager';
+  if (allianceId === 'v3s' && index === 91) return 'No Eden Account';
+  if (allianceId === 'vts' && index >= 97) return 'Shared Source';
+  return `${allianceId.toUpperCase()} Account ${String(index).padStart(3, '0')}`;
+}
+
+function allianceViewEdenName(allianceId, index) {
+  if (allianceId === 'v3s' && index === 90) return 'Fuzzy Ranger';
+  return allianceViewAccountName(allianceId, index);
+}
+
+function createSyntheticAllianceRosterCsv(allianceId, count) {
+  const quote = (value) => `"${String(value).replaceAll('"', '""')}"`;
+  const rows = [
+    ['Name', 'Alliance', 'Rank', 'Server', 'Castle Level', 'Total Power', 'Last Online'],
+  ];
+  for (let index = 1; index <= count; index += 1) {
+    const activity =
+      index % 4 === 1
+        ? '1 hour ago'
+        : index % 4 === 2
+          ? '3 days ago'
+          : index % 4 === 3
+            ? '9 days ago'
+            : 'Unknown';
+    rows.push([
+      allianceViewAccountName(allianceId, index),
+      allianceId.toUpperCase(),
+      ['R5', 'R4', 'R3'][index % 3],
+      String(1700 + (index % 4)),
+      String(25 + (index % 16)),
+      String(40000000 + index * 137000 + (allianceId === 'vts' ? 50000 : 0)),
+      activity,
+    ]);
+  }
+  return rows.map((row) => row.map(quote).join(',')).join('\r\n');
+}
+
+function createAllianceViewSmokeFixture() {
+  const contributionEntries = [];
+  for (let index = 1; index <= 91; index += 1) {
+    if (index === 91) continue;
+    const globalRank = (index - 1) * 2 + 1;
+    contributionEntries.push({
+      rank: String(globalRank),
+      name: allianceViewEdenName('v3s', index),
+      guild: 'V3S',
+      contribution: String(1000000 - globalRank * 1000),
+    });
+  }
+  for (let index = 1; index <= 98; index += 1) {
+    if (index === 98) continue;
+    const globalRank = index <= 91 ? index * 2 : 182 + (index - 91);
+    contributionEntries.push({
+      rank: String(globalRank),
+      name: allianceViewEdenName('vts', index),
+      guild: 'VTS',
+      contribution: String(1000000 - globalRank * 1000),
+    });
+  }
+  contributionEntries.push({
+    rank: '999',
+    name: 'Manual Reserve Eden',
+    guild: 'VTS',
+    contribution: '500',
+  });
+  contributionEntries.sort((left, right) => Number(left.rank) - Number(right.rank));
+
+  const dashboard = {
+    date: '2026-07-16',
+    r5Season: 'season-2026',
+    last_updated: '16/07/2026, 12:00',
+    total_attacks: 0,
+    attacks: [],
+    players_summary: [],
+    contributionRecords: [
+      {
+        id: 'alliance-view-smoke-primary',
+        date: '2026-07-16',
+        isPrimary: true,
+        premiumSlots: 20,
+        entries: contributionEntries,
+      },
+    ],
+    exGuildContributions: [
+      {
+        id: 'alliance-view-smoke-ex-guild',
+        playerName: 'V3S Account 001',
+        matchedName: 'V3S Account 001',
+        contribution: 25000,
+        status: 'matched',
+      },
+    ],
+    dutyRecords: [
+      {
+        id: 'alliance-view-smoke-banner',
+        type: 'banner',
+        date: '2026-07-16',
+        entries: [{ name: 'V3S Account 001', confirmed: 'V3S Account 001', status: 'exact' }],
+      },
+      {
+        id: 'alliance-view-smoke-pather',
+        type: 'pather',
+        date: '2026-07-16',
+        entries: [{ name: 'V3S Account 001', confirmed: 'V3S Account 001', status: 'exact' }],
+      },
+      {
+        id: 'alliance-view-smoke-shield',
+        type: 'shield_wall',
+        date: '2026-07-16',
+        entries: [{ name: 'VTS Account 001', confirmed: 'VTS Account 001', status: 'exact' }],
+      },
+    ],
+  };
+  const adjustments = [
+    {
+      season: 'season-2026',
+      player: 'V3S Account 001',
+      playerName: 'V3S Account 001',
+      points: 6,
+      category: 'extra_effort',
+    },
+    {
+      season: 'season-2026',
+      player: 'VTS Account 001',
+      playerName: 'VTS Account 001',
+      points: -1,
+      category: 'extra_effort',
+    },
+  ];
+  return {
+    dashboard,
+    adjustments,
+    v3sCsv: createSyntheticAllianceRosterCsv('v3s', 91),
+    vtsCsv: createSyntheticAllianceRosterCsv('vts', 98),
+  };
+}
+
+async function seedAllianceViewContributions(page, fixture) {
+  await page.waitForFunction(
+    () =>
+      typeof window.setOcrDashboardDataForTest === 'function' &&
+      typeof window.switchDashSubtab === 'function'
+  );
+  await page.evaluate(({ dashboard, adjustments }) => {
+    window.setOcrDashboardDataForTest(dashboard, [], adjustments);
+  }, fixture);
+}
+
+async function waitForAllianceViewReady(page) {
+  await expect(page.locator('#dashSubtabAllianceView')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#dashAllianceViewRoot')).toHaveAttribute('aria-busy', 'false', {
+    timeout: 20000,
+  });
+  await page.waitForFunction(
+    () =>
+      typeof window.getAllianceViewStateForTest === 'function' &&
+      window.getAllianceViewStateForTest()?.rows?.length === 0
+  );
+  await expect(page.locator('#dashAllianceViewStatus')).toContainText(/live|ready/i);
+}
+
+async function importAllianceRoster(page, allianceId, csv, expectedCount) {
+  await page.locator(`[data-action="import"][data-alliance="${allianceId}"]`).click();
+  await page.locator('#dashAllianceRosterFile').setInputFiles({
+    name: `${allianceId}-synthetic-roster.csv`,
+    mimeType: 'text/csv',
+    buffer: Buffer.from(csv, 'utf8'),
+  });
+  const dialog = page.locator('#dashAllianceImportDialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('.dash-alliance-preview-card[data-tone="added"] strong')).toHaveText(
+    String(expectedCount)
+  );
+  await dialog.locator('[data-action="apply-import"]').click();
+  await expect(dialog).not.toBeVisible({ timeout: 20000 });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (id) => window.getAllianceViewStateForTest?.()?.rosters?.[id]?.members?.length,
+          allianceId
+        ),
+      { timeout: 20000 }
+    )
+    .toBe(expectedCount);
+}
+
+async function getAllianceViewState(page) {
+  return page.evaluate(() => window.getAllianceViewStateForTest?.());
+}
+
+function allianceRowLocator(page, memberId) {
+  return page.locator(`.dash-alliance-row[data-member-id="${memberId}"]`);
+}
+
+async function expandAllianceRow(page, memberId) {
+  const row = allianceRowLocator(page, memberId);
+  await row.locator('[data-action="toggle-row"]').click();
+  const detail = page.locator(`.dash-alliance-detail-row[data-detail-for="${memberId}"]`);
+  await expect(detail).toBeVisible();
+  return detail;
+}
+
 async function openEdenX1ForTest(page) {
   await page.route('https://www.googletagmanager.com/**', (route) => route.abort());
   await page.addInitScript(() => {
@@ -2784,7 +2990,12 @@ test.describe('app smoke tabs', () => {
           ySamples.forEach((y) => {
             if (x < 0 || x >= window.innerWidth || y < 0 || y >= window.innerHeight) return;
             const topmost = document.elementFromPoint(x, y);
-            if (topmost && topmost !== popover && !popover.contains(topmost)) {
+            if (
+              topmost &&
+              topmost !== popover &&
+              !popover.contains(topmost) &&
+              !topmost.contains(popover)
+            ) {
               const blockerRect = topmost.getBoundingClientRect();
               blockers.push({
                 tag: topmost.tagName,
@@ -2867,6 +3078,10 @@ test.describe('app smoke tabs', () => {
       await expect(edgeScorePopover).toBeHidden();
       await edgeScoreTrigger.scrollIntoViewIfNeeded();
 
+      // Resizing can leave the stationary pointer over the trigger without
+      // dispatching a fresh pointerenter. Move away first so hover exercises
+      // the production positioning path at every viewport width.
+      await page.mouse.move(1, 1);
       await edgeScoreTrigger.hover();
       await expect(edgeScorePopover).toBeVisible();
       const hoverPopoverVisibility = await readPopoverVisibility();
@@ -5196,5 +5411,320 @@ test.describe('app smoke tabs', () => {
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe('vts_top_performers.png');
     await expect(page.locator('[data-ocr-export-clone="true"]')).toHaveCount(0);
+  });
+
+  test('admin Alliance View imports, ranks, audits, edits, exports, and live-refreshes accounts', async ({
+    page,
+  }) => {
+    test.slow();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const fixture = createAllianceViewSmokeFixture();
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await seedAllianceViewContributions(page, fixture);
+    await page.evaluate(() => window.switchDashSubtab('allianceView'));
+    await waitForAllianceViewReady(page);
+    await importAllianceRoster(page, 'v3s', fixture.v3sCsv, 91);
+    await importAllianceRoster(page, 'vts', fixture.vtsCsv, 98);
+
+    await expect(page.locator('#dashAllianceViewSummary [data-tone="accounts"] strong')).toHaveText(
+      '189'
+    );
+    await expect(page.locator('#dashAllianceViewSummary [data-tone="matched"] strong')).toHaveText(
+      '186'
+    );
+    await expect(
+      page.locator('#dashAllianceViewSummary [data-tone="unmatched"] strong')
+    ).toHaveText('3');
+    await expect(page.locator('#dashAllianceMetric')).toHaveValue('extended');
+    await expect(page.locator('[data-view="all"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-layout="combined"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#dashAllianceTable-combined .dash-alliance-row')).toHaveCount(189);
+    await expect(
+      page.locator('#dashAllianceTable-combined th[data-column="extended"]')
+    ).toHaveAttribute('aria-sort', 'descending');
+
+    let state = await getAllianceViewState(page);
+    const fuzzy = state.rows.find((row) => row.accountName === 'Fuzzy Rnager');
+    const unmatched = state.rows.find((row) => row.accountName === 'No Eden Account');
+    const sharedRows = state.rows.filter((row) => row.accountName === 'Shared Source');
+    expect(fuzzy).toMatchObject({
+      matchStatus: 'fuzzy_review',
+      requiresConfirmation: true,
+      edenSourceId: '',
+      extended: 0,
+    });
+    expect(fuzzy.matchSuggestionSourceName).toBe('Fuzzy Ranger');
+    expect(unmatched).toMatchObject({ matchStatus: 'unmatched', extended: 0 });
+    expect(sharedRows).toHaveLength(2);
+    expect(new Set(sharedRows.map((row) => row.id)).size).toBe(2);
+    expect(sharedRows.filter((row) => row.matchStatus === 'matched')).toHaveLength(1);
+    expect(sharedRows.filter((row) => row.matchStatus === 'duplicate_conflict')).toHaveLength(1);
+    expect(sharedRows.filter((row) => row.extended > 0)).toHaveLength(1);
+
+    for (const activity of ['current', 'watch', 'stale', 'unknown']) {
+      const cue = page.locator(`.dash-alliance-activity[data-activity="${activity}"]`).first();
+      await expect(cue).toBeVisible();
+      await expect(cue).toHaveAttribute('aria-label', /.+/);
+      await expect(cue.locator('small')).not.toBeEmpty();
+    }
+    const scoreCue = page.locator('.dash-alliance-score[data-score-band="200k"]').first();
+    await expect(scoreCue).toHaveAttribute('aria-label', /200k|200,000/i);
+    await expect(scoreCue.locator('small')).toContainText('200k+');
+    await expect(page.locator('.dash-alliance-bonus[data-bonus="gold"]').first()).toHaveAttribute(
+      'aria-label',
+      /\+6|6 or more/i
+    );
+    await expect(
+      page.locator('.dash-alliance-bonus[data-bonus="negative"]').first()
+    ).toHaveAttribute('aria-label', /negative|-1/i);
+
+    await page.locator('[data-view="top100"]').click();
+    await expect(page.locator('#dashAllianceTable-combined .dash-alliance-row')).toHaveCount(100);
+    await expect(page.locator('#dashAllianceViewSummary [data-tone="v3s"] strong')).toHaveText(
+      '50'
+    );
+    await expect(page.locator('#dashAllianceViewSummary [data-tone="vts"] strong')).toHaveText(
+      '50'
+    );
+    const metricTopIds = (await getAllianceViewState(page)).visibleRows.map((row) => row.id).sort();
+    const topAccountHeader = page.locator(
+      '#dashAllianceTable-combined th[data-column="accountName"]'
+    );
+    await topAccountHeader.locator('button').click();
+    await expect(topAccountHeader).toHaveAttribute('aria-sort', 'descending');
+    const sortedTopIds = (await getAllianceViewState(page)).visibleRows.map((row) => row.id).sort();
+    expect(sortedTopIds).toEqual(metricTopIds);
+    await page.locator('[data-layout="split"]').click();
+    await expect(page.locator('#dashAllianceTable-v3s .dash-alliance-row')).toHaveCount(50);
+    await expect(page.locator('#dashAllianceTable-vts .dash-alliance-row')).toHaveCount(50);
+    await page.locator('[data-view="all"]').click();
+    await page.locator('[data-layout="combined"]').click();
+
+    for (const metric of ['base', 'extended']) {
+      await page.locator('#dashAllianceMetric').selectOption(metric);
+      await expect
+        .poll(() => getAllianceViewState(page).then((value) => value.metric))
+        .toBe(metric);
+    }
+    const accountHeader = page.locator('#dashAllianceTable-combined th[data-column="accountName"]');
+    await accountHeader.locator('button').click();
+    await expect(accountHeader).toHaveAttribute('aria-sort', 'descending');
+
+    const filterPanel = page.locator('.dash-alliance-filter-panel');
+    await filterPanel.locator('summary').click();
+    await filterPanel.locator('input[name="columns"][value="server"]').check();
+    await expect(
+      page.locator('#dashAllianceTable-combined th[data-column="server"]')
+    ).toBeVisible();
+    await filterPanel.locator('#dashAllianceFilterAlliance').selectOption('v3s');
+    await filterPanel.locator('#dashAllianceFilterMetricMin').fill('900000');
+    await expect(page.locator('#dashAllianceFilterCount')).toHaveText('2');
+    const filteredCount = (await getAllianceViewState(page)).visibleRows.length;
+    expect(filteredCount).toBeGreaterThan(0);
+    expect(filteredCount).toBeLessThan(91);
+    await filterPanel.locator('[data-action="clear-filters"]').click();
+    await page.locator('#dashAllianceSearch').fill('城堡 050');
+    await expect(page.locator('#dashAllianceTable-combined .dash-alliance-row')).toHaveCount(1);
+    await expect(page.locator('#dashAllianceTable-combined')).toContainText('V3S 城堡 050');
+    await page.locator('#dashAllianceSearch').fill('');
+
+    state = await getAllianceViewState(page);
+    const editable = state.rows.find((row) => row.accountName === 'V3S Account 001');
+    let detail = await expandAllianceRow(page, editable.id);
+    await expect(detail).toContainText('Full contribution breakdown');
+    await expect(detail).toContainText(
+      'Extended = Contribution + Ex-guild + 10,000 × (Banners + Pathers + Shield Walls + signed Bonus Team Effort)'
+    );
+    await detail.locator('[data-action="edit"]').click();
+    await page.locator('#dashAllianceEditName').fill('Confirmed Account Rename');
+    await page.locator('#dashAllianceEditAlliance').selectOption('vts');
+    await page.locator('#dashAllianceEditTotalPower').fill('77777777');
+    const reserveOption = page
+      .locator('#dashAllianceEditEden option')
+      .filter({ hasText: 'Manual Reserve Eden' });
+    const reserveSourceId = await reserveOption.getAttribute('value');
+    expect(reserveSourceId).toBeTruthy();
+    await page.locator('#dashAllianceEditEden').selectOption(reserveSourceId);
+    await expect(page.locator('#dashAllianceEditorDialog')).toHaveAttribute(
+      'aria-labelledby',
+      'dashAllianceEditorTitle'
+    );
+    await page.evaluate(
+      ({ dashboard, adjustments }) => {
+        window.setOcrDashboardDataForTest(dashboard, [], adjustments);
+      },
+      { dashboard: fixture.dashboard, adjustments: fixture.adjustments }
+    );
+    await expect(page.locator('#dashAllianceEditEden')).toHaveValue(reserveSourceId);
+    await page.locator('#dashAllianceEditorForm button[type="submit"]').click();
+    await expect(page.locator('#dashAllianceEditorDialog')).not.toBeVisible();
+    await expect
+      .poll(async () => {
+        const row = (await getAllianceViewState(page)).rows.find((item) => item.id === editable.id);
+        return {
+          name: row?.accountName,
+          allianceId: row?.allianceId,
+          power: row?.totalPower,
+          sourceName: row?.edenSourceName,
+        };
+      })
+      .toEqual({
+        name: 'Confirmed Account Rename',
+        allianceId: 'vts',
+        power: 77777777,
+        sourceName: 'Manual Reserve Eden',
+      });
+
+    state = await getAllianceViewState(page);
+    const duplicateTarget = state.rows.find((row) => row.accountName === 'V3S Account 002');
+    detail = await expandAllianceRow(page, duplicateTarget.id);
+    await detail.locator('[data-action="edit"]').click();
+    await page.locator('#dashAllianceEditEden').selectOption(reserveSourceId);
+    await page.locator('#dashAllianceEditorForm button[type="submit"]').click();
+    await expect(page.locator('#dashAllianceEditorError')).toContainText(/already assigned/i);
+    await expect(page.locator('#dashAllianceEditorError')).toBeFocused();
+    await page.locator('#dashAllianceEditorDialog [data-action="close-editor"]').first().click();
+
+    await filterPanel.locator('#dashAllianceFilterAlliance').selectOption('v3s');
+    const filteredDownloadPromise = page.waitForEvent('download');
+    await page.locator('[data-action="export-filtered"]').click();
+    const filteredDownload = await filteredDownloadPromise;
+    expect(filteredDownload.suggestedFilename()).toMatch(/^alliance-view-filtered-.*\.csv$/);
+    const filteredCsv = await fs.readFile(await filteredDownload.path(), 'utf8');
+    expect(filteredCsv).toContain('"Match Status"');
+    expect(filteredCsv).toContain('"Eden Source ID"');
+    expect(filteredCsv.trim().split(/\r?\n/)).toHaveLength(91);
+
+    const completeDownloadPromise = page.waitForEvent('download');
+    await page.locator('[data-action="export-all"]').click();
+    const completeDownload = await completeDownloadPromise;
+    expect(completeDownload.suggestedFilename()).toMatch(/^alliance-view-complete-.*\.csv$/);
+    const completeCsv = await fs.readFile(await completeDownload.path(), 'utf8');
+    expect(completeCsv.trim().split(/\r?\n/)).toHaveLength(190);
+    expect(completeCsv).toContain('"Suggested Eden Source Name"');
+
+    await filterPanel.locator('[data-action="clear-filters"]').click();
+    const liveDashboard = structuredClone(fixture.dashboard);
+    const boosted = liveDashboard.contributionRecords[0].entries.find(
+      (entry) => entry.name === 'V3S Account 002'
+    );
+    boosted.contribution = '3000000';
+    const scoreBeforeRefresh = duplicateTarget.extended;
+    await page.evaluate(
+      ({ dashboard, adjustments }) => {
+        window.setOcrDashboardDataForTest(dashboard, [], adjustments);
+      },
+      { dashboard: liveDashboard, adjustments: fixture.adjustments }
+    );
+    await expect
+      .poll(async () => {
+        const row = (await getAllianceViewState(page)).rows.find(
+          (item) => item.id === duplicateTarget.id
+        );
+        return row?.extended;
+      })
+      .toBeGreaterThan(scoreBeforeRefresh);
+    await expect(page.locator('#dashAllianceViewStatus')).toContainText(/refreshed/i);
+  });
+
+  test('admin Alliance View stays responsive, keyboard-accessible, and RTL-aware on mobile', async ({
+    page,
+  }) => {
+    test.slow();
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => {
+      localStorage.setItem('vts_hero_lang', 'en');
+      localStorage.setItem('vts_theme', 'dark');
+    });
+    const fixture = createAllianceViewSmokeFixture();
+
+    await openAdmin(page);
+    await openLocalAdminDashboard(page);
+    await seedAllianceViewContributions(page, fixture);
+    await page.evaluate(() => window.switchDashSubtab('contributions'));
+    const contributionsTab = page.locator('.dash-subtab-btn[data-subtab="contributions"]');
+    await contributionsTab.focus();
+    await page.keyboard.press('ArrowRight');
+    const allianceTab = page.locator('.dash-subtab-btn[data-subtab="allianceView"]');
+    await expect(allianceTab).toBeFocused();
+    await expect(allianceTab).toHaveAttribute('aria-selected', 'true');
+    await waitForAllianceViewReady(page);
+    await importAllianceRoster(page, 'v3s', createSyntheticAllianceRosterCsv('v3s', 4), 4);
+
+    const layout = await page.evaluate(() => {
+      const root = document.querySelector('#ocrDashboardRoot');
+      const table = document.querySelector('#dashAllianceTable-combined');
+      const firstRow = table?.querySelector('.dash-alliance-row');
+      const wrap = table?.closest('.dash-alliance-table-wrap');
+      return {
+        documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+        rootOverflow: root.scrollWidth > root.clientWidth + 2,
+        rowDisplay: firstRow ? getComputedStyle(firstRow).display : '',
+        wrapOverflow: wrap ? getComputedStyle(wrap).overflow : '',
+      };
+    });
+    expect(layout.documentOverflow).toBe(false);
+    expect(layout.rootOverflow).toBe(false);
+    expect(layout.rowDisplay).toBe('grid');
+    expect(layout.wrapOverflow).toBe('visible');
+
+    const tableRegion = page.locator('.dash-alliance-table-wrap').first();
+    await expect(tableRegion).toHaveAttribute('role', 'region');
+    await expect(tableRegion).toHaveAttribute('tabindex', '0');
+    const expand = page.locator('.dash-alliance-expand').first();
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await expect(expand).toHaveAttribute('aria-controls', /dashAllianceDetails-/);
+    await expect(expand).toHaveAttribute('aria-label', /.+/);
+    await expand.focus();
+    await page.keyboard.press('Enter');
+    await expect(expand).toHaveAttribute('aria-expanded', 'true');
+    await expect(expand).toHaveAttribute('aria-label', /Close/i);
+
+    const bandCues = await page.evaluate(() => ({
+      score: Array.from(document.querySelectorAll('[data-score-band]')).every(
+        (node) =>
+          Boolean(node.getAttribute('aria-label')) &&
+          Boolean(node.querySelector('small')?.textContent)
+      ),
+      activity: Array.from(document.querySelectorAll('[data-activity]')).every(
+        (node) =>
+          Boolean(node.getAttribute('aria-label')) &&
+          Boolean(node.querySelector('small')?.textContent)
+      ),
+      bonus: Array.from(document.querySelectorAll('[data-bonus]')).every(
+        (node) =>
+          Boolean(node.getAttribute('aria-label')) &&
+          Boolean(node.querySelector('small')?.textContent)
+      ),
+    }));
+    expect(bandCues).toEqual({ score: true, activity: true, bonus: true });
+
+    await page.locator('#languageSelect').selectOption('ar');
+    await expect(page.locator('#languageSelect')).toHaveValue('ar');
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('vts_hero_lang')), { timeout: 20000 })
+      .toBe('ar');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl', { timeout: 20000 });
+    await expect(page.locator('html')).toHaveAttribute('lang', /ar/, { timeout: 20000 });
+    await expect(page.locator('#dashAllianceViewTitle')).toContainText(/[\u0600-\u06ff]/, {
+      timeout: 20000,
+    });
+    await expect(page.locator('#dashAllianceSearch')).toHaveAttribute(
+      'placeholder',
+      /[\u0600-\u06ff]/
+    );
+    const rtlLayout = await page.evaluate(() => ({
+      documentOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+      rootOverflow:
+        document.querySelector('#ocrDashboardRoot').scrollWidth >
+        document.querySelector('#ocrDashboardRoot').clientWidth + 2,
+      titleDirection: getComputedStyle(document.querySelector('#dashAllianceViewTitle')).direction,
+    }));
+    expect(rtlLayout.documentOverflow).toBe(false);
+    expect(rtlLayout.rootOverflow).toBe(false);
+    expect(rtlLayout.titleDirection).toBe('rtl');
   });
 });
